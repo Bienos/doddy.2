@@ -175,7 +175,7 @@ M = [
               <p class="quote">"Italian place for Ola's birthday: Trattoria Nonna, Hoża 9. Book the table by the window."</p>
               <div class="meta"><span>Saved 4 Oct 2026, 13:12</span><b>Your typed note</b></div>
             </div>''', pw="44%",
-         stamp="Your words", caption="Works today. Only notes you chose to save; nothing is remembered on its own.", after=None, peek=True),
+         stamp="Your words", caption="Works today: searching your notes in the app. Asking out loud is in testing. Only notes you chose to save; nothing is remembered on its own.", after=None, peek=True),
     dict(id="list", sun="2015", time="20:15", title="The shopping bag.", flip=True, who="someone who forgot the oat milk", label="20:15",
          share="The 20:15 one is you. Doddy adds the oat milk to the list; you do the shopping.",
          problem="You remembered the oat milk. In the car. On the way home.",
@@ -499,7 +499,7 @@ TAIL = '''
           <ul class="truth-list">
             <li><span class="cap built">Built</span><span>Works in the app now: saving notes in your words and finding them again.</span></li>
             <li><span class="cap testing">In testing</span><span>Built, being tried on real iPhones: voice conversations, calendar, reminders, timers, lists, maps, message drafts, weather, plans, personality settings.</span></li>
-            <li><span class="cap later">Later, maybe</span><span>Not built, no dates promised: translating other people, picking restaurants for you, Android. <a class="text-link inline" href="/#join">The homepage keeps the full list.</a></span></li>
+            <li><span class="cap later">Later, maybe</span><span>Not built, no dates promised: translating other people, picking restaurants for you, Android. <a class="text-link inline" href="/#real">The homepage shows the same list.</a></span></li>
           </ul>
         </div>
       </div>

@@ -72,7 +72,7 @@ The words on the page, one place to edit them. Mockup 14 is this file rendered. 
 - Doddy does: Finds the note you saved, in your exact words. · Shows when you saved it and where it came from. · Says "I couldn't find that" instead of guessing.
 - Card: Found in your notes — "Italian place for Ola's birthday: Trattoria Nonna, Hoża 9. Book the table by the window." · Saved 4 Oct 2026, 13:12 · Your typed note
 - Floating notes: Marta's book · Locker 4471 · Parked on B2
-- Caption: Works today. Only notes you chose to save; nothing is remembered on its own.
+- Caption: Works today: searching your notes in the app. Asking out loud is in testing. Only notes you chose to save; nothing is remembered on its own. (Changed 14 October: the scene is spoken, and voice is in testing.)
 - Aside: *Your words, not a guess.*
 - Note: Trattoria Nonna is made up; Hoża is a real Warsaw street. Swap for a real place only with its owner's blessing.
 
@@ -108,7 +108,7 @@ The words on the page, one place to edit them. Mockup 14 is this file rendered. 
 - What's real today: Built · Works in the app now: saving notes in your words and finding them again. / In testing · Built, being tried on real iPhones: voice conversations, calendar, reminders, timers, lists, maps, message drafts, weather, plans, personality settings. / Later, maybe · Not built, no dates promised: translating other people, picking restaurants for you, Android.
 - Final ask: **Still got a problem? Ask Doddy.** Doddy is in early testing. Leave your email to hear when early access opens.
 - Scraps: Where did I park? · Pasta timer, nine minutes · Call Mum. Actually call her. · Plan my evening
-- Later, maybe: In testing now: your calendar, reminders, alarms, timers, lists, maps and message drafts, with changes confirmed on screen first (quick list edits can be undone instead), and Polish alongside English. Not built yet, and no dates promised: translation, Android.
+- Later, maybe: removed from the homepage on 14 October (ADR-480). The homepage's `#real` strip and this page's truth panel carry the same three lines: Built, In testing, Later, maybe.
 
 ## Rules the lines follow
 

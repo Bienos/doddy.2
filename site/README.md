@@ -29,10 +29,10 @@ There's no build step: plain HTML, CSS and a small vanilla script. Visits are co
 
 ## What's real on the page
 
-- **Design v3 (light editorial notebook):** light-only; brighter paper cards derived from the app's canvas, a warm glow and a "Saved" receipt chip in the hero, a light privacy panel, footer links. Headings in Bricolage Grotesque (OFL, Google Fonts), Caveat only for Doddy's own voice and the wordmark, system text for reading. Sections: hero, the brand film, the problem, three-step How it works, the note receipt, voice (In testing), privacy panel, Meet Doddy, Take a shot (basketball game), Remember it (memory game), join. The example note in the receipt card is labelled as an example.
+- **Design v3 (light editorial notebook):** light-only; brighter paper cards derived from the app's canvas, a warm glow and a "Saved" receipt chip in the hero, a light privacy panel, footer links. Headings in Bricolage Grotesque (OFL, Google Fonts), Caveat only for Doddy's own voice and the wordmark, system text for reading. Sections (after ADR-480): hero, the brand film, the problem, What's real today (the only Built / In testing / Later, maybe list on the homepage, same three lines as the new page), three-step How it works (step 2 owns "nothing matches", step 3 owns the corrected-note receipt), three moments (all in testing), voice (In testing), privacy panel, Meet Doddy, Take a shot (basketball game), Remember it (memory game), join. The example note in the receipt card is labelled as an example.
 - **Screens are design previews**, copied from `design/interface-v1.2/previews/` and labelled "Design preview". Replace them with simulator screenshots of the native app (same file names in `assets/screens/`) once someone with Xcode captures them.
 - The voice section has no app screenshot. It shows the app's real status words and its "Save this note?" card as an illustration, labelled as such, and is marked **In testing**. The owner had a first real iPhone conversation on 9 October (`docs/implementation/V1_VOICE_STATUS.md`); the fine print says only "Voice is in testing." (owner's instruction, 13 October).
-- Claims follow the feature table in the prompt: save, search, edit, export and delete are described as working; reminders and other languages sit under "Later, maybe" with no dates.
+- Claims follow the feature table in the prompt: save, search, edit, export and delete are described as working; reminders, voice and the rest sit under "In testing" and translation, restaurant picking and Android under "Later, maybe", with no dates (the "What's real today" strip).
 
 ## Waitlist
 
@@ -163,3 +163,19 @@ Not checked: real Safari on iPhone (deep-link fallback timing, Dynamic Type zoom
 - Reduced motion: nothing primed, no chips, no hero arrival, finished cards. No JavaScript: finished cards, seven object links, ten day-strip links, choices hidden.
 - Homepage: six-link nav, the phone menu lists the new page, three moments in the teaser, the voice sentence replaced, canonical on `www.doddy.lol`. Blog: six-link nav with Blog current. `npm test` in `site/`: 18 pass. `python3 -I tools/build_day.py --check` and `tools/build_blog.py --check`: pass.
 - Not checked: real Safari on iPhone (the Web Share sheet, touch, Low Power Mode), VoiceOver reading order of a scene, Dynamic Type, Lighthouse, the real Vercel deploy and `www.doddy.lol` serving the new files, the share image in a real link preview.
+
+### Homepage and page B made to agree (ADR-480, 2026-10-14)
+
+From the audit in `design/website-what-can-doddy-do/PROMPT_how-it-works-vs-the-day.md` and mockup 26. `site/index.html`, `styles.css`, `tools/build_day.py` (page B) and `COPY.md`:
+
+- The receipt section is gone; its "nothing matches" line moved to step 2 and the corrected-note receipt to step 3. "Your words, not a guess" now appears once on the homepage (step 2); the 18:45 scene left the teaser (it stays on page B).
+- New `#real` strip, "What's real today", with the exact three lines page B's truth panel uses. The homepage's separate "Later, maybe" paragraph is deleted, and page B's panel links to `/#real`. Removing `.later` from the CSS also fixes a leak: the bare `.later` rule was styling every `.cap.later` pill (a 40 px top margin).
+- "How it works" no longer says "all on your iPhone. No account, no setup"; it says the notes stay on the phone with no account.
+- Teaser heading and lede say the three scenes are in testing; the third scene is 10:20 (page B's own train-platform art) instead of 18:45.
+- Voice section: "Say any of it out loud", scope matches the scenes, and the confirm-on-screen rule for calendar, reminders and alarms (quick list edits are undone instead), which `voice-agent/instructions.md` supports.
+- Privacy note names weather and Wikipedia lookups (a place name or search words).
+- Page B's 18:45 caption now says searching notes in the app works today and asking out loud is in testing.
+
+Checked (headless Chromium 1194, `python3 -m http.server`, no production headers or CSP run this time): homepage at 1440, 390 and 320 px: no horizontal scroll, no page errors, no broken images, no `.receipt-section` or `div.later` left. `npm test` in `site/`: 18 pass; `build_day.py --check` and `build_blog.py --check`: pass. Not checked: the CSP headers, real Safari, VoiceOver, the live deploy.
+
+**Open, needs the owner or an app check:** (1) page B's captions say weather and Wikipedia are "asked for by ElevenLabs' servers", but OpenAI Realtime is now the default voice and `voice-agent/README.md` says those web tools may run in the app or on the token server, so the caption may be stale; (2) the old homepage line listed alarms and Polish under "In testing"; the shared strip follows page B's wording and omits both, so say if they should come back; (3) the translation branch (`claude/inspiring-rubin-1agiui`) rewrites `index.html`, so it will conflict with this change.
