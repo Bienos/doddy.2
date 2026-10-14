@@ -499,7 +499,7 @@ TAIL = '''
           <ul class="truth-list">
             <li><span class="cap built">Built</span><span>Works in the app now: saving notes in your words and finding them again.</span></li>
             <li><span class="cap testing">In testing</span><span>Built, being tried on real iPhones: voice conversations, calendar, reminders, timers, lists, maps, message drafts, weather, plans, personality settings.</span></li>
-            <li><span class="cap later">Later, maybe</span><span>Not built, no dates promised: translating other people, picking restaurants for you, Android. <a class="text-link inline" href="/#real">The homepage shows the same list.</a></span></li>
+            <li><span class="cap later">Later, maybe</span><span>Not built, no dates promised: translating other people, picking restaurants for you, Android.</span></li>
           </ul>
         </div>
       </div>

@@ -64,7 +64,10 @@ let voiceTimer = null;
 function showVoiceState(i) {
   voiceStates.forEach((li, j) => li.classList.toggle("now", j === i));
 }
-if (reduceMotion.matches) {
+const voiceSection = document.querySelector(".voice");
+if (!voiceSection || voiceStates.length === 0) {
+  // No voice section on this page (ADR-482).
+} else if (reduceMotion.matches) {
   showVoiceState(1);
 } else {
   new IntersectionObserver(([entry]) => {
@@ -73,7 +76,7 @@ if (reduceMotion.matches) {
     let i = 0;
     showVoiceState(i);
     voiceTimer = setInterval(() => { i = (i + 1) % voiceStates.length; showVoiceState(i); }, 1400);
-  }, { threshold: 0.4 }).observe(document.querySelector(".voice"));
+  }, { threshold: 0.4 }).observe(voiceSection);
 }
 
 // ---------- Waitlist ----------
