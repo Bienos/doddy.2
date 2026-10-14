@@ -16,6 +16,7 @@ window.DODDY_I18N = {
   "Locker 4471": "Armário 4471",
   "Marta's book": "O livro da Marta",
   "Marta's book was The Hobbit.": "O livro da Marta era O Hobbit.",
+  "Menu": "Menu",
   "Nope. I'd have written that down.": "Não. Eu teria anotado isso.",
   "Not those two. Try again.": "Não são esses dois. Tente de novo.",
   "Nothing but net.": "Só na rede.",

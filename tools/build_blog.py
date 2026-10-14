@@ -26,6 +26,10 @@ from email.utils import format_datetime
 from datetime import datetime, timezone
 from pathlib import Path
 
+# The translation generator lives next to this file; the page's English language links come from it.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from build_site_i18n import fill_english_regions  # noqa: E402
+
 ROOT = Path(__file__).resolve().parents[1]
 POSTS = ROOT / "blog" / "posts"
 OUT = ROOT / "site" / "blog"
@@ -205,6 +209,13 @@ def nice_date(d: date) -> str:
 
 def page(title: str, description: str, path: str, main: str, og_type: str = "website", extra_head: str = "",
          og_image: str = "/assets/og-image.png") -> str:
+    """A finished page with its English language links filled in, for the translation generator to copy."""
+    text = _page(title, description, path, main, og_type, extra_head, og_image)
+    return fill_english_regions(text, path.strip("/") + "/")
+
+
+def _page(title: str, description: str, path: str, main: str, og_type: str = "website", extra_head: str = "",
+          og_image: str = "/assets/og-image.png") -> str:
     t, d, url = html.escape(title), html.escape(description), SITE_URL + path
     nav_html = NAV.replace("{{wcd}}", ' aria-current="page"' if path == "/what-can-doddy-do/" else "") \
                   .replace("{{blog}}", ' aria-current="page"' if path == "/blog/" else "")
@@ -223,6 +234,7 @@ def page(title: str, description: str, path: str, main: str, og_type: str = "web
   <meta property="og:image" content="{SITE_URL}{og_image}">
   <meta property="og:url" content="{url}">
   <link rel="canonical" href="{url}">
+  <!-- i18n:alternates --><!-- /i18n:alternates -->
   <meta name="twitter:card" content="summary_large_image">
   <link rel="alternate" type="application/rss+xml" title="Doddy blog" href="/blog/feed.xml">
   <link rel="icon" href="/assets/doddy-favicon.png" type="image/png" sizes="64x64">
@@ -234,6 +246,8 @@ def page(title: str, description: str, path: str, main: str, og_type: str = "web
   <link rel="stylesheet" href="/styles.css">
   <link rel="stylesheet" href="/blog.css">
   {ANALYTICS}
+  <!-- i18n:dictionary --><!-- /i18n:dictionary -->
+  <script src="/i18n.js" defer></script>
   <script src="/nav.js" defer></script>
 </head>
 <body>
@@ -259,6 +273,7 @@ def page(title: str, description: str, path: str, main: str, og_type: str = "web
           <li><a href="https://www.tiktok.com/@doddy_mate" target="_blank" rel="noopener">TikTok</a></li>
           <li><a href="https://www.instagram.com/doddy_mate/" target="_blank" rel="noopener">Instagram</a></li>
         </ul>
+        <!-- i18n:switcher-footer --><!-- /i18n:switcher-footer -->
       </div>
       <p>Doddy is an AI assistant, not a person. Your notes are stored on your iPhone; voice, phone calls, shared lists and connected accounts send data off it only when you switch them on.</p>
       <p>This page counts visits with Vercel Web Analytics, which sets no cookies. Its fonts load from Google Fonts.</p>

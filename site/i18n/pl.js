@@ -16,6 +16,7 @@ window.DODDY_I18N = {
   "Locker 4471": "Skrytka na paczki 4471",
   "Marta's book": "Książka Marty",
   "Marta's book was The Hobbit.": "Książka Marty to był „Hobbit”.",
+  "Menu": "Menu",
   "Nope. I'd have written that down.": "Nie. Zapisałbym to sobie.",
   "Not those two. Try again.": "Nie te dwie. Spróbuj jeszcze raz.",
   "Nothing but net.": "Sama siatka.",

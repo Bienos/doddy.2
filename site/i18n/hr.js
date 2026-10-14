@@ -16,6 +16,7 @@ window.DODDY_I18N = {
   "Locker 4471": "Paketomat 4471",
   "Marta's book": "Martina knjiga",
   "Marta's book was The Hobbit.": "Martina knjiga bila je Hobit.",
+  "Menu": "Izbornik",
   "Nope. I'd have written that down.": "Ne. Ja bih to zapisao.",
   "Not those two. Try again.": "Ne ta dva. Pokušaj ponovno.",
   "Nothing but net.": "Samo mreža.",

@@ -16,6 +16,7 @@ window.DODDY_I18N = {
   "Locker 4471": "ロッカー 4471",
   "Marta's book": "マルタさんの本",
   "Marta's book was The Hobbit.": "マルタさんの本は『ホビットの冒険』でした。",
+  "Menu": "メニュー",
   "Nope. I'd have written that down.": "いいえ。ぼくなら書き留めておきました。",
   "Not those two. Try again.": "その2枚は違います。もう一度どうぞ。",
   "Nothing but net.": "ネットを揺らしました。",

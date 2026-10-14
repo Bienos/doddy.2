@@ -16,6 +16,7 @@ window.DODDY_I18N = {
   "Locker 4471": "快递柜 4471",
   "Marta's book": "Marta 的书",
   "Marta's book was The Hobbit.": "Marta 的书是《霍比特人》。",
+  "Menu": "菜单",
   "Nope. I'd have written that down.": "不对。我本该把它记下来的。",
   "Not those two. Try again.": "不是这两张。再试一次。",
   "Nothing but net.": "空心入网。",

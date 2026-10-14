@@ -16,6 +16,7 @@ window.DODDY_I18N = {
   "Locker 4471": "Casier 4471",
   "Marta's book": "Le livre de Marta",
   "Marta's book was The Hobbit.": "Le livre de Marta était « Bilbo le Hobbit ».",
+  "Menu": "Menu",
   "Nope. I'd have written that down.": "Non. Je l’aurais noté.",
   "Not those two. Try again.": "Pas ces deux-là. Essaie encore.",
   "Nothing but net.": "Que du filet.",

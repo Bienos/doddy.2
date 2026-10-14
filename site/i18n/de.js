@@ -16,6 +16,7 @@ window.DODDY_I18N = {
   "Locker 4471": "Paketfach 4471",
   "Marta's book": "Martas Buch",
   "Marta's book was The Hobbit.": "Martas Buch war „Der Hobbit“.",
+  "Menu": "Menü",
   "Nope. I'd have written that down.": "Nee, das hätte ich mir notiert.",
   "Not those two. Try again.": "Nicht diese beiden. Versuch es noch einmal.",
   "Nothing but net.": "Nur Netz.",
