@@ -79,10 +79,17 @@ struct VoiceView: View {
             }
             let controller = self.controller ?? VoiceSessionController(store: store)
             self.controller = controller
+            // Back Tap (or another "Talk to Doddy" shortcut) greets on the island like "Hey Doddy" does,
+            // but a silent conversation stays open: only the wake word ends one by itself.
+            let openedByShortcut = ShortcutRouter.shared.takeTalkToDoddyOpening()
+            let greeting = openedByShortcut ? WakeGreeting.line(
+                name: WakeGreeting.name(nickname: Nickname.stored(), profileName: profiles.profile.value(.name)),
+                polish: ConversationLanguage.stored() == .polish) : nil
             await controller.start(
                 mode, profile: profiles.profile, translator: ShortcutRouter.shared.takeTranslatorPreset(),
                 checkIn: ShortcutRouter.shared.takeCheckInBriefing(),
-                aboutNote: ShortcutRouter.shared.takeNoteToAsk())
+                aboutNote: ShortcutRouter.shared.takeNoteToAsk(),
+                wakeGreeting: greeting, byWakeWord: false)
         }
         .onDisappear {
             Task { await controller?.stop() }

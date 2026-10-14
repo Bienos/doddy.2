@@ -14,6 +14,8 @@ final class ShortcutRouter {
     var isVoicePresented = false
     /// Home › Translate (ADR-215): the conversation that opens next starts in translator mode.
     private var translatorPreset: TranslatorSetup?
+    /// Set when "Talk to Doddy" opens the conversation; taken once by its start (`takeTalkToDoddyOpening`).
+    private var talkToDoddyOpened = false
     /// The morning check-in screen (ADR-220), opened from its notification or Settings.
     var isCheckInPresented = false
     /// The weekly tidy-up screen (ADR-228), from its notification or Settings.
@@ -58,6 +60,7 @@ final class ShortcutRouter {
             isSetupPresented = true
         } else {
             isSetupPresented = false
+            if !isVoicePresented { talkToDoddyOpened = true }
             isVoicePresented = true
         }
     }
@@ -150,6 +153,13 @@ final class ShortcutRouter {
     func takeTranslatorPreset() -> TranslatorSetup? {
         defer { translatorPreset = nil }
         return translatorPreset
+    }
+
+    /// True once when "Talk to Doddy" opened the conversation (Back Tap, Action Button, Siri,
+    /// Control Center), so it can greet on the island. Not set when a conversation was already open.
+    func takeTalkToDoddyOpening() -> Bool {
+        defer { talkToDoddyOpened = false }
+        return talkToDoddyOpened
     }
 
     /// Called from `SaveToDoddyIntent.perform()`. Shows the text on the capture screen, or keeps
