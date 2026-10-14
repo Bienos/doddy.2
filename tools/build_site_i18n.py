@@ -66,7 +66,12 @@ CANDIDATES = {"p", "h1", "h2", "h3", "h4", "h5", "h6", "li", "dt", "dd", "legend
               "small", "div", "caption", "q", "cite", "time", "dfn", "option"}
 TEXT_ATTRS = ("alt", "aria-label", "placeholder", "title")
 META_TEXT = {"description", "og:title", "og:description", "twitter:title", "twitter:description"}
+# A translated page lives one folder down (/de/), so every page-relative file URL in it becomes
+# root-absolute; otherwise the browser asks for /de/assets/... and every Doddy image is broken.
 URL_ATTRS = ("href", "src", "poster")
+SRCSET_ATTR = "srcset"
+NOT_RELATIVE = ("/", "#", "//", "http:", "https:", "mailto:", "tel:", "doddy:", "data:", "javascript:")
+URL_IN_HTML = re.compile(r"""(?<![\w:-])(href|src|poster|srcset)(\s*=\s*)(["'])(.*?)\3""", re.S)
 GENERATED_KEYS = ("Language", "English")
 
 PLACEHOLDER = re.compile(r"\{[A-Za-z_][A-Za-z0-9_]*\}")
@@ -84,6 +89,37 @@ def page_url(slug: str) -> str:
 
 def consent_for(lang) -> str:
     return "waitlist-note-v1" if lang[0] == "en" else f"waitlist-note-v1-{lang[1]}"
+
+
+def is_relative(value: str) -> bool:
+    return bool(value) and not value.startswith(NOT_RELATIVE)
+
+
+def root_url(value: str) -> str:
+    return "/" + (value[2:] if value.startswith("./") else value)
+
+
+def srcset_urls(value: str) -> list[str]:
+    return [part.strip().partition(" ")[0] for part in value.split(",") if part.strip()]
+
+
+def root_srcset(value: str) -> str:
+    """A srcset is 'URL descriptor, URL descriptor'; every relative URL in it becomes root-absolute."""
+    out = []
+    for part in value.split(","):
+        url, _, descriptor = part.strip().partition(" ")
+        if url:
+            out.append((root_url(url) if is_relative(url) else url) + (" " + descriptor.strip() if descriptor.strip() else ""))
+    return ", ".join(out)
+
+
+def root_urls_in(fragment: str) -> str:
+    """The same rewrite for markup kept as it is inside a text unit: a drawing token, an inline link."""
+    def fix(m):
+        name, eq, quote, value = m.groups()
+        new = root_srcset(value) if name == "srcset" else (root_url(value) if is_relative(value) else value)
+        return f"{name}{eq}{quote}{new}{quote}"
+    return URL_IN_HTML.sub(fix, fragment)
 
 
 # ---------- parsing the master into elements with exact offsets ----------
@@ -236,9 +272,10 @@ def attr_sites(c):
             span = attr_span(c, name)
             if span:
                 out.append(("attr", c, name, span[2], span))
-    for name in URL_ATTRS:
+    for name in URL_ATTRS + (SRCSET_ATTR,):
         value = c.attrs.get(name, "")
-        if value and not value.startswith(("/", "#", "//", "http:", "https:", "mailto:", "tel:", "doddy:", "data:")):
+        relative = any(is_relative(u) for u in srcset_urls(value)) if name == SRCSET_ATTR else is_relative(value)
+        if value and relative:
             span = attr_span(c, name)
             if span:
                 out.append(("url", c, name, span[2], span))
@@ -385,8 +422,16 @@ def render_page(base: str, sites, lang, table, problems: list[str]) -> str:
                 text = key
             blog = code != "en" and el.tag == "a" and el.attrs.get("href") == "/blog/"
             if text == key and not blog:
+                # Untranslated, but a drawing or link inside it may still carry a page-relative URL.
+                if code != "en":
+                    inner = base[el.inner_start:el.inner_end]
+                    fixed = root_urls_in(inner)
+                    if fixed != inner:
+                        reps.append((el.inner_start, el.inner_end, fixed))
                 continue
             new = restore(text, tokens)
+            if code != "en":
+                new = root_urls_in(new)
             if blog:
                 new += f' <span class="note">({html.escape(lookup(table, code, "English", missing))})</span>'
             reps.append((el.inner_start, el.inner_end, new))
@@ -402,7 +447,8 @@ def render_page(base: str, sites, lang, table, problems: list[str]) -> str:
                 reps.append((span[0], span[1], text.replace('"', "&quot;")))
         elif kind == "url":
             if code != "en":
-                reps.append((site[4][0], site[4][1], "/" + site[3]))
+                new = root_srcset(site[3]) if site[2] == SRCSET_ATTR else root_url(site[3])
+                reps.append((site[4][0], site[4][1], new))
         elif kind == "lang":
             reps.append((site[4][0], site[4][1], code))
         elif kind == "consent":
@@ -487,6 +533,7 @@ def csp_hashes() -> set[str]:
 
 def check_page(path: Path, text: str, problems: list[str]) -> None:
     rel = path.relative_to(ROOT)
+    translated = path != MASTER
     tree = Tree(text)
     if tree.problems:
         problems.append(f"{rel}: {tree.problems[0]}")
@@ -510,14 +557,17 @@ def check_page(path: Path, text: str, problems: list[str]) -> None:
             if digest not in csp_hashes():
                 problems.append(f"{rel}: inline script is not allowed by the CSP in vercel.json")
         if e.tag in {"a", "link", "script", "img", "source", "video"}:
-            for name in ("href", "src", "poster"):
+            for name in ("href", "src", "poster", SRCSET_ATTR):
                 value = e.attrs.get(name, "")
-                if value.startswith("/") and not value.startswith(("//", "/_vercel/")):
-                    target = SITE / value.split("?")[0].split("#")[0].lstrip("/")
-                    if value.endswith("/"):
-                        target = target / "index.html"
-                    if not target.exists():
-                        problems.append(f"{rel}: {name}={value} does not exist in site/")
+                for url in (srcset_urls(value) if name == SRCSET_ATTR else [value]):
+                    if translated and is_relative(url):
+                        problems.append(f"{rel}: {name}={url} is page-relative; on a translated page it must start with /")
+                    elif url.startswith("/") and not url.startswith(("//", "/_vercel/")):
+                        target = SITE / url.split("?")[0].split("#")[0].lstrip("/")
+                        if url.endswith("/"):
+                            target = target / "index.html"
+                        if not target.exists():
+                            problems.append(f"{rel}: {name}={url} does not exist in site/")
 
 
 def main() -> None:

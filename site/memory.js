@@ -11,8 +11,9 @@
   const pose = document.querySelector(".memory-doddy img");
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
-  const POSE_THINKING = "assets/day/poses/kneeling_inspect-320.webp";
-  const POSE_DONE = "assets/day/poses/fistpump-320.webp";
+  // Root-absolute: the translated pages live in /de/, /ja/ and so on, where "assets/..." would be a 404.
+  const POSE_THINKING = "/assets/day/poses/kneeling_inspect-320.webp";
+  const POSE_DONE = "/assets/day/poses/fistpump-320.webp";
 
   // Line drawings on a 64 x 64 grid; ".acc" shapes take the orange cue.
   const ITEMS = [

@@ -55,7 +55,8 @@ There's no build step: plain HTML, CSS and a small vanilla script. Visits are co
 - **Translations:** `l10n/site/<code>.json` maps English text to the language. `l10n/site/en.json` lists the keys. Work on them with `python3 -I tools/l10n_batch.py show|merge|status <code> --table site`. A new sentence in the master or in a script needs a line in every table; `--check` names the missing ones. `l10n/site/keep-english.json` lists the sentences that may stay in English (the tagline in the title).
 - **Scripts:** text a script shows goes through `doddyT("English text", values)` in `site/i18n.js`. It returns the translation for the page's language, or the English. `{name}` is filled from the values.
 - **Consent:** the signup form sends its consent wording version (`data-consent`). English uses `waitlist-note-v1`; each other language uses `waitlist-note-v1-<code>`, for example `waitlist-note-v1-de`. The API stores what the page sends. The versions are listed in `docs/legal/PRIVACY_POLICY_DRAFT.md`.
-- **Status:** the translations are drafts until a native speaker has read them. Vercel is not publishing the site at the moment, so the pages can only be checked locally.
+- **URLs:** a translated page lives in a folder (`/de/`), so every file URL in it must start with `/`: the generator rewrites `href`, `src`, `poster` and every `srcset` candidate, including those inside a text block, and `--check` fails on one it missed. Scripts must load images from `/assets/…`, never `assets/…`.
+- **Status:** live at https://www.doddy.lol since 14 October. The translations are drafts until a native speaker has read them. On 14 October the Doddy pictures were broken on the nine translated pages (page-relative `srcset`); fixed and checked in a browser (every image loads, no HTTP 4xx).
 
 ## Analytics
 

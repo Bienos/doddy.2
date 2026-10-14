@@ -28,7 +28,7 @@
   const poses = {};
   for (const name of ["basketball-shot", "basketball-follow-through", "basketball-gather"]) {
     const img = new Image();
-    img.src = `assets/poses/doddy-pose-${name}-light-v1.3-r1.svg`;
+    img.src = `/assets/poses/doddy-pose-${name}-light-v1.3-r1.svg`;
     img.onload = () => draw();
     poses[name] = img;
   }
