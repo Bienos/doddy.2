@@ -671,6 +671,8 @@ def main() -> None:
                     problems.append(f"{code}: {key[:60]!r}: {bad[0]}")
                 elif table[key] == key and len(key.split()) >= 3 and key not in keep:
                     problems.append(f"{code}: still English: {key[:60]!r}")
+                if "a mate in your pocket" in key.lower() and "a mate in your pocket" not in table[key].lower():
+                    problems.append(f"{code}: {key[:60]!r}: 'A mate in your pocket' stays in English (owner decision)")
 
     outputs = build(pages, tables, problems)
 
