@@ -163,3 +163,11 @@ Not checked: real Safari on iPhone (deep-link fallback timing, Dynamic Type zoom
 - Reduced motion: nothing primed, no chips, no hero arrival, finished cards. No JavaScript: finished cards, seven object links, ten day-strip links, choices hidden.
 - Homepage: six-link nav, the phone menu lists the new page, three moments in the teaser, the voice sentence replaced, canonical on `www.doddy.lol`. Blog: six-link nav with Blog current. `npm test` in `site/`: 18 pass. `python3 -I tools/build_day.py --check` and `tools/build_blog.py --check`: pass.
 - Not checked: real Safari on iPhone (the Web Share sheet, touch, Low Power Mode), VoiceOver reading order of a scene, Dynamic Type, Lighthouse, the real Vercel deploy and `www.doddy.lol` serving the new files, the share image in a real link preview.
+
+### Checked (2026-10-14, hero and moment-card cleanup, headless Chromium 1194 via Playwright, site/ served with the vercel.json headers)
+
+- Hero: "Quite a lot, actually." is one line at 320, 390, 1024 and 1440 px, and fits its column. Each of the seven tiles shows its own time and short title without hovering. Tiles don't touch each other, the reaction line, Doddy or the copy at any of the four widths, including while each tile is hovered. Doddy's reaction line sits in one fixed place under the ring. The coffee cup's stray speck is removed from the pack image and the site's WebP.
+- Moment cards (all ten) at 320, 390, 1024 and 1440 px: no card has a stamp, bubble, note or panel covering text. Stamps sit on the card's top edge. At 1100 px and below the cards stack like the phone layout. No sideways scroll, console errors, failed requests or broken images on the page at any width.
+- Known small remaining item: at 1440 px the 10:20 card's "You say" bubble rises a few pixels into the card's padding. It overlaps nothing and clips nothing.
+- Regression: check.mjs (82 checks: CSP, nav, phone menu, interactions, reduced motion, no-JS, homepage and blog) passes. `npm test` in site/: 18 pass. `build_day.py --check` and `build_blog.py --check`: pass. `verify_imported_pack.py`: pass.
+- Not checked: real Safari on iPhone, VoiceOver, Dynamic Type, Low Power Mode, and the live deploy (the daily Vercel cap is still blocking builds).

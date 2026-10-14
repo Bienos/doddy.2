@@ -8,6 +8,8 @@
 #jacket .r-enter { left: 12%; bottom: -8%; height: 58% }
 #jacket .r-prop { left: 30%; bottom: 8%; width: 9% }
 #jacket .r-fx1 { left: 29%; bottom: 30%; width: 9% }
+#text .d-bubble.stack { top: 22% }
+#text .u-bubble { top: 3% }
 #text .scene-panel { width: 46% }
 #text .r-rest { left: 3%; height: 74% }
 #text .r-enter { left: 2%; height: 72% }
@@ -41,6 +43,7 @@
 #forget .r-enter { left: 8%; height: 70% }
 #forget .r-prop { left: 30%; bottom: 6%; width: 9% }
 #forget .r-fx1 { left: 30%; bottom: 30%; width: 7% }
+#plan .d-bubble.stack { top: 20% }
 #plan .scene-panel { width: 48% }
 #plan .r-rest { left: 8%; height: 74% }
 #plan .r-enter { left: 10%; height: 72% }
