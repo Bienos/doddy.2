@@ -58,6 +58,10 @@ final class ShortcutRouter {
         if setup.deliver(ShortcutReceipt(receivedAt: now)) {
             isVoicePresented = false
             isSetupPresented = true
+        } else if !BackTapAction.stored(UserDefaults.standard.string(forKey: PreferenceKey.backTapAction)).startsConversation {
+            // Settings → Back Tap and Siri → "Only open Doddy": the app comes forward (the intent
+            // opens it) and no conversation, microphone or island starts.
+            return
         } else {
             isSetupPresented = false
             if !isVoicePresented { talkToDoddyOpened = true }

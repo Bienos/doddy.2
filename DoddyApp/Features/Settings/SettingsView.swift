@@ -11,6 +11,7 @@ struct SettingsView: View {
     @AppStorage(PreferenceKey.listenOnOpen) private var listenOnOpen = OpeningPreferences.listenOnOpenDefault
     @AppStorage(PreferenceKey.widgetsShowContent) private var widgetsOn = true
     @AppStorage(PreferenceKey.heyDoddyOn) private var heyDoddyOn = false
+    @AppStorage(PreferenceKey.backTapAction) private var backTapActionRaw = BackTapAction.conversation.rawValue
     @AppStorage(PreferenceKey.voiceAgentID) private var voiceAgentID = VoiceConfig.developmentAgentID
     @AppStorage(PreferenceKey.rememberConversations) private var rememberConversations = true
     @State private var connections = ConnectionController()
@@ -483,6 +484,12 @@ struct SettingsView: View {
                         }
                         .accessibilityIdentifier("settings.backTap")
                     }
+                    // What "Talk to Doddy" does, for Back Tap, the Action Button, Siri and the control.
+                    Picker("When I use Talk to Doddy", selection: $backTapActionRaw) {
+                        Text("Start a conversation").tag(BackTapAction.conversation.rawValue)
+                        Text("Only open Doddy").tag(BackTapAction.openApp.rawValue)
+                    }
+                    .accessibilityIdentifier("settings.backTapAction")
                     Text("\"Talk to Doddy\" is built in as a shortcut for Siri, the Shortcuts app and the Action Button, and on iOS 18 or later as a control you can add to Control Center or the Lock Screen (edit Control Center, then Add a Control, then search Doddy). Back Tap and controls are placed by you; Doddy can't add them and can't see whether they're set.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)

@@ -27,6 +27,8 @@ enum PreferenceKey {
     /// Settings → Voice: open the conversation by itself when the app is opened (ADR-225). On unless turned off.
     static let listenOnOpen = "listenOnOpen"
     static let voiceAgentID = "voiceAgentID"
+    /// Settings → Back Tap and Siri: "Talk to Doddy" starts a conversation (default) or only opens the app (`BackTapAction`).
+    static let backTapAction = "backTapAction"
     /// JSON `BackTapSetupSummary` (outcome and any active test window), never transcripts.
     static let backTapSetup = "backTapSetup"
     /// UI-test override of the outcome: "-backTapSetupStatus deferred".

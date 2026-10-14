@@ -44896,6 +44896,17 @@
         }
       }
     },
+    "Only open Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tylko otwórz Doddy"
+          }
+        }
+      }
+    },
     "Only reminders you set yourself.": {
       "extractionState": "manual",
       "localizations": {
@@ -64387,6 +64398,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "开始"
+          }
+        }
+      }
+    },
+    "Start a conversation": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rozpocznij rozmowę"
           }
         }
       }
@@ -84328,6 +84350,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "我离开时"
+          }
+        }
+      }
+    },
+    "When I use Talk to Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gdy używam „Talk to Doddy”"
           }
         }
       }
