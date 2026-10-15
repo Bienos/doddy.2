@@ -9,7 +9,7 @@ cd site && python3 -m http.server 8765
 # open http://localhost:8765
 ```
 
-There's no build step: plain HTML, CSS and a small vanilla script. Visits are counted with Vercel Web Analytics (no cookies) and, only for visitors who allow it, Google Analytics 4 (cookies); see [Analytics](#analytics).
+There's no build step: plain HTML, CSS and a small vanilla script. Visits are counted with Vercel Web Analytics (no cookies) and Google Analytics 4 (cookies, on every visit); see [Analytics](#analytics).
 
 ## How it connects to the app
 
@@ -87,22 +87,19 @@ sent before the script has loaded. No npm dependency, no build step.
 `analytics.js`, loaded on `index.html` and every blog page (`tools/build_blog.py` adds it), not on `/admin/`.
 
 - **Measurement ID:** `G-MRF40685L1` (web stream "doddy website", property "doddy", `properties/559137115` in the Name Atlas account), the `GA_MEASUREMENT_ID` constant at the top of `analytics.js`
-  (Google Analytics → Admin → Data streams → Web). Empty it to switch GA off: the file then does
-  nothing, with no banner, no footer sentence and no request to Google.
-- **Consent first:** GA sets cookies, so on a first visit a banner asks "Can we use Google
-  Analytics?". Only **Allow** loads `https://www.googletagmanager.com/gtag/js`; **No thanks**
-  sends nothing. The choice is stored in `localStorage` (`doddy-analytics-consent`) on that
-  device. The footer's "Analytics choices" reopens the banner; switching to No thanks sets GA
-  consent to denied and deletes the `_ga` / `_ga_*` cookies. If storage is blocked (private
-  mode) the visitor is asked again next visit.
-- **Settings:** ads storage, ad user data, ad personalisation and Google signals are off.
-  No custom events yet (a waitlist signup event would be `gtag('event', 'sign_up')` after the
-  visitor allowed GA).
+  (Google Analytics → Admin → Data streams → Web). The file does not check the ID, so keep it set.
+- **No consent step (owner, 15 October):** `analytics.js` loads Google's tag (`gtag.js`) on every
+  page as it runs, with no banner and no "Analytics choices" link. This is the plain tag Google
+  gives (`gtag('config', ID)`). GA sets `_ga` / `_ga_*` cookies on every visit. It replaces the
+  consent-first design in ADR-245 (amended).
+- **Settings:** Google signals and ad settings are whatever the GA property is set to in Admin.
+  The site code does not change them. No custom events yet (a waitlist signup event would be
+  `gtag('event', 'sign_up')`).
 - **CSP:** `vercel.json` allows `https://www.googletagmanager.com` in `script-src` and the GA
   collection hosts (`*.google-analytics.com`, `*.analytics.google.com`, `*.googletagmanager.com`)
   in `img-src` and `connect-src`, as Google's CSP guide lists. No inline script was added.
-- **Privacy:** the footer says GA is used only if the visitor allows it. A privacy policy naming
-  Google Analytics is still needed (see Needs the owner).
+- **Privacy:** the footer says Google Analytics measures visits and sets cookies. A privacy policy
+  naming Google Analytics, and the EU consent question, are still open (see Needs the owner).
 
 ## Film
 

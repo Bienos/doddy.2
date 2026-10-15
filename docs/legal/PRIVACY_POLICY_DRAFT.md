@@ -230,7 +230,7 @@ Common points:
 | Retention | No fixed period in the code. **[CONFIRM: delete after launch, after [N] months, or on request only]** Deletion on request is possible through the admin page. The form promises it but names no contact address. |
 | Legal basis | **[CONFIRM: consent]** |
 | Vercel Web Analytics | Counts page views and visitors on the landing page. No cookies. Vercel identifies a visitor by a hash of the request that it discards after 24 hours and keeps page, referrer, country, device and browser class (`site/README.md`, Vercel's documentation). It runs without asking. **[CONFIRM: lawful basis and notice in the EU]** |
-| Google Analytics 4 | Loaded only after you tap Allow in the banner. It sets cookies (`_ga`, `_ga_*`). Ads storage, ad personalisation and Google signals are off. Your choice is kept in your browser's localStorage. "Analytics choices" in the footer lets you change it, and No thanks deletes the `_ga` cookies. Measurement ID `G-MRF40685L1`. (`site/analytics.js`, ADR-245.) **[CONFIRM: Google as processor or controller; GA data location and retention setting; transfers]** |
+| Google Analytics 4 | Loaded on every page view, with no consent banner. It sets cookies (`_ga`, `_ga_*`). Google signals and ad settings are whatever the GA property is set to; the site code does not change them. Measurement ID `G-MRF40685L1` (property "doddy"). (`site/analytics.js`, ADR-245, amended 15 October.) **[CONFIRM: Google as processor or controller; GA data location and retention setting; transfers; the lawful basis for setting these cookies on EU visitors without consent]** |
 | Google Fonts | The page loads two fonts from `fonts.googleapis.com` and `fonts.gstatic.com` as soon as it opens, before any choice. That sends your IP address to Google. (`site/index.html`, `site/README.md` "Needs the owner" 4.) **[CONFIRM: self-host the fonts, or give notice and a basis]** |
 | Links | Telegram group, TikTok, Instagram. They open in a new tab. We send them nothing. |
 | Cookies and storage | Only GA cookies (if you allow) and one localStorage entry for your analytics choice. The site has no other cookies. |
@@ -400,7 +400,7 @@ Paths are relative to the repository root. "ADR" means a row in `DECISIONS.md`.
 | A38 | Delete all, forget profile, delete account | `SettingsView.swift`; `MemoryStore.swift`; `SQLiteMemoryRepository.swift`; `SQLiteProfileRepository.swift`; `UpdatesModel.swift`; `ServerClient.swift` |
 | A39 | Export formats | ADR-030, ADR-176, ADR-177, ADR-203 |
 | A40 | Website data, waitlist storage, admin | `site/api/*.js`; `site/README.md`; `site/index.html` |
-| A41 | Analytics: Vercel Web Analytics and GA4 with consent | `site/analytics.js`; `site/README.md`; ADR-245 |
+| A41 | Analytics: Vercel Web Analytics and GA4 on every page, no consent banner | `site/analytics.js`; `site/README.md`; ADR-245 |
 | A42 | Google Fonts load without consent | `site/index.html` lines 21 to 23; `site/vercel.json` CSP; `site/README.md` "Needs the owner" 4 |
 | A43 | AI disclosure texts | `voice-agent/instructions.md`; `voice-agent/phone/instructions.md`; `HomeView.swift`; `AskView.swift`; ADR-191, ADR-194 |
 | A44 | No age gate | Searched `DoddyApp` and `Packages` for age gate, parental terms; none found |
