@@ -11,7 +11,7 @@
   'use strict';
 
   // GA4 measurement ID from Google Analytics → Admin → Data streams, e.g. 'G-ABC123DEF4'.
-  var GA_MEASUREMENT_ID = 'G-WQXYVSGD4Q';
+  var GA_MEASUREMENT_ID = 'G-MRF40685L1';
   var KEY = 'doddy-analytics-consent';
 
   if (!/^G-[A-Z0-9]+$/.test(GA_MEASUREMENT_ID)) return;

@@ -86,7 +86,7 @@ sent before the script has loaded. No npm dependency, no build step.
 
 `analytics.js`, loaded on `index.html` and every blog page (`tools/build_blog.py` adds it), not on `/admin/`.
 
-- **Measurement ID:** `G-WQXYVSGD4Q`, the `GA_MEASUREMENT_ID` constant at the top of `analytics.js`
+- **Measurement ID:** `G-MRF40685L1` (web stream "doddy website", property "doddy", `properties/559137115` in the Name Atlas account), the `GA_MEASUREMENT_ID` constant at the top of `analytics.js`
   (Google Analytics → Admin → Data streams → Web). Empty it to switch GA off: the file then does
   nothing, with no banner, no footer sentence and no request to Google.
 - **Consent first:** GA sets cookies, so on a first visit a banner asks "Can we use Google
