@@ -70,6 +70,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
 
     /// Silent notifications: iCloud saying a shared list changed (ADR-284). Nothing else uses them.
     func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable: Any]) async -> UIBackgroundFetchResult {
+        await AppRuntime.shared.prepare()
         await SharedListsController.shared.handleRemoteNotification(userInfo) ? .newData : .noData
     }
 

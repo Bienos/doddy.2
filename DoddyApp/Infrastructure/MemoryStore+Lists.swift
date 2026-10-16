@@ -23,7 +23,7 @@ struct ListUndo: Equatable, Identifiable {
 extension MemoryStore {
     func createList(name: String, items: [String], source: ListItemSource) async throws -> DoddyList {
         let list = try await environment.listRepository.create(name: name, items: items, source: source)
-        await reload()
+        await reloadNotesAndLists()
         return list
     }
 
@@ -116,7 +116,7 @@ extension MemoryStore {
     func undoFromActivity(_ undo: ActivityUndo) async -> UndoResult {
         if case .savedNote(let id, let text) = undo { return await undoSavedNote(id: id, text: text) }
         guard let listID = undo.listID else { return .notDone("That isn't a list change.") }
-        await reload()
+        await reloadNotesAndLists()
         guard let items = undo.listItemsToUndo(in: list(id: listID)), !items.isEmpty else { return .leftAlone }
         let repository = environment.listRepository
         do {
@@ -162,7 +162,7 @@ extension MemoryStore {
     }
 
     private func listChanged(_ listID: UUID) async {
-        await reload()
+        await reloadNotesAndLists()
         await environment.noteReminders?.refreshContent(forMemory: listID)
     }
 }
@@ -280,7 +280,7 @@ extension MemoryStore {
     func importList(_ part: NoteImport.ListPart) async throws -> DoddyList {
         let created = try await environment.listRepository.create(
             name: part.name, items: part.open + part.ticked, done: Set(part.ticked), source: .typed)
-        await reload()
+        await reloadNotesAndLists()
         return list(id: created.id) ?? created
     }
 }

@@ -53,6 +53,50 @@ final class MemoryStoreTests: XCTestCase {
         }
     }
 
+    @MainActor
+    func testVoiceContextReloadRefreshesNotesAndLists() async throws {
+        let environment = AppEnvironment.live(arguments: ["-inMemoryStore"])
+        let store = MemoryStore(environment: environment)
+        let firstDraft = try NewMemory(
+            text: "Synthetic voice context note", category: .other, capturedAt: .now)
+        let note = try await environment.memoryRepository.save(firstDraft)
+        let list = try await environment.listRepository.create(
+            name: "Synthetic voice context list", items: [], source: .typed)
+
+        await store.reload()
+        XCTAssertEqual(store.memories.map(\.id), [note.id])
+        XCTAssertEqual(store.lists.map(\.id), [list.id])
+
+        let newerDraft = try NewMemory(
+            text: "Synthetic newer context note", category: .other, capturedAt: .now)
+        let newer = try await environment.memoryRepository.save(newerDraft)
+        await store.reloadVoiceContext()
+
+        XCTAssertEqual(Set(store.memories.map(\.id)), Set([note.id, newer.id]))
+        XCTAssertEqual(store.lists.map(\.id), [list.id])
+        XCTAssertTrue(store.hasLoaded)
+        XCTAssertNil(store.loadError)
+    }
+
+    @MainActor
+    func testSaveAfterInitialLoadUpdatesTheSnapshotInCaptureOrder() async throws {
+        let environment = AppEnvironment.live(arguments: ["-inMemoryStore"])
+        let olderDraft = try NewMemory(
+            text: "Synthetic older memory", category: .other,
+            capturedAt: Date(timeIntervalSince1970: 1_700_000_000))
+        let older = try await environment.memoryRepository.save(olderDraft)
+        let store = MemoryStore(environment: environment)
+        await store.reload()
+        let initialRevision = store.revision
+
+        let newer = try await store.save(
+            text: "Synthetic newer memory", category: .other,
+            capturedAt: Date(timeIntervalSince1970: 1_700_000_001))
+
+        XCTAssertEqual(store.memories.map(\.id), [newer.id, older.id])
+        XCTAssertEqual(store.revision, initialRevision + 1)
+    }
+
     /// Photo notes (ADR-218): the file is written before the link, kept through Undo, and
     /// deleted with the note or by Remove photo. In-memory launches use their own folder.
     @MainActor

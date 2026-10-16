@@ -60,10 +60,6 @@ struct AppEnvironment: Sendable {
         privacy: .m0,
         storageProblem: nil)
 
-    /// The one environment of this process, so the app and Siri (ADR-248) share one database
-    /// connection whichever starts first.
-    static let shared = AppEnvironment.live()
-
     /// `-inMemoryStore` (UI tests) keeps everything in memory and writes nothing to disk.
     static func live(arguments: [String] = ProcessInfo.processInfo.arguments) -> AppEnvironment {
         do {

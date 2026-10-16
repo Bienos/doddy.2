@@ -92,6 +92,31 @@ final class MemoryStore {
         await noteReminders?.reload()
     }
 
+    /// Refreshes notes, lists, and their current reminders without loading correction history or
+    /// photo/audio links. Voice context and list actions need this data; full screens and recovery
+    /// paths keep using `reload()`.
+    func reloadNotesAndLists() async {
+        // If the last complete read failed, retry it before treating a partial refresh as healthy.
+        guard hasLoaded, loadError == nil else {
+            await reload()
+            return
+        }
+
+        do {
+            // Read both before publishing either one, so a failed query keeps the last good snapshot.
+            let notes = try await environment.memoryRepository.list(limit: nil)
+                .filter { $0.category != .list }
+            let storedLists = try await environment.listRepository.lists()
+            memories = notes
+            lists = storedLists
+            loadError = nil
+            revision += 1
+        } catch {
+            loadError = UserFacingError.message(for: error)
+        }
+        await noteReminders?.reload()
+    }
+
     /// Returns only after the repository confirmed a committed, read-back write.
     /// `capturedAt` is when it was said: now, or the time of the phone call a note came from.
     func save(
@@ -99,8 +124,25 @@ final class MemoryStore {
     ) async throws -> MemoryRecord {
         let draft = try NewMemory(text: text, category: category, source: source, capturedAt: capturedAt)
         let record = try await environment.memoryRepository.save(draft)
-        await reload()
+        if hasLoaded, loadError == nil, record.category != .list {
+            insertMemoryInCaptureOrder(record)
+            revision += 1
+        } else {
+            await reload()
+        }
         return record
+    }
+
+    private func insertMemoryInCaptureOrder(_ record: MemoryRecord) {
+        guard !memories.contains(where: { $0.id == record.id }) else { return }
+        let insertionIndex = memories.firstIndex { existing in
+            switch (record.capturedAt, existing.capturedAt) {
+            case let (newDate?, existingDate?): newDate >= existingDate
+            case (nil, .some): false
+            case (.some, nil), (nil, nil): true
+            }
+        } ?? memories.endIndex
+        memories.insert(record, at: insertionIndex)
     }
 
     func correct(id: UUID, text: String) async throws -> MemoryRecord {

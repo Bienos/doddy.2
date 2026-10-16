@@ -158,6 +158,14 @@ final class VoiceSessionController {
             case .listening, .thinking, .speaking: connectedOnce = true
             default: break
             }
+            switch phase {
+            case .connecting: logStartupStage("connecting", attempt: startAttempt)
+            case .listening: logStartupStage("listening", attempt: startAttempt)
+            case .speaking: logStartupStage("speaking", attempt: startAttempt)
+            case .microphoneDenied: logStartupStage("microphone_denied", attempt: startAttempt)
+            case .failed: logStartupStage("failed", attempt: startAttempt)
+            case .idle, .thinking, .ended: break
+            }
             syncIsland()
             // Listening comes only from the provider's own event: this conversation really
             // connected. Counted once per conversation, for the Hey Doddy card (ADR-328).
@@ -334,6 +342,9 @@ final class VoiceSessionController {
     private let alarmWriter = AlarmKitWriter()
     private let leaveByWriter = LeaveByScheduler()
     private var conversation: (any LiveVoiceLink)?
+    @ObservationIgnored private var startupStartedAt: TimeInterval?
+    @ObservationIgnored private var startupCorrelationID: String?
+    @ObservationIgnored private var startupLoggedStages = Set<String>()
     /// Who runs the conversation now (Home's voice switch, read when it starts; ADR-265, ADR-442).
     private(set) var provider: VoiceProvider = .elevenLabs
     /// The OpenAI model of the conversation being started or open (only meaningful when `provider` is OpenAI).
@@ -424,7 +435,10 @@ final class VoiceSessionController {
         checkIn: MorningBriefing? = nil, wakeGreeting: String? = nil, aboutNote: UUID? = nil,
         byWakeWord: Bool = true
     ) async {
-        guard !isLive else { return }
+        guard !isLive else {
+            logStartupStage("duplicate_start_ignored", attempt: startAttempt)
+            return
+        }
         // The previous conversation's lines and unanswered cards are kept before they're cleared,
         // even when it ended in a failure nothing else recorded (ADR-360).
         keepLog()
@@ -432,6 +446,10 @@ final class VoiceSessionController {
         // never opens, keeps or hears a conversation.
         startAttempt += 1
         let attempt = startAttempt
+        startupStartedAt = ProcessInfo.processInfo.systemUptime
+        startupCorrelationID = UUID().uuidString
+        startupLoggedStages.removeAll(keepingCapacity: true)
+        logStartupStage("requested", attempt: attempt)
         callOwners.forget(before: attempt)
         isOffline = false
         offlineSaved = nil
@@ -495,13 +513,16 @@ final class VoiceSessionController {
 
         // Not set up: say so without asking for the microphone first.
         if case .notSetUp(let reason) = mode {
+            logStartupStage("provider_not_configured", attempt: attempt)
             fail(reason)
             return
         }
         guard await Self.microphoneAllowed() else {
+            logStartupStage("microphone_denied", attempt: attempt)
             if attempt == startAttempt { phase = .microphoneDenied }
             return
         }
+        logStartupStage("microphone_allowed", attempt: attempt)
         guard attempt == startAttempt else { return }
         startedAt = Date()
         countedAsConnected = false
@@ -517,7 +538,8 @@ final class VoiceSessionController {
 
         // What Doddy knows at the start: the saved notes and, if the user keeps it on, the last
         // few conversations. Both are bounded and say when they were cut.
-        await store.reload()
+        await store.reloadNotesAndLists()
+        logStartupStage(store.loadError == nil ? "voice_context_ready" : "voice_context_refresh_failed", attempt: attempt)
         // Ended (or ended and started again) while the notes loaded.
         guard attempt == startAttempt, phase == .connecting else { return }
         // Private notes (ADR-310) never reach the voice agent.
@@ -634,7 +656,10 @@ final class VoiceSessionController {
             auth = .publicAgent(id: agentID)
         case .tokenServer(let endpoint, let accessCode):
             do throws(VoiceTokenError) {
-                auth = .conversationToken(try await VoiceTokenClient(endpoint: endpoint, accessCode: accessCode).fetchToken())
+                logStartupStage("token_requested", attempt: attempt)
+                let token = try await VoiceTokenClient(endpoint: endpoint, accessCode: accessCode).fetchToken()
+                logStartupStage("token_ready", attempt: attempt)
+                auth = .conversationToken(token)
             } catch {
                 if attempt == startAttempt, phase == .connecting {
                     if error == .offline { failOffline() } else { fail(VoiceTokenServer.message(for: error)) }
@@ -651,6 +676,7 @@ final class VoiceSessionController {
 
         Self.allowOtherAppsAudio()
         do {
+            logStartupStage("provider_connect_requested", attempt: attempt)
             let started = try await ElevenLabs.startConversation(auth: auth, config: config)
             guard attempt == startAttempt, isLive else {
                 // Closed (or closed and started again) while connecting: end it so nothing keeps
@@ -660,6 +686,7 @@ final class VoiceSessionController {
             }
             conversation = started
             watchAudioInterruptions()
+            logStartupStage("provider_started", attempt: attempt)
             Self.audioLog.notice("conversation started. \(Self.describeAudioSession(), privacy: .public)")
         } catch {
             // A replaced start's failure isn't the new conversation's.
@@ -734,7 +761,9 @@ final class VoiceSessionController {
 
         let grant: OpenAIRealtimeGrant
         do throws(VoiceTokenError) {
+            logStartupStage("token_requested", attempt: attempt)
             grant = try await VoiceTokenClient(endpoint: endpoint, accessCode: accessCode).fetchOpenAIGrant(model: openAIModel)
+            logStartupStage("token_ready", attempt: attempt)
         } catch {
             if attempt == startAttempt, phase == .connecting { fail(Self.openAITokenMessage(error)) }
             return
@@ -749,6 +778,7 @@ final class VoiceSessionController {
         // Set first, so End while connecting closes it and the first tool call can be answered.
         conversation = session
         do {
+            logStartupStage("provider_connect_requested", attempt: attempt)
             try await session.start(sessionUpdate: sessionUpdate, greeting: OpenAIRealtimeWire.greeting(greetingLine))
         } catch {
             if conversation === session { conversation = nil }
@@ -761,7 +791,21 @@ final class VoiceSessionController {
             return
         }
         watchAudioInterruptions()
+        logStartupStage("provider_started", attempt: attempt)
         Self.audioLog.notice("openai conversation started. \(Self.describeAudioSession(), privacy: .public)")
+    }
+
+    /// Content-free timing points for diagnosing slow or duplicate voice starts. The identifier is
+    /// local to this controller; no transcript, note, contact, credential, or error text is logged.
+    private func logStartupStage(_ stage: String, attempt: Int) {
+        guard attempt == startAttempt,
+              let startedAt = startupStartedAt,
+              let correlationID = startupCorrelationID,
+              startupLoggedStages.insert(stage).inserted else { return }
+        let elapsedMilliseconds = Int(max(0, ProcessInfo.processInfo.systemUptime - startedAt) * 1_000)
+        Self.audioLog.notice(
+            "startup id=\(correlationID, privacy: .public) stage=\(stage, privacy: .public) attempt=\(attempt, privacy: .public) elapsed_ms=\(elapsedMilliseconds, privacy: .public)"
+        )
     }
 
     private static func openAITokenMessage(_ error: VoiceTokenError) -> String {
@@ -876,6 +920,7 @@ final class VoiceSessionController {
     func stop(_ reason: VoiceSessionEnd = .userEnded) async {
         // From here, a start still connecting ends itself and late events of this conversation
         // are dropped (review H1).
+        if phase == .connecting { logStartupStage("cancelled_while_connecting", attempt: startAttempt) }
         startAttempt += 1
         userAskedToEnd = true
         if sessionEnd == nil { sessionEnd = reason }

@@ -7,14 +7,15 @@ import Foundation
 // the list screen and voice, and Siri says only what the store read back. Changing or reading a
 // list needs the iPhone unlocked, so nothing is read out on a locked phone.
 
-/// The store the intents use; set once in `DoddyApp.init`.
+/// The store the intents use; configured by the shared runtime before an intent reads it.
 @MainActor
 enum IntentStores {
     static weak var store: MemoryStore?
 
     static func loaded() async -> MemoryStore? {
+        await AppRuntime.shared.prepare()
         guard let store else { return nil }
-        await store.reload()
+        await store.reloadNotesAndLists()
         return store
     }
 

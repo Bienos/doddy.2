@@ -139,6 +139,7 @@ final class NoteReminderRouter {
     var reminders: NoteReminderStore?
 
     func handle(action: String, requestID: String, memoryString: String?) async {
+        if reminders == nil { await AppRuntime.shared.prepare() }
         guard let reminderID = MemoryReminder.reminderID(fromNotificationID: requestID), let reminders else { return }
         switch action {
         case SystemNoteNotifications.hourAction:
