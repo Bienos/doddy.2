@@ -58,8 +58,8 @@ final class ToolCatalogTests: XCTestCase {
     // MARK: Rules between effect and approval
 
     func testOnlyListedLocalChangesRunWithoutACard() {
-        // L1 list changes the user named (ADR-216, with a receipt and Undo) and the capability-gap
-        // row (ADR-440). A new tool that changes something without a card must be added here on purpose.
+        // L1 list changes the user named (ADR-216), capability-gap row (ADR-440), and explicit
+        // translator mode switch. A new local change without a card must be added here on purpose.
         let withoutCard = Set(ToolCatalog.all.filter { $0.effect != .lookup && $0.approval == .none }.map(\.name))
         XCTAssertEqual(withoutCard, [
             VoiceToolName.addToList, VoiceToolName.checkOff, VoiceToolName.removeFromList,

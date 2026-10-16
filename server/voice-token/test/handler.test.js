@@ -121,7 +121,11 @@ test("OpenAI grant is short-lived and restricted to the model allowlist", async 
   assert.equal(calls[0].url, "https://api.openai.com/v1/realtime/client_secrets");
   assert.equal(calls[0].init.headers.authorization, "Bearer openai-server-secret");
   const sent = JSON.parse(calls[0].init.body);
-  assert.deepEqual(sent.expires_after, { anchor: "created_at", seconds: 120 });
+  assert.deepEqual(sent, {
+    expires_after: { anchor: "created_at", seconds: 120 },
+    session: { type: "realtime", model: "gpt-realtime-2.1-mini", audio: { output: { voice: "cedar" } } },
+  });
+  // No prompt, notes or tools go through this server.
   assert.equal(sent.session.instructions, undefined);
   assert.equal(sent.session.tools, undefined);
   assert.ok(!JSON.stringify(logs).includes("openai-short-secret"));

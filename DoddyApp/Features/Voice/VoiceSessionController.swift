@@ -11,8 +11,8 @@ import os
 /// switch says so (ADR-265; same prompt, notes and tools, see `LiveVoiceLink`). State shown in the
 /// UI comes only from real provider events (connected, listening, speaking, disconnected), never
 /// from timers.
-/// Tool calls are proposals. Lookups run on the phone. Anything that changes data, starts
-/// something, or opens another app waits for the user's tap, and Doddy never sends a message.
+/// Consequential changes and app handoffs are proposals. Lookups run on the phone, and a clear
+/// request can switch conversation modes immediately. Doddy never sends a message.
 /// At start the app hands the agent the saved notes and the last few conversations (dynamic
 /// variables); at the end the transcript lines are kept locally in `ConversationLogStore`.
 /// Every tool call and its verified result is recorded in "What Doddy did" (`ActivityLogStore`).
@@ -525,10 +525,19 @@ final class VoiceSessionController {
             isPrivate = true
             privacyLocked = true
             translator = TranslatorSession(setup: preset, startedAt: Date())
-            translatorNeedsHello = true
+            // A known face-to-face language can use the disclosure as the provider's first line,
+            // so it does not need a generic greeting followed by a second prompt round-trip.
+            translatorNeedsHello = preset.kind == .faceToFace && preset.other == nil
         }
 
         let ref = AttemptRef(self, attempt: attempt)
+        let openingLine: String
+        if let preset, preset.kind == .faceToFace, let other = preset.other {
+            openingLine = other.hello
+        } else {
+            openingLine = WakeGreeting.openingLine(
+                afterWakeWord: false, name: nil, polish: ConversationLanguage.stored() == .polish)
+        }
         let variables: [String: String] = [
             "saved_notes": notes.text,
             "saved_notes_count": "\(notes.includedCount)",
@@ -546,8 +555,7 @@ final class VoiceSessionController {
             // What Doddy says first (ADR-254): the greeting after "Hey Doddy", otherwise his
             // usual opening. Used once the agent's first message is {{opening_line}}
             // (voice-agent/session.json); an agent without it ignores the variable.
-            WakeGreeting.variableName: wakeGreeting ?? WakeGreeting.openingLine(
-                afterWakeWord: false, name: nil, polish: ConversationLanguage.stored() == .polish),
+            WakeGreeting.variableName: wakeGreeting ?? openingLine,
         ]
         // OpenAI Realtime is the default where the token server is set (ADR-442); a choice on Home wins.
         let tokenServerSet: Bool
@@ -701,7 +709,9 @@ final class VoiceSessionController {
         let sessionUpdate: String
         do {
             let instructions = try RealtimeInstructions.render(spec.template, variables: variables)
-            sessionUpdate = try OpenAIRealtimeWire.sessionUpdate(instructions: instructions, toolsJSON: spec.tools, eagerness: .high)
+            // Be patient before deciding the user has finished a turn. Keep barge-in enabled so
+            // the user can still intentionally interrupt Doddy while he is speaking.
+            sessionUpdate = try OpenAIRealtimeWire.sessionUpdate(instructions: instructions, toolsJSON: spec.tools, eagerness: .low)
         } catch {
             fail("Doddy's prompt couldn't be prepared for OpenAI (\(error)). Switch Home to ElevenLabs.")
             return

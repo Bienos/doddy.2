@@ -63,8 +63,7 @@ Home switch ──> VoiceSessionController.start
 - **Weather, Wikipedia and place lookup** are ElevenLabs server-side tools. On OpenAI the app answers them
   "not available in the OpenAI test", and Doddy should say so. Web search, Gmail, Drive, Notion and
   Todoist go through Doddy's server and work on both.
-- **Voice:** OpenAI's voice is set on the token server (`OPENAI_REALTIME_VOICE`, default `marin`).
-  Settings › Voice and personality (voice, speed, expressiveness) applies to ElevenLabs only.
+- **Voice:** OpenAI's voice is set on the token server (`OPENAI_REALTIME_VOICE`, default `cedar`). Settings › Voice and personality (voice, speed, expressiveness) applies to ElevenLabs only.
 - **Starting language** picks the greeting; after that OpenAI follows the user's language on its own.
 - **No hang-up tool** on OpenAI: tap End.
 - **Barge-in:** Doddy's audio stops when you start talking and OpenAI is told how much you heard. The
@@ -75,7 +74,7 @@ Home switch ──> VoiceSessionController.start
 
 1. On the token server's host (Vercel), add `OPENAI_API_KEY`. Optionally `OPENAI_REALTIME_MODEL`
    (default `gpt-realtime`; e.g. `gpt-realtime-2.1` or `gpt-realtime-mini`) and `OPENAI_REALTIME_VOICE`
-   (default `marin`; `cedar` is the other recommended one). Redeploy.
+   (default `cedar`; use this variable to select another supported voice). Redeploy.
 2. **Put a monthly spending limit on that OpenAI project.** The token server has no counters (as with
    ElevenLabs, ADR-068). Realtime audio is billed per minute of audio in and out.
 3. In the app, Settings › Voice must use the token server (the public ElevenLabs agent ID can't start OpenAI).

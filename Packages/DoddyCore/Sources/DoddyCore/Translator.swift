@@ -294,13 +294,13 @@ public enum TranslatorPrompt {
         guard let preset else { return "none" }
         var text = "Translator mode is on from the start: \(preset.agentDescription)"
         if preset.kind == .faceToFace, let other = preset.other {
-            text += " When the app says so, first say exactly this to them, in \(other.englishName): \"\(other.hello)\""
+            text += " Say exactly this as your first spoken line to them, in \(other.englishName): \"\(other.hello)\""
         }
         return text
     }
 }
 
-/// The mode requested by `start_translator`, started directly after the user's request.
+/// The language pair and translator kind requested by `start_translator`.
 public struct TranslatorProposal: Equatable, Sendable {
     public let kind: TranslatorKind
     /// Nil: the owner's default (Settings, then the iPhone's language).
@@ -321,7 +321,7 @@ public struct TranslatorProposal: Equatable, Sendable {
 }
 
 extension VoiceToolName {
-    /// Starts translator mode (ADR-215) after the user asks for translation.
+    /// Starts translator mode in response to the user's explicit voice request.
     public static let startTranslator = "start_translator"
     /// Ends translator mode. Harmless, so it runs without a card.
     public static let stopTranslator = "stop_translator"
@@ -370,7 +370,7 @@ public enum TranslatorPolicy {
 }
 
 extension VoiceToolReply {
-    /// The user tapped Start. The agent switches into the mode and says the disclosure first.
+    /// The app entered the mode. The agent switches into it and says the disclosure first.
     public static func translatorStarted(_ setup: TranslatorSetup) -> String {
         var lines = ["started: translator mode is on, \(setup.agentDescription) From now on follow the Translator mode rules: translate, never answer; the app runs no tools until it ends."]
         switch (setup.kind, setup.other) {
