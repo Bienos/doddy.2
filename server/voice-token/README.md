@@ -64,7 +64,7 @@ They never contain codes, tokens, keys, IP addresses or anything the user said.
 | `DODDY_TOKENS_PER_HOUR` | optional, default `30`: tokens one tester may get per clock hour. Counted per server instance, so it's a brake against one tester using up the shared agent limits, not a hard cap. A value that isn't a positive whole number refuses to serve |
 | `OPENAI_API_KEY` | Needed for the OpenAI voice (the default voice, ADR-442). Put a monthly spending limit on its OpenAI project: this server has no counters |
 | `OPENAI_REALTIME_MODEL` | Optional, default `gpt-realtime-2.1-mini`. Used only when the app names no model (an older app build). The app can ask for `gpt-realtime-2.1` or `gpt-realtime-2.1-mini` only; the allowlist is `OPENAI_ALLOWED_MODELS` in `src/handler.js`, so a client can't pick a pricier model |
-| `OPENAI_REALTIME_VOICE` | Optional, default `marin` (OpenAI recommends `marin` or `cedar`) |
+| `OPENAI_REALTIME_VOICE` | Optional, default `cedar` (`marin` is another supported voice) |
 | `PICOVOICE_ACCESS_KEY` | Optional. The owner's Picovoice AccessKey for one-tap "Hey Doddy" (ADR-328). Check the Picovoice plan's limits on active users and keyword-file expiry before giving it to testers |
 | `DODDY_ACCESS_CODES` | `label:code,label:code`. Codes must be ≥16 characters (shorter ones are ignored). Generate with `openssl rand -base64 24`. Remove an entry to revoke that tester |
 

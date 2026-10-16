@@ -53,6 +53,19 @@ final class TranslatorTests: XCTestCase {
         XCTAssertEqual(VoiceToolRequest.parse(name: VoiceToolName.stopTranslator, parametersJSON: Data("{}".utf8)), .stopTranslator)
     }
 
+    func testVoiceTranslatorStartsWithoutAConfirmationCard() throws {
+        let spec = try JSONSerialization.jsonObject(with: Data(contentsOf: repoRoot.appendingPathComponent("voice-agent/tools.json"))) as? [String: Any]
+        let tools = spec?["tools"] as? [[String: Any]]
+        let translator = try XCTUnwrap(tools?.first { $0["name"] as? String == VoiceToolName.startTranslator })
+        let policy = try XCTUnwrap(translator["x_doddy"] as? [String: Any])
+        XCTAssertEqual(policy["confirm_on_screen"] as? Bool, false)
+        XCTAssertEqual(policy["speak_before"] as? String, "auto")
+        let description = try XCTUnwrap(translator["description"] as? String)
+        XCTAssertTrue(description.contains("Start translator mode immediately"))
+        XCTAssertTrue(description.contains("ask one short question"))
+        XCTAssertTrue(description.contains("Do not ask for confirmation"))
+    }
+
     func testRefusesUnknownOrSameLanguagesAndModes() {
         for json in [#"{}"#, #"{"their_language":"xx"}"#, #"{"their_language":"es","your_language":"es"}"#,
                      #"{"their_language":"es","mode":"both"}"#, #"{"their_language":"es","your_language":"klingon"}"#] {

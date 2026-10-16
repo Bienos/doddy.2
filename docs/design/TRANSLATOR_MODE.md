@@ -9,7 +9,7 @@ You're with someone who doesn't speak your language: a taxi driver, a pharmacist
    - "You speak" defaults to the iPhone's language.
    - "They speak" offers a short list, "Detect when they talk", and "All 37 languages…".
    - Two plain notes: put the phone between you; both voices go to ElevenLabs.
-2. **Or ask Doddy:** "Doddy, pomóż mi pogadać z taksówkarzem, on mówi po hiszpańsku." Doddy proposes the pair on a card ("Polski ⇄ Español"). The translator opens only after Start; it is proposed with a new tool, `start_translator`.
+2. **Or ask Doddy:** "Doddy, pomóż mi pogadać z taksówkarzem, on mówi po hiszpańsku." Doddy immediately enters Translator Mode ("Polski ⇄ Español") with no confirmation card. If the other language is missing, he asks one short question first. The first spoken line to the other person is the AI translator disclosure in their language.
 3. **Disclosure, first and always, in their language:** "Hola, soy Doddy, un traductor de IA en este teléfono…" Your half shows what was said. If they object, you end.
 4. **Face to face:**
    - Their half is rotated to face them.
@@ -45,9 +45,9 @@ You're with someone who doesn't speak your language: a taxi driver, a pharmacist
 
 ## How it would be built (for the implementing milestone)
 - **Agent:** a **mode of the main agent (T2)**, not a separate agent.
-  - `start_translator` (pair and mode: `face_to_face` or `listen`) switches the conversation into the mode once the user taps Start; `stop_translator` switches it back.
+  - `start_translator` (pair and mode: `face_to_face` or `listen`) switches into the mode as soon as the user clearly asks; `stop_translator` switches it back.
   - The prompt gains a "Translator mode" section: translate, never answer, exact numbers, careful mode, the disclosure line, the quiet word.
-  - Without a restart, your notes and profile are still in the model's context. "Never share them" is therefore a prompt rule, and the risk is listed below.
+  - If the current conversation contains personal context, the app ends it privately and starts a fresh translator conversation without notes, profile or lists.
 - **Native voices (T6):** one native ElevenLabs voice per language, picked and listened to before release.
   - They are set on the agent as `supported_voices` with a label per language, and the model tags each translated line with that label. Doddy's own voice stays for the quiet word and normal talk.
   - The 36 language presets can also set a `voice_id` per language.

@@ -143,7 +143,7 @@ test("openai: returns a client secret carrying only model and voice, and never l
   const sent = JSON.parse(calls[0].init.body);
   assert.deepEqual(sent, {
     expires_after: { anchor: "created_at", seconds: 120 },
-    session: { type: "realtime", model: "gpt-realtime-2.1-mini", audio: { output: { voice: "marin" } } },
+    session: { type: "realtime", model: "gpt-realtime-2.1-mini", audio: { output: { voice: "cedar" } } },
   });
   // No prompt, notes or tools go through this server.
   assert.equal(sent.session.instructions, undefined);

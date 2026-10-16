@@ -3,7 +3,7 @@ Date: 2026-10-10. Owner: "build translator mode". Design: ADR-214, `docs/design/
 
 ## What ships
 **Two ways in**
-- **Ask Doddy** in a conversation ("help me talk to the taxi driver, he speaks Spanish"). The agent calls `start_translator`; the app shows "Start translating?" with the pair, what changes, Change languages and Not now. Nothing switches until Start.
+- **Ask Doddy** in a conversation ("help me talk to the taxi driver, he speaks Spanish"). The agent calls `start_translator` and the app switches immediately, without a confirmation card. If language is missing, Doddy asks one short question first. When the existing session contains personal context, it ends privately and a clean translator conversation starts without notes, profile or lists.
 - **Home › Translate:** pick face to face or listen only, your language and theirs (or "Detect when they talk"), then Start translating. The conversation opens in translator mode, and the agent gets **no saved notes, recent conversations or profile**: each of those variables carries a "not shared" line instead.
 
 **While it is on**
@@ -18,7 +18,7 @@ Date: 2026-10-10. Owner: "build translator mode". Design: ADR-214, `docs/design/
   - exact-fact chips on both halves;
   - Say it again, Pause, and End in the middle bar.
 - **Listen only (T1):** a list of lines in your language with the original underneath; Doddy is told never to speak to the people around you.
-- **Disclosure first:** the `started` result, or `{{translator_start}}` for the Home start, gives the agent the exact disclosure line in their language. For the Home start, the app asks for it once Doddy's greeting has played.
+- **Disclosure first:** for a known face-to-face language pair, the disclosure is the provider's first spoken line, skipping a generic greeting and extra prompt round-trip. The `started` result or `{{translator_start}}` supplies the exact line. If the other language is explicitly set to detect, Doddy asks the other person to speak first and discloses before translating.
 - **Who is talking (T4):**
   - Each of Doddy's lines goes to a half by its own language. If that can't be read, it uses the language of what was said before it, then the hold-to-talk side being held, then takes turns.
   - With "Detect", their language is learned from the first line that is clearly not yours.
@@ -93,8 +93,8 @@ Date: 2026-10-10. Owner: "build translator mode". Design: ADR-214, `docs/design/
 | Rule | What enforces it here | Tests run | Gaps / claims to limit |
 |---|---|---|---|
 | DOD-03 character_without_false_humanity / DOD-12 stable_identity | Disclosure line "an AI translator on this phone" in 37 languages, given to the agent verbatim. "AI translation · may contain mistakes" is always on their half | `testEveryAgentLanguageHasTheTranslatorLines`, `testStartedReplyCarriesTheDisclosureInTheirLanguage` | Saying it first is a prompt rule; no live run. Lines unreviewed |
-| DOD-07 scoped_action_approval | `start_translator` only shows a card; the mode starts on Start. While on, `TranslatorPolicy` refuses every tool before it runs or is logged | `testOnlyStopIsAllowedWhileTranslating` | Controller path not compiled |
-| DOD-11 observable_privacy | Home start sends no notes, conversations or profile. Conversation private and locked. Lines in memory only, dropped after 5 minutes. Privacy screens list the other person's voice | `testWhatLeavesThisIPhoneListsTheTranslator`, `testTranslatorStartVariable` | Started mid-conversation, notes are already in the model's context: "never share them" is prompt-only (T2 risk). ElevenLabs keeps its own recording |
+| DOD-07 scoped_action_approval | `start_translator` is an immediate mode switch on the user's explicit request; while on, `TranslatorPolicy` refuses every tool before it runs or is logged | `testOnlyStopIsAllowedWhileTranslating` | Controller path not compiled |
+| DOD-11 observable_privacy | Home start and the fresh voice-start conversation send no notes, conversations or profile. The prior conversation ends privately. Translator lines stay in memory only, dropped after 5 minutes. Privacy screens list the other person's voice | `testWhatLeavesThisIPhoneListsTheTranslator`, `testTranslatorStartVariable` | The prior provider session already received its approved context before the switch; the app cannot retract that prior processing. ElevenLabs keeps its own recording |
 | DOD-06 user_controlled_relevant_memory | Nothing saved unless the user taps "Save the facts as a note"; that save is read back | `testSessionKeepsTurnsCarefulModeAndTheFiveMinuteSummary` (note text) | Save path not compiled |
 | DOD-08 verified_status_and_receipts | "Saved as a note" shows the stored text; Copy says "Copied" only after the pasteboard write | — | UI not run |
 | DOD-02 honesty_over_agreeableness / DOD-10 | Prompt: translate, never answer; add or soften nothing; "not sure:" instead of guessing; careful mode, no advice; emergencies → 112 | `testCarefulTopics`, `testExactFacts` | Translation accuracy is the model's and cannot be guaranteed |

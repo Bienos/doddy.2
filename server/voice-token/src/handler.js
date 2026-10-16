@@ -52,7 +52,7 @@ const OPENAI_SECRET_SECONDS = 120;
 export const OPENAI_DEFAULT_MODEL = "gpt-realtime-2.1-mini";
 /** The models the app may ask for. Anything else is refused, so a client can't pick a pricier one. */
 export const OPENAI_ALLOWED_MODELS = Object.freeze(["gpt-realtime-2.1", "gpt-realtime-2.1-mini"]);
-export const OPENAI_DEFAULT_VOICE = "marin";
+export const OPENAI_DEFAULT_VOICE = "cedar";
 
 /**
  * @typedef {object} Env
@@ -62,7 +62,7 @@ export const OPENAI_DEFAULT_VOICE = "marin";
  * @property {string} [DODDY_TOKENS_PER_HOUR] per tester; default 30
  * @property {string} [OPENAI_API_KEY]        server-only secret; only needed for the OpenAI test voice
  * @property {string} [OPENAI_REALTIME_MODEL] used when the app names no model; default "gpt-realtime-2.1-mini"
- * @property {string} [OPENAI_REALTIME_VOICE] default "marin"
+ * @property {string} [OPENAI_REALTIME_VOICE] default "cedar"
  * @property {string} [PICOVOICE_ACCESS_KEY]  the owner's Picovoice AccessKey for "Hey Doddy" (ADR-328)
  */
 
