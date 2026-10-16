@@ -300,7 +300,7 @@ public enum TranslatorPrompt {
     }
 }
 
-/// What `start_translator` asked for. Shown as a card; nothing switches until the user taps Start.
+/// The mode requested by `start_translator`, started directly after the user's request.
 public struct TranslatorProposal: Equatable, Sendable {
     public let kind: TranslatorKind
     /// Nil: the owner's default (Settings, then the iPhone's language).
@@ -321,7 +321,7 @@ public struct TranslatorProposal: Equatable, Sendable {
 }
 
 extension VoiceToolName {
-    /// Proposes translator mode (ADR-215). Shown as a card; the conversation switches on Start.
+    /// Starts translator mode (ADR-215) after the user asks for translation.
     public static let startTranslator = "start_translator"
     /// Ends translator mode. Harmless, so it runs without a card.
     public static let stopTranslator = "stop_translator"

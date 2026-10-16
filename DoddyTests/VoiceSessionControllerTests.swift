@@ -89,6 +89,21 @@ final class VoiceSessionControllerTests: XCTestCase {
         XCTAssertEqual(t.link.results.first?.text, VoiceToolReply.eventDeleted(event, calendar: .current))
     }
 
+    @MainActor
+    func testTranslatorStartsImmediatelyWithoutShowingAConfirmationCard() async {
+        let t = Harness()
+        defer { t.restore() }
+        t.controller.beginForTesting(link: t.link)
+
+        await t.controller.receiveToolCallForTesting(
+            name: VoiceToolName.startTranslator, id: "translator-1", parameters: #"{"their_language":"es"}"#).value
+
+        XCTAssertNil(t.controller.pendingAction)
+        XCTAssertEqual(t.controller.translator?.setup.other?.code, "es")
+        XCTAssertEqual(t.link.results.map(\.id), ["translator-1"])
+        XCTAssertTrue(t.link.results.first?.text.hasPrefix("started:") == true)
+    }
+
     // MARK: Declined card runs nothing
 
     @MainActor

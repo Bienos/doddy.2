@@ -63,7 +63,7 @@ final class ToolCatalogTests: XCTestCase {
         let withoutCard = Set(ToolCatalog.all.filter { $0.effect != .lookup && $0.approval == .none }.map(\.name))
         XCTAssertEqual(withoutCard, [
             VoiceToolName.addToList, VoiceToolName.checkOff, VoiceToolName.removeFromList,
-            VoiceToolName.noteCapabilityGap, VoiceToolName.stopTranslator,
+            VoiceToolName.noteCapabilityGap, VoiceToolName.startTranslator, VoiceToolName.stopTranslator,
         ])
     }
 

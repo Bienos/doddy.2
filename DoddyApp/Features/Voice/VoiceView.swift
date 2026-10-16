@@ -18,8 +18,6 @@ struct VoiceView: View {
     @State private var openConnection: VoiceConnection?
     /// The time picker on a note-reminder card is open (closed again for each new card).
     @State private var editingNoteReminderTime = false
-    /// "Change languages" on the "Start translating?" card.
-    @State private var changingTranslator = false
     /// The plan step whose "Change" sheet is open (ADR-205).
     @State private var editingPlanStep: PlanStep?
 
@@ -680,8 +678,6 @@ struct VoiceView: View {
             Text("Apple Maps worked out the travel time just now, from where your iPhone is; traffic can change. Your position isn't kept.")
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
-        case .translator(_, let setup):
-            translatorProposal(setup, controller: controller)
         case .createList(_, let name, let items):
             Text("Start a new list?")
                 .font(.headline)
@@ -881,7 +877,6 @@ struct VoiceView: View {
         case .message(_, let draft, _): (draft.channel == .text ? NSLocalizedString("Open in Messages", comment: "") : NSLocalizedString("Open in Mail", comment: ""), NSLocalizedString("Don't open", comment: ""))
         case .cloud(_, _, let preview, _, _): (preview.confirmLabel, NSLocalizedString("Don't do this", comment: ""))
         case .noteReminder: (NSLocalizedString("Set reminder", comment: ""), NSLocalizedString("Don't set", comment: ""))
-        case .translator: (NSLocalizedString("Start", comment: ""), NSLocalizedString("Not now", comment: ""))
         case .createList: (NSLocalizedString("Create list", comment: ""), NSLocalizedString("Not now", comment: ""))
         case .changeEvent: (NSLocalizedString("Change", comment: ""), NSLocalizedString("Don't change", comment: ""))
         case .deleteEvent, .deleteReminder: (NSLocalizedString("Delete", comment: ""), NSLocalizedString("Don't delete", comment: ""))
@@ -1272,46 +1267,6 @@ struct VoiceView: View {
         .padding(16)
         .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
         .accessibilityIdentifier("voice.listReceipt")
-    }
-
-    /// "Start translating?" (canvas 2): the pair, what changes, and Change languages.
-    @ViewBuilder
-    private func translatorProposal(_ setup: TranslatorSetup, controller: VoiceSessionController) -> some View {
-        Text("Start translating?")
-            .font(.headline)
-        HStack(spacing: 8) {
-            languageChip("You", setup.owner.nativeName)
-            Image(systemName: setup.kind == .faceToFace ? "arrow.left.arrow.right" : "arrow.left")
-                .accessibilityLabel(setup.kind == .faceToFace ? "translated both ways" : "translated into your language")
-            languageChip(setup.kind == .faceToFace ? "Them" : "Around you", setup.other?.nativeName ?? "Detect")
-        }
-        Text(setup.kind == .faceToFace
-             ? "While translating, Doddy only translates: no notes, reminders or other tools, and this conversation isn't kept on this iPhone. Their voice goes to OpenAI, or ElevenLabs if you switch Home's voice to it too. Doddy first tells them, in their language, that he's an AI translator."
-             : "Listen only: Doddy translates what's said around you into your language and doesn't speak to anyone else. No tools while it's on, and this conversation isn't kept on this iPhone.")
-            .font(.footnote)
-            .foregroundStyle(Theme.secondaryText)
-        if controller.translatorStartsNewConversation {
-            // Review H3: the notes, profile and lists this conversation started with stay behind.
-            Label("Start ends this conversation and starts a new one for translating, without your notes, profile or lists. This conversation isn't kept either.", systemImage: "arrow.clockwise")
-                .font(.footnote)
-                .foregroundStyle(Theme.secondaryText)
-        }
-        Button("Change languages") { changingTranslator = true }
-            .buttonStyle(SecondaryButtonStyle())
-            .sheet(isPresented: $changingTranslator) {
-                TranslatorChangeSheet(controller: controller, setup: setup)
-            }
-    }
-
-    private func languageChip(_ who: String, _ name: String) -> some View {
-        VStack(spacing: 2) {
-            Text(who).font(.caption).foregroundStyle(Theme.secondaryText)
-            Text(name).font(.headline)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(10)
-        .background(Theme.canvas, in: RoundedRectangle(cornerRadius: 14))
-        .accessibilityElement(children: .combine)
     }
 
     /// One side of a change card: "Now" or "After", then the title and when.

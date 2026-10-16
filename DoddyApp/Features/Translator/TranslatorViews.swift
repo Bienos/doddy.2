@@ -419,39 +419,3 @@ struct TranslatorStartView: View {
         }
     }
 }
-
-/// "Change languages" on the "Start translating?" card.
-struct TranslatorChangeSheet: View {
-    let controller: VoiceSessionController
-    @Environment(\.dismiss) private var dismiss
-    @State private var kind: TranslatorKind
-    @State private var owner: TranslatorLanguage
-    @State private var other: TranslatorLanguage?
-
-    init(controller: VoiceSessionController, setup: TranslatorSetup) {
-        self.controller = controller
-        _kind = State(initialValue: setup.kind)
-        _owner = State(initialValue: setup.owner)
-        _other = State(initialValue: setup.other)
-    }
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                TranslatorChoices(kind: $kind, owner: $owner, other: $other)
-            }
-            .navigationTitle("Change languages")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Use these") {
-                        controller.changeTranslatorProposal(owner: owner, other: other, kind: kind)
-                        dismiss()
-                    }
-                    .disabled(owner == other)
-                }
-            }
-        }
-    }
-}

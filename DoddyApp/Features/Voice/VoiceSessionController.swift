@@ -52,8 +52,6 @@ final class VoiceSessionController {
         /// agent's quote matched, shown exactly with when it was saved; nothing is set until the
         /// user taps Set reminder. The user can change the time, or arrive/leave, on the card.
         case noteReminder(toolCallID: String, memoryID: UUID, noteText: String, savedAt: Date?, target: NoteReminderCardTarget)
-        /// "Start translating?" (ADR-215). The user can change either language on the card.
-        case translator(toolCallID: String, setup: TranslatorSetup)
         /// "Start a new list?" (ADR-216, L2). The user can fix the name on the card.
         case createList(toolCallID: String, name: String, items: [String])
         /// "Change this event?" (ADR-229): the event as it is now and as it will be.
@@ -82,7 +80,7 @@ final class VoiceSessionController {
             switch self {
             case .memory(let id, _), .event(let id, _), .reminder(let id, _), .timer(let id, _), .alarm(let id, _), .cancelAlarm(let id, _),
                  .map(let id, _), .shortcut(let id, _), .message(let id, _, _), .cloud(let id, _, _, _, _),
-                 .noteReminder(let id, _, _, _, _), .translator(let id, _), .createList(let id, _, _), .plan(let id, _, _),
+                 .noteReminder(let id, _, _, _, _), .createList(let id, _, _), .plan(let id, _, _),
                  .changeEvent(let id, _), .changeReminder(let id, _, _), .deleteEvent(let id, _), .deleteReminder(let id, _),
                  .undo(let id, _), .bulk(let id, _, _, _), .parking(let id, _), .leaveBy(let id, _),
                  .ingredients(let id, _, _, _, _, _):
@@ -1235,19 +1233,6 @@ final class VoiceSessionController {
             let ticked = items.filter { !bulkUnticked.contains($0.id) }
             bulkUnticked = []
             await reply(id, runBulk(ticked, verb: verb, skipped: skipped))
-        case .translator(let id, let setup):
-            // This conversation's agent already has the saved notes, profile and lists (review H3):
-            // translating goes on in a new conversation that gets none of them, as from Home's
-            // Translate. Private like a translator conversation, so nothing of this one is kept.
-            if translatorStartsNewConversation, let mode = startedMode {
-                isPrivate = true
-                await reply(id, "stopped: translator mode starts in a new conversation that has none of the user's notes, profile or lists. This conversation ends now; say nothing more.")
-                await stop()
-                await start(mode, profile: .empty, translator: setup)
-                return
-            }
-            beginTranslator(setup)
-            await reply(id, VoiceToolReply.translatorStarted(setup))
         case .createList(let id, let name, let items):
             retryChecks[id] = nil
             do {
@@ -1371,7 +1356,6 @@ final class VoiceSessionController {
         case .message(let id, _, _): await reply(id, VoiceToolReply.declinedMessage)
         case .cloud(let id, let call, _, _, _): await reply(id, VoiceToolReply.cloudDeclined(call.name))
         case .noteReminder(let id, _, _, _, _): await reply(id, VoiceToolReply.declinedNoteReminder)
-        case .translator(let id, _): await reply(id, VoiceToolReply.translatorDeclined)
         case .createList(let id, _, _): await reply(id, VoiceToolReply.declinedList)
         case .changeEvent(let id, _), .changeReminder(let id, _, _): await reply(id, VoiceToolReply.changeDeclined)
         case .deleteEvent(let id, _), .deleteReminder(let id, _): await reply(id, VoiceToolReply.deleteDeclined)
@@ -1568,16 +1552,22 @@ final class VoiceSessionController {
             deviceCode: Locale.current.language.languageCode?.identifier)
     }
 
-    /// The user changed a language on the "Start translating?" card.
-    func changeTranslatorProposal(owner: TranslatorLanguage, other: TranslatorLanguage?, kind: TranslatorKind) {
-        guard case .translator(let id, _) = pendingAction,
-              let setup = TranslatorSetup(kind: kind, owner: owner, other: other) else { return }
-        pendingAction = .translator(toolCallID: id, setup: setup)
-    }
-
-    /// Start on the "Start translating?" card ends this conversation and starts a fresh one (review H3).
+    /// A translator start from a shared-context conversation needs a fresh private session (review H3).
     var translatorStartsNewConversation: Bool {
         sharedOwnerContext && startedMode != nil
+    }
+
+    private func startTranslator(_ setup: TranslatorSetup, toolCallID: String) async {
+        // Do not carry this conversation's notes, profile or lists into translation (review H3).
+        if translatorStartsNewConversation, let mode = startedMode {
+            isPrivate = true
+            await reply(toolCallID, "stopped: translator mode starts in a new conversation that has none of the user's notes, profile or lists. This conversation ends now; say nothing more.")
+            await stop()
+            await start(mode, profile: .empty, translator: setup)
+            return
+        }
+        beginTranslator(setup)
+        await reply(toolCallID, VoiceToolReply.translatorStarted(setup))
     }
 
     private func beginTranslator(_ setup: TranslatorSetup) {
@@ -2327,7 +2317,7 @@ final class VoiceSessionController {
                 await reply(call.toolCallId, VoiceToolReply.failed("Both languages are the same. Ask the user which language the other person speaks."), isError: true)
                 return
             }
-            propose(.translator(toolCallID: call.toolCallId, setup: setup), toolCallID: call.toolCallId)
+            await startTranslator(setup, toolCallID: call.toolCallId)
         case .addToList(let request):
             await addToList(request, toolCallID: call.toolCallId)
         case .readList(let name):

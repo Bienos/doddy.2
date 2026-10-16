@@ -107,7 +107,7 @@ public enum ToolCatalog {
         .init(VoiceToolName.runShortcut, .handoff, .card),
         .init(VoiceToolName.draftMessage, .handoff, .card),
         // The conversation itself.
-        .init(VoiceToolName.startTranslator, .session, .card),
+        .init(VoiceToolName.startTranslator, .session, .none),
         .init(VoiceToolName.stopTranslator, .session, .none),
         .init(VoiceToolName.proposePlan, .session, .card),
     ]
