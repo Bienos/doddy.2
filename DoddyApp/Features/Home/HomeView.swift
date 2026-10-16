@@ -25,6 +25,8 @@ struct HomeView: View {
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
     @State private var showAsk = false
     @State private var tool: HomeTool?
+    @State private var showActivity = false
+    @State private var activity = ActivityLogStore.shared
     /// Translate (ADR-215): the start sheet, and what the user chose on it.
     @State private var showTranslator = false
     @State private var translatorChoice: TranslatorSetup?
@@ -61,64 +63,8 @@ struct HomeView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     DueRemindersView()
-
-                    HStack(alignment: .center) {
-                        DoddyWordmark()
-                        Spacer()
-                        Text("Your mate in\nyour pocket")
-                            .font(.caption2).multilineTextAlignment(.trailing)
-                            .foregroundStyle(Theme.secondaryText)
-                    }
-                    // JourneyHeading's look, with the approved name when there is one.
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text(greeting)
-                            .font(.largeTitle.weight(.medium)).tracking(-1)
-                            .accessibilityAddTraits(.isHeader)
-                            .accessibilityIdentifier("home.greeting")
-                        Text("Save a detail.\nFind it when you need it.")
-                            .font(.subheadline).foregroundStyle(Theme.secondaryText)
-                    }
-                    Group {
-                        if breathing {
-                            // Idle (ADR-313): he stands and breathes, on the sitting pose's floor; or
-                            // waves (ADR-380), whose strip stands on the same floor (564/600).
-                            DoddyMotionView(motion: helloMotion, height: 170)
-                                .padding(.bottom, 31)
-                                .frame(height: 210, alignment: .bottom)
-                        } else if seated, ready == nil {
-                            // Then he sits down on his box (ADR-323) and stays there this launch.
-                            // Same scale and floor as the breaths (both strips' boxes end at 564/600).
-                            DoddyMotionView(motion: .sit, height: 166, playing: sitPlays)
-                                .padding(.bottom, 31)
-                                .frame(height: 210, alignment: .bottom)
-                        } else {
-                            UploadedCharacterView(assetName: ready != nil ? "UploadedDoddy_Listening" : "UploadedDoddy_Sitting", height: 210)
-                        }
-                    }
-                        // The opening lands Doddy exactly here, so it needs to know where "here" is.
-                        .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { [opening] rect in
-                            Task { @MainActor in
-                                opening?.homeArtBox = ScreenBox(centerX: rect.midX, centerY: rect.midY, height: rect.height)
-                            }
-                        }
-                        // While the opening plays, its Doddy stands in for this one; when it ends,
-                        // this one is in the same place, so nothing moves.
-                        .opacity(opening?.play == nil ? 1 : 0)
-                        .frame(maxWidth: .infinity)
-                        .id(ready != nil)
-                        .transition(.opacity)
-                        .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: ready != nil)
-                        .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: breathing)
-                        .task { await breatheOnce() }
-                        // An opening (a later return) lands on the usual sitting picture: off the box.
-                        .onChange(of: opening?.play == nil) { _, nothingPlaying in
-                            if !nothingPlaying { seated = false; HomeIdle.sat = false }
-                        }
-                        // Doddy's room behind Doddy only, edge to edge; no text over it (ADR-308).
-                        .background {
-                            SceneryBackdrop(place: .home, height: 270, focus: 0.2)
-                                .padding(.horizontal, -24)
-                        }
+                    homeHeader
+                    homeHero
 
                     if let problem = store.environment.storageProblem {
                         ProblemView(message: problem, showsDoddy: true)
@@ -174,11 +120,11 @@ struct HomeView: View {
                         // of the same actions in ViewThatFits' accessibility tree.
                         Group {
                             if textSize.isAccessibilitySize {
-                                VStack(spacing: 10) { saveAction; findAction; focusAction; breatheAction }
+                                VStack(spacing: 10) { findAction; focusAction; breatheAction }
                             } else {
                                 VStack(spacing: 10) {
-                                    HStack(spacing: 10) { saveAction; findAction }
-                                    HStack(spacing: 10) { focusAction; breatheAction }
+                                    HStack(spacing: 10) { findAction; focusAction }
+                                    HStack(spacing: 10) { breatheAction }
                                 }
                             }
                         }
@@ -198,6 +144,9 @@ struct HomeView: View {
                     if hadFirstConversation || calendarOn || remindersOn {
                         TodayCard(openSettings: { selectedTab = .settings })
                     }
+
+                    onYourSide
+                    currentFocus
 
                     // Back Tap exists only on iPhone (ADR-337), and waits for the first conversation (ADR-326).
                     if router.setup.phase == .notStarted, DeviceSupport.hasBackTap, hadFirstConversation {
@@ -226,6 +175,16 @@ struct HomeView: View {
             .navigationDestination(for: UUID.self) { MemoryOrListView(id: $0) }
             .sheet(item: $modal) { _ in CaptureView() }
             .sheet(isPresented: $showDataFlow) { DataFlowSheet() }
+            .sheet(isPresented: $showActivity) {
+                NavigationStack {
+                    ActivityView()
+                        .toolbar {
+                            ToolbarItem(placement: .confirmationAction) {
+                                Button("Done") { showActivity = false }
+                            }
+                        }
+                }
+            }
             .sheet(item: $tool) { tool in
                 switch tool {
                 case .focus: FocusView()
@@ -246,16 +205,89 @@ struct HomeView: View {
 
     private var ready: OpeningReady? { opening?.ready }
 
+    /// The compact masthead from the Personal Home design. Saving stays one tap away.
+    private var homeHeader: some View {
+        HStack {
+            DoddyWordmark()
+            Spacer()
+            Button { modal = .capture } label: {
+                Image(systemName: "plus")
+                    .font(.system(size: 17, weight: .medium))
+                    .frame(width: 44, height: 44)
+                    .background(Circle().strokeBorder(Theme.separator, lineWidth: 1))
+                    .contentShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .disabled(!store.isStorageAvailable)
+            .accessibilityLabel("Save a detail")
+            .accessibilityIdentifier("home.save")
+        }
+    }
+
+    /// A personal greeting beside a small, owner-supplied Doddy illustration.
+    private var homeHero: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Your corner")
+                .font(.caption2.weight(.semibold))
+                .tracking(1.2)
+                .textCase(.uppercase)
+                .foregroundStyle(Theme.secondaryText)
+            HStack(alignment: .center, spacing: 8) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(greeting)
+                        .font(.largeTitle.weight(.medium)).tracking(-1)
+                        .accessibilityAddTraits(.isHeader)
+                        .accessibilityIdentifier("home.greeting")
+                    Text("Keep it simple. One useful thing at a time.")
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
+                homeCharacter
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var homeCharacter: some View {
+        if !textSize.isAccessibilitySize && !hideCharacterArt {
+            Group {
+                if breathing {
+                    DoddyMotionView(motion: helloMotion, height: 96, width: 72)
+                } else if seated, ready == nil {
+                    DoddyMotionView(motion: .sit, height: 96, width: 72, playing: sitPlays)
+                } else {
+                    UploadedCharacterView(
+                        assetName: ready != nil ? "UploadedDoddy_Listening" : "UploadedDoddy_Sitting",
+                        height: 96)
+                }
+            }
+            .frame(width: 80, height: 108, alignment: .bottom)
+            .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { [opening] rect in
+                guard rect.height > 0 else { return }
+                Task { @MainActor in
+                    opening?.homeArtBox = ScreenBox(centerX: rect.midX, centerY: rect.midY, height: rect.height)
+                }
+            }
+            .opacity(opening?.play == nil ? 1 : 0)
+            .id(ready != nil)
+            .transition(.opacity)
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: ready != nil)
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: breathing)
+            .task { await breatheOnce() }
+            .onChange(of: opening?.play == nil) { _, nothingPlaying in
+                if !nothingPlaying { seated = false; HomeIdle.sat = false }
+            }
+            .accessibilityHidden(true)
+        }
+    }
+
     /// Hidden under the opening until its hand-over, then they slide in as Doddy jumps into
     /// place. Never hidden under Reduce Motion.
     private var buttonsShown: Bool {
         guard let opening, let play = opening.play else { return true }
         return play.reducedMotion || opening.handingOver
-    }
-
-    private var saveAction: some View {
-        Button { modal = .capture } label: { HomeActionTile(title: "Save a detail", icon: "plus") }
-            .buttonStyle(.plain).disabled(!store.isStorageAvailable).accessibilityIdentifier("home.save")
     }
 
     /// Focus timer and breathing (ADR-241, ADR-242); both show on the Dynamic Island.
@@ -356,7 +388,7 @@ struct HomeView: View {
     @ViewBuilder
     private var aboutYou: some View {
         let profile = profiles.profile
-        let shown = [ProfileKey.context, .help, .style].filter { profile.value($0) != nil }
+        let shown = [ProfileKey.help, .style].filter { profile.value($0) != nil }
         if !shown.isEmpty {
             VStack(alignment: .leading, spacing: 8) {
                 Text("What you told me")
@@ -376,13 +408,99 @@ struct HomeView: View {
         }
     }
 
-    @ViewBuilder
-    private var recent: some View {
-        if !store.memories.isEmpty {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Recently saved")
+    /// Only shows verified actions from the on-device activity log; no sample tasks or inferred progress.
+    private var onYourSide: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("On your side")
                     .font(.headline)
                     .accessibilityAddTraits(.isHeader)
+                Spacer()
+                Button("Updates") { showActivity = true }
+                    .font(.caption.weight(.medium))
+                    .accessibilityIdentifier("home.activity.open")
+            }
+            if let entry = activity.entries.first {
+                Button { showActivity = true } label: {
+                    HStack(alignment: .top, spacing: 12) {
+                        Image(systemName: "pencil")
+                            .frame(width: 40, height: 40)
+                            .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 12))
+                            .accessibilityHidden(true)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(entry.statusText(.current))
+                                .font(.caption)
+                                .foregroundStyle(Theme.accentText)
+                            Text(entry.title(.current))
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(Theme.ink)
+                                .multilineTextAlignment(.leading)
+                            Text(entry.at, style: .relative)
+                                .font(.caption)
+                                .foregroundStyle(Theme.secondaryText)
+                        }
+                        Spacer(minLength: 0)
+                        Image(systemName: "arrow.up.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Theme.ink)
+                            .accessibilityHidden(true)
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("home.activity.latest")
+            } else if let problem = activity.problem {
+                Label(problem, systemImage: "exclamationmark.triangle")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.error)
+            } else {
+                Text("Nothing here yet. When Doddy looks something up or does something for you, it will show here.")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.secondaryText)
+            }
+        }
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("home.activity")
+    }
+
+    /// A focus appears only when the user has approved one in their profile.
+    @ViewBuilder
+    private var currentFocus: some View {
+        if let focus = profiles.profile.value(.context), !focus.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Your current focus")
+                    .font(.caption2.weight(.semibold))
+                    .tracking(1.1)
+                    .textCase(.uppercase)
+                    .foregroundStyle(Theme.secondaryText)
+                Text(focus)
+                    .font(.body)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.leading, 14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .overlay(alignment: .leading) {
+                Rectangle().fill(Theme.orangeCue).frame(width: 2)
+            }
+            .accessibilityIdentifier("home.currentFocus")
+        }
+    }
+
+    @ViewBuilder
+    private var recent: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("Useful details")
+                    .font(.headline)
+                    .accessibilityAddTraits(.isHeader)
+                Spacer()
+                Button("View all") { selectedTab = .memories }
+                    .font(.caption.weight(.medium))
+                    .accessibilityIdentifier("home.recent.viewAll")
+            }
+            if !store.memories.isEmpty {
                 // "Ask me about it" (ADR-403): a conversation about that note; never on a private one.
                 let privateNotes = PrivateNotesStore.current()
                 let canTalk = store.environment.capabilities.isAvailable(.voiceInput)
@@ -408,10 +526,11 @@ struct HomeView: View {
                     Divider()
                 }
             }
-        } else if store.hasLoaded {
-            Text("Nothing saved yet. You choose what stays.")
-                .font(.footnote)
-                .foregroundStyle(Theme.secondaryText)
+            else if store.hasLoaded {
+                Text("Nothing saved yet. You choose what stays.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+            }
         }
     }
 }

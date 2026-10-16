@@ -2,14 +2,14 @@ import Foundation
 
 /// The looks the voice island can take (ADR-239): the owner's V4 boards that have a voice
 /// conversation state, and Whole Doddy (ADR-264), his whole body from the owner's pose pack.
-/// Chosen in Settings → Voice → Dynamic Island style; Whole Doddy until the user picks one
-/// (ADR-267). Settings lists them in this order.
+/// Chosen in Settings → Voice → Dynamic Island style; Orbit is the V4 default. A user's saved
+/// choice is kept. Settings lists Orbit first, then the other designs and Whole Doddy.
 enum IslandStyle: String, Codable, CaseIterable, Hashable, Sendable {
-    case wholeDoddy, leanIn, orbit, inkRipple, negativeSpace, editorial, abstractHorizon, hereWithYou
+    case orbit, leanIn, inkRipple, negativeSpace, editorial, abstractHorizon, hereWithYou, wholeDoddy
 
-    /// The style used until the user picks one in Settings (owner: "make whole doddy the default
-    /// style", ADR-267). A style the user picked is stored and kept.
-    static let preferredDefault: IslandStyle = .wholeDoddy
+    /// The style used until the user picks one in Settings, following the V4 design direction.
+    /// A style the user picked is stored and kept.
+    static let preferredDefault: IslandStyle = .orbit
 
     /// The style stored in Settings, or the default when none is (or an unknown one is) stored.
     static func stored(_ raw: String?) -> IslandStyle {
