@@ -10,6 +10,7 @@ struct VoiceView: View {
     @Environment(ProfileStore.self) private var profiles
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    private let keepsConversationAlive: Bool
     @AppStorage(PreferenceKey.voiceAgentID) private var agentID = VoiceConfig.developmentAgentID
     @AppStorage(PreferenceKey.voiceTokenServer) private var tokenServer = ""
     @AppStorage(ConnectionPause.preferenceKey) private var pauseAllConnections = false
@@ -22,6 +23,12 @@ struct VoiceView: View {
     @State private var changingTranslator = false
     /// The plan step whose "Change" sheet is open (ADR-205).
     @State private var editingPlanStep: PlanStep?
+    @State private var showConversationDuringMessageReview = false
+
+    init(controller: VoiceSessionController? = nil, keepsConversationAlive: Bool = false) {
+        _controller = State(initialValue: controller)
+        self.keepsConversationAlive = keepsConversationAlive
+    }
 
     /// Read when a conversation starts, so a changed setting or access code applies next time.
     private var mode: VoiceConnectionMode {
@@ -42,16 +49,11 @@ struct VoiceView: View {
             .readableColumn()
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Theme.canvas)
-            .navigationTitle("Talk to Doddy")
+            .navigationTitle(keepsConversationAlive ? "Transcript" : "Talk to Doddy")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") {
-                        Task {
-                            await controller?.stop()
-                            dismiss()
-                        }
-                    }
+                    Button(keepsConversationAlive ? "Done" : "Close", action: close)
                 }
                 ToolbarItem(placement: .primaryAction) {
                     if let controller {
@@ -72,9 +74,37 @@ struct VoiceView: View {
         }
         .foregroundStyle(Theme.ink)
         .task {
+            // Home owns this active session; presenting the transcript must not start another one.
+            if self.controller != nil, keepsConversationAlive { return }
+            if let existing = self.controller {
+                let router = ShortcutRouter.shared
+                let translator = router.takeTranslatorPreset()
+                let checkIn = router.takeCheckInBriefing()
+                let aboutNote = router.takeNoteToAsk()
+                let openedByShortcut = router.takeTalkToDoddyOpening()
+                // A fresh Home request (for example Ask me about this or Translate) replaces the
+                // active call on the same controller. A plain shortcut just focuses it.
+                guard translator != nil || checkIn != nil || aboutNote != nil else { return }
+                await existing.stop()
+                let action = BackTapAction.stored(UserDefaults.standard.string(forKey: PreferenceKey.backTapAction))
+                let greeting = openedByShortcut && action.startsConversation ? WakeGreeting.line(
+                    name: WakeGreeting.name(nickname: Nickname.stored(), profileName: profiles.profile.value(.name)),
+                    polish: ConversationLanguage.stored() == .polish) : nil
+                await existing.start(mode, profile: profiles.profile, translator: translator,
+                                     checkIn: checkIn, wakeGreeting: greeting, aboutNote: aboutNote,
+                                     byWakeWord: false)
+                if let greeting, action.opensIsland { VoiceLiveActivity.shared.openForGreeting(greeting) }
+                return
+            }
             // "Hey Doddy" already started this conversation (ADR-254): show it, don't start another.
             if self.controller == nil, let started = WakeWordListener.shared.takeConversation() {
                 self.controller = started
+                return
+            }
+            // A shortcut while a Home conversation is active focuses the existing session.
+            if let active = VoiceSessionController.current {
+                _ = ShortcutRouter.shared.takeTalkToDoddyOpening()
+                self.controller = active
                 return
             }
             let controller = self.controller ?? VoiceSessionController(store: store)
@@ -95,6 +125,7 @@ struct VoiceView: View {
             if let greeting, action.opensIsland { VoiceLiveActivity.shared.openForGreeting(greeting) }
         }
         .onDisappear {
+            guard !keepsConversationAlive else { return }
             Task { await controller?.stop() }
         }
         .sheet(item: $openConnection, onDismiss: {
@@ -122,7 +153,7 @@ struct VoiceView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
                         HStack(alignment: .center, spacing: 16) {
-                            VoiceDoddyView(art: screenArt(controller))
+                            VoiceDoddyView(art: voiceScreenArt(for: controller))
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(statusTitle(controller))
                                     .font(.title2.bold())
@@ -181,14 +212,35 @@ struct VoiceView: View {
                                 .id("translatorSummary")
                         }
 
-                        ForEach(controller.lines) { line in
-                            transcriptLine(line)
-                                .id(line.id)
+                        if controller.pendingMessage != nil {
+                            DisclosureGroup("Show conversation", isExpanded: $showConversationDuringMessageReview) {
+                                transcriptLines(controller)
+                            }
+                            .font(.subheadline.weight(.medium))
+                            .tint(Theme.accentText)
+                        } else {
+                            transcriptLines(controller)
                         }
 
                         if let pending = controller.pendingAction {
-                            actionCard(pending, controller: controller)
+                            if let message = controller.pendingMessage {
+                                MessageReviewCard(
+                                    recipientName: message.draft.recipientName,
+                                    address: message.address,
+                                    message: Binding(
+                                        get: { controller.pendingMessage?.draft.body ?? "" },
+                                        set: controller.updatePendingMessageBody
+                                    ),
+                                    status: controller.messageReviewStatus,
+                                    canConfirmByVoice: controller.canConfirmMessageByVoice,
+                                    open: { Task { await controller.confirmPendingAction() } },
+                                    cancel: { Task { await controller.declinePendingAction() } }
+                                )
                                 .id("pendingAction")
+                            } else {
+                                actionCard(pending, controller: controller)
+                                    .id("pendingAction")
+                            }
                         }
 
                         if let status = controller.reminderStatus {
@@ -258,6 +310,7 @@ struct VoiceView: View {
                 }
                 .onChange(of: controller.pendingAction) { _, pending in
                     editingNoteReminderTime = false
+                    showConversationDuringMessageReview = false
                     if pending != nil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("pendingAction", anchor: .bottom) } }
                 }
                 .onChange(of: controller.listReceipt) { _, receipt in
@@ -325,6 +378,13 @@ struct VoiceView: View {
                 .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Theme.separator, lineWidth: line.fromUser ? 0 : 1))
                 .accessibilityLabel(line.fromUser ? "You: \(line.text)" : "Doddy: \(line.text)")
             if !line.fromUser { Spacer(minLength: 40) }
+        }
+    }
+
+    private func transcriptLines(_ controller: VoiceSessionController) -> some View {
+        ForEach(controller.lines) { line in
+            transcriptLine(line)
+                .id(line.id)
         }
     }
 
@@ -1392,7 +1452,7 @@ struct VoiceView: View {
                     Label(controller.isMuted ? "Unmute" : "Mute", systemImage: controller.isMuted ? "mic.slash" : "mic")
                 }
                 .buttonStyle(SecondaryButtonStyle())
-                .disabled(controller.longTurn != .off)
+                .disabled(controller.longTurn != .off || controller.isReadingMessageDraft || controller.isPreparingMessageReadBack)
                 Button {
                     Task { await controller.stop() }
                 } label: {
@@ -1411,23 +1471,15 @@ struct VoiceView: View {
     }
 
     /// Doddy's pose on this screen (ADR-299), the island's for the same moment.
-    private func screenArt(_ controller: VoiceSessionController) -> VoiceScreenArt {
-        let phase: VoiceScreenArt.Phase = switch controller.phase {
-        case .idle, .connecting: .connecting
-        case .listening: .listening
-        case .thinking: .thinking
-        case .speaking: .speaking
-        case .ended: .ended
-        case .microphoneDenied: .microphoneOff
-        case .failed: .failed
-        }
-        let planRunning = controller.planStatus.map { $0.isRunning && !$0.steps.isEmpty } ?? false
-        return .shown(phase, muted: controller.isMuted && controller.isLive,
-                      awaitingConfirmation: controller.pendingAction != nil, planRunning: planRunning)
-    }
-
         private func statusTitle(_ controller: VoiceSessionController) -> String {
-        switch controller.phase {
+        if controller.isPreparingMessageReadBack { return NSLocalizedString("Preparing spoken review…", comment: "") }
+        if controller.isReadingMessageDraft { return NSLocalizedString("Reading message aloud…", comment: "") }
+        if controller.isLive && controller.isMuted { return NSLocalizedString("Muted", comment: "") }
+        if controller.connectionNeeded != nil { return NSLocalizedString("Connection needed", comment: "") }
+        if controller.pendingMessage != nil && controller.canConfirmMessageByVoice {
+            return NSLocalizedString("Waiting for your confirmation", comment: "")
+        }
+        return switch controller.phase {
         case .idle, .connecting: NSLocalizedString("Connecting…", comment: "")
         case .listening: NSLocalizedString("Listening", comment: "")
         case .thinking: NSLocalizedString("Thinking…", comment: "")
@@ -1436,6 +1488,17 @@ struct VoiceView: View {
         case .microphoneDenied: NSLocalizedString("Microphone is off", comment: "")
         // A drop after Doddy was listening says so; it is never "Couldn't connect" (ADR-360).
         case .failed: controller.endTitle ?? NSLocalizedString("Couldn't connect", comment: "")
+        }
+    }
+
+    private func close() {
+        if keepsConversationAlive {
+            dismiss()
+        } else {
+            Task {
+                await controller?.stop()
+                dismiss()
+            }
         }
     }
 }

@@ -245,7 +245,7 @@ struct MemoryLinkCard: View {
             .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 17))
             .overlay(RoundedRectangle(cornerRadius: 17).strokeBorder(Theme.separator, lineWidth: 1))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(TactileCardButtonStyle())
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("memory.open.\(record.id.uuidString)")
     }

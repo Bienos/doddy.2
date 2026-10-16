@@ -42,6 +42,8 @@ struct StatusRow: View {
 
 struct PrimaryButtonStyle: ButtonStyle {
     @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityContrast) private var contrast
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
@@ -52,13 +54,23 @@ struct PrimaryButtonStyle: ButtonStyle {
             .background(
                 Theme.ink.opacity(isEnabled ? (configuration.isPressed ? 0.8 : 1) : 0.35),
                 in: RoundedRectangle(cornerRadius: 18))
+            .overlay {
+                if contrast == .increased {
+                    RoundedRectangle(cornerRadius: 18)
+                        .strokeBorder(Theme.secondaryText, lineWidth: 1)
+                }
+            }
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.985 : 1)
             .contentShape(RoundedRectangle(cornerRadius: 18))
+            .animation(reduceMotion ? nil : .spring(duration: 0.18, bounce: 0), value: configuration.isPressed)
     }
 }
 
 struct SecondaryButtonStyle: ButtonStyle {
     var tint: Color = Theme.ink
     @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityContrast) private var contrast
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
@@ -70,7 +82,27 @@ struct SecondaryButtonStyle: ButtonStyle {
                     .strokeBorder(Theme.separator, lineWidth: 1)
                     .background(configuration.isPressed ? Theme.quietSurface : .clear, in: RoundedRectangle(cornerRadius: 18)))
             .opacity(isEnabled ? 1 : 0.4)
+            .overlay {
+                if contrast == .increased {
+                    RoundedRectangle(cornerRadius: 18)
+                        .strokeBorder(tint.opacity(isEnabled ? 0.9 : 0.45), lineWidth: 1.5)
+                }
+            }
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.985 : 1)
             .contentShape(RoundedRectangle(cornerRadius: 18))
+            .animation(reduceMotion ? nil : .spring(duration: 0.18, bounce: 0), value: configuration.isPressed)
+    }
+}
+
+/// Immediate physical feedback for large, quiet cards that open an existing route.
+struct TactileCardButtonStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .opacity(configuration.isPressed ? 0.88 : 1)
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.99 : 1)
+            .animation(reduceMotion ? nil : .spring(duration: 0.2, bounce: 0), value: configuration.isPressed)
     }
 }
 

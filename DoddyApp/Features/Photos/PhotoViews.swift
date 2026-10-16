@@ -43,6 +43,7 @@ struct CapturePhotoPicker: View {
         }
     }
 
+    @MainActor
     private func read(_ item: PhotosPickerItem) async {
         isReading = true
         problem = nil
@@ -189,6 +190,7 @@ struct ListPhotoPicker: View {
         }
     }
 
+    @MainActor
     private func read(_ picked: PhotosPickerItem) async {
         isReading = true
         problem = nil

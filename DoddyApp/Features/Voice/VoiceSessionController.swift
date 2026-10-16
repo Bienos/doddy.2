@@ -1,4 +1,5 @@
 import AVFAudio
+import ActivityKit
 import DoddyCore
 import ElevenLabs
 import Foundation
@@ -23,6 +24,10 @@ final class VoiceSessionController {
         case idle, connecting, listening, thinking, speaking, ended
         case microphoneDenied
         case failed(String)
+    }
+
+    enum MessageReviewStatus: Equatable {
+        case preparing, reading, ready, unavailable
     }
 
     struct Line: Identifiable, Equatable {
@@ -181,10 +186,28 @@ final class VoiceSessionController {
         guard let current, current.isLive else { return .none }
         if current.phase == .connecting { return .connecting }
         if current.longTurn.isListening { return .longTurn }
-        return current.isMuted ? .muted : .listening
+        return current.isMuted || current.isTemporarilyMutingForReadBack ? .muted : .listening
     }
     private(set) var lines: [Line] = []
-    private(set) var pendingAction: PendingAction? { didSet { syncIsland() } }
+    private(set) var pendingAction: PendingAction? {
+        didSet {
+            if currentReviewDraft == nil, messageReviewStatus != nil { stopMessageReadBack() }
+            syncIsland()
+        }
+    }
+    private(set) var messageReviewStatus: MessageReviewStatus?
+    private(set) var canConfirmMessageByVoice = false
+    @ObservationIgnored private var reviewedMessage: MessageDraft?
+    @ObservationIgnored private var isTemporarilyMutingForReadBack = false
+    @ObservationIgnored private var messageReadBackAttempt = UUID()
+    @ObservationIgnored private let messageReadBack = MessageReadBack()
+
+    var pendingMessage: (draft: MessageDraft, address: String)? {
+        guard case .message(_, let draft, let address) = pendingAction, draft.channel == .text else { return nil }
+        return (draft, address)
+    }
+    var isReadingMessageDraft: Bool { currentReviewDraft != nil && messageReviewStatus == .reading }
+    var isPreparingMessageReadBack: Bool { currentReviewDraft != nil && messageReviewStatus == .preparing }
     /// The type the user picks on the "Save this note?" card. Starts as Other for every proposal;
     /// the agent is never told or asked (ADR-202).
     var pendingMemoryCategory: MemoryCategory = .other
@@ -451,6 +474,7 @@ final class VoiceSessionController {
         readAloudProblem = nil
         privacyLocked = false
         pendingAction = nil
+        stopMessageReadBack()
         contactCard = nil
         parkingCard = nil
         reminderStatus = nil
@@ -906,10 +930,11 @@ final class VoiceSessionController {
 
     func toggleMute() async {
         // During "Listen until I finish" the microphone stays muted until Done or Cancel.
-        guard let conversation, longTurn == .off else { return }
+        guard let conversation, longTurn == .off, messageReviewStatus != .reading, messageReviewStatus != .preparing else { return }
         do {
             try await conversation.setMuted(!isMuted)
             isMuted.toggle()
+            canConfirmMessageByVoice = !isMuted && currentReviewDraft == reviewedMessage && messageReviewStatus == .ready
         } catch {
             // Keep the previous state; the UI shows what is actually set.
         }
@@ -1067,6 +1092,9 @@ final class VoiceSessionController {
     /// The user tapped the card's confirm button: Save, Add, Start, Open or Run.
     func confirmPendingAction() async {
         guard let action = pendingAction else { return }
+        if case .message(_, let draft, _) = action, draft.channel == .text,
+           (messageReviewStatus == .reading || messageReviewStatus == .preparing) { return }
+        stopMessageReadBack()
         pendingAction = nil
         // The conversation the card belongs to. The change runs to the end even if the user taps
         // End meanwhile; what it shows on screen after an await is shown only if this one is
@@ -1272,6 +1300,158 @@ final class VoiceSessionController {
         }
     }
 
+    /// The Live Activity contains no private payload. Its link returns to Doddy's focused review;
+    /// the user still hears/reviews the exact draft and confirms before Messages opens.
+    func openPendingMessageFromLiveActivity() async {
+        guard pendingMessage != nil else { return }
+        beginMessageReadBack(restart: false)
+    }
+
+    func updatePendingMessageBody(_ body: String) {
+        guard case .message(let id, let draft, let address) = pendingAction,
+              draft.channel == .text,
+              body != draft.body else { return }
+        stopMessageReadBack(restoreMicrophone: false)
+        let edited = MessageDraft(recipientName: draft.recipientName, channel: draft.channel, body: body)
+        pendingAction = .message(toolCallID: id, draft: edited, address: address)
+        beginMessageReadBack(restart: true)
+    }
+
+    private var currentReviewDraft: MessageDraft? {
+        guard case .message(_, let draft, _) = pendingAction, draft.channel == .text else { return nil }
+        return draft
+    }
+
+    private func beginMessageReadBack(restart: Bool) {
+        guard let draft = currentReviewDraft else { return }
+        if !restart, reviewedMessage == draft, messageReviewStatus != nil { return }
+
+        messageReadBackAttempt = UUID()
+        let attempt = messageReadBackAttempt
+        messageReadBack.stop()
+        reviewedMessage = draft
+        messageReviewStatus = .preparing
+        canConfirmMessageByVoice = false
+
+        Task { [weak self] in
+            guard let self else { return }
+            let activeConversation = self.conversation
+            var canResumeMicrophone = false
+            if self.isLive, !self.isMuted, let activeConversation {
+                do {
+                    try await activeConversation.setMuted(true)
+                    guard self.messageReadBackAttempt == attempt,
+                          self.currentReviewDraft == draft, self.isLive else {
+                        if self.currentReviewDraft == nil {
+                            try? await activeConversation.setMuted(false)
+                        }
+                        return
+                    }
+                    canResumeMicrophone = true
+                    self.isTemporarilyMutingForReadBack = true
+                } catch {
+                    // The spoken review can still play, but voice confirmation stays unavailable.
+                }
+            }
+
+            guard self.messageReadBackAttempt == attempt,
+                  self.currentReviewDraft == draft, self.messageReviewStatus == .preparing else {
+                if canResumeMicrophone, self.currentReviewDraft == nil {
+                    try? await activeConversation?.setMuted(false)
+                }
+                return
+            }
+
+            let language = Bundle.main.preferredLocalizations.first ?? Locale.current.identifier
+            let prompt = NSLocalizedString("Say “open it” to open the draft in Messages, or “cancel” to cancel.", comment: "Spoken message confirmation prompt")
+            self.messageReviewStatus = .reading
+            self.messageReadBack.speak(
+                recipient: draft.recipientName,
+                body: draft.body,
+                prompt: prompt,
+                language: language
+            ) { [weak self] succeeded in
+                guard let self, self.messageReadBackAttempt == attempt,
+                      self.currentReviewDraft == draft else { return }
+                self.messageReviewStatus = succeeded ? .ready : .unavailable
+                guard canResumeMicrophone, self.isLive, !self.isMuted,
+                      let activeConversation = self.conversation else { return }
+                Task {
+                    do {
+                        guard self.messageReadBackAttempt == attempt else { return }
+                        try await activeConversation.setMuted(false)
+                        guard self.messageReadBackAttempt == attempt else {
+                            if self.currentReviewDraft != nil, self.isTemporarilyMutingForReadBack {
+                                try? await activeConversation.setMuted(true)
+                            }
+                            return
+                        }
+                        guard self.currentReviewDraft == draft, self.isLive, !self.isMuted else { return }
+                        self.isTemporarilyMutingForReadBack = false
+                        self.canConfirmMessageByVoice = true
+                    } catch {
+                        self.isTemporarilyMutingForReadBack = false
+                    }
+                }
+            }
+        }
+    }
+
+    private func stopMessageReadBack(restoreMicrophone: Bool = true) {
+        messageReadBackAttempt = UUID()
+        messageReadBack.stop()
+        if restoreMicrophone, isTemporarilyMutingForReadBack, let conversation {
+            Task { try? await conversation.setMuted(false) }
+        }
+        if restoreMicrophone { isTemporarilyMutingForReadBack = false }
+        canConfirmMessageByVoice = false
+        messageReviewStatus = nil
+        reviewedMessage = nil
+    }
+
+    private func consumeSpokenMessageDecision(_ text: String) -> Bool {
+        guard canConfirmMessageByVoice, !isMuted, messageReviewStatus == .ready,
+              currentReviewDraft == reviewedMessage else { return false }
+        let folded = text.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: .current)
+        let normalized = String(folded.filter { $0.isLetter || $0.isNumber || $0.isWhitespace })
+            .split(whereSeparator: \.isWhitespace).joined(separator: " ")
+        let language = (Bundle.main.preferredLocalizations.first ?? Locale.current.identifier).lowercased()
+        let commands: (open: Set<String>, cancel: Set<String>)
+        if language.hasPrefix("pl") {
+            commands = (["otworz", "otworz wiadomosc", "otworz szkic"], ["anuluj", "anuluj to"])
+        } else if language.hasPrefix("de") {
+            commands = (["offne", "offne den entwurf", "offne die nachricht"], ["abbrechen", "brich ab"])
+        } else if language.hasPrefix("fr") {
+            commands = (["ouvre", "ouvre le brouillon", "ouvre le message"], ["annule", "annuler"])
+        } else if language.hasPrefix("es") {
+            commands = (["abralo", "abre el borrador", "abre el mensaje"], ["cancela", "cancelar"])
+        } else if language.hasPrefix("it") {
+            commands = (["apri", "apri la bozza", "apri il messaggio"], ["annulla", "annulla tutto"])
+        } else if language.hasPrefix("pt") {
+            commands = (["abra", "abra o rascunho", "abra a mensagem"], ["cancele", "cancelar"])
+        } else if language.hasPrefix("hr") {
+            commands = (["otvori", "otvori poruku"], ["otkazi", "otkazi to"])
+        } else if language.hasPrefix("ja") {
+            commands = (["開いて", "メッセージを開いて"], ["キャンセル"])
+        } else if language.hasPrefix("zh") {
+            commands = (["打开", "打开消息"], ["取消"])
+        } else {
+            commands = (["open it", "open the draft"], ["cancel", "cancel it"])
+        }
+
+        if commands.open.contains(normalized) {
+            canConfirmMessageByVoice = false
+            Task { await confirmPendingAction() }
+            return true
+        }
+        if commands.cancel.contains(normalized) {
+            canConfirmMessageByVoice = false
+            Task { await declinePendingAction() }
+            return true
+        }
+        return false
+    }
+
     func selectPlace(_ index: Int) {
         guard case .noteReminder(_, _, _, _, .place(let results, _)) = pendingAction, results.indices.contains(index) else { return }
         selectedPlaceIndex = index
@@ -1356,6 +1536,7 @@ final class VoiceSessionController {
     /// The user tapped the card's decline button. Nothing changes.
     func declinePendingAction() async {
         guard let action = pendingAction else { return }
+        if case .message(_, let draft, _) = action, draft.channel == .text { stopMessageReadBack() }
         pendingAction = nil
         switch action {
         case .memory(let id, _):
@@ -1796,6 +1977,7 @@ final class VoiceSessionController {
         case .memory: return .noteWaiting
         case .plan(_, let steps, _): return .planWaiting(steps: steps.count)
         case .reminder, .noteReminder: return .reminderWaiting
+        case .message(_, let draft, _) where draft.channel == .text: return .messageWaiting
         case .some: return nil
         case nil: break
         }
@@ -1879,6 +2061,7 @@ final class VoiceSessionController {
 
     private func append(_ text: String, fromUser: Bool) {
         guard !text.allSatisfy(\.isWhitespace) else { return }
+        if fromUser, consumeSpokenMessageDecision(text) { return }
         // Translating: the lines belong to the translator screen, never to the conversation log.
         if translator != nil {
             if fromUser {
@@ -2263,7 +2446,7 @@ final class VoiceSessionController {
                 await reply(call.toolCallId, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
             }
         case .setTimer(let draft):
-            guard await devices.notificationAccess() == .granted else {
+            guard isOn(.timers) else {
                 await notConnected(call.toolCallId, .timers)
                 return
             }
@@ -2835,6 +3018,9 @@ final class VoiceSessionController {
             return
         }
         pendingAction = action
+        if case .message(_, let draft, _) = action, draft.channel == .text {
+            beginMessageReadBack(restart: true)
+        }
     }
 
     /// Looks in Calendar first, so asking again after an unconfirmed try never adds a second copy;
@@ -3282,16 +3468,22 @@ final class VoiceSessionController {
     /// Looks for a running copy only after an unconfirmed try of the same timer (ADR-320); "started"
     /// only when the iPhone lists it, with the ring time it lists.
     private func timerResult(_ draft: TimerDraft, retry: ActionRetryDecision?) async -> WriteResult {
-        guard await devices.notificationAccess() == .granted else {
-            return WriteResult(reply: VoiceToolReply.notAdded("Notifications are off for Doddy."), attempted: false)
+        guard isOn(.timers) else {
+            connectionNeeded = .timers
+            return WriteResult(reply: VoiceToolReply.failed("Timers are switched off. Nothing was set."), attempted: false)
         }
+        let alertAccess = await devices.notificationAccess()
         let outcome = await TimerStartAction.start(draft, with: devices, uncheckedSince: retry?.uncheckedSince)
-        var result = WriteResult(reply: VoiceToolReply.timer(outcome, draft: draft, calendar: .current), attempted: outcome.attemptedWrite)
+        var result = WriteResult(reply: VoiceToolReply.timer(
+            outcome, draft: draft, calendar: .current, alertsEnabled: alertAccess == .granted,
+            liveActivitiesEnabled: ActivityAuthorizationInfo().areActivitiesEnabled), attempted: outcome.attemptedWrite)
         switch outcome {
         case .started(let timer):
+            await KitchenTimerActivities.shared.start(timer: timer, fallbackDuration: TimeInterval(draft.seconds))
             result.receipt = ActivityReceipt(timer: timer, draft: draft, calendar: .current, readAt: Date())
             if case .checkFirst = retry { result.reply = VoiceToolReply.checkedFirst(result.reply, app: .timers) }
         case .alreadyRunning(let timer):
+            await KitchenTimerActivities.shared.start(timer: timer, fallbackDuration: TimeInterval(draft.seconds))
             result.receipt = ActivityReceipt(timer: timer, draft: draft, calendar: .current, readAt: Date())
         default:
             break

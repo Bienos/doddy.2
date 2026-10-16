@@ -176,6 +176,12 @@ struct ConnectionSheet: View {
                         }
                     }
 
+                    if connection == .messages {
+                        section(NSLocalizedString("iPhone access", comment: "Connection detail section about platform permissions")) {
+                            Text("Messages doesn't have an iOS permission for Doddy to read or send. Doddy only opens a draft for you to review and send.")
+                        }
+                    }
+
                     section("Doddy can") {
                         ForEach(info.canDo, id: \.self) { line in
                             HStack(alignment: .firstTextBaseline, spacing: 10) {
@@ -241,7 +247,9 @@ struct ConnectionSheet: View {
             .buttonStyle(SecondaryButtonStyle(tint: Theme.error))
             .accessibilityIdentifier("connection.turnOff")
         case .blocked:
-            Text("Doddy is switched on, but iPhone doesn't allow \(title) for Doddy any more.")
+            Text(connection == .timers
+                 ? NSLocalizedString("Timer countdowns can still run, but notifications are off. iOS may not alert you when one ends.", comment: "Timers connection explanation when iOS alerts are off")
+                 : "Doddy is switched on, but iPhone doesn't allow \(title) for Doddy any more.")
                 .foregroundStyle(Theme.secondaryText)
             Button("Open iPhone Settings") {
                 if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
@@ -268,7 +276,9 @@ struct ConnectionSheet: View {
         case .granted:
             refusal = nil
         case .denied, .notDetermined, nil:
-            refusal = "iPhone didn't allow \(connection.title) for Doddy. You can allow it in iPhone Settings, then try again."
+            refusal = connection == .timers
+                ? NSLocalizedString("Notifications are off. Timers can still run, but iOS may not alert you when one ends.", comment: "Timers connection permission result")
+                : "iPhone didn't allow \(connection.title) for Doddy. You can allow it in iPhone Settings, then try again."
         }
     }
 
@@ -322,11 +332,13 @@ struct ConnectionInfo {
                 examples: ["Set a timer for ten minutes", "Forty-five seconds for the eggs"],
                 canDo: [
                     "Start a countdown, after you tap Start",
-                    "Ring with a notification when it's done, even if the app is closed",
+                    NSLocalizedString("Schedule a local alert for the end time. iOS settings and Focus can affect how it appears", comment: "Timers connection capability"),
+                    NSLocalizedString("Show a private countdown on Dynamic Island and Lock Screen when Live Activities are available", comment: "Timers connection capability"),
+                    NSLocalizedString("Cancel a running timer from its Live Activity", comment: "Timers connection capability"),
                     "Set an alarm that rings even in Silent mode, after you tap Set alarm (iOS 26 and later)",
                 ],
                 leavesPhone: "The length and label of a timer, or the time and label of an alarm, when Doddy sets one.",
-                staysHere: "iPhone asks once for notification permission. Doddy doesn't keep track of the timer after it starts.")
+                staysHere: NSLocalizedString("Timer timing is kept on this iPhone. The alert uses generic wording; its label is not shown on Dynamic Island or Lock Screen. If alert permission is off, the countdown can still run, but iOS may not alert you.", comment: "Timers connection privacy explanation"))
         case .contacts:
             ConnectionInfo(
                 symbol: "person.crop.circle",

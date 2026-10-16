@@ -9244,6 +9244,65 @@
         }
       }
     },
+    "Cancel a running timer from its Live Activity": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Einen laufenden Timer über seine Live Activity abbrechen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancelar un temporizador activo desde su actividad en directo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Annuler un minuteur en cours depuis son activité en direct."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otkazati aktivni mjerač vremena iz Aktivnosti uživo."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Annulla un timer attivo dalla sua Attività in tempo reale."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ライブアクティビティから実行中のタイマーをキャンセルします。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anulować działający minutnik z jego Aktywności na żywo."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancelar um timer em andamento pela Atividade ao Vivo."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "从实时活动中取消正在运行的计时器。"
+          }
+        }
+      }
+    },
     "Cancel all reminders": {
       "extractionState": "manual",
       "localizations": {
@@ -12194,6 +12253,65 @@
         }
       }
     },
+    "Connection needed": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verbindung erforderlich"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se necesita una conexión"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connexion nécessaire"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Potrebna je veza"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connessione necessaria"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "接続が必要です"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wymagane połączenie"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conexão necessária"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要连接"
+          }
+        }
+      }
+    },
     "Connections": {
       "extractionState": "manual",
       "localizations": {
@@ -13197,6 +13315,65 @@
         }
       }
     },
+    "Couldn't confirm cancellation": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abbruch nicht bestätigt"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo confirmar la cancelación"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Annulation non confirmée"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otkazivanje nije potvrđeno"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Annullamento non confermato"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "キャンセルを確認できませんでした"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się potwierdzić anulowania"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível confirmar o cancelamento"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法确认已取消"
+          }
+        }
+      }
+    },
     "Couldn't connect": {
       "extractionState": "manual",
       "localizations": {
@@ -13665,6 +13842,65 @@
           "stringUnit": {
             "state": "translated",
             "value": "无法设置提醒。没有安排任何提醒，你的笔记也没有改变。"
+          }
+        }
+      }
+    },
+    "Counting down": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Läuft"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En marcha"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En cours"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odbrojava"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In corso"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "カウントダウン中"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odliczanie"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contagem em andamento"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在倒计时"
           }
         }
       }
@@ -17374,6 +17610,65 @@
         }
       }
     },
+    "Doddy couldn't read it aloud. Review the recipient and text, then choose a button.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy konnte die Nachricht nicht vorlesen. Prüfe Empfänger und Text und wähle dann eine Schaltfläche."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy no pudo leerlo en voz alta. Revisa el destinatario y el texto, y elige un botón."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy n’a pas pu lire le message à voix haute. Vérifiez le destinataire et le texte, puis choisissez un bouton."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nije mogao pročitati poruku naglas. Provjeri primatelja i tekst pa odaberi gumb."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy non è riuscito a leggere il messaggio ad alta voce. Controlla destinatario e testo, poi scegli un pulsante."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddyは読み上げできませんでした。宛先と本文を確認して、ボタンを選んでください。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie mógł odczytać wiadomości. Sprawdź odbiorcę i treść, a potem wybierz przycisk."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy não conseguiu ler em voz alta. Confira o destinatário e o texto e escolha um botão."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy无法朗读。请检查收件人和内容，然后选择一个按钮。"
+          }
+        }
+      }
+    },
     "Doddy counts how often you undo something, change a step, say \"That's wrong\", ask for the same thing again or leave a card unanswered, so you can see whether he gets better. Only the kind of event and the tool name are kept, for 90 days, on this iPhone, never sent.": {
       "extractionState": "manual",
       "localizations": {
@@ -18582,6 +18877,124 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy 已锁定"
+          }
+        }
+      }
+    },
+    "Doddy is reading the draft aloud": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy liest den Entwurf vor"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy está leyendo el borrador en voz alta"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy lit le brouillon à voix haute"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy čita skicu naglas"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy legge la bozza ad alta voce"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddyが下書きを読み上げています"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy odczytuje szkic na głos"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy está lendo o rascunho em voz alta"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy正在朗读草稿"
+          }
+        }
+      }
+    },
+    "Doddy is reading the recipient and exact message. You can cancel at any time.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy liest gerade den Empfänger und die genaue Nachricht vor. Du kannst jederzeit abbrechen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy está leyendo el destinatario y el mensaje exacto. Puedes cancelar en cualquier momento."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy lit le destinataire et le message exact. Vous pouvez annuler à tout moment."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy čita primatelja i točan tekst poruke. Možeš odustati u bilo kojem trenutku."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy sta leggendo il destinatario e il testo esatto. Puoi annullare in qualsiasi momento."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddyが宛先と正確なメッセージを読み上げています。いつでもキャンセルできます。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy odczytuje odbiorcę i dokładną treść wiadomości. Możesz anulować w dowolnym momencie."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy está lendo o destinatário e o texto exato. Você pode cancelar a qualquer momento."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy正在朗读收件人和完整消息。你可以随时取消。"
           }
         }
       }
@@ -26292,6 +26705,65 @@
           "stringUnit": {
             "state": "translated",
             "value": "网关地址（https://…）"
+          }
+        }
+      }
+    },
+    "Getting the message ready to read aloud.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Nachricht wird zum Vorlesen vorbereitet."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparando el mensaje para leerlo en voz alta."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Préparation du message à lire à voix haute."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pripremam poruku za čitanje naglas."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparo il messaggio per leggerlo ad alta voce."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "メッセージの読み上げを準備しています。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przygotowuję wiadomość do odczytania."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparando a mensagem para ler em voz alta."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在准备朗读消息。"
           }
         }
       }
@@ -35730,6 +36202,242 @@
         }
       }
     },
+    "Message draft ready": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nachrichtenentwurf bereit"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Borrador del mensaje listo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brouillon du message prêt"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nacrt poruke je spreman"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bozza del messaggio pronta"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "メッセージの下書きができました"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wersja robocza wiadomości gotowa"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rascunho da mensagem pronto"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "消息草稿已就绪"
+          }
+        }
+      }
+    },
+    "Message for %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nachricht an %@."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mensaje para %@."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Message pour %@."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poruka za %@."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Messaggio per %@."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@さんへのメッセージ。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wiadomość do: %@."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mensagem para %@."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "发给%@的消息。"
+          }
+        }
+      }
+    },
+    "Message text": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nachrichtentext"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Texto del mensaje"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Texte du message"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tekst poruke"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Testo del messaggio"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "メッセージ本文"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Treść wiadomości"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Texto da mensagem"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "消息内容"
+          }
+        }
+      }
+    },
+    "Messages doesn't have an iOS permission for Doddy to read or send. Doddy only opens a draft for you to review and send.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nachrichten erfordert keine iOS-Berechtigung, damit Doddy Nachrichten lesen oder senden kann. Doddy öffnet nur einen Entwurf, den du prüfen und selbst senden kannst."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy no necesita permiso de iOS para leer ni enviar mensajes. Solo abre un borrador para que lo revises y lo envíes tú."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy n’a pas besoin d’une autorisation iOS pour lire ou envoyer des messages. Il ouvre uniquement un brouillon que vous pouvez vérifier et envoyer."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nema iOS dozvolu za čitanje ni slanje poruka. Otvara samo skicu koju možeš pregledati i poslati."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy non richiede un permesso iOS per leggere o inviare messaggi. Apre solo una bozza che puoi controllare e inviare tu."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddyにメッセージの読み取りや送信を許可するiOS権限はありません。Doddyは確認・送信用の下書きを開くだけです。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie ma uprawnień iOS do czytania ani wysyłania wiadomości. Otwiera tylko szkic, który możesz sprawdzić i wysłać samodzielnie."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Doddy não precisa de permissão do iOS para ler ou enviar mensagens. Ele só abre um rascunho para você revisar e enviar."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy没有读取或发送信息的iOS权限。它只会打开草稿，供你检查并自行发送。"
+          }
+        }
+      }
+    },
     "Messages from Doddy": {
       "extractionState": "manual",
       "localizations": {
@@ -35785,6 +36493,65 @@
           "stringUnit": {
             "state": "translated",
             "value": "来自 Doddy 的消息"
+          }
+        }
+      }
+    },
+    "Messages opens a draft. You still tap Send.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nachrichten öffnet einen Entwurf. Zum Senden musst du weiterhin auf „Senden“ tippen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mensajes abre un borrador. Para enviarlo, aún tienes que tocar Enviar."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Messages ouvre un brouillon. Vous devez toujours toucher Envoyer pour l’envoyer."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poruke otvaraju skicu. Za slanje i dalje moraš dodirnuti Pošalji."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Messaggi apre una bozza. Per inviarla devi comunque toccare Invia."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "メッセージの下書きが開きます。送信するには「送信」をタップしてください。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wiadomości otworzą szkic. Aby go wysłać, nadal musisz stuknąć „Wyślij”."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Mensagens abre um rascunho. Você ainda precisa tocar em Enviar para mandar."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "信息会打开草稿。你仍需轻点“发送”才能发送。"
           }
         }
       }
@@ -36906,6 +37673,65 @@
           "stringUnit": {
             "state": "translated",
             "value": "将 Doddy 静音或取消静音"
+          }
+        }
+      }
+    },
+    "Muted": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stummgeschaltet"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Silenciado"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En sourdine"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Isključeno"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audio disattivato"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "消音"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mikrofon wyciszony"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Microfone silenciado"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已静音"
           }
         }
       }
@@ -43719,6 +44545,65 @@
         }
       }
     },
+    "Notifications are off. Timers can still run, but iOS may not alert you when one ends.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Benachrichtigungen sind ausgeschaltet. Timer laufen weiter, aber iOS meldet das Ende möglicherweise nicht."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las notificaciones están desactivadas. Los temporizadores pueden seguir, pero iOS quizá no avise al terminar."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les notifications sont désactivées. Les minuteurs continuent, mais iOS ne vous avertira peut-être pas à la fin."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obavijesti su isključene. Mjerači vremena mogu raditi, ali iOS možda neće javiti kada završe."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le notifiche sono disattivate. I timer possono continuare, ma iOS potrebbe non avvisarti alla fine."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通知はオフです。タイマーは動き続けますが、終了時にiOSから通知されない場合があります。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powiadomienia są wyłączone. Minutniki mogą działać, ale iOS może nie powiadomić o ich końcu."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "As notificações estão desativadas. Os timers podem continuar, mas o iOS talvez não avise quando terminarem."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通知已关闭。计时器仍会运行，但结束时 iOS 可能不会提醒你。"
+          }
+        }
+      }
+    },
     "Notifications aren't on for this iPhone yet.": {
       "extractionState": "manual",
       "localizations": {
@@ -50260,6 +51145,65 @@
         }
       }
     },
+    "Preparing spoken review…": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprachliche Vorschau wird vorbereitet…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparando la revisión hablada…"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Préparation de la lecture…"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Priprema glasovnog pregleda…"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparazione della revisione vocale…"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "読み上げを準備中…"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przygotowuję odczyt wiadomości…"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparando a revisão falada…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在准备语音预览…"
+          }
+        }
+      }
+    },
     "Preview": {
       "extractionState": "manual",
       "localizations": {
@@ -51806,6 +52750,124 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在朗读"
+          }
+        }
+      }
+    },
+    "Reading message aloud. Use Cancel if you want to stop.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Nachricht wird vorgelesen. Tippe auf Abbrechen, wenn du stoppen möchtest."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leyendo el mensaje en voz alta. Pulsa Cancelar si quieres detenerlo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lecture du message à voix haute. Touchez Annuler pour arrêter."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Čitam poruku naglas. Dodirni Odustani ako želiš prekinuti."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lettura del messaggio ad alta voce. Tocca Annulla se vuoi interrompere."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "メッセージを読み上げています。停止するには「キャンセル」をタップしてください。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odczytuję wiadomość. Stuknij „Anuluj”, jeśli chcesz przerwać."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lendo a mensagem em voz alta. Toque em Cancelar se quiser parar."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在朗读消息。如需停止，请轻点“取消”。"
+          }
+        }
+      }
+    },
+    "Reading message aloud…": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nachricht wird vorgelesen…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leyendo el mensaje en voz alta…"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lecture du message à voix haute…"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Čitam poruku naglas…"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lettura del messaggio ad alta voce…"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "メッセージを読み上げています…"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odczytuję wiadomość…"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lendo a mensagem em voz alta…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在朗读消息…"
           }
         }
       }
@@ -55771,6 +56833,183 @@
         }
       }
     },
+    "Review in Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In Doddy prüfen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revisar en Doddy"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vérifier dans Doddy"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pregledaj u Doddyju"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rivedi in Doddy"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddyで確認"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdź w Doddy"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revisar no Doddy"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在Doddy中检查"
+          }
+        }
+      }
+    },
+    "Review message": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nachricht prüfen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revisar mensaje"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vérifier le message"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pregledaj poruku"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rivedi il messaggio"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "メッセージを確認"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdź wiadomość"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revisar mensagem"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "检查消息"
+          }
+        }
+      }
+    },
+    "Review the draft, then choose a button.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prüfe den Entwurf und wähle dann eine Schaltfläche."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revisa el borrador y elige un botón."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vérifiez le brouillon, puis choisissez un bouton."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pregledaj skicu pa odaberi gumb."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rivedi la bozza e scegli un pulsante."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下書きを確認して、ボタンを選んでください。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdź szkic i wybierz przycisk."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revise o rascunho e escolha um botão."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "检查草稿，然后选择一个按钮。"
+          }
+        }
+      }
+    },
     "Routine": {
       "extractionState": "manual",
       "localizations": {
@@ -59300,6 +60539,183 @@
         }
       }
     },
+    "Say “open it” or “cancel”, or use the buttons.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sag „öffne“ oder „abbrechen“, oder nutze die Schaltflächen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Di «abre el borrador» o «cancela», o usa los botones."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dites « ouvre » ou « annule », ou utilisez les boutons."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reci „otvori” ili „otkaži”, ili upotrijebi gumbe."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Di’ «apri» o «annulla», oppure usa i pulsanti."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「開いて」または「キャンセル」と言うか、ボタンを使ってください。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powiedz „otwórz” albo „anuluj” lub użyj przycisków."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diga “abra a mensagem” ou “cancele”, ou use os botões."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "说“打开消息”或“取消”，也可以使用按钮。"
+          }
+        }
+      }
+    },
+    "Say “open it” to open the draft in Messages, or “cancel” to cancel.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sag „öffne“, um den Entwurf in Nachrichten zu öffnen, oder „abbrechen“, um ihn abzubrechen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Di «abre el borrador» para abrirlo en Mensajes o «cancela» para cancelarlo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dites « ouvre » pour ouvrir le brouillon dans Messages, ou « annule » pour l’annuler."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reci „otvori” za otvaranje skice u Porukama ili „otkaži” za odustajanje."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Di’ «apri» per aprire la bozza in Messaggi, oppure «annulla» per annullarla."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「開いて」と言うとメッセージで下書きを開き、「キャンセル」と言うと取り消します。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powiedz „otwórz”, aby otworzyć szkic w Wiadomościach, lub „anuluj”, aby go anulować."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diga “abra a mensagem” para abrir o rascunho no Mensagens ou “cancele” para cancelar."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "说“打开消息”可在信息中打开草稿，说“取消”可取消。"
+          }
+        }
+      }
+    },
+    "Say “open it” to review the draft in Messages, or “cancel” to discard it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sag „öffne“, um den Entwurf in Nachrichten zu prüfen, oder „abbrechen“, um ihn zu verwerfen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Di «abre el borrador» para revisarlo en Mensajes o «cancela» para descartarlo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dites « ouvre » pour vérifier le brouillon dans Messages, ou « annule » pour le supprimer."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reci „otvori” za pregled skice u Porukama ili „otkaži” za njezino odbacivanje."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Di’ «apri» per controllare la bozza in Messaggi o «annulla» per eliminarla."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「開いて」と言うとメッセージで下書きを確認し、「キャンセル」と言うと破棄します。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powiedz „otwórz”, aby sprawdzić szkic w Wiadomościach, lub „anuluj”, aby go odrzucić."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diga “abra a mensagem” para conferir o rascunho no Mensagens ou “cancele” para descartá-lo."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "说“打开消息”可在信息中检查草稿，说“取消”可将其丢弃。"
+          }
+        }
+      }
+    },
     "Says what is left on one of your Doddy lists.": {
       "extractionState": "manual",
       "localizations": {
@@ -59355,6 +60771,65 @@
           "stringUnit": {
             "state": "translated",
             "value": "说出你某个 Doddy 清单上还剩什么。"
+          }
+        }
+      }
+    },
+    "Schedule a local alert for the end time. iOS settings and Focus can affect how it appears": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eine lokale Mitteilung zum Ende einplanen. iOS-Einstellungen und Fokus können die Anzeige beeinflussen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Programar un aviso local para la hora de fin. Los ajustes de iOS y Concentración pueden afectar a su presentación."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Programmer une alerte locale à la fin. Les réglages iOS et Concentration peuvent modifier son affichage."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zakazati lokalnu obavijest za završetak. Postavke iOS-a i Fokus mogu utjecati na prikaz."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Programma un avviso locale all’ora di fine. Le impostazioni di iOS e Full immersion possono influire sulla visualizzazione."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "終了時刻にローカル通知を予約します。表示方法はiOSの設定や集中モードによって異なります。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaplanować lokalne powiadomienie na koniec. Ustawienia iOS i tryb Skupienie mogą wpływać na jego wyświetlanie."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agendar um alerta local para o horário final. Os ajustes do iOS e o Foco podem afetar a exibição."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在结束时间安排本地提醒。提醒的显示方式可能受 iOS 设置和专注模式影响。"
           }
         }
       }
@@ -62698,6 +64173,124 @@
           "stringUnit": {
             "state": "translated",
             "value": "显示"
+          }
+        }
+      }
+    },
+    "Show a private countdown on Dynamic Island and Lock Screen when Live Activities are available": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Einen privaten Countdown auf Dynamic Island und Sperrbildschirm anzeigen, wenn Live Activities verfügbar sind."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostrar una cuenta atrás privada en Dynamic Island y la pantalla bloqueada si las actividades en directo están disponibles."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afficher un compte à rebours privé sur la Dynamic Island et l’écran verrouillé si les activités en direct sont disponibles."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prikazati privatno odbrojavanje na Dynamic Islandu i zaključanom zaslonu kada su Aktivnosti uživo dostupne."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra un conto alla rovescia privato su Dynamic Island e sulla schermata di blocco se le Attività in tempo reale sono disponibili."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ライブアクティビティが利用可能な場合、Dynamic Islandとロック画面に非公開のカウントダウンを表示します。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pokazać prywatne odliczanie na Dynamic Island i ekranie blokady, jeśli Aktywności na żywo są dostępne."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostrar uma contagem privada na Dynamic Island e na Tela Bloqueada quando as Atividades ao Vivo estiverem disponíveis."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "如果实时活动可用，在灵动岛和锁定屏幕显示私密倒计时。"
+          }
+        }
+      }
+    },
+    "Show conversation": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unterhaltung anzeigen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostrar conversación"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afficher la conversation"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prikaži razgovor"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra conversazione"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "会話を表示"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pokaż rozmowę"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostrar conversa"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示对话"
           }
         }
       }
@@ -67327,6 +68920,65 @@
           "stringUnit": {
             "state": "translated",
             "value": "聊天时，这些提醒和清单名称会发送给 OpenAI（如果你在首页把语音切换为 ElevenLabs，则发送给 ElevenLabs）来运行对话，和任何对话一样。只有在设置的“连接”中开启了日历，才会读取日历日程。"
+          }
+        }
+      }
+    },
+    "Tap Review in Doddy to hear and check this draft": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tippe auf „In Doddy prüfen“, um den Entwurf anzuhören und zu prüfen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toca «Revisar en Doddy» para escuchar y comprobar este borrador"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Touchez « Vérifier dans Doddy » pour écouter et vérifier ce brouillon"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodirni „Pregledaj u Doddyju” da poslušaš i provjeriš skicu"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tocca «Rivedi in Doddy» per ascoltare e controllare questa bozza"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「Doddyで確認」をタップして下書きを聞いて確認します"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stuknij „Sprawdź w Doddy”, aby odsłuchać i sprawdzić szkic"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toque em “Revisar no Doddy” para ouvir e conferir este rascunho"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "轻点“在Doddy中检查”以收听并检查草稿"
           }
         }
       }
@@ -77253,6 +78905,250 @@
         }
       }
     },
+    "Timer countdowns can still run, but notifications are off. iOS may not alert you when one ends.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Timer läuft weiter, aber Benachrichtigungen sind ausgeschaltet. iOS meldet möglicherweise nicht, wenn er abläuft."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La cuenta atrás puede seguir, pero las notificaciones están desactivadas. Es posible que iOS no avise al terminar."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le compte à rebours peut continuer, mais les notifications sont désactivées. iOS ne vous avertira peut-être pas à la fin."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odbrojavanje može raditi, ali obavijesti su isključene. iOS možda neće javiti kada završi."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il conto alla rovescia può continuare, ma le notifiche sono disattivate. iOS potrebbe non avvisarti alla fine."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通知がオフでもタイマーは動きますが、終了時にiOSから通知されない場合があります。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minutnik może nadal odliczać, ale powiadomienia są wyłączone. iOS może nie powiadomić o końcu."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A contagem pode continuar, mas as notificações estão desativadas. O iOS talvez não avise quando terminar."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通知已关闭，计时器仍会继续倒计时，但结束时 iOS 可能不会提醒你。"
+          }
+        }
+      }
+    },
+    "Timer timing is kept on this iPhone. The alert uses generic wording; its label is not shown on Dynamic Island or Lock Screen. If alert permission is off, the countdown can still run, but iOS may not alert you.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Die Timerzeit bleibt auf diesem iPad. Die Mitteilung enthält einen allgemeinen Text; der Timername erscheint weder auf Dynamic Island noch auf dem Sperrbildschirm. Ohne Mitteilungsfreigabe läuft der Countdown weiter, iOS meldet das Ende aber möglicherweise nicht."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Die Timerzeit bleibt auf diesem iPhone. Die Mitteilung enthält einen allgemeinen Text; der Timername erscheint weder auf Dynamic Island noch auf dem Sperrbildschirm. Ohne Mitteilungsfreigabe läuft der Countdown weiter, iOS meldet das Ende aber möglicherweise nicht."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Timer timing is kept on this iPad. The alert uses generic wording; its label is not shown on Dynamic Island or Lock Screen. If alert permission is off, the countdown can still run, but iOS may not alert you."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Timer timing is kept on this iPhone. The alert uses generic wording; its label is not shown on Dynamic Island or Lock Screen. If alert permission is off, the countdown can still run, but iOS may not alert you."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "El tiempo del temporizador se guarda en este iPad. El aviso usa un texto genérico; su nombre no aparece en Dynamic Island ni en la pantalla bloqueada. Si los avisos están desactivados, la cuenta atrás continúa, pero iOS quizá no te avise."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "El tiempo del temporizador se guarda en este iPhone. El aviso usa un texto genérico; su nombre no aparece en Dynamic Island ni en la pantalla bloqueada. Si los avisos están desactivados, la cuenta atrás continúa, pero iOS quizá no te avise."
+                }
+              }
+            }
+          }
+        },
+        "fr": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Le minuteur reste sur cet iPad. L’alerte utilise un texte générique ; son nom n’apparaît ni sur la Dynamic Island ni sur l’écran verrouillé. Sans autorisation, le compte à rebours continue, mais iOS ne vous avertira peut-être pas."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Le minuteur reste sur cet iPhone. L’alerte utilise un texte générique ; son nom n’apparaît ni sur la Dynamic Island ni sur l’écran verrouillé. Sans autorisation, le compte à rebours continue, mais iOS ne vous avertira peut-être pas."
+                }
+              }
+            }
+          }
+        },
+        "hr": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Mjerač vremena ostaje na ovom iPadu. Obavijest sadrži općenit tekst; naziv se ne prikazuje na Dynamic Islandu ni zaključanom zaslonu. Ako su obavijesti isključene, odbrojavanje i dalje radi, ali iOS možda neće javiti završetak."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Mjerač vremena ostaje na ovom iPhoneu. Obavijest sadrži općenit tekst; naziv se ne prikazuje na Dynamic Islandu ni zaključanom zaslonu. Ako su obavijesti isključene, odbrojavanje i dalje radi, ali iOS možda neće javiti završetak."
+                }
+              }
+            }
+          }
+        },
+        "it": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Il timer resta su questo iPad. L’avviso usa un testo generico; il nome non appare su Dynamic Island né sulla schermata di blocco. Senza autorizzazione, il conto alla rovescia continua ma iOS potrebbe non avvisarti."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Il timer resta su questo iPhone. L’avviso usa un testo generico; il nome non appare su Dynamic Island né sulla schermata di blocco. Senza autorizzazione, il conto alla rovescia continua ma iOS potrebbe non avvisarti."
+                }
+              }
+            }
+          }
+        },
+        "ja": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "タイマー情報はこのiPadに保存されます。通知には一般的な文言だけを使い、タイマー名はDynamic Islandやロック画面に表示しません。通知がオフでもカウントダウンは続きますが、iOSから通知されない場合があります。"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "タイマー情報はこのiPhoneに保存されます。通知には一般的な文言だけを使い、タイマー名はDynamic Islandやロック画面に表示しません。通知がオフでもカウントダウンは続きますが、iOSから通知されない場合があります。"
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Czas minutnika jest przechowywany na tym iPadzie. Powiadomienie ma ogólną treść; jego nazwa nie pojawi się na Dynamic Island ani ekranie blokady. Gdy powiadomienia są wyłączone, odliczanie trwa, ale iOS może nie powiadomić o końcu."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Czas minutnika jest przechowywany na tym iPhonie. Powiadomienie ma ogólną treść; jego nazwa nie pojawi się na Dynamic Island ani ekranie blokady. Gdy powiadomienia są wyłączone, odliczanie trwa, ale iOS może nie powiadomić o końcu."
+                }
+              }
+            }
+          }
+        },
+        "pt-BR": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "O tempo do timer fica neste iPad. O alerta usa um texto genérico; o nome não aparece na Dynamic Island nem na Tela Bloqueada. Sem permissão para alertas, a contagem continua, mas o iOS talvez não avise."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "O tempo do timer fica neste iPhone. O alerta usa um texto genérico; o nome não aparece na Dynamic Island nem na Tela Bloqueada. Sem permissão para alertas, a contagem continua, mas o iOS talvez não avise."
+                }
+              }
+            }
+          }
+        },
+        "zh-Hans": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "计时信息保存在此 iPad 上。提醒只显示通用文字；灵动岛和锁定屏幕不会显示计时器名称。关闭提醒权限后，倒计时仍会继续，但 iOS 可能不会提醒你。"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "计时信息保存在此 iPhone 上。提醒只显示通用文字；灵动岛和锁定屏幕不会显示计时器名称。关闭提醒权限后，倒计时仍会继续，但 iOS 可能不会提醒你。"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Times are in this iPhone's time zone. Doddy checks the change the same way as its own suggestion.": {
       "extractionState": "manual",
       "localizations": {
@@ -82347,6 +84243,65 @@
           "stringUnit": {
             "state": "translated",
             "value": "等待你的回答"
+          }
+        }
+      }
+    },
+    "Waiting for your confirmation": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Warte auf deine Bestätigung"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esperando tu confirmación"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En attente de votre confirmation"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Čekam tvoju potvrdu"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In attesa della tua conferma"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "確認を待っています"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czekam na potwierdzenie"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aguardando sua confirmação"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "等待确认"
           }
         }
       }
@@ -90324,6 +92279,65 @@
           "stringUnit": {
             "state": "translated",
             "value": "iOS 会询问是否允许 Doddy 发送通知。通知绝不会显示你的笔记。"
+          }
+        }
+      }
+    },
+    "iPhone access": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iPhone-Zugriff"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acceso del iPhone"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accès de l’iPhone"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pristup iPhoneu"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accesso a iPhone"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iPhoneへのアクセス"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dostęp do iPhone’a"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acesso ao iPhone"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iPhone访问权限"
           }
         }
       }

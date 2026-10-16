@@ -7,6 +7,7 @@ Date: 2026-10-09. Owner request: "it opens app [with] double back tap, now live 
 - Compact island: face + hand on the left; on the right five voice bars (listening/speaking), three dots (thinking/connecting) or a symbol (mic-slash = muted, hand = confirm a note in the app, warning = lost).
 - Minimal (another activity is running): face + three bars or dots.
 - Long-press the island (expanded, the "big" one): "VOICE ● LIVE" and the time beside the camera; big Doddy with hand and arc, the status in 21 pt with a second line, **Mute/Unmute** and **Stop** pills, and the voice bars.
+- While a text draft waits for the user's action, the island says **Message draft ready** and offers **Review in Doddy**. Tapping it returns to the focused in-app review, where Doddy reads the recipient and exact draft aloud. The activity contains no recipient or message text. The user confirms before the system Messages composer opens and still taps Send there.
 - Lock Screen: the same, as a card that follows the phone's light/dark setting (paper in light, Night in dark). Muted: mic-slash, "Doddy can't hear you", Unmute is the main button, no orange. After End: a "Conversation ended" card with the notes you saved and the total time, removed after 2 minutes (ADR-106).
 - Tap the island to jump back into the app (e.g. to Save or Don't save a note Doddy proposed).
 - The island disappears the moment the conversation ends (End, Close, connection lost, failure). A stale one from a killed app is removed at the next launch.
@@ -17,6 +18,7 @@ Date: 2026-10-09. Owner request: "it opens app [with] double back tap, now live 
 |---|---|
 | Activity type + labels/symbols | `Shared/VoiceActivity/DoddyVoiceAttributes.swift` (app + extension) |
 | Mute / End buttons | `Shared/VoiceActivity/VoiceActivityIntents.swift`: `LiveActivityIntent`s; the app registers handlers in `VoiceSessionController.start`. On iOS 27+ they are pinned to the app process (`allowedExecutionTargets = .main`, ADR-128); the widget extension's copy has no handlers |
+| Review message draft | `DoddyWidgets/DoddyVoiceLiveActivity.swift` links to `doddy://message-draft`; `RootView` returns to the active controller's pending review, and the user confirms from the app before its existing Messages handoff. No draft text or contact is in the Activity. |
 | Island + Lock Screen UI | `DoddyWidgets/` widget extension (target `com.bienos.doddy2.dev.widgets`); art = owner-approved `UploadedDoddy_Listening` / `_Kept` / `_Sitting` (numbered ZIP poses, downscaled for the widget); light/dark colour sets in `DoddyWidgets/Assets.xcassets` (ADR-106) |
 | Start / update / end | `DoddyApp/Features/Voice/VoiceLiveActivity.swift`, driven by `didSet` on phase, mute and pending save in `VoiceSessionController` |
 | Background audio + Live Activities | `Config/Doddy-Info.plist` (`UIBackgroundModes: audio`, `NSSupportsLiveActivities`) |
@@ -116,6 +118,6 @@ is unknown until step 3.
 | Rule | What enforces it here | Tests run (Linux) | Gaps / claims to limit |
 |---|---|---|---|
 | DOD-08 verified_status_and_receipts | The island shows only states from SDK events; a stale date (90 s) and heartbeat (40 s) make it say "Lost Doddy" instead of "Listening" when the app is gone (ADR-055); "Conversation ended" carries the saved count from actual Save taps | None runnable on Linux (`IslandBaselineTests` need a simulator) | Not compiled; device behaviour unknown |
-| DOD-07 scoped_action_approval | Mute and End are the only island actions; both run the conversation's own handlers; nothing is saved or sent from the island; "Confirm in Doddy" sends the user to the on-screen card | — | — |
+| DOD-07 scoped_action_approval | Mute, End and Open draft are the island actions; Open draft only opens the pending text in Messages, where the user reviews and sends it; the Island does not send | — | — |
 | DOD-11 observable_privacy | No conversation text in the activity; the new log holds a bundle identifier and a yes/no only (`privacy: .public` on those two values, nothing else) | Guard PASS | Logs are readable in Console on a connected Mac; that is the point, and they contain nothing personal |
 | Honest capability claims (T35/T42) | This document and the ADR rows keep "unbuilt / not run"; the user-facing text in `VoiceView` already says iOS may stop Doddy in the background | — | Do not describe the island as working until step 3 above is recorded |

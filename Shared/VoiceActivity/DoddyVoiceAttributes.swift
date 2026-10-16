@@ -42,6 +42,8 @@ struct DoddyVoiceAttributes: ActivityAttributes {
         enum Moment: Codable, Hashable {
             /// "Save this note?" waits for the user's tap in the app.
             case noteWaiting
+            /// A text draft is ready. The Activity contains no recipient or message text.
+            case messageWaiting
             /// A note was written to the store (shown for a few seconds after it really saved).
             case noteSaved
             /// A plan card waits for the user's tap.
@@ -128,7 +130,10 @@ extension DoddyVoiceAttributes.ContentState {
         case .wakePaused: return "“Hey Doddy” paused"
         case .thinking: return "Thinking…"
         case .speaking: return "Speaking"
-        case .needsConfirmation: return "Confirm in Doddy"
+        case .needsConfirmation:
+            return moment == .messageWaiting
+                ? NSLocalizedString("Message draft ready", comment: "Dynamic Island status for a prepared text message")
+                : "Confirm in Doddy"
         case .ended: return "Conversation ended"
         #if DEBUG
         case .testFixture: return "Test activity"
@@ -146,7 +151,10 @@ extension DoddyVoiceAttributes.ContentState {
             case 1: return "Doddy isn't listening · 1 note saved"
             default: return "Doddy isn't listening · \(savedCount) notes saved"
             }
-        case .needsConfirmation: return "Open Doddy to Save or Don't save"
+        case .needsConfirmation:
+            return moment == .messageWaiting
+                ? NSLocalizedString("Tap Review in Doddy to hear and check this draft", comment: "Dynamic Island detail for a prepared text message")
+                : "Open Doddy to Save or Don't save"
         case .wakeListening: return "Listening on this iPhone for “Hey Doddy” only"
         case .wakePaused: return "Not listening right now"
         default: return nil
@@ -160,7 +168,7 @@ extension DoddyVoiceAttributes.ContentState {
         case .listening: return "waveform"
         case .thinking: return "ellipsis"
         case .speaking: return "speaker.wave.2.fill"
-        case .needsConfirmation: return "hand.tap.fill"
+        case .needsConfirmation: return moment == .messageWaiting ? "paperplane.fill" : "hand.tap.fill"
         case .ended: return "checkmark.circle"
         case .wakeListening: return "ear"
         case .wakePaused: return "pause.circle"

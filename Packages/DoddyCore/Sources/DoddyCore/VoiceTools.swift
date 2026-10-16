@@ -133,6 +133,12 @@ public struct MessageDraft: Equatable, Sendable {
     public let recipientName: String
     public let channel: MessageChannel
     public let body: String
+
+    public init(recipientName: String, channel: MessageChannel, body: String) {
+        self.recipientName = recipientName
+        self.channel = channel
+        self.body = body
+    }
 }
 
 /// What the agent is allowed to hear about an event: title and time only.

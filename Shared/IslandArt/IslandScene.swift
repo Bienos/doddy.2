@@ -157,7 +157,7 @@ extension DoddyVoiceAttributes.ContentState {
         if stale { return .facepalm }
         if let moment {
             switch moment {
-            case .noteWaiting, .reminderWaiting, .reminderAdding: return .reachingHigh
+            case .noteWaiting, .messageWaiting, .reminderWaiting, .reminderAdding: return .reachingHigh
             case .noteSaved, .reminderSet: return .fistpump
             case .planWaiting, .planRunning: return .tiptoe
             case .translating: return nil
@@ -258,6 +258,11 @@ extension DoddyVoiceAttributes.ContentState {
         case .noteWaiting:
             return scene(.thoughtPocket, 0, label: "NOTE", time: .elapsed, title: "Save this note?",
                          subtitle: "Open Doddy to Save or Don't save", compact: waiting, minimal: .none)
+        case .messageWaiting:
+            return scene(.storySpool, 0, label: "MESSAGE", time: .text("Draft"),
+                         title: NSLocalizedString("Message draft ready", comment: "Dynamic Island title for a prepared text message"),
+                         subtitle: NSLocalizedString("Tap Review in Doddy to hear and check this draft", comment: "Dynamic Island action hint for a prepared text message"),
+                         compact: .symbol("paperplane.fill", .accent), minimal: .none)
         case .noteSaved:
             return scene(.thoughtPocket, 1, label: "NOTE", time: .text("Saved"), title: "Note saved",
                          subtitle: "Kept in Doddy on this iPhone", compact: .check, minimal: .none)
@@ -323,6 +328,7 @@ extension DoddyToolAttributes {
         if state.isFinished || isStale { return .fistpump }
         if state.isPaused { return .crosslegged }
         switch kind {
+        case .timer: return .basketballDribble
         case .focus: return .basketballDribble
         case .breathing: return .onelegBalance
         case .readAloud: return .bellyReading
@@ -342,6 +348,20 @@ extension DoddyToolAttributes {
                         expandedSign: .none, compactSign: compact, minimalSign: minimal, minimalSignCentred: centred)
         }
         switch kind {
+        case .timer:
+            let cancelled = state.cancellationUnconfirmed == true
+            if over {
+                return scene(.tinyPromise, 0, label: "TIMER", time: .text("Done"), title: "Time's up",
+                             subtitle: NSLocalizedString("Time's up.", comment: "Kitchen timer finished status"),
+                             compact: .check, minimal: .check, centred: true)
+            }
+            let end = state.endsAt ?? now
+            let subtitle = cancelled
+                ? NSLocalizedString("Couldn't confirm cancellation", comment: "Kitchen timer Live Activity cancellation status")
+                : NSLocalizedString("Counting down", comment: "Kitchen timer Live Activity status")
+            return scene(.tinyPromise, 0, label: "TIMER", time: .countdown(end), title: NSLocalizedString("Timer", comment: "Kitchen timer Live Activity title"),
+                         bigTitle: .countdown(end), subtitle: subtitle,
+                         warning: cancelled, compact: .countdown(end), minimal: .countdown(end), centred: true)
         case .focus:
             let minutes = "\(Int((duration / 60).rounded())) min"
             if over {

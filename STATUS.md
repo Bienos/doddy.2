@@ -51,7 +51,7 @@ Merge one at a time, then rebuild and talk to Doddy before the next.
 - A native review of the eight new app languages and of all nine landing-page translations, which are live as drafts (`l10n/REVIEW_NOTES.md`).
 - "Hey Doddy" cannot work until the keyword file and a Picovoice key are in place (`docs/implementation/HEY_DODDY_STATUS.md`, "What is missing").
 - Whether notes sync between the Mac and the iPhone (today they never do).
-- The kitchen timer Live Activity.
+- Simulator/device verification of the kitchen timer Live Activity and notification presentation (implementation is in place; see `docs/implementation/KITCHEN_TIMER_LIVE_ACTIVITY_STATUS.md`).
 - A Pencil drawing canvas.
 - The Mac minimum macOS version.
 - The final icons.

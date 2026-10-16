@@ -587,7 +587,13 @@ final class DeviceConnections {
         await UNUserNotificationCenter.current().pendingNotificationRequests().compactMap { request in
             guard request.identifier.hasPrefix("doddy.timer.") else { return nil }
             if let seconds = request.content.userInfo["firesAt"] as? Double {
-                return PendingTimer(identifier: request.identifier, firesAt: Date(timeIntervalSince1970: seconds))
+                let startedAt = (request.content.userInfo["startedAt"] as? Double).map(Date.init(timeIntervalSince1970:))
+                let duration = request.content.userInfo["duration"] as? Double
+                return PendingTimer(
+                    identifier: request.identifier,
+                    firesAt: Date(timeIntervalSince1970: seconds),
+                    startedAt: startedAt,
+                    duration: duration)
             }
             guard let date = (request.trigger as? UNTimeIntervalNotificationTrigger)?.nextTriggerDate() else { return nil }
             return PendingTimer(identifier: request.identifier, firesAt: date)
@@ -599,12 +605,37 @@ final class DeviceConnections {
         let center = UNUserNotificationCenter.current()
         center.delegate = TimerBanners.shared
         let content = UNMutableNotificationContent()
-        content.title = "Timer done"
-        content.body = draft.label ?? "Your timer is done."
+        content.title = NSLocalizedString("Timer", comment: "Kitchen timer notification title")
+        // Timer labels can contain private conversation content. Keep system surfaces generic.
+        content.body = NSLocalizedString("Time's up.", comment: "Kitchen timer notification body")
         content.sound = .default
-        content.userInfo = ["firesAt": Date().addingTimeInterval(TimeInterval(draft.seconds)).timeIntervalSince1970]
+        let startedAt = Date()
+        let firesAt = startedAt.addingTimeInterval(TimeInterval(draft.seconds))
+        content.userInfo = [
+            "firesAt": firesAt.timeIntervalSince1970,
+            "startedAt": startedAt.timeIntervalSince1970,
+            "duration": TimeInterval(draft.seconds),
+        ]
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: TimeInterval(draft.seconds), repeats: false)
         try await center.add(UNNotificationRequest(identifier: identifier, content: content, trigger: trigger))
+    }
+
+    /// Cancels only this Doddy timer. Read-back confirms it is no longer pending or delivered.
+    func cancelTimer(identifier: String) async -> Bool {
+        guard identifier.hasPrefix("doddy.timer.") else { return false }
+        let center = UNUserNotificationCenter.current()
+        center.removePendingNotificationRequests(withIdentifiers: [identifier])
+        center.removeDeliveredNotifications(withIdentifiers: [identifier])
+        let stillPending = await center.pendingNotificationRequests().contains { $0.identifier == identifier }
+        let stillDelivered = await center.deliveredNotifications().contains { $0.request.identifier == identifier }
+        return !stillPending && !stillDelivered
+    }
+
+    func deliveredTimerIdentifiers() async -> [String] {
+        await UNUserNotificationCenter.current().deliveredNotifications().compactMap { notification in
+            let identifier = notification.request.identifier
+            return identifier.hasPrefix("doddy.timer.") ? identifier : nil
+        }
     }
 
     // MARK: Contacts
@@ -715,12 +746,13 @@ private final class OnceContinuation<Value: Sendable>: @unchecked Sendable {
     }
 }
 
-/// iOS hides notification banners for the app that is in front. This shows timer and nudge
-/// banners anyway, so they still ring while Doddy is open.
+/// iOS owns notification presentation. Timer alerts use an in-app completion state while Doddy
+/// is foregrounded; other notifications may request a native foreground banner.
 final class TimerBanners: NSObject, UNUserNotificationCenterDelegate, @unchecked Sendable {
     static let shared = TimerBanners()
 
     func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
+        if notification.request.identifier.hasPrefix("doddy.timer.") { return [.sound] }
         [.banner, .sound]
     }
 }

@@ -103,7 +103,7 @@ final class ToolLiveActivity {
     private func staleDate(for state: DoddyToolAttributes.ContentState) -> Date? {
         if state.isFinished || state.isPaused && kind != .readAloud { return nil }
         switch kind {
-        case .focus, .breathing: return state.endsAt
+        case .focus, .breathing, .timer: return state.endsAt
         case .readAloud: return Date().addingTimeInterval(Self.heartbeatStaleAfter)
         }
     }

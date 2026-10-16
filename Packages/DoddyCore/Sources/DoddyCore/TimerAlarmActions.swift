@@ -37,10 +37,15 @@ public enum TimerIdempotency {
 public struct PendingTimer: Equatable, Sendable {
     public let identifier: String
     public let firesAt: Date
+    /// Saved with newer Doddy timer requests so a Live Activity can be restored after relaunch.
+    public let startedAt: Date?
+    public let duration: TimeInterval?
 
-    public init(identifier: String, firesAt: Date) {
+    public init(identifier: String, firesAt: Date, startedAt: Date? = nil, duration: TimeInterval? = nil) {
         self.identifier = identifier
         self.firesAt = firesAt
+        self.startedAt = startedAt
+        self.duration = duration
     }
 }
 
@@ -213,19 +218,28 @@ extension ActionRetryDecision {
 }
 
 extension VoiceToolReply {
-    public static func timer(_ outcome: TimerStartOutcome, draft: TimerDraft, calendar: Calendar) -> String {
+    public static func timer(
+        _ outcome: TimerStartOutcome, draft: TimerDraft, calendar: Calendar,
+        alertsEnabled: Bool = true, liveActivitiesEnabled: Bool = true
+    ) -> String {
+        let confirmation: String
         switch outcome {
         case .started(let timer):
-            return timerAdded(draft, endsAt: timer.firesAt, calendar: calendar)
+            confirmation = timerAdded(draft, endsAt: timer.firesAt, calendar: calendar)
         case .alreadyRunning(let timer):
             let label = draft.label.map { " Its label:\n" + ToolData.block([quoted("Label", $0)]) } ?? ""
-            return "added: timer \(durationText(draft.seconds)), rings at \(localText(timer.firesAt, hasTime: true, calendar: calendar)).\(label)"
+            confirmation = "added: timer \(durationText(draft.seconds)), rings at \(localText(timer.firesAt, hasTime: true, calendar: calendar)).\(label)"
                 + "\nThat timer was already running from the earlier try, so Doddy did not start a second one."
         case .notStarted(let reason):
             return "failed: \(reason) Nothing was set."
         case .unknown:
             return "unknown: the iPhone didn't confirm the timer. It may not be running. Tell the user. If they ask to try again, call \(VoiceToolName.setTimer) again: Doddy checks for it first and will not start a second one."
         }
+        guard !alertsEnabled else { return confirmation }
+        let availability = liveActivitiesEnabled
+            ? " A Dynamic Island or Lock Screen countdown may appear if Live Activities are enabled for Doddy."
+            : " Live Activities are unavailable, so there is no island or Lock Screen countdown."
+        return confirmation + " iOS has not enabled timer alerts, so it may not alert you when this ends." + availability
     }
 
     public static func alarm(_ outcome: AlarmSetOutcome) -> String {

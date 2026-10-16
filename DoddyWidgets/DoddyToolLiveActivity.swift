@@ -31,7 +31,8 @@ struct DoddyToolLiveActivity: Widget {
             }
             DynamicIslandExpandedRegion(.bottom) {
                 IslandBottomView(scene: scene, startedAt: startedAt) {
-                    ToolButtons(kind: context.attributes.kind, state: context.state, scene: scene)
+                    ToolButtons(kind: context.attributes.kind, state: context.state, scene: scene,
+                                timerNotificationID: context.attributes.timerNotificationID)
                 }
                 .padding(.horizontal, 4)
             }
@@ -115,6 +116,7 @@ private struct ToolButtons: View {
     let kind: DoddyToolAttributes.Kind
     let state: DoddyToolAttributes.ContentState
     let scene: IslandScene
+    let timerNotificationID: String?
 
     private var over: Bool { state.isFinished || (!scene.live && !state.isPaused) }
 
@@ -127,17 +129,24 @@ private struct ToolButtons: View {
                                         systemImage: state.isPaused ? "play.fill" : "pause.fill",
                                         prominent: state.isPaused)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(IslandPillButtonStyle())
                 }
-                Button(intent: StopDoddyToolIntent(kind)) {
-                    IslandPillLabel(title: "Stop", systemImage: "stop.fill")
+                Button(intent: StopDoddyToolIntent(kind, timerNotificationID: timerNotificationID)) {
+                    IslandPillLabel(title: kind == .timer ? "Cancel" : "Stop", systemImage: kind == .timer ? "xmark" : "stop.fill")
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(IslandPillButtonStyle())
             } else {
-                Button(intent: StopDoddyToolIntent(kind)) {
-                    IslandPillLabel(title: "Dismiss", systemImage: "xmark")
+                if kind == .timer {
+                    Button(intent: DismissDoddyTimerIntent(timerNotificationID: timerNotificationID)) {
+                        IslandPillLabel(title: "Dismiss", systemImage: "xmark")
+                    }
+                    .buttonStyle(IslandPillButtonStyle())
+                } else {
+                    Button(intent: StopDoddyToolIntent(kind)) {
+                        IslandPillLabel(title: "Dismiss", systemImage: "xmark")
+                    }
+                    .buttonStyle(IslandPillButtonStyle())
                 }
-                .buttonStyle(.plain)
             }
         }
     }

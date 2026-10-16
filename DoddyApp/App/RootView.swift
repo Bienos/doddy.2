@@ -1,6 +1,7 @@
 import CoreSpotlight
 import DoddyCore
 import SwiftUI
+import Combine
 
 enum PreferenceKey {
     /// Off by default (owner decision D4): note reminders never carry the note text unless turned on.
@@ -100,6 +101,11 @@ struct RootView: View {
     @State private var selectedTab: AppTab = .home
     @State private var showFind = false
     @State private var homePath: [UUID] = []
+    /// Root ownership keeps a Home-started voice session alive while tabs or iPad destinations change.
+    @State private var homeVoiceController: VoiceSessionController?
+    @State private var homeVoiceStarting = false
+    @State private var homeTranscriptController: VoiceSessionController?
+    @State private var voicePresentedFromHome = false
     @Environment(NoteReminderStore.self) private var noteReminders
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.openURL) private var openURL
@@ -115,6 +121,7 @@ struct RootView: View {
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideArt = false
     /// The Face ID cover is up (ADR-310); it stays briefly after an unlock for the door (ADR-380).
     @State private var lockCovered = false
+    @State private var showKitchenTimerFinished = false
 
     private var colorScheme: ColorScheme? {
         switch AppearancePreference(rawValue: appearanceRaw) ?? .system {
@@ -143,6 +150,14 @@ struct RootView: View {
             // The Face ID lock (ADR-310) covers everything until iOS says yes.
             // After a real unlock the cover stays up a moment while Doddy's door opens (ADR-380).
             .overlay { if AppLock.shared.isLocked || lockCovered { AppLockView(skip: { lockCovered = false }) } }
+            .alert("Time's up", isPresented: $showKitchenTimerFinished) {
+                Button("Done", role: .cancel) { }
+            } message: {
+                Text("Time's up.")
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .doddyKitchenTimerFinished)) { _ in
+                showKitchenTimerFinished = true
+            }
             .onAppear { lockCovered = AppLock.shared.isLocked }
             .onChange(of: AppLock.shared.isLocked) { _, locked in
                 guard !locked else { lockCovered = true; return }
@@ -163,6 +178,7 @@ struct RootView: View {
                     Task { await noteReminders.refreshOnForeground() }
                     FocusController.shared.refresh()
                     BreathingController.shared.refresh()
+                    Task { await KitchenTimerActivities.shared.reconcile() }
                     // Shared lists (ADR-263): changes others made arrive when Doddy comes to the front.
                     Task { await SharedListsController.shared.syncAll() }
                     // Memory on calls: a copy upload that failed or was cut off is sent again.
@@ -266,6 +282,24 @@ struct RootView: View {
                 || router.shownDraft != nil || router.findRequest != nil)
     }
 
+    private var voiceControllerForPresentation: VoiceSessionController? {
+        if voicePresentedFromHome { return homeTranscriptController }
+        if homeVoiceStarting { return homeVoiceController }
+        return homeVoiceController?.isLive == true ? homeVoiceController : nil
+    }
+
+    private func openHomeTranscript(_ controller: VoiceSessionController) {
+        homeTranscriptController = controller
+        voicePresentedFromHome = true
+        router.isVoicePresented = true
+    }
+
+    private func dismissVoicePresentation() {
+        voicePresentedFromHome = false
+        homeTranscriptController = nil
+        router.showWaitingDraft()
+    }
+
     private var tabs: some View {
         ZStack {
             tabContent
@@ -286,7 +320,10 @@ struct RootView: View {
         // One presentation point for the conversation, so a shortcut invocation while it is
         // open focuses it instead of starting a second one.
         // Waiting drafts appear only once a cover or sheet has finished going away.
-        .fullScreenCover(isPresented: $router.isVoicePresented, onDismiss: { router.showWaitingDraft() }) { VoiceView() }
+        .fullScreenCover(isPresented: $router.isVoicePresented, onDismiss: dismissVoicePresentation) {
+            VoiceView(controller: voiceControllerForPresentation,
+                      keepsConversationAlive: voicePresentedFromHome)
+        }
         .sheet(isPresented: $router.isSetupPresented, onDismiss: { router.showWaitingDraft() }) {
             BackTapSetupView(model: router.setup)
         }
@@ -336,7 +373,7 @@ struct RootView: View {
             homePath = [memoryID]
         }
         .onOpenURL { url in
-            // doddy://home | memories | settings — navigation only; unknown links are ignored.
+            // doddy://home | memories | settings — navigation; unknown links are ignored.
             // doddy://open/<id> from a widget opens that note or list on Home (ADR-219).
             if let memoryID = WidgetLink.memoryID(from: url) {
                 selectedTab = .home
@@ -348,6 +385,11 @@ struct RootView: View {
             case .home: selectedTab = .home
             case .memories: selectedTab = .memories
             case .settings: selectedTab = .settings
+            case .messageDraft:
+                // A user chose Review in Doddy from the Live Activity. The active controller
+                // keeps the payload in app memory and presents the same spoken review card.
+                selectedTab = .home
+                Task { await VoiceSessionController.current?.openPendingMessageFromLiveActivity() }
             // The parking widget (ADR-315): the saved spot in Maps. No spot, nothing opens.
             case .parking:
                 if let spot = ParkingStore.current(), let maps = Parking.mapsURL(spot) { openURL(maps) }
@@ -373,7 +415,9 @@ struct RootView: View {
         } else {
             VStack(spacing: 0) {
                 TabView(selection: $selectedTab) {
-                    HomeView(selectedTab: $selectedTab, showFind: $showFind, path: $homePath)
+                    HomeView(selectedTab: $selectedTab, showFind: $showFind, path: $homePath,
+                             voiceController: $homeVoiceController, voiceStarting: $homeVoiceStarting,
+                             openVoiceTranscript: openHomeTranscript)
                         .tabItem { Label("Home", systemImage: "house") }
                         .tag(AppTab.home)
                     MemoriesView(showFind: $showFind)
@@ -403,7 +447,10 @@ struct RootView: View {
     /// relaunch.
     @ViewBuilder private var selectedScreen: some View {
         switch selectedTab {
-        case .home: HomeView(selectedTab: $selectedTab, showFind: $showFind, path: $homePath)
+        case .home:
+            HomeView(selectedTab: $selectedTab, showFind: $showFind, path: $homePath,
+                     voiceController: $homeVoiceController, voiceStarting: $homeVoiceStarting,
+                     openVoiceTranscript: openHomeTranscript)
         case .memories: MemoriesView(showFind: $showFind)
         case .settings: SettingsView()
         }

@@ -184,6 +184,11 @@ final class TimerAlarmActionsTests: XCTestCase {
         let running = VoiceToolReply.timer(.alreadyRunning(timer), draft: eggs, calendar: calendar)
         XCTAssertEqual(outcome(running), .alreadyThere)
         XCTAssertEqual(running, "added: timer 10 minutes, rings at 2026-10-10 12:10. Its label:\n<<<DATA\nLabel: \"Eggs\"\nDATA>>>\nThat timer was already running from the earlier try, so Doddy did not start a second one.")
+        let noAlerts = VoiceToolReply.timer(
+            .started(timer), draft: eggs, calendar: calendar,
+            alertsEnabled: false, liveActivitiesEnabled: false)
+        XCTAssertTrue(noAlerts.contains("iOS has not enabled timer alerts"))
+        XCTAssertTrue(noAlerts.contains("there is no island or Lock Screen countdown"))
         XCTAssertEqual(outcome(VoiceToolReply.timer(.unknown, draft: eggs, calendar: calendar)), .notSure)
         XCTAssertEqual(outcome(VoiceToolReply.timer(.notStarted("x."), draft: eggs, calendar: calendar)), .notDone)
 

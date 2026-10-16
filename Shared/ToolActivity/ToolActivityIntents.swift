@@ -13,6 +13,7 @@ final class ToolActivityActions {
 
     var togglePause: [DoddyToolAttributes.Kind: @MainActor () async -> Void] = [:]
     var stop: [DoddyToolAttributes.Kind: @MainActor () async -> Void] = [:]
+    var cancelTimer: (@MainActor (String) async -> Bool)?
 }
 
 /// "Pause" / "Resume" on the focus or read-aloud island.
@@ -27,8 +28,12 @@ struct ToggleDoddyToolPauseIntent: LiveActivityIntent {
 
     @Parameter(title: "Tool") var kind: String
 
-    init() { kind = DoddyToolAttributes.Kind.focus.rawValue }
-    init(_ kind: DoddyToolAttributes.Kind) { self.kind = kind.rawValue }
+    init() {
+        kind = DoddyToolAttributes.Kind.focus.rawValue
+    }
+    init(_ kind: DoddyToolAttributes.Kind) {
+        self.kind = kind.rawValue
+    }
 
     @MainActor
     func perform() async throws -> some IntentResult {
@@ -51,19 +56,69 @@ struct StopDoddyToolIntent: LiveActivityIntent {
     #endif
 
     @Parameter(title: "Tool") var kind: String
+    @Parameter(title: "Timer notification") var timerNotificationID: String?
 
-    init() { kind = DoddyToolAttributes.Kind.focus.rawValue }
-    init(_ kind: DoddyToolAttributes.Kind) { self.kind = kind.rawValue }
+    init() {
+        kind = DoddyToolAttributes.Kind.focus.rawValue
+        timerNotificationID = nil
+    }
+    init(_ kind: DoddyToolAttributes.Kind, timerNotificationID: String? = nil) {
+        self.kind = kind.rawValue
+        self.timerNotificationID = timerNotificationID
+    }
 
     @MainActor
     func perform() async throws -> some IntentResult {
         guard let kind = DoddyToolAttributes.Kind(rawValue: kind) else { return .result() }
+        if kind == .timer {
+            guard let timerNotificationID,
+                  let cancelTimer = ToolActivityActions.shared.cancelTimer else {
+                await markTimerCancellationUnconfirmed()
+                return .result()
+            }
+            if !(await cancelTimer(timerNotificationID)) { await markTimerCancellationUnconfirmed() }
+            return .result()
+        }
         if let stop = ToolActivityActions.shared.stop[kind] {
             await stop()
         } else {
             for activity in Activity<DoddyToolAttributes>.activities where activity.attributes.kind == kind {
                 await activity.end(nil, dismissalPolicy: .immediate)
             }
+        }
+        return .result()
+    }
+
+    @MainActor
+    private func markTimerCancellationUnconfirmed() async {
+        guard let timerNotificationID else { return }
+        for activity in Activity<DoddyToolAttributes>.activities
+            where activity.attributes.kind == .timer && activity.attributes.timerNotificationID == timerNotificationID {
+            var state = activity.content.state
+            state.cancellationUnconfirmed = true
+            await activity.update(ActivityContent(state: state, staleDate: state.endsAt))
+        }
+    }
+}
+
+/// Dismisses a completed or stale timer without trying to cancel an alert that may already have
+/// fired or implying the timer stopped early.
+struct DismissDoddyTimerIntent: LiveActivityIntent {
+    static let title: LocalizedStringResource = "Dismiss timer"
+    static let isDiscoverable = false
+
+    @Parameter(title: "Timer notification") var timerNotificationID: String?
+
+    init() { timerNotificationID = nil }
+    init(timerNotificationID: String?) { self.timerNotificationID = timerNotificationID }
+
+    @MainActor
+    func perform() async throws -> some IntentResult {
+        guard let timerNotificationID else { return .result() }
+        for activity in Activity<DoddyToolAttributes>.activities
+            where activity.attributes.kind == .timer
+                && activity.attributes.timerNotificationID == timerNotificationID {
+            await activity.end(nil, dismissalPolicy: .immediate)
         }
         return .result()
     }

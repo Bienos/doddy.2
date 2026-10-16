@@ -2,10 +2,11 @@ import SwiftUI
 
 /// Doddy on the voice screen (ADR-299): the same Whole Doddy pose as the island for what is
 /// happening, and while he speaks the pack's talking frames in turn. Since ADR-313 he walks in
-/// while connecting and runs while a plan's steps run. The frames only follow
-/// the conversation's "speaking" state; they are not synced to the audio. With Reduce Motion
-/// the first frame stays still and poses swap without a fade. Decorative: the status text
-/// beside him says the same thing. Hidden with "Hide Doddy's pictures".
+/// while connecting and runs while a plan's steps run. Talking frames run only while provider audio
+/// or the local message read-back is actually playing; neither provider exposes viseme timing, so
+/// exact lip sync for generated conversation audio is unavailable. With Reduce Motion the first
+/// frame stays still and poses swap without a fade.
+/// Hidden with "Hide Doddy's pictures".
 struct VoiceDoddyView: View {
     let art: VoiceScreenArt
     var height: CGFloat = 96
@@ -50,4 +51,27 @@ struct VoiceDoddyView: View {
             }
         }
     }
+}
+
+/// Maps the live provider state to the same character pose on Home and in the transcript screen.
+@MainActor
+func voiceScreenArt(for controller: VoiceSessionController) -> VoiceScreenArt {
+    let phase: VoiceScreenArt.Phase
+    if controller.isReadingMessageDraft {
+        phase = .speaking
+    } else {
+        phase = switch controller.phase {
+        case .idle, .connecting: .connecting
+        case .listening: .listening
+        case .thinking: .thinking
+        case .speaking: .speaking
+        case .ended: .ended
+        case .microphoneDenied: .microphoneOff
+        case .failed: .failed
+        }
+    }
+    let planRunning = controller.planStatus.map { $0.isRunning && !$0.steps.isEmpty } ?? false
+    return .shown(phase, muted: controller.isMuted && controller.isLive,
+                  awaitingConfirmation: controller.pendingAction != nil && !controller.isReadingMessageDraft,
+                  planRunning: planRunning)
 }

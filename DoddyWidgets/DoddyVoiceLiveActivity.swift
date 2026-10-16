@@ -1,5 +1,6 @@
 import ActivityKit
 import AppIntents
+import DoddyCore
 import SwiftUI
 import WidgetKit
 
@@ -139,19 +140,27 @@ private struct IslandControls: View {
                                     systemImage: shown.state.isMuted ? "mic.fill" : "mic.slash.fill",
                                     prominent: shown.state.isMuted)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(IslandPillButtonStyle())
             }
-            // Opens the app's home screen (doddy://home, as the Lock Screen's "Open Doddy" does).
-            // Always offered: on a stale island it is the way back to Doddy.
-            Link(destination: URL(string: "doddy://home")!) {
-                IslandPillLabel(title: "Open", systemImage: "arrow.up.forward.app")
+            if !shown.isStale, !shown.state.isEnded, shown.state.moment == .messageWaiting {
+                // The app resolves the payload from its live pending action. No private message
+                // text or contact details are stored in Live Activity content.
+                Link(destination: DeepLink.messageDraft.url) {
+                    IslandPillLabel(title: "Review in Doddy", systemImage: "text.bubble", prominent: true)
+                }
+                .buttonStyle(IslandPillButtonStyle())
+            } else {
+                // Opens the app's home screen. Always offered: on a stale island it is the way back.
+                Link(destination: URL(string: "doddy://home")!) {
+                    IslandPillLabel(title: "Open", systemImage: "arrow.up.forward.app")
+                }
+                .buttonStyle(IslandPillButtonStyle())
             }
-            .buttonStyle(.plain)
             Button(intent: EndDoddyConversationIntent()) {
                 IslandPillLabel(title: shown.isStale ? "Dismiss" : (shown.state.isWakeMode ? "Stop listening" : "Stop"),
                                 systemImage: shown.isStale ? "xmark" : "stop.fill")
             }
-            .buttonStyle(.plain)
+            .buttonStyle(IslandPillButtonStyle())
         }
     }
 }
@@ -161,6 +170,15 @@ private struct Controls: View {
 
     var body: some View {
         HStack(spacing: 10) {
+            if !shown.isStale, !shown.state.isEnded, shown.state.moment == .messageWaiting {
+                Link(destination: DeepLink.messageDraft.url) {
+                    Label("Review in Doddy", systemImage: "text.bubble")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Palette.ink)
+                .foregroundStyle(Palette.card)
+            }
             // Mute needs the conversation's process; a stale island has none to talk to.
             // "Hey Doddy" listening has nothing to mute: Stop listening turns it off.
             if !shown.isStale && !shown.state.isWakeMode {

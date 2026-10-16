@@ -267,12 +267,29 @@ struct IslandPillLabel: View {
     }
 }
 
+/// A short, visible press response for controls in an active Dynamic Island or its Lock Screen card.
+/// State changes still come only from the existing Live Activity intents and confirmed model updates.
+struct IslandPillButtonStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            // Keep the supplied 34 pt pill artwork while giving its interactive region a 44 pt target.
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
+            .opacity(configuration.isPressed ? 0.78 : 1)
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.97 : 1)
+            .animation(reduceMotion ? nil : .spring(duration: 0.16, bounce: 0), value: configuration.isPressed)
+    }
+}
+
 /// The expanded island under the camera: the board's drawing, status, buttons and sign.
 /// Editorial is typography-led: big status on the left, small Doddy and buttons on the right.
 struct IslandBottomView<Controls: View>: View {
     let scene: IslandScene
     let startedAt: Date
     @ViewBuilder let controls: () -> Controls
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         if scene.board == .editorial {
@@ -280,6 +297,7 @@ struct IslandBottomView<Controls: View>: View {
         } else {
             standard
         }
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.16), value: scene.title)
     }
 
     @ViewBuilder
@@ -299,14 +317,17 @@ struct IslandBottomView<Controls: View>: View {
                 .foregroundStyle(Color.islandCream)
                 .lineLimit(1)
                 .accessibilityLabel(scene.title)
+                .contentTransition(.opacity)
         case .text(let text):
             Text(text).font(.system(size: 21, weight: .medium)).foregroundStyle(Color.islandCream).lineLimit(1)
+                .contentTransition(.opacity)
         case nil:
             Text(scene.title)
                 .font(.system(size: 21, weight: .medium))
                 .foregroundStyle(Color.islandCream)
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
+                .contentTransition(.opacity)
         }
     }
 
@@ -316,6 +337,7 @@ struct IslandBottomView<Controls: View>: View {
             .foregroundStyle(scene.subtitleIsWarning ? Color.yellow : Color.islandSecondary)
             .lineLimit(1)
             .minimumScaleFactor(0.8)
+            .contentTransition(.opacity)
     }
 
     private var standard: some View {

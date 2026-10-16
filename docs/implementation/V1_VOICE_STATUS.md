@@ -1,6 +1,14 @@
 # V1 status — voice inside the app (ElevenLabs Agents)
 Date: 2026-10-08. Updated 2026-10-09 after a read-only live check of the ElevenLabs agent, when the Connections functions were built, and when timers, maps, Shortcuts and drafted messages were added to the agent. Owner instruction: build with ElevenLabs (owner has the Creator plan).
 
+## 2026-10-16 message review and voice confirmation
+- Existing text-message drafts now use a focused editable review card shared by Home and the voice screen. The card shows the selected recipient and address, lets the owner edit the body, and offers **Open in Messages** and **Cancel**. Editing restarts the read-back for the changed text.
+- Before opening Messages, `MessageReadBack` uses the iOS on-device speech synthesizer to read the recipient, exact current draft, and confirmation prompt. The existing authorized voice session is briefly muted during that local read-back to avoid feeding the speaker back into the microphone. Exact localized “open it” / cancel phrases from provider transcript events are accepted only after the utterance finishes and the live microphone is restored. The card buttons remain the visual path when speech input is unavailable. Messages still opens a draft and the user must tap Send.
+- Home and Voice show read-back, listening/muted, permission/connection, and unavailable states. The character animation follows actual speaking state, including local read-back; the voice provider exposes no viseme/audio-level signal, so precise mouth-to-phoneme synchronization is unavailable. Live Activity contains no draft payload and links back into Doddy's review.
+- Connections explains that iOS exposes no Messages permission or API for sending/reading messages; Doddy only hands the draft to Messages. Contacts continues to reflect the existing OS permission.
+- Validation: `PATH=/workspace/setup-tools/doddy:$PATH TMPDIR=/workspace/.cache/doddy/tmp scripts/ci.sh --core-only` — PASS for core-only scope; Swift package tests and app-logic type-check passed. Database tests were skipped because `TEST_DATABASE_URL` was unset. The script explicitly did not run an iOS app build. No macOS/Xcode simulator was available, so UI compilation, spoken interaction, and device permission behavior remain unverified.
+- Limitation/owner choice: read-back uses the iOS system voice rather than the configured ElevenLabs voice. No verified provider viseme signal exists to synchronize Doddy's mouth with phonemes.
+
 ## ElevenLabs setup (live state after the 2026-10-09 update)
 | Item | Value |
 |---|---|
@@ -34,7 +42,8 @@ Date: 2026-10-08. Updated 2026-10-09 after a read-only live check of the ElevenL
 A function that is off, or whose iOS permission is refused, returns "isn't connected" to the agent, which tells the user to turn it on in Settings, Connections. During a call, a card offers to turn it on.
 
 ## App
-- Home → **Talk to Doddy** opens `VoiceView`. It ends when the screen closes; since V3 it keeps running in the background with a Dynamic Island (`V3_ISLAND_STATUS.md`), so opening Maps, Shortcuts, Messages or Mail no longer has to end it (not yet checked on a device).
+- Home → **Talk to Doddy** starts the existing `VoiceSessionController` while Home stays visible. Home shows provider-backed conversation status, the latest provider transcript, and Doddy's existing talking frames while the provider reports speech. **Transcript** opens the existing `VoiceView` on an explicit tap; dismissing that transcript keeps a Home-started conversation active. Home also offers Mute and End. Shortcuts still open the conversation screen and focus a live Home session rather than starting a duplicate.
+- The talking frames follow the provider's speaking state; neither current provider interface exposes output audio levels or viseme timing, so this is not phoneme-level lip sync. The Home host and transcript presentation passed Linux syntax parsing, but have not been type-checked in Xcode or exercised on a simulator/device.
 - `VoiceSessionController` uses the ElevenLabs Swift SDK 3.3.1 (`ElevenLabs.startConversation(agentId:…)`). Status (connecting, listening, thinking, speaking, ended) comes from real SDK events.
 - `search_memories` runs the local SQLite recall and returns only stored text (`VoiceToolReply.search`).
 - One card at a time: a note, event, reminder, timer, map, Shortcut or draft waits for its tap. A second proposal while one waits is refused, so every tool call still gets an answer. While a card waits, the Dynamic Island says "Confirm in Doddy".

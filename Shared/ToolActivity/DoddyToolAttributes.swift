@@ -1,14 +1,12 @@
 import ActivityKit
 import Foundation
 
-/// The Live Activity for Doddy's small tools: the focus timer (ADR-241), breathing (ADR-242)
-/// and reading a note aloud (ADR-243). One type with a `kind`, so the island, the Pause and
-/// Stop buttons and the clean-up are shared. Compiled into the app, which starts, updates and
-/// ends it, and into the widget extension, which draws it. It carries no note text; the focus
-/// line is only what the user typed for it, knowing it shows on the Lock Screen.
+/// The Live Activity for Doddy's small tools: the kitchen timer, focus timer (ADR-241),
+/// breathing (ADR-242) and reading a note aloud (ADR-243). One type with a `kind`, so the island,
+/// controls and renderer are shared. It carries no private note, transcript or timer label.
 struct DoddyToolAttributes: ActivityAttributes {
     enum Kind: String, Codable, Hashable {
-        case focus, breathing, readAloud
+        case timer, focus, breathing, readAloud
     }
 
     struct ContentState: Codable, Hashable {
@@ -21,6 +19,8 @@ struct DoddyToolAttributes: ActivityAttributes {
         var label: String?
         /// The time ran out, the exercise ended or the note was read to the end.
         var isFinished = false
+        /// A failed stop read-back must never make the island claim the timer was cancelled.
+        var cancellationUnconfirmed: Bool? = nil
         /// The island style picked in Settings when this was sent (ADR-299): with Whole Doddy the
         /// read-aloud island shows his reading pose. Nil from older builds: the board's art.
         var islandStyle: IslandStyle?
@@ -30,4 +30,6 @@ struct DoddyToolAttributes: ActivityAttributes {
     var startedAt: Date
     /// Focus and breathing: the length chosen.
     var duration: TimeInterval
+    /// Local notification id is a non-content identifier used to cancel one exact timer.
+    var timerNotificationID: String? = nil
 }

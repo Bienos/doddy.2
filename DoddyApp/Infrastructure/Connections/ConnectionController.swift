@@ -44,7 +44,9 @@ final class ConnectionController {
         }
         let access = await devices.request(connection)
         if connection == .timers { notificationAccess = access }
-        store(connection, access == .granted)
+        // Turning on Timers also enables its on-device countdown. Notification access controls
+        // the alert only; a denied alert permission must not disable the timer itself.
+        store(connection, connection == .timers || access == .granted)
         return access
     }
 
