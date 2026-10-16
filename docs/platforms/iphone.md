@@ -15,6 +15,7 @@
   - The app sends dynamic variables at start (notes, lists, profile, `learned_context`, opening line). A variable the live prompt requires but the app doesn't send stops the call before it starts.
 - **Providers:** ElevenLabs (default) or OpenAI Realtime, as a test switch on Home (ADR-265). `docs/implementation/VOICE_PROVIDER_TEST_STATUS.md`.
 - **Status docs:** `V1_VOICE_STATUS`, `V3_ISLAND_STATUS` (Dynamic Island), `HEY_DODDY_STATUS`, `OPENING_SCENE_STATUS` (the intro and listen-on-open).
+- **Requested follow-up gaps:** `docs/implementation/IOS_NEXT_FEATURES_STATUS.md` (kitchen timer Live Activity, wake-word setup, no-code voice setup, and notes sync).
 - **To debug a voice problem,** look at the ElevenLabs conversation log for the agent first:
   - no conversation at all means the app failed before connecting;
   - a conversation with no messages means the session started without its start data.
