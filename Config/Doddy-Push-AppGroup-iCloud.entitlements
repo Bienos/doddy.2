@@ -3,6 +3,8 @@
 <!-- Doddy app with push (ADR-142), the widgets' App Group (ADR-219) and iCloud for shared lists (ADR-263). Needs a paid team; use with DODDY_CLOUD_CONTAINER. -->
 <plist version="1.0">
 <dict>
+	<key>com.apple.developer.applesignin</key>
+	<array><string>Default</string></array>
 	<key>aps-environment</key>
 	<string>development</string>
 	<key>com.apple.security.application-groups</key>

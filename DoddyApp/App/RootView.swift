@@ -24,6 +24,8 @@ enum PreferenceKey {
     static let islandStyle = "islandStyle"
     /// Settings → Appearance: the basketball opening each time the app is opened (ADR-225). On unless turned off.
     static let openingScene = "openingScene"
+    /// The one-time basketball introduction has been shown or skipped on this installation.
+    static let firstLaunchIntroSeen = "firstLaunchIntroSeen"
     /// Settings → Voice: open the conversation by itself when the app is opened (ADR-225). On unless turned off.
     static let listenOnOpen = "listenOnOpen"
     static let voiceAgentID = "voiceAgentID"
@@ -186,7 +188,7 @@ struct RootView: View {
                 case .background: WakeWordListener.shared.appWentToBackground()
                 default: break
                 }
-                // The opening plays again only after a real time away (OpeningPolicy.replayAfter).
+                // On later returns, only the separately opted-in listen-on-open preference applies.
                 switch phase {
                 case .background: opening.appWentToBackground()
                 case .active: opening.appBecameActive(openingConditions)
@@ -217,7 +219,7 @@ struct RootView: View {
                 guard store.hasLoaded, store.loadError == nil else { return }
                 MemoryCopySync.shared.schedule(PrivateNotesStore.current().shareable(store.memories))
             }
-            .fullScreenCover(isPresented: .constant(profiles.route != .home)) {
+            .fullScreenCover(isPresented: introductionPresentation) {
                 OnboardingFlowView()
                     .preferredColorScheme(colorScheme)
             }
@@ -263,7 +265,18 @@ struct RootView: View {
             voiceAvailable: store.environment.capabilities.isAvailable(.voiceInput),
             microphoneAllowed: MicrophoneAccess.isAllowed,
             somethingIsOpen: router.isVoicePresented || router.isSetupPresented
-                || router.shownDraft != nil || router.findRequest != nil)
+                || router.shownDraft != nil || router.findRequest != nil,
+            firstLaunchIntroPending: profiles.isFirstInstallation
+                && !OpeningPreferences.firstLaunchIntroSeen())
+    }
+
+    private var introductionPresentation: Binding<Bool> {
+        Binding(
+            get: { profiles.isIntroductionPresented },
+            set: { presented in
+                guard !presented, profiles.isIntroductionPresented else { return }
+                Task { await profiles.finishIntroduction(saved: false) }
+            })
     }
 
     private var tabs: some View {

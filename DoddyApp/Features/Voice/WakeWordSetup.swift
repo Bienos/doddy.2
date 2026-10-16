@@ -141,7 +141,7 @@ enum WakeKeywordStore {
 }
 
 /// "Hey Doddy" with one tap (ADR-328): the owner's Picovoice key comes from Doddy's token server,
-/// with the same access code as a conversation, and the keyword file is in the app. A user who
+/// with the same DODDY voice session as a conversation, and the keyword file is in the app. A user who
 /// saved their own key and file keeps using those.
 enum WakeOneTapSetup {
     /// One tap is enough: a keyword file is here, and a key is here or can come from the server.
@@ -167,13 +167,10 @@ enum WakeOneTapSetup {
         }
     }
 
-    /// The token server and access code from Settings → Voice, when both are set.
+    /// The fixed DODDY server; credential retrieval uses the saved voice session.
     private static var client: VoiceTokenClient? {
-        let mode = VoiceConnectionMode.resolve(
-            serverAddress: UserDefaults.standard.string(forKey: PreferenceKey.voiceTokenServer) ?? "",
-            accessCode: VoiceAccessCodeStore.read(), publicAgentID: "")
-        guard case .tokenServer(let endpoint, let accessCode) = mode else { return nil }
-        return VoiceTokenClient(endpoint: endpoint, accessCode: accessCode)
+        guard let endpoint = VoiceConfig.tokenEndpoint else { return nil }
+        return VoiceTokenClient(endpoint: endpoint)
     }
 }
 

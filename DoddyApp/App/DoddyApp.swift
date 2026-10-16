@@ -3,8 +3,8 @@ import SwiftUI
 
 /// DODDY V2. Local text memory (M1) and the reviewed profile, voice with the ElevenLabs agent (V1),
 /// the Talk to Doddy shortcut and Back Tap guide (V2) and the conversation's Dynamic Island (V3).
-/// No sign-in: the optional messaging server (notifications, texts, calls, news) uses an anonymous
-/// device account.
+/// Apple sign-in is optional for local notes and required only for voice; the optional messaging
+/// server (notifications, texts, calls, news) uses a separate anonymous device account.
 @main
 struct DoddyApp: App {
     /// APNs device-token callbacks for Doddy's notifications (server/messaging).
@@ -16,6 +16,7 @@ struct DoddyApp: App {
     init() {
         // The screens' language is read when the app starts: English unless the person picked another (ADR-459).
         AppLanguageStore.applyAtLaunch()
+        VoiceSessionKeychain.removeLegacySetup()
         // Before anything reads them: a fresh install doesn't pick up an earlier install's server tokens.
         ServerKeychainStore.clearLeftoversOnFreshInstall()
         let environment = AppEnvironment.shared

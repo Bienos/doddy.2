@@ -184,6 +184,11 @@ struct HomeView: View {
                         }
                         .modifier(SlideIn(shown: buttonsShown, delay: 0.14))
                     }
+
+                    if profiles.shouldOfferIntroduction {
+                        getToKnowCard
+                    }
+
                     Text("Only the things you choose to save.")
                         .font(.caption).foregroundStyle(Theme.secondaryText)
                         .frame(maxWidth: .infinity)
@@ -265,6 +270,51 @@ struct HomeView: View {
     private var breatheAction: some View {
         Button { tool = .breathe } label: { HomeActionTile(title: "Breathe", icon: "wind") }
             .buttonStyle(.plain).accessibilityIdentifier("home.breathe")
+    }
+
+    /// A small, dismissible invitation. It never blocks Home or starts voice, and the answer
+    /// flow opens only after the user taps it.
+    private var getToKnowCard: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Button {
+                Task { await profiles.reopenIntroduction() }
+            } label: {
+                VStack(alignment: .leading, spacing: 9) {
+                    Label("Let's get to know each other", systemImage: "bubble.left.and.bubble.right")
+                        .font(.headline)
+                        .multilineTextAlignment(.leading)
+                    Text("Two quick questions. Skip either one. Change your answers anytime.")
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.secondaryText)
+                        .multilineTextAlignment(.leading)
+                    if let problem = profiles.progressSaveProblem {
+                        Text(problem)
+                            .font(.footnote)
+                            .foregroundStyle(Theme.error)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityHint("Choose what Doddy calls you and how he should respond. You can skip or edit later.")
+            .accessibilityIdentifier("home.getToKnow")
+
+            Button {
+                Task { await profiles.finishIntroduction(saved: false) }
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Theme.secondaryText)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Not now")
+            .accessibilityIdentifier("home.getToKnow.dismiss")
+        }
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
     }
 
     private var findAction: some View {

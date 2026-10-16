@@ -165,8 +165,9 @@ public enum DataFlow {
                 note: "Doddy keeps only the place you pick. iOS watches it on this iPhone; Doddy doesn't follow where you go."),
             DataFlowRow(
                 id: "tokenServer", destination: "Voice token server",
-                what: "Your access code.", when: "When a conversation starts, and once when you turn on \"Hey Doddy\" without a key of your own (to get its key).", isActive: state.tokenServerSet,
-                note: state.tokenServerSet ? nil : "No token server is set, so nothing goes there."),
+                what: "A short-lived DODDY session credential and the selected voice provider/model. Apple sign-in is verified here to create your account; the session authorizes voice access. No voice, transcript, notes or profile details are sent to this server for token requests.",
+                when: "When you sign in or refresh your session, and when a conversation or wake-word setup requests a provider connection credential.", isActive: state.tokenServerSet,
+                note: state.tokenServerSet ? "Provider credentials stay on DODDY's server. Your voice and any approved conversation context go directly to the selected provider." : "Voice isn't set up yet."),
             DataFlowRow(
                 id: "doddyServer", destination: "Your Doddy server (Google, Microsoft Outlook, Notion, Todoist via Composio)",
                 what: "What you ask for: a date, a search word, or the text of a draft, reply or task you confirm. Never your saved notes. With Read an email or Read a Notion page on, that one email or page comes back.",
@@ -275,7 +276,7 @@ public enum DataFlow {
             // ADR-440: proposals are picked here; only what you confirm and switch on is ever handed over.
             "What Doddy learned (facts, routines, and counts of what you corrected): kept here; confirmed ones go to a conversation only if you turn that on.",
             "\"Hey Doddy\": what the microphone hears while it waits for the wake word is checked on this iPhone and not kept or sent.",
-            "Access codes and tokens, in this iPhone's Keychain.",
+            "DODDY voice refresh sessions and connected-app credentials, in this iPhone's Keychain; short-lived provider credentials stay in memory.",
         ]
     }
 

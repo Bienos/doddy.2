@@ -472,6 +472,12 @@ final class VoiceSessionController {
             fail(reason)
             return
         }
+        let consentProvider = VoiceProvider.effective(
+            stored: UserDefaults.standard.string(forKey: VoiceProvider.preferenceKey), tokenServerSet: true)
+        guard VoiceProviderConsent.isGranted(for: consentProvider) else {
+            fail("Open Talk to Doddy to review voice data sharing before starting a conversation.")
+            return
+        }
         guard await Self.microphoneAllowed() else {
             if attempt == startAttempt { phase = .microphoneDenied }
             return
@@ -604,11 +610,9 @@ final class VoiceSessionController {
 
         let auth: ElevenLabsConfiguration
         switch mode {
-        case .publicAgent(let agentID):
-            auth = .publicAgent(id: agentID)
-        case .tokenServer(let endpoint, let accessCode):
+        case .tokenServer(let endpoint):
             do throws(VoiceTokenError) {
-                auth = .conversationToken(try await VoiceTokenClient(endpoint: endpoint, accessCode: accessCode).fetchToken())
+                auth = .conversationToken(try await VoiceTokenClient(endpoint: endpoint).fetchToken())
             } catch {
                 if attempt == startAttempt, phase == .connecting {
                     if error == .offline { failOffline() } else { fail(VoiceTokenServer.message(for: error)) }
@@ -686,8 +690,8 @@ final class VoiceSessionController {
     /// (`variables`), same tools and cards. Needs the token server: the OpenAI key stays there.
     private func startOpenAI(_ mode: VoiceConnectionMode, variables: [String: String]) async {
         let attempt = startAttempt
-        guard case .tokenServer(let endpoint, let accessCode) = mode else {
-            fail("OpenAI's voice needs Doddy's token server. Add it in Settings → Voice, or switch Home to ElevenLabs.")
+        guard case .tokenServer(let endpoint) = mode else {
+            fail("Voice isn't set up yet. Try again later.")
             return
         }
         guard let spec = OpenAISpec.bundled() else {
@@ -708,7 +712,7 @@ final class VoiceSessionController {
 
         let grant: OpenAIRealtimeGrant
         do throws(VoiceTokenError) {
-            grant = try await VoiceTokenClient(endpoint: endpoint, accessCode: accessCode).fetchOpenAIGrant(model: openAIModel)
+            grant = try await VoiceTokenClient(endpoint: endpoint).fetchOpenAIGrant(model: openAIModel)
         } catch {
             if attempt == startAttempt, phase == .connecting { fail(Self.openAITokenMessage(error)) }
             return
@@ -739,14 +743,7 @@ final class VoiceSessionController {
     }
 
     private static func openAITokenMessage(_ error: VoiceTokenError) -> String {
-        switch error {
-        case .badResponse:
-            "The token server doesn't offer the OpenAI voice yet. Redeploy server/voice-token and set OPENAI_API_KEY there, or switch Home to ElevenLabs."
-        case .serverNotConfigured:
-            "OPENAI_API_KEY isn't set on the token server, so the OpenAI voice can't start. Switch Home to ElevenLabs to talk now."
-        default:
-            VoiceTokenServer.message(for: error)
-        }
+        VoiceTokenServer.message(for: error)
     }
 
     /// OpenAI's events, already in Realtime terms (`RealtimeEvent`), onto the same screen state.

@@ -9,11 +9,9 @@ import Foundation
 public enum ProfileKey: String, CaseIterable, Codable, Sendable {
     case name, help, style, language, humor, context
 
-    /// What the first introduction asks, in order (ADR-327): three questions, not six. Style,
-    /// language and humour already have sensible defaults in Settings › Doddy's voice and
-    /// personality (language auto, brief, casual, subtle humour), and can still be added under
-    /// Settings › About you › Edit.
-    public static let introductionQuestions: [ProfileKey] = [.name, .help, .context]
+    /// The optional first conversation asks only what to call the user and how Doddy should
+    /// respond. Other profile details remain editable in Settings → About you.
+    public static let introductionQuestions: [ProfileKey] = [.name, .style]
 
     /// Maximum length in Unicode scalars (same counting rule as memories and SQLite `length`).
     public var maxLength: Int {
@@ -124,7 +122,7 @@ public enum ProfileChoices {
         switch key {
         case .name, .context: []
         case .help: ["Keep useful details", "Help me follow through", "Explain things clearly", "A bit of everything"]
-        case .style: ["Short and clear", "More detail", "Talk it through"]
+        case .style: ["Upbeat", "Calm", "Straight to it", "Let's see"]
         case .language: ["Follow my language", "English", "Polski"]
         case .humor: ["A little, when it fits", "Just the useful bit"]
         }

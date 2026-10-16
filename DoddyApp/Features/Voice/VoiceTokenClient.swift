@@ -1,14 +1,11 @@
 import DoddyCore
 import Foundation
-import Security
 
-/// Fetches a one-conversation token from Doddy's token server. This is the app's only
-/// network request of its own: it sends the access code, nothing about the user or their notes.
+/// Fetches a short-lived, provider-scoped credential from DODDY's server. It sends a DODDY
+/// session bearer, never an owner/provider key or conversation content.
 /// For the OpenAI voice (ADR-265) the body also names the provider and the model (ADR-442).
 struct VoiceTokenClient: Sendable {
     let endpoint: URL
-    let accessCode: String
-
     /// ElevenLabs conversation token. Sends no body, exactly as before ADR-265.
     func fetchToken() async throws(VoiceTokenError) -> String {
         let (status, data) = try await post(VoiceTokenServer.requestBody(for: .elevenLabs))
@@ -30,7 +27,17 @@ struct VoiceTokenClient: Sendable {
     private func post(_ body: Data?) async throws(VoiceTokenError) -> (Int, Data) {
         var request = URLRequest(url: endpoint, timeoutInterval: 15)
         request.httpMethod = "POST"
-        request.setValue("Bearer \(accessCode)", forHTTPHeaderField: "Authorization")
+        let accessToken: String
+        do { accessToken = try await VoiceAuthSession.shared.bearerToken() }
+        catch let error as VoiceAuthFailure {
+            switch error {
+            case .offline: throw .offline
+            case .sessionExpired: throw .sessionExpired
+            case .serverNotConfigured: throw .serverNotConfigured
+            case .rejected, .badResponse: throw .badResponse
+            }
+        } catch { throw .badResponse }
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
         if let body {
             request.httpBody = body
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -46,41 +53,8 @@ struct VoiceTokenClient: Sendable {
         } catch {
             throw .offline
         }
-        return ((response as? HTTPURLResponse)?.statusCode ?? 0, data)
-    }
-}
-
-/// The tester's access code, kept in the Keychain on this device only (not in backups).
-enum VoiceAccessCodeStore {
-    private static var query: [String: Any] {
-        [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: "com.bienos.doddy2.voice-access-code",
-            kSecAttrAccount as String: "default",
-        ]
-    }
-
-    static func read() -> String? {
-        var request = query
-        request[kSecReturnData as String] = true
-        request[kSecMatchLimit as String] = kSecMatchLimitOne
-        var item: CFTypeRef?
-        guard SecItemCopyMatching(request as CFDictionary, &item) == errSecSuccess,
-              let data = item as? Data
-        else { return nil }
-        return String(data: data, encoding: .utf8)
-    }
-
-    /// Returns false if the Keychain refused the write; the UI then says it wasn't saved.
-    static func save(_ code: String) -> Bool {
-        delete()
-        var item = query
-        item[kSecValueData as String] = Data(code.utf8)
-        item[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
-        return SecItemAdd(item as CFDictionary, nil) == errSecSuccess
-    }
-
-    static func delete() {
-        SecItemDelete(query as CFDictionary)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        if status == 401 { await VoiceAuthSession.shared.serverRejectedSession() }
+        return (status, data)
     }
 }

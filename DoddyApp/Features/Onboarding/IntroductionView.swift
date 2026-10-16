@@ -6,35 +6,28 @@ import SwiftUI
 /// The questions are fixed and scripted: no AI reads or interprets the answers.
 struct IntroductionView: View {
     private enum Phase: Equatable {
-        case welcome
         case question(Int)
         case review
-        /// Once, at the end of first use (ADR-324). `saved`: how the introduction ended.
-        case quickStart(saved: Bool)
     }
 
     @Environment(ProfileStore.self) private var profiles
-    @State private var phase: Phase = .welcome
+    @State private var phase: Phase = .question(0)
     @State private var draft = ProfileDraft()
     @State private var didSeedDraft = false
-    @State private var showCapabilities = false
-    /// The welcome's storybook has turned its pages (ADR-299).
-    @State private var storyPlayed = false
 
     private let keys = ProfileKey.introductionQuestions
 
     var body: some View {
         Group {
             switch phase {
-            case .welcome:
-                welcome
             case .question(let index):
                 ProfileQuestionView(
                     key: keys[index], number: index + 1, total: keys.count,
                     answer: binding(for: keys[index]),
-                    back: { phase = index == 0 ? .welcome : .question(index - 1) },
+                    back: { if index == 0 { finish(saved: false) } else { phase = .question(index - 1) } },
                     next: { phase = index + 1 < keys.count ? .question(index + 1) : .review },
-                    review: { phase = .review })
+                    review: { phase = .review },
+                    notNow: { finish(saved: false) })
                 .id(index)
             case .review:
                 ProfileReviewView(
@@ -42,59 +35,13 @@ struct IntroductionView: View {
                     back: { phase = .question(keys.count - 1) },
                     finishWithoutSaving: { finish(saved: false) },
                     saved: { finish(saved: true) })
-            case .quickStart(let saved):
-                QuickStartView(profileSaved: !profiles.profile.isEmpty) {
-                    UserDefaults.standard.set(true, forKey: PreferenceKey.quickStartOffered)
-                    Task { await profiles.finishIntroduction(saved: saved) }
-                }
             }
         }
         .onAppear {
             // Reopened from Settings: start from what is already approved.
             guard !didSeedDraft else { return }
-            draft = profiles.profile.draft
+            draft = profiles.introductionDraft
             didSeedDraft = true
-        }
-        .sheet(isPresented: $showCapabilities) { CapabilitiesSheet() }
-    }
-
-    private var welcome: some View {
-        OnboardingPage {
-            OnboardingLabel(text: "Your mate in your pocket · AI assistant")
-            Text("Hey.\nLet's talk.")
-                .font(.largeTitle.bold())
-                .accessibilityAddTraits(.isHeader)
-            Text("Let's get to know each other a little. I'm an AI assistant, not a person. I'll ask a few short questions, and you decide what I keep.")
-
-            if let problem = profiles.progressSaveProblem {
-                ProblemView(message: problem)
-            }
-
-            StorybookView(played: $storyPlayed)
-                .frame(maxWidth: .infinity)
-
-            Button { phase = .question(0) } label: {
-                HStack { Text("Let's get to know each other"); Spacer(); Image(systemName: "arrow.right") }
-            }
-            .buttonStyle(PrimaryButtonStyle())
-            .accessibilityIdentifier("intro.begin")
-
-            Button { showCapabilities = true } label: {
-                Text("Show me what you can do")
-            }
-            .buttonStyle(SecondaryButtonStyle())
-            .accessibilityIdentifier("intro.capabilities")
-
-            Button { finish(saved: false) } label: {
-                HStack { Text("Start without the chat"); Image(systemName: "arrow.right") }
-                    .frame(maxWidth: .infinity, minHeight: 44)
-            }
-            .foregroundStyle(Theme.secondaryText)
-            .accessibilityIdentifier("intro.skip")
-
-            Text("Every question is optional. You'll review anything before I keep it, and you can change or forget it in Settings.")
-                .font(.footnote)
-                .foregroundStyle(Theme.secondaryText)
         }
     }
 
@@ -103,14 +50,8 @@ struct IntroductionView: View {
         Binding(get: { draft[key] ?? "" }, set: { draft[key] = $0.isEmpty ? nil : $0 })
     }
 
-    /// The first time through, the Quick start comes before Home; reopened from Settings, or once
-    /// it has been shown, the introduction ends here.
     private func finish(saved: Bool) {
-        if UserDefaults.standard.bool(forKey: PreferenceKey.quickStartOffered) {
-            Task { await profiles.finishIntroduction(saved: saved) }
-        } else {
-            phase = .quickStart(saved: saved)
-        }
+        Task { await profiles.finishIntroduction(saved: saved) }
     }
 }
 
@@ -124,6 +65,7 @@ private struct ProfileQuestionView: View {
     let back: () -> Void
     let next: () -> Void
     let review: () -> Void
+    let notNow: () -> Void
 
     private var trimmed: String { ProfileDraft.normalize(answer) }
 
@@ -155,8 +97,15 @@ private struct ProfileQuestionView: View {
             .accessibilityIdentifier("intro.next")
 
             HStack {
-                Button("Back", action: back)
-                    .accessibilityIdentifier("intro.back")
+                Button("Not now", action: notNow)
+                    .accessibilityIdentifier("intro.close")
+                Spacer()
+            }
+            HStack {
+                if number > 1 {
+                    Button("Back", action: back)
+                        .accessibilityIdentifier("intro.back")
+                }
                 Spacer()
                 Button("Review and finish", action: review)
                     .accessibilityIdentifier("intro.review")
@@ -233,6 +182,7 @@ private struct ProfileReviewView: View {
     @Environment(ProfileStore.self) private var profiles
     @State private var isSaving = false
     @State private var errorText: String?
+    @State private var showSavedConfirmation = false
 
     var body: some View {
         OnboardingPage {
@@ -240,13 +190,14 @@ private struct ProfileReviewView: View {
             Text("Here's what I'd remember.")
                 .font(.title.bold())
                 .accessibilityAddTraits(.isHeader)
-            Text("Edit or remove anything. Only what's here when you tap Save is kept, on this iPhone.")
+            Text("Only the answers shown here are changed. They're saved on this iPhone.")
                 .foregroundStyle(Theme.secondaryText)
 
-            ProfileFieldsEditor(draft: $draft)
+            ProfileFieldsEditor(draft: $draft, visibleFields: ProfileKey.introductionQuestions)
 
             if let errorText {
                 ProblemView(message: errorText)
+                    .accessibilityAddTraits(.updatesFrequently)
             }
 
             Button {
@@ -273,15 +224,20 @@ private struct ProfileReviewView: View {
             }
             .frame(minHeight: 44)
         }
+        .alert("Saved on this iPhone", isPresented: $showSavedConfirmation) {
+            Button("Done", action: saved)
+        } message: {
+            Text("Your name and response style are saved on this iPhone. You can edit or clear them in Settings.")
+        }
     }
 
     private func save() async {
         isSaving = true
         defer { isSaving = false }
         do {
-            try await profiles.commit(draft)
+            try await profiles.commitIntroduction(draft)
             errorText = nil
-            saved()
+            showSavedConfirmation = true
         } catch {
             errorText = ProfileErrorText.message(for: error)
         }
@@ -291,10 +247,11 @@ private struct ProfileReviewView: View {
 /// Every answered field, editable, each with its own Remove. Shared with Settings.
 struct ProfileFieldsEditor: View {
     @Binding var draft: ProfileDraft
+    var visibleFields: [ProfileKey] = ProfileKey.allCases
 
     /// Fields in the draft, even while their text is being retyped.
     private var answeredKeys: [ProfileKey] {
-        ProfileKey.allCases.filter { draft[$0] != nil }
+        visibleFields.filter { draft[$0] != nil }
     }
 
     var body: some View {

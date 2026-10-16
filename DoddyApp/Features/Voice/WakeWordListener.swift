@@ -363,13 +363,9 @@ final class WakeWordListener {
         }
     }
 
-    /// Same rule as `VoiceView`: the token server if one is set, else the public agent.
+    /// Voice sessions always use DODDY's authenticated server; the app never falls back to a public agent.
     private static func connectionMode() -> VoiceConnectionMode {
-        let defaults = UserDefaults.standard
-        return VoiceConnectionMode.resolve(
-            serverAddress: defaults.string(forKey: PreferenceKey.voiceTokenServer) ?? "",
-            accessCode: VoiceAccessCodeStore.read(),
-            publicAgentID: defaults.string(forKey: PreferenceKey.voiceAgentID) ?? VoiceConfig.developmentAgentID)
+        VoiceConnectionMode.resolve(serverAddress: VoiceConfig.tokenEndpointAddress)
     }
 
     // MARK: Island

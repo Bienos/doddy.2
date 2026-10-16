@@ -10,10 +10,10 @@ struct VoiceView: View {
     @Environment(ProfileStore.self) private var profiles
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @AppStorage(PreferenceKey.voiceAgentID) private var agentID = VoiceConfig.developmentAgentID
-    @AppStorage(PreferenceKey.voiceTokenServer) private var tokenServer = ""
+    @AppStorage(VoiceProvider.preferenceKey) private var voiceProvider = ""
     @AppStorage(ConnectionPause.preferenceKey) private var pauseAllConnections = false
     @State private var controller: VoiceSessionController?
+    @State private var authSession = VoiceAuthSession.shared
     @State private var connections = ConnectionController()
     @State private var openConnection: VoiceConnection?
     /// The time picker on a note-reminder card is open (closed again for each new card).
@@ -21,10 +21,11 @@ struct VoiceView: View {
     /// The plan step whose "Change" sheet is open (ADR-205).
     @State private var editingPlanStep: PlanStep?
 
-    /// Read when a conversation starts, so a changed setting or access code applies next time.
+    private var provider: VoiceProvider { VoiceProvider.effective(stored: voiceProvider, tokenServerSet: true) }
+
+    /// The app endpoint is fixed in the build; users never enter server URLs or access codes.
     private var mode: VoiceConnectionMode {
-        VoiceConnectionMode.resolve(
-            serverAddress: tokenServer, accessCode: VoiceAccessCodeStore.read(), publicAgentID: agentID)
+        VoiceConnectionMode.resolve(serverAddress: VoiceConfig.tokenEndpointAddress)
     }
 
     var body: some View {
@@ -33,7 +34,9 @@ struct VoiceView: View {
                 if let controller {
                     session(controller)
                 } else {
-                    ProgressView()
+                    VoiceAccessGate(provider: provider) {
+                        Task { await beginConversation() }
+                    }
                 }
             }
             // A full-screen cover on iPad: one readable column, the paper still edge to edge (ADR-437).
@@ -75,22 +78,10 @@ struct VoiceView: View {
                 self.controller = started
                 return
             }
-            let controller = self.controller ?? VoiceSessionController(store: store)
-            self.controller = controller
-            // Back Tap (or another "Talk to Doddy" shortcut) greets on the island like "Hey Doddy" does,
-            // but a silent conversation stays open: only the wake word ends one by itself.
-            let openedByShortcut = ShortcutRouter.shared.takeTalkToDoddyOpening()
-            let action = BackTapAction.stored(UserDefaults.standard.string(forKey: PreferenceKey.backTapAction))
-            let greeting = openedByShortcut && action.startsConversation ? WakeGreeting.line(
-                name: WakeGreeting.name(nickname: Nickname.stored(), profileName: profiles.profile.value(.name)),
-                polish: ConversationLanguage.stored() == .polish) : nil
-            await controller.start(
-                mode, profile: profiles.profile, translator: ShortcutRouter.shared.takeTranslatorPreset(),
-                checkIn: ShortcutRouter.shared.takeCheckInBriefing(),
-                wakeGreeting: greeting, aboutNote: ShortcutRouter.shared.takeNoteToAsk(),
-                byWakeWord: false)
-            // "Big island": the app is in the foreground, so it can open the island now without a push.
-            if let greeting, action.opensIsland { VoiceLiveActivity.shared.openForGreeting(greeting) }
+            await authSession.restore()
+            if authSession.isSignedIn && VoiceProviderConsent.isGranted(for: provider) {
+                await beginConversation()
+            }
         }
         .onDisappear {
             Task { await controller?.stop() }
@@ -103,6 +94,26 @@ struct VoiceView: View {
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }
+    }
+
+    @MainActor
+    private func beginConversation() async {
+        guard controller == nil else { return }
+        let controller = VoiceSessionController(store: store)
+        self.controller = controller
+        // Back Tap or another Talk to Doddy shortcut greets like Hey Doddy, after the same
+        // account and provider-consent gate used by a tap in the app.
+        let openedByShortcut = ShortcutRouter.shared.takeTalkToDoddyOpening()
+        let action = BackTapAction.stored(UserDefaults.standard.string(forKey: PreferenceKey.backTapAction))
+        let greeting = openedByShortcut && action.startsConversation ? WakeGreeting.line(
+            name: WakeGreeting.name(nickname: Nickname.stored(), profileName: profiles.profile.value(.name)),
+            polish: ConversationLanguage.stored() == .polish) : nil
+        await controller.start(
+            mode, profile: profiles.profile, translator: ShortcutRouter.shared.takeTranslatorPreset(),
+            checkIn: ShortcutRouter.shared.takeCheckInBriefing(),
+            wakeGreeting: greeting, aboutNote: ShortcutRouter.shared.takeNoteToAsk(),
+            byWakeWord: false)
+        if let greeting, action.opensIsland { VoiceLiveActivity.shared.openForGreeting(greeting) }
     }
 
     @ViewBuilder

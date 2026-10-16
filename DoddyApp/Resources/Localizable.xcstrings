@@ -3132,65 +3132,6 @@
         }
       }
     },
-    "Access code": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zugangscode"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Código de acceso"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Code d’accès"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pristupni kod"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Codice di accesso"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "アクセスコード"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kod dostępu"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Código de acesso"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "访问码"
-          }
-        }
-      }
-    },
     "Access expired or was removed at Google. Reconnect to keep using it.": {
       "extractionState": "manual",
       "localizations": {
@@ -3246,65 +3187,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "访问权限已过期或已在 Google 端被移除。重新连接以继续使用。"
-          }
-        }
-      }
-    },
-    "Account required": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Konto erforderlich"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Se necesita una cuenta"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Compte requis"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Potreban je račun"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Account necessario"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "アカウントが必要です"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wymagane konto"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Conta necessária"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "需要账户"
           }
         }
       }
@@ -5799,65 +5681,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "还有 %lld 项"
-          }
-        }
-      }
-    },
-    "And how do you like your answers?": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Und wie magst du deine Antworten?"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "¿Y cómo te gustan las respuestas?"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Et tes réponses, tu les aimes comment ?"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "A kakve odgovore voliš?"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "E come le preferisci, le risposte?"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "答え方はどんなふうがいいですか？"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "A jakie odpowiedzi lubisz?"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "E como você prefere as respostas?"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "那你喜欢什么样的回答？"
           }
         }
       }
@@ -13787,6 +13610,29 @@
         }
       }
     },
+    "DODDY keeps your voice session on this iPhone. When you start a conversation, it requests a short-lived connection credential from DODDY’s server. Your voice and conversation go to the selected provider only after you agree on first use. You never need a provider key or access code.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "DODDY keeps your voice session on this iPad. When you start a conversation, it requests a short-lived connection credential from DODDY’s server. Your voice and conversation go to the selected provider only after you agree on first use. You never need a provider key or access code."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "DODDY keeps your voice session on this iPhone. When you start a conversation, it requests a short-lived connection credential from DODDY’s server. Your voice and conversation go to the selected provider only after you agree on first use. You never need a provider key or access code."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Daily news": {
       "extractionState": "manual",
       "localizations": {
@@ -15812,65 +15658,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "检测对方何时说话"
-          }
-        }
-      }
-    },
-    "Development (public agent)": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Entwicklung (öffentlicher Agent)"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Desarrollo (agente público)"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Développement (agent public)"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Razvojno (javni agent)"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sviluppo (agente pubblico)"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "開発用（公開エージェント）"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Deweloperski (publiczny agent)"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Desenvolvimento (agente público)"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "开发（公共代理）"
           }
         }
       }
@@ -19951,65 +19738,6 @@
         }
       }
     },
-    "Doddy's opening": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Eröffnung von Doddy"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Entrada de Doddy"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ouverture de Doddy"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddyjev uvod"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Apertura di Doddy"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddyのオープニング"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Powitanie Doddy’ego"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Abertura do Doddy"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy 的开场"
-          }
-        }
-      }
-    },
     "Doddy's opening. Doddy scores a basket.": {
       "extractionState": "manual",
       "localizations": {
@@ -22024,65 +21752,6 @@
         }
       }
     },
-    "Each time you open Doddy: a two-second cartoon. A pen sketches Doddy in, he scores a basket and pops up ready to talk, then the buttons slide in. Tap it to skip. With Reduce Motion on it's a still picture; with character artwork hidden or VoiceOver on it doesn't play.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Jedes Mal, wenn du Doddy öffnest: ein Zwei-Sekunden-Cartoon. Ein Stift zeichnet Doddy, er trifft in den Korb und springt bereit zum Reden auf, dann gleiten die Tasten herein. Tippe darauf, um zu überspringen. Mit „Bewegung reduzieren“ ist es ein Standbild; bei ausgeblendeter Figur oder eingeschaltetem VoiceOver läuft es nicht."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cada vez que abres Doddy: un dibujo animado de dos segundos. Un lápiz dibuja a Doddy, encesta y aparece listo para hablar, y luego entran los botones. Tócalo para saltarlo. Con Reducir movimiento activado es una imagen fija; con el dibujo del personaje oculto o con VoiceOver activado no se reproduce."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "À chaque ouverture de Doddy : un dessin animé de deux secondes. Un stylo esquisse Doddy, il marque un panier et surgit prêt à parler, puis les boutons glissent en place. Touche-le pour passer. Avec Réduire les animations activé, c’est une image fixe ; avec les illustrations du personnage masquées ou VoiceOver activé, il ne se joue pas."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Svaki put kad otvoriš Doddyja: dvosekundni crtić. Olovka skicira Doddyja, on zabija koš i iskače spreman za razgovor, a onda uklizuju gumbi. Dodirni za preskakanje. S uključenom opcijom Smanji pokrete to je nepomična slika; sa skrivenim crtežom lika ili uključenim VoiceOverom se ne reproducira."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ogni volta che apri Doddy: un cartone di due secondi. Una penna disegna Doddy, lui fa canestro e salta fuori pronto a parlare, poi scorrono dentro i pulsanti. Toccalo per saltarlo. Con Riduci movimento attivo è un'immagine fissa; con le illustrazioni del personaggio nascoste o VoiceOver attivo non viene riprodotto."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddyを開くたびに、2秒のアニメーションが流れます。ペンがDoddyを描き、Doddyがシュートを決めて、話す準備万端で飛び出し、ボタンがスライドして現れます。タップするとスキップできます。「視差効果を減らす」がオンのときは静止画になり、キャラクターの絵を非表示にしているときやVoiceOverがオンのときは再生されません。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Przy każdym otwarciu Doddy’ego: dwusekundowa animacja. Pióro rysuje Doddy’ego, on trafia do kosza i wyskakuje gotowy do rozmowy, a potem wjeżdżają przyciski. Stuknij, aby pominąć. Przy włączonym Ograniczeniu ruchu to nieruchomy obrazek; przy ukrytej grafice postaci lub włączonym VoiceOver się nie odtwarza."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Toda vez que você abre o Doddy: um desenho animado de dois segundos. Uma caneta desenha o Doddy, ele acerta uma cesta e aparece pronto para conversar, e então os botões deslizam para dentro. Toque para pular. Com Reduzir Movimento ativado, é uma imagem parada; com a arte do personagem oculta ou o VoiceOver ativado, não toca."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "每次打开 Doddy 时：一段两秒钟的动画。一支笔勾勒出 Doddy，他投进一球，然后跳出来准备聊天，接着按钮滑入。轻点即可跳过。开启“减弱动态效果”时显示为静态图片；隐藏角色插画或开启“旁白”时不会播放。"
-          }
-        }
-      }
-    },
     "Edit": {
       "extractionState": "manual",
       "localizations": {
@@ -22142,191 +21811,6 @@
         }
       }
     },
-    "Edit or remove anything. Only what's here when you tap Save is kept, on this iPhone.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Ändere oder entferne, was du willst. Nur was hier steht, wenn du auf Speichern tippst, wird behalten, auf diesem iPad."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Ändere oder entferne, was du willst. Nur was hier steht, wenn du auf Speichern tippst, wird behalten, auf diesem iPhone."
-                }
-              }
-            }
-          }
-        },
-        "en": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Edit or remove anything. Only what's here when you tap Save is kept, on this iPad."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Edit or remove anything. Only what's here when you tap Save is kept, on this iPhone."
-                }
-              }
-            }
-          }
-        },
-        "es": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Edita o quita lo que quieras. Solo se conserva lo que haya aquí cuando toques Guardar, en este iPad."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Edita o quita lo que quieras. Solo se conserva lo que haya aquí cuando toques Guardar, en este iPhone."
-                }
-              }
-            }
-          }
-        },
-        "fr": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Modifie ou retire ce que tu veux. Seul ce qui est ici quand tu touches Enregistrer est conservé, sur cet iPad."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Modifie ou retire ce que tu veux. Seul ce qui est ici quand tu touches Enregistrer est conservé, sur cet iPhone."
-                }
-              }
-            }
-          }
-        },
-        "hr": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Uredi ili ukloni što god želiš. Čuva se samo ono što je ovdje kad dodirneš Spremi, na ovom iPadu."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Uredi ili ukloni što god želiš. Čuva se samo ono što je ovdje kad dodirneš Spremi, na ovom iPhoneu."
-                }
-              }
-            }
-          }
-        },
-        "it": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Modifica o rimuovi quello che vuoi. Viene conservato solo ciò che c'è qui quando tocchi Salva, su questo iPad."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Modifica o rimuovi quello che vuoi. Viene conservato solo ciò che c'è qui quando tocchi Salva, su questo iPhone."
-                }
-              }
-            }
-          }
-        },
-        "ja": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "何でも編集・削除できます。「保存」をタップした時点でここにあるものだけが、このiPadに残ります。"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "何でも編集・削除できます。「保存」をタップした時点でここにあるものだけが、このiPhoneに残ります。"
-                }
-              }
-            }
-          }
-        },
-        "pl": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Zmień lub usuń, co chcesz. Zostaje tylko to, co jest tu w chwili stuknięcia Zapisz, na tym iPadzie."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Zmień lub usuń, co chcesz. Zostaje tylko to, co jest tu w chwili stuknięcia Zapisz, na tym iPhonie."
-                }
-              }
-            }
-          }
-        },
-        "pt-BR": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Edite ou remova o que quiser. Só o que estiver aqui quando você tocar em Salvar é guardado, neste iPad."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Edite ou remova o que quiser. Só o que estiver aqui quando você tocar em Salvar é guardado, neste iPhone."
-                }
-              }
-            }
-          }
-        },
-        "zh-Hans": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "可以编辑或移除任何内容。只有你轻点“保存”时这里的内容会被保留，保存在这台 iPad 上。"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "可以编辑或移除任何内容。只有你轻点“保存”时这里的内容会被保留，保存在这台 iPhone 上。"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "Edit this note": {
       "extractionState": "manual",
       "localizations": {
@@ -22382,65 +21866,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "编辑这条笔记"
-          }
-        }
-      }
-    },
-    "ElevenLabs agent ID": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ElevenLabs-Agent-ID"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ID del agente de ElevenLabs"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ID d’agent ElevenLabs"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ID agenta ElevenLabs"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ID agente ElevenLabs"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ElevenLabsエージェントID"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ID agenta ElevenLabs"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ID do agente ElevenLabs"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ElevenLabs 代理 ID"
           }
         }
       }
@@ -23208,65 +22633,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "“每月”适用于 1 到 28 日，这样每个月都有这一天。"
-          }
-        }
-      }
-    },
-    "Every question is optional. You'll review anything before I keep it, and you can change or forget it in Settings.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Jede Frage ist freiwillig. Du prüfst alles, bevor ich es behalte, und kannst es in den Einstellungen ändern oder vergessen lassen."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Todas las preguntas son opcionales. Revisarás todo antes de que lo guarde, y puedes cambiarlo u olvidarlo en Ajustes."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chaque question est facultative. Tu relis tout avant que je le garde, et tu peux le modifier ou le faire oublier dans Réglages."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Svako je pitanje neobavezno. Sve ćeš pregledati prije nego što to zadržim, a možeš to promijeniti ili zaboraviti u Postavkama."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ogni domanda è facoltativa. Rivedrai tutto prima che lo conservi, e puoi modificarlo o farmelo dimenticare in Impostazioni."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "どの質問も答えなくてかまいません。ぼくが覚える前にあなたが内容を確認でき、「設定」で変更したり忘れさせたりできます。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Każde pytanie jest opcjonalne. Przejrzysz wszystko, zanim to zachowam, i możesz to zmienić lub zapomnieć w Ustawieniach."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Toda pergunta é opcional. Você revisa tudo antes de eu guardar, e pode alterar ou esquecer nos Ajustes."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "每个问题都是可选的。在我保留任何内容之前，你都会先审阅，之后也可以在设置中更改或让我忘记。"
           }
         }
       }
@@ -24868,65 +24234,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "初始项目，每行一项（可选）"
-          }
-        }
-      }
-    },
-    "First things first. What should I call you?": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Das Wichtigste zuerst. Wie soll ich dich nennen?"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lo primero es lo primero. ¿Cómo te llamo?"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Commençons par le début. Comment dois-je t’appeler ?"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prvo najvažnije. Kako da te zovem?"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prima di tutto: come ti chiamo?"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "まず最初に。なんて呼べばいいですか？"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Na początek: jak mam się do Ciebie zwracać?"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Antes de tudo: como devo chamar você?"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "先说最重要的：我该怎么称呼你？"
           }
         }
       }
@@ -27000,65 +26307,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Hey Doddy 已暂停"
-          }
-        }
-      }
-    },
-    "Hey.\nLet's talk.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hey.\nLass uns reden."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hola.\nHablemos."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hey.\nOn discute ?"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hej.\nPopričajmo."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ciao.\nParliamo."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "やあ。\n話しましょう。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hej.\nPogadajmy."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Oi.\nVamos conversar."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "嗨。\n聊聊吧。"
           }
         }
       }
@@ -32618,65 +31866,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "让我们互相认识一下"
-          }
-        }
-      }
-    },
-    "Let's get to know each other a little. I'm an AI assistant, not a person. I'll ask a few short questions, and you decide what I keep.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lass uns einander ein bisschen kennenlernen. Ich bin ein KI-Assistent, kein Mensch. Ich stelle ein paar kurze Fragen, und du entscheidest, was ich behalte."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vamos a conocernos un poco. Soy un asistente de IA, no una persona. Te haré unas preguntas cortas y tú decides qué guardo."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Faisons un peu connaissance. Je suis un assistant IA, pas une personne. Je vais poser quelques questions courtes, et tu décides ce que je garde."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Upoznajmo se malo. Ja sam AI asistent, ne osoba. Postavit ću nekoliko kratkih pitanja, a ti odlučuješ što zadržavam."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Conosciamoci un po'. Sono un assistente IA, non una persona. Ti farò qualche domanda breve, e decidi tu cosa conservo."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "少しお互いのことを知りましょう。ぼくはAIアシスタントで、人ではありません。短い質問をいくつかするので、何を覚えておくかはあなたが決めてください。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Poznajmy się trochę. Jestem asystentem SI, nie człowiekiem. Zadam kilka krótkich pytań, a Ty zdecydujesz, co zachowam."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vamos nos conhecer um pouco. Eu sou um assistente de IA, não uma pessoa. Vou fazer algumas perguntas curtas, e você decide o que eu guardo."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "让我们稍微认识一下。我是 AI 助手，不是真人。我会问几个简短的问题，由你决定我保留什么。"
           }
         }
       }
@@ -44258,6 +43447,65 @@
         }
       }
     },
+    "On your first launch, Doddy makes a quick basketball entrance. You can skip it; with Reduce Motion on, it stays calm and still. Voice and microphone access never start from the intro.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beim ersten Start kommt Doddy mit einem kurzen Basketball-Auftritt. Du kannst ihn überspringen. Bei „Bewegung reduzieren“ bleibt er ruhig und still. Die Einführung startet weder Sprache noch Mikrofonzugriff."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La primera vez que abras la app, Doddy hará una breve entrada de baloncesto. Puedes saltártela; con Reducir movimiento, será estática y tranquila. La introducción no inicia la voz ni accede al micrófono."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Au premier lancement, Doddy fait une courte entrée de basket. Tu peux la passer ; avec Réduire les animations, l’intro reste calme et immobile. Elle ne démarre ni la voix ni le microphone."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pri prvom pokretanju Doddy će kratko ući s košarkaškim potezom. Možeš to preskočiti; uz smanjeno kretanje prikaz je miran i statičan. Uvod ne pokreće glas ni mikrofon."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Al primo avvio, Doddy fa un rapido ingresso da basket. Puoi saltarlo; con Riduci movimento, resta calmo e immobile. L’introduzione non avvia la voce né accede al microfono."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "初回起動時に、Doddyがバスケットボールの演出で登場します。スキップできます。「視差効果を減らす」がオンの場合は、静止した落ち着いた表示になります。この演出から音声やマイクが起動することはありません。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przy pierwszym uruchomieniu Doddy pojawi się w krótkiej koszykarskiej scenie. Możesz ją pominąć; przy ograniczeniu ruchu będzie spokojna i statyczna. Wstęp nie uruchamia głosu ani mikrofonu."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na primeira abertura, Doddy faz uma entrada rápida de basquete. Você pode pular; com Reduzir Movimento ativado, a cena fica estática e tranquila. A introdução não inicia a voz nem acessa o microfone."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "首次启动时，Doddy会以简短的篮球动作登场。你可以跳过；开启“减弱动态效果”后，画面会保持静止平和。此介绍不会启动语音或访问麦克风。"
+          }
+        }
+      }
+    },
     "Once a week Doddy suggests notes saved twice, reminders that passed and lists with everything ticked. Nothing is deleted unless you tap it.": {
       "extractionState": "manual",
       "localizations": {
@@ -44914,6 +44162,191 @@
           "stringUnit": {
             "state": "translated",
             "value": "只有你自己设置的提醒。"
+          }
+        }
+      }
+    },
+    "Only the answers shown here are changed. They're saved on this iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Nur die hier angezeigten Antworten werden geändert. Sie werden auf diesem iPad gespeichert."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Nur die hier angezeigten Antworten werden geändert. Sie werden auf diesem iPhone gespeichert."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Only the answers shown here are changed. They're saved on this iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Only the answers shown here are changed. They're saved on this iPhone."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Solo se modifican las respuestas que aparecen aquí. Se guardan en este iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Solo se modifican las respuestas que aparecen aquí. Se guardan en este iPhone."
+                }
+              }
+            }
+          }
+        },
+        "fr": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Seules les réponses affichées ici seront modifiées. Elles seront enregistrées sur cet iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Seules les réponses affichées ici seront modifiées. Elles seront enregistrées sur cet iPhone."
+                }
+              }
+            }
+          }
+        },
+        "hr": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Mijenjaju se samo ovdje prikazani odgovori. Spremaju se na ovom iPadu."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Mijenjaju se samo ovdje prikazani odgovori. Spremaju se na ovom iPhoneu."
+                }
+              }
+            }
+          }
+        },
+        "it": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Vengono modificate solo le risposte mostrate qui. Sono salvate su questo iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Vengono modificate solo le risposte mostrate qui. Sono salvate su questo iPhone."
+                }
+              }
+            }
+          }
+        },
+        "ja": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "ここに表示されている回答だけを変更します。このiPadに保存されます。"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "ここに表示されている回答だけを変更します。このiPhoneに保存されます。"
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zmienione zostaną tylko widoczne tutaj odpowiedzi. Zostaną zapisane na tym iPadzie."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zmienione zostaną tylko widoczne tutaj odpowiedzi. Zostaną zapisane na tym iPhonie."
+                }
+              }
+            }
+          }
+        },
+        "pt-BR": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Somente as respostas exibidas aqui serão alteradas. Elas serão salvas neste iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Somente as respostas exibidas aqui serão alteradas. Elas serão salvas neste iPhone."
+                }
+              }
+            }
+          }
+        },
+        "zh-Hans": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "仅修改此处显示的答案，并将其保存在此iPad上。"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "仅修改此处显示的答案，并将其保存在此iPhone上。"
+                }
+              }
+            }
           }
         }
       }
@@ -48828,6 +48261,65 @@
         }
       }
     },
+    "Pick a starting vibe. You can change it whenever you want.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wähle eine Grundstimmung. Du kannst sie jederzeit ändern."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elige un estilo inicial. Puedes cambiarlo cuando quieras."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choisis un ton de départ. Tu pourras le modifier quand tu veux."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odaberi početni stil. Možeš ga promijeniti kad god želiš."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scegli uno stile iniziale. Puoi cambiarlo quando vuoi."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最初の雰囲気を選んでください。いつでも変更できます。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wybierz początkowy styl. Możesz go zmienić w dowolnym momencie."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escolha um estilo inicial. Você pode mudar quando quiser."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择一种初始风格。你随时可以更改。"
+          }
+        }
+      }
+    },
     "Pick a time…": {
       "extractionState": "manual",
       "localizations": {
@@ -50433,65 +49925,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "私密"
-          }
-        }
-      }
-    },
-    "Private (token server)": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Privat (Token-Server)"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Privado (servidor de tokens)"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Privé (serveur de jetons)"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Privatno (poslužitelj tokena)"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Privato (server di token)"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "プライベート（トークンサーバー）"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prywatny (serwer tokenów)"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Privado (servidor de token)"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "私有（令牌服务器）"
           }
         }
       }
@@ -53875,65 +53308,6 @@
         }
       }
     },
-    "Remove access code": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zugangscode entfernen"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Quitar código de acceso"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Retirer le code d’accès"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ukloni pristupni kod"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rimuovi codice di accesso"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "アクセスコードを削除"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Usuń kod dostępu"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Remover código de acesso"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "移除访问码"
-          }
-        }
-      }
-    },
     "Remove invite code": {
       "extractionState": "manual",
       "localizations": {
@@ -56605,65 +55979,6 @@
         }
       }
     },
-    "Save access code": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zugangscode speichern"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Guardar código"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Enregistrer le code d’accès"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Spremi pristupni kod"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Salva codice di accesso"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "アクセスコードを保存"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zapisz kod dostępu"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Salvar código de acesso"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "保存访问码"
-          }
-        }
-      }
-    },
     "Save another detail": {
       "extractionState": "manual",
       "localizations": {
@@ -57843,13 +57158,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "このiPadに保存済み"
+                  "value": "このiPadに保存しました"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "このiPhoneに保存済み"
+                  "value": "このiPhoneに保存しました"
                 }
               }
             }
@@ -57897,13 +57212,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "已保存到这台 iPad"
+                  "value": "已保存到此iPad"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "已保存到这台 iPhone"
+                  "value": "已保存到此iPhone"
                 }
               }
             }
@@ -62702,65 +62017,6 @@
         }
       }
     },
-    "Show me what you can do": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zeig mir, was du kannst"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Enséñame lo que puedes hacer"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Montre-moi ce que tu sais faire"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pokaži što znaš"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mostrami cosa sai fare"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "できることを見せて"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pokaż, co potrafisz"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Me mostre o que você sabe fazer"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "给我看看你能做什么"
-          }
-        }
-      }
-    },
     "Show note text in notifications": {
       "extractionState": "manual",
       "localizations": {
@@ -63406,6 +62662,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "每次都会显示卡片并等待你轻点"
+          }
+        }
+      }
+    },
+    "Sign in once with Apple to set up your DODDY voice account. Apple sends a signed identity token to DODDY only to verify your account and create the session. The protected session stays on this iPhone, so you won’t need to sign in every time. Sign-in doesn’t share your voice or notes.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Sign in once with Apple to set up your DODDY voice account. Apple sends a signed identity token to DODDY only to verify your account and create the session. The protected session stays on this iPad, so you won’t need to sign in every time. Sign-in doesn’t share your voice or notes."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Sign in once with Apple to set up your DODDY voice account. Apple sends a signed identity token to DODDY only to verify your account and create the session. The protected session stays on this iPhone, so you won’t need to sign in every time. Sign-in doesn’t share your voice or notes."
+                }
+              }
+            }
           }
         }
       }
@@ -65069,65 +64348,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "从你记得的一个词开始。"
-          }
-        }
-      }
-    },
-    "Start without the chat": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ohne den Chat starten"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Empezar sin el chat"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Commencer sans la discussion"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Počni bez razgovora"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Inizia senza la chat"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "会話なしで始める"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zacznij bez rozmowy"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Começar sem a conversa"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "跳过聊天直接开始"
           }
         }
       }
@@ -77682,65 +76902,6 @@
         }
       }
     },
-    "Token server (https://…)": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Token-Server (https://…)"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Servidor de tokens (https://…)"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Serveur de jetons (https://…)"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Poslužitelj tokena (https://…)"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Server di token (https://…)"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "トークンサーバー（https://…）"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Serwer tokenów (https://…)"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Servidor de token (https://…)"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "令牌服务器（https://…）"
-          }
-        }
-      }
-    },
     "Tomorrow morning": {
       "extractionState": "manual",
       "localizations": {
@@ -79511,6 +78672,65 @@
         }
       }
     },
+    "Two quick questions. Skip either one. Change your answers anytime.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zwei kurze Fragen. Du kannst jede überspringen und deine Antworten jederzeit ändern."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dos preguntas rápidas. Puedes saltarte cualquiera y cambiar tus respuestas cuando quieras."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deux questions rapides. Tu peux passer l’une ou l’autre et modifier tes réponses à tout moment."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dva kratka pitanja. Možeš preskočiti bilo koje i promijeniti odgovore kad god želiš."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Due domande veloci. Puoi saltarne una e cambiare le risposte quando vuoi."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "短い質問が2つあります。どちらもスキップでき、回答はいつでも変更できます。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dwa krótkie pytania. Możesz pominąć dowolne i zmienić odpowiedzi w każdej chwili."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duas perguntas rápidas. Você pode pular qualquer uma e mudar suas respostas quando quiser."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "两个简短问题。你可以跳过任意一个，也可以随时更改答案。"
+          }
+        }
+      }
+    },
     "Two taps.\nA little help.": {
       "extractionState": "manual",
       "localizations": {
@@ -81226,65 +80446,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "使用相关的已保存笔记"
-          }
-        }
-      }
-    },
-    "Use the development agent": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Den Entwicklungsagenten verwenden"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Usar el agente de desarrollo"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Utiliser l’agent de développement"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Koristi razvojnog agenta"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Usa l'agente di sviluppo"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "開発用エージェントを使う"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Użyj agenta deweloperskiego"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Usar o agente de desenvolvimento"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "使用开发代理"
           }
         }
       }
@@ -83299,6 +82460,65 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "What should I call you?": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wie soll ich dich nennen?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Cómo quieres que te llame?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comment dois-je t’appeler ?"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kako da te zovem?"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Come vuoi che ti chiami?"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "何とお呼びすればいいですか？"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jak mam Cię nazywać?"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Como você quer que eu te chame?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "我该怎么称呼你？"
           }
         }
       }
@@ -85344,65 +84564,6 @@
         }
       }
     },
-    "With a token server, Doddy sends only your access code to it to get a one-conversation pass; the conversation itself goes to OpenAI, or ElevenLabs if you switch Home's voice to it. Without one, only ElevenLabs works, and the development agent is open to anyone who has its ID. Conversations count toward the owner's OpenAI or ElevenLabs usage.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mit einem Token-Server sendet Doddy nur deinen Zugangscode dorthin, um einen Pass für ein Gespräch zu bekommen; das Gespräch selbst geht an OpenAI, oder an ElevenLabs, wenn du die Stimme unter Home darauf umstellst. Ohne einen funktioniert nur ElevenLabs, und der Entwicklungsagent ist für jeden offen, der seine ID hat. Gespräche zählen zur OpenAI- oder ElevenLabs-Nutzung des Eigentümers."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Con un servidor de tokens, Doddy le envía solo tu código de acceso para obtener un pase de una conversación; la conversación en sí va a OpenAI, o a ElevenLabs si cambias a ella la voz de Inicio. Sin uno, solo funciona ElevenLabs, y el agente de desarrollo está abierto a cualquiera que tenga su ID. Las conversaciones cuentan para el uso de OpenAI o ElevenLabs del propietario."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Avec un serveur de jetons, Doddy ne lui envoie que ton code d’accès pour obtenir un laissez-passer pour une conversation ; la conversation elle-même va à OpenAI, ou à ElevenLabs si tu as choisi cette voix sur l’Accueil. Sans serveur, seul ElevenLabs fonctionne, et l’agent de développement est ouvert à quiconque a son ID. Les conversations comptent dans la consommation OpenAI ou ElevenLabs du propriétaire."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "S poslužiteljem tokena Doddy mu šalje samo tvoj pristupni kod da dobije propusnicu za jedan razgovor; sam razgovor ide u OpenAI, ili u ElevenLabs ako na Početnoj prebaciš glas na njega. Bez njega radi samo ElevenLabs, a razvojni agent otvoren je svakome tko ima njegov ID. Razgovori se računaju u vlasnikovu potrošnju na OpenAI ili ElevenLabs."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Con un server di token, Doddy gli invia solo il tuo codice di accesso per ottenere un pass per una sola conversazione; la conversazione stessa va a OpenAI, o a ElevenLabs se in Home passi alla sua voce. Senza, funziona solo ElevenLabs, e l'agente di sviluppo è aperto a chiunque ne conosca l'ID. Le conversazioni contano sul consumo OpenAI o ElevenLabs del proprietario."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "トークンサーバーを使う場合、Doddyは1回分の会話の許可を得るためにアクセスコードだけをそこに送ります。会話そのものはOpenAI（ホームの声をElevenLabsに切り替えている場合はElevenLabs）に送られます。トークンサーバーがない場合はElevenLabsだけが使え、開発用エージェントはそのIDを知っている誰でも使えます。会話はオーナーのOpenAIまたはElevenLabsの使用量に計上されます。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Z serwerem tokenów Doddy wysyła do niego tylko Twój kod dostępu, żeby dostać przepustkę na jedną rozmowę; sama rozmowa idzie do OpenAI albo ElevenLabs, jeśli przełączysz na niego głos na ekranie głównym. Bez niego działa tylko ElevenLabs, a agent deweloperski jest otwarty dla każdego, kto zna jego identyfikator. Rozmowy liczą się do zużycia OpenAI lub ElevenLabs właściciela."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Com um servidor de token, o Doddy envia a ele só seu código de acesso para obter um passe de uma conversa; a conversa em si vai para a OpenAI, ou para a ElevenLabs se você trocar a voz do Início para ela. Sem um, só a ElevenLabs funciona, e o agente de desenvolvimento fica aberto a qualquer pessoa que tenha o ID dele. As conversas contam no uso de OpenAI ou ElevenLabs do proprietário."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "使用令牌服务器时，Doddy 只会把你的访问码发送给它，以获取一次对话的通行凭证；对话本身会发送给 OpenAI（如果你在首页把语音切换为 ElevenLabs，则发送给 ElevenLabs）。没有令牌服务器时，只有 ElevenLabs 可用，而且开发代理对任何知道其 ID 的人开放。对话会计入所有者的 OpenAI 或 ElevenLabs 用量。"
-          }
-        }
-      }
-    },
     "Words already added stay in the note until you change them.": {
       "extractionState": "manual",
       "localizations": {
@@ -86296,65 +85457,6 @@
         }
       }
     },
-    "You can change this whenever you want.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Du kannst das jederzeit ändern."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Puedes cambiar esto cuando quieras."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tu peux changer ça quand tu veux."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ovo možeš promijeniti kad god želiš."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Puoi cambiarlo quando vuoi."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "これはいつでも変更できます。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Możesz to zmienić, kiedy zechcesz."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Você pode mudar isso quando quiser."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "你随时可以更改。"
-          }
-        }
-      }
-    },
     "You can undo for a few seconds afterwards.": {
       "extractionState": "manual",
       "localizations": {
@@ -87212,6 +86314,29 @@
         }
       }
     },
+    "Your DODDY voice account is saved on this iPhone. Reconnecting doesn’t require another Apple sign-in.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your DODDY voice account is saved on this iPad. Reconnecting doesn’t require another Apple sign-in."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your DODDY voice account is saved on this iPhone. Reconnecting doesn’t require another Apple sign-in."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Your Doddy messaging data was deleted. Memories on this iPhone were not touched.": {
       "extractionState": "manual",
       "localizations": {
@@ -88046,6 +87171,191 @@
         }
       }
     },
+    "Your name and response style are saved on this iPhone. You can edit or clear them in Settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Dein Name und dein Antwortstil sind auf diesem iPad gespeichert. Du kannst sie in den Einstellungen bearbeiten oder löschen."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Dein Name und dein Antwortstil sind auf diesem iPhone gespeichert. Du kannst sie in den Einstellungen bearbeiten oder löschen."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your name and response style are saved on this iPad. You can edit or clear them in Settings."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your name and response style are saved on this iPhone. You can edit or clear them in Settings."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu nombre y tu estilo de respuesta se guardan en este iPad. Puedes editarlos o borrarlos en Ajustes."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tu nombre y tu estilo de respuesta se guardan en este iPhone. Puedes editarlos o borrarlos en Ajustes."
+                }
+              }
+            }
+          }
+        },
+        "fr": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Ton nom et ton style de réponse sont enregistrés sur cet iPad. Tu peux les modifier ou les effacer dans Réglages."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Ton nom et ton style de réponse sont enregistrés sur cet iPhone. Tu peux les modifier ou les effacer dans Réglages."
+                }
+              }
+            }
+          }
+        },
+        "hr": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tvoje ime i stil odgovora spremljeni su na ovom iPadu. Možeš ih urediti ili izbrisati u Postavkama."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tvoje ime i stil odgovora spremljeni su na ovom iPhoneu. Možeš ih urediti ili izbrisati u Postavkama."
+                }
+              }
+            }
+          }
+        },
+        "it": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Il tuo nome e il tuo stile di risposta sono salvati su questo iPad. Puoi modificarli o cancellarli in Impostazioni."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Il tuo nome e il tuo stile di risposta sono salvati su questo iPhone. Puoi modificarli o cancellarli in Impostazioni."
+                }
+              }
+            }
+          }
+        },
+        "ja": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "名前と応答スタイルをこのiPadに保存しました。設定から編集または削除できます。"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "名前と応答スタイルをこのiPhoneに保存しました。設定から編集または削除できます。"
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Twoje imię i styl odpowiedzi są zapisane na tym iPadzie. Możesz je zmienić lub usunąć w Ustawieniach."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Twoje imię i styl odpowiedzi są zapisane na tym iPhonie. Możesz je zmienić lub usunąć w Ustawieniach."
+                }
+              }
+            }
+          }
+        },
+        "pt-BR": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Seu nome e estilo de resposta estão salvos neste iPad. Você pode editá-los ou apagá-los em Ajustes."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Seu nome e estilo de resposta estão salvos neste iPhone. Você pode editá-los ou apagá-los em Ajustes."
+                }
+              }
+            }
+          }
+        },
+        "zh-Hans": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "你的称呼和回复风格已保存在此iPad。你可以在“设置”中编辑或清除。"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "你的称呼和回复风格已保存在此iPhone。你可以在“设置”中编辑或清除。"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Your name or nickname": {
       "extractionState": "manual",
       "localizations": {
@@ -88593,184 +87903,22 @@
         }
       }
     },
-    "Your notes stay on this iPhone. During a voice conversation, your voice, the conversation, your saved notes (except ones you mark Private), your list names (a list's items only when Doddy reads or changes it), your personality settings, and (if switched on) your last few conversations and your introduction answers are sent to OpenAI, or ElevenLabs if you switch Home's voice to it, which runs the voice agent. Calendar entries, contact names and birthdays (day and month) or message drafts Doddy uses in a conversation go too. When you ask for weather or facts with ElevenLabs as the voice, it looks them up for Doddy: the place name and coordinates go to Open-Meteo, and search words go to Wikipedia; this app makes no such requests itself. ElevenLabs keeps a recording and transcript of each conversation it runs; how long OpenAI keeps the audio and transcript isn't verified in this build. If a token server is set, starting a conversation also sends your access code to it. If you use Connected Apps or switch on an online-account tool, the app sends what you ask (a date, a search word, or the text of a draft, reply or task you confirm) to your Doddy server, which talks to Google, Microsoft (Outlook), Notion or Todoist through Composio, and the results come back to the app and, during a conversation, to OpenAI, or ElevenLabs if you switch Home's voice to it so Doddy can answer; your saved notes are never sent to that server. If you ask Siri “Ask Doddy what I saved” (it can be turned off below), Doddy searches on this iPhone and hands the matching note to Siri, Apple's assistant, to read aloud; Siri handles what you say and the answer under your Siri settings. If you turn on “Hey Doddy”, the microphone listens for the wake word on this iPhone and what it hears isn't kept or sent; Picovoice gets your AccessKey to check it, and the conversation the wake word starts goes to OpenAI, or ElevenLabs if you switch Home's voice to it like any other. If you switch on web search, your search words go the same way to your Doddy server, which looks them up through Monid (a paid search service Doddy's server uses; you don't sign in to it). If you turn on Ask Doddy, typed questions (and, if you allow it, saved notes that match them) go to the Ask Doddy gateway, a separate server, which passes them to OpenAI. If a Doddy messaging server is set and you turn on notifications, texts, phone calls or daily news, it gets an anonymous account token, this iPhone's notification token, your phone number once you confirm it with a code, and the news topics you pick; it sends through Apple and Twilio, runs calls on ElevenLabs, and writes the news with an AI (Anthropic or OpenAI, as the server is set up; Daily news names which) and GNews. Your saved notes go there only if you turn on “Let Doddy use my memories on calls”. If you search for a place for a reminder, the words you type (and roughly where you are, if Doddy already knows) go to Apple Maps; the place you pick stays on this iPhone, and iOS, not Doddy, notices when you get there. In translator mode the other person's voice goes to OpenAI, or ElevenLabs if you switch Home's voice to it too (listen only hears whoever is near you); started from Translate on Home, your notes, conversations and profile aren't sent, and nothing of it is kept on this iPhone unless you tap Copy or Save within 5 minutes. If you share a list, its name and items go to your iCloud (Apple) and to the people you invite, and their changes come back; a list reminder's place goes there too only if you tap Share this place. If you ask Doddy to convert money, the app downloads the European Central Bank's public exchange-rate file; nothing about you is sent with it. If you switch on Read an email or Read a Notion page, the one email (sender, subject and its text) or page (title and text) you ask about, cut short, comes from your Doddy server and goes to OpenAI, or ElevenLabs if you switch Home's voice to it during that conversation. Text you share to Doddy from another app, to-dos found in a voice memo and your Focus settings stay on this iPhone; the parking widget shows when you parked and your note, never where. If you ask Doddy to remind you when to leave, where your iPhone is and the place you're going go to Apple Maps once, to work out the travel time; neither is kept. If you turn on Show notes in iPhone search, your notes and lists (never private ones) are indexed by iOS on this iPhone. Nothing else is sent anywhere.": {
+    "Your notes stay on this iPhone. During a voice conversation, your voice, the conversation, your saved notes (except ones you mark Private), your list names (a list's items only when Doddy reads or changes it), your personality settings, and (if switched on) your last few conversations and your introduction answers are sent to OpenAI, or ElevenLabs if you switch Home's voice to it, which runs the voice agent. Calendar entries, contact names and birthdays (day and month) or message drafts Doddy uses in a conversation go too. When you ask for weather or facts with ElevenLabs as the voice, it looks them up for Doddy: the place name and coordinates go to Open-Meteo, and search words go to Wikipedia; this app makes no such requests itself. ElevenLabs keeps a recording and transcript of each conversation it runs; how long OpenAI keeps the audio and transcript isn't verified in this build. When you sign in with Apple, its identity token is sent to DODDY’s server for verification. Voice requests use a short-lived DODDY session credential; this server does not receive your voice, transcripts, notes or profile details for token requests. If you use Connected Apps or switch on an online-account tool, the app sends what you ask (a date, a search word, or the text of a draft, reply or task you confirm) to your Doddy server, which talks to Google, Microsoft (Outlook), Notion or Todoist through Composio, and the results come back to the app and, during a conversation, to OpenAI, or ElevenLabs if you switch Home's voice to it so Doddy can answer; your saved notes are never sent to that server. If you ask Siri “Ask Doddy what I saved” (it can be turned off below), Doddy searches on this iPhone and hands the matching note to Siri, Apple's assistant, to read aloud; Siri handles what you say and the answer under your Siri settings. If you turn on “Hey Doddy”, the microphone listens for the wake word on this iPhone and what it hears isn't kept or sent; Picovoice gets your AccessKey to check it, and the conversation the wake word starts goes to OpenAI, or ElevenLabs if you switch Home's voice to it like any other. If you switch on web search, your search words go the same way to your Doddy server, which looks them up through Monid (a paid search service Doddy's server uses; you don't sign in to it). If you turn on Ask Doddy, typed questions (and, if you allow it, saved notes that match them) go to the Ask Doddy gateway, a separate server, which passes them to OpenAI. If a Doddy messaging server is set and you turn on notifications, texts, phone calls or daily news, it gets an anonymous account token, this iPhone's notification token, your phone number once you confirm it with a code, and the news topics you pick; it sends through Apple and Twilio, runs calls on ElevenLabs, and writes the news with an AI (Anthropic or OpenAI, as the server is set up; Daily news names which) and GNews. Your saved notes go there only if you turn on “Let Doddy use my memories on calls”. If you search for a place for a reminder, the words you type (and roughly where you are, if Doddy already knows) go to Apple Maps; the place you pick stays on this iPhone, and iOS, not Doddy, notices when you get there. In translator mode the other person's voice goes to OpenAI, or ElevenLabs if you switch Home's voice to it too (listen only hears whoever is near you); started from Translate on Home, your notes, conversations and profile aren't sent, and nothing of it is kept on this iPhone unless you tap Copy or Save within 5 minutes. If you share a list, its name and items go to your iCloud (Apple) and to the people you invite, and their changes come back; a list reminder's place goes there too only if you tap Share this place. If you ask Doddy to convert money, the app downloads the European Central Bank's public exchange-rate file; nothing about you is sent with it. If you switch on Read an email or Read a Notion page, the one email (sender, subject and its text) or page (title and text) you ask about, cut short, comes from your Doddy server and goes to OpenAI, or ElevenLabs if you switch Home's voice to it during that conversation. Text you share to Doddy from another app, to-dos found in a voice memo and your Focus settings stay on this iPhone; the parking widget shows when you parked and your note, never where. If you ask Doddy to remind you when to leave, where your iPhone is and the place you're going go to Apple Maps once, to work out the travel time; neither is kept. If you turn on Show notes in iPhone search, your notes and lists (never private ones) are indexed by iOS on this iPhone. Nothing else is sent anywhere.": {
       "extractionState": "manual",
       "localizations": {
-        "de": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Deine Notizen bleiben auf diesem iPad. Während eines Sprachgesprächs werden deine Stimme, das Gespräch, deine gespeicherten Notizen (außer denen, die du als privat markierst), deine Listennamen (die Einträge einer Liste nur, wenn Doddy sie liest oder ändert), deine Persönlichkeitseinstellungen und (wenn eingeschaltet) deine letzten paar Gespräche und deine Antworten aus der Einführung an OpenAI gesendet, oder an ElevenLabs, wenn du die Stimme unter Home darauf umstellst; dort läuft der Sprachagent. Kalendereinträge, Kontaktnamen und Geburtstage (Tag und Monat) oder Nachrichtenentwürfe, die Doddy in einem Gespräch nutzt, gehen ebenfalls mit. Wenn du mit ElevenLabs als Stimme nach Wetter oder Fakten fragst, schlägt es sie für Doddy nach: Der Ortsname und die Koordinaten gehen an Open-Meteo, und Suchbegriffe gehen an Wikipedia; diese App selbst stellt keine solchen Anfragen. ElevenLabs behält eine Aufnahme und ein Transkript von jedem Gespräch, das es ausführt; wie lange OpenAI Audio und Transkript behält, ist in dieser Version nicht überprüft. Wenn ein Token-Server eingestellt ist, sendet das Starten eines Gesprächs auch deinen Zugangscode an ihn. Wenn du Verbundene Apps nutzt oder ein Online-Konto-Werkzeug einschaltest, sendet die App das, worum du bittest (ein Datum, einen Suchbegriff oder den Text eines Entwurfs, einer Antwort oder Aufgabe, die du bestätigst), an deinen Doddy-Server, der über Composio mit Google, Microsoft (Outlook), Notion oder Todoist spricht; die Ergebnisse kommen zurück in die App und, während eines Gesprächs, an OpenAI, oder an ElevenLabs, wenn du die Stimme unter Home darauf umstellst, damit Doddy antworten kann; deine gespeicherten Notizen werden nie an diesen Server gesendet. Wenn du Siri „Frag Doddy, was ich gespeichert habe“ sagst (das lässt sich unten ausschalten), sucht Doddy auf diesem iPad und übergibt die passende Notiz an Siri, den Assistenten von Apple, zum Vorlesen; Siri verarbeitet, was du sagst, und die Antwort gemäß deinen Siri-Einstellungen. Wenn du „Hey Doddy“ einschaltest, hört das Mikrofon auf diesem iPad auf das Aktivierungswort, und was es hört, wird weder behalten noch gesendet; Picovoice erhält deinen AccessKey, um ihn zu prüfen, und das Gespräch, das das Aktivierungswort startet, geht wie jedes andere an OpenAI, oder an ElevenLabs, wenn du die Stimme unter Home darauf umstellst. Wenn du die Websuche einschaltest, gehen deine Suchbegriffe auf demselben Weg an deinen Doddy-Server, der sie über Monid nachschlägt (ein bezahlter Suchdienst, den der Doddy-Server nutzt; du meldest dich dort nicht an). Wenn du Doddy fragen einschaltest, gehen getippte Fragen (und, wenn du es erlaubst, dazu passende gespeicherte Notizen) an das Doddy-fragen-Gateway, einen separaten Server, der sie an OpenAI weitergibt. Wenn ein Doddy-Nachrichtenserver eingestellt ist und du Mitteilungen, SMS, Telefonanrufe oder tägliche News einschaltest, erhält er ein anonymes Konto-Token, das Mitteilungs-Token von diesem iPad, deine Telefonnummer, sobald du sie mit einem Code bestätigst, und die News-Themen, die du wählst; er sendet über Apple und Twilio, führt Anrufe auf ElevenLabs aus und schreibt die News mit einer KI (Anthropic oder OpenAI, je nachdem, wie der Server eingerichtet ist; Tägliche News nennt welche) und GNews. Deine gespeicherten Notizen gehen nur dorthin, wenn du „Doddy darf bei Anrufen auf Gemerktes zugreifen“ einschaltest. Wenn du für eine Erinnerung nach einem Ort suchst, gehen die Wörter, die du tippst (und ungefähr, wo du bist, falls Doddy das schon weiß), an Apple Karten; der Ort, den du wählst, bleibt auf diesem iPad, und iOS, nicht Doddy, bemerkt, wenn du ankommst. Im Übersetzermodus geht auch die Stimme der anderen Person an OpenAI, oder an ElevenLabs, wenn du die Stimme unter Home darauf umstellst (Nur zuhören hört, wer in deiner Nähe ist); gestartet über Übersetzen auf Home werden deine Notizen, Gespräche und dein Profil nicht gesendet, und nichts davon bleibt auf diesem iPad, außer du tippst innerhalb von 5 Minuten auf Kopieren oder Speichern. Wenn du eine Liste teilst, gehen ihr Name und ihre Einträge an deine iCloud (Apple) und an die Personen, die du einlädst, und deren Änderungen kommen zurück; der Ort einer Listen-Erinnerung geht nur dann ebenfalls dorthin, wenn du auf „Diesen Ort teilen“ tippst. Wenn du Doddy bittest, Geld umzurechnen, lädt die App die öffentliche Wechselkursdatei der Europäischen Zentralbank herunter; nichts über dich wird dabei gesendet. Wenn du „E-Mail lesen“ oder „Notion-Seite lesen“ einschaltest, kommt die eine E-Mail (Absender, Betreff und Text) oder Seite (Titel und Text), nach der du fragst, gekürzt, von deinem Doddy-Server und geht in diesem Gespräch an OpenAI, oder an ElevenLabs, wenn du die Stimme unter Home darauf umstellst. Text, den du aus einer anderen App in Doddy teilst, To-dos aus einem Sprachmemo und deine Fokus-Einstellungen bleiben auf diesem iPad; das Park-Widget zeigt, wann du geparkt hast, und deine Notiz, nie wo. Wenn du Doddy bittest, dich zu erinnern, wann du losmusst, gehen der Standort von deinem iPad und der Ort, zu dem du willst, einmal an Apple Karten, um die Fahrzeit zu berechnen; beides wird nicht behalten. Wenn du „Notizen in der iPad-Suche zeigen“ einschaltest, werden deine Notizen und Listen (nie private) von iOS auf diesem iPad indexiert. Sonst wird nichts irgendwohin gesendet."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Deine Notizen bleiben auf diesem iPhone. Während eines Sprachgesprächs werden deine Stimme, das Gespräch, deine gespeicherten Notizen (außer denen, die du als privat markierst), deine Listennamen (die Einträge einer Liste nur, wenn Doddy sie liest oder ändert), deine Persönlichkeitseinstellungen und (wenn eingeschaltet) deine letzten paar Gespräche und deine Antworten aus der Einführung an OpenAI gesendet, oder an ElevenLabs, wenn du die Stimme unter Home darauf umstellst; dort läuft der Sprachagent. Kalendereinträge, Kontaktnamen und Geburtstage (Tag und Monat) oder Nachrichtenentwürfe, die Doddy in einem Gespräch nutzt, gehen ebenfalls mit. Wenn du mit ElevenLabs als Stimme nach Wetter oder Fakten fragst, schlägt es sie für Doddy nach: Der Ortsname und die Koordinaten gehen an Open-Meteo, und Suchbegriffe gehen an Wikipedia; diese App selbst stellt keine solchen Anfragen. ElevenLabs behält eine Aufnahme und ein Transkript von jedem Gespräch, das es ausführt; wie lange OpenAI Audio und Transkript behält, ist in dieser Version nicht überprüft. Wenn ein Token-Server eingestellt ist, sendet das Starten eines Gesprächs auch deinen Zugangscode an ihn. Wenn du Verbundene Apps nutzt oder ein Online-Konto-Werkzeug einschaltest, sendet die App das, worum du bittest (ein Datum, einen Suchbegriff oder den Text eines Entwurfs, einer Antwort oder Aufgabe, die du bestätigst), an deinen Doddy-Server, der über Composio mit Google, Microsoft (Outlook), Notion oder Todoist spricht; die Ergebnisse kommen zurück in die App und, während eines Gesprächs, an OpenAI, oder an ElevenLabs, wenn du die Stimme unter Home darauf umstellst, damit Doddy antworten kann; deine gespeicherten Notizen werden nie an diesen Server gesendet. Wenn du Siri „Frag Doddy, was ich gespeichert habe“ sagst (das lässt sich unten ausschalten), sucht Doddy auf diesem iPhone und übergibt die passende Notiz an Siri, den Assistenten von Apple, zum Vorlesen; Siri verarbeitet, was du sagst, und die Antwort gemäß deinen Siri-Einstellungen. Wenn du „Hey Doddy“ einschaltest, hört das Mikrofon auf diesem iPhone auf das Aktivierungswort, und was es hört, wird weder behalten noch gesendet; Picovoice erhält deinen AccessKey, um ihn zu prüfen, und das Gespräch, das das Aktivierungswort startet, geht wie jedes andere an OpenAI, oder an ElevenLabs, wenn du die Stimme unter Home darauf umstellst. Wenn du die Websuche einschaltest, gehen deine Suchbegriffe auf demselben Weg an deinen Doddy-Server, der sie über Monid nachschlägt (ein bezahlter Suchdienst, den der Doddy-Server nutzt; du meldest dich dort nicht an). Wenn du Doddy fragen einschaltest, gehen getippte Fragen (und, wenn du es erlaubst, dazu passende gespeicherte Notizen) an das Doddy-fragen-Gateway, einen separaten Server, der sie an OpenAI weitergibt. Wenn ein Doddy-Nachrichtenserver eingestellt ist und du Mitteilungen, SMS, Telefonanrufe oder tägliche News einschaltest, erhält er ein anonymes Konto-Token, das Mitteilungs-Token von diesem iPhone, deine Telefonnummer, sobald du sie mit einem Code bestätigst, und die News-Themen, die du wählst; er sendet über Apple und Twilio, führt Anrufe auf ElevenLabs aus und schreibt die News mit einer KI (Anthropic oder OpenAI, je nachdem, wie der Server eingerichtet ist; Tägliche News nennt welche) und GNews. Deine gespeicherten Notizen gehen nur dorthin, wenn du „Doddy darf bei Anrufen auf Gemerktes zugreifen“ einschaltest. Wenn du für eine Erinnerung nach einem Ort suchst, gehen die Wörter, die du tippst (und ungefähr, wo du bist, falls Doddy das schon weiß), an Apple Karten; der Ort, den du wählst, bleibt auf diesem iPhone, und iOS, nicht Doddy, bemerkt, wenn du ankommst. Im Übersetzermodus geht auch die Stimme der anderen Person an OpenAI, oder an ElevenLabs, wenn du die Stimme unter Home darauf umstellst (Nur zuhören hört, wer in deiner Nähe ist); gestartet über Übersetzen auf Home werden deine Notizen, Gespräche und dein Profil nicht gesendet, und nichts davon bleibt auf diesem iPhone, außer du tippst innerhalb von 5 Minuten auf Kopieren oder Speichern. Wenn du eine Liste teilst, gehen ihr Name und ihre Einträge an deine iCloud (Apple) und an die Personen, die du einlädst, und deren Änderungen kommen zurück; der Ort einer Listen-Erinnerung geht nur dann ebenfalls dorthin, wenn du auf „Diesen Ort teilen“ tippst. Wenn du Doddy bittest, Geld umzurechnen, lädt die App die öffentliche Wechselkursdatei der Europäischen Zentralbank herunter; nichts über dich wird dabei gesendet. Wenn du „E-Mail lesen“ oder „Notion-Seite lesen“ einschaltest, kommt die eine E-Mail (Absender, Betreff und Text) oder Seite (Titel und Text), nach der du fragst, gekürzt, von deinem Doddy-Server und geht in diesem Gespräch an OpenAI, oder an ElevenLabs, wenn du die Stimme unter Home darauf umstellst. Text, den du aus einer anderen App in Doddy teilst, To-dos aus einem Sprachmemo und deine Fokus-Einstellungen bleiben auf diesem iPhone; das Park-Widget zeigt, wann du geparkt hast, und deine Notiz, nie wo. Wenn du Doddy bittest, dich zu erinnern, wann du losmusst, gehen der Standort von deinem iPhone und der Ort, zu dem du willst, einmal an Apple Karten, um die Fahrzeit zu berechnen; beides wird nicht behalten. Wenn du „Notizen in der iPhone-Suche zeigen“ einschaltest, werden deine Notizen und Listen (nie private) von iOS auf diesem iPhone indexiert. Sonst wird nichts irgendwohin gesendet."
-                }
-              }
-            }
-          }
-        },
         "en": {
           "variations": {
             "device": {
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Your notes stay on this iPad. During a voice conversation, your voice, the conversation, your saved notes (except ones you mark Private), your list names (a list's items only when Doddy reads or changes it), your personality settings, and (if switched on) your last few conversations and your introduction answers are sent to OpenAI, or ElevenLabs if you switch Home's voice to it, which runs the voice agent. Calendar entries, contact names and birthdays (day and month) or message drafts Doddy uses in a conversation go too. When you ask for weather or facts with ElevenLabs as the voice, it looks them up for Doddy: the place name and coordinates go to Open-Meteo, and search words go to Wikipedia; this app makes no such requests itself. ElevenLabs keeps a recording and transcript of each conversation it runs; how long OpenAI keeps the audio and transcript isn't verified in this build. If a token server is set, starting a conversation also sends your access code to it. If you use Connected Apps or switch on an online-account tool, the app sends what you ask (a date, a search word, or the text of a draft, reply or task you confirm) to your Doddy server, which talks to Google, Microsoft (Outlook), Notion or Todoist through Composio, and the results come back to the app and, during a conversation, to OpenAI, or ElevenLabs if you switch Home's voice to it so Doddy can answer; your saved notes are never sent to that server. If you ask Siri “Ask Doddy what I saved” (it can be turned off below), Doddy searches on this iPad and hands the matching note to Siri, Apple's assistant, to read aloud; Siri handles what you say and the answer under your Siri settings. If you turn on “Hey Doddy”, the microphone listens for the wake word on this iPad and what it hears isn't kept or sent; Picovoice gets your AccessKey to check it, and the conversation the wake word starts goes to OpenAI, or ElevenLabs if you switch Home's voice to it like any other. If you switch on web search, your search words go the same way to your Doddy server, which looks them up through Monid (a paid search service Doddy's server uses; you don't sign in to it). If you turn on Ask Doddy, typed questions (and, if you allow it, saved notes that match them) go to the Ask Doddy gateway, a separate server, which passes them to OpenAI. If a Doddy messaging server is set and you turn on notifications, texts, phone calls or daily news, it gets an anonymous account token, this iPad's notification token, your phone number once you confirm it with a code, and the news topics you pick; it sends through Apple and Twilio, runs calls on ElevenLabs, and writes the news with an AI (Anthropic or OpenAI, as the server is set up; Daily news names which) and GNews. Your saved notes go there only if you turn on “Let Doddy use my memories on calls”. If you search for a place for a reminder, the words you type (and roughly where you are, if Doddy already knows) go to Apple Maps; the place you pick stays on this iPad, and iOS, not Doddy, notices when you get there. In translator mode the other person's voice goes to OpenAI, or ElevenLabs if you switch Home's voice to it too (listen only hears whoever is near you); started from Translate on Home, your notes, conversations and profile aren't sent, and nothing of it is kept on this iPad unless you tap Copy or Save within 5 minutes. If you share a list, its name and items go to your iCloud (Apple) and to the people you invite, and their changes come back; a list reminder's place goes there too only if you tap Share this place. If you ask Doddy to convert money, the app downloads the European Central Bank's public exchange-rate file; nothing about you is sent with it. If you switch on Read an email or Read a Notion page, the one email (sender, subject and its text) or page (title and text) you ask about, cut short, comes from your Doddy server and goes to OpenAI, or ElevenLabs if you switch Home's voice to it during that conversation. Text you share to Doddy from another app, to-dos found in a voice memo and your Focus settings stay on this iPad; the parking widget shows when you parked and your note, never where. If you ask Doddy to remind you when to leave, where your iPad is and the place you're going go to Apple Maps once, to work out the travel time; neither is kept. If you turn on Show notes in iPad search, your notes and lists (never private ones) are indexed by iOS on this iPad. Nothing else is sent anywhere."
+                  "value": "Your notes stay on this iPad. During a voice conversation, your voice, the conversation, your saved notes (except ones you mark Private), your list names (a list's items only when Doddy reads or changes it), your personality settings, and (if switched on) your last few conversations and your introduction answers are sent to OpenAI, or ElevenLabs if you switch Home's voice to it, which runs the voice agent. Calendar entries, contact names and birthdays (day and month) or message drafts Doddy uses in a conversation go too. When you ask for weather or facts with ElevenLabs as the voice, it looks them up for Doddy: the place name and coordinates go to Open-Meteo, and search words go to Wikipedia; this app makes no such requests itself. ElevenLabs keeps a recording and transcript of each conversation it runs; how long OpenAI keeps the audio and transcript isn't verified in this build. When you sign in with Apple, its identity token is sent to DODDY’s server for verification. Voice requests use a short-lived DODDY session credential; this server does not receive your voice, transcripts, notes or profile details for token requests. If you use Connected Apps or switch on an online-account tool, the app sends what you ask (a date, a search word, or the text of a draft, reply or task you confirm) to your Doddy server, which talks to Google, Microsoft (Outlook), Notion or Todoist through Composio, and the results come back to the app and, during a conversation, to OpenAI, or ElevenLabs if you switch Home's voice to it so Doddy can answer; your saved notes are never sent to that server. If you ask Siri “Ask Doddy what I saved” (it can be turned off below), Doddy searches on this iPad and hands the matching note to Siri, Apple's assistant, to read aloud; Siri handles what you say and the answer under your Siri settings. If you turn on “Hey Doddy”, the microphone listens for the wake word on this iPad and what it hears isn't kept or sent; Picovoice gets your AccessKey to check it, and the conversation the wake word starts goes to OpenAI, or ElevenLabs if you switch Home's voice to it like any other. If you switch on web search, your search words go the same way to your Doddy server, which looks them up through Monid (a paid search service Doddy's server uses; you don't sign in to it). If you turn on Ask Doddy, typed questions (and, if you allow it, saved notes that match them) go to the Ask Doddy gateway, a separate server, which passes them to OpenAI. If a Doddy messaging server is set and you turn on notifications, texts, phone calls or daily news, it gets an anonymous account token, this iPad's notification token, your phone number once you confirm it with a code, and the news topics you pick; it sends through Apple and Twilio, runs calls on ElevenLabs, and writes the news with an AI (Anthropic or OpenAI, as the server is set up; Daily news names which) and GNews. Your saved notes go there only if you turn on “Let Doddy use my memories on calls”. If you search for a place for a reminder, the words you type (and roughly where you are, if Doddy already knows) go to Apple Maps; the place you pick stays on this iPad, and iOS, not Doddy, notices when you get there. In translator mode the other person's voice goes to OpenAI, or ElevenLabs if you switch Home's voice to it too (listen only hears whoever is near you); started from Translate on Home, your notes, conversations and profile aren't sent, and nothing of it is kept on this iPad unless you tap Copy or Save within 5 minutes. If you share a list, its name and items go to your iCloud (Apple) and to the people you invite, and their changes come back; a list reminder's place goes there too only if you tap Share this place. If you ask Doddy to convert money, the app downloads the European Central Bank's public exchange-rate file; nothing about you is sent with it. If you switch on Read an email or Read a Notion page, the one email (sender, subject and its text) or page (title and text) you ask about, cut short, comes from your Doddy server and goes to OpenAI, or ElevenLabs if you switch Home's voice to it during that conversation. Text you share to Doddy from another app, to-dos found in a voice memo and your Focus settings stay on this iPad; the parking widget shows when you parked and your note, never where. If you ask Doddy to remind you when to leave, where your iPad is and the place you're going go to Apple Maps once, to work out the travel time; neither is kept. If you turn on Show notes in iPad search, your notes and lists (never private ones) are indexed by iOS on this iPad. Nothing else is sent anywhere."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Your notes stay on this iPhone. During a voice conversation, your voice, the conversation, your saved notes (except ones you mark Private), your list names (a list's items only when Doddy reads or changes it), your personality settings, and (if switched on) your last few conversations and your introduction answers are sent to OpenAI, or ElevenLabs if you switch Home's voice to it, which runs the voice agent. Calendar entries, contact names and birthdays (day and month) or message drafts Doddy uses in a conversation go too. When you ask for weather or facts with ElevenLabs as the voice, it looks them up for Doddy: the place name and coordinates go to Open-Meteo, and search words go to Wikipedia; this app makes no such requests itself. ElevenLabs keeps a recording and transcript of each conversation it runs; how long OpenAI keeps the audio and transcript isn't verified in this build. If a token server is set, starting a conversation also sends your access code to it. If you use Connected Apps or switch on an online-account tool, the app sends what you ask (a date, a search word, or the text of a draft, reply or task you confirm) to your Doddy server, which talks to Google, Microsoft (Outlook), Notion or Todoist through Composio, and the results come back to the app and, during a conversation, to OpenAI, or ElevenLabs if you switch Home's voice to it so Doddy can answer; your saved notes are never sent to that server. If you ask Siri “Ask Doddy what I saved” (it can be turned off below), Doddy searches on this iPhone and hands the matching note to Siri, Apple's assistant, to read aloud; Siri handles what you say and the answer under your Siri settings. If you turn on “Hey Doddy”, the microphone listens for the wake word on this iPhone and what it hears isn't kept or sent; Picovoice gets your AccessKey to check it, and the conversation the wake word starts goes to OpenAI, or ElevenLabs if you switch Home's voice to it like any other. If you switch on web search, your search words go the same way to your Doddy server, which looks them up through Monid (a paid search service Doddy's server uses; you don't sign in to it). If you turn on Ask Doddy, typed questions (and, if you allow it, saved notes that match them) go to the Ask Doddy gateway, a separate server, which passes them to OpenAI. If a Doddy messaging server is set and you turn on notifications, texts, phone calls or daily news, it gets an anonymous account token, this iPhone's notification token, your phone number once you confirm it with a code, and the news topics you pick; it sends through Apple and Twilio, runs calls on ElevenLabs, and writes the news with an AI (Anthropic or OpenAI, as the server is set up; Daily news names which) and GNews. Your saved notes go there only if you turn on “Let Doddy use my memories on calls”. If you search for a place for a reminder, the words you type (and roughly where you are, if Doddy already knows) go to Apple Maps; the place you pick stays on this iPhone, and iOS, not Doddy, notices when you get there. In translator mode the other person's voice goes to OpenAI, or ElevenLabs if you switch Home's voice to it too (listen only hears whoever is near you); started from Translate on Home, your notes, conversations and profile aren't sent, and nothing of it is kept on this iPhone unless you tap Copy or Save within 5 minutes. If you share a list, its name and items go to your iCloud (Apple) and to the people you invite, and their changes come back; a list reminder's place goes there too only if you tap Share this place. If you ask Doddy to convert money, the app downloads the European Central Bank's public exchange-rate file; nothing about you is sent with it. If you switch on Read an email or Read a Notion page, the one email (sender, subject and its text) or page (title and text) you ask about, cut short, comes from your Doddy server and goes to OpenAI, or ElevenLabs if you switch Home's voice to it during that conversation. Text you share to Doddy from another app, to-dos found in a voice memo and your Focus settings stay on this iPhone; the parking widget shows when you parked and your note, never where. If you ask Doddy to remind you when to leave, where your iPhone is and the place you're going go to Apple Maps once, to work out the travel time; neither is kept. If you turn on Show notes in iPhone search, your notes and lists (never private ones) are indexed by iOS on this iPhone. Nothing else is sent anywhere."
-                }
-              }
-            }
-          }
-        },
-        "es": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Tus notas se quedan en este iPad. Durante una conversación de voz, tu voz, la conversación, tus notas guardadas (salvo las que marques como Privada), los nombres de tus listas (los elementos de una lista solo cuando Doddy la lee o la cambia), tus ajustes de personalidad y (si está activado) tus últimas conversaciones y tus respuestas de la presentación se envían a OpenAI, o a ElevenLabs si cambias a ella la voz de Inicio, que ejecuta el agente de voz. También van las entradas del calendario, los nombres de contactos y cumpleaños (día y mes) o los borradores de mensajes que Doddy use en una conversación. Cuando pides el tiempo o datos con ElevenLabs como voz, los busca para Doddy: el nombre del lugar y las coordenadas van a Open-Meteo, y las palabras de búsqueda van a Wikipedia; esta app no hace esas peticiones por sí misma. ElevenLabs conserva una grabación y una transcripción de cada conversación que ejecuta; cuánto tiempo conserva OpenAI el audio y la transcripción no está verificado en esta versión. Si hay un servidor de tokens configurado, empezar una conversación también le envía tu código de acceso. Si usas Apps conectadas o activas una herramienta de cuenta online, la app envía lo que pides (una fecha, una palabra de búsqueda o el texto de un borrador, respuesta o tarea que confirmes) a tu servidor de Doddy, que habla con Google, Microsoft (Outlook), Notion o Todoist a través de Composio, y los resultados vuelven a la app y, durante una conversación, a OpenAI, o a ElevenLabs si cambias a ella la voz de Inicio, para que Doddy pueda responder; tus notas guardadas nunca se envían a ese servidor. Si le pides a Siri “Pregúntale a Doddy qué he guardado” (se puede desactivar abajo), Doddy busca en este iPad y entrega la nota que coincide a Siri, el asistente de Apple, para leerla en voz alta; Siri gestiona lo que dices y la respuesta según tus ajustes de Siri. Si activas “Hey Doddy”, el micrófono escucha la palabra de activación en este iPad y lo que oye no se guarda ni se envía; Picovoice recibe tu AccessKey para comprobarla, y la conversación que inicia la palabra de activación va a OpenAI, o a ElevenLabs si cambias a ella la voz de Inicio, como cualquier otra. Si activas la búsqueda web, tus palabras de búsqueda van del mismo modo a tu servidor de Doddy, que las busca a través de Monid (un servicio de búsqueda de pago que usa el servidor de Doddy; tú no inicias sesión en él). Si activas Pregunta a Doddy, las preguntas escritas (y, si lo permites, las notas guardadas que coincidan con ellas) van a la pasarela de Pregunta a Doddy, un servidor aparte, que las pasa a OpenAI. Si hay un servidor de mensajes de Doddy configurado y activas las notificaciones, los SMS, las llamadas o las noticias diarias, recibe un token de cuenta anónimo, el token de notificaciones de este iPad, tu número de teléfono una vez que lo confirmes con un código, y los temas de noticias que elijas; envía a través de Apple y Twilio, ejecuta las llamadas en ElevenLabs y redacta las noticias con una IA (Anthropic u OpenAI, según cómo esté configurado el servidor; Noticias diarias indica cuál) y GNews. Tus notas guardadas van allí solo si activas “Dejar que Doddy use mis recuerdos en las llamadas”. Si buscas un lugar para un recordatorio, las palabras que escribes (y aproximadamente dónde estás, si Doddy ya lo sabe) van a Mapas de Apple; el lugar que eliges se queda en este iPad, e iOS, no Doddy, detecta cuándo llegas. En el modo traductor, la voz de la otra persona va también a OpenAI, o a ElevenLabs si cambias a ella la voz de Inicio (Solo escuchar oye a quien esté cerca de ti); iniciado desde Traducir en Inicio, tus notas, conversaciones y perfil no se envían, y nada de ello se guarda en este iPad a menos que toques Copiar o Guardar en 5 minutos. Si compartes una lista, su nombre y sus elementos van a tu iCloud (Apple) y a las personas que invites, y sus cambios vuelven; el lugar de un recordatorio de lista va allí también solo si tocas Compartir este lugar. Si le pides a Doddy que convierta dinero, la app descarga el archivo público de tipos de cambio del Banco Central Europeo; no se envía nada sobre ti con ello. Si activas Leer un correo o Leer una página de Notion, el único correo (remitente, asunto y su texto) o la única página (título y texto) por los que preguntes, recortados, vienen de tu servidor de Doddy y van a OpenAI, o a ElevenLabs si cambias a ella la voz de Inicio, durante esa conversación. El texto que compartes en Doddy desde otra app, las tareas encontradas en una nota de voz y tus ajustes de modos de concentración se quedan en este iPad; el widget de aparcamiento muestra cuándo aparcaste y tu nota, nunca dónde. Si le pides a Doddy que te avise cuándo salir, dónde está tu iPad y el lugar al que vas van a Mapas de Apple una vez, para calcular el tiempo de trayecto; no se guarda ninguno de los dos. Si activas Mostrar notas en la búsqueda del iPad, iOS indexa tus notas y listas (nunca las privadas) en este iPad. No se envía nada más a ningún sitio."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Tus notas se quedan en este iPhone. Durante una conversación de voz, tu voz, la conversación, tus notas guardadas (salvo las que marques como Privada), los nombres de tus listas (los elementos de una lista solo cuando Doddy la lee o la cambia), tus ajustes de personalidad y (si está activado) tus últimas conversaciones y tus respuestas de la presentación se envían a OpenAI, o a ElevenLabs si cambias a ella la voz de Inicio, que ejecuta el agente de voz. También van las entradas del calendario, los nombres de contactos y cumpleaños (día y mes) o los borradores de mensajes que Doddy use en una conversación. Cuando pides el tiempo o datos con ElevenLabs como voz, los busca para Doddy: el nombre del lugar y las coordenadas van a Open-Meteo, y las palabras de búsqueda van a Wikipedia; esta app no hace esas peticiones por sí misma. ElevenLabs conserva una grabación y una transcripción de cada conversación que ejecuta; cuánto tiempo conserva OpenAI el audio y la transcripción no está verificado en esta versión. Si hay un servidor de tokens configurado, empezar una conversación también le envía tu código de acceso. Si usas Apps conectadas o activas una herramienta de cuenta online, la app envía lo que pides (una fecha, una palabra de búsqueda o el texto de un borrador, respuesta o tarea que confirmes) a tu servidor de Doddy, que habla con Google, Microsoft (Outlook), Notion o Todoist a través de Composio, y los resultados vuelven a la app y, durante una conversación, a OpenAI, o a ElevenLabs si cambias a ella la voz de Inicio, para que Doddy pueda responder; tus notas guardadas nunca se envían a ese servidor. Si le pides a Siri “Pregúntale a Doddy qué he guardado” (se puede desactivar abajo), Doddy busca en este iPhone y entrega la nota que coincide a Siri, el asistente de Apple, para leerla en voz alta; Siri gestiona lo que dices y la respuesta según tus ajustes de Siri. Si activas “Hey Doddy”, el micrófono escucha la palabra de activación en este iPhone y lo que oye no se guarda ni se envía; Picovoice recibe tu AccessKey para comprobarla, y la conversación que inicia la palabra de activación va a OpenAI, o a ElevenLabs si cambias a ella la voz de Inicio, como cualquier otra. Si activas la búsqueda web, tus palabras de búsqueda van del mismo modo a tu servidor de Doddy, que las busca a través de Monid (un servicio de búsqueda de pago que usa el servidor de Doddy; tú no inicias sesión en él). Si activas Pregunta a Doddy, las preguntas escritas (y, si lo permites, las notas guardadas que coincidan con ellas) van a la pasarela de Pregunta a Doddy, un servidor aparte, que las pasa a OpenAI. Si hay un servidor de mensajes de Doddy configurado y activas las notificaciones, los SMS, las llamadas o las noticias diarias, recibe un token de cuenta anónimo, el token de notificaciones de este iPhone, tu número de teléfono una vez que lo confirmes con un código, y los temas de noticias que elijas; envía a través de Apple y Twilio, ejecuta las llamadas en ElevenLabs y redacta las noticias con una IA (Anthropic u OpenAI, según cómo esté configurado el servidor; Noticias diarias indica cuál) y GNews. Tus notas guardadas van allí solo si activas “Dejar que Doddy use mis recuerdos en las llamadas”. Si buscas un lugar para un recordatorio, las palabras que escribes (y aproximadamente dónde estás, si Doddy ya lo sabe) van a Mapas de Apple; el lugar que eliges se queda en este iPhone, e iOS, no Doddy, detecta cuándo llegas. En el modo traductor, la voz de la otra persona va también a OpenAI, o a ElevenLabs si cambias a ella la voz de Inicio (Solo escuchar oye a quien esté cerca de ti); iniciado desde Traducir en Inicio, tus notas, conversaciones y perfil no se envían, y nada de ello se guarda en este iPhone a menos que toques Copiar o Guardar en 5 minutos. Si compartes una lista, su nombre y sus elementos van a tu iCloud (Apple) y a las personas que invites, y sus cambios vuelven; el lugar de un recordatorio de lista va allí también solo si tocas Compartir este lugar. Si le pides a Doddy que convierta dinero, la app descarga el archivo público de tipos de cambio del Banco Central Europeo; no se envía nada sobre ti con ello. Si activas Leer un correo o Leer una página de Notion, el único correo (remitente, asunto y su texto) o la única página (título y texto) por los que preguntes, recortados, vienen de tu servidor de Doddy y van a OpenAI, o a ElevenLabs si cambias a ella la voz de Inicio, durante esa conversación. El texto que compartes en Doddy desde otra app, las tareas encontradas en una nota de voz y tus ajustes de modos de concentración se quedan en este iPhone; el widget de aparcamiento muestra cuándo aparcaste y tu nota, nunca dónde. Si le pides a Doddy que te avise cuándo salir, dónde está tu iPhone y el lugar al que vas van a Mapas de Apple una vez, para calcular el tiempo de trayecto; no se guarda ninguno de los dos. Si activas Mostrar notas en la búsqueda del iPhone, iOS indexa tus notas y listas (nunca las privadas) en este iPhone. No se envía nada más a ningún sitio."
-                }
-              }
-            }
-          }
-        },
-        "fr": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Tes notes restent sur cet iPad. Pendant une conversation vocale, ta voix, la conversation, tes notes enregistrées (sauf celles que tu marques Privée), les noms de tes listes (les éléments d’une liste seulement quand Doddy la lit ou la modifie), tes réglages de personnalité et (si activés) tes dernières conversations et tes réponses d’introduction sont envoyés à OpenAI, ou à ElevenLabs si tu as choisi cette voix sur l’Accueil, qui fait tourner l’agent vocal. Les entrées de calendrier, les noms de contacts et anniversaires (jour et mois) ou les brouillons de messages que Doddy utilise dans une conversation y vont aussi. Quand tu demandes la météo ou des faits avec ElevenLabs comme voix, c’est lui qui les cherche pour Doddy : le nom du lieu et les coordonnées vont à Open-Meteo, et les mots recherchés vont à Wikipédia ; cette app ne fait aucune requête de ce type elle-même. ElevenLabs garde un enregistrement et une transcription de chaque conversation qu’il exécute ; la durée pendant laquelle OpenAI garde l’audio et la transcription n’est pas vérifiée dans cette version. Si un serveur de jetons est réglé, démarrer une conversation lui envoie aussi ton code d’accès. Si tu utilises les Apps connectées ou actives un outil de compte en ligne, l’app envoie ce que tu demandes (une date, un mot recherché, ou le texte d’un brouillon, d’une réponse ou d’une tâche que tu confirmes) à ton serveur Doddy, qui dialogue avec Google, Microsoft (Outlook), Notion ou Todoist via Composio, et les résultats reviennent dans l’app et, pendant une conversation, à OpenAI, ou à ElevenLabs si tu as choisi cette voix sur l’Accueil, pour que Doddy puisse répondre ; tes notes enregistrées ne sont jamais envoyées à ce serveur. Si tu demandes à Siri « Demande à Doddy ce que j’ai enregistré » (ça peut être désactivé ci-dessous), Doddy cherche sur cet iPad et transmet la note correspondante à Siri, l’assistant d’Apple, pour la lire à voix haute ; Siri traite ce que tu dis et la réponse selon tes réglages Siri. Si tu actives « Hey Doddy », le micro écoute le mot de réveil sur cet iPad et ce qu’il entend n’est ni conservé ni envoyé ; Picovoice reçoit ton AccessKey pour le vérifier, et la conversation lancée par le mot de réveil va à OpenAI, ou à ElevenLabs si tu as choisi cette voix sur l’Accueil, comme n’importe quelle autre. Si tu actives la recherche web, tes mots recherchés vont de la même façon à ton serveur Doddy, qui les cherche via Monid (un service de recherche payant utilisé par le serveur de Doddy ; tu ne t’y connectes pas). Si tu actives Demander à Doddy, les questions écrites (et, si tu l’autorises, les notes enregistrées qui y correspondent) vont à la passerelle Demander à Doddy, un serveur distinct, qui les transmet à OpenAI. Si un serveur de messagerie Doddy est réglé et que tu actives les notifications, les SMS, les appels téléphoniques ou les infos du jour, il reçoit un jeton de compte anonyme, le jeton de notification de cet iPad, ton numéro de téléphone une fois que tu l’as confirmé par un code, et les sujets d’infos que tu choisis ; il envoie via Apple et Twilio, fait tourner les appels sur ElevenLabs, et rédige les infos avec une IA (Anthropic ou OpenAI, selon la configuration du serveur ; Infos du jour indique laquelle) et GNews. Tes notes enregistrées n’y vont que si tu actives « Laisser Doddy utiliser mes souvenirs pendant les appels ». Si tu cherches un lieu pour un rappel, les mots que tu tapes (et à peu près où tu es, si Doddy le sait déjà) vont à Apple Plans ; le lieu que tu choisis reste sur cet iPad, et c’est iOS, pas Doddy, qui remarque quand tu y arrives. En mode traducteur, la voix de l’autre personne va aussi à OpenAI, ou à ElevenLabs si tu as choisi cette voix sur l’Accueil (l’écoute seule entend quiconque est près de toi) ; lancé depuis Traduire sur l’Accueil, tes notes, conversations et profil ne sont pas envoyés, et rien n’en est conservé sur cet iPad sauf si tu touches Copier ou Enregistrer dans les 5 minutes. Si tu partages une liste, son nom et ses éléments vont dans ton iCloud (Apple) et chez les personnes que tu invites, et leurs modifications reviennent ; le lieu d’un rappel de liste n’y va aussi que si tu touches Partager ce lieu. Si tu demandes à Doddy de convertir des devises, l’app télécharge le fichier public des taux de change de la Banque centrale européenne ; rien te concernant n’est envoyé avec. Si tu actives Lire un e-mail ou Lire une page Notion, le seul e-mail (expéditeur, objet et texte) ou la seule page (titre et texte) dont tu parles, tronqué, vient de ton serveur Doddy et va à OpenAI, ou à ElevenLabs si tu as choisi cette voix sur l’Accueil, pendant cette conversation. Le texte que tu partages vers Doddy depuis une autre app, les tâches trouvées dans un mémo vocal et tes réglages de Concentration restent sur cet iPad ; le widget de parking affiche quand tu t’es garé et ta note, jamais où. Si tu demandes à Doddy de te rappeler quand partir, la position de ton iPad et le lieu où tu vas sont envoyés une fois à Apple Plans, pour calculer le temps de trajet ; aucun des deux n’est conservé. Si tu actives Afficher les notes dans la recherche de l’iPad, tes notes et tes listes (jamais les privées) sont indexées par iOS sur cet iPad. Rien d’autre n’est envoyé nulle part."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Tes notes restent sur cet iPhone. Pendant une conversation vocale, ta voix, la conversation, tes notes enregistrées (sauf celles que tu marques Privée), les noms de tes listes (les éléments d’une liste seulement quand Doddy la lit ou la modifie), tes réglages de personnalité et (si activés) tes dernières conversations et tes réponses d’introduction sont envoyés à OpenAI, ou à ElevenLabs si tu as choisi cette voix sur l’Accueil, qui fait tourner l’agent vocal. Les entrées de calendrier, les noms de contacts et anniversaires (jour et mois) ou les brouillons de messages que Doddy utilise dans une conversation y vont aussi. Quand tu demandes la météo ou des faits avec ElevenLabs comme voix, c’est lui qui les cherche pour Doddy : le nom du lieu et les coordonnées vont à Open-Meteo, et les mots recherchés vont à Wikipédia ; cette app ne fait aucune requête de ce type elle-même. ElevenLabs garde un enregistrement et une transcription de chaque conversation qu’il exécute ; la durée pendant laquelle OpenAI garde l’audio et la transcription n’est pas vérifiée dans cette version. Si un serveur de jetons est réglé, démarrer une conversation lui envoie aussi ton code d’accès. Si tu utilises les Apps connectées ou actives un outil de compte en ligne, l’app envoie ce que tu demandes (une date, un mot recherché, ou le texte d’un brouillon, d’une réponse ou d’une tâche que tu confirmes) à ton serveur Doddy, qui dialogue avec Google, Microsoft (Outlook), Notion ou Todoist via Composio, et les résultats reviennent dans l’app et, pendant une conversation, à OpenAI, ou à ElevenLabs si tu as choisi cette voix sur l’Accueil, pour que Doddy puisse répondre ; tes notes enregistrées ne sont jamais envoyées à ce serveur. Si tu demandes à Siri « Demande à Doddy ce que j’ai enregistré » (ça peut être désactivé ci-dessous), Doddy cherche sur cet iPhone et transmet la note correspondante à Siri, l’assistant d’Apple, pour la lire à voix haute ; Siri traite ce que tu dis et la réponse selon tes réglages Siri. Si tu actives « Hey Doddy », le micro écoute le mot de réveil sur cet iPhone et ce qu’il entend n’est ni conservé ni envoyé ; Picovoice reçoit ton AccessKey pour le vérifier, et la conversation lancée par le mot de réveil va à OpenAI, ou à ElevenLabs si tu as choisi cette voix sur l’Accueil, comme n’importe quelle autre. Si tu actives la recherche web, tes mots recherchés vont de la même façon à ton serveur Doddy, qui les cherche via Monid (un service de recherche payant utilisé par le serveur de Doddy ; tu ne t’y connectes pas). Si tu actives Demander à Doddy, les questions écrites (et, si tu l’autorises, les notes enregistrées qui y correspondent) vont à la passerelle Demander à Doddy, un serveur distinct, qui les transmet à OpenAI. Si un serveur de messagerie Doddy est réglé et que tu actives les notifications, les SMS, les appels téléphoniques ou les infos du jour, il reçoit un jeton de compte anonyme, le jeton de notification de cet iPhone, ton numéro de téléphone une fois que tu l’as confirmé par un code, et les sujets d’infos que tu choisis ; il envoie via Apple et Twilio, fait tourner les appels sur ElevenLabs, et rédige les infos avec une IA (Anthropic ou OpenAI, selon la configuration du serveur ; Infos du jour indique laquelle) et GNews. Tes notes enregistrées n’y vont que si tu actives « Laisser Doddy utiliser mes souvenirs pendant les appels ». Si tu cherches un lieu pour un rappel, les mots que tu tapes (et à peu près où tu es, si Doddy le sait déjà) vont à Apple Plans ; le lieu que tu choisis reste sur cet iPhone, et c’est iOS, pas Doddy, qui remarque quand tu y arrives. En mode traducteur, la voix de l’autre personne va aussi à OpenAI, ou à ElevenLabs si tu as choisi cette voix sur l’Accueil (l’écoute seule entend quiconque est près de toi) ; lancé depuis Traduire sur l’Accueil, tes notes, conversations et profil ne sont pas envoyés, et rien n’en est conservé sur cet iPhone sauf si tu touches Copier ou Enregistrer dans les 5 minutes. Si tu partages une liste, son nom et ses éléments vont dans ton iCloud (Apple) et chez les personnes que tu invites, et leurs modifications reviennent ; le lieu d’un rappel de liste n’y va aussi que si tu touches Partager ce lieu. Si tu demandes à Doddy de convertir des devises, l’app télécharge le fichier public des taux de change de la Banque centrale européenne ; rien te concernant n’est envoyé avec. Si tu actives Lire un e-mail ou Lire une page Notion, le seul e-mail (expéditeur, objet et texte) ou la seule page (titre et texte) dont tu parles, tronqué, vient de ton serveur Doddy et va à OpenAI, ou à ElevenLabs si tu as choisi cette voix sur l’Accueil, pendant cette conversation. Le texte que tu partages vers Doddy depuis une autre app, les tâches trouvées dans un mémo vocal et tes réglages de Concentration restent sur cet iPhone ; le widget de parking affiche quand tu t’es garé et ta note, jamais où. Si tu demandes à Doddy de te rappeler quand partir, la position de ton iPhone et le lieu où tu vas sont envoyés une fois à Apple Plans, pour calculer le temps de trajet ; aucun des deux n’est conservé. Si tu actives Afficher les notes dans la recherche de l’iPhone, tes notes et tes listes (jamais les privées) sont indexées par iOS sur cet iPhone. Rien d’autre n’est envoyé nulle part."
-                }
-              }
-            }
-          }
-        },
-        "hr": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Tvoje bilješke ostaju na ovom iPadu. Tijekom glasovnog razgovora tvoj glas, razgovor, tvoje spremljene bilješke (osim onih koje označiš kao Privatno), nazivi tvojih popisa (stavke popisa samo kad ga Doddy čita ili mijenja), tvoje postavke osobnosti i (ako je uključeno) tvojih nekoliko zadnjih razgovora i tvoji odgovori iz uvoda šalju se u OpenAI, ili u ElevenLabs ako na Početnoj prebaciš glas na njega, koji pokreće glasovnog agenta. Idu i unosi iz kalendara, imena kontakata i rođendani (dan i mjesec) ili skice poruka koje Doddy koristi u razgovoru. Kad tražiš vrijeme ili činjenice s ElevenLabs kao glasom, on ih traži za Doddyja: naziv mjesta i koordinate idu u Open-Meteo, a riječi za pretraživanje u Wikipediju; ova aplikacija sama ne šalje takve zahtjeve. ElevenLabs čuva snimku i transkript svakog razgovora koji vodi; koliko dugo OpenAI čuva zvuk i transkript nije provjereno u ovoj verziji. Ako je postavljen poslužitelj tokena, početak razgovora šalje mu i tvoj pristupni kod. Ako koristiš Povezane aplikacije ili uključiš alat online računa, aplikacija šalje ono što tražiš (datum, riječ za pretraživanje ili tekst skice, odgovora ili zadatka koji potvrdiš) na tvoj Doddyjev poslužitelj, koji komunicira s uslugama Google, Microsoft (Outlook), Notion ili Todoist preko usluge Composio, a rezultati se vraćaju u aplikaciju i, tijekom razgovora, u OpenAI, ili u ElevenLabs ako na Početnoj prebaciš glas na njega, da Doddy može odgovoriti; tvoje spremljene bilješke nikad se ne šalju na taj poslužitelj. Ako Siri kažeš „Pitaj aplikaciju Doddy što imam spremljeno“ (može se isključiti u nastavku), Doddy pretražuje na ovom iPadu i predaje odgovarajuću bilješku Siri, Appleovu asistentu, da je pročita naglas; Siri obrađuje ono što kažeš i odgovor prema tvojim postavkama za Siri. Ako uključiš „Hey Doddy“, mikrofon na ovom iPadu osluškuje riječ za buđenje, a ono što čuje ne čuva se i ne šalje; Picovoice dobiva tvoj AccessKey da ga provjeri, a razgovor koji ta riječ pokrene ide u OpenAI, ili u ElevenLabs ako na Početnoj prebaciš glas na njega, kao i svaki drugi. Ako uključiš pretraživanje weba, tvoje riječi za pretraživanje idu istim putem na tvoj Doddyjev poslužitelj, koji ih traži preko usluge Monid (plaćene usluge pretraživanja koju koristi Doddyjev poslužitelj; u nju se ne prijavljuješ). Ako uključiš Pitaj Doddyja, pisana pitanja (i, ako dopustiš, spremljene bilješke koje im odgovaraju) idu na pristupnik Pitaj Doddyja, zaseban poslužitelj, koji ih prosljeđuje u OpenAI. Ako je postavljen Doddyjev poslužitelj za poruke i uključiš obavijesti, SMS poruke, telefonske pozive ili dnevne vijesti, on dobiva anonimni token računa, token obavijesti ovog iPada, tvoj broj telefona nakon što ga potvrdiš kodom i teme vijesti koje odabereš; šalje preko usluga Apple i Twilio, pozive vodi na ElevenLabs, a vijesti piše pomoću AI-ja (Anthropic ili OpenAI, ovisno o postavkama poslužitelja; Dnevne vijesti navode kojeg) i usluge GNews. Tvoje spremljene bilješke idu onamo samo ako uključiš „Dopusti Doddyju da koristi moja sjećanja na pozivima“. Ako tražiš mjesto za podsjetnik, riječi koje upišeš (i otprilike gdje si, ako Doddy to već zna) idu u Appleove Karte; mjesto koje odabereš ostaje na ovom iPadu, a iOS, ne Doddy, primjećuje kad stigneš. U načinu prevoditelja glas druge osobe također ide u OpenAI, ili u ElevenLabs ako na Početnoj prebaciš glas na njega (samo slušanje čuje bilo koga tko je blizu tebe); kad se pokrene iz Prevedi na Početnoj, tvoje bilješke, razgovori i profil ne šalju se, a ništa od toga ne ostaje na ovom iPadu osim ako u roku od 5 minuta dodirneš Kopiraj ili Spremi. Ako podijeliš popis, njegov naziv i stavke idu u tvoj iCloud (Apple) i osobama koje pozoveš, a njihove se promjene vraćaju; mjesto podsjetnika za popis ide onamo samo ako dodirneš Podijeli ovo mjesto. Ako zamoliš Doddyja da preračuna novac, aplikacija preuzima javnu datoteku tečajeva Europske središnje banke; ništa o tebi ne šalje se s njom. Ako uključiš Pročitaj e-poštu ili Pročitaj Notion stranicu, ta jedna poruka e-pošte (pošiljatelj, predmet i tekst) ili stranica (naslov i tekst) o kojoj pitaš, skraćena, dolazi s tvojeg Doddyjeva poslužitelja i ide u OpenAI, ili u ElevenLabs ako na Početnoj prebaciš glas na njega, tijekom tog razgovora. Tekst koji s Doddyjem podijeliš iz druge aplikacije, obaveze pronađene u glasovnoj bilješci i tvoje postavke Fokusa ostaju na ovom iPadu; widget za parkiranje prikazuje kad je parkirano i tvoju bilješku, nikad gdje. Ako zamoliš Doddyja da te podsjeti kad krenuti, gdje je tvoj iPad i mjesto kamo ideš idu jednom u Appleove Karte, da se izračuna vrijeme puta; ni jedno ni drugo ne čuva se. Ako uključiš Prikaži bilješke u pretraživanju iPada, tvoje bilješke i popise (nikad privatne) indeksira iOS na ovom iPadu. Ništa se drugo nikamo ne šalje."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Tvoje bilješke ostaju na ovom iPhoneu. Tijekom glasovnog razgovora tvoj glas, razgovor, tvoje spremljene bilješke (osim onih koje označiš kao Privatno), nazivi tvojih popisa (stavke popisa samo kad ga Doddy čita ili mijenja), tvoje postavke osobnosti i (ako je uključeno) tvojih nekoliko zadnjih razgovora i tvoji odgovori iz uvoda šalju se u OpenAI, ili u ElevenLabs ako na Početnoj prebaciš glas na njega, koji pokreće glasovnog agenta. Idu i unosi iz kalendara, imena kontakata i rođendani (dan i mjesec) ili skice poruka koje Doddy koristi u razgovoru. Kad tražiš vrijeme ili činjenice s ElevenLabs kao glasom, on ih traži za Doddyja: naziv mjesta i koordinate idu u Open-Meteo, a riječi za pretraživanje u Wikipediju; ova aplikacija sama ne šalje takve zahtjeve. ElevenLabs čuva snimku i transkript svakog razgovora koji vodi; koliko dugo OpenAI čuva zvuk i transkript nije provjereno u ovoj verziji. Ako je postavljen poslužitelj tokena, početak razgovora šalje mu i tvoj pristupni kod. Ako koristiš Povezane aplikacije ili uključiš alat online računa, aplikacija šalje ono što tražiš (datum, riječ za pretraživanje ili tekst skice, odgovora ili zadatka koji potvrdiš) na tvoj Doddyjev poslužitelj, koji komunicira s uslugama Google, Microsoft (Outlook), Notion ili Todoist preko usluge Composio, a rezultati se vraćaju u aplikaciju i, tijekom razgovora, u OpenAI, ili u ElevenLabs ako na Početnoj prebaciš glas na njega, da Doddy može odgovoriti; tvoje spremljene bilješke nikad se ne šalju na taj poslužitelj. Ako Siri kažeš „Pitaj aplikaciju Doddy što imam spremljeno“ (može se isključiti u nastavku), Doddy pretražuje na ovom iPhoneu i predaje odgovarajuću bilješku Siri, Appleovu asistentu, da je pročita naglas; Siri obrađuje ono što kažeš i odgovor prema tvojim postavkama za Siri. Ako uključiš „Hey Doddy“, mikrofon na ovom iPhoneu osluškuje riječ za buđenje, a ono što čuje ne čuva se i ne šalje; Picovoice dobiva tvoj AccessKey da ga provjeri, a razgovor koji ta riječ pokrene ide u OpenAI, ili u ElevenLabs ako na Početnoj prebaciš glas na njega, kao i svaki drugi. Ako uključiš pretraživanje weba, tvoje riječi za pretraživanje idu istim putem na tvoj Doddyjev poslužitelj, koji ih traži preko usluge Monid (plaćene usluge pretraživanja koju koristi Doddyjev poslužitelj; u nju se ne prijavljuješ). Ako uključiš Pitaj Doddyja, pisana pitanja (i, ako dopustiš, spremljene bilješke koje im odgovaraju) idu na pristupnik Pitaj Doddyja, zaseban poslužitelj, koji ih prosljeđuje u OpenAI. Ako je postavljen Doddyjev poslužitelj za poruke i uključiš obavijesti, SMS poruke, telefonske pozive ili dnevne vijesti, on dobiva anonimni token računa, token obavijesti ovog iPhonea, tvoj broj telefona nakon što ga potvrdiš kodom i teme vijesti koje odabereš; šalje preko usluga Apple i Twilio, pozive vodi na ElevenLabs, a vijesti piše pomoću AI-ja (Anthropic ili OpenAI, ovisno o postavkama poslužitelja; Dnevne vijesti navode kojeg) i usluge GNews. Tvoje spremljene bilješke idu onamo samo ako uključiš „Dopusti Doddyju da koristi moja sjećanja na pozivima“. Ako tražiš mjesto za podsjetnik, riječi koje upišeš (i otprilike gdje si, ako Doddy to već zna) idu u Appleove Karte; mjesto koje odabereš ostaje na ovom iPhoneu, a iOS, ne Doddy, primjećuje kad stigneš. U načinu prevoditelja glas druge osobe također ide u OpenAI, ili u ElevenLabs ako na Početnoj prebaciš glas na njega (samo slušanje čuje bilo koga tko je blizu tebe); kad se pokrene iz Prevedi na Početnoj, tvoje bilješke, razgovori i profil ne šalju se, a ništa od toga ne ostaje na ovom iPhoneu osim ako u roku od 5 minuta dodirneš Kopiraj ili Spremi. Ako podijeliš popis, njegov naziv i stavke idu u tvoj iCloud (Apple) i osobama koje pozoveš, a njihove se promjene vraćaju; mjesto podsjetnika za popis ide onamo samo ako dodirneš Podijeli ovo mjesto. Ako zamoliš Doddyja da preračuna novac, aplikacija preuzima javnu datoteku tečajeva Europske središnje banke; ništa o tebi ne šalje se s njom. Ako uključiš Pročitaj e-poštu ili Pročitaj Notion stranicu, ta jedna poruka e-pošte (pošiljatelj, predmet i tekst) ili stranica (naslov i tekst) o kojoj pitaš, skraćena, dolazi s tvojeg Doddyjeva poslužitelja i ide u OpenAI, ili u ElevenLabs ako na Početnoj prebaciš glas na njega, tijekom tog razgovora. Tekst koji s Doddyjem podijeliš iz druge aplikacije, obaveze pronađene u glasovnoj bilješci i tvoje postavke Fokusa ostaju na ovom iPhoneu; widget za parkiranje prikazuje kad je parkirano i tvoju bilješku, nikad gdje. Ako zamoliš Doddyja da te podsjeti kad krenuti, gdje je tvoj iPhone i mjesto kamo ideš idu jednom u Appleove Karte, da se izračuna vrijeme puta; ni jedno ni drugo ne čuva se. Ako uključiš Prikaži bilješke u pretraživanju iPhonea, tvoje bilješke i popise (nikad privatne) indeksira iOS na ovom iPhoneu. Ništa se drugo nikamo ne šalje."
-                }
-              }
-            }
-          }
-        },
-        "it": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Le tue note restano su questo iPad. Durante una conversazione vocale, la tua voce, la conversazione, le tue note salvate (tranne quelle che contrassegni come private), i nomi delle tue liste (le voci di una lista solo quando Doddy la legge o la modifica), le tue impostazioni di personalità e (se attivate) le tue ultime conversazioni e le risposte della presentazione vengono inviate a OpenAI, o a ElevenLabs se in Home passi alla sua voce, che fa funzionare l'agente vocale. Vanno anche gli eventi del calendario, i nomi dei contatti e i compleanni (giorno e mese) o le bozze di messaggi che Doddy usa in una conversazione. Quando chiedi il meteo o un fatto con ElevenLabs come voce, è lui a cercarli per Doddy: il nome del luogo e le coordinate vanno a Open-Meteo, e le parole di ricerca a Wikipedia; questa app non fa tali richieste da sola. ElevenLabs conserva una registrazione e una trascrizione di ogni conversazione che esegue; per quanto tempo OpenAI conservi l'audio e la trascrizione non è verificato in questa versione. Se è impostato un server di token, avviare una conversazione invia anche il tuo codice di accesso a quel server. Se usi App collegate o attivi uno strumento per account online, l'app invia ciò che chiedi (una data, una parola di ricerca, o il testo di una bozza, risposta o attività che confermi) al tuo server Doddy, che parla con Google, Microsoft (Outlook), Notion o Todoist tramite Composio, e i risultati tornano all'app e, durante una conversazione, a OpenAI, o a ElevenLabs se in Home passi alla sua voce, così Doddy può rispondere; le tue note salvate non vengono mai inviate a quel server. Se chiedi a Siri “Chiedi a Doddy cosa ho salvato” (si può disattivare qui sotto), Doddy cerca su questo iPad e passa la nota corrispondente a Siri, l'assistente di Apple, perché la legga ad alta voce; Siri gestisce ciò che dici e la risposta secondo le tue impostazioni di Siri. Se attivi “Hey Doddy”, il microfono resta in ascolto della parola di attivazione su questo iPad e ciò che sente non viene conservato né inviato; Picovoice riceve il tuo AccessKey per verificarlo, e la conversazione avviata dalla parola di attivazione va a OpenAI, o a ElevenLabs se in Home passi alla sua voce, come qualsiasi altra. Se attivi la ricerca web, le tue parole di ricerca vanno allo stesso modo al tuo server Doddy, che le cerca tramite Monid (un servizio di ricerca a pagamento usato dal server di Doddy; tu non vi accedi). Se attivi Chiedi a Doddy, le domande scritte (e, se lo consenti, le note salvate che corrispondono) vanno al gateway Chiedi a Doddy, un server separato, che le passa a OpenAI. Se è impostato un server di messaggistica di Doddy e attivi notifiche, SMS, telefonate o notizie del giorno, riceve un token di account anonimo, il token di notifica di questo iPad, il tuo numero di telefono una volta confermato con un codice, e gli argomenti di notizie che scegli; invia tramite Apple e Twilio, esegue le chiamate su ElevenLabs, e scrive le notizie con un'IA (Anthropic o OpenAI, a seconda di come è configurato il server; Notizie del giorno indica quale) e GNews. Le tue note salvate vanno lì solo se attivi “Lascia che Doddy usi i miei ricordi nelle chiamate”. Se cerchi un luogo per un promemoria, le parole che scrivi (e all'incirca dove sei, se Doddy lo sa già) vanno a Mappe di Apple; il luogo che scegli resta su questo iPad, ed è iOS, non Doddy, a notare quando ci arrivi. In modalità traduttore anche la voce dell'altra persona va a OpenAI, o a ElevenLabs se in Home passi alla sua voce (solo ascolto sente chiunque sia vicino a te); avviata da Traduci in Home, le tue note, conversazioni e il profilo non vengono inviati, e niente di tutto ciò resta su questo iPad a meno che tu non tocchi Copia o Salva entro 5 minuti. Se condividi una lista, il suo nome e le sue voci vanno al tuo iCloud (Apple) e alle persone che inviti, e le loro modifiche tornano indietro; il luogo di un promemoria della lista va lì solo se tocchi Condividi questo luogo. Se chiedi a Doddy di convertire valuta, l'app scarica il file pubblico dei tassi di cambio della Banca centrale europea; niente su di te viene inviato con esso. Se attivi Leggi un'email o Leggi una pagina Notion, l'unica email (mittente, oggetto e testo) o pagina (titolo e testo) di cui chiedi, accorciata, arriva dal tuo server Doddy e va a OpenAI, o a ElevenLabs se in Home passi alla sua voce, durante quella conversazione. Il testo che condividi con Doddy da un'altra app, le cose da fare trovate in un memo vocale e le tue impostazioni di Full Immersion restano su questo iPad; il widget del parcheggio mostra quando hai parcheggiato e la tua nota, mai dove. Se chiedi a Doddy di ricordarti quando partire, la posizione del tuo iPad e il luogo in cui vai vanno a Mappe di Apple una volta sola, per calcolare il tempo di viaggio; nessuno dei due viene conservato. Se attivi Mostra le note nella ricerca di iPad, le tue note e liste (mai quelle private) vengono indicizzate da iOS su questo iPad. Niente altro viene inviato da nessuna parte."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Le tue note restano su questo iPhone. Durante una conversazione vocale, la tua voce, la conversazione, le tue note salvate (tranne quelle che contrassegni come private), i nomi delle tue liste (le voci di una lista solo quando Doddy la legge o la modifica), le tue impostazioni di personalità e (se attivate) le tue ultime conversazioni e le risposte della presentazione vengono inviate a OpenAI, o a ElevenLabs se in Home passi alla sua voce, che fa funzionare l'agente vocale. Vanno anche gli eventi del calendario, i nomi dei contatti e i compleanni (giorno e mese) o le bozze di messaggi che Doddy usa in una conversazione. Quando chiedi il meteo o un fatto con ElevenLabs come voce, è lui a cercarli per Doddy: il nome del luogo e le coordinate vanno a Open-Meteo, e le parole di ricerca a Wikipedia; questa app non fa tali richieste da sola. ElevenLabs conserva una registrazione e una trascrizione di ogni conversazione che esegue; per quanto tempo OpenAI conservi l'audio e la trascrizione non è verificato in questa versione. Se è impostato un server di token, avviare una conversazione invia anche il tuo codice di accesso a quel server. Se usi App collegate o attivi uno strumento per account online, l'app invia ciò che chiedi (una data, una parola di ricerca, o il testo di una bozza, risposta o attività che confermi) al tuo server Doddy, che parla con Google, Microsoft (Outlook), Notion o Todoist tramite Composio, e i risultati tornano all'app e, durante una conversazione, a OpenAI, o a ElevenLabs se in Home passi alla sua voce, così Doddy può rispondere; le tue note salvate non vengono mai inviate a quel server. Se chiedi a Siri “Chiedi a Doddy cosa ho salvato” (si può disattivare qui sotto), Doddy cerca su questo iPhone e passa la nota corrispondente a Siri, l'assistente di Apple, perché la legga ad alta voce; Siri gestisce ciò che dici e la risposta secondo le tue impostazioni di Siri. Se attivi “Hey Doddy”, il microfono resta in ascolto della parola di attivazione su questo iPhone e ciò che sente non viene conservato né inviato; Picovoice riceve il tuo AccessKey per verificarlo, e la conversazione avviata dalla parola di attivazione va a OpenAI, o a ElevenLabs se in Home passi alla sua voce, come qualsiasi altra. Se attivi la ricerca web, le tue parole di ricerca vanno allo stesso modo al tuo server Doddy, che le cerca tramite Monid (un servizio di ricerca a pagamento usato dal server di Doddy; tu non vi accedi). Se attivi Chiedi a Doddy, le domande scritte (e, se lo consenti, le note salvate che corrispondono) vanno al gateway Chiedi a Doddy, un server separato, che le passa a OpenAI. Se è impostato un server di messaggistica di Doddy e attivi notifiche, SMS, telefonate o notizie del giorno, riceve un token di account anonimo, il token di notifica di questo iPhone, il tuo numero di telefono una volta confermato con un codice, e gli argomenti di notizie che scegli; invia tramite Apple e Twilio, esegue le chiamate su ElevenLabs, e scrive le notizie con un'IA (Anthropic o OpenAI, a seconda di come è configurato il server; Notizie del giorno indica quale) e GNews. Le tue note salvate vanno lì solo se attivi “Lascia che Doddy usi i miei ricordi nelle chiamate”. Se cerchi un luogo per un promemoria, le parole che scrivi (e all'incirca dove sei, se Doddy lo sa già) vanno a Mappe di Apple; il luogo che scegli resta su questo iPhone, ed è iOS, non Doddy, a notare quando ci arrivi. In modalità traduttore anche la voce dell'altra persona va a OpenAI, o a ElevenLabs se in Home passi alla sua voce (solo ascolto sente chiunque sia vicino a te); avviata da Traduci in Home, le tue note, conversazioni e il profilo non vengono inviati, e niente di tutto ciò resta su questo iPhone a meno che tu non tocchi Copia o Salva entro 5 minuti. Se condividi una lista, il suo nome e le sue voci vanno al tuo iCloud (Apple) e alle persone che inviti, e le loro modifiche tornano indietro; il luogo di un promemoria della lista va lì solo se tocchi Condividi questo luogo. Se chiedi a Doddy di convertire valuta, l'app scarica il file pubblico dei tassi di cambio della Banca centrale europea; niente su di te viene inviato con esso. Se attivi Leggi un'email o Leggi una pagina Notion, l'unica email (mittente, oggetto e testo) o pagina (titolo e testo) di cui chiedi, accorciata, arriva dal tuo server Doddy e va a OpenAI, o a ElevenLabs se in Home passi alla sua voce, durante quella conversazione. Il testo che condividi con Doddy da un'altra app, le cose da fare trovate in un memo vocale e le tue impostazioni di Full Immersion restano su questo iPhone; il widget del parcheggio mostra quando hai parcheggiato e la tua nota, mai dove. Se chiedi a Doddy di ricordarti quando partire, la posizione del tuo iPhone e il luogo in cui vai vanno a Mappe di Apple una volta sola, per calcolare il tempo di viaggio; nessuno dei due viene conservato. Se attivi Mostra le note nella ricerca di iPhone, le tue note e liste (mai quelle private) vengono indicizzate da iOS su questo iPhone. Niente altro viene inviato da nessuna parte."
-                }
-              }
-            }
-          }
-        },
-        "ja": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "メモはこのiPadにとどまります。音声会話の間、あなたの声、会話、保存したメモ（プライベートに設定したものを除く）、リスト名（リストの項目はDoddyがそのリストを読んだり変更したりするときだけ）、性格の設定、そして（オンにしている場合）直近の数回の会話と最初の紹介での回答は、音声エージェントを動かすOpenAI（ホームの声をElevenLabsに切り替えている場合はElevenLabs）に送られます。Doddyが会話で使うカレンダーの予定、連絡先の名前と誕生日（日と月）、メッセージの下書きも送られます。声がElevenLabsのときに天気や事実を尋ねると、ElevenLabsがDoddyのために調べます。地名と座標はOpen-Meteoに、検索語はWikipediaに送られます。このアプリ自体がそうした要求を行うことはありません。ElevenLabsは、自身が処理した各会話の録音と書き起こしを保持します。OpenAIが音声と書き起こしをどのくらい保持するかは、このビルドでは検証されていません。トークンサーバーが設定されている場合、会話を始めるとアクセスコードもそこに送られます。連携アプリを使うか、オンラインアカウントのツールをオンにすると、アプリはあなたの依頼内容（日付、検索語、またはあなたが確認した下書き・返信・タスクのテキスト）をあなたのDoddyサーバーに送り、サーバーはComposioを通じてGoogle、Microsoft（Outlook）、Notion、Todoistとやり取りします。結果はアプリに戻り、会話中はDoddyが答えられるようOpenAI（ホームの声をElevenLabsに切り替えている場合はElevenLabs）にも送られます。保存したメモがそのサーバーに送られることはありません。Siriに「保存した内容をDoddyに聞く」と頼むと（下でオフにできます）、DoddyはこのiPad上で検索し、一致するメモをAppleのアシスタントであるSiriに渡して読み上げさせます。あなたの発言と答えは、あなたのSiri設定に従ってSiriが処理します。「Hey Doddy」をオンにすると、マイクはこのiPad上でウェイクワードを待ち受け、聞こえた内容は保存も送信もされません。Picovoiceは確認のためにあなたのAccessKeyを受け取り、ウェイクワードで始まった会話はほかの会話と同じようにOpenAI（ホームの声をElevenLabsに切り替えている場合はElevenLabs）に送られます。Web検索をオンにすると、検索語は同じ経路であなたのDoddyサーバーに送られ、サーバーはMonid（Doddyのサーバーが使う有料の検索サービスで、あなたがサインインするものではありません）を通じて検索します。「Doddyに聞く」をオンにすると、文字入力の質問（そして、あなたが許可した場合は質問に一致する保存済みメモ）は、別のサーバーである「Doddyに聞く」ゲートウェイに送られ、そこからOpenAIに渡されます。Doddyのメッセージサーバーが設定されていて、通知、SMS、電話、毎日のニュースをオンにすると、サーバーは匿名のアカウントトークン、このiPadの通知トークン、コードで確認した後のあなたの電話番号、そして選んだニュースのトピックを受け取ります。サーバーはAppleとTwilioを通じて送信し、通話はElevenLabsで処理し、ニュースはAI（サーバーの設定に応じてAnthropicまたはOpenAI。どちらかは「毎日のニュース」に表示されます）とGNewsで書きます。保存したメモがそこに送られるのは、「通話中にDoddyが記憶を使えるようにする」をオンにした場合だけです。リマインダー用の場所を検索すると、入力した言葉（およびDoddyがすでに知っている場合はおおよその現在地）がAppleのマップに送られます。選んだ場所はこのiPadにとどまり、到着に気づくのはDoddyではなくiOSです。翻訳モードでは、相手の声もOpenAI（ホームの声をElevenLabsに切り替えている場合はElevenLabs）に送られます（「聞くだけ」では近くにいる人の声が聞き取られます）。ホームの「翻訳」から始めた場合、メモ、会話、プロフィールは送られず、5分以内に「コピー」か「保存」をタップしない限り、その内容はこのiPadに何も残りません。リストを共有すると、その名前と項目はあなたのiCloud（Apple）と招待した人に送られ、その人たちの変更が戻ってきます。リストのリマインダーの場所がそこに送られるのは、「この場所を共有」をタップした場合だけです。Doddyに通貨の換算を頼むと、アプリは欧州中央銀行の公開為替レートファイルをダウンロードします。その際にあなたに関する情報は何も送られません。「メールを読む」または「Notionページを読む」をオンにすると、あなたが尋ねた1通のメール（送信者、件名、本文）または1ページ（タイトルと本文）が短く切り詰められた形であなたのDoddyサーバーから届き、その会話中にOpenAI（ホームの声をElevenLabsに切り替えている場合はElevenLabs）に送られます。ほかのアプリからDoddyに共有したテキスト、ボイスメモから見つかったやること、集中モードの設定はこのiPadにとどまります。駐車ウィジェットに表示されるのは駐車した時刻とメモだけで、場所は表示されません。出発時刻のリマインドをDoddyに頼むと、所要時間を計算するために、iPadの現在地と行き先が一度だけAppleのマップに送られます。どちらも保存されません。「iPadの検索にメモを表示」をオンにすると、メモとリスト（プライベートなものは除く）がこのiPad上でiOSによってインデックスされます。それ以外は、どこにも何も送られません。"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "メモはこのiPhoneにとどまります。音声会話の間、あなたの声、会話、保存したメモ（プライベートに設定したものを除く）、リスト名（リストの項目はDoddyがそのリストを読んだり変更したりするときだけ）、性格の設定、そして（オンにしている場合）直近の数回の会話と最初の紹介での回答は、音声エージェントを動かすOpenAI（ホームの声をElevenLabsに切り替えている場合はElevenLabs）に送られます。Doddyが会話で使うカレンダーの予定、連絡先の名前と誕生日（日と月）、メッセージの下書きも送られます。声がElevenLabsのときに天気や事実を尋ねると、ElevenLabsがDoddyのために調べます。地名と座標はOpen-Meteoに、検索語はWikipediaに送られます。このアプリ自体がそうした要求を行うことはありません。ElevenLabsは、自身が処理した各会話の録音と書き起こしを保持します。OpenAIが音声と書き起こしをどのくらい保持するかは、このビルドでは検証されていません。トークンサーバーが設定されている場合、会話を始めるとアクセスコードもそこに送られます。連携アプリを使うか、オンラインアカウントのツールをオンにすると、アプリはあなたの依頼内容（日付、検索語、またはあなたが確認した下書き・返信・タスクのテキスト）をあなたのDoddyサーバーに送り、サーバーはComposioを通じてGoogle、Microsoft（Outlook）、Notion、Todoistとやり取りします。結果はアプリに戻り、会話中はDoddyが答えられるようOpenAI（ホームの声をElevenLabsに切り替えている場合はElevenLabs）にも送られます。保存したメモがそのサーバーに送られることはありません。Siriに「保存した内容をDoddyに聞く」と頼むと（下でオフにできます）、DoddyはこのiPhone上で検索し、一致するメモをAppleのアシスタントであるSiriに渡して読み上げさせます。あなたの発言と答えは、あなたのSiri設定に従ってSiriが処理します。「Hey Doddy」をオンにすると、マイクはこのiPhone上でウェイクワードを待ち受け、聞こえた内容は保存も送信もされません。Picovoiceは確認のためにあなたのAccessKeyを受け取り、ウェイクワードで始まった会話はほかの会話と同じようにOpenAI（ホームの声をElevenLabsに切り替えている場合はElevenLabs）に送られます。Web検索をオンにすると、検索語は同じ経路であなたのDoddyサーバーに送られ、サーバーはMonid（Doddyのサーバーが使う有料の検索サービスで、あなたがサインインするものではありません）を通じて検索します。「Doddyに聞く」をオンにすると、文字入力の質問（そして、あなたが許可した場合は質問に一致する保存済みメモ）は、別のサーバーである「Doddyに聞く」ゲートウェイに送られ、そこからOpenAIに渡されます。Doddyのメッセージサーバーが設定されていて、通知、SMS、電話、毎日のニュースをオンにすると、サーバーは匿名のアカウントトークン、このiPhoneの通知トークン、コードで確認した後のあなたの電話番号、そして選んだニュースのトピックを受け取ります。サーバーはAppleとTwilioを通じて送信し、通話はElevenLabsで処理し、ニュースはAI（サーバーの設定に応じてAnthropicまたはOpenAI。どちらかは「毎日のニュース」に表示されます）とGNewsで書きます。保存したメモがそこに送られるのは、「通話中にDoddyが記憶を使えるようにする」をオンにした場合だけです。リマインダー用の場所を検索すると、入力した言葉（およびDoddyがすでに知っている場合はおおよその現在地）がAppleのマップに送られます。選んだ場所はこのiPhoneにとどまり、到着に気づくのはDoddyではなくiOSです。翻訳モードでは、相手の声もOpenAI（ホームの声をElevenLabsに切り替えている場合はElevenLabs）に送られます（「聞くだけ」では近くにいる人の声が聞き取られます）。ホームの「翻訳」から始めた場合、メモ、会話、プロフィールは送られず、5分以内に「コピー」か「保存」をタップしない限り、その内容はこのiPhoneに何も残りません。リストを共有すると、その名前と項目はあなたのiCloud（Apple）と招待した人に送られ、その人たちの変更が戻ってきます。リストのリマインダーの場所がそこに送られるのは、「この場所を共有」をタップした場合だけです。Doddyに通貨の換算を頼むと、アプリは欧州中央銀行の公開為替レートファイルをダウンロードします。その際にあなたに関する情報は何も送られません。「メールを読む」または「Notionページを読む」をオンにすると、あなたが尋ねた1通のメール（送信者、件名、本文）または1ページ（タイトルと本文）が短く切り詰められた形であなたのDoddyサーバーから届き、その会話中にOpenAI（ホームの声をElevenLabsに切り替えている場合はElevenLabs）に送られます。ほかのアプリからDoddyに共有したテキスト、ボイスメモから見つかったやること、集中モードの設定はこのiPhoneにとどまります。駐車ウィジェットに表示されるのは駐車した時刻とメモだけで、場所は表示されません。出発時刻のリマインドをDoddyに頼むと、所要時間を計算するために、iPhoneの現在地と行き先が一度だけAppleのマップに送られます。どちらも保存されません。「iPhoneの検索にメモを表示」をオンにすると、メモとリスト（プライベートなものは除く）がこのiPhone上でiOSによってインデックスされます。それ以外は、どこにも何も送られません。"
-                }
-              }
-            }
-          }
-        },
-        "pl": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Twoje notatki zostają na tym iPadzie. Podczas rozmowy głosowej Twój głos, rozmowa, zapisane notatki (oprócz oznaczonych jako prywatne), nazwy list (pozycje listy tylko wtedy, gdy Doddy ją czyta lub zmienia), ustawienia osobowości oraz (jeśli są włączone) kilka ostatnich rozmów i odpowiedzi z przedstawienia się są wysyłane do OpenAI albo ElevenLabs, jeśli przełączysz na niego głos na ekranie głównym, który obsługuje agenta głosowego. Trafiają tam też wpisy z kalendarza, nazwy kontaktów i ich urodziny (dzień i miesiąc) lub szkice wiadomości, których Doddy użyje w rozmowie. Gdy pytasz o pogodę lub fakty, a głosem jest ElevenLabs, sprawdza je dla Doddy’ego: nazwa miejsca i współrzędne trafiają do Open-Meteo, a szukane słowa do Wikipedii; ta aplikacja sama nie wysyła takich zapytań. ElevenLabs przechowuje nagranie i zapis każdej rozmowy, którą prowadzi; jak długo OpenAI przechowuje dźwięk i zapis, nie zostało sprawdzone w tej wersji. Jeśli ustawiono serwer tokenów, rozpoczęcie rozmowy wysyła do niego także Twój kod dostępu. Jeśli używasz Połączonych aplikacji lub włączysz narzędzie konta online, aplikacja wysyła to, o co prosisz (datę, szukane słowo albo treść potwierdzonego szkicu, odpowiedzi lub zadania), do Twojego serwera Doddy, który łączy się z Google, Microsoft (Outlook), Notion lub Todoist przez Composio; wyniki wracają do aplikacji i w trakcie rozmowy do OpenAI albo ElevenLabs, jeśli przełączysz na niego głos na ekranie głównym, żeby Doddy mógł odpowiedzieć; Twoje zapisane notatki nigdy nie trafiają na ten serwer. Jeśli poprosisz Siri „Zapytaj aplikację Doddy, co mam zapisane” (można to wyłączyć poniżej), Doddy szuka na tym iPadzie i przekazuje pasującą notatkę Siri, asystentowi Apple, do przeczytania na głos; Siri obsługuje to, co mówisz, i odpowiedź zgodnie z Twoimi ustawieniami Siri. Jeśli włączysz „Hey Doddy”, mikrofon nasłuchuje słowa wybudzającego na tym iPadzie, a to, co usłyszy, nie jest przechowywane ani wysyłane; Picovoice dostaje Twój AccessKey, żeby go sprawdzić, a rozmowa rozpoczęta tym słowem trafia do OpenAI albo ElevenLabs, jeśli przełączysz na niego głos na ekranie głównym jak każda inna. Jeśli włączysz wyszukiwanie w sieci, szukane słowa trafiają tą samą drogą do Twojego serwera Doddy, który wyszukuje je przez Monid (płatną usługę wyszukiwania używaną przez serwer Doddy’ego; nie logujesz się do niej). Jeśli włączysz Zapytaj Doddy’ego, wpisane pytania (oraz, jeśli pozwolisz, pasujące do nich zapisane notatki) trafiają do bramki Zapytaj Doddy’ego, osobnego serwera, który przekazuje je do OpenAI. Jeśli ustawiono serwer wiadomości Doddy i włączysz powiadomienia, SMS-y, połączenia telefoniczne lub codzienne wiadomości, dostaje on anonimowy token konta, token powiadomień tego iPada, Twój numer telefonu po potwierdzeniu go kodem oraz wybrane tematy wiadomości; wysyła przez Apple i Twilio, prowadzi połączenia w ElevenLabs i pisze wiadomości z pomocą AI (Anthropic lub OpenAI, zależnie od konfiguracji serwera; ekran Codzienne wiadomości podaje którego) i GNews. Twoje zapisane notatki trafiają tam tylko, jeśli włączysz „Pozwól Doddy’emu używać moich wspomnień w rozmowach telefonicznych”. Jeśli szukasz miejsca dla przypomnienia, wpisane słowa (oraz przybliżone położenie, jeśli Doddy już je zna) trafiają do Apple Maps; wybrane miejsce zostaje na tym iPadzie, a to iOS, nie Doddy, zauważa, kiedy tam dotrzesz. W trybie tłumacza głos drugiej osoby też trafia do OpenAI albo ElevenLabs, jeśli przełączysz na niego głos na ekranie głównym (tryb słuchania słyszy tylko osoby w pobliżu); po uruchomieniu z Tłumacz na ekranie głównym Twoje notatki, rozmowy i profil nie są wysyłane, a nic z tego nie zostaje na tym iPadzie, chyba że w ciągu 5 minut stukniesz Kopiuj lub Zapisz. Jeśli udostępnisz listę, jej nazwa i pozycje trafiają do Twojego iCloud (Apple) i do zaproszonych osób, a ich zmiany wracają do Ciebie; miejsce przypomnienia listy trafia tam tylko wtedy, gdy stukniesz Udostępnij to miejsce. Jeśli poprosisz Doddy’ego o przeliczenie waluty, aplikacja pobiera publiczny plik kursów Europejskiego Banku Centralnego; nic o Tobie nie jest przy tym wysyłane. Jeśli włączysz „Read an email” (Przeczytaj e-mail) lub „Read a Notion page” (Przeczytaj stronę Notion), ten jeden e-mail (nadawca, temat i treść) lub strona (tytuł i treść), o które pytasz, skrócone, przychodzą z Twojego serwera Doddy i trafiają do OpenAI albo ElevenLabs, jeśli przełączysz na niego głos na ekranie głównym w tej rozmowie. Tekst udostępniony do Doddy’ego z innej aplikacji, zadania znalezione w notatce głosowej i ustawienia trybów skupienia zostają na tym iPadzie; widżet parkowania pokazuje, kiedy zaparkowano, i Twoją notatkę, nigdy miejsce. Jeśli poprosisz Doddy’ego o przypomnienie, kiedy wyjść, położenie Twojego iPada i miejsce, do którego jedziesz, trafiają raz do Map Apple, żeby obliczyć czas dojazdu; nic z tego nie jest przechowywane. Jeśli włączysz Pokazuj notatki w wyszukiwaniu iPada, Twoje notatki i listy (nigdy prywatne) są indeksowane przez iOS na tym iPadzie. Nic innego nie jest nigdzie wysyłane."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Twoje notatki zostają na tym iPhonie. Podczas rozmowy głosowej Twój głos, rozmowa, zapisane notatki (oprócz oznaczonych jako prywatne), nazwy list (pozycje listy tylko wtedy, gdy Doddy ją czyta lub zmienia), ustawienia osobowości oraz (jeśli są włączone) kilka ostatnich rozmów i odpowiedzi z przedstawienia się są wysyłane do OpenAI albo ElevenLabs, jeśli przełączysz na niego głos na ekranie głównym, który obsługuje agenta głosowego. Trafiają tam też wpisy z kalendarza, nazwy kontaktów i ich urodziny (dzień i miesiąc) lub szkice wiadomości, których Doddy użyje w rozmowie. Gdy pytasz o pogodę lub fakty, a głosem jest ElevenLabs, sprawdza je dla Doddy’ego: nazwa miejsca i współrzędne trafiają do Open-Meteo, a szukane słowa do Wikipedii; ta aplikacja sama nie wysyła takich zapytań. ElevenLabs przechowuje nagranie i zapis każdej rozmowy, którą prowadzi; jak długo OpenAI przechowuje dźwięk i zapis, nie zostało sprawdzone w tej wersji. Jeśli ustawiono serwer tokenów, rozpoczęcie rozmowy wysyła do niego także Twój kod dostępu. Jeśli używasz Połączonych aplikacji lub włączysz narzędzie konta online, aplikacja wysyła to, o co prosisz (datę, szukane słowo albo treść potwierdzonego szkicu, odpowiedzi lub zadania), do Twojego serwera Doddy, który łączy się z Google, Microsoft (Outlook), Notion lub Todoist przez Composio; wyniki wracają do aplikacji i w trakcie rozmowy do OpenAI albo ElevenLabs, jeśli przełączysz na niego głos na ekranie głównym, żeby Doddy mógł odpowiedzieć; Twoje zapisane notatki nigdy nie trafiają na ten serwer. Jeśli poprosisz Siri „Zapytaj aplikację Doddy, co mam zapisane” (można to wyłączyć poniżej), Doddy szuka na tym iPhonie i przekazuje pasującą notatkę Siri, asystentowi Apple, do przeczytania na głos; Siri obsługuje to, co mówisz, i odpowiedź zgodnie z Twoimi ustawieniami Siri. Jeśli włączysz „Hey Doddy”, mikrofon nasłuchuje słowa wybudzającego na tym iPhonie, a to, co usłyszy, nie jest przechowywane ani wysyłane; Picovoice dostaje Twój AccessKey, żeby go sprawdzić, a rozmowa rozpoczęta tym słowem trafia do OpenAI albo ElevenLabs, jeśli przełączysz na niego głos na ekranie głównym jak każda inna. Jeśli włączysz wyszukiwanie w sieci, szukane słowa trafiają tą samą drogą do Twojego serwera Doddy, który wyszukuje je przez Monid (płatną usługę wyszukiwania używaną przez serwer Doddy’ego; nie logujesz się do niej). Jeśli włączysz Zapytaj Doddy’ego, wpisane pytania (oraz, jeśli pozwolisz, pasujące do nich zapisane notatki) trafiają do bramki Zapytaj Doddy’ego, osobnego serwera, który przekazuje je do OpenAI. Jeśli ustawiono serwer wiadomości Doddy i włączysz powiadomienia, SMS-y, połączenia telefoniczne lub codzienne wiadomości, dostaje on anonimowy token konta, token powiadomień tego iPhone’a, Twój numer telefonu po potwierdzeniu go kodem oraz wybrane tematy wiadomości; wysyła przez Apple i Twilio, prowadzi połączenia w ElevenLabs i pisze wiadomości z pomocą AI (Anthropic lub OpenAI, zależnie od konfiguracji serwera; ekran Codzienne wiadomości podaje którego) i GNews. Twoje zapisane notatki trafiają tam tylko, jeśli włączysz „Pozwól Doddy’emu używać moich wspomnień w rozmowach telefonicznych”. Jeśli szukasz miejsca dla przypomnienia, wpisane słowa (oraz przybliżone położenie, jeśli Doddy już je zna) trafiają do Apple Maps; wybrane miejsce zostaje na tym iPhonie, a to iOS, nie Doddy, zauważa, kiedy tam dotrzesz. W trybie tłumacza głos drugiej osoby też trafia do OpenAI albo ElevenLabs, jeśli przełączysz na niego głos na ekranie głównym (tryb słuchania słyszy tylko osoby w pobliżu); po uruchomieniu z Tłumacz na ekranie głównym Twoje notatki, rozmowy i profil nie są wysyłane, a nic z tego nie zostaje na tym iPhonie, chyba że w ciągu 5 minut stukniesz Kopiuj lub Zapisz. Jeśli udostępnisz listę, jej nazwa i pozycje trafiają do Twojego iCloud (Apple) i do zaproszonych osób, a ich zmiany wracają do Ciebie; miejsce przypomnienia listy trafia tam tylko wtedy, gdy stukniesz Udostępnij to miejsce. Jeśli poprosisz Doddy’ego o przeliczenie waluty, aplikacja pobiera publiczny plik kursów Europejskiego Banku Centralnego; nic o Tobie nie jest przy tym wysyłane. Jeśli włączysz „Read an email” (Przeczytaj e-mail) lub „Read a Notion page” (Przeczytaj stronę Notion), ten jeden e-mail (nadawca, temat i treść) lub strona (tytuł i treść), o które pytasz, skrócone, przychodzą z Twojego serwera Doddy i trafiają do OpenAI albo ElevenLabs, jeśli przełączysz na niego głos na ekranie głównym w tej rozmowie. Tekst udostępniony do Doddy’ego z innej aplikacji, zadania znalezione w notatce głosowej i ustawienia trybów skupienia zostają na tym iPhonie; widżet parkowania pokazuje, kiedy zaparkowano, i Twoją notatkę, nigdy miejsce. Jeśli poprosisz Doddy’ego o przypomnienie, kiedy wyjść, położenie Twojego iPhone’a i miejsce, do którego jedziesz, trafiają raz do Map Apple, żeby obliczyć czas dojazdu; nic z tego nie jest przechowywane. Jeśli włączysz Pokazuj notatki w wyszukiwaniu iPhone’a, Twoje notatki i listy (nigdy prywatne) są indeksowane przez iOS na tym iPhonie. Nic innego nie jest nigdzie wysyłane."
-                }
-              }
-            }
-          }
-        },
-        "pt-BR": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Suas notas ficam neste iPad. Durante uma conversa por voz, sua voz, a conversa, suas notas salvas (exceto as que você marca como Privada), os nomes das suas listas (os itens de uma lista só quando o Doddy a lê ou altera), seus ajustes de personalidade e (se ativados) suas últimas conversas e suas respostas da apresentação são enviados à OpenAI, ou à ElevenLabs se você trocar a voz do Início para ela, que executa o agente de voz. Entradas de calendário, nomes de contatos e aniversários (dia e mês) ou rascunhos de mensagem que o Doddy use em uma conversa também vão. Quando você pede clima ou fatos com a ElevenLabs como voz, ela consulta isso para o Doddy: o nome do lugar e as coordenadas vão para o Open-Meteo, e as palavras de busca vão para a Wikipédia; este app não faz essas solicitações por conta própria. A ElevenLabs guarda uma gravação e uma transcrição de cada conversa que executa; por quanto tempo a OpenAI guarda o áudio e a transcrição não foi verificado nesta versão. Se um servidor de token estiver definido, começar uma conversa também envia seu código de acesso a ele. Se você usar Apps Conectados ou ativar uma ferramenta de conta online, o app envia o que você pede (uma data, uma palavra de busca ou o texto de um rascunho, resposta ou tarefa que você confirma) ao seu servidor do Doddy, que fala com Google, Microsoft (Outlook), Notion ou Todoist via Composio, e os resultados voltam ao app e, durante uma conversa, à OpenAI, ou à ElevenLabs se você trocar a voz do Início para ela, para o Doddy poder responder; suas notas salvas nunca são enviadas a esse servidor. Se você pedir à Siri “Perguntar ao Doddy o que eu salvei” (pode ser desativado abaixo), o Doddy busca neste iPad e passa a nota correspondente à Siri, a assistente da Apple, para ler em voz alta; a Siri trata o que você diz e a resposta conforme seus ajustes da Siri. Se você ativar o “Hey Doddy”, o microfone escuta a palavra de ativação neste iPad e o que ele ouve não é guardado nem enviado; a Picovoice recebe seu AccessKey para verificá-lo, e a conversa que a palavra de ativação inicia vai para a OpenAI, ou para a ElevenLabs se você trocar a voz do Início para ela, como qualquer outra. Se você ativar a busca na web, suas palavras de busca vão pelo mesmo caminho ao seu servidor do Doddy, que as pesquisa pelo Monid (um serviço de busca pago que o servidor do Doddy usa; você não faz login nele). Se você ativar Perguntar ao Doddy, as perguntas digitadas (e, se você permitir, as notas salvas que correspondem a elas) vão para o gateway do Perguntar ao Doddy, um servidor separado, que as passa à OpenAI. Se um servidor de mensagens do Doddy estiver definido e você ativar notificações, SMS, chamadas telefônicas ou notícias diárias, ele recebe um token de conta anônimo, o token de notificação deste iPad, seu número de telefone depois que você o confirmar com um código e os tópicos de notícias que você escolher; ele envia pela Apple e pela Twilio, executa chamadas na ElevenLabs e escreve as notícias com uma IA (Anthropic ou OpenAI, conforme a configuração do servidor; Notícias diárias informa qual) e o GNews. Suas notas salvas só vão para lá se você ativar “Deixar o Doddy usar minhas memórias nas chamadas”. Se você buscar um lugar para um lembrete, as palavras que digita (e mais ou menos onde você está, se o Doddy já souber) vão para o Mapas da Apple; o lugar que você escolhe fica neste iPad, e é o iOS, não o Doddy, que percebe quando você chega lá. No modo tradutor, a voz da outra pessoa também vai para a OpenAI, ou para a ElevenLabs se você trocar a voz do Início para ela (só ouvir escuta quem estiver perto de você); iniciado por Traduzir no Início, suas notas, conversas e perfil não são enviados, e nada disso fica neste iPad a menos que você toque em Copiar ou Salvar em até 5 minutos. Se você compartilhar uma lista, o nome e os itens dela vão para o seu iCloud (Apple) e para as pessoas que você convidar, e as mudanças delas voltam; o lugar de um lembrete de lista só vai para lá se você tocar em Compartilhar este lugar. Se você pedir ao Doddy para converter dinheiro, o app baixa o arquivo público de taxas de câmbio do Banco Central Europeu; nada sobre você é enviado junto. Se você ativar Ler um e-mail ou Ler uma página do Notion, o único e-mail (remetente, assunto e texto) ou página (título e texto) sobre o qual você pergunta, encurtado, vem do seu servidor do Doddy e vai para a OpenAI, ou para a ElevenLabs se você trocar a voz do Início para ela, durante essa conversa. O texto que você compartilha com o Doddy a partir de outro app, as tarefas encontradas em uma gravação de voz e seus ajustes de Foco ficam neste iPad; o widget de estacionamento mostra quando você estacionou e sua nota, nunca onde. Se você pedir ao Doddy para avisar quando sair, onde seu iPad está e o lugar aonde você vai são enviados uma vez ao Mapas da Apple, para calcular o tempo de trajeto; nenhum dos dois é guardado. Se você ativar Mostrar notas na busca do iPad, suas notas e listas (nunca as privadas) são indexadas pelo iOS neste iPad. Nada mais é enviado a lugar nenhum."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Suas notas ficam neste iPhone. Durante uma conversa por voz, sua voz, a conversa, suas notas salvas (exceto as que você marca como Privada), os nomes das suas listas (os itens de uma lista só quando o Doddy a lê ou altera), seus ajustes de personalidade e (se ativados) suas últimas conversas e suas respostas da apresentação são enviados à OpenAI, ou à ElevenLabs se você trocar a voz do Início para ela, que executa o agente de voz. Entradas de calendário, nomes de contatos e aniversários (dia e mês) ou rascunhos de mensagem que o Doddy use em uma conversa também vão. Quando você pede clima ou fatos com a ElevenLabs como voz, ela consulta isso para o Doddy: o nome do lugar e as coordenadas vão para o Open-Meteo, e as palavras de busca vão para a Wikipédia; este app não faz essas solicitações por conta própria. A ElevenLabs guarda uma gravação e uma transcrição de cada conversa que executa; por quanto tempo a OpenAI guarda o áudio e a transcrição não foi verificado nesta versão. Se um servidor de token estiver definido, começar uma conversa também envia seu código de acesso a ele. Se você usar Apps Conectados ou ativar uma ferramenta de conta online, o app envia o que você pede (uma data, uma palavra de busca ou o texto de um rascunho, resposta ou tarefa que você confirma) ao seu servidor do Doddy, que fala com Google, Microsoft (Outlook), Notion ou Todoist via Composio, e os resultados voltam ao app e, durante uma conversa, à OpenAI, ou à ElevenLabs se você trocar a voz do Início para ela, para o Doddy poder responder; suas notas salvas nunca são enviadas a esse servidor. Se você pedir à Siri “Perguntar ao Doddy o que eu salvei” (pode ser desativado abaixo), o Doddy busca neste iPhone e passa a nota correspondente à Siri, a assistente da Apple, para ler em voz alta; a Siri trata o que você diz e a resposta conforme seus ajustes da Siri. Se você ativar o “Hey Doddy”, o microfone escuta a palavra de ativação neste iPhone e o que ele ouve não é guardado nem enviado; a Picovoice recebe seu AccessKey para verificá-lo, e a conversa que a palavra de ativação inicia vai para a OpenAI, ou para a ElevenLabs se você trocar a voz do Início para ela, como qualquer outra. Se você ativar a busca na web, suas palavras de busca vão pelo mesmo caminho ao seu servidor do Doddy, que as pesquisa pelo Monid (um serviço de busca pago que o servidor do Doddy usa; você não faz login nele). Se você ativar Perguntar ao Doddy, as perguntas digitadas (e, se você permitir, as notas salvas que correspondem a elas) vão para o gateway do Perguntar ao Doddy, um servidor separado, que as passa à OpenAI. Se um servidor de mensagens do Doddy estiver definido e você ativar notificações, SMS, chamadas telefônicas ou notícias diárias, ele recebe um token de conta anônimo, o token de notificação deste iPhone, seu número de telefone depois que você o confirmar com um código e os tópicos de notícias que você escolher; ele envia pela Apple e pela Twilio, executa chamadas na ElevenLabs e escreve as notícias com uma IA (Anthropic ou OpenAI, conforme a configuração do servidor; Notícias diárias informa qual) e o GNews. Suas notas salvas só vão para lá se você ativar “Deixar o Doddy usar minhas memórias nas chamadas”. Se você buscar um lugar para um lembrete, as palavras que digita (e mais ou menos onde você está, se o Doddy já souber) vão para o Mapas da Apple; o lugar que você escolhe fica neste iPhone, e é o iOS, não o Doddy, que percebe quando você chega lá. No modo tradutor, a voz da outra pessoa também vai para a OpenAI, ou para a ElevenLabs se você trocar a voz do Início para ela (só ouvir escuta quem estiver perto de você); iniciado por Traduzir no Início, suas notas, conversas e perfil não são enviados, e nada disso fica neste iPhone a menos que você toque em Copiar ou Salvar em até 5 minutos. Se você compartilhar uma lista, o nome e os itens dela vão para o seu iCloud (Apple) e para as pessoas que você convidar, e as mudanças delas voltam; o lugar de um lembrete de lista só vai para lá se você tocar em Compartilhar este lugar. Se você pedir ao Doddy para converter dinheiro, o app baixa o arquivo público de taxas de câmbio do Banco Central Europeu; nada sobre você é enviado junto. Se você ativar Ler um e-mail ou Ler uma página do Notion, o único e-mail (remetente, assunto e texto) ou página (título e texto) sobre o qual você pergunta, encurtado, vem do seu servidor do Doddy e vai para a OpenAI, ou para a ElevenLabs se você trocar a voz do Início para ela, durante essa conversa. O texto que você compartilha com o Doddy a partir de outro app, as tarefas encontradas em uma gravação de voz e seus ajustes de Foco ficam neste iPhone; o widget de estacionamento mostra quando você estacionou e sua nota, nunca onde. Se você pedir ao Doddy para avisar quando sair, onde seu iPhone está e o lugar aonde você vai são enviados uma vez ao Mapas da Apple, para calcular o tempo de trajeto; nenhum dos dois é guardado. Se você ativar Mostrar notas na busca do iPhone, suas notas e listas (nunca as privadas) são indexadas pelo iOS neste iPhone. Nada mais é enviado a lugar nenhum."
-                }
-              }
-            }
-          }
-        },
-        "zh-Hans": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "你的笔记只保留在这台 iPad 上。在语音对话期间，你的语音、这段对话、你保存的笔记（标记为私密的除外）、你的清单名称（清单项目仅在 Doddy 读取或更改该清单时）、你的个性设置，以及（如果已开启）你最近几次的对话和你的开场介绍回答，都会发送给运行语音代理的 OpenAI（如果你在首页把语音切换为 ElevenLabs，则发送给 ElevenLabs）。Doddy 在对话中用到的日历条目、联系人姓名和生日（日和月）或信息草稿也会一并发送。当语音为 ElevenLabs 且你询问天气或事实时，由 ElevenLabs 为 Doddy 查询：地名和坐标会发送给 Open-Meteo，搜索词会发送给维基百科；本应用自身不会发出此类请求。ElevenLabs 会保留它运行的每段对话的录音和文字记录；OpenAI 保留音频和文字记录的时长在此版本中尚未验证。如果设置了令牌服务器，开始对话时还会把你的访问码发送给它。如果你使用“已连接的应用”或开启某个在线账户工具，应用会把你的请求（日期、搜索词，或你确认的草稿、回复或任务的文字）发送到你的 Doddy 服务器，该服务器通过 Composio 与 Google、Microsoft（Outlook）、Notion 或 Todoist 通信，结果会返回应用，并在对话期间返回给 OpenAI（如果你在首页把语音切换为 ElevenLabs，则返回给 ElevenLabs），以便 Doddy 回答；你保存的笔记绝不会发送到该服务器。如果你对 Siri 说“问 Doddy 我存了什么”（可在下方关闭），Doddy 会在这台 iPad 上搜索，并把匹配的笔记交给 Apple 的助理 Siri 朗读；Siri 会按照你的 Siri 设置处理你说的话和回答。如果你开启“Hey Doddy”，麦克风会在这台 iPad 上聆听唤醒词，听到的内容不会保留或发送；Picovoice 会收到你的 AccessKey 以进行验证，而唤醒词开启的对话和其他对话一样，会发送给 OpenAI（如果你在首页把语音切换为 ElevenLabs，则发送给 ElevenLabs）。如果你开启网页搜索，你的搜索词会以同样的方式发送到你的 Doddy 服务器，由它通过 Monid（Doddy 服务器使用的付费搜索服务；你无需登录）进行查询。如果你开启“问 Doddy”，文字提问（以及，如果你允许，与之匹配的已保存笔记）会发送到“问 Doddy”网关（一台独立的服务器），再由它转给 OpenAI。如果设置了 Doddy 消息服务器，并且你开启了通知、短信、电话或每日新闻，它会获得一个匿名账户令牌、这台 iPad 的通知令牌、你用验证码确认后的手机号码，以及你选择的新闻主题；它通过 Apple 和 Twilio 发送，在 ElevenLabs 上运行通话，并使用 AI（Anthropic 或 OpenAI，取决于服务器的配置；“每日新闻”会注明是哪一个）和 GNews 撰写新闻。只有你开启“允许 Doddy 在通话中使用我的记忆”，你保存的笔记才会发送到那里。如果你为提醒搜索地点，你输入的文字（以及你的大致位置，如果 Doddy 已经知道）会发送给 Apple 地图；你选择的地点只保留在这台 iPad 上，由 iOS 而不是 Doddy 来察觉你何时到达。在翻译模式下，对方的语音也会发送给 OpenAI（如果你在首页把语音切换为 ElevenLabs，则发送给 ElevenLabs）（“仅聆听”会听到你附近的任何人）；从首页的“翻译”启动时，你的笔记、对话和个人资料不会被发送，除非你在 5 分钟内轻点“拷贝”或“保存”，否则这台 iPad 上不会保留其中任何内容。如果你共享清单，它的名称和项目会发送到你的 iCloud（Apple）以及你邀请的人那里，他们的更改会同步回来；只有你轻点“共享这个地点”，清单提醒的地点才会一并发送。如果你让 Doddy 换算货币，应用会下载欧洲中央银行的公开汇率文件；不会随之发送任何关于你的信息。如果你开启“读取邮件”或“读取 Notion 页面”，你询问的那一封邮件（发件人、主题和正文）或那一个页面（标题和正文）会经过截短，从你的 Doddy 服务器发出，并在那次对话中发送给 OpenAI（如果你在首页把语音切换为 ElevenLabs，则发送给 ElevenLabs）。你从其他应用共享到 Doddy 的文字、在语音备忘录中找到的待办事项以及你的专注模式设置都只保留在这台 iPad 上；停车小组件只显示你停车的时间和你的笔记，绝不显示地点。如果你让 Doddy 提醒你何时出发，你 iPad 的位置和你要去的地点会一次性发送给 Apple 地图以计算路程时间；两者都不会保留。如果你开启“在 iPad 搜索中显示笔记”，你的笔记和清单（绝不包括私密笔记）会由 iOS 在这台 iPad 上建立索引。除此之外，不会向任何地方发送任何内容。"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "你的笔记只保留在这台 iPhone 上。在语音对话期间，你的语音、这段对话、你保存的笔记（标记为私密的除外）、你的清单名称（清单项目仅在 Doddy 读取或更改该清单时）、你的个性设置，以及（如果已开启）你最近几次的对话和你的开场介绍回答，都会发送给运行语音代理的 OpenAI（如果你在首页把语音切换为 ElevenLabs，则发送给 ElevenLabs）。Doddy 在对话中用到的日历条目、联系人姓名和生日（日和月）或信息草稿也会一并发送。当语音为 ElevenLabs 且你询问天气或事实时，由 ElevenLabs 为 Doddy 查询：地名和坐标会发送给 Open-Meteo，搜索词会发送给维基百科；本应用自身不会发出此类请求。ElevenLabs 会保留它运行的每段对话的录音和文字记录；OpenAI 保留音频和文字记录的时长在此版本中尚未验证。如果设置了令牌服务器，开始对话时还会把你的访问码发送给它。如果你使用“已连接的应用”或开启某个在线账户工具，应用会把你的请求（日期、搜索词，或你确认的草稿、回复或任务的文字）发送到你的 Doddy 服务器，该服务器通过 Composio 与 Google、Microsoft（Outlook）、Notion 或 Todoist 通信，结果会返回应用，并在对话期间返回给 OpenAI（如果你在首页把语音切换为 ElevenLabs，则返回给 ElevenLabs），以便 Doddy 回答；你保存的笔记绝不会发送到该服务器。如果你对 Siri 说“问 Doddy 我存了什么”（可在下方关闭），Doddy 会在这台 iPhone 上搜索，并把匹配的笔记交给 Apple 的助理 Siri 朗读；Siri 会按照你的 Siri 设置处理你说的话和回答。如果你开启“Hey Doddy”，麦克风会在这台 iPhone 上聆听唤醒词，听到的内容不会保留或发送；Picovoice 会收到你的 AccessKey 以进行验证，而唤醒词开启的对话和其他对话一样，会发送给 OpenAI（如果你在首页把语音切换为 ElevenLabs，则发送给 ElevenLabs）。如果你开启网页搜索，你的搜索词会以同样的方式发送到你的 Doddy 服务器，由它通过 Monid（Doddy 服务器使用的付费搜索服务；你无需登录）进行查询。如果你开启“问 Doddy”，文字提问（以及，如果你允许，与之匹配的已保存笔记）会发送到“问 Doddy”网关（一台独立的服务器），再由它转给 OpenAI。如果设置了 Doddy 消息服务器，并且你开启了通知、短信、电话或每日新闻，它会获得一个匿名账户令牌、这台 iPhone 的通知令牌、你用验证码确认后的手机号码，以及你选择的新闻主题；它通过 Apple 和 Twilio 发送，在 ElevenLabs 上运行通话，并使用 AI（Anthropic 或 OpenAI，取决于服务器的配置；“每日新闻”会注明是哪一个）和 GNews 撰写新闻。只有你开启“允许 Doddy 在通话中使用我的记忆”，你保存的笔记才会发送到那里。如果你为提醒搜索地点，你输入的文字（以及你的大致位置，如果 Doddy 已经知道）会发送给 Apple 地图；你选择的地点只保留在这台 iPhone 上，由 iOS 而不是 Doddy 来察觉你何时到达。在翻译模式下，对方的语音也会发送给 OpenAI（如果你在首页把语音切换为 ElevenLabs，则发送给 ElevenLabs）（“仅聆听”会听到你附近的任何人）；从首页的“翻译”启动时，你的笔记、对话和个人资料不会被发送，除非你在 5 分钟内轻点“拷贝”或“保存”，否则这台 iPhone 上不会保留其中任何内容。如果你共享清单，它的名称和项目会发送到你的 iCloud（Apple）以及你邀请的人那里，他们的更改会同步回来；只有你轻点“共享这个地点”，清单提醒的地点才会一并发送。如果你让 Doddy 换算货币，应用会下载欧洲中央银行的公开汇率文件；不会随之发送任何关于你的信息。如果你开启“读取邮件”或“读取 Notion 页面”，你询问的那一封邮件（发件人、主题和正文）或那一个页面（标题和正文）会经过截短，从你的 Doddy 服务器发出，并在那次对话中发送给 OpenAI（如果你在首页把语音切换为 ElevenLabs，则发送给 ElevenLabs）。你从其他应用共享到 Doddy 的文字、在语音备忘录中找到的待办事项以及你的专注模式设置都只保留在这台 iPhone 上；停车小组件只显示你停车的时间和你的笔记，绝不显示地点。如果你让 Doddy 提醒你何时出发，你 iPhone 的位置和你要去的地点会一次性发送给 Apple 地图以计算路程时间；两者都不会保留。如果你开启“在 iPhone 搜索中显示笔记”，你的笔记和清单（绝不包括私密笔记）会由 iOS 在这台 iPhone 上建立索引。除此之外，不会向任何地方发送任何内容。"
+                  "value": "Your notes stay on this iPhone. During a voice conversation, your voice, the conversation, your saved notes (except ones you mark Private), your list names (a list's items only when Doddy reads or changes it), your personality settings, and (if switched on) your last few conversations and your introduction answers are sent to OpenAI, or ElevenLabs if you switch Home's voice to it, which runs the voice agent. Calendar entries, contact names and birthdays (day and month) or message drafts Doddy uses in a conversation go too. When you ask for weather or facts with ElevenLabs as the voice, it looks them up for Doddy: the place name and coordinates go to Open-Meteo, and search words go to Wikipedia; this app makes no such requests itself. ElevenLabs keeps a recording and transcript of each conversation it runs; how long OpenAI keeps the audio and transcript isn't verified in this build. When you sign in with Apple, its identity token is sent to DODDY’s server for verification. Voice requests use a short-lived DODDY session credential; this server does not receive your voice, transcripts, notes or profile details for token requests. If you use Connected Apps or switch on an online-account tool, the app sends what you ask (a date, a search word, or the text of a draft, reply or task you confirm) to your Doddy server, which talks to Google, Microsoft (Outlook), Notion or Todoist through Composio, and the results come back to the app and, during a conversation, to OpenAI, or ElevenLabs if you switch Home's voice to it so Doddy can answer; your saved notes are never sent to that server. If you ask Siri “Ask Doddy what I saved” (it can be turned off below), Doddy searches on this iPhone and hands the matching note to Siri, Apple's assistant, to read aloud; Siri handles what you say and the answer under your Siri settings. If you turn on “Hey Doddy”, the microphone listens for the wake word on this iPhone and what it hears isn't kept or sent; Picovoice gets your AccessKey to check it, and the conversation the wake word starts goes to OpenAI, or ElevenLabs if you switch Home's voice to it like any other. If you switch on web search, your search words go the same way to your Doddy server, which looks them up through Monid (a paid search service Doddy's server uses; you don't sign in to it). If you turn on Ask Doddy, typed questions (and, if you allow it, saved notes that match them) go to the Ask Doddy gateway, a separate server, which passes them to OpenAI. If a Doddy messaging server is set and you turn on notifications, texts, phone calls or daily news, it gets an anonymous account token, this iPhone's notification token, your phone number once you confirm it with a code, and the news topics you pick; it sends through Apple and Twilio, runs calls on ElevenLabs, and writes the news with an AI (Anthropic or OpenAI, as the server is set up; Daily news names which) and GNews. Your saved notes go there only if you turn on “Let Doddy use my memories on calls”. If you search for a place for a reminder, the words you type (and roughly where you are, if Doddy already knows) go to Apple Maps; the place you pick stays on this iPhone, and iOS, not Doddy, notices when you get there. In translator mode the other person's voice goes to OpenAI, or ElevenLabs if you switch Home's voice to it too (listen only hears whoever is near you); started from Translate on Home, your notes, conversations and profile aren't sent, and nothing of it is kept on this iPhone unless you tap Copy or Save within 5 minutes. If you share a list, its name and items go to your iCloud (Apple) and to the people you invite, and their changes come back; a list reminder's place goes there too only if you tap Share this place. If you ask Doddy to convert money, the app downloads the European Central Bank's public exchange-rate file; nothing about you is sent with it. If you switch on Read an email or Read a Notion page, the one email (sender, subject and its text) or page (title and text) you ask about, cut short, comes from your Doddy server and goes to OpenAI, or ElevenLabs if you switch Home's voice to it during that conversation. Text you share to Doddy from another app, to-dos found in a voice memo and your Focus settings stay on this iPhone; the parking widget shows when you parked and your note, never where. If you ask Doddy to remind you when to leave, where your iPhone is and the place you're going go to Apple Maps once, to work out the travel time; neither is kept. If you turn on Show notes in iPhone search, your notes and lists (never private ones) are indexed by iOS on this iPhone. Nothing else is sent anywhere."
                 }
               }
             }

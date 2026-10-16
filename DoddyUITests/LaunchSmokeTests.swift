@@ -11,8 +11,8 @@ final class LaunchSmokeTests: XCTestCase {
     private func launch(onboardingDone: Bool, backTapSetup: String = "deferred", pauseAll: Bool = false, opening: Bool = false,
                         listen: Bool = false, firstVisit: Bool = false, extra: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
-        // Overrides UserDefaults for this launch only. The opening and listening on open are on by
-        // default; most tests turn them off and start straight on Home (UITestLaunch).
+        // Overrides UserDefaults for this launch only. Tests start on Home with the intro animation
+        // and listening disabled unless a case opts into the first-launch animation.
         app.launchArguments += UITestLaunch.arguments(
             store: .inMemory, onboardingDone: onboardingDone, backTapSetup: backTapSetup, opening: opening, listen: listen)
         // The Quick start (ADR-324) shows once per install; UserDefaults outlive the in-memory store.
@@ -20,6 +20,7 @@ final class LaunchSmokeTests: XCTestCase {
         // Most tests are about someone who has talked to Doddy before; Home's first visit
         // (ADR-326) holds back the Back Tap and Today cards until then.
         app.launchArguments += ["-hadFirstConversation", firstVisit ? "NO" : "YES"]
+        app.launchArguments += ["-firstLaunchIntroSeen", firstVisit ? "NO" : "YES"]
         if pauseAll { app.launchArguments += ["-connections.pauseAll", "YES"] }
         app.launchArguments += extra
         app.launch()
@@ -27,62 +28,51 @@ final class LaunchSmokeTests: XCTestCase {
     }
 
     @MainActor
-    func testFirstLaunchOffersIntroductionThatCanBeSkipped() {
-        let app = launch(onboardingDone: false)
-        XCTAssertTrue(app.buttons["intro.begin"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["intro.skip"].exists)
-        app.buttons["intro.skip"].tap()
+    func testFirstLaunchLandsOnHomeAndOptionalConversationCanBeSkipped() {
+        let app = launch(onboardingDone: false, firstVisit: true)
+        XCTAssertTrue(app.buttons["home.talk"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["home.getToKnow"].exists)
+        XCTAssertFalse(app.textFields["profile.field.name"].exists, "questions never appear automatically")
 
-        // Quick start (ADR-324): the notifications are offered; with nothing saved, the profile isn't.
-        XCTAssertTrue(app.buttons["quickStart.notNow"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.switches["quickStart.morning"].exists)
-        XCTAssertEqual(app.switches["quickStart.evening"].value as? String, "0", "Reminders is off on a fresh install")
-        XCTAssertFalse(app.switches["quickStart.profile"].exists, "nothing saved, nothing to share")
-        // ADR-402: where Siri, the Action Button and the control are, without claiming they're set.
-        XCTAssertTrue(app.descendants(matching: .any)["quickStart.quickAccess"].exists)
-        // The tips box can push Not now below the fold; the tab bar behind this cover isn't in the way.
-        let notNow = app.buttons["quickStart.notNow"]
-        for _ in 0..<10 where !notNow.isHittable { app.scrollStep() }
-        notNow.tap()
-
-        XCTAssertTrue(app.buttons["tab.home"].waitForExistence(timeout: 5))
-        XCTAssertEqual(app.staticTexts["home.greeting"].label, "A little less to carry.")
+        XCTAssertTrue(app.reveal(app.buttons["home.getToKnow"]))
+        app.buttons["home.getToKnow"].tap()
+        XCTAssertTrue(app.textFields["profile.field.name"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["intro.close"].exists)
+        app.buttons["intro.close"].tap()
+        XCTAssertTrue(app.buttons["home.talk"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["home.getToKnow"].exists, "Not now dismisses the offer")
     }
 
     @MainActor
-    func testIntroductionKeepsOnlyReviewedAnswers() {
-        let app = launch(onboardingDone: false)
-        XCTAssertTrue(app.buttons["intro.begin"].waitForExistence(timeout: 5))
-        app.buttons["intro.begin"].tap()
-
+    func testIntroductionReviewsAndSavesOnlyNameAndStyle() {
+        let app = launch(onboardingDone: false, firstVisit: true)
+        XCTAssertTrue(app.buttons["home.getToKnow"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.reveal(app.buttons["home.getToKnow"]))
+        app.buttons["home.getToKnow"].tap()
         let name = app.textFields["profile.field.name"]
         XCTAssertTrue(name.waitForExistence(timeout: 5))
         name.tap()
         name.typeText("Ola")
         app.buttons["intro.next"].tap()
-        XCTAssertTrue(app.buttons["Keep useful details"].waitForExistence(timeout: 5))
-        app.buttons["Keep useful details"].tap()
-        app.buttons["intro.review"].tap()
+        XCTAssertTrue(app.buttons["Upbeat"].waitForExistence(timeout: 5))
+        app.buttons["Upbeat"].tap()
+        app.buttons["intro.next"].tap()
 
-        // Removing an answer in the review means it is never stored.
+        // The review keeps the two explicit answers. Save confirms only after repository readback.
         XCTAssertTrue(app.buttons["profile.save"].waitForExistence(timeout: 5))
-        app.buttons["profile.remove.help"].tap()
+        XCTAssertTrue(app.textFields["profile.field.name"].exists)
+        XCTAssertTrue(app.textFields["profile.field.style"].exists)
+        XCTAssertFalse(app.textFields["profile.field.help"].exists)
+        XCTAssertTrue(app.reveal(app.buttons["profile.save"]))
         app.buttons["profile.save"].tap()
-
-        // Sharing the saved answers with the voice is offered, but never pre-ticked (ADR-324).
-        let share = app.switches["quickStart.profile"]
-        XCTAssertTrue(app.reveal(share))
-        XCTAssertEqual(share.value as? String, "0")
-        // Quick start is a full-screen cover: the tab bar behind it still exists, so reveal(_:)
-        // would wait for Not now to rise above a bar that isn't in the way. Step until it's tappable.
-        let notNow = app.buttons["quickStart.notNow"]
-        XCTAssertTrue(notNow.waitForExistence(timeout: 5))
-        for _ in 0..<10 where !notNow.isHittable { app.scrollStep() }
-        notNow.tap()
-
+        XCTAssertTrue(app.alerts["Saved on this iPhone"].waitForExistence(timeout: 5))
+        app.alerts.buttons["Done"].tap()
         XCTAssertTrue(app.buttons["tab.home"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.staticTexts["home.greeting"].label, "Hi, Ola.")
-        XCTAssertFalse(app.staticTexts["Useful help"].exists, "removed in the review, so not stored")
+        app.buttons["tab.settings"].tap()
+        let share = app.switches["settings.shareProfileWithVoice"]
+        XCTAssertTrue(app.reveal(share))
+        XCTAssertEqual(share.value as? String, "0", "saving preferences does not enable voice sharing")
     }
 
     @MainActor
@@ -268,8 +258,8 @@ final class LaunchSmokeTests: XCTestCase {
     }
 
     @MainActor
-    func testOpeningPlaysOnLaunchCanBeSkippedAndWithListeningOffOpensNothing() {
-        let app = launch(onboardingDone: true, opening: true)
+    func testFirstLaunchOpeningCanBeSkippedAndNeverStartsVoice() {
+        let app = launch(onboardingDone: false, backTapSetup: "deferred", opening: true, firstVisit: true)
         let scene = app.descendants(matching: .any)["opening.scene"].firstMatch
         XCTAssertTrue(scene.waitForExistence(timeout: 5))
         XCTAssertTrue(scene.label.contains("Doddy"), scene.label)
@@ -286,8 +276,8 @@ final class LaunchSmokeTests: XCTestCase {
     }
 
     @MainActor
-    func testOpeningEndsByItselfAndIsNotRepeatedOnAQuickReturn() {
-        let app = launch(onboardingDone: true, opening: true)
+    func testFirstLaunchOpeningEndsByItselfAndIsNotRepeatedOnAReturn() {
+        let app = launch(onboardingDone: false, backTapSetup: "deferred", opening: true, firstVisit: true)
         let scene = app.descendants(matching: .any)["opening.scene"].firstMatch
         XCTAssertTrue(scene.waitForExistence(timeout: 5))
         // It fades out on its own after its timeline (OpeningScene.Beat.end, 2.4 s, played
@@ -310,12 +300,8 @@ final class LaunchSmokeTests: XCTestCase {
     }
 
     @MainActor
-    func testListeningOnOpenIsOnByDefaultButWaitsForTheMicrophone() {
-        // ADR-325: with the microphone never asked about, nothing opens by itself, so iOS's
-        // question can only follow a tap on Talk to Doddy. (Opening once it's allowed is covered
-        // by OpeningPolicyTests; a UI test can't grant the microphone.)
-        XCUIApplication().resetAuthorizationStatus(for: .microphone)
-        let app = launch(onboardingDone: true, listen: true)
+    func testListeningOnOpenIsOffByDefault() {
+        let app = launch(onboardingDone: true)
         XCTAssertTrue(app.buttons["home.talk"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.navigationBars["Talk to Doddy"].waitForExistence(timeout: 3), "nothing opens before the microphone is allowed")
 
@@ -323,7 +309,7 @@ final class LaunchSmokeTests: XCTestCase {
         app.buttons["tab.settings"].tap()
         let toggle = app.switches["settings.listenOnOpen"]
         XCTAssertTrue(app.reveal(toggle))
-        XCTAssertEqual(toggle.value as? String, "1")
+        XCTAssertEqual(toggle.value as? String, "0")
     }
 
     @MainActor

@@ -1,6 +1,8 @@
 # Onboarding status — Back Tap guide, introduction, personal Home
 Date: 2026-10-09. Owner request: "implement onboarding etc screens". Source designs: `design/interface-v1.2/docs/GUIDED-BACK-TAP-AND-VOICE-SETUP.md`, `ONBOARDING-AND-PERSONAL-HOME.md`, `CLAUDE-GUIDED-SETUP-PROMPT.md` (phase 1, part of phase 2, phase 5). Replaces the old First Hello screen.
 
+> **Current behavior (2026-10-16):** the archived flow notes below describe earlier builds. A new installation now opens Home directly; a first-launch-only, skippable basketball intro can play over Home and is marked seen when it finishes or is skipped. Home offers a dismissible **Let's get to know each other** card. Its optional two-question flow asks only a name/nickname and response style, shows a review, and saves through the existing local SQLite profile repository. It never starts voice, requests permissions, enables provider sharing, or syncs profile data. Returning installations go straight to Home. Settings retains edit and forget controls; voice sharing remains a separate opt-in.
+
 > **Changed at branch consolidation (2026-10-09, DECISIONS.md ADR-089):** the written Back Tap guide below (part 1, `SetupGuideView`, the `OpenDoddyIntent` receipt and Settings → Getting started) was **removed**, because V2 already ships a Back Tap guide that was tried on the owner's iPhone (`V2_SHORTCUT_SETUP_STATUS.md`). First use is now the optional introduction only; Back Tap is offered from the Home card and Settings → Back Tap and Siri. Parts 2 and 3 are unchanged. The UI test for the written guide was removed with it.
 
 > **Current first-use flow (2026-10-13, PRs Bienos/doddy.2#43, #46, #48, #51 landed together, ADR-324 to ADR-327 and ADR-443):**

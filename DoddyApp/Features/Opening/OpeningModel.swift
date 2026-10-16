@@ -10,12 +10,28 @@ enum OpeningPreferences {
         defaults.object(forKey: PreferenceKey.openingScene) == nil ? true : defaults.bool(forKey: PreferenceKey.openingScene)
     }
 
-    /// "Start listening when I open Doddy": on unless the user turned it off (owner decision,
-    /// ADR-225). Must match the Settings toggle's default.
-    static let listenOnOpenDefault = true
+    /// Voice never starts just because the person installed or reopened the app. They can opt in
+    /// separately in Settings → Voice.
+    static let listenOnOpenDefault = false
 
     static func listenOnOpen(_ defaults: UserDefaults = .standard) -> Bool {
         defaults.object(forKey: PreferenceKey.listenOnOpen) == nil ? listenOnOpenDefault : defaults.bool(forKey: PreferenceKey.listenOnOpen)
+    }
+
+    static func firstLaunchIntroSeen(_ defaults: UserDefaults = .standard) -> Bool {
+        if defaults.object(forKey: PreferenceKey.firstLaunchIntroSeen) != nil {
+            return defaults.bool(forKey: PreferenceKey.firstLaunchIntroSeen)
+        }
+        // Older installations already completed their previous first-use route. Don't replay
+        // a first-launch experience when they update.
+        let usedBefore = defaults.bool(forKey: PreferenceKey.quickStartOffered)
+            || defaults.bool(forKey: PreferenceKey.hadFirstConversation)
+        if usedBefore { defaults.set(true, forKey: PreferenceKey.firstLaunchIntroSeen) }
+        return usedBefore
+    }
+
+    static func markFirstLaunchIntroSeen(_ defaults: UserDefaults = .standard) {
+        defaults.set(true, forKey: PreferenceKey.firstLaunchIntroSeen)
     }
 
     /// How much slower than real time the opening plays: only ever set by a UI test's launch
@@ -124,6 +140,9 @@ final class OpeningModel {
         guard play != nil else { return }
         play = nil
         handingOver = false
+        if !OpeningPreferences.firstLaunchIntroSeen() {
+            OpeningPreferences.markFirstLaunchIntroSeen()
+        }
         keepReadyForAWhile()
     }
 
@@ -138,6 +157,9 @@ final class OpeningModel {
         guard let ended = play else { return }
         play = nil
         handingOver = false
+        if !OpeningPreferences.firstLaunchIntroSeen() {
+            OpeningPreferences.markFirstLaunchIntroSeen()
+        }
         keepReadyForAWhile()
         if ended.thenListen { ShortcutRouter.shared.startListeningOnOpen() }
     }
@@ -155,7 +177,16 @@ final class OpeningModel {
     private func decide(_ conditions: OpeningConditions, trigger: OpeningTrigger) -> OpeningDecision {
         var conditions = conditions
         if conditions.sceneOn && loadedDrawings() == nil { conditions.characterArtHidden = true }
-        return OpeningPolicy.decide(conditions, trigger: trigger)
+        let decision = OpeningPolicy.decide(conditions, trigger: trigger)
+        if conditions.firstLaunchIntroPending {
+            if case .scene = decision {
+                // Persist completion only after the scene finishes or is skipped.
+                return decision
+            }
+            // Accessibility settings or an already-open destination skip the artwork.
+            OpeningPreferences.markFirstLaunchIntroSeen()
+        }
+        return decision
     }
 
     private func loadedDrawings() -> OpeningDrawings? {

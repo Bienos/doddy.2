@@ -3,6 +3,8 @@
 <!-- Doddy app with the widgets' App Group (ADR-219) and iCloud for shared lists (ADR-263). Use with Config/DoddyWidgets.entitlements and DODDY_CLOUD_CONTAINER. -->
 <plist version="1.0">
 <dict>
+	<key>com.apple.developer.applesignin</key>
+	<array><string>Default</string></array>
 	<key>com.apple.security.application-groups</key>
 	<array>
 		<string>group.$(DODDY_APP_BUNDLE_IDENTIFIER)</string>

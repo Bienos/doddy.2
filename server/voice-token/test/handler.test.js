@@ -1,283 +1,156 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createTesterLimiter, handleTokenRequest, ignoredShortCodes, parseAccessCodes } from "../src/handler.js";
+import { handleTokenRequest } from "../src/handler.js";
 
-const CODE = "a-long-tester-code-0001";
-const env = {
-  ELEVENLABS_API_KEY: "server-only-key",
+const USER_ID = "opaque-account-id";
+const ENV = {
+  APPLE_BUNDLE_ID: "com.bienos.doddy2.dev",
+  DODDY_SESSION_SIGNING_KEY: "server-only-session-key-for-tests-000000000000000",
+  ELEVENLABS_API_KEY: "elevenlabs-server-secret",
   ELEVENLABS_AGENT_ID: "agent_test",
-  DODDY_ACCESS_CODES: `owner:${CODE}, short:abc`,
+  OPENAI_API_KEY: "openai-server-secret",
+  PICOVOICE_ACCESS_KEY: "owner-picovoice-secret",
 };
 
-function request(method = "POST", code = CODE) {
+function store({ allowed = true } = {}) {
+  const calls = [];
+  return {
+    calls,
+    async hitLimits(userId, perUserLimit, globalLimit, now) {
+      calls.push({ userId, perUserLimit, globalLimit, now });
+      return { allowed, retryAfterSeconds: 120 };
+    },
+    async getSession() { return { userId: USER_ID, sessionId: "session-1" }; },
+  };
+}
+
+function request(body, token = "doddysession") {
   return new Request("https://example.test/api/voice-token", {
-    method,
-    headers: code ? { authorization: `Bearer ${code}` } : {},
+    method: "POST",
+    headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+    ...(body ? { body: JSON.stringify(body) } : {}),
   });
 }
 
-async function run(req, { upstream, environment = env, deps = {} } = {}) {
+async function run(req, options = {}) {
   const logs = [];
   const calls = [];
+  const upstream = options.upstream;
   const fetch = async (url, init) => {
     calls.push({ url: String(url), init });
     if (upstream instanceof Error) throw upstream;
-    return upstream ?? Response.json({ token: "jwt-token" });
+    return upstream ?? Response.json({ token: "provider-credential" });
   };
-  const response = await handleTokenRequest(req, environment, { fetch, log: (entry) => logs.push(entry), ...deps });
+  const response = await handleTokenRequest(req, options.environment ?? ENV, {
+    fetch, log: (entry) => logs.push(entry), now: options.now ?? (() => 100_000),
+    authStore: options.authStore ?? store(options.limits),
+    authenticateSession: options.authenticateSession ?? (async () => ({ userId: USER_ID, sessionId: "session-1" })),
+  });
   return { response, body: await response.json(), logs, calls };
 }
 
-test("valid code returns the token, uncached, and never logs secrets", async () => {
-  const { response, body, logs, calls } = await run(request());
+test("valid DODDY session exchanges only a short-lived provider credential and never logs secrets", async () => {
+  const { response, body, logs, calls } = await run(request(null));
   assert.equal(response.status, 200);
-  assert.deepEqual(body, { token: "jwt-token" });
+  assert.deepEqual(body, { token: "provider-credential" });
   assert.equal(response.headers.get("cache-control"), "no-store");
   assert.equal(calls[0].url, "https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=agent_test");
-  assert.equal(calls[0].init.headers["xi-api-key"], "server-only-key");
+  assert.equal(calls[0].init.headers["xi-api-key"], "elevenlabs-server-secret");
   const logged = JSON.stringify(logs);
-  assert.match(logged, /"tester":"owner"/);
-  for (const secret of ["jwt-token", CODE, "server-only-key"]) assert.ok(!logged.includes(secret), secret);
+  for (const secret of ["provider-credential", "doddysession", "elevenlabs-server-secret", USER_ID]) {
+    assert.ok(!logged.includes(secret), `log leaked ${secret}`);
+  }
+  assert.match(logged, /"provider":"elevenlabs"/);
 });
 
-test("wrong, missing and too-short codes are refused before ElevenLabs is called", async () => {
-  for (const code of ["wrong-code-but-long-enough", null, "abc"]) {
-    const { response, body, calls } = await run(request("POST", code));
+test("missing, invalid, or revoked sessions are refused before a provider request", async () => {
+  for (const session of [null, false]) {
+    const { response, body, calls } = await run(request(null), {
+      authenticateSession: async () => session,
+    });
     assert.equal(response.status, 401);
-    assert.deepEqual(body, { error: "invalid_access_code" });
+    assert.deepEqual(body, { error: "session_expired" });
     assert.equal(calls.length, 0);
   }
 });
 
-test("only POST, and the refusal says so", async () => {
-  const { response } = await run(request("GET"));
-  assert.equal(response.status, 405);
-  assert.equal(response.headers.get("allow"), "POST");
-});
-
-test("missing configuration fails closed", async () => {
-  const { response, body, calls } = await run(request(), { environment: { ...env, ELEVENLABS_API_KEY: "" } });
-  assert.equal(response.status, 500);
-  assert.deepEqual(body, { error: "server_not_configured" });
+test("shared per-user and global rate limits stop provider requests", async () => {
+  const authStore = store({ allowed: false });
+  const { response, body, calls } = await run(request(null), { authStore });
+  assert.equal(response.status, 429);
+  assert.deepEqual(body, { error: "rate_limited" });
+  assert.equal(response.headers.get("retry-after"), "120");
   assert.equal(calls.length, 0);
+  assert.deepEqual(authStore.calls[0], { userId: USER_ID, perUserLimit: 30, globalLimit: 100, now: 100_000 });
 });
 
-test("upstream failures map to clear errors without leaking upstream bodies", async () => {
+test("missing provider configuration and shared storage fail closed", async () => {
+  const missingProvider = await run(request(null), { environment: { ...ENV, ELEVENLABS_API_KEY: "" } });
+  assert.equal(missingProvider.response.status, 500);
+  assert.deepEqual(missingProvider.body, { error: "server_not_configured" });
+  assert.equal(missingProvider.calls.length, 0);
+  const storeUnavailable = await run(request(null), {
+    authStore: { async hitLimits() { throw new Error("store unreachable"); } },
+  });
+  assert.equal(storeUnavailable.response.status, 503);
+  assert.deepEqual(storeUnavailable.body, { error: "server_not_configured" });
+  assert.equal(storeUnavailable.calls.length, 0);
+});
+
+test("upstream failures map to useful errors without leaking provider response bodies", async () => {
   const cases = [
-    [new Response("limit", { status: 429 }), 503, "voice_busy"],
-    [new Response("nope", { status: 401 }), 502, "upstream_failed"],
+    [new Response("provider details", { status: 429 }), 503, "voice_busy"],
+    [new Response("private provider body", { status: 401 }), 502, "upstream_failed"],
     [Response.json({}), 502, "upstream_bad_response"],
-    [Object.assign(new Error("t"), { name: "TimeoutError" }), 504, "upstream_timeout"],
-    [new TypeError("fetch failed"), 502, "upstream_unreachable"],
+    [Object.assign(new Error("timeout"), { name: "TimeoutError" }), 504, "upstream_timeout"],
+    [new TypeError("network failed"), 502, "upstream_unreachable"],
   ];
   for (const [upstream, status, error] of cases) {
-    const { response, body } = await run(request(), { upstream });
+    const { response, body, logs } = await run(request(null), { upstream });
     assert.equal(response.status, status, error);
     assert.deepEqual(body, { error });
+    assert.ok(!JSON.stringify(logs).includes("private provider body"));
   }
 });
 
-test("access code list parsing", () => {
-  assert.deepEqual(parseAccessCodes(" a:0123456789abcdef ,0123456789abcdefX,b:short, "), [
-    { label: "a", code: "0123456789abcdef" },
-    { label: "unlabelled", code: "0123456789abcdefX" },
-  ]);
-});
-
-test("one tester can't use up the shared voice limits: tokens per tester per hour", async () => {
-  const OTHER = "another-tester-code-02";
-  const environment = { ...env, DODDY_ACCESS_CODES: `owner:${CODE},other:${OTHER}`, DODDY_TOKENS_PER_HOUR: "2" };
-  const limiter = createTesterLimiter();
-  let ms = Date.parse("2026-10-11T10:15:00Z");
-  const deps = { limiter, now: () => ms };
-  assert.equal((await run(request(), { environment, deps })).response.status, 200);
-  assert.equal((await run(request(), { environment, deps })).response.status, 200);
-  const third = await run(request(), { environment, deps });
-  assert.equal(third.response.status, 429);
-  assert.deepEqual(third.body, { error: "rate_limited" });
-  assert.equal(third.response.headers.get("retry-after"), String(45 * 60));
-  assert.equal(third.calls.length, 0, "ElevenLabs is not called");
-  assert.equal((await run(request("POST", OTHER), { environment, deps })).response.status, 200, "other testers unaffected");
-  ms += 45 * 60_000;
-  assert.equal((await run(request(), { environment, deps })).response.status, 200, "a new hour starts fresh");
-});
-
-test("an invalid per-hour setting fails closed", async () => {
-  const { response, calls } = await run(request(), { environment: { ...env, DODDY_TOKENS_PER_HOUR: "lots" } });
-  assert.equal(response.status, 500);
-  assert.equal(calls.length, 0);
-});
-
-test("ignored short codes are logged once, by label only", async () => {
-  const environment = { ...env, DODDY_ACCESS_CODES: `owner:${CODE},anna:tooshort,bob:alsoshort` };
-  const first = await run(request(), { environment });
-  const second = await run(request(), { environment });
-  const config = first.logs.filter((l) => l.event === "voice_token_config");
-  assert.deepEqual(config, [{ event: "voice_token_config", ignoredShortCodes: ["anna", "bob"] }]);
-  assert.ok(!JSON.stringify(first.logs).includes("tooshort"));
-  assert.equal(second.logs.filter((l) => l.event === "voice_token_config").length, 0);
-  assert.deepEqual(ignoredShortCodes(`a:${CODE},b:x`), ["b"]);
-});
-
-// OpenAI Realtime test voice (ADR-265).
-const openAIEnv = { ...env, OPENAI_API_KEY: "openai-server-key" };
-
-function openAIRequest(body = JSON.stringify({ provider: "openai" }), code = CODE) {
-  return new Request("https://example.test/api/voice-token", {
-    method: "POST",
-    headers: { authorization: `Bearer ${code}`, "content-type": "application/json" },
-    body,
-  });
-}
-
-test("openai: returns a client secret carrying only model and voice, and never logs secrets", async () => {
-  const upstream = Response.json({ value: "ek_secret", expires_at: 1, session: { model: "gpt-realtime-2.1-mini" } });
-  const { response, body, logs, calls } = await run(openAIRequest(), { upstream, environment: openAIEnv });
+test("OpenAI grant is short-lived and restricted to the model allowlist", async () => {
+  const upstream = Response.json({ value: "openai-short-secret", session: { model: "gpt-realtime-2.1-mini" } });
+  const { response, body, calls, logs } = await run(request({ provider: "openai", model: "gpt-realtime-2.1-mini" }), { upstream });
   assert.equal(response.status, 200);
-  assert.deepEqual(body, { token: "ek_secret", provider: "openai", model: "gpt-realtime-2.1-mini" });
-  assert.equal(response.headers.get("cache-control"), "no-store");
-  assert.equal(calls.length, 1);
+  assert.deepEqual(body, { token: "openai-short-secret", provider: "openai", model: "gpt-realtime-2.1-mini" });
   assert.equal(calls[0].url, "https://api.openai.com/v1/realtime/client_secrets");
-  assert.equal(calls[0].init.method, "POST");
-  assert.equal(calls[0].init.headers.authorization, "Bearer openai-server-key");
+  assert.equal(calls[0].init.headers.authorization, "Bearer openai-server-secret");
   const sent = JSON.parse(calls[0].init.body);
-  assert.deepEqual(sent, {
-    expires_after: { anchor: "created_at", seconds: 120 },
-    session: { type: "realtime", model: "gpt-realtime-2.1-mini", audio: { output: { voice: "marin" } } },
-  });
-  // No prompt, notes or tools go through this server.
+  assert.deepEqual(sent.expires_after, { anchor: "created_at", seconds: 120 });
   assert.equal(sent.session.instructions, undefined);
   assert.equal(sent.session.tools, undefined);
-  const logged = JSON.stringify(logs);
-  assert.match(logged, /"provider":"openai"/);
-  for (const secret of ["ek_secret", CODE, "openai-server-key"]) assert.ok(!logged.includes(secret), secret);
+  assert.ok(!JSON.stringify(logs).includes("openai-short-secret"));
+  const bad = await run(request({ provider: "openai", model: "gpt-4o" }));
+  assert.equal(bad.response.status, 400);
+  assert.equal(bad.calls.length, 0);
 });
 
-test("openai: model and voice come from the environment", async () => {
-  const upstream = Response.json({ value: "ek_secret", session: {} });
-  const environment = { ...openAIEnv, OPENAI_REALTIME_MODEL: "gpt-realtime-2.1", OPENAI_REALTIME_VOICE: "cedar" };
-  // No model in the request: the server's own setting decides.
-  const { body, calls } = await run(openAIRequest(), { upstream, environment });
-  const sent = JSON.parse(calls[0].init.body);
-  assert.equal(sent.session.model, "gpt-realtime-2.1");
-  assert.equal(sent.session.audio.output.voice, "cedar");
-  assert.equal(body.model, "gpt-realtime-2.1");
-});
-
-test("openai: the app can pick either allowed model, and the pick beats the environment", async () => {
-  const environment = { ...openAIEnv, OPENAI_REALTIME_MODEL: "gpt-realtime-2.1" };
-  for (const model of ["gpt-realtime-2.1", "gpt-realtime-2.1-mini"]) {
-    const upstream = Response.json({ value: "ek_secret", session: {} });
-    const { response, body, calls, logs } = await run(
-      openAIRequest(JSON.stringify({ provider: "openai", model })), { upstream, environment: { ...environment, OPENAI_REALTIME_MODEL: "gpt-realtime-2.1" } });
-    assert.equal(response.status, 200);
-    assert.equal(JSON.parse(calls[0].init.body).session.model, model);
-    assert.equal(body.model, model);
-    assert.match(JSON.stringify(logs), new RegExp(`"model":"${model}"`));
-  }
-});
-
-test("openai: a model that is not on the allowlist is refused before OpenAI is called", async () => {
-  for (const model of ["gpt-realtime-2.1-pro", "gpt-4o", "", 7, ["gpt-realtime-2.1"]]) {
-    const { response, body, calls } = await run(
-      openAIRequest(JSON.stringify({ provider: "openai", model })), { environment: openAIEnv });
-    assert.equal(response.status, 400, JSON.stringify(model));
-    assert.deepEqual(body, { error: "unknown_model" });
-    assert.equal(calls.length, 0);
-  }
-});
-
-test("a model named alongside elevenlabs is ignored", async () => {
-  const { response, body } = await run(openAIRequest(JSON.stringify({ provider: "elevenlabs", model: "anything" })));
+test("Picovoice key requires the same authenticated session and is never logged", async () => {
+  const { response, body, calls, logs } = await run(request({ provider: "picovoice" }));
   assert.equal(response.status, 200);
-  assert.deepEqual(body, { token: "jwt-token" });
-});
-
-test("openai: needs its own key; ElevenLabs keys alone are not enough, and nothing is called", async () => {
-  const { response, body, calls } = await run(openAIRequest(), { environment: env });
-  assert.equal(response.status, 500);
-  assert.deepEqual(body, { error: "server_not_configured" });
+  assert.deepEqual(body, { accessKey: "owner-picovoice-secret" });
   assert.equal(calls.length, 0);
+  assert.ok(!JSON.stringify(logs).includes("owner-picovoice-secret"));
+  const unauthenticated = await run(request({ provider: "picovoice" }), { authenticateSession: async () => null });
+  assert.equal(unauthenticated.response.status, 401);
 });
 
-test("openai: OpenAI alone is enough for the OpenAI voice, and ElevenLabs then reports not configured", async () => {
-  const onlyOpenAI = { DODDY_ACCESS_CODES: env.DODDY_ACCESS_CODES, OPENAI_API_KEY: "openai-server-key" };
-  const upstream = Response.json({ value: "ek_secret" });
-  assert.equal((await run(openAIRequest(), { upstream, environment: onlyOpenAI })).response.status, 200);
-  assert.equal((await run(request(), { environment: onlyOpenAI })).response.status, 500);
-});
-
-test("openai: a wrong code is refused before OpenAI is called", async () => {
-  const { response, calls } = await run(openAIRequest(undefined, "wrong-code-but-long-enough"), { environment: openAIEnv });
-  assert.equal(response.status, 401);
-  assert.equal(calls.length, 0);
-});
-
-test("unknown provider or a body that isn't JSON is refused before anything is called", async () => {
-  for (const raw of [JSON.stringify({ provider: "other" }), "not json"]) {
-    const { response, body, calls } = await run(openAIRequest(raw), { environment: openAIEnv });
-    assert.equal(response.status, 400);
-    assert.deepEqual(body, { error: "unknown_provider" });
-    assert.equal(calls.length, 0);
-  }
-});
-
-test("an explicit elevenlabs provider behaves like no body", async () => {
-  const { response, body } = await run(openAIRequest(JSON.stringify({ provider: "elevenlabs" })));
-  assert.equal(response.status, 200);
-  assert.deepEqual(body, { token: "jwt-token" });
-});
-
-test("openai: upstream limits, failures and bad replies map like ElevenLabs'", async () => {
-  const cases = [
-    [new Response("{}", { status: 429 }), 503, "voice_busy"],
-    [new Response("{}", { status: 401 }), 502, "upstream_failed"],
-    [Response.json({ nothing: true }), 502, "upstream_bad_response"],
-    [new Response("not json", { status: 200 }), 502, "upstream_bad_response"],
-    [Object.assign(new Error("t"), { name: "TimeoutError" }), 504, "upstream_timeout"],
-    [new TypeError("fetch failed"), 502, "upstream_unreachable"],
-  ];
-  for (const [upstream, status, error] of cases) {
-    const { response, body } = await run(openAIRequest(), { upstream, environment: openAIEnv });
-    assert.equal(response.status, status, error);
-    assert.deepEqual(body, { error });
-  }
-});
-
-// "Hey Doddy" for everyone (ADR-328): the owner's Picovoice AccessKey for a valid tester.
-const picovoiceEnv = { ...env, PICOVOICE_ACCESS_KEY: " owner-picovoice-key== " };
-function picovoiceRequest(code = CODE) {
-  return new Request("https://example.test/api/voice-token", {
-    method: "POST",
-    headers: { authorization: `Bearer ${code}`, "content-type": "application/json" },
-    body: JSON.stringify({ provider: "picovoice" }),
-  });
-}
-
-test("picovoice: a valid tester gets the trimmed key, nothing upstream is called, and the key is never logged", async () => {
-  const { response, body, logs, calls } = await run(picovoiceRequest(), { environment: picovoiceEnv });
-  assert.equal(response.status, 200);
-  assert.deepEqual(body, { accessKey: "owner-picovoice-key==" });
-  assert.equal(response.headers.get("cache-control"), "no-store");
-  assert.equal(calls.length, 0);
-  assert.ok(!JSON.stringify(logs).includes("owner-picovoice-key"));
-  assert.ok(!JSON.stringify(logs).includes(CODE));
-});
-
-test("picovoice: a wrong code is refused, and without the key the server says it isn't configured", async () => {
-  const wrong = await run(picovoiceRequest("wrong-code-but-long-enough"), { environment: picovoiceEnv });
-  assert.equal(wrong.response.status, 401);
-  assert.ok(!("accessKey" in wrong.body));
-  const missing = await run(picovoiceRequest(), { environment: env });
-  assert.equal(missing.response.status, 500);
-  assert.deepEqual(missing.body, { error: "server_not_configured" });
-});
-
-test("picovoice: asking for the key doesn't use up the tester's conversations for the hour", async () => {
-  const limiter = createTesterLimiter();
-  const oneAnHour = { ...picovoiceEnv, DODDY_TOKENS_PER_HOUR: "1" };
-  for (let i = 0; i < 3; i++) {
-    assert.equal((await run(picovoiceRequest(), { environment: oneAnHour, deps: { limiter } })).response.status, 200);
-  }
-  assert.equal((await run(request(), { environment: oneAnHour, deps: { limiter } })).response.status, 200);
+test("only POST and bounded valid provider requests are accepted", async () => {
+  const get = await run(new Request("https://example.test/api/voice-token", { method: "GET" }));
+  assert.equal(get.response.status, 405);
+  assert.equal(get.response.headers.get("allow"), "POST");
+  const unknown = await run(request({ provider: "other" }));
+  assert.equal(unknown.response.status, 400);
+  const malformed = await run(new Request("https://example.test/api/voice-token", { method: "POST", body: "{" }));
+  assert.equal(malformed.response.status, 400);
+  const oversized = await run(new Request("https://example.test/api/voice-token", {
+    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ padding: "x".repeat(5_000) }),
+  }));
+  assert.equal(oversized.response.status, 400);
+  assert.equal(oversized.calls.length, 0);
 });

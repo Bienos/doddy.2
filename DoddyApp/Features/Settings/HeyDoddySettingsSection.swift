@@ -109,7 +109,7 @@ struct HeyDoddySettingsSection: View {
     private var explanation: String {
         "When you say \u{201C}Hey Doddy\u{201D}, a conversation starts and the Dynamic Island says \u{201C}\(greeting)\u{201D} (the name comes from Doddy's personality, then About you). "
             + (oneTap
-                ? "Turn it on and allow the microphone; that's all. The first time, Doddy gets the wake word key from its token server with your access code and keeps it on this iPhone. "
+                ? "Sign in once with Apple by tapping Talk to Doddy first. Then turn this on and allow the microphone; Doddy gets the wake word key using your protected voice session and keeps it on this iPhone. "
                 : "To set it up, make a free Picovoice account, copy your AccessKey, and train the wake phrase \u{201C}Hey Doddy\u{201D} for iOS in English; download the .ppn file to this iPhone and choose it here. ")
             + "The microphone can only start while Doddy is open. It then keeps listening when you leave the app, with iOS's orange microphone dot and the island showing, until you tap Stop listening on the island, turn this off, Low Power Mode comes on, a call or another app takes the microphone, or iOS closes Doddy. After a restart, open Doddy again. "
             + "It listens on this iPhone; what it hears isn't kept or sent. Picovoice gets the AccessKey to check it. Only after the wake word does sound go to OpenAI, or ElevenLabs if you switch Home's voice to it, as when you tap Talk. "

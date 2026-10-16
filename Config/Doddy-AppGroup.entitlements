@@ -3,6 +3,8 @@
 <!-- Doddy app with the widgets' App Group only (ADR-219). Use with Config/DoddyWidgets.entitlements. -->
 <plist version="1.0">
 <dict>
+	<key>com.apple.developer.applesignin</key>
+	<array><string>Default</string></array>
 	<key>com.apple.security.application-groups</key>
 	<array>
 		<string>group.$(DODDY_APP_BUNDLE_IDENTIFIER)</string>

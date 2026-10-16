@@ -12,7 +12,7 @@ final class OfflineTests: XCTestCase {
     }
 
     func testServerAnswersAreNotOffline() {
-        XCTAssertFalse(Offline.isNoConnection(VoiceTokenError.accessCodeRejected))
+        XCTAssertFalse(Offline.isNoConnection(VoiceTokenError.sessionExpired))
         XCTAssertFalse(Offline.isNoConnection(URLError(.badServerResponse)))
         XCTAssertFalse(Offline.isNoConnection(NSError(domain: "x", code: 1)))
     }

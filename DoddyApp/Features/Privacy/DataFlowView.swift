@@ -13,7 +13,7 @@ extension DataFlowState {
         return DataFlowState(
             rememberConversations: flag(PreferenceKey.rememberConversations, default: true),
             shareProfileWithVoice: flag(PreferenceKey.shareProfileWithVoice, default: false),
-            tokenServerSet: !text(PreferenceKey.voiceTokenServer).isEmpty,
+            tokenServerSet: true,
             connectionsOn: Set(VoiceConnection.allCases.filter { defaults.bool(forKey: $0.preferenceKey) }),
             pauseAll: flag(ConnectionPause.preferenceKey, default: false),
             // Same rule as OnlineAccountsClientFactory: an address and a session token.
@@ -30,7 +30,7 @@ extension DataFlowState {
             sharedLists: SharedListsController.shared.links.count,
             // OpenAI is the default where the token server is set (ADR-442); a choice in Settings wins.
             voiceProvider: VoiceProvider.effective(
-                stored: defaults.string(forKey: VoiceProvider.preferenceKey), tokenServerSet: !text(PreferenceKey.voiceTokenServer).isEmpty),
+                stored: defaults.string(forKey: VoiceProvider.preferenceKey), tokenServerSet: true),
             learnedSharedWithVoice: defaults.bool(forKey: PreferenceKey.shareLearnedWithVoice))
     }
 }
@@ -38,7 +38,6 @@ extension DataFlowState {
 struct DataFlowView: View {
     @AppStorage(PreferenceKey.rememberConversations) private var rememberConversations = true
     @AppStorage(PreferenceKey.shareProfileWithVoice) private var shareProfileWithVoice = false
-    @AppStorage(PreferenceKey.voiceTokenServer) private var voiceTokenServer = ""
     @AppStorage(PreferenceKey.connectedAppsServerURL) private var connectedAppsServerURL = ""
     @AppStorage(PreferenceKey.assistantConsent) private var assistantConsent = false
     @AppStorage(PreferenceKey.assistantUseNotes) private var assistantUseNotes = true
