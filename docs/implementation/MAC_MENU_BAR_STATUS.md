@@ -92,3 +92,9 @@ Date: 2026-10-11. Source: the owner's deck "Doddy-Watch-iPad-Mac-Review" (Google
 | DOD-08 verified_status_and_receipts | "Saved on this Mac." only from `QuickCapture.saved` (read-back); a throw is `unconfirmed` with "look at Recent" | `testASavedNoteIsTheOneReadBackAndSurvivesReopening`, `testAFailedSaveIsUnconfirmedNeverSaved` | The view isn't compiled |
 | DOD-07 scoped_action_approval | Nothing is saved until Save; Cancel clears the words | — | UI NOT RUN |
 | DOD-11 observable_privacy | Own database on that Mac; sandbox only; no network or microphone (guarded); the window says notes don't reach the iPhone | Guard PASS, and a planted violation FAILS | Not seen on a Mac |
+
+## Startup responsiveness follow-up (2026-10-16)
+- `MacCaptureModel` starts opening SQLite and applying migrations on a utility task instead of doing this work in its app initializer on the main actor. The menu capture field can take focus while opening is in progress; Save remains unavailable until the store is ready.
+- Menu bar capture refreshes only the five recent rows it displays. The dedicated Doddy window and its palette refresh the full archive so that the open archive stays current. `listWithCount(limit:)` reads the requested rows and the widget count together without materializing the full archive for the small menu window.
+- Added `testListWithCountReturnsLimitedRowsAndTotalCountTogether` for the limited page and total count contract.
+- This is a code-level responsiveness change; no before/after launch time has been measured. The current environment has no Swift or Xcode tools, so the new Swift code and test remain uncompiled. Validate on a Mac before treating the improvement as confirmed.

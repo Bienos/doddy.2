@@ -52,6 +52,16 @@ public final class SQLiteMemoryRepository: MemoryRepository {
         try await dbQueue.read { db in try Self.allRecords(db, limit: limit) }
     }
 
+    /// Returns a page and the total row count from one read. Menu bar surfaces can show a small
+    /// recent slice without materializing every note just to update the desktop widget count.
+    public func listWithCount(limit: Int?) async throws -> (records: [MemoryRecord], count: Int) {
+        try await dbQueue.read { db in
+            let records = try Self.allRecords(db, limit: limit)
+            let count = try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM memories") ?? 0
+            return (records, count)
+        }
+    }
+
     private static func allRecords(_ db: Database, limit: Int? = nil) throws -> [MemoryRecord] {
         var sql = "SELECT * FROM memories ORDER BY captured_at_ms IS NULL, captured_at_ms DESC, rowid DESC"
         if let limit { sql += " LIMIT \(max(0, limit))" }

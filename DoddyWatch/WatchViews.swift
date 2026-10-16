@@ -1,5 +1,6 @@
 import DoddyCore
 import SwiftUI
+import WatchKit
 
 struct WatchRootView: View {
     @Environment(WatchLink.self) private var link
@@ -17,6 +18,16 @@ struct WatchRootView: View {
                 }
                 if let snapshot = link.snapshot {
                     if snapshot.isOn {
+                        Section {
+                            WatchConnectivityStatus(
+                                isActivated: link.isActivated,
+                                isReachable: link.isReachable,
+                                hasSnapshot: true,
+                                isSupported: link.isSupported,
+                                activationFailed: link.activationFailed,
+                                retry: link.activate
+                            )
+                        }
                         content(snapshot)
                     } else {
                         VStack(spacing: 6) {
@@ -30,8 +41,21 @@ struct WatchRootView: View {
                     VStack(spacing: 6) {
                         // Nothing here yet: he waits, cross-legged (ADR-323).
                         WatchDoddyPicture(name: "WatchDoddy_crosslegged", height: 64)
-                        Text("Open Doddy on your iPhone once to see your notes and lists here.")
-                            .font(.footnote)
+                        WatchConnectivityStatus(
+                            isActivated: link.isActivated,
+                            isReachable: link.isReachable,
+                            hasSnapshot: false,
+                            isSupported: link.isSupported,
+                            activationFailed: link.activationFailed,
+                            retry: link.activate
+                        )
+                        if link.isReachable {
+                            Text("Waiting for your iPhone to send your notes and lists.")
+                                .font(.footnote)
+                        } else if link.isActivated {
+                            Text("Open Doddy on your iPhone once to see your notes and lists here.")
+                                .font(.footnote)
+                        }
                     }
                 }
             }
@@ -47,12 +71,19 @@ struct WatchRootView: View {
     /// wrist is down and the screen is Always On, where anyone nearby can read it.
     @ViewBuilder
     private func content(_ snapshot: WidgetSnapshot) -> some View {
+        let upcoming = snapshot.reminders(after: .now)
+        if snapshot.pinned.isEmpty && upcoming.isEmpty && snapshot.lists.isEmpty {
+            Section {
+                Text("No pinned notes, reminders or lists to show here yet.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+        }
         if !snapshot.pinned.isEmpty {
             Section("Pinned") {
                 ForEach(snapshot.pinned) { note in Text(note.text).font(.footnote).privacySensitive() }
             }
         }
-        let upcoming = snapshot.reminders(after: .now)
         if !upcoming.isEmpty {
             Section("Next") {
                 ForEach(Array(upcoming.enumerated()), id: \.offset) { _, reminder in
@@ -101,6 +132,14 @@ struct WatchListView: View {
                     TextField("Add an item", text: $newItem)
                         .submitLabel(.done)
                         .onSubmit { Task { await add() } }
+                        .privacySensitive()
+                        .accessibilityHint("Tap the field to dictate or type an item.")
+                    if newItem.isEmpty {
+                        Text("Tap the field to dictate or type an item.")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .accessibilityHidden(true)
+                    }
                     if !newItem.isEmpty {
                         Button(isAdding ? "Adding…" : "Add") { Task { await add() } }
                             .disabled(isAdding)
@@ -141,13 +180,19 @@ struct WatchListView: View {
         defer { isAdding = false }
         let outcome = await link.send(.addToList(listID: listID, text: newItem))
         message = outcome.message
-        if case .reply(.addedToList) = outcome { newItem = "" }
+        if case .reply(.addedToList) = outcome {
+            newItem = ""
+            WatchFeedback.confirmed()
+        }
     }
 
     private func tick(_ item: WidgetSnapshot.Item) async {
         working = item.id
         defer { working = nil }
-        message = await link.send(.tick(listID: listID, itemID: item.id, shownDone: item.isDone)).message
+        let outcome = await link.send(.tick(listID: listID, itemID: item.id, shownDone: item.isDone))
+        message = outcome.message
+        if case .reply(.ticked) = outcome { WatchFeedback.confirmed() }
+        if case .reply(.unticked) = outcome { WatchFeedback.confirmed() }
     }
 }
 
@@ -172,12 +217,20 @@ struct WatchNoteEntry: View {
                     Button("Done") { dismiss() }
                 } else {
                     TextField("Your note", text: $text, axis: .vertical)
+                        .privacySensitive()
+                        .accessibilityHint("Tap the field to dictate or type. Check the words before saving.")
+                    Text("Tap the field to dictate or type. Check the words before saving.")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .accessibilityHidden(true)
                     if !text.isEmpty {
                         Text("Check the words, then Save.").font(.caption2).foregroundStyle(.secondary)
                     }
                     Button(isSaving ? "Saving…" : "Save") { Task { await save() } }
                         .disabled(isSaving || text.allSatisfy(\.isWhitespace))
                     if let message { Text(message).font(.footnote) }
+                    Button("Cancel", role: .cancel) { dismiss() }
+                        .disabled(isSaving)
                 }
             }
         }
@@ -193,10 +246,68 @@ struct WatchNoteEntry: View {
         defer { isSaving = false }
         let outcome = await link.send(.saveNote(text: text))
         if outcome == .reply(.saved) {
+            WatchFeedback.confirmed()
             saved = true
         } else {
             message = outcome.message
         }
+    }
+}
+
+/// Reports only WatchConnectivity's real state. It does not imply the Watch has its own voice
+/// session or wake-word listener.
+private struct WatchConnectivityStatus: View {
+    let isActivated: Bool
+    let isReachable: Bool
+    let hasSnapshot: Bool
+    let isSupported: Bool
+    let activationFailed: Bool
+    let retry: () -> Void
+
+    @ViewBuilder
+    var body: some View {
+        if !isSupported {
+            Label("Watch connectivity isn't available.", systemImage: "iphone.slash")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityElement(children: .combine)
+        } else if activationFailed {
+            VStack(alignment: .leading, spacing: 4) {
+                Label("Couldn't connect to your iPhone.", systemImage: "iphone.slash")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                Button("Try again", action: retry)
+                    .font(.caption)
+            }
+            .accessibilityElement(children: .contain)
+        } else if !isActivated {
+            Label("Connecting to your iPhone…", systemImage: "hourglass")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityElement(children: .combine)
+        } else if isReachable {
+            Label("Connected to your iPhone.", systemImage: "iphone")
+                .font(.caption2)
+                .foregroundStyle(.green)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityElement(children: .combine)
+        } else if hasSnapshot {
+            Label("Your iPhone is out of reach. Showing the last update it sent.", systemImage: "iphone.slash")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityElement(children: .combine)
+        }
+    }
+}
+
+@MainActor
+private enum WatchFeedback {
+    /// Called only after the iPhone has read a saved or changed value back successfully.
+    static func confirmed() {
+        WKInterfaceDevice.current().play(.success)
     }
 }
 

@@ -16,6 +16,10 @@ struct MacCaptureView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("New note").font(.headline)
+            if model.isOpeningStore {
+                ProgressView("Opening notes…")
+                    .controlSize(.small)
+            }
             if let problem = model.openProblem {
                 Text(problem).foregroundStyle(.secondary)
             } else {
@@ -67,8 +71,8 @@ struct MacCaptureView: View {
         .padding(14)
         .frame(width: 320)
         .task {
-            await model.refresh()
             typing = true
+            await model.refreshRecent()
         }
     }
 

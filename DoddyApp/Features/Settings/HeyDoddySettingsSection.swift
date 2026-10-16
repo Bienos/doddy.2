@@ -1,4 +1,5 @@
 import DoddyCore
+import Foundation
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -143,8 +144,15 @@ struct HeyDoddySettingsSection: View {
             } catch {
                 problem = error.message
             }
-        case .failure:
+        case .failure(let error):
+            guard !Self.isFilePickerCancellation(error) else { return }
             problem = WakeKeywordStore.ImportError.unreadable.message
         }
+    }
+
+    private static func isFilePickerCancellation(_ error: Error) -> Bool {
+        if error is CancellationError { return true }
+        let error = error as NSError
+        return error.domain == NSCocoaErrorDomain && error.code == NSUserCancelledError
     }
 }

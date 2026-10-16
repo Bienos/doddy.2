@@ -1,6 +1,28 @@
 # Apple Watch app status (ADR-232)
 Date: 2026-10-10. Owner: "do all of them" (item 7).
 
+## Current branch check (2026-10-16)
+- `DoddyWatch/WatchLink.swift` now ends a WatchConnectivity request with the existing truthful
+  unanswered outcome after 15 seconds if neither a reply nor an error arrives. This keeps a watch
+  action from waiting forever while avoiding a claim that it succeeded.
+- The Watch Home now reflects WatchConnectivity activation, unsupported, failure/retry, and
+  reachability states; it preserves the timestamped snapshot when the iPhone is out of reach and
+  has an explicit empty snapshot state.
+  Note and list-item entry explain that the Watch text field supports system dictation or typing.
+  Confirmed saves, list additions and item ticks give a success haptic only after the iPhone reply.
+- The Watch target still has no voice-agent session, provider playback events, or wake-word listener.
+  It cannot truthfully show listening/thinking/speaking/muted states or speak the requested opening
+  line with the existing architecture. Dictation is for notes and list items; it is not a Doddy
+  conversation. No Watch microphone permission, provider, or background audio behavior was added.
+- This is a source change only. The watchOS target still has not been built or run in Xcode or a
+  paired simulator/device in this environment; see `docs/platforms/watch.md` for the Mac checks.
+- The app remains an iPhone-backed companion. A full voice conversation on Apple Watch is not built.
+- **Validation here:** `scripts/ci.sh --core-only` passed, including 1,095 DoddyCore tests and the
+  23-file non-UI app logic type-check. Messaging database tests were skipped because
+  `TEST_DATABASE_URL` was unset. `swiftc -swift-version 6 -parse` passed for Watch, Watch widget,
+  and iPhone WatchConnectivity sources; string catalog check, capability guard, and
+  `git diff --check` passed. Xcode build and simulator/device checks were not run on this Linux host.
+
 ## What ships
 - **A watchOS 10 app** (`DoddyWatch`), embedded in the iPhone app. It needs the iPhone app; it has no database and makes no network calls.
 - **What it shows:** the snapshot the iPhone sends through the WatchConnectivity application context. It is the same content as the widgets (`WidgetSnapshot.make`):
@@ -11,6 +33,9 @@ Date: 2026-10-10. Owner: "do all of them" (item 7).
 - **Its own switch:** Settings › Apple Watch › "Show notes and lists on Apple Watch". It is shown only when a watch is paired, and is on by default, like widgets (ADR-224). When off, the watch gets an empty snapshot and says how to turn it on.
 - **Ticking:** tapping an item sends `tick(listID, itemID, shownDone)`. The iPhone runs the widgets' tick (`WidgetSync.tick`): it reloads, changes the item only if it still looks as the watch showed it, and reads it back. The watch shows the iPhone's answer ("Ticked on your iPhone.", "That list changed on your iPhone. Nothing was changed."), and the item changes on the watch when the next snapshot arrives.
 - **New note:** the user writes or dictates with watchOS text input, checks the words, then taps Save. The iPhone checks the text again, saves it as a typed note, reads it back and answers. The watch says "Saved in Doddy on your iPhone." only from that answer.
+- The Watch shows the actual iPhone connection state, offers retry after activation failure, and explains when it is displaying the last
+  snapshot. The note and list fields explain dictation/typing; their text is privacy-sensitive.
+  A success haptic follows only a confirmed save, add, or tick.
 - **When the iPhone is out of reach:**
   - Not reachable: nothing is sent, nothing is queued for later, and the watch says so.
   - Sent but unanswered: "Your iPhone didn't answer, so Doddy can't say whether it happened. Check in Doddy on your iPhone before trying again." It is never shown as done.
@@ -46,6 +71,11 @@ Date: 2026-10-10. Owner: "do all of them" (item 7).
 
 ## Decisions for the owner
 - On by default, like widgets. The owner left this as built (2026-10-11, ADR-234).
+- A spoken Watch conversation and "Hi, what's up? What do you need?" greeting need a separate,
+  platform-supported voice-session design. The existing provider/audio session belongs to iPhone;
+  WatchConnectivity only carries snapshots and trusted note/list actions. "Hey Doddy" does not run
+  on Watch. Do not add a Watch microphone permission, provider request, or always-listening claim
+  without a reviewed design and verified watchOS support.
 
 ## Constitution evidence log
 | Rule | Enforcing code | Tests | Gaps |

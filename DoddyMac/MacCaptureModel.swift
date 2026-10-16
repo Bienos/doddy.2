@@ -10,57 +10,87 @@ import WidgetKit
 @MainActor
 @Observable
 final class MacCaptureModel {
-    private let repository: SQLiteMemoryRepository?
+    private var repository: SQLiteMemoryRepository?
+    private let openTask: Task<MacStoreOpenResult, Never>
+    private(set) var isOpeningStore = true
     /// Set when the database can't be opened. Save is then not offered.
-    let openProblem: String?
+    private(set) var openProblem: String?
     /// Every note on this Mac, newest first: the Doddy window lists them all (ADR-451).
     private(set) var notes: [MemoryRecord] = []
-    /// The menu bar window shows the last five.
-    var recent: [MemoryRecord] { Array(notes.prefix(5)) }
+    /// The menu bar window only reads and renders the five notes it shows.
+    private(set) var recent: [MemoryRecord] = []
     private(set) var recentProblem: String?
+    private(set) var isRefreshingAllNotes = false
 
     init() {
-        let opened = Self.open()
-        repository = opened.repository
-        openProblem = opened.problem
+        // Opening SQLite and applying migrations must not hold up the first menu bar window.
+        openTask = Task.detached(priority: .utility) { Self.open() }
     }
 
-    private static func open() -> (repository: SQLiteMemoryRepository?, problem: String?) {
+    nonisolated private static func open() -> MacStoreOpenResult {
         do {
             let folder = try FileManager.default
                 .url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
                 .appendingPathComponent("Doddy", isDirectory: true)
             try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-            return (try SQLiteMemoryRepository(path: folder.appendingPathComponent("doddy-mac.sqlite").path), nil)
+            return .opened(try SQLiteMemoryRepository(path: folder.appendingPathComponent("doddy-mac.sqlite").path))
         } catch {
-            return (nil, "Doddy's notes on this Mac can't be opened, so nothing can be saved.")
+            return .failed("Doddy's notes on this Mac can't be opened, so nothing can be saved.")
         }
     }
 
     var canSave: Bool { repository != nil }
 
+    private func readyRepository() async -> SQLiteMemoryRepository? {
+        if let repository { return repository }
+        guard isOpeningStore else { return nil }
+        switch await openTask.value {
+        case .opened(let opened):
+            repository = opened
+        case .failed(let message):
+            openProblem = message
+        }
+        isOpeningStore = false
+        return repository
+    }
+
     /// `nil` only when the database isn't open (nothing was tried).
-    func save(_ text: String) async -> QuickCaptureOutcome? {
-        guard let repository else { return nil }
+    func save(_ text: String, refreshAllNotes: Bool = false) async -> QuickCaptureOutcome? {
+        guard let repository = await readyRepository() else { return nil }
         let outcome = await QuickCapture.save(text, to: repository)
-        await refresh()
+        if refreshAllNotes {
+            await refreshAll()
+        } else {
+            await refreshRecent()
+        }
         return outcome
     }
 
     /// Save as the windows show it: what to say, or `nil` when the database isn't open.
-    func saveForDisplay(_ text: String) async -> MacSaveResult? {
-        (await save(text)).map(MacSaveResult.init)
+    func saveForDisplay(_ text: String, refreshAllNotes: Bool = false) async -> MacSaveResult? {
+        (await save(text, refreshAllNotes: refreshAllNotes)).map(MacSaveResult.init)
     }
 
-    /// The notes on this Mac, so an unconfirmed save can be checked before trying again, and the
-    /// desktop widget's count (ADR-439).
-    func refresh() async {
-        guard let repository else { return }
+    /// The five rows the menu bar window displays plus the desktop widget's count (ADR-439).
+    func refreshRecent() async {
+        await refresh(limit: 5, allNotes: false)
+    }
+
+    /// The full archive shown only in the dedicated Doddy window (ADR-451).
+    func refreshAll() async {
+        isRefreshingAllNotes = true
+        defer { isRefreshingAllNotes = false }
+        await refresh(limit: nil, allNotes: true)
+    }
+
+    private func refresh(limit: Int?, allNotes: Bool) async {
+        guard let repository = await readyRepository() else { return }
         do {
-            let all = try await repository.list(limit: nil)
-            notes = all
+            let page = try await repository.listWithCount(limit: limit)
+            recent = Array(page.records.prefix(5))
+            if allNotes { notes = page.records }
             recentProblem = nil
-            shareCount(all.count)
+            shareCount(page.count)
         } catch {
             recentProblem = "Recent notes can't be read right now."
         }
@@ -74,4 +104,9 @@ final class MacCaptureModel {
             WidgetCenter.shared.reloadAllTimelines()
         }
     }
+}
+
+private enum MacStoreOpenResult: Sendable {
+    case opened(SQLiteMemoryRepository)
+    case failed(String)
 }

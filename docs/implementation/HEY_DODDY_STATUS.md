@@ -1,5 +1,17 @@
 # "Hey Doddy" — status
 
+## Current branch audit (2026-10-16)
+- The code still requires a Picovoice keyword file and AccessKey. Checked this checkout: the bundled
+  `DoddyApp/Resources/WakeWord/hey-doddy.ppn` is absent. No secret values were read or added.
+- The Settings flow supports a user-imported `.ppn` and key; the managed-key path also depends on
+  a configured token server and owner-provided server secret. None of those external requirements
+  can be replaced with a placeholder and called working.
+- Canceling the `.ppn` file picker now leaves setup unchanged instead of showing a false unreadable
+  file error (`DoddyApp/Features/Settings/HeyDoddySettingsSection.swift`).
+- This environment has no Xcode or Apple device/simulator. The wake listener and this change are
+  not verified at runtime. The iOS restriction below still applies: the user must open Doddy to
+  start listening; it cannot be a system wake word while Doddy is closed.
+
 Date: 2026-10-11. Owner request: "create a Dodi that can listen in the background and can be waken up on a call, hey
 Dodi, and then … the Dodi dynamic island pop-up shows up and says, hey bud, what's up? … for me right now … just Pat".
 Owner choices: "Own listening mode", detector "Picovoice (Recommended)". Decision: `DECISIONS.md` ADR-254.

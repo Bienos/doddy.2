@@ -55,6 +55,20 @@ final class SQLiteMemoryRepositoryTests: XCTestCase {
         XCTAssertEqual(afterDeleteAll, [])
     }
 
+    func testListWithCountReturnsLimitedRowsAndTotalCountTogether() async throws {
+        let repo = try SQLiteMemoryRepository.inMemory()
+        let first = try await repo.save(NewMemory(text: "First note", capturedAt: t0))
+        let second = try await repo.save(NewMemory(text: "Second note", capturedAt: t0.addingTimeInterval(1)))
+
+        let recent = try await repo.listWithCount(limit: 1)
+        XCTAssertEqual(recent.records, [second])
+        XCTAssertEqual(recent.count, 2)
+
+        let all = try await repo.listWithCount(limit: nil)
+        XCTAssertEqual(Set(all.records), [first, second])
+        XCTAssertEqual(all.count, 2)
+    }
+
     func testExportContainsExactTextAndProvenance() async throws {
         let repo = try SQLiteMemoryRepository.inMemory()
         let saved = try await repo.save(NewMemory(text: "Zażółć 🙂", capturedAt: t0))

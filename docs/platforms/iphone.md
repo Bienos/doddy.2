@@ -39,7 +39,7 @@ Code lives under `DoddyApp/Features/<Folder>/`. Status docs are in `docs/impleme
 | Backup | Encrypted backup file | 222 | ENCRYPTED_BACKUP_STATUS |
 | Birthdays | Birthday reminders from contacts | 288 | BIRTHDAYS_STATUS |
 | Calls | Calling Doddy on the phone, PIN | - | S2_CALLS_STATUS |
-| Connections, ConnectedApps, OnlineAccounts | Calendar, Reminders, Contacts; online apps | 291, 309 | - |
+| Connections, ConnectedApps, OnlineAccounts | Calendar, Reminders, Contacts; online apps | 291, 309 | CONNECTED_APPS_STATUS |
 | Focus, Tools | Focus timer, breathing, their Live Activity | 241, 242 | - |
 | Import | Google Keep and text import | 231 | NOTE_IMPORT_STATUS |
 | LeaveBy, Parking, Today | Time to leave, parking spot, Today card | 335, 301 | TODAY_STATUS |

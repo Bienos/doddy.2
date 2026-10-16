@@ -31,8 +31,8 @@ struct MacNotesWindow: View {
             .help("Show or hide a small floating palette for quick notes. It hides when you switch to another app.")
         }
         .task {
-            await model.refresh()
             typing = true
+            await model.refreshAll()
         }
     }
 
@@ -91,7 +91,22 @@ struct MacNotesWindow: View {
                 .font(.headline)
                 .padding([.horizontal, .top], 12)
                 .padding(.bottom, 6)
-            if model.notes.isEmpty {
+            if model.isOpeningStore || (model.isRefreshingAllNotes && model.notes.isEmpty) {
+                ProgressView("Opening notes…")
+                    .controlSize(.small)
+                    .padding(12)
+                Spacer()
+            } else if let problem = model.openProblem {
+                Text(problem)
+                    .foregroundStyle(.secondary)
+                    .padding(12)
+                Spacer()
+            } else if model.notes.isEmpty, let problem = model.recentProblem {
+                Text(problem)
+                    .foregroundStyle(.secondary)
+                    .padding(12)
+                Spacer()
+            } else if model.notes.isEmpty {
                 Text("Nothing saved on this Mac yet.")
                     .foregroundStyle(.secondary)
                     .padding(12)
@@ -110,7 +125,7 @@ struct MacNotesWindow: View {
                     .padding(.vertical, 2)
                 }
             }
-            if let problem = model.recentProblem {
+            if !model.notes.isEmpty, let problem = model.recentProblem {
                 Text(problem).font(.caption).foregroundStyle(.secondary).padding(12)
             }
         }
@@ -119,7 +134,7 @@ struct MacNotesWindow: View {
     private func save() async {
         isSaving = true
         defer { isSaving = false }
-        guard let shown = await model.saveForDisplay(text) else { return }
+        guard let shown = await model.saveForDisplay(text, refreshAllNotes: true) else { return }
         result = shown
         if shown == .saved { text = "" }
     }

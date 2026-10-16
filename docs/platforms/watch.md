@@ -12,6 +12,10 @@
   - shows the iPhone's snapshot: pinned notes, the next reminders, lists;
   - tick an item, add to a list, write or dictate a new note;
   - each action is done and read back by the iPhone before the Watch says it happened.
+  - shows WatchConnectivity activation, failure/retry, reachability, and last-snapshot states;
+    confirmed saves, list adds, and ticks receive a success haptic;
+  - Watch text fields use watchOS dictation or typing for note and list-item capture. There is no
+    Watch voice-agent conversation, spoken greeting, or "Hey Doddy" wake-word listener.
   - No database, no network (enforced by the capability guard).
 - **Complications** (`DoddyWatchWidgets/`):
   - "Doddy" shows times, counts and list names only; never a note's words.

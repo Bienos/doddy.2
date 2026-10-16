@@ -45,6 +45,10 @@ struct MacPaletteView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
+            if model.isOpeningStore {
+                ProgressView("Opening notes…")
+                    .controlSize(.small)
+            }
             if let problem = model.openProblem {
                 Text(problem).foregroundStyle(.secondary)
             } else {
@@ -74,7 +78,7 @@ struct MacPaletteView: View {
     private func save() async {
         isSaving = true
         defer { isSaving = false }
-        guard let shown = await model.saveForDisplay(text) else { return }
+        guard let shown = await model.saveForDisplay(text, refreshAllNotes: true) else { return }
         result = shown
         if shown == .saved { text = "" }
     }
