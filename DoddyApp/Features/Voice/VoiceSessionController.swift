@@ -42,6 +42,7 @@ final class VoiceSessionController {
         /// "Turn off this alarm?" (ADR-283), one of Doddy's alarms.
         case cancelAlarm(toolCallID: String, alarm: AlarmEntry)
         case map(toolCallID: String, place: String)
+        case uberEats(toolCallID: String, orderSummary: String?)
         case shortcut(toolCallID: String, name: String)
         /// `address` is the phone number or email from Contacts. It is shown on screen only.
         case message(toolCallID: String, draft: MessageDraft, address: String)
@@ -79,7 +80,7 @@ final class VoiceSessionController {
         var toolCallID: String {
             switch self {
             case .memory(let id, _), .event(let id, _), .reminder(let id, _), .timer(let id, _), .alarm(let id, _), .cancelAlarm(let id, _),
-                 .map(let id, _), .shortcut(let id, _), .message(let id, _, _), .cloud(let id, _, _, _, _),
+                 .map(let id, _), .uberEats(let id, _), .shortcut(let id, _), .message(let id, _, _), .cloud(let id, _, _, _, _),
                  .noteReminder(let id, _, _, _, _), .createList(let id, _, _), .plan(let id, _, _),
                  .changeEvent(let id, _), .changeReminder(let id, _, _), .deleteEvent(let id, _), .deleteReminder(let id, _),
                  .undo(let id, _), .bulk(let id, _, _, _), .parking(let id, _), .leaveBy(let id, _),
@@ -1144,6 +1145,15 @@ final class VoiceSessionController {
             }
             let opened = await open(url)
             await reply(id, opened ? VoiceToolReply.mapOpened(place) : VoiceToolReply.notOpened("Maps didn't open."))
+        case .uberEats(let id, _):
+            guard let url = OpenLinks.uberEats() else {
+                await reply(id, VoiceToolReply.notOpened("Uber Eats couldn't be opened. No order was placed."))
+                return
+            }
+            let opened = await open(url)
+            await reply(id, opened
+                ? VoiceToolReply.uberEatsOpened
+                : VoiceToolReply.notOpened("Uber Eats didn't open. No cart or order was created."))
         case .shortcut(let id, let name):
             guard let url = OpenLinks.shortcut(name: name) else {
                 await reply(id, VoiceToolReply.notOpened("That shortcut name can't be used."))
@@ -1359,6 +1369,7 @@ final class VoiceSessionController {
         case .alarm(let id, _): await reply(id, VoiceToolReply.declinedAlarm)
         case .cancelAlarm(let id, _): await reply(id, VoiceToolReply.alarmCancelDeclined)
         case .map(let id, _): await reply(id, VoiceToolReply.declinedMap)
+        case .uberEats(let id, _): await reply(id, VoiceToolReply.uberEatsDeclined)
         case .shortcut(let id, _): await reply(id, VoiceToolReply.declinedShortcut)
         case .message(let id, _, _): await reply(id, VoiceToolReply.declinedMessage)
         case .cloud(let id, let call, _, _, _): await reply(id, VoiceToolReply.cloudDeclined(call.name))
@@ -2296,6 +2307,8 @@ final class VoiceSessionController {
             }
         case .openMap(let place):
             propose(.map(toolCallID: call.toolCallId, place: place), toolCallID: call.toolCallId)
+        case .openUberEats(let orderSummary):
+            propose(.uberEats(toolCallID: call.toolCallId, orderSummary: orderSummary), toolCallID: call.toolCallId)
         case .runShortcut(let name):
             propose(.shortcut(toolCallID: call.toolCallId, name: name), toolCallID: call.toolCallId)
         case .draftMessage(let draft):
@@ -3502,7 +3515,7 @@ private extension VoiceSessionController.PendingAction {
              .deleteEvent, .deleteReminder, .bulk, .parking, .ingredients, .leaveBy: true
         // Each step of a plan is logged on its own (runPlan), not the plan as a whole. An undo
         // is recorded on the row it undoes (ADR-271).
-        case .map, .shortcut, .message, .translator, .plan, .undo: false
+        case .map, .uberEats, .shortcut, .message, .translator, .plan, .undo: false
         }
     }
 }

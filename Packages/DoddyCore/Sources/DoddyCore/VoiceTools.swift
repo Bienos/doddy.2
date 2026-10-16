@@ -13,6 +13,8 @@ public enum VoiceToolName {
     public static let lookupContact = "lookup_contact"
     public static let setTimer = "set_timer"
     public static let openMap = "open_map"
+    /// Opens Uber Eats only after a user confirmation; never creates a cart or places an order.
+    public static let openUberEats = "open_ubereats"
     public static let runShortcut = "run_shortcut"
     public static let draftMessage = "draft_message"
     /// Several changes on one card (`PlanProposal`, ADR-204).
@@ -191,6 +193,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
     /// Turn one of Doddy's alarms off, after a card.
     case cancelAlarm(clock: String, label: String?)
     case openMap(place: String)
+    /// User-reviewed handoff to Uber Eats. The summary is shown locally and is never sent to Uber.
+    case openUberEats(orderSummary: String?)
     case runShortcut(name: String)
     case draftMessage(MessageDraft)
     /// Gmail, Google Drive, Notion or Todoist through the Doddy server (see OnlineAccounts).
@@ -292,6 +296,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
         case VoiceToolName.openMap:
             guard let place = args.text("place") else { return .invalid(name: name, reason: "missing place") }
             return .openMap(place: place)
+        case VoiceToolName.openUberEats:
+            return .openUberEats(orderSummary: args.text("order_summary"))
         case VoiceToolName.runShortcut:
             guard let shortcut = args.text("name") else { return .invalid(name: name, reason: "missing name") }
             return .runShortcut(name: shortcut)
@@ -526,6 +532,11 @@ public enum OpenLinks {
         URL(string: "https://maps.apple.com/?q=\(encode(place))")
     }
 
+    /// Opens the public Uber Eats entry point. Doddy does not transmit a menu query or cart.
+    public static func uberEats() -> URL? {
+        URL(string: "https://www.ubereats.com/")
+    }
+
     public static func shortcut(name: String) -> URL? {
         URL(string: "shortcuts://run-shortcut?name=\(encode(name))")
     }
@@ -721,6 +732,10 @@ public enum VoiceToolReply {
     public static func mapOpened(_ place: String) -> String {
         "opened: Apple Maps opened for the place below.\n" + ToolData.block([quoted("Place", place)])
     }
+
+    /// Opening Uber Eats is only a handoff. No cart, checkout, payment, or order is performed.
+    public static let uberEatsOpened = "opened: Uber Eats was opened. Doddy did not create a cart or place an order; the user must choose items and complete checkout in Uber Eats."
+    public static let uberEatsDeclined = "declined: Uber Eats was not opened. No cart or order was created."
 
     /// Shortcuts is asked to run; Doddy cannot see whether the shortcut finished.
     public static func shortcutRequested(_ name: String) -> String {

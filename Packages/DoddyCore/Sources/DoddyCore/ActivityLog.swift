@@ -4,7 +4,7 @@ import Foundation
 // the voice agent asked for, with what actually happened. Kept on this iPhone only.
 
 public enum ActivityApp: String, Codable, CaseIterable, Sendable {
-    case memories, calendar, reminders, contacts, timers, maps, shortcuts, messages
+    case memories, calendar, reminders, contacts, timers, maps, shortcuts, messages, uberEats
     case gmail, drive, notion, todoist
     /// Microsoft Outlook (ADR-340).
     case outlook
@@ -22,6 +22,7 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
         case .maps: "Maps"
         case .shortcuts: "Shortcuts"
         case .messages: "Messages and email"
+        case .uberEats: "Uber Eats"
         case .gmail: "Gmail"
         case .drive: "Google Drive"
         case .notion: "Notion"
@@ -183,6 +184,9 @@ public struct ActivityRequest: Equatable, Sendable {
                 isLookup: false, operationKey: AlarmIdempotency.key(draft))
         case .openMap(let place):
             return ActivityRequest(app: .maps, title: "Open in Maps", detail: "“\(place)”", isLookup: false)
+        case .openUberEats:
+            // Keep food/order details out of the local activity log.
+            return ActivityRequest(app: .uberEats, title: "Open Uber Eats", detail: nil, isLookup: false)
         case .runShortcut(let name):
             return ActivityRequest(app: .shortcuts, title: "Run shortcut", detail: "“\(name)”", isLookup: false)
         case .draftMessage(let draft):

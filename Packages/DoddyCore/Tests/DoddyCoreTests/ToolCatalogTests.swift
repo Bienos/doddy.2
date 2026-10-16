@@ -73,6 +73,14 @@ final class ToolCatalogTests: XCTestCase {
         }
     }
 
+    func testUberEatsIsOnlyAConfirmedHandoff() {
+        let descriptor = ToolCatalog.descriptor(VoiceToolName.openUberEats)
+        XCTAssertEqual(descriptor?.effect, .handoff)
+        XCTAssertEqual(descriptor?.approval, .card)
+        XCTAssertTrue(ConnectionPause.applies(to: .openUberEats(orderSummary: nil)))
+        XCTAssertFalse(TranslatorPolicy.allows(.openUberEats(orderSummary: "food")))
+    }
+
     func testAccountWritesAreExactlyTheServerApprovedOnes() {
         let writes = Set(ToolCatalog.all.filter { $0.effect == .accountWrite }.map(\.name))
         let serverApproved = Set(ToolCatalog.all.filter { $0.approval == .serverApproval }.map(\.name))

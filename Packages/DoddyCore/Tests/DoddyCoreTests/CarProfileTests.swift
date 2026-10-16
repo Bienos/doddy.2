@@ -33,6 +33,7 @@ final class CarProfileTests: XCTestCase {
             ("parking_spot", #"{"action": "save"}"#),
             ("check_off", #"{"list": "Shopping", "items": ["milk"]}"#),
             ("draft_message", #"{"to": "Marta", "body": "On my way", "channel": "text"}"#),
+            ("open_ubereats", #"{"order_summary": "Soup"}"#),
         ] {
             guard case .refuse = CarProfile.decision(for: request(name, json)) else {
                 return XCTFail("\(name) should wait until the user isn't driving")

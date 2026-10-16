@@ -14,6 +14,7 @@ Date: 2026-10-10. Owner: "design lists by voice", then "approved, build it" (L1â
   - Untick all.
   - Remind me: the note reminder sheet, time or place, once or repeating.
   - Share as text: the name plus the open items.
+  - Order with Uber Eats: a handoff sheet shows open items; the user may share/copy them and open Uber Eats. Doddy does not send the items, build a cart, submit an order or pay. Details and verification status: `UBER_EATS_HANDOFF_STATUS.md`.
   - Rename.
   - Clear ticked.
   - Delete list: asks first; the list and its items come back with the note Undo bar ("List deleted. Undo").

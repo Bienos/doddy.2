@@ -102,8 +102,9 @@ public enum ToolCatalog {
         .init(VoiceToolName.calculate, .lookup, .none),
         .init(VoiceToolName.convertUnits, .lookup, .none),
         .init(VoiceToolName.convertCurrency, .lookup, .none),
-        // Another app opens with it filled in; nothing is sent by Doddy.
+        // App handoffs require a card. Uber Eats receives no request details; the user enters them there.
         .init(VoiceToolName.openMap, .handoff, .card),
+        .init(VoiceToolName.openUberEats, .handoff, .card),
         .init(VoiceToolName.runShortcut, .handoff, .card),
         .init(VoiceToolName.draftMessage, .handoff, .card),
         // The conversation itself.

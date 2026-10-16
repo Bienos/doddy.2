@@ -31,7 +31,7 @@ Code lives under `DoddyApp/Features/<Folder>/`. Status docs are in `docs/impleme
 | Home | Home screen | 323, 380 | ONBOARDING_STATUS |
 | Memories | Notes list, find, detail, corrections | 252, 310 | MEMORY_HISTORY_STATUS, M1_STATUS |
 | Capture | New-note editor, "Save to Doddy" | 179 | M1_STATUS |
-| Lists | Lists, templates, share card, shopping mode | 216, 257, 334 | LISTS_STATUS, SHOPPING_MODE_STATUS |
+| Lists | Lists, templates, share card, shopping mode, Uber Eats handoff | 216, 257, 334 | LISTS_STATUS, SHOPPING_MODE_STATUS, UBER_EATS_HANDOFF_STATUS |
 | NoteReminders | Time and place reminders on notes | 196, 211 | M4A_NOTE_REMINDERS_STATUS, PLACE_REMINDERS_STATUS |
 | Settings | Settings, Hey Doddy, island style, personality, what Doddy learned | 254, 440 | HEY_DODDY_STATUS, M6_LEARNING_LOOP_STATUS |
 | Ask | Typed questions (gateway) | - | M2_STATUS |

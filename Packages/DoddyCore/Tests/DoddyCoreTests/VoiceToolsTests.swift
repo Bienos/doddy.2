@@ -294,6 +294,15 @@ final class VoiceToolsTests: XCTestCase {
         XCTAssertEqual(parse("run_shortcut", #"{}"#), .invalid(name: "run_shortcut", reason: "missing name"))
     }
 
+    func testUberEatsToolOnlyCarriesAnOptionalLocalOrderSummary() {
+        XCTAssertEqual(parse("open_ubereats", #"{}"#), .openUberEats(orderSummary: nil))
+        XCTAssertEqual(parse("open_ubereats", #"{"order_summary":"Veggie burger and fries"}"#),
+                       .openUberEats(orderSummary: "Veggie burger and fries"))
+        XCTAssertEqual(OpenLinks.uberEats()?.absoluteString, "https://www.ubereats.com/")
+        XCTAssertTrue(VoiceToolReply.uberEatsOpened.contains("did not create a cart or place an order"))
+        XCTAssertTrue(VoiceToolReply.uberEatsDeclined.hasPrefix("declined:"))
+    }
+
     func testMessageDraftChannels() {
         XCTAssertEqual(parse("draft_message", #"{"to":"Marta","body":"See you at six"}"#),
                        .draftMessage(MessageDraft(recipientName: "Marta", channel: .text, body: "See you at six")))

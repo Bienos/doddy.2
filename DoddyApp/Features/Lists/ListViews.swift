@@ -106,6 +106,7 @@ struct ListDetailView: View {
     @State private var confirmDelete = false
     @State private var showReminder = false
     @State private var confirmShopping = false
+    @State private var showUberEatsHandoff = false
     @FocusState private var addFocused: Bool
     private let shopping = ShoppingModeController.shared
     private let sharing = SharedListsController.shared
@@ -250,6 +251,7 @@ struct ListDetailView: View {
             Button("Cancel", role: .cancel) {}
         }
         .sheet(isPresented: $showReminder) { NoteReminderSheet(memoryID: list.id, startAtTime: false) }
+        .sheet(isPresented: $showUberEatsHandoff) { UberEatsHandoffSheet(list: list) }
         .sheet(item: $cloudShare) { sheet in
             CloudSharingView(sheet: sheet, listName: list.name, onStopped: {
                 // Apple's "Stop Sharing" removes only the share, so the copy in iCloud and the
@@ -376,6 +378,10 @@ struct ListDetailView: View {
                 Button { confirmShopping = true } label: { Label("Shopping mode", systemImage: "cart") }
                     .disabled(list.open.isEmpty)
             }
+            Button { showUberEatsHandoff = true } label: {
+                Label("Order with Uber Eats", systemImage: "bag")
+            }
+            .disabled(list.open.isEmpty)
             ShareLink(item: list.shareText, preview: SharePreview(list.name)) {
                 Label("Share as text", systemImage: "square.and.arrow.up")
             }
@@ -476,6 +482,46 @@ struct ListDetailView: View {
             errorMessage = nil
             do { try await change() } catch { errorMessage = UserFacingError.listMessage(for: error) }
         }
+    }
+}
+
+/// Honest Uber Eats handoff. The user can share/copy the selected list, then open Uber Eats;
+/// Doddy neither transmits the items nor builds a cart or submits an order.
+private struct UberEatsHandoffSheet: View {
+    let list: DoddyList
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section("Your open items") {
+                    ForEach(list.open) { item in
+                        Text(item.text)
+                    }
+                }
+                Section {
+                    Text("This opens Uber Eats, but doesn't add items to a cart or place an order. You can share or copy this list, then choose the restaurant and items in Uber Eats and review and pay there.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                    ShareLink(item: list.shareText, preview: SharePreview(list.name)) {
+                        Label("Share order list", systemImage: "square.and.arrow.up")
+                    }
+                    if let url = OpenLinks.uberEats() {
+                        Link(destination: url) {
+                            Label("Open Uber Eats", systemImage: "arrow.up.right.square")
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Continue in Uber Eats")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
     }
 }
 

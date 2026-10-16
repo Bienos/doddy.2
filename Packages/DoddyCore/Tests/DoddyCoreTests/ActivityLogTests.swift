@@ -34,6 +34,10 @@ final class ActivityLogTests: XCTestCase {
         XCTAssertEqual(off.note, "Reminders isn't connected.")
 
         XCTAssertEqual(entry(.openMap(place: "Hala Koszyki"), reply: VoiceToolReply.mapOpened("Hala Koszyki")).outcome, .opened)
+        XCTAssertEqual(entry(.openUberEats(orderSummary: "Veggie burger"), reply: VoiceToolReply.uberEatsOpened).outcome, .opened)
+        XCTAssertNil(entry(.openUberEats(orderSummary: "Veggie burger"), reply: VoiceToolReply.uberEatsOpened).detail,
+                     "food and order details stay out of the activity log")
+        XCTAssertEqual(entry(.openUberEats(orderSummary: nil), reply: VoiceToolReply.uberEatsDeclined).outcome, .declined)
         // A reply the app never phrased as a result is not shown as done.
         XCTAssertEqual(entry(add, reply: "something else").outcome, .notSure)
     }

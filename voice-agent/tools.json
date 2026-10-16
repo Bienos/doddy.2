@@ -447,6 +447,19 @@
     },
     {
       "type": "function",
+      "name": "open_ubereats",
+      "description": "Prepare a user-confirmed handoff to Uber Eats when the user asks to open it or accepts a handoff to finish ordering there. Doddy cannot search its menu, create or fill a cart, submit an order, or pay. If the user asks Doddy itself to do those unsupported purchase steps, state the limitation and call note_capability_gap once with payment; the handoff may be offered separately and never counts as completing the order. The app shows this limitation and waits for the user to tap Open Uber Eats. The optional order summary is shown on the user's screen only and is not sent to Uber. The result starts with 'opened' only if Uber Eats opened, and explicitly says no cart or order was created; it starts with 'declined' if the user said no. Before the tool runs, briefly say that you can open Uber Eats but the user must choose items and pay there. Never say an order was placed.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "order_summary": {"type": "string", "description": "Optional concise summary of only the food the user asked for, shown on the confirmation card. Do not include private context or invent a restaurant, price, address, or preference."}
+        },
+        "required": []
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "not_synced"}
+    },
+    {
+      "type": "function",
       "name": "parking_spot",
       "description": "The user's parking spot, kept on their iPhone. action save: when the user asks you to remember where they parked; the app reads where the iPhone is now and the user taps Save. action find: when they ask where they parked or where their car is; you get when it was saved, their note and roughly how far it is, never the place itself, and the screen offers Open in Maps. action clear: when they say they've got the car or to forget the spot. The result starts with 'saved', 'found', 'cleared', 'declined', 'not found', 'not changed' or 'failed'. Before it runs, say only one short line: for save, for example 'Confirm on screen if I should save this spot.' (Polish: 'Potwierdź na ekranie, jeśli mam zapisać to miejsce.'); for find or clear, for example 'Let me check.' (Polish: 'Już sprawdzam.'). Never describe directions yourself.",
       "parameters": {

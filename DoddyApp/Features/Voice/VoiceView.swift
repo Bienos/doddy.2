@@ -476,6 +476,16 @@ struct VoiceView: View {
                 .font(.headline)
             Text(place)
                 .font(.body)
+        case .uberEats(_, let orderSummary):
+            Text("Continue in Uber Eats?")
+                .font(.headline)
+            if let orderSummary {
+                Text(orderSummary)
+                    .font(.body)
+            }
+            Text("Your request is not sent to Uber Eats. Choose the restaurant and items there, then review and pay. Doddy won't create a cart or place an order.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
         case .shortcut(_, let name):
             Text("Run this Shortcut?")
                 .font(.headline)
@@ -884,6 +894,7 @@ struct VoiceView: View {
         case .alarm: (NSLocalizedString("Set alarm", comment: ""), NSLocalizedString("Don't set", comment: ""))
         case .cancelAlarm: (NSLocalizedString("Turn off", comment: ""), NSLocalizedString("Keep it", comment: ""))
         case .map: (NSLocalizedString("Open in Maps", comment: ""), NSLocalizedString("Don't open", comment: ""))
+        case .uberEats: (NSLocalizedString("Open Uber Eats", comment: ""), NSLocalizedString("Don't open", comment: ""))
         case .shortcut: (NSLocalizedString("Run", comment: ""), NSLocalizedString("Don't run", comment: ""))
         case .message(_, let draft, _): (draft.channel == .text ? NSLocalizedString("Open in Messages", comment: "") : NSLocalizedString("Open in Mail", comment: ""), NSLocalizedString("Don't open", comment: ""))
         case .cloud(_, _, let preview, _, _): (preview.confirmLabel, NSLocalizedString("Don't do this", comment: ""))

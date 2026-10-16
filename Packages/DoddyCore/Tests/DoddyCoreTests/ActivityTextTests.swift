@@ -22,7 +22,7 @@ final class ActivityTextTests: XCTestCase {
             .createCalendarEvent(event), .createReminder(ReminderDraft(title: "Buy milk", due: nil, notes: nil)),
             .remindAboutNote(NoteReminderVoiceDraft(noteText: "Keys", target: .time(now, timeZoneID: "Europe/Warsaw"))),
             .lookupContact(name: "Marta"), .upcomingBirthdays(days: 7), .setTimer(TimerDraft(seconds: 60, label: nil)),
-            .openMap(place: "Old Town"), .runShortcut(name: "Home"),
+            .openMap(place: "Old Town"), .openUberEats(orderSummary: "Soup"), .runShortcut(name: "Home"),
             .draftMessage(MessageDraft(recipientName: "Marta", channel: .text, body: "Hi")),
             .draftMessage(MessageDraft(recipientName: "Marta", channel: .email, body: "Hi")),
             .addToList(list), .readList(name: "Shopping"), .checkOff(list), .removeFromList(list), .createList(list),
@@ -50,7 +50,7 @@ final class ActivityTextTests: XCTestCase {
     private func getsARow(_ request: VoiceToolRequest) -> Bool {
         switch request {
         case .searchMemories, .saveMemory, .readCalendar, .createCalendarEvent, .createReminder, .remindAboutNote,
-             .lookupContact, .upcomingBirthdays, .setTimer, .setAlarm, .listAlarms, .cancelAlarm, .openMap, .runShortcut,
+             .lookupContact, .upcomingBirthdays, .setTimer, .setAlarm, .listAlarms, .cancelAlarm, .openMap, .openUberEats, .runShortcut,
              .draftMessage, .cloudTool, .addToList, .readList, .checkOff, .removeFromList, .createList,
              .changeCalendarEvent, .changeReminder, .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders,
              .convertCurrency, .parkingSpot, .addIngredients, .findFreeTime, .leaveBy:
@@ -66,7 +66,7 @@ final class ActivityTextTests: XCTestCase {
         XCTAssertTrue(everyKind.allSatisfy(getsARow))
         // One of each kind that gets a row (cloud tools count once each, drafts twice).
         let kinds = Set(everyKind.map { String(describing: $0).prefix { $0 != "(" } })
-        XCTAssertEqual(kinds.count, 32)
+        XCTAssertEqual(kinds.count, 33)
         XCTAssertNil(ActivityRequest.describe(.undoLast, calendar: calendar))
         XCTAssertNil(ActivityRequest.describe(.calculate(expression: "1+1"), calendar: calendar))
     }
