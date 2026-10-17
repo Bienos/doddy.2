@@ -4,14 +4,20 @@ New milestone: cloud voice and external actions (CLAUDE.md rule 6). Date: 2026-1
 
 Owner request: "Give Doddy his own phone number so he can (a) call me and take calls from me, and (b) send and receive SMS."
 
-**Status: plan only, waiting for your approval.** Nothing in this document is built, deployed or run. This is step 0 of the request; work stops here until you approve.
+**Status: approved by the owner on 2026-10-17** ("approved, go with your recommendations, start U0"). U0 is in progress; see "Progress" below. Nothing else in this plan is built yet.
 
 ## The short version
 1. **Most of this already exists in code, but it has never touched a real phone number.** S1 (texts) and S2 (calls in both directions) were built on 2026-10-10 in `server/messaging/` and the app: your verified number, consent, STOP, delivery receipts, signed webhooks, the "Doddy (phone)" agent with a PIN, "Call me now", call limits, and `unknown` never redialled. None of it has been deployed. No real text or call has gone through it (`S1_SERVER_STATUS.md`, `S2_CALLS_STATUS.md`). So the work starts by going live with what exists, not by building a second phone system.
 2. **The number should be a Polish mobile number** (+48 73… or +48 79…) on Twilio, not a US local or toll-free one. A US number can't receive texts from a Polish phone. A2P 10DLC and toll-free verification are US and Canada rules, so they don't apply. Twilio needs your ID and PESEL before you can buy the number.
 3. **One change to what is built: calls reach Doddy's server first.** The S2 design imports the number into ElevenLabs, so every caller, strangers included, talks to the AI, and only the AI's prompt sends them away. With ElevenLabs' `register-call`, the server checks the caller before any AI hears them. A stranger hears one fixed sentence and the call ends. Your number is handed to the phone agent.
 4. **New code:** texts Doddy proposes and you approve, bound to a hash of the exact text; texts from you to Doddy; Doddy calling you at a time and for a reason you approved; quiet hours and caps as config.
-5. **Nine decisions** for you are at the end, each with a recommendation.
+5. **Nine decisions**, taken on 2026-10-17 (your recommendations), are at the end.
+
+## Progress
+| Unit | State |
+|---|---|
+| U0. Go live with texts | Setup runbook written (`docs/integrations/PHONE_NUMBER_SETUP.md`). The built server passes its tests on this branch (55 tests, 0 failures, 2026-10-17). Waiting on your setup steps and the iPhone checks. |
+| U1 to U4 | Not started |
 
 ## What exists and what is new
 "Built" below means the code exists and its automated tests pass with stand-ins for Twilio and ElevenLabs. The app side compiles in hosted CI. Nothing has run against the real services.
@@ -31,7 +37,7 @@ Owner request: "Give Doddy his own phone number so he can (a) call me and take c
 | **D.** An honest "not available yet" when voice isn't wired | The agent says Doddy can't reach its memory if the server has a problem. If the server is down, what callers hear depends on ElevenLabs. | A fixed sentence for every case, including a fallback hosted at Twilio for when Doddy's server is down. |
 | **E.** Secrets only on the server; `.env.example` with names only | `server/messaging/.env.example` has names only. The guard scans for key values (ADR-146). The app holds no provider keys. | New variable names only. |
 | **E.** Allowlist, quiet hours and caps in `doddy_rules.yaml`, enforced in code | Caps are constants in `src/routes/calls.ts`. | The policy and defaults in `doddy_rules.yaml`. The server reads its caps from config, and a test fails if its defaults differ from the yaml. Phone numbers never go in the repo. |
-| **F.** Tests | Server suite: 39 tests at the last recorded run (`SECURITY_REVIEW_MESSAGING.md`; not re-run for this plan). Swift client tests and end-to-end runs with stand-ins (S1, S2 docs). | Per unit; see "Tests" below. |
+| **F.** Tests | Server suite: 55 tests, 0 failures (run on this branch on 2026-10-17: real PostgreSQL 16, stand-ins for Twilio and ElevenLabs). Swift client tests and end-to-end runs with stand-ins (S1, S2 docs). | Per unit; see "Tests" below. |
 
 ## Where this plan differs from the request
 1. **Your number stays out of the repo.** The request puts the allowlist in `docs/trust/config/doddy_rules.yaml`. That file is in git, so your phone number would be published in the history forever. The yaml gets the policy (only numbers verified in the app, at most one, the defaults). The number itself stays where it is today: in Doddy's database, after you confirm it with a Twilio Verify code.
@@ -269,7 +275,7 @@ Each unit is a small reviewed change, with its tests and docs, and stops for you
 
 | Unit | What | Main files | Done when |
 |---|---|---|---|
-| **U0. Go live with texts (built code)** | A step-by-step setup runbook for the Twilio console and Render; the server address in the app (`ServerConfig`) once you give it; nothing else changes | `docs/integrations/PHONE_NUMBER_SETUP.md`, `DoddyApp/Infrastructure/Server/ServerConfig.swift` | On your iPhone: a Verify code arrives, a test text arrives and shows Delivered (or "not confirmed"), and STOP then START work. Calls are not connected yet, so the number isn't imported into ElevenLabs only to be undone in U1. |
+| **U0. Go live with texts (built code)** | A step-by-step setup runbook for the Twilio console and Render; the server address in the app (`ServerConfig`) once you give it; nothing else changes | `docs/integrations/PHONE_NUMBER_SETUP.md`, `DoddyApp/Infrastructure/Server/ServerConfig.swift` | On your iPhone: a Verify code arrives; a test text arrives and shows "Delivered" (or "Handed to Twilio for delivery" when no receipt comes); STOP then START work; a call to the number hears the fixed "not connected yet" sentence. Calls are not connected to the AI yet, so the number isn't imported into ElevenLabs only to be undone in U1. |
 | **U1. Calls through the server** | Inbound and outbound call routes; `register-call`; Twilio Calls API with status callbacks; fallback TwiML Bin; the phone agent's audio set to μ-law 8000 Hz; the setup script stops importing the number | `server/messaging/src/routes/twilioVoice.ts` (new), `src/providers/twilio.ts`, `src/providers/elevenlabs.ts`, `src/calls.ts`, `migrations/008_*.sql`, `scripts/setup-phone-agent.mjs`, `voice-agent/phone/session.json` | Server tests pass. On your iPhone: you call Doddy and reach the agent after the PIN; a call from another phone hears the fixed sentence; Call me now rings you and the app shows Answered. |
 | **U2. Texts you approve** | Approval hash (app, server, worker); `text_me` voice tool and card; honest status copy; Twilio 500/502/504 become `unknown`, with a lookup at Twilio | `src/routes/texts.ts` (new), `src/approval.ts` (new), `src/outbox.ts`, `contracts/phone/approval-vectors.json`, `Packages/DoddyCore/.../ApprovalHash.swift`, `VoiceTools.swift`, `voice-agent/tools.json`, `instructions.md`, `DoddyApp/Features/Voice`, `Features/Calls`, `doddy_rules.yaml` | Tests pass. The live app agent gets `text_me` (you update it). A text Doddy proposes arrives after your tap, and an edited text needs a new tap. |
 | **U3. Texts to Doddy** | Allowlist, unique message ids, rate limit, Polish keywords, notes inbox, deleting records at Twilio, history export; AI replies (if decision 4 is yes, off by default) with Claude and the two tools. Draft consent wording for you to approve: "Texts you send to Doddy's number go to Doddy's server and to Twilio. If you turn on replies, Doddy, an AI, answers by text, and your text goes to Anthropic to write the answer. Text STOP to stop." | `src/routes/twilioWebhooks.ts`, `src/sms.ts`, `src/textReplies.ts` (new), `migrations/009_*.sql`, `Features/Calls` | Tests pass. On your iPhone: a text from you becomes a note, or gets an answer; a text from another phone gets nothing. |
@@ -319,7 +325,9 @@ Each unit is a small reviewed change, with its tests and docs, and stops for you
 | DOD-11 observable privacy | "What leaves this iPhone" rows; deletion at Twilio; recording off | "No record parameter" test; data-flow row test |
 | Content is data, not instructions | Text in a data block; no tool takes a recipient | Injection fixture test |
 
-## 9. Decisions for you
+## 9. Decisions (taken 2026-10-17)
+You approved the recommendations below. Decision 7 had no recommendation, so the default applies: Claude Opus 5.5. It is a config value, so switching to Claude Haiku 5.5 later is one setting. Decision 9 keeps the default: Doddy speaks into your voicemail, with no answering-machine detection.
+
 1. **Approve this plan and the unit order** (U0 to U4). Recommendation: yes, and stop after each unit.
 2. **Whose name is on the number:** you as a person (ID and PESEL), or a business (KRS, REGON or NIP, and an authorised person). Recommendation: you, for a personal build.
 3. **Route calls through Doddy's server** with `register-call`, replacing the ElevenLabs number import in ADR-152. Recommendation: yes.

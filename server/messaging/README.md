@@ -43,8 +43,8 @@ All `/v1` routes except account creation need `Authorization: Bearer <deviceToke
 - **Outbound:** goes only to the verified number, after consent (`calls-v1`). Limits are 3 per hour and 10 per day. A network timeout is recorded as `unknown` and never redialled.
 - **Agent setup:**
   1. Run `node scripts/setup-phone-agent.mjs --dry-run` to see the requests, then run it for real after deploy.
-  2. In ElevenLabs, import the Twilio number and assign it to the new agent.
-  3. Set the call-start webhook (or use `--set-workspace-webhook`).
+  2. Don't import the Twilio number into ElevenLabs. ADR-490 (2026-10-17) routes calls through this server with ElevenLabs `register-call` (unit U1). Until then the number answers with the fixed sentence from `docs/integrations/PHONE_NUMBER_SETUP.md`.
+  3. The call-start webhook (`--set-workspace-webhook`) is replaced in U1 as well.
 
 ## News digests
 Once a day at the user's local time, the worker builds a short news message:
@@ -67,12 +67,13 @@ TEST_DATABASE_URL=postgres://…/doddy_test npm test   # WARNING: drops that DB'
 ```
 
 ## Before the first deploy (owner)
-1. Apply `render.yaml` in Render. This creates **paid** resources: 2 × starter + basic-256mb Postgres.
-2. Fill the `doddy-secrets` env group, then set `PUBLIC_BASE_URL` to the `doddy-api` URL.
+For the owner's single-number setup, follow `docs/integrations/PHONE_NUMBER_SETUP.md` instead (one web service with `RUN_WORKER_IN_WEB=1`, no Blueprint). The general steps:
+1. Apply `render.yaml` in Render. This creates **paid** resources: 2 × starter + basic-256mb Postgres. (It also creates the `doddy` backend, which may already exist.)
+2. Fill the `doddy-messaging-secrets` env group, then set `PUBLIC_BASE_URL` to the `doddy-messaging` URL.
 3. Twilio:
    - Buy a number and create a Messaging Service with **Advanced Opt-Out** on.
    - Point the inbound webhook at `/webhooks/twilio/sms`.
    - Create a Verify service.
-   - US numbers also need A2P 10DLC registration.
+   - Doddy's number is a Polish mobile number (ADR-490): Twilio's identity bundle, no A2P 10DLC. A US number would need A2P 10DLC registration.
 4. APNs: create a .p8 key and enable the Push capability on the app id.
 5. ElevenLabs: turn on **authentication** for the Doddy agent, so tokens are required.
