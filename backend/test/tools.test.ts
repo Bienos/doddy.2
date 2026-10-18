@@ -319,14 +319,17 @@ test("an approval expires", async () => {
   assert.equal(rig.provider.executed.length, 0);
 });
 
-test("prepare refuses reads and tools that are switched off", async () => {
+test("prepare refuses tools that are switched off; a read gets a card too, and nothing is read for it (ASK-01)", async () => {
   rig = await start();
   await connect(rig, "gmail");
   const off = await rig.call("POST", "/v1/tools/prepare", { body: { tool: "draft_email", arguments: { to: "anna@example.com", subject: "Hi", body: "Hello" } } });
   assert.equal(off.status, 403);
   await on(rig, "check_email");
   const read = await rig.call("POST", "/v1/tools/prepare", { body: { tool: "check_email", arguments: {} } });
-  assert.equal(read.status, 400);
+  assert.equal(read.status, 200, read.text);
+  assert.equal(read.body.preview.title, "Check your Gmail?");
+  assert.deepEqual(read.body.preview.lines, ["Your Gmail inbox", "Doddy reads the newest 5: sender, subject, time and a short preview."]);
+  assert.deepEqual(rig.provider.executed, [], "asking reads nothing");
 });
 
 test("a draft is created with the exact text the user saw, and is never sent", async () => {

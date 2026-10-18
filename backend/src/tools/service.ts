@@ -3,6 +3,7 @@ import { type CompleteRequest, CompleteRequestSchema, type ConnectionReason, typ
 import type { Limits } from "../config.js";
 import { AppError, ProviderError } from "../errors.js";
 import { argumentDigest, UsageLimiter } from "../policy.js";
+import { AskGate, type AskBinding, WEB_ACCOUNT } from "./askFirst.js";
 import { CLEANUP_RETRY, type ConnectionRow, type QueuedCleanup, type Store } from "../store.js";
 import { isSupportedTimeZone } from "../time.js";
 import {
@@ -44,7 +45,6 @@ import {
 
 type SectionId = ToolkitId | typeof WEB_SECTION_ID;
 
-const APPROVAL_TTL_SECONDS = 120;
 /** How far back prepare looks for the same write (ADR-322). Approvals are kept a day past expiry. */
 const EARLIER_WINDOW_MS = 86_400_000;
 
@@ -75,6 +75,8 @@ export class CloudToolsService {
   private readonly webSearch: WebSearchProvider | null;
   private readonly limits: Limits;
   private readonly limiter: UsageLimiter;
+  /** ASK-01: the one place that decides whether a tool may run (askFirst.ts). */
+  private readonly ask: AskGate;
   private readonly now: () => number;
   private readonly sleep: (ms: number) => Promise<void>;
 
@@ -90,6 +92,7 @@ export class CloudToolsService {
     this.limits = deps.limits;
     this.limiter = new UsageLimiter(deps.store, deps.limits);
     this.now = deps.now ?? Date.now;
+    this.ask = new AskGate(deps.store, this.now);
     this.sleep = deps.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
   }
 
@@ -444,21 +447,25 @@ export class CloudToolsService {
   // ---------------------------------------------------------------- prepare / run
 
   /**
-   * Writes only. Shows exactly what would happen and returns a single-use approval for those
-   * arguments. A tool with a `resolve` lookup first reads its target from the provider (a read,
+   * Every tool (ASK-01, ADR-483). Shows exactly what would happen and returns a single-use approval
+   * for those arguments; `run` refuses without it. A read's card is made from its arguments alone:
+   * nothing is read from the account before the yes. For a write, A tool with a `resolve` lookup first reads its target from the provider (a read,
    * counted like one; never the write), shows that in the preview, and binds the approval to it too.
    * If the same write ran in the last day, the card says so (ADR-322); after a try whose outcome is
    * unknown, a write that can be looked for is looked for first.
    */
   async prepare(userId: string, body: unknown): Promise<PrepareResult> {
     const request = parse(PrepareRequestSchema, body);
-    if (request.tool === WEB_SEARCH_TOOL) throw new AppError("invalid_request", { message: "This tool doesn't need a confirmation." });
+    if (request.tool === WEB_SEARCH_TOOL) return this.prepareWebSearch(userId, request.arguments);
     const tool = this.requireTool(request.tool);
-    if (tool.risk !== "write" || !tool.preview) throw new AppError("invalid_request", { message: "This tool doesn't need a confirmation." });
     const args = parse(tool.input, request.arguments);
     const now = this.now();
     this.limiter.reserveRequest(userId, now);
-    const row = this.checkUsable(userId, tool, "write");
+    const row = this.checkUsable(userId, tool, tool.risk);
+    if (tool.risk === "read") {
+      const { approvalId, expiresAt } = this.ask.issue({ userId, tool: tool.name, accountId: row.connection_id, argsDigest: argumentDigest(args) });
+      return { mode: this.mode, tool: tool.name, preview: tool.preview(args, null), approvalId, expiresAt: new Date(expiresAt).toISOString() };
+    }
     let target: ResolvedTarget | null = null;
     if (tool.resolve) {
       this.reserveRuns(userId, tool, now, 1);
@@ -470,14 +477,7 @@ export class CloudToolsService {
       }
     }
     const argsDigest = approvalDigest(args, target);
-    const { approvalId, expiresAt } = this.store.createApproval({
-      userId,
-      capability: tool.name,
-      accountId: row.connection_id,
-      argsDigest,
-      now,
-      ttlSeconds: APPROVAL_TTL_SECONDS,
-    });
+    const { approvalId, expiresAt } = this.ask.issue({ userId, tool: tool.name, accountId: row.connection_id, argsDigest });
     const preview = tool.preview(args, target);
     const result: PrepareResult = { mode: this.mode, tool: tool.name, preview, approvalId, expiresAt: new Date(expiresAt).toISOString() };
     const latest = this.store.latestWrite({ userId, capability: tool.name, argsDigest, since: now - EARLIER_WINDOW_MS });
@@ -639,22 +639,24 @@ export class CloudToolsService {
     // A write's approval is checked here but only used up right before the provider call, so a
     // limit or "busy" refusal in between doesn't cost the user their confirmation. For a tool with
     // a lookup the approval is bound to the target too, so before the lookup only its presence is checked.
-    const approval = (target: ResolvedTarget | null, checkOnly: boolean) =>
-      request.approvalId !== undefined &&
-      this.store.consumeApproval(
-        { approvalId: request.approvalId, userId, capability: tool.name, accountId: row.connection_id, argsDigest: approvalDigest(args, target), now: this.now() },
-        { checkOnly },
-      );
+    // ASK-01: reads are bound to their arguments only (nothing was looked up before the yes).
+    const binding = (target: ResolvedTarget | null): AskBinding => ({
+      userId, tool: tool.name, accountId: row.connection_id, argsDigest: op === "write" ? approvalDigest(args, target) : argumentDigest(args),
+    });
+    const approval = (target: ResolvedTarget | null, checkOnly: boolean) => this.ask.allows(binding(target), request.approvalId, checkOnly ? "check" : "use");
     const unconfirmed = () =>
-      new AppError("capability_disabled", {
-        message: "This action needs a fresh confirmation.",
-        receipt: this.receipt(userId, tool.toolkit, op, tool.name, "blocked", "Not done: it wasn't confirmed.", "confirmation_required", null),
-      });
+      op === "write"
+        ? new AppError("capability_disabled", {
+            message: "This action needs a fresh confirmation.",
+            receipt: this.receipt(userId, tool.toolkit, op, tool.name, "blocked", "Not done: it wasn't confirmed.", "confirmation_required", null),
+          })
+        : askFirstRefusal(this.receipt(userId, tool.toolkit, op, tool.name, "blocked", "Not done: Doddy didn't have a yes for this.", "ask_first_required", null));
     if (tool.risk === "write" && request.approvalId !== undefined) {
       const repeat = this.repeatOfUsedApproval(userId, tool, args, request.approvalId, row.connection_id);
       if (repeat) return repeat;
     }
     if (tool.risk === "write" && (tool.resolve ? request.approvalId === undefined : !approval(null, true))) throw unconfirmed();
+    if (tool.risk === "read" && !approval(null, true)) throw unconfirmed();
 
     // A lookup (before a write, or the search before a read) counts as one more run, reserved together with the main call.
     this.reserveRuns(userId, tool, now, tool.resolve ? 2 : 1);
@@ -665,6 +667,8 @@ export class CloudToolsService {
     let used: string | null = null;
     try {
       return await this.limiter.withSlot(userId, async () => {
+        // A read's yes is used up before anything is read, its lookup included: one yes, one read.
+        if (tool.risk === "read" && !approval(null, false)) throw unconfirmed();
         // The target is read again right before the write: if it is gone, done, or no longer what the
         // card showed, the approval doesn't match and nothing is written. A read looks up what it opens.
         const found = tool.resolve ? await this.lookup(userId, tool, args, composioUserId, row.connection_id) : null;
@@ -712,6 +716,30 @@ export class CloudToolsService {
     }
   }
 
+  /** The card for a web search (ASK-01): the exact search words, and that Doddy pays for it. Nothing is searched. */
+  private prepareWebSearch(userId: string, raw: Record<string, unknown>): PrepareResult {
+    const args = parse(WebSearchInput, raw);
+    const now = this.now();
+    this.limiter.reserveRequest(userId, now);
+    const blocked = (code: "capability_disabled" | "live_not_configured", message: string): never => {
+      throw new AppError(code, { message, receipt: this.receipt(userId, WEB_SECTION_ID, "read", WEB_SEARCH_TOOL, "blocked", `Not done: ${message}`, code, null) });
+    };
+    if (!this.webSearch || !this.webSearch.isConfigured()) return blocked("live_not_configured", "Web search isn't set up on this server.");
+    if (!this.store.toolEnabled(userId, WEB_SEARCH_TOOL)) return blocked("capability_disabled", `${WEB_SEARCH_COPY.title} is turned off in Settings.`);
+    const { approvalId, expiresAt } = this.ask.issue({ userId, tool: WEB_SEARCH_TOOL, accountId: WEB_ACCOUNT, argsDigest: argumentDigest(args) });
+    return {
+      mode: this.mode,
+      tool: WEB_SEARCH_TOOL,
+      preview: {
+        title: "Search the web?",
+        lines: [`Search words: ${args.query}`, "They go to Doddy's server and a search provider (Monid). Doddy pays for each search; there is a daily limit."],
+        confirmLabel: "Yes, search",
+      },
+      approvalId,
+      expiresAt: new Date(expiresAt).toISOString(),
+    };
+  }
+
   /**
    * Same order as account tools, minus the account: known tool -> valid arguments -> switch on ->
    * set up -> limits (incl. the web search caps) -> one Monid call (never retried: each run is billed)
@@ -719,7 +747,6 @@ export class CloudToolsService {
    */
   private async runWebSearch(userId: string, request: { arguments: Record<string, unknown>; timeZone: string; approvalId?: string | undefined }): Promise<RunResult> {
     const args = parse(WebSearchInput, request.arguments);
-    if (request.approvalId !== undefined) throw new AppError("invalid_request");
     if (!isSupportedTimeZone(request.timeZone)) {
       throw new AppError("invalid_request", { message: "Use an IANA time zone such as Europe/Warsaw." });
     }
@@ -731,6 +758,10 @@ export class CloudToolsService {
     const provider = this.webSearch;
     if (!provider || !provider.isConfigured()) return blocked("live_not_configured", "Web search isn't set up on this server.");
     if (!this.store.toolEnabled(userId, WEB_SEARCH_TOOL)) return blocked("capability_disabled", `${WEB_SEARCH_COPY.title} is turned off in Settings.`);
+    // ASK-01: the user's yes for exactly these search words, checked before the search is counted.
+    const binding: AskBinding = { userId, tool: WEB_SEARCH_TOOL, accountId: WEB_ACCOUNT, argsDigest: argumentDigest(args) };
+    const unasked = () => askFirstRefusal(this.receipt(userId, WEB_SECTION_ID, "read", WEB_SEARCH_TOOL, "blocked", "Not done: Doddy didn't have a yes for this.", "ask_first_required", null));
+    if (!this.ask.allows(binding, request.approvalId, "check")) throw unasked();
     try {
       this.limiter.reserveWebSearch(userId, now);
     } catch (error) {
@@ -740,6 +771,7 @@ export class CloudToolsService {
 
     try {
       return await this.limiter.withSlot(userId, async () => {
+        if (!this.ask.allows(binding, request.approvalId, "use")) throw unasked();
         const result = await provider.search({ query: args.query, signal: AbortSignal.timeout(WEB_SEARCH_TIMEOUT_MS) });
         const outcome = normalizeWebSearch(result.output, args.query);
         const receipt = this.receipt(userId, WEB_SECTION_ID, "read", WEB_SEARCH_TOOL, "succeeded", outcome.summary, null, result.runId);
@@ -859,6 +891,11 @@ const LOOKUP_RETRIES = 1;
  */
 function approvalDigest(args: Record<string, unknown>, target: ResolvedTarget | null): string {
   return target === null ? argumentDigest(args) : argumentDigest({ arguments: args, target });
+}
+
+/** ASK-01: a run that came without the user's yes for exactly this. Nothing was looked up or sent. */
+function askFirstRefusal(receipt: ToolReceipt): AppError {
+  return new AppError("capability_disabled", { message: "Doddy has to ask first: this needs the user's yes on the card.", receipt });
 }
 
 /** Error codes that mean a write never reached the point of running at the provider. */

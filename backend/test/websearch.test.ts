@@ -110,8 +110,11 @@ test("strict input: extra fields, empty or long queries and approvals are refuse
   assert.equal((await search(rig, "   ")).status, 400);
   assert.equal((await search(rig, "x".repeat(201))).status, 400);
   assert.equal((await search(rig, 42)).status, 400);
-  assert.equal((await search(rig, "x", USER_A, { approvalId: "00000000-0000-4000-8000-000000000001" })).status, 400);
-  assert.equal((await rig.call("POST", "/v1/tools/prepare", { body: { tool: "web_search", arguments: { query: "x" } } })).status, 400);
+  // ASK-01: an approval the server never issued is not a yes.
+  const made = await search(rig, "x", USER_A, { approvalId: "00000000-0000-4000-8000-000000000001" });
+  assert.equal(made.status, 403);
+  assert.equal(made.body.error.receipt.errorCode, "ask_first_required");
+  assert.equal((await rig.call("POST", "/v1/tools/prepare", { body: { tool: "web_search", arguments: { query: "x", provider: "apify" } } })).status, 400);
   assert.deepEqual(rig.webSearch!.queries, []);
 });
 

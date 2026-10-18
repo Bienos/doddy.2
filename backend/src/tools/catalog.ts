@@ -267,7 +267,12 @@ export interface CloudToolDefinition {
   toArguments(args: Record<string, unknown>, target?: ResolvedTarget | null, context?: Context): Record<string, unknown>;
   /** Look the target up first; the preview, the arguments and the reply use what the provider returned. */
   resolve?: TargetLookup;
-  preview?(args: Record<string, unknown>, resolved: ResolvedTarget | null): ConfirmationPreview;
+  /**
+   * ASK-01 (ADR-483): every tool, reads included, has a card that says exactly what it will do.
+   * Required, so a tool without a confirmation path doesn't compile. A read's card is made from
+   * the arguments alone (nothing is read before the yes); a write's may show its looked-up target.
+   */
+  preview(args: Record<string, unknown>, resolved: ResolvedTarget | null): ConfirmationPreview;
   normalize(raw: unknown, args: Record<string, unknown>, context: Context, resolved: ResolvedTarget | null): ToolOutcome;
   /**
    * Writes (ADR-322): the answer for a repeated run of an approval that already succeeded. The
@@ -369,6 +374,14 @@ export const CHECK_EMAIL: CloudToolDefinition = {
     verbose: false,
     include_payload: false,
     include_spam_trash: false,
+  }),
+  preview: (args) => ({
+    title: "Check your Gmail?",
+    lines: [
+      typeof args.query === "string" ? `Search: ${args.query}` : "Your Gmail inbox",
+      `Doddy reads the newest ${(args.max as number | undefined) ?? 5}: sender, subject, time and a short preview.`,
+    ],
+    confirmLabel: "Yes, check",
   }),
   normalize: (raw, args, context) => {
     const data = dataOf(raw);
@@ -476,6 +489,11 @@ export const FIND_DRIVE_FILE: CloudToolDefinition = {
     pageSize: 10,
     fields: "files(name,mimeType,modifiedTime),nextPageToken",
   }),
+  preview: (args) => ({
+    title: "Search your Google Drive?",
+    lines: [`File name contains: ${args.name as string}`, "Doddy sees names, types and last changes only."],
+    confirmLabel: "Yes, search",
+  }),
   normalize: (raw, args, context) => {
     const data = dataOf(raw);
     const files = listOf(data, "files").map((f) => {
@@ -527,6 +545,11 @@ export const SEARCH_NOTION: CloudToolDefinition = {
   input: z.object({ query: text(1, 100) }).strict(),
   maxRetries: 1,
   toArguments: (args) => ({ query: args.query, page_size: 10, filter_value: "page", filter_property: "object" }),
+  preview: (args) => ({
+    title: "Search Notion?",
+    lines: [`Search: ${args.query as string}`, "Doddy sees page titles only, among pages shared with it."],
+    confirmLabel: "Yes, search",
+  }),
   normalize: (raw, args, context) => {
     const data = dataOf(raw);
     const pages = listOf(data, "results")
@@ -585,6 +608,14 @@ export const LIST_TODOIST_TASKS: CloudToolDefinition = {
     if (word) parts.push(`search: ${word}`);
     return { limit: 20, ...(parts.length > 0 ? { filter: parts.join(" & ") } : {}) };
   },
+  preview: (args) => ({
+    title: "Check your Todoist tasks?",
+    lines: [
+      `Which: ${(args.when as string | undefined) ?? "today"}${typeof args.search === "string" ? `, containing "${args.search}"` : ""}`,
+      "Doddy reads up to 20 open tasks.",
+    ],
+    confirmLabel: "Yes, check",
+  }),
   normalize: (raw, args) => {
     const data = dataOf(raw);
     const tasks = listOf(data, "tasks").map((t) => {
@@ -850,6 +881,11 @@ export const READ_EMAIL: CloudToolDefinition = {
     include_payload: true,
     include_spam_trash: false,
   }),
+  preview: (args) => ({
+    title: "Read one Gmail email?",
+    lines: [`Search: ${args.query as string}`, "Doddy reads the newest email that matches, including its text."],
+    confirmLabel: "Yes, read it",
+  }),
   normalize: (raw, _args, context) => {
     const data = dataOf(raw);
     const messages = listOf(data, "messages").map((m) => {
@@ -1072,6 +1108,11 @@ export const READ_NOTION_PAGE: CloudToolDefinition = {
     return { page_id: target.pageId };
   },
   resolve: NOTION_PAGE_LOOKUP,
+  preview: (args) => ({
+    title: "Read one Notion page?",
+    lines: [`Search: ${args.query as string}`, "Doddy reads the best match among pages shared with it."],
+    confirmLabel: "Yes, read it",
+  }),
   normalize: (raw, _args, context, target) => {
     const data = dataOf(raw);
     if (target?.kind !== "notion_page") throw new ProviderError("malformed_provider_result");
@@ -1174,6 +1215,14 @@ export const CHECK_OUTLOOK_EMAIL: CloudToolDefinition = {
     // Graph refuses `orderby` together with `search`; a search is sorted here instead.
     ...(typeof args.query === "string" ? { search: args.query } : { orderby: ["receivedDateTime desc"] }),
   }),
+  preview: (args) => ({
+    title: "Check your Outlook email?",
+    lines: [
+      typeof args.query === "string" ? `Search: ${args.query}` : "Your Outlook inbox",
+      `Doddy reads the newest ${(args.max as number | undefined) ?? 5}: sender, subject, time and a short preview.`,
+    ],
+    confirmLabel: "Yes, check",
+  }),
   normalize: (raw, args, context) => {
     const limit = (args.max as number | undefined) ?? 5;
     const messages = outlookMessages(raw).map(({ item }) => ({
@@ -1218,6 +1267,11 @@ export const READ_OUTLOOK_EMAIL: CloudToolDefinition = {
     search: args.query,
     // `body` is what brings the text; an explicit select wins over Composio's "minimal" default.
     select: ["id", "subject", "from", "receivedDateTime", "body"],
+  }),
+  preview: (args) => ({
+    title: "Read one Outlook email?",
+    lines: [`Search: ${args.query as string}`, "Doddy reads the newest email that matches, including its text."],
+    confirmLabel: "Yes, read it",
   }),
   normalize: (raw, _args, context) => {
     const messages = outlookMessages(raw);
@@ -1337,6 +1391,11 @@ export const READ_OUTLOOK_CALENDAR: CloudToolDefinition = {
       orderby: "start/dateTime asc",
     };
   },
+  preview: (args) => ({
+    title: "Read your Outlook calendar?",
+    lines: [args.from === args.to ? `Day: ${args.from as string}` : `From ${args.from as string} to ${args.to as string}`, "Doddy reads titles, times and places."],
+    confirmLabel: "Yes, read it",
+  }),
   normalize: (raw, args, context) => {
     const data = dataOf(raw);
     const events = listOf(data, "value")
