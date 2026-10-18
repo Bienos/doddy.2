@@ -36,6 +36,9 @@ public enum CarProfile {
         case .draftBlikTransfer:
             // Money (ADR-510): a card to check and a bank app to send from, so never while driving.
             return .refuse(reason: "A BLIK transfer is shown on the iPhone for the user to check and send in their bank app, so it waits until they aren't driving.")
+        case .preparePurchase:
+            // Paying needs Face ID or a BLIK code on the iPhone (ADR-490).
+            return .refuse(reason: "Paying needs a tap and Face ID on the iPhone, so it waits until the user isn't driving.")
         case .saveMemory(let text):
             return .askAloud(readBack: CarConfirmation.readBack(saving: text))
         case .addToList(let request):

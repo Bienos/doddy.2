@@ -1,0 +1,18 @@
+{
+  "mode": "test",
+  "purchase": {
+    "id": "6f1c2b9e-3a4d-4f5e-8a7b-1c2d3e4f5a6b",
+    "kind": "native",
+    "merchantName": "Kino Muranów",
+    "description": "2 tickets, Friday 19:30",
+    "amountMinor": 5600,
+    "currency": "PLN",
+    "checkoutHost": null,
+    "status": "outcome_unknown",
+    "method": "apple_pay",
+    "testMode": true,
+    "summary": "Stripe didn't answer, so Doddy can't tell yet whether 56,00 zł was paid. Nothing will be tried again by itself.",
+    "createdAt": "2026-10-18T10:00:00.000Z",
+    "updatedAt": "2026-10-18T10:00:20.000Z"
+  }
+}

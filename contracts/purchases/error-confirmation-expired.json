@@ -1,0 +1,7 @@
+{
+  "error": {
+    "code": "capability_disabled",
+    "message": "This purchase needs a fresh confirmation. Nothing was paid.",
+    "correlationId": "2f3e4d5c-6b7a-4980-a1b2-c3d4e5f6a7b8"
+  }
+}

@@ -197,7 +197,13 @@ struct VoiceView: View {
                                 .id(line.id)
                         }
 
-                        if let pending = controller.pendingAction {
+                        // The Buy card and its receipt (ADR-490) have their own buttons.
+                        if let flow = controller.purchaseFlow {
+                            PurchaseCardView(flow: flow) { controller.dismissPurchase() }
+                                .id("purchase")
+                        }
+
+                        if let pending = controller.pendingAction, !pending.isPurchase {
                             actionCard(pending, controller: controller)
                                 .id("pendingAction")
                         }
@@ -758,6 +764,9 @@ struct VoiceView: View {
             Text("Say yes, or tap. Nothing is looked at before that.")
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
+        case .purchase:
+            // Drawn by PurchaseCardView, never by this generic card (ADR-490).
+            EmptyView()
         }
     }
 
@@ -945,6 +954,8 @@ struct VoiceView: View {
         case .leaveBy: (NSLocalizedString("Set reminder", comment: ""), NSLocalizedString("Not now", comment: ""))
         case .ingredients(_, _, _, _, let items, _):
             (String(format: NSLocalizedString("Add %lld", comment: ""), items.count - controller.ingredientsUnticked.count), NSLocalizedString("Not now", comment: ""))
+        // Never shown: the Buy card draws its own buttons (PurchaseCardView).
+        case .purchase: (NSLocalizedString("Pay", comment: ""), NSLocalizedString("Don't pay", comment: ""))
         }
     }
 
@@ -1709,5 +1720,13 @@ struct LongTurnPanel: View {
             .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 14))
             .accessibilityIdentifier("voice.longTurn.draft")
         }
+    }
+}
+
+private extension VoiceSessionController.PendingAction {
+    /// The Buy card (ADR-490) draws itself; the generic action card skips it.
+    var isPurchase: Bool {
+        if case .purchase = self { return true }
+        return false
     }
 }

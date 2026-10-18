@@ -1189,6 +1189,23 @@
         "required": ["category"]
       },
       "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 60, "elevenlabs_tool_id": "tool_3801m4rntsxbf9yr0vf8r8jnf6n9"}
+    },
+    {
+      "type": "function",
+      "name": "prepare_purchase",
+      "description": "Get something the user asked to buy ready to pay for. Doddy never pays by itself: the app shows a card with the shop, what is bought and the price, and only the user's own tap pays. kind 'native' shows Apple Pay and BLIK inside Doddy; in this version it is a test payment to Doddy with no real money, so use it only when the user asks to try paying or to test it. kind 'checkout' opens the shop's own checkout page inside Doddy, where the user pays the shop themselves; use it for a real purchase when you have the shop's https page from the user or a web result the user chose. Use the price the user heard; never guess one. The result starts with 'paid' (Stripe confirmed it; say it in one sentence, and say it was a test if the result says so), 'opened' (the checkout page was opened; never say it was paid), 'declined', 'failed' (nothing was paid) or 'unknown' (it may or may not have gone through: ask the user to check their bank app and never try again yourself). Before this tool runs, say only one short line, for example 'Confirm the payment on screen.' Never say something was bought or paid unless the result starts with 'paid'.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "kind": {"type": "string", "enum": ["native", "checkout"], "description": "'native' for a test payment inside Doddy with Apple Pay or BLIK; 'checkout' to open the shop's own checkout page."},
+          "merchant": {"type": "string", "description": "The shop or service, as the user named it, for example 'Kino Muranów'. At most 80 characters."},
+          "description": {"type": "string", "description": "What is bought, short, in the user's language, for example '2 bilety, piątek 19:30'. At most 200 characters."},
+          "amount_pln": {"type": "number", "description": "The price in złoty the user heard, for example 56 or 56.5. At most two decimals."},
+          "checkout_url": {"type": "string", "description": "Only for kind 'checkout': the shop's https checkout or product page. Leave out for 'native'."}
+        },
+        "required": ["kind", "merchant", "description", "amount_pln"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 120, "elevenlabs_tool_id": "not_synced"}
     }
   ]
 }

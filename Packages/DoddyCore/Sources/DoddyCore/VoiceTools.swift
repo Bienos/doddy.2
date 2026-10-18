@@ -19,6 +19,9 @@ public enum VoiceToolName {
     public static let proposePlan = "propose_plan"
     /// The user asked for something no tool covers: a category, kept on the iPhone (ADR-440).
     public static let noteCapabilityGap = "note_capability_gap"
+    /// Pay for something the user asked for (ADR-490): a card with Apple Pay or BLIK (test mode
+    /// in this milestone), or the shop's own checkout page. Nothing is paid without the user's tap.
+    public static let preparePurchase = "prepare_purchase"
 }
 
 /// The functions a user turns on in Settings, Connections. All start off, and each one may also
@@ -27,6 +30,8 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
     case calendar, reminders, contacts, timers, maps, shortcuts, messages
     /// BLIK phone transfers shown on a card for the user to send in their bank app (ADR-510).
     case blik
+    /// Paying for things by voice (ADR-490). Off until the user turns it on, like every other.
+    case payments
 
     /// The name shown in Settings and in the agent's replies.
     public var title: String {
@@ -39,6 +44,7 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
         case .shortcuts: "Shortcuts"
         case .messages: "Messages and email"
         case .blik: "BLIK transfers"
+        case .payments: "Payments"
         }
     }
 
@@ -58,6 +64,7 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
         case VoiceToolName.runShortcut: .shortcuts
         case VoiceToolName.draftMessage: .messages
         case VoiceToolName.draftBlikTransfer: .blik
+        case VoiceToolName.preparePurchase: .payments
         default: nil
         }
     }
@@ -230,6 +237,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case findFreeTime(FreeTimeRequest)
     /// "Remind me when to leave" (ADR-335): travel time from Apple Maps, then a card.
     case leaveBy(LeaveByRequest)
+    /// A purchase the agent proposed (ADR-490). Shown on a card; paid only by the user's own tap.
+    case preparePurchase(PurchaseDraft)
     case unsupported(name: String)
     case invalid(name: String, reason: String)
 
@@ -313,6 +322,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
         case VoiceToolName.noteCapabilityGap:
             guard let raw = args.text("category") else { return .invalid(name: name, reason: "missing category") }
             return .noteCapabilityGap(CapabilityGapCategory(rawValue: raw) ?? .unknown)
+        case VoiceToolName.preparePurchase:
+            return parsePurchase(args, name: name)
         case VoiceToolName.addToList, VoiceToolName.readList, VoiceToolName.checkOff,
              VoiceToolName.removeFromList, VoiceToolName.createList:
             return parseList(args, name: name)
@@ -524,6 +535,7 @@ public enum VoiceTextLimits {
         case "text", "note": MemoryLimits.maxTextLength
         case "notes", "body": paragraph
         case "query", "place": search
+        case "checkout_url": PurchaseLimits.checkoutURLLength
         default: line
         }
     }
@@ -612,6 +624,8 @@ public enum VoiceToolReply {
         // Round 3 (ADR-280, ADR-283): reminders moved, an alarm turned off. Round 4 (ADR-301,
         // ADR-303): a parking spot cleared, a Todoist task moved. Each read back first.
         "moved:", "turned off:", "cleared:",
+        // A payment Stripe confirmed through Doddy's server (ADR-490). Nothing else says "paid:".
+        "paid:",
     ]
     /// List results: `added to the list: 1 item.`, then the list's name and the items as data
     /// (listAdded, listChanged).

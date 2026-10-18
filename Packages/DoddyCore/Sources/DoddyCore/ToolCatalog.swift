@@ -20,6 +20,8 @@ public struct ToolDescriptor: Equatable, Sendable {
         case handoff
         /// Changes the conversation itself (translator mode, the plan card).
         case session
+        /// Money moves, or a shop's checkout opens, after the user's own tap (ADR-490).
+        case payment
     }
 
     /// ASK-01 (ADR-483): there is no "runs when the agent calls it". Every tool asks first.
@@ -117,6 +119,9 @@ public enum ToolCatalog {
         .init(VoiceToolName.startTranslator, .session, .askFirst),
         .init(VoiceToolName.stopTranslator, .session, .askFirst),
         .init(VoiceToolName.proposePlan, .session, .card),
+        // A card bound to the server's single-use approval; paid only by Apple Pay, BLIK or the
+        // shop's own page after the user's tap (ADR-490).
+        .init(VoiceToolName.preparePurchase, .payment, .serverApproval),
     ]
 
     /// From `CloudToolName`: a write is an account write behind the server's approval, the rest are reads.

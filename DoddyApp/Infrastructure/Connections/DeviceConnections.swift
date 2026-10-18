@@ -63,8 +63,9 @@ final class DeviceConnections {
         case .reminders: Self.eventAccess(EKEventStore.authorizationStatus(for: .reminder))
         case .contacts: Self.contactAccess(CNContactStore.authorizationStatus(for: .contacts))
         case .timers: .notDetermined
-        // BLIK transfers (ADR-510) need no iOS permission: the card only shows what to send.
-        case .maps, .shortcuts, .messages, .blik: .granted
+        // BLIK transfers (ADR-510) and payments (ADR-490) need no iOS permission: the BLIK card only
+        // shows what to send, and Apple Pay asks for Face ID on each payment.
+        case .maps, .shortcuts, .messages, .blik, .payments: .granted
         }
     }
 
@@ -76,7 +77,7 @@ final class DeviceConnections {
             guard current == .notDetermined else { return current }
             let granted = (try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])) ?? false
             return granted ? .granted : .denied
-        case .maps, .shortcuts, .messages, .blik:
+        case .maps, .shortcuts, .messages, .blik, .payments:
             return .granted
         case .calendar, .reminders, .contacts:
             guard access(for: connection) == .notDetermined else { return access(for: connection) }

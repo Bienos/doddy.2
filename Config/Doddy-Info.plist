@@ -37,6 +37,10 @@
 	<string>$(DODDY_CLOUD_CONTAINER)</string>
 	<key>CKSharingSupported</key>
 	<true/>
+	<!-- Apple Pay on the Buy card (ADR-490): the merchant ID, empty unless the build sets
+	     DODDY_APPLE_PAY_MERCHANT_ID with the Apple Pay entitlement; empty means no Apple Pay sheet. -->
+	<key>DoddyApplePayMerchantID</key>
+	<string>$(DODDY_APPLE_PAY_MERCHANT_ID)</string>
 	<!-- One Doddy window at a time (ADR-436). iPad would otherwise allow several windows, each
 	     bound to the same conversation router, so two voice screens could open at once. SwiftUI
 	     supplies the scene itself; the app delegate still picks the share-accept scene delegate. -->

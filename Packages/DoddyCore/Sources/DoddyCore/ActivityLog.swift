@@ -13,6 +13,8 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
     case exchangeRates
     /// A BLIK phone transfer shown for the user to send in their bank app (ADR-510).
     case blik
+    /// Paying for things through Doddy's server (ADR-490).
+    case payments
 
     public var title: String {
         switch self {
@@ -32,6 +34,7 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
         case .web: "Web search"
         case .exchangeRates: "Exchange rates"
         case .blik: "BLIK transfers"
+        case .payments: "Payments"
         }
     }
 }
@@ -278,6 +281,16 @@ public struct ActivityRequest: Equatable, Sendable {
         case .convertCurrency(let request):
             // Only that the rates file was fetched; the amount stays in the conversation (ADR-300).
             return ActivityRequest(app: .exchangeRates, title: "Converted currency", detail: "\(CurrencyConversion.code(request.from)) → \(CurrencyConversion.code(request.to))", isLookup: true)
+        case .preparePurchase(let draft):
+            // The shop and the price the card showed; never a card number or a BLIK code (ADR-490).
+            let price = PurchaseMoney.format(minor: draft.amountMinor, currency: draft.currency)
+            switch draft.kind {
+            case .native:
+                return ActivityRequest(app: .payments, title: "Pay for something", detail: "\u{201C}\(draft.merchantName)\u{201D} · \(price)", logDetail: nil, isLookup: false)
+            case .checkout:
+                let host = draft.checkoutURL.flatMap(CheckoutLink.host(of:)) ?? draft.merchantName
+                return ActivityRequest(app: .payments, title: "Open a checkout", detail: "\u{201C}\(draft.merchantName)\u{201D} · \(host)", logDetail: nil, isLookup: false)
+            }
         case .noteCapabilityGap:
             // A category Doddy notes for itself (ADR-440); no app is used and nothing changes.
             return nil

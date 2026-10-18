@@ -1,0 +1,22 @@
+{
+  "mode": "mock",
+  "purchase": {
+    "id": "6f1c2b9e-3a4d-4f5e-8a7b-1c2d3e4f5a6b",
+    "kind": "native",
+    "merchantName": "Kino Muranów",
+    "description": "2 tickets, Friday 19:30",
+    "amountMinor": 5600,
+    "currency": "PLN",
+    "checkoutHost": null,
+    "status": "awaiting_tap",
+    "method": null,
+    "testMode": true,
+    "summary": "Waiting for your tap: 56,00 zł for Kino Muranów (test mode, no real money).",
+    "createdAt": "2026-10-18T10:00:00.000Z",
+    "updatedAt": "2026-10-18T10:00:00.000Z"
+  },
+  "approvalId": "0b7d4a2e-5f6c-4d3b-9a8e-7f6e5d4c3b2a",
+  "expiresAt": "2026-10-18T10:05:00.000Z",
+  "methods": ["apple_pay", "blik"],
+  "payee": "Doddy (test)"
+}

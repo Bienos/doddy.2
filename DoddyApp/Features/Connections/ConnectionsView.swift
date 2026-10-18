@@ -66,8 +66,9 @@ struct ConnectionGroup: Identifiable {
         ConnectionGroup(title: "Your day", items: [.calendar, .reminders, .timers]),
         ConnectionGroup(title: "People", items: [.contacts, .messages]),
         ConnectionGroup(title: "Places and apps", items: [.maps, .shortcuts]),
-        // ADR-510: shown, never sent; the user sends it in their bank app.
-        ConnectionGroup(title: "Money", items: [.blik]),
+        // ADR-510: shown, never sent; the user sends it in their bank app. ADR-490: paid on Doddy's card
+        // (test mode) or on the shop's own checkout page, always after the user's tap.
+        ConnectionGroup(title: "Money", items: [.blik, .payments]),
     ]
 }
 
@@ -380,6 +381,18 @@ struct ConnectionInfo {
                 ],
                 leavesPhone: "The person's name, the amount and the title you said, as part of the conversation.",
                 staysHere: "Phone numbers are shown only on your screen. Doddy has no access to your bank and can't see whether you sent it.")
+        case .payments:
+            ConnectionInfo(
+                symbol: "creditcard",
+                examples: ["Pay for two cinema tickets", "Open the checkout for the pad thai", "Try a test payment"],
+                canDo: [
+                    "Get a payment ready on a card: the shop, what you buy and the price",
+                    "Pay on that card with Apple Pay and Face ID, or a BLIK code from your bank app. In this version these are test payments with no real money",
+                    "Open a shop's own checkout page inside Doddy, where you pay the shop yourself",
+                    "At most 200 zł a payment and 500 zł a day",
+                ],
+                leavesPhone: "The shop, what you buy and the price go to Doddy's server, and to Stripe for a payment inside Doddy. Apple Pay sends an encrypted token; your card number never reaches Doddy.",
+                staysHere: "Doddy never pays by itself and never keeps a card number or a BLIK code. Whether you paid on a shop's own page is your answer, not something Doddy can see.")
         }
     }
 }

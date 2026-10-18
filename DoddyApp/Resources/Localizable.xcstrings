@@ -732,6 +732,17 @@
         }
       }
     },
+    "6 digits": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "6 cyfr"
+          }
+        }
+      }
+    },
     "A BLIK transfer for you to send": {
       "extractionState": "manual",
       "localizations": {
@@ -6463,6 +6474,17 @@
         }
       }
     },
+    "Apple Pay couldn't open. You can pay with BLIK instead.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się otworzyć Apple Pay. Możesz zapłacić BLIK-iem."
+          }
+        }
+      }
+    },
     "Apple Reminders": {
       "extractionState": "manual",
       "localizations": {
@@ -7521,6 +7543,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "可用"
+          }
+        }
+      }
+    },
+    "BLIK code from your bank app": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kod BLIK z aplikacji banku"
           }
         }
       }
@@ -10140,6 +10173,17 @@
         }
       }
     },
+    "Check again": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdź ponownie"
+          }
+        }
+      }
+    },
     "Check and add": {
       "extractionState": "manual",
       "localizations": {
@@ -10372,6 +10416,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在查看明天…"
+          }
+        }
+      }
+    },
+    "Checking with the bank…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdzam w banku…"
           }
         }
       }
@@ -12953,6 +13008,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "本周的修正"
+          }
+        }
+      }
+    },
+    "Couldn't cancel. Decline it in your bank app.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się anulować. Odrzuć płatność w aplikacji banku."
           }
         }
       }
@@ -18675,6 +18741,17 @@
         }
       }
     },
+    "Doddy lost the answer while paying. It may have gone through: check your bank app before trying again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy zgubił odpowiedź podczas płatności. Mogła przejść: sprawdź aplikację banku, zanim spróbujesz ponownie."
+          }
+        }
+      }
+    },
     "Doddy may call me": {
       "extractionState": "manual",
       "localizations": {
@@ -20040,6 +20117,17 @@
         }
       }
     },
+    "Doddy's server couldn't be reached. Try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się połączyć z serwerem Doddy'ego. Spróbuj ponownie."
+          }
+        }
+      }
+    },
     "Doddy's voice needs the internet. You can still write or dictate a note here; it's saved on this iPhone.": {
       "extractionState": "manual",
       "localizations": {
@@ -20929,6 +21017,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "不打开"
+          }
+        }
+      }
+    },
+    "Don't pay": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie płać"
           }
         }
       }
@@ -23002,6 +23101,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Expected price. The shop's page shows the real one, and you pay the shop there.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cena orientacyjna. Prawdziwą pokaże strona sklepu i tam zapłacisz sklepowi."
           }
         }
       }
@@ -26790,6 +26900,17 @@
         }
       }
     },
+    "I didn't": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niezapłacone"
+          }
+        }
+      }
+    },
     "I haven't\nfound that.": {
       "extractionState": "manual",
       "localizations": {
@@ -26845,6 +26966,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "我没有\n找到。"
+          }
+        }
+      }
+    },
+    "I paid": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapłacone"
           }
         }
       }
@@ -38134,6 +38266,17 @@
         }
       }
     },
+    "No payment method is set up in this build.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W tej wersji nie ustawiono żadnej metody płatności."
+          }
+        }
+      }
+    },
     "No phone number in Contacts. Pick them in your bank app's BLIK phone transfer.": {
       "extractionState": "manual",
       "localizations": {
@@ -46169,6 +46312,28 @@
         }
       }
     },
+    "Open the shop's checkout": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz płatność w sklepie"
+          }
+        }
+      }
+    },
+    "Open the shop's page again": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz ponownie stronę sklepu"
+          }
+        }
+      }
+    },
     "Open the tidy-up now": {
       "extractionState": "manual",
       "localizations": {
@@ -46287,6 +46452,17 @@
         }
       }
     },
+    "Open this checkout?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otworzyć płatność w sklepie?"
+          }
+        }
+      }
+    },
     "Open this in Maps?": {
       "extractionState": "manual",
       "localizations": {
@@ -46342,6 +46518,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "在地图中打开？"
+          }
+        }
+      }
+    },
+    "Opening the shop's page…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwieram stronę sklepu…"
           }
         }
       }
@@ -47884,6 +48071,61 @@
           "stringUnit": {
             "state": "translated",
             "value": "已被你的专注模式暂停。该专注模式结束后会重新聆听。"
+          }
+        }
+      }
+    },
+    "Pay": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapłać"
+          }
+        }
+      }
+    },
+    "Pay for this?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapłacić za to?"
+          }
+        }
+      }
+    },
+    "Pay with BLIK": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapłać BLIK-iem"
+          }
+        }
+      }
+    },
+    "Paying…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Płacę…"
+          }
+        }
+      }
+    },
+    "Payment": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Płatność"
           }
         }
       }
@@ -59932,6 +60174,17 @@
         }
       }
     },
+    "Sending the BLIK code…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wysyłam kod BLIK…"
+          }
+        }
+      }
+    },
     "Sent, with your current settings": {
       "extractionState": "manual",
       "localizations": {
@@ -66731,6 +66984,17 @@
         }
       }
     },
+    "Test · no real money": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Test · bez prawdziwych pieniędzy"
+          }
+        }
+      }
+    },
     "Text": {
       "extractionState": "manual",
       "localizations": {
@@ -71747,6 +72011,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "无法确认保存，所以不算已保存。你的文字还在这里。"
+          }
+        }
+      }
+    },
+    "The shop's address wasn't safe to open.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adresu sklepu nie można było bezpiecznie otworzyć."
           }
         }
       }
@@ -78970,6 +79245,17 @@
         }
       }
     },
+    "Type the 6-digit BLIK code from your bank app.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wpisz 6-cyfrowy kod BLIK z aplikacji banku."
+          }
+        }
+      }
+    },
     "Typed AI questions": {
       "extractionState": "manual",
       "localizations": {
@@ -80213,6 +80499,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "请使用 6 到 8 位较难猜到的数字：不要用同一个数字重复，也不要用 123456 这样的连续数字。"
+          }
+        }
+      }
+    },
+    "Use BLIK instead": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Użyj BLIK-a"
           }
         }
       }
