@@ -110,6 +110,15 @@ services:
         sync: false
       - key: COMPOSIO_TODOIST_TOOLKIT_VERSION
         sync: false
+      - key: COMPOSIO_OUTLOOK_AUTH_CONFIG_ID
+        sync: false
+      - key: COMPOSIO_OUTLOOK_TOOLKIT_VERSION
+        sync: false
+      # Google Calendar as an online account (ADR-486); events only.
+      - key: COMPOSIO_GCALENDAR_AUTH_CONFIG_ID
+        sync: false
+      - key: COMPOSIO_GCALENDAR_TOOLKIT_VERSION
+        sync: false
       # Web search through Monid (optional; empty = "not set up"). Paid from Doddy's Monid wallet.
       - key: MONID_API_KEY
         sync: false

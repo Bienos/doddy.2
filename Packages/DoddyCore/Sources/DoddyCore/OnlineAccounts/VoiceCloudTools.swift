@@ -35,7 +35,7 @@ extension VoiceToolReply {
     }
 
     /// The result words the server starts a line with (backend/src/tools/catalog.ts).
-    static let cloudResultPrefixes = ["drafted:", "added:", "completed:", "moved:", "email:", "page:"]
+    static let cloudResultPrefixes = ["drafted:", "added:", "completed:", "moved:", "email:", "page:", "sent:", "changed:", "trashed:", "deleted:", "answered:"]
 
     public static func cloudDeclined(_ tool: String) -> String {
         "declined: the user chose not to do \"\(CloudToolName.title(tool))\". Nothing was done."
@@ -61,6 +61,10 @@ extension VoiceToolReply {
             if receipt?.status == .outcomeUnknown { return maybeDone }
             switch code {
             case "capability_disabled":
+                // ASK-01: the server had no yes for this exact call (or it was used or expired).
+                if receipt?.errorCode == "ask_first_required" {
+                    return "declined: Doddy didn't have the user's yes for \"\(CloudToolName.title(tool))\", so nothing was looked at or done. Ask again only if the user wants."
+                }
                 if receipt?.errorCode == "confirmation_required" {
                     return "failed: the confirmation expired before it was used. Nothing was done. Offer to try again."
                 }
@@ -77,9 +81,18 @@ extension VoiceToolReply {
                 return "failed: \(account) or Doddy's usage limit says to wait. Tell the user to try again later. Nothing was done."
             case "provider_timeout", "provider_unavailable":
                 return isWrite ? maybeDone : "failed: \(account) couldn't be reached. Nothing was changed."
-            case "not_found" where tool == CloudToolName.completeTodoistTask || tool == CloudToolName.moveTodoistTask:
+            case "not_found" where tool.hasSuffix("_notion_page") && CloudToolName.isWrite(tool):
+                return "not found: no Notion page shared with Doddy matched that search. Nothing was changed. Ask the user which page."
+            case "not_found" where tool == CloudToolName.completeTodoistTask || tool == CloudToolName.moveTodoistTask || tool == "rename_todoist_task":
                 // Refused before any card (ADR-303): Todoist doesn't have that open task.
                 return "not found: that Todoist task wasn't found, or it's already done. Nothing was changed. Read the tasks again with list_todoist_tasks and use the id it gives."
+            case "not_found" where CloudToolName.more[tool]?.write == true && tool.hasSuffix("_event"):
+                return "not found: no event with that title starts then, or several do. Nothing was changed. Read the calendar again and pass the title and start exactly as it gives them."
+            case "not_found" where tool.hasSuffix("_invite"):
+                return "not found: no invitation with that title starts then, or the user made that event. Nothing was answered."
+            case "not_found" where [CloudToolName.replyToEmail, CloudToolName.forwardEmail, CloudToolName.changeEmail, CloudToolName.trashEmail].contains(tool)
+                || (CloudToolName.more[tool]?.write == true && tool.hasSuffix("_email")):
+                return "not found: no email matched that search, or Doddy can't tell who to reply to. Nothing was sent or changed. Ask the user which email they meant."
             case "not_found" where tool == CloudToolName.draftEmailReply:
                 // Refused before any card: no email matched, or its sender has no usable address.
                 return "not found: no email matched that search, or the newest match has no sender address Doddy can reply to. No draft was created. Ask the user which email they meant."

@@ -64,13 +64,13 @@ final class OnlineAccountsContractTests: XCTestCase {
     func testEveryFixtureDecodes() throws {
         let catalog = try decode(ToolsCatalog.self, "catalog-disconnected")
         XCTAssertEqual(catalog.mode, .mock)
-        XCTAssertEqual(catalog.toolkits.map(\.id), ["gmail", "googledrive", "notion", "todoist", "outlook", "websearch"])
+        XCTAssertEqual(catalog.toolkits.map(\.id), ["gmail", "googledrive", "notion", "todoist", "outlook", "gcalendar", "websearch"])
         let accounts = catalog.toolkits.filter(\.hasAccount)
-        XCTAssertEqual(accounts.count, 5)
+        XCTAssertEqual(accounts.count, 6)
         XCTAssertTrue(accounts.allSatisfy { $0.status == .disconnected }, "nothing is connected by default")
         XCTAssertTrue(catalog.toolkits.flatMap(\.tools).allSatisfy { !$0.enabled }, "every switch starts off")
         let writes = catalog.toolkits.flatMap(\.tools).filter { $0.risk == .write }.map(\.name).sorted()
-        XCTAssertEqual(writes, ["add_todoist_task", "complete_todoist_task", "draft_email", "draft_email_reply", "draft_outlook_email", "move_todoist_task"])
+        XCTAssertTrue(writes.contains("send_email") && writes.contains("answer_google_invite") && writes.contains("move_outlook_email"))
         XCTAssertEqual(Set(writes), CloudToolName.writes, "the app and the server agree on which tools write")
         XCTAssertEqual(Set(catalog.toolkits.flatMap(\.tools).map(\.name)), CloudToolName.all)
 
@@ -242,7 +242,10 @@ final class CloudToolVoiceTests: XCTestCase {
         guard case .cloudTool(let read) = VoiceToolRequest.parse(name: "check_email", parametersJSON: Data("{}".utf8)) else { return XCTFail("not routed") }
         XCTAssertFalse(read.isWrite)
 
-        XCTAssertEqual(VoiceToolRequest.parse(name: "send_email", parametersJSON: data), .unsupported(name: "send_email"))
+        // Since ADR-485 send_email is a known write (behind the server's approval); a slug never is.
+        guard case .cloudTool(let send) = VoiceToolRequest.parse(name: "send_email", parametersJSON: data) else { return XCTFail("not routed") }
+        XCTAssertTrue(send.isWrite)
+        XCTAssertEqual(VoiceToolRequest.parse(name: "delete_email", parametersJSON: data), .unsupported(name: "delete_email"))
         XCTAssertEqual(VoiceToolRequest.parse(name: "GMAIL_SEND_EMAIL", parametersJSON: data), .unsupported(name: "GMAIL_SEND_EMAIL"))
         XCTAssertEqual(
             VoiceToolRequest.parse(name: "check_email", parametersJSON: Data("[1]".utf8)),
@@ -435,7 +438,8 @@ final class WebSearchToolTests: XCTestCase {
         let web = try XCTUnwrap(catalog.toolkits.first { $0.id == "websearch" })
         XCTAssertFalse(web.hasAccount)
         XCTAssertEqual(web.status, .connected, "nothing to connect: ready whenever the server has it set up")
-        XCTAssertEqual(web.tools.map(\.name), [CloudToolName.webSearch])
+        XCTAssertEqual(web.tools.map(\.name), [CloudToolName.webSearch, "news_search", "find_places"])
+        XCTAssertFalse(CloudToolName.needsAccount("find_places"))
         XCTAssertFalse(web.tools[0].enabled, "starts off like every other tool")
 
         XCTAssertFalse(CloudToolName.isWrite(CloudToolName.webSearch))

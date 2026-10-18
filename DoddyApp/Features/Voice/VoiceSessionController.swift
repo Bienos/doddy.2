@@ -75,6 +75,13 @@ final class VoiceSessionController {
         case leaveBy(toolCallID: String, plan: LeaveByPlan)
         /// A dish's ingredients with ticks (ADR-305); `alreadyOpen` start unticked.
         case ingredients(toolCallID: String, listID: UUID, listName: String, dish: String, items: [String], alreadyOpen: Set<Int>)
+        /// ASK-01 (ADR-483): "Doddy wants to …" before a tool with no card of its own runs. A read
+        /// runs on a tap or the user's own spoken yes; a change (`needsTap`) only on a tap. The
+        /// call is kept as it came, and handled again after the yes.
+        case ask(toolCallID: String, card: AskCard, needsTap: Bool, toolName: String, parameters: Data)
+        /// ASK-01: an online-account read or web search. `preview` and `approvalID` come from
+        /// Doddy's server, which read nothing to make them and runs nothing without the approval.
+        case cloudRead(toolCallID: String, call: CloudToolCall, preview: ToolPreview, approvalID: UUID, mode: ConnectedAppsMode)
 
         var toolCallID: String {
             switch self {
@@ -83,7 +90,7 @@ final class VoiceSessionController {
                  .noteReminder(let id, _, _, _, _), .createList(let id, _, _), .plan(let id, _, _),
                  .changeEvent(let id, _), .changeReminder(let id, _, _), .deleteEvent(let id, _), .deleteReminder(let id, _),
                  .undo(let id, _), .bulk(let id, _, _, _), .parking(let id, _), .leaveBy(let id, _),
-                 .ingredients(let id, _, _, _, _, _):
+                 .ingredients(let id, _, _, _, _, _), .ask(let id, _, _, _, _), .cloudRead(let id, _, _, _, _):
                 id
             }
         }
@@ -183,6 +190,8 @@ final class VoiceSessionController {
     }
     private(set) var lines: [Line] = []
     private(set) var pendingAction: PendingAction? { didSet { syncIsland() } }
+    /// ASK-01 (ADR-483): which calls the user said yes to. Checked right before a tool runs.
+    private var askLedger = AskLedger()
     /// The type the user picks on the "Save this note?" card. Starts as Other for every proposal;
     /// the agent is never told or asked (ADR-202).
     var pendingMemoryCategory: MemoryCategory = .other
@@ -857,6 +866,7 @@ final class VoiceSessionController {
         let active = conversation
         conversation = nil
         pendingAction = nil
+        askLedger.clear()
         contactCard = nil
         parkingCard = nil
         connectionNeeded = nil
@@ -1153,6 +1163,18 @@ final class VoiceSessionController {
             await reply(id, opened
                 ? VoiceToolReply.messageOpened(draft, recipient: draft.recipientName)
                 : VoiceToolReply.notOpened("Messages or Mail didn't open."))
+        case .ask(let id, _, _, let toolName, _):
+            guard askLedger.answer(.tapped, for: id, at: Date()) == .granted else {
+                await reply(id, AskFirst.notAsked(toolName))
+                return
+            }
+            await runAsked(action, attempt: attempt)
+        case .cloudRead(let id, let call, _, _, _):
+            guard askLedger.answer(.tapped, for: id, at: Date()) == .granted else {
+                await reply(id, AskFirst.notAsked(call.name))
+                return
+            }
+            await runAsked(action, attempt: attempt)
         case .cloud(let id, let call, _, let approvalID, _):
             retryChecks[id] = nil
             let record = await runConfirmedCloud(call, approvalID: approvalID, app: asked[id]?.app ?? .gmail)
@@ -1352,6 +1374,12 @@ final class VoiceSessionController {
         case .shortcut(let id, _): await reply(id, VoiceToolReply.declinedShortcut)
         case .message(let id, _, _): await reply(id, VoiceToolReply.declinedMessage)
         case .cloud(let id, let call, _, _, _): await reply(id, VoiceToolReply.cloudDeclined(call.name))
+        case .ask(let id, _, _, let toolName, _):
+            _ = askLedger.answer(.declined, for: id, at: Date())
+            await reply(id, AskFirst.notAsked(toolName))
+        case .cloudRead(let id, let call, _, _, _):
+            _ = askLedger.answer(.declined, for: id, at: Date())
+            await reply(id, AskFirst.notAsked(call.name))
         case .noteReminder(let id, _, _, _, _): await reply(id, VoiceToolReply.declinedNoteReminder)
         case .createList(let id, _, _): await reply(id, VoiceToolReply.declinedList)
         case .changeEvent(let id, _), .changeReminder(let id, _, _): await reply(id, VoiceToolReply.changeDeclined)
@@ -1890,6 +1918,7 @@ final class VoiceSessionController {
             Task { await sendToAgent(FirstConversationPrompt.appMessage) }
         }
         if fromUser { firstConversationNeedsTour = false }
+        if fromUser { Task { await spokenAnswer(text) } }
         if !fromUser, let question = noteQuestion {
             noteQuestion = nil
             Task { await sendToAgent(question) }
@@ -2131,6 +2160,20 @@ final class VoiceSessionController {
             await notConnected(call.toolCallId, connection)
             return
         case .translatorRefused, .plan, .run:
+            break
+        }
+        // ASK-01 (ADR-483): nothing below runs before the user's yes for exactly this call. Tools
+        // with a payload card of their own (and the server's tools) ask through that card.
+        switch AskFirst.need(for: request) {
+        case .yesFirst(let card), .tapFirst(let card):
+            guard askLedger.mayRun(call.toolCallId, request: request, at: Date()) else {
+                let needsTap = AskFirst.needsTap(AskFirst.need(for: request))
+                askLedger.asked(call.toolCallId, request: request, needsTap: needsTap, at: Date())
+                propose(.ask(toolCallID: call.toolCallId, card: card, needsTap: needsTap, toolName: call.toolName, parameters: call.parametersData),
+                        toolCallID: call.toolCallId)
+                return
+            }
+        case .nothingRuns, .ownPayloadCard, .serverCard:
             break
         }
         switch request {
@@ -2652,12 +2695,63 @@ final class VoiceSessionController {
                     .cloud(toolCallID: toolCallID, call: cloud, preview: prepared.preview, approvalID: prepared.approvalId, mode: prepared.mode),
                     toolCallID: toolCallID)
             } else {
-                let result = try await client.run(cloud, timeZone: TimeZone.current.identifier, approvalId: nil)
-                await reply(toolCallID, VoiceToolReply.cloudResult(result))
+                // ASK-01: the server makes the card from the arguments alone (nothing is read) and a
+                // single-use approval; the read runs only after the user's yes (runAskedCloudRead).
+                let prepared = try await client.prepare(cloud)
+                askLedger.asked(toolCallID, request: .cloudTool(cloud), needsTap: false, at: Date())
+                propose(
+                    .cloudRead(toolCallID: toolCallID, call: cloud, preview: prepared.preview, approvalID: prepared.approvalId, mode: prepared.mode),
+                    toolCallID: toolCallID)
             }
         } catch {
             await reply(toolCallID, VoiceToolReply.cloudFailed(error, tool: cloud.name), isError: true)
         }
+    }
+
+    /// ASK-01: the user said yes to this read. The server checks the approval again and uses it up.
+    private func runAskedCloudRead(_ cloud: CloudToolCall, approvalID: UUID, toolCallID: String) async {
+        guard askLedger.mayRun(toolCallID, request: .cloudTool(cloud), at: Date()) else {
+            await reply(toolCallID, AskFirst.notAsked(cloud.name))
+            return
+        }
+        guard let client = OnlineAccountsClientFactory.make() else {
+            await reply(toolCallID, VoiceToolReply.cloudFailed(.notConfigured, tool: cloud.name), isError: true)
+            return
+        }
+        do {
+            let result = try await client.run(cloud, timeZone: TimeZone.current.identifier, approvalId: approvalID)
+            await reply(toolCallID, VoiceToolReply.cloudResult(result))
+        } catch {
+            await reply(toolCallID, VoiceToolReply.cloudFailed(error, tool: cloud.name), isError: true)
+        }
+    }
+
+    /// ASK-01: runs the call the user said yes to. For `.ask`, the call is handled again from the
+    /// start (Pause all and the switches are checked again); the ledger lets it through once.
+    private func runAsked(_ action: PendingAction, attempt: Int) async {
+        switch action {
+        case .ask(let id, _, _, let toolName, let parameters):
+            await handle(ClientToolCallEvent(toolName: toolName, toolCallId: id, parametersData: parameters, eventId: 0, expectsResponse: true),
+                         attempt: attempt)
+        case .cloudRead(let id, let call, _, let approvalID, _):
+            await runAskedCloudRead(call, approvalID: approvalID, toolCallID: id)
+        default:
+            break
+        }
+    }
+
+    /// ASK-01: the user's own words while a read's card is up. Only a short, clear yes counts
+    /// (`SpokenYes`); a change never runs on words, only on a tap.
+    private func spokenAnswer(_ text: String) async {
+        guard let action = pendingAction else { return }
+        let id: String
+        switch action {
+        case .ask(let callID, _, false, _, _), .cloudRead(let callID, _, _, _, _): id = callID
+        default: return
+        }
+        guard askLedger.answer(.userSaid(text), for: id, at: Date()) == .granted, pendingAction == action else { return }
+        pendingAction = nil
+        await runAsked(action, attempt: startAttempt)
     }
 
     /// The user tapped the card. The approval is for exactly the arguments the card showed. A lost
@@ -3492,7 +3586,8 @@ private extension VoiceSessionController.PendingAction {
              .deleteEvent, .deleteReminder, .bulk, .parking, .ingredients, .leaveBy: true
         // Each step of a plan is logged on its own (runPlan), not the plan as a whole. An undo
         // is recorded on the row it undoes (ADR-271).
-        case .map, .shortcut, .message, .translator, .plan, .undo: false
+        // ASK-01 asks: the change itself (a list item) is logged by the flow it runs.
+        case .map, .shortcut, .message, .plan, .undo, .ask, .cloudRead: false
         }
     }
 }
