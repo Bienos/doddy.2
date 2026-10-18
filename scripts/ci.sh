@@ -97,6 +97,15 @@ else
   not_run "Site waitlist function tests" "node/npm not found on PATH"
 fi
 
+# Project secrets in 1Password (ADR-493): the manifest, the generated .env.op templates (references
+# only) and the sync tool, against a fake `op` and fake Vercel/Render APIs. No network, no values.
+if command -v node >/dev/null 2>&1; then
+  run_step "Secrets manifest and .env.op templates" node tools/secrets/sync.mjs check
+  run_step "Secrets sync tool tests (fake op and hosts)" node --test "tools/secrets/test/*.test.mjs"
+else
+  not_run "Secrets manifest and sync tool" "node not found on PATH"
+fi
+
 if [ "$core_only" -eq 1 ]; then
   record "iOS app build + tests" "NOT RUN" "--core-only requested"
 elif ! command -v xcodebuild >/dev/null 2>&1; then

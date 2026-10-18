@@ -12,6 +12,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "migrate": "node dist/src/migrate.js",
     "start": "node dist/src/index.js",
+    "start:op": "op run --env-file=.env.op -- node --env-file-if-exists=.env dist/src/index.js",
     "worker": "node dist/src/worker.js",
     "test": "tsc -p tsconfig.json && node --test --test-concurrency=1 dist/test/*.test.js"
   },
