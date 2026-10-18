@@ -47,7 +47,24 @@ jobs:
           node --version
 
       - name: scripts/ci.sh
-        run: scripts/ci.sh
+        shell: bash
+        run: |
+          set -o pipefail
+          scripts/ci.sh 2>&1 | tee "$RUNNER_TEMP/ci.log"
+
+      # TEMPORARY (payments PR #89): the job log can't be read from where the PR was written, so
+      # the failing lines are repeated as annotations, which the checks API returns. Remove after.
+      - name: Failures as annotations
+        if: failure()
+        shell: bash
+        run: |
+          log="$RUNNER_TEMP/ci.log"
+          enc() { sed -e 's/%/%25/g' | awk 'BEGIN{ORS="%0A"}{print}'; }
+          grep -E "error:|error -|failed|: Fail|XCTAssert|Test Case .* failed|\*\* .* FAILED \*\*" "$log" \
+            | grep -vE "warning:|with 0 failures|0 failed" | sed -E 's#/Users/runner/work/[^ ]*/doddy\.2/##g' \
+            | awk '!seen[$0]++' | head -60 > "$RUNNER_TEMP/fail.txt" || true
+          echo "::error title=ci.sh failing lines::$(enc < "$RUNNER_TEMP/fail.txt")"
+          echo "::error title=ci.sh summary::$(sed -n '/================ SUMMARY/,$p' "$log" | enc)"
 
       - name: Keep the test results
         if: always()
