@@ -1,4 +1,3 @@
-import AuthenticationServices
 import CryptoKit
 import DoddyCore
 import Foundation
@@ -6,7 +5,8 @@ import Observation
 import Security
 
 /// A persistent DODDY voice session. Apple sign-in is exchanged once for a rotating,
-/// revocable DODDY refresh token; provider credentials are never stored here.
+/// revocable DODDY refresh token; provider credentials are never stored here. Apple's side of
+/// the sign-in is in AppleSignIn.swift, the calls to DODDY's server in VoiceTokenClient.swift (ADR-483).
 @MainActor
 @Observable
 final class VoiceAuthSession {
@@ -24,10 +24,8 @@ final class VoiceAuthSession {
     private var revocationObserver: NSObjectProtocol?
 
     private init() {
-        revocationObserver = NotificationCenter.default.addObserver(
-            forName: ASAuthorizationAppleIDProvider.credentialRevokedNotification, object: nil, queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor in await self?.appleAccessWasRevoked() }
+        revocationObserver = AppleSignIn.observeRevocation { [weak self] in
+            await self?.appleAccessWasRevoked()
         }
     }
 
@@ -40,9 +38,7 @@ final class VoiceAuthSession {
         isLoading = true
         defer { isLoading = false }
         do {
-            let appleID = ASAuthorizationAppleIDProvider()
-            let state = try await appleCredentialState(appleID, userID: userID)
-            guard state == .authorized else {
+            guard try await AppleSignIn.isStillAuthorized(userID: userID) else {
                 clearLocalSession()
                 lastFailure = .sessionExpired
                 message = "Your Apple access has changed. Sign in with Apple again to use voice."
@@ -140,15 +136,6 @@ final class VoiceAuthSession {
         return try await task.value
     }
 
-    private func appleCredentialState(_ provider: ASAuthorizationAppleIDProvider, userID: String) async throws -> ASAuthorizationAppleIDProvider.CredentialState {
-        try await withCheckedThrowingContinuation { continuation in
-            provider.getCredentialState(forUserID: userID) { state, error in
-                if let error { continuation.resume(throwing: error) }
-                else { continuation.resume(returning: state) }
-            }
-        }
-    }
-
     private func clearLocalSession() {
         VoiceSessionKeychain.delete()
         userID = nil
@@ -171,56 +158,6 @@ enum VoiceAuthFailure: Error, Equatable {
         }
     }
 }
-
-struct VoiceSessionReply: Decodable, Sendable {
-    let accessToken: String
-    let refreshToken: String
-    let expiresIn: Int
-}
-
-actor VoiceAuthAPI {
-    static let shared = VoiceAuthAPI()
-
-    func signIn(_ identityToken: String, rawNonce: String, provider: String) async throws -> VoiceSessionReply {
-        try await post(["action": "sign-in", "identityToken": identityToken, "rawNonce": rawNonce, "provider": provider])
-    }
-
-    func refresh(_ refreshToken: String) async throws -> VoiceSessionReply {
-        try await post(["action": "refresh", "refreshToken": refreshToken])
-    }
-
-    func signOut(_ accessToken: String) async throws {
-        let _: EmptyReply = try await post(["action": "sign-out"], bearer: accessToken)
-    }
-
-    func deleteAccount(_ accessToken: String) async throws {
-        let _: EmptyReply = try await post(["action": "delete-account"], bearer: accessToken)
-    }
-
-    private func post<T: Decodable>(_ body: [String: Any], bearer: String? = nil) async throws -> T {
-        guard let endpoint = VoiceConfig.authEndpoint else { throw VoiceAuthFailure.serverNotConfigured }
-        var request = URLRequest(url: endpoint, timeoutInterval: 15)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        if let bearer { request.setValue("Bearer \(bearer)", forHTTPHeaderField: "Authorization") }
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
-        let (data, response): (Data, URLResponse)
-        let session = URLSession(configuration: .ephemeral)
-        defer { session.finishTasksAndInvalidate() }
-        do { (data, response) = try await session.data(for: request) }
-        catch { throw VoiceAuthFailure.offline }
-        guard let status = (response as? HTTPURLResponse)?.statusCode else { throw VoiceAuthFailure.badResponse }
-        guard (200..<300).contains(status) else {
-            if status == 401 { throw VoiceAuthFailure.sessionExpired }
-            if status == 404 || status == 500 || status == 503 { throw VoiceAuthFailure.serverNotConfigured }
-            throw VoiceAuthFailure.rejected
-        }
-        guard let decoded = try? JSONDecoder().decode(T.self, from: data) else { throw VoiceAuthFailure.badResponse }
-        return decoded
-    }
-}
-
-private struct EmptyReply: Decodable {}
 
 /// A single Keychain item stores only the DODDY refresh token and Apple's opaque subject.
 /// The short-lived access token stays in memory.

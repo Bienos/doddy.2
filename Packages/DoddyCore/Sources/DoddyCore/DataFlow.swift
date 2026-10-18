@@ -166,8 +166,9 @@ public enum DataFlow {
             DataFlowRow(
                 id: "tokenServer", destination: "Voice token server",
                 what: "A short-lived DODDY session credential and the selected voice provider/model. Apple sign-in is verified here to create your account; the session authorizes voice access. No voice, transcript, notes or profile details are sent to this server for token requests.",
-                when: "When you sign in or refresh your session, and when a conversation or wake-word setup requests a provider connection credential.", isActive: state.tokenServerSet,
-                note: state.tokenServerSet ? "Provider credentials stay on DODDY's server. Your voice and any approved conversation context go directly to the selected provider." : "Voice isn't set up yet."),
+                when: "When you sign in, refresh your session, sign out or delete your voice account, and when a conversation or wake-word setup requests a provider connection credential.", isActive: state.tokenServerSet,
+                // ADR-483: no requested scopes (guard-enforced); the credential-state check is AppleSignIn.isStillAuthorized.
+                note: state.tokenServerSet ? "Provider credentials stay on DODDY's server. Your voice and any approved conversation context go directly to the selected provider. Sign in with Apple runs in Apple's own sheet, and Doddy asks Apple for no name or email; when the app reconnects your voice session, it asks Apple whether that sign-in is still valid." : "Voice isn't set up yet."),
             DataFlowRow(
                 id: "doddyServer", destination: "Your Doddy server (Google, Microsoft Outlook, Notion, Todoist via Composio)",
                 what: "What you ask for: a date, a search word, or the text of a draft, reply or task you confirm. Never your saved notes. With Read an email or Read a Notion page on, that one email or page comes back.",

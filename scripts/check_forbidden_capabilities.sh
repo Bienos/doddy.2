@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 # Capability guard. Settings/Home copy makes specific privacy claims; this check keeps them true:
-#  - the app's own networking lives in four files: the voice token client (one POST of the access
-#    code to the token server), Connected Apps' transport (to the Doddy server), the typed-assistant
+#  - the app's own networking lives in four files: the voice token client (its POSTs to the voice
+#    token server: provider credentials, and the voice account's sign-in, refresh, sign-out and
+#    deletion, ADR-483), Connected Apps' transport (to the Doddy server), the typed-assistant
 #    transport (to the M2 gateway, ADR-110) and the messaging server transport (server/messaging,
 #    ADR-148); the ElevenLabs SDK does the voice connection, except the OpenAI Realtime test voice
 #    (ADR-265), whose WebSocket lives in one file in Features/Voice, and the exchange-rate client
 #    (ADR-300), which downloads only the ECB's public rates file,
 #  - the system authentication browser is used only by Connected Apps,
+#  - Sign in with Apple (Apple's own sheet, no browser) only in Voice's AppleSignIn.swift, and it
+#    asks Apple for no name or email (no requested scopes, ADR-483),
 #  - ElevenLabs code only inside DoddyApp/Features/Voice; audio (AVFoundation) only there and in
 #    DoddyApp/Features/VoiceMemos (recording and playing voice memos, ADR-230),
 #  - speech recognition (Speech) only inside DoddyApp/Features/VoiceMemos, and every recognition
@@ -55,7 +58,11 @@ rates_client=DoddyApp/Infrastructure/Network/ExchangeRateClient.swift
 # URLSessionTransport type name is not networking and stays allowed.
 network_only='URLSession(WebSocketTask|DataTask|DownloadTask|UploadTask|StreamTask|Task|Configuration)?([^A-Za-z]|$)|URLRequest([^A-Za-z]|$)|\.resourceBytes|NSURLConnection|CFReadStream|CFHTTPMessage|contentsOf: *URL\(string:'
 web_auth_file=DoddyApp/Features/ConnectedApps/SystemWebAuthenticator.swift
-web_auth_only='import AuthenticationServices|ASWebAuthenticationSession|WKWebView|import WebKit|SFSafariViewController'
+web_auth_only='ASWebAuthenticationSession|WKWebView|import WebKit|SFSafariViewController'
+# Sign in with Apple for the DODDY voice account (ADR-483): Apple's sheet, credential state and
+# revocation notice in one file. AuthenticationServices may be imported only there and above.
+apple_sign_in_file=DoddyApp/Features/Voice/AppleSignIn.swift
+apple_sign_in_only='ASAuthorization|SignInWithAppleButton'
 voice_only='import ElevenLabs'
 memos_dir=DoddyApp/Features/VoiceMemos
 audio_only='import AVFoundation|import AVFAudio|AVAudio'
@@ -109,6 +116,17 @@ if [ -f "$rates_client" ] && grep -nE 'URL\(string|URLComponents|appendingPathCo
 fi
 if grep -RInE --include='*.swift' "$web_auth_only" "${dirs[@]}" | code_only | grep -v "^$web_auth_file:"; then
   echo "FAIL: web authentication / web views outside $web_auth_file." >&2; status=1
+fi
+if grep -RInE --include='*.swift' "$apple_sign_in_only" "${dirs[@]}" | code_only | grep -v "^$apple_sign_in_file:"; then
+  echo "FAIL: Sign in with Apple outside $apple_sign_in_file (ADR-483)." >&2; status=1
+fi
+if grep -RInE --include='*.swift' 'import AuthenticationServices' "${dirs[@]}" | code_only | grep -v -e "^$web_auth_file:" -e "^$apple_sign_in_file:"; then
+  echo "FAIL: AuthenticationServices outside $web_auth_file and $apple_sign_in_file." >&2; status=1
+fi
+# What leaves this iPhone says Doddy asks Apple for no name or email (ADR-483): nothing sets an
+# Apple ID request's scopes. (Connected Apps' contract only declares a field of that name.)
+if grep -RInE --include='*.swift' 'requestedScopes[[:space:]]*=([^=]|$)' "${dirs[@]}" | code_only; then
+  echo "FAIL: Sign in with Apple may not request a name or email (ADR-483)." >&2; status=1
 fi
 if grep -RInE --include='*.swift' "$wake_only" "${dirs[@]}" | code_only | grep -v "^$wake_file:"; then
   echo "FAIL: wake-word engine code outside $wake_file." >&2; status=1
@@ -223,5 +241,5 @@ fi
 if grep -RnoE 'NS[A-Za-z]+UsageDescription' project.yml DoddyApp DoddyWidgets DoddyShare Config | grep -vE "$allowed_permissions"; then
   echo "FAIL: only the alarms, microphone, speech recognition, calendar, reminders, contacts, While Using location and Face ID permissions are allowed." >&2; status=1
 fi
-[ "$status" -eq 0 ] && echo "PASS: networking only in the token client, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice and the ECB rates client, web auth only in Connected Apps, ElevenLabs only in Voice, audio only in Voice and Voice memos, on-device speech recognition only in Voice memos, calendar, contacts and location only in Connections, photo reading and the photo picker only in Photos (no camera or photo library access), no Always/background location, no analytics, no secrets, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts, While Using location and Face ID (LocalAuthentication only in the app lock); backend has no write tools beyond the reviewed Gmail draft and reply draft, the Outlook draft and Todoist add, complete and move, and no proxy execution."
+[ "$status" -eq 0 ] && echo "PASS: networking only in the token client, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice and the ECB rates client, web auth only in Connected Apps, Sign in with Apple only in AppleSignIn.swift (no name or email asked), ElevenLabs only in Voice, audio only in Voice and Voice memos, on-device speech recognition only in Voice memos, calendar, contacts and location only in Connections, photo reading and the photo picker only in Photos (no camera or photo library access), no Always/background location, no analytics, no secrets, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts, While Using location and Face ID (LocalAuthentication only in the app lock); backend has no write tools beyond the reviewed Gmail draft and reply draft, the Outlook draft and Todoist add, complete and move, and no proxy execution."
 exit "$status"

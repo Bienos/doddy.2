@@ -1,8 +1,8 @@
-import AuthenticationServices
 import SwiftUI
 
 /// First voice use has two explicit steps: DODDY account sign-in, then consent for the selected
-/// provider. Neither step is required for local notes or other local features.
+/// provider. Neither step is required for local notes or other local features. Apple's sign-in
+/// sheet is in AppleSignIn.swift (ADR-483).
 struct VoiceAccessGate: View {
     let provider: VoiceProvider
     let onContinue: () -> Void
@@ -38,15 +38,14 @@ struct VoiceAccessGate: View {
                     .font(.body)
                     .foregroundStyle(Theme.secondaryText)
                     .multilineTextAlignment(.center)
-                SignInWithAppleButton(.signIn, onRequest: { request in
+                AppleSignInButton(onRequest: {
                     guard let nonce = AppleSignInNonce.make() else {
                         session.message = "This iPhone couldn’t start secure Apple sign-in. Try again."
-                        return
+                        return nil
                     }
                     rawNonce = nonce.raw
-                    request.nonce = nonce.hashed
+                    return nonce.hashed
                 }, onCompletion: completeSignIn)
-                .signInWithAppleButtonStyle(.black)
                 .frame(height: 50)
                 .accessibilityIdentifier("voice.auth.appleSignIn")
             } else {
@@ -97,19 +96,15 @@ struct VoiceAccessGate: View {
         .task { consented = VoiceProviderConsent.isGranted(for: provider) }
     }
 
-    private func completeSignIn(_ result: Result<ASAuthorization, Error>) {
-        guard case .success(let authorization) = result,
-              let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
-              let data = credential.identityToken,
-              let identityToken = String(data: data, encoding: .utf8),
-              let rawNonce else {
-            if case .failure(let error) = result, (error as? ASAuthorizationError)?.code != .canceled {
+    private func completeSignIn(_ result: AppleSignInResult) {
+        guard case .signedIn(let identityToken, let userID) = result, let rawNonce else {
+            if case .failed = result {
                 session.message = "Apple sign-in didn’t finish. Try again."
             }
             return
         }
         Task { await session.finishAppleSignIn(identityToken: identityToken, rawNonce: rawNonce,
-                                               userID: credential.user, provider: provider) }
+                                               userID: userID, provider: provider) }
         self.rawNonce = nil
     }
 }

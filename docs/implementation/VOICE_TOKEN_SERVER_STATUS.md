@@ -10,7 +10,7 @@ Date: 2026-10-09. Owner instruction: "build" (the step recommended after V2). Cl
 | App: `VoiceTokenClient` + `VoiceAccessCodeStore` | One POST per conversation with an ephemeral session. The access code is in the Keychain (`AfterFirstUnlockThisDeviceOnly`). Errors map to plain messages (code not accepted, busy/daily limit, offline…). |
 | App: start/close races | Closing the voice screen while the token is being fetched or the SDK is connecting no longer opens or leaves a live microphone. The started conversation is ended straight away. This also fixes the V1 race. Not-set-up no longer triggers the microphone prompt. |
 | Settings → Voice | Connection row ("Private (token server)" / "Development (public agent)" / "Not set up"), token server address, access code (save/remove), agent ID field only in development mode. Privacy text names the token server. |
-| Guard | Own networking (`URLSession`/`URLRequest`) is allowed only in `VoiceTokenClient.swift`; checked with a probe file. |
+| Guard | Own networking (`URLSession`/`URLRequest`) is allowed only in `VoiceTokenClient.swift`; checked with a probe file. Since ADR-483 that file also holds the voice account's calls (`VoiceAuthAPI`: Apple sign-in exchange, refresh, sign-out, deletion), and Sign in with Apple is allowed only in `AppleSignIn.swift`, with no name or email requested. |
 
 ## Verified (Linux, 2026-10-09)
 - `node --test` (Node 22.22): **6 server tests pass**. They cover the success path (agent ID and API key sent upstream; no token, code or key in logs); wrong, missing and too-short codes refused before any upstream call; GET refused; fail-closed config; upstream 429/401/bad body/timeout/unreachable mapping.

@@ -8,7 +8,7 @@
 **State:** this is what the owner builds and uses. The known-good branch and the unmerged changes are in `/STATUS.md`. iPad work (sidebar, fixes) is in `docs/implementation/IPAD_STATUS.md`. Most of it is not compiled yet (PR #61).
 
 ## Voice: the core of the app
-- **Code:** `DoddyApp/Features/Voice/` (18 files). Session: `VoiceSessionController.swift`. Screen: `VoiceView.swift`. Wake word: `WakeWordListener.swift`. Provider config: `VoiceConfig.swift`.
+- **Code:** `DoddyApp/Features/Voice/` (23 files). Session: `VoiceSessionController.swift`. Screen: `VoiceView.swift`. Wake word: `WakeWordListener.swift`. Provider config: `VoiceConfig.swift`. Voice account: `VoiceAuthSession.swift` (session and Keychain), `AppleSignIn.swift` (Sign in with Apple, the only AuthenticationServices use outside Connected Apps), and its calls to the token server in `VoiceTokenClient.swift` (ADR-483).
 - **Agent:**
   - ElevenLabs `agent_0501m4et27vyeawrwqfdxxfszfa6`. The prompt and tools are in `voice-agent/` (`instructions.md`, `tools.json`, `session.json`). `python3 -I scripts/voice_agent_spec.py check` validates them.
   - The live agent is changed by the owner, never from the app.
