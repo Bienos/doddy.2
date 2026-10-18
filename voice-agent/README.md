@@ -50,7 +50,10 @@ and 36 language presets; keep them when applying (both lists are replaced wholes
   - "Send or pay money …" in "# Unsupported capabilities".
 - **Version:** `agtvrsn_3501m5219zqke9tv2thaxz3m729t` → `agtvrsn_0201m57cm3vnfgsrv3fw49mqb9mk`.
 - **Checked after saving:** the full agent was read back. The prompt is byte for byte the intended merge, the tool list is the 61 plus the new one, and no other agent setting changed. The live tool matches this spec field by field.
-- **Note:** the live prompt's list of success prefixes includes `paid`. No Doddy tool returns it.
+- **Then `paid` removed** (owner: "yes, remove 'paid' from the live prompt"). It was in the live prompt's list of success prefixes, though no Doddy tool returns it, so Doddy could never read a result as a payment made.
+  - **Version:** `agtvrsn_0201m57cm3vnfgsrv3fw49mqb9mk` (rollback) → `agtvrsn_4301m57e2fxjfkb9fsc54tmjtyca`.
+  - **Checked:** read back, that one line is the only change to the prompt, and the 62 tool ids are unchanged.
+  - **Seen in the read-back, not from this change:** between 11:50 and 12:00 UTC, 27 of the agent's lookup tools were edited elsewhere (tool edits don't create agent versions). Each gained an "ASK-01: before this tool runs, say in one short line exactly what you will look at…" sentence, `pre_tool_speech: force` and a 60 s timeout. Examples: `search_memories`, `read_calendar`, `lookup_contact`, `check_email`, `web_search`, `note_capability_gap`. Those descriptions now differ from `tools.json`.
 
 **Not yet applied to the live agent (2026-10-16):** `start_translator` now starts immediately after the user asks, with no confirmation card or forced pre-tool speech. The app still gives the AI-translator disclosure after starting and keeps microphone access subject to iOS permission. Read the live prompt and tools before syncing; preserve remote edits and compare the fetched configuration after saving.
 
