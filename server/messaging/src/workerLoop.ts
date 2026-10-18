@@ -5,6 +5,8 @@ import { runDueDigests, type NewsDeps } from "./news/digest.js";
 import { pruneNewsCache } from "./news/sources.js";
 import { dispatchDue } from "./outbox.js";
 import type { PushSender, SmsSender } from "./providers/types.js";
+import type { TaskCallContext } from "./taskCalls/context.js";
+import { runTaskCallPasses } from "./taskCalls/worker.js";
 
 import { log } from "./log.js";
 
@@ -25,9 +27,29 @@ async function pause(ms: number, shouldStop: () => boolean) {
  * FOR UPDATE SKIP LOCKED.
  */
 export async function runWorkerLoop(
-  db: Db, deps: { push?: PushSender; sms?: SmsSender; cipher?: TextCipher; news: NewsDeps }, shouldStop: () => boolean,
+  db: Db, deps: { push?: PushSender; sms?: SmsSender; cipher?: TextCipher; news: NewsDeps; taskCalls?: TaskCallContext },
+  shouldStop: () => boolean,
 ): Promise<void> {
-  await Promise.all([dispatchLoop(db, deps, shouldStop), digestLoop(db, deps.news, shouldStop)]);
+  const loops = [dispatchLoop(db, deps, shouldStop), digestLoop(db, deps.news, shouldStop)];
+  if (deps.taskCalls) loops.push(taskCallLoop(deps.taskCalls, shouldStop));
+  await Promise.all(loops);
+}
+
+/**
+ * Call cases (ADR-500): scheduled dials, the goodbye at the time limit, the kill switch, answer
+ * cards, costs and deletions. Its own loop, so a slow provider call never holds back pushes.
+ */
+async function taskCallLoop(ctx: TaskCallContext, shouldStop: () => boolean) {
+  const state = { lastSweep: 0 };
+  while (!shouldStop()) {
+    try {
+      const counts = await runTaskCallPasses(ctx, state);
+      if (Object.keys(counts).length) log("task-call passes", counts);
+    } catch (err) {
+      log("task-call passes failed", { error: (err as Error).message });
+    }
+    await pause(2000, shouldStop);
+  }
 }
 
 async function dispatchLoop(db: Db, deps: { push?: PushSender; sms?: SmsSender; cipher?: TextCipher }, shouldStop: () => boolean) {

@@ -7,20 +7,7 @@ import { callFits, warsawClock } from "../src/taskCalls/hours.js";
 import { openingLine } from "../src/taskCalls/opening.js";
 import { AGENT_VARIABLE_NAMES, canonicalJson, caseKeys, compilePayload, payloadDigest, previewOf } from "../src/taskCalls/payload.js";
 import { classifyDestination, GEOGRAPHIC_PREFIXES, MOBILE_PREFIXES } from "../src/taskCalls/phone.js";
-
-export const VALID_PESEL = "44051401359";
-
-export function sampleBrief(over: Partial<BriefInput> = {}): BriefInput {
-  return {
-    kind: "ask",
-    callee: { name: "Serwis Laptop", phone: "+48 22 123 45 67", source: "contacts", sourceLabel: "Serwis Laptop Mokotów" },
-    principal: { name: "Anna", genitive: "Anny" },
-    goal: "Dowiedzieć się, czy laptop oddany do naprawy jest gotowy do odbioru.",
-    question: "Czy laptop z serwisu jest gotowy",
-    facts: [{ kind: "reference", text: "Numer zlecenia 12345" }, { kind: "device", text: "Lenovo ThinkPad, oddany 10 października" }],
-    ...over,
-  };
-}
+import { sampleBrief, VALID_PESEL } from "./helpers.js";
 
 describe("destinations", () => {
   test("every two-digit prefix: only mobile and geographic ranges are allowed", () => {
