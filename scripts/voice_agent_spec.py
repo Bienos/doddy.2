@@ -103,7 +103,10 @@ def check(tools, session, instructions):
     declared = set(session.get("variables", {}))
     for name in sorted(used - declared):
         errors.append(f"instructions: {{{{{name}}}}} is not declared in session.json variables")
-    for name in sorted(declared - used):
+    # A variable may be used only in the first message (the phone agent's opening sentence, ADR-495).
+    first = session.get("first_message", {})
+    in_first = {n for text in (first.values() if isinstance(first, dict) else []) for n in PLACEHOLDER.findall(text)}
+    for name in sorted(declared - used - in_first):
         errors.append(f"session.json: variable '{name}' is never used in instructions")
     # Builds that don't send a variable fall back to the agent's placeholder; without one the conversation can't start.
     placeholders = session.get("elevenlabs", {}).get("placeholders")

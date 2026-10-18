@@ -8,12 +8,16 @@ import { OUTBOUND_CONSENT_VERSIONS, OUTBOUND_DAILY_LIMIT, OUTBOUND_HOURLY_LIMIT 
 import { hashPin, isAcceptablePin } from "../crypto.js";
 import { inTransaction } from "../db.js";
 import type { NoteSource } from "../inbox.js";
+import { formatClock, isValidTimeZone, QUIET_HOURS_DEFAULT } from "../quietHours.js";
+import { cancelScheduledCalls } from "../scheduledCalls.js";
 import { callsAvailable } from "./twilioVoice.js";
 
 const settingsBody = z.object({
   inboundEnabled: z.boolean().optional(),
   outboundConsent: z.boolean().optional(),
   outboundConsentTextVersion: z.string().max(32).optional(),
+  /** The iPhone's current time zone, for quiet hours on scheduled calls (ADR-495). */
+  timeZone: z.string().refine(isValidTimeZone, "unknown time zone").optional(),
 }).refine((b) => b.outboundConsent !== true || OUTBOUND_CONSENT_VERSIONS.has(b.outboundConsentTextVersion ?? ""),
   { path: ["outboundConsentTextVersion"] });
 const pinBody = z.object({ pin: z.string() });
@@ -38,14 +42,16 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
   const ensureRow = (accountId: string) =>
     db.query("INSERT INTO call_settings (account_id) VALUES ($1) ON CONFLICT DO NOTHING", [accountId]);
 
+  const quiet = deps.quietHours ?? QUIET_HOURS_DEFAULT;
+
   app.get("/v1/calls/settings", { preHandler: auth }, async (req) => {
     const { accountId } = principal(req);
     // One round trip; the settings row may not exist yet.
     const { rows } = await db.query<{
       inbound_enabled: boolean | null; pin_set: boolean | null; pin_locked: boolean | null; outbound: boolean | null;
-      memory_on: boolean | null; copies: number; phone: boolean;
+      memory_on: boolean | null; copies: number; phone: boolean; time_zone: string | null;
     }>(
-      `SELECT s.inbound_enabled, s.pin_hash IS NOT NULL AS pin_set, coalesce(s.pin_locked_until > now(), false) AS pin_locked,
+      `SELECT s.inbound_enabled, s.time_zone, s.pin_hash IS NOT NULL AS pin_set, coalesce(s.pin_locked_until > now(), false) AS pin_locked,
               s.outbound_consent_at IS NOT NULL AS outbound, s.memory_copy_enabled_at IS NOT NULL AS memory_on,
               (SELECT count(*)::int FROM memory_copies WHERE account_id = $1) AS copies,
               EXISTS (SELECT 1 FROM phone_numbers WHERE account_id = $1) AS phone
@@ -62,6 +68,9 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
       pinLocked: s?.pin_locked ?? false,
       outboundConsent: s?.outbound ?? false,
       memoryCopy: { enabled: s?.memory_on ?? false, count: r.copies },
+      // No scheduled call rings inside these, where the user is, unless its card allowed it.
+      quietHours: { start: formatClock(quiet.start), end: formatClock(quiet.end) },
+      timeZone: r.time_zone,
     };
   });
 
@@ -74,13 +83,17 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
       if (!phone.rowCount) return reply.code(409).send({ error: "no_verified_phone" });
     }
     await ensureRow(accountId);
+    // Turning calls from Doddy off also cancels the calls booked for later (ADR-495).
+    if (body.outboundConsent === false) await cancelScheduledCalls(db, accountId, "consent_off");
     await db.query(
       `UPDATE call_settings SET updated_at = now(),
          inbound_enabled = coalesce($2, inbound_enabled),
          outbound_consent_at = CASE WHEN $3::boolean IS NULL THEN outbound_consent_at WHEN $3 THEN now() END,
-         outbound_consent_text_version = CASE WHEN $3::boolean IS NULL THEN outbound_consent_text_version WHEN $3 THEN $4 END
+         outbound_consent_text_version = CASE WHEN $3::boolean IS NULL THEN outbound_consent_text_version WHEN $3 THEN $4 END,
+         time_zone = coalesce($5, time_zone)
        WHERE account_id = $1`,
-      [accountId, body.inboundEnabled ?? null, body.outboundConsent ?? null, body.outboundConsentTextVersion ?? null]);
+      [accountId, body.inboundEnabled ?? null, body.outboundConsent ?? null, body.outboundConsentTextVersion ?? null,
+        body.timeZone ?? null]);
     return reply.code(204).send();
   });
 

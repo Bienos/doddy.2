@@ -9,8 +9,8 @@ import { loadConfig } from "../src/config.js";
 import { apnsJwt } from "../src/providers/apns.js";
 import { ElevenLabsCallRegistrar } from "../src/providers/elevenlabs.js";
 import { isValidTwilioSignature, TwilioClient, TwilioVoiceCaller, twilioSignature } from "../src/providers/twilio.js";
-import { approvalHash, textApprovalHash } from "../src/approval.js";
-import { OUTBOUND_DAILY_LIMIT, OUTBOUND_HOURLY_LIMIT } from "../src/calls.js";
+import { approvalHash, callApprovalHash, textApprovalHash } from "../src/approval.js";
+import { callOpening, OUTBOUND_DAILY_LIMIT, OUTBOUND_HOURLY_LIMIT } from "../src/calls.js";
 import { APPROVED_TEXTS_PER_DAY, APPROVED_TEXTS_SERVER_PER_DAY, TEXT_MAX_LENGTH } from "../src/routes/texts.js";
 import { readFileSync } from "node:fs";
 import { connectTwiml, sayAndHangUp, type FixedLine } from "../src/voiceTwiml.js";
@@ -18,6 +18,12 @@ import { classifySms, smsSegments } from "../src/sms.js";
 import {
   AI_REPLIES_PER_DAY, AI_REPLY_BUDGET_USD_PER_DAY, AI_REPLY_MAX_SEGMENTS, AI_REPLY_WINDOW_MINUTES, FIXED, INBOUND_TEXTS_PER_HOUR,
 } from "../src/textReplies.js";
+import {
+  DEFAULT_TIME_ZONE, formatClock, inQuietHours, isValidTimeZone, localClock, parseClock, QUIET_HOURS_DEFAULT,
+} from "../src/quietHours.js";
+import {
+  CALL_REASON_MAX_LENGTH, SCHEDULED_CALL_LATE_MINUTES, SCHEDULED_CALL_MAX_DAYS, SCHEDULED_CALLS_PENDING_MAX,
+} from "../src/scheduledCalls.js";
 
 test("Twilio signature matches the official twilio library", () => {
   const url = "https://doddy.example.test/webhooks/twilio/sms";
@@ -157,7 +163,13 @@ test("approval hashes reproduce the shared vectors (contracts/phone/approval-vec
     assert.equal(approvalHash(v.fields).toString("hex"), v.sha256, v.description);
     const [version, kind, to, body] = v.fields;
     if (version === "doddy-approval-1" && kind === "text") assert.equal(textApprovalHash(to!, body!).toString("hex"), v.sha256, v.description);
+    if (version === "doddy-approval-1" && kind === "call") {
+      const [, , , at, reason, quiet] = v.fields;
+      assert.ok(quiet === "0" || quiet === "1", v.description);
+      assert.equal(callApprovalHash(to!, at!, reason!, quiet === "1").toString("hex"), v.sha256, v.description);
+    }
   }
+  assert.ok(file.vectors.some((v) => v.fields[1] === "call"), "call vectors are there too (ADR-495)");
 });
 
 test("a text through Twilio: a server error after the request may have been sent is unknown, never retried", async () => {
@@ -211,6 +223,14 @@ test("the contact policy in doddy_rules.yaml matches what the server enforces", 
     [INBOUND_TEXTS_PER_HOUR, AI_REPLIES_PER_DAY, AI_REPLY_BUDGET_USD_PER_DAY, AI_REPLY_WINDOW_MINUTES, AI_REPLY_MAX_SEGMENTS, 1]);
   assert.deepEqual([value("texts_to_doddy"), value("ai_replies"), value("ai_reply_memories"), value("inbound_text_is_instructions")],
     ["off_by_default", "off_by_default", "off_by_default", "false"]);
+  // Scheduled calls and quiet hours (U4, ADR-495).
+  assert.deepEqual(
+    [value("scheduled_call_max_days_ahead"), value("scheduled_call_late_minutes"), value("scheduled_calls_pending_max"),
+      value("call_reason_max_length")].map(Number),
+    [SCHEDULED_CALL_MAX_DAYS, SCHEDULED_CALL_LATE_MINUTES, SCHEDULED_CALLS_PENDING_MAX, CALL_REASON_MAX_LENGTH]);
+  assert.deepEqual([value("start"), value("end"), value("timezone_fallback"), value("applies_to"), value("scheduled_call_unknown_outcome")],
+    [`"${formatClock(QUIET_HOURS_DEFAULT.start)}"`, `"${formatClock(QUIET_HOURS_DEFAULT.end)}"`, DEFAULT_TIME_ZONE, "[scheduled_calls]",
+      "never_placed_again"]);
   assert.doesNotMatch(block, /\+\d{6,}/, "no phone number in the rules file");
 });
 
@@ -298,4 +318,59 @@ test("Twilio records wait 24 hours by default before deletion; an empty setting 
     .twilioRecordDeleteAfterHours;
   assert.deepEqual([hours(), hours(""), hours("0"), hours("2")], [24, 24, 0, 2]);
   assert.throws(() => hours("-1"));
+});
+
+test("quiet hours follow the wall clock where the user is, across both summer-time changes in Warsaw", () => {
+  const quiet = (iso: string, zone = "Europe/Warsaw") => inQuietHours(new Date(iso), zone);
+  // 2026-10-25: summer time ends (03:00 CEST becomes 02:00 CET). The same UTC time is an hour earlier on the clock.
+  assert.equal(quiet("2026-10-24T06:30:00Z"), false, "08:30 CEST");
+  assert.equal(quiet("2026-10-25T06:30:00Z"), true, "07:30 CET, the morning after the change");
+  assert.equal(quiet("2026-10-25T07:00:00Z"), false, "08:00 CET: quiet hours are over");
+  assert.equal(quiet("2026-10-24T18:59:00Z"), false, "20:59 CEST");
+  assert.equal(quiet("2026-10-24T19:00:00Z"), true, "21:00 CEST");
+  assert.equal(quiet("2026-10-25T01:30:00Z"), true, "02:30 CET, inside the repeated hour");
+  // 2027-03-28: summer time starts (02:00 CET becomes 03:00 CEST).
+  assert.equal(quiet("2027-03-27T06:30:00Z"), true, "07:30 CET");
+  assert.equal(quiet("2027-03-28T06:30:00Z"), false, "08:30 CEST, the morning after the change");
+  assert.equal(quiet("2027-03-27T19:30:00Z"), false, "20:30 CET");
+  assert.equal(quiet("2027-03-28T19:30:00Z"), true, "21:30 CEST");
+  // Another zone: the same instant can be quiet in one place and not in another.
+  assert.equal(quiet("2026-10-19T14:00:00Z", "Europe/Warsaw"), false, "16:00 in Warsaw");
+  assert.equal(quiet("2026-10-19T14:00:00Z", "Asia/Tokyo"), true, "23:00 in Tokyo");
+  assert.equal(localClock(new Date("2026-10-25T06:30:00Z"), "Europe/Warsaw"), "07:30");
+});
+
+test("quiet hours: windows that don't cross midnight, empty windows, clock text and zone names", () => {
+  const day = { start: 13 * 60, end: 15 * 60 };
+  assert.equal(inQuietHours(new Date("2026-10-19T13:00:00Z"), "UTC", day), true);
+  assert.equal(inQuietHours(new Date("2026-10-19T14:59:00Z"), "UTC", day), true);
+  assert.equal(inQuietHours(new Date("2026-10-19T15:00:00Z"), "UTC", day), false);
+  assert.equal(inQuietHours(new Date("2026-10-19T12:59:00Z"), "UTC", day), false);
+  assert.equal(inQuietHours(new Date("2026-10-19T03:00:00Z"), "UTC", { start: 600, end: 600 }), false, "start = end: no quiet hours");
+  assert.deepEqual(["21:00", "08:00", "00:00", "23:59", "24:00", "9:00", "21:60", "", "21:00 "].map(parseClock),
+    [1260, 480, 0, 1439, undefined, undefined, undefined, undefined, undefined]);
+  assert.equal(formatClock(480), "08:00");
+  for (const zone of ["Europe/Warsaw", "America/Los_Angeles", "UTC", "Etc/GMT+5"]) assert.equal(isValidTimeZone(zone), true, zone);
+  for (const zone of ["Mars/Base", "", "../etc/passwd", "Europe/Warsaw\n", "x".repeat(65)]) assert.equal(isValidTimeZone(zone), false, zone);
+});
+
+test("quiet hours come from QUIET_HOURS_START and QUIET_HOURS_END, 21:00 to 08:00 by default", () => {
+  const base = { DATABASE_URL: "postgres://x" };
+  assert.deepEqual(loadConfig(base).quietHours, { start: 21 * 60, end: 8 * 60 });
+  assert.deepEqual(loadConfig({ ...base, QUIET_HOURS_START: "", QUIET_HOURS_END: "" }).quietHours, { start: 21 * 60, end: 8 * 60 });
+  assert.deepEqual(loadConfig({ ...base, QUIET_HOURS_START: "22:30", QUIET_HOURS_END: "07:15" }).quietHours, { start: 1350, end: 435 });
+  assert.throws(() => loadConfig({ ...base, QUIET_HOURS_START: "10pm" }), /QUIET_HOURS_START/);
+});
+
+test("the phone agent's first sentence always says Doddy is an AI, and says a scheduled call's reason word for word", () => {
+  assert.equal(callOpening(undefined, "en"), "Hi, this is Doddy, an AI assistant. How can I help?");
+  assert.equal(callOpening("Take the cake out", "en"), "Hi, this is Doddy, an AI assistant. You asked me to call you about this: Take the cake out");
+  assert.equal(callOpening("Wyjmij ciasto", "pl"), "Cześć, tu Doddy, asystent AI. Dzwonię zgodnie z Twoją prośbą w sprawie: Wyjmij ciasto");
+  for (const opening of [callOpening(undefined, "pl"), callOpening("x", "en"), callOpening("x", "pl")]) assert.match(opening, /\bAI\b/);
+  // The agent's settings use the same sentence when a call carries no variables (dashboard tests).
+  const session = JSON.parse(readFileSync(new URL("../../../../voice-agent/phone/session.json", import.meta.url), "utf8")) as
+    { first_message: { en: string }; elevenlabs: { placeholders: Record<string, string> } };
+  assert.equal(session.first_message.en, "{{doddy_call_opening}}");
+  assert.equal(session.elevenlabs.placeholders.doddy_call_opening, callOpening(undefined, "en"));
+  assert.equal(session.elevenlabs.placeholders.doddy_call_reason, "none");
 });

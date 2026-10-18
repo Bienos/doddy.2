@@ -21,3 +21,10 @@ export const APPROVAL_VERSION = "doddy-approval-1";
 
 /** A text from Doddy's number to `to` (E.164), with exactly `body`. */
 export const textApprovalHash = (to: string, body: string) => approvalHash([APPROVAL_VERSION, "text", to, body]);
+
+/**
+ * A call Doddy places later (ADR-495): to `to` (E.164), at `at` exactly as the app wrote it
+ * (YYYY-MM-DDTHH:MM:SSZ), saying `reason`, and whether the user allowed it inside quiet hours.
+ */
+export const callApprovalHash = (to: string, at: string, reason: string, allowQuietHours: boolean) =>
+  approvalHash([APPROVAL_VERSION, "call", to, at, reason, allowQuietHours ? "1" : "0"]);

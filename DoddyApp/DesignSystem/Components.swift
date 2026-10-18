@@ -187,6 +187,7 @@ extension MemorySource {
         case .sharedContent: NSLocalizedString("Shared into Doddy", comment: "")
         case .importedLegacyUnknown: NSLocalizedString("Imported, date unknown", comment: "")
         case .importedFile: NSLocalizedString("Imported from a file", comment: "")
+        case .notedByDoddy: NSLocalizedString("Noted by Doddy, saved by you", comment: "")
         case .sampleFixture: NSLocalizedString("Sample", comment: "")
         }
     }

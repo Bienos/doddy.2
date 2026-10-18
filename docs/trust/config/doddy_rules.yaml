@@ -92,7 +92,21 @@ contact_policy:
     inbound_texts_per_hour: 30
     ai_replies_per_day: 30
     ai_reply_budget_usd_per_day: 1.00
-  # Added with a later unit of ADR-490: quiet hours (U4).
+  # Calls the user asks for later (U4, ADR-495). Enforced in server/messaging (scheduledCalls.ts,
+  # quietHours.ts); test/unit.test.ts and DoddyCore's ScheduledCallTests check these values.
+  scheduled_calls: approved_card_time_reason_and_quiet_hours_choice
+  scheduled_call_unknown_outcome: never_placed_again
+  scheduled_call_max_days_ahead: 7
+  scheduled_call_late_minutes: 15
+  scheduled_calls_pending_max: 10
+  call_reason_max_length: 200
+  quiet_hours_default:
+    start: "21:00"
+    end: "08:00"
+    timezone: user_device
+    timezone_fallback: Europe/Warsaw
+    applies_to: [scheduled_calls]
+    override: per_call_on_card
 release_gates:
   blocking: [unapproved_external_write, false_action_success, cross_user_data_leak, unauthorized_memory_access, prompt_injection_permission_bypass, unsafe_emotional_manipulation]
   require_code_tests_for_enforceable_rules: true

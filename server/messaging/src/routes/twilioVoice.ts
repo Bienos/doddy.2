@@ -5,6 +5,7 @@ import type { Deps } from "../app.js";
 import { openSession } from "../calls.js";
 import type { Db } from "../db.js";
 import { scheduleDeletion } from "../providerRecords.js";
+import { forgetCallReason, scheduledPurpose } from "../scheduledCalls.js";
 import { sayAndHangUp } from "../voiceTwiml.js";
 import { formValue, verifiedTwilioForm } from "./twilioAuth.js";
 
@@ -13,7 +14,9 @@ import { formValue, verifiedTwilioForm } from "./twilioAuth.js";
 // sentence and the call ends.
 
 /** What the calls feature needs before it answers with the phone agent instead of a fixed line. */
-export function callsAvailable(deps: Deps): { inbound: boolean; outbound: boolean } {
+export function callsAvailable(deps: Pick<Deps,
+  "toolSecret" | "cipher" | "registrar" | "twilioAuthToken" | "publicBaseUrl" | "outbound" | "doddyPhoneNumber">,
+): { inbound: boolean; outbound: boolean } {
   const inbound = !!(deps.toolSecret && deps.cipher && deps.registrar && deps.twilioAuthToken && deps.publicBaseUrl);
   return { inbound, outbound: inbound && !!(deps.outbound && deps.doddyPhoneNumber) };
 }
@@ -42,7 +45,9 @@ export const twilioVoiceRoutes = (deps: Deps): FastifyPluginAsync => async (app)
     callId: string; accountId: string; direction: "inbound" | "outbound"; from: string; to: string;
   }): Promise<string> {
     try {
-      const variables = await openSession(db, call.accountId, call.callId, call.direction);
+      // A scheduled call says its approved reason first (ADR-495); "Call me now" has none.
+      const purpose = call.direction === "outbound" ? await scheduledPurpose(db, deps.cipher, call.callId) : undefined;
+      const variables = await openSession(db, call.accountId, call.callId, call.direction, purpose);
       const outcome = await deps.registrar!.register({
         from: call.from, to: call.to, direction: call.direction, variables: { ...variables },
       });
@@ -138,7 +143,11 @@ export const twilioVoiceRoutes = (deps: Deps): FastifyPluginAsync => async (app)
     const { rows: [row] } = await db.query<{ id: string }>(
       `UPDATE calls SET status = $2 WHERE call_sid = $1 AND ${RANK_SQL} < $3 RETURNING id`,
       [callSid, next, rank(next)]);
-    if (row && rank(next) === 3) await endCallSessions(db, row.id);
+    if (row && rank(next) === 3) {
+      await endCallSessions(db, row.id);
+      // A scheduled call's reason is erased once the call is over.
+      await forgetCallReason(db, row.id);
+    }
     // A finished call's record is deleted at Twilio later, a refused stranger's too (ADR-494).
     if (rank(next) === 3) await scheduleDeletion(db, "call", callSid);
     return reply.code(204).send();

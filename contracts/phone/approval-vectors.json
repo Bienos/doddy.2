@@ -1,7 +1,7 @@
 {
   "format": "doddy-approval-vectors/1",
   "note": "Approval hashes (ADR-490, DOD-07), shared by server/messaging/src/approval.ts and DoddyCore ApprovalHash. Generated independently of both; each must reproduce every vector.",
-  "encoding": "SHA-256 over each field in order, written as its UTF-8 byte length in decimal, a colon, then its UTF-8 bytes. Lowercase hex. A text approval is the fields [\"doddy-approval-1\", \"text\", recipient in E.164, the exact text].",
+  "encoding": "SHA-256 over each field in order, written as its UTF-8 byte length in decimal, a colon, then its UTF-8 bytes. Lowercase hex. A text approval is the fields [\"doddy-approval-1\", \"text\", recipient in E.164, the exact text]. A call approval (ADR-495) is [\"doddy-approval-1\", \"call\", recipient in E.164, the time in UTC as YYYY-MM-DDTHH:MM:SSZ, the exact reason, \"1\" if allowed in quiet hours else \"0\"].",
   "vectors": [
     {
       "description": "plain text",
@@ -82,6 +82,42 @@
         "Buy milk on the way home."
       ],
       "sha256": "49059286dea11217e64f00771ee9eea94b777c87f61d1c513b7ec6966172a74a"
+    },
+    {
+      "description": "call: a time and a reason, quiet hours respected",
+      "fields": [
+        "doddy-approval-1",
+        "call",
+        "+48500100200",
+        "2026-10-19T16:30:00Z",
+        "Take the cake out of the oven.",
+        "0"
+      ],
+      "sha256": "518d758626c0e2fd8341d2b862293ba26b4dbd7e17eabdb7079532ba963d7c69"
+    },
+    {
+      "description": "call: the same call allowed inside quiet hours differs only in the last field",
+      "fields": [
+        "doddy-approval-1",
+        "call",
+        "+48500100200",
+        "2026-10-19T16:30:00Z",
+        "Take the cake out of the oven.",
+        "1"
+      ],
+      "sha256": "7354075c251af4517fb826f799d20d333caa179cb492493f704e6793f721e734"
+    },
+    {
+      "description": "call: Polish reason, on the night summer time ends in Warsaw",
+      "fields": [
+        "doddy-approval-1",
+        "call",
+        "+48500100200",
+        "2026-10-25T00:30:00Z",
+        "Zadzwoń do mamy w sprawie łóżka.",
+        "1"
+      ],
+      "sha256": "bdadc507a9618270dfb1a25578eee6e0b5a6a0c5796ee7fda3cbc59b2c4d0e16"
     }
   ]
 }

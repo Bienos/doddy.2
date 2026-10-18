@@ -42,6 +42,8 @@ final class ActivityTextTests: XCTestCase {
             .leaveBy(LeaveByRequest(place: "Dentist", arriveBy: now)),
             // ADR-490 U2.
             .textMe(body: "Parcel code 4417"),
+            // ADR-495.
+            .callMeLater(CallLaterDraft(at: now.addingTimeInterval(3_600), reason: "Cake", timeZoneID: "Europe/Warsaw")),
         ]
         requests += CloudToolName.all.sorted().map { .cloudTool(CloudToolCall(name: $0, arguments: [:])) }
         return requests
@@ -55,7 +57,7 @@ final class ActivityTextTests: XCTestCase {
              .lookupContact, .upcomingBirthdays, .setTimer, .setAlarm, .listAlarms, .cancelAlarm, .openMap, .runShortcut,
              .draftMessage, .cloudTool, .addToList, .readList, .checkOff, .removeFromList, .createList,
              .changeCalendarEvent, .changeReminder, .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders,
-             .convertCurrency, .parkingSpot, .addIngredients, .findFreeTime, .leaveBy, .textMe:
+             .convertCurrency, .parkingSpot, .addIngredients, .findFreeTime, .leaveBy, .textMe, .callMeLater:
             true
         case .needsClarification, .calculate, .convertUnits, .undoLast, .startTranslator, .stopTranslator, .unsupported, .invalid,
              .noteCapabilityGap:
@@ -68,7 +70,7 @@ final class ActivityTextTests: XCTestCase {
         XCTAssertTrue(everyKind.allSatisfy(getsARow))
         // One of each kind that gets a row (cloud tools count once each, drafts twice).
         let kinds = Set(everyKind.map { String(describing: $0).prefix { $0 != "(" } })
-        XCTAssertEqual(kinds.count, 33)
+        XCTAssertEqual(kinds.count, 34)
         XCTAssertNil(ActivityRequest.describe(.undoLast, calendar: calendar))
         XCTAssertNil(ActivityRequest.describe(.calculate(expression: "1+1"), calendar: calendar))
     }

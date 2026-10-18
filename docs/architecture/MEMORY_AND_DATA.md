@@ -38,7 +38,7 @@ Search should index `current_text`, not immutable original by default. GRDB migr
 - Deletion must invalidate in-memory caches, search indexes and any queued retrieval snippets.
 
 ## Source types and private sessions
-`explicit_text`, `explicit_voice`, `shared_content`, `imported_legacy_unknown`, `sample_fixture` (sample never returned for personal recall). `private_session` is ephemeral, does not persist by default and does not become another source type for long-term memory.
+`explicit_text`, `explicit_voice`, `shared_content`, `imported_legacy_unknown`, `imported_file`, `noted_by_doddy` (a note Doddy wrote on a call or while answering a text, saved by the user's tap; ADR-494), `sample_fixture` (sample never returned for personal recall). `private_session` is ephemeral, does not persist by default and does not become another source type for long-term memory.
 
 ## Security on device
 Use protected app container, configure appropriate `NSFileProtection*` policies, coordinate lock/unlock, use Keychain only for secrets, and document SQLite WAL/SHM protection and OS-backup rules. iOS Data Protection is *not* equivalent to application-layer end-to-end encryption. Validate behavior after force-quit, disk-full, locked device and interrupted migration; never delete original import data before read-back and checksum verification.

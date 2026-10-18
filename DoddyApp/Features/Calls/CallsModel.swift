@@ -23,6 +23,10 @@ final class CallsModel {
     /// only retries the removal, so the memory isn't saved twice (DOD-06).
     private(set) var savedNoteIDs: Set<UUID> = []
     private(set) var recent: [CallRecord] = []
+    /// Calls booked for later (ADR-495), newest first, as the server lists them.
+    private(set) var scheduled: [ScheduledCall] = []
+    /// Why the booked calls couldn't be loaded, or nil. A failed load is never shown as "none".
+    private(set) var scheduledProblem: String?
     private(set) var isWorking = false
     private(set) var message: String?
 
@@ -38,6 +42,7 @@ final class CallsModel {
             let settings = try await client.callSettings()
             self.settings = settings
             self.recent = (try? await client.recentCalls()) ?? []
+            await self.loadScheduled(client, settings: settings)
             do {
                 let texts = try await client.textSettings()
                 self.textSettings = texts
@@ -172,14 +177,55 @@ final class CallsModel {
         }
     }
 
+    // MARK: Calls booked for later (ADR-495)
+
+    /// The list, and the iPhone's zone when a call is waiting and the server has another one, so
+    /// quiet hours are checked where the user is now. The zone is sent only then.
+    private func loadScheduled(_ client: DoddyServerClient, settings: CallSettings) async {
+        guard settings.available.outbound else {
+            scheduled = []
+            scheduledProblem = nil
+            return
+        }
+        do {
+            scheduled = try await client.scheduledCalls()
+            scheduledProblem = nil
+        } catch {
+            scheduledProblem = String(format: NSLocalizedString("Couldn't load your booked calls. %@", comment: ""), Self.text(for: error))
+            return
+        }
+        let zone = TimeZone.current.identifier
+        if scheduled.contains(where: \.canCancel), settings.timeZone != zone {
+            try? await client.setCallTimeZone(zone)
+        }
+    }
+
+    /// Only a call still waiting; the list is read back afterwards either way.
+    func cancel(_ call: ScheduledCall) async {
+        guard let client else { return }
+        await run {
+            var failure: (any Error)?
+            do {
+                try await client.cancelScheduledCall(call.id)
+            } catch ServerError.notEnabled("already_placed_or_done") {
+                self.message = NSLocalizedString("That call isn't waiting any more: it was placed, cancelled or skipped.", comment: "")
+            } catch {
+                failure = error
+            }
+            if let settings = self.settings { await self.loadScheduled(client, settings: settings) }
+            if let failure { throw failure }
+        }
+    }
+
     /// Saves the note as a memory (as said on the call, at that time), then removes it from the inbox.
     func keep(_ note: CallNote, into store: MemoryStore) async {
         guard let client else { return }
         await run {
             if !self.savedNoteIDs.contains(note.id) {
-                // A note from a text was typed by the user; one from a call was said (ADR-494).
+                // The user's own text is a typed note; anything Doddy wrote, on a call or while
+                // answering a text, is Doddy's note that the user saved (ADR-494).
                 _ = try await store.save(
-                    text: note.text, category: .other, source: note.fromText ? .explicitText : .explicitVoice,
+                    text: note.text, category: .other, source: note.fromText ? .explicitText : .notedByDoddy,
                     capturedAt: note.createdDate ?? Date())
                 self.savedNoteIDs.insert(note.id)
             }

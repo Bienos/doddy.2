@@ -32,6 +32,25 @@ export interface CallVariables {
   doddy_memory: "on" | "off";
   doddy_pin: "set" | "not_set";
   doddy_direction: "inbound" | "outbound";
+  /** A scheduled call's approved reason, the user's own words, or "none" (ADR-495). */
+  doddy_call_reason: string;
+  /** The agent's first sentence, written by the server (callOpening below). */
+  doddy_call_opening: string;
+}
+
+export type Language = "en" | "pl";
+export const lang = (v: string | null | undefined): Language => (v === "pl" ? "pl" : "en");
+
+/**
+ * The phone agent's first sentence (its first message is exactly this variable). Written here, not
+ * by the model, and it always says Doddy is an AI (DOD-03). On a scheduled call it says the
+ * reason the user approved, word for word.
+ */
+export function callOpening(reason: string | undefined, language: Language): string {
+  if (reason === undefined) return "Hi, this is Doddy, an AI assistant. How can I help?";
+  return language === "pl"
+    ? `Cześć, tu Doddy, asystent AI. Dzwonię zgodnie z Twoją prośbą w sprawie: ${reason}`
+    : `Hi, this is Doddy, an AI assistant. You asked me to call you about this: ${reason}`;
 }
 
 export function sameSecret(expected: string, given: string | undefined): boolean {
@@ -44,6 +63,7 @@ export function sameSecret(expected: string, given: string | undefined): boolean
 /** Creates the per-call capability and returns the variables for a recognised caller. */
 export async function openSession(
   db: Db, accountId: string, callId: string, direction: CallVariables["doddy_direction"],
+  purpose?: { reason: string; language: Language },
 ): Promise<CallVariables> {
   const token = randomBytes(32).toString("base64url");
   await db.query(
@@ -59,6 +79,8 @@ export async function openSession(
     doddy_memory: rows[0]?.memory_on ? "on" : "off",
     doddy_pin: rows[0]?.pin_set ? "set" : "not_set",
     doddy_direction: direction,
+    doddy_call_reason: purpose?.reason ?? "none",
+    doddy_call_opening: callOpening(purpose?.reason, purpose?.language ?? "en"),
   };
 }
 

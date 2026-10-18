@@ -212,6 +212,18 @@ struct VoiceView: View {
                             .id("textSending")
                         }
 
+                        if controller.callBooking {
+                            HStack(spacing: 8) {
+                                ProgressView()
+                                Text("Booking your call…")
+                                    .font(.headline)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(16)
+                            .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+                            .id("callBooking")
+                        }
+
                         if let status = controller.reminderStatus {
                             reminderStatusCard(status, controller: controller)
                                 .id("reminderStatus")
@@ -543,6 +555,8 @@ struct VoiceView: View {
             Text("Twilio carries the text. Doddy's server keeps it encrypted only until it's sent, and sends exactly this.")
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
+        case .callLater(_, let draft, let to, let quietHours):
+            callLaterContent(draft, to: to, quietHours: quietHours, controller: controller)
         case .changeEvent(_, let plan):
             Text("Change this event?")
                 .font(.headline)
@@ -918,6 +932,8 @@ struct VoiceView: View {
         if case .bulk(_, let items, _, _) = pending { return items.allSatisfy { controller.bulkUnticked.contains($0.id) } }
         // Ingredients (ADR-305): nothing ticked, nothing to add.
         if case .ingredients(_, _, _, _, let items, _) = pending { return controller.ingredientsUnticked.count >= items.count }
+        // A call inside quiet hours (ADR-495) can be booked only with the switch on.
+        if case .callLater(_, let draft, _, let quietHours) = pending { return draft.inQuietHours(quietHours) && !controller.callLaterAllowQuiet }
         return false
     }
 
@@ -933,6 +949,7 @@ struct VoiceView: View {
         case .message(_, let draft, _): (draft.channel == .text ? NSLocalizedString("Open in Messages", comment: "") : NSLocalizedString("Open in Mail", comment: ""), NSLocalizedString("Don't open", comment: ""))
         case .cloud(_, _, let preview, _, _): (preview.confirmLabel, NSLocalizedString("Don't do this", comment: ""))
         case .text: (NSLocalizedString("Send text", comment: ""), NSLocalizedString("Don't send", comment: ""))
+        case .callLater: (NSLocalizedString("Book call", comment: ""), NSLocalizedString("Don't book", comment: ""))
         case .noteReminder: (NSLocalizedString("Set reminder", comment: ""), NSLocalizedString("Don't set", comment: ""))
         case .createList: (NSLocalizedString("Create list", comment: ""), NSLocalizedString("Not now", comment: ""))
         case .changeEvent: (NSLocalizedString("Change", comment: ""), NSLocalizedString("Don't change", comment: ""))
@@ -949,6 +966,52 @@ struct VoiceView: View {
         case .ingredients(_, _, _, _, let items, _):
             (String(format: NSLocalizedString("Add %lld", comment: ""), items.count - controller.ingredientsUnticked.count), NSLocalizedString("Not now", comment: ""))
         }
+    }
+
+    /// "Call you later?" (ADR-495): the time in the user's zone, the number's last digits, the exact
+    /// sentence Doddy says when the call is answered, and the quiet-hours switch the approval covers.
+    @ViewBuilder
+    private func callLaterContent(
+        _ draft: CallLaterDraft, to: String, quietHours: QuietHours, controller: VoiceSessionController
+    ) -> some View {
+        Text("Call you later?")
+            .font(.headline)
+        Text(draft.at.formatted(Date.FormatStyle(date: .complete, time: .shortened, timeZone: draft.timeZone)))
+            .font(.body)
+        Text(String(format: NSLocalizedString("From Doddy's number to your number ending %@", comment: ""), String(to.suffix(3))))
+            .foregroundStyle(Theme.secondaryText)
+        Text("When you answer, Doddy says:")
+            .font(.footnote)
+            .foregroundStyle(Theme.secondaryText)
+        Text(draft.opening(.current))
+            .font(.body)
+            .textSelection(.enabled)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(10)
+            .background(Theme.canvas, in: RoundedRectangle(cornerRadius: 10))
+            .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Theme.separator, lineWidth: 1))
+            .accessibilityIdentifier("voice.callLater.opening")
+        Label("Anyone who answers your phone hears this, and so does your voicemail.", systemImage: "speaker.wave.2")
+            .font(.footnote)
+            .foregroundStyle(Theme.secondaryText)
+        Toggle(isOn: Binding(get: { controller.callLaterAllowQuiet }, set: { controller.callLaterAllowQuiet = $0 })) {
+            Text(String(format: NSLocalizedString("Call even in quiet hours (%@–%@)", comment: ""), quietHours.start, quietHours.end))
+        }
+        .frame(minHeight: 44)
+        .accessibilityIdentifier("voice.callLater.quietHours")
+        if draft.inQuietHours(quietHours) && !controller.callLaterAllowQuiet {
+            Label("This time is in quiet hours. Turn on the switch to book it anyway, or ask Doddy for another time.",
+                  systemImage: "moon")
+                .font(.footnote)
+        }
+        if VoiceSessionController.unconfirmedCalls.contains(draft.approvalHash(to: to, allowQuietHours: controller.callLaterAllowQuiet)) {
+            Label("Doddy couldn't confirm an earlier try of this exact call. Booking again while Doddy is open won't book it twice.",
+                  systemImage: "exclamationmark.triangle")
+                .font(.footnote)
+        }
+        Text("Doddy's server keeps the reason encrypted until the call is over, and checks quiet hours where you are when it's time. Twilio places the call. You can cancel it in Settings, Phone calls.")
+            .font(.footnote)
+            .foregroundStyle(Theme.secondaryText)
     }
 
     /// Note reminder card (ADR-198): the note exactly as saved and when, then the time with its

@@ -518,6 +518,21 @@
     },
     {
       "type": "function",
+      "name": "call_me_later",
+      "description": "Book a phone call from Doddy's own number to the user's own number, the one they verified in Doddy's Settings, at a later time. Use it only when the user asks Doddy to call them later, for example 'call me at six about the cake' or 'zadzwoń do mnie jutro o 8 w sprawie leków'. It can never call anyone else, and it can't call now (for that the user taps Call me now in Settings, Phone calls). Give time as the day and time in the user's local time, from two minutes to seven days ahead; turn relative words into a date using the current date and time you were given, and if the time is unclear ask one short question first. Give reason as one short line in the user's language saying what the call is about: Doddy says it word for word when the call is answered, and so does voicemail or anyone else who picks up, so never put a password, PIN, code or health detail in it. The card shows the time, the reason and a switch to call even in quiet hours (21:00 to 08:00 where the user is); nothing is booked until the user taps. Before this tool runs, say only one short line, for example 'Confirm on screen to book this call.' The result starts with 'booked' (Doddy's server will call then; it isn't a call yet), 'declined', 'failed' (nothing was booked; the reason follows) or 'unknown'. Never say Doddy called. If the result starts with 'failed: not added yet', ask the user the question it gives, then call this tool again with their answer. After 'unknown', never call this tool again unless the user asks.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "time": {"type": "string", "description": "When to call, in the user's local time as YYYY-MM-DDTHH:MM. Always the full day and a time, no time zone or offset, at least two minutes from now and at most seven days ahead."},
+          "reason": {"type": "string", "description": "What the call is about, one line in the user's words and language, at most 200 characters, e.g. 'Take the cake out of the oven' or 'Wyjmij ciasto z piekarnika'. Doddy says it when the call is answered."},
+          "said_time": {"type": "string", "description": "The user's own words for when, exactly as they said them and in their language, e.g. 'at six', 'jutro o 8'. Never reword or fix them. The app checks the time against these words and may answer 'failed: not added yet' with one question to ask."}
+        },
+        "required": ["time", "reason"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "not_synced"}
+    },
+    {
+      "type": "function",
       "name": "check_email",
       "description": "Check the user's newest Gmail emails: sender, subject, time and a short preview only. Use it when the user asks whether they have new email, what is in their inbox, or whether someone wrote to them. Optional query uses Gmail search words, e.g. 'from:anna' or 'is:unread'; leave it out for the inbox. Answer only from the result and never invent emails. It gives previews only; to hear one whole email, use read_email. If the result says the tool is switched off or Gmail isn't connected, tell the user in one sentence that they can switch it on in Settings, Online accounts. If the result starts with DEMO DATA, tell the user it is demo data.",
       "parameters": {

@@ -12,6 +12,7 @@ import { callRoutes } from "./routes/calls.js";
 import { elevenLabsRoutes } from "./routes/elevenlabs.js";
 import { newsRoutes } from "./routes/news.js";
 import type { NewsDeps } from "./news/digest.js";
+import type { QuietHours } from "./quietHours.js";
 import { accountRoutes } from "./routes/account.js";
 import { phoneRoutes } from "./routes/phone.js";
 import { updateRoutes } from "./routes/updates.js";
@@ -19,6 +20,7 @@ import { textRoutes } from "./routes/texts.js";
 import { textSettingsRoutes } from "./routes/textSettings.js";
 import { twilioWebhookRoutes } from "./routes/twilioWebhooks.js";
 import { twilioVoiceRoutes } from "./routes/twilioVoice.js";
+import { scheduledCallRoutes } from "./routes/scheduledCalls.js";
 
 export interface Deps {
   db: Db;
@@ -38,6 +40,8 @@ export interface Deps {
   doddyPhoneNumber?: string;
   /** Writes replies to the user's texts when they turn replies on (Claude, ADR-494). */
   replyWriter?: TextReplyWriter;
+  /** No scheduled call rings inside these hours unless its card allowed it (ADR-495). Default 21:00–08:00. */
+  quietHours?: QuietHours;
   /** News digests: feeds always; keyword search and AI writer when configured. */
   news?: NewsDeps;
   logger?: boolean;
@@ -97,6 +101,7 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   await app.register(twilioWebhookRoutes(deps));
   await app.register(twilioVoiceRoutes(deps));
   await app.register(callRoutes(deps));
+  await app.register(scheduledCallRoutes(deps));
   await app.register(elevenLabsRoutes(deps));
   await app.register(newsRoutes(deps));
   return app;

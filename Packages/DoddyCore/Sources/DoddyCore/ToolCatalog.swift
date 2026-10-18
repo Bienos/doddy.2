@@ -21,6 +21,9 @@ public struct ToolDescriptor: Equatable, Sendable {
         /// A text from Doddy's own number to the user's verified number (ADR-490 U2), through
         /// Doddy's messaging server. Never to anyone else.
         case sendText
+        /// A call from Doddy's own number to the user's verified number at a time they approved
+        /// (ADR-495), placed by Doddy's messaging server. Never to anyone else.
+        case placeCall
         /// Changes the conversation itself (translator mode, the plan card).
         case session
     }
@@ -112,6 +115,9 @@ public enum ToolCatalog {
         // Sent by Doddy, so the card shows the exact text and the tap approves exactly that
         // text; the server checks the same approval hash (ADR-490 U2).
         .init(VoiceToolName.textMe, .sendText, .card),
+        // The card shows the time and the exact reason Doddy will say; the server checks the same
+        // approval hash when it books the call and again when it places it (ADR-495).
+        .init(VoiceToolName.callMeLater, .placeCall, .card),
         // The conversation itself.
         .init(VoiceToolName.startTranslator, .session, .none),
         .init(VoiceToolName.stopTranslator, .session, .none),

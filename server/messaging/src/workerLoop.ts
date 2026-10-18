@@ -7,6 +7,7 @@ import { dispatchDue, reconcileUnknownSms } from "./outbox.js";
 import { DELETE_AFTER_HOURS_DEFAULT, deleteAfterMinutes, pruneDeletions, runDueDeletions } from "./providerRecords.js";
 import type { PushSender, RecordDeleter, SmsSender, TextReplyWriter } from "./providers/types.js";
 import { processTextReply } from "./textReplies.js";
+import { placeDueCall, pruneCallReasons, type ScheduledCallDeps } from "./scheduledCalls.js";
 
 import { log } from "./log.js";
 
@@ -29,17 +30,20 @@ export interface WorkerDeps {
   /** Deletes Doddy's records at Twilio, deleteAfterMinutes after they are final (ADR-494). */
   deleter?: RecordDeleter;
   deleteAfterMinutes?: number;
+  /** Places scheduled calls (ADR-495); only when calls are fully set up, else due calls fail with a notice. */
+  scheduledCalls?: Omit<ScheduledCallDeps, "db" | "cipher" | "now">;
 }
 
 /**
- * Three independent loops until `shouldStop()`: one sends queued updates every ~2 s (plus hourly
- * tidying), one builds due news digests, and one writes replies to the user's texts and deletes
- * records at Twilio. They are separate so a slow feed or AI call can't hold back time-sensitive
+ * Four independent loops until `shouldStop()`: one sends queued updates every ~2 s (plus hourly
+ * tidying), one builds due news digests, one writes replies to the user's texts and deletes
+ * records at Twilio, and one places scheduled calls. They are separate so a slow feed or AI call can't hold back time-sensitive
  * pushes such as a PIN-lock alert. Logs counts and ids only, never message text or phone
  * numbers. Safe to run more than once at a time: every job is claimed with FOR UPDATE SKIP LOCKED.
  */
 export async function runWorkerLoop(db: Db, deps: WorkerDeps, shouldStop: () => boolean): Promise<void> {
-  await Promise.all([dispatchLoop(db, deps, shouldStop), digestLoop(db, deps.news, shouldStop), textLoop(db, deps, shouldStop)]);
+  await Promise.all([dispatchLoop(db, deps, shouldStop), digestLoop(db, deps.news, shouldStop), textLoop(db, deps, shouldStop),
+    callLoop(db, deps, shouldStop)]);
 }
 
 async function dispatchLoop(db: Db, deps: { push?: PushSender; sms?: SmsSender; cipher?: TextCipher }, shouldStop: () => boolean) {
@@ -55,7 +59,10 @@ async function dispatchLoop(db: Db, deps: { push?: PushSender; sms?: SmsSender; 
         const sessions = await purgeExpiredSessions(db);
         const pruned = await pruneNewsCache(db);
         const deletions = await pruneDeletions(db);
-        if (sessions || pruned || deletions) log("tidied", { sessions, newsCacheRows: pruned, deletionRows: deletions });
+        const reasons = await pruneCallReasons(db);
+        if (sessions || pruned || deletions || reasons) {
+          log("tidied", { sessions, newsCacheRows: pruned, deletionRows: deletions, callReasons: reasons });
+        }
       }
       if (r.processed || r.reaped) log("dispatch pass", r);
       if (r.processed) continue; // more may be due
@@ -86,6 +93,19 @@ async function textLoop(db: Db, deps: WorkerDeps, shouldStop: () => boolean) {
       }
     }
     if (!handled) await pause(2000, shouldStop);
+  }
+}
+
+/** Scheduled calls, one at a time, checked every few seconds so a call rings close to its time. */
+async function callLoop(db: Db, deps: WorkerDeps, shouldStop: () => boolean) {
+  while (!shouldStop()) {
+    let handled = false;
+    try {
+      handled = await placeDueCall({ db, cipher: deps.cipher, ...deps.scheduledCalls });
+    } catch (err) {
+      log("scheduled call pass failed", { error: (err as Error).message });
+    }
+    if (!handled) await pause(5000, shouldStop);
   }
 }
 

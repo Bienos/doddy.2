@@ -6,6 +6,7 @@ import { ElevenLabsCallRegistrar } from "./elevenlabs.js";
 import { deleteAfterMinutes } from "../providerRecords.js";
 import { TwilioClient, TwilioVoiceCaller } from "./twilio.js";
 import { GNewsSearch, HttpFeedSource } from "../news/sources.js";
+import { callsAvailable } from "../routes/twilioVoice.js";
 import { ClaudeDigestWriter, OpenAIDigestWriter } from "../news/writer.js";
 
 /** Real provider adapters for whatever is configured; anything missing stays undefined. */
@@ -38,4 +39,19 @@ export function providersFrom(config: Config) {
         : undefined,
     },
   };
+}
+
+/**
+ * What the worker needs to place scheduled calls (ADR-495), only when calls are fully set up (the
+ * same test as the API's). Without it a due call fails, and the user is told, instead of ringing
+ * into a call nobody can answer.
+ */
+export function scheduledCallsFrom(config: Config, providers: ReturnType<typeof providersFrom>) {
+  const ready = callsAvailable({
+    ...providers, toolSecret: config.toolSecret, twilioAuthToken: config.twilio?.authToken,
+    publicBaseUrl: config.publicBaseUrl, doddyPhoneNumber: config.doddyPhoneNumber,
+  }).outbound;
+  return ready
+    ? { outbound: providers.outbound, doddyPhoneNumber: config.doddyPhoneNumber, publicBaseUrl: config.publicBaseUrl, quietHours: config.quietHours }
+    : undefined;
 }

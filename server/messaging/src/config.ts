@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { parseClock, QUIET_HOURS_DEFAULT, type QuietHours } from "./quietHours.js";
 
 // Every provider block is optional: a missing block switches that feature off and the API
 // answers 503 "not_configured". Nothing is faked.
@@ -47,6 +48,11 @@ const schema = z.object({
   TWILIO_RECORD_DELETE_AFTER_HOURS: z.preprocess((v) => (v === "" ? undefined : v),
     z.coerce.number().min(0).max(24 * 30).default(24)),
   DODDY_PHONE_NUMBER: z.string().regex(/^\+[1-9][0-9]{6,14}$/).optional(),
+  // Quiet hours for scheduled calls, "HH:MM" on the user's own clock (ADR-495). Default 21:00–08:00.
+  QUIET_HOURS_START: z.preprocess((v) => (v === "" ? undefined : v),
+    z.string().refine((v) => parseClock(v) !== undefined, "QUIET_HOURS_START must be HH:MM").optional()),
+  QUIET_HOURS_END: z.preprocess((v) => (v === "" ? undefined : v),
+    z.string().refine((v) => parseClock(v) !== undefined, "QUIET_HOURS_END must be HH:MM").optional()),
 });
 
 export interface ApnsConfig { teamId: string; keyId: string; privateKey: string; bundleId: string }
@@ -75,6 +81,7 @@ export interface Config {
   gnewsApiKey?: string;
   textReplyModel?: string;
   twilioRecordDeleteAfterHours: number;
+  quietHours: QuietHours;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -109,5 +116,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     gnewsApiKey: e.GNEWS_API_KEY,
     textReplyModel: e.TEXT_REPLY_MODEL,
     twilioRecordDeleteAfterHours: e.TWILIO_RECORD_DELETE_AFTER_HOURS,
+    quietHours: {
+      start: e.QUIET_HOURS_START ? parseClock(e.QUIET_HOURS_START)! : QUIET_HOURS_DEFAULT.start,
+      end: e.QUIET_HOURS_END ? parseClock(e.QUIET_HOURS_END)! : QUIET_HOURS_DEFAULT.end,
+    },
   };
 }

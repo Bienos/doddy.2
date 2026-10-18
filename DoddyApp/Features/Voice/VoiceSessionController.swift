@@ -78,6 +78,10 @@ final class VoiceSessionController {
         /// "Send this text to you?" (ADR-490 U2): from Doddy's number to the user's own verified
         /// number, exactly `draft.body`. The tap approves that text for that number only.
         case text(toolCallID: String, draft: ApprovedTextDraft)
+        /// "Call you later?" (ADR-495): from Doddy's number to the user's own verified number `to`,
+        /// at `draft.at`, saying `draft.reason` first. The tap approves that with the card's
+        /// quiet-hours switch (`callLaterAllowQuiet`).
+        case callLater(toolCallID: String, draft: CallLaterDraft, to: String, quietHours: QuietHours)
 
         var toolCallID: String {
             switch self {
@@ -86,7 +90,7 @@ final class VoiceSessionController {
                  .noteReminder(let id, _, _, _, _), .createList(let id, _, _), .plan(let id, _, _),
                  .changeEvent(let id, _), .changeReminder(let id, _, _), .deleteEvent(let id, _), .deleteReminder(let id, _),
                  .undo(let id, _), .bulk(let id, _, _, _), .parking(let id, _), .leaveBy(let id, _),
-                 .ingredients(let id, _, _, _, _, _), .text(let id, _):
+                 .ingredients(let id, _, _, _, _, _), .text(let id, _), .callLater(let id, _, _, _):
                 id
             }
         }
@@ -229,6 +233,10 @@ final class VoiceSessionController {
     private(set) var listReceipt: ListReceipt?
     /// True from the tap on Send text until its result (ADR-490 U2): the card is gone by then.
     private(set) var textSending = false
+    /// The "Call even in quiet hours" switch on a call-later card (ADR-495); off for each new card.
+    var callLaterAllowQuiet = false
+    /// True from the tap on Book call until the server's answer.
+    private(set) var callBooking = false
     /// The last change Doddy made in Calendar or Reminders, with Undo (ADR-258).
     private(set) var changeReceipt: ChangeReceipt?
     /// Translator mode (ADR-215), in memory only. While it is set the app runs no tool and the
@@ -1169,6 +1177,13 @@ final class VoiceSessionController {
             textSending = false
             writeResults[id] = WriteResult(reply: result.reply, attempted: result.attempted)
             await reply(id, result.reply)
+        case .callLater(let id, let draft, let to, let quietHours):
+            callBooking = true
+            let result = await bookCall(draft, to: to, quietHours: quietHours, allowQuietHours: callLaterAllowQuiet)
+            callBooking = false
+            callLaterAllowQuiet = false
+            writeResults[id] = WriteResult(reply: result.reply, attempted: result.attempted)
+            await reply(id, result.reply)
         case .noteReminder(let id, let memoryID, let noteText, _, let target):
             guard let confirmed = confirmedNoteReminder(memoryID: memoryID, noteText: noteText, target: target) else {
                 await reply(id, VoiceToolReply.noteReminderFailed("That place can't be used."))
@@ -1363,6 +1378,9 @@ final class VoiceSessionController {
         case .shortcut(let id, _): await reply(id, VoiceToolReply.declinedShortcut)
         case .message(let id, _, _): await reply(id, VoiceToolReply.declinedMessage)
         case .text(let id, _): await reply(id, VoiceToolReply.textDeclined)
+        case .callLater(let id, _, _, _):
+            callLaterAllowQuiet = false
+            await reply(id, VoiceToolReply.callDeclined)
         case .cloud(let id, let call, _, _, _): await reply(id, VoiceToolReply.cloudDeclined(call.name))
         case .noteReminder(let id, _, _, _, _): await reply(id, VoiceToolReply.declinedNoteReminder)
         case .createList(let id, _, _): await reply(id, VoiceToolReply.declinedList)
@@ -2323,6 +2341,8 @@ final class VoiceSessionController {
             await handleCloud(cloud, toolCallID: call.toolCallId)
         case .textMe(let body):
             await proposeText(body, toolCallID: call.toolCallId)
+        case .callMeLater(let draft):
+            await proposeCallLater(draft, toolCallID: call.toolCallId)
         case .startTranslator(let proposal):
             guard let setup = proposal.setup(ownerDefault: Self.ownerLanguage) else {
                 await reply(call.toolCallId, VoiceToolReply.failed("Both languages are the same. Ask the user which language the other person speaks."), isError: true)
@@ -2906,6 +2926,70 @@ final class VoiceSessionController {
                 if !latest.isPending { break }
             }
             return (VoiceToolReply.textResult(status), true)
+        }
+    }
+
+    // MARK: Calls from Doddy's number later (ADR-495)
+
+    /// Approval hashes of calls whose booking was unknown, so the card can say so.
+    private(set) static var unconfirmedCalls: Set<String> = []
+
+    /// Asks Doddy's server which number is the user's, whether calls from Doddy are on and what
+    /// quiet hours are before the card is shown. Nothing is booked here.
+    private func proposeCallLater(_ draft: CallLaterDraft, toolCallID: String) async {
+        guard let client = Self.messagingClient() else {
+            await reply(toolCallID, VoiceToolReply.callNoServer, isError: true)
+            return
+        }
+        // No account yet means no verified number; asking the server would create an account.
+        guard await client.hasAccount() else {
+            await reply(toolCallID, VoiceToolReply.callNotReady(.noPhone))
+            return
+        }
+        let readiness: CallReadiness
+        do {
+            async let settings = client.callSettings()
+            async let phone = client.phoneStatus()
+            readiness = CallReadiness(settings: try await settings, phone: try await phone)
+        } catch {
+            await reply(toolCallID, VoiceToolReply.callCheckFailed(error as? ServerError), isError: true)
+            return
+        }
+        guard case .ready(let to, let quietHours) = readiness else {
+            await reply(toolCallID, VoiceToolReply.callNotReady(readiness))
+            return
+        }
+        callLaterAllowQuiet = false
+        propose(.callLater(toolCallID: toolCallID, draft: draft, to: to, quietHours: quietHours), toolCallID: toolCallID)
+    }
+
+    /// After the tap: the time, reason and quiet-hours choice go to the server with the approval
+    /// hash of exactly what the card showed. The server books it; the call is placed later.
+    private func bookCall(
+        _ draft: CallLaterDraft, to: String, quietHours: QuietHours, allowQuietHours: Bool
+    ) async -> (reply: String, attempted: Bool) {
+        // The card may have waited: a time inside quiet hours needs the switch, and a time that
+        // is now under a minute away can't be booked.
+        if draft.inQuietHours(quietHours) && !allowQuietHours {
+            return (VoiceToolReply.callRefused("quiet_hours", quietHours: quietHours), false)
+        }
+        if draft.at.timeIntervalSinceNow < 60 { return (VoiceToolReply.callRefused("too_soon"), false) }
+        guard let client = Self.messagingClient() else { return (VoiceToolReply.callNoServer, false) }
+        let hash = draft.approvalHash(to: to, allowQuietHours: allowQuietHours)
+        do {
+            switch try await client.scheduleCall(draft, to: to, allowQuietHours: allowQuietHours, language: .current) {
+            case .booked:
+                Self.unconfirmedCalls.remove(hash)
+                return (VoiceToolReply.callBooked(draft, calendar: .current), true)
+            case .refused(let code):
+                return (VoiceToolReply.callRefused(code, quietHours: quietHours), false)
+            case .unknown:
+                Self.unconfirmedCalls.insert(hash)
+                return (VoiceToolReply.callUnknown, true)
+            }
+        } catch {
+            // Certainly not booked: offline before it left, or an answer that means it never ran.
+            return (VoiceToolReply.callNotBooked(error as? ServerError), false)
         }
     }
 
@@ -3585,7 +3669,7 @@ private extension VoiceSessionController.PendingAction {
     var changesSomething: Bool {
         switch self {
         case .memory, .event, .reminder, .timer, .alarm, .cancelAlarm, .cloud, .noteReminder, .createList, .changeEvent, .changeReminder,
-             .deleteEvent, .deleteReminder, .bulk, .parking, .ingredients, .leaveBy, .text: true
+             .deleteEvent, .deleteReminder, .bulk, .parking, .ingredients, .leaveBy, .text, .callLater: true
         // Each step of a plan is logged on its own (runPlan), not the plan as a whole. An undo
         // is recorded on the row it undoes (ADR-271).
         case .map, .shortcut, .message, .plan, .undo: false

@@ -198,6 +198,9 @@ public enum VoiceToolRequest: Equatable, Sendable {
     /// A text from Doddy's number to the user's own verified number (ADR-490 U2). Shown on a card
     /// with the exact text; sent only on the user's tap, bound to that text by `ApprovalHash`.
     case textMe(body: String)
+    /// A call from Doddy's number to the user's verified number at a later time (ADR-495). Shown
+    /// on a card with the time and the exact reason; booked only on the user's tap.
+    case callMeLater(CallLaterDraft)
     /// Gmail, Google Drive, Notion or Todoist through the Doddy server (see OnlineAccounts).
     case cloudTool(CloudToolCall)
     /// Translator mode (ADR-215): proposed on a card; the conversation switches on Start.
@@ -315,6 +318,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
                 return .invalid(name: name, reason: "body has a hidden character (U+\(code)); write the text without it")
             }
             return .textMe(body: body)
+        case VoiceToolName.callMeLater:
+            return parseCallMeLater(args, name: name, now: now, calendar: calendar)
         case VoiceToolName.startTranslator:
             return parseStartTranslator(args, name: name)
         case VoiceToolName.stopTranslator:
@@ -623,6 +628,8 @@ public enum VoiceToolReply {
         "moved:", "turned off:", "cleared:",
         // ADR-490 U2: a text the carrier reported as delivered. "sent:" and "queued:" are not done.
         "delivered:",
+        // ADR-495: Doddy's server booked the call for later (it said so). The call itself is later.
+        "booked:",
     ]
     /// List results: `added to the list: 1 item.`, then the list's name and the items as data
     /// (listAdded, listChanged).

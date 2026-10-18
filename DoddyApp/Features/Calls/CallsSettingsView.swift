@@ -158,6 +158,10 @@ struct CallsSettingsView: View {
             }
         }
 
+        if s.available.outbound {
+            scheduledSection(s)
+        }
+
         textsSection(s)
 
         if !model.recent.isEmpty {
@@ -168,6 +172,62 @@ struct CallsSettingsView: View {
                         value: DateText.full(call.createdDate) + outcomeNote(call))
                 }
             }
+        }
+    }
+
+    /// Calls booked for later by voice (ADR-495): when, what Doddy will say, and Cancel while waiting.
+    @ViewBuilder
+    private func scheduledSection(_ s: CallSettings) -> some View {
+        let quiet = s.quietHours ?? .standard
+        Section("Calls you booked") {
+            if let problem = model.scheduledProblem {
+                Text(problem)
+                    .foregroundStyle(Theme.secondaryText)
+            } else if model.scheduled.isEmpty {
+                Text("None. Ask Doddy, for example “Call me at six about the cake.”")
+                    .foregroundStyle(Theme.secondaryText)
+            }
+            ForEach(model.scheduled) { call in
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(DateText.full(call.atDate))
+                        .font(.body)
+                    if let reason = call.reason {
+                        Text(verbatim: "“\(reason)”")
+                            .foregroundStyle(Theme.secondaryText)
+                    }
+                    Text(Self.scheduledState(call))
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                    if call.canCancel {
+                        Button("Cancel this call", role: .destructive) { Task { await model.cancel(call) } }
+                            .frame(minHeight: 44)
+                            .accessibilityIdentifier("calls.scheduled.cancel")
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+            Text(String(format: NSLocalizedString("Doddy doesn't call in quiet hours (%@–%@ where you are) unless you allowed it on the call's card. Turning off \"Doddy may call me\" cancels the calls still waiting.", comment: ""), quiet.start, quiet.end))
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+        }
+    }
+
+    /// What happened to a booked call, from the server's state only.
+    static func scheduledState(_ call: ScheduledCall) -> String {
+        switch call.state {
+        case "scheduled": NSLocalizedString("Waiting. Doddy's server will call you then.", comment: "")
+        case "placing": NSLocalizedString("Calling you now.", comment: "")
+        case "placed": NSLocalizedString("Placed: Twilio accepted the call.", comment: "")
+        case "cancelled" where call.errorCode == "cancelled_by_user": NSLocalizedString("You cancelled it.", comment: "")
+        case "cancelled": NSLocalizedString("Cancelled: your number or your consent to calls changed.", comment: "")
+        case "skipped_quiet_hours": NSLocalizedString("Not called: it was quiet hours where you were.", comment: "")
+        case "missed": NSLocalizedString("Not called: Doddy's server wasn't running at the time.", comment: "")
+        case "limit": NSLocalizedString("Not called: Doddy had already called as many times as it may.", comment: "")
+        case "failed" where call.errorCode == "not_configured" || call.errorCode == "reason_unreadable":
+            NSLocalizedString("Not called: Doddy's phone line wasn't set up on its server.", comment: "")
+        case "failed": NSLocalizedString("Not called: the phone service turned it down.", comment: "")
+        case "unknown": NSLocalizedString("Not sure: Doddy couldn't confirm whether the call was placed. It won't try again.", comment: "")
+        default: NSLocalizedString("Doddy couldn't tell what happened to this call.", comment: "")
         }
     }
 

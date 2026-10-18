@@ -207,6 +207,8 @@ public actor DoddyServerClient {
     private var pendingUpdateKeys: [UpdateBody: String] = [:]
     /// The same for approved texts, by approval hash (ADR-490 U2).
     private var pendingTextKeys: [String: String] = [:]
+    /// The same for calls booked for later, by approval hash (ADR-495, `scheduleCall`).
+    var pendingCallKeys: [String: String] = [:]
     /// The account being created right now, if any (see `ensureAccount`).
     private var accountCreation: Task<String, any Error>?
 

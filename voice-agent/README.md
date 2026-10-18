@@ -43,6 +43,8 @@ and 36 language presets; keep them when applying (both lists are replaced wholes
 
 **Not yet applied to the live agent (ADR-493, 2026-10-18):** the new `text_me` tool (a text from Doddy's own number to the user's verified number, after a card; `not_synced`), its lines in `instructions.md` (the tool line after `draft_message` and two strict rules), and "to someone else" in `note_capability_gap`'s description. OpenAI voice gets them with the next app build. On ElevenLabs, add the tool as a client tool that waits for the result (90 s), merge the prompt lines, then run `compare`. Until then the ElevenLabs agent never calls it.
 
+**Not yet applied to the live agent (ADR-495, 2026-10-18):** the new `call_me_later` tool (a call from Doddy's own number to the user's verified number at a later time, after a card; `not_synced`) and its two lines in `instructions.md` (the tool line after `text_me` and one strict rule). The phone agent (`phone/`) gets `{{doddy_call_reason}}`, rule 6 and a first message that is `{{doddy_call_opening}}`; `setup-phone-agent.mjs` creates it with them, and an agent made before this needs them applied, or a scheduled call opens without its reason. OpenAI voice gets the app tool with the next app build. On ElevenLabs, add the tool as a client tool that waits for the result (90 s), merge the prompt lines, then run `compare`.
+
 **Not yet applied to the live agent (2026-10-16):** `start_translator` now starts immediately after the user asks, with no confirmation card or forced pre-tool speech. The app still gives the AI-translator disclosure after starting and keeps microphone access subject to iOS permission. Read the live prompt and tools before syncing; preserve remote edits and compare the fetched configuration after saving.
 
 Editing the agent in the ElevenLabs dashboard without updating these files is drift; the compare
@@ -200,7 +202,7 @@ places phone calls through the Twilio number (ADR-152, ADR-172). Same three file
 
 | File | What it is |
 |---|---|
-| `phone/instructions.md` | The phone prompt, with `{{doddy_caller}}`, `{{doddy_direction}}`, `{{doddy_memory}}`, `{{doddy_pin}}` filled by the messaging server's call-start webhook |
+| `phone/instructions.md` | The phone prompt, with `{{doddy_caller}}`, `{{doddy_direction}}`, `{{doddy_memory}}`, `{{doddy_pin}}`, `{{doddy_call_reason}}` filled by the messaging server through register-call; the first message is `{{doddy_call_opening}}` (ADR-495) |
 | `phone/tools.json` | `verify_pin`, `search_memories`, `save_note`: webhooks to `server/messaging`. Instead of a fixed url they give `x_doddy.http.base` (the `PUBLIC_BASE_URL` env name), a `path_template` and `body` parameters; headers reference the workspace secret `doddy_tool_secret` and the secret variable `secret__doddy_session` |
 | `phone/session.json` | First message, LLM, privacy (no audio recording, 30-day transcripts), placeholders, the call-start webhook path |
 

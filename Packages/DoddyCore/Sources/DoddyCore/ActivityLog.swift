@@ -192,6 +192,12 @@ public struct ActivityRequest: Equatable, Sendable {
         case .textMe:
             // The card shows the text; the log keeps none of it (review C2).
             return ActivityRequest(app: .messages, title: "Text you from Doddy's number", detail: nil, isLookup: false)
+        case .callMeLater(let draft):
+            // The time, never the reason (ADR-495): the log is kept on the iPhone longer than the call.
+            var local = calendar
+            local.timeZone = draft.timeZone
+            let time = VoiceToolReply.localText(draft.at, hasTime: true, calendar: local)
+            return ActivityRequest(app: .messages, title: "Call you later from Doddy's number", detail: time, logDetail: time, isLookup: false)
         case .cloudTool(let call):
             // Writes carry a key (ADR-322): a hash of the tool and its arguments, never the words.
             guard let request = describe(cloud: call.name), let key = CloudIdempotency.key(call) else { return describe(cloud: call.name) }

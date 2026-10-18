@@ -6,6 +6,7 @@ import { sha256 } from "../crypto.js";
 import { inTransaction } from "../db.js";
 import { cancelQueuedSms } from "../outbox.js";
 import { textsOff } from "../textReplies.js";
+import { cancelScheduledCalls } from "../scheduledCalls.js";
 import { ProviderError } from "../providers/types.js";
 
 /** Verify codes one phone number may receive, across all accounts. */
@@ -82,6 +83,7 @@ export const phoneRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
       for (const row of moved.rows) {
         await cancelQueuedSms(c, row.account_id);
         await textsOff(c, row.account_id);
+        await cancelScheduledCalls(c, row.account_id, "number_changed");
       }
       const previous = await c.query<{ e164: string }>(
         "SELECT e164 FROM phone_numbers WHERE account_id = $1 FOR UPDATE", [accountId]);
@@ -90,6 +92,8 @@ export const phoneRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
         await cancelQueuedSms(c, accountId);
         // A new number needs new consent for texts to Doddy (ADR-494).
         await textsOff(c, accountId);
+        // Calls booked for the old number were approved for it only (ADR-495).
+        await cancelScheduledCalls(c, accountId, "number_changed");
       }
       // A different number starts without SMS consent; the same number keeps its state.
       await c.query(
@@ -141,6 +145,7 @@ export const phoneRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
     await inTransaction(db, async (c) => {
       await cancelQueuedSms(c, accountId);
       await textsOff(c, accountId);
+      await cancelScheduledCalls(c, accountId, "number_changed");
       await c.query("DELETE FROM phone_numbers WHERE account_id = $1", [accountId]);
     });
     return reply.code(204).send();

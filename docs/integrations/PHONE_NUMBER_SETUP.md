@@ -246,6 +246,36 @@ Send Claude what you saw. Never send codes or keys.
 | 10 | The next day, Twilio Console → Monitor → Logs → Messaging | Yesterday's texts are gone (Twilio may keep deleted bodies in backups for up to 30 days) |
 | 11 | Render logs | `text received` and `text reply` lines with ids, states and costs only, never a text |
 
+## Unit U4: Doddy calls you later (after the U1 checks pass)
+In a conversation, ask Doddy to call you later ("call me at six about the cake"). A card shows the time, the sentence Doddy will say when you answer, and a **Call even in quiet hours** switch; nothing is booked until you tap **Book call**. Doddy's server places the call at that time, from Doddy's number, after checking everything again (ADR-495).
+
+1. **Deploy the U4 code**, as for U1 to U3. The database update (migration 011) runs by itself at start-up. Calls are placed by the worker, which runs inside the web service with `RUN_WORKER_IN_WEB=1` (step 7), so it already has the U1 keys.
+2. **Optional, Render → doddy-messaging → Environment:**
+
+   | Key | Value |
+   |---|---|
+   | `QUIET_HOURS_START` | Optional, `HH:MM`, default `21:00`: when quiet hours start, on your own clock where you are |
+   | `QUIET_HOURS_END` | Optional, `HH:MM`, default `08:00`: when they end |
+
+3. **The phone agent:** if you created it with U1 before this code, it doesn't know about a call's reason yet. Delete it in ElevenLabs and run `setup-phone-agent.mjs` again (U1 step 4), then put the new `ELEVENLABS_PHONE_AGENT_ID` on Render. Or ask Claude to update it in place: the first message becomes `{{doddy_call_opening}}`, and `{{doddy_call_reason}}` and rule 6 are added to its prompt (`voice-agent/phone/`).
+4. **Build the iPhone app from the same branch.** With OpenAI voice (the default) it brings `call_me_later` with it. **ElevenLabs voice only:** ask Claude to sync the tool and its two prompt lines (`voice-agent/README.md`).
+5. **On your iPhone, Settings → Phone calls:** **Doddy may call me** must be on (U1 step 7).
+
+### The U4 checks
+Send Claude what you saw and heard. Never send codes, the PIN or keys.
+
+| # | Check | Expected |
+|---|---|---|
+| 1 | Outside quiet hours, say "call me in five minutes about the cake" | A card: "Call you later?", the day and time, the last three digits of your number, and "Hi, this is Doddy, an AI assistant. You asked me to call you about this: …" |
+| 2 | Tap **Book call** | Doddy says it's booked, not that it called. **Settings → Phone calls → Calls you booked** shows it as waiting, with the reason. |
+| 3 | Wait and answer | At the time (within a few seconds), your phone rings from Doddy's number; Doddy's first sentence says the reason. Afterwards the list shows "Placed" and no longer shows the reason. |
+| 4 | Ask for a call at 23:00 tonight | The card says the time is in quiet hours, and **Book call** works only with **Call even in quiet hours** on. Tap **Don't book**. |
+| 5 | Book one for an hour from now, then tap **Cancel this call** | It shows "You cancelled it", and no call comes |
+| 6 | Book one, then turn off **Doddy may call me** | The list shows it cancelled; no call comes. Turn it back on. |
+| 7 | Book one for two minutes from now and don't answer | It rings once. Doddy doesn't call again. |
+| 8 | **What Doddy did** | A row "Call you later from Doddy's number" with the time, never the reason |
+| 9 | Render logs | `scheduled call` lines with ids and states only, never a reason or a number |
+
 ## When something goes wrong
 | What you see | Likely cause |
 |---|---|
@@ -260,6 +290,9 @@ Send Claude what you saw. Never send codes or keys.
 | U2: Doddy says it reached the most texts allowed for today | 20 approved texts a day per account (`contact_policy` in `docs/trust/config/doddy_rules.yaml`) |
 | U3: your text gets no note and no answer | **Accept texts from my number** is off, or the Messaging Service webhook isn't the server. Render's `text dropped` line gives the reason. |
 | U3: "Doddy couldn't answer that just now" | Render's `text reply` line has the code: `anthropic_401` (wrong key), `anthropic_429` (rate or spending limit), `refusal`, `deadline`. Your text is kept as a note. |
+| U4: no call came, and a notification says Doddy's server wasn't running | The worker wasn't running at the time (the web service was asleep or restarting). A call more than 15 minutes late is never placed. On Render's starter plan the service doesn't sleep. |
+| U4: a notification says it was quiet hours where you are | The server checks quiet hours in the time zone your iPhone last told it. Book again with **Call even in quiet hours** on, or for another time. |
+| U4: Doddy answers a booked call with only "How can I help?" | The phone agent was created before U4 (step 3) |
 | U3: the replies switch can't be turned on | Replies are texts from Doddy, so texts in **Notifications and texts** must be on (and no STOP since), and `ANTHROPIC_API_KEY` must be set |
 
 **Since U2:** a Twilio 500, 502 or 504 is never retried. The text shows as "Unclear whether it was sent" while the server looks for it in Twilio's message list; it is never sent twice (ADR-493).
@@ -270,6 +303,7 @@ Send Claude what you saw. Never send codes or keys.
 - Twilio keeps its own message logs. Deleting them is built in unit U3.
 - **U3:** texts you send Doddy's number go through Twilio to the messaging server and wait there as encrypted notes until you save or discard them. With replies on, your text (and, if you allowed it, the notes it finds) goes to Anthropic to write the answer. Doddy deletes its records at Twilio a day after each text or call by default.
 - **U2:** a text you approve goes to the messaging server and then to Twilio. The server stores it encrypted with `MEMORY_ENCRYPTION_KEY` (set in step 7) and erases it once the text has a final status. It keeps a hash of it only while an unclear outcome is being checked.
+- **U4:** a call you book sends its time, its reason and your iPhone's time zone to the messaging server. The reason is stored encrypted and erased when the call is over or won't happen; Doddy says it when the call is answered, and ElevenLabs processes the call as in U1. Twilio places the call.
 - Your memories stay on your iPhone.
 
 ## Sources (read 2026-10-17)

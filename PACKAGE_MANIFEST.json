@@ -1040,8 +1040,8 @@
     },
     {
       "path": "docs/architecture/MEMORY_AND_DATA.md",
-      "sha256": "3bc2cca33b9326227299ca5f7031a961b981b2210b798a154b35118c32ec4fa7",
-      "bytes": 4091
+      "sha256": "90ed7103e7f7b4f52508dabecc37365fa61fbe9c5224a6a7237b1115e62fa898",
+      "bytes": 4217
     },
     {
       "path": "docs/architecture/TOOLS_AND_ACTIONS.md",
@@ -1280,8 +1280,8 @@
     },
     {
       "path": "schemas/memory.schema.json",
-      "sha256": "3edf1a79481a6a503606cc72cecb15953dc8db965f3c5b75aaf78d81c2795d96",
-      "bytes": 1468
+      "sha256": "4fbd596818e7b706a518574ea19ac3a388b3df06c42c5582e2b27c33f8f0c822",
+      "bytes": 1494
     },
     {
       "path": "schemas/telemetry.schema.json",

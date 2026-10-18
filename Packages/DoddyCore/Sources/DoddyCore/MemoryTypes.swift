@@ -9,12 +9,16 @@ public enum MemorySource: String, Codable, CaseIterable, Sendable {
     /// Brought in from a Google Keep export or a text file the user picked and reviewed
     /// (ADR-231). Dated when the file says when the note was made, otherwise "date unknown".
     case importedFile = "imported_file"
+    /// A note Doddy wrote, on a phone call or while answering a text, that the user then saved
+    /// with a tap (ADR-494, owner decision 2026-10-18). Doddy's words, the user's confirmation.
+    case notedByDoddy = "noted_by_doddy"
     case sampleFixture = "sample_fixture"
 
     /// Sources a user can create through an explicit capture action.
     public var isExplicitCapture: Bool {
         switch self {
-        case .explicitText, .explicitVoice, .sharedContent: true
+        // A note Doddy wrote counts: it becomes a memory only through the user's Save tap.
+        case .explicitText, .explicitVoice, .sharedContent, .notedByDoddy: true
         case .importedLegacyUnknown, .importedFile, .sampleFixture: false
         }
     }

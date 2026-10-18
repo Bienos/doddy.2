@@ -1,7 +1,7 @@
 import { buildApp } from "./app.js";
 import { loadConfig } from "./config.js";
 import { createPool, migrateOrExit } from "./db.js";
-import { providersFrom } from "./providers/index.js";
+import { providersFrom, scheduledCallsFrom } from "./providers/index.js";
 import { callsAvailable } from "./routes/twilioVoice.js";
 import { log, runWorkerLoop } from "./workerLoop.js";
 
@@ -12,7 +12,7 @@ const providers = providersFrom(config);
 const deps = {
   db, ...providers, twilioAuthToken: config.twilio?.authToken, publicBaseUrl: config.publicBaseUrl,
   toolSecret: config.toolSecret, doddyPhoneNumber: config.doddyPhoneNumber,
-  trustProxyHops: config.trustProxyHops, verifyDailyCap: config.verifyDailyCap,
+  trustProxyHops: config.trustProxyHops, verifyDailyCap: config.verifyDailyCap, quietHours: config.quietHours,
 };
 const app = await buildApp(deps);
 const calls = callsAvailable(deps);
@@ -30,7 +30,7 @@ let stopping = false;
 let workerDone: Promise<void> | undefined;
 if (config.runWorkerInWeb) {
   log("worker started in the web process", { push: !!providers.push, sms: !!providers.sms });
-  workerDone = runWorkerLoop(db, providers, () => stopping);
+  workerDone = runWorkerLoop(db, { ...providers, scheduledCalls: scheduledCallsFrom(config, providers) }, () => stopping);
 }
 
 const shutdown = async () => {

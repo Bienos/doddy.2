@@ -321,6 +321,9 @@ describe("phone calls against real Postgres", { skip: dbSkip }, () => {
     const agent = registrar.calls.at(-1)!;
     assert.deepEqual([agent.direction, agent.from, agent.to, agent.variables.doddy_direction],
       ["outbound", DODDY_NUMBER, "+48500000007", "outbound"]);
+    // "Call me now" has no reason: the plain opening, which says Doddy is an AI.
+    assert.deepEqual([agent.variables.doddy_call_reason, agent.variables.doddy_call_opening],
+      ["none", "Hi, this is Doddy, an AI assistant. How can I help?"]);
     const s = agent.variables.secret__doddy_session!;
     assert.deepEqual((await el("/webhooks/elevenlabs/tools/verify-pin", { pin: "258025" }, s)).json(), { status: "verified" });
 
@@ -366,6 +369,7 @@ describe("phone calls against real Postgres", { skip: dbSkip }, () => {
     assert.deepEqual(st, {
       available: { inbound: true, outbound: true }, doddyNumber: "+48221234567", phoneVerified: true,
       inboundEnabled: true, pinSet: true, pinLocked: false, outboundConsent: false, memoryCopy: { enabled: true, count: 1 },
+      quietHours: { start: "21:00", end: "08:00" }, timeZone: null,
     });
     await ring("+48500000008");
     assert.equal((await call("DELETE", "/v1/account", h)).statusCode, 204);
