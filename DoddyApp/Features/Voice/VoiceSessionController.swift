@@ -486,6 +486,11 @@ final class VoiceSessionController {
         startedAt = Date()
         countedAsConnected = false
         phase = .connecting
+        // For a phone log of a start that never got going (STATUS "Known problems"): which start,
+        // what started it, and whether Doddy was in the background. No notes or speech in it.
+        let inBackground = UIApplication.shared.applicationState == .background
+        let startNote = "starting a conversation: attempt \(attempt), by wake word \(startedByWakeWord), in background \(inBackground)"
+        Self.audioLog.notice("\(startNote, privacy: .public)")
 
         // The Dynamic Island / Lock Screen buttons reach this conversation through these.
         let actions = VoiceActivityActions.shared
@@ -614,6 +619,8 @@ final class VoiceSessionController {
             do throws(VoiceTokenError) {
                 auth = .conversationToken(try await VoiceTokenClient(endpoint: endpoint).fetchToken())
             } catch {
+                let tokenNote = "voice token not received: attempt \(attempt), \(LogSafeError.kind(of: error))"
+                Self.audioLog.notice("\(tokenNote, privacy: .public)")
                 if attempt == startAttempt, phase == .connecting {
                     if error == .offline { failOffline() } else { fail(VoiceTokenServer.message(for: error)) }
                 }
@@ -628,11 +635,15 @@ final class VoiceSessionController {
         guard attempt == startAttempt, phase == .connecting else { return }
 
         Self.allowOtherAppsAudio()
+        let connectNote = "connecting to ElevenLabs: attempt \(attempt)"
+        Self.audioLog.notice("\(connectNote, privacy: .public)")
         do {
             let started = try await ElevenLabs.startConversation(auth: auth, config: config)
             guard attempt == startAttempt, isLive else {
                 // Closed (or closed and started again) while connecting: end it so nothing keeps
                 // listening and its tool calls stop (review H1).
+                let replacedNote = "a replaced start connected and was ended: attempt \(attempt)"
+                Self.audioLog.notice("\(replacedNote, privacy: .public)")
                 await started.endConversation()
                 return
             }
@@ -640,6 +651,8 @@ final class VoiceSessionController {
             watchAudioInterruptions()
             Self.audioLog.notice("conversation started. \(Self.describeAudioSession(), privacy: .public)")
         } catch {
+            let failedNote = "ElevenLabs conversation didn't start: attempt \(attempt), \(LogSafeError.kind(of: error))"
+            Self.audioLog.notice("\(failedNote, privacy: .public)")
             // A replaced start's failure isn't the new conversation's.
             guard attempt == startAttempt else { return }
             if Offline.isNoConnection(error) {

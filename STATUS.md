@@ -44,7 +44,11 @@ Merge one at a time, then rebuild and talk to Doddy before the next.
   - a "ghost" session that connects but never sends its start data and stays silent for 30 s;
   - a session that can't hear the user.
 
-  Not fixed yet. It needs a device log to confirm the cause.
+  Investigated 18 Oct (`docs/implementation/VOICE_SESSION_STARTS.md`, ElevenLabs list only, no transcripts):
+  - Two starts at once mostly predate the 11 Oct "review H1" fix.
+  - Silent 30-second sessions with zero messages still happen: six since that build, four of them within five minutes on 16 Oct at night.
+  - Leading suspect: a "Hey Doddy" start from the background that stalls before its start data and stops when iOS's roughly 30-second background allowance runs out.
+  - Branch `claude/laughing-darwin-hqxa63` adds the log lines a phone log needs. Not fixed yet: it still needs a device log to confirm the cause.
 - **Vercel:** the `doddy` project (team `doddyyyy`) built and published the site from the default branch on 2026-10-14 (www.doddy.lol); the earlier "account blocked" failures did not recur on that build. The daily deployment limit still applies, so `site/vercel.json` builds only when something under `site/` changed. GitHub Actions has run again since 2026-10-12.
 
 ## Waiting on the owner

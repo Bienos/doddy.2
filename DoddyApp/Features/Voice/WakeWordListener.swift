@@ -325,7 +325,10 @@ final class WakeWordListener {
             return
         }
         guard let store else { return }
-        Self.log.notice("wake word heard")
+        // Whether Doddy was on screen: a start from the background is the leading suspect for the
+        // silent 30-second sessions (docs/implementation/VOICE_SESSION_STARTS.md).
+        let heardNote = "wake word heard (Doddy in foreground: \(inForeground))"
+        Self.log.notice("\(heardNote, privacy: .public)")
         // The conversation needs the microphone: give it up first.
         stopEngine()
         handingOver = true
