@@ -215,6 +215,21 @@ final class VoiceSessionController {
     private(set) var selectedPlaceIndex = 0
     /// A function the agent asked for that is off or blocked. The screen offers to turn it on.
     private(set) var connectionNeeded: VoiceConnection?
+    /// An online account the agent needed that isn't connected, or a tool of it that is off (ADR-483).
+    /// The screen offers to connect it or switch it on without leaving the conversation.
+    struct AccountNeeded: Equatable {
+        enum State: Equatable {
+            case offered
+            /// The sign-in page is up, or the server is switching the tool on.
+            case working
+            /// The user closed the sign-in page; nothing was connected.
+            case canceled
+            case failed(String)
+        }
+        let offer: CloudAccessOffer
+        var state: State
+    }
+    private(set) var accountNeeded: AccountNeeded?
     private(set) var isMuted = false {
         didSet {
             syncIsland()
@@ -455,6 +470,7 @@ final class VoiceSessionController {
         noteReminderStatus = nil
         planStatus = nil
         connectionNeeded = nil
+        accountNeeded = nil
         isMuted = false
         savedThisConversation = 0
         islandFlash = nil
@@ -860,6 +876,7 @@ final class VoiceSessionController {
         contactCard = nil
         parkingCard = nil
         connectionNeeded = nil
+        accountNeeded = nil
         if isLive { phase = .ended }
         keepLog()
         offerSaveSuggestions()
@@ -2656,7 +2673,52 @@ final class VoiceSessionController {
                 await reply(toolCallID, VoiceToolReply.cloudResult(result))
             }
         } catch {
-            await reply(toolCallID, VoiceToolReply.cloudFailed(error, tool: cloud.name), isError: true)
+            // Not connected or switched off: a card here instead of a trip to Settings (ADR-483).
+            if let offer = await offerAccess(after: error, tool: cloud.name, client: client, toolCallID: toolCallID) {
+                await reply(toolCallID, CloudAccess.agentReply(offer), isError: true)
+            } else {
+                await reply(toolCallID, VoiceToolReply.cloudFailed(error, tool: cloud.name), isError: true)
+            }
+        }
+    }
+
+    /// Asks the server's catalog which step is missing (the error alone can't say: the server checks
+    /// the switch first) and puts the card for it on screen. Nil: answer the agent as before.
+    private func offerAccess(
+        after error: OnlineAccountsError, tool: String, client: any OnlineAccountsClient, toolCallID: String
+    ) async -> CloudAccessOffer? {
+        guard CloudAccessOffer.mayNeedAccess(error), let catalog = try? await client.catalog() else { return nil }
+        // Ended, or another conversation started, while the catalog was asked for (ADR-458).
+        guard isLive, isCurrent(toolCallID),
+              let offer = CloudAccessOffer.decide(after: error, tool: tool, catalog: catalog) else { return nil }
+        // A card the user is already working through stays as it is.
+        if accountNeeded?.state != .working { accountNeeded = AccountNeeded(offer: offer, state: .offered) }
+        return offer
+    }
+
+    /// The tap on the account card: the provider's own sign-in page if needed, then exactly the one
+    /// tool switched on. Only a confirmed result tells the agent to try again; the conversation
+    /// keeps running while the page is up.
+    func openAccountNeeded() async {
+        guard var needed = accountNeeded, needed.state != .working else { return }
+        guard let client = OnlineAccountsClientFactory.make() else {
+            accountNeeded?.state = .failed(OnlineAccountsError.notConfigured.userMessage)
+            return
+        }
+        needed.state = .working
+        accountNeeded = needed
+        let outcome = await CloudAccess.open(needed.offer, client: client, authenticator: SystemWebAuthenticator())
+        // Ended or replaced while the page was up: the server's state stands, but this
+        // conversation is not told (ADR-458).
+        guard accountNeeded?.offer == needed.offer else { return }
+        switch outcome {
+        case .ready:
+            accountNeeded = nil
+            if isLive { await sendToAgent(CloudAccess.agentMessage(needed.offer)) }
+        case .canceled:
+            accountNeeded?.state = .canceled
+        case .failed(let message):
+            accountNeeded?.state = .failed(message)
         }
     }
 
