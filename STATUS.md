@@ -31,6 +31,7 @@ Merge one at a time, then rebuild and talk to Doddy before the next.
 
 | Branch / PR | What it changes | Risk to voice |
 |---|---|---|
+| `claude/trusting-sagan-7lky84` | ASK-01: every tool asks first (server gate, app ask cards, agent spec); Gmail, Google Calendar, Outlook, Todoist, Notion, Drive and Monid tools behind cards (ADR-483 to 489). App code not built; live agent not synced. Runbook: `docs/integrations/LIVE_GMAIL_TEST_RUNBOOK.md` | High: every tool call now waits for an answer; needs the live agent synced too |
 | `claude/admiring-curie-bsuwv9-all` (PR #67) | Quick start, the first-use fixes, Home's first visit and the shorter intro merged on 13 Oct (#76). Still open: "Hey Doddy" with one tap, the guided first conversation, Quick start shortcuts and "Ask me about it" (#53, #56, #57, #58). | High for what's left: the wake word and the first conversation |
 | `claude/trusting-dirac-o8ajzc` | Voice screen shows Doddy with a sound wave; the transcript is one tap away; the wave follows loudness | Medium: adds audio level meters to the live session |
 | `claude/affectionate-mayer-aovol9` | Island compact view draws a pre-cut round face | Low |
@@ -40,7 +41,6 @@ Merge one at a time, then rebuild and talk to Doddy before the next.
 | PR #61 `claude/fervent-hamilton-cv19sj` | iPad sidebar and fixes, Watch "New note" and Smart Stack, Mac menu bar app, widget and window, per-platform projects | Low for voice: no voice-agent changes |
 
 ## Known problems
-- **The capability guard fails on `VoiceAuthSession.swift` and `VoiceAccessGate.swift`** (networking and `AuthenticationServices` outside their allowed files), from the commit `754e5d6` ("secure voice access"). Either the guard's allowed list or the files need to change; not touched by the call-case branch.
 - **Voice sessions sometimes start twice.** ElevenLabs logs from 2026-10-09 to 10-11 show:
   - two sessions starting in the same second;
   - a "ghost" session that connects but never sends its start data and stays silent for 30 s;

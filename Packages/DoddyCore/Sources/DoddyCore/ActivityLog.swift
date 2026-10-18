@@ -279,11 +279,28 @@ public struct ActivityRequest: Equatable, Sendable {
 
     /// Online-account calls: names only. Email subjects, file names and task text are not kept.
     static func describe(cloud name: String) -> ActivityRequest? {
-        switch name {
+        // ADR-486/487: Google Calendar is listed under Calendar, Outlook's under Outlook.
+        if let more = CloudToolName.more[name] {
+            let app: ActivityApp = switch more.account {
+            case "Outlook": .outlook
+            case "Todoist": .todoist
+            case "Notion": .notion
+            case "Google Drive": .drive
+            case "Web search": .web
+            default: .calendar
+            }
+            return ActivityRequest(app: app, title: more.title, detail: nil, isLookup: !more.write)
+        }
+        return switch name {
         case CloudToolName.checkEmail: ActivityRequest(app: .gmail, title: "Checked email", detail: nil, isLookup: true)
         case CloudToolName.draftEmail: ActivityRequest(app: .gmail, title: "Create an email draft", detail: nil, isLookup: false)
         case CloudToolName.readEmail: ActivityRequest(app: .gmail, title: "Read an email", detail: nil, isLookup: true)
         case CloudToolName.draftEmailReply: ActivityRequest(app: .gmail, title: "Create a reply draft", detail: nil, isLookup: false)
+        case CloudToolName.sendEmail: ActivityRequest(app: .gmail, title: "Send an email", detail: nil, isLookup: false)
+        case CloudToolName.replyToEmail: ActivityRequest(app: .gmail, title: "Send a reply", detail: nil, isLookup: false)
+        case CloudToolName.forwardEmail: ActivityRequest(app: .gmail, title: "Forward an email", detail: nil, isLookup: false)
+        case CloudToolName.changeEmail: ActivityRequest(app: .gmail, title: "Archive or mark an email", detail: nil, isLookup: false)
+        case CloudToolName.trashEmail: ActivityRequest(app: .gmail, title: "Move an email to Trash", detail: nil, isLookup: false)
         case CloudToolName.readNotionPage: ActivityRequest(app: .notion, title: "Read a Notion page", detail: nil, isLookup: true)
         case CloudToolName.completeTodoistTask: ActivityRequest(app: .todoist, title: "Complete a task", detail: nil, isLookup: false)
         case CloudToolName.moveTodoistTask: ActivityRequest(app: .todoist, title: "Move a task", detail: nil, isLookup: false)

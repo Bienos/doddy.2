@@ -161,15 +161,53 @@ public enum CloudToolName {
     public static let readOutlookEmail = "read_outlook_email"
     public static let draftOutlookEmail = "draft_outlook_email"
     public static let readOutlookCalendar = "read_outlook_calendar"
+    /// Gmail writes that send or change something (ADR-485). Each runs only on a tap on the card
+    /// that shows exactly what will happen (ASK-01); nothing deletes for good.
+    public static let sendEmail = "send_email"
+    public static let replyToEmail = "reply_to_email"
+    public static let forwardEmail = "forward_email"
+    public static let changeEmail = "change_email"
+    public static let trashEmail = "trash_email"
+    /// Google Calendar (ADR-486) and Outlook calendar and mail writes (ADR-486, ADR-487): name →
+    /// spoken title, account, write. Every write waits for a tap on its card (ASK-01).
+    static let more: [String: (title: String, account: String, write: Bool)] = [
+        "read_google_calendar": ("Read the Google Calendar", "Google Calendar", false),
+        "create_google_event": ("Add a Google Calendar event", "Google Calendar", true),
+        "change_google_event": ("Change a Google Calendar event", "Google Calendar", true),
+        "delete_google_event": ("Delete a Google Calendar event", "Google Calendar", true),
+        "answer_google_invite": ("Answer a Google Calendar invitation", "Google Calendar", true),
+        "create_outlook_event": ("Add an Outlook event", "Outlook", true),
+        "change_outlook_event": ("Change an Outlook event", "Outlook", true),
+        "delete_outlook_event": ("Delete an Outlook event", "Outlook", true),
+        "accept_outlook_invite": ("Accept an Outlook invitation", "Outlook", true),
+        "decline_outlook_invite": ("Decline an Outlook invitation", "Outlook", true),
+        "send_outlook_email": ("Send an Outlook email", "Outlook", true),
+        "reply_outlook_email": ("Send an Outlook reply", "Outlook", true),
+        "forward_outlook_email": ("Forward an Outlook email", "Outlook", true),
+        "move_outlook_email": ("Archive or bin an Outlook email", "Outlook", true),
+        "mark_outlook_email": ("Mark an Outlook email", "Outlook", true),
+        // ADR-488.
+        "rename_todoist_task": ("Rename a task", "Todoist", true),
+        "create_notion_page": ("Create a Notion page", "Notion", true),
+        "append_notion_page": ("Add to a Notion page", "Notion", true),
+        "trash_notion_page": ("Move a Notion page to the trash", "Notion", true),
+        "create_drive_doc": ("Create a Google Doc", "Google Drive", true),
+        // ADR-489: fixed Monid endpoints, no account (like web search); Doddy pays, the card says how much.
+        "news_search": ("Search the news", "Web search", false),
+        "find_places": ("Find places", "Web search", false),
+    ]
     /// Web search through Monid on Doddy's server. No account; only a switch in Settings.
     public static let webSearch = "web_search"
 
-    public static let all: Set<String> = [checkEmail, draftEmail, readEmail, draftEmailReply, findDriveFile, searchNotion,
+    public static let all: Set<String> = Set<String>([checkEmail, draftEmail, readEmail, draftEmailReply, findDriveFile, searchNotion,
                                           readNotionPage, listTodoistTasks, addTodoistTask, completeTodoistTask,
                                           moveTodoistTask, webSearch, checkOutlookEmail, readOutlookEmail,
-                                          draftOutlookEmail, readOutlookCalendar]
+                                          draftOutlookEmail, readOutlookCalendar, sendEmail, replyToEmail, forwardEmail,
+                                          changeEmail, trashEmail]).union(more.keys)
     /// These change something in the user's account and wait for a tap on the card.
-    public static let writes: Set<String> = [draftEmail, draftEmailReply, draftOutlookEmail, addTodoistTask, completeTodoistTask, moveTodoistTask]
+    public static let writes: Set<String> = Set<String>([draftEmail, draftEmailReply, draftOutlookEmail, addTodoistTask, completeTodoistTask, moveTodoistTask,
+                                             sendEmail, replyToEmail, forwardEmail, changeEmail, trashEmail])
+        .union(more.filter { $0.value.write }.keys)
 
     public static func isWrite(_ name: String) -> Bool { writes.contains(name) }
 
@@ -192,23 +230,28 @@ public enum CloudToolName {
         case draftOutlookEmail: "Draft an Outlook email"
         case readOutlookCalendar: "Read the Outlook calendar"
         case webSearch: "Search the web"
-        default: name
+        case sendEmail: "Send an email"
+        case replyToEmail: "Send a reply"
+        case forwardEmail: "Forward an email"
+        case changeEmail: "Archive or mark an email"
+        case trashEmail: "Move an email to Trash"
+        default: more[name]?.title ?? name
         }
     }
 
     public static func account(_ name: String) -> String {
         switch name {
-        case checkEmail, draftEmail, readEmail, draftEmailReply: "Gmail"
+        case checkEmail, draftEmail, readEmail, draftEmailReply, sendEmail, replyToEmail, forwardEmail, changeEmail, trashEmail: "Gmail"
         case findDriveFile: "Google Drive"
         case searchNotion, readNotionPage: "Notion"
         case checkOutlookEmail, readOutlookEmail, draftOutlookEmail, readOutlookCalendar: "Outlook"
         case webSearch: "Web search"
-        default: "Todoist"
+        default: more[name]?.account ?? "Todoist"
         }
     }
 
     /// Tools that work without connecting an account.
-    public static func needsAccount(_ name: String) -> Bool { name != webSearch }
+    public static func needsAccount(_ name: String) -> Bool { name != webSearch && more[name]?.account != "Web search" }
 }
 
 /// A tool call from the voice agent. Arguments are passed on exactly as received.

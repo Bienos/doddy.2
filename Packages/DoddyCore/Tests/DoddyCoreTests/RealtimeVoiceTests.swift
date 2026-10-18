@@ -36,18 +36,20 @@ final class RealtimeVoiceTests: XCTestCase {
             return true
         })
         XCTAssertEqual(RealtimeToolCatalog.unhandledPhoneTools(tools, handled: routable), [])
-        // The online-account tools exist in the spec, run on the phone, and only the writes ask for a tap.
+        // The online-account tools exist in the spec, run on the phone, and only the writes ask for a
+        // tap; the reads ask too, for a spoken yes or a tap (ASK-01).
         let cloud = tools.filter { CloudToolName.all.contains($0.name) }
         XCTAssertEqual(Set(cloud.map(\.name)), CloudToolName.all)
         XCTAssertTrue(cloud.allSatisfy { $0.runsOn == .phone })
         XCTAssertEqual(Set(cloud.filter(\.confirmOnScreen).map(\.name)), CloudToolName.writes)
+        XCTAssertEqual(Set(cloud.filter { $0.ask == .yesOrTap }.map(\.name)), CloudToolName.all.subtracting(CloudToolName.writes))
         let save = try XCTUnwrap(tools.first { $0.name == VoiceToolName.saveMemory })
         XCTAssertEqual(save.runsOn, .phone)
         XCTAssertTrue(save.confirmOnScreen)
         XCTAssertEqual(save.requiredParameters, ["text"])
-        let weather = try XCTUnwrap(tools.first { $0.name == "get_weather" })
-        XCTAssertEqual(weather.runsOn, .web)
-        XCTAssertEqual(weather.parameterNames, ["latitude", "longitude"])
+        // ASK-01: no web tools (ElevenLabs ran them without the app, so nothing could ask first).
+        XCTAssertNil(tools.first { $0.name == "get_weather" })
+        XCTAssertTrue(tools.allSatisfy { $0.runsOn == .phone && $0.ask != nil })
         // The memory tools this module parses are in the catalog under the same names.
         let unhandled = RealtimeToolCatalog.unhandledPhoneTools(tools, handled: [VoiceToolName.searchMemories, VoiceToolName.saveMemory])
         XCTAssertFalse(unhandled.contains(VoiceToolName.searchMemories))

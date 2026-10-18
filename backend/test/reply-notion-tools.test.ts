@@ -176,7 +176,7 @@ test("the approval is bound to the arguments, the user and the email the card sh
     const result = await execute(call);
     if (call.slug !== "GMAIL_FETCH_EMAILS") return result;
     const raw = structuredClone(result.raw) as { data: { messages: Record<string, unknown>[] } };
-    for (const m of raw.data.messages) if (m.messageId === "m2") m.sender = "Mallory <mallory@evil.example>";
+    for (const m of raw.data.messages) if (m.messageId === "18f0a2") m.sender = "Mallory <mallory@evil.example>";
     return { ...result, raw };
   };
   const swapped = await run(rig, "draft_email_reply", REPLY, { approvalId });
@@ -198,7 +198,7 @@ test("a draft answer without a draft id is 'outcome_unknown', never done, and is
   assert.equal(slugs(rig).filter((s) => s === "GMAIL_CREATE_EMAIL_DRAFT").length, 1);
 });
 
-const emailTarget = { kind: "email" as const, messageId: "m2", threadId: "t2", to: "anna@demo.example", toName: "Anna Demo", subject: "Lunch on Friday?" };
+const emailTarget = { kind: "email" as const, messageId: "m2", threadId: "t2", to: "anna@demo.example", toName: "Anna Demo", subject: "Lunch on Friday?", from: "Anna Demo <anna@demo.example>" };
 const ctx = { timeZone: "Europe/Warsaw" };
 const malformed = (e: unknown) => e instanceof ProviderError && e.code === "malformed_provider_result";
 
@@ -220,7 +220,7 @@ test("the reply lookup takes the newest email and parses its sender strictly", (
   const emails = (messages: unknown[]) => ({ successful: true, error: null, data: { messages, nextPageToken: "", resultSizeEstimate: messages.length } });
   const msg = (extra: Record<string, unknown>) => ({ messageId: "m1", threadId: "t1", sender: "a@x.example", subject: "S", messageTimestamp: "2026-10-09T09:30:00Z", ...extra });
   assert.deepEqual(read(emails([msg({}), msg({ messageId: "m2", threadId: "t2", sender: '"Doe, Jo" <jo@x.example>', messageTimestamp: "2026-10-10T09:30:00Z" })]), REPLY), {
-    kind: "email", messageId: "m2", threadId: "t2", to: "jo@x.example", toName: "Doe, Jo", subject: "S",
+    kind: "email", messageId: "m2", threadId: "t2", to: "jo@x.example", toName: "Doe, Jo", subject: "S", from: '"Doe, Jo" <jo@x.example>',
   });
   assert.equal(read(emails([]), REPLY), null);
   assert.deepEqual(read(emails([msg({ sender: "Just A Name" })]), REPLY), {
