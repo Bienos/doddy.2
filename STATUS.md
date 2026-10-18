@@ -31,6 +31,7 @@ Merge one at a time, then rebuild and talk to Doddy before the next.
 
 | Branch / PR | What it changes | Risk to voice |
 |---|---|---|
+| `claude/trusting-sagan-7lky84` | ASK-01: every tool asks first (server gate, app ask cards, agent spec); Gmail, Google Calendar, Outlook, Todoist, Notion, Drive and Monid tools behind cards (ADR-483 to 489). App code not built; live agent not synced. Runbook: `docs/integrations/LIVE_GMAIL_TEST_RUNBOOK.md` | High: every tool call now waits for an answer; needs the live agent synced too |
 | `claude/admiring-curie-bsuwv9-all` (PR #67) | Quick start, the first-use fixes, Home's first visit and the shorter intro merged on 13 Oct (#76). Still open: "Hey Doddy" with one tap, the guided first conversation, Quick start shortcuts and "Ask me about it" (#53, #56, #57, #58). | High for what's left: the wake word and the first conversation |
 | `claude/trusting-dirac-o8ajzc` | Voice screen shows Doddy with a sound wave; the transcript is one tap away; the wave follows loudness | Medium: adds audio level meters to the live session |
 | `claude/affectionate-mayer-aovol9` | Island compact view draws a pre-cut round face | Low |
