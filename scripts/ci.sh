@@ -27,6 +27,7 @@ run_step "Imported pack integrity" python3 -I scripts/verify_imported_pack.py
 run_step "Forbidden-capability guard" scripts/check_forbidden_capabilities.sh
 run_step "Voice agent spec" python3 -I scripts/voice_agent_spec.py check
 run_step "Phone agent spec" python3 -I scripts/voice_agent_spec.py check --agent phone
+run_step "Task-call agent spec" python3 -I scripts/voice_agent_spec.py check --agent task-call
 run_step "Blog pages up to date" python3 -I tools/build_blog.py --check
 run_step "Site pages in every language up to date" python3 -I tools/build_site_i18n.py --check
 run_step "String catalogs up to date" python3 -I tools/build_strings_catalog.py --check

@@ -55,6 +55,9 @@
     "auth": {
       "enable_auth": true
     },
-    "post_call_webhook": "/webhooks/elevenlabs/post-call"
+    "post_call_webhook": "/webhooks/elevenlabs/post-call",
+    "not_in_prompt": [
+      "doddy_attempt"
+    ]
   }
 }

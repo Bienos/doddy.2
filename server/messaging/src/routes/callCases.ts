@@ -37,8 +37,9 @@ export const callCaseRoutes = (deps: Deps, ctx: TaskCallContext | undefined): Fa
   // What the server can do now; the app shows "needs setup" or "off" instead of a form that fails.
   app.get("/v1/call-cases/availability", { preHandler: auth }, async (req) => {
     const { rows } = await deps.db.query("SELECT 1 FROM phone_numbers WHERE account_id = $1", [principal(req).accountId]);
+    const agentProblems = ctx ? await ctx.drift.problems() : [];
     return {
-      available: !!ctx && !ctx.settings.killSwitch,
+      available: !!ctx && !ctx.settings.killSwitch && agentProblems.length === 0,
       configured: !!ctx,
       killSwitch: ctx?.settings.killSwitch ?? false,
       phoneVerified: rows.length > 0,
@@ -46,6 +47,8 @@ export const callCaseRoutes = (deps: Deps, ctx: TaskCallContext | undefined): Fa
       recordsAudio: false,
       maxDurationSecs: ctx?.settings.limits.maxDurationSecs ?? 300,
       hours: { zone: "Europe/Warsaw", from: "08:00", to: "20:00" },
+      // Names of agent settings that differ from the spec (no values); calls are refused while any are listed.
+      agentProblems,
     };
   });
 
