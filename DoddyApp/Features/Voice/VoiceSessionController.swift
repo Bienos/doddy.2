@@ -400,6 +400,13 @@ final class VoiceSessionController {
         byWakeWord: Bool = true
     ) async {
         guard !isLive else { return }
+        // Another controller's conversation is starting or live: don't open a second microphone.
+        guard Self.gate.request(self, isBusy: { $0.isBusy }) == .go else {
+            Self.audioLog.notice("a second conversation was not started: another one is starting or live")
+            return
+        }
+        startsInProgress += 1
+        defer { startsInProgress -= 1 }
         // The previous conversation's lines and unanswered cards are kept before they're cleared,
         // even when it ended in a failure nothing else recorded (ADR-360).
         keepLog()
@@ -698,6 +705,16 @@ final class VoiceSessionController {
     /// token server or the provider) never opens a second microphone (review H1). `AttemptRef`
     /// reads it, so it is fileprivate.
     fileprivate var startAttempt = 0
+    /// One conversation at a time across the app (ADR-496): the voice screen and "Hey Doddy" each
+    /// make their own controller, so `guard !isLive` alone can't stop two at once.
+    private static var gate = VoiceConversationGate<VoiceSessionController>()
+    /// Starts still running (waiting for the microphone, the token or the provider). A counter, not
+    /// a flag, so "Talk again" tapped twice can't clear it while the second start still runs.
+    private var startsInProgress = 0
+    private var isBusy: Bool { startsInProgress > 0 || isLive }
+    /// The conversation starting or live anywhere in the app, if any: the voice screen shows it
+    /// instead of starting a second, and "Hey Doddy" doesn't start one.
+    static var runningConversation: VoiceSessionController? { gate.running { $0.isBusy } }
 
     /// Same start as ElevenLabs from here on: same notes, conversations, lists and profile
     /// (`variables`), same tools and cards. Needs the token server: the OpenAI key stays there.

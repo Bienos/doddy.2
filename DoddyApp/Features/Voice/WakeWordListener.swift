@@ -144,6 +144,12 @@ final class WakeWordListener {
         if !hasConversationToShow { wakeConversation = nil }
     }
 
+    /// The voice screen picked up this conversation as the one already running (ADR-496), so it
+    /// is no longer waiting to be shown; a later screen must not get it again once it has ended.
+    func conversationShown(_ conversation: VoiceSessionController) {
+        if wakeConversation === conversation { wakeConversation = nil }
+    }
+
     /// Called by `VoiceSessionController` when its conversation is over and it would end the
     /// island. Returns true when "Hey Doddy" takes the island back (it shows "paused" until the
     /// conversation's audio is gone, then listening, or ends it if iOS refuses the microphone);
@@ -319,6 +325,14 @@ final class WakeWordListener {
 
     private func heard() {
         guard running, state == .listening else { return }
+        // One conversation at a time (ADR-496): one is already starting or live (the voice screen
+        // opened a moment ago), so the wake word starts nothing and doesn't count towards the
+        // hourly limit; refresh pauses the listener for that conversation.
+        if VoiceSessionController.runningConversation != nil {
+            Self.log.notice("wake word ignored: a conversation is already starting or live")
+            refresh()
+            return
+        }
         guard gate.accept(at: .now) else {
             // Too soon after starting, or too many this hour (refresh rests the listener).
             refresh()
