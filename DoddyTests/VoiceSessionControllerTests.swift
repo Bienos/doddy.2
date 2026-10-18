@@ -90,7 +90,9 @@ final class VoiceSessionControllerTests: XCTestCase {
     }
 
     @MainActor
-    func testTranslatorStartsImmediatelyWithoutShowingAConfirmationCard() async {
+    func testTranslatorAsksFirstThenStartsOnATap() async {
+        // ASK-01 (ADR-483): start_translator is a yesFirst ask, so a card comes first and
+        // nothing starts until the user says yes. This replaces f40861c's "starts immediately".
         let t = Harness()
         defer { t.restore() }
         t.controller.beginForTesting(link: t.link)
@@ -98,7 +100,12 @@ final class VoiceSessionControllerTests: XCTestCase {
         await t.controller.receiveToolCallForTesting(
             name: VoiceToolName.startTranslator, id: "translator-1", parameters: #"{"their_language":"es"}"#).value
 
-        XCTAssertNil(t.controller.pendingAction)
+        guard case .some(.ask) = t.controller.pendingAction else { return XCTFail("start_translator must ask first (ASK-01)") }
+        XCTAssertNil(t.controller.translator)
+        XCTAssertTrue(t.link.results.isEmpty)
+
+        await t.controller.confirmPendingAction()
+
         XCTAssertEqual(t.controller.translator?.setup.other?.code, "es")
         XCTAssertEqual(t.link.results.map(\.id), ["translator-1"])
         XCTAssertTrue(t.link.results.first?.text.hasPrefix("started:") == true)
