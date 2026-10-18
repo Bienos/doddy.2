@@ -49,6 +49,23 @@ final class CallsClientTests: XCTestCase {
         XCTAssertTrue(body.contains(keys.id.uuidString.lowercased()))
     }
 
+    /// Once after the update, a copy from before private notes were left out is replaced.
+    func testCopyIsResentOnceForThePrivateNotesCleanup() {
+        // Due until the server confirmed an upload made after the fix.
+        XCTAssertTrue(MemoryCopyResend.isDue(copyOn: true, notesLoaded: true, lastUploadFailed: false, cleanupConfirmed: false))
+        XCTAssertFalse(MemoryCopyResend.isDue(copyOn: true, notesLoaded: true, lastUploadFailed: false, cleanupConfirmed: true))
+        // A failed upload is still sent again after the cleanup.
+        XCTAssertTrue(MemoryCopyResend.isDue(copyOn: true, notesLoaded: true, lastUploadFailed: true, cleanupConfirmed: true))
+        // Never with the copy off (there is no copy on the server), and never before the notes were
+        // read: an empty or stale list would wipe or roll back the server copy (DOD-06).
+        for failed in [false, true] {
+            for confirmed in [false, true] {
+                XCTAssertFalse(MemoryCopyResend.isDue(copyOn: false, notesLoaded: true, lastUploadFailed: failed, cleanupConfirmed: confirmed))
+                XCTAssertFalse(MemoryCopyResend.isDue(copyOn: true, notesLoaded: false, lastUploadFailed: failed, cleanupConfirmed: confirmed))
+            }
+        }
+    }
+
     func testSettingsDecodeAndWeakPINMaps() throws {
         let json = #"{"available":{"inbound":true,"outbound":false},"doddyNumber":"+48221234567","phoneVerified":true,"inboundEnabled":false,"pinSet":true,"pinLocked":false,"outboundConsent":false,"memoryCopy":{"enabled":true,"count":3}}"#
         let s = try JSONDecoder().decode(CallSettings.self, from: Data(json.utf8))

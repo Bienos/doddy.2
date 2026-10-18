@@ -109,6 +109,25 @@ public struct MemoryCopyItem: Equatable, Sendable, Encodable {
     }
 }
 
+/// When the app sends the server copy again without a note having changed.
+///
+/// Before 18 October 2026 the first upload after switching "Memory on calls" on sent every note,
+/// private ones included (ADR-310). Such a copy stayed until the next note change. So once after
+/// the update, the copy is replaced with a filtered one. That counts as done only when the server
+/// confirmed an upload made after the fix; a failed or cut-off upload is tried again (DOD-08).
+public enum MemoryCopyResend {
+    /// Set once the server confirmed an upload made after the fix. A new key, so it starts unset.
+    public static let privateNotesCleanupKey = "memoryCopy.privateNotesCleanupConfirmed"
+
+    /// Due after a failed upload, or once for the private-notes cleanup. Never while the copy is
+    /// off, and never before the notes were read successfully: an empty or stale list would wipe
+    /// or roll back the server copy (DOD-06).
+    public static func isDue(copyOn: Bool, notesLoaded: Bool, lastUploadFailed: Bool, cleanupConfirmed: Bool) -> Bool {
+        guard copyOn, notesLoaded else { return false }
+        return lastUploadFailed || !cleanupConfirmed
+    }
+}
+
 
 extension DoddyServerClient {
     public func callSettings() async throws -> CallSettings {

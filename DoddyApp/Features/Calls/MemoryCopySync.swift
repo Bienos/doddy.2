@@ -40,6 +40,8 @@ final class MemoryCopySync {
             let items = MemoryCopyItem.from(records, excluding: PrivateNotesStore.current())
             do {
                 let count = try await client.replaceMemoryCopy(items)
+                // The server holds a filtered copy now, even if a newer change cancelled this task.
+                Self.confirmCleanup()
                 guard !Task.isCancelled else { return }
                 needsRetry = false
                 status = .copied(count: count, at: Date())
@@ -56,10 +58,19 @@ final class MemoryCopySync {
         }
     }
 
-    /// When Doddy comes to the front: sends the current list again if the last upload didn't go through.
-    func retryIfNeeded(_ records: [MemoryRecord]) {
-        guard needsRetry else { return }
+    /// At launch and when Doddy comes to the front: sends the current list again if the last
+    /// upload didn't go through, or once to replace a copy from before private notes were left
+    /// out (`MemoryCopyResend`). `notesLoaded` must be false when reading the notes failed.
+    func retryIfNeeded(_ records: [MemoryRecord], notesLoaded: Bool) {
+        let cleanupConfirmed = UserDefaults.standard.bool(forKey: MemoryCopyResend.privateNotesCleanupKey)
+        guard MemoryCopyResend.isDue(copyOn: isOn, notesLoaded: notesLoaded,
+                                     lastUploadFailed: needsRetry, cleanupConfirmed: cleanupConfirmed) else { return }
         schedule(records, delay: .zero)
+    }
+
+    /// Only after the server confirmed an upload; every upload leaves private notes out.
+    private static func confirmCleanup() {
+        UserDefaults.standard.set(true, forKey: MemoryCopyResend.privateNotesCleanupKey)
     }
 
     /// Uploads now and waits for the server's answer, for callers that must say what happened
@@ -71,6 +82,7 @@ final class MemoryCopySync {
         needsRetry = true
         do {
             let count = try await client.replaceMemoryCopy(MemoryCopyItem.from(records, excluding: PrivateNotesStore.current()))
+            Self.confirmCleanup()
             needsRetry = false
             status = .copied(count: count, at: Date())
         } catch ServerError.notEnabled {
