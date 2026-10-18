@@ -19,6 +19,8 @@ export type ToolsMockScenario =
   | "expired"
   | "broad_scope"
   | "missing_scope"
+  /** Gmail granted only what Doddy asked for before ADR-485: read and compose (no send, no modify). */
+  | "read_compose_only"
   /** A write goes through, then its answer is lost (a timeout): the case ADR-322 settles. */
   | "lost_answer";
 
@@ -88,7 +90,9 @@ export class MockToolsProvider implements ToolsProvider {
           ? [...toolkit.requestedScopes, microsoft ? "Mail.Send" : "https://mail.google.com/"]
           : scenario === "missing_scope"
             ? [microsoft ? "User.Read" : "https://www.googleapis.com/auth/userinfo.email"]
-            : [...toolkit.requestedScopes];
+            : scenario === "read_compose_only" && input.toolkit === "gmail"
+              ? ["https://www.googleapis.com/auth/gmail.readonly", "https://www.googleapis.com/auth/gmail.compose"]
+              : [...toolkit.requestedScopes];
     return { connectionId: pending.id };
   }
 
@@ -148,7 +152,7 @@ function envelope(slug: string, args: Record<string, unknown>, empty: boolean, m
       if (/nomatch/i.test(query)) return ok({ messages: [], nextPageToken: "", resultSizeEstimate: 0 });
       if (/newsletter/i.test(query) && !empty) {
         return ok({
-          messages: [{ messageId: "m3", threadId: "t3", sender: "Demo Newsletter", subject: "Demo: weekly digest", messageTimestamp: "2026-10-10T06:00:00Z", preview: { body: "This week in demo news." }, ...text("Demo: this week in demo news.") }],
+          messages: [{ messageId: "18f0a3", threadId: "t3", sender: "Demo Newsletter", subject: "Demo: weekly digest", messageTimestamp: "2026-10-10T06:00:00Z", preview: { body: "This week in demo news." }, ...text("Demo: this week in demo news.") }],
           nextPageToken: "",
           resultSizeEstimate: 1,
         });
@@ -158,8 +162,8 @@ function envelope(slug: string, args: Record<string, unknown>, empty: boolean, m
         messages: empty
           ? []
           : [
-              { messageId: "m1", threadId: "t1", sender: "Demo Bank <noreply@demo.example>", subject: "Your statement is ready", messageTimestamp: "2026-10-08T07:00:00Z", preview: { body: "Your September statement is now available." }, ...text("Demo: your September statement is now available in online banking.") },
-              { messageId: "m2", threadId: "t2", sender: "Anna Demo <anna@demo.example>", subject: "Lunch on Friday?", messageTimestamp: "2026-10-09T09:30:00Z", preview: { body: "Are you free around 1pm? There's a new place near the office." }, ...text("Demo: Are you free around 1pm on Friday?\r\nThere's a new place near the office: https://demo.example/menu\r\n\r\nAnna") },
+              { messageId: "18f0a1", threadId: "t1", sender: "Demo Bank <noreply@demo.example>", subject: "Your statement is ready", messageTimestamp: "2026-10-08T07:00:00Z", preview: { body: "Your September statement is now available." }, ...text("Demo: your September statement is now available in online banking.") },
+              { messageId: "18f0a2", threadId: "t2", sender: "Anna Demo <anna@demo.example>", subject: "Lunch on Friday?", messageTimestamp: "2026-10-09T09:30:00Z", preview: { body: "Are you free around 1pm? There's a new place near the office." }, ...text("Demo: Are you free around 1pm on Friday?\r\nThere's a new place near the office: https://demo.example/menu\r\n\r\nAnna") },
             ],
         nextPageToken: "",
         resultSizeEstimate: empty ? 0 : 2,
@@ -168,6 +172,21 @@ function envelope(slug: string, args: Record<string, unknown>, empty: boolean, m
     case "GMAIL_CREATE_EMAIL_DRAFT":
       // A reply draft lands in the thread it names, as Composio documents for a valid thread_id.
       return ok({ id: "draft_demo_1", message: { id: "msg_demo_1", threadId: typeof args.thread_id === "string" ? args.thread_id : "t_demo" } });
+    // Gmail writes (ADR-485): Gmail's message resource, as Composio's output schemas give it.
+    case "GMAIL_SEND_EMAIL":
+      return ok({ id: "18f0b1", threadId: "18f0b1", labelIds: ["SENT"] });
+    case "GMAIL_REPLY_TO_THREAD":
+      return ok({ id: "18f0b2", threadId: typeof args.thread_id === "string" ? args.thread_id : "t_demo", labelIds: ["SENT"] });
+    case "GMAIL_FORWARD_MESSAGE":
+      return ok({ id: "18f0b3", threadId: "18f0b3", labelIds: ["SENT"] });
+    case "GMAIL_ADD_LABEL_TO_EMAIL": {
+      const add = Array.isArray(args.add_label_ids) ? (args.add_label_ids as string[]) : [];
+      const remove = Array.isArray(args.remove_label_ids) ? (args.remove_label_ids as string[]) : [];
+      const labels = [...new Set([...["INBOX", "UNREAD"].filter((l) => !remove.includes(l)), ...add])];
+      return ok({ id: String(args.message_id), threadId: "t2", labelIds: labels });
+    }
+    case "GMAIL_MOVE_TO_TRASH":
+      return ok({ id: String(args.message_id), threadId: "t2", labelIds: ["TRASH"] });
     case "GOOGLEDRIVE_FIND_FILE":
       return ok({
         files: empty

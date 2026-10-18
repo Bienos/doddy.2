@@ -59,6 +59,8 @@ export interface ToolsServiceDeps {
   completionMode: "verifier" | "callback" | "mock";
   now?: () => number;
   sleep?: (ms: number) => Promise<void>;
+  /** Operational log (no tokens, no email content). Default: nothing. */
+  log?: (line: Record<string, unknown>) => void;
 }
 
 /**
@@ -303,6 +305,17 @@ export class CloudToolsService {
       if (connection.status !== "active") return fail(`connection_${connection.status}`, `${title} didn't finish connecting.`);
 
       const verdict = evaluateToolkitGrant(TOOLKITS[id], connection.grantedScopes);
+      // Which permissions the account granted, by name only (never a token), so a "too broad"
+      // grant can be fixed in the auth config. Scope names are public OAuth identifiers.
+      const allowed = TOOLKITS[id].allowedGrants;
+      this.deps.log?.({
+        level: "info",
+        event: "grant_checked",
+        toolkit: id,
+        verdict,
+        scopes: connection.grantedScopes ?? null,
+        notAllowed: allowed && connection.grantedScopes ? connection.grantedScopes.filter((g) => !allowed.has(g)) : null,
+      });
       const { status, reason } = statusForVerdict(verdict);
       this.store.upsertConnection({
         user_id: userId,

@@ -35,7 +35,7 @@ export async function start(limits: Parameters<typeof testLimits>[0] = {}, o: { 
   const logs: string[] = [];
   const common = { store, limits: testLimits(limits), publicBaseUrl: "https://api.doddy.test", appReturnUrl: "doddy-dev://connected-apps/return", now: clock.now, sleep: async () => {} };
   const webSearch = o.webSearch === undefined ? new MockWebSearchProvider() : o.webSearch;
-  const tools = new CloudToolsService({ ...common, provider, webSearch, completionMode: "mock" });
+  const tools = new CloudToolsService({ ...common, provider, webSearch, completionMode: "mock", log: (line) => logs.push(JSON.stringify(line)) });
   const service = new ConnectedAppsService({ ...common, provider: new MockCalendarProvider(), registry: defaultRegistry(), completionMode: "mock" });
   const handler = createHandler({
     service,

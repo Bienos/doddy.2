@@ -22,6 +22,36 @@ a status line, and under a connected account one switch per tool. Everything sta
 | `add_todoist_task` | Todoist | **write** | Adds one task after a tap on a card | Anything else |
 | `web_search` | — (Monid, no account) | read | Up to 5 web results: title, site, 300-char snippet | Open pages, pick other endpoints |
 
+## 2026-10-18: always ask first (ASK-01, ADR-483) and Gmail writes (ADR-485)
+
+**Every tool asks first, reads included.** `POST /v1/tools/prepare` now works for every tool and web search: it returns
+the card (`preview`) and a single-use approval bound to user, tool, account and the exact arguments (two minutes).
+For a read nothing is read to make the card. `POST /v1/tools/run` refuses any tool without that approval: 403
+`capability_disabled`, receipt `ask_first_required` (reads) or `confirmation_required` (writes), before any provider
+call. Older app builds that run reads directly are refused. Details and tests: `docs/trust/ASK_FIRST.md`.
+
+**New Gmail tools** (mock-tested only; never run against a real account), each a write behind a tap on its card:
+
+| Tool | Composio slug | Card shows | "Done" only when |
+|---|---|---|---|
+| `send_email` | `GMAIL_SEND_EMAIL` | To, subject, full text; "can't be taken back" | Gmail returns the sent message's id |
+| `reply_to_email` | `GMAIL_REPLY_TO_THREAD` | To (Gmail's sender of the newest match), "Re: subject", full text | Gmail returns the message id |
+| `forward_email` | `GMAIL_FORWARD_MESSAGE` | To, the email's sender and subject from Gmail, the note | Gmail returns the message id |
+| `change_email` | `GMAIL_ADD_LABEL_TO_EMAIL` | The email; archive, mark read/unread, star/unstar, back to inbox | Gmail's `labelIds` show the change |
+| `trash_email` | `GMAIL_MOVE_TO_TRASH` | The email; "back from Trash for 30 days" | Gmail's `labelIds` include `TRASH` |
+
+No custom labels yet (they need `GMAIL_LIST_LABELS` for ids), no cc/bcc, attachments or HTML, no permanent or bulk
+delete. Every send passes `include_signature: false`, so exactly the card's text goes out. An answer that doesn't show
+the change is reported as "may or may not have gone through" (DOD-08), never as done.
+
+**Scopes.** Doddy now asks Google for `gmail.readonly`, `gmail.compose`, `gmail.send` and `gmail.modify` (plus the
+identity scopes) and accepts exactly those. `https://mail.google.com/` (full access, including permanent delete) is
+still refused as too broad. A connection made with only read + compose keeps working for drafts and sending (compose
+allows sending) but can't switch on archive/Trash. On every completed connect the server logs one line
+`{"event":"grant_checked","toolkit","verdict","scopes","notAllowed"}` with scope **names** only, so the live grant can be
+compared with what Doddy accepts. The Composio auth config (`ac_XUGmWDS79r-R` on Render) must be set to these four
+Gmail scopes; whether Composio's managed Google app grants exactly those is not verified.
+
 ## Web search (Monid), added 2026-10-10 (ADR-173)
 
 Web search is the one section with **no account**: Settings → Online accounts shows "Web search · Ready, no sign-in"

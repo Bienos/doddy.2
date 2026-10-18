@@ -48,7 +48,9 @@ test("Outlook is a toolkit with four tools, each named once, with no send slug a
     ["draft_outlook_email", "OUTLOOK_CREATE_DRAFT", "write"],
     ["read_outlook_calendar", "OUTLOOK_GET_CALENDAR_VIEW", "read"],
   ]);
-  assert.ok(CLOUD_TOOLS.every((t) => !/SEND|REPLY|FORWARD|DELETE|MOVE|UPDATE/.test(t.composioSlug) || t.toolkit === "todoist"));
+  // Sending, replying, forwarding and Trash exist for Gmail only since ADR-485, each behind its tap; never a permanent delete.
+  assert.ok(CLOUD_TOOLS.every((t) => !/SEND|REPLY|FORWARD|DELETE|MOVE|UPDATE/.test(t.composioSlug) || t.toolkit === "todoist" || t.toolkit === "gmail"));
+  assert.ok(CLOUD_TOOLS.every((t) => !/DELETE|EMPTY|PURGE/.test(t.composioSlug)));
   assert.equal(DRAFT_OUTLOOK_EMAIL.maxRetries, 0, "a write is never retried");
   assert.equal(
     TOOLKITS.outlook.access,

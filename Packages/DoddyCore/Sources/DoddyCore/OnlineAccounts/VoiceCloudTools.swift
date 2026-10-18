@@ -35,7 +35,7 @@ extension VoiceToolReply {
     }
 
     /// The result words the server starts a line with (backend/src/tools/catalog.ts).
-    static let cloudResultPrefixes = ["drafted:", "added:", "completed:", "moved:", "email:", "page:"]
+    static let cloudResultPrefixes = ["drafted:", "added:", "completed:", "moved:", "email:", "page:", "sent:", "changed:", "trashed:"]
 
     public static func cloudDeclined(_ tool: String) -> String {
         "declined: the user chose not to do \"\(CloudToolName.title(tool))\". Nothing was done."
@@ -84,6 +84,8 @@ extension VoiceToolReply {
             case "not_found" where tool == CloudToolName.completeTodoistTask || tool == CloudToolName.moveTodoistTask:
                 // Refused before any card (ADR-303): Todoist doesn't have that open task.
                 return "not found: that Todoist task wasn't found, or it's already done. Nothing was changed. Read the tasks again with list_todoist_tasks and use the id it gives."
+            case "not_found" where [CloudToolName.replyToEmail, CloudToolName.forwardEmail, CloudToolName.changeEmail, CloudToolName.trashEmail].contains(tool):
+                return "not found: no email matched that search, or Doddy can't tell who to reply to. Nothing was sent or changed. Ask the user which email they meant."
             case "not_found" where tool == CloudToolName.draftEmailReply:
                 // Refused before any card: no email matched, or its sender has no usable address.
                 return "not found: no email matched that search, or the newest match has no sender address Doddy can reply to. No draft was created. Ask the user which email they meant."

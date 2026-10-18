@@ -30,7 +30,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 type Handler = (ctx: { userId: string; body: unknown; scenario: MockScenario | undefined }) => Promise<unknown>;
 
-const TOOLS_SCENARIOS = new Set<ToolsMockScenario>(["normal", "empty", "malformed", "malformed_write", "provider_error", "rate_limited", "expired", "broad_scope", "missing_scope"]);
+const TOOLS_SCENARIOS = new Set<ToolsMockScenario>(["normal", "empty", "malformed", "malformed_write", "provider_error", "rate_limited", "expired", "broad_scope", "missing_scope", "read_compose_only"]);
 const TOOLKIT_ROUTE = /^POST \/v1\/tools\/([a-z]{1,20})\/(connect|complete|disconnect)$/;
 
 export function createHandler(deps: HttpDeps) {

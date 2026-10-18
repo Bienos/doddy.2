@@ -211,14 +211,17 @@ if [ -d "$backend_src" ]; then
   if grep -RInE 'GOOGLECALENDAR_(CREATE|UPDATE|DELETE|PATCH|QUICK_ADD|MOVE|REMOVE|CLEAR|INSERT)' "$backend_src"; then
     echo "FAIL: calendar write tool referenced in the backend." >&2; status=1
   fi
+  # Since ADR-485 also the Gmail send, reply, forward, label and Trash tools (each behind ASK-01's
+  # tap on the exact payload), in the catalog and its mock only. Never a permanent or bulk delete.
   # The only write tools allowed are GMAIL_CREATE_EMAIL_DRAFT, TODOIST_CREATE_TASK and, since ADR-303,
   # TODOIST_CLOSE_TASK_V1 and TODOIST_UPDATE_TASK (each needs a fresh on-screen approval bound to the
   # task Todoist returned). Anything that sends, deletes, shares, edits or labels is refused here, and
   # the two Todoist writes may appear only in the catalog and its mock.
   if grep -RInE 'GMAIL_(SEND|DELETE|TRASH|REPLY|FORWARD|MODIFY|BATCH|ADD|REMOVE|CREATE_LABEL|PATCH|UPDATE|MOVE|UNTRASH)|GOOGLEDRIVE_(CREATE|UPDATE|DELETE|ADD_FILE_SHARING|EDIT|COPY|MOVE|TRASH|UPLOAD|DOWNLOAD|EMPTY|REMOVE)|NOTION_(CREATE|UPDATE|DELETE|ADD|APPEND|ARCHIVE|INSERT|DUPLICATE|MOVE)|TODOIST_(UPDATE|DELETE|CLOSE|REOPEN|BULK|MOVE|QUICK_ADD|ARCHIVE|ADD)' "$backend_src" \
     | grep -vE "^($tools_catalog|$tools_mock):[0-9]+:.*TODOIST_(CLOSE_TASK_V1|UPDATE_TASK)([^A-Z0-9_]|$)" \
+    | grep -vE "^($tools_catalog|$tools_mock):[0-9]+:[^G]*GMAIL_(SEND_EMAIL|REPLY_TO_THREAD|FORWARD_MESSAGE|ADD_LABEL_TO_EMAIL|MOVE_TO_TRASH)([^A-Z0-9_]|$)" \
     | grep -E 'GMAIL_|GOOGLEDRIVE_|NOTION_|TODOIST_(UPDATE|DELETE|CLOSE|REOPEN|BULK|MOVE|QUICK_ADD|ARCHIVE|ADD)'; then
-    echo "FAIL: a write tool beyond the reviewed Gmail draft and the Todoist add, complete and move is referenced in the backend." >&2; status=1
+    echo "FAIL: a write tool beyond the reviewed Gmail ones (draft, send, reply, forward, labels, Trash) and the Todoist add, complete and move is referenced in the backend." >&2; status=1
   fi
   # Outlook (ADR-340): the only write is OUTLOOK_CREATE_DRAFT, in the catalog and its mock. Nothing
   # that sends, deletes, moves, replies, flags or changes the calendar.

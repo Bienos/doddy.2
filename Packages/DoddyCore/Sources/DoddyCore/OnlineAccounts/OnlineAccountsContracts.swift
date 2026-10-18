@@ -161,15 +161,24 @@ public enum CloudToolName {
     public static let readOutlookEmail = "read_outlook_email"
     public static let draftOutlookEmail = "draft_outlook_email"
     public static let readOutlookCalendar = "read_outlook_calendar"
+    /// Gmail writes that send or change something (ADR-485). Each runs only on a tap on the card
+    /// that shows exactly what will happen (ASK-01); nothing deletes for good.
+    public static let sendEmail = "send_email"
+    public static let replyToEmail = "reply_to_email"
+    public static let forwardEmail = "forward_email"
+    public static let changeEmail = "change_email"
+    public static let trashEmail = "trash_email"
     /// Web search through Monid on Doddy's server. No account; only a switch in Settings.
     public static let webSearch = "web_search"
 
     public static let all: Set<String> = [checkEmail, draftEmail, readEmail, draftEmailReply, findDriveFile, searchNotion,
                                           readNotionPage, listTodoistTasks, addTodoistTask, completeTodoistTask,
                                           moveTodoistTask, webSearch, checkOutlookEmail, readOutlookEmail,
-                                          draftOutlookEmail, readOutlookCalendar]
+                                          draftOutlookEmail, readOutlookCalendar, sendEmail, replyToEmail, forwardEmail,
+                                          changeEmail, trashEmail]
     /// These change something in the user's account and wait for a tap on the card.
-    public static let writes: Set<String> = [draftEmail, draftEmailReply, draftOutlookEmail, addTodoistTask, completeTodoistTask, moveTodoistTask]
+    public static let writes: Set<String> = [draftEmail, draftEmailReply, draftOutlookEmail, addTodoistTask, completeTodoistTask, moveTodoistTask,
+                                             sendEmail, replyToEmail, forwardEmail, changeEmail, trashEmail]
 
     public static func isWrite(_ name: String) -> Bool { writes.contains(name) }
 
@@ -192,13 +201,18 @@ public enum CloudToolName {
         case draftOutlookEmail: "Draft an Outlook email"
         case readOutlookCalendar: "Read the Outlook calendar"
         case webSearch: "Search the web"
+        case sendEmail: "Send an email"
+        case replyToEmail: "Send a reply"
+        case forwardEmail: "Forward an email"
+        case changeEmail: "Archive or mark an email"
+        case trashEmail: "Move an email to Trash"
         default: name
         }
     }
 
     public static func account(_ name: String) -> String {
         switch name {
-        case checkEmail, draftEmail, readEmail, draftEmailReply: "Gmail"
+        case checkEmail, draftEmail, readEmail, draftEmailReply, sendEmail, replyToEmail, forwardEmail, changeEmail, trashEmail: "Gmail"
         case findDriveFile: "Google Drive"
         case searchNotion, readNotionPage: "Notion"
         case checkOutlookEmail, readOutlookEmail, draftOutlookEmail, readOutlookCalendar: "Outlook"

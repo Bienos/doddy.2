@@ -494,6 +494,77 @@
     },
     {
       "type": "function",
+      "name": "send_email",
+      "description": "Send an email from the user's Gmail right away. Only when the user clearly asks you to send (not just draft) an email. You need a real email address: if the user gave only a name, ask for the address and never guess. Subject and text in the user's words and language. The card shows the recipient, subject and full text, and nothing is sent until the user taps Send. To answer an email, use reply_to_email instead. ASK-01: say in one short line exactly what will happen and ask the user to tap the card, for example 'Tap Send on screen if I should send this.' (Polish: 'Dotknij Wyślij na ekranie, jeśli mam to wysłać.'). A spoken yes is not enough. The result starts with 'sent', 'changed', 'trashed', 'declined', 'not found', 'unknown' or 'failed'. Never say it was done unless the result says so; 'unknown' means it may or may not have happened: tell the user to check Gmail. If the result says the tool is switched off or Gmail isn't connected, tell the user they can switch it on in Settings, Online accounts.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "to": {"type": "string", "description": "The recipient's email address, exactly as the user gave it."},
+          "subject": {"type": "string", "description": "Short subject line in the user's language."},
+          "body": {"type": "string", "description": "The message text in the user's words and language."}
+        },
+        "required": ["to", "subject", "body"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "not_synced"}
+    },
+    {
+      "type": "function",
+      "name": "reply_to_email",
+      "description": "Send a reply to an email in the user's Gmail, in that email's conversation and to its sender, right away. Only when the user clearly asks you to reply (to only draft one, use draft_email_reply). The app looks the email up; the card shows who it goes to, the subject and the full text, and nothing is sent until the user taps Send reply. ASK-01: say in one short line exactly what will happen and ask the user to tap the card, for example 'Tap Send on screen if I should send this.' (Polish: 'Dotknij Wyślij na ekranie, jeśli mam to wysłać.'). A spoken yes is not enough. The result starts with 'sent', 'changed', 'trashed', 'declined', 'not found', 'unknown' or 'failed'. Never say it was done unless the result says so; 'unknown' means it may or may not have happened: tell the user to check Gmail. If the result says the tool is switched off or Gmail isn't connected, tell the user they can switch it on in Settings, Online accounts.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "query": {"type": "string", "description": "Gmail search words picking the email, e.g. 'from:anna lunch'. The newest match is used; the card shows which one."},
+          "body": {"type": "string", "description": "The reply text in the user's words and language."}
+        },
+        "required": ["query", "body"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "not_synced"}
+    },
+    {
+      "type": "function",
+      "name": "forward_email",
+      "description": "Forward one email from the user's Gmail, with its attachments, to someone. Only when the user clearly asks. You need a real email address for the recipient; never guess one. The card shows the email (sender and subject from Gmail), the recipient and the user's note, and nothing is sent until the user taps Forward. ASK-01: say in one short line exactly what will happen and ask the user to tap the card, for example 'Tap Send on screen if I should send this.' (Polish: 'Dotknij Wyślij na ekranie, jeśli mam to wysłać.'). A spoken yes is not enough. The result starts with 'sent', 'changed', 'trashed', 'declined', 'not found', 'unknown' or 'failed'. Never say it was done unless the result says so; 'unknown' means it may or may not have happened: tell the user to check Gmail. If the result says the tool is switched off or Gmail isn't connected, tell the user they can switch it on in Settings, Online accounts.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "query": {"type": "string", "description": "Gmail search words picking the email, e.g. 'from:anna lunch'. The newest match is used; the card shows which one."},
+          "to": {"type": "string", "description": "The recipient's email address, exactly as the user gave it."},
+          "note": {"type": "string", "description": "Optional short note above the forwarded email, in the user's words. Leave out if the user gave none."}
+        },
+        "required": ["query", "to"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "not_synced"}
+    },
+    {
+      "type": "function",
+      "name": "change_email",
+      "description": "Archive one email, mark it read or unread, star or unstar it, or move it back to the inbox, in the user's Gmail. Only when the user asks. The card shows the email (sender and subject from Gmail) and the change, and nothing changes until the user taps it. ASK-01: say in one short line exactly what will happen and ask the user to tap the card, for example 'Tap Send on screen if I should send this.' (Polish: 'Dotknij Wyślij na ekranie, jeśli mam to wysłać.'). A spoken yes is not enough. The result starts with 'sent', 'changed', 'trashed', 'declined', 'not found', 'unknown' or 'failed'. Never say it was done unless the result says so; 'unknown' means it may or may not have happened: tell the user to check Gmail. If the result says the tool is switched off or Gmail isn't connected, tell the user they can switch it on in Settings, Online accounts.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "query": {"type": "string", "description": "Gmail search words picking the email, e.g. 'from:anna lunch'. The newest match is used; the card shows which one."},
+          "change": {"type": "string", "enum": ["archive", "mark_read", "mark_unread", "star", "unstar", "move_to_inbox"], "description": "What to do with the email."}
+        },
+        "required": ["query", "change"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "not_synced"}
+    },
+    {
+      "type": "function",
+      "name": "trash_email",
+      "description": "Move one email to the Trash in the user's Gmail, where it can be restored for 30 days. Doddy never deletes email for good. Only when the user asks to delete or bin an email. The card shows the email (sender and subject from Gmail), and nothing moves until the user taps Move to Trash. ASK-01: say in one short line exactly what will happen and ask the user to tap the card, for example 'Tap Send on screen if I should send this.' (Polish: 'Dotknij Wyślij na ekranie, jeśli mam to wysłać.'). A spoken yes is not enough. The result starts with 'sent', 'changed', 'trashed', 'declined', 'not found', 'unknown' or 'failed'. Never say it was done unless the result says so; 'unknown' means it may or may not have happened: tell the user to check Gmail. If the result says the tool is switched off or Gmail isn't connected, tell the user they can switch it on in Settings, Online accounts.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "query": {"type": "string", "description": "Gmail search words picking the email, e.g. 'from:anna lunch'. The newest match is used; the card shows which one."}
+        },
+        "required": ["query"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "not_synced"}
+    },
+    {
+      "type": "function",
       "name": "find_drive_file",
       "description": "Find files in the user's Google Drive by part of the name. You get name, type and last-changed time only; you cannot open, read, share or change files. Use it when the user asks where a document is or whether they have a file. Answer only from the result and never invent files. If the result says the tool is switched off or Drive isn't connected, tell the user in one sentence that they can switch it on in Settings, Online accounts. If the result starts with DEMO DATA, tell the user it is demo data. ASK-01: before this tool runs, say in one short line exactly what you will look at and ask, for example 'Shall I check your inbox?' (Polish: 'Mam sprawdzić twoją skrzynkę?'). The app shows the same question on screen and runs it only after the user says yes or taps Yes; if the result starts with 'declined', nothing was looked at: say so in one short sentence.",
       "parameters": {

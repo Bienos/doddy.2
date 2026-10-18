@@ -2,7 +2,7 @@
   "toolkit": {
     "id": "gmail",
     "title": "Gmail",
-    "access": "Doddy can list your recent emails (sender, subject, a short preview), read one email aloud when you ask (the newest that matches), and create drafts, including a reply in an email's own conversation (to its sender), after you tap Create. Doddy never sends, deletes or labels email. Google's draft permission also allows sending; Doddy has no send tool.",
+    "access": "Doddy can list your recent emails (sender, subject, a short preview) and read one email aloud when you ask, after you say yes. It can write drafts, send an email, reply, forward, archive, mark read or unread, star, and move an email to Trash, each only after you tap the card that shows exactly what will happen. It never deletes email for good.",
     "needsAccount": true,
     "status": "connected",
     "reason": null,
@@ -36,11 +36,46 @@
         "blurb": "Creates a reply draft in an email's conversation, to its sender, after you tap Create on the card. Doddy never sends it. Off until you switch it on.",
         "risk": "write",
         "enabled": false
+      },
+      {
+        "name": "send_email",
+        "title": "Send an email",
+        "blurb": "Sends an email from your Gmail after you tap Send on the card, which shows the recipient, subject and full text. Off until you switch it on.",
+        "risk": "write",
+        "enabled": false
+      },
+      {
+        "name": "reply_to_email",
+        "title": "Send a reply",
+        "blurb": "Sends a reply in an email's conversation, to its sender, after you tap Send reply. Off until you switch it on.",
+        "risk": "write",
+        "enabled": false
+      },
+      {
+        "name": "forward_email",
+        "title": "Forward an email",
+        "blurb": "Forwards one email, with its attachments, after you tap Forward on the card. Off until you switch it on.",
+        "risk": "write",
+        "enabled": false
+      },
+      {
+        "name": "change_email",
+        "title": "Archive or mark email",
+        "blurb": "Archives, marks read or unread, or stars one email after you tap the card. Off until you switch it on.",
+        "risk": "write",
+        "enabled": false
+      },
+      {
+        "name": "trash_email",
+        "title": "Move email to Trash",
+        "blurb": "Moves one email to Gmail's Trash after you tap the card. It can be restored for 30 days; Doddy never deletes for good. Off until you switch it on.",
+        "risk": "write",
+        "enabled": false
       }
     ]
   },
   "receipt": {
-    "operationId": "1e10cba7-c47f-4444-b0ac-602655d0e9f4",
+    "operationId": "038affce-7620-4609-8cf9-9f1777b063b3",
     "operation": "switch",
     "toolkit": "gmail",
     "tool": "check_email",

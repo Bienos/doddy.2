@@ -95,6 +95,11 @@ public enum ActivityText {
         "Add ingredients to a list": "Dodaj składniki do listy",
         // Round 5.
         "Create a reply draft": "Utwórz szkic odpowiedzi",
+        "Send an email": "Wyślij e-mail",
+        "Send a reply": "Wyślij odpowiedź",
+        "Forward an email": "Przekaż e-mail",
+        "Archive or mark an email": "Zarchiwizuj lub oznacz e-mail",
+        "Move an email to Trash": "Przenieś e-mail do kosza",
         "Read a Notion page": "Odczytano stronę Notion",
     ]
 

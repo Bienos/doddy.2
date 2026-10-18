@@ -101,6 +101,10 @@ const GOOGLE_IDENTITY = [
 ];
 const GMAIL_READONLY = "https://www.googleapis.com/auth/gmail.readonly";
 const GMAIL_COMPOSE = "https://www.googleapis.com/auth/gmail.compose";
+/** Sending (ADR-485). gmail.compose also allows sending; either one is enough for a send tool. */
+const GOOGLE_SEND_MAIL = "https://www.googleapis.com/auth/gmail.send";
+/** Labels, archive, read/unread and Trash (ADR-485). It can't delete for good: that needs https://mail.google.com/. */
+const GOOGLE_MODIFY_MAIL = "https://www.googleapis.com/auth/gmail.modify";
 const DRIVE_METADATA_READONLY = "https://www.googleapis.com/auth/drive.metadata.readonly";
 const DRIVE_READONLY = "https://www.googleapis.com/auth/drive.readonly";
 
@@ -118,12 +122,13 @@ export const TOOLKITS: Readonly<Record<ToolkitId, ToolkitDefinition>> = {
     id: "gmail",
     title: "Gmail",
     composioToolkit: "gmail",
-    requestedScopes: [GMAIL_READONLY, GMAIL_COMPOSE],
-    allowedGrants: new Set([GMAIL_READONLY, GMAIL_COMPOSE, ...GOOGLE_IDENTITY]),
+    requestedScopes: [GMAIL_READONLY, GMAIL_COMPOSE, GOOGLE_SEND_MAIL, GOOGLE_MODIFY_MAIL],
+    // https://mail.google.com/ (full access, including deleting for good) is still "too broad".
+    allowedGrants: new Set([GMAIL_READONLY, GMAIL_COMPOSE, GOOGLE_SEND_MAIL, GOOGLE_MODIFY_MAIL, ...GOOGLE_IDENTITY]),
     access:
-      "Doddy can list your recent emails (sender, subject, a short preview), read one email aloud when you ask (the newest that matches), " +
-      "and create drafts, including a reply in an email's own conversation (to its sender), after you tap Create. " +
-      "Doddy never sends, deletes or labels email. Google's draft permission also allows sending; Doddy has no send tool.",
+      "Doddy can list your recent emails (sender, subject, a short preview) and read one email aloud when you ask, after you say yes. " +
+      "It can write drafts, send an email, reply, forward, archive, mark read or unread, star, and move an email to Trash, " +
+      "each only after you tap the card that shows exactly what will happen. It never deletes email for good.",
   },
   googledrive: {
     id: "googledrive",
@@ -212,6 +217,8 @@ export interface EmailTarget {
   toName: string | null;
   /** Gmail's subject, or null when the email has none. */
   subject: string | null;
+  /** The sender as Gmail shows it, for the card. */
+  from: string;
 }
 
 /** The Notion page a read opens: the top non-archived search match. */
@@ -941,8 +948,15 @@ export function replySubject(subject: string | null): string {
   return /^re:/i.test(subject) ? subject : `Re: ${subject}`;
 }
 
-/** GMAIL_FETCH_EMAILS (metadata only): the newest email matching the search, as the reply's target. */
-const EMAIL_REPLY_LOOKUP: TargetLookup = {
+/** Gmail message ids that Composio's message tools accept (hex; their schemas say so). */
+const GMAIL_HEX_ID = /^[0-9a-fA-F]{1,64}$/;
+
+/**
+ * GMAIL_FETCH_EMAILS (metadata only): the newest email matching the search, as a write's target.
+ * `needsSender`: a reply goes to the sender, so an email without a usable address is "missing".
+ */
+function gmailMessageLookup(o: { notFound: string; needsSender: boolean; noSender?: string }): TargetLookup {
+  return {
   slug: "GMAIL_FETCH_EMAILS",
   toArguments: (args) => ({
     user_id: "me",
@@ -969,14 +983,24 @@ const EMAIL_REPLY_LOOKUP: TargetLookup = {
     if (typeof messageId !== "string" || !GMAIL_ID.test(messageId) || typeof threadId !== "string" || !GMAIL_ID.test(threadId)) {
       throw new ProviderError("malformed_provider_result");
     }
+    if (!o.needsSender && !GMAIL_HEX_ID.test(messageId)) throw new ProviderError("malformed_provider_result");
     const sender = parseSender(newest.sender);
+    const from = clip(newest.sender, 120) ?? "unknown sender";
     if (sender === null) {
-      return { kind: "missing", message: "Doddy can't tell who to reply to: the newest matching email has no usable sender address. No draft was created." };
+      if (o.needsSender) return { kind: "missing", message: o.noSender ?? o.notFound };
+      return { kind: "email", messageId, threadId, to: "", toName: null, subject: clip(newest.subject, 200), from };
     }
-    return { kind: "email", messageId, threadId, to: sender.address, toName: sender.name, subject: clip(newest.subject, 200) };
+    return { kind: "email", messageId, threadId, to: sender.address, toName: sender.name, subject: clip(newest.subject, 200), from };
   },
+  notFound: o.notFound,
+  };
+}
+
+const EMAIL_REPLY_LOOKUP = gmailMessageLookup({
   notFound: "No email matched that search, so there is nothing to reply to. No draft was created.",
-};
+  needsSender: true,
+  noSender: "Doddy can't tell who to reply to: the newest matching email has no usable sender address. No draft was created.",
+});
 
 function emailOf(target: ResolvedTarget | null | undefined): EmailTarget {
   if (target?.kind !== "email") throw new Error("a reply draft needs the looked-up email");
@@ -1045,6 +1069,216 @@ export const DRAFT_EMAIL_REPLY: CloudToolDefinition = {
     summary: "Gmail reply draft created (not sent).",
     ...(externalId ? { externalId } : {}),
   }),
+};
+
+// ------------------------------------------------------------------ Gmail: send, reply, forward, labels, Trash (ADR-485)
+//
+// Slugs and schemas read with COMPOSIO_GET_TOOL_SCHEMAS (input and output) on 2026-10-18. Every one
+// returns Gmail's message resource (`id`, `threadId`, `labelIds`). None has run against a real account.
+//  - GMAIL_SEND_EMAIL: `recipient_email`, `subject`, `body`, `is_html`, `include_signature` (default
+//    true appends the Gmail signature: off, so exactly the card's text is sent). "Sends immediately and is irreversible".
+//  - GMAIL_REPLY_TO_THREAD: `thread_id` (a thread id, not a message id), `recipient_email`, `message_body`;
+//    no subject (a subject starts a new conversation).
+//  - GMAIL_FORWARD_MESSAGE: `message_id` (hex), `recipients` (min 1), `additional_text`.
+//  - GMAIL_ADD_LABEL_TO_EMAIL: `message_id` (hex), `add_label_ids`, `remove_label_ids`. Archive is
+//    removing INBOX, read is removing UNREAD. Only system labels: a custom label needs its id from
+//    GMAIL_LIST_LABELS, which Doddy doesn't call yet.
+//  - GMAIL_MOVE_TO_TRASH: `message_id` (hex). Recoverable from Trash; nothing here deletes for good.
+
+/** Every Gmail write tool sends exactly what the card showed: no signature, plain text. */
+const PLAIN = { is_html: false, include_signature: false } as const;
+
+/** Gmail's answer to a message write: its message resource. The id is required; anything else is malformed. */
+function gmailMessage(raw: unknown): { id: string; labelIds: string[] | null } {
+  const data = dataOf(raw);
+  if (typeof data.id !== "string" || data.id === "") throw new ProviderError("malformed_provider_result");
+  const labels = Array.isArray(data.labelIds) && data.labelIds.every((l) => typeof l === "string") ? (data.labelIds as string[]) : null;
+  return { id: data.id, labelIds: labels };
+}
+
+const sentOutcome = (text: string, summary: string, externalId?: string): ToolOutcome => ({
+  text, count: 1, truncated: false, summary, ...(externalId ? { externalId } : {}),
+});
+
+const SendEmailInput = z
+  .object({
+    to: EMAIL_ADDRESS,
+    subject: text(1, 200),
+    body: text(1, 5000),
+  })
+  .strict();
+
+export const SEND_EMAIL: CloudToolDefinition = {
+  name: "send_email",
+  toolkit: "gmail",
+  composioSlug: "GMAIL_SEND_EMAIL",
+  risk: "write",
+  requiredAnyGrant: [GOOGLE_SEND_MAIL, GMAIL_COMPOSE],
+  input: SendEmailInput,
+  maxRetries: 0,
+  toArguments: (args) => ({ user_id: "me", recipient_email: args.to, subject: args.subject, body: args.body, ...PLAIN }),
+  preview: (args) => ({
+    title: "Send this email now?",
+    lines: [`To: ${args.to as string}`, `Subject: ${args.subject as string}`, args.body as string, "It is sent at once from your Gmail and can't be taken back."],
+    confirmLabel: "Send",
+  }),
+  normalize: (raw, args) => {
+    const message = gmailMessage(raw);
+    return sentOutcome(`sent: Gmail sent the email to ${args.to as string} with subject ${JSON.stringify(args.subject)}.`, "Gmail email sent.", message.id);
+  },
+  replay: (args, externalId) =>
+    sentOutcome(`sent: the email to ${args.to as string} was sent on the first try; nothing was sent again.`, "Gmail email sent.", externalId ?? undefined),
+};
+
+const EMAIL_TARGET_LOOKUP = (verb: string) =>
+  gmailMessageLookup({ notFound: `No email matched that search, so nothing was ${verb}.`, needsSender: false });
+
+/** The email as the card names it: sender and subject from Gmail, never the agent's words. */
+const named = (email: EmailTarget) => [`From: ${email.from}`, `Subject: ${email.subject ?? "(no subject)"}`];
+
+export const REPLY_TO_EMAIL: CloudToolDefinition = {
+  name: "reply_to_email",
+  toolkit: "gmail",
+  composioSlug: "GMAIL_REPLY_TO_THREAD",
+  risk: "write",
+  requiredAnyGrant: [GOOGLE_SEND_MAIL, GMAIL_COMPOSE],
+  requiredAllGrants: [GMAIL_READONLY],
+  input: z.object({ query: text(1, 200), body: text(1, 5000) }).strict(),
+  maxRetries: 0,
+  // Recipient and conversation come only from Gmail's answer to the lookup.
+  toArguments: (args, target) => {
+    const email = emailOf(target);
+    return { user_id: "me", thread_id: email.threadId, recipient_email: email.to, message_body: args.body, ...PLAIN };
+  },
+  resolve: gmailMessageLookup({
+    notFound: "No email matched that search, so there is nothing to reply to. Nothing was sent.",
+    needsSender: true,
+    noSender: "Doddy can't tell who to reply to: the newest matching email has no usable sender address. Nothing was sent.",
+  }),
+  preview: (args, target) => {
+    const email = emailOf(target);
+    return {
+      title: "Send this reply now?",
+      lines: [`To: ${email.toName ? `${email.toName} <${email.to}>` : email.to}`, replySubject(email.subject), args.body as string, "It is sent at once from your Gmail and can't be taken back."],
+      confirmLabel: "Send reply",
+    };
+  },
+  normalize: (raw, _args, _context, target) => {
+    const message = gmailMessage(raw);
+    const email = emailOf(target);
+    return sentOutcome(`sent: Gmail sent the reply to ${email.to} (${JSON.stringify(replySubject(email.subject))}).`, "Gmail reply sent.", message.id);
+  },
+  replay: (_args, externalId) =>
+    sentOutcome("sent: the reply was sent on the first try; nothing was sent again.", "Gmail reply sent.", externalId ?? undefined),
+};
+
+export const FORWARD_EMAIL: CloudToolDefinition = {
+  name: "forward_email",
+  toolkit: "gmail",
+  composioSlug: "GMAIL_FORWARD_MESSAGE",
+  risk: "write",
+  requiredAnyGrant: [GOOGLE_SEND_MAIL, GMAIL_COMPOSE],
+  requiredAllGrants: [GMAIL_READONLY],
+  input: z.object({ query: text(1, 200), to: EMAIL_ADDRESS, note: text(1, 2000).optional() }).strict(),
+  maxRetries: 0,
+  toArguments: (args, target) => {
+    const email = emailOf(target);
+    return {
+      user_id: "me",
+      message_id: email.messageId,
+      recipients: [args.to],
+      ...(typeof args.note === "string" ? { additional_text: args.note } : {}),
+      include_signature: false,
+    };
+  },
+  resolve: EMAIL_TARGET_LOOKUP("forwarded"),
+  preview: (args, target) => ({
+    title: "Forward this email now?",
+    lines: [
+      `To: ${args.to as string}`,
+      ...named(emailOf(target)),
+      ...(typeof args.note === "string" ? [`Your note: ${args.note}`] : []),
+      "The whole email and its attachments go to them at once and can't be taken back.",
+    ],
+    confirmLabel: "Forward",
+  }),
+  normalize: (raw, args, _context, target) => {
+    const message = gmailMessage(raw);
+    const email = emailOf(target);
+    return sentOutcome(`sent: Gmail forwarded ${JSON.stringify(email.subject ?? "(no subject)")} to ${args.to as string}.`, "Gmail email forwarded.", message.id);
+  },
+  replay: (args, externalId) =>
+    sentOutcome(`sent: the email was forwarded to ${args.to as string} on the first try; nothing was sent again.`, "Gmail email forwarded.", externalId ?? undefined),
+};
+
+/** The label changes Doddy can make: system labels only, each with what Gmail's answer must show after it. */
+export const EMAIL_CHANGES = {
+  archive: { add: [], remove: ["INBOX"], title: "Archive this email?", label: "Archive", done: "archived" },
+  mark_read: { add: [], remove: ["UNREAD"], title: "Mark this email as read?", label: "Mark read", done: "marked as read" },
+  mark_unread: { add: ["UNREAD"], remove: [], title: "Mark this email as unread?", label: "Mark unread", done: "marked as unread" },
+  star: { add: ["STARRED"], remove: [], title: "Star this email?", label: "Star", done: "starred" },
+  unstar: { add: [], remove: ["STARRED"], title: "Remove the star from this email?", label: "Remove star", done: "unstarred" },
+  move_to_inbox: { add: ["INBOX"], remove: [], title: "Move this email back to the inbox?", label: "Move to inbox", done: "moved back to the inbox" },
+} as const satisfies Record<string, { add: readonly string[]; remove: readonly string[]; title: string; label: string; done: string }>;
+type EmailChange = keyof typeof EMAIL_CHANGES;
+
+export const CHANGE_EMAIL: CloudToolDefinition = {
+  name: "change_email",
+  toolkit: "gmail",
+  composioSlug: "GMAIL_ADD_LABEL_TO_EMAIL",
+  risk: "write",
+  requiredAnyGrant: [GOOGLE_MODIFY_MAIL],
+  requiredAllGrants: [GMAIL_READONLY],
+  input: z.object({ query: text(1, 200), change: z.enum(Object.keys(EMAIL_CHANGES) as [EmailChange, ...EmailChange[]]) }).strict(),
+  maxRetries: 0,
+  toArguments: (args, target) => {
+    const change = EMAIL_CHANGES[args.change as EmailChange];
+    return { user_id: "me", message_id: emailOf(target).messageId, add_label_ids: [...change.add], remove_label_ids: [...change.remove] };
+  },
+  resolve: EMAIL_TARGET_LOOKUP("changed"),
+  preview: (args, target) => {
+    const change = EMAIL_CHANGES[args.change as EmailChange];
+    return { title: change.title, lines: named(emailOf(target)), confirmLabel: change.label };
+  },
+  normalize: (raw, args, _context, target) => {
+    const message = gmailMessage(raw);
+    const change = EMAIL_CHANGES[args.change as EmailChange];
+    const subject = JSON.stringify(emailOf(target).subject ?? "(no subject)");
+    // Done only when Gmail's answer shows the labels as asked. Otherwise the answer can't be used,
+    // and the service reports the write as "may or may not have gone through" (DOD-08).
+    const confirmed = message.labelIds !== null && change.add.every((l) => message.labelIds!.includes(l)) && change.remove.every((l) => !message.labelIds!.includes(l));
+    if (!confirmed) throw new ProviderError("malformed_provider_result");
+    return sentOutcome(`changed: Gmail ${change.done} the email ${subject}.`, `Gmail email ${change.done}.`, message.id);
+  },
+  replay: (args, externalId) =>
+    sentOutcome(`changed: the email was ${EMAIL_CHANGES[args.change as EmailChange].done} on the first try; nothing ran again.`, "Gmail email changed.", externalId ?? undefined),
+};
+
+export const TRASH_EMAIL: CloudToolDefinition = {
+  name: "trash_email",
+  toolkit: "gmail",
+  composioSlug: "GMAIL_MOVE_TO_TRASH",
+  risk: "write",
+  requiredAnyGrant: [GOOGLE_MODIFY_MAIL],
+  requiredAllGrants: [GMAIL_READONLY],
+  input: z.object({ query: text(1, 200) }).strict(),
+  maxRetries: 0,
+  toArguments: (_args, target) => ({ user_id: "me", message_id: emailOf(target).messageId }),
+  resolve: EMAIL_TARGET_LOOKUP("moved to Trash"),
+  preview: (_args, target) => ({
+    title: "Move this email to Trash?",
+    lines: [...named(emailOf(target)), "You can get it back from Gmail's Trash for 30 days. Doddy never deletes email for good."],
+    confirmLabel: "Move to Trash",
+  }),
+  normalize: (raw, _args, _context, target) => {
+    const message = gmailMessage(raw);
+    const subject = JSON.stringify(emailOf(target).subject ?? "(no subject)");
+    // In Trash only when Gmail's answer says so; anything else is "may or may not have" (DOD-08).
+    if (!message.labelIds?.includes("TRASH")) throw new ProviderError("malformed_provider_result");
+    return sentOutcome(`trashed: Gmail moved the email ${subject} to Trash. It can be restored from Trash for 30 days.`, "Gmail email moved to Trash.", message.id);
+  },
+  replay: (_args, externalId) =>
+    sentOutcome("trashed: the email was moved to Trash on the first try; nothing ran again.", "Gmail email moved to Trash.", externalId ?? undefined),
 };
 
 // ------------------------------------------------------------------ Notion: one page's text
@@ -1436,6 +1670,11 @@ export const CLOUD_TOOLS: readonly CloudToolDefinition[] = [
   READ_EMAIL,
   DRAFT_EMAIL,
   DRAFT_EMAIL_REPLY,
+  SEND_EMAIL,
+  REPLY_TO_EMAIL,
+  FORWARD_EMAIL,
+  CHANGE_EMAIL,
+  TRASH_EMAIL,
   FIND_DRIVE_FILE,
   SEARCH_NOTION,
   READ_NOTION_PAGE,
@@ -1458,6 +1697,11 @@ export const TOOL_COPY: Readonly<Record<string, { title: string; blurb: string }
     title: "Draft a reply",
     blurb: "Creates a reply draft in an email's conversation, to its sender, after you tap Create on the card. Doddy never sends it. Off until you switch it on.",
   },
+  send_email: { title: "Send an email", blurb: "Sends an email from your Gmail after you tap Send on the card, which shows the recipient, subject and full text. Off until you switch it on." },
+  reply_to_email: { title: "Send a reply", blurb: "Sends a reply in an email's conversation, to its sender, after you tap Send reply. Off until you switch it on." },
+  forward_email: { title: "Forward an email", blurb: "Forwards one email, with its attachments, after you tap Forward on the card. Off until you switch it on." },
+  change_email: { title: "Archive or mark email", blurb: "Archives, marks read or unread, or stars one email after you tap the card. Off until you switch it on." },
+  trash_email: { title: "Move email to Trash", blurb: "Moves one email to Gmail's Trash after you tap the card. It can be restored for 30 days; Doddy never deletes for good. Off until you switch it on." },
   find_drive_file: { title: "Find a Drive file", blurb: "Looks up files by name and shows name, type and last change. It can't open or change files." },
   search_notion: { title: "Search Notion", blurb: "Finds page titles shared with Doddy. It doesn't read the pages." },
   read_notion_page: { title: "Read a Notion page", blurb: "Reads one page aloud when you ask, the best match among pages shared with Doddy. Off until you switch it on." },
