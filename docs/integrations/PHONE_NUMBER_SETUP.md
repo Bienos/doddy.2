@@ -196,7 +196,7 @@ Doddy can text your own number, and only yours, when you ask it to in a conversa
 
 1. **Deploy the U2 code**, the same way as U1 (branch `claude/awesome-cray-2lb9ia` until it is merged). The database update (migration 009) runs by itself at start-up. No new Render keys are needed.
 2. **Build the iPhone app from the same branch** in Xcode. With OpenAI voice (the default), the app brings the new `text_me` tool with it.
-3. **ElevenLabs voice only:** the live agent doesn't have `text_me` yet. Ask Claude to sync it, or follow `voice-agent/README.md` ("Source of truth and syncing"): add the tool and the new prompt lines, then run the compare step.
+3. **ElevenLabs voice:** the live agent has had `text_me` since 2026-10-18 (`voice-agent/README.md`), so there is nothing to do here.
 4. **On your iPhone, Settings → Notifications and texts:** your number must be verified and texts turned on (U0 checks 3 and 4).
 
 ### The U2 checks
@@ -257,8 +257,8 @@ In a conversation, ask Doddy to call you later ("call me at six about the cake")
    | `QUIET_HOURS_START` | Optional, `HH:MM`, default `21:00`: when quiet hours start, on your own clock where you are |
    | `QUIET_HOURS_END` | Optional, `HH:MM`, default `08:00`: when they end |
 
-3. **The phone agent:** if you created it with U1 before this code, it doesn't know about a call's reason yet. Delete it in ElevenLabs and run `setup-phone-agent.mjs` again (U1 step 4), then put the new `ELEVENLABS_PHONE_AGENT_ID` on Render. Or ask Claude to update it in place: the first message becomes `{{doddy_call_opening}}`, and `{{doddy_call_reason}}` and rule 6 are added to its prompt (`voice-agent/phone/`).
-4. **Build the iPhone app from the same branch.** With OpenAI voice (the default) it brings `call_me_later` with it. **ElevenLabs voice only:** ask Claude to sync the tool and its two prompt lines (`voice-agent/README.md`).
+3. **The phone agent:** there was none in ElevenLabs on 2026-10-18, so creating it in U1 step 4 from this code already includes the reason. Only if you created it with U1 before this code does it not know about a call's reason yet. Delete it in ElevenLabs and run `setup-phone-agent.mjs` again (U1 step 4), then put the new `ELEVENLABS_PHONE_AGENT_ID` on Render. Or ask Claude to update it in place: the first message becomes `{{doddy_call_opening}}`, and `{{doddy_call_reason}}` and rule 6 are added to its prompt (`voice-agent/phone/`).
+4. **Build the iPhone app from the same branch.** With OpenAI voice (the default) it brings `call_me_later` with it. The ElevenLabs agent has had it since 2026-10-18.
 5. **On your iPhone, Settings → Phone calls:** **Doddy may call me** must be on (U1 step 7).
 
 ### The U4 checks
