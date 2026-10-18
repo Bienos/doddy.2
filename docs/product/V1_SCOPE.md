@@ -115,7 +115,7 @@ The newest commits (`f40861c`, `754e5d6`, 16 Oct) have never compiled (checklist
 
 | Feature | What it does | Seen | Leaves the phone | Suggested | Why | Owner |
 |---|---|---|---|---|---|---|
-| Online accounts (Gmail, Outlook, Drive, Notion, Todoist) | 16 tools through Composio and `backend/`, each off by default | built; mock tests only | Mail, files and tasks through Composio | **Hide** | Never run against a real account. Gmail's scopes need Google's verification (ADR-099). No real user sign-in on the backend (ADR-077). Composio's terms aren't reviewed | |
+| Online accounts (Gmail, Outlook, Drive, Notion, Todoist, Google Calendar) | Tools through Composio and `backend/`, each off by default; since PR #87 (18 Oct) they include sending and changing mail, calendars and pages, each behind ASK-01 | built; mock tests only | Mail, files and tasks through Composio | **Hide** | Never run against a real account. Gmail's scopes need Google's verification (ADR-099). No real user sign-in on the backend (ADR-077). Composio's terms aren't reviewed | |
 | Web search | Doddy looks something up | device (11–14 Oct) | Query to Monid through `backend/` | **Hide** (owner call) | The one online feature seen working. It needs the backend, which is reached only through a developer token pasted in Settings | |
 | Connected Apps (Google Calendar) | Tomorrow's Google events in Settings | built | Through Composio | **Cut** | The iPhone's own Calendar already shows Google calendars synced to it | |
 | Daily news | A daily digest | built | Topics to the messaging server, headlines to an AI | **Cut** | A release build has no server address. The server's database expires 10 Nov. GNews' free plan isn't for commercial use | |
@@ -133,7 +133,7 @@ The newest commits (`f40861c`, `754e5d6`, 16 Oct) have never compiled (checklist
 
 ## 6. Work in progress on branches
 
-Today (18 Oct) several branches add more scope. Suggestion: until this file is marked up, merge only fixes, and hold anything that adds a tool, a vendor or a permission.
+On 18 Oct several branches were adding more scope, and one (PR #87) has since merged. Suggestion: until this file is marked up, merge only fixes, and hold anything that adds a tool, a vendor or a permission.
 
 | Branch or PR | What it adds | Suggested |
 |---|---|---|
@@ -141,7 +141,7 @@ Today (18 Oct) several branches add more scope. Suggestion: until this file is m
 | `sweet-albattani`, `upbeat-ride`, `awesome-cray` | Other fixes for the same broken checks | Close in favour of #84 |
 | PR #85 `dreamy-cannon` | BLIK bank transfers by voice (Doddy prepares, you send in your bank app) | **Hold.** Payments are the highest-trust action there is, even when Doddy only prepares them, and they aren't in the promise |
 | PR #86 `connect-in-conversation` (draft) | Connect an online account from the conversation | **Hold** while online accounts are hidden |
-| `trusting-sagan` | ASK-01 "always ask first", plus Gmail send, Outlook, Google Calendar and Notion writes | **Hold the new tools.** ASK-01 is a trust rule worth taking on its own, if it can be split out |
+| PR #87 `trusting-sagan` (**merged into main on 18 Oct** at the owner's request) | ASK-01 "always ask first" for every tool, plus Gmail send, Outlook, Google Calendar, Notion and Monid tools (ADR-483 to 489) | **Keep ASK-01.** It is the trust rule v1 needs. The new account tools are on main and on the live agent (85 tools, `agtvrsn_6401…`), so for v1 they stay hidden: no Settings row, and off the live agent (section 4). Hosted CI couldn't run, so none of it has been built |
 | `awesome-cray` | Doddy's phone number (Twilio texts) | **Hold** (calls and texts are cut) |
 | `jolly-clarke` | One persona for both providers, Wiktor voice | Take if it improves the one beta provider |
 | PR #78 | "Big brain. Small body." share card (claims ADR-444, already used) | Site only; renumber before merging |
