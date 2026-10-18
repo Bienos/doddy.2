@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # Capability guard. Settings/Home copy makes specific privacy claims; this check keeps them true:
-#  - the app's own networking lives in four files: the voice token client (one POST of the access
-#    code to the token server), Connected Apps' transport (to the Doddy server), the typed-assistant
+#  - the app's own networking lives in four files: the voice token client (DODDY's session and the
+#    provider-token requests, all to the token server; ADR-494), Connected Apps' transport (to the Doddy server), the typed-assistant
 #    transport (to the M2 gateway, ADR-110) and the messaging server transport (server/messaging,
 #    ADR-148); the ElevenLabs SDK does the voice connection, except the OpenAI Realtime test voice
-#    (ADR-265), whose WebSocket lives in one file in Features/Voice, the exchange-rate client
-#    (ADR-300), which downloads only the ECB's public rates file, and the voice sign-in session
-#    (ADR-484), which posts only to the token server's /api/voice-auth (VoiceConfig.authEndpoint),
-#  - the system authentication browser is used only by Connected Apps; Sign in with Apple (the
-#    system sheet, not a browser) only in the two voice sign-in files (ADR-484),
+#    (ADR-265), whose WebSocket lives in one file in Features/Voice, and the exchange-rate client
+#    (ADR-300), which downloads only the ECB's public rates file,
+#  - the system authentication browser is used only by Connected Apps; AuthenticationServices is
+#    imported only there and in the two voice-access files, which use it for Sign in with Apple only
+#    (ADR-494),
 #  - ElevenLabs code only inside DoddyApp/Features/Voice; audio (AVFoundation) only there and in
 #    DoddyApp/Features/VoiceMemos (recording and playing voice memos, ADR-230),
 #  - speech recognition (Speech) only inside DoddyApp/Features/VoiceMemos, and every recognition
@@ -52,18 +52,15 @@ assistant_transport=DoddyApp/Infrastructure/Network/AppHTTPTransport.swift
 messaging_transport=DoddyApp/Infrastructure/Server/ServerHTTPTransport.swift
 # The ECB's public daily rates file, one fixed address (ADR-300).
 rates_client=DoddyApp/Infrastructure/Network/ExchangeRateClient.swift
-# Sign in with Apple for voice (owner's commit 754e5d6, ADR-484): the session posts only to
-# VoiceConfig.authEndpoint; the gate only shows Apple's button.
-voice_auth=DoddyApp/Features/Voice/VoiceAuthSession.swift
-voice_access_gate=DoddyApp/Features/Voice/VoiceAccessGate.swift
 # Every way Foundation can reach the network: sessions and their tasks, URL byte streams,
 # loading a web address straight into Data or String, and the older connection APIs. The app's own
 # URLSessionTransport type name is not networking and stays allowed.
 network_only='URLSession(WebSocketTask|DataTask|DownloadTask|UploadTask|StreamTask|Task|Configuration)?([^A-Za-z]|$)|URLRequest([^A-Za-z]|$)|\.resourceBytes|NSURLConnection|CFReadStream|CFHTTPMessage|contentsOf: *URL\(string:'
 web_auth_file=DoddyApp/Features/ConnectedApps/SystemWebAuthenticator.swift
 web_auth_only='ASWebAuthenticationSession|WKWebView|import WebKit|SFSafariViewController'
-# AuthenticationServices also has Sign in with Apple, which is a system sheet, not a browser.
-auth_services_only='import AuthenticationServices'
+# Sign in with Apple for voice access (754e5d6, ADR-494): the Apple ID provider and its button only.
+apple_sign_in_files='^DoddyApp/Features/Voice/(VoiceAuthSession|VoiceAccessGate)\.swift:'
+apple_sign_in_other='ASAuthorizationPasswordProvider|ASAuthorizationPlatformPublicKeyCredential|ASAuthorizationSecurityKey|ASCredentialProvider|ASAuthorizationProviderExtension|ASPasskey'
 voice_only='import ElevenLabs'
 memos_dir=DoddyApp/Features/VoiceMemos
 audio_only='import AVFoundation|import AVFAudio|AVAudio'
@@ -104,12 +101,8 @@ status=0
 if grep -RInE --include='*.swift' --include='*.plist' "$anywhere" "${dirs[@]}" Config; then
   echo "FAIL: forbidden capability code found (see matches above)." >&2; status=1
 fi
-if grep -RInE --include='*.swift' "$network_only" "${dirs[@]}" | code_only | grep -v -e "^$network_file:" -e "^$token_client:" -e "^$assistant_transport:" -e "^$messaging_transport:" -e "^$openai_voice:" -e "^$rates_client:" -e "^$voice_auth:"; then
-  echo "FAIL: networking code outside $network_file, $assistant_transport, $messaging_transport, $token_client, $openai_voice, $rates_client and $voice_auth." >&2; status=1
-fi
-# The voice sign-in session may only post to VoiceConfig.authEndpoint (ADR-484), never an address it builds or is given.
-if [ -f "$voice_auth" ] && grep -nE 'URL\(string|URLComponents|appendingPathComponent|https?://' "$voice_auth" | code_only; then
-  echo "FAIL: $voice_auth may only post to VoiceConfig.authEndpoint." >&2; status=1
+if grep -RInE --include='*.swift' "$network_only" "${dirs[@]}" | code_only | grep -v -e "^$network_file:" -e "^$token_client:" -e "^$assistant_transport:" -e "^$messaging_transport:" -e "^$openai_voice:" -e "^$rates_client:"; then
+  echo "FAIL: networking code outside $network_file, $assistant_transport, $messaging_transport, $token_client, $openai_voice and $rates_client." >&2; status=1
 fi
 # Face ID (ADR-310): LocalAuthentication only in the app lock.
 if grep -RInE --include='*.swift' 'import LocalAuthentication|LAContext' "${dirs[@]}" | code_only | grep -v "^DoddyApp/Features/Privacy/AppLock.swift:"; then
@@ -122,8 +115,11 @@ fi
 if grep -RInE --include='*.swift' "$web_auth_only" "${dirs[@]}" | code_only | grep -v "^$web_auth_file:"; then
   echo "FAIL: web authentication / web views outside $web_auth_file." >&2; status=1
 fi
-if grep -RInE --include='*.swift' "$auth_services_only" "${dirs[@]}" | code_only | grep -v -e "^$web_auth_file:" -e "^$voice_auth:" -e "^$voice_access_gate:"; then
-  echo "FAIL: AuthenticationServices outside $web_auth_file, $voice_auth and $voice_access_gate." >&2; status=1
+if grep -RInE --include='*.swift' 'import AuthenticationServices' "${dirs[@]}" | code_only | grep -v "^$web_auth_file:" | grep -vE "$apple_sign_in_files"; then
+  echo "FAIL: AuthenticationServices outside $web_auth_file and the two Sign in with Apple files (ADR-494)." >&2; status=1
+fi
+if grep -RInE --include='*.swift' "$apple_sign_in_other" "${dirs[@]}" | code_only; then
+  echo "FAIL: password, passkey or credential-provider APIs; only Sign in with Apple is allowed (ADR-494)." >&2; status=1
 fi
 if grep -RInE --include='*.swift' "$wake_only" "${dirs[@]}" | code_only | grep -v "^$wake_file:"; then
   echo "FAIL: wake-word engine code outside $wake_file." >&2; status=1
@@ -238,5 +234,5 @@ fi
 if grep -RnoE 'NS[A-Za-z]+UsageDescription' project.yml DoddyApp DoddyWidgets DoddyShare Config | grep -vE "$allowed_permissions"; then
   echo "FAIL: only the alarms, microphone, speech recognition, calendar, reminders, contacts, While Using location and Face ID permissions are allowed." >&2; status=1
 fi
-[ "$status" -eq 0 ] && echo "PASS: networking only in the token client, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice, the ECB rates client and the voice sign-in session (to the token server only), web auth only in Connected Apps, Sign in with Apple only in voice sign-in, ElevenLabs only in Voice, audio only in Voice and Voice memos, on-device speech recognition only in Voice memos, calendar, contacts and location only in Connections, photo reading and the photo picker only in Photos (no camera or photo library access), no Always/background location, no analytics, no secrets, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts, While Using location and Face ID (LocalAuthentication only in the app lock); backend has no write tools beyond the reviewed Gmail draft and reply draft, the Outlook draft and Todoist add, complete and move, and no proxy execution."
+[ "$status" -eq 0 ] && echo "PASS: networking only in the token client, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice and the ECB rates client, web auth only in Connected Apps, ElevenLabs only in Voice, audio only in Voice and Voice memos, on-device speech recognition only in Voice memos, calendar, contacts and location only in Connections, photo reading and the photo picker only in Photos (no camera or photo library access), no Always/background location, no analytics, no secrets, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts, While Using location and Face ID (LocalAuthentication only in the app lock); backend has no write tools beyond the reviewed Gmail draft and reply draft, the Outlook draft and Todoist add, complete and move, and no proxy execution."
 exit "$status"

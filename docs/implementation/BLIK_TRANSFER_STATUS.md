@@ -22,10 +22,10 @@ Why not more: BLIK has no public interface that lets an app send money. Phone tr
 | Copy | Numbers as digits (a +48 or 0048 number as its nine digits; another country keeps its +); this iPhone only, no Universal Clipboard, gone after 10 minutes. The amount is never copied. | `BlikPhone.forCopy`, `copyForBlik` |
 
 ## Evidence
-- `swift test --package-path Packages/DoddyCore` on Linux (Swift 6.2): 1,110 tests, 0 failures, the 15 `BlikTransferTests` included. (Two voice-token tests were failing before; they were stale after 754e5d6 and are fixed by ADR-484.)
+- `swift test --package-path Packages/DoddyCore` on Linux (Swift 6.2): 1,110 tests, 0 failures, the 15 `BlikTransferTests` included. (Two voice-token tests were failing before; they were stale after 754e5d6. This branch carries PR #84's fix for them, ADR-494.)
 - `python3 -I scripts/voice_agent_spec.py check`: PASS, 59 tools.
 - `python3 -I tools/build_strings_catalog.py --check`: PASS. Polish has lines for the 11 new screen strings; other languages show them in English. "To …" and the quoted title are built at run time and stay English, as the message card's are.
-- `scripts/ci.sh --core-only` (Linux, Swift 6.2, Node 22): PASS for the core-only scope, after ADR-484 repaired the capability guard and the non-UI app type-check that 754e5d6 had broken. The iOS build is NOT RUN here.
+- `scripts/ci.sh --core-only` (Linux, Swift 6.2, Node 22): PASS for the core-only scope, with PR #84's fix (ADR-494) for the capability guard, the non-UI app type-check and the two tests that 754e5d6 had broken, ported file for file so it drops out when #84 merges. The iOS build is NOT RUN here.
 
 ## Not done or not verified
 - **The app code has not been compiled.** No Mac here; `VoiceView`, `VoiceSessionController`, `ConnectionsView`, `DeviceConnections` and `ActivityView` changes are unbuilt. Hosted CI builds only on a pull request or a manual run.
