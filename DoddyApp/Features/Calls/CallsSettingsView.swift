@@ -206,7 +206,7 @@ struct CallsSettingsView: View {
                 }
                 .padding(.vertical, 4)
             }
-            Text(String(format: NSLocalizedString("Doddy doesn't call in quiet hours (%@–%@ where you are) unless you allowed it on the call's card. Turning off \"Doddy may call me\" cancels the calls still waiting.", comment: ""), quiet.start, quiet.end))
+            Text(String(format: NSLocalizedString("Doddy doesn't call in quiet hours (%@–%@ in your iPhone's time zone) unless you allowed it on the call's card. Turning off \"Doddy may call me\" cancels the calls still waiting.", comment: ""), quiet.start, quiet.end))
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
         }
@@ -216,15 +216,17 @@ struct CallsSettingsView: View {
     static func scheduledState(_ call: ScheduledCall) -> String {
         switch call.state {
         case "scheduled": NSLocalizedString("Waiting. Doddy's server will call you then.", comment: "")
-        case "placing": NSLocalizedString("Calling you now.", comment: "")
+        case "placing": NSLocalizedString("Doddy's server is placing this call.", comment: "")
         case "placed": NSLocalizedString("Placed: Twilio accepted the call.", comment: "")
         case "cancelled" where call.errorCode == "cancelled_by_user": NSLocalizedString("You cancelled it.", comment: "")
         case "cancelled": NSLocalizedString("Cancelled: your number or your consent to calls changed.", comment: "")
-        case "skipped_quiet_hours": NSLocalizedString("Not called: it was quiet hours where you were.", comment: "")
-        case "missed": NSLocalizedString("Not called: Doddy's server wasn't running at the time.", comment: "")
-        case "limit": NSLocalizedString("Not called: Doddy had already called as many times as it may.", comment: "")
-        case "failed" where call.errorCode == "not_configured" || call.errorCode == "reason_unreadable":
+        case "skipped_quiet_hours": NSLocalizedString("Not called: it was quiet hours in your iPhone's time zone.", comment: "")
+        case "missed": NSLocalizedString("Not called: Doddy's server couldn't place it in time.", comment: "")
+        case "limit": NSLocalizedString("Not called: Doddy had already tried to call as many times as it may.", comment: "")
+        case "failed" where call.errorCode == "not_configured":
             NSLocalizedString("Not called: Doddy's phone line wasn't set up on its server.", comment: "")
+        case "failed" where call.errorCode == "reason_unreadable":
+            NSLocalizedString("Not called: Doddy's server couldn't read what the call was about.", comment: "")
         case "failed": NSLocalizedString("Not called: the phone service turned it down.", comment: "")
         case "unknown": NSLocalizedString("Not sure: Doddy couldn't confirm whether the call was placed. It won't try again.", comment: "")
         default: NSLocalizedString("Doddy couldn't tell what happened to this call.", comment: "")

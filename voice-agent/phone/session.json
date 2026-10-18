@@ -9,7 +9,7 @@
   ],
   "variables": {
     "doddy_call_opening": "The first sentence, set by the server and never by the model, always saying Doddy is an AI (DOD-03): \"Hi, this is Doddy, an AI assistant. How can I help?\", or on a scheduled call \"...You asked me to call you about this: <reason>\" (in Polish when the call was asked for in Polish)",
-    "doddy_call_reason": "none | the reason the user approved for a scheduled call (ADR-495), their own words",
+    "doddy_call_reason": "none | the reason for a scheduled call, as the user approved it on the card (ADR-495)",
     "doddy_caller": "known | unknown | calls_off | unavailable",
     "doddy_direction": "inbound | outbound",
     "doddy_memory": "on | off (memory on calls)",

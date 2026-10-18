@@ -252,6 +252,47 @@ final class ScheduledCallTests: XCTestCase {
         }
     }
 
+    func testARepeatOfACallThatIsOverIsNeverBooked() async throws {
+        let cancelled = #"{"id":"6f1c2c1e-3b6c-4c55-9a39-0d6a1e9f1a10","at":"2026-10-19T16:30:00Z","state":"cancelled"}"#
+        let transport = StepTransport([
+            reply(409, #"{"error":"already_done","state":"cancelled"}"#), reply(202, cancelled), reply(409, #"{"error":"already_booked"}"#),
+        ])
+        let client = DoddyServerClient(transport: transport, credentials: FixedCredentials(token: "t"))
+        var outcomes: [ScheduleCallOutcome] = []
+        for _ in 0..<3 { outcomes.append(try await client.scheduleCall(draft, to: "+48500100200", allowQuietHours: false, language: .english)) }
+        XCTAssertEqual(outcomes, [.refused("already_done"), .refused("already_done"), .refused("already_booked")],
+                       "a 202 from an older server for a cancelled call is not booked either")
+        for code in ["already_done", "already_booked"] {
+            let text = VoiceToolReply.callRefused(code)
+            XCTAssertTrue(text.hasSuffix("Nothing new was booked."), text)
+            XCTAssertTrue(text.contains("Settings, Phone calls"), text)
+            XCTAssertEqual(ActivityEntry.outcome(of: text, isLookup: false).0, .notDone)
+        }
+    }
+
+    func testAfterAnUnclearTryARefusalSaysTheCallMayAlreadyBeBooked() {
+        let text = VoiceToolReply.callRefused("too_soon", mayBeBooked: true)
+        XCTAssertFalse(text.contains("Nothing was booked."), text)
+        XCTAssertTrue(text.contains("may already be booked"), text)
+        XCTAssertEqual(draft.identity(to: "+48500100200"), draft.approvalHash(to: "+48500100200", allowQuietHours: false))
+        XCTAssertFalse(VoiceToolReply.callUnknown.contains("while Doddy is open"))
+    }
+
+    func testTheZoneIsSentAgainOnlyWhileACallMayWaitAndTheZoneChanged() throws {
+        let later = now.addingTimeInterval(3_600)
+        XCTAssertTrue(CallZoneSync.shouldSend(now: now, waitingUntil: later, lastSent: "Europe/Warsaw", current: "Europe/London"))
+        XCTAssertTrue(CallZoneSync.shouldSend(now: now, waitingUntil: later, lastSent: nil, current: "Europe/London"))
+        XCTAssertFalse(CallZoneSync.shouldSend(now: now, waitingUntil: later, lastSent: "Europe/London", current: "Europe/London"))
+        XCTAssertFalse(CallZoneSync.shouldSend(now: now, waitingUntil: now.addingTimeInterval(-60), lastSent: "Europe/Warsaw", current: "Europe/London"),
+                       "no call waiting: nothing is sent")
+        XCTAssertFalse(CallZoneSync.shouldSend(now: now, waitingUntil: nil, lastSent: nil, current: "Europe/London"))
+        let list = #"{"calls":[{"id":"6f1c2c1e-3b6c-4c55-9a39-0d6a1e9f1a10","at":"2026-10-19T16:30:00Z","state":"scheduled","errorCode":null,"allowQuietHours":false,"reason":"A"},{"id":"7f1c2c1e-3b6c-4c55-9a39-0d6a1e9f1a10","at":"2026-10-21T16:30:00Z","state":"placed","errorCode":null,"allowQuietHours":false,"reason":null},{"id":"8f1c2c1e-3b6c-4c55-9a39-0d6a1e9f1a10","at":"2026-10-20T08:00:00Z","state":"scheduled","errorCode":null,"allowQuietHours":true,"reason":"B"}]}"#
+        struct List: Decodable { let calls: [ScheduledCall] }
+        let calls = try JSONDecoder().decode(List.self, from: Data(list.utf8)).calls
+        XCTAssertEqual(CallZoneSync.waitingUntil(calls), ServerDates.parse("2026-10-20T08:00:00Z"), "only calls still waiting")
+        XCTAssertNil(CallZoneSync.waitingUntil([]))
+    }
+
     func testOfflineBeforeItLeftIsUnknownOnlyWhenItMayHaveBeenSent() async throws {
         // The app's transport reports every URLSession failure as `.offline`, timeouts included.
         let transport = StepTransport([.failure(ServerError.offline)])
@@ -297,6 +338,7 @@ final class ScheduledCallTests: XCTestCase {
             XCTAssertEqual(ActivityEntry.outcome(of: VoiceToolReply.callNotReady(readiness), isLookup: false).0, .notDone)
         }
         XCTAssertFalse(booked.lowercased().contains("called"))
+        XCTAssertTrue(booked.contains("if notifications are on"), "a notice goes out only when it can")
     }
 
     func testTheLogKeepsTheTimeButNeverTheReason() throws {

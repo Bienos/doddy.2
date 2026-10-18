@@ -2968,29 +2968,44 @@ final class VoiceSessionController {
     private func bookCall(
         _ draft: CallLaterDraft, to: String, quietHours: QuietHours, allowQuietHours: Bool
     ) async -> (reply: String, attempted: Bool) {
+        // An earlier try of this call (either switch) had an unclear outcome: a refusal now
+        // doesn't mean nothing is booked.
+        let identity = draft.identity(to: to)
+        let mayBeBooked = Self.unconfirmedCalls.contains(identity)
         // The card may have waited: a time inside quiet hours needs the switch, and a time that
         // is now under a minute away can't be booked.
         if draft.inQuietHours(quietHours) && !allowQuietHours {
-            return (VoiceToolReply.callRefused("quiet_hours", quietHours: quietHours), false)
+            return (VoiceToolReply.callRefused("quiet_hours", quietHours: quietHours, mayBeBooked: mayBeBooked), false)
         }
-        if draft.at.timeIntervalSinceNow < 60 { return (VoiceToolReply.callRefused("too_soon"), false) }
+        if draft.at.timeIntervalSinceNow < 60 { return (VoiceToolReply.callRefused("too_soon", mayBeBooked: mayBeBooked), false) }
         guard let client = Self.messagingClient() else { return (VoiceToolReply.callNoServer, false) }
-        let hash = draft.approvalHash(to: to, allowQuietHours: allowQuietHours)
         do {
             switch try await client.scheduleCall(draft, to: to, allowQuietHours: allowQuietHours, language: .current) {
             case .booked:
-                Self.unconfirmedCalls.remove(hash)
+                Self.unconfirmedCalls.remove(identity)
+                Self.rememberBooked(draft)
                 return (VoiceToolReply.callBooked(draft, calendar: .current), true)
             case .refused(let code):
-                return (VoiceToolReply.callRefused(code, quietHours: quietHours), false)
+                return (VoiceToolReply.callRefused(code, quietHours: quietHours, mayBeBooked: mayBeBooked), false)
             case .unknown:
-                Self.unconfirmedCalls.insert(hash)
+                Self.unconfirmedCalls.insert(identity)
+                Self.rememberBooked(draft)
                 return (VoiceToolReply.callUnknown, true)
             }
         } catch {
-            // Certainly not booked: offline before it left, or an answer that means it never ran.
-            return (VoiceToolReply.callNotBooked(error as? ServerError), false)
+            // Certainly not booked now: offline before it left, or an answer that means it never ran.
+            let reply = VoiceToolReply.callNotBooked(error as? ServerError)
+            return (mayBeBooked ? reply + " An earlier try of this call may already be booked: tell the user to check Settings, Phone calls." : reply, false)
         }
+    }
+
+    /// So the app sends its time zone again when it comes to the front while this call may be
+    /// waiting (CallZoneSync); the booking itself sent this zone.
+    private static func rememberBooked(_ draft: CallLaterDraft) {
+        let defaults = UserDefaults.standard
+        let until = defaults.object(forKey: CallZoneSync.waitingUntilKey) as? Date
+        defaults.set(max(until ?? draft.at, draft.at), forKey: CallZoneSync.waitingUntilKey)
+        defaults.set(draft.timeZoneID, forKey: CallZoneSync.lastSentKey)
     }
 
     private func propose(_ action: PendingAction, toolCallID: String) {

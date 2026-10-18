@@ -103,7 +103,7 @@ contact_policy:
   quiet_hours_default:
     start: "21:00"
     end: "08:00"
-    timezone: user_device
+    timezone: last_reported_by_device
     timezone_fallback: Europe/Warsaw
     applies_to: [scheduled_calls]
     override: per_call_on_card

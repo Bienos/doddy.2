@@ -32,7 +32,7 @@ export interface CallVariables {
   doddy_memory: "on" | "off";
   doddy_pin: "set" | "not_set";
   doddy_direction: "inbound" | "outbound";
-  /** A scheduled call's approved reason, the user's own words, or "none" (ADR-495). */
+  /** A scheduled call's reason as the user approved it on the card, or "none" (ADR-495). */
   doddy_call_reason: string;
   /** The agent's first sentence, written by the server (callOpening below). */
   doddy_call_opening: string;

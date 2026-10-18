@@ -175,6 +175,8 @@ struct RootView: View {
                     if store.hasLoaded && store.loadError == nil {
                         MemoryCopySync.shared.retryIfNeeded(PrivateNotesStore.current().shareable(store.memories))
                     }
+                    // Quiet hours for a booked call are checked in this iPhone's zone (ADR-495).
+                    CallZoneSender.sendIfNeeded()
                     pickUpSharedItem()
                 }
                 if phase == .background {

@@ -194,9 +194,13 @@ final class CallsModel {
             scheduledProblem = String(format: NSLocalizedString("Couldn't load your booked calls. %@", comment: ""), Self.text(for: error))
             return
         }
+        let defaults = UserDefaults.standard
+        defaults.set(CallZoneSync.waitingUntil(scheduled), forKey: CallZoneSync.waitingUntilKey)
         let zone = TimeZone.current.identifier
         if scheduled.contains(where: \.canCancel), settings.timeZone != zone {
-            try? await client.setCallTimeZone(zone)
+            if (try? await client.setCallTimeZone(zone)) != nil { defaults.set(zone, forKey: CallZoneSync.lastSentKey) }
+        } else if let held = settings.timeZone {
+            defaults.set(held, forKey: CallZoneSync.lastSentKey)
         }
     }
 
@@ -321,6 +325,33 @@ extension TextsPause {
         case .repliesNotSetUp: NSLocalizedString("Replies are paused: they aren't set up on Doddy's server. Your texts wait as notes.", comment: "")
         case .repliesCantText: NSLocalizedString("Replies are paused: Doddy can't text you (texts are off in Notifications and texts, or you sent STOP). Your texts wait as notes.", comment: "")
         case .memoriesWithoutCopy: NSLocalizedString("Memory on calls is off, so replies can't use your notes.", comment: "")
+        }
+    }
+}
+
+/// Tells Doddy's server the iPhone's time zone when Doddy comes to the front while a call it
+/// booked may still be waiting (ADR-495), so quiet hours are checked where the user is. Sends
+/// nothing otherwise, and never creates a server account to do it.
+@MainActor
+enum CallZoneSender {
+    private static var sending = false
+
+    static func sendIfNeeded(now: Date = Date()) {
+        let defaults = UserDefaults.standard
+        let current = TimeZone.current.identifier
+        guard !sending,
+              CallZoneSync.shouldSend(
+                now: now, waitingUntil: defaults.object(forKey: CallZoneSync.waitingUntilKey) as? Date,
+                lastSent: defaults.string(forKey: CallZoneSync.lastSentKey), current: current),
+              let client = ServerConfig.client()
+        else { return }
+        sending = true
+        Task { @MainActor in
+            defer { sending = false }
+            guard await client.hasAccount() else { return }
+            if (try? await client.setCallTimeZone(current)) != nil {
+                UserDefaults.standard.set(current, forKey: CallZoneSync.lastSentKey)
+            }
         }
     }
 }

@@ -8997,17 +8997,6 @@
         }
       }
     },
-    "Calling you now.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dzwoni teraz do Ciebie."
-          }
-        }
-      }
-    },
     "Calls you booked": {
       "extractionState": "manual",
       "localizations": {
@@ -17101,13 +17090,13 @@
         }
       }
     },
-    "Doddy couldn't confirm an earlier try of this exact call. Booking again while Doddy is open won't book it twice.": {
+    "Doddy couldn't confirm an earlier try of this exact call. It may already be booked: Doddy's server never books the same time and reason twice.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy nie mógł potwierdzić wcześniejszej próby umówienia dokładnie tego telefonu. Ponowna próba, póki Doddy jest otwarty, nie umówi go dwa razy."
+            "value": "Doddy nie mógł potwierdzić wcześniejszej próby umówienia dokładnie tego telefonu. Może już być umówiony: serwer Doddy’ego nigdy nie umawia dwa razy tej samej godziny z tym samym powodem."
           }
         }
       }
@@ -17504,13 +17493,13 @@
         }
       }
     },
-    "Doddy doesn't call in quiet hours (%@–%@ where you are) unless you allowed it on the call's card. Turning off \"Doddy may call me\" cancels the calls still waiting.": {
+    "Doddy doesn't call in quiet hours (%@–%@ in your iPhone's time zone) unless you allowed it on the call's card. Turning off \"Doddy may call me\" cancels the calls still waiting.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy nie dzwoni w godzinach ciszy (%@–%@ tam, gdzie jesteś), chyba że zezwolisz na to na karcie telefonu. Wyłączenie „Doddy może do mnie dzwonić” anuluje telefony, które jeszcze czekają."
+            "value": "Doddy nie dzwoni w godzinach ciszy (%@–%@ w strefie czasowej Twojego iPhone’a), chyba że zezwolisz na to na karcie telefonu. Wyłączenie „Doddy może do mnie dzwonić” anuluje telefony, które jeszcze czekają."
           }
         }
       }
@@ -20139,13 +20128,24 @@
         }
       }
     },
-    "Doddy's server keeps the reason encrypted until the call is over, and checks quiet hours where you are when it's time. Twilio places the call. You can cancel it in Settings, Phone calls.": {
+    "Doddy's server is placing this call.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Serwer Doddy’ego przechowuje powód zaszyfrowany do końca rozmowy i w chwili połączenia sprawdza godziny ciszy tam, gdzie jesteś. Połączenie wykonuje Twilio. Możesz je anulować w Ustawieniach, w sekcji Rozmowy telefoniczne."
+            "value": "Serwer Doddy’ego wykonuje teraz to połączenie."
+          }
+        }
+      }
+    },
+    "Doddy's server keeps the reason encrypted until the call is over, and checks quiet hours in your iPhone's time zone when it's time. Twilio places the call. You can cancel it in Settings, Phone calls.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego przechowuje powód zaszyfrowany do końca rozmowy i w chwili połączenia sprawdza godziny ciszy w strefie czasowej Twojego iPhone’a. Połączenie wykonuje Twilio. Możesz je anulować w Ustawieniach, w sekcji Rozmowy telefoniczne."
           }
         }
       }
@@ -39125,13 +39125,13 @@
         }
       }
     },
-    "Not called: Doddy had already called as many times as it may.": {
+    "Not called: Doddy had already tried to call as many times as it may.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Bez połączenia: Doddy wykonał już tyle połączeń, ile może."
+            "value": "Bez połączenia: Doddy próbował już dzwonić tyle razy, ile może."
           }
         }
       }
@@ -39147,24 +39147,35 @@
         }
       }
     },
-    "Not called: Doddy's server wasn't running at the time.": {
+    "Not called: Doddy's server couldn't place it in time.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Bez połączenia: serwer Doddy’ego wtedy nie działał."
+            "value": "Bez połączenia: serwer Doddy’ego nie zdążył go wykonać."
           }
         }
       }
     },
-    "Not called: it was quiet hours where you were.": {
+    "Not called: Doddy's server couldn't read what the call was about.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Bez połączenia: tam, gdzie wtedy było Twoje urządzenie, trwały godziny ciszy."
+            "value": "Bez połączenia: serwer Doddy’ego nie mógł odczytać, czego dotyczy rozmowa."
+          }
+        }
+      }
+    },
+    "Not called: it was quiet hours in your iPhone's time zone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bez połączenia: w strefie czasowej Twojego iPhone’a trwały godziny ciszy."
           }
         }
       }

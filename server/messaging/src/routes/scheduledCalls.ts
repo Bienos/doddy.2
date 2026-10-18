@@ -5,10 +5,10 @@ import { parse, type Deps } from "../app.js";
 import { callApprovalHash } from "../approval.js";
 import { principal, requireDevice } from "../auth.js";
 import { OUTBOUND_DAILY_LIMIT, OUTBOUND_HOURLY_LIMIT } from "../calls.js";
-import { inTransaction } from "../db.js";
+import { inTransaction, type Db } from "../db.js";
 import { inQuietHours, isValidTimeZone, QUIET_HOURS_DEFAULT } from "../quietHours.js";
 import {
-  CALL_REASON_MAX_LENGTH, SCHEDULED_CALL_MAX_DAYS, SCHEDULED_CALLS_PENDING_MAX, sealReason,
+  CALL_REASON_MAX_LENGTH, capExceeded, SCHEDULED_CALL_MAX_DAYS, SCHEDULED_CALLS_PENDING_MAX, sealReason,
 } from "../scheduledCalls.js";
 import { callsAvailable } from "./twilioVoice.js";
 
@@ -33,6 +33,35 @@ const scheduleBody = z.object({
 });
 const idParam = z.object({ id: z.uuid() });
 
+type Queryable = { query: Db["query"] };
+
+/** The verified number and whether calls from Doddy are on. */
+async function caller(db: Queryable, accountId: string): Promise<{ e164: string | null; consent: boolean }> {
+  const { rows: [who] } = await db.query<{ e164: string | null; consent: boolean }>(
+    `SELECT p.e164, s.outbound_consent_at IS NOT NULL AS consent FROM (SELECT $1::uuid AS account_id) a
+     LEFT JOIN phone_numbers p ON p.account_id = a.account_id LEFT JOIN call_settings s ON s.account_id = a.account_id`,
+    [accountId]);
+  return { e164: who?.e164 ?? null, consent: who?.consent ?? false };
+}
+
+/**
+ * The answer to a repeat of an earlier request (the same idempotency key), or undefined for a new
+ * one. A call still waiting or being placed is the same call again; one that is over is not
+ * "booked" any more, so the repeat says so instead of repeating 202.
+ */
+async function repeatOf(db: Queryable, accountId: string, key: string, expected: Buffer):
+    Promise<{ status: number; body: object } | undefined> {
+  const { rows: [again] } = await db.query<{ id: string; call_at_text: string; state: string; approval_hash: Buffer }>(
+    "SELECT id, call_at_text, state, approval_hash FROM scheduled_calls WHERE account_id = $1 AND idempotency_key = $2",
+    [accountId, key]);
+  if (!again) return undefined;
+  if (!again.approval_hash.equals(expected)) return { status: 409, body: { error: "idempotency_mismatch" } };
+  if (again.state !== "scheduled" && again.state !== "placing") {
+    return { status: 409, body: { error: "already_done", id: again.id, state: again.state } };
+  }
+  return { status: 202, body: { id: again.id, at: again.call_at_text, state: again.state } };
+}
+
 class Refused extends Error {
   constructor(readonly status: number, readonly code: string) { super(code); }
 }
@@ -48,50 +77,58 @@ export const scheduledCallRoutes = (deps: Deps): FastifyPluginAsync => async (ap
     if (!body) return;
     const at = new Date(body.at);
     if (Number.isNaN(at.getTime())) return reply.code(400).send({ error: "invalid_request", fields: ["at"] });
-    const now = Date.now();
-    if (at.getTime() < now + 60_000) return reply.code(409).send({ error: "too_soon" });
-    if (at.getTime() > now + SCHEDULED_CALL_MAX_DAYS * 86_400_000 + 5 * 60_000) return reply.code(409).send({ error: "too_far" });
     const { accountId } = principal(req);
-    const { rows: [who] } = await db.query<{ e164: string | null; consent: boolean }>(
-      `SELECT p.e164, s.outbound_consent_at IS NOT NULL AS consent FROM (SELECT $1::uuid AS account_id) a
-       LEFT JOIN phone_numbers p ON p.account_id = a.account_id LEFT JOIN call_settings s ON s.account_id = a.account_id`,
-      [accountId]);
-    if (!who?.e164) return reply.code(409).send({ error: "no_verified_phone" });
+    const who = await caller(db, accountId);
+    if (!who.e164) return reply.code(409).send({ error: "no_verified_phone" });
     if (!who.consent) return reply.code(409).send({ error: "outbound_not_enabled" });
     // The number, time, reason and quiet-hours choice the card showed; any difference is refused.
     const expected = callApprovalHash(who.e164, body.at, body.reason, body.allowQuietHours);
     if (!timingSafeEqual(expected, Buffer.from(body.approvalHash, "hex"))) {
       return reply.code(409).send({ error: "approval_mismatch" });
     }
+    // A repeat of the same tap is answered before anything else, so a try-again after an unclear
+    // answer hears what happened to the first, not a refusal that would read as "not booked".
+    const earlier = await repeatOf(db, accountId, body.idempotencyKey, expected);
+    if (earlier) return reply.code(earlier.status).send(earlier.body);
+    const now = Date.now();
+    if (at.getTime() < now + 60_000) return reply.code(409).send({ error: "too_soon" });
+    if (at.getTime() > now + SCHEDULED_CALL_MAX_DAYS * 86_400_000 + 5 * 60_000) return reply.code(409).send({ error: "too_far" });
     if (!body.allowQuietHours && inQuietHours(at, body.timeZone, deps.quietHours ?? QUIET_HOURS_DEFAULT)) {
       return reply.code(409).send({ error: "quiet_hours" });
     }
     const cipher = deps.cipher;
+    // The same call with the other quiet-hours choice, as a second card could approve it.
+    const sameCall = [callApprovalHash(who.e164, body.at, body.reason, false), callApprovalHash(who.e164, body.at, body.reason, true)];
     try {
       const call = await inTransaction(db, async (c) => {
+        // The same lock as Call me now, turning calls off and changing the number (cancelScheduledCalls).
         await c.query("SELECT pg_advisory_xact_lock(hashtext('outbound_calls:' || $1))", [accountId]);
-        const { rows: [again] } = await c.query<{ id: string; call_at_text: string; state: string; approval_hash: Buffer }>(
-          "SELECT id, call_at_text, state, approval_hash FROM scheduled_calls WHERE account_id = $1 AND idempotency_key = $2",
-          [accountId, body.idempotencyKey]);
-        if (again) {
-          // A retry of the same tap: the same call again, never a second one.
-          if (!again.approval_hash.equals(expected)) throw new Refused(409, "idempotency_mismatch");
-          return { id: again.id, at: again.call_at_text, state: again.state };
-        }
-        const { rows: [counts] } = await c.query<{ pending: number; day: number; hour: number }>(
-          `SELECT count(*) FILTER (WHERE state = 'scheduled')::int AS pending,
-                  count(*) FILTER (WHERE state = 'scheduled' AND call_at > $2::timestamptz - interval '1 day' AND call_at <= $2)::int AS day,
-                  count(*) FILTER (WHERE state = 'scheduled' AND call_at > $2::timestamptz - interval '1 hour' AND call_at <= $2)::int AS hour
-           FROM scheduled_calls WHERE account_id = $1`, [accountId, at]);
-        if ((counts?.pending ?? 0) >= SCHEDULED_CALLS_PENDING_MAX) throw new Refused(429, "too_many_scheduled");
-        const { rows: [made] } = await c.query<{ day: number; hour: number }>(
-          `SELECT count(*)::int AS day, count(*) FILTER (WHERE created_at > $2::timestamptz - interval '1 hour')::int AS hour
-           FROM calls WHERE account_id = $1 AND direction = 'outbound'
-           AND created_at > $2::timestamptz - interval '1 day' AND created_at <= $2`, [accountId, at]);
-        // The caps are checked now, for the calls already made or booked before this one, and
-        // again when the call is due.
-        if ((counts?.day ?? 0) + (made?.day ?? 0) >= OUTBOUND_DAILY_LIMIT) throw new Refused(429, "daily_limit");
-        if ((counts?.hour ?? 0) + (made?.hour ?? 0) >= OUTBOUND_HOURLY_LIMIT) throw new Refused(429, "hourly_limit");
+        const again = await repeatOf(c, accountId, body.idempotencyKey, expected);
+        if (again) return again;
+        // Checked again under the lock: consent or the number may have changed since.
+        const now = await caller(c, accountId);
+        if (!now.consent) throw new Refused(409, "outbound_not_enabled");
+        if (now.e164 !== who.e164) throw new Refused(409, "approval_mismatch");
+        // The same time and reason already waiting (another card, or after Doddy was reopened):
+        // never a second call.
+        const { rowCount: duplicate } = await c.query(
+          `SELECT 1 FROM scheduled_calls WHERE account_id = $1 AND state IN ('scheduled', 'placing') AND approval_hash = ANY($2::bytea[])`,
+          [accountId, sameCall]);
+        if (duplicate) throw new Refused(409, "already_booked");
+        const { rows: [{ pending } = { pending: 0 }] } = await c.query<{ pending: number }>(
+          "SELECT count(*)::int AS pending FROM scheduled_calls WHERE account_id = $1 AND state = 'scheduled'", [accountId]);
+        if (pending >= SCHEDULED_CALLS_PENDING_MAX) throw new Refused(429, "too_many_scheduled");
+        // Every hour and every day that would hold this call, counting calls already made and
+        // calls booked before and after it. Checked again when the call is due.
+        const { rows: times } = await c.query<{ t: Date }>(
+          `SELECT created_at AS t FROM calls WHERE account_id = $1 AND direction = 'outbound'
+             AND created_at > $2::timestamptz - interval '1 day'
+           UNION ALL
+           SELECT call_at AS t FROM scheduled_calls WHERE account_id = $1 AND state IN ('scheduled', 'placing')
+             AND call_at > $2::timestamptz - interval '1 day' AND call_at < $2::timestamptz + interval '1 day'`, [accountId, at]);
+        const others = times.map((r) => r.t);
+        if (capExceeded(others, at, 86_400_000, OUTBOUND_DAILY_LIMIT)) throw new Refused(429, "daily_limit");
+        if (capExceeded(others, at, 3_600_000, OUTBOUND_HOURLY_LIMIT)) throw new Refused(429, "hourly_limit");
         const id = randomUUID();
         await c.query(
           `INSERT INTO scheduled_calls (id, account_id, call_at, call_at_text, reason_ciphertext, reason_key_version, time_zone,
@@ -99,13 +136,13 @@ export const scheduledCallRoutes = (deps: Deps): FastifyPluginAsync => async (ap
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'scheduled')`,
           [id, accountId, at, body.at, sealReason(cipher, accountId, id, body.reason), cipher.keyVersion, body.timeZone,
             body.allowQuietHours, body.language, expected, body.idempotencyKey]);
-        // Where the user is now, for quiet hours when the call is due.
+        // The zone the iPhone is in now, for quiet hours when the call is due.
         await c.query(
           `INSERT INTO call_settings (account_id, time_zone) VALUES ($1, $2)
            ON CONFLICT (account_id) DO UPDATE SET time_zone = $2, updated_at = now()`, [accountId, body.timeZone]);
-        return { id, at: body.at, state: "scheduled" };
+        return { status: 202, body: { id, at: body.at, state: "scheduled" } };
       });
-      return reply.code(202).send(call);
+      return reply.code(call.status).send(call.body);
     } catch (err) {
       if (err instanceof Refused) return reply.code(err.status).send({ error: err.code });
       throw err;

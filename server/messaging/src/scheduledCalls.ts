@@ -27,22 +27,24 @@ const PLACING_STUCK_MINUTES = 5;
 const REASON_KEPT_HOURS = 2;
 
 type Notice = (time: string) => string;
-const NOTICE: Record<Language, { missed: Notice; quiet: Notice; limit: Notice; cancelled: Notice; failed: Notice; notSetUp: Notice }> = {
+const NOTICE: Record<Language, { missed: Notice; quiet: Notice; limit: Notice; cancelled: Notice; failed: Notice; notSetUp: Notice; unreadable: Notice }> = {
   en: {
-    missed: (t) => `Doddy couldn't call you at ${t}: its server wasn't running then. Ask again if you still want the call.`,
-    quiet: (t) => `Doddy didn't call you at ${t}: it's quiet hours where you are now. Ask again for another time.`,
-    limit: (t) => `Doddy didn't call you at ${t}: it had already called you as many times as it may in an hour or a day.`,
+    missed: (t) => `Doddy couldn't call you at ${t}: its server couldn't place the call in time. Ask again if you still want it.`,
+    quiet: (t) => `Doddy didn't call you at ${t}: it was quiet hours in the time zone your iPhone last gave Doddy. Ask again for another time.`,
+    limit: (t) => `Doddy didn't call you at ${t}: it had already tried to call you as many times as it may in an hour or a day.`,
     cancelled: (t) => `Doddy didn't call you at ${t}: your number or your consent to calls changed since you asked.`,
     failed: (t) => `Doddy couldn't place your call at ${t}: the phone service turned it down. Ask again if you still want it.`,
     notSetUp: (t) => `Doddy couldn't call you at ${t}: its phone line isn't set up on its server right now.`,
+    unreadable: (t) => `Doddy couldn't call you at ${t}: its server couldn't read what the call was about. Ask again if you still want it.`,
   },
   pl: {
-    missed: (t) => `Doddy nie mógł zadzwonić o ${t}: jego serwer wtedy nie działał. Poproś ponownie, jeśli nadal chcesz tę rozmowę.`,
-    quiet: (t) => `Doddy nie zadzwonił o ${t}: tam, gdzie teraz jesteś, trwają godziny ciszy. Poproś o inną godzinę.`,
-    limit: (t) => `Doddy nie zadzwonił o ${t}: wykonał już tyle połączeń, ile może w ciągu godziny lub dnia.`,
+    missed: (t) => `Doddy nie mógł zadzwonić o ${t}: jego serwer nie zdążył wykonać połączenia. Poproś ponownie, jeśli nadal chcesz tę rozmowę.`,
+    quiet: (t) => `Doddy nie zadzwonił o ${t}: w strefie czasowej, którą Twój iPhone ostatnio podał Doddy’emu, trwały godziny ciszy. Poproś o inną godzinę.`,
+    limit: (t) => `Doddy nie zadzwonił o ${t}: próbował już dzwonić tyle razy, ile może w ciągu godziny lub dnia.`,
     cancelled: (t) => `Doddy nie zadzwonił o ${t}: od Twojej prośby zmienił się numer albo zgoda na rozmowy.`,
     failed: (t) => `Doddy nie mógł zadzwonić o ${t}: usługa telefoniczna odrzuciła połączenie. Poproś ponownie, jeśli nadal chcesz tę rozmowę.`,
     notSetUp: (t) => `Doddy nie mógł zadzwonić o ${t}: jego linia telefoniczna nie jest teraz skonfigurowana na serwerze.`,
+    unreadable: (t) => `Doddy nie mógł zadzwonić o ${t}: jego serwer nie mógł odczytać, czego dotyczy rozmowa. Poproś ponownie, jeśli nadal jej chcesz.`,
   },
 };
 
@@ -90,8 +92,8 @@ export async function placeDueCall(deps: ScheduledCallDeps): Promise<boolean> {
     return true;
   };
 
-  // Too late: Doddy's server wasn't running at the time. A call long after it was asked for is
-  // not what the user approved.
+  // Too late (the worker wasn't running, or was held up): a call long after the time the user
+  // approved is not what they approved.
   if (now.getTime() - due.call_at.getTime() > SCHEDULED_CALL_LATE_MINUTES * 60_000) {
     return end("missed", "server_late", NOTICE[language].missed);
   }
@@ -109,12 +111,12 @@ export async function placeDueCall(deps: ScheduledCallDeps): Promise<boolean> {
   try {
     reason = cipher.decrypt(due.reason_ciphertext, reasonAad(due.account_id, due.id));
   } catch {
-    return end("failed", "reason_unreadable", NOTICE[language].notSetUp, zone);
+    return end("failed", "reason_unreadable", NOTICE[language].unreadable, zone);
   }
   // The approval covers the number it was shown for: a different number now is not approved.
   const expected = callApprovalHash(who.e164, due.call_at_text, reason, due.allow_quiet_hours);
   if (!timingSafeEqual(expected, due.approval_hash)) return end("cancelled", "number_changed", NOTICE[language].cancelled, zone);
-  // Quiet hours where the user is now (the zone may have changed since the card).
+  // Quiet hours in the zone the iPhone last sent (it may have changed since the card).
   if (!due.allow_quiet_hours && inQuietHours(now, zone, deps.quietHours ?? QUIET_HOURS_DEFAULT)) {
     return end("skipped_quiet_hours", "quiet_hours", NOTICE[language].quiet, zone);
   }
@@ -197,14 +199,29 @@ export async function pruneCallReasons(db: Db): Promise<number> {
 
 /**
  * The number changed or went, or calls were turned off: calls waiting for it won't happen, and
- * their reasons are erased now. The worker would refuse them anyway (the approval is bound to the
+ * their reasons are erased now. Call it inside the transaction that makes the change. The worker would refuse them anyway (the approval is bound to the
  * number); this keeps the list honest and the reasons no longer than needed.
  */
-export async function cancelScheduledCalls(db: pg.Pool | pg.PoolClient, accountId: string, code: "number_changed" | "consent_off"): Promise<number> {
+export async function cancelScheduledCalls(db: pg.PoolClient, accountId: string, code: "number_changed" | "consent_off"): Promise<number> {
+  // Inside the caller's transaction, under the lock a booking takes, so a booking can't slip in
+  // between this and the change that caused it.
+  await db.query("SELECT pg_advisory_xact_lock(hashtext('outbound_calls:' || $1))", [accountId]);
   const r = await db.query(
     `UPDATE scheduled_calls SET state = 'cancelled', error_code = $2, reason_ciphertext = NULL, reason_key_version = NULL,
        updated_at = now() WHERE account_id = $1 AND state = 'scheduled'`, [accountId, code]);
   return r.rowCount ?? 0;
+}
+
+/**
+ * Whether one more call at `at` would put more than `limit` calls into some window of `windowMs`
+ * that holds it, with the calls at `others` (made or booked). Windows are half-open, like the
+ * worker's "in the last hour" count, and it is enough to try those starting at a call.
+ */
+export function capExceeded(others: readonly Date[], at: Date, windowMs: number, limit: number): boolean {
+  const points = [...others.map((d) => d.getTime()), at.getTime()];
+  const t = at.getTime();
+  return points.some((start) => start <= t && start > t - windowMs
+    && points.filter((p) => p >= start && p < start + windowMs).length > limit);
 }
 
 export const sealReason = (cipher: TextCipher, accountId: string, id: string, reason: string) =>

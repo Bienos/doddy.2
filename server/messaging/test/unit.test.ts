@@ -22,7 +22,7 @@ import {
   DEFAULT_TIME_ZONE, formatClock, inQuietHours, isValidTimeZone, localClock, parseClock, QUIET_HOURS_DEFAULT,
 } from "../src/quietHours.js";
 import {
-  CALL_REASON_MAX_LENGTH, SCHEDULED_CALL_LATE_MINUTES, SCHEDULED_CALL_MAX_DAYS, SCHEDULED_CALLS_PENDING_MAX,
+  CALL_REASON_MAX_LENGTH, capExceeded, SCHEDULED_CALL_LATE_MINUTES, SCHEDULED_CALL_MAX_DAYS, SCHEDULED_CALLS_PENDING_MAX,
 } from "../src/scheduledCalls.js";
 
 test("Twilio signature matches the official twilio library", () => {
@@ -373,4 +373,16 @@ test("the phone agent's first sentence always says Doddy is an AI, and says a sc
   assert.equal(session.first_message.en, "{{doddy_call_opening}}");
   assert.equal(session.elevenlabs.placeholders.doddy_call_opening, callOpening(undefined, "en"));
   assert.equal(session.elevenlabs.placeholders.doddy_call_reason, "none");
+});
+
+test("the caps count every window that would hold the new call, before and after it", () => {
+  const t = (m: number) => new Date(Date.UTC(2026, 9, 19, 18, m));
+  const hour = 3_600_000;
+  assert.equal(capExceeded([t(10), t(20)], t(5), hour, 3), false, "three in the hour is the limit, not over it");
+  assert.equal(capExceeded([t(10), t(20), t(30)], t(5), hour, 3), true, "calls after it count");
+  assert.equal(capExceeded([t(-50), t(-40), t(-30)], t(5), hour, 3), true, "calls before it count");
+  assert.equal(capExceeded([t(-60), t(-50), t(65)], t(5), hour, 3), false, "no single hour holds four");
+  assert.equal(capExceeded([t(-54), t(-50), t(4)], t(5), hour, 3), true);
+  assert.equal(capExceeded([t(-55), t(-50), t(4)], t(5), hour, 3), false, "an hour before is outside, as in the worker's count");
+  assert.equal(capExceeded([], t(5), hour, 0), true);
 });

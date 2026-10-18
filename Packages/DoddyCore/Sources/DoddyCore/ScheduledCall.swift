@@ -114,6 +114,9 @@ public struct CallLaterDraft: Equatable, Sendable {
 
     public var timeZone: TimeZone { TimeZone(identifier: timeZoneID) ?? .current }
 
+    /// The same call whatever the quiet-hours switch says, for "an earlier try was unclear".
+    public func identity(to: String) -> String { approvalHash(to: to, allowQuietHours: false) }
+
     /// What the card approves: this number, this time, this reason, and the quiet-hours choice.
     public func approvalHash(to: String, allowQuietHours: Bool) -> String {
         ApprovalHash.call(to: to, at: atText, reason: reason, allowQuietHours: allowQuietHours)
@@ -182,6 +185,24 @@ extension VoiceToolRequest {
     }
 }
 
+/// When the app tells the server its time zone again (ADR-495): quiet hours for a booked call are
+/// checked in the zone the server last heard, so the app sends a new one when it comes to the
+/// front while a call it booked may still be waiting. Nothing is sent when no call is waiting.
+public enum CallZoneSync {
+    public static let waitingUntilKey = "calls.bookedWaitingUntil"
+    public static let lastSentKey = "calls.lastSentTimeZone"
+
+    public static func shouldSend(now: Date, waitingUntil: Date?, lastSent: String?, current: String) -> Bool {
+        guard let waitingUntil, waitingUntil > now else { return false }
+        return lastSent != current
+    }
+
+    /// After a booking or a list from the server: the latest time a call may still be waiting.
+    public static func waitingUntil(_ calls: [ScheduledCall]) -> Date? {
+        calls.filter(\.canCancel).compactMap(\.atDate).max()
+    }
+}
+
 // MARK: Server
 
 /// A call booked for later, as the server lists it. `reason` is nil once the call is over or
@@ -240,6 +261,9 @@ extension DoddyServerClient {
         }
         if response.status == 202, let booked = try? JSONDecoder().decode(Booked.self, from: response.body) {
             forgetCallKey(hash)
+            // A repeat of a call that is no longer waiting is not "booked" (the server answers
+            // 409 for that; this guards against an older server that repeats 202).
+            if let state = booked.state, state != "scheduled", state != "placing" { return .refused("already_done") }
             return .booked(id: booked.id)
         }
         let code = (try? JSONDecoder().decode(CallError.self, from: response.body))?.error
@@ -280,7 +304,7 @@ private struct ScheduleBody: Encodable {
     let approvalHash: String
     let idempotencyKey: String
 }
-private struct Booked: Decodable { let id: UUID }
+private struct Booked: Decodable { let id: UUID; let state: String? }
 private struct CallError: Decodable { let error: String? }
 private struct ScheduledList: Decodable { let calls: [ScheduledCall] }
 private struct ZoneBody: Encodable { let timeZone: String }
@@ -328,7 +352,9 @@ extension VoiceToolReply {
         }
     }
 
-    public static func callRefused(_ code: String, quietHours: QuietHours = .standard) -> String {
+    /// `mayBeBooked`: an earlier try of this call had an unclear outcome, so a refusal now doesn't
+    /// mean nothing is booked (the earlier one may be).
+    public static func callRefused(_ code: String, quietHours: QuietHours = .standard, mayBeBooked: Bool = false) -> String {
         let reason = switch code {
         case "quiet_hours":
             "that time is inside quiet hours (\(quietHours.start) to \(quietHours.end)) where the user is. Ask for another time, or whether to call even in quiet hours, which the user can switch on on the card."
@@ -354,10 +380,19 @@ extension VoiceToolReply {
             "there were too many tries in the last hour. Try again later."
         case "idempotency_mismatch":
             "the server saw a different call under the same approval. Ask the user to ask again."
+        case "already_booked":
+            "this exact call (the same time and reason) is already booked. The user can see it in Settings, Phone calls."
+        case "already_done":
+            "this exact call was booked earlier and isn't waiting any more (it was placed, cancelled or skipped). The user can see what happened in Settings, Phone calls."
         case "invalid":
             "the server didn't accept the time or the reason as written."
         default:
             "the server refused it (\(code))."
+        }
+        if code == "already_booked" || code == "already_done" { return "failed: \(reason) Nothing new was booked." }
+        if mayBeBooked {
+            return "failed: \(reason) Nothing new was booked, but Doddy couldn't confirm an earlier try of this call, so it may already be booked. "
+                + "Tell the user to check Settings, Phone calls."
         }
         return "failed: \(reason) Nothing was booked."
     }
@@ -368,16 +403,16 @@ extension VoiceToolReply {
         var local = calendar
         local.timeZone = draft.timeZone
         return "booked: Doddy's server will call the user's number at \(localText(draft.at, hasTime: true, calendar: local)). "
-            + "When they answer, Doddy says the reason first. If it can't call then (quiet hours where they are, the daily limit, "
-            + "their number or consent changed), it tells them instead. They can cancel it in Settings, Phone calls."
+            + "When they answer, Doddy says the reason first. If it can't call then (quiet hours in their iPhone's time zone, "
+            + "the limit on calls, their number or consent changed), it doesn't call and sends a notification if notifications are on. "
+            + "They can cancel it in Settings, Phone calls."
     }
 
     /// The request may have reached the server but no answer came back (DOD-08, DOD-09).
     public static let callUnknown = """
         unknown: Doddy couldn't confirm whether its server booked the call. Don't say it is booked, and don't call \
         call_me_later again on your own. The user can check in Settings, Phone calls. If they ask to try again, call \
-        call_me_later with exactly the same time and reason: the server recognises a repeat of the same approval and \
-        books it at most once.
+        call_me_later with exactly the same time and reason: the server books the same time and reason at most once.
         """
 }
 

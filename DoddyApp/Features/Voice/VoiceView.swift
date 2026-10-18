@@ -1004,12 +1004,12 @@ struct VoiceView: View {
                   systemImage: "moon")
                 .font(.footnote)
         }
-        if VoiceSessionController.unconfirmedCalls.contains(draft.approvalHash(to: to, allowQuietHours: controller.callLaterAllowQuiet)) {
-            Label("Doddy couldn't confirm an earlier try of this exact call. Booking again while Doddy is open won't book it twice.",
+        if VoiceSessionController.unconfirmedCalls.contains(draft.identity(to: to)) {
+            Label("Doddy couldn't confirm an earlier try of this exact call. It may already be booked: Doddy's server never books the same time and reason twice.",
                   systemImage: "exclamationmark.triangle")
                 .font(.footnote)
         }
-        Text("Doddy's server keeps the reason encrypted until the call is over, and checks quiet hours where you are when it's time. Twilio places the call. You can cancel it in Settings, Phone calls.")
+        Text("Doddy's server keeps the reason encrypted until the call is over, and checks quiet hours in your iPhone's time zone when it's time. Twilio places the call. You can cancel it in Settings, Phone calls.")
             .font(.footnote)
             .foregroundStyle(Theme.secondaryText)
     }

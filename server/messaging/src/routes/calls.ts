@@ -83,17 +83,19 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
       if (!phone.rowCount) return reply.code(409).send({ error: "no_verified_phone" });
     }
     await ensureRow(accountId);
-    // Turning calls from Doddy off also cancels the calls booked for later (ADR-495).
-    if (body.outboundConsent === false) await cancelScheduledCalls(db, accountId, "consent_off");
-    await db.query(
-      `UPDATE call_settings SET updated_at = now(),
-         inbound_enabled = coalesce($2, inbound_enabled),
-         outbound_consent_at = CASE WHEN $3::boolean IS NULL THEN outbound_consent_at WHEN $3 THEN now() END,
-         outbound_consent_text_version = CASE WHEN $3::boolean IS NULL THEN outbound_consent_text_version WHEN $3 THEN $4 END,
-         time_zone = coalesce($5, time_zone)
-       WHERE account_id = $1`,
-      [accountId, body.inboundEnabled ?? null, body.outboundConsent ?? null, body.outboundConsentTextVersion ?? null,
-        body.timeZone ?? null]);
+    await inTransaction(db, async (c) => {
+      await c.query(
+        `UPDATE call_settings SET updated_at = now(),
+           inbound_enabled = coalesce($2, inbound_enabled),
+           outbound_consent_at = CASE WHEN $3::boolean IS NULL THEN outbound_consent_at WHEN $3 THEN now() END,
+           outbound_consent_text_version = CASE WHEN $3::boolean IS NULL THEN outbound_consent_text_version WHEN $3 THEN $4 END,
+           time_zone = coalesce($5, time_zone)
+         WHERE account_id = $1`,
+        [accountId, body.inboundEnabled ?? null, body.outboundConsent ?? null, body.outboundConsentTextVersion ?? null,
+          body.timeZone ?? null]);
+      // Turning calls from Doddy off also cancels the calls booked for later (ADR-495).
+      if (body.outboundConsent === false) await cancelScheduledCalls(c, accountId, "consent_off");
+    });
     return reply.code(204).send();
   });
 

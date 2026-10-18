@@ -131,6 +131,21 @@ describe("scheduled calls against real Postgres", { skip: dbSkip }, () => {
     assert.deepEqual(again.json(), first.json());
     assert.equal((await book(o, { at, reason: "Something else", key })).json().error, "idempotency_mismatch");
     assert.equal((await list(o.h)).filter((c) => c.reason === reason).length, 1);
+    // The same time and reason from another card (another key, the other quiet-hours choice):
+    // never a second call.
+    assert.equal((await book(o, { at, reason, allowQuietHours: true })).json().error, "already_booked");
+    // A repeat is answered with what happened to the first, before any other check: here the
+    // time has come so close that a new booking would be refused as too soon.
+    const soon = (await book(o, { at: inMinutes(300), reason: "Soon", key: "soon-key" })).json() as { id: string };
+    const past = iso(inMinutes(-1));
+    await db.query("UPDATE scheduled_calls SET call_at_text = $2, approval_hash = $3 WHERE id = $1",
+      [soon.id, past, callApprovalHash(o.phone, past, "Soon", false)]);
+    const repeat = await book(o, { at: new Date(past), reason: "Soon", key: "soon-key" });
+    assert.deepEqual([repeat.statusCode, repeat.json().id, repeat.json().state], [202, soon.id, "scheduled"]);
+    // A repeat of a call that is over doesn't say booked.
+    assert.equal((await call("DELETE", `/v1/calls/scheduled/${soon.id}`, o.h)).statusCode, 204);
+    const over = await book(o, { at: new Date(past), reason: "Soon", key: "soon-key" });
+    assert.deepEqual([over.statusCode, over.json().error, over.json().state], [409, "already_done", "cancelled"]);
     // The booking tells the server the user's zone, for quiet hours when the call is due.
     assert.equal((await call("GET", "/v1/calls/settings", o.h)).json().timeZone, zone);
 
@@ -197,7 +212,7 @@ describe("scheduled calls against real Postgres", { skip: dbSkip }, () => {
     assert.deepEqual(await row(late.id), { state: "missed", error_code: "server_late", reason: false, call_id: null });
     await deliver();
     assert.equal(notices(), sent + 1);
-    assert.match(push.sent.at(-1)!.body, /^Doddy couldn't call you at \d\d:\d\d: its server wasn't running then\./);
+    assert.match(push.sent.at(-1)!.body, /^Doddy couldn't call you at \d\d:\d\d: its server couldn't place the call in time\./);
     assert.doesNotMatch(push.sent.at(-1)!.body, /cake/, "the reason is never in a notice");
 
     // The user travelled: quiet hours are checked where they are when the call is due.
@@ -207,7 +222,7 @@ describe("scheduled calls against real Postgres", { skip: dbSkip }, () => {
     assert.equal(await worker(at), true);
     assert.equal((await row(trip.id)).state, "skipped_quiet_hours");
     await deliver();
-    assert.match(push.sent.at(-1)!.body, /it's quiet hours where you are now/);
+    assert.match(push.sent.at(-1)!.body, /quiet hours in the time zone your iPhone last gave Doddy/);
     // Allowed on the card: it rings anyway.
     const allowed = (await book(o, { at, allowQuietHours: true, timeZone: zoneWhere(at, true) })).json() as { id: string };
     assert.equal(await worker(at), true);
@@ -306,7 +321,7 @@ describe("scheduled calls against real Postgres", { skip: dbSkip }, () => {
       const when = inMinutes(200 + i * 24 * 60 / 1.5);
       assert.equal((await book(o, { at: when, allowQuietHours: true, timeZone: zone })).statusCode, 202, `call ${i}`);
     }
-    assert.equal((await book(o, { at, allowQuietHours: true, timeZone: zone })).json().error, "too_many_scheduled");
+    assert.equal((await book(o, { at, allowQuietHours: true, timeZone: zone, reason: "An eleventh" })).json().error, "too_many_scheduled");
 
     const p = await owner("+48500200051");
     const insertCalls = (n: number, ago: string) => db.query(
@@ -326,6 +341,12 @@ describe("scheduled calls against real Postgres", { skip: dbSkip }, () => {
     assert.equal(await worker(inMinutes(70)), true);
     assert.equal((await row(later.id)).state, "limit");
     assert.equal(outbound.calls.length, before);
+    // Calls booked after this one count too: an hour from 18:05 that already holds three.
+    const s = await owner("+48500200054");
+    for (const m of [210, 220, 230]) assert.equal((await book(s, { at: inMinutes(m), allowQuietHours: true, reason: `r${m}` })).statusCode, 202);
+    assert.equal((await book(s, { at: inMinutes(205), allowQuietHours: true })).json().error, "hourly_limit");
+    assert.equal((await book(s, { at: inMinutes(231), allowQuietHours: true })).json().error, "hourly_limit");
+    assert.equal((await book(s, { at: inMinutes(291), allowQuietHours: true })).statusCode, 202, "an hour after the first is free again");
     // The day's cap.
     const q = await owner("+48500200052");
     await db.query(
@@ -343,6 +364,63 @@ describe("scheduled calls against real Postgres", { skip: dbSkip }, () => {
     assert.equal(await worker(inMinutes(80)), true);
     assert.equal((await row(dayLater.id)).state, "limit");
     assert.equal(outbound.calls.length, before);
+  });
+
+  test("turning calls off and booking can't cross: both take the same lock", async () => {
+    const lock = (c: { query: Db["query"] }, accountId: string) =>
+      c.query("SELECT pg_advisory_xact_lock(hashtext('outbound_calls:' || $1))", [accountId]);
+    const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
+    // A booking is between its checks and its insert when the user turns calls off.
+    const o = await owner("+48500200080");
+    const c = await db.connect();
+    try {
+      await c.query("BEGIN");
+      await lock(c, o.accountId);
+      const off = call("PUT", "/v1/calls/settings", o.h, { outboundConsent: false });
+      await pause(300);
+      const id = randomUUID();
+      const at = iso(inMinutes(400));
+      await c.query(
+        `INSERT INTO scheduled_calls (id, account_id, call_at, call_at_text, reason_ciphertext, reason_key_version, time_zone,
+           approval_hash, idempotency_key, state)
+         VALUES ($1, $2, $3, $4, $5, $6, 'UTC', $7, $8, 'scheduled')`,
+        [id, o.accountId, new Date(at), at, testCipher.encrypt("x", `${o.accountId}:call_reason:${id}`), testCipher.keyVersion,
+          callApprovalHash(o.phone, at, "x", false), randomUUID()]);
+      await c.query("COMMIT");
+      assert.equal((await off).statusCode, 204);
+      assert.deepEqual([(await row(id)).state, (await row(id)).reason], ["cancelled", false], "turning off waited for the booking, then cancelled it");
+    } finally {
+      c.release();
+    }
+    // Calls are turned off while a booking waits for the lock: the booking reads consent again.
+    const p = await owner("+48500200081");
+    const d = await db.connect();
+    try {
+      await d.query("BEGIN");
+      await lock(d, p.accountId);
+      const booking = book(p, { at: inMinutes(410) });
+      await pause(300);
+      await d.query("UPDATE call_settings SET outbound_consent_at = NULL, outbound_consent_text_version = NULL WHERE account_id = $1", [p.accountId]);
+      await d.query("COMMIT");
+      assert.equal((await booking).json().error, "outbound_not_enabled");
+    } finally {
+      d.release();
+    }
+  });
+
+  test("a reason the server can't read is never guessed: no call, and the user is told why", async () => {
+    const o = await owner("+48500200085", { push: true });
+    const at = inMinutes(420);
+    const { id } = (await book(o, { at })).json() as { id: string };
+    // Encrypted for another call: it won't open for this one.
+    await db.query("UPDATE scheduled_calls SET reason_ciphertext = $2 WHERE id = $1",
+      [id, testCipher.encrypt("x", `${o.accountId}:call_reason:${randomUUID()}`)]);
+    const before = outbound.calls.length;
+    assert.equal(await worker(at), true);
+    assert.deepEqual([(await row(id)).state, (await row(id)).error_code, (await row(id)).reason], ["failed", "reason_unreadable", false]);
+    assert.equal(outbound.calls.length, before);
+    await dispatchDue(db, { push, cipher: testCipher });
+    assert.match(push.sent.at(-1)!.body, /couldn't read what the call was about/);
   });
 
   test("cancel: only your own call, only while it waits; account deletion removes them", async () => {

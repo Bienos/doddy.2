@@ -275,6 +275,7 @@ Send Claude what you saw and heard. Never send codes, the PIN or keys.
 | 7 | Book one for two minutes from now and don't answer | It rings once. Doddy doesn't call again. |
 | 8 | **What Doddy did** | A row "Call you later from Doddy's number" with the time, never the reason |
 | 9 | Render logs | `scheduled call` lines with ids and states only, never a reason or a number |
+| 10 | With the iPhone in Polish, book a call and answer | Doddy's first sentence is in Polish ("Cześć, tu Doddy, asystent AI…"). Tell Claude if it sounds read with English pronunciation: the phone agent is set up with English as its language. |
 
 ## When something goes wrong
 | What you see | Likely cause |
@@ -290,8 +291,8 @@ Send Claude what you saw and heard. Never send codes, the PIN or keys.
 | U2: Doddy says it reached the most texts allowed for today | 20 approved texts a day per account (`contact_policy` in `docs/trust/config/doddy_rules.yaml`) |
 | U3: your text gets no note and no answer | **Accept texts from my number** is off, or the Messaging Service webhook isn't the server. Render's `text dropped` line gives the reason. |
 | U3: "Doddy couldn't answer that just now" | Render's `text reply` line has the code: `anthropic_401` (wrong key), `anthropic_429` (rate or spending limit), `refusal`, `deadline`. Your text is kept as a note. |
-| U4: no call came, and a notification says Doddy's server wasn't running | The worker wasn't running at the time (the web service was asleep or restarting). A call more than 15 minutes late is never placed. On Render's starter plan the service doesn't sleep. |
-| U4: a notification says it was quiet hours where you are | The server checks quiet hours in the time zone your iPhone last told it. Book again with **Call even in quiet hours** on, or for another time. |
+| U4: no call came, and a notification says the server couldn't place it in time | The worker wasn't running at the time (the web service was restarting or deploying) or was held up. A call more than 15 minutes late is never placed. On Render's starter plan the service doesn't sleep. |
+| U4: a notification says it was quiet hours in your iPhone's time zone | The server checks quiet hours in the time zone your iPhone last sent: when you booked, or when you last opened Doddy while a call was waiting. Book again with **Call even in quiet hours** on, or for another time. |
 | U4: Doddy answers a booked call with only "How can I help?" | The phone agent was created before U4 (step 3) |
 | U3: the replies switch can't be turned on | Replies are texts from Doddy, so texts in **Notifications and texts** must be on (and no STOP since), and `ANTHROPIC_API_KEY` must be set |
 
