@@ -60,7 +60,8 @@ extension ActivityOutcome {
     /// Nil for look-ups: nothing was changed, so there is no action to track.
     public var status: ActionStatus? {
         switch self {
-        case .lookedUp: nil
+        // A BLIK transfer card (ADR-510): Doddy did nothing to track; the user sends it in their bank app.
+        case .lookedUp, .shown: nil
         case .done, .alreadyThere: .confirmed
         case .opened: .handedOff
         case .notSure: .unknown

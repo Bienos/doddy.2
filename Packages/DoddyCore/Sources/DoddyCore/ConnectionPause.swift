@@ -16,7 +16,7 @@ public enum ConnectionPause {
              .addToList, .readList, .checkOff, .removeFromList, .createList, .noteCapabilityGap:
             false
         case .readCalendar, .findFreeTime, .leaveBy, .createCalendarEvent, .createReminder, .lookupContact, .upcomingBirthdays, .setTimer,
-             .openMap, .runShortcut, .draftMessage, .cloudTool, .changeCalendarEvent, .changeReminder,
+             .openMap, .runShortcut, .draftMessage, .draftBlikTransfer, .cloudTool, .changeCalendarEvent, .changeReminder,
              .deleteCalendarEvent, .deleteReminder, .setAlarm, .undoLast,
              .deleteCalendarEvents, .moveReminders, .listAlarms, .cancelAlarm,
              .convertCurrency:
