@@ -5,7 +5,7 @@
     {
       "type": "function",
       "name": "search_memories",
-      "description": "Search the notes the user has explicitly saved in Doddy on their iPhone. Use it whenever the user asks about something they may have saved (where they put something, what someone recommended, a code, a decision). The search is word-based and notes may have been saved in Polish or English, so pass the key words in BOTH languages, e.g. 'kod code paczkomat parcel locker' or 'klucze keys'. Numbers as digits. If nothing matched, try once more with a broader or different word before giving up. To list the notes with one of the user's tags (a word they wrote with #), pass exactly that tag as the query, e.g. '#car'. The app returns the exact saved notes with their saved date, or says nothing matched. Only answer from what this tool returns; if nothing matched, say you couldn't find it in their saved memories and never guess. ASK-01: before this tool runs, say in one short line exactly what you will look at and ask, for example 'Shall I check your inbox?' (Polish: 'Mam sprawdzić twoją skrzynkę?'). The app shows the same question on screen and runs it only after the user says yes or taps Yes; if the result starts with 'declined', nothing was looked at: say so in one short sentence.",
+      "description": "Search the notes the user has explicitly saved in Doddy on their iPhone. Use it whenever the user asks about something they may have saved (where they put something, what someone recommended, a code, a decision). The search is word-based and notes may have been saved in Polish or English, so pass the key words in BOTH languages, e.g. 'kod code paczkomat parcel locker' or 'klucze keys'. Numbers as digits. If nothing matched, try once more with a broader or different word before giving up. To list the notes with one of the user's tags (a word they wrote with #), pass exactly that tag as the query, e.g. '#car'. To list the notes about one person (a name they wrote with @), pass exactly that name as the query, e.g. '@Marta'. The app returns the exact saved notes with their saved date, or says nothing matched. Only answer from what this tool returns; if nothing matched, say you couldn't find it in their saved memories and never guess. ASK-01: before this tool runs, say in one short line exactly what you will look at and ask, for example 'Shall I check your inbox?' (Polish: 'Mam sprawdzić twoją skrzynkę?'). The app shows the same question on screen and runs it only after the user says yes or taps Yes; if the result starts with 'declined', nothing was looked at: say so in one short sentence.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -1164,7 +1164,7 @@
     {
       "type": "function",
       "name": "note_capability_gap",
-      "description": "Write down, on the user's iPhone, that they asked for something none of your tools can do. Call it once when the user asks for something you cannot do with your tools, for example playing music, controlling a smart home, making a payment, sending a message directly or controlling another app, in addition to telling them plainly that you cannot do it. Give only a category, never the user's words. It adds one row on the iPhone and uses no other app; the app asks the user on a card first. The result starts with 'noted' or 'declined'. ASK-01: the app shows exactly this on a card and changes nothing until the user taps it. Before this tool runs, say only one short line that asks the user to confirm on screen, for example 'Confirm on screen if I should do this.' (Polish: 'Potwierdź na ekranie, jeśli mam to zrobić.'). If the result starts with 'declined', nothing changed.",
+      "description": "Write down, on the user's iPhone, that they asked for something none of your tools can do. Call it once when the user asks for something you cannot do with your tools, for example playing music, controlling a smart home, making a payment other than paying for one web page with pay_for_page, sending a message directly or controlling another app, in addition to telling them plainly that you cannot do it. Give only a category, never the user's words. It adds one row on the iPhone and uses no other app; the app asks the user on a card first. The result starts with 'noted' or 'declined'. ASK-01: the app shows exactly this on a card and changes nothing until the user taps it. Before this tool runs, say only one short line that asks the user to confirm on screen, for example 'Confirm on screen if I should do this.' (Polish: 'Potwierdź na ekranie, jeśli mam to zrobić.'). If the result starts with 'declined', nothing changed. Never mention this tool or that you wrote it down unless the user asks.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -1172,7 +1172,7 @@
         },
         "required": ["category"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 60, "elevenlabs_tool_id": "not_synced"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 60, "elevenlabs_tool_id": "tool_3801m4rntsxbf9yr0vf8r8jnf6n9"}
     }
   ]
 }
