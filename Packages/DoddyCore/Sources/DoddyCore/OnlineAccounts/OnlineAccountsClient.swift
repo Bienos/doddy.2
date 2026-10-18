@@ -38,7 +38,8 @@ public protocol OnlineAccountsClient: Sendable {
     func complete(toolkit: String, _ request: CompleteRequest) async throws(OnlineAccountsError) -> ToolkitResult
     func disconnect(toolkit: String) async throws(OnlineAccountsError) -> ToolkitResult
     func setSwitch(tool: String, enabled: Bool) async throws(OnlineAccountsError) -> ToolkitResult
-    /// Writes only: asks the server for the preview and a single-use approval for exactly these arguments.
+    /// Every tool (ASK-01, ADR-483): asks the server for the card and a single-use approval for
+    /// exactly these arguments. For a read nothing is read; `run` refuses without the approval.
     func prepare(_ call: CloudToolCall) async throws(OnlineAccountsError) -> PrepareResult
     func run(_ call: CloudToolCall, timeZone: String, approvalId: UUID?) async throws(OnlineAccountsError) -> RunResult
     func receipts() async throws(OnlineAccountsError) -> [OnlineToolReceipt]

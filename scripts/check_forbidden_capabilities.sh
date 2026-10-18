@@ -6,7 +6,14 @@
 #    ADR-148); the ElevenLabs SDK does the voice connection, except the OpenAI Realtime test voice
 #    (ADR-265), whose WebSocket lives in one file in Features/Voice, and the exchange-rate client
 #    (ADR-300), which downloads only the ECB's public rates file,
-#  - the system authentication browser is used only by Connected Apps,
+#  - the system authentication browser is used only by Connected Apps; Sign in with Apple
+#    (AuthenticationServices without a browser or web view) only in the voice account sign-in
+#    (VoiceAccessGate, VoiceAuthSession), whose one network call posts to the voice token
+#    server's /api/voice-auth (ADR-484),
+#  - ASK-01 (ADR-483): every voice tool asks first. Each tool in voice-agent/tools.json runs on the
+#    phone with an x_doddy.ask; every server tool has a card (preview) and runs only through the
+#    one approval gate (backend/src/tools/askFirst.ts); the voice controller checks AskFirst
+#    before any tool runs,
 #  - ElevenLabs code only inside DoddyApp/Features/Voice; audio (AVFoundation) only there and in
 #    DoddyApp/Features/VoiceMemos (recording and playing voice memos, ADR-230),
 #  - speech recognition (Speech) only inside DoddyApp/Features/VoiceMemos, and every recognition
@@ -55,7 +62,12 @@ rates_client=DoddyApp/Infrastructure/Network/ExchangeRateClient.swift
 # URLSessionTransport type name is not networking and stays allowed.
 network_only='URLSession(WebSocketTask|DataTask|DownloadTask|UploadTask|StreamTask|Task|Configuration)?([^A-Za-z]|$)|URLRequest([^A-Za-z]|$)|\.resourceBytes|NSURLConnection|CFReadStream|CFHTTPMessage|contentsOf: *URL\(string:'
 web_auth_file=DoddyApp/Features/ConnectedApps/SystemWebAuthenticator.swift
-web_auth_only='import AuthenticationServices|ASWebAuthenticationSession|WKWebView|import WebKit|SFSafariViewController'
+# A browser or web view: only Connected Apps (ADR-484 narrowed this from the whole framework).
+web_auth_only='ASWebAuthenticationSession|WKWebView|import WebKit|SFSafariViewController'
+# AuthenticationServices itself: Connected Apps, and Sign in with Apple for the voice account.
+auth_services='import AuthenticationServices'
+apple_sign_in_files='^(DoddyApp/Features/ConnectedApps/SystemWebAuthenticator.swift|DoddyApp/Features/Voice/VoiceAccessGate.swift|DoddyApp/Features/Voice/VoiceAuthSession.swift):'
+voice_auth=DoddyApp/Features/Voice/VoiceAuthSession.swift
 voice_only='import ElevenLabs'
 memos_dir=DoddyApp/Features/VoiceMemos
 audio_only='import AVFoundation|import AVFAudio|AVAudio'
@@ -96,8 +108,12 @@ status=0
 if grep -RInE --include='*.swift' --include='*.plist' "$anywhere" "${dirs[@]}" Config; then
   echo "FAIL: forbidden capability code found (see matches above)." >&2; status=1
 fi
-if grep -RInE --include='*.swift' "$network_only" "${dirs[@]}" | code_only | grep -v -e "^$network_file:" -e "^$token_client:" -e "^$assistant_transport:" -e "^$messaging_transport:" -e "^$openai_voice:" -e "^$rates_client:"; then
-  echo "FAIL: networking code outside $network_file, $assistant_transport, $messaging_transport, $token_client, $openai_voice and $rates_client." >&2; status=1
+if grep -RInE --include='*.swift' "$network_only" "${dirs[@]}" | code_only | grep -v -e "^$network_file:" -e "^$token_client:" -e "^$assistant_transport:" -e "^$messaging_transport:" -e "^$openai_voice:" -e "^$rates_client:" -e "^$voice_auth:"; then
+  echo "FAIL: networking code outside $network_file, $assistant_transport, $messaging_transport, $token_client, $voice_auth, $openai_voice and $rates_client." >&2; status=1
+fi
+# The voice account client may only post to VoiceConfig.authEndpoint, never an address it builds (ADR-484).
+if [ -f "$voice_auth" ] && grep -nE 'URL\(string|URLComponents|appendingPathComponent|https?://' "$voice_auth" | code_only; then
+  echo "FAIL: $voice_auth may only post to VoiceConfig.authEndpoint." >&2; status=1
 fi
 # Face ID (ADR-310): LocalAuthentication only in the app lock.
 if grep -RInE --include='*.swift' 'import LocalAuthentication|LAContext' "${dirs[@]}" | code_only | grep -v "^DoddyApp/Features/Privacy/AppLock.swift:"; then
@@ -109,6 +125,28 @@ if [ -f "$rates_client" ] && grep -nE 'URL\(string|URLComponents|appendingPathCo
 fi
 if grep -RInE --include='*.swift' "$web_auth_only" "${dirs[@]}" | code_only | grep -v "^$web_auth_file:"; then
   echo "FAIL: web authentication / web views outside $web_auth_file." >&2; status=1
+fi
+if grep -RInE --include='*.swift' "$auth_services" "${dirs[@]}" | code_only | grep -vE "$apple_sign_in_files"; then
+  echo "FAIL: AuthenticationServices outside Connected Apps and the voice account's Sign in with Apple (ADR-484)." >&2; status=1
+fi
+# ASK-01 (ADR-483): a tool without a way to ask first fails here.
+if ! python3 -I - voice-agent/tools.json <<'PY'
+import json, sys
+bad = []
+for t in json.load(open(sys.argv[1], encoding="utf-8"))["tools"]:
+    x = t.get("x_doddy", {})
+    if x.get("runs_on") != "phone" or x.get("ask") not in ("yes_or_tap", "tap") or (x.get("ask") == "tap") != bool(x.get("confirm_on_screen")):
+        bad.append(t.get("name"))
+if bad:
+    print("tools without an ask:", ", ".join(map(str, bad)))
+    sys.exit(1)
+PY
+then
+  echo "FAIL: ASK-01: every voice tool must run on the phone and ask first (x_doddy.ask; 'tap' with confirm_on_screen)." >&2; status=1
+fi
+voice_controller=DoddyApp/Features/Voice/VoiceSessionController.swift
+if [ -f "$voice_controller" ] && ! { grep -q 'AskFirst.need(for: request)' "$voice_controller" && grep -q 'askLedger.mayRun(' "$voice_controller"; }; then
+  echo "FAIL: ASK-01: $voice_controller must check AskFirst before a tool runs." >&2; status=1
 fi
 if grep -RInE --include='*.swift' "$wake_only" "${dirs[@]}" | code_only | grep -v "^$wake_file:"; then
   echo "FAIL: wake-word engine code outside $wake_file." >&2; status=1
@@ -188,6 +226,28 @@ if [ -d "$backend_src" ]; then
     | grep -vE "^($tools_catalog|$tools_mock):[0-9]+:([^O]|O[^U])*OUTLOOK_CREATE_DRAFT([^A-Z0-9_]|$)([^O]|O[^U])*$"; then
     echo "FAIL: an Outlook write tool beyond the reviewed draft is referenced in the backend." >&2; status=1
   fi
+  # ASK-01: every server tool has a card and runs only through the one gate.
+  if grep -nE 'preview\?\(' "$tools_catalog"; then
+    echo "FAIL: ASK-01: a tool's preview (its card) is required in $tools_catalog." >&2; status=1
+  fi
+  if ! python3 -I - "$tools_catalog" <<'PY'
+import re, sys
+src = open(sys.argv[1], encoding="utf-8").read()
+blocks = re.findall(r"export const (\w+): CloudToolDefinition = \{(.*?)\n\};", src, re.S)
+missing = [name for name, body in blocks if "\n  preview:" not in body]
+if not blocks or missing:
+    print("tools without a card:", ", ".join(missing) or "(none found)")
+    sys.exit(1)
+PY
+  then
+    echo "FAIL: ASK-01: every tool in $tools_catalog needs a preview (its card)." >&2; status=1
+  fi
+  if grep -RInE 'consumeApproval\(' --include='*.ts' "$backend_src" | code_only | grep -vE "^$backend_src/(store|policy|tools/askFirst)\.ts:"; then
+    echo "FAIL: ASK-01: approvals are checked only in backend/src/tools/askFirst.ts (and the older policy.ts)." >&2; status=1
+  fi
+  if ! grep -q 'this.ask.allows(binding, request.approvalId' "$backend_src/tools/service.ts" || ! grep -q 'this.ask.allows(binding(target)' "$backend_src/tools/service.ts"; then
+    echo "FAIL: ASK-01: both run paths in backend/src/tools/service.ts must go through AskGate." >&2; status=1
+  fi
   if grep -RInE 'tools\.proxy|proxyExecute|COMPOSIO_MULTI_EXECUTE|COMPOSIO_REMOTE' "$backend_src"; then
     echo "FAIL: generic proxy/meta-tool execution in the backend." >&2; status=1
   fi
@@ -223,5 +283,5 @@ fi
 if grep -RnoE 'NS[A-Za-z]+UsageDescription' project.yml DoddyApp DoddyWidgets DoddyShare Config | grep -vE "$allowed_permissions"; then
   echo "FAIL: only the alarms, microphone, speech recognition, calendar, reminders, contacts, While Using location and Face ID permissions are allowed." >&2; status=1
 fi
-[ "$status" -eq 0 ] && echo "PASS: networking only in the token client, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice and the ECB rates client, web auth only in Connected Apps, ElevenLabs only in Voice, audio only in Voice and Voice memos, on-device speech recognition only in Voice memos, calendar, contacts and location only in Connections, photo reading and the photo picker only in Photos (no camera or photo library access), no Always/background location, no analytics, no secrets, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts, While Using location and Face ID (LocalAuthentication only in the app lock); backend has no write tools beyond the reviewed Gmail draft and reply draft, the Outlook draft and Todoist add, complete and move, and no proxy execution."
+[ "$status" -eq 0 ] && echo "PASS: ASK-01: every voice tool and every server tool asks first through one gate; networking only in the token client, the voice account sign-in, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice and the ECB rates client, web auth only in Connected Apps, ElevenLabs only in Voice, audio only in Voice and Voice memos, on-device speech recognition only in Voice memos, calendar, contacts and location only in Connections, photo reading and the photo picker only in Photos (no camera or photo library access), no Always/background location, no analytics, no secrets, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts, While Using location and Face ID (LocalAuthentication only in the app lock); backend has no write tools beyond the reviewed Gmail draft and reply draft, the Outlook draft and Todoist add, complete and move, and no proxy execution."
 exit "$status"

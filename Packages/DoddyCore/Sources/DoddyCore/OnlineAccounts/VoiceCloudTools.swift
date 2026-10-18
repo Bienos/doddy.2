@@ -61,6 +61,10 @@ extension VoiceToolReply {
             if receipt?.status == .outcomeUnknown { return maybeDone }
             switch code {
             case "capability_disabled":
+                // ASK-01: the server had no yes for this exact call (or it was used or expired).
+                if receipt?.errorCode == "ask_first_required" {
+                    return "declined: Doddy didn't have the user's yes for \"\(CloudToolName.title(tool))\", so nothing was looked at or done. Ask again only if the user wants."
+                }
                 if receipt?.errorCode == "confirmation_required" {
                     return "failed: the confirmation expired before it was used. Nothing was done. Offer to try again."
                 }
