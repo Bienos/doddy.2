@@ -2,7 +2,7 @@
 
 Doddy is a voice-first memory companion for iPhone, with an Apple Watch app and a Mac menu bar prototype. This page is the short version. Update it when you merge something that changes what is below.
 
-Last updated 2026-10-18 (stage A, ADR-520 to ADR-524). Before that: 2026-10-14, PR #80, the ten languages.
+Last updated 2026-10-18 (stage A, ADR-520 to ADR-524). Before that, the same day: PR #85, BLIK transfers (ADR-510), on main.
 
 **On 18 Oct, main was broken in three ways** (`docs/implementation/GO_LIVE_CHECKLIST.md`, stage A). Branch `claude/fervent-edison-3gnqpq` carries the code fixes for two of them; the rest needs the owner:
 1. **Voice couldn't connect.** The app hard-coded `https://doddy-voice-token.vercel.app`, which answers 402 DEPLOYMENT_DISABLED, and `754e5d6` removed the public-agent fallback. The fix points the app at `doddy-voice-token-beta.vercel.app` (ADR-521). That server still needs its sign-in settings before anyone can talk (checklist A4).
@@ -19,6 +19,8 @@ The same branch also fixes two go-live risks: note reminders and birthdays now s
 - **Hosted CI:** since `c8aff7ae` (#69 with #70), every target compiles on Xcode 26.6 and the unit and 26 UI tests pass on the simulator. That build has not been run on a device.
 - **Since then on main:** OpenAI Realtime is the default voice, with a model picker on Home (ADR-442), and the first-use screens landed (#76: ADR-324 to 327, ADR-443).
 - **Also on main (PR #80, 14 Oct):** the iPhone app and the landing page in ten languages, as machine-translated drafts (ADR-458 to 460). The landing page is live at https://www.doddy.lol in all ten. CI built the app and passed the unit and UI tests with these changes; the language picker and the translated screens have not been seen on a device, and no native speaker has read any of it (`l10n/REVIEW_NOTES.md`).
+- **Hosted CI on 18 Oct:** jobs start again after the owner fixed the account's GitHub billing. The first Mac build since 14 Oct showed that no branch had compiled since 754e5d6 (`VoiceAccessGate.swift` used `VoiceProvider` without `import DoddyCore`), and that two app unit tests had never run: the profile intro test from 754e5d6 and the translator test that ASK-01 made stale. PR #85 fixes all three. Its run 39138962699 built the app and passed the 29 UI tests, with only those two tests failing.
+- **Also on main (PR #85, 18 Oct):** BLIK transfers by voice (ADR-510). "Send Ania 50 zł" shows a card to send in the bank app; Doddy never sends money. The `draft_blik_transfer` tool is behind an off-by-default switch and has been on the live ElevenLabs agent since 18 Oct (live `agtvrsn_2801m57etpkkfhfbjvqt95nptfha`). Compiled in hosted CI; not yet seen on a device. Details: `docs/implementation/BLIK_TRANSFER_STATUS.md`.
 - **Evidence:**
   - The live voice agent worked from this code on 2026-10-11 at 22:35 Warsaw time: a 139 s conversation that used `search_memories`, `save_memory` and `web_search`.
   - The variables the app sent to ElevenLabs match this branch, and not the unmerged `-all` branch.
@@ -45,7 +47,6 @@ Merge one at a time, then rebuild and talk to Doddy before the next.
 | Branch / PR | What it changes | Risk to voice |
 |---|---|---|
 | PR #84 `claude/laughing-darwin-hqxa63` | Fixes the capability guard `754e5d6` broke (ADR-494); one conversation at a time (ADR-496); voice start logging; 1Password secrets; `render.yaml` secrets. Also merged into `claude/fervent-edison-3gnqpq` with the voice address fix (ADR-521) | Medium: changes how a conversation starts. **Merge first**, once CI runs |
-| PR #85 `claude/dreamy-cannon-gc33dj` | BLIK transfers by voice (renumbered to ADR-510 on 18 Oct) | Hold until the v1 scope is marked up |
 | PR #86 `claude/connect-in-conversation` (draft) | Connect an online account from the conversation (claims ADR-483 too: renumber) | Hold until the v1 scope is marked up |
 | `claude/admiring-curie-bsuwv9-all` (PR #67, closed without merging) | 43 commits not on main. Its parts landed separately on 13 Oct: #76, then #53, #56, #57 and #58 | Check what's left before reusing it |
 | `claude/trusting-dirac-o8ajzc` | Voice screen shows Doddy with a sound wave; the transcript is one tap away; the wave follows loudness | Medium: adds audio level meters to the live session |
