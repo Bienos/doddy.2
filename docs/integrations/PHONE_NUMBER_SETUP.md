@@ -4,12 +4,12 @@ This is the runbook for unit U0 of ADR-490 (`docs/implementation/PHONE_SMS_MILES
 
 **Calls are not connected in U0.** Anyone who calls the number hears one fixed sentence and the call ends. Calls come in unit U1: see "Unit U1: connect calls" below, once the U0 checks pass.
 
-Written 2026-10-17. Console paths are from Twilio's and Render's documentation on that date and may have moved a little since. Nothing in this runbook has been tried yet; your run is the first.
+Written 2026-10-17. Console paths are from Twilio's and Render's documentation on that date and may have moved a little since. Nothing in this runbook has been tried yet; your run is the first. Step 7 was rewritten on 2026-10-18 from what Render showed that day.
 
 ## Before you start
 - **Twilio account** with billing set up.
 - **Your Polish ID card** (dowód osobisty). It shows both your name and your PESEL. A passport works too.
-- **Render account:** the one with "Patryk's workspace", where the `doddy` backend already runs (`DEPLOY_RENDER.md`).
+- **Render account:** the one with "Patryk's workspace". The messaging server already runs there on the free plan, and step 7 moves it to paid plans.
 - **Your iPhone** with a Debug build from Xcode (`make project-iphone`, scheme `Doddy`).
 - **A terminal** with `openssl`, to make one key.
 
@@ -82,51 +82,56 @@ This TwiML records nothing. Don't add `<Record>`: recording stays off (ADR-490, 
 6. Copy the **Messaging Service SID**. It starts with `MG`.
 
 ## 7. The messaging server on Render
-Don't use **New → Blueprint**: `render.yaml` would also create a separate paid worker and a second `doddy` backend. Create two things by hand instead.
+The server already exists. It was created in Patryk's workspace on 2026-10-11 for daily news (`docs/implementation/GO_LIVE_DAILY_NEWS.md`). Don't create a second one, and don't use **New → Blueprint**: `render.yaml` would also create a paid worker and a second `doddy` backend.
 
-1. **New → Postgres:**
-   - name `doddy-db`, region **Frankfurt**, PostgreSQL **16**, a paid plan (`render.yaml` uses Basic-256mb; Render shows the price);
-   - after it is created, copy the **Internal Database URL**.
-2. **New → Web Service:**
-   - repo `Bienos/doddy.2`, branch `claude/loving-dirac-uuxoux` (the default branch; its `server/messaging` is the same as on this plan's branch);
-   - name `doddy-messaging`, region **Frankfurt**, runtime **Node**, root directory `server/messaging`;
-   - build `npm ci && npm run build`, start `npm start`, health check path `/healthz`;
-   - plan **Starter** (paid), auto-deploy **off**.
-3. Render shows the service's address (`https://doddy-messaging….onrender.com`) as soon as the service exists. Add these under **Environment**:
+What Claude saw on 2026-10-18 through Render's tools:
+
+| | |
+|---|---|
+| Web service | `doddy-messaging`, Frankfurt, **free plan**, address `https://doddy-messaging-zw1n.onrender.com`, branch `claude/loving-dirac-uuxoux`, auto-deploy off, no health check path |
+| Database | `doddy-messaging-db`, PostgreSQL 16, Frankfurt, **free plan, expires 2026-11-10**. It accepts no connections from outside Render. |
+| Running | Code from 2026-10-11, from before U1. `/healthz` answers `{"ok":true}`. The log shows `"sms":false`, `"calls":false`, `"webhooks":true`, and the worker running inside the web service. |
+| Already set | `DATABASE_URL`, `PUBLIC_BASE_URL`, `RUN_WORKER_IN_WEB=1`, `TRUST_PROXY_HOPS=1`, `NODE_VERSION=22` and an AI key for daily news (from `GO_LIVE_DAILY_NEWS.md` and the log). Claude added `VERIFY_DAILY_CAP=20` (code texts per day for the whole server) on 2026-10-18. That started a deploy of the default branch (commit `5904c9c`), whose result Claude didn't check. If it failed, Render keeps the previous deploy running. |
+
+1. **Move both off the free plan.** The free plans don't work for a phone number:
+   - The free web service sleeps after about 15 minutes without requests. Waking it took 22 seconds on 2026-10-18, and Twilio waits about 15 seconds for an answer, so the first text or call after a quiet spell fails. While the service sleeps, the worker doesn't run either, so queued texts and booked calls wait. **doddy-messaging → Settings → Instance Type → Starter.**
+   - The free database expires on **2026-11-10**. Render then deletes it with everything in it, after a short grace period. **doddy-messaging-db → Upgrade** to a paid plan (Basic-256mb is enough) before then.
+   - Render shows each price before you confirm.
+2. **doddy-messaging → Settings:**
+   - **Branch:** `claude/awesome-cray-2lb9ia`, where U1 to U4 are until they're merged into the default branch. Its database updates (migrations 008 to 011) run by themselves at start-up. U1 to U4 stay off until their keys and switches are set.
+   - **Health Check Path:** `/healthz`, so Render switches to a new deploy only once it answers.
+3. **doddy-messaging → Environment:**
+   - Check that `PUBLIC_BASE_URL` is exactly `https://doddy-messaging-zw1n.onrender.com`, with no path. Twilio's signatures are checked against it.
+   - Add what's missing:
 
 | Key | Value |
 |---|---|
-| `NODE_VERSION` | `22` |
-| `DATABASE_URL` | the Internal Database URL from step 7.1 |
-| `RUN_WORKER_IN_WEB` | `1`: this one service also sends the queued texts, so no separate worker is needed |
-| `TRUST_PROXY_HOPS` | `1` |
-| `VERIFY_DAILY_CAP` | `20`: code texts per day for the whole server (you are the only user) |
-| `PUBLIC_BASE_URL` | the service's address, `https://…onrender.com`, with no path. Twilio's signatures are checked against it, so it must be exactly the address Twilio calls. |
 | `TWILIO_ACCOUNT_SID` | **secret.** Twilio Console → Account Info |
 | `TWILIO_AUTH_TOKEN` | **secret.** Same place. The server also uses it to check that webhooks come from Twilio. |
 | `TWILIO_MESSAGING_SERVICE_SID` | `MG…` from step 6 |
 | `TWILIO_VERIFY_SERVICE_SID` | `VA…` from step 5 |
-| `MEMORY_ENCRYPTION_KEY` | **secret.** Run `openssl rand -base64 32` on your computer and paste the output. Keep a copy in your password manager: if it is lost, queued texts can't be read and are never sent. |
+| `MEMORY_ENCRYPTION_KEY` | **secret, and only if it isn't there yet.** Run `openssl rand -base64 32` on your computer and paste the output. Keep a copy in your password manager: if it is lost, queued texts can't be read and are never sent. **If it is already there, don't change it:** whatever is already stored with it could no longer be read. |
 
 Leave these out for now:
 - `ELEVENLABS_*` and `DODDY_PHONE_NUMBER`: calls, unit U1;
-- `APNS_*`: notifications, optional, needs Apple's `.p8` key;
-- `ANTHROPIC_API_KEY`, `OPENAI_API_KEY` and `GNEWS_API_KEY`: daily news, optional.
+- `APNS_*`: notifications, optional, needs Apple's `.p8` key.
 
-4. Deploy, then check:
+If the daily-news key is `ANTHROPIC_API_KEY`, replies to your texts (U3) can use it too.
+
+4. **Manual Deploy → Deploy latest commit**, or ask Claude, who can start the deploy and read the log with Render's tools. Then check:
    - The log line `configured features` should show `"sms":true` and `"webhooks":true`.
-   - `https://<address>/healthz` should answer `{"ok":true}`.
+   - `https://doddy-messaging-zw1n.onrender.com/healthz` should answer `{"ok":true}`.
    - If the server refuses to start, the log names the variable (never its value).
-5. Go back to step 6.3 and put the address into the Messaging Service's webhook.
+5. Go back to step 6.3 and put `https://doddy-messaging-zw1n.onrender.com/webhooks/twilio/sms` into the Messaging Service's webhook.
 
 ## 8. Your iPhone (Debug build)
 1. Run `Doddy` from Xcode on your iPhone.
-2. Open **Settings → Notifications and texts**. In **Server (development)**, paste `https://<address>` and press Return.
+2. Open **Settings → Notifications and texts**. In **Server (development)**, paste `https://doddy-messaging-zw1n.onrender.com` and press Return.
 3. Under **Text messages**, type your number (+48 …) and tap **Text me a code**. Enter the code and tap **Confirm**.
 4. Turn on **Texts from Doddy**. This records your consent, wording `sms-v1`.
 5. Tap **Send a test text**.
 
-A Release or TestFlight build ignores the development field (ADR-175). Send Claude the address, and it goes into `ServerConfig.defaultBaseURL` in the app.
+A Release or TestFlight build ignores the development field (ADR-175). Before one, ask Claude to put the address into `ServerConfig.defaultBaseURL` in the app; it is still empty.
 
 ## 9. The U0 checks
 Send Claude the results: what you saw, the app's wording, or Twilio's error code. Never send secrets or codes.
@@ -148,7 +153,7 @@ Optional: tap **Delete my Doddy messaging data**, check that the number is gone 
 ## Unit U1: connect calls (after the U0 checks pass)
 Calls reach the messaging server first (ADR-490). It lets your number through to the "Doddy (phone)" agent at ElevenLabs. Anyone else hears one fixed sentence and the call ends. **Don't import the number into ElevenLabs.**
 
-1. **Deploy the U1 code.** It is on branch `claude/awesome-cray-2lb9ia` until it is merged. In Render, set the `doddy-messaging` service's branch to it, or to the default branch once U1 is merged, and deploy. The database update (migration 008) runs by itself at start-up.
+1. **Deploy the U1 code.** It is on branch `claude/awesome-cray-2lb9ia` until it is merged. In Render, set the `doddy-messaging` service's branch to it, or to the default branch once U1 is merged, and deploy. The database update (migration 008) runs by itself at start-up. If step 7 already set this branch, U1 to U4 are deployed and there's nothing to do here.
 2. **Twilio voice permissions:** under **Voice → Settings → Geo permissions**, tick Poland (low-risk numbers), so Doddy can call your Polish number. Without it, Twilio refuses with error 21215.
 3. **Make the tool secret:** run `openssl rand -base64 32` and keep the output for the next two steps. The server refuses a secret shorter than 32 characters.
 4. **Create the phone agent** from a checkout of the repo on your computer:

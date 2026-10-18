@@ -2,7 +2,7 @@
 
 > **DRAFT. NOT LEGAL ADVICE. NOT REVIEWED. NOT PUBLISHED.**
 >
-> - This file was written from the code and the docs in this repository on 2026-10-11. It is for the owner and a lawyer to review.
+> - This file was written from the code and the docs in this repository on 2026-10-11. It is for the owner and a lawyer to review. On 2026-10-18, sections 5.6, 5.7, 9.1 and Appendix C were updated for Doddy's phone number (units U1 to U4, ADR-490 to ADR-495), which isn't live yet.
 > - It is not published, not linked from the app or the website, and not an approved notice under GDPR, the EU AI Act or App Store rules.
 > - Text in [BRACKETS] is a placeholder. Text tagged **[CONFIRM: ...]** is something the code or docs do not settle.
 > - Every statement is meant to match what the code does today. Where the app's own screens say something different, this is noted in Appendix B.
@@ -160,16 +160,22 @@ Common points:
 | Stored | The number is stored in the database in plain form (`phone_numbers.e164`). Only a hash of the number is kept in the 2-day table that limits repeated codes. Message text is encrypted while queued if the server has its key (otherwise plain) and is erased when the message reaches a final state. **[CONFIRM: encrypt the stored phone number or accept]** |
 | Opt-in? | Yes: you verify the number and agree in the app. A STOP reply cancels texts. |
 | Logs | Ids and counts only. No message text, phone numbers or tokens. (`server/messaging/README.md`, `src/log.ts`.) |
+| **Texts you approve (U2, ADR-493)** | When you ask Doddy in a conversation to text you, a card shows the exact text; only after you tap Send does the text go to the server and then to Twilio, to your own verified number only. It is stored encrypted and erased once Twilio reports a final status. While an outcome is unclear, the server keeps a SHA-256 hash of the text to find it in Twilio's message list, then erases it. 20 approved texts a day per account. |
+| **Texts you send to Doddy's number (U3, ADR-494)** | Off by default ("Accept texts from my number", consent wording `texts-in-v1`). A text from your verified number travels carrier → Twilio → the server. Without replies, it waits as an encrypted note (`call_notes`, source `text`) until you save or discard it in the app; at most 20 notes wait. Texts from any other number are dropped without a reply: only Twilio's message id is kept, to delete Twilio's record. The server keeps a row per text from you (Twilio's id, state, error code, cost, times) with no text in it. |
+| **AI replies by text (U3)** | A separate switch, off by default. Your text goes to **Anthropic** (Claude, model `claude-opus-5-5` by default), which writes a reply of at most 200 characters. With "Replies may use my memories" on, the notes that match your text go to Anthropic too. The reply is queued encrypted and sent to your number only. Claude can leave a note in your inbox, labelled "Doddy noted this from your text", and "Noted by Doddy, saved by you" once you save it. At most 30 replies a day and $1 a day of model cost. **[CONFIRM: Anthropic entity, retention, zero-retention or not, training use, processor terms]** |
+| **Records at Twilio** | Doddy deletes its message and call records at Twilio `TWILIO_RECORD_DELETE_AFTER_HOURS` after they are final (default 24 hours), strangers' texts included. Twilio says deleted message bodies can stay in its backups for up to 30 days. The server keeps the Twilio ids of deleted records for 30 days. **[CONFIRM: Twilio's own retention]** |
 
 ### 5.7 Doddy messaging server: phone calls with Doddy
 
 | Item | Detail |
 |---|---|
-| What | Doddy can answer calls from your verified number, and can call you ("call me now"). Calls run on an ElevenLabs phone agent through a Twilio number. You set a 6 to 8 digit PIN, stored only as a scrypt hash. Rows record each call: direction, status, conversation ID, call ID, time. |
-| Recording and transcript | The phone agent is set up with no audio recording and transcripts kept 30 days at ElevenLabs (`voice-agent/phone/session.json`, ADR-158). The setup script has not been run: "The phone agent is not created yet" (`voice-agent/README.md`). The agent is configured to use Google's `gemini-2.5-flash` model. Twilio keeps its own call records. **[CONFIRM: all of this; Twilio call-record retention]** |
-| Notes from calls | Notes Doddy takes on a call wait on the server, encrypted, until you confirm or discard them in the app. They have no expiry in the code reviewed for this draft. **[CONFIRM: add an expiry?]** |
-| Limits | Outbound calls: 3 per hour, 10 per day. |
-| Opt-in? | Yes: calls are off until turned on; outbound calls need separate consent (`calls-v1`). |
+| What | Doddy can answer calls from your verified number, and can call you ("call me now"). Calls reach the messaging server first (U1, ADR-490), which lets only your verified number through to an ElevenLabs phone agent; other callers hear one fixed sentence. You set a 6 to 8 digit PIN, stored only as a scrypt hash. Rows record each call: direction, status, conversation ID, call ID, time. |
+| Recording and transcript | The phone agent is set up with no audio recording and transcripts kept 30 days at ElevenLabs (`voice-agent/phone/session.json`, ADR-158). The setup script has not been run: on 2026-10-18 there was no phone agent in ElevenLabs (`voice-agent/README.md`). The agent is configured to use Google's `gemini-2.5-flash` model. Doddy deletes its call records at Twilio a day after each call by default (5.6, "Records at Twilio"). **[CONFIRM: all of this; Twilio call-record retention]** |
+| Notes from calls | Notes Doddy takes on a call wait on the server, encrypted, until you confirm or discard them in the app. At most 20 wait. They have no expiry in the code reviewed for this draft. **[CONFIRM: add an expiry?]** |
+| **Calls you book for later (U4, ADR-495)** | You ask Doddy to call you at a time "about" something. A card shows the time, the exact sentence Doddy will say and a quiet-hours switch; nothing is booked until you tap Book. The server stores the time, the reason (encrypted, at most 200 characters) and your iPhone's time zone (to check quiet hours, 21:00 to 08:00, where you are). At the time, Twilio places the call and Doddy says the reason to whoever answers, voicemail included (the card says so). The reason is erased when the call ends or won't happen; the row (time, state) stays. The time zone stays in your call settings. |
+| Limits | Outbound calls: 3 per hour, 10 per day; at most 10 booked calls waiting, from 1 minute to 7 days ahead. |
+| Opt-in? | Yes: calls are off until turned on; outbound calls need separate consent (`calls-v1`). Turning "Doddy may call me" off cancels booked calls and erases their reasons. |
+| Export | Settings → Phone calls → "Export phone and text history" gives a JSON file of your calls, text statuses and waiting notes (`GET /v1/phone/history`). |
 
 ### 5.8 Doddy messaging server: "Memory on calls" (copy of your notes)
 
@@ -321,7 +327,11 @@ What the app **cannot** delete:
 | Messaging server account, phone number, news settings | Until deleted | `001_init.sql`, `003_news.sql` |
 | Queued message text | Until the message reaches a final state | `001_init.sql` |
 | Memory copy | Until Memory on calls is turned off | ADR-153 |
-| Call notes | Until you confirm or discard them **[CONFIRM: expiry]** | `002_calls.sql` |
+| Call notes, and notes from your texts | Until you confirm or discard them **[CONFIRM: expiry]** | `002_calls.sql`, `010_texts_to_doddy.sql` |
+| Text of a text you sent Doddy, while a reply is written | Erased when the reply is sent or fails; the row without text stays until the account is deleted **[CONFIRM: retention of these rows]** | `010_texts_to_doddy.sql` |
+| Reason of a booked call | Until the call ends or won't happen; 2 hours after a placed call whose end Twilio never reported | `011_scheduled_calls.sql`, `scheduledCalls.ts` |
+| Booked-call rows (time, state) and your time zone | Until the account is deleted **[CONFIRM: retention]** | `011_scheduled_calls.sql` |
+| Message and call records at Twilio | Deleted by Doddy 24 hours after final by default; Twilio backups up to 30 days | `providerRecords.ts`, ADR-494 |
 | Verification-start records | 2 days (hash of number only) | `routes/phone.ts` |
 | News sent records / digests / feed cache | 14 days / 30 days / 24 hours | `news/digest.ts`, `news/sources.ts` |
 | Backend receipts and usage counters | **[CONFIRM: no pruning today]** | `SECURITY_AND_PERMISSIONS.md` |
@@ -486,14 +496,14 @@ Based on the code and `PrivacyInfo.xcprivacy`. Apple counts data that leaves the
 | Apple data type | Collected? | Linked to user? | Used for tracking? | Purpose | What and why | Status |
 |---|---|---|---|---|---|---|
 | Audio data (Voice or sound recordings) | Yes | Declared "not linked" in `PrivacyInfo.xcprivacy`. A random install ID is sent as the conversation user ID. | No | App functionality | Your voice goes to ElevenLabs (or OpenAI). | **[CONFIRM: linked or not; ElevenLabs keeps it]** |
-| Other user content | Yes | Declared "linked" | No | App functionality | Notes, list names and items, conversations, drafts, calendar and reminder text, email previews and other results sent to ElevenLabs, the gateway or the server. | **[CONFIRM]** |
+| Other user content | Yes | Declared "linked" | No | App functionality | Notes, list names and items, conversations, drafts, calendar and reminder text, email previews and other results sent to ElevenLabs, the gateway or the server. Since U4, the reason of a call you book (kept until the call is over). | **[CONFIRM]** |
 | Name | Yes | Declared "not linked" | No | App functionality | Your first name or nickname when About you is shared with voice. | **[CONFIRM]** |
-| Phone number | Yes, only if you use texts or calls | Declared "linked" | No | App functionality | Sent to the messaging server and Twilio. | **[CONFIRM]** |
+| Phone number | Yes, only if you use texts or calls | Declared "linked" | No | App functionality | Your verified number goes to the messaging server and Twilio. Doddy texts and calls only that number. | **[CONFIRM]** |
 | User ID | Yes | Declared "linked" | No | App functionality | Anonymous account ID and device token (messaging), session token (backend), gateway device ID. | **[CONFIRM]** |
 | Device ID | Yes | Declared "not linked" | No | App functionality | Random install ID (not the advertising ID). Notification token. | **[CONFIRM: a notification token may be a device ID]** |
 | Contacts | Yes, when asked in a voice conversation | Not declared. Probably linked to the voice conversation. | No | App functionality | Contact names and birthday day and month go to ElevenLabs. | **[CONFIRM: missing from the manifest]** |
-| Precise or coarse location | Mostly no. Where you are is sent to Apple Maps, which is Apple. A parking spot stays on the iPhone. | Not declared | No | App functionality | Place reminders, leave-by, parking. | **[CONFIRM: does Apple Maps use count as collection by the app?]** |
-| Emails or text messages | Possibly: email previews and one whole email reach ElevenLabs through your connected account. | Not declared | No | App functionality | Only when you switch the matching tool on. | **[CONFIRM: "Emails or text messages", "Other user content"]** |
+| Precise or coarse location | Mostly no. Where you are is sent to Apple Maps, which is Apple. A parking spot stays on the iPhone. Since U4, the iPhone's time zone (such as `Europe/Warsaw`) goes to the server to check quiet hours for booked calls. | Not declared | No | App functionality | Place reminders, leave-by, parking, quiet hours. | **[CONFIRM: does Apple Maps use count as collection by the app? Does a time zone count as coarse location? The lawyer decides.]** |
+| Emails or text messages | **Draft answer: Yes**, for texts. Since U2 to U4: the text of an SMS you approve leaves the app for the server and Twilio; texts you send Doddy's number are kept on the server as notes; with AI replies on, they go to Anthropic. Email previews and one whole email also reach ElevenLabs through a connected account. | **Draft answer: linked** (tied to the messaging account and your number). Not declared in `PrivacyInfo.xcprivacy` yet. | No | App functionality | Only when you switch the matching feature on. Apple's category covers the content, sender and recipients of messages. | **[CONFIRM: the owner and the lawyer decide (ADR-494, ADR-495). If yes, `PrivacyInfo.xcprivacy` gains `NSPrivacyCollectedDataTypeEmailsOrTextMessages`, linked, app functionality.]** |
 | Search history | Possibly: web search words go to the backend and Monid; Ask Doddy questions go to the gateway. | Not declared | No | App functionality | | **[CONFIRM]** |
 | Photos or videos | No. Photos stay on the iPhone and are chosen with the picker. | | | | | **[CONFIRM]** |
 | Health, fitness, financial info, browsing history, purchases | No | | | | | |
