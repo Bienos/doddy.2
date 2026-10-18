@@ -25,6 +25,7 @@ Code lives under `DoddyApp/Features/<Folder>/`. Status docs are in `docs/impleme
 | Folder | What it is | ADR | Status doc |
 |---|---|---|---|
 | Voice | Voice conversation, plan cards, island, wake word | 254, 265 | V1_VOICE_STATUS, VOICE_PROVIDER_TEST_STATUS |
+| Voice (BLIK card), Connections › Money | BLIK phone transfer shown for the user to send in their bank app; Doddy never sends money | 483 | BLIK_TRANSFER_STATUS |
 | Opening | Animated intro, listen on open | 225 | OPENING_SCENE_STATUS |
 | Onboarding | Introduction, storybook welcome | 299, 380 | ONBOARDING_STATUS |
 | Home | Home screen | 323, 380 | ONBOARDING_STATUS |
