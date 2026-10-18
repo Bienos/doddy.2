@@ -2,7 +2,7 @@
 
 Doddy is a voice-first memory companion for iPhone, with an Apple Watch app and a Mac menu bar prototype. This page is the short version. Update it when you merge something that changes what is below.
 
-Last updated 2026-10-14, 12:00 UTC (PR #80, the ten languages, merged into the default branch).
+Last updated 2026-10-18 (PR #85, BLIK transfers, with the fixes that let hosted CI build the app again).
 
 ## Known-good build
 - **Main branch:** `claude/loving-dirac-uuxoux`.
@@ -10,6 +10,8 @@ Last updated 2026-10-14, 12:00 UTC (PR #80, the ten languages, merged into the d
 - **Hosted CI:** since `c8aff7ae` (#69 with #70), every target compiles on Xcode 26.6 and the unit and 26 UI tests pass on the simulator. That build has not been run on a device.
 - **Since then on main:** OpenAI Realtime is the default voice, with a model picker on Home (ADR-442), and the first-use screens landed (#76: ADR-324 to 327, ADR-443).
 - **Also on main (PR #80, 14 Oct):** the iPhone app and the landing page in ten languages, as machine-translated drafts (ADR-458 to 460). The landing page is live at https://www.doddy.lol in all ten. CI built the app and passed the unit and UI tests with these changes; the language picker and the translated screens have not been seen on a device, and no native speaker has read any of it (`l10n/REVIEW_NOTES.md`).
+- **Hosted CI on 18 Oct:** jobs start again after the owner fixed the account's GitHub billing. The first Mac build since 14 Oct showed that no branch had compiled since 754e5d6 (`VoiceAccessGate.swift` used `VoiceProvider` without `import DoddyCore`), and that two app unit tests had never run: the profile intro test from 754e5d6 and the translator test that ASK-01 made stale. PR #85 fixes all three. Its run 39138962699 built the app and passed the 29 UI tests, with only those two tests failing.
+- **Also on main (PR #85, 18 Oct):** BLIK transfers by voice (ADR-510). "Send Ania 50 zł" shows a card to send in the bank app; Doddy never sends money. The `draft_blik_transfer` tool is behind an off-by-default switch and has been on the live ElevenLabs agent since 18 Oct (live `agtvrsn_2801m57etpkkfhfbjvqt95nptfha`). Compiled in hosted CI; not yet seen on a device. Details: `docs/implementation/BLIK_TRANSFER_STATUS.md`.
 - **Evidence:**
   - The live voice agent worked from this code on 2026-10-11 at 22:35 Warsaw time: a 139 s conversation that used `search_memories`, `save_memory` and `web_search`.
   - The variables the app sent to ElevenLabs match this branch, and not the unmerged `-all` branch.
@@ -37,7 +39,6 @@ Merge one at a time, then rebuild and talk to Doddy before the next.
 | `claude/affectionate-mayer-aovol9` | Island compact view draws a pre-cut round face | Low |
 | `claude/dismiss-ended-card` | Nothing: its changes were reverted | None |
 | PR #44 `claude/peaceful-hopper-v3gx75` | Action status, session recovery, Stop listening, unfinished notes, "Listen until I finish" | High: changes the voice session |
-| `claude/dreamy-cannon-gc33dj` | BLIK transfers (ADR-510): "send Ania 50 zł" shows a card to send in the bank app; Doddy never sends money. New `draft_blik_transfer` tool behind an off-by-default switch; on the live ElevenLabs agent since 18 Oct. Live is now `agtvrsn_2801m57etpkkfhfbjvqt95nptfha`: the ASK-01 version from `claude/trusting-sagan-7lky84`, which this branch had overwritten by mistake and then restored, without `paid` in the prompt's success words, and the phone answers it as unsupported until this branch is built. Follows ASK-01: the card is the ask, and its tap sends nothing. Carries PR #84's fix for two voice-token tests and the type-check that 754e5d6 broke (ADR-494, the same files, so it drops out when #84 merges). Linux checks pass; app code not compiled yet. | Low: one new tool; nothing else in the session changes |
 | PR #61 `claude/fervent-hamilton-cv19sj` | iPad sidebar and fixes, Watch "New note" and Smart Stack, Mac menu bar app, widget and window, per-platform projects | Low for voice: no voice-agent changes |
 
 ## Known problems

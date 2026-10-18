@@ -1,6 +1,6 @@
 # BLIK transfers by voice: status (ADR-510)
 
-Last updated 2026-10-18. Branch `claude/dreamy-cannon-gc33dj` (PR #85), not merged. Numbered ADR-510; ADR-483 is ASK-01.
+Last updated 2026-10-18. Branch `claude/dreamy-cannon-gc33dj` (PR #85). Numbered ADR-510; ADR-483 is ASK-01.
 
 ## What it is
 "Send Ania 50 zł for the pizza" shows a card with the person, their phone number (from Contacts, when iOS allows it), the amount in złoty and the title. The user sends the transfer themselves in their bank app, with BLIK's phone transfer ("przelew na telefon"). **Doddy never sends, pays or moves money**, and it can't see whether the user sent it.
@@ -23,6 +23,7 @@ Why not more: BLIK has no public interface that lets an app send money. Phone tr
 | Copy | Numbers as digits (a +48 or 0048 number as its nine digits; another country keeps its +); this iPhone only, no Universal Clipboard, gone after 10 minutes. The amount is never copied. | `BlikPhone.forCopy`, `copyForBlik` |
 
 ## Evidence
+- Hosted CI on 2026-10-18 (Xcode 26.6, iOS simulator), run 39138962699 at `1d84a20d`: the app compiles with the card, Connections and Activity changes, and the 29 UI tests pass. 2 of 35 app unit tests failed. Neither is BLIK's: a profile-intro assertion from 754e5d6 and a translator test that ASK-01 made stale. Both are fixed in the next commit, which hosted CI runs again.
 - After merging ASK-01 (PR #87) on 2026-10-18: `scripts/ci.sh --core-only` (Linux, Swift 6.2) PASS for the core-only scope; DoddyCore 1,128 tests, 0 failures, the 15 `BlikTransferTests` and the BLIK line in `AskFirstTests` included; voice spec check PASS, 82 tools; strings check PASS.
 - Before that merge: `swift test --package-path Packages/DoddyCore` on Linux (Swift 6.2): 1,110 tests, 0 failures. (Two voice-token tests were failing before; they were stale after 754e5d6. This branch carries PR #84's fix for them, ADR-494.)
 - `python3 -I scripts/voice_agent_spec.py check` before the merge: PASS, 59 tools.
@@ -30,7 +31,7 @@ Why not more: BLIK has no public interface that lets an app send money. Phone tr
 - `scripts/ci.sh --core-only` (Linux, Swift 6.2, Node 22): PASS for the core-only scope, with PR #84's fix (ADR-494) for the capability guard, the non-UI app type-check and the two tests that 754e5d6 had broken, ported file for file so it drops out when #84 merges. The iOS build is NOT RUN here.
 
 ## Not done or not verified
-- **The app code has not been compiled.** No Mac here; `VoiceView`, `VoiceSessionController`, `ConnectionsView`, `DeviceConnections` and `ActivityView` changes are unbuilt. Hosted CI builds only on a pull request or a manual run.
+- **Compiled in hosted CI only.** No app test drives the BLIK card itself; the Linux tests cover its rules (`BlikTransferTests`).
 - **Not seen on a device:** the card, the Copy buttons, the Money group in Connections, "50,00 zł" formatting, Dynamic Type at AX5, VoiceOver labels ("Copy phone number", "Copy title").
 - **Live ElevenLabs agent:** synced on 2026-10-18 at the owner's request, before an app build with the card is on the phone (tool `tool_5701m57c1717fmebcs14kbrjqmdq`, version `agtvrsn_0201m57cm3vnfgsrv3fw49mqb9mk`; rollback `agtvrsn_3501m5219zqke9tv2thaxz3m729t`. Later the same day the live agent took the ASK-01 change from another branch, which keeps BLIK. Live is now `agtvrsn_2801m57etpkkfhfbjvqt95nptfha`, without `paid` in the prompt's success words. Details in `voice-agent/README.md`). Until that build is installed, the phone answers the tool as unsupported, so the agent says it isn't available yet; no card appears and nothing is sent. OpenAI Realtime (the default voice) gets the tool with that same build, because the app bundles `voice-agent/`. Not yet tried in a real conversation.
 - **Whether bank apps accept the pasted number** (nine digits) has not been tried in any bank app.
