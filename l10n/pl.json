@@ -1344,5 +1344,12 @@
   "Pick a starting vibe. You can change it whenever you want.": "Wybierz początkowy styl. Możesz go zmienić w dowolnym momencie.",
   "Your name and response style are saved on this iPhone. You can edit or clear them in Settings.": "Twoje imię i styl odpowiedzi są zapisane na tym iPhonie. Możesz je zmienić lub usunąć w Ustawieniach.",
   "On your first launch, Doddy makes a quick basketball entrance. You can skip it; with Reduce Motion on, it stays calm and still. Voice and microphone access never start from the intro.": "Przy pierwszym uruchomieniu Doddy pojawi się w krótkiej koszykarskiej scenie. Możesz ją pominąć; przy ograniczeniu ruchu będzie spokojna i statyczna. Wstęp nie uruchamia głosu ani mikrofonu.",
-  "Only the answers shown here are changed. They're saved on this iPhone.": "Zmienione zostaną tylko widoczne tutaj odpowiedzi. Zostaną zapisane na tym iPhonie."
+  "Only the answers shown here are changed. They're saved on this iPhone.": "Zmienione zostaną tylko widoczne tutaj odpowiedzi. Zostaną zapisane na tym iPhonie.",
+  "failed": "nieudane",
+  "not confirmed": "niepotwierdzone",
+  "ringing": "dzwoni",
+  "answered": "odebrane",
+  "no answer": "nieodebrane",
+  "busy": "zajęte",
+  "cancelled": "anulowane"
 }

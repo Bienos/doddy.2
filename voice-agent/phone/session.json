@@ -1,6 +1,6 @@
 {
   "format": "doddy-voice-session/1",
-  "note": "Phone agent settings (S2). Variables come from the call-start webhook (server/messaging/src/routes/elevenlabs.ts); the placeholders below are only for tests in the ElevenLabs dashboard.",
+  "note": "Phone agent settings (S2; calls routed through Doddy's server since ADR-490). Doddy's server lets a call through and passes these variables with ElevenLabs register-call (server/messaging/src/routes/twilioVoice.ts); the placeholders below are only for tests in the ElevenLabs dashboard.",
   "first_message": {
     "en": "Hi, this is Doddy, an AI assistant. How can I help?"
   },
@@ -22,6 +22,10 @@
     "llm": "gemini-2.5-flash",
     "temperature": 0.3,
     "timezone": "Europe/Warsaw",
+    "audio": {
+      "agent_output_audio_format": "ulaw_8000",
+      "user_input_audio_format": "ulaw_8000"
+    },
     "secret_variables": {
       "secret__doddy_session": "Per-call session id; only ever placed in tool headers, never shown to the model"
     },
@@ -36,13 +40,12 @@
       "doddy_tool_secret": "ELEVENLABS_TOOL_SECRET (same value as on the server)"
     },
     "overrides": {
-      "enable_conversation_initiation_client_data_from_webhook": true
+      "enable_conversation_initiation_client_data_from_webhook": false
     },
     "privacy": {
       "record_voice": false,
       "retention_days": 30,
       "note": "Calls can contain memories read aloud (ADR-158)"
-    },
-    "call_start_webhook": "/webhooks/elevenlabs/call-start"
+    }
   }
 }

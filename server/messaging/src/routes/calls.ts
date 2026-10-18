@@ -4,9 +4,10 @@ import type pg from "pg";
 import { z } from "zod";
 import { parse, type Deps } from "../app.js";
 import { principal, requireDevice } from "../auth.js";
-import { OUTBOUND_CONSENT_VERSIONS, OUTBOUND_DAILY_LIMIT, openSession } from "../calls.js";
+import { OUTBOUND_CONSENT_VERSIONS, OUTBOUND_DAILY_LIMIT } from "../calls.js";
 import { hashPin, isAcceptablePin } from "../crypto.js";
 import { inTransaction } from "../db.js";
+import { callsAvailable } from "./twilioVoice.js";
 
 const settingsBody = z.object({
   inboundEnabled: z.boolean().optional(),
@@ -52,7 +53,7 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
     const s = r.inbound_enabled === null ? undefined : r;
     return {
       // What the server can actually do; the app shows "needs setup" otherwise.
-      available: { inbound: !!(deps.toolSecret && deps.cipher), outbound: !!(deps.outbound && deps.toolSecret && deps.cipher) },
+      available: callsAvailable(deps),
       doddyNumber: deps.doddyPhoneNumber ?? null,
       phoneVerified: r.phone,
       inboundEnabled: s?.inbound_enabled ?? false,
@@ -107,9 +108,11 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
     return reply.code(204).send();
   });
 
-  // "Call me now". Doddy only calls the verified number, only after explicit consent.
+  // "Call me now". Doddy only calls the verified number, only after explicit consent. Twilio rings
+  // it from Doddy's number; the phone agent and the call's session start only when it is answered
+  // (routes/twilioVoice.ts, ADR-490).
   app.post("/v1/calls/outbound", { preHandler: auth, config: { rateLimit: { max: 3, timeWindow: "1 hour" } } }, async (req, reply) => {
-    if (!deps.outbound || !deps.toolSecret || !deps.cipher) return reply.code(503).send({ error: "not_configured" });
+    if (!callsAvailable(deps).outbound) return reply.code(503).send({ error: "not_configured" });
     const { accountId } = principal(req);
     const { rows } = await db.query<{ e164: string; consent: boolean }>(
       `SELECT p.e164, s.outbound_consent_at IS NOT NULL AS consent FROM phone_numbers p
@@ -130,14 +133,18 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
       return true;
     });
     if (!underLimit) return reply.code(429).send({ error: "daily_limit" });
-    const variables = await openSession(db, accountId, callId, "outbound");
-    const outcome = await deps.outbound.placeCall(target.e164, { ...variables });
+    const outcome = await deps.outbound!.placeCall({
+      to: target.e164, from: deps.doddyPhoneNumber!,
+      answerUrl: `${deps.publicBaseUrl}/webhooks/twilio/voice/outbound/${callId}`,
+      statusCallbackUrl: `${deps.publicBaseUrl}/webhooks/twilio/call-status`,
+    });
     const status = outcome.kind === "accepted" ? "requested" : outcome.kind === "unknown" ? "unknown" : "failed";
+    // Only from "requested": Twilio's callbacks may already have moved the call on.
     await db.query(
-      "UPDATE calls SET status = $2, conversation_id = $3, call_sid = $4, error_code = $5 WHERE id = $1",
+      `UPDATE calls SET status = CASE WHEN status = 'requested' THEN $2 ELSE status END,
+         call_sid = coalesce(call_sid, $3), error_code = $4 WHERE id = $1`,
       [callId, status,
-        outcome.kind === "accepted" ? outcome.conversationId ?? null : null,
-        outcome.kind === "accepted" ? outcome.callSid ?? null : null,
+        outcome.kind === "accepted" ? outcome.callSid : null,
         outcome.kind === "accepted" ? null : outcome.code]);
     if (status === "failed") return reply.code(502).send({ error: "provider_unavailable", callId });
     return reply.code(202).send({ callId, status });

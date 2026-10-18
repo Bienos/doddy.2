@@ -38,8 +38,6 @@ envVarGroups:
         sync: false
       - key: ELEVENLABS_PHONE_AGENT_ID
         sync: false
-      - key: ELEVENLABS_PHONE_NUMBER_ID
-        sync: false
       - key: DODDY_PHONE_NUMBER
         sync: false
       # Daily news (N1)

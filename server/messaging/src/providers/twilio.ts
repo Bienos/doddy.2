@@ -1,6 +1,9 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import type { TwilioConfig } from "../config.js";
-import { ProviderError, type PhoneVerifier, type SendOutcome, type SmsSender, type VerifyCheck } from "./types.js";
+import {
+  ProviderError, type CallOutcome, type OutboundCall, type OutboundCaller, type PhoneVerifier, type SendOutcome,
+  type SmsSender, type VerifyCheck,
+} from "./types.js";
 
 type Params = Record<string, string | string[] | undefined>;
 
@@ -23,6 +26,9 @@ export function isValidTwilioSignature(authToken: string, url: string, params: P
 
 interface TwilioError { code?: number; message?: string }
 
+const basicAuth = (c: Pick<TwilioConfig, "accountSid" | "authToken">) =>
+  "Basic " + Buffer.from(`${c.accountSid}:${c.authToken}`).toString("base64");
+
 export class TwilioClient implements SmsSender, PhoneVerifier {
   private readonly auth: string;
 
@@ -31,7 +37,7 @@ export class TwilioClient implements SmsSender, PhoneVerifier {
     private readonly statusCallbackUrl?: string,
     private readonly timeoutMs = 10_000,
   ) {
-    this.auth = "Basic " + Buffer.from(`${config.accountSid}:${config.authToken}`).toString("base64");
+    this.auth = basicAuth(config);
   }
 
   private post(url: string, form: Record<string, string>): Promise<Response> {
@@ -82,5 +88,49 @@ export class TwilioClient implements SmsSender, PhoneVerifier {
     const json = (await res.json().catch(() => ({}))) as TwilioError & { status?: string };
     if (res.status === 200) return json.status === "approved" ? "approved" : "wrong_code";
     throw new ProviderError(`twilio_verify_${json.code ?? res.status}`, res.status);
+  }
+}
+
+/**
+ * Doddy's calls to the user, from Doddy's own number (ADR-490). Twilio asks `answerUrl` for TwiML
+ * when the user picks up, and reports each step to `statusCallbackUrl`. No recording is requested.
+ */
+export class TwilioVoiceCaller implements OutboundCaller {
+  private readonly auth: string;
+
+  constructor(
+    private readonly config: Pick<TwilioConfig, "accountSid" | "authToken">,
+    private readonly timeoutMs = 10_000,
+    private readonly apiBase = "https://api.twilio.com",
+  ) {
+    this.auth = basicAuth(config);
+  }
+
+  async placeCall(call: OutboundCall): Promise<CallOutcome> {
+    const form = new URLSearchParams({
+      To: call.to, From: call.from, Url: call.answerUrl, Method: "POST",
+      StatusCallback: call.statusCallbackUrl, StatusCallbackMethod: "POST",
+      // Seconds to ring before Twilio reports no-answer.
+      Timeout: "30",
+    });
+    for (const event of ["initiated", "ringing", "answered", "completed"]) form.append("StatusCallbackEvent", event);
+    let res: Response;
+    try {
+      res = await fetch(`${this.apiBase}/2010-04-01/Accounts/${this.config.accountSid}/Calls.json`, {
+        method: "POST",
+        headers: { authorization: this.auth, "content-type": "application/x-www-form-urlencoded" },
+        body: form,
+        signal: AbortSignal.timeout(this.timeoutMs),
+      });
+    } catch {
+      // The request may have reached Twilio and the phone may already be ringing: never redial.
+      return { kind: "unknown", code: "twilio_network" };
+    }
+    const json = (await res.json().catch(() => ({}))) as TwilioError & { sid?: string };
+    if (res.status === 201 && json.sid) return { kind: "accepted", callSid: json.sid };
+    const code = `twilio_${json.code ?? res.status}`;
+    // A server error can come after Twilio created the call, so it is unknown, not failed (DOD-09).
+    if (res.status >= 500) return { kind: "unknown", code };
+    return { kind: "rejected", code };
   }
 }

@@ -2,20 +2,23 @@ import { buildApp } from "./app.js";
 import { loadConfig } from "./config.js";
 import { createPool, migrateOrExit } from "./db.js";
 import { providersFrom } from "./providers/index.js";
+import { callsAvailable } from "./routes/twilioVoice.js";
 import { log, runWorkerLoop } from "./workerLoop.js";
 
 const config = loadConfig();
 const db = createPool(config.databaseUrl);
 await migrateOrExit(db, log);
 const providers = providersFrom(config);
-const app = await buildApp({
+const deps = {
   db, ...providers, twilioAuthToken: config.twilio?.authToken, publicBaseUrl: config.publicBaseUrl,
   toolSecret: config.toolSecret, doddyPhoneNumber: config.doddyPhoneNumber,
   trustProxyHops: config.trustProxyHops, verifyDailyCap: config.verifyDailyCap,
-});
+};
+const app = await buildApp(deps);
+const calls = callsAvailable(deps);
 app.log.info({
   push: !!providers.push, sms: !!providers.sms, webhooks: !!config.publicBaseUrl,
-  calls: !!(config.toolSecret && providers.cipher), outboundCalls: !!providers.outbound,
+  calls: calls.inbound, outboundCalls: calls.outbound,
   newsWriter: !!providers.news.writer, newsSearch: !!providers.news.search,
 }, "configured features");
 

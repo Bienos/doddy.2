@@ -70,8 +70,10 @@ public struct CallRecord: Equatable, Sendable, Decodable, Identifiable {
 public struct CallRequest: Equatable, Sendable, Decodable {
     /// Nil when the server's answer never reached the phone.
     public let callId: UUID?
-    /// `requested` (ElevenLabs accepted it) or `unknown` (no answer from ElevenLabs, or the
+    /// `requested` (Twilio accepted it, ADR-490) or `unknown` (no answer from Twilio, or the
     /// server's answer was lost on the way back; the phone may already be ringing; not redialled).
+    /// How the call then went arrives later in `CallRecord.status`: ringing, answered, completed,
+    /// busy, no_answer, canceled or failed.
     public let status: String
 }
 

@@ -1,8 +1,10 @@
 import { buildApp, type Deps } from "../src/app.js";
 import { createPool, migrate, type Db } from "../src/db.js";
 import { TextCipher } from "../src/crypto.js";
+import { twilioSignature } from "../src/providers/twilio.js";
 import type {
-  CallOutcome, OutboundCaller, PhoneVerifier, PushSender, PushTarget, SendOutcome, SmsSender, VerifyCheck,
+  CallOutcome, CallRegistrar, OutboundCall, OutboundCaller, PhoneVerifier, PushSender, PushTarget, RegisterOutcome,
+  SendOutcome, SmsSender, VerifyCheck,
 } from "../src/providers/types.js";
 
 export const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL;
@@ -43,12 +45,25 @@ export class FakeVerifier implements PhoneVerifier {
   }
 }
 
+/** Stands in for Twilio's Calls API. */
 export class FakeOutbound implements OutboundCaller {
-  calls: { to: string; variables: Record<string, string> }[] = [];
+  calls: OutboundCall[] = [];
   next: CallOutcome[] = [];
-  async placeCall(to: string, variables: Record<string, string>): Promise<CallOutcome> {
-    this.calls.push({ to, variables });
-    return this.next.shift() ?? { kind: "accepted", conversationId: `conv_${this.calls.length}`, callSid: "CA1" };
+  async placeCall(call: OutboundCall): Promise<CallOutcome> {
+    this.calls.push(call);
+    return this.next.shift() ?? { kind: "accepted", callSid: `CAout${this.calls.length}` };
+  }
+}
+
+export const CONNECT_TWIML = '<?xml version="1.0" encoding="UTF-8"?><Response><Connect><Stream url="wss://agent.example.test"/></Connect></Response>';
+
+/** Stands in for ElevenLabs register-call: records each call it is asked to connect. */
+export class FakeRegistrar implements CallRegistrar {
+  calls: Parameters<CallRegistrar["register"]>[0][] = [];
+  next: RegisterOutcome[] = [];
+  async register(call: Parameters<CallRegistrar["register"]>[0]): Promise<RegisterOutcome> {
+    this.calls.push(call);
+    return this.next.shift() ?? { kind: "twiml", twiml: CONNECT_TWIML };
   }
 }
 
@@ -63,9 +78,21 @@ export async function testApp(db: Db, extra: Partial<Deps> = {}) {
   const sms = new FakeSms();
   const verifier = new FakeVerifier();
   const outbound = new FakeOutbound();
+  const registrar = new FakeRegistrar();
   const app = await buildApp({
-    db, push, sms, verifier, outbound, cipher: testCipher, toolSecret: TOOL_SECRET, doddyPhoneNumber: "+48221234567",
-    twilioAuthToken: TWILIO_TOKEN, publicBaseUrl: BASE_URL, logger: false, ...extra,
+    db, push, sms, verifier, outbound, registrar, cipher: testCipher, toolSecret: TOOL_SECRET,
+    doddyPhoneNumber: DODDY_NUMBER, twilioAuthToken: TWILIO_TOKEN, publicBaseUrl: BASE_URL, logger: false, ...extra,
   });
-  return { app, push, sms, verifier, outbound };
+  return { app, push, sms, verifier, outbound, registrar };
+}
+
+export const DODDY_NUMBER = "+48221234567";
+
+/** A webhook request signed the way Twilio signs it (form body, X-Twilio-Signature). */
+export function twilioRequest(url: string, form: Record<string, string>,
+  signature = twilioSignature(TWILIO_TOKEN, BASE_URL + url, form)) {
+  return {
+    method: "POST" as const, url, payload: new URLSearchParams(form).toString(),
+    headers: { "content-type": "application/x-www-form-urlencoded", "x-twilio-signature": signature },
+  };
 }

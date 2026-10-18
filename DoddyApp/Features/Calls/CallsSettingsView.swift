@@ -161,9 +161,27 @@ struct CallsSettingsView: View {
                 ForEach(model.recent) { call in
                     StatusRow(
                         title: call.direction == "inbound" ? "You called Doddy" : "Doddy called you",
-                        value: "\(DateText.full(call.createdDate))\(call.status == "failed" ? " · failed" : call.status == "unknown" ? " · not confirmed" : "")")
+                        value: DateText.full(call.createdDate) + outcomeNote(call))
                 }
             }
         }
+    }
+
+    /// How a call went, as Twilio reported it to Doddy's server (ADR-490). Nothing is added while
+    /// there is nothing to say, such as a call that is still being placed.
+    private func outcomeNote(_ call: CallRecord) -> String {
+        let word: String?
+        switch (call.direction, call.status) {
+        case (_, "failed"): word = NSLocalizedString("failed", comment: "Recent calls: the call didn't go through")
+        case (_, "unknown"): word = NSLocalizedString("not confirmed", comment: "Recent calls: unclear whether the call was placed")
+        case ("outbound", "ringing"): word = NSLocalizedString("ringing", comment: "Recent calls: Doddy's call is ringing")
+        case ("outbound", "answered"), ("outbound", "completed"):
+            word = NSLocalizedString("answered", comment: "Recent calls: you picked up Doddy's call")
+        case ("outbound", "no_answer"): word = NSLocalizedString("no answer", comment: "Recent calls: nobody picked up Doddy's call")
+        case ("outbound", "busy"): word = NSLocalizedString("busy", comment: "Recent calls: your line was busy")
+        case ("outbound", "canceled"): word = NSLocalizedString("cancelled", comment: "Recent calls: the call was cancelled before it rang through")
+        default: word = nil
+        }
+        return word.map { " · \($0)" } ?? ""
     }
 }

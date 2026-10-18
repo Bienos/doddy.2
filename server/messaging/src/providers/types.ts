@@ -29,14 +29,38 @@ export interface PhoneVerifier {
   check(toE164: string, code: string): Promise<VerifyCheck>;
 }
 
+/**
+ * Outcome of asking the phone provider to ring someone.
+ * - accepted: the provider took the call (we have its CallSid).
+ * - rejected: the provider refused it, so nothing rang.
+ * - unknown:  the call may or may not have been placed. Never redialled automatically.
+ */
 export type CallOutcome =
-  | { kind: "accepted"; conversationId?: string; callSid?: string }
+  | { kind: "accepted"; callSid: string }
   | { kind: "rejected"; code: string }
   | { kind: "unknown"; code: string };
 
-/** Asks the phone agent to ring a number, passing the call's dynamic variables. */
+export interface OutboundCall {
+  to: string;
+  from: string;
+  /** Asked for TwiML once the call is answered. */
+  answerUrl: string;
+  /** Receives how the call went: ringing, answered, completed, busy, no answer… */
+  statusCallbackUrl: string;
+}
+
+/** Rings someone from Doddy's own number (Twilio, ADR-490). */
 export interface OutboundCaller {
-  placeCall(toE164: string, dynamicVariables: Record<string, string>): Promise<CallOutcome>;
+  placeCall(call: OutboundCall): Promise<CallOutcome>;
+}
+
+export type RegisterOutcome = { kind: "twiml"; twiml: string } | { kind: "failed"; code: string };
+
+/** Hands an answered call to the phone agent and returns the TwiML that connects it (ElevenLabs register-call). */
+export interface CallRegistrar {
+  register(call: {
+    from: string; to: string; direction: "inbound" | "outbound"; variables: Record<string, string>;
+  }): Promise<RegisterOutcome>;
 }
 
 export class ProviderError extends Error {

@@ -6,7 +6,11 @@ import { isAcceptablePin } from "../src/crypto.js";
 import type { Db } from "../src/db.js";
 import { searchMemories } from "../src/memorySearch.js";
 import { bodyAad, dispatchDue } from "../src/outbox.js";
-import { dbSkip, FakeOutbound, FakePush, FakeSms, freshDb, testApp, testCipher, TOOL_SECRET } from "./helpers.js";
+import { twilioSignature } from "../src/providers/twilio.js";
+import {
+  BASE_URL, CONNECT_TWIML, dbSkip, DODDY_NUMBER, FakeOutbound, FakePush, FakeRegistrar, FakeSms, freshDb, testApp,
+  testCipher, TOOL_SECRET, TWILIO_TOKEN, twilioRequest,
+} from "./helpers.js";
 
 test("PIN rules reject trivial PINs", () => {
   for (const bad of ["123", "2580", "11111", "111111", "123456", "987654", "012345", "12a456", "123456789"]) {
@@ -31,10 +35,11 @@ describe("phone calls against real Postgres", { skip: dbSkip }, () => {
   let push: FakePush;
   let sms: FakeSms;
   let outbound: FakeOutbound;
+  let registrar: FakeRegistrar;
 
   before(async () => {
     db = await freshDb();
-    ({ app, push, sms, outbound } = await testApp(db));
+    ({ app, push, sms, outbound, registrar } = await testApp(db));
   });
   after(async () => {
     await app?.close();
@@ -50,8 +55,11 @@ describe("phone calls against real Postgres", { skip: dbSkip }, () => {
     });
 
   /** Account with a verified number; optionally PIN, inbound calls and a memory copy. */
+  let accounts = 0;
   async function user(phone: string, opts: { pin?: string; inbound?: boolean; memories?: string[] } = {}) {
-    const r = await app.inject({ method: "POST", url: "/v1/accounts" });
+    // Account creation is limited per IP (ADR-175); each test account comes from its own address.
+    const r = await app.inject({ method: "POST", url: "/v1/accounts", remoteAddress: `10.0.0.${++accounts}` });
+    assert.equal(r.statusCode, 201);
     const { accountId, deviceToken } = r.json() as { accountId: string; deviceToken: string };
     const h = { authorization: `Bearer ${deviceToken}` };
     assert.equal((await call("POST", "/v1/phone/verification/check", h, { phone, code: "123456" })).statusCode, 200);
@@ -66,29 +74,85 @@ describe("phone calls against real Postgres", { skip: dbSkip }, () => {
     return { accountId, h };
   }
 
-  async function ring(caller: string) {
-    const r = await el("/webhooks/elevenlabs/call-start", { caller_id: caller, called_number: "+48221234567", call_sid: "CAx", conversation_id: "conv_in" });
+  let sids = 0;
+  /** Calls Doddy's number from `caller` the way Twilio does. `variables` are what the phone agent got, if reached. */
+  async function dial(caller: string, on: { app: FastifyInstance; registrar: FakeRegistrar } = { app, registrar }) {
+    const reached = on.registrar.calls.length;
+    const callSid = `CAin${++sids}`;
+    const r = await on.app.inject(twilioRequest("/webhooks/twilio/voice",
+      { From: caller, To: DODDY_NUMBER, CallSid: callSid, Direction: "inbound", AccountSid: "AC1" }));
     assert.equal(r.statusCode, 200);
-    const body = r.json() as { type: string; dynamic_variables: Record<string, string> };
-    assert.equal(body.type, "conversation_initiation_client_data");
-    return body.dynamic_variables;
+    assert.match(String(r.headers["content-type"]), /text\/xml/);
+    const agent = on.registrar.calls.length > reached ? on.registrar.calls.at(-1) : undefined;
+    return { twiml: r.body, variables: agent?.variables, agent, callSid };
   }
 
-  test("webhook and tools refuse requests without the shared secret", async () => {
-    assert.equal((await el("/webhooks/elevenlabs/call-start", { caller_id: "+48500000001" }, undefined, "wrong")).statusCode, 401);
+  /** A call that reaches the phone agent; returns the variables the agent got. */
+  async function ring(caller: string) {
+    const { twiml, variables } = await dial(caller);
+    assert.equal(twiml, CONNECT_TWIML);
+    return variables!;
+  }
+
+  const countRows = async (table: string) => Number((await db.query(`SELECT count(*) AS n FROM ${table}`)).rows[0].n);
+
+  test("voice webhooks refuse unsigned or forged requests; tools still need the shared secret", async () => {
+    for (const url of ["/webhooks/twilio/voice", `/webhooks/twilio/voice/outbound/${randomUUID()}`, "/webhooks/twilio/call-status"]) {
+      assert.equal((await app.inject(twilioRequest(url, { From: "+48500000003" }, "forged"))).statusCode, 403, url);
+      const signedForOtherForm = twilioSignature(TWILIO_TOKEN, BASE_URL + url, { From: "+48500000003" });
+      assert.equal((await app.inject(twilioRequest(url, { From: "+48500000099" }, signedForOtherForm))).statusCode, 403, url);
+    }
     assert.equal((await el("/webhooks/elevenlabs/tools/search-memories", { query: "x" }, "abc", "")).statusCode, 401);
   });
 
-  test("unknown numbers and numbers with calls off get no session", async () => {
-    const unknown = await ring("+48500000099");
-    assert.equal(unknown.doddy_caller, "unknown");
-    assert.equal(unknown.secret__doddy_session, "none");
+  test("strangers, withheld numbers and numbers with calls off hear a fixed line, never the agent", async () => {
     await user("+48500000002");
-    const off = await ring("+48500000002");
-    assert.equal(off.doddy_caller, "calls_off");
-    assert.equal(off.secret__doddy_session, "none");
-    // Every variable the agent defines is always present.
-    assert.deepEqual(Object.keys(off).sort(), ["doddy_caller", "doddy_direction", "doddy_memory", "doddy_pin", "secret__doddy_session"]);
+    const [agentCalls, calls, sessions] = [registrar.calls.length, await countRows("calls"), await countRows("call_sessions")];
+    for (const caller of ["+48500000099", "anonymous", ""]) {
+      const { twiml, agent } = await dial(caller);
+      assert.match(twiml, /This number only works for its owner\. Goodbye\.<\/Say><Hangup\/><\/Response>$/);
+      assert.equal(agent, undefined);
+    }
+    const off = await dial("+48500000002");
+    assert.match(off.twiml, /Phone calls are turned off in the Doddy app/);
+    assert.equal(registrar.calls.length, agentCalls, "the phone agent was never asked");
+    assert.equal(await countRows("calls"), calls);
+    assert.equal(await countRows("call_sessions"), sessions);
+  });
+
+  test("a call the phone agent can't take hears a fixed line; the call is failed and its session gone", async () => {
+    await user("+48500000020", { pin: "258025", inbound: true });
+    registrar.next = [{ kind: "failed", code: "elevenlabs_503" }];
+    const { twiml, variables, callSid } = await dial("+48500000020");
+    assert.match(twiml, /I can't talk right now/);
+    assert.deepEqual((await el("/webhooks/elevenlabs/tools/verify-pin", { pin: "258025" }, variables!.secret__doddy_session)).json(),
+      { status: "not_recognised" });
+    assert.deepEqual((await db.query("SELECT status, error_code FROM calls WHERE call_sid = $1", [callSid])).rows[0],
+      { status: "failed", error_code: "elevenlabs_503" });
+  });
+
+  test("call status only moves forward, and a finished call ends its session", async () => {
+    const { accountId } = await user("+48500000022", { pin: "258025", inbound: true });
+    const status = async (sid: string) => (await db.query("SELECT status FROM calls WHERE call_sid = $1", [sid])).rows[0].status;
+    const report = (sid: string, s: string) => app.inject(twilioRequest("/webhooks/twilio/call-status", { CallSid: sid, CallStatus: s }));
+
+    const inbound = await dial("+48500000022");
+    const s = inbound.variables!.secret__doddy_session!;
+    for (const [twilio, ours] of [["ringing", "started"], ["in-progress", "started"], ["completed", "completed"],
+      ["ringing", "completed"], ["no-answer", "completed"], ["queued", "completed"]]) {
+      assert.equal((await report(inbound.callSid, twilio!)).statusCode, 204);
+      assert.equal(await status(inbound.callSid), ours, twilio);
+    }
+    assert.deepEqual((await el("/webhooks/elevenlabs/tools/verify-pin", { pin: "258025" }, s)).json(), { status: "not_recognised" });
+
+    await db.query("INSERT INTO calls (id, account_id, direction, status, call_sid) VALUES ($1, $2, 'outbound', 'requested', 'CAseq')",
+      [randomUUID(), accountId]);
+    for (const [twilio, ours] of [["initiated", "requested"], ["ringing", "ringing"], ["in-progress", "answered"],
+      ["ringing", "answered"], ["busy", "busy"], ["completed", "busy"]]) {
+      await report("CAseq", twilio!);
+      assert.equal(await status("CAseq"), ours, twilio);
+    }
+    assert.equal((await report("CAnobody", "completed")).statusCode, 204);
   });
 
   test("inbound: memories only after the right PIN; wrong PINs lock", async () => {
@@ -156,8 +220,8 @@ describe("phone calls against real Postgres", { skip: dbSkip }, () => {
     await inj("PUT", "/v1/calls/pin", { pin: "258025" });
     await inj("PUT", "/v1/calls/settings", { inboundEnabled: true });
     await inj("PUT", "/v1/device/push-token", { token: "e".repeat(64), environment: "sandbox" });
-    const start = await inj("POST", "/webhooks/elevenlabs/call-start", { caller_id: "+48500000017" }, { "x-doddy-tool-secret": TOOL_SECRET });
-    const s = start.json().dynamic_variables.secret__doddy_session;
+    const { variables } = await dial("+48500000017", noPush);
+    const s = variables!.secret__doddy_session!;
     for (let i = 0; i < 5; i++) {
       await inj("POST", "/webhooks/elevenlabs/tools/verify-pin", { pin: "000000" }, { "x-doddy-tool-secret": TOOL_SECRET, "x-doddy-session": s });
     }
@@ -232,24 +296,68 @@ describe("phone calls against real Postgres", { skip: dbSkip }, () => {
     assert.equal((await call("PUT", "/v1/memory-copy/snapshot", h, { items: [] })).statusCode, 409);
   });
 
-  test("outbound: needs consent, calls only the verified number, passes a session", async () => {
-    const { h } = await user("+48500000007", { pin: "258025" });
+  const consent = (h: object, on: boolean) =>
+    call("PUT", "/v1/calls/settings", h, on ? { outboundConsent: true, outboundConsentTextVersion: "calls-v1" } : { outboundConsent: false });
+
+  test("Call me now: Twilio rings the verified number; the session opens only when answered, and only once", async () => {
+    const { accountId, h } = await user("+48500000007", { pin: "258025" });
     assert.equal((await call("POST", "/v1/calls/outbound", h)).json().error, "outbound_not_enabled");
     assert.equal((await call("PUT", "/v1/calls/settings", h, { outboundConsent: true })).statusCode, 400, "needs the wording version");
-    assert.equal((await call("PUT", "/v1/calls/settings", h, { outboundConsent: true, outboundConsentTextVersion: "calls-v1" })).statusCode, 204);
+    assert.equal((await consent(h, true)).statusCode, 204);
 
     const r = await call("POST", "/v1/calls/outbound", h);
     assert.equal(r.statusCode, 202);
-    const placed = outbound.calls.at(-1)!;
-    assert.equal(placed.to, "+48500000007");
-    assert.equal(placed.variables.doddy_direction, "outbound");
-    const s = placed.variables.secret__doddy_session!;
+    const { callId, status } = r.json() as { callId: string; status: string };
+    assert.equal(status, "requested");
+    const answerPath = `/webhooks/twilio/voice/outbound/${callId}`;
+    assert.deepEqual(outbound.calls.at(-1), {
+      to: "+48500000007", from: DODDY_NUMBER, answerUrl: BASE_URL + answerPath, statusCallbackUrl: `${BASE_URL}/webhooks/twilio/call-status`,
+    });
+    assert.equal((await db.query("SELECT 1 FROM call_sessions WHERE account_id = $1", [accountId])).rowCount, 0, "no session before the answer");
+
+    const callSid = `CAout${outbound.calls.length}`;
+    const answered = await app.inject(twilioRequest(answerPath, { CallSid: callSid, CallStatus: "in-progress", From: DODDY_NUMBER, To: "+48500000007" }));
+    assert.equal(answered.body, CONNECT_TWIML);
+    const agent = registrar.calls.at(-1)!;
+    assert.deepEqual([agent.direction, agent.from, agent.to, agent.variables.doddy_direction],
+      ["outbound", DODDY_NUMBER, "+48500000007", "outbound"]);
+    const s = agent.variables.secret__doddy_session!;
     assert.deepEqual((await el("/webhooks/elevenlabs/tools/verify-pin", { pin: "258025" }, s)).json(), { status: "verified" });
 
-    outbound.next = [{ kind: "unknown", code: "elevenlabs_network" }];
+    // The same answer again, or with another CallSid, connects nothing.
+    const reached = registrar.calls.length;
+    for (const sid of [callSid, "CAother"]) {
+      assert.match((await app.inject(twilioRequest(answerPath, { CallSid: sid }))).body, /I can't talk right now/);
+    }
+    assert.equal(registrar.calls.length, reached);
+
+    // Twilio reports the end: the call is completed and its session no longer works.
+    await app.inject(twilioRequest("/webhooks/twilio/call-status", { CallSid: callSid, CallStatus: "completed" }));
+    assert.deepEqual((await el("/webhooks/elevenlabs/tools/verify-pin", { pin: "258025" }, s)).json(), { status: "not_recognised" });
+
+    outbound.next = [{ kind: "unknown", code: "twilio_network" }];
     assert.equal((await call("POST", "/v1/calls/outbound", h)).json().status, "unknown");
     const list = (await call("GET", "/v1/calls", h)).json().calls;
-    assert.deepEqual(list.map((c: { status: string }) => c.status), ["unknown", "requested"]);
+    assert.deepEqual(list.map((c: { status: string }) => c.status), ["unknown", "completed"]);
+  });
+
+  test("Call me now: an answer after consent was withdrawn connects nothing; a refused call is failed", async () => {
+    const { h } = await user("+48500000021", { pin: "258025" });
+    await consent(h, true);
+    const { callId } = (await call("POST", "/v1/calls/outbound", h)).json() as { callId: string };
+    const callSid = `CAout${outbound.calls.length}`;
+    await consent(h, false);
+    const reached = registrar.calls.length;
+    const late = await app.inject(twilioRequest(`/webhooks/twilio/voice/outbound/${callId}`, { CallSid: callSid }));
+    assert.match(late.body, /I can't talk right now/);
+    assert.equal(registrar.calls.length, reached);
+
+    await consent(h, true);
+    outbound.next = [{ kind: "rejected", code: "twilio_21215" }];
+    const refused = await call("POST", "/v1/calls/outbound", h);
+    assert.equal(refused.statusCode, 502);
+    assert.deepEqual((await db.query("SELECT status, error_code FROM calls WHERE id = $1", [refused.json().callId])).rows[0],
+      { status: "failed", error_code: "twilio_21215" });
   });
 
   test("settings report what exists; account deletion removes call data", async () => {
@@ -267,12 +375,21 @@ describe("phone calls against real Postgres", { skip: dbSkip }, () => {
   });
 
   test("without the encryption key or secret, call features say not configured", async () => {
-    const bare = await testApp(db, { cipher: undefined, toolSecret: undefined, outbound: undefined });
+    const bare = await testApp(db, { cipher: undefined, toolSecret: undefined, outbound: undefined, registrar: undefined });
     const r = await bare.app.inject({ method: "POST", url: "/v1/accounts" });
     const h = { authorization: `Bearer ${r.json().deviceToken}` };
     assert.deepEqual((await bare.app.inject({ method: "GET", url: "/v1/calls/settings", headers: h })).json().available, { inbound: false, outbound: false });
     assert.equal((await bare.app.inject({ method: "PUT", url: "/v1/memory-copy", headers: h, payload: { enabled: true } })).statusCode, 503);
-    assert.equal((await bare.app.inject({ method: "POST", url: "/webhooks/elevenlabs/call-start", payload: {} })).statusCode, 503);
+    assert.equal((await bare.app.inject({ method: "POST", url: "/v1/calls/outbound", headers: h })).statusCode, 503);
+    // Twilio still gets an honest answer: a fixed line, never the agent.
+    const answer = await bare.app.inject(twilioRequest("/webhooks/twilio/voice", { From: "+48500000003", To: DODDY_NUMBER, CallSid: "CAbare" }));
+    assert.match(answer.body, /Phone calls aren't connected yet/);
     await bare.app.close();
+    // Without a way to check Twilio's signature the server answers 503, so Twilio plays the number's fallback.
+    const unsigned = await testApp(db, { twilioAuthToken: undefined });
+    const noCheck = await unsigned.app.inject(twilioRequest("/webhooks/twilio/voice", { From: "+48500000003", To: DODDY_NUMBER, CallSid: "CAnocheck" }));
+    assert.equal(noCheck.statusCode, 503);
+    assert.deepEqual((await unsigned.app.inject({ method: "GET", url: "/v1/calls/settings", headers: h })).json().available, { inbound: false, outbound: false });
+    await unsigned.app.close();
   });
 });

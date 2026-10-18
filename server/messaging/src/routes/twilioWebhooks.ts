@@ -1,33 +1,15 @@
-import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
+import type { FastifyPluginAsync } from "fastify";
 import type { Deps } from "../app.js";
 import { inTransaction } from "../db.js";
 import { cancelQueuedSms } from "../outbox.js";
-import { isValidTwilioSignature } from "../providers/twilio.js";
 import { classifySms } from "../sms.js";
+import { formValue as str, verifiedTwilioForm } from "./twilioAuth.js";
 
-type Form = Record<string, string | string[] | undefined>;
 const EMPTY_TWIML = '<?xml version="1.0" encoding="UTF-8"?><Response/>';
-
-const str = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? "";
 
 export const twilioWebhookRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
   const { db } = deps;
-
-  /** Rejects anything not signed by Twilio. Returns the form fields when valid. */
-  function verified(req: FastifyRequest, reply: FastifyReply): Form | undefined {
-    if (!deps.twilioAuthToken || !deps.publicBaseUrl) {
-      void reply.code(503).send({ error: "not_configured" });
-      return undefined;
-    }
-    const form = (req.body ?? {}) as Form;
-    const sig = req.headers["x-twilio-signature"];
-    if (!isValidTwilioSignature(deps.twilioAuthToken, deps.publicBaseUrl + req.url, form,
-      typeof sig === "string" ? sig : undefined)) {
-      void reply.code(403).send({ error: "bad_signature" });
-      return undefined;
-    }
-    return form;
-  }
+  const verified = verifiedTwilioForm.bind(undefined, deps);
 
   // Inbound SMS. Only opt-out / opt-in keywords change state; message text is not stored.
   // Twilio's Advanced Opt-Out sends the confirmation replies, so we answer with empty TwiML.

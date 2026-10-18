@@ -1,8 +1,8 @@
 import type { Config } from "../config.js";
 import { ApnsPushSender } from "./apns.js";
 import { TextCipher } from "../crypto.js";
-import { ElevenLabsOutboundCaller } from "./elevenlabs.js";
-import { TwilioClient } from "./twilio.js";
+import { ElevenLabsCallRegistrar } from "./elevenlabs.js";
+import { TwilioClient, TwilioVoiceCaller } from "./twilio.js";
 import { GNewsSearch, HttpFeedSource } from "../news/sources.js";
 import { ClaudeDigestWriter, OpenAIDigestWriter } from "../news/writer.js";
 
@@ -16,7 +16,9 @@ export function providersFrom(config: Config) {
     push: config.apns ? new ApnsPushSender(config.apns) : undefined,
     sms: twilio,
     verifier: twilio,
-    outbound: config.phoneAgent ? new ElevenLabsOutboundCaller(config.phoneAgent) : undefined,
+    // Calls (ADR-490): Twilio places Doddy's calls; ElevenLabs connects answered calls to the agent.
+    outbound: config.twilio ? new TwilioVoiceCaller(config.twilio) : undefined,
+    registrar: config.phoneAgent ? new ElevenLabsCallRegistrar(config.phoneAgent) : undefined,
     cipher,
     news: {
       cipher,

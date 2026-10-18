@@ -2,7 +2,7 @@
 
 This is the runbook for unit U0 of ADR-490 (`docs/implementation/PHONE_SMS_MILESTONE.md`). At the end, Doddy has a Polish Twilio mobile number. It sends you texts and handles STOP and START through the messaging server (`server/messaging/`).
 
-**Calls are not connected in U0.** Anyone who calls the number hears one fixed sentence and the call ends. Calls come in unit U1.
+**Calls are not connected in U0.** Anyone who calls the number hears one fixed sentence and the call ends. Calls come in unit U1: see "Unit U1: connect calls" below, once the U0 checks pass.
 
 Written 2026-10-17. Console paths are from Twilio's and Render's documentation on that date and may have moved a little since. Nothing in this runbook has been tried yet; your run is the first.
 
@@ -145,6 +145,52 @@ Send Claude the results: what you saw, the app's wording, or Twilio's error code
 
 Optional: tap **Delete my Doddy messaging data**, check that the number is gone from Settings, then verify again.
 
+## Unit U1: connect calls (after the U0 checks pass)
+Calls reach the messaging server first (ADR-490). It lets your number through to the "Doddy (phone)" agent at ElevenLabs. Anyone else hears one fixed sentence and the call ends. **Don't import the number into ElevenLabs.**
+
+1. **Deploy the U1 code.** It is on branch `claude/awesome-cray-2lb9ia` until it is merged. In Render, set the `doddy-messaging` service's branch to it, or to the default branch once U1 is merged, and deploy. The database update (migration 008) runs by itself at start-up.
+2. **Twilio voice permissions:** under **Voice → Settings → Geo permissions**, tick Poland (low-risk numbers), so Doddy can call your Polish number. Without it, Twilio refuses with error 21215.
+3. **Make the tool secret:** run `openssl rand -base64 32` and keep the output for the next two steps. The server refuses a secret shorter than 32 characters.
+4. **Create the phone agent** from a checkout of the repo on your computer:
+   ```sh
+   cd server/messaging && npm ci
+   ELEVENLABS_API_KEY=… PUBLIC_BASE_URL=https://<address> ELEVENLABS_TOOL_SECRET=… node scripts/setup-phone-agent.mjs --dry-run
+   ELEVENLABS_API_KEY=… PUBLIC_BASE_URL=https://<address> ELEVENLABS_TOOL_SECRET=… node scripts/setup-phone-agent.mjs
+   ```
+   - The script creates a workspace secret, the agent's three tools and the agent, with μ-law audio for phone lines and no audio recording.
+   - It prints `ELEVENLABS_PHONE_AGENT_ID` and the Twilio settings for step 6.
+   - The keys sit only in that terminal command on your own computer.
+5. **Render → doddy-messaging → Environment:** add these, then deploy again.
+
+   | Key | Value |
+   |---|---|
+   | `ELEVENLABS_API_KEY` | **secret.** ElevenLabs → API keys |
+   | `ELEVENLABS_TOOL_SECRET` | **secret.** The value from step 3 |
+   | `ELEVENLABS_PHONE_AGENT_ID` | Printed by the script in step 4 |
+   | `DODDY_PHONE_NUMBER` | Doddy's number, as `+48…`. It is the caller ID of Doddy's calls, and the app shows it with a Call button. |
+
+   The log line `configured features` should now show `"calls":true` and `"outboundCalls":true`.
+6. **Twilio → Phone Numbers → Active numbers →** Doddy's number, under Voice:
+   - **A call comes in:** Webhook, HTTP POST, `https://<address>/webhooks/twilio/voice`
+   - **Primary handler fails:** keep the TwiML Bin `Doddy calls not connected` from step 4 of U0
+   - **Call status changes:** `https://<address>/webhooks/twilio/call-status`
+7. **On your iPhone, Settings → Phone calls:** set a PIN, turn on **Answer calls from my number** and **Doddy may call me**. **Let Doddy use my memories on calls** is optional.
+
+### The U1 checks
+Send Claude what you saw and heard. Never send the PIN, keys or the tool secret.
+
+| # | Check | Expected |
+|---|---|---|
+| 1 | Call Doddy's number from your phone | Doddy answers ("Hi, this is Doddy, an AI assistant…") and asks for your PIN before anything about your memories |
+| 2 | After the right PIN, ask about something you saved (memories on calls turned on) | An answer from your memories. **If Doddy says it can't use its memory on this call, tell Claude:** that means the call's session key didn't arrive through `register-call`, which is the one thing these checks prove for the first time. |
+| 3 | Call from another phone, or with your number withheld | The fixed sentence, "…This number only works for its owner. Goodbye.", and the call ends |
+| 4 | Turn off **Answer calls from my number**, then call | "…Phone calls are turned off in the Doddy app. Goodbye." Turn it back on afterwards. |
+| 5 | Tap **Call me now** and answer | Your phone rings from Doddy's number, Doddy speaks after you answer, and **Recent calls** shows "answered" |
+| 6 | Tap **Call me now** and don't answer | After about 30 seconds of ringing, **Recent calls** shows "no answer". Doddy doesn't call again. |
+| 7 | ElevenLabs → the agent's conversations | The calls from checks 1, 2 and 5 are there with transcripts and no audio |
+| 8 | Render logs | `call_refused` lines with a reason only, never a phone number |
+| 9 | Twilio → Monitor → Logs → Calls | Your calls, with no recordings |
+
 ## When something goes wrong
 | What you see | Likely cause |
 |---|---|
@@ -152,6 +198,9 @@ Optional: tap **Delete my Doddy messaging data**, check that the number is gone 
 | The code never arrives | Poland isn't ticked in Geo Permissions, or the Verify SID is wrong. Look for a `twilio_verify_…` code in Render's log. |
 | The test text says "Not delivered" | The Twilio error code tells you why: 21610 means you replied STOP, 21408 means Poland isn't enabled in Geo Permissions, 21614 means the number isn't a mobile |
 | The server stops at start-up | The log names the missing or wrong variable |
+| U1: every caller, you included, hears "Phone calls aren't connected yet" | One of `ELEVENLABS_API_KEY`, `ELEVENLABS_PHONE_AGENT_ID`, `ELEVENLABS_TOOL_SECRET` or `MEMORY_ENCRYPTION_KEY` is missing on Render |
+| U1: you hear "I can't talk right now" | The server didn't get a usable answer from ElevenLabs `register-call`. Render's log shows `call_not_connected` with a code, such as `elevenlabs_401` for a wrong key or `elevenlabs_422` for a wrong agent id. |
+| U1: Call me now says the phone service couldn't place the call | Twilio refused it. Error 21215 means Poland isn't ticked under Voice → Settings → Geo permissions. |
 
 **Known limit until unit U2:** the server retries a Twilio 500 error, so a test text could, rarely, arrive twice (ADR-490, section 4A of the plan).
 
@@ -169,3 +218,5 @@ Optional: tap **Delete my Doddy messaging data**, check that the number is gone 
 - Twilio, Messaging Services (Smart Encoding): https://www.twilio.com/docs/messaging/services
 - Twilio, TwiML Bins: https://www.twilio.com/docs/serverless/twiml-bins/getting-started
 - Twilio, text-to-speech voices (Polish): https://www.twilio.com/docs/voice/twiml/say/text-speech
+- Twilio, voice geo permissions: https://www.twilio.com/docs/sip-trunking/voice-dialing-geographic-permissions
+- ElevenLabs, register Twilio calls: https://elevenlabs.io/docs/eleven-agents/phone-numbers/twilio-integration/register-call

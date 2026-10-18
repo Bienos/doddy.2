@@ -4,19 +4,19 @@
 // checkout of the repo, after the server is deployed.
 //
 //   ELEVENLABS_API_KEY=… PUBLIC_BASE_URL=https://… ELEVENLABS_TOOL_SECRET=… \
-//     node scripts/setup-phone-agent.mjs [--dry-run] [--set-workspace-webhook]
+//     node scripts/setup-phone-agent.mjs [--dry-run]
 //
 // --dry-run prints every request instead of sending it.
-// --set-workspace-webhook also points the WORKSPACE-WIDE conversation-initiation webhook at this
-//   server. That setting is shared by every agent in the workspace, so it is opt-in.
 //
-// Afterwards (ElevenLabs dashboard): import the Twilio number, assign it to this agent, then set
-// ELEVENLABS_PHONE_AGENT_ID, ELEVENLABS_PHONE_NUMBER_ID and DODDY_PHONE_NUMBER on the server.
+// Calls reach this server first (ADR-490): don't import the Twilio number into ElevenLabs. The
+// server lets a call through and connects it to this agent with ElevenLabs register-call, so the
+// agent speaks and hears Twilio's μ-law 8 kHz audio and never fetches a conversation-start webhook.
+// Afterwards set ELEVENLABS_PHONE_AGENT_ID and DODDY_PHONE_NUMBER on the server, then point the
+// Twilio number's voice webhooks at the server (the script prints them).
 
 import { readFileSync } from "node:fs";
 
 const dryRun = process.argv.includes("--dry-run");
-const setWorkspaceWebhook = process.argv.includes("--set-workspace-webhook");
 const { ELEVENLABS_API_KEY: apiKey, PUBLIC_BASE_URL: base, ELEVENLABS_TOOL_SECRET: toolSecret } = process.env;
 if (!dryRun && (!apiKey || !base || !toolSecret)) {
   console.error("Set ELEVENLABS_API_KEY, PUBLIC_BASE_URL and ELEVENLABS_TOOL_SECRET (or use --dry-run).");
@@ -84,10 +84,12 @@ const agent = await api("POST", "/v1/convai/agents/create", {
     agent: {
       first_message: session.first_message.en,
       language: session.languages[0],
-      // Placeholders for tests in the dashboard; real values come from the call-start webhook.
+      // Placeholders for tests in the dashboard; real values come with each call (register-call).
       dynamic_variables: { dynamic_variable_placeholders: el.placeholders },
       prompt: { prompt, llm: el.llm, temperature: el.temperature, timezone: el.timezone, tool_ids: toolIds },
     },
+    tts: { agent_output_audio_format: el.audio.agent_output_audio_format },
+    asr: { user_input_audio_format: el.audio.user_input_audio_format },
   },
   platform_settings: {
     overrides: el.overrides,
@@ -96,18 +98,10 @@ const agent = await api("POST", "/v1/convai/agents/create", {
   },
 });
 
-const webhook = {
-  conversation_initiation_client_data_webhook: {
-    url: `${origin}${el.call_start_webhook}`,
-    request_headers: { "X-Doddy-Tool-Secret": { secret_id: secretIds.doddy_tool_secret } },
-  },
-};
-if (setWorkspaceWebhook) {
-  await api("PATCH", "/v1/convai/settings", webhook);
-} else {
-  console.log("\nNot changed: the workspace-wide call-start webhook. Set it in ElevenLabs → Agents → Settings, or re-run with --set-workspace-webhook:");
-  console.log(JSON.stringify(webhook, null, 2));
-}
-
 console.log(`\nDone. ELEVENLABS_PHONE_AGENT_ID=${agent.agent_id}`);
-console.log("Next: import the Twilio number in ElevenLabs (Phone Numbers), assign it to this agent, and set ELEVENLABS_PHONE_NUMBER_ID and DODDY_PHONE_NUMBER on the server.");
+console.log("Next:");
+console.log("  1. On the server, set ELEVENLABS_PHONE_AGENT_ID (above), ELEVENLABS_API_KEY, ELEVENLABS_TOOL_SECRET and DODDY_PHONE_NUMBER.");
+console.log("  2. In Twilio, on Doddy's number (don't import it into ElevenLabs):");
+console.log(`     A call comes in        → Webhook, HTTP POST, ${origin}/webhooks/twilio/voice`);
+console.log("     Primary handler fails  → TwiML Bin \"Doddy calls not connected\" (the U0 runbook)");
+console.log(`     Call status changes    → ${origin}/webhooks/twilio/call-status`);

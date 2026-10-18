@@ -34,7 +34,6 @@ const schema = z.object({
   // "1": run the worker loop inside the web process (one service; e.g. Render free/starter).
   RUN_WORKER_IN_WEB: z.enum(["0", "1"]).default("0"),
   ELEVENLABS_PHONE_AGENT_ID: optional,
-  ELEVENLABS_PHONE_NUMBER_ID: optional, // ElevenLabs id of the imported Twilio number
   // News digests
   ANTHROPIC_API_KEY: optional, // Claude writes the one-line summaries
   OPENAI_API_KEY: optional, // or OpenAI, when there is no Anthropic key (ADR-197)
@@ -47,7 +46,8 @@ export interface ApnsConfig { teamId: string; keyId: string; privateKey: string;
 export interface TwilioConfig {
   accountSid: string; authToken: string; messagingServiceSid: string; verifyServiceSid: string;
 }
-export interface PhoneAgentConfig { apiKey: string; agentId: string; phoneNumberId: string }
+/** The phone agent that answers calls this server lets through (ElevenLabs register-call, ADR-490). */
+export interface PhoneAgentConfig { apiKey: string; agentId: string }
 
 export interface Config {
   databaseUrl: string;
@@ -91,7 +91,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     memoryEncryptionKey: e.MEMORY_ENCRYPTION_KEY,
     toolSecret: e.ELEVENLABS_TOOL_SECRET,
     phoneAgent: all<PhoneAgentConfig>({
-      apiKey: e.ELEVENLABS_API_KEY, agentId: e.ELEVENLABS_PHONE_AGENT_ID, phoneNumberId: e.ELEVENLABS_PHONE_NUMBER_ID,
+      apiKey: e.ELEVENLABS_API_KEY, agentId: e.ELEVENLABS_PHONE_AGENT_ID,
     }),
     doddyPhoneNumber: e.DODDY_PHONE_NUMBER,
     anthropicApiKey: e.ANTHROPIC_API_KEY,

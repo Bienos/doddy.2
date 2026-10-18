@@ -5,7 +5,7 @@ import rateLimit from "@fastify/rate-limit";
 import type { z } from "zod";
 import type { Db } from "./db.js";
 import type { TextCipher } from "./crypto.js";
-import type { OutboundCaller, PhoneVerifier, PushSender, SmsSender } from "./providers/types.js";
+import type { CallRegistrar, OutboundCaller, PhoneVerifier, PushSender, SmsSender } from "./providers/types.js";
 import { callRoutes } from "./routes/calls.js";
 import { elevenLabsRoutes } from "./routes/elevenlabs.js";
 import { newsRoutes } from "./routes/news.js";
@@ -14,6 +14,7 @@ import { accountRoutes } from "./routes/account.js";
 import { phoneRoutes } from "./routes/phone.js";
 import { updateRoutes } from "./routes/updates.js";
 import { twilioWebhookRoutes } from "./routes/twilioWebhooks.js";
+import { twilioVoiceRoutes } from "./routes/twilioVoice.js";
 
 export interface Deps {
   db: Db;
@@ -23,10 +24,12 @@ export interface Deps {
   /** Needed (with publicBaseUrl) to verify Twilio webhook signatures. */
   twilioAuthToken?: string;
   publicBaseUrl?: string;
-  /** S2: phone calls. */
+  /** Phone calls (S2, routed through this server since ADR-490): Twilio rings the user's number... */
   outbound?: OutboundCaller;
+  /** ...and ElevenLabs register-call connects an answered call to the phone agent. */
+  registrar?: CallRegistrar;
   cipher?: TextCipher;
-  /** Shared with ElevenLabs; authenticates the call-start webhook and tool requests. */
+  /** Shared with ElevenLabs; authenticates the phone agent's tool requests. */
   toolSecret?: string;
   doddyPhoneNumber?: string;
   /** News digests: feeds always; keyword search and AI writer when configured. */
@@ -84,6 +87,7 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   await app.register(phoneRoutes(deps));
   await app.register(updateRoutes(deps));
   await app.register(twilioWebhookRoutes(deps));
+  await app.register(twilioVoiceRoutes(deps));
   await app.register(callRoutes(deps));
   await app.register(elevenLabsRoutes(deps));
   await app.register(newsRoutes(deps));

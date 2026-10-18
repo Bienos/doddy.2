@@ -17,7 +17,8 @@ Owner request: "Give Doddy his own phone number so he can (a) call me and take c
 | Unit | State |
 |---|---|
 | U0. Go live with texts | Setup runbook written (`docs/integrations/PHONE_NUMBER_SETUP.md`). The built server passes its tests on this branch (55 tests, 0 failures, 2026-10-17). Waiting on your setup steps and the iPhone checks. |
-| U1 to U4 | Not started |
+| U1. Calls through the server | Built on 2026-10-18 (ADR-492): voice routes, Twilio caller, `register-call`, migration 008, setup script, the app's call status words. Server tests: 61 pass, 0 fail, with stand-ins for Twilio and ElevenLabs; six deliberate breakages were each caught by a test. Not run: anything live (it needs U0 first), and the app compile (no Swift here). Waiting on U0, then your U1 steps and checks (`docs/integrations/PHONE_NUMBER_SETUP.md`). |
+| U2 to U4 | Not started |
 
 ## What exists and what is new
 "Built" below means the code exists and its automated tests pass with stand-ins for Twilio and ElevenLabs. The app side compiles in hosted CI. Nothing has run against the real services.

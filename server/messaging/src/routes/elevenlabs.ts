@@ -3,24 +3,18 @@ import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import type { Deps } from "../app.js";
 import {
-  findSession, MAX_PENDING_NOTES, openSession, PIN_MAX_ATTEMPTS, pinLockMinutes, sameSecret, variablesFor,
-  type Session,
+  findSession, MAX_PENDING_NOTES, PIN_MAX_ATTEMPTS, pinLockMinutes, sameSecret, type Session,
 } from "../calls.js";
 import { verifyPin } from "../crypto.js";
 import { inTransaction } from "../db.js";
 import { searchMemories } from "../memorySearch.js";
 import { canPush, enqueue } from "../outbox.js";
 
-// Endpoints called by ElevenLabs during phone calls. All require the shared tool secret.
+// The phone agent's tools, called by ElevenLabs during phone calls. All require the shared tool
+// secret. (Calls themselves start at routes/twilioVoice.ts since ADR-490.)
 // Tool replies are always HTTP 200 with a `status` the agent's prompt knows how to say aloud;
 // they never contain memories unless the caller proved the PIN on this call.
 
-const startBody = z.object({
-  caller_id: z.string().max(32).optional(),
-  called_number: z.string().max(32).optional(),
-  call_sid: z.string().max(64).optional(),
-  conversation_id: z.string().max(128).optional(),
-});
 const pinBody = z.object({ pin: z.string().max(16) });
 const searchBody = z.object({ query: z.string().min(1).max(300) });
 const noteBody = z.object({ text: z.string().trim().min(1).max(1000) });
@@ -45,34 +39,6 @@ export const elevenLabsRoutes = (deps: Deps): FastifyPluginAsync => async (app) 
     const header = req.headers["x-doddy-session"];
     return findSession(db, typeof header === "string" ? header : undefined);
   }
-
-  // Conversation initiation webhook for inbound Twilio calls. Runs while the phone rings, so
-  // it must answer quickly and always answer: a failure here would drop the call.
-  app.post("/webhooks/elevenlabs/call-start", async (req, reply) => {
-    if (!authorized(req, reply)) return;
-    const respond = (dynamic_variables: object) =>
-      reply.send({ type: "conversation_initiation_client_data", dynamic_variables });
-    const body = startBody.safeParse(req.body);
-    if (!body.success || !body.data.caller_id) return respond(variablesFor("unknown", "inbound"));
-    try {
-      const { rows } = await db.query<{ account_id: string; inbound_enabled: boolean | null }>(
-        `SELECT p.account_id, s.inbound_enabled FROM phone_numbers p
-         LEFT JOIN call_settings s ON s.account_id = p.account_id WHERE p.e164 = $1`,
-        [body.data.caller_id]);
-      const row = rows[0];
-      if (!row) return respond(variablesFor("unknown", "inbound"));
-      if (!row.inbound_enabled) return respond(variablesFor("calls_off", "inbound"));
-      const callId = randomUUID();
-      await db.query(
-        `INSERT INTO calls (id, account_id, direction, status, conversation_id, call_sid)
-         VALUES ($1, $2, 'inbound', 'started', $3, $4)`,
-        [callId, row.account_id, body.data.conversation_id ?? null, body.data.call_sid ?? null]);
-      return respond(await openSession(db, row.account_id, callId, "inbound"));
-    } catch (err) {
-      req.log.error({ err: { message: (err as Error).message } }, "call-start failed");
-      return respond(variablesFor("unavailable", "inbound"));
-    }
-  });
 
   app.post("/webhooks/elevenlabs/tools/verify-pin", async (req, reply) => {
     if (!authorized(req, reply)) return;

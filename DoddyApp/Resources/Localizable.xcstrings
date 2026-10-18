@@ -88819,6 +88819,39 @@
         }
       }
     },
+    "answered": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "odebrane"
+          }
+        }
+      }
+    },
+    "busy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "zajęte"
+          }
+        }
+      }
+    },
+    "cancelled": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "anulowane"
+          }
+        }
+      }
+    },
     "confirmed %@": {
       "extractionState": "manual",
       "localizations": {
@@ -88874,6 +88907,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "已确认 %@"
+          }
+        }
+      }
+    },
+    "failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "nieudane"
           }
         }
       }
@@ -89299,6 +89343,17 @@
         }
       }
     },
+    "no answer": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "nieodebrane"
+          }
+        }
+      }
+    },
     "none": {
       "extractionState": "manual",
       "localizations": {
@@ -89354,6 +89409,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "无"
+          }
+        }
+      }
+    },
+    "not confirmed": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "niepotwierdzone"
+          }
+        }
+      }
+    },
+    "ringing": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "dzwoni"
           }
         }
       }

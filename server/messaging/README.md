@@ -12,11 +12,11 @@ It holds provider keys so the iPhone app never does, and sends updates by **push
 | Phone (Twilio Verify) | `POST /v1/phone/verification` `{phone}` · `POST /v1/phone/verification/check` `{phone, code}` · `GET/DELETE /v1/phone` |
 | SMS opt-in | `PUT /v1/phone/sms-consent` `{consent, textVersion}`: the app records which wording the user agreed to |
 | Updates | `POST /v1/updates` `{text ≤640, channels:[push,sms], sendAt?, idempotencyKey}` · `GET/DELETE /v1/updates/:id` |
-| Twilio webhooks | `POST /webhooks/twilio/sms` (STOP/START) · `POST /webhooks/twilio/status` (delivery receipts), signature-checked |
+| Twilio webhooks | `POST /webhooks/twilio/sms` (STOP/START) · `POST /webhooks/twilio/status` (delivery receipts) · `POST /webhooks/twilio/voice` (someone calls Doddy) · `POST /webhooks/twilio/voice/outbound/:callId` (the user answered Doddy's call) · `POST /webhooks/twilio/call-status` (how a call went), all signature-checked |
 | Calls (S2, app) | `GET/PUT /v1/calls/settings` (inbound on/off, outbound consent `calls-v1`) · `PUT/DELETE /v1/calls/pin` · `POST /v1/calls/outbound` ("call me now") · `GET /v1/calls` |
 | Memory on calls (opt-in) | `PUT /v1/memory-copy` `{enabled}` (off deletes every copy) · `PUT /v1/memory-copy/snapshot` (replaces the copy) |
 | Notes from calls | `GET /v1/call-notes` · `DELETE /v1/call-notes/:id` (after the user confirms or discards) |
-| ElevenLabs (S2) | `POST /webhooks/elevenlabs/call-start` · `POST /webhooks/elevenlabs/tools/{verify-pin,search-memories,save-note}`; all need `X-Doddy-Tool-Secret`, tools also `X-Doddy-Session` |
+| ElevenLabs (S2) | `POST /webhooks/elevenlabs/tools/{verify-pin,search-memories,save-note}`: the phone agent's tools; they need `X-Doddy-Tool-Secret` and `X-Doddy-Session` |
 | News digests | `GET /v1/news/catalog` · `GET/PUT /v1/news/settings` (topics, own keywords, own feeds, time, zone, channels, language) · `POST /v1/news/feeds/check` · `POST /v1/news/send-now` · `GET /v1/news/digests` |
 | Health | `GET /healthz` |
 
@@ -32,19 +32,30 @@ All `/v1` routes except account creation need `Authorization: Bearer <deviceToke
 - Logs carry ids and counts only. No message text, no phone numbers, no tokens.
 - A missing provider configuration returns `503 not_configured`. It never fakes success.
 
-## Phone calls (S2)
-- **Who:** Doddy answers only verified numbers whose owner turned calls on. Unknown numbers get a polite "add this number in the app".
+## Phone calls (S2, through this server since ADR-490)
+- **Route:** every call to Doddy's Twilio number reaches this server first (`src/routes/twilioVoice.ts`).
+  - The server decides who reaches the "Doddy (phone)" agent and connects them with ElevenLabs `register-call`.
+  - The number stays on Doddy's Twilio account and is **not** imported into ElevenLabs.
+- **Who:** only a verified number whose owner turned calls on reaches the agent. Everyone else, including withheld numbers, hears one fixed sentence (Polish, then English, saying Doddy is an AI) and the call ends. No AI runs for them, and the log keeps only the reason, never the number.
+- **When something is missing:**
+  - No phone agent configured: a fixed "not connected yet" sentence.
+  - The agent can't be reached: "I can't talk right now", and the call is recorded as failed.
+  - The server can't check Twilio's signature: 503, so Twilio plays the number's fallback (a TwiML Bin).
 - **PIN:** every call needs the user's PIN before memories are searched or notes saved, because caller ID can be faked.
   - The PIN is stored as an scrypt hash.
-  - 5 wrong tries lock it for 15 minutes.
-- **Session:** each call gets a random session key, passed as an ElevenLabs `secret__` variable. That kind of variable is only put in request headers and never shown to the language model.
+  - Wrong tries lock it, with escalating lockouts (ADR-175).
+- **Session:**
+  - Each call gets a random session key, passed as an ElevenLabs `secret__` variable through `register-call`. That kind of variable is only put in tool request headers, never shown to the language model.
+  - The session ends when Twilio reports the call finished, or after 2 hours.
 - **Encryption:** memory copies and call notes are encrypted with AES-256-GCM, bound to account and row, using `MEMORY_ENCRYPTION_KEY`. This is encryption at rest, **not end-to-end**: the server decrypts to answer.
 - **Notes:** notes taken on a call wait in the app until the user confirms them. The push notification never contains the note.
-- **Outbound:** goes only to the verified number, after consent (`calls-v1`). Limits are 3 per hour and 10 per day. A network timeout is recorded as `unknown` and never redialled.
-- **Agent setup:**
-  1. Run `node scripts/setup-phone-agent.mjs --dry-run` to see the requests, then run it for real after deploy.
-  2. Don't import the Twilio number into ElevenLabs. ADR-490 (2026-10-17) routes calls through this server with ElevenLabs `register-call` (unit U1). Until then the number answers with the fixed sentence from `docs/integrations/PHONE_NUMBER_SETUP.md`.
-  3. The call-start webhook (`--set-workspace-webhook`) is replaced in U1 as well.
+- **Outbound ("Call me now"):**
+  - goes only to the verified number, after consent (`calls-v1`), at most 3 per hour and 10 per day;
+  - Twilio rings from `DODDY_PHONE_NUMBER`, and the session opens only when the user answers, once per call (consent is checked again then);
+  - a timeout or Twilio server error is recorded as `unknown` and never redialled;
+  - Twilio's status callbacks record ringing, answered, completed, busy, no answer, failed or canceled, and a status never moves backwards.
+- **Recording:** none. No TwiML or Twilio request asks to record, and TwiML that would record is refused.
+- **Agent setup:** run `node scripts/setup-phone-agent.mjs --dry-run` to see the requests, then run it for real after deploy. It prints the Twilio settings to use. The full steps are in `docs/integrations/PHONE_NUMBER_SETUP.md`, section "Unit U1".
 
 ## News digests
 Once a day at the user's local time, the worker builds a short news message:

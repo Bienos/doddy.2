@@ -18,8 +18,9 @@ export const OUTBOUND_DAILY_LIMIT = 10;
 export const MAX_PENDING_NOTES = 20;
 
 /**
- * Variables handed to the phone agent at the start of every call. The agent defines all of
- * them, so every response must contain all of them (ElevenLabs requirement).
+ * Variables handed to the phone agent at the start of every call it takes (through ElevenLabs
+ * register-call, ADR-490). The agent defines all of them, so every call must carry all of them.
+ * Only verified callers reach the agent now; the other caller values stay for the prompt's sake.
  * `secret__doddy_session` is only ever placed in tool request headers by ElevenLabs and is
  * never sent to the language model.
  */
@@ -29,10 +30,6 @@ export interface CallVariables {
   doddy_memory: "on" | "off";
   doddy_pin: "set" | "not_set";
   doddy_direction: "inbound" | "outbound";
-}
-
-export function variablesFor(caller: CallVariables["doddy_caller"], direction: CallVariables["doddy_direction"]): CallVariables {
-  return { secret__doddy_session: "none", doddy_caller: caller, doddy_memory: "off", doddy_pin: "not_set", doddy_direction: direction };
 }
 
 export function sameSecret(expected: string, given: string | undefined): boolean {
