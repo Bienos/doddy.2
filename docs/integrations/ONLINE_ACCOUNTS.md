@@ -113,6 +113,10 @@ Contract fixtures: `contracts/online-accounts/*.json` (written by `npm run fixtu
    hosted connect link, completion mode, whether Composio reports granted scopes for Gmail/Drive (if not, they show
    "Needs attention" and stay blocked on purpose), and every tool slug/argument/output shape (read from Composio's
    schemas, not executed).
+   **Gmail, 2026-10-18, on Render (no app):** hosted link, Google consent, callback completion, the ownership check,
+   the scope report and Disconnect all worked live. Composio reports Gmail's granted scopes. The auth config
+   granted more than read + compose, so the account was blocked (`grant_too_broad`) and no tool ran. Still unverified:
+   any Gmail tool call and its output shape. Details in `DEPLOY_RENDER.md`.
 2. **Mac build** of the app: `OnlineAccountsView`, the voice card, Settings link, `OnlineAccountsClientFactory`.
 3. **A real conversation** on a phone: tool calls arriving, card → tap → result, "DEMO DATA" wording, Polish.
 4. That the installed app build matches the agent: an older build answers the new tools with "not supported in this version".

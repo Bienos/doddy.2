@@ -29,6 +29,20 @@ Since ADR-193 the backend starts in live mode with **only a Monid key** (web sea
   because the server never logs Composio's answer.
 * Every wake on the free plan is a new instance (a new instance ID in the logs), so the SQLite file, connections and
   switches are lost after about 15 minutes idle, not only on redeploy.
+* Same day, after the owner put a new `ak_…` project key on Render and the agent set
+  `COMPOSIO_GMAIL_AUTH_CONFIG_ID=ac_XUGmWDS79r-R` (deploy `dep-dba9h6nbtjjs73eaou70`), the live path worked up to
+  the grant check:
+  1. `POST /v1/tools/gmail/connect` → 200 with a `connect.composio.dev/link/…` link.
+  2. The owner approved Google in a browser and landed on `/v1/health?attempt=…&status=success&connected_account_id=ca_…`.
+  3. `POST /v1/tools/gmail/complete` (callback mode) → 200. The server re-read the connection: active, owned by this
+     user, the right auth config. **Composio does report Gmail's granted scopes** (otherwise the verdict would have been
+     `grant_unverifiable`). They were broader than `gmail.readonly` + `gmail.compose`: status
+     `permission_insufficient`, reason `grant_too_broad`, receipt `blocked`, as designed.
+  4. Switching `check_email` on → 403 `permission_insufficient`; running it → 403. No email was read.
+  5. `POST /v1/tools/gmail/disconnect` → 200, revoked and deleted at Composio (`remoteCleanup: none`).
+* **Next:** limit auth config `ac_XUGmWDS79r-R` (or a new one) to `gmail.readonly` and `gmail.compose` (identity
+  scopes `openid`, `email`, `profile`, `userinfo.email`, `userinfo.profile` are also accepted), then connect again. If
+  Composio's managed Gmail app won't take a narrower list, it needs Doddy's own Google OAuth client.
 
 Earlier (2026-10-10): service `doddy` (`srv-db559odckfvc7390v2i0`, https://doddy.onrender.com) in workspace **SLIYD**,
 web search verified there. That account is no longer the one in use; delete the old service there if it still runs.
