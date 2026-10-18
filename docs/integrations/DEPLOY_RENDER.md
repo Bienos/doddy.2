@@ -40,9 +40,18 @@ Since ADR-193 the backend starts in live mode with **only a Monid key** (web sea
      `permission_insufficient`, reason `grant_too_broad`, receipt `blocked`, as designed.
   4. Switching `check_email` on → 403 `permission_insufficient`; running it → 403. No email was read.
   5. `POST /v1/tools/gmail/disconnect` → 200, revoked and deleted at Composio (`remoteCleanup: none`).
-* **Next:** limit auth config `ac_XUGmWDS79r-R` (or a new one) to `gmail.readonly` and `gmail.compose` (identity
-  scopes `openid`, `email`, `profile`, `userinfo.email`, `userinfo.profile` are also accepted), then connect again. If
-  Composio's managed Gmail app won't take a narrower list, it needs Doddy's own Google OAuth client.
+* Again after PR #87 (ASK-01, deploy of `5904c9c`; allowed Gmail grants are now `gmail.readonly`, `gmail.compose`,
+  `gmail.send`, `gmail.modify` plus identity). Connect and complete worked; still `grant_too_broad`. The new
+  `grant_checked` log line shows what auth config `ac_XUGmWDS79r-R` asks Google for: `https://mail.google.com/` (full
+  mailbox, incl. permanent delete), `contacts.readonly`, `contacts.other.readonly`, `profile.emails.read`,
+  `user.birthday.read`, `user.addresses.read`, `user.emails.read`, `user.phonenumbers.read`,
+  `profile.language.read`, plus identity. Disconnected at once (revoked and deleted). No tool ran.
+* A sign-in approved at 12:13 UTC was never completed (the 10-minute attempt expired, then the instance slept), so its
+  Composio connection may still be live with the broad grant. Delete it in Composio (Connected Accounts, Gmail).
+* **Next:** change auth config `ac_XUGmWDS79r-R` (or create a new one) so it asks only for `gmail.readonly`,
+  `gmail.compose`, `gmail.send`, `gmail.modify` and identity (`openid`, `email`, `profile`, `userinfo.email`,
+  `userinfo.profile`), then connect again. If Composio's managed Google app can't be narrowed, the config needs
+  Doddy's own Google OAuth client (custom auth).
 
 Earlier (2026-10-10): service `doddy` (`srv-db559odckfvc7390v2i0`, https://doddy.onrender.com) in workspace **SLIYD**,
 web search verified there. That account is no longer the one in use; delete the old service there if it still runs.
