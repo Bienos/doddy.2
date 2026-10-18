@@ -85,13 +85,14 @@ final class ApplePayPresenter: NSObject, PKPaymentAuthorizationControllerDelegat
 
     // MARK: PKPaymentAuthorizationControllerDelegate
 
-    /// The async form of PassKit's delegate method (Swift's import of its `handler:` block), so
-    /// no non-Sendable completion block has to cross to the main actor.
-    nonisolated func paymentAuthorizationController(
+    // PassKit's delegate protocol is main-actor isolated in the iOS SDK, so these run on the main
+    // actor like the rest of this class. The async form of the authorization method (Swift's
+    // import of its `handler:` block) returns the result instead of calling a completion block.
+    func paymentAuthorizationController(
         _ controller: PKPaymentAuthorizationController,
         didAuthorizePayment payment: PKPayment
     ) async -> PKPaymentAuthorizationResult {
-        // Read the token here into plain values; only those cross to the main actor.
+        // Only plain values leave this method; the phone never reads the card behind the token.
         let transaction = payment.token.transactionIdentifier
         let token = ApplePayTokenData(
             paymentData: String(data: payment.token.paymentData, encoding: .utf8) ?? "",
@@ -102,8 +103,8 @@ final class ApplePayPresenter: NSObject, PKPaymentAuthorizationControllerDelegat
         return PKPaymentAuthorizationResult(status: paid ? .success : .failure, errors: nil)
     }
 
-    nonisolated func paymentAuthorizationControllerDidFinish(_ controller: PKPaymentAuthorizationController) {
-        Task { @MainActor in self.finish() }
+    func paymentAuthorizationControllerDidFinish(_ controller: PKPaymentAuthorizationController) {
+        finish()
     }
 
     private func send(_ token: ApplePayTokenData) async -> Bool {
