@@ -1,5 +1,7 @@
 # What stands between Doddy and going live — 11 October 2026 (ADR-336)
 
+> **Superseded on 2026-10-18** by the living checklist `docs/implementation/GO_LIVE_CHECKLIST.md` (ADR-500). This file stays as the 11 October snapshot.
+
 A read-only survey of the default branch at `3ec1155` (PR #52), the docs, `DECISIONS.md`, `project.yml`,
 `Config/`, CI and the open branches. Uncertain points are marked. `README.md` and
 `docs/00_START_HERE/DECISIONS_AND_STATUS.md` are from 2026-10-08 and out of date; `DECISIONS.md` and the
