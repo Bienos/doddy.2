@@ -9,6 +9,7 @@ import { isSupportedTimeZone } from "../time.js";
 import {
   CLOUD_TOOLS,
   type CloudToolDefinition,
+  type Context,
   cloudTool,
   evaluateToolkitGrant,
   type GrantVerdict,
@@ -472,6 +473,13 @@ export class CloudToolsService {
     if (request.tool === WEB_SEARCH_TOOL) return this.prepareWebSearch(userId, request.arguments);
     const tool = this.requireTool(request.tool);
     const args = parse(tool.input, request.arguments);
+    if (request.timeZone !== undefined && !isSupportedTimeZone(request.timeZone)) {
+      throw new AppError("invalid_request", { message: "Use an IANA time zone such as Europe/Warsaw." });
+    }
+    if (tool.resolve?.needsTimeZone && request.timeZone === undefined) {
+      throw new AppError("invalid_request", { message: "This tool needs the user's time zone." });
+    }
+    const context: Context | undefined = request.timeZone === undefined ? undefined : { timeZone: request.timeZone };
     const now = this.now();
     this.limiter.reserveRequest(userId, now);
     const row = this.checkUsable(userId, tool, tool.risk);
@@ -484,7 +492,7 @@ export class CloudToolsService {
       this.reserveRuns(userId, tool, now, 1);
       const composioUserId = this.store.composioUserId(userId, now);
       try {
-        target = (await this.limiter.withSlot(userId, () => this.lookup(userId, tool, args, composioUserId, row.connection_id))).target;
+        target = (await this.limiter.withSlot(userId, () => this.lookup(userId, tool, args, composioUserId, row.connection_id, context))).target;
       } catch (error) {
         throw this.failure(userId, tool, error, false);
       }
@@ -584,12 +592,13 @@ export class CloudToolsService {
     args: Record<string, unknown>,
     composioUserId: string,
     connectionId: string,
+    context?: Context,
   ): Promise<{ target: ResolvedTarget; missing: null } | { target: null; missing: string }> {
     const lookup = tool.resolve!;
     const result = await this.withRetry(LOOKUP_RETRIES, (signal) =>
-      this.provider.execute({ toolkit: tool.toolkit, slug: lookup.slug, composioUserId, connectionId, arguments: lookup.toArguments(args), signal }),
+      this.provider.execute({ toolkit: tool.toolkit, slug: lookup.slug, composioUserId, connectionId, arguments: lookup.toArguments(args, context), signal }),
     );
-    const found = lookup.read(result.raw, args);
+    const found = lookup.read(result.raw, args, context);
     if (found !== null && found.kind !== "missing") return { target: found, missing: null };
     const message = found?.message ?? lookup.notFound;
     if (tool.risk === "read") return { target: null, missing: message };
@@ -684,7 +693,7 @@ export class CloudToolsService {
         if (tool.risk === "read" && !approval(null, false)) throw unconfirmed();
         // The target is read again right before the write: if it is gone, done, or no longer what the
         // card showed, the approval doesn't match and nothing is written. A read looks up what it opens.
-        const found = tool.resolve ? await this.lookup(userId, tool, args, composioUserId, row.connection_id) : null;
+        const found = tool.resolve ? await this.lookup(userId, tool, args, composioUserId, row.connection_id, { timeZone: request.timeZone }) : null;
         if (found?.missing) {
           // Reads only (a write's miss throws): nothing matched, so the main slug isn't run.
           const summary = tool.resolve!.missSummary ?? "Nothing matched.";

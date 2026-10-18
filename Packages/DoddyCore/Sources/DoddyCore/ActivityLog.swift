@@ -279,7 +279,11 @@ public struct ActivityRequest: Equatable, Sendable {
 
     /// Online-account calls: names only. Email subjects, file names and task text are not kept.
     static func describe(cloud name: String) -> ActivityRequest? {
-        switch name {
+        // ADR-486/487: Google Calendar is listed under Calendar, Outlook's under Outlook.
+        if let more = CloudToolName.more[name] {
+            return ActivityRequest(app: more.account == "Outlook" ? .outlook : .calendar, title: more.title, detail: nil, isLookup: !more.write)
+        }
+        return switch name {
         case CloudToolName.checkEmail: ActivityRequest(app: .gmail, title: "Checked email", detail: nil, isLookup: true)
         case CloudToolName.draftEmail: ActivityRequest(app: .gmail, title: "Create an email draft", detail: nil, isLookup: false)
         case CloudToolName.readEmail: ActivityRequest(app: .gmail, title: "Read an email", detail: nil, isLookup: true)

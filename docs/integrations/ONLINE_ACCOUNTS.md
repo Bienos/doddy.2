@@ -52,6 +52,39 @@ allows sending) but can't switch on archive/Trash. On every completed connect th
 compared with what Doddy accepts. The Composio auth config (`ac_XUGmWDS79r-R` on Render) must be set to these four
 Gmail scopes; whether Composio's managed Google app grants exactly those is not verified.
 
+## 2026-10-18: calendars (ADR-486) and Outlook mail (ADR-487)
+
+Mock-tested only; never run against a real Google or Microsoft account. Every write is behind a tap on its card.
+
+| Tool | Slug | Card shows | "Done" only when |
+|---|---|---|---|
+| `read_google_calendar` (read) | `GOOGLECALENDAR_EVENTS_LIST` | The days | — |
+| `create_google_event` | `GOOGLECALENDAR_CREATE_EVENT` | Title, start–end in the user's zone, place; no guests, no Meet link, no emails | Google's event has the card's start |
+| `change_google_event` | `GOOGLECALENDAR_PATCH_EVENT` | The event as Google has it, the new start/end/title; "guests are told" | Google's event shows the new start/title |
+| `delete_google_event` | `GOOGLECALENDAR_DELETE_EVENT` | The event; "trash for 30 days" | `response_data.status: "success"` |
+| `answer_google_invite` | `GOOGLECALENDAR_PATCH_EVENT` (`rsvp_response`) | The invitation and organizer | The user's attendee entry shows the answer |
+| `create/change/delete_outlook_event` | `OUTLOOK_CALENDAR_CREATE_EVENT`, `OUTLOOK_UPDATE_CALENDAR_EVENT`, `OUTLOOK_DELETE_CALENDAR_EVENT` | Same as Google; delete goes to Deleted Items | An event id / title back, or Composio's success |
+| `accept/decline_outlook_invite` | `OUTLOOK_ACCEPT_EVENT`, `OUTLOOK_DECLINE_EVENT` | The invitation and organizer | Composio's `success` |
+| `send/reply/forward_outlook_email` | `OUTLOOK_SEND_EMAIL`, `OUTLOOK_REPLY_EMAIL`, `OUTLOOK_FORWARD_MESSAGE` | Recipient, subject, full text (reply: the sender from Outlook) | A 2xx `status_code` (or Composio's success) |
+| `move_outlook_email` | `OUTLOOK_MOVE_MESSAGE` | The email; Archive / Deleted Items / inbox | The moved message's new id |
+| `mark_outlook_email` | `OUTLOOK_UPDATE_USER_MAIL_FOLDER_MESSAGE` | The email; read/unread/flag | Outlook's answer shows the change |
+
+An event is found by its **title and start exactly as the calendar read gave them** (one match; none or several:
+nothing changes and the agent asks). Lookups use the user's time zone, which `prepare` now accepts (`timeZone`, sent by
+the app). Guests are told about changes and deletions; the card says so. No guests, attendees, recurrence, Meet/Teams
+links or other calendars can be set from the agent.
+
+**Google Calendar is a new account section** (`gcalendar`, Composio toolkit `googlecalendar`), configured with
+`COMPOSIO_GCALENDAR_AUTH_CONFIG_ID` / `_TOOLKIT_VERSION`. It is separate from the older read-only Connected Apps path
+(`COMPOSIO_GOOGLECALENDAR_*`). Scope: `calendar.events` (read-only event scopes also accepted for reading); full
+`calendar` access is "too broad". **Outlook** now also asks for `Mail.Send` and `Calendars.ReadWrite`; shared-mailbox,
+mailbox-settings and contacts permissions stay "too broad".
+
+**Apple Calendar** (and Google or Exchange calendars added to the iPhone) already had add, change and delete behind a
+card on the phone (`create_calendar_event`, `change_calendar_event`, `delete_calendar_event`, ADR-229/259). Answering
+invitations there isn't possible: Apple's EventKit lets apps read a participant's status, not set it. Use the Google or
+Outlook account tools for invitations.
+
 ## Web search (Monid), added 2026-10-10 (ADR-173)
 
 Web search is the one section with **no account**: Settings → Online accounts shows "Web search · Ready, no sign-in"

@@ -164,7 +164,7 @@
     {
       "id": "outlook",
       "title": "Outlook",
-      "access": "Doddy can list your recent Outlook emails (sender, subject, a short preview), read one email aloud when you ask, read your Outlook calendar for the days you ask about, and create drafts after you tap Create. Doddy never sends, deletes or moves email, and never changes your calendar.",
+      "access": "Doddy can list your recent Outlook emails (sender, subject, a short preview), read one email aloud when you ask, and read your Outlook calendar for the days you ask about, after you say yes. It can create drafts, send, reply, forward, mark read or flag, archive or move an email to Deleted Items, and add, change, delete or answer calendar events, each only after you tap the card that shows exactly what will happen. It never deletes anything for good.",
       "needsAccount": true,
       "status": "disconnected",
       "reason": null,
@@ -197,6 +197,123 @@
           "title": "Read my Outlook calendar",
           "blurb": "Reads your Outlook calendar for the days you ask about: title, time and place. It can't change events. Off until you switch it on.",
           "risk": "read",
+          "enabled": false
+        },
+        {
+          "name": "create_outlook_event",
+          "title": "Add an Outlook event",
+          "blurb": "Adds an event to your Outlook calendar after you tap Add on the card. Off until you switch it on.",
+          "risk": "write",
+          "enabled": false
+        },
+        {
+          "name": "change_outlook_event",
+          "title": "Change an Outlook event",
+          "blurb": "Moves or renames one event after you tap Change. Its guests are told. Off until you switch it on.",
+          "risk": "write",
+          "enabled": false
+        },
+        {
+          "name": "delete_outlook_event",
+          "title": "Delete an Outlook event",
+          "blurb": "Deletes one event after you tap Delete. It goes to Deleted Items. Off until you switch it on.",
+          "risk": "write",
+          "enabled": false
+        },
+        {
+          "name": "accept_outlook_invite",
+          "title": "Accept an Outlook invitation",
+          "blurb": "Answers yes or maybe to one invitation after you tap the card. Off until you switch it on.",
+          "risk": "write",
+          "enabled": false
+        },
+        {
+          "name": "decline_outlook_invite",
+          "title": "Decline an Outlook invitation",
+          "blurb": "Declines one invitation after you tap the card. Off until you switch it on.",
+          "risk": "write",
+          "enabled": false
+        },
+        {
+          "name": "send_outlook_email",
+          "title": "Send an Outlook email",
+          "blurb": "Sends an email after you tap Send on the card, which shows the recipient, subject and full text. Off until you switch it on.",
+          "risk": "write",
+          "enabled": false
+        },
+        {
+          "name": "reply_outlook_email",
+          "title": "Send an Outlook reply",
+          "blurb": "Replies to one email's sender after you tap Send reply. Off until you switch it on.",
+          "risk": "write",
+          "enabled": false
+        },
+        {
+          "name": "forward_outlook_email",
+          "title": "Forward an Outlook email",
+          "blurb": "Forwards one email, with its attachments, after you tap Forward. Off until you switch it on.",
+          "risk": "write",
+          "enabled": false
+        },
+        {
+          "name": "move_outlook_email",
+          "title": "Archive or bin an Outlook email",
+          "blurb": "Moves one email to Archive or Deleted Items (or back to the inbox) after you tap the card. Never deletes for good. Off until you switch it on.",
+          "risk": "write",
+          "enabled": false
+        },
+        {
+          "name": "mark_outlook_email",
+          "title": "Mark an Outlook email",
+          "blurb": "Marks one email read or unread, or flags it, after you tap the card. Off until you switch it on.",
+          "risk": "write",
+          "enabled": false
+        }
+      ]
+    },
+    {
+      "id": "gcalendar",
+      "title": "Google Calendar",
+      "access": "Doddy can read your Google Calendar for the days you ask about, after you say yes, and add, move, rename or delete an event, or answer an invitation, each only after you tap the card that shows exactly what will happen. Deleted events stay in Google Calendar's trash for 30 days. It never changes calendar settings or sharing.",
+      "needsAccount": true,
+      "status": "disconnected",
+      "reason": null,
+      "connectedAt": null,
+      "remoteCleanup": "none",
+      "tools": [
+        {
+          "name": "read_google_calendar",
+          "title": "Read my Google Calendar",
+          "blurb": "Reads your Google Calendar for the days you ask about: title, time and place, after you say yes. Off until you switch it on.",
+          "risk": "read",
+          "enabled": false
+        },
+        {
+          "name": "create_google_event",
+          "title": "Add a Google event",
+          "blurb": "Adds an event to your Google Calendar after you tap Add on the card. No guests, no Meet link. Off until you switch it on.",
+          "risk": "write",
+          "enabled": false
+        },
+        {
+          "name": "change_google_event",
+          "title": "Change a Google event",
+          "blurb": "Moves or renames one event after you tap Change. Its guests are told. Off until you switch it on.",
+          "risk": "write",
+          "enabled": false
+        },
+        {
+          "name": "delete_google_event",
+          "title": "Delete a Google event",
+          "blurb": "Deletes one event after you tap Delete. It stays in Google Calendar's trash for 30 days. Off until you switch it on.",
+          "risk": "write",
+          "enabled": false
+        },
+        {
+          "name": "answer_google_invite",
+          "title": "Answer a Google invitation",
+          "blurb": "Answers yes, no or maybe to one invitation after you tap the card. Off until you switch it on.",
+          "risk": "write",
           "enabled": false
         }
       ]

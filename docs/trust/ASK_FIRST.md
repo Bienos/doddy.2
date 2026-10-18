@@ -88,7 +88,10 @@ Before = `voice-agent/tools.json` at `2278430`. "Card, tap" tools already asked;
 | `note_capability_gap` | **Doesn't ask**: runs on the agent's call | Card with the exact change; **tap only** |
 
 Added later the same day (ADR-485), all **card with the exact change; tap only + server approval bound to the payload**:
-`send_email`, `reply_to_email`, `forward_email`, `change_email`, `trash_email`.
+`send_email`, `reply_to_email`, `forward_email`, `change_email`, `trash_email`; and (ADR-486, ADR-487)
+`create/change/delete_google_event`, `answer_google_invite`, `create/change/delete_outlook_event`,
+`accept/decline_outlook_invite`, `send/reply/forward/move/mark_outlook_email`. `read_google_calendar` is a read: **card;
+spoken yes or tap + server approval**.
 
 Not in `tools.json`, also covered:
 - **Server tools without a voice tool:** none; the server's 15 account tools and web search are the 16 cloud rows above.

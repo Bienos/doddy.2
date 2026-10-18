@@ -65,7 +65,14 @@ export type ToolkitResult = z.infer<typeof ToolkitResultSchema>;
 
 export const SwitchRequestSchema = z.object({ tool: z.string().min(1).max(64), enabled: z.boolean() }).strict();
 
-export const PrepareRequestSchema = z.object({ tool: z.string().min(1).max(64), arguments: z.record(z.unknown()) }).strict();
+export const PrepareRequestSchema = z
+  .object({
+    tool: z.string().min(1).max(64),
+    arguments: z.record(z.unknown()),
+    /** IANA zone; needed by tools that find an item by its local time (calendar events). */
+    timeZone: z.string().min(1).max(64).optional(),
+  })
+  .strict();
 
 export const RunRequestSchema = z
   .object({

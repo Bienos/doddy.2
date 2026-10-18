@@ -87,7 +87,7 @@ export class MockToolsProvider implements ToolsProvider {
       toolkit.allowedGrants === null
         ? null
         : scenario === "broad_scope"
-          ? [...toolkit.requestedScopes, microsoft ? "Mail.Send" : "https://mail.google.com/"]
+          ? [...toolkit.requestedScopes, microsoft ? "MailboxSettings.ReadWrite" : "https://mail.google.com/"]
           : scenario === "missing_scope"
             ? [microsoft ? "User.Read" : "https://www.googleapis.com/auth/userinfo.email"]
             : scenario === "read_compose_only" && input.toolkit === "gmail"
@@ -247,6 +247,50 @@ function envelope(slug: string, args: Record<string, unknown>, empty: boolean, m
     }
     case "OUTLOOK_CREATE_DRAFT":
       return ok({ id: "outlook_draft_demo_1", isDraft: true, subject: String(args.subject), toRecipients: (args.to_recipients as string[]).map((address) => ({ emailAddress: { address } })) });
+    // Google Calendar (ADR-486): times in the zone asked for, as Google does with `timeZone`.
+    case "GOOGLECALENDAR_EVENTS_LIST": {
+      const q = typeof args.q === "string" ? args.q.toLowerCase() : "";
+      const items = empty ? [] : DEMO_GOOGLE_EVENTS.filter((e) => q === "" || String(e.summary).toLowerCase().includes(q));
+      return ok({ kind: "calendar#events", items, nextPageToken: "" });
+    }
+    case "GOOGLECALENDAR_CREATE_EVENT":
+      return ok({ response_data: { id: "gnew1", status: "confirmed", summary: args.summary, start: { dateTime: `${String(args.start_datetime)}+02:00` }, end: { dateTime: `${String(args.end_datetime)}+02:00` } } });
+    case "GOOGLECALENDAR_PATCH_EVENT": {
+      const before = DEMO_GOOGLE_EVENTS.find((e) => e.id === args.event_id);
+      if (!before) return { successful: false, data: {}, error: "404 Not Found" };
+      const attendees = Array.isArray(before.attendees)
+        ? (before.attendees as Record<string, unknown>[]).map((a) => (a.self === true && typeof args.rsvp_response === "string" ? { ...a, responseStatus: args.rsvp_response } : a))
+        : undefined;
+      return ok({
+        ...before,
+        ...(typeof args.summary === "string" ? { summary: args.summary } : {}),
+        ...(typeof args.start_time === "string" ? { start: { dateTime: `${args.start_time}+02:00` } } : {}),
+        ...(attendees ? { attendees } : {}),
+      });
+    }
+    case "GOOGLECALENDAR_DELETE_EVENT":
+      return ok({ response_data: { status: "success" } });
+    // Outlook writes (ADR-486, ADR-487), as Composio's output schemas give them.
+    case "OUTLOOK_CALENDAR_CREATE_EVENT":
+      return ok({ id: "onew1", subject: args.subject, start: { dateTime: args.start_datetime, timeZone: args.time_zone } });
+    case "OUTLOOK_UPDATE_CALENDAR_EVENT":
+      return ok({ id: String(args.event_id), subject: typeof args.subject === "string" ? args.subject : "Demo: dentist" });
+    case "OUTLOOK_DELETE_CALENDAR_EVENT":
+      return ok({});
+    case "OUTLOOK_ACCEPT_EVENT":
+      return ok({ message: "Event response recorded successfully.", success: true, event_id: args.event_id, response_type: args.response_type });
+    case "OUTLOOK_DECLINE_EVENT":
+      return ok({ message: "Event declined successfully.", success: true });
+    case "OUTLOOK_SEND_EMAIL":
+      return ok({ status_code: 202, body: null });
+    case "OUTLOOK_REPLY_EMAIL":
+      return ok({ status_code: 202, response_body: null });
+    case "OUTLOOK_FORWARD_MESSAGE":
+      return ok({});
+    case "OUTLOOK_MOVE_MESSAGE":
+      return ok({ id: `${String(args.message_id)}-moved`, subject: "Demo: budget for Q4", parentFolderId: String(args.destination_id) });
+    case "OUTLOOK_UPDATE_USER_MAIL_FOLDER_MESSAGE":
+      return ok({ id: String(args.message_id), isRead: typeof args.isRead === "boolean" ? args.isRead : false, flag: args.flag ?? { flagStatus: "notFlagged" } });
     case "OUTLOOK_GET_CALENDAR_VIEW": {
       // Times come back in the zone asked for, as the schema's `timezone` says.
       const zone = String(args.timezone ?? "UTC");
@@ -255,7 +299,7 @@ function envelope(slug: string, args: Record<string, unknown>, empty: boolean, m
         value: empty
           ? []
           : [
-              { id: "e1", subject: "Demo: dentist", start: at("2026-10-12T09:00:00.0000000"), end: at("2026-10-12T10:00:00.0000000"), isAllDay: false, isCancelled: false, location: { displayName: "Demo Clinic" } },
+              { id: "e1", subject: "Demo: dentist", start: at("2026-10-12T09:00:00.0000000"), end: at("2026-10-12T10:00:00.0000000"), isAllDay: false, isCancelled: false, location: { displayName: "Demo Clinic" }, isOrganizer: true, attendees: [] },
               { id: "e2", subject: "Demo: Anna's birthday", start: at("2026-10-13T00:00:00.0000000"), end: at("2026-10-14T00:00:00.0000000"), isAllDay: true, isCancelled: false, location: { displayName: "" } },
               { id: "e3", subject: "Demo: cancelled meeting", start: at("2026-10-13T12:00:00.0000000"), end: at("2026-10-13T13:00:00.0000000"), isAllDay: false, isCancelled: true, location: {} },
               {
@@ -266,6 +310,10 @@ function envelope(slug: string, args: Record<string, unknown>, empty: boolean, m
                 isAllDay: false,
                 isCancelled: false,
                 location: { displayName: "Online https://teams.demo.example/join/123" },
+                isOrganizer: false,
+                attendees: [{ emailAddress: { address: "marta@demo.example" } }, { emailAddress: { address: "me@demo.example" } }],
+                responseStatus: { response: "notResponded" },
+                organizer: { emailAddress: { name: "Marta Demo", address: "marta@demo.example" } },
               },
             ],
       });
@@ -303,6 +351,24 @@ const notFound = () => ({ successful: false, data: {}, error: "404 Not Found: ta
  * Demo Outlook inbox, deliberately unsorted. The newer one is HTML with a request inside it, a link,
  * an entity and invisible characters, so the cleaning and framing are exercised.
  */
+/** Google Calendar demo events, in Europe/Warsaw time (the tests' zone). */
+const DEMO_GOOGLE_EVENTS: Record<string, unknown>[] = [
+  { id: "gev1", status: "confirmed", summary: "Demo: dentist", start: { dateTime: "2026-10-12T15:00:00+02:00" }, end: { dateTime: "2026-10-12T16:00:00+02:00" }, location: "Demo Clinic" },
+  {
+    id: "gev2",
+    status: "confirmed",
+    summary: "Demo: team lunch",
+    start: { dateTime: "2026-10-13T13:00:00+02:00" },
+    end: { dateTime: "2026-10-13T14:00:00+02:00" },
+    organizer: { email: "anna@demo.example", displayName: "Anna Demo" },
+    attendees: [
+      { email: "me@demo.example", self: true, responseStatus: "needsAction" },
+      { email: "anna@demo.example", organizer: true, responseStatus: "accepted" },
+    ],
+  },
+  { id: "gev3", status: "cancelled", summary: "Demo: dentist", start: { dateTime: "2026-10-12T15:00:00+02:00" }, end: { dateTime: "2026-10-12T16:00:00+02:00" } },
+];
+
 const DEMO_OUTLOOK_MESSAGES: Record<string, unknown>[] = [
   {
     id: "om1",

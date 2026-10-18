@@ -35,7 +35,7 @@ test("Doddy now asks Google for send and modify, and accepts them; full access s
   assert.ok(g.requestedScopes.includes("https://www.googleapis.com/auth/gmail.modify"));
   assert.equal(evaluateToolkitGrant(g, [...g.requestedScopes, "openid", "email"]), "ok");
   assert.equal(evaluateToolkitGrant(g, [...g.requestedScopes, "https://mail.google.com/"]), "too_broad", "full access can delete for good");
-  assert.ok(CLOUD_TOOLS.every((t) => !/DELETE|EMPTY|PURGE|BATCH/.test(t.composioSlug)), "no permanent or bulk delete");
+  assert.ok(CLOUD_TOOLS.filter((t) => t.toolkit === "gmail").every((t) => !/DELETE|EMPTY|PURGE|BATCH/.test(t.composioSlug)), "no permanent or bulk delete");
   assert.match(g.access, /never deletes email for good/);
 });
 

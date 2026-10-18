@@ -660,6 +660,230 @@
     },
     {
       "type": "function",
+      "name": "read_google_calendar",
+      "description": "Read the user's Google Calendar (primary calendar) for one day or a few days, when the user says Google Calendar or their Google account. Answer only from the result; to change an event later, use its title and start exactly as given. ASK-01: before this tool runs, say in one short line what you will look at and ask, for example 'Shall I check your Google Calendar for Friday?'; the app runs it only after the user says yes or taps Yes; if the result starts with 'declined', nothing was looked at.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "from": {"type": "string", "description": "First day, YYYY-MM-DD."},
+          "to": {"type": "string", "description": "Last day, YYYY-MM-DD, at most 31 days after from."}
+        },
+        "required": ["from", "to"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 60, "elevenlabs_tool_id": "not_synced"}
+    },
+    {
+      "type": "function",
+      "name": "create_google_event",
+      "description": "Add an event to the user's Google Calendar when they ask. No guests and no meeting link are added. If the day or time is unclear, ask first. ASK-01: say in one short line exactly what will happen and ask the user to tap the card (a spoken yes is not enough), for example 'Tap Change on screen if I should move it.' (Polish: 'Dotknij Zmień na ekranie, jeśli mam to przesunąć.'). The result starts with 'added', 'changed', 'deleted', 'answered', 'sent', 'declined', 'not found', 'unknown' or 'failed'. Never say it was done unless the result says so; 'unknown' means it may or may not have happened: tell the user to check before trying again. If the tool is switched off or the account isn't connected, tell the user they can switch it on in Settings, Online accounts.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "title": {"type": "string", "description": "Short event title in the user's words and language."},
+          "start": {"type": "string", "description": "Start in the user's local time as YYYY-MM-DDTHH:MM."},
+          "end": {"type": "string", "description": "End in the user's local time as YYYY-MM-DDTHH:MM, after start."},
+          "location": {"type": "string", "description": "Place, only if the user gave one."}
+        },
+        "required": ["title", "start", "end"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "not_synced"}
+    },
+    {
+      "type": "function",
+      "name": "change_google_event",
+      "description": "Move or rename one event in the user's Google Calendar. First read the calendar; pass the event's title and start exactly as read, plus what changes. Guests are told about the change. ASK-01: say in one short line exactly what will happen and ask the user to tap the card (a spoken yes is not enough), for example 'Tap Change on screen if I should move it.' (Polish: 'Dotknij Zmień na ekranie, jeśli mam to przesunąć.'). The result starts with 'added', 'changed', 'deleted', 'answered', 'sent', 'declined', 'not found', 'unknown' or 'failed'. Never say it was done unless the result says so; 'unknown' means it may or may not have happened: tell the user to check before trying again. If the tool is switched off or the account isn't connected, tell the user they can switch it on in Settings, Online accounts.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "title": {"type": "string", "description": "The event's title exactly as the calendar result gave it."},
+          "start": {"type": "string", "description": "The event's start exactly as the calendar result gave it, as YYYY-MM-DDTHH:MM (local time), or YYYY-MM-DD for an all-day event."},
+          "new_start": {"type": "string", "description": "New start in the user's local time as YYYY-MM-DDTHH:MM. Leave out to keep it; with only a new start the event keeps its length."},
+          "new_end": {"type": "string", "description": "New end in the user's local time as YYYY-MM-DDTHH:MM. Leave out to keep the length."},
+          "new_title": {"type": "string", "description": "New title in the user's words. Leave out to keep it."}
+        },
+        "required": ["title", "start"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "not_synced"}
+    },
+    {
+      "type": "function",
+      "name": "delete_google_event",
+      "description": "Delete one event from the user's Google Calendar (it stays in Google Calendar's trash for 30 days). First read the calendar; pass the title and start exactly as read. Guests are told it was cancelled. ASK-01: say in one short line exactly what will happen and ask the user to tap the card (a spoken yes is not enough), for example 'Tap Change on screen if I should move it.' (Polish: 'Dotknij Zmień na ekranie, jeśli mam to przesunąć.'). The result starts with 'added', 'changed', 'deleted', 'answered', 'sent', 'declined', 'not found', 'unknown' or 'failed'. Never say it was done unless the result says so; 'unknown' means it may or may not have happened: tell the user to check before trying again. If the tool is switched off or the account isn't connected, tell the user they can switch it on in Settings, Online accounts.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "title": {"type": "string", "description": "The event's title exactly as the calendar result gave it."},
+          "start": {"type": "string", "description": "The event's start exactly as the calendar result gave it, as YYYY-MM-DDTHH:MM (local time), or YYYY-MM-DD for an all-day event."}
+        },
+        "required": ["title", "start"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "not_synced"}
+    },
+    {
+      "type": "function",
+      "name": "answer_google_invite",
+      "description": "Answer an invitation in the user's Google Calendar: accepted (yes), declined (no) or tentative (maybe). First read the calendar; pass the title and start exactly as read. The organizer sees the answer. ASK-01: say in one short line exactly what will happen and ask the user to tap the card (a spoken yes is not enough), for example 'Tap Change on screen if I should move it.' (Polish: 'Dotknij Zmień na ekranie, jeśli mam to przesunąć.'). The result starts with 'added', 'changed', 'deleted', 'answered', 'sent', 'declined', 'not found', 'unknown' or 'failed'. Never say it was done unless the result says so; 'unknown' means it may or may not have happened: tell the user to check before trying again. If the tool is switched off or the account isn't connected, tell the user they can switch it on in Settings, Online accounts.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "title": {"type": "string", "description": "The event's title exactly as the calendar result gave it."},
+          "start": {"type": "string", "description": "The event's start exactly as the calendar result gave it, as YYYY-MM-DDTHH:MM (local time), or YYYY-MM-DD for an all-day event."},
+          "answer": {"type": "string", "enum": ["accepted", "declined", "tentative"], "description": "The user's answer."}
+        },
+        "required": ["title", "start", "answer"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "not_synced"}
+    },
+    {
+      "type": "function",
+      "name": "create_outlook_event",
+      "description": "Add an event to the user's Outlook calendar when they ask and say Outlook, work or their Microsoft account. If the day or time is unclear, ask first. ASK-01: say in one short line exactly what will happen and ask the user to tap the card (a spoken yes is not enough), for example 'Tap Change on screen if I should move it.' (Polish: 'Dotknij Zmień na ekranie, jeśli mam to przesunąć.'). The result starts with 'added', 'changed', 'deleted', 'answered', 'sent', 'declined', 'not found', 'unknown' or 'failed'. Never say it was done unless the result says so; 'unknown' means it may or may not have happened: tell the user to check before trying again. If the tool is switched off or the account isn't connected, tell the user they can switch it on in Settings, Online accounts.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "title": {"type": "string", "description": "Short event title in the user's words and language."},
+          "start": {"type": "string", "description": "Start in the user's local time as YYYY-MM-DDTHH:MM."},
+          "end": {"type": "string", "description": "End in the user's local time as YYYY-MM-DDTHH:MM, after start."},
+          "location": {"type": "string", "description": "Place, only if the user gave one."}
+        },
+        "required": ["title", "start", "end"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "not_synced"}
+    },
+    {
+      "type": "function",
+      "name": "change_outlook_event",
+      "description": "Move or rename one event in the user's Outlook calendar. First read it with read_outlook_calendar; pass the title and start exactly as read, plus what changes. ASK-01: say in one short line exactly what will happen and ask the user to tap the card (a spoken yes is not enough), for example 'Tap Change on screen if I should move it.' (Polish: 'Dotknij Zmień na ekranie, jeśli mam to przesunąć.'). The result starts with 'added', 'changed', 'deleted', 'answered', 'sent', 'declined', 'not found', 'unknown' or 'failed'. Never say it was done unless the result says so; 'unknown' means it may or may not have happened: tell the user to check before trying again. If the tool is switched off or the account isn't connected, tell the user they can switch it on in Settings, Online accounts.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "title": {"type": "string", "description": "The event's title exactly as the calendar result gave it."},
+          "start": {"type": "string", "description": "The event's start exactly as the calendar result gave it, as YYYY-MM-DDTHH:MM (local time), or YYYY-MM-DD for an all-day event."},
+          "new_start": {"type": "string", "description": "New start in the user's local time as YYYY-MM-DDTHH:MM. Leave out to keep it; with only a new start the event keeps its length."},
+          "new_end": {"type": "string", "description": "New end in the user's local time as YYYY-MM-DDTHH:MM. Leave out to keep the length."},
+          "new_title": {"type": "string", "description": "New title in the user's words. Leave out to keep it."}
+        },
+        "required": ["title", "start"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "not_synced"}
+    },
+    {
+      "type": "function",
+      "name": "delete_outlook_event",
+      "description": "Delete one event from the user's Outlook calendar (it goes to Deleted Items; a meeting the user organises is cancelled for its guests). Pass the title and start exactly as read. ASK-01: say in one short line exactly what will happen and ask the user to tap the card (a spoken yes is not enough), for example 'Tap Change on screen if I should move it.' (Polish: 'Dotknij Zmień na ekranie, jeśli mam to przesunąć.'). The result starts with 'added', 'changed', 'deleted', 'answered', 'sent', 'declined', 'not found', 'unknown' or 'failed'. Never say it was done unless the result says so; 'unknown' means it may or may not have happened: tell the user to check before trying again. If the tool is switched off or the account isn't connected, tell the user they can switch it on in Settings, Online accounts.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "title": {"type": "string", "description": "The event's title exactly as the calendar result gave it."},
+          "start": {"type": "string", "description": "The event's start exactly as the calendar result gave it, as YYYY-MM-DDTHH:MM (local time), or YYYY-MM-DD for an all-day event."}
+        },
+        "required": ["title", "start"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "not_synced"}
+    },
+    {
+      "type": "function",
+      "name": "accept_outlook_invite",
+      "description": "Accept, or with tentative true answer maybe to, an Outlook meeting invitation. Pass the title and start exactly as read_outlook_calendar gave them. The organizer is told. ASK-01: say in one short line exactly what will happen and ask the user to tap the card (a spoken yes is not enough), for example 'Tap Change on screen if I should move it.' (Polish: 'Dotknij Zmień na ekranie, jeśli mam to przesunąć.'). The result starts with 'added', 'changed', 'deleted', 'answered', 'sent', 'declined', 'not found', 'unknown' or 'failed'. Never say it was done unless the result says so; 'unknown' means it may or may not have happened: tell the user to check before trying again. If the tool is switched off or the account isn't connected, tell the user they can switch it on in Settings, Online accounts.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "title": {"type": "string", "description": "The event's title exactly as the calendar result gave it."},
+          "start": {"type": "string", "description": "The event's start exactly as the calendar result gave it, as YYYY-MM-DDTHH:MM (local time), or YYYY-MM-DD for an all-day event."},
+          "tentative": {"type": "boolean", "description": "True to answer maybe instead of yes."}
+        },
+        "required": ["title", "start"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "not_synced"}
+    },
+    {
+      "type": "function",
+      "name": "decline_outlook_invite",
+      "description": "Decline an Outlook meeting invitation. Pass the title and start exactly as read_outlook_calendar gave them. The organizer is told. ASK-01: say in one short line exactly what will happen and ask the user to tap the card (a spoken yes is not enough), for example 'Tap Change on screen if I should move it.' (Polish: 'Dotknij Zmień na ekranie, jeśli mam to przesunąć.'). The result starts with 'added', 'changed', 'deleted', 'answered', 'sent', 'declined', 'not found', 'unknown' or 'failed'. Never say it was done unless the result says so; 'unknown' means it may or may not have happened: tell the user to check before trying again. If the tool is switched off or the account isn't connected, tell the user they can switch it on in Settings, Online accounts.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "title": {"type": "string", "description": "The event's title exactly as the calendar result gave it."},
+          "start": {"type": "string", "description": "The event's start exactly as the calendar result gave it, as YYYY-MM-DDTHH:MM (local time), or YYYY-MM-DD for an all-day event."}
+        },
+        "required": ["title", "start"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "not_synced"}
+    },
+    {
+      "type": "function",
+      "name": "send_outlook_email",
+      "description": "Send an email from the user's Outlook right away, only when they clearly ask to send (not draft) and say Outlook or work email. You need a real address; never guess one. ASK-01: say in one short line exactly what will happen and ask the user to tap the card (a spoken yes is not enough), for example 'Tap Change on screen if I should move it.' (Polish: 'Dotknij Zmień na ekranie, jeśli mam to przesunąć.'). The result starts with 'added', 'changed', 'deleted', 'answered', 'sent', 'declined', 'not found', 'unknown' or 'failed'. Never say it was done unless the result says so; 'unknown' means it may or may not have happened: tell the user to check before trying again. If the tool is switched off or the account isn't connected, tell the user they can switch it on in Settings, Online accounts.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "to": {"type": "string", "description": "The recipient's email address, exactly as the user gave it."},
+          "subject": {"type": "string", "description": "Short subject line in the user's language."},
+          "body": {"type": "string", "description": "The message text in the user's words and language."}
+        },
+        "required": ["to", "subject", "body"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "not_synced"}
+    },
+    {
+      "type": "function",
+      "name": "reply_outlook_email",
+      "description": "Send a reply to an Outlook email, to its sender, right away, only when the user clearly asks to reply. The app looks the email up; the card shows who it goes to and the full text. ASK-01: say in one short line exactly what will happen and ask the user to tap the card (a spoken yes is not enough), for example 'Tap Change on screen if I should move it.' (Polish: 'Dotknij Zmień na ekranie, jeśli mam to przesunąć.'). The result starts with 'added', 'changed', 'deleted', 'answered', 'sent', 'declined', 'not found', 'unknown' or 'failed'. Never say it was done unless the result says so; 'unknown' means it may or may not have happened: tell the user to check before trying again. If the tool is switched off or the account isn't connected, tell the user they can switch it on in Settings, Online accounts.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "query": {"type": "string", "description": "Outlook search words picking the email, e.g. 'marta budget'. The newest match in the inbox is used; the card shows which one."},
+          "body": {"type": "string", "description": "The reply text in the user's words and language."}
+        },
+        "required": ["query", "body"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "not_synced"}
+    },
+    {
+      "type": "function",
+      "name": "forward_outlook_email",
+      "description": "Forward one Outlook email, with its attachments, to someone the user names by email address. Never guess an address. ASK-01: say in one short line exactly what will happen and ask the user to tap the card (a spoken yes is not enough), for example 'Tap Change on screen if I should move it.' (Polish: 'Dotknij Zmień na ekranie, jeśli mam to przesunąć.'). The result starts with 'added', 'changed', 'deleted', 'answered', 'sent', 'declined', 'not found', 'unknown' or 'failed'. Never say it was done unless the result says so; 'unknown' means it may or may not have happened: tell the user to check before trying again. If the tool is switched off or the account isn't connected, tell the user they can switch it on in Settings, Online accounts.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "query": {"type": "string", "description": "Outlook search words picking the email, e.g. 'marta budget'. The newest match in the inbox is used; the card shows which one."},
+          "to": {"type": "string", "description": "The recipient's email address, exactly as the user gave it."},
+          "note": {"type": "string", "description": "Optional short note above the forwarded email. Leave out if the user gave none."}
+        },
+        "required": ["query", "to"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "not_synced"}
+    },
+    {
+      "type": "function",
+      "name": "move_outlook_email",
+      "description": "Archive one Outlook email, move it to Deleted Items (it can be restored), or move it back to the inbox, when the user asks. Nothing is deleted for good. ASK-01: say in one short line exactly what will happen and ask the user to tap the card (a spoken yes is not enough), for example 'Tap Change on screen if I should move it.' (Polish: 'Dotknij Zmień na ekranie, jeśli mam to przesunąć.'). The result starts with 'added', 'changed', 'deleted', 'answered', 'sent', 'declined', 'not found', 'unknown' or 'failed'. Never say it was done unless the result says so; 'unknown' means it may or may not have happened: tell the user to check before trying again. If the tool is switched off or the account isn't connected, tell the user they can switch it on in Settings, Online accounts.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "query": {"type": "string", "description": "Outlook search words picking the email, e.g. 'marta budget'. The newest match in the inbox is used; the card shows which one."},
+          "to_folder": {"type": "string", "enum": ["archive", "deleteditems", "inbox"], "description": "Where the email goes."}
+        },
+        "required": ["query", "to_folder"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "not_synced"}
+    },
+    {
+      "type": "function",
+      "name": "mark_outlook_email",
+      "description": "Mark one Outlook email read or unread, or flag or unflag it, when the user asks. ASK-01: say in one short line exactly what will happen and ask the user to tap the card (a spoken yes is not enough), for example 'Tap Change on screen if I should move it.' (Polish: 'Dotknij Zmień na ekranie, jeśli mam to przesunąć.'). The result starts with 'added', 'changed', 'deleted', 'answered', 'sent', 'declined', 'not found', 'unknown' or 'failed'. Never say it was done unless the result says so; 'unknown' means it may or may not have happened: tell the user to check before trying again. If the tool is switched off or the account isn't connected, tell the user they can switch it on in Settings, Online accounts.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "query": {"type": "string", "description": "Outlook search words picking the email, e.g. 'marta budget'. The newest match in the inbox is used; the card shows which one."},
+          "mark": {"type": "string", "enum": ["read", "unread", "flag", "unflag"], "description": "What to do."}
+        },
+        "required": ["query", "mark"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "not_synced"}
+    },
+    {
+      "type": "function",
       "name": "list_todoist_tasks",
       "description": "List the user's open Todoist tasks. Use it when the user asks what is on their to-do list, what is due today or what is overdue. Answer only from the result and never invent tasks. Each task ends with [id ...]: use that id only for complete_todoist_task or move_todoist_task, and never read it aloud. If the result says the tool is switched off or Todoist isn't connected, tell the user in one sentence that they can switch it on in Settings, Online accounts. If the result starts with DEMO DATA, tell the user it is demo data. ASK-01: before this tool runs, say in one short line exactly what you will look at and ask, for example 'Shall I check your inbox?' (Polish: 'Mam sprawdzić twoją skrzynkę?'). The app shows the same question on screen and runs it only after the user says yes or taps Yes; if the result starts with 'declined', nothing was looked at: say so in one short sentence.",
       "parameters": {

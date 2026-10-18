@@ -208,8 +208,12 @@ if [ -d "$backend_src" ]; then
   if grep -RInE '(^|[^A-Z_])(GOOGLECALENDAR|GOOGLESUPER|GMAIL|GOOGLEDRIVE|NOTION|TODOIST|OUTLOOK)_[A-Z]' --include='*.ts' "$backend_src" | code_only | grep -v -e "^$composio_adapter:" -e "^$tools_catalog:" -e "^$tools_mock:"; then
     echo "FAIL: Composio tool slugs outside $composio_adapter, $tools_catalog and $tools_mock." >&2; status=1
   fi
-  if grep -RInE 'GOOGLECALENDAR_(CREATE|UPDATE|DELETE|PATCH|QUICK_ADD|MOVE|REMOVE|CLEAR|INSERT)' "$backend_src"; then
-    echo "FAIL: calendar write tool referenced in the backend." >&2; status=1
+  # Google Calendar writes (ADR-486): only create, patch (move, rename, answer an invitation) and
+  # delete, in the catalog and its mock, each behind ASK-01's tap. No quick-add (free text), clear,
+  # move between calendars, or calendar-level changes.
+  if grep -RInE 'GOOGLECALENDAR_(CREATE|UPDATE|DELETE|PATCH|QUICK_ADD|MOVE|REMOVE|CLEAR|INSERT)' "$backend_src" \
+    | grep -vE "^($tools_catalog|$tools_mock):[0-9]+:[^G]*GOOGLECALENDAR_(CREATE_EVENT|PATCH_EVENT|DELETE_EVENT)([^A-Z0-9_]|$)"; then
+    echo "FAIL: a calendar write tool beyond the reviewed Google Calendar create, patch and delete is referenced in the backend." >&2; status=1
   fi
   # Since ADR-485 also the Gmail send, reply, forward, label and Trash tools (each behind ASK-01's
   # tap on the exact payload), in the catalog and its mock only. Never a permanent or bulk delete.
@@ -225,9 +229,15 @@ if [ -d "$backend_src" ]; then
   fi
   # Outlook (ADR-340): the only write is OUTLOOK_CREATE_DRAFT, in the catalog and its mock. Nothing
   # that sends, deletes, moves, replies, flags or changes the calendar.
+  # Since ADR-486/487 also the reviewed calendar and mail writes below, each behind ASK-01's tap.
+  # Never a "permanently" delete, a batch, a cancel-for-everyone or anything on another user's mailbox.
+  outlook_ok='OUTLOOK_(CREATE_DRAFT|CALENDAR_CREATE_EVENT|UPDATE_CALENDAR_EVENT|DELETE_CALENDAR_EVENT|ACCEPT_EVENT|DECLINE_EVENT|SEND_EMAIL|REPLY_EMAIL|FORWARD_MESSAGE|MOVE_MESSAGE|UPDATE_USER_MAIL_FOLDER_MESSAGE)'
   if grep -RInE 'OUTLOOK_(SEND|DELETE|MOVE|UPDATE|CREATE|REPLY|FORWARD|COPY|PATCH|FLAG|MARK|ADD|REMOVE|ACCEPT|DECLINE|CANCEL|TENTATIVE|SNOOZE|DISMISS|BATCH)' "$backend_src" \
-    | grep -vE "^($tools_catalog|$tools_mock):[0-9]+:([^O]|O[^U])*OUTLOOK_CREATE_DRAFT([^A-Z0-9_]|$)([^O]|O[^U])*$"; then
-    echo "FAIL: an Outlook write tool beyond the reviewed draft is referenced in the backend." >&2; status=1
+    | grep -vE "^($tools_catalog|$tools_mock):[0-9]+:([^O]|O[^U])*${outlook_ok}([^A-Z0-9_]|$)([^O]|O[^U])*$"; then
+    echo "FAIL: an Outlook write tool beyond the reviewed ones (ADR-340, ADR-486, ADR-487) is referenced in the backend." >&2; status=1
+  fi
+  if grep -RInE '(OUTLOOK|GOOGLECALENDAR|GMAIL|GOOGLEDRIVE|NOTION|TODOIST)_[A-Z_]*(PERMANENT|EMPTY_TRASH|PURGE)' "$backend_src"; then
+    echo "FAIL: a permanent-delete tool is referenced in the backend; permanent deletion is out of scope (ASK-01 prompt)." >&2; status=1
   fi
   # ASK-01: every server tool has a card and runs only through the one gate.
   if grep -nE 'preview\?\(' "$tools_catalog"; then

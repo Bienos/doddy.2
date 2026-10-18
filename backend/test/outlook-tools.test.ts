@@ -33,31 +33,36 @@ const slugs = (r: Rig) => r.provider.executed.map((e) => e.slug);
 const composioUser = (r: Rig, token = USER_A) => r.store.composioUserId(DEV_IDENTITIES[token]!, r.clock.now());
 const kept = async (r: Rig) => (await r.call("GET", "/v1/tools/receipts")).text + r.logs.join("\n");
 
-const OUTLOOK_TOOLS = ["check_outlook_email", "read_outlook_email", "draft_outlook_email", "read_outlook_calendar"] as const;
+const OUTLOOK_TOOLS = CLOUD_TOOLS.filter((t) => t.toolkit === "outlook").map((t) => t.name);
 const DRAFT = { to: "marta@demo.example", subject: "Demo: budget", body: "Thanks, I'll look at it on Monday." };
 const ctx = { timeZone: "Europe/Warsaw" };
 const malformed = (e: unknown) => e instanceof ProviderError && e.code === "malformed_provider_result";
 
 // ------------------------------------------------------------------ catalog, copy, switches
 
-test("Outlook is a toolkit with four tools, each named once, with no send slug anywhere", () => {
+test("Outlook's tools, each named once; every write behind a tap; nothing deletes for good (ADR-486, ADR-487)", () => {
   const outlook = CLOUD_TOOLS.filter((t) => t.toolkit === "outlook");
   assert.deepEqual(outlook.map((t) => [t.name, t.composioSlug, t.risk]), [
     ["check_outlook_email", "OUTLOOK_LIST_MESSAGES", "read"],
     ["read_outlook_email", "OUTLOOK_LIST_MESSAGES", "read"],
     ["draft_outlook_email", "OUTLOOK_CREATE_DRAFT", "write"],
     ["read_outlook_calendar", "OUTLOOK_GET_CALENDAR_VIEW", "read"],
+    ["create_outlook_event", "OUTLOOK_CALENDAR_CREATE_EVENT", "write"],
+    ["change_outlook_event", "OUTLOOK_UPDATE_CALENDAR_EVENT", "write"],
+    ["delete_outlook_event", "OUTLOOK_DELETE_CALENDAR_EVENT", "write"],
+    ["accept_outlook_invite", "OUTLOOK_ACCEPT_EVENT", "write"],
+    ["decline_outlook_invite", "OUTLOOK_DECLINE_EVENT", "write"],
+    ["send_outlook_email", "OUTLOOK_SEND_EMAIL", "write"],
+    ["reply_outlook_email", "OUTLOOK_REPLY_EMAIL", "write"],
+    ["forward_outlook_email", "OUTLOOK_FORWARD_MESSAGE", "write"],
+    ["move_outlook_email", "OUTLOOK_MOVE_MESSAGE", "write"],
+    ["mark_outlook_email", "OUTLOOK_UPDATE_USER_MAIL_FOLDER_MESSAGE", "write"],
   ]);
-  // Sending, replying, forwarding and Trash exist for Gmail only since ADR-485, each behind its tap; never a permanent delete.
-  assert.ok(CLOUD_TOOLS.every((t) => !/SEND|REPLY|FORWARD|DELETE|MOVE|UPDATE/.test(t.composioSlug) || t.toolkit === "todoist" || t.toolkit === "gmail"));
-  assert.ok(CLOUD_TOOLS.every((t) => !/DELETE|EMPTY|PURGE/.test(t.composioSlug)));
-  assert.equal(DRAFT_OUTLOOK_EMAIL.maxRetries, 0, "a write is never retried");
-  assert.equal(
-    TOOLKITS.outlook.access,
-    "Doddy can list your recent Outlook emails (sender, subject, a short preview), read one email aloud when you ask, " +
-      "read your Outlook calendar for the days you ask about, and create drafts after you tap Create. " +
-      "Doddy never sends, deletes or moves email, and never changes your calendar.",
-  );
+  // No permanent delete anywhere: Outlook's delete moves an event to Deleted Items; the "permanently" slugs are never named.
+  assert.ok(CLOUD_TOOLS.every((t) => !/PERMANENT|EMPTY|PURGE|BATCH/.test(t.composioSlug)));
+  assert.ok(CLOUD_TOOLS.filter((t) => t.risk === "write").every((t) => t.maxRetries === 0), "a write is never retried");
+  assert.match(TOOLKITS.outlook.access, /each only after you tap the card/);
+  assert.match(TOOLKITS.outlook.access, /never deletes anything for good/);
   for (const name of OUTLOOK_TOOLS) assert.match(TOOL_COPY[name]!.blurb, /Off until you switch it on\.$/, name);
 });
 
@@ -88,7 +93,7 @@ test("every Outlook switch starts off; each tool refuses until switched on, and 
   assert.equal(rig.provider.executed.length, 0);
 });
 
-test("Outlook grants: reads need Mail.Read (or ReadWrite), drafts Mail.ReadWrite, the calendar Calendars.Read", () => {
+test("Outlook grants: reads need Mail.Read (or ReadWrite), drafts Mail.ReadWrite, sending Mail.Send, calendar writes Calendars.ReadWrite", () => {
   assert.equal(toolHasGrant(CHECK_OUTLOOK_EMAIL, ["Mail.Read"]), true);
   assert.equal(toolHasGrant(READ_OUTLOOK_EMAIL, ["https://graph.microsoft.com/Mail.Read"]), true, "the long form counts too");
   assert.equal(toolHasGrant(READ_OUTLOOK_EMAIL, ["Mail.ReadWrite"]), true);
@@ -100,15 +105,15 @@ test("Outlook grants: reads need Mail.Read (or ReadWrite), drafts Mail.ReadWrite
   assert.equal(toolHasGrant(READ_OUTLOOK_CALENDAR, ["Calendars.Read"]), true);
 
   const outlook = TOOLKITS.outlook;
-  assert.deepEqual(outlook.requestedScopes, ["Mail.Read", "Mail.ReadWrite", "Calendars.Read", "User.Read", "offline_access"]);
-  assert.equal(evaluateToolkitGrant(outlook, [...outlook.requestedScopes, "openid", "profile", "email"]), "ok");
-  for (const extra of ["Mail.Send", "https://graph.microsoft.com/Mail.Send", "Calendars.ReadWrite", "Mail.ReadWrite.Shared", "Contacts.Read"]) {
+  assert.deepEqual(outlook.requestedScopes, ["Mail.Read", "Mail.ReadWrite", "Mail.Send", "Calendars.Read", "Calendars.ReadWrite", "User.Read", "offline_access"]);
+  assert.equal(evaluateToolkitGrant(outlook, [...outlook.requestedScopes, "openid", "profile", "email", "https://graph.microsoft.com/Mail.Send"]), "ok");
+  for (const extra of ["Mail.ReadWrite.Shared", "Mail.Send.Shared", "MailboxSettings.ReadWrite", "Contacts.Read", "Calendars.ReadWrite.Shared"]) {
     assert.equal(evaluateToolkitGrant(outlook, [...outlook.requestedScopes, extra]), "too_broad", extra);
   }
   assert.equal(evaluateToolkitGrant(outlook, null), "unverifiable");
 });
 
-test("an Outlook grant that includes sending blocks every Outlook tool", async () => {
+test("an Outlook grant broader than Doddy needs blocks every Outlook tool", async () => {
   rig = await start();
   const done = await connect(rig, "outlook", USER_A, "broad_scope");
   assert.equal(done.status, 200);

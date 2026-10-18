@@ -35,7 +35,7 @@ extension VoiceToolReply {
     }
 
     /// The result words the server starts a line with (backend/src/tools/catalog.ts).
-    static let cloudResultPrefixes = ["drafted:", "added:", "completed:", "moved:", "email:", "page:", "sent:", "changed:", "trashed:"]
+    static let cloudResultPrefixes = ["drafted:", "added:", "completed:", "moved:", "email:", "page:", "sent:", "changed:", "trashed:", "deleted:", "answered:"]
 
     public static func cloudDeclined(_ tool: String) -> String {
         "declined: the user chose not to do \"\(CloudToolName.title(tool))\". Nothing was done."
@@ -84,7 +84,12 @@ extension VoiceToolReply {
             case "not_found" where tool == CloudToolName.completeTodoistTask || tool == CloudToolName.moveTodoistTask:
                 // Refused before any card (ADR-303): Todoist doesn't have that open task.
                 return "not found: that Todoist task wasn't found, or it's already done. Nothing was changed. Read the tasks again with list_todoist_tasks and use the id it gives."
-            case "not_found" where [CloudToolName.replyToEmail, CloudToolName.forwardEmail, CloudToolName.changeEmail, CloudToolName.trashEmail].contains(tool):
+            case "not_found" where CloudToolName.more[tool]?.write == true && tool.hasSuffix("_event"):
+                return "not found: no event with that title starts then, or several do. Nothing was changed. Read the calendar again and pass the title and start exactly as it gives them."
+            case "not_found" where tool.hasSuffix("_invite"):
+                return "not found: no invitation with that title starts then, or the user made that event. Nothing was answered."
+            case "not_found" where [CloudToolName.replyToEmail, CloudToolName.forwardEmail, CloudToolName.changeEmail, CloudToolName.trashEmail].contains(tool)
+                || (CloudToolName.more[tool]?.write == true && tool.hasSuffix("_email")):
                 return "not found: no email matched that search, or Doddy can't tell who to reply to. Nothing was sent or changed. Ask the user which email they meant."
             case "not_found" where tool == CloudToolName.draftEmailReply:
                 // Refused before any card: no email matched, or its sender has no usable address.
