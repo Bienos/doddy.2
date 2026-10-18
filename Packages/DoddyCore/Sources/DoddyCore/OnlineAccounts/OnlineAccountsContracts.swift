@@ -192,6 +192,9 @@ public enum CloudToolName {
         "append_notion_page": ("Add to a Notion page", "Notion", true),
         "trash_notion_page": ("Move a Notion page to the trash", "Notion", true),
         "create_drive_doc": ("Create a Google Doc", "Google Drive", true),
+        // ADR-489: fixed Monid endpoints, no account (like web search); Doddy pays, the card says how much.
+        "news_search": ("Search the news", "Web search", false),
+        "find_places": ("Find places", "Web search", false),
     ]
     /// Web search through Monid on Doddy's server. No account; only a switch in Settings.
     public static let webSearch = "web_search"
@@ -248,7 +251,7 @@ public enum CloudToolName {
     }
 
     /// Tools that work without connecting an account.
-    public static func needsAccount(_ name: String) -> Bool { name != webSearch }
+    public static func needsAccount(_ name: String) -> Bool { name != webSearch && more[name]?.account != "Web search" }
 }
 
 /// A tool call from the voice agent. Arguments are passed on exactly as received.

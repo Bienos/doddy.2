@@ -91,7 +91,7 @@ Added later the same day (ADR-485), all **card with the exact change; tap only +
 `send_email`, `reply_to_email`, `forward_email`, `change_email`, `trash_email`; and (ADR-486, ADR-487)
 `create/change/delete_google_event`, `answer_google_invite`, `create/change/delete_outlook_event`,
 `accept/decline_outlook_invite`, `send/reply/forward/move/mark_outlook_email`; and (ADR-488) `rename_todoist_task`,
-`create_notion_page`, `append_notion_page`, `trash_notion_page`, `create_drive_doc`. `read_google_calendar` is a read: **card;
+`create_notion_page`, `append_notion_page`, `trash_notion_page`, `create_drive_doc`. Reads `news_search` and `find_places` (ADR-489): **card with the price; spoken yes or tap + server approval**. `read_google_calendar` is a read: **card;
 spoken yes or tap + server approval**.
 
 Not in `tools.json`, also covered:

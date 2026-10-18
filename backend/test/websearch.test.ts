@@ -21,7 +21,7 @@ test("web search is its own section: no account, starts off, demo provider in mo
   assert.equal(web.title, "Web search");
   assert.equal(web.needsAccount, false);
   assert.equal(web.status, "connected");
-  assert.deepEqual(web.tools.map((t: any) => [t.name, t.risk, t.enabled]), [["web_search", "read", false]]);
+  assert.deepEqual(web.tools.map((t: any) => [t.name, t.risk, t.enabled]), [["web_search", "read", false], ["news_search", "read", false], ["find_places", "read", false]]);
   for (const account of catalog.toolkits.filter((t: any) => t.id !== "websearch")) assert.equal(account.needsAccount, true);
 });
 

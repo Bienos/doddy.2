@@ -286,6 +286,7 @@ public struct ActivityRequest: Equatable, Sendable {
             case "Todoist": .todoist
             case "Notion": .notion
             case "Google Drive": .drive
+            case "Web search": .web
             default: .calendar
             }
             return ActivityRequest(app: app, title: more.title, detail: nil, isLookup: !more.write)

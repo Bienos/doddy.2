@@ -65,7 +65,7 @@ async function readyAll(r: Rig) {
     await ready(r, toolkit, first.name);
   }
   for (const t of CLOUD_TOOLS) assert.equal((await on(r, t.name)).status, 200, t.name);
-  assert.equal((await on(r, "web_search")).status, 200);
+  for (const t of ["web_search", "news_search", "find_places"]) assert.equal((await on(r, t)).status, 200);
 }
 
 const prepare = (r: Rig, tool: string, args: Record<string, unknown>, token = USER_A) =>
@@ -85,8 +85,8 @@ test("every tool has a card: a preview made from its arguments, with a confirm l
 test("no yes, nothing runs: every tool, read or write, is refused without an approval and no provider is called", async () => {
   rig = await start();
   await readyAll(rig);
-  for (const name of [...CLOUD_TOOLS.map((t) => t.name), "web_search"]) {
-    const args = name === "web_search" ? { query: "cafe hours" } : ARGS[name]!;
+  for (const name of [...CLOUD_TOOLS.map((t) => t.name), "web_search", "news_search", "find_places"]) {
+    const args = name === "web_search" ? { query: "cafe hours" } : name === "news_search" ? { query: "tram" } : name === "find_places" ? { query: "cafe", near: "Warsaw" } : ARGS[name]!;
     const res = await runRaw(rig, name, args);
     assert.equal(res.status, 403, `${name}: ${res.text}`);
     assert.equal(res.body.error.code, "capability_disabled", name);

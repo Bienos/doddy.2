@@ -438,7 +438,8 @@ final class WebSearchToolTests: XCTestCase {
         let web = try XCTUnwrap(catalog.toolkits.first { $0.id == "websearch" })
         XCTAssertFalse(web.hasAccount)
         XCTAssertEqual(web.status, .connected, "nothing to connect: ready whenever the server has it set up")
-        XCTAssertEqual(web.tools.map(\.name), [CloudToolName.webSearch])
+        XCTAssertEqual(web.tools.map(\.name), [CloudToolName.webSearch, "news_search", "find_places"])
+        XCTAssertFalse(CloudToolName.needsAccount("find_places"))
         XCTAssertFalse(web.tools[0].enabled, "starts off like every other tool")
 
         XCTAssertFalse(CloudToolName.isWrite(CloudToolName.webSearch))

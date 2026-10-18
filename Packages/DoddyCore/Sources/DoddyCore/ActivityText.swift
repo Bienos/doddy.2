@@ -120,6 +120,8 @@ public enum ActivityText {
         "Add to a Notion page": "Dodaj do strony w Notion",
         "Move a Notion page to the trash": "Przenieś stronę Notion do kosza",
         "Create a Google Doc": "Utwórz Dokument Google",
+        "Search the news": "Wyszukano wiadomości",
+        "Find places": "Wyszukano miejsca",
         "Read a Notion page": "Odczytano stronę Notion",
     ]
 

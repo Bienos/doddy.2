@@ -122,10 +122,12 @@ final class ToolCatalogTests: XCTestCase {
         let source = try String(contentsOf: repoRoot.appendingPathComponent("backend/src/tools/catalog.ts"), encoding: .utf8)
         let server = Self.serverRisks(source)
         XCTAssertFalse(server.isEmpty, "couldn't read CLOUD_TOOLS from catalog.ts")
-        XCTAssertEqual(Set(server.keys).union([CloudToolName.webSearch]), CloudToolName.all)
+        // websearch.ts also holds the fixed Monid tools (ADR-489).
+        XCTAssertEqual(Set(server.keys).union([CloudToolName.webSearch, "news_search", "find_places"]), CloudToolName.all)
         XCTAssertEqual(Set(server.filter { $0.value == "write" }.keys), CloudToolName.writes)
         let websearch = try String(contentsOf: repoRoot.appendingPathComponent("backend/src/tools/websearch.ts"), encoding: .utf8)
         XCTAssertTrue(websearch.contains("\"\(CloudToolName.webSearch)\""), "web_search not found in websearch.ts")
+        for name in ["news_search", "find_places"] { XCTAssertTrue(websearch.contains("\(name): {"), "\(name) not in MONID_TOOLS") }
         for name in CloudToolName.all {
             XCTAssertEqual(ToolCatalog.descriptor(name)?.isCloud, true, name)
         }

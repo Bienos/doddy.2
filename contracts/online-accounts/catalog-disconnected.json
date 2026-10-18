@@ -369,6 +369,20 @@
           "blurb": "Looks up current information (opening hours, news, prices) and tells you where it came from.",
           "risk": "read",
           "enabled": false
+        },
+        {
+          "name": "news_search",
+          "title": "Search the news",
+          "blurb": "Looks up recent news articles when you ask and says where each came from. Doddy pays per search. Off until you switch it on.",
+          "risk": "read",
+          "enabled": false
+        },
+        {
+          "name": "find_places",
+          "title": "Find places",
+          "blurb": "Finds places (cafés, shops, opening hours, ratings) near a town you name. Doddy pays per search. Off until you switch it on.",
+          "risk": "read",
+          "enabled": false
         }
       ]
     }

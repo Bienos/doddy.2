@@ -42,7 +42,19 @@ import {
   WEB_SECTION_ID,
   type WebSearchProvider,
   WebSearchInput,
+  isMonidTool,
+  MONID_TOOL_INPUT,
+  MONID_TOOL_NAMES,
+  MONID_TOOLS,
+  monidCard,
+  type MonidToolName,
+  normalizeMonidTool,
 } from "./websearch.js";
+
+/** Web search and the other fixed Monid tools (ADR-489): no account, a switch each, Doddy pays. */
+type WebTool = typeof WEB_SEARCH_TOOL | MonidToolName;
+const isWebTool = (name: string): name is WebTool => name === WEB_SEARCH_TOOL || isMonidTool(name);
+const webTitle = (tool: WebTool) => (tool === WEB_SEARCH_TOOL ? WEB_SEARCH_COPY.title : MONID_TOOLS[tool].title);
 
 type SectionId = ToolkitId | typeof WEB_SECTION_ID;
 
@@ -166,6 +178,13 @@ export class CloudToolsService {
           risk: "read",
           enabled: configured && this.store.toolEnabled(userId, WEB_SEARCH_TOOL),
         },
+        ...MONID_TOOL_NAMES.map((name) => ({
+          name,
+          title: MONID_TOOLS[name].title,
+          blurb: MONID_TOOLS[name].blurb,
+          risk: "read" as const,
+          enabled: configured && this.store.toolEnabled(userId, name),
+        })),
       ],
     };
   }
@@ -346,7 +365,7 @@ export class CloudToolsService {
     if (toolkitId === WEB_SECTION_ID) {
       // Older app builds show a Disconnect button for every section; for web search it means "off".
       parse(EmptyRequestSchema, body);
-      this.store.setToolEnabled(userId, WEB_SEARCH_TOOL, false, this.now());
+      for (const name of [WEB_SEARCH_TOOL, ...MONID_TOOL_NAMES]) this.store.setToolEnabled(userId, name, false, this.now());
       const summary = "Web search has no account to disconnect; it was switched off.";
       return { toolkit: this.webView(userId), receipt: this.receipt(userId, WEB_SECTION_ID, "disconnect", null, "succeeded", summary, null, null) };
     }
@@ -433,13 +452,13 @@ export class CloudToolsService {
 
   setSwitch(userId: string, body: unknown): ToolkitResult {
     const request = parse(SwitchRequestSchema, body);
-    if (request.tool === WEB_SEARCH_TOOL) {
+    if (isWebTool(request.tool)) {
       if (request.enabled && this.webSearch?.isConfigured() !== true) {
         throw new AppError("live_not_configured", { message: "Web search isn't set up on this server." });
       }
-      this.store.setToolEnabled(userId, WEB_SEARCH_TOOL, request.enabled, this.now());
-      const summary = `${WEB_SEARCH_COPY.title} switched ${request.enabled ? "on" : "off"}.`;
-      return { toolkit: this.webView(userId), receipt: this.receipt(userId, WEB_SECTION_ID, "switch", WEB_SEARCH_TOOL, "succeeded", summary, null, null) };
+      this.store.setToolEnabled(userId, request.tool, request.enabled, this.now());
+      const summary = `${webTitle(request.tool)} switched ${request.enabled ? "on" : "off"}.`;
+      return { toolkit: this.webView(userId), receipt: this.receipt(userId, WEB_SECTION_ID, "switch", request.tool, "succeeded", summary, null, null) };
     }
     const tool = cloudTool(request.tool);
     if (!tool) throw new AppError("not_found", { message: "That tool doesn't exist." });
@@ -470,7 +489,7 @@ export class CloudToolsService {
    */
   async prepare(userId: string, body: unknown): Promise<PrepareResult> {
     const request = parse(PrepareRequestSchema, body);
-    if (request.tool === WEB_SEARCH_TOOL) return this.prepareWebSearch(userId, request.arguments);
+    if (isWebTool(request.tool)) return this.prepareWebSearch(userId, request.tool, request.arguments);
     const tool = this.requireTool(request.tool);
     const args = parse(tool.input, request.arguments);
     if (request.timeZone !== undefined && !isSupportedTimeZone(request.timeZone)) {
@@ -647,7 +666,7 @@ export class CloudToolsService {
 
   async run(userId: string, body: unknown): Promise<RunResult> {
     const request = parse(RunRequestSchema, body);
-    if (request.tool === WEB_SEARCH_TOOL) return this.runWebSearch(userId, request);
+    if (isWebTool(request.tool)) return this.runWebSearch(userId, request.tool, request);
     const tool = this.requireTool(request.tool);
     const args = parse(tool.input, request.arguments);
     if (!isSupportedTimeZone(request.timeZone)) {
@@ -738,28 +757,29 @@ export class CloudToolsService {
     }
   }
 
-  /** The card for a web search (ASK-01): the exact search words, and that Doddy pays for it. Nothing is searched. */
-  private prepareWebSearch(userId: string, raw: Record<string, unknown>): PrepareResult {
-    const args = parse(WebSearchInput, raw);
+  /**
+   * The card for web search, news or places (ASK-01): the exact words, and what Doddy pays for it
+   * (ADR-489: the price is on the card). Nothing is searched.
+   */
+  private prepareWebSearch(userId: string, tool: WebTool, raw: Record<string, unknown>): PrepareResult {
+    const args = tool === WEB_SEARCH_TOOL ? parse(WebSearchInput, raw) : parse(MONID_TOOL_INPUT[tool], raw);
     const now = this.now();
     this.limiter.reserveRequest(userId, now);
     const blocked = (code: "capability_disabled" | "live_not_configured", message: string): never => {
-      throw new AppError(code, { message, receipt: this.receipt(userId, WEB_SECTION_ID, "read", WEB_SEARCH_TOOL, "blocked", `Not done: ${message}`, code, null) });
+      throw new AppError(code, { message, receipt: this.receipt(userId, WEB_SECTION_ID, "read", tool, "blocked", `Not done: ${message}`, code, null) });
     };
     if (!this.webSearch || !this.webSearch.isConfigured()) return blocked("live_not_configured", "Web search isn't set up on this server.");
-    if (!this.store.toolEnabled(userId, WEB_SEARCH_TOOL)) return blocked("capability_disabled", `${WEB_SEARCH_COPY.title} is turned off in Settings.`);
-    const { approvalId, expiresAt } = this.ask.issue({ userId, tool: WEB_SEARCH_TOOL, accountId: WEB_ACCOUNT, argsDigest: argumentDigest(args) });
-    return {
-      mode: this.mode,
-      tool: WEB_SEARCH_TOOL,
-      preview: {
-        title: "Search the web?",
-        lines: [`Search words: ${args.query}`, "They go to Doddy's server and a search provider (Monid). Doddy pays for each search; there is a daily limit."],
-        confirmLabel: "Yes, search",
-      },
-      approvalId,
-      expiresAt: new Date(expiresAt).toISOString(),
-    };
+    if (!this.store.toolEnabled(userId, tool)) return blocked("capability_disabled", `${webTitle(tool)} is turned off in Settings.`);
+    const { approvalId, expiresAt } = this.ask.issue({ userId, tool, accountId: WEB_ACCOUNT, argsDigest: argumentDigest(args) });
+    const preview =
+      tool === WEB_SEARCH_TOOL
+        ? {
+            title: "Search the web?",
+            lines: [`Search words: ${(args as { query: string }).query}`, "They go to Doddy's server and a search provider (Monid). Doddy pays about $0.001 per search; there is a daily limit."],
+            confirmLabel: "Yes, search",
+          }
+        : monidCard(tool, args);
+    return { mode: this.mode, tool, preview, approvalId, expiresAt: new Date(expiresAt).toISOString() };
   }
 
   /**
@@ -767,22 +787,22 @@ export class CloudToolsService {
    * set up -> limits (incl. the web search caps) -> one Monid call (never retried: each run is billed)
    * -> normalized result -> receipt. Search words are not stored anywhere, receipts included.
    */
-  private async runWebSearch(userId: string, request: { arguments: Record<string, unknown>; timeZone: string; approvalId?: string | undefined }): Promise<RunResult> {
-    const args = parse(WebSearchInput, request.arguments);
+  private async runWebSearch(userId: string, tool: WebTool, request: { arguments: Record<string, unknown>; timeZone: string; approvalId?: string | undefined }): Promise<RunResult> {
+    const args: Record<string, unknown> = tool === WEB_SEARCH_TOOL ? parse(WebSearchInput, request.arguments) : parse(MONID_TOOL_INPUT[tool], request.arguments);
     if (!isSupportedTimeZone(request.timeZone)) {
       throw new AppError("invalid_request", { message: "Use an IANA time zone such as Europe/Warsaw." });
     }
     const now = this.now();
     this.limiter.reserveRequest(userId, now);
     const blocked = (code: "capability_disabled" | "live_not_configured" | "quota_exceeded", message: string, errorCode: string = code): never => {
-      throw new AppError(code, { message, receipt: this.receipt(userId, WEB_SECTION_ID, "read", WEB_SEARCH_TOOL, "blocked", `Not done: ${message}`, errorCode, null) });
+      throw new AppError(code, { message, receipt: this.receipt(userId, WEB_SECTION_ID, "read", tool, "blocked", `Not done: ${message}`, errorCode, null) });
     };
     const provider = this.webSearch;
     if (!provider || !provider.isConfigured()) return blocked("live_not_configured", "Web search isn't set up on this server.");
-    if (!this.store.toolEnabled(userId, WEB_SEARCH_TOOL)) return blocked("capability_disabled", `${WEB_SEARCH_COPY.title} is turned off in Settings.`);
-    // ASK-01: the user's yes for exactly these search words, checked before the search is counted.
-    const binding: AskBinding = { userId, tool: WEB_SEARCH_TOOL, accountId: WEB_ACCOUNT, argsDigest: argumentDigest(args) };
-    const unasked = () => askFirstRefusal(this.receipt(userId, WEB_SECTION_ID, "read", WEB_SEARCH_TOOL, "blocked", "Not done: Doddy didn't have a yes for this.", "ask_first_required", null));
+    if (!this.store.toolEnabled(userId, tool)) return blocked("capability_disabled", `${webTitle(tool)} is turned off in Settings.`);
+    // ASK-01: the user's yes for exactly these words, checked before the search is counted.
+    const binding: AskBinding = { userId, tool, accountId: WEB_ACCOUNT, argsDigest: argumentDigest(args) };
+    const unasked = () => askFirstRefusal(this.receipt(userId, WEB_SECTION_ID, "read", tool, "blocked", "Not done: Doddy didn't have a yes for this.", "ask_first_required", null));
     if (!this.ask.allows(binding, request.approvalId, "check")) throw unasked();
     try {
       this.limiter.reserveWebSearch(userId, now);
@@ -794,17 +814,20 @@ export class CloudToolsService {
     try {
       return await this.limiter.withSlot(userId, async () => {
         if (!this.ask.allows(binding, request.approvalId, "use")) throw unasked();
-        const result = await provider.search({ query: args.query, signal: AbortSignal.timeout(WEB_SEARCH_TIMEOUT_MS) });
-        const outcome = normalizeWebSearch(result.output, args.query);
-        const receipt = this.receipt(userId, WEB_SECTION_ID, "read", WEB_SEARCH_TOOL, "succeeded", outcome.summary, null, result.runId);
-        return { mode: this.mode, tool: WEB_SEARCH_TOOL, text: outcome.text, count: outcome.count, truncated: outcome.truncated, receipt };
+        const signal = AbortSignal.timeout(WEB_SEARCH_TIMEOUT_MS);
+        const result = tool === WEB_SEARCH_TOOL
+          ? await provider.search({ query: args.query as string, signal })
+          : await provider.call({ tool, args, signal });
+        const outcome = tool === WEB_SEARCH_TOOL ? normalizeWebSearch(result.output, args.query as string) : normalizeMonidTool(tool, result.output, args);
+        const receipt = this.receipt(userId, WEB_SECTION_ID, "read", tool, "succeeded", outcome.summary, null, result.runId);
+        return { mode: this.mode, tool, text: outcome.text, count: outcome.count, truncated: outcome.truncated, receipt };
       });
     } catch (error) {
       if (error instanceof AppError) throw error;
-      const appError = toAppError(error, WEB_SEARCH_COPY.title);
+      const appError = toAppError(error, webTitle(tool));
       const message =
         appError.code === "rate_limited" ? "Web search is busy right now. Try again shortly." : appError.code === "malformed_provider_result" ? "Web search sent an answer Doddy couldn't read, so nothing is shown." : "Web search couldn't be reached. Nothing is shown instead.";
-      const receipt = this.receipt(userId, WEB_SECTION_ID, "read", WEB_SEARCH_TOOL, "failed", message, appError.code, null);
+      const receipt = this.receipt(userId, WEB_SECTION_ID, "read", tool, "failed", message, appError.code, null);
       throw new AppError(appError.code, { ...appError.options, message, receipt });
     }
   }

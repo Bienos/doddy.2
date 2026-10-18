@@ -38,7 +38,7 @@
 #  - backend: Composio tool slugs only in the adapters and the tool catalog (and the mock that mimics
 #    their answers), no write tools beyond the reviewed ones (Gmail draft and reply draft; Todoist add, complete and move,
 #    ADR-303), no proxy execution,
-#    and Monid only in the web search module, with one fixed endpoint (no discover/inspect: the model
+#    and Monid only in the web search module, with fixed endpoints (web search, news, places; ADR-489; no discover/inspect: the model
 #    can never pick another paid endpoint).
 # Exit 0 = clean, 1 = violation.
 set -euo pipefail

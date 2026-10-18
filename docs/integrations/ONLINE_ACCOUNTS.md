@@ -98,6 +98,20 @@ Mock-tested only. Each behind a tap on its card.
   Drive access (`https://www.googleapis.com/auth/drive`), which can also delete for good; that scope stays "too broad"
   until the owner decides.
 
+## 2026-10-18: news and places through Monid (ADR-489)
+
+Two more fixed Monid endpoints in the Web search section (no account, one switch each, off by default), behind ASK-01.
+The card shows the words and what Doddy pays. Read with Monid's free search and inspection; **nothing was run**, so
+neither answer has been seen live.
+- `news_search`: Search1API `/news`, about $0.001 per search (free when nothing is found). Answer read as `results[]`
+  with `title`, `link`, `snippet`, `published_date` (as `/search`); anything else is an error.
+- `find_places`: Litescrape `/google/local`, about $0.00015 per search, `q` + `location` as query parameters. Answer read
+  as `local_results[]` with `title`, `rating`, `reviews`, `address`, `hours`. Litescrape marks it "alpha"; Monid showed it
+  "degraded" on 2026-10-18.
+- **Weather not built:** every Monid weather endpoint (AccuWeather $0.05, Weather Underground $0.02, an Open-Meteo relay
+  $0.0055) documents its input but not its answer. Seeing the answer needs one paid run, which needs the owner's yes.
+  Not verified either: whether Monid's REST `/v1/run` takes a GET endpoint's input as `{queryParams}`.
+
 ## Web search (Monid), added 2026-10-10 (ADR-173)
 
 Web search is the one section with **no account**: Settings → Online accounts shows "Web search · Ready, no sign-in"
