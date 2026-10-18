@@ -115,6 +115,11 @@ public enum ActivityText {
         "Forward an Outlook email": "Przekaż e-mail z Outlooka",
         "Archive or bin an Outlook email": "Zarchiwizuj lub usuń e-mail w Outlooku",
         "Mark an Outlook email": "Oznacz e-mail w Outlooku",
+        "Rename a task": "Zmień nazwę zadania",
+        "Create a Notion page": "Utwórz stronę w Notion",
+        "Add to a Notion page": "Dodaj do strony w Notion",
+        "Move a Notion page to the trash": "Przenieś stronę Notion do kosza",
+        "Create a Google Doc": "Utwórz Dokument Google",
         "Read a Notion page": "Odczytano stronę Notion",
     ]
 

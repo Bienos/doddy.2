@@ -107,6 +107,8 @@ const GOOGLE_SEND_MAIL = "https://www.googleapis.com/auth/gmail.send";
 const GOOGLE_MODIFY_MAIL = "https://www.googleapis.com/auth/gmail.modify";
 const DRIVE_METADATA_READONLY = "https://www.googleapis.com/auth/drive.metadata.readonly";
 const DRIVE_READONLY = "https://www.googleapis.com/auth/drive.readonly";
+/** Only files Doddy creates (ADR-488); it can't see, change or delete any other file. */
+const DRIVE_FILE = "https://www.googleapis.com/auth/drive.file";
 /** Google Calendar events: read and write events, never calendar settings or sharing (ADR-486). */
 const GCAL_EVENTS = "https://www.googleapis.com/auth/calendar.events";
 const GCAL_EVENTS_READONLY = "https://www.googleapis.com/auth/calendar.events.readonly";
@@ -155,9 +157,12 @@ export const TOOLKITS: Readonly<Record<ToolkitId, ToolkitDefinition>> = {
     id: "googledrive",
     title: "Google Drive",
     composioToolkit: "googledrive",
-    requestedScopes: [DRIVE_METADATA_READONLY],
-    allowedGrants: new Set([DRIVE_METADATA_READONLY, DRIVE_READONLY, ...GOOGLE_IDENTITY]),
-    access: "Doddy can find files by name (name, type, last change). It can't open, change, share or delete files.",
+    requestedScopes: [DRIVE_METADATA_READONLY, DRIVE_FILE],
+    // Full Drive access (which can also delete for good) stays "too broad" (ADR-488).
+    allowedGrants: new Set([DRIVE_METADATA_READONLY, DRIVE_READONLY, DRIVE_FILE, ...GOOGLE_IDENTITY]),
+    access:
+      "Doddy can find files by name (name, type, last change) after you say yes, and create a private Google Doc after you tap " +
+      "the card that shows its name and text. It can't open, change, share or delete your other files.",
   },
   notion: {
     id: "notion",
@@ -166,8 +171,9 @@ export const TOOLKITS: Readonly<Record<ToolkitId, ToolkitDefinition>> = {
     requestedScopes: [],
     allowedGrants: null,
     access:
-      "Doddy can search the titles of pages you shared with it, and read one page aloud when you ask (the best match among them). " +
-      "It can't change, create or delete anything.",
+      "Doddy can search the titles of pages you shared with it, and read one page aloud when you ask, after you say yes. It can create " +
+      "a page, add text to the end of a page, or move a page to Notion's trash, each only after you tap the card that shows exactly what " +
+      "will happen. It never deletes for good.",
   },
   todoist: {
     id: "todoist",
@@ -176,8 +182,8 @@ export const TOOLKITS: Readonly<Record<ToolkitId, ToolkitDefinition>> = {
     requestedScopes: [],
     allowedGrants: null,
     access:
-      "Doddy can list your open tasks, add a task after you tap Add, and mark a task done or change its due date after you tap to confirm. " +
-      "It can't delete tasks or change their text.",
+      "Doddy can list your open tasks after you say yes, and add a task, mark one done, change its due date or rename it, each " +
+      "after you tap the card. It can't delete tasks: Todoist deletes for good.",
   },
   outlook: {
     id: "outlook",
@@ -2455,6 +2461,165 @@ export const MARK_OUTLOOK_EMAIL: CloudToolDefinition = {
   replay: (args) => sent(`changed: the email was ${MAIL_MARKS_OUTLOOK[args.mark as OutlookMark].done} on the first try; nothing ran again.`, "Outlook email changed."),
 };
 
+// ------------------------------------------------------------------ Todoist, Notion and Drive writes (ADR-488)
+//
+// Slugs and input/output schemas read with COMPOSIO_SEARCH_TOOLS / COMPOSIO_GET_TOOL_SCHEMAS on
+// 2026-10-18. None has run against a real account.
+//  - TODOIST_UPDATE_TASK `content` (rename). Todoist has no trash: deleting a task is permanent, so
+//    Doddy has no delete tool (permanent deletion is out of scope).
+//  - NOTION_CREATE_NOTION_PAGE: `parent_id`, `title`, `markdown`. Output: the page (`id`, `archived`, `in_trash`).
+//  - NOTION_APPEND_TEXT_BLOCKS: `block_id` (the page), `children` (paragraph blocks, 2000 characters
+//    each). Output `results[]`: the blocks added.
+//  - NOTION_ARCHIVE_NOTION_PAGE: `page_id`, `archive: true` (Notion's trash). Output: the page.
+//  - GOOGLEDRIVE_CREATE_FILE_FROM_TEXT: `file_name`, `text_content`, `mime_type`. Output `id`, `name`
+//    at the top level; "Created files are private by default". Needs only `drive.file` (files Doddy
+//    makes). Sharing or trashing the user's other files would need full Drive access, which can also
+//    delete for good: not asked for (owner decision, ADR-488).
+
+export const RENAME_TODOIST_TASK: CloudToolDefinition = {
+  name: "rename_todoist_task",
+  toolkit: "todoist",
+  composioSlug: "TODOIST_UPDATE_TASK",
+  risk: "write",
+  requiredAnyGrant: [],
+  input: z.object({ task_id: TodoistTaskId, content: text(1, 300) }).strict(),
+  maxRetries: 0,
+  toArguments: (args) => ({ task_id: args.task_id, content: args.content }),
+  resolve: TODOIST_TASK_LOOKUP,
+  preview: (args, target) => ({
+    title: "Rename this Todoist task?",
+    lines: [`Now: ${taskOf(target).title}`, `New name: ${args.content as string}`],
+    confirmLabel: "Rename",
+  }),
+  normalize: (raw, args) => {
+    const data = dataOf(raw);
+    // Renamed only when Todoist's task has the new text.
+    if (data.content !== args.content) throw new ProviderError("malformed_provider_result");
+    return { text: `changed: the Todoist task is now ${JSON.stringify(args.content)}.`, count: 1, truncated: false, summary: "Todoist task renamed.", externalId: String(args.task_id) };
+  },
+  replay: (args) => ({ text: `changed: the task was renamed to ${JSON.stringify(args.content)} on the first try; nothing ran again.`, count: 1, truncated: false, summary: "Todoist task renamed." }),
+};
+
+function pageOf(target: ResolvedTarget | null | undefined): PageTarget {
+  if (target?.kind !== "notion_page") throw new Error("this needs the looked-up Notion page");
+  return target;
+}
+
+/** Text as Notion paragraphs: one per blank-line-separated part, each at most 2000 characters. */
+export function notionParagraphs(value: string): { type: "paragraph"; paragraph: { rich_text: { type: "text"; text: { content: string } }[] } }[] {
+  const parts = value.split(/\n\s*\n/).map((p) => p.trim()).filter((p) => p !== "");
+  const chunks = parts.flatMap((p) => p.match(/[\s\S]{1,2000}/g) ?? []);
+  return chunks.map((content) => ({ type: "paragraph", paragraph: { rich_text: [{ type: "text", text: { content } }] } }));
+}
+
+const notionPageWrite = (verb: string): TargetLookup => ({
+  ...NOTION_PAGE_LOOKUP,
+  notFound: `No Notion page matched that search, so nothing was ${verb}. Notion only finds pages shared with Doddy.`,
+});
+
+/** Notion's page in its answer, checked: id required, and not in the trash unless that was the point. */
+function notionPageResult(raw: unknown): { id: string; inTrash: boolean } {
+  const data = dataOf(raw);
+  if (typeof data.id !== "string" || !NOTION_ID.test(data.id)) throw new ProviderError("malformed_provider_result");
+  return { id: data.id, inTrash: data.in_trash === true || data.archived === true };
+}
+
+export const CREATE_NOTION_PAGE: CloudToolDefinition = {
+  name: "create_notion_page",
+  toolkit: "notion",
+  composioSlug: "NOTION_CREATE_NOTION_PAGE",
+  risk: "write",
+  requiredAnyGrant: [],
+  input: z.object({ query: text(1, 100), title: text(1, 200), text: text(1, 10_000).optional() }).strict(),
+  maxRetries: 0,
+  // Under the page the search found; never an id from the agent.
+  toArguments: (args, target) => ({
+    parent_id: pageOf(target).pageId,
+    title: args.title,
+    ...(typeof args.text === "string" ? { markdown: args.text } : {}),
+  }),
+  resolve: notionPageWrite("created"),
+  preview: (args, target) => ({
+    title: "Create this Notion page?",
+    lines: [`Inside: ${pageOf(target).title}`, `Title: ${args.title as string}`, ...(typeof args.text === "string" ? [args.text] : [])],
+    confirmLabel: "Create page",
+  }),
+  normalize: (raw, args) => {
+    const page = notionPageResult(raw);
+    if (page.inTrash) throw new ProviderError("malformed_provider_result");
+    return { text: `added: Notion page ${JSON.stringify(args.title)} was created.`, count: 1, truncated: false, summary: "Notion page created.", externalId: page.id };
+  },
+  replay: (args, externalId) => ({ text: `added: the Notion page ${JSON.stringify(args.title)} was created on the first try; nothing ran again.`, count: 1, truncated: false, summary: "Notion page created.", ...(externalId ? { externalId } : {}) }),
+};
+
+export const APPEND_NOTION_PAGE: CloudToolDefinition = {
+  name: "append_notion_page",
+  toolkit: "notion",
+  composioSlug: "NOTION_APPEND_TEXT_BLOCKS",
+  risk: "write",
+  requiredAnyGrant: [],
+  input: z.object({ query: text(1, 100), text: text(1, 10_000) }).strict(),
+  maxRetries: 0,
+  toArguments: (args, target) => ({ block_id: pageOf(target).pageId, children: notionParagraphs(args.text as string) }),
+  resolve: notionPageWrite("added"),
+  preview: (args, target) => ({
+    title: "Add this to the end of a Notion page?",
+    lines: [`Page: ${pageOf(target).title}`, args.text as string],
+    confirmLabel: "Add",
+  }),
+  normalize: (raw, args, _context, target) => {
+    const data = dataOf(raw);
+    // Added only when Notion lists as many new blocks as were sent.
+    if (listOf(data, "results").length !== notionParagraphs(args.text as string).length) throw new ProviderError("malformed_provider_result");
+    return { text: `added: the text was added to the end of the Notion page ${JSON.stringify(pageOf(target).title)}.`, count: 1, truncated: false, summary: "Notion page: text added." };
+  },
+  replay: () => ({ text: "added: the text was added on the first try; nothing ran again.", count: 1, truncated: false, summary: "Notion page: text added." }),
+};
+
+export const TRASH_NOTION_PAGE: CloudToolDefinition = {
+  name: "trash_notion_page",
+  toolkit: "notion",
+  composioSlug: "NOTION_ARCHIVE_NOTION_PAGE",
+  risk: "write",
+  requiredAnyGrant: [],
+  input: z.object({ query: text(1, 100) }).strict(),
+  maxRetries: 0,
+  toArguments: (_args, target) => ({ page_id: pageOf(target).pageId, archive: true }),
+  resolve: notionPageWrite("moved to the trash"),
+  preview: (_args, target) => ({
+    title: "Move this Notion page to the trash?",
+    lines: [`Page: ${pageOf(target).title}`, "It can be restored from Notion's trash. Doddy never deletes for good."],
+    confirmLabel: "Move to trash",
+  }),
+  normalize: (raw, _args, _context, target) => {
+    if (!notionPageResult(raw).inTrash) throw new ProviderError("malformed_provider_result");
+    return { text: `trashed: the Notion page ${JSON.stringify(pageOf(target).title)} is in Notion's trash and can be restored there.`, count: 1, truncated: false, summary: "Notion page moved to the trash." };
+  },
+  replay: () => ({ text: "trashed: the page was moved to the trash on the first try; nothing ran again.", count: 1, truncated: false, summary: "Notion page moved to the trash." }),
+};
+
+export const CREATE_DRIVE_DOC: CloudToolDefinition = {
+  name: "create_drive_doc",
+  toolkit: "googledrive",
+  composioSlug: "GOOGLEDRIVE_CREATE_FILE_FROM_TEXT",
+  risk: "write",
+  requiredAnyGrant: [DRIVE_FILE],
+  input: z.object({ name: text(1, 200), text: text(1, 20_000) }).strict(),
+  maxRetries: 0,
+  toArguments: (args) => ({ file_name: args.name, text_content: args.text, mime_type: "application/vnd.google-apps.document" }),
+  preview: (args) => ({
+    title: "Create this Google Doc?",
+    lines: [`Name: ${args.name as string}`, args.text as string, "It is private to you in your Drive; nothing is shared."],
+    confirmLabel: "Create doc",
+  }),
+  normalize: (raw, args) => {
+    const data = dataOf(raw);
+    if (typeof data.id !== "string" || data.id === "" || data.trashed === true) throw new ProviderError("malformed_provider_result");
+    return { text: `added: Google Doc ${JSON.stringify(args.name)} was created in the user's Drive (private).`, count: 1, truncated: false, summary: "Google Doc created.", externalId: data.id };
+  },
+  replay: (args, externalId) => ({ text: `added: the Google Doc ${JSON.stringify(args.name)} was created on the first try; nothing ran again.`, count: 1, truncated: false, summary: "Google Doc created.", ...(externalId ? { externalId } : {}) }),
+};
+
 export const CLOUD_TOOLS: readonly CloudToolDefinition[] = [
   CHECK_EMAIL,
   READ_EMAIL,
@@ -2491,6 +2656,11 @@ export const CLOUD_TOOLS: readonly CloudToolDefinition[] = [
   FORWARD_OUTLOOK_EMAIL,
   MOVE_OUTLOOK_EMAIL,
   MARK_OUTLOOK_EMAIL,
+  RENAME_TODOIST_TASK,
+  CREATE_NOTION_PAGE,
+  APPEND_NOTION_PAGE,
+  TRASH_NOTION_PAGE,
+  CREATE_DRIVE_DOC,
 ];
 
 /** What Settings shows for each switch. Plain words about what the tool does and does not do. */
@@ -2522,6 +2692,11 @@ export const TOOL_COPY: Readonly<Record<string, { title: string; blurb: string }
   forward_outlook_email: { title: "Forward an Outlook email", blurb: "Forwards one email, with its attachments, after you tap Forward. Off until you switch it on." },
   move_outlook_email: { title: "Archive or bin an Outlook email", blurb: "Moves one email to Archive or Deleted Items (or back to the inbox) after you tap the card. Never deletes for good. Off until you switch it on." },
   mark_outlook_email: { title: "Mark an Outlook email", blurb: "Marks one email read or unread, or flags it, after you tap the card. Off until you switch it on." },
+  rename_todoist_task: { title: "Rename a task", blurb: "Changes a Todoist task's text after you tap Rename. The card shows the task as Todoist has it. Off until you switch it on." },
+  create_notion_page: { title: "Create a Notion page", blurb: "Creates a page inside a page shared with Doddy after you tap Create page. Off until you switch it on." },
+  append_notion_page: { title: "Add to a Notion page", blurb: "Adds text to the end of one page after you tap Add. Off until you switch it on." },
+  trash_notion_page: { title: "Move a Notion page to the trash", blurb: "Moves one page to Notion's trash after you tap the card. It can be restored there. Off until you switch it on." },
+  create_drive_doc: { title: "Create a Google Doc", blurb: "Creates a private Google Doc with the text on the card after you tap Create doc. Off until you switch it on." },
   find_drive_file: { title: "Find a Drive file", blurb: "Looks up files by name and shows name, type and last change. It can't open or change files." },
   search_notion: { title: "Search Notion", blurb: "Finds page titles shared with Doddy. It doesn't read the pages." },
   read_notion_page: { title: "Read a Notion page", blurb: "Reads one page aloud when you ask, the best match among pages shared with Doddy. Off until you switch it on." },

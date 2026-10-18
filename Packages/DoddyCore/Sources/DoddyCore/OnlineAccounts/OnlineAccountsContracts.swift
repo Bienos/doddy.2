@@ -186,6 +186,12 @@ public enum CloudToolName {
         "forward_outlook_email": ("Forward an Outlook email", "Outlook", true),
         "move_outlook_email": ("Archive or bin an Outlook email", "Outlook", true),
         "mark_outlook_email": ("Mark an Outlook email", "Outlook", true),
+        // ADR-488.
+        "rename_todoist_task": ("Rename a task", "Todoist", true),
+        "create_notion_page": ("Create a Notion page", "Notion", true),
+        "append_notion_page": ("Add to a Notion page", "Notion", true),
+        "trash_notion_page": ("Move a Notion page to the trash", "Notion", true),
+        "create_drive_doc": ("Create a Google Doc", "Google Drive", true),
     ]
     /// Web search through Monid on Doddy's server. No account; only a switch in Settings.
     public static let webSearch = "web_search"

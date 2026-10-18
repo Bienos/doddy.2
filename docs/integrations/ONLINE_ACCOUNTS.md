@@ -85,6 +85,19 @@ card on the phone (`create_calendar_event`, `change_calendar_event`, `delete_cal
 invitations there isn't possible: Apple's EventKit lets apps read a participant's status, not set it. Use the Google or
 Outlook account tools for invitations.
 
+## 2026-10-18: Todoist, Notion and Drive writes (ADR-488)
+
+Mock-tested only. Each behind a tap on its card.
+- `rename_todoist_task` (`TODOIST_UPDATE_TASK` `content`): the card shows the task as Todoist has it; done when Todoist's
+  task has the new text. **No Todoist delete**: Todoist has no trash, so a delete is permanent (out of scope).
+- `create_notion_page` (`NOTION_CREATE_NOTION_PAGE`, inside the page the search found), `append_notion_page`
+  (`NOTION_APPEND_TEXT_BLOCKS`, paragraphs of at most 2000 characters; done when Notion lists as many new blocks),
+  `trash_notion_page` (`NOTION_ARCHIVE_NOTION_PAGE`, Notion's trash; done when the page is in the trash).
+- `create_drive_doc` (`GOOGLEDRIVE_CREATE_FILE_FROM_TEXT`, a private Google Doc). Drive now also asks for `drive.file`,
+  which covers only files Doddy makes. **Sharing or trashing the user's other Drive files is not built**: it needs full
+  Drive access (`https://www.googleapis.com/auth/drive`), which can also delete for good; that scope stays "too broad"
+  until the owner decides.
+
 ## Web search (Monid), added 2026-10-10 (ADR-173)
 
 Web search is the one section with **no account**: Settings → Online accounts shows "Web search · Ready, no sign-in"

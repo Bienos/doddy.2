@@ -281,7 +281,14 @@ public struct ActivityRequest: Equatable, Sendable {
     static func describe(cloud name: String) -> ActivityRequest? {
         // ADR-486/487: Google Calendar is listed under Calendar, Outlook's under Outlook.
         if let more = CloudToolName.more[name] {
-            return ActivityRequest(app: more.account == "Outlook" ? .outlook : .calendar, title: more.title, detail: nil, isLookup: !more.write)
+            let app: ActivityApp = switch more.account {
+            case "Outlook": .outlook
+            case "Todoist": .todoist
+            case "Notion": .notion
+            case "Google Drive": .drive
+            default: .calendar
+            }
+            return ActivityRequest(app: app, title: more.title, detail: nil, isLookup: !more.write)
         }
         return switch name {
         case CloudToolName.checkEmail: ActivityRequest(app: .gmail, title: "Checked email", detail: nil, isLookup: true)

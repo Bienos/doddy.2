@@ -81,7 +81,9 @@ extension VoiceToolReply {
                 return "failed: \(account) or Doddy's usage limit says to wait. Tell the user to try again later. Nothing was done."
             case "provider_timeout", "provider_unavailable":
                 return isWrite ? maybeDone : "failed: \(account) couldn't be reached. Nothing was changed."
-            case "not_found" where tool == CloudToolName.completeTodoistTask || tool == CloudToolName.moveTodoistTask:
+            case "not_found" where tool.hasSuffix("_notion_page") && CloudToolName.isWrite(tool):
+                return "not found: no Notion page shared with Doddy matched that search. Nothing was changed. Ask the user which page."
+            case "not_found" where tool == CloudToolName.completeTodoistTask || tool == CloudToolName.moveTodoistTask || tool == "rename_todoist_task":
                 // Refused before any card (ADR-303): Todoist doesn't have that open task.
                 return "not found: that Todoist task wasn't found, or it's already done. Nothing was changed. Read the tasks again with list_todoist_tasks and use the id it gives."
             case "not_found" where CloudToolName.more[tool]?.write == true && tool.hasSuffix("_event"):

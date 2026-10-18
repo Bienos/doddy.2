@@ -215,6 +215,7 @@ if [ -d "$backend_src" ]; then
     | grep -vE "^($tools_catalog|$tools_mock):[0-9]+:[^G]*GOOGLECALENDAR_(CREATE_EVENT|PATCH_EVENT|DELETE_EVENT)([^A-Z0-9_]|$)"; then
     echo "FAIL: a calendar write tool beyond the reviewed Google Calendar create, patch and delete is referenced in the backend." >&2; status=1
   fi
+  # ADR-488: Notion create, append and move-to-trash, and a new private Google Doc (drive.file).
   # Since ADR-485 also the Gmail send, reply, forward, label and Trash tools (each behind ASK-01's
   # tap on the exact payload), in the catalog and its mock only. Never a permanent or bulk delete.
   # The only write tools allowed are GMAIL_CREATE_EMAIL_DRAFT, TODOIST_CREATE_TASK and, since ADR-303,
@@ -224,6 +225,7 @@ if [ -d "$backend_src" ]; then
   if grep -RInE 'GMAIL_(SEND|DELETE|TRASH|REPLY|FORWARD|MODIFY|BATCH|ADD|REMOVE|CREATE_LABEL|PATCH|UPDATE|MOVE|UNTRASH)|GOOGLEDRIVE_(CREATE|UPDATE|DELETE|ADD_FILE_SHARING|EDIT|COPY|MOVE|TRASH|UPLOAD|DOWNLOAD|EMPTY|REMOVE)|NOTION_(CREATE|UPDATE|DELETE|ADD|APPEND|ARCHIVE|INSERT|DUPLICATE|MOVE)|TODOIST_(UPDATE|DELETE|CLOSE|REOPEN|BULK|MOVE|QUICK_ADD|ARCHIVE|ADD)' "$backend_src" \
     | grep -vE "^($tools_catalog|$tools_mock):[0-9]+:.*TODOIST_(CLOSE_TASK_V1|UPDATE_TASK)([^A-Z0-9_]|$)" \
     | grep -vE "^($tools_catalog|$tools_mock):[0-9]+:[^G]*GMAIL_(SEND_EMAIL|REPLY_TO_THREAD|FORWARD_MESSAGE|ADD_LABEL_TO_EMAIL|MOVE_TO_TRASH)([^A-Z0-9_]|$)" \
+    | grep -vE "^($tools_catalog|$tools_mock):[0-9]+:[^GN]*(NOTION_(CREATE_NOTION_PAGE|APPEND_TEXT_BLOCKS|ARCHIVE_NOTION_PAGE)|GOOGLEDRIVE_CREATE_FILE_FROM_TEXT)([^A-Z0-9_]|$)" \
     | grep -E 'GMAIL_|GOOGLEDRIVE_|NOTION_|TODOIST_(UPDATE|DELETE|CLOSE|REOPEN|BULK|MOVE|QUICK_ADD|ARCHIVE|ADD)'; then
     echo "FAIL: a write tool beyond the reviewed Gmail ones (draft, send, reply, forward, labels, Trash) and the Todoist add, complete and move is referenced in the backend." >&2; status=1
   fi

@@ -236,8 +236,19 @@ function envelope(slug: string, args: Record<string, unknown>, empty: boolean, m
     case "TODOIST_UPDATE_TASK": {
       const task = empty ? undefined : DEMO_TASKS[String(args.task_id)];
       if (!task) return notFound();
+      // A rename (ADR-488) changes the text and keeps the due date; a move changes the due date.
+      if (typeof args.content === "string") return ok({ ...task, content: args.content, updated_at: "2026-10-11T08:00:00Z" });
       return ok({ ...task, due: { date: "2026-10-12", string: String(args.due_string), lang: String(args.due_lang ?? "en"), is_recurring: false }, updated_at: "2026-10-11T08:00:00Z" });
     }
+    // Notion and Drive writes (ADR-488), as Composio's output schemas give them.
+    case "NOTION_CREATE_NOTION_PAGE":
+      return ok({ object: "page", id: "33333333-3333-4333-8333-333333333333", archived: false, in_trash: false, parent: { type: "page_id", page_id: String(args.parent_id) }, properties: {}, url: "https://www.notion.so/demo" });
+    case "NOTION_APPEND_TEXT_BLOCKS":
+      return ok({ object: "list", type: "block", block: {}, has_more: false, results: (args.children as unknown[]).map((_, i) => ({ object: "block", id: `b${i}`, type: "paragraph" })) });
+    case "NOTION_ARCHIVE_NOTION_PAGE":
+      return ok({ object: "page", id: String(args.page_id), archived: args.archive === true, in_trash: args.archive === true });
+    case "GOOGLEDRIVE_CREATE_FILE_FROM_TEXT":
+      return ok({ kind: "drive#file", id: "drivedoc1", name: String(args.file_name), mimeType: String(args.mime_type), display_url: "https://docs.google.com/demo", link_label: "Open" });
     case "OUTLOOK_LIST_MESSAGES": {
       // Only the selected fields come back, as with Graph's $select. "nomatch" finds nothing.
       const fields = Array.isArray(args.select) ? (args.select as string[]) : ["id", "subject", "from", "receivedDateTime", "bodyPreview"];
