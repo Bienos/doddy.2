@@ -6,6 +6,7 @@ import { sameBytes } from "../crypto.js";
 import { inTransaction } from "../db.js";
 import type { TaskCallContext } from "./context.js";
 import { previewOf } from "./payload.js";
+import { isRetryableOutcome } from "./result.js";
 import { decryptPayload, phaseOf, resultAad } from "./service.js";
 
 type Client = Pick<pg.PoolClient, "query">;
@@ -97,8 +98,6 @@ export async function listCases(ctx: TaskCallContext, accountId: string) {
   return rows;
 }
 
-const RETRYABLE = new Set(["no_answer", "busy", "failed", "not_placed", "voicemail", "voice_unavailable", "unknown"]);
-
 /**
  * The app has saved the result on the iPhone: delete the server's copy of the result and the live
  * lines, and the payload unless a retry is still possible. Each delete writes its receipt in the same
@@ -118,7 +117,7 @@ export async function ackResult(ctx: TaskCallContext, accountId: string, caseId:
     await receipt(c, accountId, caseId, attemptId, "call_result", "acked", 1, now);
     const lines = await c.query("DELETE FROM call_live_lines WHERE attempt_id = $1", [attemptId]);
     if (lines.rowCount) await receipt(c, accountId, caseId, attemptId, "live_lines", "acked", lines.rowCount, now);
-    const retry = RETRYABLE.has(r.outcome ?? "") && r.attempt_no < 3;
+    const retry = isRetryableOutcome(r.outcome) && r.attempt_no < 3;
     if (!retry) await purgePayload(c, accountId, caseId, "finished", "acked", now);
     return "ok" as const;
   });

@@ -349,6 +349,11 @@ public struct CallApproval: Equatable, Sendable {
     public let attemptId: UUID?
     /// `dialing`, `scheduled`, or `unknown` (the call may be ringing; Doddy won't redial).
     public let state: String
+
+    public init(attemptId: UUID?, state: String) {
+        self.attemptId = attemptId
+        self.state = state
+    }
 }
 
 public enum CallPhase: String, Codable, Sendable {
@@ -399,7 +404,7 @@ public enum CallOutcome: String, Codable, Sendable {
     }
 
     /// A failed call can be retried at a set time (a new approval).
-    public var isRetryable: Bool { [.noAnswer, .busy, .failed, .notPlaced, .voicemail, .voiceUnavailable, .unknown].contains(self) }
+    public var isRetryable: Bool { [.noAnswer, .busy, .failed, .notPlaced, .voicemail, .ivr, .wrongNumber, .voiceUnavailable, .unknown].contains(self) }
 }
 
 public enum CallConfidence: String, Codable, Sendable {

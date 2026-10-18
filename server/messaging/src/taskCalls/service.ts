@@ -18,6 +18,7 @@ import {
 } from "./payload.js";
 import { classifyDestination, type DestinationRefusal } from "./phone.js";
 import { GOODBYE } from "./opening.js";
+import { RETRYABLE_OUTCOMES } from "./result.js";
 import { sayAndHangUp } from "./twiml.js";
 
 export const PREVIEW_MINUTES = 30;
@@ -145,8 +146,9 @@ export async function approve(ctx: TaskCallContext, accountId: string, deviceId:
       `SELECT count(*)::int AS n,
               count(*) FILTER (WHERE state IN ('scheduled','dialing','ringing','connecting','in_progress','taken_over')
                                   OR (state = 'unknown' AND settled_at IS NULL))::int AS open,
-              count(*) FILTER (WHERE voice_connected_at IS NOT NULL)::int AS reached
-       FROM call_attempts WHERE case_id = $1`, [caseId]);
+              count(*) FILTER (WHERE voice_connected_at IS NOT NULL AND NOT EXISTS (
+                SELECT 1 FROM call_results r WHERE r.attempt_id = call_attempts.id AND r.outcome = ANY($2::text[])))::int AS reached
+       FROM call_attempts WHERE case_id = $1`, [caseId, RETRYABLE_OUTCOMES]);
     const p = prior[0]!;
     if (p.open > 0) return refuse(409, "attempt_open");
     if (p.reached > 0) return refuse(409, "already_answered");

@@ -97,6 +97,11 @@ extension DoddyServerClient {
                          LiveActivityBody(token: token.map { String(format: "%02x", $0) }.joined(), environment: environment))
     }
 
+    /// The call is over or the Live Activity ended: the server forgets its push token.
+    public func clearCallLiveActivityToken(_ caseId: UUID) async throws {
+        try await expect(204, .delete, "/v1/call-cases/\(Self.id(caseId))/live-activity")
+    }
+
     static func id(_ uuid: UUID) -> String { uuid.uuidString.lowercased() }
 
     static func callCaseError(from response: ServerResponse) -> CallCaseError {

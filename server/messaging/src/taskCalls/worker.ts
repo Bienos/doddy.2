@@ -6,7 +6,7 @@ import { canPush, enqueue } from "../outbox.js";
 import { hmacSha256 } from "../crypto.js";
 import type { TaskCallContext } from "./context.js";
 import { purgePayload, receipt } from "./cases.js";
-import { buildCallResult, type CallResult, type Line, type WriterOutput } from "./result.js";
+import { buildCallResult, isRetryableOutcome, type CallResult, type Line, type WriterOutput } from "./result.js";
 import { decryptPayload, dialAttempt, endCall, inputAad, liveAad, resultAad, STALE_DIALING_MS } from "./service.js";
 import { endHalfJoined } from "./takeover.js";
 import { onStatus, queueConversationDeletion } from "./webhooks.js";
@@ -14,7 +14,6 @@ import type { CallPayload } from "./payload.js";
 
 const LIVE = "state IN ('dialing','ringing','connecting','in_progress') OR (state = 'unknown' AND settled_at IS NULL)";
 const RESULT_LEASE_MS = 5 * 60_000;
-const NON_RETRYABLE = new Set(["answered", "taken_over", "wrong_number", "ivr", "no_conversation", "stopped"]);
 
 export interface PassCounts { [pass: string]: number }
 
@@ -206,7 +205,7 @@ async function buildAndStore(ctx: TaskCallContext, r: ResultRow) {
          VALUES ($1, $2, 'model', $3, $4, $5, $6, 'token', $7, $7) ON CONFLICT DO NOTHING`,
         [r.attempt_id, r.account_id, ...modelCost(writer.usage), now]);
     }
-    if (NON_RETRYABLE.has(result.outcome) || r.attempt_no >= 3) {
+    if (!isRetryableOutcome(result.outcome) || r.attempt_no >= 3) {
       await c.query("UPDATE call_cases SET state = 'finished', updated_at = $2 WHERE id = $1 AND state = 'active'", [r.case_id, now]);
     }
     if (ctx.push && await canPush(c, r.account_id)) {

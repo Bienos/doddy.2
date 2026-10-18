@@ -485,6 +485,37 @@ describe("call cases against real Postgres", { skip: dbSkip }, () => {
     await w.app.close();
   });
 
+  test("voicemail: Doddy's voice connected, but the card can still be tried again; an answered call can't", async () => {
+    const w = await world();
+    const u = await user(w);
+    const d = await dialled(w, u.h);
+    await answer(w, d);
+    await status(w, d, "completed", 3, "12");
+    const turns = conversation(d.attemptId, "conv_vm", [["user", "Nie ma mnie, proszę zostawić wiadomość."], ["agent", ""]]);
+    (turns.transcript[1] as Record<string, unknown>).tool_calls = [{ tool_name: "voicemail_detection" }];
+    assert.equal((await postCall(w, turns)).statusCode, 200);
+    assert.equal(await processResults(w.ctx), 1);
+    const kase = (await api(w, "GET", `/v1/call-cases/${d.caseId}`, u.h)).json();
+    assert.equal(kase.results[0].outcome, "voicemail");
+    assert.equal(kase.state, "active", "a retryable outcome keeps the case open");
+    const at = new Date(w.clock.now.getTime() + 2 * 3600_000).toISOString();
+    const retry = await api(w, "POST", `/v1/call-cases/${d.caseId}/approve`, u.h, { digest: d.preview.digest, at });
+    assert.deepEqual([retry.statusCode, retry.json().state], [202, "scheduled"]);
+
+    // The same after a real answer: refused.
+    const d2 = await dialled(w, u.h);
+    await answer(w, d2);
+    await status(w, d2, "completed", 3, "30");
+    assert.equal((await postCall(w, conversation(d2.attemptId, "conv_ok", [
+      ["agent", "Dzień dobry, mówi Doddy, asystent AI, dzwonię w imieniu Anny. Chciałbym zapytać: Czy laptop z serwisu jest gotowy?"],
+      ["user", "Tak, jest gotowy."]]))).statusCode, 200);
+    await processResults(w.ctx);
+    const again = await api(w, "POST", `/v1/call-cases/${d2.caseId}/approve`, u.h, { digest: d2.preview.digest, at });
+    assert.equal(again.statusCode, 409);
+    assert.ok(["already_answered", "not_approvable"].includes(again.json().error), again.body);
+    await w.app.close();
+  });
+
   test("every dialled attempt has its costs; a part nobody reports becomes unknown, never zero", async () => {
     const w = await world({ settings: { prices: { elevenLabsUsdPerCredit: undefined, transcriptionUsdPerMin: undefined } } });
     const u = await user(w);

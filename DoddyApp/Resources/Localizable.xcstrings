@@ -473,6 +473,17 @@
         }
       }
     },
+    "%lld calls still have a part of their cost unknown or pending, so no average is shown for them.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Połączenia z częścią kosztu wciąż nieznaną lub w toku: %lld; dla nich średnia nie jest pokazywana."
+          }
+        }
+      }
+    },
     "%lld items": {
       "extractionState": "manual",
       "localizations": {
@@ -587,6 +598,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "还剩 %lld 项"
+          }
+        }
+      }
+    },
+    "%lld min": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld min"
           }
         }
       }
@@ -732,6 +754,39 @@
         }
       }
     },
+    "A PESEL can only be sent as a fact marked PESEL.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PESEL można wysłać tylko jako informację oznaczoną jako PESEL."
+          }
+        }
+      }
+    },
+    "A PESEL-like number was said by Doddy. Check this line.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy powiedział numer podobny do PESEL. Sprawdź tę wypowiedź."
+          }
+        }
+      }
+    },
+    "A call for this card is already on or waiting for its time.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Połączenie z tej karty już trwa albo czeka na swoją godzinę."
+          }
+        }
+      }
+    },
     "A draft, not a note: it's saved only if you tap Save as note.": {
       "extractionState": "manual",
       "localizations": {
@@ -787,6 +842,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "这是草稿，不是笔记：只有轻点“保存为笔记”才会保存。"
+          }
+        }
+      }
+    },
+    "A fact, e.g. order number 12345": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Informacja, np. numer zlecenia 12345"
           }
         }
       }
@@ -1385,6 +1451,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "名字或昵称就够了。这不会验证你的身份。"
+          }
+        }
+      }
+    },
+    "A new try uses the same card, approved again for the time you pick. Only times when the whole call fits inside 8:00–20:00.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nowa próba używa tej samej karty, zatwierdzonej ponownie na wybraną godzinę. Tylko godziny, w których cała rozmowa mieści się między 8:00 a 20:00."
           }
         }
       }
@@ -2365,6 +2442,17 @@
         }
       }
     },
+    "A rehearsal needs the microphone. Turn it on in Settings › Doddy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Próba potrzebuje mikrofonu. Włącz go w Ustawieniach › Doddy."
+          }
+        }
+      }
+    },
     "A repeating alarm stops for every day, not just the next one.": {
       "extractionState": "manual",
       "localizations": {
@@ -2774,6 +2862,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "一个想法、一条推荐、备用钥匙放在哪儿。"
+          }
+        }
+      }
+    },
+    "A ticked fact looks like a PESEL or an address. Mark it as one, or untick it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaznaczona informacja wygląda na PESEL albo adres. Oznacz ją tak albo odznacz."
           }
         }
       }
@@ -4017,6 +4116,17 @@
         }
       }
     },
+    "Add your first name, as Doddy says it: \"on behalf of …\".": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj swoje imię w formie, w jakiej powie je Doddy: „w imieniu …”."
+          }
+        }
+      }
+    },
     "Added %lld to %@.": {
       "extractionState": "manual",
       "localizations": {
@@ -4253,6 +4363,17 @@
         }
       }
     },
+    "Address": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adres"
+          }
+        }
+      }
+    },
     "Adds items to one of your Doddy lists. Separate several items with commas.": {
       "extractionState": "manual",
       "localizations": {
@@ -4485,6 +4606,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "更改后"
+          }
+        }
+      }
+    },
+    "Agree to anything, book, order or confirm": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zgadzać się na cokolwiek, rezerwować, zamawiać ani potwierdzać"
           }
         }
       }
@@ -5264,6 +5396,28 @@
         }
       }
     },
+    "An address can only be sent as a fact marked Address.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adres można wysłać tylko jako informację oznaczoną jako Adres."
+          }
+        }
+      }
+    },
+    "An automatic menu answered": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odebrał automat z menu"
+          }
+        }
+      }
+    },
     "An easier way to say hey.": {
       "extractionState": "manual",
       "localizations": {
@@ -5744,6 +5898,28 @@
         }
       }
     },
+    "Another call by Doddy is still on. One at a time. Nothing was dialled.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inne połączenie Doddy’ego jeszcze trwa. Jedno naraz. Nic nie zostało wybrane."
+          }
+        }
+      }
+    },
+    "Answer": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odpowiedź"
+          }
+        }
+      }
+    },
     "Answer calls from my number": {
       "extractionState": "manual",
       "localizations": {
@@ -5803,6 +5979,28 @@
         }
       }
     },
+    "Answer card (Claude)": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Karta odpowiedzi (Claude)"
+          }
+        }
+      }
+    },
+    "Answer card and transcript": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Karta odpowiedzi i zapis"
+          }
+        }
+      }
+    },
     "Answer the intro questions again": {
       "extractionState": "manual",
       "localizations": {
@@ -5858,6 +6056,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "重新回答开场问题"
+          }
+        }
+      }
+    },
+    "Answered": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odebrane"
+          }
+        }
+      }
+    },
+    "Answered, but no conversation": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odebrane, ale bez rozmowy"
           }
         }
       }
@@ -6688,6 +6908,28 @@
         }
       }
     },
+    "Approved": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zatwierdzone"
+          }
+        }
+      }
+    },
+    "Approving sends exactly this card. It can be approved until %@; after that, make a new one.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zatwierdzenie wysyła dokładnie tę kartę. Można ją zatwierdzić do %@; potem przygotuj nową."
+          }
+        }
+      }
+    },
     "Arrive by %@": {
       "extractionState": "manual",
       "localizations": {
@@ -6743,6 +6985,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ 前到达"
+          }
+        }
+      }
+    },
+    "As Doddy says it: \"w imieniu …\"": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tak, jak powie Doddy: „w imieniu …”"
           }
         }
       }
@@ -7396,6 +7649,17 @@
         }
       }
     },
+    "At most %lld min": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najwyżej %lld min"
+          }
+        }
+      }
+    },
     "Automatic": {
       "extractionState": "manual",
       "localizations": {
@@ -7864,6 +8128,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "趁还没忘"
+          }
+        }
+      }
+    },
+    "Before the card can be made": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zanim powstanie karta"
           }
         }
       }
@@ -8595,6 +8870,17 @@
         }
       }
     },
+    "Busy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zajęte"
+          }
+        }
+      }
+    },
     "CLOSE IN MEANING": {
       "extractionState": "manual",
       "localizations": {
@@ -8713,6 +8999,28 @@
         }
       }
     },
+    "Call": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Połączenie"
+          }
+        }
+      }
+    },
+    "Call %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zadzwoń: %@"
+          }
+        }
+      }
+    },
     "Call Doddy": {
       "extractionState": "manual",
       "localizations": {
@@ -8768,6 +9076,50 @@
           "stringUnit": {
             "state": "translated",
             "value": "给 Doddy 打电话"
+          }
+        }
+      }
+    },
+    "Call again at %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zadzwoń ponownie o %@"
+          }
+        }
+      }
+    },
+    "Call again now": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zadzwoń ponownie teraz"
+          }
+        }
+      }
+    },
+    "Call at %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zadzwoń o %@"
+          }
+        }
+      }
+    },
+    "Call ended": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rozmowa zakończona"
           }
         }
       }
@@ -8831,6 +9183,28 @@
         }
       }
     },
+    "Call now": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zadzwoń teraz"
+          }
+        }
+      }
+    },
+    "Call them as you would on the phone. Say \"koniec próby\" for tips.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mów tak, jak w prawdziwej rozmowie. Powiedz „koniec próby”, aby dostać wskazówki."
+          }
+        }
+      }
+    },
     "Calling Doddy": {
       "extractionState": "manual",
       "localizations": {
@@ -8886,6 +9260,61 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在呼叫 Doddy"
+          }
+        }
+      }
+    },
+    "Calls": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Połączenia"
+          }
+        }
+      }
+    },
+    "Calls by Doddy are switched off on the server right now.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Połączenia Doddy’ego są teraz wyłączone na serwerze."
+          }
+        }
+      }
+    },
+    "Calls by Doddy are switched off on the server right now. Nothing was dialled.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Połączenia Doddy’ego są teraz wyłączone na serwerze. Nic nie zostało wybrane."
+          }
+        }
+      }
+    },
+    "Calls by Doddy need a Doddy messaging server, and none is connected in this build yet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Połączenia Doddy’ego wymagają serwera wiadomości Doddy, a w tej wersji żaden nie jest jeszcze podłączony."
+          }
+        }
+      }
+    },
+    "Calls for you": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Połączenia za Ciebie"
           }
         }
       }
@@ -9126,6 +9555,17 @@
         }
       }
     },
+    "Cancel the call": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anuluj połączenie"
+          }
+        }
+      }
+    },
     "Canceled": {
       "extractionState": "manual",
       "localizations": {
@@ -9181,6 +9621,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "已取消"
+          }
+        }
+      }
+    },
+    "Cancelled": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anulowane"
+          }
+        }
+      }
+    },
+    "Cancelled. Doddy won't call.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anulowano. Doddy nie zadzwoni."
           }
         }
       }
@@ -9716,6 +10178,17 @@
         }
       }
     },
+    "Change the brief": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zmień kartę"
+          }
+        }
+      }
+    },
     "Change the detail.\nKeep the original.": {
       "extractionState": "manual",
       "localizations": {
@@ -10129,6 +10602,17 @@
         }
       }
     },
+    "Check again": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdź ponownie"
+          }
+        }
+      }
+    },
     "Check and add": {
       "extractionState": "manual",
       "localizations": {
@@ -10302,6 +10786,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "检查内容，然后保存。"
+          }
+        }
+      }
+    },
+    "Check this line.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdź tę wypowiedź."
+          }
+        }
+      }
+    },
+    "Check what Doddy said": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdź, co powiedział Doddy"
           }
         }
       }
@@ -12253,6 +12759,17 @@
         }
       }
     },
+    "Contact": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kontakt"
+          }
+        }
+      }
+    },
     "Continue": {
       "extractionState": "manual",
       "localizations": {
@@ -12607,6 +13124,17 @@
         }
       }
     },
+    "Conversation at ElevenLabs": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rozmowa w ElevenLabs"
+          }
+        }
+      }
+    },
     "Conversation ended": {
       "extractionState": "manual",
       "localizations": {
@@ -12902,6 +13430,17 @@
         }
       }
     },
+    "Cost": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Koszt"
+          }
+        }
+      }
+    },
     "Couldn't check": {
       "extractionState": "manual",
       "localizations": {
@@ -12961,6 +13500,28 @@
         }
       }
     },
+    "Couldn't confirm the call started. Doddy won't redial on its own; the line is checked now.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się potwierdzić, że połączenie ruszyło. Doddy nie zadzwoni ponownie sam; linia jest teraz sprawdzana."
+          }
+        }
+      }
+    },
+    "Couldn't confirm your phone is ringing. If it rings, answer and press 1. Doddy carries on until then.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się potwierdzić, że Twój telefon dzwoni. Jeśli zadzwoni, odbierz i naciśnij 1. Do tego czasu Doddy kontynuuje rozmowę."
+          }
+        }
+      }
+    },
     "Couldn't connect": {
       "extractionState": "manual",
       "localizations": {
@@ -13016,6 +13577,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "无法连接"
+          }
+        }
+      }
+    },
+    "Couldn't connect the rehearsal. Check your internet connection and try again. (%@)": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się połączyć próby. Sprawdź połączenie z internetem i spróbuj ponownie. (%@)"
           }
         }
       }
@@ -13551,6 +14123,17 @@
         }
       }
     },
+    "Curly brackets { } can't be used in a brief.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W karcie nie można używać nawiasów klamrowych { }."
+          }
+        }
+      }
+    },
     "Custom": {
       "extractionState": "manual",
       "localizations": {
@@ -13806,6 +14389,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "每日新闻需要一台 Doddy 消息服务器，而此版本尚未连接任何服务器。"
+          }
+        }
+      }
+    },
+    "Date": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Data"
           }
         }
       }
@@ -15226,6 +15820,17 @@
         }
       }
     },
+    "Deleted from the servers": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usunięte z serwerów"
+          }
+        }
+      }
+    },
     "Deleted on this iPhone, but sharing couldn't be stopped for %lld shared lists (%@). Their copy stays in iCloud and with the people you invited.": {
       "extractionState": "manual",
       "localizations": {
@@ -15603,6 +16208,17 @@
         }
       }
     },
+    "Details": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szczegóły"
+          }
+        }
+      }
+    },
     "Detect when they talk": {
       "extractionState": "manual",
       "localizations": {
@@ -15902,6 +16518,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Device": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Urządzenie"
           }
         }
       }
@@ -16437,6 +17064,17 @@
         }
       }
     },
+    "Doddy announces that the call is recorded or transcribed.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy zapowiada, że rozmowa jest nagrywana lub zapisywana."
+          }
+        }
+      }
+    },
     "Doddy asks for “While Using” only, never “Always”.": {
       "extractionState": "manual",
       "localizations": {
@@ -16492,6 +17130,83 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy 只会请求“使用 App 期间”，绝不会请求“始终”。"
+          }
+        }
+      }
+    },
+    "Doddy asks this question word for word, may ask one short follow-up, then thanks and ends. Ask, don't agree: \"Is the laptop ready?\", not \"Please book me in.\"": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy zada to pytanie dosłownie, może dopytać jeden raz, potem podziękuje i zakończy. Pytaj, nie umawiaj: „Czy laptop jest gotowy?”, a nie „Proszę mnie zapisać”."
+          }
+        }
+      }
+    },
+    "Doddy calls": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy dzwoni"
+          }
+        }
+      }
+    },
+    "Doddy calls %@ now?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy ma teraz zadzwonić: %@?"
+          }
+        }
+      }
+    },
+    "Doddy calls a business in Polish to ask one question for you, after you approve a card.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Po zatwierdzeniu karty Doddy dzwoni do firmy po polsku, aby zadać za Ciebie jedno pytanie."
+          }
+        }
+      }
+    },
+    "Doddy calls a business or a person for you in Polish, says it's an AI calling on your behalf, asks one question and brings the answer back as a card. Nothing is dialled until you approve the card, and Doddy never agrees to anything, pays or gives your PESEL or address unless you tick it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy dzwoni w Twoim imieniu do firmy albo osoby, po polsku, mówi, że jest asystentem AI, zadaje jedno pytanie i przynosi odpowiedź jako kartę. Nic nie jest wybierane, dopóki nie zatwierdzisz karty, a Doddy nigdy na nic się nie zgadza, nie płaci i nie podaje Twojego numeru PESEL ani adresu, chyba że to zaznaczysz."
+          }
+        }
+      }
+    },
+    "Doddy calls for you": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy dzwoni za Ciebie"
+          }
+        }
+      }
+    },
+    "Doddy calls only between 8:00 and 20:00 Polish time, and the whole call must fit. Pick a time:": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy dzwoni tylko między 8:00 a 20:00 czasu polskiego i cała rozmowa musi się w tym zmieścić. Wybierz godzinę:"
           }
         }
       }
@@ -16669,6 +17384,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "只有在你允许时，Doddy 才能使用这些。每一项初始都是关闭的。在你轻点之前，不会添加、启动、发送或打开任何内容。"
+          }
+        }
+      }
+    },
+    "Doddy can't call that number. Only Polish mobile, landline and 800 numbers.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie może zadzwonić na ten numer. Tylko polskie numery komórkowe, stacjonarne i 800."
           }
         }
       }
@@ -17287,6 +18013,17 @@
         }
       }
     },
+    "Doddy doesn't announce a recording (the legal basis isn't confirmed yet).": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie zapowiada nagrywania (podstawa prawna nie jest jeszcze potwierdzona)."
+          }
+        }
+      }
+    },
     "Doddy doesn't speak to anyone here. Use it for a guide, a talk or an announcement, not someone's private conversation.": {
       "extractionState": "manual",
       "localizations": {
@@ -17519,6 +18256,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "如果你在说话时切换语言，Doddy 会跟着切换。"
+          }
+        }
+      }
+    },
+    "Doddy has called this number enough for now. Nothing was dialled. Try again later.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy dzwonił już na ten numer wystarczająco często. Nic nie zostało wybrane. Spróbuj później."
           }
         }
       }
@@ -18255,6 +19003,17 @@
         }
       }
     },
+    "Doddy is calling…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy dzwoni…"
+          }
+        }
+      }
+    },
     "Doddy is locked": {
       "extractionState": "manual",
       "localizations": {
@@ -18314,6 +19073,39 @@
         }
       }
     },
+    "Doddy is on a call": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy prowadzi rozmowę"
+          }
+        }
+      }
+    },
+    "Doddy is ringing your phone. Answer and press 1 to take over. Doddy carries on until you do.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy dzwoni na Twój telefon. Odbierz i naciśnij 1, aby przejąć rozmowę. Do tego czasu Doddy ją kontynuuje."
+          }
+        }
+      }
+    },
+    "Doddy is saying goodbye and hanging up.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy się żegna i rozłącza."
+          }
+        }
+      }
+    },
     "Doddy is speaking": {
       "extractionState": "manual",
       "localizations": {
@@ -18369,6 +19161,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy 正在说话"
+          }
+        }
+      }
+    },
+    "Doddy is talking": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy rozmawia"
           }
         }
       }
@@ -18668,6 +19471,39 @@
         }
       }
     },
+    "Doddy may have agreed to something. Check this line.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy mógł się na coś zgodzić. Sprawdź tę wypowiedź."
+          }
+        }
+      }
+    },
+    "Doddy may say": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy może powiedzieć"
+          }
+        }
+      }
+    },
+    "Doddy must not": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie może"
+          }
+        }
+      }
+    },
     "Doddy needs permission to remind you": {
       "extractionState": "manual",
       "localizations": {
@@ -18841,6 +19677,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy 需要在你使用应用期间获取你的位置，才能在某个地点提醒你。没有设置任何内容。请在设置中允许。"
+          }
+        }
+      }
+    },
+    "Doddy never calls emergency or short numbers.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nigdy nie dzwoni na numery alarmowe ani skrócone."
+          }
+        }
+      }
+    },
+    "Doddy never calls premium or shared-cost numbers.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nigdy nie dzwoni na numery o podwyższonej opłacie ani z dzieloną opłatą."
+          }
+        }
+      }
+    },
+    "Doddy never says card or bank account numbers on a call.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nigdy nie podaje w rozmowie numerów kart ani kont bankowych."
           }
         }
       }
@@ -19030,6 +19899,39 @@
         }
       }
     },
+    "Doddy only calls Polish numbers for now.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na razie Doddy dzwoni tylko na polskie numery."
+          }
+        }
+      }
+    },
+    "Doddy only calls between 8:00 and 20:00 Polish time, and the whole call must fit. Nothing was dialled.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy dzwoni tylko między 8:00 a 20:00 czasu polskiego i cała rozmowa musi się w tym zmieścić. Nic nie zostało wybrane."
+          }
+        }
+      }
+    },
+    "Doddy only calls between 8:00 and 20:00 Polish time, and the whole call must fit. Pick a later time.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy dzwoni tylko między 8:00 a 20:00 czasu polskiego i cała rozmowa musi się w tym zmieścić. Wybierz późniejszą godzinę."
+          }
+        }
+      }
+    },
     "Doddy opens this on the capture screen next time you open the app. Nothing is saved until you tap Save there.": {
       "extractionState": "manual",
       "localizations": {
@@ -19085,6 +19987,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "下次你打开应用时，Doddy 会在记录界面打开它。在你在那里轻点“保存”之前，不会保存任何内容。"
+          }
+        }
+      }
+    },
+    "Doddy opens with: \"Dzień dobry, mówi Doddy, asystent AI, dzwonię w imieniu …\". Check the form of your name after \"w imieniu\".": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy zaczyna od: „Dzień dobry, mówi Doddy, asystent AI, dzwonię w imieniu …”. Sprawdź formę swojego imienia po „w imieniu”."
           }
         }
       }
@@ -19207,6 +20120,61 @@
         }
       }
     },
+    "Doddy rings your phone. Answer and press 1 to join the call.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy zadzwoni na Twój telefon. Odbierz i naciśnij 1, aby dołączyć do rozmowy."
+          }
+        }
+      }
+    },
+    "Doddy said a number that isn't on the card. Check this line.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy podał numer, którego nie ma na karcie. Sprawdź tę wypowiedź."
+          }
+        }
+      }
+    },
+    "Doddy said you'd call back about something outside the card.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy powiedział, że oddzwonisz w sprawie czegoś spoza karty."
+          }
+        }
+      }
+    },
+    "Doddy says first, word for word": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy najpierw mówi, dosłownie"
+          }
+        }
+      }
+    },
+    "Doddy says goodbye when the time is up. Calls happen only between 8:00 and 20:00 Polish time, and the whole call must fit.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gdy czas się skończy, Doddy się pożegna. Połączenia odbywają się tylko między 8:00 a 20:00 czasu polskiego i cała rozmowa musi się w tym zmieścić."
+          }
+        }
+      }
+    },
     "Doddy says his suggestion to them, in their language.": {
       "extractionState": "manual",
       "localizations": {
@@ -19262,6 +20230,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy 会用对方的语言向对方说出他的建议。"
+          }
+        }
+      }
+    },
+    "Doddy says the opening line on the card first, asks the question and ends the call. You can take over or end it from this screen or the Lock Screen.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy najpierw powie zdanie otwierające z karty, zada pytanie i zakończy rozmowę. Możesz ją przejąć albo zakończyć z tego ekranu lub z ekranu blokady."
           }
         }
       }
@@ -19502,6 +20481,39 @@
         }
       }
     },
+    "Doddy will call at %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy zadzwoni o %@."
+          }
+        }
+      }
+    },
+    "Doddy will call at %@. You can cancel until then.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy zadzwoni o %@. Do tego czasu możesz to anulować."
+          }
+        }
+      }
+    },
+    "Doddy will call at the time you picked.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy zadzwoni o wybranej godzinie."
+          }
+        }
+      }
+    },
     "Doddy wrote these down during calls. They become memories only when you save them.": {
       "extractionState": "manual",
       "localizations": {
@@ -19616,6 +20628,50 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy 的闹钟在静音模式或专注模式下也会响。这里只显示由 Doddy 设置的闹钟；“时钟”应用的闹钟不会显示。"
+          }
+        }
+      }
+    },
+    "Doddy's call": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Połączenie Doddy’ego"
+          }
+        }
+      }
+    },
+    "Doddy's calling line isn't set up on the server yet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Linia, z której dzwoni Doddy, nie jest jeszcze skonfigurowana na serwerze."
+          }
+        }
+      }
+    },
+    "Doddy's calling voice doesn't match its approved settings, so nothing was dialled.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Głos, którym dzwoni Doddy, nie zgadza się z zatwierdzonymi ustawieniami, więc nic nie zostało wybrane."
+          }
+        }
+      }
+    },
+    "Doddy's calling voice doesn't match its approved settings, so the server refuses to call until that's fixed.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Głos, którym dzwoni Doddy, nie zgadza się z zatwierdzonymi ustawieniami, więc serwer nie dzwoni, dopóki to nie zostanie poprawione."
           }
         }
       }
@@ -19974,6 +21030,17 @@
         }
       }
     },
+    "Doddy's voice (ElevenLabs)": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Głos Doddy’ego (ElevenLabs)"
+          }
+        }
+      }
+    },
     "Doddy's voice needs the internet. You can still write or dictate a note here; it's saved on this iPhone.": {
       "extractionState": "manual",
       "localizations": {
@@ -20155,6 +21222,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Doddy's voice wasn't available": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Głos Doddy’ego był niedostępny"
           }
         }
       }
@@ -22106,6 +23184,28 @@
         }
       }
     },
+    "End the call": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zakończ rozmowę"
+          }
+        }
+      }
+    },
+    "End the conversation with Doddy first: a rehearsal needs the microphone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najpierw zakończ rozmowę z Doddym: próba potrzebuje mikrofonu."
+          }
+        }
+      }
+    },
     "Ended": {
       "extractionState": "manual",
       "localizations": {
@@ -23172,6 +24272,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "导出为文本"
+          }
+        }
+      }
+    },
+    "Export my calls": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eksportuj moje połączenia"
           }
         }
       }
@@ -24356,6 +25467,17 @@
         }
       }
     },
+    "Five cards are waiting already. Use or cancel one first.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pięć kart już czeka. Najpierw użyj albo anuluj którąś."
+          }
+        }
+      }
+    },
     "Fix the name if Doddy misheard. Nothing is made until you tap Create list.": {
       "extractionState": "manual",
       "localizations": {
@@ -25308,6 +26430,17 @@
         }
       }
     },
+    "From Contacts": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Z Kontaktów"
+          }
+        }
+      }
+    },
     "From Doddy": {
       "extractionState": "manual",
       "localizations": {
@@ -25422,6 +26555,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "从 Google Keep 导入：在 Google Takeout 中导出 Keep。在“文件”应用中轻点 .zip 文件解压，打开 Keep 文件夹并选择 .json 文件。也可以选择 .txt 和 .md 文件。"
+          }
+        }
+      }
+    },
+    "From a note": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Z notatki"
           }
         }
       }
@@ -25544,6 +26688,17 @@
         }
       }
     },
+    "General": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ogólne"
+          }
+        }
+      }
+    },
     "Give the list a name.": {
       "extractionState": "manual",
       "localizations": {
@@ -25599,6 +26754,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "给清单起个名字。"
+          }
+        }
+      }
+    },
+    "Give your PESEL or address, unless ticked above as one": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podawać Twojego PESEL ani adresu, chyba że są zaznaczone wyżej jako takie"
           }
         }
       }
@@ -25776,6 +26942,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "回到主屏幕，然后轻点两下 iPhone 背面。快捷指令应该会把你带回 Doddy。"
+          }
+        }
+      }
+    },
+    "Goal": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cel"
+          }
+        }
+      }
+    },
+    "Goal and question": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cel i pytanie"
+          }
+        }
+      }
+    },
+    "Goal, in one sentence": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cel, jednym zdaniem"
           }
         }
       }
@@ -26429,6 +27628,17 @@
         }
       }
     },
+    "High confidence": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wysoka pewność"
+          }
+        }
+      }
+    },
     "Home": {
       "extractionState": "manual",
       "localizations": {
@@ -26901,6 +28111,17 @@
         }
       }
     },
+    "I'll call myself": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dzwonię sam"
+          }
+        }
+      }
+    },
     "If it repeats, only this time changes. Nothing is deleted.": {
       "extractionState": "manual",
       "localizations": {
@@ -27015,6 +28236,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "如果是重复的，只删除这一次。这无法从 Doddy 中撤销。"
+          }
+        }
+      }
+    },
+    "If they ask for anything outside the card, Doddy says it will check with you and call back.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jeśli rozmówca poprosi o coś spoza karty, Doddy powie, że sprawdzi to z Tobą i oddzwoni."
+          }
+        }
+      }
+    },
+    "If they ask for anything outside the card, Doddy says the line above and ends politely.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jeśli rozmówca poprosi o coś spoza karty, Doddy powie zdanie powyżej i uprzejmie zakończy."
           }
         }
       }
@@ -29537,6 +30780,17 @@
         }
       }
     },
+    "Joining you in (Twilio)": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dołączenie Cię do rozmowy (Twilio)"
+          }
+        }
+      }
+    },
     "Keep Precise Location on, or iOS can't tell when you get there.": {
       "extractionState": "manual",
       "localizations": {
@@ -30631,6 +31885,47 @@
         }
       }
     },
+    "Kept only on this iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Kept only on this iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Kept only on this iPhone."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Przechowywany tylko na tym iPadzie."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Przechowywany tylko na tym iPhonie."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Kept so you can see them. Doddy doesn't use anything here.": {
       "extractionState": "manual",
       "localizations": {
@@ -30804,6 +32099,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "关键词，用逗号分隔"
+          }
+        }
+      }
+    },
+    "Kind": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rodzaj"
+          }
+        }
+      }
+    },
+    "Known cost, all calls": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Znany koszt, wszystkie połączenia"
           }
         }
       }
@@ -31630,6 +32947,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "保持不变（那天没有这个时间）：%@"
+          }
+        }
+      }
+    },
+    "Length": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Długość"
           }
         }
       }
@@ -32814,6 +34142,28 @@
         }
       }
     },
+    "Live transcript (Twilio)": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapis na żywo (Twilio)"
+          }
+        }
+      }
+    },
+    "Live transcript lines": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wiersze zapisu na żywo"
+          }
+        }
+      }
+    },
     "Live, Doddy can hear you": {
       "extractionState": "manual",
       "localizations": {
@@ -33471,6 +34821,17 @@
         }
       }
     },
+    "Longest call": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najdłuższa rozmowa"
+          }
+        }
+      }
+    },
     "Looking for": {
       "extractionState": "manual",
       "localizations": {
@@ -33589,6 +34950,17 @@
         }
       }
     },
+    "Lost touch with Doddy's server. The call carries on there; open this call again to check.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Utracono kontakt z serwerem Doddy’ego. Rozmowa trwa tam dalej; otwórz to połączenie ponownie, aby sprawdzić."
+          }
+        }
+      }
+    },
     "Low": {
       "extractionState": "manual",
       "localizations": {
@@ -33644,6 +35016,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "低"
+          }
+        }
+      }
+    },
+    "Low confidence: check the transcript": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niska pewność: sprawdź zapis"
+          }
+        }
+      }
+    },
+    "Made from the live transcript only; the voice provider's transcript never came.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zrobione tylko z zapisu na żywo; zapis od dostawcy głosu nie dotarł."
           }
         }
       }
@@ -34368,6 +35762,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "中"
+          }
+        }
+      }
+    },
+    "Medium confidence": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Średnia pewność"
           }
         }
       }
@@ -36217,6 +37622,17 @@
         }
       }
     },
+    "Name (for example: Serwis Komputerowy Bajt)": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nazwa (na przykład: Serwis Komputerowy Bajt)"
+          }
+        }
+      }
+    },
     "Name this place": {
       "extractionState": "manual",
       "localizations": {
@@ -36984,6 +38400,28 @@
         }
       }
     },
+    "New call": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nowe połączenie"
+          }
+        }
+      }
+    },
+    "New card from this brief": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nowa karta z tych samych danych"
+          }
+        }
+      }
+    },
     "New list": {
       "extractionState": "manual",
       "localizations": {
@@ -37338,6 +38776,17 @@
         }
       }
     },
+    "Next step": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Następny krok"
+          }
+        }
+      }
+    },
     "Nicely done": {
       "extractionState": "manual",
       "localizations": {
@@ -37511,6 +38960,102 @@
           "stringUnit": {
             "state": "translated",
             "value": "没有 Doddy 设置的闹钟。可以让 Doddy 设置，例如“七点叫我起床”。"
+          }
+        }
+      }
+    },
+    "No answer": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bez odpowiedzi"
+          }
+        }
+      }
+    },
+    "No answer card yet": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jeszcze bez karty odpowiedzi"
+          }
+        }
+      }
+    },
+    "No answer found in the transcript": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W zapisie nie znaleziono odpowiedzi"
+          }
+        }
+      }
+    },
+    "No answer to the question was found.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie znaleziono odpowiedzi na pytanie."
+          }
+        }
+      }
+    },
+    "No audio is recorded. A text transcript is made; after the call it is kept on this iPhone and the server's copies are deleted.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "No audio is recorded. A text transcript is made; after the call it is kept on this iPad and the server's copies are deleted."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "No audio is recorded. A text transcript is made; after the call it is kept on this iPhone and the server's copies are deleted."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Dźwięk nie jest nagrywany. Powstaje zapis tekstowy; po rozmowie jest przechowywany na tym iPadzie, a kopie na serwerach są usuwane."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Dźwięk nie jest nagrywany. Powstaje zapis tekstowy; po rozmowie jest przechowywany na tym iPhonie, a kopie na serwerach są usuwane."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "No calls yet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jeszcze nie ma połączeń."
           }
         }
       }
@@ -39049,6 +40594,17 @@
         }
       }
     },
+    "Not dialled": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie wybrano numeru"
+          }
+        }
+      }
+    },
     "Not everything this import added could be removed. Check your notes and lists.": {
       "extractionState": "manual",
       "localizations": {
@@ -39163,6 +40719,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "不是来自你的笔记。这是一个一般性回答。"
+          }
+        }
+      }
+    },
+    "Not known": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nieznane"
+          }
+        }
+      }
+    },
+    "Not known: %@. Never counted as zero.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nieznane: %@. Nigdy nie liczone jako zero."
           }
         }
       }
@@ -40225,6 +41803,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "已保存的笔记：%lld"
+          }
+        }
+      }
+    },
+    "Nothing beyond the question.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nic poza pytaniem."
           }
         }
       }
@@ -43152,6 +44741,61 @@
         }
       }
     },
+    "Number from Contacts: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Numer z Kontaktów: %@"
+          }
+        }
+      }
+    },
+    "Number from a note": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Numer z notatki"
+          }
+        }
+      }
+    },
+    "Number from a note: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Numer z notatki: %@"
+          }
+        }
+      }
+    },
+    "Number typed in": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Numer wpisany ręcznie"
+          }
+        }
+      }
+    },
+    "Number typed in, from: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Numer wpisany ręcznie, źródło: %@"
+          }
+        }
+      }
+    },
     "OK": {
       "extractionState": "manual",
       "localizations": {
@@ -43443,6 +45087,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "每次通话时，Doddy 在查看你的记忆或记笔记之前都会要求输入这个 PIN 码，因为来电号码可能被伪造。输错五次后，PIN 码输入会被锁定，每次锁定时间更长，并且你会收到通知。"
+          }
+        }
+      }
+    },
+    "On whose behalf": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W czyim imieniu"
           }
         }
       }
@@ -44713,6 +46368,47 @@
         }
       }
     },
+    "Only ticked facts leave this iPhone, at most five. A PESEL or an address is left unticked when you add it: tick it, and mark it as one, only if Doddy really needs to give it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Only ticked facts leave this iPad, at most five. A PESEL or an address is left unticked when you add it: tick it, and mark it as one, only if Doddy really needs to give it."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Only ticked facts leave this iPhone, at most five. A PESEL or an address is left unticked when you add it: tick it, and mark it as one, only if Doddy really needs to give it."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Z tego iPada wychodzą tylko zaznaczone informacje, najwyżej pięć. PESEL albo adres po dodaniu zostaje niezaznaczony: zaznacz go i oznacz jako taki tylko wtedy, gdy Doddy naprawdę musi go podać."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Z tego iPhone’a wychodzą tylko zaznaczone informacje, najwyżej pięć. PESEL albo adres po dodaniu zostaje niezaznaczony: zaznacz go i oznacz jako taki tylko wtedy, gdy Doddy naprawdę musi go podać."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Only what you choose to save appears here. Nothing is added automatically.": {
       "extractionState": "manual",
       "localizations": {
@@ -45358,6 +47054,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "打开 Doddy 再读一遍"
+          }
+        }
+      }
+    },
+    "Open Doddy to see the call as it is now.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz Doddy’ego, aby zobaczyć aktualny stan rozmowy."
           }
         }
       }
@@ -47140,6 +48847,17 @@
         }
       }
     },
+    "PESEL": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PESEL"
+          }
+        }
+      }
+    },
     "PIN": {
       "extractionState": "manual",
       "localizations": {
@@ -47313,6 +49031,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "已停车"
+          }
+        }
+      }
+    },
+    "Part of the cost isn't reported yet; it is checked again when you open this call.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Część kosztu nie jest jeszcze znana; zostanie sprawdzona ponownie, gdy otworzysz to połączenie."
           }
         }
       }
@@ -47789,6 +49518,17 @@
         }
       }
     },
+    "Pay or give card or account numbers": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Płacić ani podawać numerów kart czy kont"
+          }
+        }
+      }
+    },
     "Payments": {
       "extractionState": "manual",
       "localizations": {
@@ -47903,6 +49643,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "人"
+          }
+        }
+      }
+    },
+    "Per answered call": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na odebrane połączenie"
           }
         }
       }
@@ -48080,6 +49831,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "与 Doddy 通电话"
+          }
+        }
+      }
+    },
+    "Phone line (Twilio)": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Linia telefoniczna (Twilio)"
+          }
+        }
+      }
+    },
+    "Phone line and transcript from Twilio, Doddy's voice from ElevenLabs, the answer card from Claude. Twilio's price arrives after the call; the rest is estimated from documented prices.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Linia i zapis od Twilio, głos Doddy’ego od ElevenLabs, karta odpowiedzi od Claude. Cena Twilio przychodzi po rozmowie; resztę szacujemy z opublikowanych cen."
+          }
+        }
+      }
+    },
+    "Phone number": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Numer telefonu"
           }
         }
       }
@@ -48434,6 +50218,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "至少选择一个主题或订阅源。"
+          }
+        }
+      }
+    },
+    "Pick from Contacts": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wybierz z Kontaktów"
           }
         }
       }
@@ -49213,6 +51008,17 @@
         }
       }
     },
+    "Polish mobile, landline and 800 numbers only. Never emergency, premium or foreign numbers. The card shows where the number came from.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tylko polskie numery komórkowe, stacjonarne i 800. Nigdy alarmowe, o podwyższonej opłacie ani zagraniczne. Karta pokazuje, skąd jest numer."
+          }
+        }
+      }
+    },
     "Polish native": {
       "extractionState": "manual",
       "localizations": {
@@ -49689,6 +51495,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Prepare the card": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przygotuj kartę"
           }
         }
       }
@@ -50649,6 +52466,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "退出 Doddy"
+          }
+        }
+      }
+    },
+    "Quoted word for word from the transcript": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cytat dosłownie z zapisu rozmowy"
           }
         }
       }
@@ -51947,6 +53775,50 @@
           "stringUnit": {
             "state": "translated",
             "value": "无法开始录音。如果你正在和 Doddy 聊天或正在通话，请先结束。"
+          }
+        }
+      }
+    },
+    "Reference number": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Numer sprawy"
+          }
+        }
+      }
+    },
+    "Rehearsal": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Próba"
+          }
+        }
+      }
+    },
+    "Rehearse again": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przećwicz ponownie"
+          }
+        }
+      }
+    },
+    "Rehearse first": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najpierw przećwicz"
           }
         }
       }
@@ -55082,6 +56954,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "检查并完成"
+          }
+        }
+      }
+    },
+    "Ringing": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dzwoni"
+          }
+        }
+      }
+    },
+    "Ringing your phone (Twilio)": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dzwonienie na Twój telefon (Twilio)"
+          }
+        }
+      }
+    },
+    "Ringing…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dzwoni…"
           }
         }
       }
@@ -58371,6 +60276,17 @@
         }
       }
     },
+    "Say who Doddy is calling.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podaj, do kogo dzwoni Doddy."
+          }
+        }
+      }
+    },
     "Say “Hey Doddy” and I'll answer. I listen for it on this iPhone, with iOS's orange microphone dot showing, until you stop me. It uses some battery.": {
       "extractionState": "manual",
       "localizations": {
@@ -58552,6 +60468,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Saying goodbye": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Żegna się"
           }
         }
       }
@@ -61168,6 +63095,17 @@
         }
       }
     },
+    "Share the export": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Udostępnij eksport"
+          }
+        }
+      }
+    },
     "Share this place with everyone on the list": {
       "extractionState": "manual",
       "localizations": {
@@ -63231,6 +65169,17 @@
         }
       }
     },
+    "Something Doddy said needs a look (below).": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coś, co powiedział Doddy, wymaga sprawdzenia (niżej)."
+          }
+        }
+      }
+    },
     "Something else": {
       "extractionState": "manual",
       "localizations": {
@@ -63345,6 +65294,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "该请求中的某些内容未被接受。没有更改任何内容。"
+          }
+        }
+      }
+    },
+    "Something in the brief is too long for the server.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coś w karcie jest za długie dla serwera."
+          }
+        }
+      }
+    },
+    "Something is too long: goal up to 160 characters, question up to 200, each fact up to 160.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coś jest za długie: cel do 160 znaków, pytanie do 200, każda informacja do 160."
           }
         }
       }
@@ -64112,6 +66083,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "开启购物模式"
+          }
+        }
+      }
+    },
+    "Start the rehearsal": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zacznij próbę"
           }
         }
       }
@@ -65784,6 +67766,28 @@
         }
       }
     },
+    "Summary made from the transcript by fixed rules.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podsumowanie zrobione z zapisu według stałych reguł."
+          }
+        }
+      }
+    },
+    "Summary written by Claude from the transcript.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podsumowanie napisane przez Claude na podstawie zapisu."
+          }
+        }
+      }
+    },
     "Switch off in Doddy": {
       "extractionState": "manual",
       "localizations": {
@@ -66020,6 +68024,28 @@
         }
       }
     },
+    "Take over": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przejmij"
+          }
+        }
+      }
+    },
+    "Take over the call": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przejmij rozmowę"
+          }
+        }
+      }
+    },
     "Taken off": {
       "extractionState": "manual",
       "localizations": {
@@ -66075,6 +68101,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "已停用"
+          }
+        }
+      }
+    },
+    "Taking over needs a verified Polish phone number.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przejęcie rozmowy wymaga zweryfikowanego polskiego numeru."
           }
         }
       }
@@ -67621,6 +69658,17 @@
         }
       }
     },
+    "That doesn't look like a phone number.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To nie wygląda na numer telefonu."
+          }
+        }
+      }
+    },
     "That doesn't look like a phone number. Include the country code, like +48 500 100 200.": {
       "extractionState": "manual",
       "localizations": {
@@ -68860,6 +70908,17 @@
         }
       }
     },
+    "That was the last try for this card. Make a new one to call again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To była ostatnia próba z tej karty. Przygotuj nową, aby zadzwonić ponownie."
+          }
+        }
+      }
+    },
     "That was too short to keep. Tap Record and speak, then Stop.": {
       "extractionState": "manual",
       "localizations": {
@@ -68978,6 +71037,28 @@
         }
       }
     },
+    "That's Doddy's own number.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To numer samego Doddy’ego."
+          }
+        }
+      }
+    },
+    "That's the limit for calls by Doddy for now. Nothing was dialled. Try again later.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na razie to limit połączeń Doddy’ego. Nic nie zostało wybrane. Spróbuj później."
+          }
+        }
+      }
+    },
     "That's the limit for calls for now. Try again later.": {
       "extractionState": "manual",
       "localizations": {
@@ -69092,6 +71173,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "不对"
+          }
+        }
+      }
+    },
+    "That's your own number. Doddy calls other people for you.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To Twój własny numer. Doddy dzwoni w Twoim imieniu do innych."
           }
         }
       }
@@ -69269,6 +71361,102 @@
           "stringUnit": {
             "state": "translated",
             "value": "“快捷指令”应用会短暂打开。"
+          }
+        }
+      }
+    },
+    "The answer card is in Doddy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Karta odpowiedzi jest w Doddym."
+          }
+        }
+      }
+    },
+    "The answer is saved on this iPhone, but the server's copy couldn't be deleted yet: %@ Doddy asks again the next time you open this call.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The answer is saved on this iPad, but the server's copy couldn't be deleted yet: %@ Doddy asks again the next time you open this call."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The answer is saved on this iPhone, but the server's copy couldn't be deleted yet: %@ Doddy asks again the next time you open this call."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Odpowiedź jest zapisana na tym iPadzie, ale kopii na serwerze nie udało się jeszcze usunąć: %@ Doddy poprosi o to ponownie, gdy następnym razem otworzysz to połączenie."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Odpowiedź jest zapisana na tym iPhonie, ale kopii na serwerze nie udało się jeszcze usunąć: %@ Doddy poprosi o to ponownie, gdy następnym razem otworzysz to połączenie."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "The answer is spread over several replies.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odpowiedź jest rozłożona na kilka wypowiedzi."
+          }
+        }
+      }
+    },
+    "The answer on the server changed. Open the call again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odpowiedź na serwerze się zmieniła. Otwórz połączenie ponownie."
+          }
+        }
+      }
+    },
+    "The answer sounded unsure.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odpowiedź brzmiała niepewnie."
+          }
+        }
+      }
+    },
+    "The approved brief": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zatwierdzona karta"
           }
         }
       }
@@ -69517,6 +71705,124 @@
         }
       }
     },
+    "The call can't be taken over now: it hasn't started talking, or less than 30 seconds are left.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Teraz nie można przejąć rozmowy: jeszcze się nie zaczęła albo zostało mniej niż 30 sekund."
+          }
+        }
+      }
+    },
+    "The call ended, but the answer card isn't here yet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rozmowa się zakończyła, ale karty odpowiedzi jeszcze tu nie ma."
+          }
+        }
+      }
+    },
+    "The call ended. Doddy is preparing the answer card…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rozmowa się zakończyła. Doddy przygotowuje kartę odpowiedzi…"
+          }
+        }
+      }
+    },
+    "The call failed": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Połączenie się nie udało"
+          }
+        }
+      }
+    },
+    "The call is on. End it first.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rozmowa trwa. Najpierw ją zakończ."
+          }
+        }
+      }
+    },
+    "The call isn't on any more.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rozmowa już się nie toczy."
+          }
+        }
+      }
+    },
+    "The call reached its time limit.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rozmowa osiągnęła limit czasu."
+          }
+        }
+      }
+    },
+    "The card couldn't be saved on this iPhone, so it was withdrawn. Nothing was dialled. %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The card couldn't be saved on this iPad, so it was withdrawn. Nothing was dialled. %@"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The card couldn't be saved on this iPhone, so it was withdrawn. Nothing was dialled. %@"
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Nie udało się zapisać karty na tym iPadzie, więc została wycofana. Nic nie zostało wybrane. %@"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Nie udało się zapisać karty na tym iPhonie, więc została wycofana. Nic nie zostało wybrane. %@"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "The check-in couldn't be set. Try again.": {
       "extractionState": "manual",
       "localizations": {
@@ -69572,6 +71878,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "无法设置早间概览。请重试。"
+          }
+        }
+      }
+    },
+    "The fact marked PESEL doesn't hold a valid PESEL.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Informacja oznaczona jako PESEL nie zawiera poprawnego numeru PESEL."
           }
         }
       }
@@ -70788,6 +73105,17 @@
         }
       }
     },
+    "The one question Doddy asks": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jedno pytanie, które zada Doddy"
+          }
+        }
+      }
+    },
     "The original\nis right here.": {
       "extractionState": "manual",
       "localizations": {
@@ -70902,6 +73230,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "原始记录保持原样，并且仍可查看。"
+          }
+        }
+      }
+    },
+    "The phone service couldn't ring your phone. Doddy carries on with the call.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Operator nie mógł zadzwonić na Twój telefon. Doddy kontynuuje rozmowę."
+          }
+        }
+      }
+    },
+    "The phone service turned the call down, so nothing was dialled. Try again in a few minutes.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Operator odrzucił połączenie, więc nic nie zostało wybrane. Spróbuj za kilka minut."
           }
         }
       }
@@ -71268,6 +73618,17 @@
         }
       }
     },
+    "The question asks Doddy to agree to, book or pay for something. Doddy only asks; rephrase it as a question.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pytanie prosi Doddy’ego, żeby na coś się zgodził, coś zarezerwował albo za coś zapłacił. Doddy tylko pyta; przeformułuj to jako pytanie."
+          }
+        }
+      }
+    },
     "The recording is deleted from this iPhone. The note's words stay.": {
       "extractionState": "manual",
       "localizations": {
@@ -71453,6 +73814,17 @@
         }
       }
     },
+    "The rehearsal couldn't be prepared from this card.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się przygotować próby z tej karty."
+          }
+        }
+      }
+    },
     "The restored notes couldn't be confirmed, so nothing from the file was added.": {
       "extractionState": "manual",
       "localizations": {
@@ -71508,6 +73880,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "无法确认恢复的笔记，所以没有添加该文件中的任何内容。"
+          }
+        }
+      }
+    },
+    "The same fact is ticked twice.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ta sama informacja jest zaznaczona dwa razy."
           }
         }
       }
@@ -71626,6 +74009,50 @@
           "stringUnit": {
             "state": "translated",
             "value": "无法确认保存，所以不算已保存。你的文字还在这里。"
+          }
+        }
+      }
+    },
+    "The server didn't accept that right now.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer teraz tego nie przyjął."
+          }
+        }
+      }
+    },
+    "The server stopped this call before dialling. Nothing was dialled.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer zatrzymał to połączenie przed wybraniem numeru. Nic nie zostało wybrane."
+          }
+        }
+      }
+    },
+    "The server won't send this brief (%@).": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer nie wyśle tej karty (%@)."
+          }
+        }
+      }
+    },
+    "The suggested quote wasn't word for word in the transcript, so it was dropped.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Proponowanego cytatu nie było dosłownie w zapisie, więc został pominięty."
           }
         }
       }
@@ -71803,6 +74230,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "无法设置每周整理。请重试。"
+          }
+        }
+      }
+    },
+    "The transcript appears here as they talk.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapis pojawia się tutaj w trakcie rozmowy."
           }
         }
       }
@@ -72346,6 +74784,17 @@
         }
       }
     },
+    "Then Doddy listens, may ask one short follow-up question, thanks and ends the call.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Potem Doddy słucha, może raz krótko dopytać, dziękuje i kończy rozmowę."
+          }
+        }
+      }
+    },
     "There are no words in it.": {
       "extractionState": "manual",
       "localizations": {
@@ -72519,6 +74968,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "这里没有 Doddy 可以保留的文字或网页链接。没有保存任何内容。"
+          }
+        }
+      }
+    },
+    "They": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rozmówca"
+          }
+        }
+      }
+    },
+    "They asked for something outside the card.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rozmówca pytał o coś spoza karty."
           }
         }
       }
@@ -73188,6 +75659,28 @@
         }
       }
     },
+    "This call": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To połączenie"
+          }
+        }
+      }
+    },
+    "This call was already answered. For another call, make a new card.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na to połączenie już odpowiedziano. Na kolejne przygotuj nową kartę."
+          }
+        }
+      }
+    },
     "This can't be undone from Doddy.": {
       "extractionState": "manual",
       "localizations": {
@@ -73243,6 +75736,50 @@
           "stringUnit": {
             "state": "translated",
             "value": "这无法从 Doddy 中撤销。"
+          }
+        }
+      }
+    },
+    "This card can't be approved any more.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tej karty nie można już zatwierdzić."
+          }
+        }
+      }
+    },
+    "This card doesn't match what the server holds. Make a new one.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ta karta nie zgadza się z tym, co ma serwer. Przygotuj nową."
+          }
+        }
+      }
+    },
+    "This card has expired. Make a new one from the same brief.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ta karta wygasła. Przygotuj nową na podstawie tych samych danych."
+          }
+        }
+      }
+    },
+    "This card was cancelled.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ta karta została anulowana."
           }
         }
       }
@@ -74305,6 +76842,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "这条记忆已不存在。"
+          }
+        }
+      }
+    },
+    "This note can't be read any more, so it can't be saved.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tej notatki nie da się już odczytać, więc nie można jej zapisać."
           }
         }
       }
@@ -76001,6 +78549,17 @@
         }
       }
     },
+    "Tick at most five facts Doddy may say.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaznacz najwyżej pięć informacji, które Doddy może podać."
+          }
+        }
+      }
+    },
     "Ticked by %@": {
       "extractionState": "manual",
       "localizations": {
@@ -76536,6 +79095,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Tips on how it went": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wskazówki, jak poszło"
           }
         }
       }
@@ -77252,6 +79822,69 @@
           "stringUnit": {
             "state": "translated",
             "value": "主题"
+          }
+        }
+      }
+    },
+    "Transcript": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapis rozmowy"
+          }
+        }
+      }
+    },
+    "Transcript from the voice provider": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapis od dostawcy głosu"
+          }
+        }
+      }
+    },
+    "Transcripts are kept only on this iPhone once the answer card is saved here. Deleting a call here deletes it from this iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Transcripts are kept only on this iPad once the answer card is saved here. Deleting a call here deletes it from this iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Transcripts are kept only on this iPhone once the answer card is saved here. Deleting a call here deletes it from this iPhone."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Gdy karta odpowiedzi jest zapisana tutaj, zapisy rozmów są przechowywane tylko na tym iPadzie. Usunięcie połączenia tutaj usuwa je z tego iPada."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Gdy karta odpowiedzi jest zapisana tutaj, zapisy rozmów są przechowywane tylko na tym iPhonie. Usunięcie połączenia tutaj usuwa je z tego iPhone’a."
+                }
+              }
+            }
           }
         }
       }
@@ -78613,6 +81246,17 @@
         }
       }
     },
+    "Twilio keeps its call log (numbers, times, duration, price) under its own retention. No audio is recorded anywhere.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twilio przechowuje swój rejestr połączeń (numery, godziny, czas trwania, cena) według własnych zasad. Dźwięk nie jest nigdzie nagrywany."
+          }
+        }
+      }
+    },
     "Twilio sends a one-time code to check the number is yours. Texts with updates only start after you turn them on.": {
       "extractionState": "manual",
       "localizations": {
@@ -78904,6 +81548,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "文字 AI 提问"
+          }
+        }
+      }
+    },
+    "Typed in": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wpisany ręcznie"
           }
         }
       }
@@ -80804,6 +83459,17 @@
         }
       }
     },
+    "Verify your phone number first, in Settings → Notifications and texts. Doddy rings it if you take over a call.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najpierw zweryfikuj swój numer w Ustawieniach → Powiadomienia i SMS-y. Doddy dzwoni na niego, gdy przejmujesz rozmowę."
+          }
+        }
+      }
+    },
     "Verify your phone number first.": {
       "extractionState": "manual",
       "localizations": {
@@ -81158,6 +83824,28 @@
         }
       }
     },
+    "Voice isn't set up yet. Try again later.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Głos nie jest jeszcze skonfigurowany. Spróbuj później."
+          }
+        }
+      }
+    },
+    "Voicemail": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poczta głosowa"
+          }
+        }
+      }
+    },
     "Waiting": {
       "extractionState": "manual",
       "localizations": {
@@ -81276,6 +83964,17 @@
         }
       }
     },
+    "Waiting for its time": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czeka na swoją godzinę"
+          }
+        }
+      }
+    },
     "Waiting for your answer": {
       "extractionState": "manual",
       "localizations": {
@@ -81331,6 +84030,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "等待你的回答"
+          }
+        }
+      }
+    },
+    "Waiting for your approval": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czeka na Twoją zgodę"
           }
         }
       }
@@ -82102,6 +84812,17 @@
         }
       }
     },
+    "What Doddy may say": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co Doddy może powiedzieć"
+          }
+        }
+      }
+    },
     "What I can do": {
       "extractionState": "manual",
       "localizations": {
@@ -82578,6 +85299,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "要记住的内容"
+          }
+        }
+      }
+    },
+    "What to say": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co powiedzieć"
           }
         }
       }
@@ -84151,6 +86883,28 @@
         }
       }
     },
+    "Where exactly (optional, e.g. their website)": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skąd dokładnie (opcjonalnie, np. ich strona)"
+          }
+        }
+      }
+    },
+    "Where the number came from": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skąd jest numer"
+          }
+        }
+      }
+    },
     "Where your information goes, based on your settings right now. Nothing is sold, and there are no ads or analytics.": {
       "extractionState": "manual",
       "localizations": {
@@ -84387,6 +87141,28 @@
         }
       }
     },
+    "Who": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kto"
+          }
+        }
+      }
+    },
+    "Who Doddy calls": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do kogo dzwoni Doddy"
+          }
+        }
+      }
+    },
     "Widgets": {
       "extractionState": "manual",
       "localizations": {
@@ -84560,6 +87336,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "开启“通话记忆”后，你的笔记副本也会存在你的 Doddy 消息服务器上。"
+          }
+        }
+      }
+    },
+    "Withdraw the card": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wycofaj kartę"
           }
         }
       }
@@ -84859,6 +87646,28 @@
         }
       }
     },
+    "Write the goal of the call in one sentence.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opisz cel rozmowy jednym zdaniem."
+          }
+        }
+      }
+    },
+    "Write the one question Doddy asks.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wpisz jedno pytanie, które zada Doddy."
+          }
+        }
+      }
+    },
     "Writing it out on this iPhone…": {
       "extractionState": "manual",
       "localizations": {
@@ -85040,6 +87849,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Wrong number": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pomyłka"
           }
         }
       }
@@ -85280,6 +88100,17 @@
         }
       }
     },
+    "You": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ty"
+          }
+        }
+      }
+    },
     "You also have an unfinished note from %@. It's kept; it opens the next time you start a new note.": {
       "extractionState": "manual",
       "localizations": {
@@ -85453,6 +88284,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "你说：“周六我在妈妈家吃午饭。提醒我带上备用钥匙，记住它在哪里，再启动一个煮意面的计时器。”"
+          }
+        }
+      }
+    },
+    "You call from your own phone. Doddy isn't on the line and nothing is transcribed.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dzwonisz ze swojego telefonu. Doddy’ego nie ma na linii i nic nie jest zapisywane."
           }
         }
       }
@@ -86078,6 +88920,28 @@
         }
       }
     },
+    "You took over": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przejęto rozmowę"
+          }
+        }
+      }
+    },
+    "You took over, so the rest of the call isn't in the transcript.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rozmowa została przejęta, więc jej dalszej części nie ma w zapisie."
+          }
+        }
+      }
+    },
     "You turned notifications off for Doddy in iOS Settings. Turn them on there to get updates.": {
       "extractionState": "manual",
       "localizations": {
@@ -86310,6 +89174,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "你已离线。Doddy 的语音需要联网。"
+          }
+        }
+      }
+    },
+    "You're on the call": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Teraz Ty rozmawiasz"
+          }
+        }
+      }
+    },
+    "You're on the call now; hang up on your phone to end it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Teraz Ty prowadzisz rozmowę; rozłącz się w telefonie, aby ją zakończyć."
+          }
+        }
+      }
+    },
+    "You're on the call. Hang up on your phone to end it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Teraz Ty rozmawiasz. Rozłącz się w telefonie, aby zakończyć."
           }
         }
       }
@@ -86640,6 +89537,17 @@
         }
       }
     },
+    "Your calls": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoje połączenia"
+          }
+        }
+      }
+    },
     "Your day": {
       "extractionState": "manual",
       "localizations": {
@@ -86754,6 +89662,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "你的一天，\n一目了然。"
+          }
+        }
+      }
+    },
+    "Your first name": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoje imię"
           }
         }
       }
@@ -88103,6 +91022,17 @@
         }
       }
     },
+    "Your phone was rung twice already. Doddy carries on with the call.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twój telefon dzwonił już dwa razy. Doddy kontynuuje rozmowę."
+          }
+        }
+      }
+    },
     "Your preferences changed somewhere else while you were editing. Nothing was saved; your edits are still here. Check them and save again.": {
       "extractionState": "manual",
       "localizations": {
@@ -88158,6 +91088,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "你编辑期间，偏好在别处被更改了。没有保存任何内容；你的编辑还在这里。请检查后再次保存。"
+          }
+        }
+      }
+    },
+    "Your question": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoje pytanie"
           }
         }
       }
@@ -88819,6 +91760,17 @@
         }
       }
     },
+    "already gone": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "już nie istniało"
+          }
+        }
+      }
+    },
     "confirmed %@": {
       "extractionState": "manual",
       "localizations": {
@@ -88874,6 +91826,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "已确认 %@"
+          }
+        }
+      }
+    },
+    "deleted": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "usunięto"
+          }
+        }
+      }
+    },
+    "deletion not confirmed": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "usunięcie niepotwierdzone"
+          }
+        }
+      }
+    },
+    "deletion pending": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "usuwanie w toku"
           }
         }
       }
@@ -89354,6 +92339,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "无"
+          }
+        }
+      }
+    },
+    "not known": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "nieznane"
+          }
+        }
+      }
+    },
+    "pending": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "w toku"
           }
         }
       }

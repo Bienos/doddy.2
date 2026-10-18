@@ -184,7 +184,9 @@ final class CallCaseTests: XCTestCase {
         XCTAssertEqual(try JSONDecoder().decode(CallPhase.self, from: Data(#""something_new""#.utf8)), .unknown)
         XCTAssertEqual(try JSONDecoder().decode(CallOutcome.self, from: Data(#""no_answer""#.utf8)), .noAnswer)
         XCTAssertTrue(CallOutcome.noAnswer.isRetryable)
-        XCTAssertFalse(CallOutcome.answered.isRetryable)
+        // The owner's list of failed calls that can be tried again (server: RETRYABLE_OUTCOMES).
+        for outcome: CallOutcome in [.voicemail, .ivr, .wrongNumber, .busy, .voiceUnavailable] { XCTAssertTrue(outcome.isRetryable, "\(outcome)") }
+        for outcome: CallOutcome in [.answered, .takenOver, .noConversation, .stopped] { XCTAssertFalse(outcome.isRetryable, "\(outcome)") }
         XCTAssertTrue(CallPhase.talking.canTakeOver)
         XCTAssertFalse(CallPhase.ringing.canTakeOver)
     }

@@ -10,6 +10,18 @@ export type Outcome =
   | "answered" | "no_answer" | "busy" | "failed" | "not_placed" | "voicemail" | "ivr" | "wrong_number"
   | "no_conversation" | "taken_over" | "voice_unavailable" | "stopped" | "unknown";
 export type Confidence = "high" | "medium" | "low" | "none";
+
+/**
+ * Failed calls that may be tried again at a set time (a new approval of the same card): nobody
+ * talked with Doddy about the question. The owner's list: no answer, voicemail, wrong number, IVR.
+ * The app's `CallOutcome.isRetryable` mirrors this.
+ */
+export const RETRYABLE_OUTCOMES: readonly Outcome[] = [
+  "no_answer", "busy", "failed", "not_placed", "voicemail", "ivr", "wrong_number", "voice_unavailable", "unknown",
+];
+export function isRetryableOutcome(outcome: string | null | undefined): boolean {
+  return (RETRYABLE_OUTCOMES as readonly string[]).includes(outcome ?? "");
+}
 export type TranscriptSource = "elevenlabs" | "twilio_live" | "none";
 
 export interface Warning { kind: "possible_commitment" | "unlisted_number" | "pesel_said"; line: number }
@@ -211,7 +223,7 @@ function nextStepFor(outcome: Outcome, quote: CallResult["quote"], callbackPromi
         return { kind: "set_reminder", text: "W odpowiedzi jest termin: dodaj przypomnienie." };
       }
       return { kind: "save_note", text: "Zapisz odpowiedź w notatkach." };
-    case "taken_over": return { kind: "none", text: "Dalszą część rozmowy prowadziłeś Ty." };
+    case "taken_over": return { kind: "none", text: "Po przejęciu Doddy nie brał już udziału w rozmowie." };
     case "no_answer": case "busy": case "failed": case "voice_unavailable": case "not_placed":
       return { kind: "retry", text: "Zadzwoń ponownie o wybranej godzinie." };
     case "voicemail": return { kind: "retry", text: "Spróbuj ponownie później, w godzinach pracy." };

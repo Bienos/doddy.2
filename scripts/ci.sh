@@ -49,6 +49,8 @@ if command -v swift >/dev/null 2>&1; then
     # A real compile of the app files that need no Apple UI framework (ADR-200). On a Mac the
     # full xcodebuild below compiles everything, so this step is Linux-only.
     run_step "App logic type-check (non-UI app files)" scripts/typecheck_app_logic.sh
+    # The call screens' state, run with fakes for the server and the store (ADR-500).
+    run_step "Call screens' state tests" scripts/test_call_cases_model.sh
     run_step "Unfinished notes on real files" scripts/check_unfinished_note_store.sh
   else
     run_step "Swift package tests (DoddyCore)" swift test --package-path Packages/DoddyCore
