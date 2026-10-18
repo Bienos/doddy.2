@@ -5,6 +5,10 @@ import Observation
 /// Keeps the opt-in server copy of memories (used only to answer on phone calls) equal to what
 /// is on this iPhone. Every change sends the full current list, so deletions and corrections
 /// carry over. Does nothing unless the user turned on "Memory on calls".
+///
+/// Private notes (ADR-310) are never in the server copy. Every upload leaves them out here, with
+/// the private set read from this iPhone just before sending, so a caller that passes every
+/// note can't put a private one on the server.
 @MainActor
 @Observable
 final class MemoryCopySync {
@@ -28,11 +32,12 @@ final class MemoryCopySync {
         guard isOn, let client = ServerConfig.client() else { return }
         pending?.cancel()
         needsRetry = true
-        let items = MemoryCopyItem.from(records)
         pending = Task {
             // Collapses bursts of edits into one upload.
             try? await Task.sleep(for: delay)
             guard !Task.isCancelled else { return }
+            // Read after the wait, so a note made private in the meantime is left out too.
+            let items = MemoryCopyItem.from(records, excluding: PrivateNotesStore.current())
             do {
                 let count = try await client.replaceMemoryCopy(items)
                 guard !Task.isCancelled else { return }
@@ -65,7 +70,7 @@ final class MemoryCopySync {
         pending?.cancel()
         needsRetry = true
         do {
-            let count = try await client.replaceMemoryCopy(MemoryCopyItem.from(records))
+            let count = try await client.replaceMemoryCopy(MemoryCopyItem.from(records, excluding: PrivateNotesStore.current()))
             needsRetry = false
             status = .copied(count: count, at: Date())
         } catch ServerError.notEnabled {

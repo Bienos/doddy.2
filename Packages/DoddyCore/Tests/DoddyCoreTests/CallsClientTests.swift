@@ -14,8 +14,39 @@ final class CallsClientTests: XCTestCase {
         let mine = try MemoryRecord(id: UUID(), rawText: "Dentist Tuesdy", source: .explicitText, capturedAt: date)
             .correcting(to: "Dentist Tuesday", at: date)
         let sample = try MemoryRecord(id: UUID(), rawText: "Sample", source: .sampleFixture, capturedAt: date)
-        let items = MemoryCopyItem.from([mine, sample])
+        let items = MemoryCopyItem.from([mine, sample], excluding: PrivateNotes())
         XCTAssertEqual(items, [MemoryCopyItem(id: mine.id, text: "Dentist Tuesday", capturedAt: ServerDates.format(date))])
+    }
+
+    /// ADR-310: a private note is never in the server copy for calls, whoever builds the upload.
+    func testMemoryCopyNeverIncludesPrivateNotes() throws {
+        let date = Date(timeIntervalSince1970: 1_790_000_000)
+        let pin = try MemoryRecord(id: UUID(), rawText: "Bank PIN 4417", source: .explicitText, capturedAt: date)
+        let keys = try MemoryRecord(id: UUID(), rawText: "Keys in the blue tin", source: .explicitText, capturedAt: date)
+        // Privacy follows the note's id, so a corrected private note stays out too.
+        let door = try MemoryRecord(id: UUID(), rawText: "Door code 1234", source: .explicitText, capturedAt: date)
+            .correcting(to: "Door code 5678", at: date)
+        let items = MemoryCopyItem.from([pin, keys, door], excluding: PrivateNotes(ids: [pin.id, door.id]))
+        XCTAssertEqual(items, [MemoryCopyItem(id: keys.id, text: "Keys in the blue tin", capturedAt: ServerDates.format(date))])
+        // When every note is private the upload is empty, and the server copy is replaced with nothing.
+        XCTAssertEqual(MemoryCopyItem.from([pin], excluding: PrivateNotes(ids: [pin.id])), [])
+    }
+
+    /// The bytes that go to the server for the snapshot carry no trace of a private note.
+    func testSnapshotRequestHasNoPrivateNote() async throws {
+        let date = Date(timeIntervalSince1970: 1_790_000_000)
+        let pin = try MemoryRecord(id: UUID(), rawText: "Bank PIN 4417", source: .explicitText, capturedAt: date)
+        let keys = try MemoryRecord(id: UUID(), rawText: "Keys in the blue tin", source: .explicitText, capturedAt: date)
+        let transport = StepTransport([.success(ServerResponse(status: 200, body: Data(#"{"count":1}"#.utf8)))])
+        let client = DoddyServerClient(transport: transport, credentials: FixedCredentials(token: "t"))
+        let count = try await client.replaceMemoryCopy(MemoryCopyItem.from([pin, keys], excluding: PrivateNotes(ids: [pin.id])))
+        XCTAssertEqual(count, 1)
+        let sent = await transport.sent
+        XCTAssertEqual(sent.map(\.path), ["/v1/memory-copy/snapshot"])
+        let body = String(decoding: try XCTUnwrap(sent.first?.body), as: UTF8.self).lowercased()
+        XCTAssertFalse(body.contains("4417"))
+        XCTAssertFalse(body.contains(pin.id.uuidString.lowercased()))
+        XCTAssertTrue(body.contains(keys.id.uuidString.lowercased()))
     }
 
     func testSettingsDecodeAndWeakPINMaps() throws {
