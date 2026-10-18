@@ -19,6 +19,8 @@ public enum VoiceToolName {
     public static let proposePlan = "propose_plan"
     /// The user asked for something no tool covers: a category, kept on the iPhone (ADR-440).
     public static let noteCapabilityGap = "note_capability_gap"
+    /// A text from Doddy's own number to the user's verified number, after a card (ADR-490 U2).
+    public static let textMe = "text_me"
 }
 
 /// The functions a user turns on in Settings, Connections. All start off, and each one may also
@@ -193,6 +195,9 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case openMap(place: String)
     case runShortcut(name: String)
     case draftMessage(MessageDraft)
+    /// A text from Doddy's number to the user's own verified number (ADR-490 U2). Shown on a card
+    /// with the exact text; sent only on the user's tap, bound to that text by `ApprovalHash`.
+    case textMe(body: String)
     /// Gmail, Google Drive, Notion or Todoist through the Doddy server (see OnlineAccounts).
     case cloudTool(CloudToolCall)
     /// Translator mode (ADR-215): proposed on a card; the conversation switches on Start.
@@ -297,6 +302,19 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return .runShortcut(name: shortcut)
         case VoiceToolName.draftMessage:
             return parseMessage(args, name: name)
+        case VoiceToolName.textMe:
+            // Exactly as the agent wrote it: the card shows it and the approval covers it, so
+            // nothing is trimmed. Too long is refused, never cut (review C11).
+            guard let body = args.text("body") else { return .invalid(name: name, reason: "missing body") }
+            guard body.utf16.count <= ApprovedTextLimits.maxLength else {
+                return .invalid(name: name, reason: "body is longer than \(ApprovedTextLimits.maxLength) characters")
+            }
+            // The user approves what they see; a hidden character would be sent unseen.
+            if let hidden = ApprovedTextLimits.hiddenCharacter(in: body) {
+                let code = String(hidden.value, radix: 16, uppercase: true)
+                return .invalid(name: name, reason: "body has a hidden character (U+\(code)); write the text without it")
+            }
+            return .textMe(body: body)
         case VoiceToolName.startTranslator:
             return parseStartTranslator(args, name: name)
         case VoiceToolName.stopTranslator:
@@ -603,6 +621,8 @@ public enum VoiceToolReply {
         // Round 3 (ADR-280, ADR-283): reminders moved, an alarm turned off. Round 4 (ADR-301,
         // ADR-303): a parking spot cleared, a Todoist task moved. Each read back first.
         "moved:", "turned off:", "cleared:",
+        // ADR-490 U2: a text the carrier reported as delivered. "sent:" and "queued:" are not done.
+        "delivered:",
     ]
     /// List results: `added to the list: 1 item.`, then the list's name and the items as data
     /// (listAdded, listChanged).

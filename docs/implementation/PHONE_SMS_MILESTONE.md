@@ -18,7 +18,8 @@ Owner request: "Give Doddy his own phone number so he can (a) call me and take c
 |---|---|
 | U0. Go live with texts | Setup runbook written (`docs/integrations/PHONE_NUMBER_SETUP.md`). The built server passes its tests on this branch (55 tests, 0 failures, 2026-10-17). Waiting on your setup steps and the iPhone checks. |
 | U1. Calls through the server | Built on 2026-10-18 (ADR-492): voice routes, Twilio caller, `register-call`, migration 008, setup script, the app's call status words. Server tests: 61 pass, 0 fail, with stand-ins for Twilio and ElevenLabs; six deliberate breakages were each caught by a test. Not run: anything live (it needs U0 first), and the app compile (no Swift here). Waiting on U0, then your U1 steps and checks (`docs/integrations/PHONE_NUMBER_SETUP.md`). |
-| U2 to U4 | Not started |
+| U2. Texts you approve | Built on 2026-10-18 (ADR-493): `text_me` voice tool and card, approval hash checked by the app, the server and the worker, `POST /v1/texts` with caps, Twilio 500/502/504 as `unknown` with a lookup in Twilio's message list, honest status words, `contact_policy` in `doddy_rules.yaml`. Server tests: 72 pass, 0 fail. DoddyCore tests run on Linux with Swift 6.1: 1122 tests, the new ones all pass, 2 failures that were already there before U2 (voice token wording, unrelated). Not built: typing a text in Settings, the 10-minute wording and the price on the card (see ADR-493). Not run: anything live, and the app compile (needs Xcode). Waiting on U0, then your U2 steps and checks (`docs/integrations/PHONE_NUMBER_SETUP.md`). |
+| U3 and U4 | Not started |
 
 ## What exists and what is new
 "Built" below means the code exists and its automated tests pass with stand-ins for Twilio and ElevenLabs. The app side compiles in hosted CI. Nothing has run against the real services.
@@ -169,9 +170,9 @@ There is no US-style registration (A2P 10DLC, toll-free verification) for the Po
 ## 4. Flows: what can go wrong and how it recovers
 
 ### A. A text Doddy sends you
-1. Doddy proposes it with the voice tool `text_me`, or you type one in Settings.
-2. The card shows the recipient (your number, last three digits), Doddy's number, the exact text, its segment count and its cost.
-3. You tap Send. Editing the text changes the card, and the hash covers what is on screen when you tap.
+1. Doddy proposes it with the voice tool `text_me`. (Typing one in Settings was planned; it isn't built, ADR-493.)
+2. The card shows the recipient (your number, last three digits), that it comes from Doddy's number, the exact text and its segment count. (As built it shows no price, ADR-493.)
+3. You tap Send. The hash covers what is on screen when you tap. As built, the card can't be edited: asking for a different text makes a new card.
 
 | What goes wrong | What Doddy does | What you see | How it recovers |
 |---|---|---|---|
@@ -180,8 +181,8 @@ There is no US-style registration (A2P 10DLC, toll-free verification) for the Po
 | Daily cap reached | Refuses | "Daily limit reached" | Tomorrow, or change the cap |
 | Twilio refuses it (bad number, STOP on Twilio's side) | Marks it failed with Twilio's code | "Not sent" and why | Fix it and approve again |
 | Twilio answers 429 or 503 | Retries with backoff (Twilio didn't accept it) | "Sending…" | Automatic |
-| Twilio answers 500, 502 or 504, or the request times out | `unknown`; looks the message up at Twilio; never resends on its own | "Not sure it was sent" | You choose: "Send again" warns it may arrive twice |
-| Accepted, but no delivery receipt arrives (some networks don't send them) | Stays "sent" | After 10 minutes: "Sent, delivery not confirmed" | Look on your phone |
+| Twilio answers 500, 502 or 504, or the request times out | `unknown`; looks the message up at Twilio; never resends on its own | "Not sure it was sent" | As built: asking for the same text again while Doddy is open reuses the request, so the server sends it at most once |
+| Accepted, but no delivery receipt arrives (some networks don't send them) | Stays "sent" | "Handed to Twilio for delivery" (the 10-minute wording wasn't built) | Look on your phone |
 | Twilio reports undelivered or failed | Records the code | "Not delivered" and why | Approve again if you want |
 | Doddy's server can't be reached when you tap | Nothing is queued | "Couldn't reach Doddy's server; nothing was sent" | Try again; the same idempotency key can't queue it twice |
 | Receipts arrive out of order | Status never moves backwards | – | – |
@@ -248,7 +249,7 @@ What must change before you use it:
 - Legal review is still required before anyone but you uses this (open since S1).
 
 ## 5a. Rules config (proposed `doddy_rules.yaml` section)
-Added with the first unit that enforces it. A server test fails if the server's defaults differ from these values.
+Added with the first unit that enforces it. A server test fails if the server's defaults differ from these values. **U2 added the part it enforces** (see `docs/trust/config/doddy_rules.yaml`): the allowlist, recipients, `approval: exact_payload_hash`, `unknown_inbound_calls: fixed_message_no_ai`, `unknown_text_outcome: never_resent_lookup_at_provider`, `recording: off`, `text_max_length: 640`, and the caps `calls_per_hour`, `calls_per_day`, `approved_texts_per_day` and `approved_texts_server_per_day` (named `server_texts_per_day` below). The inbound-text, AI-reply and quiet-hours lines come with U3 and U4.
 
 ```yaml
 contact_policy:            # Doddy's phone number (ADR-490). Phone numbers are never stored in this file.
@@ -299,7 +300,7 @@ Each unit is a small reviewed change, with its tests and docs, and stops for you
 
 **Optional, labelled "Twilio test credentials", never in CI:** one test sends to Twilio's magic test number and expects 201 with no charge. Test credentials don't call webhooks, so they can't test the rest.
 
-**Swift** (`Packages/DoddyCore`): the approval-hash vectors, argument checks for `text_me` and `call_me_later`, segment counting (GSM-7 and Unicode), and status copy. There is no Swift toolchain in this container, so these run in hosted CI or on your Mac. Here they will be marked **NOT RUN**.
+**Swift** (`Packages/DoddyCore`): the approval-hash vectors, argument checks for `text_me` and `call_me_later`, segment counting (GSM-7 and Unicode), and status copy. From U2 they run here on Linux with a Swift 6.1 toolchain downloaded for the session (`make test-core`'s command). The iPhone app itself still needs Xcode, so its compile is **NOT RUN** here.
 
 **Voice agent spec:** `voice_agent_spec.py check` for both agents. The new tools change something, so they need a card and a tap; the phone agent must still disclose that it is an AI.
 

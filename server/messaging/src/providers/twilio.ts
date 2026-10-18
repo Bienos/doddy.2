@@ -36,6 +36,7 @@ export class TwilioClient implements SmsSender, PhoneVerifier {
     private readonly config: TwilioConfig,
     private readonly statusCallbackUrl?: string,
     private readonly timeoutMs = 10_000,
+    private readonly apiBase = "https://api.twilio.com",
   ) {
     this.auth = basicAuth(config);
   }
@@ -57,7 +58,7 @@ export class TwilioClient implements SmsSender, PhoneVerifier {
     let res: Response;
     try {
       res = await this.post(
-        `https://api.twilio.com/2010-04-01/Accounts/${this.config.accountSid}/Messages.json`, form);
+        `${this.apiBase}/2010-04-01/Accounts/${this.config.accountSid}/Messages.json`, form);
     } catch {
       // The request may have reached Twilio; do not resend automatically.
       return { kind: "unknown", code: "twilio_network" };
@@ -65,9 +66,34 @@ export class TwilioClient implements SmsSender, PhoneVerifier {
     const json = (await res.json().catch(() => ({}))) as TwilioError & { sid?: string };
     if (res.status === 201 && json.sid) return { kind: "accepted", providerId: json.sid };
     const code = `twilio_${json.code ?? res.status}`;
-    if (res.status === 429 || res.status >= 500) return { kind: "transient", code };
+    // Refused before it was accepted: safe to try again later.
+    if (res.status === 429 || res.status === 503) return { kind: "transient", code };
+    // Any other server error can come after Twilio created the message (ADR-490, DOD-09): unknown,
+    // never resent automatically, and looked up later (outbox reconcileUnknownSms).
+    if (res.status >= 500) return { kind: "unknown", code };
     // 21610: the recipient replied STOP to this sender.
     return { kind: "rejected", code, unsubscribed: json.code === 21610 };
+  }
+
+  async recentMessagesTo(toE164: string): Promise<{ sid: string; body: string; createdAt: Date; status: string }[] | undefined> {
+    const query = new URLSearchParams({ To: toE164, PageSize: "50" });
+    let res: Response;
+    try {
+      res = await fetch(`${this.apiBase}/2010-04-01/Accounts/${this.config.accountSid}/Messages.json?${query}`, {
+        headers: { authorization: this.auth }, signal: AbortSignal.timeout(this.timeoutMs),
+      });
+    } catch {
+      return undefined;
+    }
+    if (!res.ok) return undefined;
+    const json = (await res.json().catch(() => undefined)) as
+      { messages?: { sid?: string; body?: string; date_created?: string; status?: string }[] } | undefined;
+    if (!json?.messages) return undefined;
+    return json.messages.flatMap((m) => {
+      const createdAt = m.date_created ? new Date(m.date_created) : undefined;
+      return m.sid && typeof m.body === "string" && createdAt && !Number.isNaN(createdAt.getTime())
+        ? [{ sid: m.sid, body: m.body, createdAt, status: m.status ?? "" }] : [];
+    });
   }
 
   async start(toE164: string): Promise<void> {

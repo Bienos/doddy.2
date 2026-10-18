@@ -189,6 +189,9 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(
                 app: .messages, title: draft.channel == .text ? "Draft a text" : "Draft an email",
                 detail: "to \(draft.recipientName)", isLookup: false)
+        case .textMe:
+            // The card shows the text; the log keeps none of it (review C2).
+            return ActivityRequest(app: .messages, title: "Text you from Doddy's number", detail: nil, isLookup: false)
         case .cloudTool(let call):
             // Writes carry a key (ADR-322): a hash of the tool and its arguments, never the words.
             guard let request = describe(cloud: call.name), let key = CloudIdempotency.key(call) else { return describe(cloud: call.name) }
@@ -467,6 +470,9 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
         if isLookup { return (.lookedUp, nil) }
         if text.hasPrefix("declined:") { return (.declined, nil) }
         if text.hasPrefix("unknown:") { return (.notSure, "Doddy couldn't confirm it went through.") }
+        // Texts from Doddy's number (ADR-490 U2): accepted is not delivered, so not done.
+        if text.hasPrefix("sent:") { return (.notSure, "Twilio accepted the text; delivery isn't confirmed.") }
+        if text.hasPrefix("queued:") { return (.notSure, "Doddy's server has the text; it wasn't confirmed as sent yet.") }
         if text.hasPrefix("not found:") { return (.notDone, "Doddy couldn't find it, so nothing changed.") }
         // Round 3 (ADR-280, ADR-283): "partly" means only some of the ticked ones changed, so the
         // row says which part.

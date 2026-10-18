@@ -14,6 +14,8 @@ export const PIN_LOCK_MINUTES = 15;
 export function pinLockMinutes(previousLocks: number): number {
   return Math.min(PIN_LOCK_MINUTES * 4 ** previousLocks, 24 * 60);
 }
+/** Doddy's calls to the user; mirrored in docs/trust/config/doddy_rules.yaml (contact_policy). */
+export const OUTBOUND_HOURLY_LIMIT = 3;
 export const OUTBOUND_DAILY_LIMIT = 10;
 export const MAX_PENDING_NOTES = 20;
 

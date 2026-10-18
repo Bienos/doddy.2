@@ -505,6 +505,19 @@
     },
     {
       "type": "function",
+      "name": "text_me",
+      "description": "Send a text message (SMS) from Doddy's own phone number to the user's own number, the one they verified in Doddy's Settings. Use it only when the user asks Doddy to text them something, for example 'text me the parcel code' or 'send me that address by SMS'. It can never text anyone else; to message someone else, use draft_message. Write the text in the user's language, short, with exactly what they asked for, and never a password, PIN or card number. The card shows it word for word and nothing is sent until the user taps Send. Before this tool runs, say only one short line, for example 'Confirm on screen to send this text.' The result starts with 'delivered' (the carrier reported it reached the phone), 'sent' (Twilio accepted it; delivery isn't confirmed), 'queued' (Doddy's server has it; not sent yet), 'declined', 'failed' (nothing was sent; the reason follows) or 'unknown'. Say the text arrived only when the result starts with 'delivered'. After 'unknown', never call this tool again unless the user asks.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "body": {"type": "string", "description": "The text, word for word, at most 640 characters. Polish letters and emoji make a text cost more parts, so keep it short."}
+        },
+        "required": ["body"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "not_synced"}
+    },
+    {
+      "type": "function",
       "name": "check_email",
       "description": "Check the user's newest Gmail emails: sender, subject, time and a short preview only. Use it when the user asks whether they have new email, what is in their inbox, or whether someone wrote to them. Optional query uses Gmail search words, e.g. 'from:anna' or 'is:unread'; leave it out for the inbox. Answer only from the result and never invent emails. It gives previews only; to hear one whole email, use read_email. If the result says the tool is switched off or Gmail isn't connected, tell the user in one sentence that they can switch it on in Settings, Online accounts. If the result starts with DEMO DATA, tell the user it is demo data.",
       "parameters": {
@@ -838,7 +851,7 @@
     {
       "type": "function",
       "name": "note_capability_gap",
-      "description": "Write down, on the user's iPhone, that they asked for something none of your tools can do. Call it once when the user asks for something you cannot do with your tools, for example playing music, controlling a smart home, making a payment, sending a message directly or controlling another app, in addition to telling them plainly that you cannot do it. Give only a category, never the user's words. The tool changes nothing and uses no app. The result starts with 'noted'. Never mention this tool or that you wrote it down unless the user asks.",
+      "description": "Write down, on the user's iPhone, that they asked for something none of your tools can do. Call it once when the user asks for something you cannot do with your tools, for example playing music, controlling a smart home, making a payment, sending a message to someone else directly or controlling another app, in addition to telling them plainly that you cannot do it. Give only a category, never the user's words. The tool changes nothing and uses no app. The result starts with 'noted'. Never mention this tool or that you wrote it down unless the user asks.",
       "parameters": {
         "type": "object",
         "properties": {

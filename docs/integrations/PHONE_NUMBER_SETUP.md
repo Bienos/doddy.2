@@ -191,6 +191,28 @@ Send Claude what you saw and heard. Never send the PIN, keys or the tool secret.
 | 8 | Render logs | `call_refused` lines with a reason only, never a phone number |
 | 9 | Twilio → Monitor → Logs → Calls | Your calls, with no recordings |
 
+## Unit U2: texts you approve (after the U0 checks pass)
+Doddy can text your own number, and only yours, when you ask it to in a conversation ("text me the parcel code"). A card shows the exact text first; nothing is sent until you tap **Send text** (ADR-493).
+
+1. **Deploy the U2 code**, the same way as U1 (branch `claude/awesome-cray-2lb9ia` until it is merged). The database update (migration 009) runs by itself at start-up. No new Render keys are needed.
+2. **Build the iPhone app from the same branch** in Xcode. With OpenAI voice (the default), the app brings the new `text_me` tool with it.
+3. **ElevenLabs voice only:** the live agent doesn't have `text_me` yet. Ask Claude to sync it, or follow `voice-agent/README.md` ("Source of truth and syncing"): add the tool and the new prompt lines, then run the compare step.
+4. **On your iPhone, Settings → Notifications and texts:** your number must be verified and texts turned on (U0 checks 3 and 4).
+
+### The U2 checks
+Send Claude what you saw. Never send codes or keys.
+
+| # | Check | Expected |
+|---|---|---|
+| 1 | In a conversation, say "text me the word banana" | A card: "Send this text to you?", the last three digits of your number, and the text. Doddy says only one short line before it. |
+| 2 | Tap **Send text** | A text from Doddy's number with exactly that text. Doddy says it was delivered, or that Twilio accepted it and delivery isn't confirmed yet. It never says "delivered" before Twilio's receipt. |
+| 3 | Ask again and tap **Don't send** | Nothing arrives; Doddy accepts it |
+| 4 | Ask for a text with Polish letters, longer than 70 characters | It arrives exactly as the card showed; the card says "Sent as 2 SMS parts" |
+| 5 | Turn texts off in **Settings → Notifications and texts**, then ask | Doddy says texts are switched off; no card, nothing arrives. Turn them back on. |
+| 6 | Ask Doddy to text someone else, e.g. "text Marta that I'm late" | Doddy uses the Messages draft instead (`draft_message`); it never texts another number itself |
+| 7 | **What Doddy did** | A row "Text you from Doddy's number", with no text in it |
+| 8 | Render logs | No text of any message, only ids and codes |
+
 ## When something goes wrong
 | What you see | Likely cause |
 |---|---|
@@ -201,13 +223,16 @@ Send Claude what you saw and heard. Never send the PIN, keys or the tool secret.
 | U1: every caller, you included, hears "Phone calls aren't connected yet" | One of `ELEVENLABS_API_KEY`, `ELEVENLABS_PHONE_AGENT_ID`, `ELEVENLABS_TOOL_SECRET` or `MEMORY_ENCRYPTION_KEY` is missing on Render |
 | U1: you hear "I can't talk right now" | The server didn't get a usable answer from ElevenLabs `register-call`. Render's log shows `call_not_connected` with a code, such as `elevenlabs_401` for a wrong key or `elevenlabs_422` for a wrong agent id. |
 | U1: Call me now says the phone service couldn't place the call | Twilio refused it. Error 21215 means Poland isn't ticked under Voice → Settings → Geo permissions. |
+| U2: Doddy says your number changed after the card was shown | You verified a different number while the card was open. Ask again for a new card. |
+| U2: Doddy says it reached the most texts allowed for today | 20 approved texts a day per account (`contact_policy` in `docs/trust/config/doddy_rules.yaml`) |
 
-**Known limit until unit U2:** the server retries a Twilio 500 error, so a test text could, rarely, arrive twice (ADR-490, section 4A of the plan).
+**Since U2:** a Twilio 500, 502 or 504 is never retried. The text shows as "Unclear whether it was sent" while the server looks for it in Twilio's message list; it is never sent twice (ADR-493).
 
-## What leaves your iPhone in U0
+## What leaves your iPhone
 - Your phone number and your consent go to the messaging server (Render, Frankfurt) and to Twilio, which checks the number and delivers texts.
 - The text of an update is erased from the server's database once it reaches a final status (ADR-144).
 - Twilio keeps its own message logs. Deleting them is built in unit U3.
+- **U2:** a text you approve goes to the messaging server and then to Twilio. The server stores it encrypted with `MEMORY_ENCRYPTION_KEY` (set in step 7) and erases it once the text has a final status. It keeps a hash of it only while an unclear outcome is being checked.
 - Your memories stay on your iPhone.
 
 ## Sources (read 2026-10-17)

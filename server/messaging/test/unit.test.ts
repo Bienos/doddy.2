@@ -7,7 +7,11 @@ import twilio from "twilio";
 import { createPool, dbErrorFields } from "../src/db.js";
 import { apnsJwt } from "../src/providers/apns.js";
 import { ElevenLabsCallRegistrar } from "../src/providers/elevenlabs.js";
-import { isValidTwilioSignature, TwilioVoiceCaller, twilioSignature } from "../src/providers/twilio.js";
+import { isValidTwilioSignature, TwilioClient, TwilioVoiceCaller, twilioSignature } from "../src/providers/twilio.js";
+import { approvalHash, textApprovalHash } from "../src/approval.js";
+import { OUTBOUND_DAILY_LIMIT, OUTBOUND_HOURLY_LIMIT } from "../src/calls.js";
+import { APPROVED_TEXTS_PER_DAY, APPROVED_TEXTS_SERVER_PER_DAY, TEXT_MAX_LENGTH } from "../src/routes/texts.js";
+import { readFileSync } from "node:fs";
 import { connectTwiml, sayAndHangUp, type FixedLine } from "../src/voiceTwiml.js";
 import { classifySms } from "../src/sms.js";
 
@@ -139,6 +143,64 @@ test("fixed call lines say Doddy is an AI, in Polish then English, hang up, and 
     assert.doesNotMatch(xml, /record/i, line);
     assert.doesNotMatch(xml, /&/, `${line}: the text needs no XML escaping`);
   }
+});
+
+test("approval hashes reproduce the shared vectors (contracts/phone/approval-vectors.json)", () => {
+  const file = JSON.parse(readFileSync(new URL("../../../../contracts/phone/approval-vectors.json", import.meta.url), "utf8")) as
+    { vectors: { description: string; fields: string[]; sha256: string }[] };
+  assert.ok(file.vectors.length >= 8);
+  for (const v of file.vectors) {
+    assert.equal(approvalHash(v.fields).toString("hex"), v.sha256, v.description);
+    const [version, kind, to, body] = v.fields;
+    if (version === "doddy-approval-1" && kind === "text") assert.equal(textApprovalHash(to!, body!).toString("hex"), v.sha256, v.description);
+  }
+});
+
+test("a text through Twilio: a server error after the request may have been sent is unknown, never retried", async () => {
+  let answer = { status: 201, type: "application/json", body: JSON.stringify({ sid: "SM1" }) };
+  const api = await standIn(() => answer);
+  const twilio = new TwilioClient({ accountSid: "AC1", authToken: "t", messagingServiceSid: "MG1", verifyServiceSid: "VA1" },
+    "https://d.test/webhooks/twilio/status", 2000, api.base);
+  try {
+    assert.deepEqual(await twilio.send("+48500000000", "Hi"), { kind: "accepted", providerId: "SM1" });
+    for (const s of [500, 502, 504]) {
+      answer = { status: s, type: "application/json", body: "{}" };
+      assert.deepEqual(await twilio.send("+48500000000", "Hi"), { kind: "unknown", code: `twilio_${s}` }, String(s));
+    }
+    for (const s of [429, 503]) {
+      answer = { status: s, type: "application/json", body: "{}" };
+      assert.deepEqual(await twilio.send("+48500000000", "Hi"), { kind: "transient", code: `twilio_${s}` }, String(s));
+    }
+    answer = { status: 400, type: "application/json", body: JSON.stringify({ code: 21610 }) };
+    assert.deepEqual(await twilio.send("+48500000000", "Hi"), { kind: "rejected", code: "twilio_21610", unsubscribed: true });
+
+    answer = { status: 200, type: "application/json", body: JSON.stringify({ messages: [
+      { sid: "SM9", body: "Kup mleko", date_created: "Sat, 17 Oct 2026 10:00:00 +0000", status: "delivered" },
+      { sid: "SM8", date_created: "Sat, 17 Oct 2026 09:00:00 +0000", status: "sent" },
+    ] }) };
+    const list = await twilio.recentMessagesTo("+48500000000");
+    assert.deepEqual(list, [{ sid: "SM9", body: "Kup mleko", createdAt: new Date("2026-10-17T10:00:00Z"), status: "delivered" }],
+      "a record without a body (redacted) is left out");
+    const asked = api.requests.at(-1)!;
+    assert.equal(asked.url, "/2010-04-01/Accounts/AC1/Messages.json?To=%2B48500000000&PageSize=50");
+    answer = { status: 500, type: "application/json", body: "{}" };
+    assert.equal(await twilio.recentMessagesTo("+48500000000"), undefined);
+  } finally {
+    api.close();
+  }
+});
+
+test("the contact policy in doddy_rules.yaml matches what the server enforces", () => {
+  const yaml = readFileSync(new URL("../../../../docs/trust/config/doddy_rules.yaml", import.meta.url), "utf8");
+  // The contact_policy block: its indented lines up to the next top-level key.
+  const block = yaml.split("\ncontact_policy:\n")[1]?.split(/\n(?=\S)/)[0];
+  assert.ok(block, "contact_policy missing from doddy_rules.yaml");
+  const value = (key: string) => block.match(new RegExp(`^\\s+${key}: (\\S+)`, "m"))?.[1];
+  assert.deepEqual(
+    [value("text_max_length"), value("calls_per_hour"), value("calls_per_day"), value("approved_texts_per_day"), value("approved_texts_server_per_day")].map(Number),
+    [TEXT_MAX_LENGTH, OUTBOUND_HOURLY_LIMIT, OUTBOUND_DAILY_LIMIT, APPROVED_TEXTS_PER_DAY, APPROVED_TEXTS_SERVER_PER_DAY]);
+  assert.deepEqual([value("approval"), value("recording"), value("allowlist_max_numbers")], ["exact_payload_hash", "off", "1"]);
+  assert.doesNotMatch(block, /\+\d{6,}/, "no phone number in the rules file");
 });
 
 test("a database that never answers fails within the connect timeout, not minutes later", async () => {

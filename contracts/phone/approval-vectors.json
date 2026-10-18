@@ -1,0 +1,87 @@
+{
+  "format": "doddy-approval-vectors/1",
+  "note": "Approval hashes (ADR-490, DOD-07), shared by server/messaging/src/approval.ts and DoddyCore ApprovalHash. Generated independently of both; each must reproduce every vector.",
+  "encoding": "SHA-256 over each field in order, written as its UTF-8 byte length in decimal, a colon, then its UTF-8 bytes. Lowercase hex. A text approval is the fields [\"doddy-approval-1\", \"text\", recipient in E.164, the exact text].",
+  "vectors": [
+    {
+      "description": "plain text",
+      "fields": [
+        "doddy-approval-1",
+        "text",
+        "+48500100200",
+        "Buy milk on the way home."
+      ],
+      "sha256": "1f7775abf7d505d90deccad62b0c0bf24acaade59503c8f122542d1aba681688"
+    },
+    {
+      "description": "Polish letters (several UTF-8 bytes per letter)",
+      "fields": [
+        "doddy-approval-1",
+        "text",
+        "+48500100200",
+        "Kup mleko i chleb, proszę. Zażółć gęślą jaźń."
+      ],
+      "sha256": "eb58300b103c8490fdafce1718b45bed0cb4c9e87dcb99e04b8340e04c5865ed"
+    },
+    {
+      "description": "emoji and a new line",
+      "fields": [
+        "doddy-approval-1",
+        "text",
+        "+48500100200",
+        "Parcel locker code: 4417\nPickup by Friday 📦"
+      ],
+      "sha256": "fd06090ad19482c0ba965d7cdc5c934dbfa081dc9b8cc1d34651164bb8de2631"
+    },
+    {
+      "description": "precomposed e-acute (U+00E9): nothing is normalised, so this differs from the next vector",
+      "fields": [
+        "doddy-approval-1",
+        "text",
+        "+48500100200",
+        "Café at 6"
+      ],
+      "sha256": "4786100de91af0440f7f01eaff56e519f14f15acfbb6d7d03975da9307e1ff18"
+    },
+    {
+      "description": "e followed by a combining acute accent (U+0065 U+0301)",
+      "fields": [
+        "doddy-approval-1",
+        "text",
+        "+48500100200",
+        "Café at 6"
+      ],
+      "sha256": "dd3971fe0cb43c3e6182d01d041ee8efb46c9354fb6c75bc24b7e1a96a78afd3"
+    },
+    {
+      "description": "a trailing space is part of the text: nothing is trimmed",
+      "fields": [
+        "doddy-approval-1",
+        "text",
+        "+48500100200",
+        "Call mum "
+      ],
+      "sha256": "6f5460aea7ebd851d0506b6c17ca7b9b8ecca9d1054b34cd1aade6a5e066a4f3"
+    },
+    {
+      "description": "colons and digits in the text can't be mistaken for a length prefix",
+      "fields": [
+        "doddy-approval-1",
+        "text",
+        "+48500100200",
+        "3:4:5 at 10:30"
+      ],
+      "sha256": "1a93366a4be7672be4762935b8aba0a8cbd907ec17d8034ad6d6961a1f43c07e"
+    },
+    {
+      "description": "another number gives another hash",
+      "fields": [
+        "doddy-approval-1",
+        "text",
+        "+48600700800",
+        "Buy milk on the way home."
+      ],
+      "sha256": "49059286dea11217e64f00771ee9eea94b777c87f61d1c513b7ec6966172a74a"
+    }
+  ]
+}

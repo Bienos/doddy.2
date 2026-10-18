@@ -40,6 +40,8 @@ final class ActivityTextTests: XCTestCase {
             .addIngredients(IngredientsProposal(list: "Shopping", dish: "Pancakes", items: ["Eggs"])),
             .findFreeTime(FreeTimeRequest(firstDay: now, days: 1)),
             .leaveBy(LeaveByRequest(place: "Dentist", arriveBy: now)),
+            // ADR-490 U2.
+            .textMe(body: "Parcel code 4417"),
         ]
         requests += CloudToolName.all.sorted().map { .cloudTool(CloudToolCall(name: $0, arguments: [:])) }
         return requests
@@ -53,7 +55,7 @@ final class ActivityTextTests: XCTestCase {
              .lookupContact, .upcomingBirthdays, .setTimer, .setAlarm, .listAlarms, .cancelAlarm, .openMap, .runShortcut,
              .draftMessage, .cloudTool, .addToList, .readList, .checkOff, .removeFromList, .createList,
              .changeCalendarEvent, .changeReminder, .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders,
-             .convertCurrency, .parkingSpot, .addIngredients, .findFreeTime, .leaveBy:
+             .convertCurrency, .parkingSpot, .addIngredients, .findFreeTime, .leaveBy, .textMe:
             true
         case .needsClarification, .calculate, .convertUnits, .undoLast, .startTranslator, .stopTranslator, .unsupported, .invalid,
              .noteCapabilityGap:
@@ -66,7 +68,7 @@ final class ActivityTextTests: XCTestCase {
         XCTAssertTrue(everyKind.allSatisfy(getsARow))
         // One of each kind that gets a row (cloud tools count once each, drafts twice).
         let kinds = Set(everyKind.map { String(describing: $0).prefix { $0 != "(" } })
-        XCTAssertEqual(kinds.count, 32)
+        XCTAssertEqual(kinds.count, 33)
         XCTAssertNil(ActivityRequest.describe(.undoLast, calendar: calendar))
         XCTAssertNil(ActivityRequest.describe(.calculate(expression: "1+1"), calendar: calendar))
     }
@@ -107,6 +109,7 @@ final class ActivityTextTests: XCTestCase {
         let fixed = [
             "Connections were paused.", "Doddy couldn't confirm it went through.", "Demo data from a test server, not your account.",
             ActivityLog.interruptedNote, "The conversation ended before you answered.", "Reminders isn't connected.",
+            "Twilio accepted the text; delivery isn't confirmed.", "Doddy's server has the text; it wasn't confirmed as sent yet.",
         ]
         for note in fixed { XCTAssertNotEqual(ActivityText.note(note, .polish), note, note) }
 

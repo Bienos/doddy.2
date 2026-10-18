@@ -11,7 +11,8 @@ It holds provider keys so the iPhone app never does, and sends updates by **push
 | Push token | `PUT/DELETE /v1/device/push-token` `{token, environment: sandbox\|production}` |
 | Phone (Twilio Verify) | `POST /v1/phone/verification` `{phone}` · `POST /v1/phone/verification/check` `{phone, code}` · `GET/DELETE /v1/phone` |
 | SMS opt-in | `PUT /v1/phone/sms-consent` `{consent, textVersion}`: the app records which wording the user agreed to |
-| Updates | `POST /v1/updates` `{text ≤640, channels:[push,sms], sendAt?, idempotencyKey}` · `GET/DELETE /v1/updates/:id` |
+| Updates | `POST /v1/updates` `{text ≤640, channels:[push,sms], sendAt?, idempotencyKey}` · `GET/DELETE /v1/updates/:id` (the GET includes `lookup` for a text whose outcome was unknown) |
+| Approved texts (U2, ADR-493) | `POST /v1/texts` `{body ≤640, approvalHash, idempotencyKey}`: a text the user approved on a card, to their own verified number only. `approvalHash` is `src/approval.ts` over that number and the exact text; any difference is `409 approval_mismatch`. 20 per account per day, 300 across the server. Its status is read with `GET /v1/updates/:id`. |
 | Twilio webhooks | `POST /webhooks/twilio/sms` (STOP/START) · `POST /webhooks/twilio/status` (delivery receipts) · `POST /webhooks/twilio/voice` (someone calls Doddy) · `POST /webhooks/twilio/voice/outbound/:callId` (the user answered Doddy's call) · `POST /webhooks/twilio/call-status` (how a call went), all signature-checked |
 | Calls (S2, app) | `GET/PUT /v1/calls/settings` (inbound on/off, outbound consent `calls-v1`) · `PUT/DELETE /v1/calls/pin` · `POST /v1/calls/outbound` ("call me now") · `GET /v1/calls` |
 | Memory on calls (opt-in) | `PUT /v1/memory-copy` `{enabled}` (off deletes every copy) · `PUT /v1/memory-copy/snapshot` (replaces the copy) |
@@ -27,7 +28,10 @@ All `/v1` routes except account creation need `Authorization: Bearer <deviceToke
 - STOP cancels queued texts. Only an inbound START re-opens SMS, as carrier rules require.
 - Outbox states: `queued → sending → sent | failed | unknown | cancelled`.
   - A timeout or dropped connection becomes `unknown` and is **never resent automatically**, so nobody gets a text twice.
-  - A 429 or 5xx refusal is retried with backoff, at most 5 attempts.
+  - A Twilio 429 or 503 is retried with backoff, at most 5 attempts: Twilio didn't accept the text.
+  - Since U2 (ADR-493), any other Twilio 5xx is `unknown` too, as Twilio may have created the message. Two minutes later the worker looks for it in Twilio's message list for that number (by a hash of the text and the time, up to 3 tries): found means `sent` with Twilio's id, not found leaves it `unknown` with `lookup: not_found`. Then the hash is erased.
+- An approved text (`POST /v1/texts`) is checked against its approval hash by the route and again by the worker just before Twilio; a mismatch is never sent. It needs `MEMORY_ENCRYPTION_KEY`: without it the route answers `503 sms_not_configured`, so an approved text is never stored readable.
+- Delivery receipts only move a status forward (queued, sending, sent, then delivered, undelivered or failed).
 - Message text is erased from the database as soon as a message reaches a final state. While queued it is encrypted with `MEMORY_ENCRYPTION_KEY` when that key is set (plain text otherwise).
 - Logs carry ids and counts only. No message text, no phone numbers, no tokens.
 - A missing provider configuration returns `503 not_configured`. It never fakes success.

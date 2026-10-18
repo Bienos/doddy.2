@@ -4,7 +4,7 @@ import type pg from "pg";
 import { z } from "zod";
 import { parse, type Deps } from "../app.js";
 import { principal, requireDevice } from "../auth.js";
-import { OUTBOUND_CONSENT_VERSIONS, OUTBOUND_DAILY_LIMIT } from "../calls.js";
+import { OUTBOUND_CONSENT_VERSIONS, OUTBOUND_DAILY_LIMIT, OUTBOUND_HOURLY_LIMIT } from "../calls.js";
 import { hashPin, isAcceptablePin } from "../crypto.js";
 import { inTransaction } from "../db.js";
 import { callsAvailable } from "./twilioVoice.js";
@@ -111,7 +111,9 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
   // "Call me now". Doddy only calls the verified number, only after explicit consent. Twilio rings
   // it from Doddy's number; the phone agent and the call's session start only when it is answered
   // (routes/twilioVoice.ts, ADR-490).
-  app.post("/v1/calls/outbound", { preHandler: auth, config: { rateLimit: { max: 3, timeWindow: "1 hour" } } }, async (req, reply) => {
+  app.post("/v1/calls/outbound", {
+    preHandler: auth, config: { rateLimit: { max: OUTBOUND_HOURLY_LIMIT, timeWindow: "1 hour" } },
+  }, async (req, reply) => {
     if (!callsAvailable(deps).outbound) return reply.code(503).send({ error: "not_configured" });
     const { accountId } = principal(req);
     const { rows } = await db.query<{ e164: string; consent: boolean }>(

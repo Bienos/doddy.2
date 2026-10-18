@@ -7,6 +7,15 @@ import { formValue as str, verifiedTwilioForm } from "./twilioAuth.js";
 
 const EMPTY_TWIML = '<?xml version="1.0" encoding="UTF-8"?><Response/>';
 
+/** Twilio's message statuses in the order they happen; the last group is final. Others are ignored. */
+const DELIVERY_RANK: Record<string, number> = {
+  accepted: 0, scheduled: 0, queued: 0, sending: 1, sent: 2,
+  delivered: 3, undelivered: 3, failed: 3, read: 3, canceled: 3,
+};
+const DELIVERY_RANK_SQL = `CASE WHEN delivery_status IS NULL THEN -1
+  WHEN delivery_status IN ('accepted', 'scheduled', 'queued') THEN 0 WHEN delivery_status = 'sending' THEN 1
+  WHEN delivery_status = 'sent' THEN 2 ELSE 3 END`;
+
 export const twilioWebhookRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
   const { db } = deps;
   const verified = verifiedTwilioForm.bind(undefined, deps);
@@ -32,16 +41,19 @@ export const twilioWebhookRoutes = (deps: Deps): FastifyPluginAsync => async (ap
     return reply.type("text/xml").send(EMPTY_TWIML);
   });
 
-  // Delivery receipts for messages we sent (queued → sent → delivered / undelivered / failed).
+  // Delivery receipts for messages we sent (queued → sending → sent → delivered / undelivered /
+  // failed). They can arrive out of order, so a status only moves forward (ADR-490): a late "sent"
+  // never hides "delivered".
   app.post("/webhooks/twilio/status", async (req, reply) => {
     const form = verified(req, reply);
     if (!form) return;
     const sid = str(form.MessageSid);
     const status = str(form.MessageStatus);
-    if (sid && /^[a-z_]{1,32}$/.test(status)) {
+    const rank = DELIVERY_RANK[status];
+    if (sid && rank !== undefined) {
       await db.query(
         `UPDATE outbound_messages SET delivery_status = $2, updated_at = now()
-         WHERE provider_message_id = $1 AND channel = 'sms'`, [sid, status]);
+         WHERE provider_message_id = $1 AND channel = 'sms' AND ${DELIVERY_RANK_SQL} < $3`, [sid, status, rank]);
     }
     return reply.code(204).send();
   });

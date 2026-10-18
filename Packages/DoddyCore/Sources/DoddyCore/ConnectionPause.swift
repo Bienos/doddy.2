@@ -19,8 +19,9 @@ public enum ConnectionPause {
              .openMap, .runShortcut, .draftMessage, .cloudTool, .changeCalendarEvent, .changeReminder,
              .deleteCalendarEvent, .deleteReminder, .setAlarm, .undoLast,
              .deleteCalendarEvents, .moveReminders, .listAlarms, .cancelAlarm,
-             .convertCurrency:
-            // Currency rates come from the ECB's public file, another service (ADR-300).
+             .convertCurrency, .textMe:
+            // Currency rates come from the ECB's public file, another service (ADR-300). A text
+            // goes through Doddy's server and Twilio (ADR-490 U2).
             true
         case .remindAboutNote(let draft):
             // A time stays inside Doddy; a place is looked up in Apple Maps, another service.

@@ -13,6 +13,7 @@ import type { NewsDeps } from "./news/digest.js";
 import { accountRoutes } from "./routes/account.js";
 import { phoneRoutes } from "./routes/phone.js";
 import { updateRoutes } from "./routes/updates.js";
+import { textRoutes } from "./routes/texts.js";
 import { twilioWebhookRoutes } from "./routes/twilioWebhooks.js";
 import { twilioVoiceRoutes } from "./routes/twilioVoice.js";
 
@@ -86,6 +87,7 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   await app.register(accountRoutes(deps));
   await app.register(phoneRoutes(deps));
   await app.register(updateRoutes(deps));
+  await app.register(textRoutes(deps));
   await app.register(twilioWebhookRoutes(deps));
   await app.register(twilioVoiceRoutes(deps));
   await app.register(callRoutes(deps));

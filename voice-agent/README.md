@@ -41,6 +41,8 @@ and 36 language presets; keep them when applying (both lists are replaced wholes
 
 **Not yet applied to the live agent (ADR-441, 2026-10-11):** this repository now has the `note_capability_gap` tool, the `{{learned_context}}` variable (declared in `session.json`) and two paragraphs in `instructions.md` (what Doddy learned, and when to note a gap). Until the owner applies them (the live prompt is ahead of `instructions.md`, so merge the two paragraphs rather than overwriting it), the app already sends the variable, which the live prompt ignores, and Doddy never calls the new tool. Run `compare` afterwards.
 
+**Not yet applied to the live agent (ADR-493, 2026-10-18):** the new `text_me` tool (a text from Doddy's own number to the user's verified number, after a card; `not_synced`), its lines in `instructions.md` (the tool line after `draft_message` and two strict rules), and "to someone else" in `note_capability_gap`'s description. OpenAI voice gets them with the next app build. On ElevenLabs, add the tool as a client tool that waits for the result (90 s), merge the prompt lines, then run `compare`. Until then the ElevenLabs agent never calls it.
+
 **Not yet applied to the live agent (2026-10-16):** `start_translator` now starts immediately after the user asks, with no confirmation card or forced pre-tool speech. The app still gives the AI-translator disclosure after starting and keeps microphone access subject to iOS permission. Read the live prompt and tools before syncing; preserve remote edits and compare the fetched configuration after saving.
 
 Editing the agent in the ElevenLabs dashboard without updating these files is drift; the compare

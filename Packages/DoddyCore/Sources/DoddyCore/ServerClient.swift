@@ -133,13 +133,20 @@ public struct UpdateStatus: Equatable, Sendable, Decodable {
     public let state: String
     public let deliveryStatus: String?
     public let errorCode: String?
+    /// For a text whose outcome was unknown: what Twilio's own records showed (ADR-490 U2).
+    /// "found" (the row is then sent), "not_found", "failed" (couldn't check), or nil.
+    public let lookup: String?
 
-    public init(id: UUID, channel: UpdateChannel, state: String, deliveryStatus: String? = nil, errorCode: String? = nil) {
+    public init(
+        id: UUID, channel: UpdateChannel, state: String, deliveryStatus: String? = nil, errorCode: String? = nil,
+        lookup: String? = nil
+    ) {
         self.id = id
         self.channel = channel
         self.state = state
         self.deliveryStatus = deliveryStatus
         self.errorCode = errorCode
+        self.lookup = lookup
     }
 
     /// Still moving through the server's outbox.
@@ -156,6 +163,12 @@ public struct UpdateStatus: Equatable, Sendable, Decodable {
         case "sent" where channel == .sms: return "Handed to Twilio for delivery"
         case "sent": return "Handed to Apple. Check your notifications"
         case "failed": return "Not sent" + (errorCode.map { " (\($0))" } ?? "")
+        case "unknown" where channel == .sms && lookup == "not_found":
+            return "Twilio has no record of it, so it most likely wasn't sent. Doddy won't resend it automatically"
+        case "unknown" where channel == .sms && lookup == "failed":
+            return "Unclear whether it was sent, and Doddy couldn't check with Twilio. It won't resend it automatically"
+        case "unknown" where channel == .sms:
+            return "Unclear whether it was sent. Doddy is checking Twilio's records and won't resend it"
         case "unknown": return "Unclear whether it was sent. Doddy won't resend it automatically"
         case "cancelled": return "Cancelled"
         default: return "Status: \(state)"
@@ -192,6 +205,8 @@ public actor DoddyServerClient {
     private let credentials: any ServerCredentialStore
     /// Idempotency keys of updates not yet accepted by the server, by text and channels.
     private var pendingUpdateKeys: [UpdateBody: String] = [:]
+    /// The same for approved texts, by approval hash (ADR-490 U2).
+    private var pendingTextKeys: [String: String] = [:]
     /// The account being created right now, if any (see `ensureAccount`).
     private var accountCreation: Task<String, any Error>?
 
@@ -276,8 +291,51 @@ public actor DoddyServerClient {
         return queued.messages
     }
 
-    public func updateStatus(_ id: UUID) async throws -> UpdateStatus {
-        try await getJSON("/v1/updates/\(id.uuidString.lowercased())")
+    /// A text the user approved on a card, from Doddy's number to their own verified number
+    /// (ADR-490 U2). `approvalHash` is `ApprovalHash.text` of the number and text the card showed;
+    /// the server recomputes it with the number it holds and refuses on any difference.
+    ///
+    /// One idempotency key per approval: trying the same approved text again after an unknown
+    /// outcome reuses the key, so the server sends it at most once (DOD-09). The key is dropped
+    /// only once the server has queued the text, so the same words approved again later are a
+    /// new text. A refusal keeps it: the server refuses some requests (its hourly limit, texts
+    /// switched off) before it looks for a repeat of the key, so a refusal says nothing about
+    /// an earlier try that went unanswered.
+    /// Throws `ServerError` when it certainly wasn't sent (offline, account gone, unexpected).
+    public func sendApprovedText(_ body: String, approvalHash: String) async throws -> ApprovedTextOutcome {
+        let key = pendingTextKeys[approvalHash] ?? UUID().uuidString
+        pendingTextKeys[approvalHash] = key
+        let request = try Self.json(TextBody(body: body, approvalHash: approvalHash, idempotencyKey: key))
+        let response: ServerResponse
+        do {
+            response = try await authorized(.post, "/v1/texts", body: request, startsSomething: true)
+        } catch is OutcomeUnknown {
+            return .unknown
+        }
+        if response.status == 202, let queued = try? JSONDecoder().decode(QueuedList.self, from: response.body),
+           let text = queued.messages.first {
+            pendingTextKeys[approvalHash] = nil
+            return .queued(text)
+        }
+        let code = (try? JSONDecoder().decode(ErrorBody.self, from: response.body))?.error
+        switch (response.status, code) {
+        // Each of these is answered before anything is queued.
+        case (400, _): return .refused("invalid")
+        case (409, _): return .refused(code ?? "status_409")
+        case (503, "sms_not_configured"): return .refused("sms_not_configured")
+        // The route's hourly limit answers without a code; the daily limits name themselves.
+        case (429, _): return .refused(code ?? "rate_limited")
+        // Any other server error, the hosting proxy's 502 or 504 included, may come after the
+        // server queued the text: unknown, never "not sent" (DOD-08). The key is kept, so a
+        // try-again of the same approval is answered with the text already queued.
+        case (500..., _):
+            return .unknown
+        default: throw Self.error(from: response)
+        }
+    }
+
+    public func updateStatus(_ id: UUID, timeout: TimeInterval = ServerRequest.defaultTimeout) async throws -> UpdateStatus {
+        try await getJSON("/v1/updates/\(id.uuidString.lowercased())", timeout: timeout)
     }
 
     /// Erases the account and everything the server holds for it, then forgets the token.
@@ -292,8 +350,8 @@ public actor DoddyServerClient {
     // MARK: Plumbing
 
     /// GETs `path` and decodes a 200 reply; anything else, an unreadable body included, is an error.
-    func getJSON<T: Decodable>(_ path: String) async throws -> T {
-        let response = try await authorized(.get, path, body: nil)
+    func getJSON<T: Decodable>(_ path: String, timeout: TimeInterval = ServerRequest.defaultTimeout) async throws -> T {
+        let response = try await authorized(.get, path, body: nil, timeout: timeout)
         guard response.status == 200, let value = try? JSONDecoder().decode(T.self, from: response.body)
         else { throw Self.error(from: response) }
         return value
@@ -382,6 +440,17 @@ private struct CodeBody: Encodable { let phone: String; let code: String }
 private struct ConsentBody: Encodable { let consent: Bool; let textVersion: String? }
 private struct UpdateBody: Encodable, Hashable { let text: String; let channels: [UpdateChannel]; let idempotencyKey: String }
 private struct QueuedList: Decodable { let messages: [QueuedUpdate] }
+private struct TextBody: Encodable { let body: String; let approvalHash: String; let idempotencyKey: String }
+
+/// What happened to an approved text (ADR-490 U2).
+public enum ApprovedTextOutcome: Equatable, Sendable {
+    /// The server queued it, or had queued it on an earlier try of the same approval.
+    case queued(QueuedUpdate)
+    /// Refused before anything was queued; the server's error code (see `VoiceToolReply.textRefused`).
+    case refused(String)
+    /// The request may have reached the server but no answer came back (DOD-08).
+    case unknown
+}
 private struct ErrorBody: Decodable { let error: String?; let fields: [String]? }
 
 /// ISO 8601 timestamps as the messaging server writes them (with or without fractional seconds).

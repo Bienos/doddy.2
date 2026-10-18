@@ -18,6 +18,9 @@ public struct ToolDescriptor: Equatable, Sendable {
         case accountWrite
         /// Opens another app with something filled in; the user finishes there.
         case handoff
+        /// A text from Doddy's own number to the user's verified number (ADR-490 U2), through
+        /// Doddy's messaging server. Never to anyone else.
+        case sendText
         /// Changes the conversation itself (translator mode, the plan card).
         case session
     }
@@ -106,6 +109,9 @@ public enum ToolCatalog {
         .init(VoiceToolName.openMap, .handoff, .card),
         .init(VoiceToolName.runShortcut, .handoff, .card),
         .init(VoiceToolName.draftMessage, .handoff, .card),
+        // Sent by Doddy, so the card shows the exact text and the tap approves exactly that
+        // text; the server checks the same approval hash (ADR-490 U2).
+        .init(VoiceToolName.textMe, .sendText, .card),
         // The conversation itself.
         .init(VoiceToolName.startTranslator, .session, .none),
         .init(VoiceToolName.stopTranslator, .session, .none),

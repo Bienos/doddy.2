@@ -33,6 +33,9 @@ public enum CarProfile {
             return CloudToolName.isWrite(call.name)
                 ? .refuse(reason: "Drafts and tasks in online accounts need a tap on the iPhone, so not while driving.")
                 : .run
+        case .textMe:
+            // Leaves the iPhone through Doddy's server and Twilio (ADR-490 U2).
+            return .refuse(reason: "A text from Doddy's number needs a tap on the iPhone, so it waits until the user isn't driving.")
         case .saveMemory(let text):
             return .askAloud(readBack: CarConfirmation.readBack(saving: text))
         case .addToList(let request):

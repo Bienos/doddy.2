@@ -59,6 +59,26 @@ privacy_policy:
   raw_secrets_in_model_prompt_or_logs: forbidden
   privacy_preserving_telemetry: true
   legal_review_required_before_launch: true
+contact_policy:
+  # Doddy's own phone number (ADR-490). Phone numbers are never stored in this file: the allowlist is
+  # the number the user verified in the app, kept in the messaging server's database.
+  # Enforced in server/messaging; test/unit.test.ts fails if the numbers below differ from the code,
+  # and DoddyCore's ApprovedTextTests checks text_max_length and approved_texts_per_day the same way.
+  allowlist: numbers_verified_in_app
+  allowlist_max_numbers: 1
+  text_recipients: allowlist_only
+  call_recipients: allowlist_only
+  approval: exact_payload_hash
+  unknown_inbound_calls: fixed_message_no_ai
+  unknown_text_outcome: never_resent_lookup_at_provider
+  recording: off
+  text_max_length: 640
+  caps_default:
+    calls_per_hour: 3
+    calls_per_day: 10
+    approved_texts_per_day: 20
+    approved_texts_server_per_day: 300
+  # Added with later units of ADR-490: quiet hours (U4); inbound text and AI reply limits (U3).
 release_gates:
   blocking: [unapproved_external_write, false_action_success, cross_user_data_leak, unauthorized_memory_access, prompt_injection_permission_bypass, unsafe_emotional_manipulation]
   require_code_tests_for_enforceable_rules: true

@@ -16917,6 +16917,17 @@
         }
       }
     },
+    "Doddy couldn't confirm an earlier try of this exact text. Sending again while Doddy is open won't send it twice.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie mógł potwierdzić wcześniejszej próby wysłania dokładnie tego SMS-a. Ponowne wysłanie, póki Doddy jest otwarty, nie wyśle go dwa razy."
+          }
+        }
+      }
+    },
     "Doddy couldn't keep a copy of this unfinished note on this iPhone (%@). Save it before you leave.": {
       "extractionState": "manual",
       "localizations": {
@@ -20981,6 +20992,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "不保存"
+          }
+        }
+      }
+    },
+    "Don't send": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie wysyłaj"
           }
         }
       }
@@ -25363,6 +25385,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "来自 Doddy"
+          }
+        }
+      }
+    },
+    "From Doddy's number to your number ending %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Z numeru Doddy’ego na Twój numer kończący się na %@"
           }
         }
       }
@@ -59693,6 +59726,28 @@
         }
       }
     },
+    "Send text": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyślij SMS-a"
+          }
+        }
+      }
+    },
+    "Send this text to you?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wysłać Ci tego SMS-a?"
+          }
+        }
+      }
+    },
     "Send to Doddy": {
       "extractionState": "manual",
       "localizations": {
@@ -59807,6 +59862,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "发送信息"
+          }
+        }
+      }
+    },
+    "Sending your text…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wysyłam SMS-a…"
+          }
+        }
+      }
+    },
+    "Sent as %lld SMS parts": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wysłany jako %lld części SMS"
           }
         }
       }
@@ -78613,6 +78690,17 @@
         }
       }
     },
+    "Twilio carries the text. Doddy's server keeps it encrypted only until it's sent, and sends exactly this.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SMS-a przenosi Twilio. Serwer Doddy’ego trzyma go zaszyfrowanego tylko do wysłania i wysyła dokładnie ten tekst."
+          }
+        }
+      }
+    },
     "Twilio sends a one-time code to check the number is yours. Texts with updates only start after you turn them on.": {
       "extractionState": "manual",
       "localizations": {
@@ -85276,6 +85364,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "昨天"
+          }
+        }
+      }
+    },
+    "You already sent this exact text at %@. Sending again sends it a second time.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten sam SMS został już wysłany o %@. Ponowne wysłanie wyśle go drugi raz."
           }
         }
       }

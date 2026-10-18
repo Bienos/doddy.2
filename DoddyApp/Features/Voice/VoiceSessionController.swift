@@ -75,6 +75,9 @@ final class VoiceSessionController {
         case leaveBy(toolCallID: String, plan: LeaveByPlan)
         /// A dish's ingredients with ticks (ADR-305); `alreadyOpen` start unticked.
         case ingredients(toolCallID: String, listID: UUID, listName: String, dish: String, items: [String], alreadyOpen: Set<Int>)
+        /// "Send this text to you?" (ADR-490 U2): from Doddy's number to the user's own verified
+        /// number, exactly `draft.body`. The tap approves that text for that number only.
+        case text(toolCallID: String, draft: ApprovedTextDraft)
 
         var toolCallID: String {
             switch self {
@@ -83,7 +86,7 @@ final class VoiceSessionController {
                  .noteReminder(let id, _, _, _, _), .createList(let id, _, _), .plan(let id, _, _),
                  .changeEvent(let id, _), .changeReminder(let id, _, _), .deleteEvent(let id, _), .deleteReminder(let id, _),
                  .undo(let id, _), .bulk(let id, _, _, _), .parking(let id, _), .leaveBy(let id, _),
-                 .ingredients(let id, _, _, _, _, _):
+                 .ingredients(let id, _, _, _, _, _), .text(let id, _):
                 id
             }
         }
@@ -224,6 +227,8 @@ final class VoiceSessionController {
     /// The last list change made by voice (ADR-216): what changed, its Undo, and items Doddy
     /// couldn't tell apart, to tap. Shown on screen until dismissed or the next change.
     private(set) var listReceipt: ListReceipt?
+    /// True from the tap on Send text until its result (ADR-490 U2): the card is gone by then.
+    private(set) var textSending = false
     /// The last change Doddy made in Calendar or Reminders, with Undo (ADR-258).
     private(set) var changeReceipt: ChangeReceipt?
     /// Translator mode (ADR-215), in memory only. While it is set the app runs no tool and the
@@ -1158,6 +1163,12 @@ final class VoiceSessionController {
             let record = await runConfirmedCloud(call, approvalID: approvalID, app: asked[id]?.app ?? .gmail)
             writeResults[id] = WriteResult(reply: record.reply, receipt: record.receipt, attempted: record.attempted)
             await reply(id, record.reply)
+        case .text(let id, let draft):
+            textSending = true
+            let result = await sendApprovedText(draft)
+            textSending = false
+            writeResults[id] = WriteResult(reply: result.reply, attempted: result.attempted)
+            await reply(id, result.reply)
         case .noteReminder(let id, let memoryID, let noteText, _, let target):
             guard let confirmed = confirmedNoteReminder(memoryID: memoryID, noteText: noteText, target: target) else {
                 await reply(id, VoiceToolReply.noteReminderFailed("That place can't be used."))
@@ -1351,6 +1362,7 @@ final class VoiceSessionController {
         case .map(let id, _): await reply(id, VoiceToolReply.declinedMap)
         case .shortcut(let id, _): await reply(id, VoiceToolReply.declinedShortcut)
         case .message(let id, _, _): await reply(id, VoiceToolReply.declinedMessage)
+        case .text(let id, _): await reply(id, VoiceToolReply.textDeclined)
         case .cloud(let id, let call, _, _, _): await reply(id, VoiceToolReply.cloudDeclined(call.name))
         case .noteReminder(let id, _, _, _, _): await reply(id, VoiceToolReply.declinedNoteReminder)
         case .createList(let id, _, _): await reply(id, VoiceToolReply.declinedList)
@@ -2309,6 +2321,8 @@ final class VoiceSessionController {
             }
         case .cloudTool(let cloud):
             await handleCloud(cloud, toolCallID: call.toolCallId)
+        case .textMe(let body):
+            await proposeText(body, toolCallID: call.toolCallId)
         case .startTranslator(let proposal):
             guard let setup = proposal.setup(ownerDefault: Self.ownerLanguage) else {
                 await reply(call.toolCallId, VoiceToolReply.failed("Both languages are the same. Ask the user which language the other person speaks."), isError: true)
@@ -2810,6 +2824,88 @@ final class VoiceSessionController {
             if ParkingStore.clear() { parkingCard = nil }
             WidgetSync.shared.refresh()
             await reply(toolCallID, ParkingStore.current() == nil ? VoiceToolReply.parkingCleared : VoiceToolReply.failed("The parking spot couldn't be removed."))
+        }
+    }
+
+    // MARK: Texts from Doddy's number (ADR-490 U2)
+
+    /// One messaging client for approved texts while Doddy runs, shared by every conversation, so
+    /// a try-again after an unknown outcome reuses its idempotency key and the server sends that
+    /// text at most once (`DoddyServerClient.sendApprovedText`). The key lives in memory only:
+    /// after Doddy is closed, a new try is a new request.
+    private static var textClient: (url: URL, client: DoddyServerClient)?
+    /// Approval hashes of texts whose outcome was unknown, so the card can say so.
+    private(set) static var unconfirmedTexts: Set<String> = []
+    /// When each approved text was queued, by approval hash, so a card for the same text again
+    /// says it was already sent (the agent may ask again after its own wait ran out).
+    private(set) static var queuedTexts: [String: Date] = [:]
+
+    private static func messagingClient() -> DoddyServerClient? {
+        guard let url = ServerConfig.baseURL() else { return nil }
+        if let held = textClient, held.url == url { return held.client }
+        guard let client = ServerConfig.client() else { return nil }
+        textClient = (url, client)
+        return client
+    }
+
+    /// Asks Doddy's server which number is the user's and whether texts are on before the card is
+    /// shown. Nothing is sent here; the card waits for the tap.
+    private func proposeText(_ body: String, toolCallID: String) async {
+        guard let client = Self.messagingClient() else {
+            await reply(toolCallID, VoiceToolReply.textNoServer, isError: true)
+            return
+        }
+        // No account yet means no verified number; asking the server would create an account.
+        guard await client.hasAccount() else {
+            await reply(toolCallID, VoiceToolReply.textNotReady(.noPhone))
+            return
+        }
+        let readiness: TextReadiness
+        do {
+            readiness = TextReadiness(try await client.phoneStatus())
+        } catch {
+            await reply(toolCallID, VoiceToolReply.textCheckFailed(error as? ServerError), isError: true)
+            return
+        }
+        guard case .ready(let to) = readiness else {
+            await reply(toolCallID, VoiceToolReply.textNotReady(readiness))
+            return
+        }
+        propose(.text(toolCallID: toolCallID, draft: ApprovedTextDraft(body: body, to: to)), toolCallID: toolCallID)
+    }
+
+    /// After the tap: the text and the approval hash of exactly what the card showed go to the
+    /// server, which checks the hash against the number it holds before queueing. Then a few
+    /// seconds of status, so the reply says what is known and no more (DOD-08).
+    private func sendApprovedText(_ draft: ApprovedTextDraft) async -> (reply: String, attempted: Bool) {
+        guard let client = Self.messagingClient() else { return (VoiceToolReply.textNoServer, false) }
+        let outcome: ApprovedTextOutcome
+        do {
+            outcome = try await client.sendApprovedText(draft.body, approvalHash: draft.approvalHash)
+        } catch {
+            // Certainly not queued: offline before it left, or an answer that means it never ran.
+            return (VoiceToolReply.textNotSent(error as? ServerError), false)
+        }
+        switch outcome {
+        case .unknown:
+            Self.unconfirmedTexts.insert(draft.approvalHash)
+            return (VoiceToolReply.textUnknown, true)
+        case .refused(let code):
+            return (VoiceToolReply.textRefused(code), false)
+        case .queued(let queued):
+            Self.unconfirmedTexts.remove(draft.approvalHash)
+            Self.queuedTexts[draft.approvalHash] = Date()
+            // A few seconds at most, so the reply comes well inside the agent's wait; after that
+            // the reply says the server has it, and What Doddy did keeps the rest.
+            let deadline = Date().addingTimeInterval(6)
+            var status: UpdateStatus?
+            while Date() < deadline {
+                try? await Task.sleep(for: .seconds(1))
+                guard let latest = try? await client.updateStatus(queued.id, timeout: 3) else { break }
+                status = latest
+                if !latest.isPending { break }
+            }
+            return (VoiceToolReply.textResult(status), true)
         }
     }
 
@@ -3489,10 +3585,10 @@ private extension VoiceSessionController.PendingAction {
     var changesSomething: Bool {
         switch self {
         case .memory, .event, .reminder, .timer, .alarm, .cancelAlarm, .cloud, .noteReminder, .createList, .changeEvent, .changeReminder,
-             .deleteEvent, .deleteReminder, .bulk, .parking, .ingredients, .leaveBy: true
+             .deleteEvent, .deleteReminder, .bulk, .parking, .ingredients, .leaveBy, .text: true
         // Each step of a plan is logged on its own (runPlan), not the plan as a whole. An undo
         // is recorded on the row it undoes (ADR-271).
-        case .map, .shortcut, .message, .translator, .plan, .undo: false
+        case .map, .shortcut, .message, .plan, .undo: false
         }
     }
 }

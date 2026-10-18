@@ -59,6 +59,8 @@ public enum ActivityText {
         "Run shortcut": "Uruchom skrót",
         "Draft a text": "Szkic SMS-a",
         "Draft an email": "Szkic e-maila",
+        // ADR-490 U2.
+        "Text you from Doddy's number": "SMS do Ciebie z numeru Doddy’ego",
         // Written before ADR-275 fixed the article; old rows still say it.
         "Draft a email": "Szkic e-maila",
         "Checked email": "Sprawdzono pocztę",
@@ -103,6 +105,9 @@ public enum ActivityText {
         var notes: [String: String] = [
             "Connections were paused.": "Połączenia były wstrzymane.",
             "Doddy couldn't confirm it went through.": "Doddy nie mógł potwierdzić, że się udało.",
+            // Texts from Doddy's number (ADR-490 U2).
+            "Twilio accepted the text; delivery isn't confirmed.": "Twilio przyjął SMS-a; doręczenie nie jest potwierdzone.",
+            "Doddy's server has the text; it wasn't confirmed as sent yet.": "Serwer Doddy’ego ma SMS-a; wysłanie nie zostało jeszcze potwierdzone.",
             "Demo data from a test server, not your account.": "Dane demonstracyjne z serwera testowego, nie z Twojego konta.",
             ActivityLog.interruptedNote: "Doddy zamknął się, zanim to się skończyło. Sprawdź, zanim poprosisz ponownie, żeby nie zrobić tego dwa razy.",
             "Found in Reminders when you checked.": "Znalezione w Przypomnieniach przy sprawdzaniu.",

@@ -3,7 +3,7 @@ import type { TextCipher } from "./crypto.js";
 import type { Db } from "./db.js";
 import { runDueDigests, type NewsDeps } from "./news/digest.js";
 import { pruneNewsCache } from "./news/sources.js";
-import { dispatchDue } from "./outbox.js";
+import { dispatchDue, reconcileUnknownSms } from "./outbox.js";
 import type { PushSender, SmsSender } from "./providers/types.js";
 
 import { log } from "./log.js";
@@ -35,6 +35,8 @@ async function dispatchLoop(db: Db, deps: { push?: PushSender; sms?: SmsSender; 
   while (!shouldStop()) {
     try {
       const r = await dispatchDue(db, { push: deps.push, sms: deps.sms, cipher: deps.cipher });
+      // Texts whose outcome is unknown are looked up at Twilio a little later (DOD-09).
+      await reconcileUnknownSms(db, deps.sms);
       if (Date.now() - lastTidy > 3_600_000) {
         lastTidy = Date.now();
         // Expired sessions are already refused by findSession; this only reclaims space.

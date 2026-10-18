@@ -1351,5 +1351,14 @@
   "answered": "odebrane",
   "no answer": "nieodebrane",
   "busy": "zajęte",
-  "cancelled": "anulowane"
+  "cancelled": "anulowane",
+  "Send this text to you?": "Wysłać Ci tego SMS-a?",
+  "From Doddy's number to your number ending %@": "Z numeru Doddy’ego na Twój numer kończący się na %@",
+  "Sent as %lld SMS parts": "Wysłany jako %lld części SMS",
+  "Doddy couldn't confirm an earlier try of this exact text. Sending again while Doddy is open won't send it twice.": "Doddy nie mógł potwierdzić wcześniejszej próby wysłania dokładnie tego SMS-a. Ponowne wysłanie, póki Doddy jest otwarty, nie wyśle go dwa razy.",
+  "Twilio carries the text. Doddy's server keeps it encrypted only until it's sent, and sends exactly this.": "SMS-a przenosi Twilio. Serwer Doddy’ego trzyma go zaszyfrowanego tylko do wysłania i wysyła dokładnie ten tekst.",
+  "Send text": "Wyślij SMS-a",
+  "Don't send": "Nie wysyłaj",
+  "Sending your text…": "Wysyłam SMS-a…",
+  "You already sent this exact text at %@. Sending again sends it a second time.": "Ten sam SMS został już wysłany o %@. Ponowne wysłanie wyśle go drugi raz."
 }
