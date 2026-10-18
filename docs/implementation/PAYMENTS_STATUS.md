@@ -27,8 +27,8 @@ From the payments research (owner's doc "Doddy Payments Research", 2026-10-18, w
 |---|---|---|
 | API contract and fixtures | `contracts/purchases/` | Written; both sides decode the same JSON |
 | Server: prepare, pay (Apple Pay, BLIK), status, cancel, hand-off, report, list; limits; approvals; Stripe over HTTPS; mock gateway | `backend/src/payments/` | Built; tested offline with a mock gateway and a fake Stripe (see the PR) |
-| Rules with no UI: contract types, client, price format, BLIK code, checkout link check, voice tool parsing, replies | `Packages/DoddyCore/Sources/DoddyCore/Payments/` | Written with tests (`PaymentsTests.swift`, plus payments cases in `AskFirstTests`, `DataFlowTests`, `ToolCatalogTests`); **not compiled here** (no Swift on this machine, swift.org unreachable) and hosted CI was blocked by GitHub billing on 2026-10-18 |
-| Buy card, Apple Pay sheet, Safari checkout, BLIK wait, receipt | `DoddyApp/Features/Payments/` | Written; **not compiled or run** |
+| Rules with no UI: contract types, client, price format, BLIK code, checkout link check, voice tool parsing, replies | `Packages/DoddyCore/Sources/DoddyCore/Payments/` | Written with tests (`PaymentsTests.swift`, plus payments cases in `AskFirstTests`, `DataFlowTests`, `ToolCatalogTests`); **pass on hosted CI** (Linux, Swift 6.1) |
+| Buy card, Apple Pay sheet, Safari checkout, BLIK wait, receipt | `DoddyApp/Features/Payments/` | **Compiles** on hosted CI (Xcode); never run on a device or simulator |
 | Voice controller and screen | `VoiceSessionController`, `VoiceView` | `.purchase` card, `prepare_purchase` routing |
 | Settings switch | Connections › Money › Payments | Off by default |
 | Voice agent spec | `voice-agent/tools.json`, `instructions.md` | `prepare_purchase` added, `elevenlabs_tool_id: not_synced` |
@@ -64,7 +64,11 @@ Run here (Linux, Node 22, Python 3; **no Swift**):
 - `scripts/check_forbidden_capabilities.sh` PASS (with probes: a `sk_test_…` key in `backend/src` and `import StripeApplePay` in the app each make it fail).
 - `scripts/voice_agent_spec.py check` PASS (83 tools; `prepare_purchase` asks by `tap`), phone agent PASS, string catalogs, site pages, blog, day page, platform specs, imported pack: PASS.
 
-**NOT RUN:** `swift test` for DoddyCore, the app type-check, any iOS build, the app on a device or simulator, Apple Pay's sheet, a Stripe test-mode run, VoiceOver and large Dynamic Type on the card. Nothing on the iPhone side is "tested" until those run.
+Hosted CI on GitHub (`.github/workflows/ios.yml`), commit 3976e3ec:
+- **Linux job (`core`, Swift 6.1 container): PASS**: DoddyCore `swift test` (payments tests included), the non-UI app type-check, the guard, agent specs, backend with its pinned toolchain, gateway, messaging server, site.
+- **macOS job (`ci`, Xcode latest stable)**: the app and its tests **compile** (the first run found three Swift 6 isolation errors in `ApplePayPresenter.swift`, fixed in 3976e3ec); unit tests passed; `xcodebuild test` failed on one UI test, `MemoryJourneyTests.testApprovedJourneyCorrectionRetainsOriginalAfterRestart`: the saved note read back with a trailing space after the simulator keyboard typed it. That test and the note capture screen aren't touched by this branch; the default branch passed it at 16:50 the same day. Treat it as unexplained until a re-run shows whether it is the runner.
+
+**NOT RUN:** the app on a device, Apple Pay's real sheet, a Stripe test-mode run, VoiceOver and large Dynamic Type on the card, and no UI test opens the Buy card. Nothing on the card itself is "tested" until those run.
 
 Review fixes in this round: `PrepareResult` renamed `PurchasePrepareResult` (it collided with the online-accounts type of the same name); Apple Pay goes token → PaymentMethod → PaymentIntent (documented Stripe parameters); each Stripe call capped at 5 s; the gateway itself refuses non-test keys; a tool error or timeout is "unknown" for the agent; an untouched Buy card is dropped on stop, failure, disconnect and a new start, and its approval cancelled on the server; the card stays while the Apple Pay sheet is open; Cancel only while BLIK waits at the bank; the delegate uses PassKit's async method; the screen scrolls to the Buy card; "What leaves this iPhone" and the privacy draft list payments; the guard bans a Stripe SDK in the app and Stripe-style keys in the repo.
 
