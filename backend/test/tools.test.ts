@@ -356,6 +356,38 @@ test("a write that fails is never retried and says the outcome may be unknown", 
   assert.equal(res.status, 502);
   assert.equal(res.body.error.receipt.status, "outcome_unknown");
   assert.equal(rig.provider.executed.length, 1, "no automatic retry for a write");
+  // The message the app shows must not contradict the receipt.
+  assert.match(res.body.error.message, /Todoist didn't confirm; it may or may not have gone through/);
+  assert.doesNotMatch(res.body.error.message, /Nothing was changed/);
+});
+
+test("a failed read names its own account, not Google Calendar", async () => {
+  rig = await start();
+  await ready(rig, "gmail", "check_email");
+  rig.provider.setScenario(rigComposioUser(rig, USER_A), "provider_error");
+  const res = await run(rig, "check_email", {});
+  assert.equal(res.status, 502);
+  assert.equal(res.body.error.message, "Gmail couldn't be reached. Nothing was changed.");
+});
+
+test("Connect names the account when Composio refuses the request (e.g. a wrong project key)", async () => {
+  const store = new Store(":memory:");
+  const refused = Object.assign(new Error("401 Invalid API key"), { status: 401 });
+  const fake = { connectedAccounts: { link: async () => { throw refused; } } } as unknown as ComposioToolsLike;
+  const provider = new ComposioToolsProvider("key", { gmail: { authConfigId: "ac_1", toolkitVersion: "20260101_00" } }, fake);
+  const tools = new CloudToolsService({
+    store,
+    provider,
+    limits: testLimits(),
+    publicBaseUrl: "https://api.doddy.test",
+    appReturnUrl: "doddy-dev://connected-apps/return",
+    completionMode: "callback",
+  });
+  await assert.rejects(
+    () => tools.connect("8b0c7f1e-2d3a-4b5c-9d8e-0f1a2b3c4d5e", "gmail", {}),
+    (e: unknown) => e instanceof Error && (e as { code?: string }).code === "provider_unavailable" && e.message === "Gmail couldn't be reached. Nothing was changed.",
+  );
+  store.close();
 });
 
 test("a write whose answer can't be read is reported as maybe done, not as failed", async () => {

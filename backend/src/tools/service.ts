@@ -200,7 +200,7 @@ export class CloudToolsService {
       try {
         return await this.provider.createConnectionLink({ toolkit: id, composioUserId, callbackUrl, signal: this.timeout() });
       } catch (error) {
-        throw toAppError(error);
+        throw toAppError(error, TOOLKITS[id].title);
       }
     });
     if (!this.store.setPendingConnection(attempt.attemptId, link.pendingConnectionId, this.now())) {
@@ -320,8 +320,8 @@ export class CloudToolsService {
         : done("blocked", blockedSummary(title, verdict), reason);
     } catch (error) {
       if (error instanceof AppError) throw error;
-      const appError = toAppError(error);
-      throw new AppError(appError.code, { receipt: this.receipt(userId, id, "connect", null, "failed", `${title} couldn't be connected.`, appError.code, null) });
+      const appError = toAppError(error, title);
+      throw new AppError(appError.code, { ...appError.options, receipt: this.receipt(userId, id, "connect", null, "failed", `${title} couldn't be connected.`, appError.code, null) });
     }
   }
 
@@ -605,9 +605,9 @@ export class CloudToolsService {
    */
   private failure(userId: string, tool: CloudToolDefinition, error: unknown, writeSent: boolean): AppError {
     if (error instanceof AppError) return error;
-    const appError = toAppError(error);
-    const op = tool.risk === "write" ? "write" : "read";
     const title = TOOLKITS[tool.toolkit].title;
+    const appError = toAppError(error, title);
+    const op = tool.risk === "write" ? "write" : "read";
     if (appError.code === "connection_expired") {
       this.store.updateConnectionStatus(userId, tool.toolkit, "expired", "revoked_or_expired", this.now());
       this.store.disableTools(userId, toolNames(tool.toolkit), this.now());
@@ -619,7 +619,8 @@ export class CloudToolsService {
         ? `${title} wasn't reached or its answer couldn't be used. Nothing was changed.`
         : `${title} wasn't reached or its answer couldn't be used. Nothing is shown instead.`;
     const receipt = this.receipt(userId, tool.toolkit, op, tool.name, unknown ? "outcome_unknown" : "failed", summary, appError.code, null);
-    return new AppError(appError.code, { ...appError.options, receipt });
+    // The message matches the receipt: "Nothing was changed" would be false for a write that may have run.
+    return new AppError(appError.code, { ...appError.options, message: unknown ? summary : appError.message, receipt });
   }
 
   async run(userId: string, body: unknown): Promise<RunResult> {
@@ -704,7 +705,7 @@ export class CloudToolsService {
       // after it was sent (timeout, provider error, an answer Doddy couldn't read) may have
       // happened: say so (DOD-08).
       if (used) {
-        const code = error instanceof AppError ? error.code : toAppError(error).code;
+        const code = error instanceof AppError ? error.code : toAppError(error, TOOLKITS[tool.toolkit].title).code;
         this.store.finishApproval(used, WRITE_NOT_RUN.has(code) ? "failed" : "outcome_unknown", null, this.now());
       }
       throw this.failure(userId, tool, error, writeSent);
@@ -746,7 +747,7 @@ export class CloudToolsService {
       });
     } catch (error) {
       if (error instanceof AppError) throw error;
-      const appError = toAppError(error);
+      const appError = toAppError(error, WEB_SEARCH_COPY.title);
       const message =
         appError.code === "rate_limited" ? "Web search is busy right now. Try again shortly." : appError.code === "malformed_provider_result" ? "Web search sent an answer Doddy couldn't read, so nothing is shown." : "Web search couldn't be reached. Nothing is shown instead.";
       const receipt = this.receipt(userId, WEB_SECTION_ID, "read", WEB_SEARCH_TOOL, "failed", message, appError.code, null);
@@ -909,8 +910,29 @@ function parse<T>(schema: { safeParse(v: unknown): { success: true; data: T } | 
   return result.data;
 }
 
-function toAppError(error: unknown): AppError {
+/**
+ * A provider failure in the words of the account it came from. The shared default messages in
+ * errors.ts name Google Calendar, and the Online accounts screen shows `message` as it is.
+ */
+function toAppError(error: unknown, title: string): AppError {
   if (error instanceof AppError) return error;
   const p = error instanceof ProviderError ? error : new ProviderError("provider_unavailable");
-  return new AppError(p.code, p.retryAfterSeconds !== undefined ? { retryAfterSeconds: p.retryAfterSeconds } : {});
+  return new AppError(p.code, { message: providerMessage(p.code, title), ...(p.retryAfterSeconds !== undefined ? { retryAfterSeconds: p.retryAfterSeconds } : {}) });
+}
+
+function providerMessage(code: ProviderError["code"], title: string): string {
+  switch (code) {
+    case "rate_limited":
+      return `${title} is busy right now. Try again shortly.`;
+    case "provider_timeout":
+      return `${title} took too long to answer. Nothing was changed.`;
+    case "malformed_provider_result":
+      return `${title} sent an answer Doddy couldn't read, so nothing is shown.`;
+    case "connection_expired":
+      return `${title} access expired or was removed. Reconnect it in Settings, Online accounts.`;
+    case "permission_insufficient":
+      return `This ${title} connection doesn't have the access Doddy needs. Reconnect it in Settings, Online accounts.`;
+    case "provider_unavailable":
+      return `${title} couldn't be reached. Nothing was changed.`;
+  }
 }
