@@ -61,7 +61,8 @@ final class OpenAIRealtimeTests: XCTestCase {
         XCTAssertEqual(VoiceTokenServer.openAIGrant(status: 200, body: Data(#"{"token":"","provider":"openai","model":"m"}"#.utf8)), .failure(.badResponse))
         XCTAssertEqual(VoiceTokenServer.openAIGrant(status: 401, body: Data()), .failure(.sessionExpired))
         XCTAssertEqual(VoiceTokenServer.openAIGrant(status: 503, body: Data()), .failure(.busy))
-        XCTAssertEqual(VoiceTokenServer.openAIGrant(status: 500, body: Data()), .failure(.serverNotConfigured))
+        XCTAssertEqual(VoiceTokenServer.openAIGrant(status: 500, body: Data(#"{"error":"server_not_configured"}"#.utf8)), .failure(.serverNotConfigured))
+        XCTAssertEqual(VoiceTokenServer.openAIGrant(status: 500, body: Data()), .failure(.busy), "an unexplained 500 is not \"not set up\"")
         XCTAssertEqual(VoiceTokenServer.openAIGrant(status: 400, body: Data()), .failure(.serverProblem(status: 400)))
     }
 

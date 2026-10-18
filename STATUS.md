@@ -36,7 +36,7 @@ Merge one at a time, then rebuild and talk to Doddy before the next.
 | `claude/affectionate-mayer-aovol9` | Island compact view draws a pre-cut round face | Low |
 | `claude/dismiss-ended-card` | Nothing: its changes were reverted | None |
 | PR #44 `claude/peaceful-hopper-v3gx75` | Action status, session recovery, Stop listening, unfinished notes, "Listen until I finish" | High: changes the voice session |
-| `claude/dreamy-cannon-gc33dj` | BLIK transfers (ADR-483): "send Ania 50 zł" shows a card to send in the bank app; Doddy never sends money. New `draft_blik_transfer` tool behind an off-by-default switch. Also fixes a leftover translator-card case that stopped the app compiling. App code not compiled yet. | Low: one new tool; nothing else in the session changes |
+| `claude/dreamy-cannon-gc33dj` | BLIK transfers (ADR-483): "send Ania 50 zł" shows a card to send in the bank app; Doddy never sends money. New `draft_blik_transfer` tool behind an off-by-default switch. Also repairs what stopped the app or the checks building: a leftover translator-card case, `VoiceConfig.swift` without imports, the capability guard and two stale tests after 754e5d6 (ADR-484). Linux checks pass; app code not compiled yet. | Low: one new tool; nothing else in the session changes |
 | PR #61 `claude/fervent-hamilton-cv19sj` | iPad sidebar and fixes, Watch "New note" and Smart Stack, Mac menu bar app, widget and window, per-platform projects | Low for voice: no voice-agent changes |
 
 ## Known problems
