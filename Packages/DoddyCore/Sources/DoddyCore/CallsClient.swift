@@ -99,9 +99,11 @@ public struct MemoryCopyItem: Equatable, Sendable, Encodable {
     public let text: String
     public let capturedAt: String?
 
-    /// Sample fixtures are never copied; they are not the user's memories.
-    public static func from(_ records: [MemoryRecord]) -> [MemoryCopyItem] {
-        records.filter { $0.source != .sampleFixture }.map {
+    /// Private notes (ADR-310) are never copied, so the set of private notes must be passed in:
+    /// there is no way to build upload items without it. Sample fixtures are never copied either;
+    /// they are not the user's memories.
+    public static func from(_ records: [MemoryRecord], excluding privateNotes: PrivateNotes) -> [MemoryCopyItem] {
+        privateNotes.shareable(records).filter { $0.source != .sampleFixture }.map {
             MemoryCopyItem(id: $0.id, text: $0.currentText, capturedAt: $0.capturedAt.map(ServerDates.format))
         }
     }
