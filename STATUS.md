@@ -2,7 +2,7 @@
 
 Doddy is a voice-first memory companion for iPhone, with an Apple Watch app and a Mac menu bar prototype. This page is the short version. Update it when you merge something that changes what is below.
 
-Last updated 2026-10-14, 12:00 UTC (PR #80, the ten languages, merged into the default branch). 1Password lines under "Waiting on the owner" added 2026-10-18 on branch `claude/laughing-darwin-hqxa63` (not merged).
+Last updated 2026-10-14, 12:00 UTC (PR #80, the ten languages, merged into the default branch). 1Password and GitHub Actions lines under "Waiting on the owner" added 2026-10-18 on branch `claude/laughing-darwin-hqxa63` (not merged).
 
 ## Known-good build
 - **Main branch:** `claude/loving-dirac-uuxoux`.
@@ -49,9 +49,11 @@ Merge one at a time, then rebuild and talk to Doddy before the next.
   - Silent 30-second sessions with zero messages still happen: six since that build, four of them within five minutes on 16 Oct at night.
   - Leading suspect: a "Hey Doddy" start from the background that stalls before its start data and stops when iOS's roughly 30-second background allowance runs out.
   - Branch `claude/laughing-darwin-hqxa63` adds the log lines a phone log needs. Not fixed yet: it still needs a device log to confirm the cause.
-- **Vercel:** the `doddy` project (team `doddyyyy`) built and published the site from the default branch on 2026-10-14 (www.doddy.lol); the earlier "account blocked" failures did not recur on that build. The daily deployment limit still applies, so `site/vercel.json` builds only when something under `site/` changed. GitHub Actions has run again since 2026-10-12.
+- **Vercel:** the `doddy` project (team `doddyyyy`) built and published the site from the default branch on 2026-10-14 (www.doddy.lol); the earlier "account blocked" failures did not recur on that build. The daily deployment limit still applies, so `site/vercel.json` builds only when something under `site/` changed. GitHub Actions ran from 12 to 14 October, then stopped starting jobs again on 16 October (no runner assigned, as on 10–11 October): most likely the account's Actions billing, which only the owner can see (BUILD_AND_TEST.md, "Hosted CI").
 
 ## Waiting on the owner
+- GitHub Actions: open a failed run's page for GitHub's reason, then fix it under Settings → Billing and licensing (budget or payment).
+  - 12–14 October used about $250, almost all of it the macOS build. On branch `claude/laughing-darwin-hqxa63`, that build waits for the Linux checks and skips pull requests that don't touch the app (ADR-497).
 - 1Password for project secrets (ADR-493, `docs/security/SECRETS_1PASSWORD.md`).
   - Create the four vaults and items, then run the sync tool one host at a time.
   - Built and tested on Linux against fakes only; it hasn't touched the real 1Password, Vercel or Render.

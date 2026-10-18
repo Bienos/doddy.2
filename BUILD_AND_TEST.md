@@ -61,15 +61,25 @@ xcodebuild test -project Doddy.xcodeproj -scheme Doddy \
 scripts/ci.sh                  # set DODDY_DESTINATION to override the simulator
 ```
 
-**Hosted macOS CI (`.github/workflows/ios.yml`, ADR-123) has never run a step.** As of 2026-10-10 all
-58 runs (pull requests and one manual dispatch) end in failure within seconds, for the macOS job *and*
-the Ubuntu job alike: no runner is ever assigned (`runner_id: 0`) and there are no logs to download.
-The API gives no reason; it is shown as a banner on the run page (e.g.
-<https://github.com/Bienos/doddy.2/actions/runs/38085624065>). The usual causes for a private repo are
-Actions billing (included minutes used up, spending limit at 0, or a failed payment: GitHub Settings →
-Billing and plans → Spending limits → Actions) or an Actions policy that blocks the actions used
-(repo Settings → Actions → General → "Allow all actions and reusable workflows"). Nothing in the workflow
-file is known to be wrong. Until a run starts, every iOS build is a manual Mac build.
+**Hosted CI (`.github/workflows/ios.yml`, ADR-123, ADR-137, ADR-497)** has three jobs:
+- `core` (Ubuntu): `scripts/ci.sh --core-only`, on every pull request.
+- `changes` (Ubuntu, seconds): decides whether the pull request needs the macOS build
+  (`scripts/ci_needs_mac.sh`). It does when any changed file can reach an Xcode target or its tests;
+  a change made only of docs, servers, site or other non-app files skips it.
+- `ci` (macOS): the full `scripts/ci.sh`, including `xcodebuild test`. It runs only after `core`
+  passes and only when `changes` says so. Run the workflow by hand (Actions → iOS build and tests →
+  Run workflow) and it always runs.
+
+**Cost:** the repository is private, so Actions time is paid for. A macOS run takes about 52 minutes
+(34 of them UI tests) at $0.062 a minute, about $3.20. From 12 to 14 October CI used about $250.
+
+**When jobs end in seconds with no logs** (no runner assigned, `runner_id: 0`, both jobs), GitHub is
+refusing to start them for the account: it happened on 10–11 October and again from 16 October. The
+reason is shown only as a banner on the run page, not in the API. For a private repo it is usually
+Actions billing: included minutes used up, a budget reached, or a failed payment (GitHub Settings →
+Billing and licensing → Usage, Budgets and alerts, Payment information). Less often, an Actions policy
+blocks the actions used (repo Settings → Actions → General). While it lasts, every iOS build is a manual
+Mac build.
 
 Why `Doddy.xcodeproj` is not committed: no Xcode could open or build a generated project when M0 was
 authored, and the architecture notes forbid presenting an unverified project file as working. The
