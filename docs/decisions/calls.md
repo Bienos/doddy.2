@@ -97,7 +97,8 @@ This page is the decision. It says what was chosen, why, what the code enforces,
 11. **Retry at a set time.** The failed card offers only times where the whole call fits inside the calling hours.
     - Choosing one is a new approval of the same payload for a 10-minute window at that time.
     - If the server misses the window, the attempt expires; it never dials late.
-    - At most 2 retries, and only while no earlier attempt reached a conversation.
+    - At most 2 retries, and only while no earlier attempt reached a conversation. An attempt whose voice connected only to voicemail, a phone menu or a wrong number doesn't count as a conversation (`RETRYABLE_OUTCOMES` in `server/messaging/src/taskCalls/result.ts`, mirrored by `CallOutcome.isRetryable` in the app).
+    - The server takes an approval for a time up to 24 hours ahead, while the card's payload is kept (at most two days after the card was made). The app offers only such times.
 
 ## What the code enforces (by construction)
 These hold even if the model, the prompt or the app misbehaves. Each has a test in `server/messaging/test/taskCalls*.test.ts`.

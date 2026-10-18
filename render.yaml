@@ -42,7 +42,29 @@ envVarGroups:
         sync: false
       - key: DODDY_PHONE_NUMBER
         sync: false
-      # Daily news (N1)
+      # Calls Doddy makes for the user (ADR-500, docs/decisions/calls.md). Use a Poland-only
+      # Twilio subaccount; the TWILIO_TASK_* pair falls back to TWILIO_ACCOUNT_SID/AUTH_TOKEN.
+      - key: TWILIO_TASK_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_TASK_AUTH_TOKEN
+        sync: false
+      - key: TASK_CALL_FROM_NUMBER
+        sync: false
+      - key: ELEVENLABS_TASK_AGENT_ID
+        sync: false
+      - key: ELEVENLABS_WEBHOOK_SECRET
+        sync: false
+      - key: TASK_CALLS_KILL_SWITCH # "1" stops every call by Doddy at once
+        value: "0"
+      - key: CALL_RECORDING_NOTICE # off until the owner confirms the legal basis
+        value: "off"
+      - key: PRICE_TWILIO_TRANSCRIPTION_USD_PER_MIN
+        sync: false
+      - key: PRICE_TWILIO_CONFERENCE_USD_PER_PARTICIPANT_MIN
+        sync: false
+      - key: PRICE_ELEVENLABS_USD_PER_CREDIT
+        sync: false
+      # Daily news (N1); ANTHROPIC_API_KEY also writes the call answer card's summary
       - key: ANTHROPIC_API_KEY
         sync: false
       - key: OPENAI_API_KEY # used only when ANTHROPIC_API_KEY is empty (ADR-197)

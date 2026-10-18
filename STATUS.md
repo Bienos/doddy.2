@@ -36,9 +36,11 @@ Merge one at a time, then rebuild and talk to Doddy before the next.
 | `claude/affectionate-mayer-aovol9` | Island compact view draws a pre-cut round face | Low |
 | `claude/dismiss-ended-card` | Nothing: its changes were reverted | None |
 | PR #44 `claude/peaceful-hopper-v3gx75` | Action status, session recovery, Stop listening, unfinished notes, "Listen until I finish" | High: changes the voice session |
+| `claude/modest-pasteur-7jnwfd` | Calls Doddy makes for you (ADR-500 to 507): Doddy calls a business in Polish after you approve a card, asks one question and brings the answer back; take over mid-call; rehearsal. Server tested with fakes; **no real call yet; the iPhone screens were never compiled**. Status: `docs/implementation/CALL_CASES_STATUS.md`. Also fixes `VoiceConfig.swift`'s missing imports. | Low for the main voice: a separate ElevenLabs agent for these calls; rehearsal uses the OpenAI voice with no tools |
 | PR #61 `claude/fervent-hamilton-cv19sj` | iPad sidebar and fixes, Watch "New note" and Smart Stack, Mac menu bar app, widget and window, per-platform projects | Low for voice: no voice-agent changes |
 
 ## Known problems
+- **The capability guard fails on `VoiceAuthSession.swift` and `VoiceAccessGate.swift`** (networking and `AuthenticationServices` outside their allowed files), from the commit `754e5d6` ("secure voice access"). Either the guard's allowed list or the files need to change; not touched by the call-case branch.
 - **Voice sessions sometimes start twice.** ElevenLabs logs from 2026-10-09 to 10-11 show:
   - two sessions starting in the same second;
   - a "ghost" session that connects but never sends its start data and stays silent for 30 s;
@@ -48,6 +50,7 @@ Merge one at a time, then rebuild and talk to Doddy before the next.
 - **Vercel:** the `doddy` project (team `doddyyyy`) built and published the site from the default branch on 2026-10-14 (www.doddy.lol); the earlier "account blocked" failures did not recur on that build. The daily deployment limit still applies, so `site/vercel.json` builds only when something under `site/` changed. GitHub Actions has run again since 2026-10-12.
 
 ## Waiting on the owner
+- Calls Doddy makes for you: the legal basis for transcribing the person called (the recording notice stays off until then), a Poland-only Twilio subaccount, the task-call agent with a Polish voice, then live tests #1 to #3 (`docs/implementation/CALL_CASES_STATUS.md`).
 - A native review of the eight new app languages and of all nine landing-page translations, which are live as drafts (`l10n/REVIEW_NOTES.md`).
 - "Hey Doddy" cannot work until the keyword file and a Picovoice key are in place (`docs/implementation/HEY_DODDY_STATUS.md`, "What is missing").
 - Whether notes sync between the Mac and the iPhone (today they never do).

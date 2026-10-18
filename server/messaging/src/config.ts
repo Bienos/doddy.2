@@ -122,7 +122,8 @@ export interface Config {
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
-  const e = schema.parse(env);
+  // A variable left empty (as in a copied .env.example) counts as unset, not as an invalid value.
+  const e = schema.parse(Object.fromEntries(Object.entries(env).filter(([, v]) => v !== "")));
   const all = <T extends object>(o: { [K in keyof T]: T[K] | undefined }): T | undefined =>
     Object.values(o).every((v) => v !== undefined) ? (o as T) : undefined;
   return {
