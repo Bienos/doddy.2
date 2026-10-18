@@ -156,6 +156,10 @@ struct RootView: View {
             }
             .task {
                 await store.reload()
+                // Memory on calls, at launch: once after the update, the server copy is replaced with
+                // one that has no private notes (ADR-310), only if the notes were read successfully.
+                MemoryCopySync.shared.retryIfNeeded(PrivateNotesStore.current().shareable(store.memories),
+                                                    notesLoaded: store.hasLoaded && store.loadError == nil)
                 await noteReminders.refreshOnForeground()
                 if scenePhase == .active { heyDoddyAppBecameActive() }
                 pickUpSharedItem()
@@ -167,11 +171,10 @@ struct RootView: View {
                     BreathingController.shared.refresh()
                     // Shared lists (ADR-263): changes others made arrive when Doddy comes to the front.
                     Task { await SharedListsController.shared.syncAll() }
-                    // Memory on calls: a copy upload that failed or was cut off is sent again.
-                    // Private notes (ADR-310) are never in the server copy.
-                    if store.hasLoaded && store.loadError == nil {
-                        MemoryCopySync.shared.retryIfNeeded(PrivateNotesStore.current().shareable(store.memories))
-                    }
+                    // Memory on calls: a copy upload that failed or was cut off is sent again, and once
+                    // after the update, a copy that may hold private notes is replaced (ADR-310).
+                    MemoryCopySync.shared.retryIfNeeded(PrivateNotesStore.current().shareable(store.memories),
+                                                        notesLoaded: store.hasLoaded && store.loadError == nil)
                     pickUpSharedItem()
                 }
                 if phase == .background {
