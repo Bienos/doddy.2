@@ -1,4 +1,4 @@
-import { createCipheriv, createDecipheriv, createHash, randomBytes, scrypt, timingSafeEqual } from "node:crypto";
+import { createCipheriv, createDecipheriv, createHash, createHmac, hkdfSync, randomBytes, scrypt, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
 
 export function sha256(value: string): Buffer {
@@ -37,6 +37,20 @@ export class TextCipher {
     decipher.setAuthTag(blob.subarray(12, 28));
     return Buffer.concat([decipher.update(blob.subarray(28)), decipher.final()]).toString("utf8");
   }
+
+  /** A separate 32-byte key for one purpose (HKDF-SHA256), so no key is used for two jobs. */
+  derivedKey(purpose: string): Buffer {
+    return Buffer.from(hkdfSync("sha256", this.key, Buffer.alloc(0), `doddy:${purpose}`, 32));
+  }
+}
+
+export function hmacSha256(key: Buffer, value: string | Buffer): Buffer {
+  return createHmac("sha256", key).update(value).digest();
+}
+
+/** Constant-time comparison of two byte strings of any length. */
+export function sameBytes(a: Buffer, b: Buffer): boolean {
+  return a.length === b.length && timingSafeEqual(a, b);
 }
 
 const SCRYPT = { N: 16384, r: 8, p: 1 };
