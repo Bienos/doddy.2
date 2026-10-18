@@ -225,6 +225,8 @@ final class VoiceSessionController {
             /// The user closed the sign-in page; nothing was connected.
             case canceled
             case failed(String)
+            /// The server confirmed it; the card stays as a one-line receipt until the next card.
+            case connected
         }
         let offer: CloudAccessOffer
         var state: State
@@ -2700,7 +2702,7 @@ final class VoiceSessionController {
     /// tool switched on. Only a confirmed result tells the agent to try again; the conversation
     /// keeps running while the page is up.
     func openAccountNeeded() async {
-        guard var needed = accountNeeded, needed.state != .working else { return }
+        guard var needed = accountNeeded, needed.state != .working, needed.state != .connected else { return }
         guard let client = OnlineAccountsClientFactory.make() else {
             accountNeeded?.state = .failed(OnlineAccountsError.notConfigured.userMessage)
             return
@@ -2713,7 +2715,7 @@ final class VoiceSessionController {
         guard accountNeeded?.offer == needed.offer else { return }
         switch outcome {
         case .ready:
-            accountNeeded = nil
+            accountNeeded?.state = .connected
             if isLive { await sendToAgent(CloudAccess.agentMessage(needed.offer)) }
         case .canceled:
             accountNeeded?.state = .canceled

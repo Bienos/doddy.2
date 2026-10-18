@@ -1141,7 +1141,27 @@ struct VoiceView: View {
 
     /// An online account the agent needed (ADR-483): one tap opens the provider's own sign-in page
     /// in the system browser, then switches on only the tool that was asked for.
+    @ViewBuilder
     private func accountCard(_ needed: VoiceSessionController.AccountNeeded, controller: VoiceSessionController) -> some View {
+        if needed.state == .connected {
+            // The server confirmed both steps: a one-line receipt instead of the card.
+            let offer = needed.offer
+            let title: LocalizedStringKey = offer.kind == .turnOn
+                ? "“\(offer.toolTitle)” is on."
+                : "\(offer.accountTitle) connected. “\(offer.toolTitle)” is on."
+            Label(title, systemImage: "checkmark.circle")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Theme.confirmed)
+                .padding(16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+                .accessibilityIdentifier("voice.connectAccount.connected")
+        } else {
+            accountOfferCard(needed, controller: controller)
+        }
+    }
+
+    private func accountOfferCard(_ needed: VoiceSessionController.AccountNeeded, controller: VoiceSessionController) -> some View {
         let offer = needed.offer
         let working = needed.state == .working
         return VStack(alignment: .leading, spacing: 12) {
@@ -1178,16 +1198,17 @@ struct VoiceView: View {
                     .font(.footnote)
                     .foregroundStyle(Theme.error)
                     .accessibilityIdentifier("voice.connectAccount.failed")
-            case .offered, .working:
+            case .offered, .working, .connected:
                 EmptyView()
             }
             Button {
                 Task { await controller.openAccountNeeded() }
             } label: {
                 if working {
+                    let waiting: LocalizedStringKey = offer.kind == .turnOn ? "Switching on…" : "Waiting for \(offer.accountTitle)…"
                     HStack(spacing: 8) {
                         ProgressView()
-                        Text(offer.kind == .turnOn ? "Switching on…" : "Waiting for \(offer.accountTitle)…")
+                        Text(waiting)
                     }
                 } else {
                     switch offer.kind {

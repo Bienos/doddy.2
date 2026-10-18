@@ -69,7 +69,7 @@ Asking for something from an account that isn't ready no longer ends in "go to S
 | 3. Which step is missing | The app reads `GET /v1/tools` and picks one card (`CloudAccessOffer.decide`): **Connect Gmail?** (never connected), **Gmail needs connecting again** (expired or wrong access), or **"Check my email" is off** (connected, switch off). No card when the server can't connect that account, the tool is already on, or the failure is about anything else (limits, provider, an expired confirmation, a write that may have gone through). |
 | 4. Doddy says one line | The tool reply tells the agent to point at the card, not Settings. |
 | 5. Tap | `CloudAccess.open`: connect → the hosted sign-in in the system browser (same as Settings) → complete (also when closed, so the attempt ends) → switch on **only** the tool asked for. Each step is the server's answer. |
-| 6. Carry on | Only on the server's confirmation the app sends the agent "(app) … do what they asked again now with check_email, once", and the summary follows in the same conversation. Closed or failed: the card says so; nothing is retried by itself. |
+| 6. Carry on | Only on the server's confirmation the card becomes a one-line receipt ("Gmail connected. “Check my email” is on."), and the app sends the agent "(app) … do what they asked again now with check_email, once", and the summary follows in the same conversation. Closed or failed: the card says so; nothing is retried by itself. |
 
 Other Gmail tools stay off, and a draft still waits for its own confirmation card. Plan cards (`propose_plan`) don't
 show this card yet. Code: `Packages/DoddyCore/Sources/DoddyCore/OnlineAccounts/CloudAccess.swift` (tests:
