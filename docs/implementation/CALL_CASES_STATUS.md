@@ -2,7 +2,7 @@
 
 Last updated 2026-10-18. Branch `claude/modest-pasteur-7jnwfd`. Decisions: ADR-500 to 507. Architecture, the docs checked and the open legal questions: `docs/decisions/calls.md`.
 
-**State: built and tested with fakes. No real call has been placed, and the iPhone screens have never been compiled.** Nothing below may be called working until the live tests at the end pass.
+**State: built and tested with fakes. No real call has been placed. The iPhone screens compile (hosted CI, Xcode 26.6) but have never been run on a device or seen on screen.** Nothing below may be called working until the live tests at the end pass.
 
 ## What it does
 1. The user writes a brief in the app: who (name, number, where the number came from), the goal in one sentence, the one question, facts Doddy may say (only ticked ones leave the iPhone), and the longest the call may last (4 min by default).
@@ -37,7 +37,7 @@ Last updated 2026-10-18. Branch `claude/modest-pasteur-7jnwfd`. Decisions: ADR-5
 
 ## Not verified
 - **No real call.** Nothing has been dialled, heard or transcribed for real; Twilio's and ElevenLabs' real callbacks have only been imitated by fakes.
-- **The iPhone screens, Live Activity, widget, intents, contact picker and rehearsal have never been compiled** (no Xcode here). Expect compile fixes on the first Mac build.
+- **The iPhone screens, Live Activity, widget, intents, contact picker and rehearsal have never been run.** They compile on hosted CI (Xcode 26.6, PR #90), where `CallCasesModelTests` (8) passed on the iOS simulator and the existing 29 UI tests still pass; no UI test covers the call screens.
 - APNs Live Activity pushes, Twilio Real-Time Transcription in Polish (track labels, latency, quality), the takeover conference, the voicemail tool on Polish voicemail greetings, ElevenLabs' post-call webhook arriving and its deletion.
 - How long callees wait in silence after "Halo" before Doddy speaks.
 - The Polish wording has not been read by a native speaker in context; the recording notice wording has not been reviewed legally.

@@ -37,7 +37,7 @@ Merge one at a time, then rebuild and talk to Doddy before the next.
 | `claude/affectionate-mayer-aovol9` | Island compact view draws a pre-cut round face | Low |
 | `claude/dismiss-ended-card` | Nothing: its changes were reverted | None |
 | PR #44 `claude/peaceful-hopper-v3gx75` | Action status, session recovery, Stop listening, unfinished notes, "Listen until I finish" | High: changes the voice session |
-| `claude/modest-pasteur-7jnwfd` | Calls Doddy makes for you (ADR-500 to 507): Doddy calls a business in Polish after you approve a card, asks one question and brings the answer back; take over mid-call; rehearsal. Server tested with fakes; **no real call yet; the iPhone screens were never compiled**. Status: `docs/implementation/CALL_CASES_STATUS.md`. Also fixes `VoiceConfig.swift`'s missing imports. | Low for the main voice: a separate ElevenLabs agent for these calls; rehearsal uses the OpenAI voice with no tools |
+| `claude/modest-pasteur-7jnwfd` | Calls Doddy makes for you (ADR-500 to 507): Doddy calls a business in Polish after you approve a card, asks one question and brings the answer back; take over mid-call; rehearsal. Server tested with fakes; **no real call yet**; the iPhone screens compile on hosted CI but were never run on a device. Status: `docs/implementation/CALL_CASES_STATUS.md`. Also fixes `VoiceConfig.swift`'s missing imports. | Low for the main voice: a separate ElevenLabs agent for these calls; rehearsal uses the OpenAI voice with no tools |
 | PR #61 `claude/fervent-hamilton-cv19sj` | iPad sidebar and fixes, Watch "New note" and Smart Stack, Mac menu bar app, widget and window, per-platform projects | Low for voice: no voice-agent changes |
 
 ## Known problems
