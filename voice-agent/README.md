@@ -41,7 +41,16 @@ and 36 language presets; keep them when applying (both lists are replaced wholes
 
 **Not yet applied to the live agent (ADR-441, 2026-10-11):** this repository now has the `note_capability_gap` tool, the `{{learned_context}}` variable (declared in `session.json`) and two paragraphs in `instructions.md` (what Doddy learned, and when to note a gap). Until the owner applies them (the live prompt is ahead of `instructions.md`, so merge the two paragraphs rather than overwriting it), the app already sends the variable, which the live prompt ignores, and Doddy never calls the new tool. Run `compare` afterwards.
 
-**Not yet applied to the live agent (ADR-483, 2026-10-18):** the new phone tool `draft_blik_transfer` (`not_synced`), its bullet after `draft_message`, "BLIK transfers" in the Connections sentence, and "send money or pay for anything …" in "What you cannot do yet". Add the tool from `voice_agent_spec.py elevenlabs` and merge the three prompt edits into the live prompt (don't overwrite it), then run `compare`. OpenAI Realtime gets them with the next app build.
+**Applied to the live agent 2026-10-18 (ADR-483, BLIK transfers; owner: "sync it to ElevenLabs now"):**
+- **Read first:** live version `agtvrsn_3501m5219zqke9tv2thaxz3m729t` (the rollback point), 61 tools. Its prompt is the owner's own rewrite (headings such as "# Identity", "# Tools", "# Tool results"), not this folder's `instructions.md`, so `compare` reports the whole prompt as drift. That is not from this change.
+- **Tool:** `draft_blik_transfer` created as client tool `tool_5701m57c1717fmebcs14kbrjqmdq`, exactly as `voice_agent_spec.py elevenlabs` renders it, and attached as the 62nd tool. The other 61 ids are unchanged.
+- **Prompt:** the owner's text is kept word for word. The `instructions.md` lines weren't copied in; three passages were added in the live prompt's own style:
+  - a "## BLIK transfers" section after "## Email";
+  - what a `"shown"` result means, after the `"opened"` line in "# Tool results";
+  - "Send or pay money …" in "# Unsupported capabilities".
+- **Version:** `agtvrsn_3501m5219zqke9tv2thaxz3m729t` → `agtvrsn_0201m57cm3vnfgsrv3fw49mqb9mk`.
+- **Checked after saving:** the full agent was read back. The prompt is byte for byte the intended merge, the tool list is the 61 plus the new one, and no other agent setting changed. The live tool matches this spec field by field.
+- **Note:** the live prompt's list of success prefixes includes `paid`. No Doddy tool returns it.
 
 **Not yet applied to the live agent (2026-10-16):** `start_translator` now starts immediately after the user asks, with no confirmation card or forced pre-tool speech. The app still gives the AI-translator disclosure after starting and keeps microphone access subject to iOS permission. Read the live prompt and tools before syncing; preserve remote edits and compare the fetched configuration after saving.
 

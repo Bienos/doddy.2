@@ -30,7 +30,7 @@ Why not more: BLIK has no public interface that lets an app send money. Phone tr
 ## Not done or not verified
 - **The app code has not been compiled.** No Mac here; `VoiceView`, `VoiceSessionController`, `ConnectionsView`, `DeviceConnections` and `ActivityView` changes are unbuilt. Hosted CI builds only on a pull request or a manual run.
 - **Not seen on a device:** the card, the Copy buttons, the Money group in Connections, "50,00 zł" formatting, Dynamic Type at AX5, VoiceOver labels ("Copy phone number", "Copy title").
-- **Live ElevenLabs agent:** the tool is `not_synced`. Until the owner adds it (`voice_agent_spec.py elevenlabs`, then attach it to `agent_0501m4et27vyeawrwqfdxxfszfa6` and merge the prompt lines), ElevenLabs conversations can't use it. OpenAI Realtime (the default voice) gets it with the next app build, because the app bundles `voice-agent/`.
+- **Live ElevenLabs agent:** synced on 2026-10-18 at the owner's request, before an app build with the card is on the phone (tool `tool_5701m57c1717fmebcs14kbrjqmdq`, version `agtvrsn_0201m57cm3vnfgsrv3fw49mqb9mk`; rollback `agtvrsn_3501m5219zqke9tv2thaxz3m729t`; details in `voice-agent/README.md`). Until that build is installed, the phone answers the tool as unsupported, so the agent says it isn't available yet; no card appears and nothing is sent. OpenAI Realtime (the default voice) gets the tool with that same build, because the app bundles `voice-agent/`. Not yet tried in a real conversation.
 - **Whether bank apps accept the pasted number** (nine digits) has not been tried in any bank app.
 - **Polish wording** is mine, not a native review (`l10n/REVIEW_NOTES.md` applies).
 
@@ -40,5 +40,5 @@ Why not more: BLIK has no public interface that lets an app send money. Phone tr
 
 ## Decisions for the owner
 1. Keep the 10,000 zł ceiling, or change it.
-2. Add the tool to the live ElevenLabs agent.
+2. ~~Add the tool to the live ElevenLabs agent.~~ Done 2026-10-18.
 3. Whether to try opening the user's bank app from the card. iOS opens another app only through its own link scheme; Polish banks' schemes aren't documented, so this would need testing with real bank apps, or a "Doddy Bank" Shortcut the user makes (as for the camera, ADR-291).

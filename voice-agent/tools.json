@@ -506,7 +506,7 @@
     {
       "type": "function",
       "name": "draft_blik_transfer",
-      "description": "Prepare a BLIK phone transfer (przelew na telefon) for the user to send themselves in their bank app. Use it when the user asks to send, transfer or give someone money in złoty with BLIK or to their phone number. Doddy cannot send or pay money: the app shows a card with the person (and their number from Contacts when it can read them), the amount and the title; the user taps Done and sends it in their bank app. The amount is in złoty only: a number with a dot and at most two decimals, exactly as the user said it. Never round, convert or guess an amount; if it is unclear, ask. The result starts with 'shown' (the details are on the user's screen; nothing was sent), 'declined' or 'failed' (for example several contacts have that name: ask which one). Before this tool runs, say only one short line, for example 'Check the transfer on screen.' Never say the money was sent, paid or transferred; say the user sends it in their bank app.",
+      "description": "Prepare a BLIK phone transfer (przelew na telefon) for the user to send themselves in their bank app. Use it when the user asks to send, transfer or give someone money in złoty with BLIK or to their phone number. Doddy cannot send or pay money: the app shows a card with the person (and their number from Contacts when it can read them), the amount and the title; the user taps I'll send it myself and sends it in their bank app. The amount is in złoty only: a number with a dot and at most two decimals, exactly as the user said it. Never round, convert or guess an amount; if it is unclear, ask. The result starts with 'shown' (the details are on the user's screen; nothing was sent), 'declined' or 'failed' (for example several contacts have that name: ask which one). Before this tool runs, say only one short line, for example 'Check the transfer on screen.' Never say the money was sent, paid or transferred; say the user sends it in their bank app.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -517,7 +517,7 @@
         },
         "required": ["to", "amount"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "not_synced"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_5701m57c1717fmebcs14kbrjqmdq"}
     },
     {
       "type": "function",
