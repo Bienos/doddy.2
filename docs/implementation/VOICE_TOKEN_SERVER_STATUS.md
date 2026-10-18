@@ -27,6 +27,17 @@ Date: 2026-10-09. Owner instruction: "build" (the step recommended after V2). Cl
 3. Set the URL + your code in the app, and confirm "Private (token server)" works.
 4. Turn on agent authentication and set concurrency/daily call limits in ElevenLabs (the spending cap).
 
+## Current deployment (checked 2026-10-18)
+The project has moved; the table below (2026-10-09) describes the first one.
+| Item | State |
+|---|---|
+| Vercel project | `doddy-voice-token` (team `doddyyyy`), only domain `doddy-voice-token-beta.vercel.app` (production) |
+| The app's address | `VoiceConfig.tokenEndpointAddress` = `https://doddy-voice-token-beta.vercel.app/api/voice-token`; `/api/voice-auth` on the same host. Before 2026-10-18 the app pointed at `doddy-voice-token.vercel.app`, the first team's project, which answers `402 DEPLOYMENT_DISABLED` |
+| Code | Runs the Sign in with Apple server (`754e5d6`): `/api/voice-auth` exists |
+| Live check | `POST /api/voice-auth` and `/api/voice-token` → `503 {"error":"server_not_configured"}` |
+| Env set | `OPENAI_API_KEY`, `ELEVENLABS_API_KEY`, `ELEVENLABS_AGENT_ID`, `DODDY_ACCESS_CODES` (retired; remove once sign-in works) |
+| Env missing | `APPLE_BUNDLE_ID`, `DODDY_SESSION_SIGNING_KEY`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` (see `server/voice-token/README.md`). Until they are set and production is redeployed, voice can't start |
+
 ## Deployment (2026-10-09)
 | Item | State |
 |---|---|
