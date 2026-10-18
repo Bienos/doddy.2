@@ -2,7 +2,7 @@
 
 Doddy is a voice-first memory companion for iPhone, with an Apple Watch app and a Mac menu bar prototype. This page is the short version. Update it when you merge something that changes what is below.
 
-Last updated 2026-10-14, 12:00 UTC (PR #80, the ten languages, merged into the default branch).
+Last updated 2026-10-14, 12:00 UTC (PR #80, the ten languages, merged into the default branch). 1Password lines under "Waiting on the owner" added 2026-10-18 on branch `claude/laughing-darwin-hqxa63` (not merged).
 
 ## Known-good build
 - **Main branch:** `claude/loving-dirac-uuxoux`.
@@ -48,6 +48,11 @@ Merge one at a time, then rebuild and talk to Doddy before the next.
 - **Vercel:** the `doddy` project (team `doddyyyy`) built and published the site from the default branch on 2026-10-14 (www.doddy.lol); the earlier "account blocked" failures did not recur on that build. The daily deployment limit still applies, so `site/vercel.json` builds only when something under `site/` changed. GitHub Actions has run again since 2026-10-12.
 
 ## Waiting on the owner
+- 1Password for project secrets (ADR-493, `docs/security/SECRETS_1PASSWORD.md`).
+  - Create the four vaults and items, then run the sync tool one host at a time.
+  - Built and tested on Linux against fakes only; it hasn't touched the real 1Password, Vercel or Render.
+- Delete the two old Supabase functions and their secrets (code saved in `docs/archive/supabase-functions-2026-10-18/`).
+  - Decide whether to keep the Render copies of `doddy-voice-token` and `doddy-gateway` (research report, decision 11).
 - A native review of the eight new app languages and of all nine landing-page translations, which are live as drafts (`l10n/REVIEW_NOTES.md`).
 - "Hey Doddy" cannot work until the keyword file and a Picovoice key are in place (`docs/implementation/HEY_DODDY_STATUS.md`, "What is missing").
 - Whether notes sync between the Mac and the iPhone (today they never do).

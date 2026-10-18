@@ -9,6 +9,8 @@ Research run from `prompts/1PASSWORD_RESEARCH.md` on 17–18 October 2026. Nothi
 4. **The app stays with no secrets.** Doddy can't read a user's 1Password (there is no API for that on iOS), and a "read my password aloud" feature would break Doddy's own rules. Don't build it.
 5. **Go slowly with two keys:** `MEMORY_ENCRYPTION_KEY` (changing it makes stored memories unreadable) and the voice server's `DODDY_SESSION_SIGNING_KEY` (changing it signs everyone out). Record them in 1Password first, and never rotate them as part of the move.
 
+**Built 18 Oct 2026 (ADR-493).** The manifest, `.env.op` templates, sync tool and checks are in. The owner's guide is `docs/security/SECRETS_1PASSWORD.md`. They've been tested against fakes only; the owner's first run is still to do.
+
 ## Owner answers (18 Oct 2026)
 - **Plan:** Individual ($3.99/month). Move to Business later if a second person needs access or an access history is wanted.
 - **Old Supabase functions:** save the code, then delete them. Code saved in `docs/archive/supabase-functions-2026-10-18/`. The `voice-token` handler there is identical to `server/voice-token/src/handler.js` at `d6ece5d`. The owner deletes both functions and their secrets in the Supabase dashboard, because Claude's tools here can't delete functions. Steps are in that folder's README.

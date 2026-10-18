@@ -4,9 +4,14 @@
 #  - doddy-messaging (+ worker + Postgres): notifications, texts, phone calls and the daily news
 #    (server/messaging/, ADR-139). Paid plans: confirm cost before applying. Owner decision
 #    2026-10-10: one Render setup; the backend is expected to move onto the same Postgres later.
-# Deploy: Render dashboard > New > Blueprint > pick this repo and branch. Render then asks for every
-# variable marked `sync: false`; type the secrets THERE (never in chat or in this file).
-# Status: neither is deployed or has run on Render. See docs/integrations/DEPLOY_RENDER.md and
+# Deploy: Render dashboard > New > Blueprint > pick this repo and branch. Render asks for the
+# service-level variables marked `sync: false`, and only when the Blueprint is first created. It does
+# NOT ask for `sync: false` keys inside an environment group (Render ignores them), so the
+# doddy-messaging-secrets values must be added afterwards. Secrets come from 1Password
+# (ADR-493, docs/security/SECRETS_1PASSWORD.md); never type them in chat or in this file.
+# Status (18 Oct 2026): this Blueprint has not been applied. The services running on Render were made
+# by hand: doddy, doddy-messaging (a free web service, no separate worker), and copies of
+# doddy-voice-token and doddy-gateway. See docs/integrations/DEPLOY_RENDER.md and
 # docs/implementation/S1_SERVER_STATUS.md.
 envVarGroups:
   - name: doddy-messaging-secrets

@@ -16,6 +16,19 @@ Since ADR-193 the backend starts in live mode with **only a Monid key** (web sea
 Earlier (2026-10-10): service `doddy` (`srv-db559odckfvc7390v2i0`, https://doddy.onrender.com) in workspace **SLIYD**,
 web search verified there. That account is no longer the one in use; delete the old service there if it still runs.
 
+## Secrets come from 1Password (ADR-493)
+The values for every secret below live in 1Password (`docs/security/SECRETS_1PASSWORD.md`). After the first setup, change them with the sync tool rather than by typing in the dashboard:
+```
+op run --env-file=secrets/deploy.env.op -- node tools/secrets/sync.mjs --target render:doddy
+```
+It prints the plan. Run it again with `--apply --confirm <code>` to write it, then deploy by hand, because auto-deploy is off.
+
+Two Render facts to know:
+- **Every Render API read returns values,** so the Render API key can read every secret. It lives only in the owner-only 1Password vault.
+- **`sync: false` doesn't work inside an environment group** in `render.yaml`: Render ignores those keys.
+
+On 18 Oct 2026 the workspace also runs copies of `doddy-voice-token` and `doddy-gateway` on a non-default branch. They aren't managed by the sync tool (owner decision pending).
+
 ## Web search only (fastest path)
 
 1. Render dashboard → your workspace → **New → Web Service** → repo `Bienos/doddy.2`, the default branch
