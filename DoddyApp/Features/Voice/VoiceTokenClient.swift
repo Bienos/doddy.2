@@ -58,3 +58,49 @@ struct VoiceTokenClient: Sendable {
         return (status, data)
     }
 }
+
+/// DODDY voice sign-in (Sign in with Apple, ADR-491) on the same token server, at `/api/voice-auth`.
+/// It lives here so that one file holds all networking to the voice token server.
+actor VoiceAuthAPI {
+    static let shared = VoiceAuthAPI()
+
+    func signIn(_ identityToken: String, rawNonce: String, provider: String) async throws -> VoiceSessionReply {
+        try await post(["action": "sign-in", "identityToken": identityToken, "rawNonce": rawNonce, "provider": provider])
+    }
+
+    func refresh(_ refreshToken: String) async throws -> VoiceSessionReply {
+        try await post(["action": "refresh", "refreshToken": refreshToken])
+    }
+
+    func signOut(_ accessToken: String) async throws {
+        let _: EmptyReply = try await post(["action": "sign-out"], bearer: accessToken)
+    }
+
+    func deleteAccount(_ accessToken: String) async throws {
+        let _: EmptyReply = try await post(["action": "delete-account"], bearer: accessToken)
+    }
+
+    private func post<T: Decodable>(_ body: [String: Any], bearer: String? = nil) async throws -> T {
+        guard let endpoint = VoiceConfig.authEndpoint else { throw VoiceAuthFailure.serverNotConfigured }
+        var request = URLRequest(url: endpoint, timeoutInterval: 15)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let bearer { request.setValue("Bearer \(bearer)", forHTTPHeaderField: "Authorization") }
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        let (data, response): (Data, URLResponse)
+        let session = URLSession(configuration: .ephemeral)
+        defer { session.finishTasksAndInvalidate() }
+        do { (data, response) = try await session.data(for: request) }
+        catch { throw VoiceAuthFailure.offline }
+        guard let status = (response as? HTTPURLResponse)?.statusCode else { throw VoiceAuthFailure.badResponse }
+        guard (200..<300).contains(status) else {
+            if status == 401 { throw VoiceAuthFailure.sessionExpired }
+            if status == 404 || status == 500 || status == 503 { throw VoiceAuthFailure.serverNotConfigured }
+            throw VoiceAuthFailure.rejected
+        }
+        guard let decoded = try? JSONDecoder().decode(T.self, from: data) else { throw VoiceAuthFailure.badResponse }
+        return decoded
+    }
+}
+
+private struct EmptyReply: Decodable {}

@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 # Capability guard. Settings/Home copy makes specific privacy claims; this check keeps them true:
-#  - the app's own networking lives in four files: the voice token client (one POST of the access
-#    code to the token server), Connected Apps' transport (to the Doddy server), the typed-assistant
+#  - the app's own networking lives in four files: the voice token client (the token server: tokens,
+#    and since ADR-491 the voice sign-in at /api/voice-auth), Connected Apps' transport (to the Doddy server), the typed-assistant
 #    transport (to the M2 gateway, ADR-110) and the messaging server transport (server/messaging,
 #    ADR-148); the ElevenLabs SDK does the voice connection, except the OpenAI Realtime test voice
 #    (ADR-265), whose WebSocket lives in one file in Features/Voice, and the exchange-rate client
 #    (ADR-300), which downloads only the ECB's public rates file,
 #  - the system authentication browser is used only by Connected Apps,
+#  - Sign in with Apple (voice access, ADR-491) only in VoiceAuthSession.swift and VoiceAccessGate.swift,
+#    which may import AuthenticationServices for it but may not open a web view or a web login,
 #  - ElevenLabs code only inside DoddyApp/Features/Voice; audio (AVFoundation) only there and in
 #    DoddyApp/Features/VoiceMemos (recording and playing voice memos, ADR-230),
 #  - speech recognition (Speech) only inside DoddyApp/Features/VoiceMemos, and every recognition
@@ -56,6 +58,10 @@ rates_client=DoddyApp/Infrastructure/Network/ExchangeRateClient.swift
 network_only='URLSession(WebSocketTask|DataTask|DownloadTask|UploadTask|StreamTask|Task|Configuration)?([^A-Za-z]|$)|URLRequest([^A-Za-z]|$)|\.resourceBytes|NSURLConnection|CFReadStream|CFHTTPMessage|contentsOf: *URL\(string:'
 web_auth_file=DoddyApp/Features/ConnectedApps/SystemWebAuthenticator.swift
 web_auth_only='import AuthenticationServices|ASWebAuthenticationSession|WKWebView|import WebKit|SFSafariViewController'
+# Sign in with Apple for voice access (ADR-491): only these two files, and the only web-auth line
+# excused in them is the AuthenticationServices import itself.
+apple_sign_in_files='^DoddyApp/Features/Voice/(VoiceAuthSession|VoiceAccessGate)\.swift:'
+apple_sign_in_only='ASAuthorizationAppleID|SignInWithAppleButton|ASAuthorizationController'
 voice_only='import ElevenLabs'
 memos_dir=DoddyApp/Features/VoiceMemos
 audio_only='import AVFoundation|import AVFAudio|AVAudio'
@@ -107,8 +113,12 @@ fi
 if [ -f "$rates_client" ] && grep -nE 'URL\(string|URLComponents|appendingPathComponent|https?://' "$rates_client" | code_only; then
   echo "FAIL: $rates_client may only fetch ExchangeRateSource.url." >&2; status=1
 fi
-if grep -RInE --include='*.swift' "$web_auth_only" "${dirs[@]}" | code_only | grep -v "^$web_auth_file:"; then
+if grep -RInE --include='*.swift' "$web_auth_only" "${dirs[@]}" | code_only | grep -v "^$web_auth_file:" \
+    | grep -vE "${apple_sign_in_files}[0-9]+:import AuthenticationServices"; then
   echo "FAIL: web authentication / web views outside $web_auth_file." >&2; status=1
+fi
+if grep -RInE --include='*.swift' "$apple_sign_in_only" "${dirs[@]}" | code_only | grep -vE "$apple_sign_in_files"; then
+  echo "FAIL: Sign in with Apple outside VoiceAuthSession.swift and VoiceAccessGate.swift (ADR-491)." >&2; status=1
 fi
 if grep -RInE --include='*.swift' "$wake_only" "${dirs[@]}" | code_only | grep -v "^$wake_file:"; then
   echo "FAIL: wake-word engine code outside $wake_file." >&2; status=1
