@@ -9,10 +9,23 @@ Research run from `prompts/1PASSWORD_RESEARCH.md` on 17–18 October 2026. Nothi
 4. **The app stays with no secrets.** Doddy can't read a user's 1Password (there is no API for that on iOS), and a "read my password aloud" feature would break Doddy's own rules. Don't build it.
 5. **Go slowly with two keys:** `MEMORY_ENCRYPTION_KEY` (changing it makes stored memories unreadable) and the voice server's `DODDY_SESSION_SIGNING_KEY` (changing it signs everyone out). Record them in 1Password first, and never rotate them as part of the move.
 
+## Owner answers (18 Oct 2026)
+- **Plan:** Individual ($3.99/month). Move to Business later if a second person needs access or an access history is wanted.
+- **Old Supabase functions:** save the code, then delete them. Code saved in `docs/archive/supabase-functions-2026-10-18/`. The `voice-token` handler there is identical to `server/voice-token/src/handler.js` at `d6ece5d`. The owner deletes both functions and their secrets in the Supabase dashboard, because Claude's tools here can't delete functions. Steps are in that folder's README.
+- **Render:** deployed. Four services in the owner's one workspace, listed below.
+
 ## Found along the way (fix these whatever happens with 1Password)
 - **`render.yaml`'s environment group won't ask for its secrets.** All 18 keys in `doddy-messaging-secrets` are `sync: false`. Render's Blueprint spec says: "You can't apply `sync: false` to environment variables defined in an environment group", and Render then ignores them. It also prompts for `sync: false` values "only during the initial Blueprint creation". The file's header comment ("Render then asks for every variable marked `sync: false`") is therefore wrong for the messaging server. Its secrets would have to be added by hand or by API after the Blueprint is created. (Verified on render.com/docs/blueprint-spec, 18 Oct.)
 - **Render's API always returns secret values.** Listing a service's variables or an environment group returns `{key, value}`, and even a write to one group variable returns the whole group with values. So a Render API key can read every Render secret in every workspace the owner belongs to. It must live only in 1Password, and any tool that calls Render must throw the values away without logging them.
 - **Render doesn't redeploy after an env change here:** all three services have `autoDeploy: false`, and env-group changes only redeploy services with autodeploy on. Each sync to Render needs an explicit deploy.
+- **Render was set up by hand, not from `render.yaml`.**
+  - Four free web services, all with auto-deploy off, none suspended:
+    - `doddy` (backend, branch `claude/loving-dirac-uuxoux`)
+    - `doddy-messaging` (branch `claude/loving-dirac-uuxoux`, no separate worker)
+    - `doddy-voice-token` and `doddy-gateway` (both branch `claude/affectionate-tesla-nqu0nj`, started with `node server.js`, a file that isn't on the default branch)
+  - So the env-group problem hasn't caused harm yet, but a Blueprint deploy would hit it.
+  - **The voice token server and the gateway each exist in three places:** Vercel, Render and Supabase. For voice, the app calls the Vercel copy; the gateway address is whatever is typed into the app's Settings. Each copy probably holds its own provider keys **[inference]**.
+  - Health and recent traffic of the Render services weren't checked.
 - **Two old Supabase functions are live** (`assistant` v4 and `voice-token` v1 in project `doddy-gateway`), and their source isn't in this repo. Nothing in the app calls them. Each one probably holds its own copy of provider keys **[inference]**: more places a key can leak, and more places to update on rotation.
 
 ## Part 1: Inventory (names only)
@@ -25,7 +38,7 @@ Built from `render.yaml`, every `.env.example`, the server READMEs and a search 
 |---|---|---|---|
 | Vercel team `doddyyyy` | Projects `doddy` (site, www.doddy.lol), `doddy-gateway` (`gateway/`), `doddy-voice-token` (`server/voice-token/`), plus an unrelated `name-atlas` | Yes: all three Doddy projects exist (created 12 Oct 2026). The app's voice endpoint is `https://doddy-voice-token.vercel.app/api/voice-token` (`DoddyApp/Features/Voice/VoiceConfig.swift`) | Vercel project list |
 | Supabase project `doddy-gateway` (eu-central-1) | Edge Functions `assistant` (v4) and `voice-token` (v1). The organisation was created through the Vercel Marketplace integration | Active, but the source for these functions isn't in this repository. They look like the older Supabase variants of the gateway and token server (`docs/implementation/BRANCH_TRIAGE_2026-10-11.md`). Nothing in the app points at them | Supabase project and function list |
-| Render | `render.yaml` describes `doddy`, `doddy-messaging`, `doddy-messaging-worker`, Postgres `doddy-db`. `HEY_DODDY_STATUS.md` also names a `doddy-voice-token` service | **Not confirmed.** The `render.yaml` header says neither service has been deployed; the Render tool needs the owner to pick a workspace before it will list services, so I didn't | Not checked |
+| Render workspace (owner's, one team workspace) | Web services `doddy` (backend), `doddy-messaging`, `doddy-voice-token`, `doddy-gateway`, all on the free plan, auto-deploy off. Not created from `render.yaml`: there's no worker, and the messaging server is a free web service | **Yes**, all four running (not suspended), checked 18 Oct. Health and traffic not checked. Postgres for the messaging server not checked | Render service list |
 | GitHub Actions | `.github/workflows/ios.yml` | Runs, and uses **no secrets** (ADR-123). The Postgres password in it is a throwaway for the test container | Read the file |
 | ElevenLabs | Voice agent and phone agent; a workspace secret `doddy_tool_secret` that the phone agent's webhook tools send | Live (STATUS.md) | `voice-agent/phone/tools.json` |
 | A developer's Mac | `.env.local` files per service, Xcode signing in the login Keychain | Owner's machine | Docs |
@@ -37,14 +50,14 @@ Built from `render.yaml`, every `.env.example`, the server READMEs and a search 
 
 | Name | Service | Lives today | Needed by | Rotate |
 |---|---|---|---|---|
-| `DODDY_SESSION_SIGNING_KEY` | `server/voice-token` | Vercel `doddy-voice-token` (and probably the old Supabase `voice-token`) | Server at runtime | **Dangerous.** Signs everyone out **and** changes the pseudonymous Apple subject ids the server derives from it (README). My inference: server-side records keyed by those ids would no longer match |
+| `DODDY_SESSION_SIGNING_KEY` | `server/voice-token` | Vercel `doddy-voice-token`, probably also Render `doddy-voice-token` (which runs a different branch) | Server at runtime | **Dangerous.** Signs everyone out **and** changes the pseudonymous Apple subject ids the server derives from it (README). My inference: server-side records keyed by those ids would no longer match |
 | `DODDY_SESSION_SIGNING_KEY` | `backend/` | Render `doddy` (`generateValue: true`, so Render made it) | Server at runtime; `mintSession.ts` locally | Signs every backend session out. Same name as above but must be a **different value** |
 | `UPSTASH_REDIS_REST_TOKEN` | `server/voice-token`, `gateway/` | Vercel | Runtime | Update both services together; short outage otherwise (both fail closed) |
 | `KV_REST_API_TOKEN` | `gateway/` (alternative to Upstash) | Set by a Vercel Marketplace store, if one is connected | Runtime | Managed by Vercel; don't copy it into 1Password as the record |
 | `ELEVENLABS_API_KEY` | `server/voice-token`, `server/messaging` | Vercel; Render env group | Runtime; `setup-phone-agent.mjs` locally | Update every host that has it, then revoke the old key in ElevenLabs |
 | `OPENAI_API_KEY` | `server/voice-token`, `gateway/`, `server/messaging` | Vercel; Render env group | Runtime | As above. Three services, ideally three separate keys (one per OpenAI project) so a leak is contained |
 | `PICOVOICE_ACCESS_KEY` | `server/voice-token` | Vercel | Runtime; **handed to phones by design** (ADR-328) | Phones keep the old key in the Keychain. After rotation "Hey Doddy" fails on each phone until it fetches the new one. Whether the app refetches after a key failure is not verified |
-| `GATEWAY_TOKEN_SECRET` | `gateway/` | Vercel `doddy-gateway` | Runtime | Signs every device out of the typed assistant; also re-keys the HMAC'd store keys (counters reset) |
+| `GATEWAY_TOKEN_SECRET` | `gateway/` | Vercel `doddy-gateway`, probably also Render `doddy-gateway` | Runtime | Signs every device out of the typed assistant; also re-keys the HMAC'd store keys (counters reset) |
 | `GATEWAY_INVITE_CODES` | `gateway/` | Vercel | Runtime; the owner hands codes to testers | Removing a code revokes that tester; this is a list that changes, not a key |
 | `WAITLIST_ADMIN_PASSWORD` | `site/api` | Vercel `doddy` | Runtime; the owner logs into the waitlist admin | Owner logs in with the new one |
 | `BLOB_READ_WRITE_TOKEN` | `site/api` (`@vercel/blob`) | Set by Vercel when the Blob store is connected | Runtime | Managed by Vercel |
@@ -173,7 +186,7 @@ An `op://` reference reveals vault and item names, never a value, and can't be u
 | 2. Sync, dry-run | Build prompt, then the owner | The sync tool lists names on Vercel and Supabase and prints the plan: no writes | Nothing to undo |
 | 3. Sync, Vercel | Owner runs `--apply` and confirms | Push to `doddy-voice-token` first (the one the app uses), redeploy, and talk to Doddy once. Then gateway and site | Re-push the old value from 1Password's item history and redeploy. Env changes only apply to new deployments, so an earlier deployment can also be promoted back **[inference]** |
 | 4. Supabase | Owner decides | Either delete the two old functions and their secrets (recommended if unused), or add them to the manifest | Functions can be redeployed from their source, which isn't in the repo, so **copy the source out before deleting** |
-| 5. Render | When it's actually deployed | Fix the env-group problem above, first setup by hand from 1Password, later syncs by API with an explicit deploy | Re-push the old value from 1Password's item history and deploy again |
+| 5. Render | Owner and build prompt | It's deployed (4 services). First decide which of the duplicate `doddy-voice-token` / `doddy-gateway` copies to keep (decision 11). Copy current values into 1Password from the Render dashboard (Render can show them), then sync by API one key at a time, with an explicit deploy | Re-push the old value from 1Password's item history and deploy again |
 | 6. Runbooks | Build prompt | A rotation runbook per secret in `docs/security/SECRETS_1PASSWORD.md`, and separate provider keys per service at each key's next rotation | Docs only |
 
 CI, Claude sessions and the app are deliberately left out of every phase.
@@ -196,9 +209,9 @@ CI, Claude sessions and the app are deliberately left out of every phase.
 | Agents reading secrets through tokens or transcripts | No 1Password or host tokens in any Claude session; tests use fakes |
 
 ### Decisions for the owner (each with a recommended answer)
-1. **Which 1Password plan?** Recommended: Business, one seat. If you already pay for Individual, start there and move when someone else needs access.
-2. **Are the Supabase functions `assistant` and `voice-token` still used?** Recommended: no, so save their source and delete them, which removes extra copies of provider keys.
-3. **Is Render deployed, and in which workspace?** Recommended: tell us the workspace. Until it's deployed, Render stays manual and dry-run. Fix the env-group problem before the first deploy either way.
+1. **Which 1Password plan?** **Answered: Individual.**
+2. **Are the Supabase functions `assistant` and `voice-token` still used?** **Answered: no. Code saved; the owner deletes them in the dashboard.**
+3. **Is Render deployed, and in which workspace?** **Answered: yes, the owner's one workspace, 4 services.**
 4. **Vault layout as above?** Recommended: yes, four vaults.
 5. **Who runs the sync?** Recommended: you, from your Mac with Touch ID. No service account until it's needed.
 6. **Commit the `op://` manifest and templates?** Recommended: yes.
@@ -206,6 +219,7 @@ CI, Claude sessions and the app are deliberately left out of every phase.
 8. **A user-facing 1Password feature?** Recommended: no.
 9. **Separate provider keys per service** (OpenAI and ElevenLabs are each used by two or three servers)? Recommended: yes, at each key's next rotation, not as part of the move.
 10. **Install 1Password's Claude Code plugin on your Mac?** Recommended: optional and not needed. It's beta, and it can only manage Environments, never read values.
+11. **Keep the Render copies of `doddy-voice-token` and `doddy-gateway`?** Both run a non-default branch. The app's voice address is fixed to the Vercel `doddy-voice-token` (`VoiceConfig.swift`), so it never calls the Render one. The gateway address is typed into the app's Settings, so first check which gateway address your phone has. Recommended: suspend the copies you don't use, and delete them a week later if nothing breaks. That leaves fewer copies of each key to sync and rotate.
 
 ### Draft ADR (for `DECISIONS.md` only after the owner approves)
 > | NNN | **Project secrets are recorded in 1Password; hosts keep environment variables** (owner: "search how we can use 1password"; research `docs/research/1PASSWORD_SECRETS_2026-10.md`). 1Password holds every project secret in four owner-controlled vaults (`doddy-prod`, `doddy-dev`, `doddy-deploy`, `doddy-accounts`). The servers keep reading plain environment variables, so nothing at runtime depends on 1Password and tests stay offline. A committed manifest maps each variable to its `op://` reference and its hosts. A sync tool run by the owner from their Mac shows the exact plan (host, name, add/change/remove, never the value), asks for a confirmation bound to that plan, writes through each host's API from stdin or the request body (never argv), and reports `set`, `unchanged`, `failed` or `unknown` per name. No 1Password token is stored on any host, in CI or in a Claude session, and the iPhone app gets no secrets and no 1Password code. Platform-managed values (`DATABASE_URL`, Vercel store tokens) stay with the platform. `MEMORY_ENCRYPTION_KEY` and `DODDY_SESSION_SIGNING_KEY` are recorded but never rotated by this work. Reading users' 1Password from the app is rejected: iOS offers no API for it, and it would put secrets into the voice provider's context and Doddy's logs. | Proposed — owner approval pending |
