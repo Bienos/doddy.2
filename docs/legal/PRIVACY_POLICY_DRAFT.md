@@ -115,11 +115,13 @@ Common points:
 
 | Item | Detail |
 |---|---|
-| Who | Doddy's own small server (`server/voice-token`), written for Vercel Functions. `VOICE_TOKEN_SERVER_STATUS.md` and `GO_LIVE_STATUS` say a token server is deployed with one owner code. **[CONFIRM: host, region and what is live]** |
-| What is sent | Your access code, when a conversation starts. |
-| What it does | Swaps the code for a one-conversation ElevenLabs token (or, for the OpenAI voice, a 120-second OpenAI client secret for the model you picked), so the ElevenLabs API key stays on the server. |
-| Logged | One JSON line per request: status, error, tester label, upstream status, duration. No codes, tokens, keys, IP addresses or spoken content. (`server/voice-token/README.md`.) The hosting platform may keep its own request logs. **[CONFIRM: Vercel log retention and IP logging]** |
-| Opt-in? | Only if a token server address is set in Settings, Voice. |
+| Who | Doddy's own small server (`server/voice-token`) on Vercel Functions: project `doddy-voice-token`, team `doddyyyy`, address `doddy-voice-token-beta.vercel.app` (ADR-501). It keeps its records in Upstash Redis. **[CONFIRM: Vercel and Upstash regions, and the processor agreements with both]** |
+| What is sent | **Signing in (once):** Apple's identity token from Sign in with Apple, and a one-time number (nonce) that ties it to this request. **Each conversation:** a short-lived Doddy access token and the voice provider you picked (and, for OpenAI, the model). No audio, transcripts, notes or profile. (ADR-502, `server/voice-token/README.md`.) |
+| What it does | Checks the Apple token with Apple's published keys. Then it swaps your Doddy session for a one-conversation ElevenLabs token or a short-lived OpenAI client secret, so the provider API keys stay on the server. It limits each account to 30 conversations an hour by default. |
+| What it keeps | A keyed pseudonym of your Apple account ID (not the ID itself), your session records, hashes of your refresh tokens (not the tokens), and short-lived counters for one-time numbers and rate limits. Refresh tokens last 30 days and rotate on use; access tokens last 10 minutes and stay on the iPhone. **[CONFIRM: whether Apple's identity token carries your email and whether the server reads it; the code keeps only the subject]** |
+| Logged | One line per request: action or provider, outcome, status and duration. No content, credentials, Apple account ID or user identifier (`server/voice-token/README.md`). The hosting platform may keep its own request logs. **[CONFIRM: Vercel log retention and IP logging]** |
+| Opt-in? | Required for voice; nothing else in the app needs it. Settings, Voice has Sign out of voice and Delete voice account. Deleting removes your sessions on the server. It doesn't yet revoke the Sign in with Apple link: today the app tells you to remove it in your Apple ID settings (go-live checklist C8). |
+| Legal basis | **[CONFIRM: proposed: performance of the service you asked for]** |
 
 ### 5.3 OpenAI: Doddy's voice (the default where a token server is set)
 
