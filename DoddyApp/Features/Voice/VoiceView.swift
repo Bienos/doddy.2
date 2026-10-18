@@ -20,6 +20,8 @@ struct VoiceView: View {
     @State private var editingNoteReminderTime = false
     /// The plan step whose "Change" sheet is open (ADR-205).
     @State private var editingPlanStep: PlanStep?
+    /// What was last copied from a BLIK card (ADR-483), to show "Copied" next to it.
+    @State private var copiedForBlik: String?
 
     private var provider: VoiceProvider { VoiceProvider.effective(stored: voiceProvider, tokenServerSet: true) }
 
@@ -215,6 +217,11 @@ struct VoiceView: View {
                                 .id("changeReceipt")
                         }
 
+                        if let card = controller.blikCard {
+                            blikReceiptCard(card, controller: controller)
+                                .id("blikCard")
+                        }
+
                         if let status = controller.noteReminderStatus {
                             noteReminderStatusCard(status, controller: controller)
                                 .id("noteReminderStatus")
@@ -267,10 +274,14 @@ struct VoiceView: View {
                 }
                 .onChange(of: controller.pendingAction) { _, pending in
                     editingNoteReminderTime = false
+                    copiedForBlik = nil
                     if pending != nil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("pendingAction", anchor: .bottom) } }
                 }
                 .onChange(of: controller.listReceipt) { _, receipt in
                     if receipt != nil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("listReceipt", anchor: .bottom) } }
+                }
+                .onChange(of: controller.blikCard) { _, card in
+                    if card != nil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("blikCard", anchor: .bottom) } }
                 }
                 .onChange(of: controller.noteReminderStatus) { _, status in
                     if status != nil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("noteReminderStatus", anchor: .bottom) } }
@@ -498,6 +509,10 @@ struct VoiceView: View {
             Text("You check it and send it there yourself. Doddy never sends it.")
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
+        case .blik(_, let draft, let contactName, let numbers):
+            Text("A BLIK transfer for you to send")
+                .font(.headline)
+            blikDetails(draft, contactName: contactName, numbers: numbers, controller: controller)
         case .changeEvent(_, let plan):
             Text("Change this event?")
                 .font(.headline)
@@ -886,6 +901,7 @@ struct VoiceView: View {
         case .map: (NSLocalizedString("Open in Maps", comment: ""), NSLocalizedString("Don't open", comment: ""))
         case .shortcut: (NSLocalizedString("Run", comment: ""), NSLocalizedString("Don't run", comment: ""))
         case .message(_, let draft, _): (draft.channel == .text ? NSLocalizedString("Open in Messages", comment: "") : NSLocalizedString("Open in Mail", comment: ""), NSLocalizedString("Don't open", comment: ""))
+        case .blik: (NSLocalizedString("I'll send it myself", comment: "BLIK card: the user sends it in their bank app"), NSLocalizedString("Not now", comment: ""))
         case .cloud(_, _, let preview, _, _): (preview.confirmLabel, NSLocalizedString("Don't do this", comment: ""))
         case .noteReminder: (NSLocalizedString("Set reminder", comment: ""), NSLocalizedString("Don't set", comment: ""))
         case .createList: (NSLocalizedString("Create list", comment: ""), NSLocalizedString("Not now", comment: ""))
@@ -1278,6 +1294,84 @@ struct VoiceView: View {
         .padding(16)
         .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
         .accessibilityIdentifier("voice.listReceipt")
+    }
+
+    /// After "I'll send it myself" (ADR-483): the same details, kept on screen while the user
+    /// opens their bank app. Doddy never sends money and can't see whether it was sent.
+    private func blikReceiptCard(_ card: VoiceSessionController.BlikCard, controller: VoiceSessionController) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("Send it in your bank app").font(.headline)
+                Spacer()
+                Button { controller.dismissBlikCard() } label: {
+                    Image(systemName: "xmark").frame(width: 44, height: 44)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Dismiss")
+            }
+            blikDetails(card.draft, contactName: card.contactName, numbers: card.numbers, controller: controller)
+        }
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+        .accessibilityIdentifier("voice.blikCard")
+    }
+
+    /// Who, their numbers with Copy, how much and the title (ADR-483). The amount is shown in the
+    /// iPhone's language ("50,00 zł" in Polish) but never copied: it is typed in the bank app.
+    @ViewBuilder
+    private func blikDetails(
+        _ draft: BlikTransferDraft, contactName: String?, numbers: [BlikPhoneNumber], controller: VoiceSessionController
+    ) -> some View {
+        Text(draft.amount.decimal, format: .currency(code: "PLN"))
+            .font(.title2.monospacedDigit())
+            .accessibilityIdentifier("voice.blik.amount")
+        Text("To \(contactName ?? draft.recipientName)")
+            .font(.body)
+        ForEach(numbers, id: \.self) { number in
+            HStack {
+                Label(number.shown, systemImage: "phone")
+                Spacer()
+                blikCopyButton(number.copy, controller: controller)
+                    .accessibilityLabel("Copy phone number")
+            }
+        }
+        if numbers.isEmpty {
+            Group {
+                if contactName == nil {
+                    Text("Pick them in your bank app's BLIK phone transfer.")
+                } else {
+                    Text("No phone number in Contacts. Pick them in your bank app's BLIK phone transfer.")
+                }
+            }
+            .font(.subheadline)
+            .foregroundStyle(Theme.secondaryText)
+        }
+        if let title = draft.title {
+            HStack {
+                Label("“\(title)”", systemImage: "text.alignleft")
+                Spacer()
+                blikCopyButton(title, controller: controller)
+                    .accessibilityLabel("Copy title")
+            }
+        }
+        Text("Doddy doesn't send money and can't see your bank. Check the person and the amount in your bank app before you confirm there. They need BLIK phone transfers turned on in their own bank app.")
+            .font(.footnote)
+            .foregroundStyle(Theme.secondaryText)
+    }
+
+    private func blikCopyButton(_ text: String, controller: VoiceSessionController) -> some View {
+        Button {
+            controller.copyForBlik(text)
+            copiedForBlik = text
+        } label: {
+            if copiedForBlik == text {
+                Label("Copied", systemImage: "checkmark")
+            } else {
+                Text("Copy")
+            }
+        }
+        .buttonStyle(.bordered)
+        .frame(minHeight: 44)
     }
 
     /// One side of a change card: "Now" or "After", then the title and when.

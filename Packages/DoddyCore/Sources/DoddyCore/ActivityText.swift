@@ -21,6 +21,7 @@ extension ActivityApp {
         case .gmail, .drive, .notion, .todoist, .outlook: return title
         case .web: return "Wyszukiwanie w sieci"
         case .exchangeRates: return "Kursy walut"
+        case .blik: return "Przelewy BLIK"
         }
     }
 }
@@ -37,6 +38,7 @@ extension ActivityOutcome {
         case .notDone: return "Nie zrobiono"
         case .declined: return "Odrzucone"
         case .inProgress: return "W toku"
+        case .shown: return "Pokazano do wysłania"
         }
     }
 }
@@ -58,6 +60,7 @@ public enum ActivityText {
         "Open in Maps": "Otwórz w Mapach",
         "Run shortcut": "Uruchom skrót",
         "Draft a text": "Szkic SMS-a",
+        "Prepare a BLIK transfer": "Przygotuj przelew BLIK",
         "Draft an email": "Szkic e-maila",
         // Written before ADR-275 fixed the article; old rows still say it.
         "Draft a email": "Szkic e-maila",
@@ -104,6 +107,7 @@ public enum ActivityText {
             "Connections were paused.": "Połączenia były wstrzymane.",
             "Doddy couldn't confirm it went through.": "Doddy nie mógł potwierdzić, że się udało.",
             "Demo data from a test server, not your account.": "Dane demonstracyjne z serwera testowego, nie z Twojego konta.",
+            "Doddy didn't send any money. You send it in your bank app.": "Doddy nie wysłał żadnych pieniędzy. Wysyłasz je w aplikacji banku.",
             ActivityLog.interruptedNote: "Doddy zamknął się, zanim to się skończyło. Sprawdź, zanim poprosisz ponownie, żeby nie zrobić tego dwa razy.",
             "Found in Reminders when you checked.": "Znalezione w Przypomnieniach przy sprawdzaniu.",
             "Not in Reminders when you checked. You can ask Doddy again.": "Nie było w Przypomnieniach przy sprawdzaniu. Możesz poprosić Doddy’ego ponownie.",
@@ -154,6 +158,7 @@ public enum ActivityText {
         case .maps: "Mapy"
         case .shortcuts: "Skróty"
         case .messages: "Wiadomości i e-mail"
+        case .blik: "Przelewy BLIK"
         }
     }
 

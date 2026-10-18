@@ -66,6 +66,8 @@ struct ConnectionGroup: Identifiable {
         ConnectionGroup(title: "Your day", items: [.calendar, .reminders, .timers]),
         ConnectionGroup(title: "People", items: [.contacts, .messages]),
         ConnectionGroup(title: "Places and apps", items: [.maps, .shortcuts]),
+        // ADR-483: shown, never sent; the user sends it in their bank app.
+        ConnectionGroup(title: "Money", items: [.blik]),
     ]
 }
 
@@ -366,6 +368,18 @@ struct ConnectionInfo {
                 ],
                 leavesPhone: "The shortcut's name, when you ask Doddy to run it.",
                 staysHere: "Doddy can't see what a shortcut does or whether it finished.")
+        case .blik:
+            // ADR-483: BLIK has no way for an app to send money, so Doddy only shows the details.
+            ConnectionInfo(
+                symbol: "banknote",
+                examples: ["Send Ania 50 zł for the pizza", "Send Tomek 20 zł with BLIK"],
+                canDo: [
+                    "Show a BLIK phone transfer on your screen: who, their number, how much in złoty, and the title",
+                    "You send it yourself in your bank app; Doddy never sends or pays money",
+                    "Finds the person's number if Contacts is allowed too",
+                ],
+                leavesPhone: "The person's name, the amount and the title you said, as part of the conversation.",
+                staysHere: "Phone numbers are shown only on your screen. Doddy has no access to your bank and can't see whether you sent it.")
         }
     }
 }
