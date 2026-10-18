@@ -70,8 +70,9 @@ scripts/ci.sh                  # set DODDY_DESTINATION to override the simulator
   passes and only when `changes` says so. Run the workflow by hand (Actions → iOS build and tests →
   Run workflow) and it always runs.
 
-**Cost:** the repository is private, so Actions time is paid for. A macOS run takes about 52 minutes
-(34 of them UI tests) at $0.062 a minute, about $3.20. From 12 to 14 October CI used about $250.
+**Cost:** the repository is private, so Actions time is paid for. A macOS run took about 52 minutes
+(34 of them UI tests) at $0.062 a minute, about $3.20, on 14 October; ADR-499 should take about 10 minutes
+off the UI tests (not yet measured). From 12 to 14 October CI used about $250.
 
 **When jobs end in seconds with no logs** (no runner assigned, `runner_id: 0`, both jobs), GitHub is
 refusing to start them for the account: it happened on 10–11 October and again from 16 October. The
