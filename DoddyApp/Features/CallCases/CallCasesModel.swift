@@ -346,7 +346,7 @@ final class CallCaseModel {
             let snapshot = try await backend.callCase(record.id)
             adopt(snapshot)
             try await absorb(snapshot)
-        } catch CallCaseError.server(.notEnabled), CallCaseError.server(.unexpected(status: 404)) {
+        } catch ServerError.unexpected(status: 404), CallCaseError.server(.unexpected(status: 404)) {
             // The server no longer has this case (expired or deleted); what is here stays.
             return
         } catch {

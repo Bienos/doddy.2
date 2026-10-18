@@ -111,6 +111,20 @@ final class CallCasesModelTests: XCTestCase {
     }
 
     @MainActor
+    func testACaseTheServerNoLongerHasStaysOnTheIPhoneWithoutAnError() async throws {
+        let backend = FakeCallBackend()
+        await backend.setGone(true)
+        let repository = MemoryCallCases()
+        let list = CallCasesModel(backend: backend, repository: repository, describe: { "\($0)" })
+        let record = try await repository.save(CallFixtures.record(state: "finished"))
+        let model = list.caseModel(for: record, activity: nil)
+        await model.refresh()
+        XCTAssertNil(model.message)
+        let kept = try await repository.get(record.id)
+        XCTAssertEqual(kept, record)
+    }
+
+    @MainActor
     func testRetryTimesFitTheHoursAndTheServersWindow() async throws {
         let list = CallCasesModel(backend: FakeCallBackend(), repository: MemoryCallCases(), describe: { "\($0)" })
         let created = ISO8601DateFormatter().date(from: "2026-10-19T09:00:00Z")!
@@ -177,12 +191,14 @@ private actor FakeCallBackend: CallCasesBackend {
     private var snapshots: [CallCaseSnapshot] = []
     private var ackFails = false
     private var repository: MemoryCallCases?
+    private var gone = false
 
     func setRepository(_ repository: MemoryCallCases) { self.repository = repository }
     func setLive(_ views: [CallLiveView]) { live = views }
     func setSnapshots(_ list: [CallCaseSnapshot]) { snapshots = list }
     func setApprovalState(_ state: String) { approvalState = state }
     func failAcks(_ on: Bool) { ackFails = on }
+    func setGone(_ on: Bool) { gone = on }
 
     func callCaseAvailability() async throws -> CallCaseAvailability {
         try CallFixtures.decode(#"{"available":true,"configured":true,"killSwitch":false,"phoneVerified":true,"recordingNotice":"off","recordsAudio":false,"maxDurationSecs":300,"agentProblems":[]}"#)
@@ -207,6 +223,8 @@ private actor FakeCallBackend: CallCasesBackend {
     func takeOverCallCase(_ caseId: UUID) async throws -> String { "ringing" }
 
     func callCase(_ caseId: UUID) async throws -> CallCaseSnapshot {
+        // What DoddyServerClient throws for a 404 from GET /v1/call-cases/:id.
+        if gone { throw ServerError.unexpected(status: 404) }
         guard let first = snapshots.first else { return CallFixtures.snapshot(ready: false) }
         return first
     }
