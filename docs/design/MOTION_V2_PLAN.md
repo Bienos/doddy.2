@@ -2,7 +2,13 @@
 
 Investigation only, 18 October 2026. No app code, tokens, assets or voice-agent files were changed. Nothing in this document is implemented.
 
-**Source of the motion world:** the `design/motion-v2/` handoff (README, BRIEF, DECISIONS, `reference/` engine and prototype, `telemetry/`). It was supplied next to the repo and is **not committed on this branch** (only this plan is). Q1 asks to commit it first, because MV1's tests read its telemetry.
+**Source of the motion world:** the `design/motion-v2/` handoff (README, BRIEF, DECISIONS, `reference/` engine and prototype, `telemetry/`). Committed with MV1 (owner answer to Q1, 18 Oct 2026): MV1's golden tests read its telemetry.
+
+## Status (18 Oct 2026)
+
+- **Owner answers:** Q1 commit the handoff folder (done); Q7 whole-picture transforms of pack art are allowed (move, scale, rotate, squash), never redrawn, recoloured, cut up or generated; Q9 add `CADisableMinimumFrameDurationOnPhone` in MV2. Every other question takes this plan's recommendation until the owner overrules it.
+- **MV1 done (branch `claude/motion-mv1`):** `Packages/DoddyCore/Sources/DoddyCore/Motion/` (`MotionEngine`, `MotionSurface`, `HopPlan`, `MotionMath`). `MotionTelemetryTests` drives the engine through all 25 studies on the reference layout and matches every clip's telemetry within ±1 ms and ±0.5 pt, including the event log. No app code changed.
+- **MV2–MV6:** not started. They need Xcode and a simulator (see the MV1 report).
 
 ## In short
 
