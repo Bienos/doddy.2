@@ -3,6 +3,8 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import type { SessionVerifier } from "./auth.js";
 import { type ErrorResponse, MockScenario } from "./contracts.js";
 import { AppError } from "./errors.js";
+import { PURCHASE_RULES } from "./payments/contracts.js";
+import type { PaymentsService } from "./payments/service.js";
 import type { ConnectedAppsService } from "./service.js";
 import type { ToolsMockScenario } from "./tools/mock.js";
 import type { CloudToolsService } from "./tools/service.js";
@@ -17,6 +19,8 @@ export interface HttpDeps {
   service: ConnectedAppsService;
   /** Online-account tools (Gmail, Drive, Notion, Todoist). Routes exist only when provided. */
   tools?: CloudToolsService;
+  /** Purchases (ADR-490). Routes exist only when provided. */
+  payments?: PaymentsService;
   verifier: SessionVerifier;
   appReturnUrl: string;
   maxBodyBytes: number;
@@ -63,6 +67,20 @@ export function createHandler(deps: HttpDeps) {
       }
     : {};
 
+  // Purchases: the user comes from the token only; no route takes a provider, a Stripe id or a URL to call.
+  const payments = deps.payments;
+  const paymentRoutes: Record<string, (userId: string, body: unknown) => unknown | Promise<unknown>> = payments
+    ? {
+        "GET /v1/purchases": (userId) => payments.list(userId),
+        "POST /v1/purchases/prepare": (userId, body) => payments.prepare(userId, body),
+        "POST /v1/purchases/pay": (userId, body) => payments.pay(userId, body),
+        "POST /v1/purchases/status": (userId, body) => payments.status(userId, body),
+        "POST /v1/purchases/cancel": (userId, body) => payments.cancel(userId, body),
+        "POST /v1/purchases/handoff": (userId, body) => payments.handoff(userId, body),
+        "POST /v1/purchases/report": (userId, body) => payments.report(userId, body),
+      }
+    : {};
+
   return async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const started = Date.now();
     const correlationId = randomUUID();
@@ -88,7 +106,8 @@ export function createHandler(deps: HttpDeps) {
       if (key === "GET /v1/health") {
         route = key;
         status = 200;
-        return send(res, 200, { status: "ok", mode: service.mode, api: "v1", capabilities: ["calendar.listEvents"] });
+        const capabilities = ["calendar.listEvents", ...(payments?.nativeConfigured ? ["payments"] : [])];
+        return send(res, 200, { status: "ok", mode: service.mode, api: "v1", capabilities });
       }
       if (key === "GET /v1/oauth/return" || key === "GET /v1/oauth/verify") {
         route = key;
@@ -98,8 +117,9 @@ export function createHandler(deps: HttpDeps) {
 
       const toolkitRoute = tools ? TOOLKIT_ROUTE.exec(key) : null;
       const toolsHandler = toolsRoutes[key];
+      const paymentHandler = paymentRoutes[key];
       const handler = routes[key];
-      if (!handler && !toolsHandler && !toolkitRoute) throw new AppError("not_found");
+      if (!handler && !toolsHandler && !toolkitRoute && !paymentHandler) throw new AppError("not_found");
       // Route templates only in logs, so the set of values stays small.
       route = toolkitRoute ? `POST /v1/tools/:toolkit/${toolkitRoute[2]}` : key;
 
@@ -110,7 +130,14 @@ export function createHandler(deps: HttpDeps) {
       const scenario = rawScenario === undefined ? undefined : MockScenario.safeParse(rawScenario);
       if (scenario && !scenario.success) throw new AppError("invalid_request");
 
-      const body = req.method === "POST" || req.method === "PUT" ? await readJson(req, deps.maxBodyBytes) : undefined;
+      // Apple Pay tokens are a few KB, so the pay route alone takes more; every other route keeps the default.
+      const maxBytes = key === "POST /v1/purchases/pay" ? Math.max(deps.maxBodyBytes, PURCHASE_RULES.payMaxBodyBytes) : deps.maxBodyBytes;
+      const body = req.method === "POST" || req.method === "PUT" ? await readJson(req, maxBytes) : undefined;
+      if (paymentHandler) {
+        const paymentResult = await paymentHandler(user.userId, body);
+        status = 200;
+        return send(res, 200, paymentResult);
+      }
       if (tools && (toolsHandler || toolkitRoute)) {
         const rawTools = header(req, "x-doddy-tools-scenario");
         if (rawTools !== undefined) {

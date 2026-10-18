@@ -147,6 +147,27 @@ export class Store {
         body TEXT NOT NULL
       );
       CREATE INDEX IF NOT EXISTS tool_receipts_user ON tool_receipts(user_id, created_at);
+      CREATE TABLE IF NOT EXISTS purchases (
+        purchase_id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        kind TEXT NOT NULL CHECK (kind IN ('native', 'checkout')),
+        merchant_name TEXT NOT NULL,
+        description TEXT NOT NULL,
+        amount_minor INTEGER NOT NULL CHECK (amount_minor > 0),
+        currency TEXT NOT NULL,
+        checkout_url TEXT,
+        status TEXT NOT NULL,
+        method TEXT,
+        payment_id TEXT,
+        reason TEXT,
+        approval_id TEXT NOT NULL,
+        test_mode INTEGER NOT NULL,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        expires_at INTEGER NOT NULL,
+        CHECK ((kind = 'checkout') = (checkout_url IS NOT NULL))
+      );
+      CREATE INDEX IF NOT EXISTS purchases_user ON purchases(user_id, created_at);
     `);
     // ADR-322: what happened when an approval was used. Outcome and the provider's id only, never
     // the email or task text. Added to databases made before it.
@@ -487,8 +508,8 @@ export class Store {
 
   /**
    * Retention (review 2026-10-11): drops attempts and approvals a day after they expire, usage
-   * periods no limit reads any more, and receipts older than 90 days or beyond the newest 200 per
-   * user (per table). Returns how many rows went, per table.
+   * periods no limit reads any more, receipts older than 90 days or beyond the newest 200 per
+   * user (per table), and purchases older than 90 days (ADR-490). Returns how many rows went, per table.
    */
   prune(now: number): Record<string, number> {
     const DAY = 86_400_000;
@@ -509,6 +530,7 @@ export class Store {
           run("DELETE FROM usage WHERE period LIKE 'month:%' AND period < ?", monthCutoff),
         receipts: receipts("receipts"),
         toolReceipts: receipts("tool_receipts"),
+        purchases: run("DELETE FROM purchases WHERE created_at < ?", now - 90 * DAY),
       };
     });
   }
@@ -549,26 +571,32 @@ export class Store {
     argsDigest: string;
     now: number;
   }, opts: { checkOnly?: boolean } = {}): boolean {
-    return this.transaction(() => {
-      const row = this.db.prepare("SELECT * FROM approvals WHERE approval_id = ?").get(input.approvalId) as
-        | { user_id: string; capability: string; account_id: string; args_digest: string; expires_at: number; consumed_at: number | null }
-        | undefined;
-      if (
-        !row ||
-        row.user_id !== input.userId ||
-        row.capability !== input.capability ||
-        row.account_id !== input.accountId ||
-        row.args_digest !== input.argsDigest ||
-        row.consumed_at !== null ||
-        row.expires_at <= input.now
-      ) {
-        return false;
-      }
-      // checkOnly: would it be accepted? Lets the caller pass its limits first without burning it.
-      if (opts.checkOnly) return true;
-      return this.db.prepare("UPDATE approvals SET consumed_at = ? WHERE approval_id = ? AND consumed_at IS NULL").run(input.now, input.approvalId)
-        .changes === 1;
-    });
+    return this.transaction(() => this.useApproval(input, opts.checkOnly === true));
+  }
+
+  /** The checks and the single use of `consumeApproval`, for callers already inside a transaction. */
+  private useApproval(
+    input: { approvalId: string; userId: string; capability: string; accountId: string; argsDigest: string; now: number },
+    checkOnly: boolean,
+  ): boolean {
+    const row = this.db.prepare("SELECT * FROM approvals WHERE approval_id = ?").get(input.approvalId) as
+      | { user_id: string; capability: string; account_id: string; args_digest: string; expires_at: number; consumed_at: number | null }
+      | undefined;
+    if (
+      !row ||
+      row.user_id !== input.userId ||
+      row.capability !== input.capability ||
+      row.account_id !== input.accountId ||
+      row.args_digest !== input.argsDigest ||
+      row.consumed_at !== null ||
+      row.expires_at <= input.now
+    ) {
+      return false;
+    }
+    // checkOnly: would it be accepted? Lets the caller pass its limits first without burning it.
+    if (checkOnly) return true;
+    return this.db.prepare("UPDATE approvals SET consumed_at = ? WHERE approval_id = ? AND consumed_at IS NULL").run(input.now, input.approvalId)
+      .changes === 1;
   }
 
   /** Records what happened after a used approval ran (ADR-322). Only the first record counts. */
@@ -599,6 +627,113 @@ export class Store {
     return row ? { outcome: row.outcome, externalId: row.external_id } : null;
   }
 
+  // ------------------------------------------------------------ purchases (ADR-490)
+
+  /**
+   * A new purchase and its single-use approval, in one transaction: either the card has both or
+   * neither exists. The approval is bound to the purchase id (`account_id`) and the digest of the
+   * stored purchase, so changing anything the card showed makes the approval stop matching.
+   */
+  createPurchase(row: Omit<PurchaseRow, "expires_at" | "approval_id">, approval: { capability: string; argsDigest: string; ttlSeconds: number }): PurchaseRow {
+    return this.transaction(() => {
+      const created = this.createApproval({
+        userId: row.user_id,
+        capability: approval.capability,
+        accountId: row.purchase_id,
+        argsDigest: approval.argsDigest,
+        now: row.created_at,
+        ttlSeconds: approval.ttlSeconds,
+      });
+      const stored: PurchaseRow = { ...row, approval_id: created.approvalId, expires_at: created.expiresAt };
+      this.db
+        .prepare(
+          `INSERT INTO purchases (purchase_id, user_id, kind, merchant_name, description, amount_minor, currency, checkout_url,
+             status, method, payment_id, reason, approval_id, test_mode, created_at, updated_at, expires_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        )
+        .run(
+          stored.purchase_id, stored.user_id, stored.kind, stored.merchant_name, stored.description, stored.amount_minor, stored.currency,
+          stored.checkout_url, stored.status, stored.method, stored.payment_id, stored.reason, stored.approval_id, stored.test_mode,
+          stored.created_at, stored.updated_at, stored.expires_at,
+        );
+      return stored;
+    });
+  }
+
+  /** The user's own purchase, or null (another user's purchase is indistinguishable from none). */
+  getPurchase(userId: string, purchaseId: string): PurchaseRow | null {
+    return (this.db.prepare("SELECT * FROM purchases WHERE purchase_id = ? AND user_id = ?").get(purchaseId, userId) as PurchaseRow | undefined) ?? null;
+  }
+
+  /** The user's purchases since `since`, newest first. */
+  listPurchases(userId: string, since: number, limit: number): PurchaseRow[] {
+    return this.db
+      .prepare("SELECT * FROM purchases WHERE user_id = ? AND created_at >= ? ORDER BY created_at DESC, rowid DESC LIMIT ?")
+      .all(userId, since, limit) as unknown as PurchaseRow[];
+  }
+
+  /** Sum of today's purchases (since `since`) in these statuses, for the daily cap. */
+  committedPurchaseMinor(userId: string, since: number, statuses: readonly PurchaseStatusValue[]): number {
+    const marks = statuses.map(() => "?").join(", ");
+    const row = this.db
+      .prepare(`SELECT COALESCE(SUM(amount_minor), 0) AS total FROM purchases WHERE user_id = ? AND created_at >= ? AND status IN (${marks})`)
+      .get(userId, since, ...statuses) as { total: number };
+    return Number(row.total);
+  }
+
+  /**
+   * Moves a purchase on, only from one of `from` (compare-and-set), so two requests racing on the
+   * same purchase can't both move it. Returns false when it was no longer in one of those states.
+   */
+  updatePurchase(
+    userId: string,
+    purchaseId: string,
+    from: readonly PurchaseStatusValue[],
+    change: { status: PurchaseStatusValue; now: number; method?: string | null; paymentId?: string | null; reason?: string | null },
+  ): boolean {
+    const marks = from.map(() => "?").join(", ");
+    const sets = ["status = ?", "updated_at = ?"];
+    const values: (string | number | null)[] = [change.status, change.now];
+    for (const [column, value] of [["method", change.method], ["payment_id", change.paymentId], ["reason", change.reason]] as const) {
+      if (value === undefined) continue;
+      sets.push(`${column} = ?`);
+      values.push(value);
+    }
+    return (
+      this.db
+        .prepare(`UPDATE purchases SET ${sets.join(", ")} WHERE purchase_id = ? AND user_id = ? AND status IN (${marks})`)
+        .run(...values, purchaseId, userId, ...from).changes === 1
+    );
+  }
+
+  /**
+   * Uses up a purchase's approval and moves the purchase on, in one transaction: either both
+   * happen or neither. The digest is recomputed by the caller from the STORED purchase, so a body
+   * can never change what is paid. `withinLimit` runs inside the same transaction, before the
+   * approval is touched (the daily cap, counted again at the moment money is committed).
+   * "refused": the approval didn't match (wrong user, other purchase, expired, already used) or the
+   * purchase was no longer in one of `from`. "limit": `withinLimit` said no; nothing changed.
+   */
+  usePurchaseApproval(
+    input: { approvalId: string; userId: string; capability: string; purchaseId: string; argsDigest: string; now: number },
+    from: readonly PurchaseStatusValue[],
+    change: { status: PurchaseStatusValue; method?: string | null },
+    withinLimit: (purchase: PurchaseRow) => boolean = () => true,
+  ): "used" | "refused" | "limit" {
+    return this.transaction(() => {
+      const purchase = this.getPurchase(input.userId, input.purchaseId);
+      if (!purchase || !from.includes(purchase.status)) return "refused";
+      if (!withinLimit(purchase)) return "limit";
+      const used = this.useApproval(
+        { approvalId: input.approvalId, userId: input.userId, capability: input.capability, accountId: input.purchaseId, argsDigest: input.argsDigest, now: input.now },
+        false,
+      );
+      if (!used) return "refused";
+      if (!this.updatePurchase(input.userId, input.purchaseId, from, { ...change, now: input.now })) throw new Error("purchase changed during approval");
+      return "used";
+    });
+  }
+
   /** The newest run of the same write (user, tool, arguments) since `since` that did or may have gone through. */
   latestWrite(input: { userId: string; capability: string; argsDigest: string; since: number }): { outcome: WriteOutcome; finishedAt: number } | null {
     const row = this.db
@@ -614,3 +749,40 @@ export class Store {
 
 /** How a used approval's run ended (ADR-322). */
 export type WriteOutcome = "succeeded" | "outcome_unknown" | "failed";
+
+export type PurchaseStatusValue =
+  | "awaiting_tap"
+  | "paying"
+  | "waiting_for_bank"
+  | "paid"
+  | "failed"
+  | "outcome_unknown"
+  | "cancelled"
+  | "expired"
+  | "handed_off"
+  | "user_reported_paid";
+
+/**
+ * One purchase (ADR-490). Never a card number, Apple Pay token or BLIK code: `payment_id` is
+ * Stripe's PaymentIntent id (or the mock's), `reason` a short fixed code for the summary.
+ */
+export interface PurchaseRow {
+  purchase_id: string;
+  user_id: string;
+  kind: "native" | "checkout";
+  merchant_name: string;
+  description: string;
+  amount_minor: number;
+  currency: string;
+  checkout_url: string | null;
+  status: PurchaseStatusValue;
+  method: string | null;
+  payment_id: string | null;
+  reason: string | null;
+  /** The single-use approval made with the purchase (its outcome is recorded once settled, ADR-322). */
+  approval_id: string;
+  test_mode: number;
+  created_at: number;
+  updated_at: number;
+  expires_at: number;
+}

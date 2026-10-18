@@ -67,6 +67,49 @@ test("TLS outside loopback; return URL is allowlisted (scheme, no query)", () =>
   assert.ok(problems({ DODDY_APP_RETURN_URL: "javascript://x" }).length > 0);
 });
 
+// Payments (ADR-490). Short fakes only: the guard script refuses anything that looks like a real key.
+test("payments: live mode takes a Stripe test key, and refuses live and malformed keys by name only", () => {
+  assert.equal(loadConfig(live).payments, null, "no key: native purchases say not set up");
+  assert.deepEqual(loadConfig({ ...live, STRIPE_SECRET_KEY: "sk_test_fakefake" }).payments, { stripeSecretKey: "sk_test_fakefake" });
+  assert.deepEqual(loadConfig({ ...live, STRIPE_SECRET_KEY: "rk_test_fakefake" }).payments, { stripeSecretKey: "rk_test_fakefake" });
+  for (const key of ["sk_live_fakefake", "rk_live_fakefake"]) {
+    const p = problems({ ...live, STRIPE_SECRET_KEY: key });
+    assert.deepEqual(p, ["STRIPE_SECRET_KEY must be a test key; live payments are blocked until ADR-490's legal review"]);
+    assert.ok(!p.join(" ").includes(key));
+  }
+  for (const key of ["sk_test_short", "pk_test_fakefake", "sk_test_fake-fake!", "whsec_fakefake"]) {
+    const p = problems({ ...live, STRIPE_SECRET_KEY: key });
+    assert.ok(p.some((x) => x.includes("STRIPE_SECRET_KEY")), key);
+    assert.ok(!p.join(" ").includes(key), key);
+  }
+});
+
+test("payments: Stripe alone doesn't make a live server; Composio or Monid is still required", () => {
+  const p = problems({ DODDY_MODE: "live", DODDY_AUTH_MODE: "signed", DODDY_SESSION_SIGNING_KEY: KEY, DODDY_PUBLIC_BASE_URL: "https://doddy-dev.example.com", STRIPE_SECRET_KEY: "sk_test_fakefake" });
+  assert.ok(p.some((x) => x.includes("needs Composio")));
+});
+
+test("payments: mock mode ignores any Stripe key, even a live one", () => {
+  assert.equal(loadConfig({ STRIPE_SECRET_KEY: "sk_live_fakefake" }).payments, null);
+  assert.equal(loadConfig({ STRIPE_SECRET_KEY: "sk_test_fakefake" }).payments, null);
+});
+
+test("payments: limits default to the contract's and the checkout allowlist is validated", () => {
+  const c = loadConfig({});
+  assert.equal(c.limits.purchaseMaxMinor, 20_000);
+  assert.equal(c.limits.purchaseDailyMaxMinor, 50_000);
+  assert.equal(c.limits.userDailyPurchases, 10);
+  assert.deepEqual(c.checkoutHosts, []);
+  assert.deepEqual(loadConfig({ DODDY_CHECKOUT_HOSTS: " Shop.Example.PL, pyszne.pl ,," }).checkoutHosts, ["shop.example.pl", "pyszne.pl"]);
+  for (const bad of ["https://shop.example.pl", "shop.example.pl/checkout", "10.0.0.1", "localhost", "shop.example.pl:443", "*.example.pl"]) {
+    assert.ok(problems({ DODDY_CHECKOUT_HOSTS: bad }).some((x) => x.includes("DODDY_CHECKOUT_HOSTS")), bad);
+  }
+  assert.ok(problems({ DODDY_PURCHASE_MAX_MINOR: "199" }).length > 0, "below Stripe's PLN minimum");
+  assert.ok(problems({ DODDY_PURCHASE_MAX_MINOR: "30000", DODDY_PURCHASE_DAILY_MAX_MINOR: "20000" }).some((x) => x.includes("DODDY_PURCHASE_DAILY_MAX_MINOR")));
+  const set = loadConfig({ DODDY_PURCHASE_MAX_MINOR: "1000", DODDY_PURCHASE_DAILY_MAX_MINOR: "3000", DODDY_LIMIT_USER_DAILY_PURCHASES: "2" });
+  assert.deepEqual([set.limits.purchaseMaxMinor, set.limits.purchaseDailyMaxMinor, set.limits.userDailyPurchases], [1000, 3000, 2]);
+});
+
 test("signing key must be strong", () => {
   assert.ok(problems({ ...live, DODDY_SESSION_SIGNING_KEY: Buffer.alloc(8).toString("base64") }).length > 0);
 });
