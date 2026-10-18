@@ -169,6 +169,8 @@ final class UpdatesModel {
             try await client.deleteAccount()
             self.defaults.set(false, forKey: PreferenceKey.pushUpdatesOn)
             self.defaults.set(false, forKey: PreferenceKey.memoryCopyOn)
+            self.defaults.set(false, forKey: PreferenceKey.textsToDoddyOn)
+            self.defaults.set(false, forKey: PreferenceKey.textRepliesOn)
             MemoryCopySync.shared.stop()
             self.pushState = .off
             self.phone = .none

@@ -39,6 +39,13 @@ const schema = z.object({
   OPENAI_API_KEY: optional, // or OpenAI, when there is no Anthropic key (ADR-197)
   OPENAI_MODEL: optional, // default gpt-5-mini
   GNEWS_API_KEY: optional, // keyword search across news sources (paid plan for commercial use)
+  // Replies to the user's texts (ADR-494) use ANTHROPIC_API_KEY, with this model (owner decision 7).
+  TEXT_REPLY_MODEL: optional, // default claude-opus-5-5
+  // Hours after a message or call is final before its record is deleted at Twilio (ADR-494).
+  // 0 means as soon as Twilio allows (about 2 minutes).
+  // An empty value means the default (z.coerce would read "" as 0, deleting at once).
+  TWILIO_RECORD_DELETE_AFTER_HOURS: z.preprocess((v) => (v === "" ? undefined : v),
+    z.coerce.number().min(0).max(24 * 30).default(24)),
   DODDY_PHONE_NUMBER: z.string().regex(/^\+[1-9][0-9]{6,14}$/).optional(),
 });
 
@@ -66,6 +73,8 @@ export interface Config {
   openaiApiKey?: string;
   openaiModel?: string;
   gnewsApiKey?: string;
+  textReplyModel?: string;
+  twilioRecordDeleteAfterHours: number;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -98,5 +107,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     openaiApiKey: e.OPENAI_API_KEY,
     openaiModel: e.OPENAI_MODEL,
     gnewsApiKey: e.GNEWS_API_KEY,
+    textReplyModel: e.TEXT_REPLY_MODEL,
+    twilioRecordDeleteAfterHours: e.TWILIO_RECORD_DELETE_AFTER_HOURS,
   };
 }

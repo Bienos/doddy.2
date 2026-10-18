@@ -850,6 +850,17 @@
         }
       }
     },
+    "A file with your calls, the status of texts between you and Doddy, and the notes waiting here. The text of messages isn't in it: Doddy's server erases it once a message is sent. Doddy's server also deletes its records at Twilio after each call or text, a day later unless the server is set up otherwise.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plik z Twoimi rozmowami, stanem SMS-ów między Tobą a Doddym i notatkami, które tu czekają. Nie ma w nim treści wiadomości: serwer Doddy’ego usuwa ją po wysłaniu. Serwer Doddy’ego usuwa też swoje zapisy w Twilio po każdej rozmowie i SMS-ie, dzień później, chyba że ustawiono go inaczej."
+          }
+        }
+      }
+    },
     "A handwritten or printed list. Doddy reads it on this iPhone; the photo isn't kept or sent anywhere.": {
       "extractionState": "manual",
       "localizations": {
@@ -3128,6 +3139,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "关于你"
+          }
+        }
+      }
+    },
+    "Accept texts from my number": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przyjmuj SMS-y z mojego numeru"
           }
         }
       }
@@ -19218,6 +19240,17 @@
         }
       }
     },
+    "Doddy replies by text": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy odpowiada SMS-em"
+          }
+        }
+      }
+    },
     "Doddy says his suggestion to them, in their language.": {
       "extractionState": "manual",
       "localizations": {
@@ -19513,61 +19546,13 @@
         }
       }
     },
-    "Doddy wrote these down during calls. They become memories only when you save them.": {
+    "Doddy wrote these down during calls, or kept them from your texts. They become memories only when you save them.": {
       "extractionState": "manual",
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy hat das bei Anrufen notiert. Gemerkt wird es erst, wenn du es speicherst."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy apuntó esto durante las llamadas. Solo se convierten en recuerdos cuando los guardas."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy a noté ceci pendant des appels. Ça ne devient des souvenirs que si tu l’enregistres."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy je ovo zapisao tijekom poziva. Postaju sjećanja tek kad ih spremiš."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy le ha annotate durante le chiamate. Diventano ricordi solo quando le salvi."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddyが通話中に書き留めたものです。あなたが保存したときにだけ記憶になります。"
-          }
-        },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy zanotował to podczas rozmów. Staną się wspomnieniami dopiero, gdy je zapiszesz."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O Doddy anotou isto durante as chamadas. Só vira memória quando você salva."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "这些是 Doddy 在通话中记下的。只有你保存后，它们才会成为记忆。"
+            "value": "Doddy zanotował to podczas rozmów albo zachował z Twoich SMS-ów. Staną się wspomnieniami dopiero, gdy je zapiszesz."
           }
         }
       }
@@ -19922,6 +19907,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "服务器上尚未设置 Doddy 的电话线路。设置好后，下面的一切就会开始工作。"
+          }
+        }
+      }
+    },
+    "Doddy's phone number isn't set up on the server yet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Numer telefonu Doddy’ego nie jest jeszcze skonfigurowany na serwerze."
           }
         }
       }
@@ -23198,6 +23194,17 @@
         }
       }
     },
+    "Export phone and text history": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eksportuj historię rozmów i SMS-ów"
+          }
+        }
+      }
+    },
     "Export with your settings as JSON": {
       "extractionState": "manual",
       "localizations": {
@@ -25514,6 +25521,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "来自你保存的笔记"
+          }
+        }
+      }
+    },
+    "From your text · %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Z Twojego SMS-a · %@"
           }
         }
       }
@@ -40026,65 +40044,6 @@
         }
       }
     },
-    "Notes from your calls": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Notizen aus deinen Anrufen"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Notas de tus llamadas"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Notes de tes appels"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bilješke iz tvojih poziva"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Note dalle tue chiamate"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "通話からのメモ"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Notatki z Twoich rozmów telefonicznych"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Notas das suas chamadas"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "来自你通话的笔记"
-          }
-        }
-      }
-    },
     "Notes on this Mac": {
       "extractionState": "manual",
       "localizations": {
@@ -40258,6 +40217,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "已保存的笔记：%lld"
+          }
+        }
+      }
+    },
+    "Notes waiting for you": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notatki czekające na Ciebie"
           }
         }
       }
@@ -43240,6 +43210,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "好"
+          }
+        }
+      }
+    },
+    "Off by default. Only texts from your verified number count; texts from anyone else are dropped without a reply. Without replies, each text waits here as a note. With replies, Doddy answers each text once, within 10 minutes, up to 30 a day, and only to your number; it can leave a note for you to confirm. With memories allowed, a reply can quote a saved note, and texts aren't encrypted between phone networks.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Domyślnie wyłączone. Liczą się tylko SMS-y z Twojego zweryfikowanego numeru; SMS-y od innych są pomijane bez odpowiedzi. Bez odpowiedzi każdy SMS czeka tutaj jako notatka. Z odpowiedziami Doddy odpowiada na każdy SMS raz, w ciągu 10 minut, najwyżej 30 razy dziennie i tylko na Twój numer; może zostawić notatkę do potwierdzenia. Gdy pozwolisz na wspomnienia, odpowiedź może cytować zapisaną notatkę, a SMS-y nie są szyfrowane między sieciami komórkowymi."
           }
         }
       }
@@ -54824,6 +54805,39 @@
         }
       }
     },
+    "Replies are texts from Doddy: turn on texts in Notifications and texts first. If you sent STOP, text START to Doddy's number.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odpowiedzi to SMS-y od Doddy’ego: najpierw włącz SMS-y w Powiadomieniach i SMS-ach. Jeśli wysłano STOP, wyślij START na numer Doddy’ego."
+          }
+        }
+      }
+    },
+    "Replies aren't set up on Doddy's server yet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odpowiedzi nie są jeszcze skonfigurowane na serwerze Doddy’ego."
+          }
+        }
+      }
+    },
+    "Replies may use my memories": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odpowiedzi mogą korzystać z moich wspomnień"
+          }
+        }
+      }
+    },
     "Reply length": {
       "extractionState": "manual",
       "localizations": {
@@ -55410,6 +55424,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "运行这个快捷指令？"
+          }
+        }
+      }
+    },
+    "Said on a call · %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powiedziane w rozmowie · %@"
           }
         }
       }
@@ -61241,6 +61266,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "共享文本"
+          }
+        }
+      }
+    },
+    "Share the export": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Udostępnij eksport"
           }
         }
       }
@@ -67155,6 +67191,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "来自 Doddy 的短信"
+          }
+        }
+      }
+    },
+    "Texts to Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SMS-y do Doddy’ego"
           }
         }
       }
@@ -78336,6 +78383,28 @@
         }
       }
     },
+    "Turn on Memory on calls first: replies use the same copy of your notes.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najpierw włącz Pamięć w rozmowach telefonicznych: odpowiedzi korzystają z tej samej kopii Twoich notatek."
+          }
+        }
+      }
+    },
+    "Turn on Texts to Doddy first.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najpierw włącz SMS-y do Doddy’ego."
+          }
+        }
+      }
+    },
     "Turn on notifications": {
       "extractionState": "manual",
       "localizations": {
@@ -78450,6 +78519,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "请先在“通知和短信”中开启通知。"
+          }
+        }
+      }
+    },
+    "Turn on replies first.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najpierw włącz odpowiedzi."
           }
         }
       }
@@ -80951,6 +81031,17 @@
         }
       }
     },
+    "Verify your phone number in Notifications and texts first.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najpierw zweryfikuj swój numer w Powiadomieniach i SMS-ach."
+          }
+        }
+      }
+    },
     "Version": {
       "extractionState": "manual",
       "localizations": {
@@ -81419,6 +81510,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "等待你的回答"
+          }
+        }
+      }
+    },
+    "Waiting since %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czeka od %@"
           }
         }
       }
@@ -88198,6 +88300,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "你的停车位置"
+          }
+        }
+      }
+    },
+    "Your phone and text history": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Historia Twoich rozmów i SMS-ów"
           }
         }
       }

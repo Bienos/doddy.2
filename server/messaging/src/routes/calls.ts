@@ -163,16 +163,17 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
   app.get("/v1/call-notes", { preHandler: auth }, async (req, reply) => {
     if (!deps.cipher) return reply.code(503).send({ error: "not_configured" });
     const { accountId } = principal(req);
-    const { rows } = await db.query<{ id: string; ciphertext: Buffer; created_at: Date }>(
-      "SELECT id, ciphertext, created_at FROM call_notes WHERE account_id = $1 ORDER BY created_at", [accountId]);
+    const { rows } = await db.query<{ id: string; ciphertext: Buffer; created_at: Date; source: "call" | "text" }>(
+      "SELECT id, ciphertext, created_at, source FROM call_notes WHERE account_id = $1 ORDER BY created_at", [accountId]);
     const cipher = deps.cipher;
     // A note that won't decrypt (e.g. after a key change) must not hide the others; it is listed
     // separately (older apps ignore the field) so it can still be discarded.
-    const notes: { id: string; text: string; createdAt: Date }[] = [];
+    // `source` says whether Doddy took the note on a call or it came from a text (ADR-494).
+    const notes: { id: string; text: string; createdAt: Date; source: "call" | "text" }[] = [];
     const unreadable: { id: string; createdAt: Date }[] = [];
     for (const r of rows) {
       try {
-        notes.push({ id: r.id, text: cipher.decrypt(r.ciphertext, `${accountId}:note:${r.id}`), createdAt: r.created_at });
+        notes.push({ id: r.id, text: cipher.decrypt(r.ciphertext, `${accountId}:note:${r.id}`), createdAt: r.created_at, source: r.source });
       } catch {
         unreadable.push({ id: r.id, createdAt: r.created_at });
       }

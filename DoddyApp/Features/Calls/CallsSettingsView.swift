@@ -1,8 +1,9 @@
 import DoddyCore
 import SwiftUI
 
-/// Settings → Phone calls: call Doddy's number, let Doddy call you, PIN, memory on calls,
-/// and notes Doddy took on calls (waiting for your confirmation).
+/// Settings → Phone calls: call Doddy's number, let Doddy call you, PIN, memory on calls, texts
+/// to Doddy (ADR-494), notes from calls and texts (waiting for your confirmation), and the export
+/// of your phone and text history.
 struct CallsSettingsView: View {
     @Environment(MemoryStore.self) private var store
     @State private var model = CallsModel()
@@ -52,7 +53,7 @@ struct CallsSettingsView: View {
         }
 
         if !model.notes.isEmpty || !model.unreadableNotes.isEmpty || model.notesProblem != nil {
-            Section("Notes from your calls") {
+            Section("Notes waiting for you") {
                 if let problem = model.notesProblem {
                     Label(problem, systemImage: "exclamationmark.triangle")
                         .foregroundStyle(Theme.error)
@@ -61,7 +62,9 @@ struct CallsSettingsView: View {
                 ForEach(model.notes) { note in
                     VStack(alignment: .leading, spacing: 8) {
                         Text(note.text)
-                        Text("Said on a call · \(DateText.full(note.createdDate))")
+                        Text(note.fromText
+                             ? String(format: NSLocalizedString("From your text · %@", comment: ""), DateText.full(note.createdDate))
+                             : String(format: NSLocalizedString("Said on a call · %@", comment: ""), DateText.full(note.createdDate)))
                             .font(.footnote)
                             .foregroundStyle(Theme.secondaryText)
                         HStack {
@@ -80,14 +83,14 @@ struct CallsSettingsView: View {
                 ForEach(model.unreadableNotes) { note in
                     VStack(alignment: .leading, spacing: 8) {
                         Text("This note can't be read any more, so it can't be saved.")
-                        Text("Said on a call · \(DateText.full(note.createdDate))")
+                        Text(String(format: NSLocalizedString("Waiting since %@", comment: ""), DateText.full(note.createdDate)))
                             .font(.footnote)
                             .foregroundStyle(Theme.secondaryText)
                         Button("Discard", role: .destructive) { Task { await model.discard(note.id) } }
                             .buttonStyle(.borderless)
                     }
                 }
-                Text("Doddy wrote these down during calls. They become memories only when you save them.")
+                Text("Doddy wrote these down during calls, or kept them from your texts. They become memories only when you save them.")
                     .font(.footnote)
                     .foregroundStyle(Theme.secondaryText)
             }
@@ -156,6 +159,8 @@ struct CallsSettingsView: View {
             }
         }
 
+        textsSection(s)
+
         if !model.recent.isEmpty {
             Section("Recent calls") {
                 ForEach(model.recent) { call in
@@ -165,6 +170,63 @@ struct CallsSettingsView: View {
                 }
             }
         }
+    }
+
+    /// Texts to Doddy (ADR-494): each switch only once the server says the one before it is on.
+    @ViewBuilder
+    private func textsSection(_ calls: CallSettings) -> some View {
+        let t = model.textSettings ?? .off
+        Section("Texts to Doddy") {
+            if let number = t.doddyNumber ?? calls.doddyNumber {
+                StatusRow(title: "Doddy's number", value: number)
+            }
+            Toggle("Accept texts from my number", isOn: Binding(
+                get: { t.inboundEnabled },
+                set: { on in Task { await model.setTextsToDoddy(on) } }))
+                .disabled(!t.inboundEnabled && t.inboundBlocker != nil)
+                .accessibilityIdentifier("texts.inbound")
+            Text(TextsToDoddyConsent.text)
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+            Toggle("Doddy replies by text", isOn: Binding(
+                get: { t.repliesEnabled },
+                set: { on in Task { await model.setTextReplies(on) } }))
+                .disabled(!t.repliesEnabled && t.repliesBlocker != nil)
+                .accessibilityIdentifier("texts.replies")
+            if t.repliesEnabled {
+                Toggle("Replies may use my memories", isOn: Binding(
+                    get: { t.repliesUseMemories },
+                    set: { on in Task { await model.setTextRepliesUseMemories(on) } }))
+                    .disabled(!t.repliesUseMemories && t.memoriesBlocker != nil)
+                    .accessibilityIdentifier("texts.memories")
+            }
+            if let blocker = nextBlocker(t) {
+                Label(blocker.localized, systemImage: "info.circle")
+                    .font(.footnote)
+            }
+            Text("Off by default. Only texts from your verified number count; texts from anyone else are dropped without a reply. Without replies, each text waits here as a note. With replies, Doddy answers each text once, within 10 minutes, up to 30 a day, and only to your number; it can leave a note for you to confirm. With memories allowed, a reply can quote a saved note, and texts aren't encrypted between phone networks.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+        }
+
+        Section("Your phone and text history") {
+            Button("Export phone and text history") { Task { await model.exportHistory() } }
+                .accessibilityIdentifier("texts.export")
+            if let file = model.historyFile {
+                ShareLink(item: file) { Label("Share the export", systemImage: "square.and.arrow.up") }
+            }
+            Text("A file with your calls, the status of texts between you and Doddy, and the notes waiting here. The text of messages isn't in it: Doddy's server erases it once a message is sent. Doddy's server also deletes its records at Twilio after each call or text, a day later unless the server is set up otherwise.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+        }
+    }
+
+    /// Why the next switch down is off and can't be turned on yet; nil when nothing is in the way.
+    private func nextBlocker(_ t: TextSettings) -> TextsBlocker? {
+        if !t.inboundEnabled { return t.inboundBlocker }
+        if !t.repliesEnabled { return t.repliesBlocker }
+        if !t.repliesUseMemories, let blocker = t.memoriesBlocker, blocker != .repliesOff { return blocker }
+        return nil
     }
 
     /// How a call went, as Twilio reported it to Doddy's server (ADR-490). Nothing is added while

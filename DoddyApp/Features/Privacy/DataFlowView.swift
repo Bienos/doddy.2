@@ -31,7 +31,9 @@ extension DataFlowState {
             // OpenAI is the default where the token server is set (ADR-442); a choice in Settings wins.
             voiceProvider: VoiceProvider.effective(
                 stored: defaults.string(forKey: VoiceProvider.preferenceKey), tokenServerSet: true),
-            learnedSharedWithVoice: defaults.bool(forKey: PreferenceKey.shareLearnedWithVoice))
+            learnedSharedWithVoice: defaults.bool(forKey: PreferenceKey.shareLearnedWithVoice),
+            textsToDoddyOn: defaults.bool(forKey: PreferenceKey.textsToDoddyOn),
+            textRepliesOn: defaults.bool(forKey: PreferenceKey.textRepliesOn))
     }
 }
 
@@ -45,6 +47,8 @@ struct DataFlowView: View {
     @AppStorage(PreferenceKey.messagingServerURL) private var messagingServerURL = ""
     @AppStorage(PreferenceKey.pushUpdatesOn) private var pushOn = false
     @AppStorage(PreferenceKey.memoryCopyOn) private var memoryCopyOn = false
+    @AppStorage(PreferenceKey.textsToDoddyOn) private var textsToDoddyOn = false
+    @AppStorage(PreferenceKey.textRepliesOn) private var textRepliesOn = false
     @AppStorage(PreferenceKey.siriReadsNotes) private var siriReadsNotes = true
     @AppStorage(PreferenceKey.heyDoddyOn) private var heyDoddyOn = false
     @AppStorage(VoiceProvider.preferenceKey) private var voiceProvider = ""

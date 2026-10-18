@@ -71,6 +71,9 @@ enum PreferenceKey {
     static let pushUpdatesOn = "pushUpdatesOn"
     /// The user turned on the server copy of their notes for phone calls (S2).
     static let memoryCopyOn = "memoryCopyOn"
+    /// Texts to Doddy and replies to them (ADR-494), as the server last reported; for What leaves this iPhone.
+    static let textsToDoddyOn = "textsToDoddyOn"
+    static let textRepliesOn = "textRepliesOn"
     /// "Worth keeping?" after a voice conversation (ADR-247). On unless turned off; on-device rules.
     static let suggestSavesAfterConversation = "suggestSavesAfterConversation"
     /// Siri may read saved notes aloud (ADR-248). On unless turned off; the phone must be unlocked.

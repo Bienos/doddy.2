@@ -4,6 +4,7 @@ import { z } from "zod";
 import type { Deps } from "../app.js";
 import { openSession } from "../calls.js";
 import type { Db } from "../db.js";
+import { scheduleDeletion } from "../providerRecords.js";
 import { sayAndHangUp } from "../voiceTwiml.js";
 import { formValue, verifiedTwilioForm } from "./twilioAuth.js";
 
@@ -138,6 +139,8 @@ export const twilioVoiceRoutes = (deps: Deps): FastifyPluginAsync => async (app)
       `UPDATE calls SET status = $2 WHERE call_sid = $1 AND ${RANK_SQL} < $3 RETURNING id`,
       [callSid, next, rank(next)]);
     if (row && rank(next) === 3) await endCallSessions(db, row.id);
+    // A finished call's record is deleted at Twilio later, a refused stranger's too (ADR-494).
+    if (rank(next) === 3) await scheduleDeletion(db, "call", callSid);
     return reply.code(204).send();
   });
 };

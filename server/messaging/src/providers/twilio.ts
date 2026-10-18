@@ -1,8 +1,8 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import type { TwilioConfig } from "../config.js";
 import {
-  ProviderError, type CallOutcome, type OutboundCall, type OutboundCaller, type PhoneVerifier, type SendOutcome,
-  type SmsSender, type VerifyCheck,
+  ProviderError, type CallOutcome, type DeleteOutcome, type OutboundCall, type OutboundCaller, type PhoneVerifier,
+  type RecordDeleter, type SendOutcome, type SmsSender, type VerifyCheck,
 } from "./types.js";
 
 type Params = Record<string, string | string[] | undefined>;
@@ -29,7 +29,11 @@ interface TwilioError { code?: number; message?: string }
 const basicAuth = (c: Pick<TwilioConfig, "accountSid" | "authToken">) =>
   "Basic " + Buffer.from(`${c.accountSid}:${c.authToken}`).toString("base64");
 
-export class TwilioClient implements SmsSender, PhoneVerifier {
+/** Twilio's ids for a message (SM…, MM…) and a call (CA…), so nothing else reaches a URL path. */
+const SID = { message: /^(SM|MM)[0-9a-f]{32}$/i, call: /^CA[0-9a-f]{32}$/i } as const;
+export const isTwilioSid = (kind: keyof typeof SID, sid: string) => SID[kind].test(sid);
+
+export class TwilioClient implements SmsSender, PhoneVerifier, RecordDeleter {
   private readonly auth: string;
 
   constructor(
@@ -94,6 +98,29 @@ export class TwilioClient implements SmsSender, PhoneVerifier {
       return m.sid && typeof m.body === "string" && createdAt && !Number.isNaN(createdAt.getTime())
         ? [{ sid: m.sid, body: m.body, createdAt, status: m.status ?? "" }] : [];
     });
+  }
+
+  /**
+   * Deletes a message or call record from Twilio's logs (ADR-494). Twilio answers 20009 until a
+   * record is final, so that is "retry"; a record Twilio no longer has counts as deleted. Twilio
+   * says deleted message bodies can stay in its backups for up to 30 days.
+   */
+  async deleteRecord(kind: "message" | "call", sid: string): Promise<DeleteOutcome> {
+    if (!isTwilioSid(kind, sid)) return { kind: "failed", code: "bad_sid" };
+    const path = kind === "message" ? "Messages" : "Calls";
+    let res: Response;
+    try {
+      res = await fetch(`${this.apiBase}/2010-04-01/Accounts/${this.config.accountSid}/${path}/${sid}.json`, {
+        method: "DELETE", headers: { authorization: this.auth }, signal: AbortSignal.timeout(this.timeoutMs),
+      });
+    } catch {
+      return { kind: "retry", code: "twilio_network" };
+    }
+    if (res.status === 204 || res.status === 404) return { kind: "deleted" };
+    const json = (await res.json().catch(() => ({}))) as TwilioError;
+    const code = `twilio_${json.code ?? res.status}`;
+    if (json.code === 20009 || res.status === 429 || res.status >= 500) return { kind: "retry", code };
+    return { kind: "failed", code };
   }
 
   async start(toE164: string): Promise<void> {

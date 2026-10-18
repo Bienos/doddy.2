@@ -1,7 +1,9 @@
 import type { Config } from "../config.js";
 import { ApnsPushSender } from "./apns.js";
 import { TextCipher } from "../crypto.js";
+import { ClaudeTextReplyWriter } from "./claudeReplies.js";
 import { ElevenLabsCallRegistrar } from "./elevenlabs.js";
+import { deleteAfterMinutes } from "../providerRecords.js";
 import { TwilioClient, TwilioVoiceCaller } from "./twilio.js";
 import { GNewsSearch, HttpFeedSource } from "../news/sources.js";
 import { ClaudeDigestWriter, OpenAIDigestWriter } from "../news/writer.js";
@@ -20,6 +22,12 @@ export function providersFrom(config: Config) {
     outbound: config.twilio ? new TwilioVoiceCaller(config.twilio) : undefined,
     registrar: config.phoneAgent ? new ElevenLabsCallRegistrar(config.phoneAgent) : undefined,
     cipher,
+    // Replies to the user's texts: Claude only (owner decision 7), never the OpenAI fallback.
+    replyWriter: config.anthropicApiKey
+      ? new ClaudeTextReplyWriter({ apiKey: config.anthropicApiKey, model: config.textReplyModel }) : undefined,
+    // Doddy's message and call records at Twilio are deleted this long after they are final.
+    deleter: twilio,
+    deleteAfterMinutes: deleteAfterMinutes(config.twilioRecordDeleteAfterHours),
     news: {
       cipher,
       feeds: new HttpFeedSource(),

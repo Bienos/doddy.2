@@ -8,6 +8,10 @@ import Observation
 final class CallsModel {
     private(set) var client: DoddyServerClient?
     private(set) var settings: CallSettings?
+    /// Texts to Doddy (ADR-494); nil until the server answered.
+    private(set) var textSettings: TextSettings?
+    /// The exported history, ready to share, after Export phone and text history.
+    private(set) var historyFile: URL?
     private(set) var notes: [CallNote] = []
     /// Notes the server holds but can't read any more; they can only be discarded.
     private(set) var unreadableNotes: [UnreadableCallNote] = []
@@ -32,7 +36,9 @@ final class CallsModel {
             let settings = try await client.callSettings()
             self.settings = settings
             self.recent = (try? await client.recentCalls()) ?? []
-            if settings.available.inbound {
+            if let texts = try? await client.textSettings() { self.textSettings = texts; Self.mirror(texts) }
+            // The inbox holds notes from calls and from texts (ADR-494).
+            if settings.available.inbound || self.textSettings?.available.notes == true {
                 do {
                     let inbox = try await client.callInbox()
                     self.notes = inbox.notes
@@ -86,6 +92,51 @@ final class CallsModel {
         }
     }
 
+    // MARK: Texts to Doddy (ADR-494)
+
+    func setTextsToDoddy(_ on: Bool) async { await changeTexts { try await $0.setTextsToDoddy(on, language: .current) } }
+    func setTextReplies(_ on: Bool) async { await changeTexts { try await $0.setTextReplies(on, language: .current) } }
+    func setTextRepliesUseMemories(_ on: Bool) async { await changeTexts { try await $0.setTextRepliesUseMemories(on) } }
+
+    /// Writes, then reads back what the server now holds, as `change` does for calls.
+    private func changeTexts(_ work: @escaping (DoddyServerClient) async throws -> Void) async {
+        guard let client else { return }
+        await run {
+            var failure: (any Error)?
+            do {
+                try await work(client)
+            } catch {
+                failure = error
+            }
+            do {
+                let texts = try await client.textSettings()
+                self.textSettings = texts
+                Self.mirror(texts)
+            } catch {
+                if failure == nil { self.message = UpdatesModel.savedButNotReadBack }
+            }
+            if let failure { throw failure }
+        }
+    }
+
+    /// What leaves this iPhone reads these; the server's answer is the only source.
+    private static func mirror(_ texts: TextSettings) {
+        UserDefaults.standard.set(texts.inboundEnabled, forKey: PreferenceKey.textsToDoddyOn)
+        UserDefaults.standard.set(texts.inboundEnabled && texts.repliesEnabled, forKey: PreferenceKey.textRepliesOn)
+    }
+
+    /// The server's JSON, saved to a file this iPhone shares from. Nothing else is added to it.
+    func exportHistory() async {
+        guard let client else { return }
+        historyFile = nil
+        await run {
+            let data = try await client.phoneHistory()
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent("Doddy phone and text history.json")
+            try data.write(to: url, options: [.atomic, .completeFileProtection])
+            self.historyFile = url
+        }
+    }
+
     func callMeNow() async {
         guard let client else { return }
         await run {
@@ -109,8 +160,10 @@ final class CallsModel {
         guard let client else { return }
         await run {
             if !self.savedNoteIDs.contains(note.id) {
+                // A note from a text was typed by the user; one from a call was said (ADR-494).
                 _ = try await store.save(
-                    text: note.text, category: .other, source: .explicitVoice, capturedAt: note.createdDate ?? Date())
+                    text: note.text, category: .other, source: note.fromText ? .explicitText : .explicitVoice,
+                    capturedAt: note.createdDate ?? Date())
                 self.savedNoteIDs.insert(note.id)
             }
             do {
@@ -172,9 +225,27 @@ final class CallsModel {
         switch error as? ServerError {
         case .notEnabled("no_verified_phone"): NSLocalizedString("Verify your phone number first, in Settings → Notifications and texts.", comment: "")
         case .notEnabled("outbound_not_enabled"): NSLocalizedString("Turn on \"Doddy may call me\" first.", comment: "")
+        case .notEnabled("sms_not_enabled"): TextsBlocker.textsFromDoddyOff.localized
+        case .notEnabled("memory_copy_off"): TextsBlocker.memoryCopyOff.localized
+        case .notConfigured("replies_not_configured"): TextsBlocker.repliesNotSetUp.localized
         case .rateLimited: NSLocalizedString("That's the limit for calls for now. Try again later.", comment: "")
         case .notConfigured: NSLocalizedString("Doddy's phone line isn't set up on the server yet.", comment: "")
         default: UpdatesModel.text(for: error)
+        }
+    }
+}
+
+extension TextsBlocker {
+    /// `message` in the app's language; literal keys, so the strings catalog finds them.
+    var localized: String {
+        switch self {
+        case .notSetUp: NSLocalizedString("Doddy's phone number isn't set up on the server yet.", comment: "")
+        case .noVerifiedPhone: NSLocalizedString("Verify your phone number in Notifications and texts first.", comment: "")
+        case .repliesNotSetUp: NSLocalizedString("Replies aren't set up on Doddy's server yet.", comment: "")
+        case .textsToDoddyOff: NSLocalizedString("Turn on Texts to Doddy first.", comment: "")
+        case .textsFromDoddyOff: NSLocalizedString("Replies are texts from Doddy: turn on texts in Notifications and texts first. If you sent STOP, text START to Doddy's number.", comment: "")
+        case .repliesOff: NSLocalizedString("Turn on replies first.", comment: "")
+        case .memoryCopyOff: NSLocalizedString("Turn on Memory on calls first: replies use the same copy of your notes.", comment: "")
         }
     }
 }

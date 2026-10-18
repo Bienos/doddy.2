@@ -28,8 +28,10 @@ public struct CallSettings: Equatable, Sendable, Decodable {
 public struct CallNote: Equatable, Sendable, Decodable, Identifiable {
     public let id: UUID
     public let text: String
-    /// When it was said on the call (ISO 8601 from the server).
+    /// When it was said on the call, or the text arrived (ISO 8601 from the server).
     public let createdAt: String
+    /// "call" or "text" (ADR-494); nil from servers before texts to Doddy.
+    public var source: String? = nil
 
     public var createdDate: Date? { ServerDates.parse(createdAt) }
 }

@@ -37,7 +37,7 @@ Merge one at a time, then rebuild and talk to Doddy before the next.
 | `claude/dismiss-ended-card` | Nothing: its changes were reverted | None |
 | PR #44 `claude/peaceful-hopper-v3gx75` | Action status, session recovery, Stop listening, unfinished notes, "Listen until I finish" | High: changes the voice session |
 | PR #61 `claude/fervent-hamilton-cv19sj` | iPad sidebar and fixes, Watch "New note" and Smart Stack, Mac menu bar app, widget and window, per-platform projects | Low for voice: no voice-agent changes |
-| `claude/awesome-cray-2lb9ia` | Doddy's own phone number (ADR-490): the U0 setup runbook, calls through the messaging server (U1, ADR-492), texts you approve with the `text_me` voice tool and card (U2, ADR-493), and the capability guard fix for voice sign-in (ADR-491). Nothing deployed. | Medium: a new voice tool and card in `VoiceSessionController`; the app compile is not run yet |
+| `claude/awesome-cray-2lb9ia` | Doddy's own phone number (ADR-490): the U0 setup runbook, calls through the messaging server (U1, ADR-492), texts you approve with the `text_me` voice tool and card (U2, ADR-493), texts to Doddy with optional Claude replies and deleting records at Twilio (U3, ADR-494), and the capability guard fix for voice sign-in (ADR-491). Nothing deployed. | Medium: a new voice tool and card in `VoiceSessionController`; the app compile is not run yet |
 
 ## Known problems
 - **Voice sessions sometimes start twice.** ElevenLabs logs from 2026-10-09 to 10-11 show:

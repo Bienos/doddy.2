@@ -1,13 +1,10 @@
-import { randomUUID } from "node:crypto";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import type { Deps } from "../app.js";
-import {
-  findSession, MAX_PENDING_NOTES, PIN_MAX_ATTEMPTS, pinLockMinutes, sameSecret, type Session,
-} from "../calls.js";
+import { findSession, PIN_MAX_ATTEMPTS, pinLockMinutes, sameSecret, type Session } from "../calls.js";
 import { verifyPin } from "../crypto.js";
 import { inTransaction } from "../db.js";
-import { searchMemories } from "../memorySearch.js";
+import { memoryCopyOn, quotedMemory, saveNote, searchMemoryCopy } from "../inbox.js";
 import { canPush, enqueue } from "../outbox.js";
 
 // The phone agent's tools, called by ElevenLabs during phone calls. All require the shared tool
@@ -87,27 +84,10 @@ export const elevenLabsRoutes = (deps: Deps): FastifyPluginAsync => async (app) 
     if (!s.pinVerified) return { status: "pin_required" };
     const body = searchBody.safeParse(req.body);
     if (!body.success) return { status: "no_match" };
-    const { rows: st } = await db.query<{ on: boolean }>(
-      "SELECT memory_copy_enabled_at IS NOT NULL AS on FROM call_settings WHERE account_id = $1", [s.accountId]);
-    if (!st[0]?.on || !deps.cipher) return { status: "memory_off" };
-
-    const cipher = deps.cipher;
-    const { rows } = await db.query<{ memory_id: string; ciphertext: Buffer; captured_at: Date | null }>(
-      "SELECT memory_id, ciphertext, captured_at FROM memory_copies WHERE account_id = $1", [s.accountId]);
-    // A row that won't decrypt (e.g. after a key change) is skipped, not a failed call.
-    const memories = rows.flatMap((r) => {
-      try {
-        return [{ id: r.memory_id, text: cipher.decrypt(r.ciphertext, `${s.accountId}:memory:${r.memory_id}`), capturedAt: r.captured_at }];
-      } catch {
-        return [];
-      }
-    });
-    const hits = searchMemories(memories, body.data.query);
+    if (!deps.cipher || !await memoryCopyOn(db, s.accountId)) return { status: "memory_off" };
+    const hits = await searchMemoryCopy(db, deps.cipher, s.accountId, body.data.query);
     if (hits.length === 0) return { status: "no_match" };
-    return {
-      status: "ok",
-      results: hits.map((h) => ({ text: h.text, saved: h.capturedAt ? h.capturedAt.toISOString().slice(0, 10) : "date unknown" })),
-    };
+    return { status: "ok", results: hits.map(quotedMemory) };
   });
 
   app.post("/webhooks/elevenlabs/tools/save-note", async (req, reply) => {
@@ -119,23 +99,10 @@ export const elevenLabsRoutes = (deps: Deps): FastifyPluginAsync => async (app) 
     if (!deps.cipher) return { status: "unavailable" };
     const body = noteBody.safeParse(req.body);
     if (!body.success) return { status: "empty" };
-    const cipher = deps.cipher;
-    const id = randomUUID();
-    const saved = await inTransaction(db, async (c) => {
-      // Serialises notes per account so parallel tool calls can't overfill the inbox.
-      await c.query("SELECT pg_advisory_xact_lock(hashtext('call_notes:' || $1))", [s.accountId]);
-      const { rows } = await c.query<{ n: number }>(
-        "SELECT count(*)::int AS n FROM call_notes WHERE account_id = $1", [s.accountId]);
-      if ((rows[0]?.n ?? 0) >= MAX_PENDING_NOTES) return false;
-      const { rows: call } = await c.query<{ conversation_id: string | null }>(
-        "SELECT c.conversation_id FROM call_sessions s LEFT JOIN calls c ON c.id = s.call_id WHERE s.id = $1", [s.id]);
-      await c.query(
-        `INSERT INTO call_notes (id, account_id, key_version, ciphertext, conversation_id) VALUES ($1, $2, $3, $4, $5)`,
-        [id, s.accountId, cipher.keyVersion, cipher.encrypt(body.data.text, `${s.accountId}:note:${id}`),
-          call[0]?.conversation_id ?? null]);
-      return true;
-    });
-    if (!saved) return { status: "inbox_full" };
+    const { rows: call } = await db.query<{ conversation_id: string | null }>(
+      "SELECT c.conversation_id FROM call_sessions s LEFT JOIN calls c ON c.id = s.call_id WHERE s.id = $1", [s.id]);
+    const id = await saveNote(db, deps.cipher, s.accountId, body.data.text, "call", call[0]?.conversation_id ?? null);
+    if (!id) return { status: "inbox_full" };
     // The notification never contains the note itself.
     if (deps.push && await canPush(db, s.accountId)) {
       await enqueue(db, s.accountId, ["push"], "Doddy took a note on your call. Open Doddy to confirm it.", new Date(), `call-note:${id}`, { cipher: deps.cipher });

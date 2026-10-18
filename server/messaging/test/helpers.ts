@@ -3,8 +3,8 @@ import { createPool, migrate, type Db } from "../src/db.js";
 import { TextCipher } from "../src/crypto.js";
 import { twilioSignature } from "../src/providers/twilio.js";
 import type {
-  CallOutcome, CallRegistrar, OutboundCall, OutboundCaller, PhoneVerifier, PushSender, PushTarget, RegisterOutcome,
-  SendOutcome, SmsSender, VerifyCheck,
+  CallOutcome, CallRegistrar, DeleteOutcome, OutboundCall, OutboundCaller, PhoneVerifier, PushSender, PushTarget, RecordDeleter,
+  RegisterOutcome, SendOutcome, SmsSender, TextReplyOutcome, TextReplyRequest, TextReplyTools, TextReplyWriter, VerifyCheck,
 } from "../src/providers/types.js";
 
 export const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL;
@@ -74,6 +74,31 @@ export class FakeRegistrar implements CallRegistrar {
   }
 }
 
+/**
+ * Stands in for Claude writing a reply. `script` decides the outcome and may use the tools, as
+ * the real writer lets Claude do; every request and the tools it was given are recorded.
+ */
+export class FakeReplyWriter implements TextReplyWriter {
+  readonly provider = "anthropic" as const;
+  requests: { request: TextReplyRequest; tools: TextReplyTools }[] = [];
+  script: (request: TextReplyRequest, tools: TextReplyTools) => Promise<TextReplyOutcome> =
+    async (r) => ({ kind: "reply", text: `Reply to: ${r.text}`, costMicroUsd: 6000 });
+  async reply(request: TextReplyRequest, tools: TextReplyTools): Promise<TextReplyOutcome> {
+    this.requests.push({ request, tools });
+    return this.script(request, tools);
+  }
+}
+
+/** Stands in for Twilio's DELETE on a message or call record. */
+export class FakeDeleter implements RecordDeleter {
+  deleted: { kind: string; sid: string }[] = [];
+  next: DeleteOutcome[] = [];
+  async deleteRecord(kind: "message" | "call", sid: string): Promise<DeleteOutcome> {
+    this.deleted.push({ kind, sid });
+    return this.next.shift() ?? { kind: "deleted" };
+  }
+}
+
 export const TOOL_SECRET = "test-tool-secret-0123456789";
 export const testCipher = new TextCipher(Buffer.alloc(32, 7));
 
@@ -86,11 +111,12 @@ export async function testApp(db: Db, extra: Partial<Deps> = {}) {
   const verifier = new FakeVerifier();
   const outbound = new FakeOutbound();
   const registrar = new FakeRegistrar();
+  const replyWriter = new FakeReplyWriter();
   const app = await buildApp({
-    db, push, sms, verifier, outbound, registrar, cipher: testCipher, toolSecret: TOOL_SECRET,
+    db, push, sms, verifier, outbound, registrar, cipher: testCipher, toolSecret: TOOL_SECRET, replyWriter,
     doddyPhoneNumber: DODDY_NUMBER, twilioAuthToken: TWILIO_TOKEN, publicBaseUrl: BASE_URL, logger: false, ...extra,
   });
-  return { app, push, sms, verifier, outbound, registrar };
+  return { app, push, sms, verifier, outbound, registrar, replyWriter };
 }
 
 export const DODDY_NUMBER = "+48221234567";

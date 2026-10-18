@@ -68,6 +68,51 @@ export interface CallRegistrar {
   }): Promise<RegisterOutcome>;
 }
 
+/**
+ * Deleting one of Doddy's records at the phone provider (Twilio, ADR-494).
+ * - deleted: gone (also when the provider had no such record).
+ * - retry:   not yet (Twilio 20009: the record isn't final yet), rate limited, or no answer.
+ * - failed:  refused for good; not tried again.
+ */
+export type DeleteOutcome = { kind: "deleted" } | { kind: "retry"; code: string } | { kind: "failed"; code: string };
+
+export interface RecordDeleter {
+  deleteRecord(kind: "message" | "call", sid: string): Promise<DeleteOutcome>;
+}
+
+/** What a reply to one text may use. search is absent unless the user allowed memories in replies. */
+export interface TextReplyTools {
+  searchMemories?: (query: string) => Promise<{ text: string; saved: string }[]>;
+  /** "saved" only after the note is stored; it still waits for the user's confirmation in the app. */
+  saveNote: (text: string) => Promise<"saved" | "inbox_full">;
+}
+
+export interface TextReplyRequest {
+  /** The user's text, exactly as received. */
+  text: string;
+  /** The language of the user's settings; the reply follows the text's own language. */
+  language: "en" | "pl";
+  receivedAt: Date;
+  maxSegments: number;
+}
+
+/**
+ * - reply:    the answer, at most maxSegments SMS parts.
+ * - too_long: the model's answer stayed too long after one request to shorten it.
+ * - failed:   no usable answer (provider error, refusal, cut off, no text).
+ * costMicroUsd is an estimate from the tokens used, at the model's list price.
+ */
+export type TextReplyOutcome =
+  | { kind: "reply"; text: string; costMicroUsd: number }
+  | { kind: "too_long"; costMicroUsd: number }
+  | { kind: "failed"; code: string; costMicroUsd: number };
+
+/** Writes Doddy's reply to the user's text (Claude, ADR-494). */
+export interface TextReplyWriter {
+  readonly provider: "anthropic";
+  reply(request: TextReplyRequest, tools: TextReplyTools): Promise<TextReplyOutcome>;
+}
+
 export class ProviderError extends Error {
   constructor(readonly code: string, readonly status?: number) {
     super(`provider error ${code}${status ? ` (HTTP ${status})` : ""}`);

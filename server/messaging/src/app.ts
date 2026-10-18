@@ -5,7 +5,9 @@ import rateLimit from "@fastify/rate-limit";
 import type { z } from "zod";
 import type { Db } from "./db.js";
 import type { TextCipher } from "./crypto.js";
-import type { CallRegistrar, OutboundCaller, PhoneVerifier, PushSender, SmsSender } from "./providers/types.js";
+import type {
+  CallRegistrar, OutboundCaller, PhoneVerifier, PushSender, SmsSender, TextReplyWriter,
+} from "./providers/types.js";
 import { callRoutes } from "./routes/calls.js";
 import { elevenLabsRoutes } from "./routes/elevenlabs.js";
 import { newsRoutes } from "./routes/news.js";
@@ -14,6 +16,7 @@ import { accountRoutes } from "./routes/account.js";
 import { phoneRoutes } from "./routes/phone.js";
 import { updateRoutes } from "./routes/updates.js";
 import { textRoutes } from "./routes/texts.js";
+import { textSettingsRoutes } from "./routes/textSettings.js";
 import { twilioWebhookRoutes } from "./routes/twilioWebhooks.js";
 import { twilioVoiceRoutes } from "./routes/twilioVoice.js";
 
@@ -33,6 +36,8 @@ export interface Deps {
   /** Shared with ElevenLabs; authenticates the phone agent's tool requests. */
   toolSecret?: string;
   doddyPhoneNumber?: string;
+  /** Writes replies to the user's texts when they turn replies on (Claude, ADR-494). */
+  replyWriter?: TextReplyWriter;
   /** News digests: feeds always; keyword search and AI writer when configured. */
   news?: NewsDeps;
   logger?: boolean;
@@ -88,6 +93,7 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   await app.register(phoneRoutes(deps));
   await app.register(updateRoutes(deps));
   await app.register(textRoutes(deps));
+  await app.register(textSettingsRoutes(deps));
   await app.register(twilioWebhookRoutes(deps));
   await app.register(twilioVoiceRoutes(deps));
   await app.register(callRoutes(deps));

@@ -4,6 +4,7 @@ import type pg from "pg";
 import { sha256, type TextCipher } from "./crypto.js";
 import { log } from "./log.js";
 import type { Db } from "./db.js";
+import { scheduleDeletion } from "./providerRecords.js";
 import type { PushSender, SendOutcome, SmsSender } from "./providers/types.js";
 
 export type Channel = "push" | "sms";
@@ -228,7 +229,11 @@ async function finalize(db: Db, msg: Claimed, o: SendOutcome | { kind: "cancelle
     if (!r.rowCount) log("outcome after reap", { id: msg.id, outcome: state, code });
   };
   switch (o.kind) {
-    case "accepted": await final("sent", null, o.providerId); break;
+    case "accepted":
+      await final("sent", null, o.providerId);
+      // Twilio's record of the text is deleted later (ADR-494), receipt or not.
+      if (msg.channel === "sms") await scheduleDeletion(db, "message", o.providerId);
+      break;
     case "rejected": await final("failed", o.code); break;
     case "unknown": await final("unknown", o.code); break;
     case "cancelled": await final("cancelled", o.code); break;
@@ -279,6 +284,7 @@ export async function reconcileUnknownSms(db: Db, sms: SmsSender | undefined, ba
           `UPDATE outbound_messages SET state = 'sent', provider_message_id = $2, delivery_status = $3, lookup = 'found',
              error_code = NULL, approval_hash = NULL, body_hash = NULL, updated_at = now()
            WHERE id = $1 AND state = 'unknown'`, [row.id, match.sid, match.status]);
+        await scheduleDeletion(db, "message", match.sid);
       } catch {
         // That Twilio message already belongs to another row: don't guess, and don't look again.
         await db.query(

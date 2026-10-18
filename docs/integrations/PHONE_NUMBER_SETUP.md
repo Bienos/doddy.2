@@ -213,6 +213,39 @@ Send Claude what you saw. Never send codes or keys.
 | 7 | **What Doddy did** | A row "Text you from Doddy's number", with no text in it |
 | 8 | Render logs | No text of any message, only ids and codes |
 
+## Unit U3: texts to Doddy (after the U0 checks pass)
+You can text Doddy's number. Each text waits as a note in the app, or, with replies on, Doddy (Claude, on the server) answers by text. Texts from any other number are dropped without a reply (ADR-494).
+
+1. **Deploy the U3 code**, as for U1 and U2. The database update (migration 010) runs by itself at start-up.
+2. **For replies only, Render → doddy-messaging → Environment:**
+
+   | Key | Value |
+   |---|---|
+   | `ANTHROPIC_API_KEY` | **secret.** Anthropic Console → API keys. Also turns on the AI writer for daily news if it wasn't on. Set a monthly spending limit in the Anthropic Console too. |
+   | `TEXT_REPLY_MODEL` | Optional. Default `claude-opus-5-5` (decision 7), about $0.03 a reply. |
+   | `TWILIO_RECORD_DELETE_AFTER_HOURS` | Optional. Default 24: Doddy deletes its message and call records at Twilio a day after they finish. `0` deletes them after about 2 minutes. |
+
+   The log line `configured features` should show `"textReplies":true` and `"twilioDeleteAfterMinutes":1440`.
+3. **Twilio:** nothing new. Texts already reach the server through the Messaging Service webhook from U0 step 6.
+4. **Build the iPhone app from the same branch.** In **Settings → Phone calls → Texts to Doddy**, turn on **Accept texts from my number** (read the wording under it). For replies, also **Doddy replies by text**; for answers from your notes, **Replies may use my memories** (it needs **Memory on calls**).
+
+### The U3 checks
+Send Claude what you saw. Never send codes or keys.
+
+| # | Check | Expected |
+|---|---|---|
+| 1 | Replies off: text Doddy's number "Kupić mleko" | No answer. In **Settings → Phone calls**, a note "Kupić mleko" under **Notes waiting for you**, marked "From your text" |
+| 2 | Tap **Save to memories** on it | It's in your memories; the note leaves the list |
+| 3 | Text Doddy from another phone | Nothing back, no note. Render shows `text dropped` with `not_allowed` and no number |
+| 4 | Replies on: text "What can you do by text?" | One answer from Doddy's number within a minute, at most 3 SMS parts |
+| 5 | Text "Remember to buy batteries" | The answer says it left a note to confirm; the note appears in the app |
+| 6 | Text "Text my sister that I'm late" | The answer says Doddy can't text anyone else |
+| 7 | With **Replies may use my memories** on, ask by text about something you saved | The answer uses that note. With it off, Doddy says it can't see your notes by text |
+| 8 | Text `POMOC` | Only Twilio's help message; no note, no AI answer |
+| 9 | **Export phone and text history**, then share it to yourself | A JSON file with your calls, text statuses and waiting notes; no other numbers |
+| 10 | The next day, Twilio Console → Monitor → Logs → Messaging | Yesterday's texts are gone (Twilio may keep deleted bodies in backups for up to 30 days) |
+| 11 | Render logs | `text received` and `text reply` lines with ids, states and costs only, never a text |
+
 ## When something goes wrong
 | What you see | Likely cause |
 |---|---|
@@ -225,6 +258,9 @@ Send Claude what you saw. Never send codes or keys.
 | U1: Call me now says the phone service couldn't place the call | Twilio refused it. Error 21215 means Poland isn't ticked under Voice → Settings → Geo permissions. |
 | U2: Doddy says your number changed after the card was shown | You verified a different number while the card was open. Ask again for a new card. |
 | U2: Doddy says it reached the most texts allowed for today | 20 approved texts a day per account (`contact_policy` in `docs/trust/config/doddy_rules.yaml`) |
+| U3: your text gets no note and no answer | **Accept texts from my number** is off, or the Messaging Service webhook isn't the server. Render's `text dropped` line gives the reason. |
+| U3: "Doddy couldn't answer that just now" | Render's `text reply` line has the code: `anthropic_401` (wrong key), `anthropic_429` (rate or spending limit), `refusal`, `deadline`. Your text is kept as a note. |
+| U3: the replies switch can't be turned on | Replies are texts from Doddy, so texts in **Notifications and texts** must be on (and no STOP since), and `ANTHROPIC_API_KEY` must be set |
 
 **Since U2:** a Twilio 500, 502 or 504 is never retried. The text shows as "Unclear whether it was sent" while the server looks for it in Twilio's message list; it is never sent twice (ADR-493).
 
@@ -232,6 +268,7 @@ Send Claude what you saw. Never send codes or keys.
 - Your phone number and your consent go to the messaging server (Render, Frankfurt) and to Twilio, which checks the number and delivers texts.
 - The text of an update is erased from the server's database once it reaches a final status (ADR-144).
 - Twilio keeps its own message logs. Deleting them is built in unit U3.
+- **U3:** texts you send Doddy's number go through Twilio to the messaging server and wait there as encrypted notes until you save or discard them. With replies on, your text (and, if you allowed it, the notes it finds) goes to Anthropic to write the answer. Doddy deletes its records at Twilio a day after each text or call by default.
 - **U2:** a text you approve goes to the messaging server and then to Twilio. The server stores it encrypted with `MEMORY_ENCRYPTION_KEY` (set in step 7) and erases it once the text has a final status. It keeps a hash of it only while an unclear outcome is being checked.
 - Your memories stay on your iPhone.
 

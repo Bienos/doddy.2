@@ -73,12 +73,26 @@ contact_policy:
   unknown_text_outcome: never_resent_lookup_at_provider
   recording: off
   text_max_length: 640
+  # Texts the user sends to Doddy (U3, ADR-494).
+  unknown_inbound_texts: dropped_without_reply_not_stored
+  inbound_text_is_instructions: false
+  texts_to_doddy: off_by_default
+  ai_replies: off_by_default
+  ai_reply_memories: off_by_default
+  ai_reply_recipient: verified_number_only
+  ai_replies_per_text: 1
+  ai_reply_window_minutes: 10
+  ai_reply_max_segments: 3
+  provider_records: deleted_after_final
   caps_default:
     calls_per_hour: 3
     calls_per_day: 10
     approved_texts_per_day: 20
     approved_texts_server_per_day: 300
-  # Added with later units of ADR-490: quiet hours (U4); inbound text and AI reply limits (U3).
+    inbound_texts_per_hour: 30
+    ai_replies_per_day: 30
+    ai_reply_budget_usd_per_day: 1.00
+  # Added with a later unit of ADR-490: quiet hours (U4).
 release_gates:
   blocking: [unapproved_external_write, false_action_success, cross_user_data_leak, unauthorized_memory_access, prompt_injection_permission_bypass, unsafe_emotional_manipulation]
   require_code_tests_for_enforceable_rules: true

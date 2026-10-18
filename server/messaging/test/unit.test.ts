@@ -5,6 +5,7 @@ import { createServer, type Socket } from "node:net";
 import { test } from "node:test";
 import twilio from "twilio";
 import { createPool, dbErrorFields } from "../src/db.js";
+import { loadConfig } from "../src/config.js";
 import { apnsJwt } from "../src/providers/apns.js";
 import { ElevenLabsCallRegistrar } from "../src/providers/elevenlabs.js";
 import { isValidTwilioSignature, TwilioClient, TwilioVoiceCaller, twilioSignature } from "../src/providers/twilio.js";
@@ -13,7 +14,10 @@ import { OUTBOUND_DAILY_LIMIT, OUTBOUND_HOURLY_LIMIT } from "../src/calls.js";
 import { APPROVED_TEXTS_PER_DAY, APPROVED_TEXTS_SERVER_PER_DAY, TEXT_MAX_LENGTH } from "../src/routes/texts.js";
 import { readFileSync } from "node:fs";
 import { connectTwiml, sayAndHangUp, type FixedLine } from "../src/voiceTwiml.js";
-import { classifySms } from "../src/sms.js";
+import { classifySms, smsSegments } from "../src/sms.js";
+import {
+  AI_REPLIES_PER_DAY, AI_REPLY_BUDGET_USD_PER_DAY, AI_REPLY_MAX_SEGMENTS, AI_REPLY_WINDOW_MINUTES, FIXED, INBOUND_TEXTS_PER_HOUR,
+} from "../src/textReplies.js";
 
 test("Twilio signature matches the official twilio library", () => {
   const url = "https://doddy.example.test/webhooks/twilio/sms";
@@ -45,12 +49,12 @@ test("SMS keywords", () => {
 
 /** A local HTTP stand-in for a provider API: records each request and answers with `reply`. */
 async function standIn(reply: () => { status: number; type: string; body: string; delayMs?: number }) {
-  const requests: { url: string; headers: http.IncomingHttpHeaders; body: string }[] = [];
+  const requests: { url: string; method: string; headers: http.IncomingHttpHeaders; body: string }[] = [];
   const server = http.createServer((req, res) => {
     let body = "";
     req.on("data", (c) => { body += c; });
     req.on("end", () => {
-      requests.push({ url: req.url ?? "", headers: req.headers, body });
+      requests.push({ url: req.url ?? "", method: req.method ?? "", headers: req.headers, body });
       const r = reply();
       setTimeout(() => res.writeHead(r.status, { "content-type": r.type }).end(r.body), r.delayMs ?? 0);
     });
@@ -200,6 +204,13 @@ test("the contact policy in doddy_rules.yaml matches what the server enforces", 
     [value("text_max_length"), value("calls_per_hour"), value("calls_per_day"), value("approved_texts_per_day"), value("approved_texts_server_per_day")].map(Number),
     [TEXT_MAX_LENGTH, OUTBOUND_HOURLY_LIMIT, OUTBOUND_DAILY_LIMIT, APPROVED_TEXTS_PER_DAY, APPROVED_TEXTS_SERVER_PER_DAY]);
   assert.deepEqual([value("approval"), value("recording"), value("allowlist_max_numbers")], ["exact_payload_hash", "off", "1"]);
+  // Texts to Doddy (U3, ADR-494).
+  assert.deepEqual(
+    [value("inbound_texts_per_hour"), value("ai_replies_per_day"), value("ai_reply_budget_usd_per_day"),
+      value("ai_reply_window_minutes"), value("ai_reply_max_segments"), value("ai_replies_per_text")].map(Number),
+    [INBOUND_TEXTS_PER_HOUR, AI_REPLIES_PER_DAY, AI_REPLY_BUDGET_USD_PER_DAY, AI_REPLY_WINDOW_MINUTES, AI_REPLY_MAX_SEGMENTS, 1]);
+  assert.deepEqual([value("texts_to_doddy"), value("ai_replies"), value("ai_reply_memories"), value("inbound_text_is_instructions")],
+    ["off_by_default", "off_by_default", "off_by_default", "false"]);
   assert.doesNotMatch(block, /\+\d{6,}/, "no phone number in the rules file");
 });
 
@@ -227,4 +238,64 @@ test("database errors are logged without the connection string", () => {
   assert.ok(!fields.error.includes("hunter2"));
   assert.equal(fields.error, "bad <url> here");
   assert.deepEqual(dbErrorFields("boom"), { code: "unknown", error: "boom" });
+});
+
+test("Twilio records: deleted with DELETE on the record, 'not final yet' is tried again, anything but a Twilio id is refused", async () => {
+  let answer = { status: 204, type: "application/json", body: "" };
+  const api = await standIn(() => answer);
+  const twilio = new TwilioClient({ accountSid: "AC1", authToken: "t", messagingServiceSid: "MG1", verifyServiceSid: "VA1" },
+    undefined, 2000, api.base);
+  const sm = "SM" + "a".repeat(32);
+  const ca = "CA" + "b".repeat(32);
+  try {
+    assert.deepEqual(await twilio.deleteRecord("message", sm), { kind: "deleted" });
+    assert.deepEqual([api.requests.at(-1)!.method, api.requests.at(-1)!.url], ["DELETE", `/2010-04-01/Accounts/AC1/Messages/${sm}.json`]);
+    assert.deepEqual(await twilio.deleteRecord("call", ca), { kind: "deleted" });
+    assert.equal(api.requests.at(-1)!.url, `/2010-04-01/Accounts/AC1/Calls/${ca}.json`);
+    answer = { status: 404, type: "application/json", body: JSON.stringify({ code: 20404 }) };
+    assert.deepEqual(await twilio.deleteRecord("message", sm), { kind: "deleted" }, "already gone");
+    answer = { status: 409, type: "application/json", body: JSON.stringify({ code: 20009 }) };
+    assert.deepEqual(await twilio.deleteRecord("message", sm), { kind: "retry", code: "twilio_20009" });
+    answer = { status: 503, type: "application/json", body: "{}" };
+    assert.deepEqual(await twilio.deleteRecord("call", ca), { kind: "retry", code: "twilio_503" });
+    answer = { status: 403, type: "application/json", body: JSON.stringify({ code: 20003 }) };
+    assert.deepEqual(await twilio.deleteRecord("call", ca), { kind: "failed", code: "twilio_20003" });
+    const before = api.requests.length;
+    for (const [kind, sid] of [["message", "../Calls/x"], ["call", sm], ["message", ca], ["message", sm + "0"]] as const) {
+      assert.deepEqual(await twilio.deleteRecord(kind, sid), { kind: "failed", code: "bad_sid" }, sid);
+    }
+    assert.equal(api.requests.length, before, "nothing that isn't a Twilio id reaches Twilio");
+  } finally {
+    api.close();
+  }
+});
+
+test("SMS parts are counted as the iPhone counts them (Smart Encoding off)", () => {
+  // The same cases as DoddyCore's ApprovedTextTests.testSegments.
+  const cases: [string, number][] = [
+    ["a".repeat(160), 1], ["a".repeat(161), 2], ["a".repeat(306), 2], ["a".repeat(307), 3],
+    ["€".repeat(80), 1], ["€".repeat(81), 2],
+    ["ż".repeat(70), 1], ["ż".repeat(71), 2], ["ż".repeat(134), 2], ["ż".repeat(135), 3], ["📦", 1],
+  ];
+  for (const [text, parts] of cases) assert.equal(smsSegments(text), parts, `${text.slice(0, 3)}… x${[...text].length}`);
+});
+
+test("POMOC is a help word, so it never becomes a note or a reply", () => {
+  for (const word of ["POMOC", "pomoc", " Pomoc "]) assert.equal(classifySms(word), "help", word);
+  assert.equal(classifySms("pomoc z zakupami"), "other");
+});
+
+test("Doddy's fixed texts fit the reply limit in both languages", () => {
+  for (const lang of ["en", "pl"] as const) {
+    for (const [name, text] of Object.entries(FIXED[lang])) {
+      assert.ok(smsSegments(text) <= AI_REPLY_MAX_SEGMENTS, `${lang}.${name} is ${smsSegments(text)} parts`);
+    }
+  }
+});
+
+test("Twilio records wait 24 hours by default before deletion; an empty setting is the default, not zero", () => {
+  const hours = (v?: string) => loadConfig({ DATABASE_URL: "postgres://x", ...(v === undefined ? {} : { TWILIO_RECORD_DELETE_AFTER_HOURS: v }) })
+    .twilioRecordDeleteAfterHours;
+  assert.deepEqual([hours(), hours(""), hours("0"), hours("2")], [24, 24, 0, 2]);
+  assert.throws(() => hours("-1"));
 });

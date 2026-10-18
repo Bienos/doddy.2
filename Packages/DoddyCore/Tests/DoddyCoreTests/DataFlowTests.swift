@@ -90,6 +90,30 @@ final class DataFlowTests: XCTestCase {
         XCTAssertTrue(row("messagingServer", state).what.contains("a copy of your saved notes"))
     }
 
+    func testTextsToDoddyAndTheirRepliesAreListed() {
+        // ADR-494: texts kept as notes on the messaging server; replies written by Anthropic.
+        var state = base
+        state.messagingServerSet = true
+        state.newsWriterProvider = "openai"
+        XCTAssertFalse(row("messagingServer", state).what.contains("texts you send"))
+        XCTAssertFalse(DataFlow.cloudAISummary(state).contains("replies to your texts"))
+        state.textsToDoddyOn = true
+        XCTAssertTrue(row("messagingServer", state).what.contains("the texts you send Doddy's number"))
+        XCTAssertFalse(row("messagingServer", state).destination.contains("Anthropic"), "notes alone go to no AI")
+        state.textRepliesOn = true
+        XCTAssertTrue(row("messagingServer", state).destination.contains("OpenAI, Anthropic"))
+        XCTAssertTrue(row("messagingServer", state).note?.contains("written by Anthropic") == true)
+        XCTAssertTrue(DataFlow.cloudAISummary(state).contains("Anthropic (replies to your texts)"))
+        // Replies without texts to Doddy can't happen; the screen never claims them.
+        state.textsToDoddyOn = false
+        XCTAssertFalse(DataFlow.cloudAISummary(state).contains("replies to your texts"))
+        XCTAssertFalse(row("messagingServer", state).destination.contains("Anthropic"))
+        XCTAssertFalse(row("messagingServer", state).note?.contains("written by Anthropic") == true)
+        XCTAssertFalse(DataFlowState(rememberConversations: true, shareProfileWithVoice: false, tokenServerSet: true, connectionsOn: [],
+                                     pauseAll: false, doddyServerSet: false, askDoddyOn: false, askDoddyUsesNotes: false,
+                                     textsToDoddyOn: false, textRepliesOn: true).textRepliesOn)
+    }
+
     func testNewsWriterIsNamedOnlyAsTheServerReportsIt() {
         var state = base
         state.messagingServerSet = true

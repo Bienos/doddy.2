@@ -21,6 +21,10 @@ public struct DataFlowState: Equatable, Sendable {
     public var pushOn: Bool
     /// The user turned on the server copy of their notes for phone calls.
     public var memoryCopyOn: Bool
+    /// Texts the user sends Doddy's number are kept as notes (ADR-494), as the server last said.
+    public var textsToDoddyOn: Bool
+    /// Doddy answers those texts; Claude (Anthropic) writes the answers (ADR-494).
+    public var textRepliesOn: Bool
     /// The morning check-in is on (ADR-220).
     public var morningCheckInOn: Bool
     /// Siri may read saved notes aloud (ADR-248).
@@ -46,8 +50,11 @@ public struct DataFlowState: Equatable, Sendable {
         siriReadsNotes: Bool = false, heyDoddyOn: Bool = false, sharedLists: Int = 0,
         voiceProvider: VoiceProvider = .elevenLabs,
         learnedSharedWithVoice: Bool = false,
-        newsWriterProvider: String? = nil
+        newsWriterProvider: String? = nil,
+        textsToDoddyOn: Bool = false, textRepliesOn: Bool = false
     ) {
+        self.textsToDoddyOn = textsToDoddyOn
+        self.textRepliesOn = textsToDoddyOn && textRepliesOn
         self.learnedSharedWithVoice = learnedSharedWithVoice
         self.newsWriterProvider = newsWriterProvider
         self.morningCheckInOn = morningCheckInOn
@@ -98,6 +105,7 @@ public enum DataFlow {
         messaging.append("your phone number, only if you confirm it with a code for texts or calls")
         messaging.append("the news topics and feeds you pick, if you turn on daily news")
         if state.memoryCopyOn { messaging.append("a copy of your saved notes, for phone calls with Doddy") }
+        if state.textsToDoddyOn { messaging.append("the texts you send Doddy's number, kept as notes until you save or discard them") }
 
         // The server can use either provider (ADR-197); name one only when the server said which.
         let writer = switch state.newsWriterProvider {
@@ -105,6 +113,10 @@ public enum DataFlow {
         case "openai": "OpenAI"
         default: "Anthropic or OpenAI, as the server is set up"
         }
+
+        // Replies to texts are always Claude's (ADR-494), whoever writes the news.
+        let repliesOn = state.textsToDoddyOn && state.textRepliesOn
+        let messagingAI = repliesOn && !writer.hasPrefix("Anthropic") ? "\(writer), Anthropic" : writer
 
         var ask = "Typed questions"
         if state.askDoddyUsesNotes { ask += " and the saved notes that match them" }
@@ -177,12 +189,15 @@ public enum DataFlow {
                     ? "No Doddy server is set, so nothing goes there."
                     : state.pauseAll ? "Connections are paused, so Doddy doesn't use it in conversations. The Connected Apps screen still works when you open it." : nil),
             DataFlowRow(
-                id: "messagingServer", destination: "Your Doddy messaging server (Apple, Twilio, ElevenLabs, \(writer), GNews)",
+                id: "messagingServer", destination: "Your Doddy messaging server (Apple, Twilio, ElevenLabs, \(messagingAI), GNews)",
                 what: sentence(messaging),
                 when: "When you turn on notifications, texts, phone calls or daily news, and while they are on.",
                 isActive: state.messagingServerSet,
                 note: state.messagingServerSet
                     ? "It sends notifications through Apple and texts and calls through Twilio; calls run on ElevenLabs. Daily news sends your topics and public headlines to \(writer), and your own keywords to GNews."
+                        + (repliesOn
+                            ? " Replies to your texts are written by Anthropic from your text, and from your saved notes if you allowed that."
+                            : "")
                     : "No messaging server is set, so nothing goes there."),
             DataFlowRow(
                 id: "siri", destination: "Apple (Siri)",
@@ -225,6 +240,7 @@ public enum DataFlow {
         if active.contains("askDoddy") { parts.append("OpenAI (Ask Doddy)") }
         if active.contains("messagingServer") {
             parts.append("ElevenLabs (phone calls) and \(newsWriter(state)) (daily news) on your messaging server")
+            if state.textsToDoddyOn && state.textRepliesOn { parts.append("Anthropic (replies to your texts) on your messaging server") }
         }
         return parts.isEmpty ? "None" : parts.joined(separator: "; ")
     }

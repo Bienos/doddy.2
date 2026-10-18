@@ -4,7 +4,9 @@ import type { Db } from "./db.js";
 import { runDueDigests, type NewsDeps } from "./news/digest.js";
 import { pruneNewsCache } from "./news/sources.js";
 import { dispatchDue, reconcileUnknownSms } from "./outbox.js";
-import type { PushSender, SmsSender } from "./providers/types.js";
+import { DELETE_AFTER_HOURS_DEFAULT, deleteAfterMinutes, pruneDeletions, runDueDeletions } from "./providerRecords.js";
+import type { PushSender, RecordDeleter, SmsSender, TextReplyWriter } from "./providers/types.js";
+import { processTextReply } from "./textReplies.js";
 
 import { log } from "./log.js";
 
@@ -17,17 +19,27 @@ async function pause(ms: number, shouldStop: () => boolean) {
   for (let waited = 0; waited < ms && !shouldStop(); waited += 1000) await sleep(Math.min(1000, ms - waited));
 }
 
+export interface WorkerDeps {
+  push?: PushSender;
+  sms?: SmsSender;
+  cipher?: TextCipher;
+  news: NewsDeps;
+  /** Replies to the user's texts (ADR-494). */
+  replyWriter?: TextReplyWriter;
+  /** Deletes Doddy's records at Twilio, deleteAfterMinutes after they are final (ADR-494). */
+  deleter?: RecordDeleter;
+  deleteAfterMinutes?: number;
+}
+
 /**
- * Two independent loops until `shouldStop()`: one sends queued updates every ~2 s (plus hourly
- * tidying), the other builds due news digests. They are separate so a slow feed or AI call can't
- * hold back time-sensitive pushes such as a PIN-lock alert. Logs counts and ids only, never
- * message text or phone numbers. Safe to run more than once at a time: every job is claimed with
- * FOR UPDATE SKIP LOCKED.
+ * Three independent loops until `shouldStop()`: one sends queued updates every ~2 s (plus hourly
+ * tidying), one builds due news digests, and one writes replies to the user's texts and deletes
+ * records at Twilio. They are separate so a slow feed or AI call can't hold back time-sensitive
+ * pushes such as a PIN-lock alert. Logs counts and ids only, never message text or phone
+ * numbers. Safe to run more than once at a time: every job is claimed with FOR UPDATE SKIP LOCKED.
  */
-export async function runWorkerLoop(
-  db: Db, deps: { push?: PushSender; sms?: SmsSender; cipher?: TextCipher; news: NewsDeps }, shouldStop: () => boolean,
-): Promise<void> {
-  await Promise.all([dispatchLoop(db, deps, shouldStop), digestLoop(db, deps.news, shouldStop)]);
+export async function runWorkerLoop(db: Db, deps: WorkerDeps, shouldStop: () => boolean): Promise<void> {
+  await Promise.all([dispatchLoop(db, deps, shouldStop), digestLoop(db, deps.news, shouldStop), textLoop(db, deps, shouldStop)]);
 }
 
 async function dispatchLoop(db: Db, deps: { push?: PushSender; sms?: SmsSender; cipher?: TextCipher }, shouldStop: () => boolean) {
@@ -42,7 +54,8 @@ async function dispatchLoop(db: Db, deps: { push?: PushSender; sms?: SmsSender; 
         // Expired sessions are already refused by findSession; this only reclaims space.
         const sessions = await purgeExpiredSessions(db);
         const pruned = await pruneNewsCache(db);
-        if (sessions || pruned) log("tidied", { sessions, newsCacheRows: pruned });
+        const deletions = await pruneDeletions(db);
+        if (sessions || pruned || deletions) log("tidied", { sessions, newsCacheRows: pruned, deletionRows: deletions });
       }
       if (r.processed || r.reaped) log("dispatch pass", r);
       if (r.processed) continue; // more may be due
@@ -50,6 +63,29 @@ async function dispatchLoop(db: Db, deps: { push?: PushSender; sms?: SmsSender; 
       log("dispatch pass failed", { error: (err as Error).message });
     }
     await sleep(2000);
+  }
+}
+
+/** Replies to the user's texts, one at a time, and once a minute the due deletions at Twilio. */
+async function textLoop(db: Db, deps: WorkerDeps, shouldStop: () => boolean) {
+  let lastDeletions = 0;
+  const after = deps.deleteAfterMinutes ?? deleteAfterMinutes(DELETE_AFTER_HOURS_DEFAULT);
+  while (!shouldStop()) {
+    let handled = false;
+    try {
+      handled = await processTextReply({ db, cipher: deps.cipher, replyWriter: deps.replyWriter });
+    } catch (err) {
+      log("text reply pass failed", { error: (err as Error).message });
+    }
+    if (Date.now() - lastDeletions > 60_000) {
+      lastDeletions = Date.now();
+      try {
+        await runDueDeletions(db, deps.deleter, after);
+      } catch (err) {
+        log("twilio deletion pass failed", { error: (err as Error).message });
+      }
+    }
+    if (!handled) await pause(2000, shouldStop);
   }
 }
 

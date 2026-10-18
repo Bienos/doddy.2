@@ -2,7 +2,9 @@ import type { FastifyPluginAsync } from "fastify";
 import type { Deps } from "../app.js";
 import { inTransaction } from "../db.js";
 import { cancelQueuedSms } from "../outbox.js";
+import { scheduleDeletion } from "../providerRecords.js";
 import { classifySms } from "../sms.js";
+import { receiveText } from "../textReplies.js";
 import { formValue as str, verifiedTwilioForm } from "./twilioAuth.js";
 
 const EMPTY_TWIML = '<?xml version="1.0" encoding="UTF-8"?><Response/>';
@@ -20,13 +22,19 @@ export const twilioWebhookRoutes = (deps: Deps): FastifyPluginAsync => async (ap
   const { db } = deps;
   const verified = verifiedTwilioForm.bind(undefined, deps);
 
-  // Inbound SMS. Only opt-out / opt-in keywords change state; message text is not stored.
-  // Twilio's Advanced Opt-Out sends the confirmation replies, so we answer with empty TwiML.
+  // Inbound SMS. STOP / START / HELP change state only; Twilio's Advanced Opt-Out sends the
+  // confirmation replies. Any other text from the user's own number, with texts to Doddy on,
+  // becomes a note or a reply job (textReplies.ts, ADR-494); from anyone else it is dropped, with
+  // no reply and nothing stored. The answer to Twilio is always empty TwiML.
   app.post("/webhooks/twilio/sms", async (req, reply) => {
     const form = verified(req, reply);
     if (!form) return;
     const from = str(form.From);
-    const kind = classifySms(str(form.Body));
+    const sid = str(form.MessageSid);
+    const body = str(form.Body);
+    // Every inbound record is deleted at Twilio later, a stranger's too (ADR-494).
+    await scheduleDeletion(db, "message", sid);
+    const kind = classifySms(body);
     if (kind === "opt_out") {
       await inTransaction(db, async (c) => {
         const { rows } = await c.query<{ account_id: string }>(
@@ -37,6 +45,8 @@ export const twilioWebhookRoutes = (deps: Deps): FastifyPluginAsync => async (ap
     } else if (kind === "opt_in") {
       await db.query(
         "UPDATE phone_numbers SET sms_opted_out_at = NULL, updated_at = now() WHERE e164 = $1", [from]);
+    } else if (kind === "other") {
+      await receiveText(deps, { from, sid, body });
     }
     return reply.type("text/xml").send(EMPTY_TWIML);
   });

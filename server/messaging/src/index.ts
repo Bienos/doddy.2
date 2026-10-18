@@ -20,6 +20,7 @@ app.log.info({
   push: !!providers.push, sms: !!providers.sms, webhooks: !!config.publicBaseUrl,
   calls: calls.inbound, outboundCalls: calls.outbound,
   newsWriter: !!providers.news.writer, newsSearch: !!providers.news.search,
+  textReplies: !!providers.replyWriter, twilioDeleteAfterMinutes: providers.deleteAfterMinutes,
 }, "configured features");
 
 // One service instead of web + worker (a small or free deploy): RUN_WORKER_IN_WEB=1 runs the
