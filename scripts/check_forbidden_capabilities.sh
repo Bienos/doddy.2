@@ -8,9 +8,9 @@
 #    (ADR-300), which downloads only the ECB's public rates file,
 #  - the system authentication browser is used only by Connected Apps; Sign in with Apple
 #    (AuthenticationServices without a browser or web view) only in the voice account sign-in
-#    (VoiceAccessGate, VoiceAuthSession), whose calls to the voice token server's /api/voice-auth
-#    live in the voice token client (ADR-484, ADR-494); no password, passkey or
-#    credential-provider APIs anywhere (ADR-494),
+#    (VoiceAccessGate, VoiceAuthSession), whose calls go to the voice token server's
+#    /api/voice-auth (ADR-484; they live in the token client since ADR-494), and no password,
+#    passkey or credential-provider API anywhere (ADR-494),
 #  - ASK-01 (ADR-483): every voice tool asks first. Each tool in voice-agent/tools.json runs on the
 #    phone with an x_doddy.ask; every server tool has a card (preview) and runs only through the
 #    one approval gate (backend/src/tools/askFirst.ts); the voice controller checks AskFirst
@@ -72,7 +72,6 @@ web_auth_only='ASWebAuthenticationSession|WKWebView|import WebKit|SFSafariViewCo
 auth_services='import AuthenticationServices'
 apple_sign_in_files='^(DoddyApp/Features/ConnectedApps/SystemWebAuthenticator.swift|DoddyApp/Features/Voice/VoiceAccessGate.swift|DoddyApp/Features/Voice/VoiceAuthSession.swift):'
 voice_auth=DoddyApp/Features/Voice/VoiceAuthSession.swift
-# Only Sign in with Apple: no password, passkey or credential-provider APIs (ADR-494).
 apple_sign_in_other='ASAuthorizationPasswordProvider|ASAuthorizationPlatformPublicKeyCredential|ASAuthorizationSecurityKey|ASCredentialProvider|ASAuthorizationProviderExtension|ASPasskey'
 voice_only='import ElevenLabs'
 memos_dir=DoddyApp/Features/VoiceMemos
@@ -317,5 +316,5 @@ fi
 if grep -RnoE 'NS[A-Za-z]+UsageDescription' project.yml DoddyApp DoddyWidgets DoddyShare Config | grep -vE "$allowed_permissions"; then
   echo "FAIL: only the alarms, microphone, speech recognition, calendar, reminders, contacts, While Using location and Face ID permissions are allowed." >&2; status=1
 fi
-[ "$status" -eq 0 ] && echo "PASS: ASK-01: every voice tool and every server tool asks first through one gate; networking only in the token client, the voice account sign-in, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice and the ECB rates client, web auth only in Connected Apps, Sign in with Apple only in the two voice-access files (no password or passkey APIs), ElevenLabs only in Voice, audio only in Voice and Voice memos, on-device speech recognition only in Voice memos, calendar, contacts and location only in Connections, photo reading and the photo picker only in Photos (no camera or photo library access), no Always/background location, no analytics, no secrets, no 1Password code in the app or SDK in the servers, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts, While Using location and Face ID (LocalAuthentication only in the app lock); backend has no write tools beyond the reviewed Gmail draft and reply draft, the Outlook draft and Todoist add, complete and move, and no proxy execution."
+[ "$status" -eq 0 ] && echo "PASS: ASK-01: every voice tool and every server tool asks first through one gate; networking only in the token client, the voice account sign-in, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice and the ECB rates client, web auth only in Connected Apps, Sign in with Apple only in the voice account sign-in and no password or passkey APIs, ElevenLabs only in Voice, audio only in Voice and Voice memos, on-device speech recognition only in Voice memos, calendar, contacts and location only in Connections, photo reading and the photo picker only in Photos (no camera or photo library access), no Always/background location, no analytics, no secrets, no 1Password code in the app or SDK in the servers, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts, While Using location and Face ID (LocalAuthentication only in the app lock); backend has no write tools beyond the reviewed Gmail draft and reply draft, the Outlook draft and Todoist add, complete and move, and no proxy execution."
 exit "$status"

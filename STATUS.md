@@ -6,7 +6,7 @@ Last updated 2026-10-18 (stage A, ADR-520 to ADR-524). Before that: 2026-10-14, 
 
 **On 18 Oct, main was broken in three ways** (`docs/implementation/GO_LIVE_CHECKLIST.md`, stage A). Branch `claude/fervent-edison-3gnqpq` carries the code fixes for two of them; the rest needs the owner:
 1. **Voice couldn't connect.** The app hard-coded `https://doddy-voice-token.vercel.app`, which answers 402 DEPLOYMENT_DISABLED, and `754e5d6` removed the public-agent fallback. The fix points the app at `doddy-voice-token-beta.vercel.app` (ADR-521). That server still needs its sign-in settings before anyone can talk (checklist A4).
-2. **Hosted CI is billing-blocked** since 16 Oct, so `f40861c` and `754e5d6` never compiled in CI. The last green run is `44f6934`, 14 Oct. The owner fixes this in GitHub billing.
+2. **Hosted CI was billing-blocked** from 16 Oct, so `f40861c` and `754e5d6` never compiled in CI. It ran again on 18 Oct at 15:08 UTC (run 39139146509, this branch): the app build failed on a missing `import DoddyCore` in `754e5d6`'s `VoiceAccessGate.swift`, and one DoddyCore test failed only on macOS. PR #84's `c819c24b` fixes both and is merged here. The last green macOS run is still `44f6934`, 14 Oct.
 3. **`scripts/check_forbidden_capabilities.sh` failed** on `754e5d6`. The fix is PR #84, which this branch merges.
 
 The same branch also fixes two go-live risks: note reminders and birthdays now share iOS's limit of 64 pending notifications instead of being dropped quietly (ADR-523, checklist B6), and deleting the voice account revokes Sign in with Apple once the owner adds a Sign in with Apple key to the server (ADR-524, checklist C8). Both are tested on Linux only.
@@ -67,15 +67,15 @@ PR #87 (`claude/trusting-sagan-7lky84`) is **on main** since 18 Oct, merged at t
   - Silent 30-second sessions with zero messages still happen: six since that build, four of them within five minutes on 16 Oct at night.
   - Leading suspect: a "Hey Doddy" start from the background that stalls before its start data and stops when iOS's roughly 30-second background allowance runs out.
   - PR #84 adds one conversation at a time (ADR-496) and the log lines a phone log needs. Not fixed yet: it still needs a device log to confirm the cause.
-- **Vercel:** the `doddy` project (team `doddyyyy`) built and published the site from the default branch on 2026-10-14 (www.doddy.lol); the earlier "account blocked" failures did not recur on that build. The daily deployment limit still applies, so `site/vercel.json` builds only when something under `site/` changed. The old team `bienos` is disabled: `doddy-voice-token.vercel.app` and `doddy-gateway.vercel.app` answer 402. GitHub Actions ran from 12 to 14 Oct and has been billing-blocked again since 16 Oct.
+- **Vercel:** the `doddy` project (team `doddyyyy`) built and published the site from the default branch on 2026-10-14 (www.doddy.lol); the earlier "account blocked" failures did not recur on that build. The free plan allows 100 deployments a day, and skipped ones count: on 18 October the limit was reached by 12:22 UTC (100 deployments since 09:34, 86 of them skipped), so Vercel refused new ones and showed "Account is blocked". Since 18 October only the production branch deploys: preview deployments are off in all three projects' settings (go-live checklist A10), and each `vercel.json` says the same (ADR-498, PR #84, carried by `claude/fervent-edison-3gnqpq`). GitHub Actions stopped starting jobs on 16 October and ran again on 18 October at 15:08 UTC (run 39139146509).
 
 ## Waiting on the owner
 - Mark up `docs/product/V1_SCOPE.md`: Ship, Hide or Cut for each feature, plus the eight decisions at its end.
 - Stage A of `docs/implementation/GO_LIVE_CHECKLIST.md`:
-  - GitHub billing;
   - the voice token server's sign-in settings on Vercel (Upstash Redis, signing key, `APPLE_BUNDLE_ID`), then a redeploy;
   - Sign in with Apple on the App ID (needs a paid team);
   - then build on a Mac and talk to Doddy on the phone.
+- GitHub Actions cost: 12–14 October used about $250, almost all of it the macOS build. ADR-497 (PR #84) makes that build wait for the Linux checks and skip pull requests that don't touch the app.
 - 1Password for project secrets (ADR-493, `docs/security/SECRETS_1PASSWORD.md`).
   - Create the four vaults and items, then run the sync tool one host at a time.
   - Built and tested on Linux against fakes only; it hasn't touched the real 1Password, Vercel or Render.
