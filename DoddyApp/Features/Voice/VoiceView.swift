@@ -731,6 +731,31 @@ struct VoiceView: View {
             }
         case .plan(_, let steps, let blocked):
             planContent(steps: steps, blocked: blocked, controller: controller)
+        case .ask(_, let card, let needsTap, _, _):
+            // ASK-01 (ADR-483): exactly what Doddy will do; nothing runs before the answer.
+            Text(card.title)
+                .font(.headline)
+            ForEach(Array(card.lines.enumerated()), id: \.offset) { _, line in
+                Text(line)
+                    .font(.body)
+            }
+            Text(needsTap ? "Nothing changes until you tap." : "Say yes, or tap. Nothing is looked at before that.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+        case .cloudRead(_, _, let preview, _, let mode):
+            if mode == .mock {
+                Label("Demo — not your real account", systemImage: "theatermasks")
+                    .font(.footnote)
+            }
+            Text(preview.title)
+                .font(.headline)
+            ForEach(Array(preview.lines.enumerated()), id: \.offset) { _, line in
+                Text(line)
+                    .font(.body)
+            }
+            Text("Say yes, or tap. Nothing is looked at before that.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
         }
     }
 
@@ -900,6 +925,8 @@ struct VoiceView: View {
         case .shortcut: (NSLocalizedString("Run", comment: ""), NSLocalizedString("Don't run", comment: ""))
         case .message(_, let draft, _): (draft.channel == .text ? NSLocalizedString("Open in Messages", comment: "") : NSLocalizedString("Open in Mail", comment: ""), NSLocalizedString("Don't open", comment: ""))
         case .cloud(_, _, let preview, _, _): (preview.confirmLabel, NSLocalizedString("Don't do this", comment: ""))
+        case .ask(_, let card, _, _, _): (card.confirmLabel, NSLocalizedString("No", comment: ""))
+        case .cloudRead(_, _, let preview, _, _): (preview.confirmLabel, NSLocalizedString("No", comment: ""))
         case .noteReminder: (NSLocalizedString("Set reminder", comment: ""), NSLocalizedString("Don't set", comment: ""))
         case .createList: (NSLocalizedString("Create list", comment: ""), NSLocalizedString("Not now", comment: ""))
         case .changeEvent: (NSLocalizedString("Change", comment: ""), NSLocalizedString("Don't change", comment: ""))

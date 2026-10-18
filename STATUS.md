@@ -23,7 +23,7 @@ Last updated 2026-10-18 (stage A, ADR-500 and ADR-501). Before that: 2026-10-14,
 - **To get back to a build that works,** build this branch: `make project`, open `Doddy.xcodeproj`, scheme `Doddy`.
 - **Voice agent:** ElevenLabs agent `agent_0501m4et27vyeawrwqfdxxfszfa6`. Its spec is `voice-agent/`.
   - Live version at the last working call (11 Oct): `agtvrsn_5201m4p132brf30th15nggeqarf0`.
-  - Live version on 18 Oct: `agtvrsn_0201m57cm3vnfgsrv3fw49mqb9mk`.
+  - Live version after the ASK-01 sync (18 Oct, `43a94083`): `agtvrsn_6401m57e22qwepwtr1ywwe64x2k4`, 85 tools.
   - Settings on 18 Oct: authentication off, 10 calls a day for the whole agent, concurrency 2, recordings kept with no time limit.
   - The ElevenLabs logs show device calls on 14–16 Oct from a build newer than `ce02763`; which commit isn't recorded.
 
@@ -43,14 +43,16 @@ Merge one at a time, then rebuild and talk to Doddy before the next.
 | Branch / PR | What it changes | Risk to voice |
 |---|---|---|
 | PR #84 `claude/laughing-darwin-hqxa63` | Fixes the capability guard `754e5d6` broke (ADR-494); one conversation at a time (ADR-496); voice start logging; 1Password secrets; `render.yaml` secrets. Also merged into `claude/fervent-edison-3gnqpq` with the voice address fix (ADR-501) | Medium: changes how a conversation starts. **Merge first**, once CI runs |
-| PR #85 `claude/dreamy-cannon-gc33dj` | BLIK transfers by voice (claims ADR-483) | Hold until the v1 scope is marked up |
-| PR #86 `claude/connect-in-conversation` (draft) | Connect an online account from the conversation (claims ADR-483 too) | Hold until the v1 scope is marked up |
+| PR #85 `claude/dreamy-cannon-gc33dj` | BLIK transfers by voice (claims ADR-483, which main now uses for ASK-01: renumber before merging) | Hold until the v1 scope is marked up |
+| PR #86 `claude/connect-in-conversation` (draft) | Connect an online account from the conversation (claims ADR-483 too: renumber) | Hold until the v1 scope is marked up |
 | `claude/admiring-curie-bsuwv9-all` (PR #67, closed without merging) | 43 commits not on main. Its parts landed separately on 13 Oct: #76, then #53, #56, #57 and #58 | Check what's left before reusing it |
 | `claude/trusting-dirac-o8ajzc` | Voice screen shows Doddy with a sound wave; the transcript is one tap away; the wave follows loudness | Medium: adds audio level meters to the live session |
 | `claude/affectionate-mayer-aovol9` | Island compact view draws a pre-cut round face | Low |
 | `claude/dismiss-ended-card` | Nothing: its changes were reverted | None |
 
 PR #44 (action status, session recovery, Stop listening, unfinished notes) and PR #61 (iPad, Watch, Mac, per-platform projects) are **on main** since 13 Oct, through PR #79. They were compiled in CI and have never run on a device.
+
+PR #87 (`claude/trusting-sagan-7lky84`) is **on main** since 18 Oct, merged at the owner's request: ASK-01, every tool asks first (server gate, app ask cards, agent spec), and Gmail, Google Calendar, Outlook, Todoist, Notion, Drive and Monid tools behind cards (ADR-483 to 489). Hosted CI couldn't run, so its app code has never been built; the live agent sync is recorded in `43a94083`. Runbook: `docs/integrations/LIVE_GMAIL_TEST_RUNBOOK.md`. Risk to voice: high, because every tool call now waits for an answer.
 
 ## Known problems
 - **Voice sessions sometimes start twice.** ElevenLabs logs from 2026-10-09 to 10-11 show:

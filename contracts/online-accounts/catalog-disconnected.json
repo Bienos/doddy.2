@@ -4,7 +4,7 @@
     {
       "id": "gmail",
       "title": "Gmail",
-      "access": "Doddy can list your recent emails (sender, subject, a short preview), read one email aloud when you ask (the newest that matches), and create drafts, including a reply in an email's own conversation (to its sender), after you tap Create. Doddy never sends, deletes or labels email. Google's draft permission also allows sending; Doddy has no send tool.",
+      "access": "Doddy can list your recent emails (sender, subject, a short preview) and read one email aloud when you ask, after you say yes. It can write drafts, send an email, reply, forward, archive, mark read or unread, star, and move an email to Trash, each only after you tap the card that shows exactly what will happen. It never deletes email for good.",
       "needsAccount": true,
       "status": "disconnected",
       "reason": null,
@@ -38,13 +38,48 @@
           "blurb": "Creates a reply draft in an email's conversation, to its sender, after you tap Create on the card. Doddy never sends it. Off until you switch it on.",
           "risk": "write",
           "enabled": false
+        },
+        {
+          "name": "send_email",
+          "title": "Send an email",
+          "blurb": "Sends an email from your Gmail after you tap Send on the card, which shows the recipient, subject and full text. Off until you switch it on.",
+          "risk": "write",
+          "enabled": false
+        },
+        {
+          "name": "reply_to_email",
+          "title": "Send a reply",
+          "blurb": "Sends a reply in an email's conversation, to its sender, after you tap Send reply. Off until you switch it on.",
+          "risk": "write",
+          "enabled": false
+        },
+        {
+          "name": "forward_email",
+          "title": "Forward an email",
+          "blurb": "Forwards one email, with its attachments, after you tap Forward on the card. Off until you switch it on.",
+          "risk": "write",
+          "enabled": false
+        },
+        {
+          "name": "change_email",
+          "title": "Archive or mark email",
+          "blurb": "Archives, marks read or unread, or stars one email after you tap the card. Off until you switch it on.",
+          "risk": "write",
+          "enabled": false
+        },
+        {
+          "name": "trash_email",
+          "title": "Move email to Trash",
+          "blurb": "Moves one email to Gmail's Trash after you tap the card. It can be restored for 30 days; Doddy never deletes for good. Off until you switch it on.",
+          "risk": "write",
+          "enabled": false
         }
       ]
     },
     {
       "id": "googledrive",
       "title": "Google Drive",
-      "access": "Doddy can find files by name (name, type, last change). It can't open, change, share or delete files.",
+      "access": "Doddy can find files by name (name, type, last change) after you say yes, and create a private Google Doc after you tap the card that shows its name and text. It can't open, change, share or delete your other files.",
       "needsAccount": true,
       "status": "disconnected",
       "reason": null,
@@ -57,13 +92,20 @@
           "blurb": "Looks up files by name and shows name, type and last change. It can't open or change files.",
           "risk": "read",
           "enabled": false
+        },
+        {
+          "name": "create_drive_doc",
+          "title": "Create a Google Doc",
+          "blurb": "Creates a private Google Doc with the text on the card after you tap Create doc. Off until you switch it on.",
+          "risk": "write",
+          "enabled": false
         }
       ]
     },
     {
       "id": "notion",
       "title": "Notion",
-      "access": "Doddy can search the titles of pages you shared with it, and read one page aloud when you ask (the best match among them). It can't change, create or delete anything.",
+      "access": "Doddy can search the titles of pages you shared with it, and read one page aloud when you ask, after you say yes. It can create a page, add text to the end of a page, or move a page to Notion's trash, each only after you tap the card that shows exactly what will happen. It never deletes for good.",
       "needsAccount": true,
       "status": "disconnected",
       "reason": null,
@@ -83,13 +125,34 @@
           "blurb": "Reads one page aloud when you ask, the best match among pages shared with Doddy. Off until you switch it on.",
           "risk": "read",
           "enabled": false
+        },
+        {
+          "name": "create_notion_page",
+          "title": "Create a Notion page",
+          "blurb": "Creates a page inside a page shared with Doddy after you tap Create page. Off until you switch it on.",
+          "risk": "write",
+          "enabled": false
+        },
+        {
+          "name": "append_notion_page",
+          "title": "Add to a Notion page",
+          "blurb": "Adds text to the end of one page after you tap Add. Off until you switch it on.",
+          "risk": "write",
+          "enabled": false
+        },
+        {
+          "name": "trash_notion_page",
+          "title": "Move a Notion page to the trash",
+          "blurb": "Moves one page to Notion's trash after you tap the card. It can be restored there. Off until you switch it on.",
+          "risk": "write",
+          "enabled": false
         }
       ]
     },
     {
       "id": "todoist",
       "title": "Todoist",
-      "access": "Doddy can list your open tasks, add a task after you tap Add, and mark a task done or change its due date after you tap to confirm. It can't delete tasks or change their text.",
+      "access": "Doddy can list your open tasks after you say yes, and add a task, mark one done, change its due date or rename it, each after you tap the card. It can't delete tasks: Todoist deletes for good.",
       "needsAccount": true,
       "status": "disconnected",
       "reason": null,
@@ -123,13 +186,20 @@
           "blurb": "Changes a Todoist task's due date after you tap Move. It can't change the task's text.",
           "risk": "write",
           "enabled": false
+        },
+        {
+          "name": "rename_todoist_task",
+          "title": "Rename a task",
+          "blurb": "Changes a Todoist task's text after you tap Rename. The card shows the task as Todoist has it. Off until you switch it on.",
+          "risk": "write",
+          "enabled": false
         }
       ]
     },
     {
       "id": "outlook",
       "title": "Outlook",
-      "access": "Doddy can list your recent Outlook emails (sender, subject, a short preview), read one email aloud when you ask, read your Outlook calendar for the days you ask about, and create drafts after you tap Create. Doddy never sends, deletes or moves email, and never changes your calendar.",
+      "access": "Doddy can list your recent Outlook emails (sender, subject, a short preview), read one email aloud when you ask, and read your Outlook calendar for the days you ask about, after you say yes. It can create drafts, send, reply, forward, mark read or flag, archive or move an email to Deleted Items, and add, change, delete or answer calendar events, each only after you tap the card that shows exactly what will happen. It never deletes anything for good.",
       "needsAccount": true,
       "status": "disconnected",
       "reason": null,
@@ -163,6 +233,123 @@
           "blurb": "Reads your Outlook calendar for the days you ask about: title, time and place. It can't change events. Off until you switch it on.",
           "risk": "read",
           "enabled": false
+        },
+        {
+          "name": "create_outlook_event",
+          "title": "Add an Outlook event",
+          "blurb": "Adds an event to your Outlook calendar after you tap Add on the card. Off until you switch it on.",
+          "risk": "write",
+          "enabled": false
+        },
+        {
+          "name": "change_outlook_event",
+          "title": "Change an Outlook event",
+          "blurb": "Moves or renames one event after you tap Change. Its guests are told. Off until you switch it on.",
+          "risk": "write",
+          "enabled": false
+        },
+        {
+          "name": "delete_outlook_event",
+          "title": "Delete an Outlook event",
+          "blurb": "Deletes one event after you tap Delete. It goes to Deleted Items. Off until you switch it on.",
+          "risk": "write",
+          "enabled": false
+        },
+        {
+          "name": "accept_outlook_invite",
+          "title": "Accept an Outlook invitation",
+          "blurb": "Answers yes or maybe to one invitation after you tap the card. Off until you switch it on.",
+          "risk": "write",
+          "enabled": false
+        },
+        {
+          "name": "decline_outlook_invite",
+          "title": "Decline an Outlook invitation",
+          "blurb": "Declines one invitation after you tap the card. Off until you switch it on.",
+          "risk": "write",
+          "enabled": false
+        },
+        {
+          "name": "send_outlook_email",
+          "title": "Send an Outlook email",
+          "blurb": "Sends an email after you tap Send on the card, which shows the recipient, subject and full text. Off until you switch it on.",
+          "risk": "write",
+          "enabled": false
+        },
+        {
+          "name": "reply_outlook_email",
+          "title": "Send an Outlook reply",
+          "blurb": "Replies to one email's sender after you tap Send reply. Off until you switch it on.",
+          "risk": "write",
+          "enabled": false
+        },
+        {
+          "name": "forward_outlook_email",
+          "title": "Forward an Outlook email",
+          "blurb": "Forwards one email, with its attachments, after you tap Forward. Off until you switch it on.",
+          "risk": "write",
+          "enabled": false
+        },
+        {
+          "name": "move_outlook_email",
+          "title": "Archive or bin an Outlook email",
+          "blurb": "Moves one email to Archive or Deleted Items (or back to the inbox) after you tap the card. Never deletes for good. Off until you switch it on.",
+          "risk": "write",
+          "enabled": false
+        },
+        {
+          "name": "mark_outlook_email",
+          "title": "Mark an Outlook email",
+          "blurb": "Marks one email read or unread, or flags it, after you tap the card. Off until you switch it on.",
+          "risk": "write",
+          "enabled": false
+        }
+      ]
+    },
+    {
+      "id": "gcalendar",
+      "title": "Google Calendar",
+      "access": "Doddy can read your Google Calendar for the days you ask about, after you say yes, and add, move, rename or delete an event, or answer an invitation, each only after you tap the card that shows exactly what will happen. Deleted events stay in Google Calendar's trash for 30 days. It never changes calendar settings or sharing.",
+      "needsAccount": true,
+      "status": "disconnected",
+      "reason": null,
+      "connectedAt": null,
+      "remoteCleanup": "none",
+      "tools": [
+        {
+          "name": "read_google_calendar",
+          "title": "Read my Google Calendar",
+          "blurb": "Reads your Google Calendar for the days you ask about: title, time and place, after you say yes. Off until you switch it on.",
+          "risk": "read",
+          "enabled": false
+        },
+        {
+          "name": "create_google_event",
+          "title": "Add a Google event",
+          "blurb": "Adds an event to your Google Calendar after you tap Add on the card. No guests, no Meet link. Off until you switch it on.",
+          "risk": "write",
+          "enabled": false
+        },
+        {
+          "name": "change_google_event",
+          "title": "Change a Google event",
+          "blurb": "Moves or renames one event after you tap Change. Its guests are told. Off until you switch it on.",
+          "risk": "write",
+          "enabled": false
+        },
+        {
+          "name": "delete_google_event",
+          "title": "Delete a Google event",
+          "blurb": "Deletes one event after you tap Delete. It stays in Google Calendar's trash for 30 days. Off until you switch it on.",
+          "risk": "write",
+          "enabled": false
+        },
+        {
+          "name": "answer_google_invite",
+          "title": "Answer a Google invitation",
+          "blurb": "Answers yes, no or maybe to one invitation after you tap the card. Off until you switch it on.",
+          "risk": "write",
+          "enabled": false
         }
       ]
     },
@@ -180,6 +367,20 @@
           "name": "web_search",
           "title": "Search the web",
           "blurb": "Looks up current information (opening hours, news, prices) and tells you where it came from.",
+          "risk": "read",
+          "enabled": false
+        },
+        {
+          "name": "news_search",
+          "title": "Search the news",
+          "blurb": "Looks up recent news articles when you ask and says where each came from. Doddy pays per search. Off until you switch it on.",
+          "risk": "read",
+          "enabled": false
+        },
+        {
+          "name": "find_places",
+          "title": "Find places",
+          "blurb": "Finds places (cafés, shops, opening hours, ratings) near a town you name. Doddy pays per search. Off until you switch it on.",
           "risk": "read",
           "enabled": false
         }

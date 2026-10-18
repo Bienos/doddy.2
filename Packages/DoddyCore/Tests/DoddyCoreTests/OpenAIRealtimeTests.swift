@@ -107,8 +107,8 @@ final class OpenAIRealtimeTests: XCTestCase {
             XCTAssertEqual(tool["type"] as? String, "function")
             XCTAssertNotNil(tool["parameters"] as? [String: Any])
         }
-        // Web tools stay listed, so the model hears they're unavailable instead of inventing an answer.
-        XCTAssertTrue(spec.contains { $0.runsOn == .web })
+        // ASK-01: every tool runs on the phone, where the app asks first; there are no web tools.
+        XCTAssertFalse(spec.contains { $0.runsOn == .web })
         XCTAssertThrowsError(try OpenAIRealtimeWire.realtimeTools(fromToolsJSON: Data("[]".utf8)))
     }
 

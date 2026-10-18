@@ -10,6 +10,7 @@ import { defaultRegistry } from "../src/capabilities.js";
 import { MockCalendarProvider } from "../src/providers/mock.js";
 import { Store } from "../src/store.js";
 import { MockToolsProvider, type ToolsMockScenario } from "../src/tools/mock.js";
+import { cloudTool } from "../src/tools/catalog.js";
 import { CloudToolsService } from "../src/tools/service.js";
 import { MockWebSearchProvider, type WebSearchProvider } from "../src/tools/websearch.js";
 import { Clock, USER_A } from "./helpers.js";
@@ -34,7 +35,7 @@ export async function start(limits: Parameters<typeof testLimits>[0] = {}, o: { 
   const logs: string[] = [];
   const common = { store, limits: testLimits(limits), publicBaseUrl: "https://api.doddy.test", appReturnUrl: "doddy-dev://connected-apps/return", now: clock.now, sleep: async () => {} };
   const webSearch = o.webSearch === undefined ? new MockWebSearchProvider() : o.webSearch;
-  const tools = new CloudToolsService({ ...common, provider, webSearch, completionMode: "mock" });
+  const tools = new CloudToolsService({ ...common, provider, webSearch, completionMode: "mock", log: (line) => logs.push(JSON.stringify(line)) });
   const service = new ConnectedAppsService({ ...common, provider: new MockCalendarProvider(), registry: defaultRegistry(), completionMode: "mock" });
   const handler = createHandler({
     service,
@@ -96,8 +97,23 @@ export async function connect(r: Rig, toolkit: string, token = USER_A, scenario?
 }
 
 export const on = (r: Rig, tool: string, token = USER_A) => r.call("PUT", "/v1/tools/switch", { token, body: { tool, enabled: true } });
-export const run = (r: Rig, tool: string, args: Record<string, unknown>, extra: Record<string, unknown> = {}, token = USER_A) =>
+/** A run exactly as sent: no approval unless `extra` has one. ASK-01 tests use this. */
+export const runRaw = (r: Rig, tool: string, args: Record<string, unknown>, extra: Record<string, unknown> = {}, token = USER_A) =>
   r.call("POST", "/v1/tools/run", { token, body: { tool, arguments: args, timeZone: "Europe/Warsaw", ...extra } });
+
+const isRead = (tool: string) => tool === "web_search" || cloudTool(tool)?.risk === "read";
+
+/**
+ * The app's flow for a read (ASK-01): ask (prepare: the card), the user says yes, then run with
+ * that approval. A refused ask is returned as it is. Writes are sent as given: their tests make
+ * and pass their own approvals.
+ */
+export async function run(r: Rig, tool: string, args: Record<string, unknown>, extra: Record<string, unknown> = {}, token = USER_A) {
+  if (!isRead(tool) || "approvalId" in extra) return runRaw(r, tool, args, extra, token);
+  const asked = await r.call("POST", "/v1/tools/prepare", { token, body: { tool, arguments: args } });
+  if (asked.status !== 200) return asked;
+  return runRaw(r, tool, args, { ...extra, approvalId: asked.body.approvalId }, token);
+}
 
 export async function ready(r: Rig, toolkit: string, tool: string, token = USER_A) {
   assert.equal((await connect(r, toolkit, token)).status, 200);
