@@ -120,6 +120,24 @@ final class DataFlowTests: XCTestCase {
         XCTAssertTrue(row("elevenlabs", shared).what.contains("the facts and routines you confirmed under What I've learned"))
         XCTAssertTrue(DataFlow.staysOnPhone(base).contains { $0.hasPrefix("What Doddy learned") }, "proposals and counts are always on the phone")
     }
+
+    // ADR-530: Buy cards reach Doddy's server and Stripe only with the server set and Payments on.
+    func testPaymentsRowNeedsTheServerAndTheSwitch() {
+        XCTAssertFalse(row("payments", base).isActive)
+        var state = base
+        state.doddyServerSet = true
+        XCTAssertFalse(row("payments", state).isActive)
+        XCTAssertTrue(row("payments", state).note?.contains("Payments is off") ?? false)
+        state.connectionsOn = [.payments]
+        let on = row("payments", state)
+        XCTAssertTrue(on.isActive)
+        XCTAssertTrue(on.what.contains("never your card number"))
+        XCTAssertTrue(on.note?.contains("Test mode") ?? false)
+        XCTAssertTrue(DataFlow.networkSummary(state).contains("Stripe"))
+        state.pauseAll = true
+        XCTAssertFalse(row("payments", state).isActive, "Pause all stops Buy cards too")
+        XCTAssertFalse(DataFlow.networkSummary(state).contains("Stripe"))
+    }
 }
 
 /// Settings → Privacy's Network and Cloud AI rows come from the same rows as What leaves this

@@ -31,7 +31,7 @@ export interface Limits {
   maxEvents: number;
   attemptTtlSeconds: number;
   maxBodyBytes: number;
-  /** Purchases (ADR-490): one purchase at most, in grosze. */
+  /** Purchases (ADR-530): one purchase at most, in grosze. */
   purchaseMaxMinor: number;
   /** Per user per UTC day, counting everything paid, paying, waiting for the bank, unsure, handed off or reported paid. */
   purchaseDailyMaxMinor: number;
@@ -39,7 +39,7 @@ export interface Limits {
   userDailyPurchases: number;
 }
 
-/** Stripe on test keys (ADR-490). Absent: native purchases answer "Payments aren't set up". */
+/** Stripe on test keys (ADR-530). Absent: native purchases answer "Payments aren't set up". */
 export interface PaymentsSettings {
   stripeSecretKey: string;
 }
@@ -276,13 +276,13 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     if (base) monid = { apiKey: monidKey, baseUrl: base.origin };
   }
 
-  // Payments (ADR-490). Mock mode never calls Stripe, so it ignores any key. Live mode takes test
+  // Payments (ADR-530). Mock mode never calls Stripe, so it ignores any key. Live mode takes test
   // keys only: Doddy charging users with live keys waits for the legal review. Names, never values.
   let payments: PaymentsSettings | null = null;
   const stripeKey = (e.STRIPE_SECRET_KEY ?? "").trim();
   if (e.DODDY_MODE === "live" && stripeKey !== "") {
     if (/^(sk|rk)_live_/.test(stripeKey)) {
-      problems.push("STRIPE_SECRET_KEY must be a test key; live payments are blocked until ADR-490's legal review");
+      problems.push("STRIPE_SECRET_KEY must be a test key; live payments are blocked until ADR-530's legal review");
     } else if (!/^(sk|rk)_test_[A-Za-z0-9]{8,}$/.test(stripeKey)) {
       problems.push("STRIPE_SECRET_KEY must look like sk_test_<secret> or rk_test_<secret>");
     } else {

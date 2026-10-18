@@ -205,6 +205,17 @@ Common points:
 | Identity today | Sign-in is by a token the owner mints. Real app sign-in is not built. Live production mode is refused until it is (ADR-077). **[CONFIRM: how users will sign in before public launch]** |
 | Retention | Backend records have no retention policy; the free-plan database file resets on restart or deploy (`render.yaml`, `SECURITY_AND_PERMISSIONS.md` gate 2). Account deletion and export for backend data are "not built". **[CONFIRM]** |
 
+### 5.10a Doddy backend: payments (Stripe, test mode only)
+
+| Item | Detail |
+|---|---|
+| Who | Doddy's backend (`backend/src/payments/`), and Stripe for a payment inside Doddy (ADR-530). **Test keys only in this version: no real money moves; the server refuses a live key.** A shop's own checkout page opens in Safari's view and talks to the shop directly, not through Doddy. **[CONFIRM before live payments: Stripe as processor and its terms, a data processing agreement, Polish counsel's opinion on the payment model, a DPIA]** |
+| What the app sends | Only with Settings › Connections › Payments on. When Doddy shows a Buy card: the shop's name, what is bought, the price and, for a checkout, the page's address. When you tap Apple Pay: the encrypted Apple Pay token (the card number never reaches the phone's code or Doddy). When you send a BLIK code: the six digits, once. For a checkout you opened: your own answer to "Did you pay?". (`DataFlow` row `payments`, `contracts/purchases/README.md`.) |
+| What goes to Stripe | The amount, the description, a random purchase ID, and the Apple Pay token or the BLIK code. Stripe and your card issuer or bank process them under their own terms. |
+| Stored by the backend | One purchase record: shop, what, price, status, method (Apple Pay or BLIK), Stripe's payment ID, times. The card name Apple Pay shows (e.g. "Visa 1234") is passed to Stripe and not kept. Never a card number, a token or a BLIK code. Deleted after 90 days (`store.ts` `prune`). |
+| Retention caveat | On Render's free plan the database file resets on restart or deploy (`render.yaml`), so purchase records, approvals and the daily limits can be lost; Stripe's own records stay. A real deployment needs a persistent disk before payments are turned on. |
+| Opt-in? | Yes: Payments is off until you turn it on, and nothing is paid without your tap on the card (and Face ID or your bank app's approval). |
+
 ### 5.11 Other services the app reaches
 
 | Service | What is sent | When | Opt-in | Source |
@@ -325,6 +336,7 @@ What the app **cannot** delete:
 | Verification-start records | 2 days (hash of number only) | `routes/phone.ts` |
 | News sent records / digests / feed cache | 14 days / 30 days / 24 hours | `news/digest.ts`, `news/sources.ts` |
 | Backend receipts and usage counters | **[CONFIRM: no pruning today]** | `SECURITY_AND_PERMISSIONS.md` |
+| Purchase records (no card number, token or BLIK code) | 90 days; lost earlier on a free-plan restart | ADR-530, `backend/src/store.ts` |
 | Waitlist | **[CONFIRM]** | `site/README.md` |
 | Web server logs | **[CONFIRM: Vercel and Render]** | |
 
@@ -496,7 +508,9 @@ Based on the code and `PrivacyInfo.xcprivacy`. Apple counts data that leaves the
 | Emails or text messages | Possibly: email previews and one whole email reach ElevenLabs through your connected account. | Not declared | No | App functionality | Only when you switch the matching tool on. | **[CONFIRM: "Emails or text messages", "Other user content"]** |
 | Search history | Possibly: web search words go to the backend and Monid; Ask Doddy questions go to the gateway. | Not declared | No | App functionality | | **[CONFIRM]** |
 | Photos or videos | No. Photos stay on the iPhone and are chosen with the picker. | | | | | **[CONFIRM]** |
-| Health, fitness, financial info, browsing history, purchases | No | | | | | |
+| Purchases | Yes, only with Payments on: what you buy, the shop and the price, on Doddy's server and at Stripe | Linked (session token) | No | App functionality | Buy card (ADR-530). Test mode only in this version. | **[CONFIRM]** |
+| Financial info | Possibly: the Apple Pay token or a BLIK code passes through Doddy's server to Stripe and isn't kept | | No | App functionality | Doddy never sees a card number. | **[CONFIRM: whether a pass-through token counts]** |
+| Health, fitness, browsing history | No | | | | | |
 | Usage data, diagnostics, advertising data | No for the app. The server has request logs. **[CONFIRM: whether server logs count as "diagnostics" or "performance data"]** | | | | | **[CONFIRM]** |
 | Sensitive info | The app does not ask for it, but notes and voice may contain it. | | | | | **[CONFIRM]** |
 

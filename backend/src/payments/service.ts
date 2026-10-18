@@ -22,7 +22,7 @@ import {
 import { GatewayError, type GatewayPayment, type PaymentGateway } from "./gateway.js";
 
 /**
- * Purchases (ADR-490). The agent only proposes; this service decides. Order for a native payment:
+ * Purchases (ADR-530). The agent only proposes; this service decides. Order for a native payment:
  * signed-in owner -> strict body -> the user's own purchase, still awaiting the tap -> not expired
  * -> payments set up -> daily cap -> the single-use approval, bound to the STORED purchase, used up
  * in the same transaction that marks it `paying` -> one gateway call -> normalized answer -> status.

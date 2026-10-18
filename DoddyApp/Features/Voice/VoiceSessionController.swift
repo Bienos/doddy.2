@@ -86,10 +86,10 @@ final class VoiceSessionController {
         /// ASK-01: an online-account read or web search. `preview` and `approvalID` come from
         /// Doddy's server, which read nothing to make them and runs nothing without the approval.
         case cloudRead(toolCallID: String, call: CloudToolCall, preview: ToolPreview, approvalID: UUID, mode: ConnectedAppsMode)
-        /// "Pay for this?" (ADR-490): the purchase and the server's single-use approval for exactly
+        /// "Pay for this?" (ADR-530): the purchase and the server's single-use approval for exactly
         /// what the card shows. Its own buttons pay (Apple Pay, BLIK) or open the shop's checkout;
         /// `purchaseFlow` runs it and answers the agent once.
-        case purchase(toolCallID: String, prepared: PrepareResult)
+        case purchase(toolCallID: String, prepared: PurchasePrepareResult)
 
         var toolCallID: String {
             switch self {
@@ -208,7 +208,7 @@ final class VoiceSessionController {
     private(set) var pendingAction: PendingAction? { didSet { syncIsland() } }
     /// ASK-01 (ADR-483): which calls the user said yes to. Checked right before a tool runs.
     private var askLedger = AskLedger()
-    /// The Buy card and, after the agent has its answer, its receipt (ADR-490). Stays on screen
+    /// The Buy card and, after the agent has its answer, its receipt (ADR-530). Stays on screen
     /// after the conversation ends once a payment step was started, like the reminder receipt.
     private(set) var purchaseFlow: PurchaseFlow?
     /// The type the user picks on the "Save this note?" card. Starts as Other for every proposal;
@@ -482,6 +482,7 @@ final class VoiceSessionController {
         readAloudProblem = nil
         privacyLocked = false
         pendingAction = nil
+        dropUntouchedPurchase()
         contactCard = nil
         parkingCard = nil
         reminderStatus = nil
@@ -891,9 +892,7 @@ final class VoiceSessionController {
         conversation = nil
         pendingAction = nil
         askLedger.clear()
-        // A Buy card nobody tapped goes with the conversation; one that started paying stays as
-        // its receipt and finishes on its own (ADR-490).
-        if purchaseFlow?.isUntouched == true { purchaseFlow = nil }
+        dropUntouchedPurchase()
         contactCard = nil
         parkingCard = nil
         connectionNeeded = nil
@@ -2026,6 +2025,7 @@ final class VoiceSessionController {
         keepRecoveryDraft()
         phase = .failed(message)
         pendingAction = nil
+        dropUntouchedPurchase()
         dropLongTurn()
         // The lines and unanswered cards are kept now, not only at the next Close (ADR-360).
         keepLog()
@@ -2053,6 +2053,7 @@ final class VoiceSessionController {
         conversation = nil
         if wasLive { keepRecoveryDraft() }
         pendingAction = nil
+        dropUntouchedPurchase()
         keepLog()
         if case .failed = phase { return }
         // A drop is never shown as a normal end (ADR-360).
@@ -2906,7 +2907,7 @@ final class VoiceSessionController {
         return store.noteReminders?.reminder(forMemory: memoryID)
     }
 
-    // MARK: Purchases (ADR-490)
+    // MARK: Purchases (ADR-530)
 
     /// The agent proposed a purchase: Doddy's server checks it against the limits and returns the
     /// purchase with a single-use approval, and only then is the Buy card shown. Nothing is paid here.
@@ -2917,7 +2918,7 @@ final class VoiceSessionController {
         }
         // Tried too often without a confirmed result: stop before the card (ADR-322).
         guard await mayTryAgain(toolCallID, app: .payments) else { return }
-        let prepared: PrepareResult
+        let prepared: PurchasePrepareResult
         do {
             prepared = try await client.prepare(draft.request)
         } catch {
@@ -2954,6 +2955,13 @@ final class VoiceSessionController {
         case .notOpened(let reason):
             await reply(toolCallID, "failed: The shop's checkout couldn't be opened: \(reason) Nothing was paid.", isError: true)
         }
+    }
+
+    /// A Buy card nobody tapped goes with the conversation, and its approval on Doddy's server
+    /// ends with it; one that started paying (or has the Apple Pay sheet open) stays as its
+    /// receipt and finishes on its own (ADR-530). Called on stop, failure, disconnect and a new start.
+    private func dropUntouchedPurchase() {
+        if purchaseFlow?.abandonIfUntouched() == true { purchaseFlow = nil }
     }
 
     /// Close on the receipt.
@@ -3727,7 +3735,7 @@ private extension VoiceSessionController.PendingAction {
         // is recorded on the row it undoes (ADR-271).
         // ASK-01 asks: the change itself (a list item) is logged by the flow it runs. A BLIK card only
         // shows what the user sends in their bank app (ADR-510). A purchase marks its own row as
-        // started when the user taps Apple Pay, BLIK or checkout (ADR-490), not when the card is shown.
+        // started when the user taps Apple Pay, BLIK or checkout (ADR-530), not when the card is shown.
         case .map, .shortcut, .message, .blik, .plan, .undo, .ask, .cloudRead, .purchase: false
         }
     }

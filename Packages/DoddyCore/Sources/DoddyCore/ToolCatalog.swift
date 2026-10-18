@@ -20,7 +20,7 @@ public struct ToolDescriptor: Equatable, Sendable {
         case handoff
         /// Changes the conversation itself (translator mode, the plan card).
         case session
-        /// Money moves, or a shop's checkout opens, after the user's own tap (ADR-490).
+        /// Money moves, or a shop's checkout opens, after the user's own tap (ADR-530).
         case payment
     }
 
@@ -120,7 +120,7 @@ public enum ToolCatalog {
         .init(VoiceToolName.stopTranslator, .session, .askFirst),
         .init(VoiceToolName.proposePlan, .session, .card),
         // A card bound to the server's single-use approval; paid only by Apple Pay, BLIK or the
-        // shop's own page after the user's tap (ADR-490).
+        // shop's own page after the user's tap (ADR-530).
         .init(VoiceToolName.preparePurchase, .payment, .serverApproval),
     ]
 

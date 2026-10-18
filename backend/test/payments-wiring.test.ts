@@ -9,7 +9,7 @@ import { MockPaymentGateway } from "../src/payments/gateway.js";
 import { StripeHttpGateway } from "../src/payments/stripe.js";
 
 /**
- * buildApp picks the payment gateway strictly from validated config (ADR-490): mock mode uses the
+ * buildApp picks the payment gateway strictly from validated config (ADR-530): mock mode uses the
  * demo gateway, live mode uses Stripe only with a test key and otherwise none. Mock never stands in.
  */
 const KEY = Buffer.alloc(32, 5).toString("base64");

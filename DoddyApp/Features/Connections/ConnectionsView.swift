@@ -66,7 +66,7 @@ struct ConnectionGroup: Identifiable {
         ConnectionGroup(title: "Your day", items: [.calendar, .reminders, .timers]),
         ConnectionGroup(title: "People", items: [.contacts, .messages]),
         ConnectionGroup(title: "Places and apps", items: [.maps, .shortcuts]),
-        // ADR-510: shown, never sent; the user sends it in their bank app. ADR-490: paid on Doddy's card
+        // ADR-510: shown, never sent; the user sends it in their bank app. ADR-530: paid on Doddy's card
         // (test mode) or on the shop's own checkout page, always after the user's tap.
         ConnectionGroup(title: "Money", items: [.blik, .payments]),
     ]

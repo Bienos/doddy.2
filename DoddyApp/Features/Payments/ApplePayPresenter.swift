@@ -2,7 +2,7 @@ import DoddyCore
 import PassKit
 import SwiftUI
 
-// The only file that uses PassKit (ADR-490; scripts/check_forbidden_capabilities.sh). The Apple
+// The only file that uses PassKit (ADR-530; scripts/check_forbidden_capabilities.sh). The Apple
 // Pay sheet's encrypted token goes to Doddy's server untouched; the phone never sees the card.
 
 /// Whether this build and this iPhone can show the Apple Pay sheet. Apple Pay needs a merchant
@@ -85,23 +85,21 @@ final class ApplePayPresenter: NSObject, PKPaymentAuthorizationControllerDelegat
 
     // MARK: PKPaymentAuthorizationControllerDelegate
 
+    /// The async form of PassKit's delegate method (Swift's import of its `handler:` block), so
+    /// no non-Sendable completion block has to cross to the main actor.
     nonisolated func paymentAuthorizationController(
         _ controller: PKPaymentAuthorizationController,
-        didAuthorizePayment payment: PKPayment,
-        handler completion: @escaping (PKPaymentAuthorizationResult) -> Void
-    ) {
-        // Read the token here, on the delegate's thread, into plain values; only those cross over.
+        didAuthorizePayment payment: PKPayment
+    ) async -> PKPaymentAuthorizationResult {
+        // Read the token here into plain values; only those cross to the main actor.
         let transaction = payment.token.transactionIdentifier
         let token = ApplePayTokenData(
             paymentData: String(data: payment.token.paymentData, encoding: .utf8) ?? "",
             network: payment.token.paymentMethod.network?.rawValue,
             instrumentName: payment.token.paymentMethod.displayName,
             transactionId: transaction.isEmpty ? nil : transaction)
-        let reply = ResultHandler(completion)
-        Task { @MainActor in
-            let paid = await self.send(token)
-            reply.call(PKPaymentAuthorizationResult(status: paid ? .success : .failure, errors: nil))
-        }
+        let paid = await send(token)
+        return PKPaymentAuthorizationResult(status: paid ? .success : .failure, errors: nil)
     }
 
     nonisolated func paymentAuthorizationControllerDidFinish(_ controller: PKPaymentAuthorizationController) {
@@ -121,21 +119,5 @@ final class ApplePayPresenter: NSObject, PKPaymentAuthorizationControllerDelegat
         let outcome: ApplePayOutcome = didAuthorize ? .authorized : .cancelled
         finished?.resume(returning: outcome)
         finished = nil
-    }
-}
-
-/// PassKit's result handler, carried to the main actor and called there exactly once.
-private final class ResultHandler: @unchecked Sendable {
-    private let completion: (PKPaymentAuthorizationResult) -> Void
-    private var called = false
-
-    init(_ completion: @escaping (PKPaymentAuthorizationResult) -> Void) {
-        self.completion = completion
-    }
-
-    @MainActor func call(_ result: PKPaymentAuthorizationResult) {
-        guard !called else { return }
-        called = true
-        completion(result)
     }
 }

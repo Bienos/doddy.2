@@ -63,7 +63,7 @@ final class DeviceConnections {
         case .reminders: Self.eventAccess(EKEventStore.authorizationStatus(for: .reminder))
         case .contacts: Self.contactAccess(CNContactStore.authorizationStatus(for: .contacts))
         case .timers: .notDetermined
-        // BLIK transfers (ADR-510) and payments (ADR-490) need no iOS permission: the BLIK card only
+        // BLIK transfers (ADR-510) and payments (ADR-530) need no iOS permission: the BLIK card only
         // shows what to send, and Apple Pay asks for Face ID on each payment.
         case .maps, .shortcuts, .messages, .blik, .payments: .granted
         }

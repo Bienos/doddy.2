@@ -197,7 +197,7 @@ struct VoiceView: View {
                                 .id(line.id)
                         }
 
-                        // The Buy card and its receipt (ADR-490) have their own buttons.
+                        // The Buy card and its receipt (ADR-530) have their own buttons.
                         if let flow = controller.purchaseFlow {
                             PurchaseCardView(flow: flow) { controller.dismissPurchase() }
                                 .id("purchase")
@@ -281,7 +281,8 @@ struct VoiceView: View {
                 .onChange(of: controller.pendingAction) { _, pending in
                     editingNoteReminderTime = false
                     copiedForBlik = nil
-                    if pending != nil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("pendingAction", anchor: .bottom) } }
+                    // The Buy card is drawn apart from the other cards, under its own id (ADR-530).
+                    if let pending { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo(pending.isPurchase ? "purchase" : "pendingAction", anchor: .bottom) } }
                 }
                 .onChange(of: controller.listReceipt) { _, receipt in
                     if receipt != nil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("listReceipt", anchor: .bottom) } }
@@ -765,7 +766,7 @@ struct VoiceView: View {
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
         case .purchase:
-            // Drawn by PurchaseCardView, never by this generic card (ADR-490).
+            // Drawn by PurchaseCardView, never by this generic card (ADR-530).
             EmptyView()
         }
     }
@@ -1724,7 +1725,7 @@ struct LongTurnPanel: View {
 }
 
 private extension VoiceSessionController.PendingAction {
-    /// The Buy card (ADR-490) draws itself; the generic action card skips it.
+    /// The Buy card (ADR-530) draws itself; the generic action card skips it.
     var isPurchase: Bool {
         if case .purchase = self { return true }
         return false

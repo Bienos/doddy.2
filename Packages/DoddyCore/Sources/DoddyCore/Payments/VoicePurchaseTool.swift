@@ -1,6 +1,6 @@
 import Foundation
 
-// prepare_purchase (ADR-490): the agent's arguments, checked before anything goes to the server.
+// prepare_purchase (ADR-530): the agent's arguments, checked before anything goes to the server.
 //
 //   kind          "native" (Apple Pay or BLIK inside Doddy, test mode in this milestone) or
 //                 "checkout" (the shop's own page, opened inside Doddy)

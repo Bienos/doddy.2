@@ -26,14 +26,14 @@ import {
   type PaymentGateway,
 } from "../src/payments/gateway.js";
 import { NATIVE_PAYEE, PaymentsService } from "../src/payments/service.js";
-import { StripeHttpGateway } from "../src/payments/stripe.js";
+import { STRIPE_CALL_CAP_MS, StripeHttpGateway } from "../src/payments/stripe.js";
 import { MockCalendarProvider } from "../src/providers/mock.js";
 import { ConnectedAppsService } from "../src/service.js";
 import { Store } from "../src/store.js";
 import { Clock, USER_A, USER_B } from "./helpers.js";
 
 /**
- * Purchases (ADR-490): the contract's shapes, the approval rules (single use, bound to the stored
+ * Purchases (ADR-530): the contract's shapes, the approval rules (single use, bound to the stored
  * purchase), the limits, every native outcome, the checkout hand-off, and the Stripe adapter's
  * request encoding and error mapping against a fake fetch. Nothing here reaches Stripe.
  */
@@ -844,14 +844,15 @@ const PID = "6f1c2b9e-3a4d-4f5e-8a7b-1c2d3e4f5a6b";
 const common = { purchaseId: PID, amountMinor: 5600, currency: "PLN" as const, description: "Kino Muranów: 2 tickets, Friday 19:30", idempotencyKey: `purchase:${PID}:apple_pay` };
 const stripe = (fetchImpl: typeof fetch, secretKey = TEST_KEY) => new StripeHttpGateway({ secretKey, timeoutMs: 500 }, fetchImpl);
 
-test("Stripe Apple Pay: tokens call with Stripe's own pk_token parameters, then a confirmed PaymentIntent", async () => {
+test("Stripe Apple Pay: tokens call with Stripe's own pk_token parameters, a card PaymentMethod, then a confirmed PaymentIntent", async () => {
   const { sent, fetchImpl } = fakeStripe([
     json(200, { id: "tok_1AbC", object: "token" }),
+    json(200, { id: "pm_1AbC", object: "payment_method", type: "card" }),
     json(200, { id: "pi_1AbC", object: "payment_intent", status: "succeeded", payment_method_types: ["card"] }),
   ]);
   const result = await stripe(fetchImpl).payWithApplePay({ ...common, applePay: APPLE_PAY });
   assert.deepEqual(result, { paymentId: "pi_1AbC", state: "succeeded" });
-  const [token, pi] = sent as [Sent, Sent];
+  const [token, method, pi] = sent as [Sent, Sent, Sent];
   assert.equal(token.url, "https://api.stripe.com/v1/tokens");
   assert.equal(token.method, "POST");
   assert.equal(token.headers["content-type"], "application/x-www-form-urlencoded");
@@ -864,6 +865,12 @@ test("Stripe Apple Pay: tokens call with Stripe's own pk_token parameters, then 
     ["pk_token_payment_network", "Visa"],
     ["pk_token_transaction_id", "abc123"],
   ]);
+  assert.equal(method.url, "https://api.stripe.com/v1/payment_methods");
+  assert.equal(method.method, "POST");
+  assert.equal(method.headers["idempotency-key"], `purchase:${PID}:apple_pay:method`);
+  assert.deepEqual([...method.form!.entries()], [["type", "card"], ["card[token]", "tok_1AbC"]]);
+  // Bracket notation on the wire.
+  assert.match(new URLSearchParams(method.form!).toString(), /card%5Btoken%5D=tok_1AbC/);
   assert.equal(pi.url, "https://api.stripe.com/v1/payment_intents");
   assert.equal(pi.headers["idempotency-key"], `purchase:${PID}:apple_pay`);
   assert.deepEqual(Object.fromEntries(pi.form!.entries()), {
@@ -871,27 +878,41 @@ test("Stripe Apple Pay: tokens call with Stripe's own pk_token parameters, then 
     currency: "pln",
     confirm: "true",
     "payment_method_types[]": "card",
-    "payment_method_data[type]": "card",
-    "payment_method_data[card][token]": "tok_1AbC",
+    payment_method: "pm_1AbC",
     description: "Kino Muranów: 2 tickets, Friday 19:30",
     "metadata[purchase_id]": PID,
   });
-  // Bracket notation on the wire.
-  assert.match(new URLSearchParams(pi.form!).toString(), /payment_method_data%5Bcard%5D%5Btoken%5D=tok_1AbC/);
 });
 
 test("Stripe Apple Pay: an empty token uses tok_visa with a test key only", async () => {
-  const { sent, fetchImpl } = fakeStripe([json(200, { id: "pi_sim_1", status: "succeeded", payment_method_types: ["card"] })]);
+  const { sent, fetchImpl } = fakeStripe([json(200, { id: "pm_sim_1" }), json(200, { id: "pi_sim_1", status: "succeeded", payment_method_types: ["card"] })]);
   await stripe(fetchImpl).payWithApplePay({ ...common, applePay: { paymentData: "" } });
-  assert.equal(sent.length, 1, "no tokens call");
-  assert.equal(sent[0]!.form!.get("payment_method_data[card][token]"), "tok_visa");
-  const restricted = fakeStripe([json(200, { id: "pi_sim_2", status: "succeeded" })]);
+  assert.equal(sent.length, 2, "no tokens call");
+  assert.equal(sent[0]!.form!.get("card[token]"), "tok_visa");
+  assert.equal(sent[1]!.form!.get("payment_method"), "pm_sim_1");
+  const restricted = fakeStripe([json(200, { id: "pm_sim_2" }), json(200, { id: "pi_sim_2", status: "succeeded" })]);
   await stripe(restricted.fetchImpl, "rk_test_fakefake").payWithApplePay({ ...common, applePay: { paymentData: "" } });
-  assert.equal(restricted.sent[0]!.form!.get("payment_method_data[card][token]"), "tok_visa");
-  // Any other key: refused before anything is sent.
+  assert.equal(restricted.sent[0]!.form!.get("card[token]"), "tok_visa");
+});
+
+test("Stripe gateway: only test keys, and each call at most STRIPE_CALL_CAP_MS", () => {
   const other = fakeStripe([]);
-  await assert.rejects(stripe(other.fetchImpl, LIVE_LOOKING_KEY).payWithApplePay({ ...common, applePay: { paymentData: "" } }), (e: unknown) => e instanceof GatewayError && e.kind === "not_sent");
+  for (const key of [LIVE_LOOKING_KEY, "rk_live_fakefake", "", "pk_test_fakefake"]) {
+    assert.throws(() => stripe(other.fetchImpl, key), /test keys only/);
+  }
   assert.equal(other.sent.length, 0);
+  assert.equal(new StripeHttpGateway({ secretKey: TEST_KEY, timeoutMs: 60_000 }).callTimeoutMs, STRIPE_CALL_CAP_MS);
+  assert.equal(new StripeHttpGateway({ secretKey: TEST_KEY, timeoutMs: 1_000 }).callTimeoutMs, 1_000);
+  // Three calls in a row (token, method, payment) end before the phone's 20-second wait.
+  assert.ok(3 * STRIPE_CALL_CAP_MS < 20_000);
+});
+
+test("Stripe Apple Pay: a failed PaymentMethod call is not_sent, even a timeout, and no PaymentIntent follows", async () => {
+  for (const answer of [json(400, { error: { type: "invalid_request_error", message: "planted" } }), json(500, {}), json(200, { id: "card_wrong" }), () => Promise.reject(Object.assign(new Error("t"), { name: "TimeoutError" }))]) {
+    const { sent, fetchImpl } = fakeStripe([json(200, { id: "tok_ok" }), answer]);
+    await assert.rejects(stripe(fetchImpl).payWithApplePay({ ...common, applePay: APPLE_PAY }), (e: unknown) => e instanceof GatewayError && e.kind === "not_sent" && !e.message.includes("planted"));
+    assert.equal(sent.length, 2, "no PaymentIntent after a failed PaymentMethod");
+  }
 });
 
 test("Stripe Apple Pay: a failed tokens call is not_sent, even a timeout (nothing can be charged)", async () => {
@@ -1020,6 +1041,7 @@ test("the service over the Stripe adapter: unknown on timeout, then search finds
   const fetchImpl = (async (input: string | URL | Request) => {
     const url = String(input);
     if (url.endsWith("/v1/tokens")) return new Response(JSON.stringify({ id: "tok_svc" }), { status: 200 });
+    if (url.endsWith("/v1/payment_methods")) return new Response(JSON.stringify({ id: "pm_svc" }), { status: 200 });
     if (url.endsWith("/v1/payment_intents")) throw Object.assign(new Error("t"), { name: "TimeoutError" });
     if (url.includes("/search")) {
       const data = mode === "search-found" ? [{ id: "pi_svc", status: "succeeded", metadata: { purchase_id: new URL(url).searchParams.get("query")!.split("'")[3] } }] : [];

@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /**
- * Doddy-owned purchases contract (ADR-490, contracts/purchases/README.md). Request bodies are
+ * Doddy-owned purchases contract (ADR-530, contracts/purchases/README.md). Request bodies are
  * strict: a user ID, a Stripe ID, a provider name or any unknown field is rejected, not ignored.
  * The response schemas are the exact shapes the iPhone decodes; the backend tests parse the JSON
  * fixtures in contracts/purchases/ against them.

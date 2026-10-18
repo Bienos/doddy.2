@@ -27,11 +27,11 @@ public enum PaymentsError: Error, Equatable, Sendable {
     }
 }
 
-/// Doddy-owned API surface for purchases (ADR-490). There is no call that takes a provider, an
+/// Doddy-owned API surface for purchases (ADR-530). There is no call that takes a provider, an
 /// amount to charge later or a URL to fetch: the server keeps the purchase the card showed and
 /// charges exactly that, once.
 public protocol PaymentsClient: Sendable {
-    func prepare(_ request: PreparePurchaseRequest) async throws(PaymentsError) -> PrepareResult
+    func prepare(_ request: PreparePurchaseRequest) async throws(PaymentsError) -> PurchasePrepareResult
     /// Native purchases only. Uses up the card's approval.
     func pay(purchaseId: UUID, approvalId: UUID, payment: PurchasePayment) async throws(PaymentsError) -> PurchaseResult
     /// Re-read from Stripe by the server while paying, waiting for the bank or unsure.
@@ -62,7 +62,7 @@ public struct BackendPaymentsClient: PaymentsClient {
         self.init(baseURL: baseURL, sessionToken: { boundToken()?.token(for: baseURL) }, transport: transport)
     }
 
-    public func prepare(_ request: PreparePurchaseRequest) async throws(PaymentsError) -> PrepareResult {
+    public func prepare(_ request: PreparePurchaseRequest) async throws(PaymentsError) -> PurchasePrepareResult {
         try await call("POST", "v1/purchases/prepare", body: request)
     }
 
@@ -135,7 +135,7 @@ public struct BackendPaymentsClient: PaymentsClient {
 /// The client used when no server is configured: every call says so plainly.
 public struct UnconfiguredPaymentsClient: PaymentsClient {
     public init() {}
-    public func prepare(_ request: PreparePurchaseRequest) async throws(PaymentsError) -> PrepareResult { throw .notConfigured }
+    public func prepare(_ request: PreparePurchaseRequest) async throws(PaymentsError) -> PurchasePrepareResult { throw .notConfigured }
     public func pay(purchaseId: UUID, approvalId: UUID, payment: PurchasePayment) async throws(PaymentsError) -> PurchaseResult { throw .notConfigured }
     public func status(purchaseId: UUID) async throws(PaymentsError) -> PurchaseResult { throw .notConfigured }
     public func cancel(purchaseId: UUID) async throws(PaymentsError) -> PurchaseResult { throw .notConfigured }

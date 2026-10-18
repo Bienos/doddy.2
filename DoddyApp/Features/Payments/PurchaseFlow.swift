@@ -2,7 +2,7 @@ import DoddyCore
 import Foundation
 import Observation
 
-/// One purchase card, from the agent's proposal to the receipt (ADR-490). Nothing is paid until the
+/// One purchase card, from the agent's proposal to the receipt (ADR-530). Nothing is paid until the
 /// user taps Apple Pay (and Face ID), sends a BLIK code they typed, or opens the shop's checkout.
 /// The agent hears the result once (`settle`); after that the card stays as a receipt the user can
 /// check again or close, and nothing on it is ever paid a second time.
@@ -35,7 +35,7 @@ final class PurchaseFlow {
     }
 
     let toolCallID: String
-    let prepared: PrepareResult
+    let prepared: PurchasePrepareResult
     private(set) var phase: Phase = .ready
     /// A plain sentence under the buttons when something needs the user's attention.
     private(set) var problem: String?
@@ -57,19 +57,22 @@ final class PurchaseFlow {
     var applePayAvailable: Bool { prepared.methods.contains(.applePay) && ApplePaySupport.isAvailable }
     var blikAvailable: Bool { prepared.methods.contains(.blik) }
     var isCheckout: Bool { prepared.purchase.kind == .checkout }
-    /// Shown, but no payment step was started: dropped when the conversation ends.
-    var isUntouched: Bool { phase == .ready && !started }
+    /// Shown, but no payment step was started and the Apple Pay sheet isn't open: dropped when
+    /// the conversation ends.
+    var isUntouched: Bool { phase == .ready && !started && !sheetShowing }
 
     private let client: any PaymentsClient
     private let presenter = ApplePayPresenter()
     private let onStart: @MainActor () -> Void
     private let onSettle: @MainActor (Settlement) async -> Void
     @ObservationIgnored private var started = false
+    /// The Apple Pay sheet is on screen: the user may be paying, so the card must not go away.
+    @ObservationIgnored private var sheetShowing = false
     @ObservationIgnored private var replied = false
     @ObservationIgnored private var lastAnswer: Result<PurchaseView, PaymentsError>?
 
     init(
-        toolCallID: String, prepared: PrepareResult, client: any PaymentsClient,
+        toolCallID: String, prepared: PurchasePrepareResult, client: any PaymentsClient,
         onStart: @escaping @MainActor () -> Void, onSettle: @escaping @MainActor (Settlement) async -> Void
     ) {
         self.toolCallID = toolCallID
@@ -85,9 +88,11 @@ final class PurchaseFlow {
         guard phase == .ready, applePayAvailable else { return }
         problem = nil
         lastAnswer = nil
-        let outcome = await presenter.present(ApplePaySheet(prepared: prepared)) { [weak self] token in
+        sheetShowing = true
+        let outcome = await presenter.present(ApplePaySheet(prepared: prepared)) { @MainActor @Sendable [weak self] token in
             await self?.sendApplePay(token) ?? false
         }
+        sheetShowing = false
         switch outcome {
         case .notShown:
             problem = NSLocalizedString("Apple Pay couldn't open. You can pay with BLIK instead.", comment: "Purchase card")
@@ -243,7 +248,8 @@ final class PurchaseFlow {
             // The server's purchase would run out in five minutes anyway; this ends it now.
             let client = client, id = prepared.purchase.id
             Task { _ = try? await client.cancel(purchaseId: id) }
-        case .waitingForBank(let purchase):
+        case .waitingForBank(let purchase) where purchase.method == .blik && purchase.status == .waitingForBank:
+            // Only a BLIK payment the bank app is still waiting on can be called back.
             isChecking = true
             defer { isChecking = false }
             guard let answer = try? await client.cancel(purchaseId: purchase.id) else {
@@ -277,6 +283,19 @@ final class PurchaseFlow {
         }
         problem = nil
         phase = .settled(answer.purchase)
+    }
+
+    /// The conversation ended (or failed, or a new one started) before the user tapped anything:
+    /// the card goes, and its approval on the server ends now rather than in five minutes. Returns
+    /// false, and keeps the card, once a payment step started or the Apple Pay sheet is open.
+    func abandonIfUntouched() -> Bool {
+        guard isUntouched else { return false }
+        // Nobody is left to hear an answer; nothing on this card can be paid any more.
+        replied = true
+        phase = .settled(prepared.purchase)
+        let client = client, id = prepared.purchase.id
+        Task { _ = try? await client.cancel(purchaseId: id) }
+        return true
     }
 
     // MARK: Private

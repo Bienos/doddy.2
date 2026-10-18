@@ -19,7 +19,7 @@ export interface HttpDeps {
   service: ConnectedAppsService;
   /** Online-account tools (Gmail, Drive, Notion, Todoist). Routes exist only when provided. */
   tools?: CloudToolsService;
-  /** Purchases (ADR-490). Routes exist only when provided. */
+  /** Purchases (ADR-530). Routes exist only when provided. */
   payments?: PaymentsService;
   verifier: SessionVerifier;
   appReturnUrl: string;

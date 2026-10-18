@@ -1,7 +1,7 @@
 import SafariServices
 import SwiftUI
 
-/// A shop's own checkout page, inside Doddy (ADR-490). Safari's view, not a web view Doddy
+/// A shop's own checkout page, inside Doddy (ADR-530). Safari's view, not a web view Doddy
 /// controls: Doddy can't read or fill the page, can't see what the user types, and Safari keeps
 /// its own cookies. Besides the Connected Apps sign-in, the only place the app opens web pages
 /// (scripts/check_forbidden_capabilities.sh). The address was checked by Doddy's server first.

@@ -1,5 +1,5 @@
 /**
- * The payment provider boundary (ADR-490). The service only ever sees this normalized shape, never
+ * The payment provider boundary (ADR-530). The service only ever sees this normalized shape, never
  * a provider object, error message or token. Two implementations: `MockPaymentGateway` (demo mode,
  * nothing leaves the process) and `StripeHttpGateway` in ./stripe.ts (Stripe on test keys).
  */

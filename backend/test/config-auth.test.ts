@@ -67,14 +67,14 @@ test("TLS outside loopback; return URL is allowlisted (scheme, no query)", () =>
   assert.ok(problems({ DODDY_APP_RETURN_URL: "javascript://x" }).length > 0);
 });
 
-// Payments (ADR-490). Short fakes only: the guard script refuses anything that looks like a real key.
+// Payments (ADR-530). Short fakes only: the guard script refuses anything that looks like a real key.
 test("payments: live mode takes a Stripe test key, and refuses live and malformed keys by name only", () => {
   assert.equal(loadConfig(live).payments, null, "no key: native purchases say not set up");
   assert.deepEqual(loadConfig({ ...live, STRIPE_SECRET_KEY: "sk_test_fakefake" }).payments, { stripeSecretKey: "sk_test_fakefake" });
   assert.deepEqual(loadConfig({ ...live, STRIPE_SECRET_KEY: "rk_test_fakefake" }).payments, { stripeSecretKey: "rk_test_fakefake" });
   for (const key of ["sk_live_fakefake", "rk_live_fakefake"]) {
     const p = problems({ ...live, STRIPE_SECRET_KEY: key });
-    assert.deepEqual(p, ["STRIPE_SECRET_KEY must be a test key; live payments are blocked until ADR-490's legal review"]);
+    assert.deepEqual(p, ["STRIPE_SECRET_KEY must be a test key; live payments are blocked until ADR-530's legal review"]);
     assert.ok(!p.join(" ").includes(key));
   }
   for (const key of ["sk_test_short", "pk_test_fakefake", "sk_test_fake-fake!", "whsec_fakefake"]) {

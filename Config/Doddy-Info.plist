@@ -37,7 +37,7 @@
 	<string>$(DODDY_CLOUD_CONTAINER)</string>
 	<key>CKSharingSupported</key>
 	<true/>
-	<!-- Apple Pay on the Buy card (ADR-490): the merchant ID, empty unless the build sets
+	<!-- Apple Pay on the Buy card (ADR-530): the merchant ID, empty unless the build sets
 	     DODDY_APPLE_PAY_MERCHANT_ID with the Apple Pay entitlement; empty means no Apple Pay sheet. -->
 	<key>DoddyApplePayMerchantID</key>
 	<string>$(DODDY_APPLE_PAY_MERCHANT_ID)</string>

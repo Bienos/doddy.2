@@ -13,7 +13,7 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
     case exchangeRates
     /// A BLIK phone transfer shown for the user to send in their bank app (ADR-510).
     case blik
-    /// Paying for things through Doddy's server (ADR-490).
+    /// Paying for things through Doddy's server (ADR-530).
     case payments
 
     public var title: String {
@@ -282,7 +282,7 @@ public struct ActivityRequest: Equatable, Sendable {
             // Only that the rates file was fetched; the amount stays in the conversation (ADR-300).
             return ActivityRequest(app: .exchangeRates, title: "Converted currency", detail: "\(CurrencyConversion.code(request.from)) → \(CurrencyConversion.code(request.to))", isLookup: true)
         case .preparePurchase(let draft):
-            // The shop and the price the card showed; never a card number or a BLIK code (ADR-490).
+            // The shop and the price the card showed; never a card number or a BLIK code (ADR-530).
             let price = PurchaseMoney.format(minor: draft.amountMinor, currency: draft.currency)
             switch draft.kind {
             case .native:

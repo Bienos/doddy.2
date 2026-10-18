@@ -42,7 +42,7 @@ final class ActivityTextTests: XCTestCase {
             .leaveBy(LeaveByRequest(place: "Dentist", arriveBy: now)),
             // ADR-510.
             .draftBlikTransfer(BlikTransferDraft(recipientName: "Ania", amount: BlikAmount(grosze: 5_000)!, title: "Pizza")),
-            // ADR-490: a payment inside Doddy and a shop's checkout page.
+            // ADR-530: a payment inside Doddy and a shop's checkout page.
             .preparePurchase(PurchaseDraft(kind: .native, merchantName: "Kino", description: "2 tickets", amountMinor: 5_600, checkoutURL: nil)),
             .preparePurchase(PurchaseDraft(kind: .checkout, merchantName: "Bistro", description: "Lunch", amountMinor: 4_000,
                                            checkoutURL: URL(string: "https://shop.example.pl/checkout"))),

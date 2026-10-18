@@ -1,7 +1,7 @@
 import DoddyCore
 import SwiftUI
 
-/// The Buy card (ADR-490): what the agent prepared, exactly as Doddy's server will charge it, and
+/// The Buy card (ADR-530): what the agent prepared, exactly as Doddy's server will charge it, and
 /// the only buttons that pay. After the agent has its answer the same card is the receipt.
 struct PurchaseCardView: View {
     @Bindable var flow: PurchaseFlow
@@ -90,7 +90,8 @@ struct PurchaseCardView: View {
         case .paying(let method):
             progress(method == .blik ? Text("Sending the BLIK code…") : Text("Paying…"))
         case .waitingForBank(let purchase):
-            if purchase.method == .blik {
+            // Cancel only while the bank app really waits for BLIK; an unsure or card payment can't be called back.
+            if purchase.method == .blik && purchase.status == .waitingForBank {
                 progress(Text("Approve \(PurchaseMoney.format(minor: purchase.amountMinor, currency: purchase.currency)) in your bank app"))
                 Button("Cancel") { Task { await flow.cancel() } }
                     .buttonStyle(SecondaryButtonStyle())

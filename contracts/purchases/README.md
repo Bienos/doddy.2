@@ -1,4 +1,4 @@
-# Purchases API (ADR-490)
+# Purchases API (ADR-530)
 
 Doddy's own API for paying for things the user asked for. Every route needs the session token, the
 user comes from the token only, and nothing here takes a provider name, a Stripe id or a URL to call.
@@ -12,7 +12,7 @@ DoddyCore tests both read them.
 | `native` | Doddy's Stripe account, **test keys only** in this milestone (live keys are refused at start-up) | Apple Pay sheet with Face ID, or a BLIK code approved in the bank app, inside Doddy | Paid, failed or "not sure", read from Stripe by the server |
 | `checkout` | The shop itself, on its own checkout page | Inside an in-app Safari view, with whatever the shop offers (Apple Pay, BLIK, card) | Only that the page was opened. "I paid" is the user's own word and is labelled so |
 
-Doddy never holds money for a shop and never charges the user on a shop's behalf (ADR-490).
+Doddy never holds money for a shop and never charges the user on a shop's behalf (ADR-530).
 
 ## Routes
 

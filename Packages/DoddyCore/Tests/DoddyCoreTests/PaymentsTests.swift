@@ -2,7 +2,7 @@ import Foundation
 import XCTest
 @testable import DoddyCore
 
-/// Paying for things by voice (ADR-490): the shared contract, the client's requests, the checks
+/// Paying for things by voice (ADR-530): the shared contract, the client's requests, the checks
 /// before anything is sent, and the results the agent and "What Doddy did" get.
 
 private func purchaseFixture(_ name: String) throws -> Data {
@@ -37,7 +37,7 @@ private final class PaymentsTransport: HTTPTransport, @unchecked Sendable {
 
 final class PaymentsContractTests: XCTestCase {
     func testEveryFixtureDecodes() throws {
-        let native = try decodePurchase(PrepareResult.self, "prepare-result-native")
+        let native = try decodePurchase(PurchasePrepareResult.self, "prepare-result-native")
         XCTAssertEqual(native.purchase.kind, .native)
         XCTAssertEqual(native.purchase.status, .awaitingTap)
         XCTAssertEqual(native.methods, [.applePay, .blik])
@@ -46,7 +46,7 @@ final class PaymentsContractTests: XCTestCase {
         XCTAssertNil(native.purchase.checkoutHost)
         XCTAssertNotNil(native.expiryDate)
 
-        let checkout = try decodePurchase(PrepareResult.self, "prepare-result-checkout")
+        let checkout = try decodePurchase(PurchasePrepareResult.self, "prepare-result-checkout")
         XCTAssertEqual(checkout.purchase.kind, .checkout)
         XCTAssertEqual(checkout.methods, [])
         XCTAssertEqual(checkout.purchase.checkoutHost, "shop.example.pl")
@@ -223,7 +223,7 @@ final class PurchaseRulesTests: XCTestCase {
     }
 
     func testTheApplePaySheetNamesWhoIsReallyPaid() throws {
-        let prepared = try decodePurchase(PrepareResult.self, "prepare-result-native")
+        let prepared = try decodePurchase(PurchasePrepareResult.self, "prepare-result-native")
         let sheet = ApplePaySheet(prepared: prepared)
         XCTAssertEqual(sheet.lines.map(\.label), ["Kino Muranów (test, no real money)", "Doddy (test)"])
         XCTAssertEqual(sheet.lines.last?.amount, Decimal(56))

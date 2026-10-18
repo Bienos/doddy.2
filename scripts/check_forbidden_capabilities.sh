@@ -40,11 +40,11 @@
 #    ADR-303), no proxy execution,
 #    and Monid only in the web search module, with fixed endpoints (web search, news, places; ADR-489; no discover/inspect: the model
 #    can never pick another paid endpoint),
-#  - backend: Stripe's API only in backend/src/payments/stripe.ts (ADR-490), so every request that can
-#    move money goes through the one file that encodes it,
+#  - backend: Stripe's API only in backend/src/payments/stripe.ts (ADR-530), so every request that can
+#    move money goes through the one file that encodes it, and no Stripe SDK or Stripe key in the app or repo,
 #  - Apple Pay (PassKit) only in DoddyApp/Features/Payments/ApplePayPresenter.swift, and Safari's view
 #    (SFSafariViewController, never a web view Doddy controls) besides Connected Apps only in
-#    DoddyApp/Features/Payments/CheckoutBrowser.swift, for a shop's own checkout page (ADR-490).
+#    DoddyApp/Features/Payments/CheckoutBrowser.swift, for a shop's own checkout page (ADR-530).
 # Exit 0 = clean, 1 = violation.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -73,9 +73,9 @@ web_auth_only='ASWebAuthenticationSession|WKWebView|import WebKit|SFSafariViewCo
 auth_services='import AuthenticationServices'
 apple_sign_in_files='^(DoddyApp/Features/ConnectedApps/SystemWebAuthenticator.swift|DoddyApp/Features/Voice/VoiceAccessGate.swift|DoddyApp/Features/Voice/VoiceAuthSession.swift):'
 voice_auth=DoddyApp/Features/Voice/VoiceAuthSession.swift
-# A shop's own checkout page in Safari's view (ADR-490): SFSafariViewController there, nothing else.
+# A shop's own checkout page in Safari's view (ADR-530): SFSafariViewController there, nothing else.
 checkout_browser=DoddyApp/Features/Payments/CheckoutBrowser.swift
-# Apple Pay (ADR-490): the sheet and its token in one file.
+# Apple Pay (ADR-530): the sheet and its token in one file.
 apple_pay_file=DoddyApp/Features/Payments/ApplePayPresenter.swift
 voice_only='import ElevenLabs'
 memos_dir=DoddyApp/Features/VoiceMemos
@@ -96,7 +96,7 @@ photos_only='import Vision|VNRecognizeText|VNImageRequestHandler|import PhotosUI
 photo_library='PHPhotoLibrary\.(requestAuthorization|authorizationStatus)|PHAsset\.fetch|UIImagePickerController|AVCaptureSession|NSCameraUsageDescription|NSPhotoLibrary(Add)?UsageDescription'
 location_tracking='requestAlwaysAuthorization|NSLocationAlways|allowsBackgroundLocationUpdates|startMonitoringSignificantLocationChanges|startMonitoringVisits|CLBackgroundActivitySession|UIBackgroundModes.*location'
 messaging_secrets='(sk-[A-Za-z0-9]{20,}|sk_[A-Za-z0-9]{20,}|AC[0-9a-f]{32}|SK[0-9a-f]{32}|BEGIN (RSA |EC )?PRIVATE KEY|(KEY|TOKEN|SECRET)=[^[:space:]]{8,})'
-secrets='(sk-[A-Za-z0-9]{20,}|sk_[A-Za-z0-9]{20,}|ak_[A-Za-z0-9_-]{20,}|monid_(live|test)_[A-Za-z0-9_-]{16,}|xi-api-key|api[_-]?key[[:space:]]*[:=][[:space:]]*"[^"]+"|BEGIN (RSA |EC )?PRIVATE KEY)'
+secrets='(sk-[A-Za-z0-9]{20,}|sk_[A-Za-z0-9]{20,}|(sk|rk)_(test|live)_[A-Za-z0-9]{10,}|whsec_[A-Za-z0-9]{10,}|ak_[A-Za-z0-9_-]{20,}|monid_(live|test)_[A-Za-z0-9_-]{16,}|xi-api-key|api[_-]?key[[:space:]]*[:=][[:space:]]*"[^"]+"|BEGIN (RSA |EC )?PRIVATE KEY)'
 allowed_permissions='NSAlarmKitUsageDescription|NSMicrophoneUsageDescription|NSSpeechRecognitionUsageDescription|NSCalendarsFullAccessUsageDescription|NSRemindersFullAccessUsageDescription|NSContactsUsageDescription|NSLocationWhenInUseUsageDescription|NSFaceIDUsageDescription'
 backend_src=backend/src
 # Drops comment-only lines from `grep -n` output (file:line:   // …, /// …, * …).
@@ -108,7 +108,7 @@ tools_catalog=backend/src/tools/catalog.ts
 tools_mock=backend/src/tools/mock.ts
 # Web search: the only file that may talk to Monid.
 websearch=backend/src/tools/websearch.ts
-# Payments (ADR-490): the only file that may talk to Stripe.
+# Payments (ADR-530): the only file that may talk to Stripe.
 stripe_gateway=backend/src/payments/stripe.ts
 # "Hey Doddy" (ADR-254): the wake-word engine and its recorder in one file, so "what it hears
 # isn't kept or sent" stays checkable.
@@ -139,11 +139,15 @@ if grep -RInE --include='*.swift' "$web_auth_only" "${dirs[@]}" | code_only | gr
   echo "FAIL: web authentication / web views outside $web_auth_file and, for Safari's view, $checkout_browser." >&2; status=1
 fi
 
-# The checkout page (ADR-490): Safari's own view only, never WebKit or a web sign-in.
+# The checkout page (ADR-530): Safari's own view only, never WebKit or a web sign-in.
 if [ -f "$checkout_browser" ] && grep -nE 'WKWebView|import WebKit|ASWebAuthenticationSession|import AuthenticationServices|evaluateJavaScript' "$checkout_browser" | code_only; then
   echo "FAIL: $checkout_browser may only show Safari's view (SFSafariViewController)." >&2; status=1
 fi
-# Apple Pay (ADR-490): PassKit only where the sheet is shown and its token handed to Doddy's server.
+# Payments (ADR-530): no Stripe SDK in any app target; the phone talks only to Doddy's server.
+if grep -RInE --include='*.swift' 'import Stripe|STPAPIClient|StripeAPI\.' "${dirs[@]}" | code_only; then
+  echo "FAIL: a Stripe SDK in the app. Payments go through Doddy's server (backend/src/payments)." >&2; status=1
+fi
+# Apple Pay (ADR-530): PassKit only where the sheet is shown and its token handed to Doddy's server.
 if grep -RInE --include='*.swift' 'import PassKit|PKPayment|PayWithApplePayButton|PKPaymentAuthorizationController' "${dirs[@]}" | code_only | grep -v "^$apple_pay_file:"; then
   echo "FAIL: Apple Pay (PassKit) outside $apple_pay_file." >&2; status=1
 fi

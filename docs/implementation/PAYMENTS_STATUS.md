@@ -1,10 +1,10 @@
-# Payments: Apple Pay, BLIK and the shop's checkout (ADR-490)
+# Payments: Apple Pay, BLIK and the shop's checkout (ADR-530)
 
 Status 2026-10-18. Owner: "connect it with Doddy, I want a seamless Apple Pay experience or BLIK for Doddy to pay for stuff", then chose **both** ways below and a PR. This page says what is built, what is only written, and what has to happen before real money moves.
 
 ## What the user sees
 
-1. They say what to buy. The agent calls `prepare_purchase` (only if Settings › Connections › **Payments** is on; it starts off like every connection).
+1. They say what to buy. The agent calls `prepare_purchase` (only if Settings › Connections › **Payments** is on; it starts off like every connection). Under ASK-01 (ADR-483) the Buy card is the tool's own payload card: only a tap on it pays (`AskFirst` `.ownPayloadCard`, `"ask": "tap"` in `tools.json`).
 2. Doddy's server checks it against the limits and keeps the purchase with a **single-use approval bound to exactly what the card shows**, valid 5 minutes. Only then does the **Buy card** appear: shop, what is bought, price, and who is paid.
 3. One of two kinds:
    - **Native** (test mode only in this milestone): **Apple Pay** (one tap, Face ID) or a **BLIK** code typed on the card and approved in the bank app. The payment goes to Doddy's Stripe account on **test keys**; the card says "Test · no real money" and the Apple Pay sheet says "Doddy (test)", never the shop's name.
@@ -19,7 +19,7 @@ From the payments research (owner's doc "Doddy Payments Research", 2026-10-18, w
 - **Who is paid:** Doddy must not charge the user and then pay a shop itself. That looks like money remittance under PSD2 (a payment-institution licence, UUP art. 150 fines), Stripe restricts it as payment facilitation, and Apple's acceptable-use rules ban a substitute merchant of record. So: test payments to Doddy now, the shop's own checkout for real purchases, and later Stripe Shared Payment Tokens (the shop charges) or Apple's Pay-on-behalf delegate API.
 - **SCA:** each tapped purchase is customer-initiated and needs strong customer authentication. Apple Pay's Face ID and the bank-app BLIK approval are that; Doddy's own Face ID prompt would not be.
 - **Apple Pay rule:** a saved Apple Pay method may not be charged while the user is in the flow, so every purchase shows a fresh Apple Pay sheet.
-- **No Stripe SDK in the app:** its networking and telemetry would break the capability guard's "the app talks only to Doddy's server" claim. The phone passes the Apple Pay token to Doddy's server, which creates the payment with Stripe using the same token parameters Stripe's own SDK sends (`pk_token…`, read in stripe-ios `Token+API.swift`).
+- **No Stripe SDK in the app:** its networking and telemetry would break the capability guard's "the app talks only to Doddy's server" claim (the guard now fails on `import Stripe…`). The phone passes the Apple Pay token to Doddy's server, which makes three Stripe calls: the token to a card token with the same parameters Stripe's own SDK sends (`pk_token…`, read in stripe-ios `Token+API.swift`), that to a card PaymentMethod (`card[token]`, which Stripe's API reference documents "for Apple Pay", read 2026-10-18), then a confirmed PaymentIntent with that `payment_method`. Only the last call can charge; each is capped at 5 seconds so all three end before the phone stops waiting (20 s).
 
 ## What is built
 
@@ -27,7 +27,7 @@ From the payments research (owner's doc "Doddy Payments Research", 2026-10-18, w
 |---|---|---|
 | API contract and fixtures | `contracts/purchases/` | Written; both sides decode the same JSON |
 | Server: prepare, pay (Apple Pay, BLIK), status, cancel, hand-off, report, list; limits; approvals; Stripe over HTTPS; mock gateway | `backend/src/payments/` | Built; tested offline with a mock gateway and a fake Stripe (see the PR) |
-| Rules with no UI: contract types, client, price format, BLIK code, checkout link check, voice tool parsing, replies | `Packages/DoddyCore/Sources/DoddyCore/Payments/` | Written with tests (`PaymentsTests.swift`); **not compiled here** (no Swift on this machine); CI runs them on the PR |
+| Rules with no UI: contract types, client, price format, BLIK code, checkout link check, voice tool parsing, replies | `Packages/DoddyCore/Sources/DoddyCore/Payments/` | Written with tests (`PaymentsTests.swift`, plus payments cases in `AskFirstTests`, `DataFlowTests`, `ToolCatalogTests`); **not compiled here** (no Swift on this machine, swift.org unreachable) and hosted CI was blocked by GitHub billing on 2026-10-18 |
 | Buy card, Apple Pay sheet, Safari checkout, BLIK wait, receipt | `DoddyApp/Features/Payments/` | Written; **not compiled or run** |
 | Voice controller and screen | `VoiceSessionController`, `VoiceView` | `.purchase` card, `prepare_purchase` routing |
 | Settings switch | Connections › Money › Payments | Off by default |
@@ -45,6 +45,10 @@ From the payments research (owner's doc "Doddy Payments Research", 2026-10-18, w
 
 **Voice agent:** sync `prepare_purchase` to the live ElevenLabs agent (`voice-agent/README.md`) and replace `not_synced` with its id. Until then only the OpenAI Realtime voice (which reads `tools.json`) can call it.
 
+## Hosting: the database must survive a restart
+
+Purchases, their single-use approvals and the daily limits live in the backend's SQLite file (`DODDY_DB_PATH`). On Render's free plan (`render.yaml`) that file resets on every restart or deploy. In test mode that only loses records (Stripe keeps its own; "Check again" then can't find the purchase and the card stays "not sure", never "paid"). **Before any real money, the backend needs a persistent disk** (a Render paid plan with a disk mounted at the database path, or another host), otherwise the daily limit could be bypassed by a restart and a payment's record could be lost.
+
 ## Not done, and before real money
 
 - **Live payments are blocked on purpose** (config refuses live keys). Before switching: a Polish counsel's opinion on the no-licence model, Stripe's view of Doddy's business (intermediaries can't use reusable BLIK; P24 bans marketplaces), terms of service with a liability cap, a DPIA, and the AI Act Art. 50 disclosure checked.
@@ -52,3 +56,15 @@ From the payments research (owner's doc "Doddy Payments Research", 2026-10-18, w
 - **Not verified:** Stripe accepting `pk_token` from a server with a secret key (Stripe's SDK sends it with a publishable key); a test-mode run against Stripe; BLIK's `requires_action` → succeeded transition on a real test account; any Swift compile; the card on a device at large Dynamic Type; VoiceOver; the Apple Pay sheet.
 - **Translations:** the card is in English and Polish; the eight draft languages show it in English. Server summaries are English.
 - **Webhooks:** none. Status is read from Stripe when the card or "Check again" asks, which is enough for one user on test keys.
+
+## Evidence (2026-10-18, rebased onto c61f023d: BLIK transfers #85 and ASK-01)
+
+Run here (Linux, Node 22, Python 3; **no Swift**):
+- Backend: `tsc` build clean; `node --test` 297 of 297 pass (all backend tests, payments included: Stripe's three Apple Pay calls, test-key-only gateway, 5-second call cap, PaymentMethod failure is `not_sent`, approvals, limits, mock gateway).
+- `scripts/check_forbidden_capabilities.sh` PASS (with probes: a `sk_test_…` key in `backend/src` and `import StripeApplePay` in the app each make it fail).
+- `scripts/voice_agent_spec.py check` PASS (83 tools; `prepare_purchase` asks by `tap`), phone agent PASS, string catalogs, site pages, blog, day page, platform specs, imported pack: PASS.
+
+**NOT RUN:** `swift test` for DoddyCore, the app type-check, any iOS build, the app on a device or simulator, Apple Pay's sheet, a Stripe test-mode run, VoiceOver and large Dynamic Type on the card. Nothing on the iPhone side is "tested" until those run.
+
+Review fixes in this round: `PrepareResult` renamed `PurchasePrepareResult` (it collided with the online-accounts type of the same name); Apple Pay goes token → PaymentMethod → PaymentIntent (documented Stripe parameters); each Stripe call capped at 5 s; the gateway itself refuses non-test keys; a tool error or timeout is "unknown" for the agent; an untouched Buy card is dropped on stop, failure, disconnect and a new start, and its approval cancelled on the server; the card stays while the Apple Pay sheet is open; Cancel only while BLIK waits at the bank; the delegate uses PassKit's async method; the screen scrolls to the Buy card; "What leaves this iPhone" and the privacy draft list payments; the guard bans a Stripe SDK in the app and Stripe-style keys in the repo.
+

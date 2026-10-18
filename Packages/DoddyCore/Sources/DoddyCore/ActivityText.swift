@@ -48,7 +48,7 @@ public enum ActivityText {
     /// Every title `ActivityRequest.describe` writes, in Polish.
     static let polishTitles: [String: String] = [
         "Searched your notes": "Przeszukano notatki",
-        // ADR-490.
+        // ADR-530.
         "Pay for something": "Zapłać za coś",
         "Open a checkout": "Otwórz stronę płatności",
         "Save a note": "Zapisz notatkę",

@@ -69,7 +69,7 @@ export function buildApp(
     completionMode: toolsProvider.mode === "mock" ? "mock" : (config.composio?.completionMode ?? "verifier"),
     log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`),
   });
-  // Purchases (ADR-490). Mock: the demo gateway, never Stripe. Live: Stripe on a validated test key,
+  // Purchases (ADR-530). Mock: the demo gateway, never Stripe. Live: Stripe on a validated test key,
   // or no gateway at all (native purchases say "not set up"; checkout still works). Never mock in live.
   const paymentGateway =
     overrides.paymentGateway !== undefined

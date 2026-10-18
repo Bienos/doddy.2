@@ -1,6 +1,6 @@
 import Foundation
 
-// Swift mirror of Doddy's purchases API (contracts/purchases/README.md, ADR-490). The server and
+// Swift mirror of Doddy's purchases API (contracts/purchases/README.md, ADR-530). The server and
 // these types decode the same fixtures in contracts/purchases/, so a change on one side that the
 // other doesn't know fails a test before it reaches a phone.
 
@@ -111,7 +111,7 @@ public struct PurchaseView: Codable, Equatable, Sendable, Identifiable {
 
 /// The card's data: the purchase, and a single-use approval bound by the server to exactly what
 /// the card shows. It runs out at `expiresAt`.
-public struct PrepareResult: Codable, Equatable, Sendable {
+public struct PurchasePrepareResult: Codable, Equatable, Sendable {
     public let mode: PurchaseMode
     public let purchase: PurchaseView
     public let approvalId: UUID

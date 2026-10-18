@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<!-- Doddy app with the widgets' App Group and Apple Pay (ADR-490). Use with
+<!-- Doddy app with the widgets' App Group and Apple Pay (ADR-530). Use with
      DODDY_APPLE_PAY_MERCHANT_ID set to a merchant ID registered in the developer account (paid
      team), with its Apple Pay payment processing certificate made from Stripe's request. -->
 <plist version="1.0">

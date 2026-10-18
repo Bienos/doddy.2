@@ -105,7 +105,7 @@ public enum AskFirst {
             return .ownPayloadCard
         case .preparePurchase:
             // The Buy card shows the exact purchase the server approved; only a tap on Apple Pay,
-            // BLIK or the shop's checkout moves money (ADR-490).
+            // BLIK or the shop's checkout moves money (ADR-530).
             return .ownPayloadCard
         case .cloudTool(let call):
             return .serverCard(isWrite: call.isWrite)

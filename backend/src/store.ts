@@ -509,7 +509,7 @@ export class Store {
   /**
    * Retention (review 2026-10-11): drops attempts and approvals a day after they expire, usage
    * periods no limit reads any more, receipts older than 90 days or beyond the newest 200 per
-   * user (per table), and purchases older than 90 days (ADR-490). Returns how many rows went, per table.
+   * user (per table), and purchases older than 90 days (ADR-530). Returns how many rows went, per table.
    */
   prune(now: number): Record<string, number> {
     const DAY = 86_400_000;
@@ -627,7 +627,7 @@ export class Store {
     return row ? { outcome: row.outcome, externalId: row.external_id } : null;
   }
 
-  // ------------------------------------------------------------ purchases (ADR-490)
+  // ------------------------------------------------------------ purchases (ADR-530)
 
   /**
    * A new purchase and its single-use approval, in one transaction: either the card has both or
@@ -763,7 +763,7 @@ export type PurchaseStatusValue =
   | "user_reported_paid";
 
 /**
- * One purchase (ADR-490). Never a card number, Apple Pay token or BLIK code: `payment_id` is
+ * One purchase (ADR-530). Never a card number, Apple Pay token or BLIK code: `payment_id` is
  * Stripe's PaymentIntent id (or the mock's), `reason` a short fixed code for the summary.
  */
 export interface PurchaseRow {

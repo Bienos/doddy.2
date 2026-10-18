@@ -1,6 +1,6 @@
 import Foundation
 
-// Rules for paying for things by voice (ADR-490), with no UI so they run on Linux. The server
+// Rules for paying for things by voice (ADR-530), with no UI so they run on Linux. The server
 // checks all of it again; these checks give the agent a precise reason before anything is sent.
 
 /// What the agent proposed, after the app's checks. Nothing is charged from this: the server turns
@@ -129,7 +129,7 @@ public struct ApplePaySheet: Equatable, Sendable {
     public let currency: String
     public let countryCode: String
 
-    public init(prepared: PrepareResult) {
+    public init(prepared: PurchasePrepareResult) {
         let purchase = prepared.purchase
         let amount = PurchaseMoney.decimal(minor: purchase.amountMinor)
         let item = purchase.testMode ? "\(purchase.merchantName) (test, no real money)" : purchase.merchantName

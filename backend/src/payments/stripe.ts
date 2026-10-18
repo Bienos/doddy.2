@@ -6,7 +6,7 @@ import {
 } from "./gateway.js";
 
 /**
- * Stripe over HTTPS (ADR-490), with Doddy's own secret key on Doddy's server. The ONLY file that
+ * Stripe over HTTPS (ADR-530), with Doddy's own secret key on Doddy's server. The ONLY file that
  * may name Stripe's API host (scripts/check_forbidden_capabilities.sh). No Stripe SDK: plain
  * `fetch`, form-encoded bodies with Stripe's bracket notation, the key in the Authorization header.
  *
@@ -23,9 +23,14 @@ import {
  * codes differ by version (older versions say `generic_decline` for BLIK failures); they are
  * informational only and never change what the user is told was charged.
  *
+ * Apple Pay is three calls: the Apple Pay token to a card token (`/v1/tokens`), the card token to a
+ * card PaymentMethod (`/v1/payment_methods` with `card[token]`, which Stripe's API reference
+ * documents "for Apple Pay", read 2026-10-18), then a confirmed PaymentIntent with that
+ * `payment_method`. Only the last one can charge.
+ *
  * Not verified against Stripe (no network or keys in development): that `/v1/tokens` accepts
  * `pk_token…` with a secret key (Stripe's iOS SDK sends the same parameters with a publishable
- * key, StripeApplePay Token+API.swift), and that `payment_method_data[card][token]` is accepted.
+ * key, StripeApplePay Token+API.swift).
  */
 const STRIPE_API = "https://api.stripe.com";
 
@@ -35,10 +40,19 @@ export const STRIPE_SIMULATOR_TOKEN = "tok_visa";
 const TEST_KEY = /^(sk|rk)_test_/;
 const PAYMENT_ID = /^pi_[A-Za-z0-9_]{1,255}$/;
 const TOKEN_ID = /^tok_[A-Za-z0-9_]{1,255}$/;
+const PAYMENT_METHOD_ID = /^pm_[A-Za-z0-9_]{1,255}$/;
 const PURCHASE_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const SHORT_CODE = /^[a-z_]{1,64}$/;
 /** Errors from `fetch` that prove the connection was never made, so nothing reached Stripe. */
 const NEVER_CONNECTED = new Set(["ENOTFOUND", "EAI_AGAIN", "ECONNREFUSED", "ERR_INVALID_URL"]);
+
+/**
+ * The longest one Stripe call may take. Apple Pay makes three calls in a row and the phone waits
+ * 20 seconds for `/v1/purchases/pay` (URLSessionTransport), so 3 × 5 s ends before the phone gives
+ * up and the answer it reads is the real one. A PaymentIntent call that runs out is `unknown` and
+ * is looked up again, never retried.
+ */
+export const STRIPE_CALL_CAP_MS = 5_000;
 
 export interface StripeSettings {
   secretKey: string;
@@ -54,11 +68,18 @@ interface StripeAnswer {
 
 export class StripeHttpGateway implements PaymentGateway {
   readonly mode = "test" as const;
+  /** `settings.timeoutMs`, never more than `STRIPE_CALL_CAP_MS`. */
+  readonly callTimeoutMs: number;
 
   constructor(
     private readonly settings: StripeSettings,
     private readonly fetchImpl: typeof fetch = fetch,
-  ) {}
+  ) {
+    // Config already refuses live keys at start-up; this gateway refuses them too, so no other
+    // path can build one that moves real money in this milestone.
+    if (!TEST_KEY.test(settings.secretKey)) throw new Error("Stripe test keys only in this milestone (ADR-530)");
+    this.callTimeoutMs = Math.max(1, Math.min(settings.timeoutMs, STRIPE_CALL_CAP_MS));
+  }
 
   async payWithApplePay(input: {
     purchaseId: string;
@@ -69,10 +90,10 @@ export class StripeHttpGateway implements PaymentGateway {
     idempotencyKey: string;
   }): Promise<GatewayPayment> {
     const token = await this.cardToken(input.applePay, input.idempotencyKey);
+    const paymentMethod = await this.cardPaymentMethod(token, input.idempotencyKey);
     return this.createPaymentIntent(input, [
       ["payment_method_types[]", "card"],
-      ["payment_method_data[type]", "card"],
-      ["payment_method_data[card][token]", token],
+      ["payment_method", paymentMethod],
     ]);
   }
 
@@ -146,6 +167,22 @@ export class StripeHttpGateway implements PaymentGateway {
     return id;
   }
 
+  /**
+   * A card PaymentMethod from the card token, as Stripe documents for Apple Pay tokens. Nothing is
+   * charged by this call either, so any failure, a timeout included, is `not_sent`.
+   */
+  private async cardPaymentMethod(token: string, idempotencyKey: string): Promise<string> {
+    let answer: StripeAnswer;
+    try {
+      answer = await this.request("POST", "/v1/payment_methods", [["type", "card"], ["card[token]", token]], `${idempotencyKey}:method`);
+    } catch {
+      throw new GatewayError("not_sent");
+    }
+    const id = answer.status === 200 ? answer.body?.id : undefined;
+    if (typeof id !== "string" || !PAYMENT_METHOD_ID.test(id)) throw new GatewayError("not_sent");
+    return id;
+  }
+
   private async createPaymentIntent(
     input: { purchaseId: string; amountMinor: number; description: string; idempotencyKey: string },
     method: Params,
@@ -184,7 +221,7 @@ export class StripeHttpGateway implements PaymentGateway {
         headers,
         ...(body !== undefined ? { body } : {}),
         redirect: "error",
-        signal: AbortSignal.timeout(this.settings.timeoutMs),
+        signal: AbortSignal.timeout(this.callTimeoutMs),
       });
     } catch (error) {
       throw new GatewayError(neverConnected(error) ? "not_sent" : "unknown");
