@@ -170,7 +170,7 @@ public enum DataFlow {
                 note: state.tokenServerSet ? "Provider credentials stay on DODDY's server. Your voice and any approved conversation context go directly to the selected provider." : "Voice isn't set up yet."),
             DataFlowRow(
                 id: "doddyServer", destination: "Your Doddy server (Google, Microsoft Outlook, Notion, Todoist via Composio)",
-                what: "What you ask for: a date, a search word, or the text of a draft, reply or task you confirm. Never your saved notes. With Read an email or Read a Notion page on, that one email or page comes back.",
+                what: "What you ask for, only after you say yes: a date, a search word, or the text of a draft, email, reply or task you tap to confirm. An email you send or forward goes on to its recipient. Never your saved notes. With Read an email or Read a Notion page on, that one email or page comes back.",
                 when: "When you use Connected Apps, or Doddy uses an online-account tool you switched on.",
                 isActive: state.doddyServerSet,
                 note: !state.doddyServerSet

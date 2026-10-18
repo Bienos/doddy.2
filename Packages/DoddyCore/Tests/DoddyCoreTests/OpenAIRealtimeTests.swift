@@ -61,7 +61,9 @@ final class OpenAIRealtimeTests: XCTestCase {
         XCTAssertEqual(VoiceTokenServer.openAIGrant(status: 200, body: Data(#"{"token":"","provider":"openai","model":"m"}"#.utf8)), .failure(.badResponse))
         XCTAssertEqual(VoiceTokenServer.openAIGrant(status: 401, body: Data()), .failure(.sessionExpired))
         XCTAssertEqual(VoiceTokenServer.openAIGrant(status: 503, body: Data()), .failure(.busy))
-        XCTAssertEqual(VoiceTokenServer.openAIGrant(status: 500, body: Data()), .failure(.serverNotConfigured))
+        // Since 754e5d6 a 500 or 503 means "not configured" only when the server says so (VoiceTokenTests).
+        XCTAssertEqual(VoiceTokenServer.openAIGrant(status: 500, body: Data()), .failure(.busy))
+        XCTAssertEqual(VoiceTokenServer.openAIGrant(status: 500, body: Data(#"{"error":"server_not_configured"}"#.utf8)), .failure(.serverNotConfigured))
         XCTAssertEqual(VoiceTokenServer.openAIGrant(status: 400, body: Data()), .failure(.serverProblem(status: 400)))
     }
 
@@ -105,8 +107,8 @@ final class OpenAIRealtimeTests: XCTestCase {
             XCTAssertEqual(tool["type"] as? String, "function")
             XCTAssertNotNil(tool["parameters"] as? [String: Any])
         }
-        // Web tools stay listed, so the model hears they're unavailable instead of inventing an answer.
-        XCTAssertTrue(spec.contains { $0.runsOn == .web })
+        // ASK-01: every tool runs on the phone, where the app asks first; there are no web tools.
+        XCTAssertFalse(spec.contains { $0.runsOn == .web })
         XCTAssertThrowsError(try OpenAIRealtimeWire.realtimeTools(fromToolsJSON: Data("[]".utf8)))
     }
 

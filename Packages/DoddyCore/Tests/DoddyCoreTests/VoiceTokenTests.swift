@@ -33,7 +33,8 @@ final class VoiceTokenTests: XCTestCase {
         XCTAssertEqual(VoiceTokenServer.wakeWordKey(status: 200, body: Data(#"{"token":"jwt"}"#.utf8)), .failure(.badResponse),
                        "an ElevenLabs token is never taken for a key")
         XCTAssertEqual(VoiceTokenServer.wakeWordKey(status: 401, body: Data()), .failure(.sessionExpired))
-        XCTAssertEqual(VoiceTokenServer.wakeWordKey(status: 500, body: Data()), .failure(.serverNotConfigured))
+        XCTAssertEqual(VoiceTokenServer.wakeWordKey(status: 500, body: Data()), .failure(.busy))
+        XCTAssertEqual(VoiceTokenServer.wakeWordKey(status: 500, body: Data(#"{"error":"server_not_configured"}"#.utf8)), .failure(.serverNotConfigured))
         XCTAssertEqual(VoiceTokenServer.wakeWordKey(status: 400, body: Data()), .failure(.serverProblem(status: 400)), "a server from before ADR-328")
     }
 

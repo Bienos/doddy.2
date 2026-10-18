@@ -41,6 +41,24 @@ and 36 language presets; keep them when applying (both lists are replaced wholes
 
 **Not yet applied to the live agent (ADR-441, 2026-10-11):** this repository now has the `note_capability_gap` tool, the `{{learned_context}}` variable (declared in `session.json`) and two paragraphs in `instructions.md` (what Doddy learned, and when to note a gap). Until the owner applies them (the live prompt is ahead of `instructions.md`, so merge the two paragraphs rather than overwriting it), the app already sends the variable, which the live prompt ignores, and Doddy never calls the new tool. Run `compare` afterwards.
 
+**Applied to the live agent 2026-10-18 (ADR-510, BLIK transfers; owner: "sync it to ElevenLabs now"):**
+- **Read first:** live version `agtvrsn_3501m5219zqke9tv2thaxz3m729t` (the rollback point), 61 tools. Its prompt is the owner's own rewrite (headings such as "# Identity", "# Tools", "# Tool results"), not this folder's `instructions.md`, so `compare` reports the whole prompt as drift. That is not from this change.
+- **Tool:** `draft_blik_transfer` created as client tool `tool_5701m57c1717fmebcs14kbrjqmdq`, exactly as `voice_agent_spec.py elevenlabs` renders it, and attached as the 62nd tool. The other 61 ids are unchanged.
+- **Prompt:** the owner's text is kept word for word. The `instructions.md` lines weren't copied in; three passages were added in the live prompt's own style:
+  - a "## BLIK transfers" section after "## Email";
+  - what a `"shown"` result means, after the `"opened"` line in "# Tool results";
+  - "Send or pay money …" in "# Unsupported capabilities".
+- **Version:** `agtvrsn_3501m5219zqke9tv2thaxz3m729t` → `agtvrsn_0201m57cm3vnfgsrv3fw49mqb9mk`.
+- **Checked after saving:** the full agent was read back. The prompt is byte for byte the intended merge, the tool list is the 61 plus the new one, and no other agent setting changed. The live tool matches this spec field by field.
+- **Then `paid` removed** (owner: "yes, remove 'paid' from the live prompt"). It was in the live prompt's list of success prefixes, though no Doddy tool returns it, so Doddy could never read a result as a payment made.
+  - **Version:** `agtvrsn_0201m57cm3vnfgsrv3fw49mqb9mk` (rollback) → `agtvrsn_4301m57e2fxjfkb9fsc54tmjtyca`.
+  - **Checked:** read back, that one line is the only change to the prompt, and the 62 tool ids are unchanged.
+- **Correction (same day): that save overwrote the owner's ASK-01 sync, and it was restored.**
+  - **What happened:** at 11:59 UTC another session (`claude/trusting-sagan-7lky84`, commit 43a94083) applied ASK-01 with the owner's yes, as `agtvrsn_6401m57e22qwepwtr1ywwe64x2k4` (85 tools). The "paid" edit above had read the prompt before that, the worker restarted, and the save went out without reading the version again. So `agtvrsn_4301m57e2…` replaced ASK-01's prompt and tool list with the old ones. The 27 tool edits noted at the time were ASK-01's, not an unknown change.
+  - **Restored** at the owner's choice: `agtvrsn_4301m57e2fxjfkb9fsc54tmjtyca` → `agtvrsn_2801m57etpkkfhfbjvqt95nptfha`. That is ASK-01's prompt with only its `paid` line removed, plus its 85 tools.
+  - **Checked:** read back in full, the prompt is ASK-01's minus that line, the tool list and every embedded tool config equal `agtvrsn_6401…`'s, and no other setting differs. Rollback to ASK-01 exactly: `agtvrsn_6401m57e22qwepwtr1ywwe64x2k4`.
+  - **Rule for every live edit:** read the version immediately before saving, never from a read made before a pause or restart. This branch's `tools.json` doesn't have the ASK-01 tools; `claude/trusting-sagan-7lky84` does.
+
 **Not yet applied to the live agent (2026-10-16):** `start_translator` now starts immediately after the user asks, with no confirmation card or forced pre-tool speech. The app still gives the AI-translator disclosure after starting and keeps microphone access subject to iOS permission. Read the live prompt and tools before syncing; preserve remote edits and compare the fetched configuration after saving.
 
 Editing the agent in the ElevenLabs dashboard without updating these files is drift; the compare
@@ -255,3 +273,13 @@ places phone calls through the Twilio number (ADR-152, ADR-172). Same three file
 - **Prompt:** the round 6 lines of `instructions.md` (tags, free time, leave-by, Outlook, list templates, "What you cannot do yet", the online-account rule), merged with the live-only lines above.
 - **Version:** `agtvrsn_2901m4ny3aecery96s4qqx3z5zeh` → `agtvrsn_9901m4nydc9qegk8npkv8jvprm90`, 57 tools. The stored prompt and tool list were read back from the save.
 - **Mixed versions:** an installed app from before this round answers "unsupported" to the six new tools and ignores `template`. A backend without round 6 refuses the four Outlook tools as unknown, and the Outlook toolkit only runs against the mock until a Composio Outlook auth config exists (`docs/implementation/ROUND6_REPORT_2026-10-11.md`).
+
+**Applied to the live agent 2026-10-18 (ASK-01, ADR-483 to ADR-489; the owner said yes to the exact diff).**
+- **Re-read first:** version `agtvrsn_0201m57cm3vnfgsrv3fw49mqb9mk` (62 tools), read again right before writing. Its prompt is the owner's dashboard DODDY persona prompt, not `instructions.md`, so this round edited that text in place instead of replacing it. It also carries a "BLIK transfers" section and `draft_blik_transfer` from another session; both are kept.
+- **Prompt:** a new "Always ask first (ASK-01)" section; "Approval cards" now has no exceptions (translator and lists ask too); the Wikipedia and weather lines became `web_search`, `news_search` and `find_places`; lines for the Google and Outlook calendar tools, `rename_todoist_task` and the email send/reply/forward/bin tools; the `sent`, `replied`, `forwarded`, `trashed` and `answered` prefixes; "Delete anything for good" added to what Doddy can't do; one ASK-01 guardrail. The "## Approval cards" heading lost its trailing space.
+- **Updated in place (27):** the read tools, lists, translator, `parking_spot`, `search_memories` and `note_capability_gap` got the ASK-01 descriptions, `pre_tool_speech: force` and a 60 s timeout (90 s for `start_translator`). The two live-only lines (`@Marta` on `search_memories`, `pay_for_page` on `note_capability_gap`) were merged into `tools.json` first, so they stay.
+- **New client tools (27):** ids are in `tools.json` (`x_doddy.elevenlabs_tool_id`).
+- **Detached, not deleted:** `geocode_place`, `get_weather`, `wikipedia_search`, `wikipedia_summary`; the app can't ask before ElevenLabs runs them.
+- **Left as they are (live-only):** `draft_blik_transfer`, `pay_for_page`, `add_to_diary`, `upcoming_renewals`. They don't ask in the app's code; they need the owner's decision.
+- **Version:** `agtvrsn_0201m57cm3vnfgsrv3fw49mqb9mk` → `agtvrsn_6401m57e22qwepwtr1ywwe64x2k4`, 85 tools. The stored prompt and tool list were read back and match the approved text exactly; no other agent setting changed. All 81 spec tools were compared with the live tools (description, parameters, timeout, speak-before): no differences. Rollback: the first version.
+- **Mixed versions:** an installed app from before ASK-01 doesn't show the read cards and answers "unsupported" to the 27 new tools. The app side is written but not built (needs a Mac): BLOCKED / NOT RUN.

@@ -178,50 +178,6 @@ struct VoiceSessionReply: Decodable, Sendable {
     let expiresIn: Int
 }
 
-actor VoiceAuthAPI {
-    static let shared = VoiceAuthAPI()
-
-    func signIn(_ identityToken: String, rawNonce: String, provider: String) async throws -> VoiceSessionReply {
-        try await post(["action": "sign-in", "identityToken": identityToken, "rawNonce": rawNonce, "provider": provider])
-    }
-
-    func refresh(_ refreshToken: String) async throws -> VoiceSessionReply {
-        try await post(["action": "refresh", "refreshToken": refreshToken])
-    }
-
-    func signOut(_ accessToken: String) async throws {
-        let _: EmptyReply = try await post(["action": "sign-out"], bearer: accessToken)
-    }
-
-    func deleteAccount(_ accessToken: String) async throws {
-        let _: EmptyReply = try await post(["action": "delete-account"], bearer: accessToken)
-    }
-
-    private func post<T: Decodable>(_ body: [String: Any], bearer: String? = nil) async throws -> T {
-        guard let endpoint = VoiceConfig.authEndpoint else { throw VoiceAuthFailure.serverNotConfigured }
-        var request = URLRequest(url: endpoint, timeoutInterval: 15)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        if let bearer { request.setValue("Bearer \(bearer)", forHTTPHeaderField: "Authorization") }
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
-        let (data, response): (Data, URLResponse)
-        let session = URLSession(configuration: .ephemeral)
-        defer { session.finishTasksAndInvalidate() }
-        do { (data, response) = try await session.data(for: request) }
-        catch { throw VoiceAuthFailure.offline }
-        guard let status = (response as? HTTPURLResponse)?.statusCode else { throw VoiceAuthFailure.badResponse }
-        guard (200..<300).contains(status) else {
-            if status == 401 { throw VoiceAuthFailure.sessionExpired }
-            if status == 404 || status == 500 || status == 503 { throw VoiceAuthFailure.serverNotConfigured }
-            throw VoiceAuthFailure.rejected
-        }
-        guard let decoded = try? JSONDecoder().decode(T.self, from: data) else { throw VoiceAuthFailure.badResponse }
-        return decoded
-    }
-}
-
-private struct EmptyReply: Decodable {}
-
 /// A single Keychain item stores only the DODDY refresh token and Apple's opaque subject.
 /// The short-lived access token stays in memory.
 enum VoiceSessionKeychain {

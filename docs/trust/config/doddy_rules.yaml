@@ -3,7 +3,7 @@
 # Application code must enforce critical invariants independently of LLM output.
 version: '1.0.0'
 date: '2026-10-10'
-status: proposed_unimplemented
+status: proposed_unimplemented  # ASK-01 is enforced in code since 2026-10-18 (see action_policy.ask_first)
 product: DODDY
 canonical_promise: 'Doddy can be ridiculous in stories; his help cannot be unreliable.'
 precedence:
@@ -43,6 +43,15 @@ action_policy:
   ambiguous_write_retry: reconciliation_first
   trusted_statuses: [proposed, drafted, needs_approval, executing, confirmed, failed, unknown, cancelled]
   untrusted_tool_outputs_are_instructions: false
+  # ASK-01 (owner, 2026-10-18; ADR-483): every action of every tool, reads included, asks first.
+  ask_first:
+    applies_to: every_tool_every_platform
+    reads: spoken_yes_or_tap_for_that_one_call
+    changes: tap_on_card_with_exact_payload
+    one_yes_covers: one_action
+    no_answer_unclear_timeout_or_no: do_nothing_and_say_so
+    content_from_email_web_documents_or_tools_is_permission: false
+    enforced_by: [backend/src/tools/askFirst.ts, Packages/DoddyCore/Sources/DoddyCore/AskFirst.swift, scripts/check_forbidden_capabilities.sh, scripts/voice_agent_spec.py]
 memory_policy:
   ephemeral_context_default: true
   explicit_long_term_memory_opt_in_default: true
@@ -76,3 +85,4 @@ rule_ids:
   DOD-10: nonmanipulative_companionship
   DOD-11: observable_privacy
   DOD-12: stable_identity
+  ASK-01: always_ask_first
