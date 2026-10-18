@@ -25,7 +25,7 @@ It prints the plan. Run it again with `--apply --confirm <code>` to write it, th
 
 Two Render facts to know:
 - **Every Render API read returns values,** so the Render API key can read every secret. It lives only in the owner-only 1Password vault.
-- **`sync: false` doesn't work inside an environment group** in `render.yaml`: Render ignores those keys.
+- **`sync: false` doesn't work inside an environment group:** Render ignores those keys. So `render.yaml` puts the messaging secrets on the web service and on the worker as service-level `sync: false` (ADR-495), and Render asks for them twice when the Blueprint is created.
 
 On 18 Oct 2026 the workspace also runs copies of `doddy-voice-token` and `doddy-gateway` on a non-default branch. They aren't managed by the sync tool (owner decision pending).
 

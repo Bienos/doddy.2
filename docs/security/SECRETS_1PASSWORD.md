@@ -99,6 +99,7 @@ Nothing here can be done from a Claude session: it needs your 1Password sign-in.
    Then redeploy `doddy-voice-token` in Vercel and talk to Doddy once.
 8. **The other hosts, one at a time:** `vercel:doddy-gateway`, `vercel:doddy`, `render:doddy`, `render:doddy-messaging`. On Render, redeploy by hand after each one, because auto-deploy is off.
    - **If the Render plan says `add` for keys you know are set,** those values come from an environment group, not the service. Stop and move that target to `render-group:<name>` in the manifest, with the group's id in `hosts.render.envGroups`.
+   - **If you later apply `render.yaml`:** it creates a separate worker that needs the same secrets (ADR-495). Add `doddy-messaging-worker`'s id under `hosts.render.services`, and `render:doddy-messaging-worker` to those secrets' targets.
 9. **Lock 1Password when you're done.** A Touch-ID-unlocked terminal can read the whole account for up to 12 hours.
 
 ## Everyday use

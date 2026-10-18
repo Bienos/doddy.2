@@ -69,7 +69,7 @@ With 1Password (ADR-493): `npm run start:op` takes the secrets from the `doddy-d
 
 ## Before the first deploy (owner)
 1. Apply `render.yaml` in Render. This creates **paid** resources: 2 × starter + basic-256mb Postgres.
-2. Fill the `doddy-messaging-secrets` env group from 1Password: Render doesn't ask for `sync: false` keys in a group. Then set `PUBLIC_BASE_URL` to the service's URL. Later changes go through `tools/secrets/sync.mjs` (`docs/security/SECRETS_1PASSWORD.md`).
+2. Render asks for each secret when the Blueprint is created, once for the web service and once for the worker (ADR-495). Take the values from 1Password, and set `PUBLIC_BASE_URL` to the service's URL. Later changes go through `tools/secrets/sync.mjs` (`docs/security/SECRETS_1PASSWORD.md`).
 3. Twilio:
    - Buy a number and create a Messaging Service with **Advanced Opt-Out** on.
    - Point the inbound webhook at `/webhooks/twilio/sms`.
