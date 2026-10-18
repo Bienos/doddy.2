@@ -22,11 +22,16 @@ public struct ToolDescriptor: Equatable, Sendable {
         case session
     }
 
+    /// ASK-01 (ADR-483): there is no "runs when the agent calls it". Every tool asks first.
     public enum Approval: String, Sendable, CaseIterable {
-        /// Runs when the agent calls it.
-        case none
-        /// Shows a card first; nothing happens until the user taps.
+        /// Changes nothing: the app shows what it will do and runs it on a tap or the user's own
+        /// spoken yes (`AskFirst.Need.yesFirst`).
+        case askFirst
+        /// Shows a card with the exact change first; nothing happens until the user taps.
         case card
+        /// A read through Doddy's server: the server's single-use approval for exactly these
+        /// arguments, sent once the user said yes or tapped.
+        case serverAsk
         /// A card, and the server's single-use approval for exactly the arguments shown.
         case serverApproval
     }
@@ -52,8 +57,9 @@ public struct ToolDescriptor: Equatable, Sendable {
 }
 
 public enum ToolCatalog {
-    /// Every tool in `voice-agent/tools.json`, by name.
-    public static let all: [ToolDescriptor] = phone + web + cloud
+    /// Every tool in `voice-agent/tools.json`, by name. There are no `runs_on: web` tools any more:
+    /// ElevenLabs ran those itself, where the app can't ask first (ASK-01), so they were taken out.
+    public static let all: [ToolDescriptor] = phone + cloud
 
     public static func descriptor(_ name: String) -> ToolDescriptor? {
         byName[name]
@@ -62,22 +68,21 @@ public enum ToolCatalog {
     private static let byName: [String: ToolDescriptor] = Dictionary(uniqueKeysWithValues: all.map { ($0.name, $0) })
 
     private static let phone: [ToolDescriptor] = [
-        // Notes and lists (ADR-216): a note waits for the card; list items the user named go
-        // straight on, with a receipt and Undo.
-        .init(VoiceToolName.searchMemories, .lookup, .none),
+        // Notes and lists (ADR-216). Since ASK-01 list changes show a card too.
+        .init(VoiceToolName.searchMemories, .lookup, .askFirst),
         .init(VoiceToolName.saveMemory, .localChange, .card),
         .init(VoiceToolName.remindAboutNote, .localChange, .card),
-        .init(VoiceToolName.readList, .lookup, .none),
-        .init(VoiceToolName.addToList, .localChange, .none),
-        .init(VoiceToolName.checkOff, .localChange, .none),
-        .init(VoiceToolName.removeFromList, .localChange, .none),
+        .init(VoiceToolName.readList, .lookup, .askFirst),
+        .init(VoiceToolName.addToList, .localChange, .card),
+        .init(VoiceToolName.checkOff, .localChange, .card),
+        .init(VoiceToolName.removeFromList, .localChange, .card),
         .init(VoiceToolName.createList, .localChange, .card),
         .init(VoiceToolName.addIngredients, .localChange, .card),
         // One row on this iPhone, a category only (ADR-440).
-        .init(VoiceToolName.noteCapabilityGap, .localChange, .none),
+        .init(VoiceToolName.noteCapabilityGap, .localChange, .card),
         // Calendar and Reminders.
-        .init(VoiceToolName.readCalendar, .lookup, .none),
-        .init(VoiceToolName.findFreeTime, .lookup, .none),
+        .init(VoiceToolName.readCalendar, .lookup, .askFirst),
+        .init(VoiceToolName.findFreeTime, .lookup, .askFirst),
         .init(VoiceToolName.createCalendarEvent, .localChange, .card),
         .init(VoiceToolName.createReminder, .localChange, .card),
         .init(VoiceToolName.changeCalendarEvent, .localChange, .card),
@@ -88,40 +93,36 @@ public enum ToolCatalog {
         .init(VoiceToolName.moveReminders, .localChange, .card),
         .init(VoiceToolName.undoLast, .localChange, .card),
         // Contacts, timers and alarms, places.
-        .init(VoiceToolName.lookupContact, .lookup, .none),
-        .init(VoiceToolName.upcomingBirthdays, .lookup, .none),
+        .init(VoiceToolName.lookupContact, .lookup, .askFirst),
+        .init(VoiceToolName.upcomingBirthdays, .lookup, .askFirst),
         .init(VoiceToolName.setTimer, .localChange, .card),
         .init(VoiceToolName.setAlarm, .localChange, .card),
-        .init(VoiceToolName.listAlarms, .lookup, .none),
+        .init(VoiceToolName.listAlarms, .lookup, .askFirst),
         .init(VoiceToolName.cancelAlarm, .localChange, .card),
-        // Saving a spot shows a card; "find" answers and "clear" removes the saved spot without
-        // one (ADR-301). The card is the strictest of its three actions.
+        // Saving or clearing a spot shows a card; "find" asks first (ADR-301, ASK-01). The card is
+        // the strictest of its three actions.
         .init(VoiceToolName.parkingSpot, .localChange, .card),
         .init(VoiceToolName.remindWhenToLeave, .localChange, .card),
         // Worked out on the iPhone, or the ECB's public rates file (ADR-270, ADR-300).
-        .init(VoiceToolName.calculate, .lookup, .none),
-        .init(VoiceToolName.convertUnits, .lookup, .none),
-        .init(VoiceToolName.convertCurrency, .lookup, .none),
+        .init(VoiceToolName.calculate, .lookup, .askFirst),
+        .init(VoiceToolName.convertUnits, .lookup, .askFirst),
+        .init(VoiceToolName.convertCurrency, .lookup, .askFirst),
         // Another app opens with it filled in; nothing is sent by Doddy.
         .init(VoiceToolName.openMap, .handoff, .card),
         .init(VoiceToolName.runShortcut, .handoff, .card),
         .init(VoiceToolName.draftMessage, .handoff, .card),
-        // A BLIK transfer on a card; the user sends it in their bank app, never Doddy (ADR-483).
+        // A BLIK transfer on a card; the user sends it in their bank app, never Doddy (ADR-510).
         .init(VoiceToolName.draftBlikTransfer, .handoff, .card),
         // The conversation itself.
-        .init(VoiceToolName.startTranslator, .session, .none),
-        .init(VoiceToolName.stopTranslator, .session, .none),
+        .init(VoiceToolName.startTranslator, .session, .askFirst),
+        .init(VoiceToolName.stopTranslator, .session, .askFirst),
         .init(VoiceToolName.proposePlan, .session, .card),
     ]
-
-    /// Plain HTTPS lookups that ElevenLabs runs itself (`runs_on: web`); the app never sees them.
-    private static let web: [ToolDescriptor] = ["geocode_place", "get_weather", "wikipedia_search", "wikipedia_summary"]
-        .map { ToolDescriptor($0, .lookup, .none, runsOn: .web) }
 
     /// From `CloudToolName`: a write is an account write behind the server's approval, the rest are reads.
     private static let cloud: [ToolDescriptor] = CloudToolName.all.sorted().map { name in
         CloudToolName.isWrite(name)
             ? ToolDescriptor(name, .accountWrite, .serverApproval)
-            : ToolDescriptor(name, .lookup, .none)
+            : ToolDescriptor(name, .lookup, .serverAsk)
     }
 }

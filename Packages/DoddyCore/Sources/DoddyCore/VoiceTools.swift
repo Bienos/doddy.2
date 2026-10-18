@@ -25,7 +25,7 @@ public enum VoiceToolName {
 /// need an iOS permission of its own.
 public enum VoiceConnection: String, CaseIterable, Sendable {
     case calendar, reminders, contacts, timers, maps, shortcuts, messages
-    /// BLIK phone transfers shown on a card for the user to send in their bank app (ADR-483).
+    /// BLIK phone transfers shown on a card for the user to send in their bank app (ADR-510).
     case blik
 
     /// The name shown in Settings and in the agent's replies.
@@ -197,7 +197,7 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case openMap(place: String)
     case runShortcut(name: String)
     case draftMessage(MessageDraft)
-    /// A BLIK phone transfer on a card for the user to send in their bank app (ADR-483). Doddy
+    /// A BLIK phone transfer on a card for the user to send in their bank app (ADR-510). Doddy
     /// never sends money.
     case draftBlikTransfer(BlikTransferDraft)
     /// Gmail, Google Drive, Notion or Todoist through the Doddy server (see OnlineAccounts).

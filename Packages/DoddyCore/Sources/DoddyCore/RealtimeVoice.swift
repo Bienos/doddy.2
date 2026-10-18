@@ -153,11 +153,20 @@ public struct RealtimeToolSpec: Equatable, Sendable, Decodable {
     public let runsOn: RunsOn
     /// The user must approve on screen before anything happens.
     public let confirmOnScreen: Bool
+    /// ASK-01 (ADR-483): how the user says yes before the tool runs. Nil only in older specs
+    /// (the phone agent); the app agent's spec check requires it on every tool.
+    public enum Ask: String, Sendable, Decodable {
+        /// A read: the user's spoken yes or a tap.
+        case yesOrTap = "yes_or_tap"
+        /// A change: only a tap on the card.
+        case tap
+    }
+    public let ask: Ask?
     public let timeoutSeconds: Int
 
     private enum Keys: String, CodingKey { case type, name, description, parameters, x_doddy }
     private enum ParameterKeys: String, CodingKey { case properties, required }
-    private enum DoddyKeys: String, CodingKey { case runs_on, confirm_on_screen, timeout_secs }
+    private enum DoddyKeys: String, CodingKey { case runs_on, confirm_on_screen, ask, timeout_secs }
 
     private struct AnyKey: CodingKey {
         let stringValue: String
@@ -181,6 +190,7 @@ public struct RealtimeToolSpec: Equatable, Sendable, Decodable {
         let x = try c.nestedContainer(keyedBy: DoddyKeys.self, forKey: .x_doddy)
         runsOn = try x.decode(RunsOn.self, forKey: .runs_on)
         confirmOnScreen = try x.decodeIfPresent(Bool.self, forKey: .confirm_on_screen) ?? false
+        ask = try x.decodeIfPresent(Ask.self, forKey: .ask)
         timeoutSeconds = try x.decode(Int.self, forKey: .timeout_secs)
     }
 }

@@ -63,7 +63,7 @@ final class DeviceConnections {
         case .reminders: Self.eventAccess(EKEventStore.authorizationStatus(for: .reminder))
         case .contacts: Self.contactAccess(CNContactStore.authorizationStatus(for: .contacts))
         case .timers: .notDetermined
-        // BLIK transfers (ADR-483) need no iOS permission: the card only shows what to send.
+        // BLIK transfers (ADR-510) need no iOS permission: the card only shows what to send.
         case .maps, .shortcuts, .messages, .blik: .granted
         }
     }

@@ -1,6 +1,6 @@
-# BLIK transfers by voice: status (ADR-483)
+# BLIK transfers by voice: status (ADR-510)
 
-Last updated 2026-10-18. Branch `claude/dreamy-cannon-gc33dj`, not merged.
+Last updated 2026-10-18. Branch `claude/dreamy-cannon-gc33dj` (PR #85), not merged. Numbered ADR-510; ADR-483 is ASK-01.
 
 ## What it is
 "Send Ania 50 zł for the pizza" shows a card with the person, their phone number (from Contacts, when iOS allows it), the amount in złoty and the title. The user sends the transfer themselves in their bank app, with BLIK's phone transfer ("przelew na telefon"). **Doddy never sends, pays or moves money**, and it can't see whether the user sent it.
@@ -12,6 +12,7 @@ Why not more: BLIK has no public interface that lets an app send money. Phone tr
 |---|---|---|
 | Switch | Settings › Connections › Money › **BLIK transfers**, off by default. Off: the agent hears "BLIK transfers isn't connected". No iOS permission. | `VoiceConnection.blik`, `ConnectionsView.swift` |
 | The agent asks | `draft_blik_transfer` with `to`, `amount` (złoty), optional `title`, optional `currency` | `voice-agent/tools.json`, `instructions.md` |
+| Asks first (ASK-01, ADR-483) | `ask: tap`: the BLIK card is the ask, so nothing extra is shown before it, and its tap sends nothing either. `AskFirst` lists it with the other own-card tools. | `AskFirst.swift`, `tools.json` |
 | Typed checks | Amount kept in grosze, never rounded. Refused, so the agent asks again: more than two decimals, zero or less, not a number, another currency, more than 10,000 zł (Doddy's own ceiling, `BlikTransferLimits.maxGrosze`). Name and title bounded like every other tool argument. | `BlikTransfer.swift` |
 | The person | Contacts read only if iOS allows it. One match: their numbers, each once. Several matches: no card, the agent asks which person. No match or no permission: the card shows the name as said and says to pick them in the bank app. | `BlikRecipient.resolve`, `VoiceSessionController` |
 | The card | "A BLIK transfer for you to send": amount in the iPhone's language ("50,00 zł"), "To …", each number with **Copy**, the title with **Copy**, and the line "Doddy doesn't send money and can't see your bank…". Buttons: **I'll send it myself** / **Not now**. | `VoiceView.swift` |
@@ -22,8 +23,9 @@ Why not more: BLIK has no public interface that lets an app send money. Phone tr
 | Copy | Numbers as digits (a +48 or 0048 number as its nine digits; another country keeps its +); this iPhone only, no Universal Clipboard, gone after 10 minutes. The amount is never copied. | `BlikPhone.forCopy`, `copyForBlik` |
 
 ## Evidence
-- `swift test --package-path Packages/DoddyCore` on Linux (Swift 6.2): 1,110 tests, 0 failures, the 15 `BlikTransferTests` included. (Two voice-token tests were failing before; they were stale after 754e5d6. This branch carries PR #84's fix for them, ADR-494.)
-- `python3 -I scripts/voice_agent_spec.py check`: PASS, 59 tools.
+- After merging ASK-01 (PR #87) on 2026-10-18: `scripts/ci.sh --core-only` (Linux, Swift 6.2) PASS for the core-only scope; DoddyCore 1,128 tests, 0 failures, the 15 `BlikTransferTests` and the BLIK line in `AskFirstTests` included; voice spec check PASS, 82 tools; strings check PASS.
+- Before that merge: `swift test --package-path Packages/DoddyCore` on Linux (Swift 6.2): 1,110 tests, 0 failures. (Two voice-token tests were failing before; they were stale after 754e5d6. This branch carries PR #84's fix for them, ADR-494.)
+- `python3 -I scripts/voice_agent_spec.py check` before the merge: PASS, 59 tools.
 - `python3 -I tools/build_strings_catalog.py --check`: PASS. Polish has lines for the 11 new screen strings; other languages show them in English. "To …" and the quoted title are built at run time and stay English, as the message card's are.
 - `scripts/ci.sh --core-only` (Linux, Swift 6.2, Node 22): PASS for the core-only scope, with PR #84's fix (ADR-494) for the capability guard, the non-UI app type-check and the two tests that 754e5d6 had broken, ported file for file so it drops out when #84 merges. The iOS build is NOT RUN here.
 

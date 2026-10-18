@@ -63,7 +63,7 @@ test("everything starts off and nothing runs until the user switches it on", asy
   rig = await start();
   const catalog = await rig.call("GET", "/v1/tools");
   assert.equal(catalog.status, 200);
-  assert.deepEqual(catalog.body.toolkits.map((t: any) => t.id), ["gmail", "googledrive", "notion", "todoist", "outlook", "websearch"]);
+  assert.deepEqual(catalog.body.toolkits.map((t: any) => t.id), ["gmail", "googledrive", "notion", "todoist", "outlook", "gcalendar", "websearch"]);
   for (const toolkit of catalog.body.toolkits) {
     // Web search has no account (test/websearch.test.ts); every account starts disconnected.
     assert.equal(toolkit.status, toolkit.id === "websearch" ? "connected" : "disconnected");
@@ -319,14 +319,17 @@ test("an approval expires", async () => {
   assert.equal(rig.provider.executed.length, 0);
 });
 
-test("prepare refuses reads and tools that are switched off", async () => {
+test("prepare refuses tools that are switched off; a read gets a card too, and nothing is read for it (ASK-01)", async () => {
   rig = await start();
   await connect(rig, "gmail");
   const off = await rig.call("POST", "/v1/tools/prepare", { body: { tool: "draft_email", arguments: { to: "anna@example.com", subject: "Hi", body: "Hello" } } });
   assert.equal(off.status, 403);
   await on(rig, "check_email");
   const read = await rig.call("POST", "/v1/tools/prepare", { body: { tool: "check_email", arguments: {} } });
-  assert.equal(read.status, 400);
+  assert.equal(read.status, 200, read.text);
+  assert.equal(read.body.preview.title, "Check your Gmail?");
+  assert.deepEqual(read.body.preview.lines, ["Your Gmail inbox", "Doddy reads the newest 5: sender, subject, time and a short preview."]);
+  assert.deepEqual(rig.provider.executed, [], "asking reads nothing");
 });
 
 test("a draft is created with the exact text the user saw, and is never sent", async () => {
@@ -356,6 +359,38 @@ test("a write that fails is never retried and says the outcome may be unknown", 
   assert.equal(res.status, 502);
   assert.equal(res.body.error.receipt.status, "outcome_unknown");
   assert.equal(rig.provider.executed.length, 1, "no automatic retry for a write");
+  // The message the app shows must not contradict the receipt.
+  assert.match(res.body.error.message, /Todoist didn't confirm; it may or may not have gone through/);
+  assert.doesNotMatch(res.body.error.message, /Nothing was changed/);
+});
+
+test("a failed read names its own account, not Google Calendar", async () => {
+  rig = await start();
+  await ready(rig, "gmail", "check_email");
+  rig.provider.setScenario(rigComposioUser(rig, USER_A), "provider_error");
+  const res = await run(rig, "check_email", {});
+  assert.equal(res.status, 502);
+  assert.equal(res.body.error.message, "Gmail couldn't be reached. Nothing was changed.");
+});
+
+test("Connect names the account when Composio refuses the request (e.g. a wrong project key)", async () => {
+  const store = new Store(":memory:");
+  const refused = Object.assign(new Error("401 Invalid API key"), { status: 401 });
+  const fake = { connectedAccounts: { link: async () => { throw refused; } } } as unknown as ComposioToolsLike;
+  const provider = new ComposioToolsProvider("key", { gmail: { authConfigId: "ac_1", toolkitVersion: "20260101_00" } }, fake);
+  const tools = new CloudToolsService({
+    store,
+    provider,
+    limits: testLimits(),
+    publicBaseUrl: "https://api.doddy.test",
+    appReturnUrl: "doddy-dev://connected-apps/return",
+    completionMode: "callback",
+  });
+  await assert.rejects(
+    () => tools.connect("8b0c7f1e-2d3a-4b5c-9d8e-0f1a2b3c4d5e", "gmail", {}),
+    (e: unknown) => e instanceof Error && (e as { code?: string }).code === "provider_unavailable" && e.message === "Gmail couldn't be reached. Nothing was changed.",
+  );
+  store.close();
 });
 
 test("a write whose answer can't be read is reported as maybe done, not as failed", async () => {

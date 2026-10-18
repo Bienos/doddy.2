@@ -66,7 +66,7 @@ struct ConnectionGroup: Identifiable {
         ConnectionGroup(title: "Your day", items: [.calendar, .reminders, .timers]),
         ConnectionGroup(title: "People", items: [.contacts, .messages]),
         ConnectionGroup(title: "Places and apps", items: [.maps, .shortcuts]),
-        // ADR-483: shown, never sent; the user sends it in their bank app.
+        // ADR-510: shown, never sent; the user sends it in their bank app.
         ConnectionGroup(title: "Money", items: [.blik]),
     ]
 }
@@ -369,7 +369,7 @@ struct ConnectionInfo {
                 leavesPhone: "The shortcut's name, when you ask Doddy to run it.",
                 staysHere: "Doddy can't see what a shortcut does or whether it finished.")
         case .blik:
-            // ADR-483: BLIK has no way for an app to send money, so Doddy only shows the details.
+            // ADR-510: BLIK has no way for an app to send money, so Doddy only shows the details.
             ConnectionInfo(
                 symbol: "banknote",
                 examples: ["Send Ania 50 zł for the pizza", "Send Tomek 20 zł with BLIK"],

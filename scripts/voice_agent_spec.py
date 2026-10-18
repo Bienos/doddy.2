@@ -25,6 +25,9 @@ AGENTS = {"app": SPEC, "phone": SPEC / "phone"}
 PLACEHOLDER = re.compile(r"\{\{\s*([a-z_][a-z0-9_]*)\s*\}\}")
 RUNS_ON = {"phone", "web"}
 SPEAK_BEFORE = {"auto", "force"}
+# ASK-01: a read takes the user's spoken yes or a tap; a change only a tap.
+ASK = {"yes_or_tap", "tap"}
+APP_INSTRUCTIONS = SPEC / "instructions.md"
 
 
 def load(spec=SPEC):
@@ -136,6 +139,20 @@ def check_app(tools, sources=APP_SOURCES):
             errors.append(f"tool {name}: x_doddy.elevenlabs_tool_id must be the live tool id, or 'not_synced' until it is synced")
         if x.get("runs_on") == "phone" and f'"{name}"' not in swift:
             errors.append(f"tool {name}: runs on the phone but no Swift source names it, so the app would answer it as unsupported")
+        # ASK-01 (ADR-483): every tool asks first. The app can only ask for a tool it runs itself,
+        # a change needs a tap on a card, and the agent always says what it is about to do.
+        if x.get("runs_on") != "phone":
+            errors.append(f"tool {name}: ASK-01 needs every tool to run on the phone, where the app asks first; ElevenLabs runs web tools without asking")
+        if x.get("ask") not in ASK:
+            errors.append(f"tool {name}: x_doddy.ask must be one of {sorted(ASK)} (ASK-01)")
+        if (x.get("ask") == "tap") != bool(x.get("confirm_on_screen")):
+            errors.append(f"tool {name}: x_doddy.ask 'tap' and confirm_on_screen go together (ASK-01)")
+        if x.get("speak_before") != "force":
+            errors.append(f"tool {name}: ASK-01 needs speak_before 'force', so Doddy says what it will do before the tool runs")
+        if x.get("ask") and (not isinstance(x.get("timeout_secs"), int) or x["timeout_secs"] < 60):
+            errors.append(f"tool {name}: an ask needs at least 60 s to be answered")
+    if "ASK-01" not in APP_INSTRUCTIONS.read_text(encoding="utf-8"):
+        errors.append("instructions: ASK-01 (always ask first) must be in voice-agent/instructions.md")
     return errors
 
 

@@ -40,7 +40,7 @@ final class ActivityTextTests: XCTestCase {
             .addIngredients(IngredientsProposal(list: "Shopping", dish: "Pancakes", items: ["Eggs"])),
             .findFreeTime(FreeTimeRequest(firstDay: now, days: 1)),
             .leaveBy(LeaveByRequest(place: "Dentist", arriveBy: now)),
-            // ADR-483.
+            // ADR-510.
             .draftBlikTransfer(BlikTransferDraft(recipientName: "Ania", amount: BlikAmount(grosze: 5_000)!, title: "Pizza")),
         ]
         requests += CloudToolName.all.sorted().map { .cloudTool(CloudToolCall(name: $0, arguments: [:])) }

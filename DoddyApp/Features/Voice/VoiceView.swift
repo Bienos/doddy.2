@@ -20,7 +20,7 @@ struct VoiceView: View {
     @State private var editingNoteReminderTime = false
     /// The plan step whose "Change" sheet is open (ADR-205).
     @State private var editingPlanStep: PlanStep?
-    /// What was last copied from a BLIK card (ADR-483), to show "Copied" next to it.
+    /// What was last copied from a BLIK card (ADR-510), to show "Copied" next to it.
     @State private var copiedForBlik: String?
 
     private var provider: VoiceProvider { VoiceProvider.effective(stored: voiceProvider, tokenServerSet: true) }
@@ -733,6 +733,31 @@ struct VoiceView: View {
             }
         case .plan(_, let steps, let blocked):
             planContent(steps: steps, blocked: blocked, controller: controller)
+        case .ask(_, let card, let needsTap, _, _):
+            // ASK-01 (ADR-483): exactly what Doddy will do; nothing runs before the answer.
+            Text(card.title)
+                .font(.headline)
+            ForEach(Array(card.lines.enumerated()), id: \.offset) { _, line in
+                Text(line)
+                    .font(.body)
+            }
+            Text(needsTap ? "Nothing changes until you tap." : "Say yes, or tap. Nothing is looked at before that.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+        case .cloudRead(_, _, let preview, _, let mode):
+            if mode == .mock {
+                Label("Demo — not your real account", systemImage: "theatermasks")
+                    .font(.footnote)
+            }
+            Text(preview.title)
+                .font(.headline)
+            ForEach(Array(preview.lines.enumerated()), id: \.offset) { _, line in
+                Text(line)
+                    .font(.body)
+            }
+            Text("Say yes, or tap. Nothing is looked at before that.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
         }
     }
 
@@ -903,6 +928,8 @@ struct VoiceView: View {
         case .message(_, let draft, _): (draft.channel == .text ? NSLocalizedString("Open in Messages", comment: "") : NSLocalizedString("Open in Mail", comment: ""), NSLocalizedString("Don't open", comment: ""))
         case .blik: (NSLocalizedString("I'll send it myself", comment: "BLIK card: the user sends it in their bank app"), NSLocalizedString("Not now", comment: ""))
         case .cloud(_, _, let preview, _, _): (preview.confirmLabel, NSLocalizedString("Don't do this", comment: ""))
+        case .ask(_, let card, _, _, _): (card.confirmLabel, NSLocalizedString("No", comment: ""))
+        case .cloudRead(_, _, let preview, _, _): (preview.confirmLabel, NSLocalizedString("No", comment: ""))
         case .noteReminder: (NSLocalizedString("Set reminder", comment: ""), NSLocalizedString("Don't set", comment: ""))
         case .createList: (NSLocalizedString("Create list", comment: ""), NSLocalizedString("Not now", comment: ""))
         case .changeEvent: (NSLocalizedString("Change", comment: ""), NSLocalizedString("Don't change", comment: ""))
@@ -1296,7 +1323,7 @@ struct VoiceView: View {
         .accessibilityIdentifier("voice.listReceipt")
     }
 
-    /// After "I'll send it myself" (ADR-483): the same details, kept on screen while the user
+    /// After "I'll send it myself" (ADR-510): the same details, kept on screen while the user
     /// opens their bank app. Doddy never sends money and can't see whether it was sent.
     private func blikReceiptCard(_ card: VoiceSessionController.BlikCard, controller: VoiceSessionController) -> some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -1316,7 +1343,7 @@ struct VoiceView: View {
         .accessibilityIdentifier("voice.blikCard")
     }
 
-    /// Who, their numbers with Copy, how much and the title (ADR-483). The amount is shown in the
+    /// Who, their numbers with Copy, how much and the title (ADR-510). The amount is shown in the
     /// iPhone's language ("50,00 zł" in Polish) but never copied: it is typed in the bank app.
     @ViewBuilder
     private func blikDetails(

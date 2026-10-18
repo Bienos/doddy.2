@@ -2,7 +2,7 @@ import Foundation
 import XCTest
 @testable import DoddyCore
 
-/// BLIK phone transfers prepared by voice (ADR-483): the model only proposes; these rules decide
+/// BLIK phone transfers prepared by voice (ADR-510): the model only proposes; these rules decide
 /// what the card may show, and the replies never let the agent say money was sent.
 final class BlikTransferTests: XCTestCase {
     private func parse(_ json: String) -> VoiceToolRequest {

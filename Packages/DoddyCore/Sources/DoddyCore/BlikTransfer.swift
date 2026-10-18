@@ -1,6 +1,6 @@
 import Foundation
 
-// BLIK phone transfers, prepared by voice (ADR-483). BLIK has no public interface that lets an
+// BLIK phone transfers, prepared by voice (ADR-510). BLIK has no public interface that lets an
 // app send money: a phone transfer ("przelew na telefon") is made only in the user's own bank app.
 // So Doddy never sends, pays or moves money. "Send Ania 50 zł for the pizza" becomes a card with
 // the person, their phone number from Contacts, the amount in złoty and the title, for the user
@@ -37,7 +37,7 @@ public struct BlikAmount: Equatable, Hashable, Sendable {
 public enum BlikTransferLimits {
     /// Doddy's own ceiling for one prepared transfer: 10,000 zł. Not BLIK's limit or a bank's
     /// (each bank sets its own); it stops a misheard amount from reaching the card. The owner can
-    /// change it (ADR-483).
+    /// change it (ADR-510).
     public static let maxGrosze = 1_000_000
 }
 
