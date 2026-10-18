@@ -79,7 +79,7 @@ The 28 lines above are the imported pack's original rules. `scripts/verify_impor
   - "What Doddy did" (`activity.json`) is pruned at 30 days / 300 rows and drops receipts after 24 h, so the case log must be its own durable table.
   - Report results as typed values, not as reply-string prefixes (`ActivityEntry.outcome(of:)`).
 - **Secrets only in the backend or Keychain,** never in the client bundle, logs, the repo or chat. Host env vars on Render and Vercel. `VoiceConfig.swift` holds public URLs only.
-- **Respect the capability guard** (`scripts/check_forbidden_capabilities.sh`): each sensitive API is allowed in one named file. Change its allowlist deliberately, in the same commit. It currently fails on this branch (`docs/ARCHITECTURE.md` §12).
+- **Respect the capability guard** (`scripts/check_forbidden_capabilities.sh`): each sensitive API is allowed in one named file. Change its allowlist deliberately, in the same commit.
 - **Write tests for the case state machine, the rules file, and every approval path.** Do not mock the thing under test.
   - Use a real `DoddyDatabase.inMemory()` and fake only the edges (EventKit, providers, network).
   - Server approvals are tested in `backend/test/`.

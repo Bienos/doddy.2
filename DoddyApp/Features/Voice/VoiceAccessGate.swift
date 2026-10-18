@@ -1,4 +1,4 @@
-import AuthenticationServices
+import DoddyCore
 import SwiftUI
 
 /// First voice use has two explicit steps: DODDY account sign-in, then consent for the selected
@@ -7,7 +7,6 @@ struct VoiceAccessGate: View {
     let provider: VoiceProvider
     let onContinue: () -> Void
     @State private var session = VoiceAuthSession.shared
-    @State private var rawNonce: String?
     @State private var consented = false
 
     var body: some View {
@@ -38,15 +37,15 @@ struct VoiceAccessGate: View {
                     .font(.body)
                     .foregroundStyle(Theme.secondaryText)
                     .multilineTextAlignment(.center)
-                SignInWithAppleButton(.signIn, onRequest: { request in
-                    guard let nonce = AppleSignInNonce.make() else {
-                        session.message = "This iPhone couldn’t start secure Apple sign-in. Try again."
-                        return
+                AppleSignInButton(onSignedIn: { credential in
+                    Task { await session.finishAppleSignIn(identityToken: credential.identityToken, rawNonce: credential.rawNonce,
+                                                           userID: credential.userID, provider: provider) }
+                }, onProblem: { problem in
+                    switch problem {
+                    case .couldNotStart: session.message = "This iPhone couldn’t start secure Apple sign-in. Try again."
+                    case .didNotFinish: session.message = "Apple sign-in didn’t finish. Try again."
                     }
-                    rawNonce = nonce.raw
-                    request.nonce = nonce.hashed
-                }, onCompletion: completeSignIn)
-                .signInWithAppleButtonStyle(.black)
+                })
                 .frame(height: 50)
                 .accessibilityIdentifier("voice.auth.appleSignIn")
             } else {
@@ -95,21 +94,5 @@ struct VoiceAccessGate: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .task { consented = VoiceProviderConsent.isGranted(for: provider) }
-    }
-
-    private func completeSignIn(_ result: Result<ASAuthorization, Error>) {
-        guard case .success(let authorization) = result,
-              let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
-              let data = credential.identityToken,
-              let identityToken = String(data: data, encoding: .utf8),
-              let rawNonce else {
-            if case .failure(let error) = result, (error as? ASAuthorizationError)?.code != .canceled {
-                session.message = "Apple sign-in didn’t finish. Try again."
-            }
-            return
-        }
-        Task { await session.finishAppleSignIn(identityToken: identityToken, rawNonce: rawNonce,
-                                               userID: credential.user, provider: provider) }
-        self.rawNonce = nil
     }
 }

@@ -1,4 +1,12 @@
 # Voice token server: status
+
+> **2026-10-18 (ADR-483):** commit `754e5d6` replaces the access code with Sign in with Apple
+> (`POST /api/voice-auth`; see `server/voice-token/README.md`). The production deployment below
+> predates it, so a build with that commit can't start voice until `server/voice-token` is
+> redeployed with `APPLE_BUNDLE_ID`, `DODDY_SESSION_SIGNING_KEY`, `UPSTASH_REDIS_REST_URL` and
+> `UPSTASH_REDIS_REST_TOKEN`. Not redeployed. On 2026-10-18 both routes answered
+> `402 DEPLOYMENT_DISABLED` from Vercel. The sections below describe the access-code version.
+
 Date: 2026-10-09. Owner instruction: "build" (the step recommended after V2). Closes ADR-034's
 "must change before TestFlight" **once deployed and the agent's authentication is on**. Neither has happened yet.
 

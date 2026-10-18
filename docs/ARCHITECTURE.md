@@ -67,7 +67,7 @@ STATUS.md                 one-page current state
   - `DoddyApp.swift` puts `MemoryStore`, `ProfileStore` and `NoteReminderStore` in the environment (`@Environment(MemoryStore.self)`); most views reach the repositories through `store.environment`.
   - There are 32 `static let shared` singletons (for example `ShortcutRouter`, which owns every presentation flag, `ActivityLogStore`, `VoiceAuthSession`).
 - **Boundary:** DoddyCore defines protocols ("ports": `Ports.swift`, `Assistant/GatewayPorts.swift`, `Learning/LearningPorts.swift`, plus `ReminderStore`, `CalendarEventWriter`, `OnlineAccountsClient`, `ServerTransport`). The app implements the platform side: EventKit in `DeviceConnections.swift`, Keychain, `URLSession` transports. Rules (time parsing, idempotency, plan parsing, action status, undo rules, exports) live in DoddyCore and are tested on Linux.
-- **Capability guard:** `scripts/check_forbidden_capabilities.sh` allows each sensitive API in one named place only. Examples: networking only in 6 transport files; EventKit, Contacts and CoreLocation only in `Infrastructure/Connections`; CloudKit only in `Features/Sharing`; no analytics SDKs. **It fails on this branch** (§14).
+- **Capability guard:** `scripts/check_forbidden_capabilities.sh` allows each sensitive API in one named place only. Examples: networking only in 6 transport files; EventKit, Contacts and CoreLocation only in `Infrastructure/Connections`; CloudKit only in `Features/Sharing`; Sign in with Apple only in `Features/Voice/AppleSignIn.swift` (ADR-483); no analytics SDKs.
 
 ## 4. Data models and where notes are stored
 
@@ -183,7 +183,7 @@ There is no single reusable "approval card" component. There is **one pending-ca
 
 ## 6. ElevenLabs and the live voice
 
-1. **Sign-in:** before the first conversation, `VoiceAccessGate` asks for Sign in with Apple and a per-provider consent (this branch, `754e5d6`). `VoiceAuthSession` trades the Apple identity token at `POST https://doddy-voice-token.vercel.app/api/voice-auth` for a rotating refresh token (Keychain) and a 10-minute access token. The endpoint is hard-coded in `VoiceConfig.swift`; it is a public URL, not a secret.
+1. **Sign-in:** before the first conversation, `VoiceAccessGate` asks for Sign in with Apple and a per-provider consent (this branch, `754e5d6`). `VoiceAuthSession` trades the Apple identity token at `POST https://doddy-voice-token.vercel.app/api/voice-auth` for a rotating refresh token (Keychain) and a 10-minute access token. The HTTP calls are `VoiceAuthAPI` in `VoiceTokenClient.swift` and Apple's sheet and credential check are in `AppleSignIn.swift` (ADR-483). The endpoint is hard-coded in `VoiceConfig.swift`; it is a public URL, not a secret.
 2. **Provider token:** `VoiceTokenClient` calls `POST /api/voice-token` with the access token.
    - For ElevenLabs, the server (`server/voice-token/src/handler.js`) asks `GET /v1/convai/conversation/token?agent_id=…` with its own `xi-api-key` and returns a conversation token.
    - For OpenAI it returns a 120 s Realtime client secret (models `gpt-realtime-2.1[-mini]`).
@@ -295,7 +295,7 @@ All exports are in Settings and go through the share sheet (`SettingsView.swift`
 | gateway | 73 | Node | **73/73 pass** |
 | server/voice-token | 19 | Node | **19/19 pass** |
 | server/messaging | 55 (37 need `TEST_DATABASE_URL`) | Node + Postgres | Not run |
-| `scripts/check_forbidden_capabilities.sh` | guard | any | **FAIL** (§14) |
+| `scripts/check_forbidden_capabilities.sh` | guard | any | PASS (fixed with ADR-483) |
 | `scripts/verify_imported_pack.py` | 259 locked files | any | PASS |
 
 - **CI:** `.github/workflows/ios.yml` runs on pull requests and manual dispatch.
@@ -364,9 +364,8 @@ All exports are in Settings and go through the share sheet (`SettingsView.swift`
   - Two transports each claim to be the only HTTP client.
 
 **Repo hygiene**
-- The capability guard fails on this branch (`VoiceAuthSession.swift` uses `URLSession` and `AuthenticationServices`; `VoiceAccessGate.swift` imports `AuthenticationServices`).
 - ADR-458 is used twice.
-- This branch's two commits have no ADR, and the Apple sign-in conflicts with ADR-077/147.
+- `f40861c` (translator) has no ADR. The Apple sign-in is ADR-483: it leaves ADR-077 open and needs the owner's call against ADR-147.
 - Listen-on-open now defaults off, reversing the owner decision in `OPENING_SCENE_STATUS.md`.
 
 ## 13. Missing for the case (sprawa) spine
@@ -394,8 +393,7 @@ These have no code today. They are listed so nobody mistakes an existing piece f
 - `voice-agent/README.md` says "10 function tools" (there are 58).
 
 **This branch** (`754e5d6`, `f40861c`, not on main):
-- Sign in with Apple voice access (`VoiceAccessGate`, `VoiceAuthSession`, `server/voice-token/src/voice-auth.js`).
+- Sign in with Apple voice access (`VoiceAccessGate`, `VoiceAuthSession`, `AppleSignIn.swift`, `server/voice-token/src/voice-auth.js`; ADR-483).
 - A first-launch profile card on Home.
 - Listen-on-open off by default.
 - `start_translator` without a card.
-- It also breaks the capability guard.
