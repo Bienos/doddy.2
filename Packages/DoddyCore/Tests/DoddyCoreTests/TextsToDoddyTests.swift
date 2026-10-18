@@ -46,6 +46,23 @@ final class TextsToDoddyTests: XCTestCase {
         XCTAssertEqual(TextSettings.off.inboundBlocker, .notSetUp)
     }
 
+    func testSwitchesThatAreOnButCantWorkSaySo() {
+        func settings(notes: Bool = true, replies: Bool = true, fromDoddy: Bool = true, repliesOn: Bool = true,
+                      memories: Bool = true, copy: Bool = true) -> TextSettings {
+            TextSettings(
+                available: .init(notes: notes, replies: replies), doddyNumber: nil, phoneVerified: true, textsFromDoddy: fromDoddy,
+                optedOut: !fromDoddy, inboundEnabled: true, repliesEnabled: repliesOn, repliesUseMemories: memories, memoryCopy: copy,
+                language: "en", consentTextVersion: "texts-in-v1")
+        }
+        XCTAssertEqual(settings().pauses, [])
+        XCTAssertEqual(settings(notes: false).pauses, [.notReceiving])
+        XCTAssertEqual(settings(fromDoddy: false).pauses, [.repliesCantText], "after STOP the switch stays on but replies stop")
+        XCTAssertEqual(settings(replies: false).pauses, [.repliesNotSetUp])
+        XCTAssertEqual(settings(copy: false).pauses, [.memoriesWithoutCopy])
+        XCTAssertEqual(settings(fromDoddy: false, repliesOn: false, memories: false).pauses, [], "nothing on, nothing paused")
+        XCTAssertEqual(TextSettings.off.pauses, [])
+    }
+
     func testTheConsentWordingSaysWhereTextsGoAndWhatStopDoes() {
         let text = TextsToDoddyConsent.text
         for part in ["Doddy's server", "Twilio", "notes", "an AI", "Anthropic", "STOP"] {
@@ -125,10 +142,12 @@ final class TextsToDoddyTests: XCTestCase {
         let inbox = try JSONDecoder().decode(CallInbox.self, from: Data(#"""
         {"notes":[{"id":"6f1c2c1e-3b6c-4c55-9a39-0d6a1e9f1a10","text":"Kupić mleko","createdAt":"2026-10-18T10:00:00.000Z","source":"text"},
                   {"id":"6f1c2c1e-3b6c-4c55-9a39-0d6a1e9f1a11","text":"Call the dentist","createdAt":"2026-10-18T10:00:00.000Z","source":"call"},
-                  {"id":"6f1c2c1e-3b6c-4c55-9a39-0d6a1e9f1a12","text":"From an older server","createdAt":"2026-10-18T10:00:00.000Z"}],
+                  {"id":"6f1c2c1e-3b6c-4c55-9a39-0d6a1e9f1a12","text":"From an older server","createdAt":"2026-10-18T10:00:00.000Z"},
+                  {"id":"6f1c2c1e-3b6c-4c55-9a39-0d6a1e9f1a13","text":"Ask about the gate","createdAt":"2026-10-18T10:00:00.000Z","source":"doddy"}],
          "unreadable":[]}
         """#.utf8))
-        XCTAssertEqual(inbox.notes.map(\.fromText), [true, false, false])
+        XCTAssertEqual(inbox.notes.map(\.fromText), [true, false, false, false])
+        XCTAssertEqual(inbox.notes.map(\.writtenByDoddy), [false, false, false, true], "Doddy's words are never shown as the user's text")
     }
 
     func testTheLanguageCodes() {

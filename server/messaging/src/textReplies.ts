@@ -114,6 +114,16 @@ export async function receiveText(deps: TextDeps, msg: { from: string; sid: stri
   return result.state;
 }
 
+/**
+ * Texts to Doddy were agreed to for one number: when it is removed, replaced or proved by another
+ * account, they are switched off and need the user's consent again.
+ */
+export async function textsOff(c: pg.PoolClient, accountId: string): Promise<void> {
+  await c.query(
+    `UPDATE text_settings SET inbound_enabled = false, replies_enabled = false, replies_use_memories = false, updated_at = now()
+     WHERE account_id = $1`, [accountId]);
+}
+
 function dropped(reason: string): ReceiveResult {
   log("text dropped", { reason });
   return "dropped";
@@ -180,8 +190,9 @@ export async function processTextReply(deps: TextDeps & { now?: () => Date }): P
   }
 
   const tools: TextReplyTools = {
+    // Claude's words, not the user's: labelled as Doddy's note so the app never calls it "your text".
     saveNote: async (note) => (await inTransaction(db, (c) =>
-      saveNoteIn(c, cipher, job.account_id, note.slice(0, INBOUND_TEXT_MAX), "text"))) ? "saved" : "inbox_full",
+      saveNoteIn(c, cipher, job.account_id, note.slice(0, INBOUND_TEXT_MAX), "doddy"))) ? "saved" : "inbox_full",
   };
   if (settings.memories && await memoryCopyOn(db, job.account_id)) {
     tools.searchMemories = async (query) => (await searchMemoryCopy(db, cipher, job.account_id, query)).map(quotedMemory);

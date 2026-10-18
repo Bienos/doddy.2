@@ -63,9 +63,11 @@ export const textSettingsRoutes = (deps: Deps): FastifyPluginAsync => async (app
   });
 
   app.put("/v1/texts/settings", { preHandler: auth }, async (req, reply) => {
-    if (!notesAvailable()) return reply.code(503).send({ error: "not_configured" });
     const body = parse(settingsBody, req.body, reply);
     if (!body) return;
+    // Turning something off is always accepted, even after the server lost its setup.
+    const turnsOn = body.inboundEnabled === true || body.repliesEnabled === true || body.repliesUseMemories === true;
+    if (turnsOn && !notesAvailable()) return reply.code(503).send({ error: "not_configured" });
     const { accountId } = principal(req);
     const cur = await current(accountId);
     // Each switch needs the one before it; turning one off turns off the ones after it.

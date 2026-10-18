@@ -850,13 +850,43 @@
         }
       }
     },
-    "A file with your calls, the status of texts between you and Doddy, and the notes waiting here. The text of messages isn't in it: Doddy's server erases it once a message is sent. Doddy's server also deletes its records at Twilio after each call or text, a day later unless the server is set up otherwise.": {
+    "A file with your calls, the status of texts between you and Doddy, and the notes waiting here. The text of messages isn't in it: Doddy's server erases it once a message is sent. Doddy's server also asks Twilio to delete its records of each call and text, a day later unless the server is set up otherwise. The file is removed from this iPhone when you leave this screen.": {
       "extractionState": "manual",
       "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "A file with your calls, the status of texts between you and Doddy, and the notes waiting here. The text of messages isn't in it: Doddy's server erases it once a message is sent. Doddy's server also asks Twilio to delete its records of each call and text, a day later unless the server is set up otherwise. The file is removed from this iPad when you leave this screen."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "A file with your calls, the status of texts between you and Doddy, and the notes waiting here. The text of messages isn't in it: Doddy's server erases it once a message is sent. Doddy's server also asks Twilio to delete its records of each call and text, a day later unless the server is set up otherwise. The file is removed from this iPhone when you leave this screen."
+                }
+              }
+            }
+          }
+        },
         "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Plik z Twoimi rozmowami, stanem SMS-ów między Tobą a Doddym i notatkami, które tu czekają. Nie ma w nim treści wiadomości: serwer Doddy’ego usuwa ją po wysłaniu. Serwer Doddy’ego usuwa też swoje zapisy w Twilio po każdej rozmowie i SMS-ie, dzień później, chyba że ustawiono go inaczej."
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Plik z Twoimi rozmowami, stanem SMS-ów między Tobą a Doddym i notatkami, które tu czekają. Nie ma w nim treści wiadomości: serwer Doddy’ego usuwa ją po wysłaniu. Serwer Doddy’ego prosi też Twilio o usunięcie zapisów każdej rozmowy i SMS-a, dzień później, chyba że ustawiono go inaczej. Plik znika z tego iPada, gdy opuścisz ten ekran."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Plik z Twoimi rozmowami, stanem SMS-ów między Tobą a Doddym i notatkami, które tu czekają. Nie ma w nim treści wiadomości: serwer Doddy’ego usuwa ją po wysłaniu. Serwer Doddy’ego prosi też Twilio o usunięcie zapisów każdej rozmowy i SMS-a, dzień później, chyba że ustawiono go inaczej. Plik znika z tego iPhone’a, gdy opuścisz ten ekran."
+                }
+              }
+            }
           }
         }
       }
@@ -13101,6 +13131,17 @@
         }
       }
     },
+    "Couldn't load the settings for texts to Doddy. %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się wczytać ustawień SMS-ów do Doddy’ego. %@"
+          }
+        }
+      }
+    },
     "Couldn't load this feed last time": {
       "extractionState": "manual",
       "localizations": {
@@ -13156,6 +13197,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "上次无法加载这个订阅源"
+          }
+        }
+      }
+    },
+    "Couldn't load your notes. %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się wczytać Twoich notatek. %@"
           }
         }
       }
@@ -18878,6 +18930,17 @@
         }
       }
     },
+    "Doddy noted this from your text · %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy zanotował to z Twojego SMS-a · %@"
+          }
+        }
+      }
+    },
     "Doddy noticed this in what you said. It stays on this iPhone. It is handed to Doddy in a conversation only if you turned that on in Settings, What I've learned.": {
       "extractionState": "manual",
       "localizations": {
@@ -19852,72 +19915,13 @@
         }
       }
     },
-    "Doddy's phone line isn't set up on the server yet. Everything below starts working once it is.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Die Telefonleitung von Doddy ist auf dem Server noch nicht eingerichtet. Alles darunter funktioniert, sobald sie es ist."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La línea telefónica de Doddy aún no está configurada en el servidor. Todo lo de abajo empieza a funcionar cuando lo esté."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La ligne téléphonique de Doddy n’est pas encore configurée sur le serveur. Tout ce qui suit fonctionnera dès qu’elle le sera."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddyjeva telefonska linija još nije postavljena na poslužitelju. Sve u nastavku proradit će kad bude."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La linea telefonica di Doddy non è ancora configurata sul server. Tutto ciò che segue inizia a funzionare appena lo sarà."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddyの電話回線はまだサーバーに設定されていません。設定が済めば、以下はすべて使えるようになります。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Linia telefoniczna Doddy’ego nie jest jeszcze ustawiona na serwerze. Wszystko poniżej zacznie działać, gdy będzie."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "A linha telefônica do Doddy ainda não está configurada no servidor. Tudo abaixo começa a funcionar quando estiver."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "服务器上尚未设置 Doddy 的电话线路。设置好后，下面的一切就会开始工作。"
-          }
-        }
-      }
-    },
-    "Doddy's phone number isn't set up on the server yet.": {
+    "Doddy's phone line isn't set up on the server yet. Calls start working once it is.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Numer telefonu Doddy’ego nie jest jeszcze skonfigurowany na serwerze."
+            "value": "Linia telefoniczna Doddy’ego nie jest jeszcze skonfigurowana na serwerze. Rozmowy zadziałają, gdy będzie."
           }
         }
       }
@@ -19977,6 +19981,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy 的界面跟随你 iPhone 的语言。这里设置的是 Doddy 回复所用的语言。"
+          }
+        }
+      }
+    },
+    "Doddy's server can't receive texts right now, so nothing you text it is kept.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego nie może teraz odbierać SMS-ów, więc nic, co wyślesz, nie zostanie zachowane."
           }
         }
       }
@@ -34911,6 +34926,17 @@
         }
       }
     },
+    "Memory on calls is off, so replies can't use your notes.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pamięć w rozmowach telefonicznych jest wyłączona, więc odpowiedzi nie mogą korzystać z Twoich notatek."
+          }
+        }
+      }
+    },
     "Messages from Doddy": {
       "extractionState": "manual",
       "localizations": {
@@ -43214,13 +43240,13 @@
         }
       }
     },
-    "Off by default. Only texts from your verified number count; texts from anyone else are dropped without a reply. Without replies, each text waits here as a note. With replies, Doddy answers each text once, within 10 minutes, up to 30 a day, and only to your number; it can leave a note for you to confirm. With memories allowed, a reply can quote a saved note, and texts aren't encrypted between phone networks.": {
+    "Off by default. Only texts from your verified number count; texts from anyone else are dropped without a reply. Without replies, each text waits here as a note, while there's room for 20 notes and up to 30 texts an hour. With replies, Doddy answers each text once and only to your number, if it can start within 10 minutes (otherwise the text becomes a note), up to 30 a day while the server's daily budget lasts; it can leave a note for you to confirm. With memories allowed, the saved notes that match your text go to Anthropic too, a reply can quote one, and texts aren't encrypted between phone networks.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Domyślnie wyłączone. Liczą się tylko SMS-y z Twojego zweryfikowanego numeru; SMS-y od innych są pomijane bez odpowiedzi. Bez odpowiedzi każdy SMS czeka tutaj jako notatka. Z odpowiedziami Doddy odpowiada na każdy SMS raz, w ciągu 10 minut, najwyżej 30 razy dziennie i tylko na Twój numer; może zostawić notatkę do potwierdzenia. Gdy pozwolisz na wspomnienia, odpowiedź może cytować zapisaną notatkę, a SMS-y nie są szyfrowane między sieciami komórkowymi."
+            "value": "Domyślnie wyłączone. Liczą się tylko SMS-y z Twojego zweryfikowanego numeru; SMS-y od innych są pomijane bez odpowiedzi. Bez odpowiedzi każdy SMS czeka tutaj jako notatka, dopóki jest miejsce na 20 notatek i do 30 SMS-ów na godzinę. Z odpowiedziami Doddy odpowiada na każdy SMS raz i tylko na Twój numer, jeśli zdąży zacząć w ciągu 10 minut (inaczej SMS staje się notatką), do 30 razy dziennie, dopóki starcza dziennego budżetu serwera; może zostawić notatkę do potwierdzenia. Gdy pozwolisz na wspomnienia, zapisane notatki pasujące do Twojego SMS-a też trafiają do Anthropic, odpowiedź może jedną z nich cytować, a SMS-y nie są szyfrowane między sieciami komórkowymi."
           }
         }
       }
@@ -54801,6 +54827,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "每年重复"
+          }
+        }
+      }
+    },
+    "Replies are paused: Doddy can't text you (texts are off in Notifications and texts, or you sent STOP). Your texts wait as notes.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odpowiedzi są wstrzymane: Doddy nie może wysyłać Ci SMS-ów (są wyłączone w Powiadomieniach i SMS-ach albo wysłano STOP). Twoje SMS-y czekają jako notatki."
+          }
+        }
+      }
+    },
+    "Replies are paused: they aren't set up on Doddy's server. Your texts wait as notes.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odpowiedzi są wstrzymane: nie są skonfigurowane na serwerze Doddy’ego. Twoje SMS-y czekają jako notatki."
           }
         }
       }
@@ -67206,6 +67254,17 @@
         }
       }
     },
+    "Texts to Doddy aren't set up on Doddy's server yet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SMS-y do Doddy’ego nie są jeszcze skonfigurowane na serwerze Doddy’ego."
+          }
+        }
+      }
+    },
     "That address didn't return a news feed. Look for an RSS or Atom link on the site.": {
       "extractionState": "manual",
       "localizations": {
@@ -69102,61 +69161,13 @@
         }
       }
     },
-    "That's the limit for calls for now. Try again later.": {
+    "That's the limit for now. Try again later.": {
       "extractionState": "manual",
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Das ist vorerst das Limit für Anrufe. Versuch es später noch einmal."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ese es el límite de llamadas por ahora. Inténtalo más tarde."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "C’est la limite d’appels pour le moment. Réessaie plus tard."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "To je zasad limit poziva. Pokušaj poslije."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Per ora è il limite di chiamate. Riprova più tardi."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "今のところ通話の上限に達しています。後でもう一度お試しください。"
-          }
-        },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Na razie to limit rozmów. Spróbuj później."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Esse é o limite de chamadas por enquanto. Tente de novo mais tarde."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "目前通话次数已达上限。请稍后再试。"
+            "value": "To na razie limit. Spróbuj później."
           }
         }
       }

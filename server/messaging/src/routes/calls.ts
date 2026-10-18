@@ -7,6 +7,7 @@ import { principal, requireDevice } from "../auth.js";
 import { OUTBOUND_CONSENT_VERSIONS, OUTBOUND_DAILY_LIMIT, OUTBOUND_HOURLY_LIMIT } from "../calls.js";
 import { hashPin, isAcceptablePin } from "../crypto.js";
 import { inTransaction } from "../db.js";
+import type { NoteSource } from "../inbox.js";
 import { callsAvailable } from "./twilioVoice.js";
 
 const settingsBody = z.object({
@@ -163,13 +164,13 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
   app.get("/v1/call-notes", { preHandler: auth }, async (req, reply) => {
     if (!deps.cipher) return reply.code(503).send({ error: "not_configured" });
     const { accountId } = principal(req);
-    const { rows } = await db.query<{ id: string; ciphertext: Buffer; created_at: Date; source: "call" | "text" }>(
+    const { rows } = await db.query<{ id: string; ciphertext: Buffer; created_at: Date; source: NoteSource }>(
       "SELECT id, ciphertext, created_at, source FROM call_notes WHERE account_id = $1 ORDER BY created_at", [accountId]);
     const cipher = deps.cipher;
     // A note that won't decrypt (e.g. after a key change) must not hide the others; it is listed
     // separately (older apps ignore the field) so it can still be discarded.
-    // `source` says whether Doddy took the note on a call or it came from a text (ADR-494).
-    const notes: { id: string; text: string; createdAt: Date; source: "call" | "text" }[] = [];
+    // `source`: taken on a call, the user's text word for word, or written by Doddy from a text (ADR-494).
+    const notes: { id: string; text: string; createdAt: Date; source: NoteSource }[] = [];
     const unreadable: { id: string; createdAt: Date }[] = [];
     for (const r of rows) {
       try {

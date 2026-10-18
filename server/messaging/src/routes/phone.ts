@@ -5,6 +5,7 @@ import { principal, requireDevice } from "../auth.js";
 import { sha256 } from "../crypto.js";
 import { inTransaction } from "../db.js";
 import { cancelQueuedSms } from "../outbox.js";
+import { textsOff } from "../textReplies.js";
 import { ProviderError } from "../providers/types.js";
 
 /** Verify codes one phone number may receive, across all accounts. */
@@ -78,11 +79,18 @@ export const phoneRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
       // Proving ownership moves the number from any older account (e.g. after a reinstall).
       const moved = await c.query<{ account_id: string }>(
         "DELETE FROM phone_numbers WHERE e164 = $1 AND account_id <> $2 RETURNING account_id", [body.phone, accountId]);
-      for (const row of moved.rows) await cancelQueuedSms(c, row.account_id);
+      for (const row of moved.rows) {
+        await cancelQueuedSms(c, row.account_id);
+        await textsOff(c, row.account_id);
+      }
       const previous = await c.query<{ e164: string }>(
         "SELECT e164 FROM phone_numbers WHERE account_id = $1 FOR UPDATE", [accountId]);
       // Texts queued for an older number must not go to the new one.
-      if (previous.rows[0] && previous.rows[0].e164 !== body.phone) await cancelQueuedSms(c, accountId);
+      if (previous.rows[0] && previous.rows[0].e164 !== body.phone) {
+        await cancelQueuedSms(c, accountId);
+        // A new number needs new consent for texts to Doddy (ADR-494).
+        await textsOff(c, accountId);
+      }
       // A different number starts without SMS consent; the same number keeps its state.
       await c.query(
         `INSERT INTO phone_numbers (account_id, e164, verified_at) VALUES ($1, $2, now())
@@ -132,6 +140,7 @@ export const phoneRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
     const { accountId } = principal(req);
     await inTransaction(db, async (c) => {
       await cancelQueuedSms(c, accountId);
+      await textsOff(c, accountId);
       await c.query("DELETE FROM phone_numbers WHERE account_id = $1", [accountId]);
     });
     return reply.code(204).send();

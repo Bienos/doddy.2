@@ -35,13 +35,14 @@ struct CallsSettingsView: View {
         .disabled(model.isWorking)
         .overlay { if model.isWorking { ProgressView() } }
         .task { await model.refresh() }
+        .onDisappear { model.clearExport() }
     }
 
     @ViewBuilder
     private func content(_ s: CallSettings) -> some View {
         if !s.available.inbound {
             Section {
-                Text("Doddy's phone line isn't set up on the server yet. Everything below starts working once it is.")
+                Text("Doddy's phone line isn't set up on the server yet. Calls start working once it is.")
             }
         }
 
@@ -62,9 +63,7 @@ struct CallsSettingsView: View {
                 ForEach(model.notes) { note in
                     VStack(alignment: .leading, spacing: 8) {
                         Text(note.text)
-                        Text(note.fromText
-                             ? String(format: NSLocalizedString("From your text · %@", comment: ""), DateText.full(note.createdDate))
-                             : String(format: NSLocalizedString("Said on a call · %@", comment: ""), DateText.full(note.createdDate)))
+                        Text(noteOrigin(note))
                             .font(.footnote)
                             .foregroundStyle(Theme.secondaryText)
                         HStack {
@@ -180,10 +179,19 @@ struct CallsSettingsView: View {
             if let number = t.doddyNumber ?? calls.doddyNumber {
                 StatusRow(title: "Doddy's number", value: number)
             }
+            if model.textSettings == nil, let problem = model.textsProblem {
+                Label(problem, systemImage: "exclamationmark.triangle")
+                    .foregroundStyle(Theme.error)
+                Button("Try again") { Task { await model.refresh() } }
+            }
+            ForEach(t.pauses, id: \.self) { pause in
+                Label(pause.localized, systemImage: "pause.circle")
+                    .font(.footnote)
+            }
             Toggle("Accept texts from my number", isOn: Binding(
                 get: { t.inboundEnabled },
                 set: { on in Task { await model.setTextsToDoddy(on) } }))
-                .disabled(!t.inboundEnabled && t.inboundBlocker != nil)
+                .disabled(model.textSettings == nil || (!t.inboundEnabled && t.inboundBlocker != nil))
                 .accessibilityIdentifier("texts.inbound")
             Text(TextsToDoddyConsent.text)
                 .font(.footnote)
@@ -191,7 +199,7 @@ struct CallsSettingsView: View {
             Toggle("Doddy replies by text", isOn: Binding(
                 get: { t.repliesEnabled },
                 set: { on in Task { await model.setTextReplies(on) } }))
-                .disabled(!t.repliesEnabled && t.repliesBlocker != nil)
+                .disabled(model.textSettings == nil || (!t.repliesEnabled && t.repliesBlocker != nil))
                 .accessibilityIdentifier("texts.replies")
             if t.repliesEnabled {
                 Toggle("Replies may use my memories", isOn: Binding(
@@ -200,11 +208,11 @@ struct CallsSettingsView: View {
                     .disabled(!t.repliesUseMemories && t.memoriesBlocker != nil)
                     .accessibilityIdentifier("texts.memories")
             }
-            if let blocker = nextBlocker(t) {
+            if model.textSettings != nil, let blocker = nextBlocker(t) {
                 Label(blocker.localized, systemImage: "info.circle")
                     .font(.footnote)
             }
-            Text("Off by default. Only texts from your verified number count; texts from anyone else are dropped without a reply. Without replies, each text waits here as a note. With replies, Doddy answers each text once, within 10 minutes, up to 30 a day, and only to your number; it can leave a note for you to confirm. With memories allowed, a reply can quote a saved note, and texts aren't encrypted between phone networks.")
+            Text("Off by default. Only texts from your verified number count; texts from anyone else are dropped without a reply. Without replies, each text waits here as a note, while there's room for 20 notes and up to 30 texts an hour. With replies, Doddy answers each text once and only to your number, if it can start within 10 minutes (otherwise the text becomes a note), up to 30 a day while the server's daily budget lasts; it can leave a note for you to confirm. With memories allowed, the saved notes that match your text go to Anthropic too, a reply can quote one, and texts aren't encrypted between phone networks.")
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
         }
@@ -215,10 +223,18 @@ struct CallsSettingsView: View {
             if let file = model.historyFile {
                 ShareLink(item: file) { Label("Share the export", systemImage: "square.and.arrow.up") }
             }
-            Text("A file with your calls, the status of texts between you and Doddy, and the notes waiting here. The text of messages isn't in it: Doddy's server erases it once a message is sent. Doddy's server also deletes its records at Twilio after each call or text, a day later unless the server is set up otherwise.")
+            Text("A file with your calls, the status of texts between you and Doddy, and the notes waiting here. The text of messages isn't in it: Doddy's server erases it once a message is sent. Doddy's server also asks Twilio to delete its records of each call and text, a day later unless the server is set up otherwise. The file is removed from this iPhone when you leave this screen.")
                 .font(.footnote)
                 .foregroundStyle(Theme.secondaryText)
         }
+    }
+
+    /// Where a waiting note came from: a call, your text word for word, or Doddy's words (ADR-494).
+    private func noteOrigin(_ note: CallNote) -> String {
+        let when = DateText.full(note.createdDate)
+        if note.writtenByDoddy { return String(format: NSLocalizedString("Doddy noted this from your text · %@", comment: ""), when) }
+        if note.fromText { return String(format: NSLocalizedString("From your text · %@", comment: ""), when) }
+        return String(format: NSLocalizedString("Said on a call · %@", comment: ""), when)
     }
 
     /// Why the next switch down is off and can't be turned on yet; nil when nothing is in the way.

@@ -212,7 +212,8 @@ describe("texts to Doddy against real Postgres", { skip: dbSkip }, () => {
     await process();
     await deliver();
     assert.equal(sms.sent.at(-1)!.body, "Gate code 4417 (saved)");
-    assert.deepEqual((await notes(me.h)).map((n) => [n.text, n.source]), [["Ask about the gate", "text"]]);
+    // Claude's words are labelled as Doddy's note, never as the user's text.
+    assert.deepEqual((await notes(me.h)).map((n) => [n.text, n.source]), [["Ask about the gate", "doddy"]]);
     replyWriter.script = async (r) => ({ kind: "reply", text: `Reply to: ${r.text}`, costMicroUsd: 6000 });
   });
 
@@ -354,6 +355,41 @@ describe("texts to Doddy against real Postgres", { skip: dbSkip }, () => {
     assert.equal((await db.query("SELECT 1 FROM provider_deletions WHERE sid = $1", [callSid])).rowCount, 0, "not before it ends");
     await app.inject(twilioRequest("/webhooks/twilio/call-status", { CallSid: callSid, CallStatus: "completed" }));
     assert.equal((await db.query("SELECT kind FROM provider_deletions WHERE sid = $1", [callSid])).rows[0]?.kind, "call");
+  });
+
+  test("texts to Doddy switch off when the number is removed, replaced, or proved by another account", async () => {
+    const on = async (accountId: string) =>
+      (await db.query("SELECT inbound_enabled, replies_enabled FROM text_settings WHERE account_id = $1", [accountId])).rows[0];
+    // Removed.
+    const a = await owner("+48500300020");
+    await turnOn(a.h, { repliesEnabled: true });
+    assert.equal((await app.inject({ method: "DELETE", url: "/v1/phone", headers: a.h })).statusCode, 204);
+    assert.deepEqual(await on(a.accountId), { inbound_enabled: false, replies_enabled: false });
+    // Replaced by another number: new consent needed.
+    const b = await owner("+48500300021");
+    await turnOn(b.h);
+    await app.inject({ method: "POST", url: "/v1/phone/verification/check", headers: b.h, payload: { phone: "+48500300022", code: "123456" } });
+    assert.equal((await on(b.accountId)).inbound_enabled, false);
+    // The same number verified again keeps them on.
+    const c = await owner("+48500300023");
+    await turnOn(c.h);
+    await app.inject({ method: "POST", url: "/v1/phone/verification/check", headers: c.h, payload: { phone: "+48500300023", code: "123456" } });
+    assert.equal((await on(c.accountId)).inbound_enabled, true);
+    // Proved by another account (a reinstall): the old account's switch goes off with the number.
+    const d = await owner("+48500300023");
+    assert.equal((await on(c.accountId)).inbound_enabled, false);
+    assert.equal(await on(d.accountId), undefined, "the new account starts with everything off");
+  });
+
+  test("turning texts off works even after the server lost its setup", async () => {
+    const me = await owner("+48500300024");
+    await turnOn(me.h);
+    const bare = await testApp(db, { publicBaseUrl: undefined });
+    const put = (payload: object) => bare.app.inject({ method: "PUT", url: "/v1/texts/settings", headers: me.h, payload });
+    assert.equal((await put({ repliesEnabled: true })).statusCode, 503, "nothing new is turned on");
+    assert.equal((await put({ inboundEnabled: false })).statusCode, 204);
+    assert.equal((await db.query("SELECT inbound_enabled FROM text_settings WHERE account_id = $1", [me.accountId])).rows[0].inbound_enabled, false);
+    await bare.app.close();
   });
 
   test("deleting the account deletes its text settings, texts and notes", async () => {

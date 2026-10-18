@@ -45,8 +45,9 @@ CREATE INDEX inbound_texts_queued ON inbound_texts (received_at) WHERE state = '
 CREATE INDEX inbound_texts_replying ON inbound_texts (updated_at) WHERE state = 'replying';
 CREATE INDEX inbound_texts_cost ON inbound_texts (received_at) WHERE cost_microusd > 0;
 
--- Notes in the inbox now come from calls or from texts; the app labels them.
-ALTER TABLE call_notes ADD COLUMN source text NOT NULL DEFAULT 'call' CHECK (source IN ('call', 'text'));
+-- Notes in the inbox now say where they came from, and the app labels them: a call, a text kept
+-- word for word, or a note Doddy (Claude) wrote while answering a text.
+ALTER TABLE call_notes ADD COLUMN source text NOT NULL DEFAULT 'call' CHECK (source IN ('call', 'text', 'doddy'));
 
 -- Message and call records Doddy deletes at Twilio. Only Twilio's id is kept: no number, no text.
 CREATE TABLE provider_deletions (

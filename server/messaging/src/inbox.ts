@@ -9,7 +9,8 @@ import { searchMemories, type MemoryHit } from "./memorySearch.js";
 // Doddy (textReplies.ts). A note is not a memory: it waits until the user confirms or discards it
 // in the app (DOD-06).
 
-export type NoteSource = "call" | "text";
+/** call: Doddy took it on a call. text: the user's text, word for word. doddy: Claude wrote it while answering a text. */
+export type NoteSource = "call" | "text" | "doddy";
 
 /** Leaves a note in the inbox, encrypted. Undefined when the inbox is full (MAX_PENDING_NOTES). */
 export async function saveNote(

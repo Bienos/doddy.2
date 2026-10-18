@@ -238,7 +238,7 @@ Send Claude what you saw. Never send codes or keys.
 | 2 | Tap **Save to memories** on it | It's in your memories; the note leaves the list |
 | 3 | Text Doddy from another phone | Nothing back, no note. Render shows `text dropped` with `not_allowed` and no number |
 | 4 | Replies on: text "What can you do by text?" | One answer from Doddy's number within a minute, at most 3 SMS parts |
-| 5 | Text "Remember to buy batteries" | The answer says it left a note to confirm; the note appears in the app |
+| 5 | Text "Remember to buy batteries" | The answer says it left a note to confirm; the note appears in the app, marked "Doddy noted this from your text" |
 | 6 | Text "Text my sister that I'm late" | The answer says Doddy can't text anyone else |
 | 7 | With **Replies may use my memories** on, ask by text about something you saved | The answer uses that note. With it off, Doddy says it can't see your notes by text |
 | 8 | Text `POMOC` | Only Twilio's help message; no note, no AI answer |

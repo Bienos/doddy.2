@@ -10,6 +10,8 @@ final class CallsModel {
     private(set) var settings: CallSettings?
     /// Texts to Doddy (ADR-494); nil until the server answered.
     private(set) var textSettings: TextSettings?
+    /// Why the texts settings couldn't be loaded, or nil. A failed load never reads as "not set up".
+    private(set) var textsProblem: String?
     /// The exported history, ready to share, after Export phone and text history.
     private(set) var historyFile: URL?
     private(set) var notes: [CallNote] = []
@@ -36,7 +38,15 @@ final class CallsModel {
             let settings = try await client.callSettings()
             self.settings = settings
             self.recent = (try? await client.recentCalls()) ?? []
-            if let texts = try? await client.textSettings() { self.textSettings = texts; Self.mirror(texts) }
+            do {
+                let texts = try await client.textSettings()
+                self.textSettings = texts
+                self.textsProblem = nil
+                Self.mirror(texts)
+            } catch {
+                self.textsProblem = String(
+                    format: NSLocalizedString("Couldn't load the settings for texts to Doddy. %@", comment: ""), Self.text(for: error))
+            }
             // The inbox holds notes from calls and from texts (ADR-494).
             if settings.available.inbound || self.textSettings?.available.notes == true {
                 do {
@@ -46,7 +56,7 @@ final class CallsModel {
                     self.notesProblem = nil
                 } catch {
                     self.notesProblem = String(
-                        format: NSLocalizedString("Couldn't load the notes from your calls. %@", comment: ""), Self.text(for: error))
+                        format: NSLocalizedString("Couldn't load your notes. %@", comment: ""), Self.text(for: error))
                 }
             } else {
                 self.notes = []
@@ -111,6 +121,7 @@ final class CallsModel {
             do {
                 let texts = try await client.textSettings()
                 self.textSettings = texts
+                self.textsProblem = nil
                 Self.mirror(texts)
             } catch {
                 if failure == nil { self.message = UpdatesModel.savedButNotReadBack }
@@ -128,13 +139,19 @@ final class CallsModel {
     /// The server's JSON, saved to a file this iPhone shares from. Nothing else is added to it.
     func exportHistory() async {
         guard let client else { return }
-        historyFile = nil
+        clearExport()
         await run {
             let data = try await client.phoneHistory()
             let url = FileManager.default.temporaryDirectory.appendingPathComponent("Doddy phone and text history.json")
             try data.write(to: url, options: [.atomic, .completeFileProtection])
             self.historyFile = url
         }
+    }
+
+    /// The export holds the phone number and the waiting notes: it isn't left behind.
+    func clearExport() {
+        if let file = historyFile { try? FileManager.default.removeItem(at: file) }
+        historyFile = nil
     }
 
     func callMeNow() async {
@@ -228,7 +245,7 @@ final class CallsModel {
         case .notEnabled("sms_not_enabled"): TextsBlocker.textsFromDoddyOff.localized
         case .notEnabled("memory_copy_off"): TextsBlocker.memoryCopyOff.localized
         case .notConfigured("replies_not_configured"): TextsBlocker.repliesNotSetUp.localized
-        case .rateLimited: NSLocalizedString("That's the limit for calls for now. Try again later.", comment: "")
+        case .rateLimited: NSLocalizedString("That's the limit for now. Try again later.", comment: "")
         case .notConfigured: NSLocalizedString("Doddy's phone line isn't set up on the server yet.", comment: "")
         default: UpdatesModel.text(for: error)
         }
@@ -239,13 +256,25 @@ extension TextsBlocker {
     /// `message` in the app's language; literal keys, so the strings catalog finds them.
     var localized: String {
         switch self {
-        case .notSetUp: NSLocalizedString("Doddy's phone number isn't set up on the server yet.", comment: "")
+        case .notSetUp: NSLocalizedString("Texts to Doddy aren't set up on Doddy's server yet.", comment: "")
         case .noVerifiedPhone: NSLocalizedString("Verify your phone number in Notifications and texts first.", comment: "")
         case .repliesNotSetUp: NSLocalizedString("Replies aren't set up on Doddy's server yet.", comment: "")
         case .textsToDoddyOff: NSLocalizedString("Turn on Texts to Doddy first.", comment: "")
         case .textsFromDoddyOff: NSLocalizedString("Replies are texts from Doddy: turn on texts in Notifications and texts first. If you sent STOP, text START to Doddy's number.", comment: "")
         case .repliesOff: NSLocalizedString("Turn on replies first.", comment: "")
         case .memoryCopyOff: NSLocalizedString("Turn on Memory on calls first: replies use the same copy of your notes.", comment: "")
+        }
+    }
+}
+
+extension TextsPause {
+    /// `message` in the app's language; literal keys, so the strings catalog finds them.
+    var localized: String {
+        switch self {
+        case .notReceiving: NSLocalizedString("Doddy's server can't receive texts right now, so nothing you text it is kept.", comment: "")
+        case .repliesNotSetUp: NSLocalizedString("Replies are paused: they aren't set up on Doddy's server. Your texts wait as notes.", comment: "")
+        case .repliesCantText: NSLocalizedString("Replies are paused: Doddy can't text you (texts are off in Notifications and texts, or you sent STOP). Your texts wait as notes.", comment: "")
+        case .memoriesWithoutCopy: NSLocalizedString("Memory on calls is off, so replies can't use your notes.", comment: "")
         }
     }
 }

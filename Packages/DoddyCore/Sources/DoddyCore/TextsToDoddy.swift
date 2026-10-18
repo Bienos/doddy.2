@@ -70,6 +70,31 @@ public struct TextSettings: Equatable, Sendable, Decodable {
         if !memoryCopy { return .memoryCopyOff }
         return nil
     }
+
+    /// Switches the server reports as on that can't do their job right now, so the screen never
+    /// implies they work (the server goes on with notes where it can).
+    public var pauses: [TextsPause] {
+        var out: [TextsPause] = []
+        if inboundEnabled && !available.notes { out.append(.notReceiving) }
+        if inboundEnabled && repliesEnabled {
+            if !available.replies { out.append(.repliesNotSetUp) } else if !textsFromDoddy { out.append(.repliesCantText) }
+        }
+        if repliesEnabled && repliesUseMemories && !memoryCopy { out.append(.memoriesWithoutCopy) }
+        return out
+    }
+}
+
+public enum TextsPause: Hashable, Sendable {
+    case notReceiving, repliesNotSetUp, repliesCantText, memoriesWithoutCopy
+
+    public var message: String {
+        switch self {
+        case .notReceiving: "Doddy's server can't receive texts right now, so nothing you text it is kept."
+        case .repliesNotSetUp: "Replies are paused: they aren't set up on Doddy's server. Your texts wait as notes."
+        case .repliesCantText: "Replies are paused: Doddy can't text you (texts are off in Notifications and texts, or you sent STOP). Your texts wait as notes."
+        case .memoriesWithoutCopy: "Memory on calls is off, so replies can't use your notes."
+        }
+    }
 }
 
 public enum TextsBlocker: Equatable, Sendable {
@@ -77,7 +102,7 @@ public enum TextsBlocker: Equatable, Sendable {
 
     public var message: String {
         switch self {
-        case .notSetUp: "Doddy's phone number isn't set up on the server yet."
+        case .notSetUp: "Texts to Doddy aren't set up on Doddy's server yet."
         case .noVerifiedPhone: "Verify your phone number in Notifications and texts first."
         case .repliesNotSetUp: "Replies aren't set up on Doddy's server yet."
         case .textsToDoddyOff: "Turn on Texts to Doddy first."
@@ -96,8 +121,10 @@ public enum TextsToDoddyConsent {
 }
 
 extension CallNote {
-    /// The note came from a text the user sent Doddy (ADR-494), not from a call.
+    /// The user's own text, word for word (ADR-494).
     public var fromText: Bool { source == "text" }
+    /// Written by Doddy (Claude) while answering a text: Doddy's words, not the user's (ADR-494).
+    public var writtenByDoddy: Bool { source == "doddy" }
 }
 
 extension DoddyServerClient {
