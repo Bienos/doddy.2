@@ -98,6 +98,17 @@ Not in `tools.json`, also covered:
 - **Server tools without a voice tool:** none; the server's 15 account tools and web search are the 16 cloud rows above.
 - **Plan card (`propose_plan`):** each step is a change shown on the one card; the tap is the yes for the ticked steps.
 
+## Phone actions (prompt step 2.5)
+
+Checked 2026-10-18 in code and pinned by `AskFirstTests.testPhoneActionsWaitForATapOnTheirOwnCard`:
+- **Messages** (`draft_message`): a card with the recipient (from Contacts) and the text; the tap opens Messages or Mail
+  with it filled in and the user sends it there. Doddy never sends a text itself.
+- **Calls**: there is no call tool; Doddy can't place calls.
+- **Shortcuts** (`run_shortcut`), **alarms** (`set_alarm`, `cancel_alarm`), **timers** (`set_timer`), **Maps**
+  (`open_map`): each shows its own card and runs only on a tap.
+- **Several at once** (`propose_plan`): one card with each step ticked; the tap runs only the ticked steps. Online-account
+  sends are not plan steps (one tap per send).
+
 ## Tests that fail if the rule breaks
 
 | Test | Where | Checks |

@@ -63,6 +63,26 @@ final class AskFirstTests: XCTestCase {
         XCTAssertEqual(AskFirst.need(for: .invalid(name: "x", reason: "y")), .nothingRuns)
     }
 
+    func testPhoneActionsWaitForATapOnTheirOwnCard() {
+        // Step 2.5: messages (opened for the user to send), calls (no tool: Doddy can't call),
+        // shortcuts, alarms, timers and Maps all show their own card and run only on a tap.
+        let calls: [(String, String)] = [
+            ("set_timer", #"{"minutes":5,"label":"Eggs"}"#),
+            ("set_alarm", #"{"time":"2099-01-05T07:30"}"#),
+            ("cancel_alarm", #"{"time":"07:30"}"#),
+            ("run_shortcut", #"{"name":"Home"}"#),
+            ("draft_message", #"{"to":"Anna","body":"On my way"}"#),
+            ("open_map", #"{"place":"Demo Café"}"#),
+        ]
+        for (name, json) in calls {
+            let request = VoiceToolRequest.parse(name: name, parametersJSON: Data(json.utf8))
+            if case .invalid(_, let reason) = request { XCTFail("\(name): \(reason)"); continue }
+            XCTAssertEqual(AskFirst.need(for: request), .ownPayloadCard, name)
+            XCTAssertTrue(AskFirst.needsTap(AskFirst.need(for: request)), name)
+        }
+        XCTAssertNil(ToolCatalog.descriptor("make_call"), "there is no call tool")
+    }
+
     func testTheCardShowsTheExactChange() {
         guard case .tapFirst(let card) = AskFirst.need(for: .addToList(ListVoiceRequest(list: "Shopping", items: ["2 milk", "eggs"]))) else {
             return XCTFail("adding to a list needs a tap on a card")
