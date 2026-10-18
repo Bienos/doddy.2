@@ -20,6 +20,9 @@ final class VoiceTokenTests: XCTestCase {
         XCTAssertEqual(VoiceTokenServer.token(status: 503, body: Data()), .failure(.busy))
         XCTAssertEqual(VoiceTokenServer.token(status: 503, body: Data(#"{"error":"server_not_configured"}"#.utf8)), .failure(.serverNotConfigured))
         XCTAssertEqual(VoiceTokenServer.token(status: 503, body: Data(#"{"error":"voice_busy"}"#.utf8)), .failure(.busy))
+        XCTAssertEqual(VoiceTokenServer.token(status: 500, body: Data(#"{"error":"server_not_configured"}"#.utf8)), .failure(.serverNotConfigured),
+                       "server/voice-token sends 500 only for a missing provider key or limit setting")
+        XCTAssertEqual(VoiceTokenServer.token(status: 500, body: Data()), .failure(.serverNotConfigured), "a 500 is never busy")
         XCTAssertEqual(VoiceTokenServer.token(status: 404, body: Data()), .failure(.serverNotConfigured))
         XCTAssertEqual(VoiceTokenServer.token(status: 504, body: Data()), .failure(.serverProblem(status: 504)))
     }

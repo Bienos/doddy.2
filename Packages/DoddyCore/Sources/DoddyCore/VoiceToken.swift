@@ -49,10 +49,14 @@ public enum VoiceTokenServer {
         case 429:
             let seconds = retryAfter.flatMap { Int($0.trimmingCharacters(in: .whitespaces)) }.flatMap { $0 > 0 ? $0 : nil }
             return .failure(.rateLimited(retryAfterSeconds: seconds))
-        case 503, 500:
+        // The server sends 503 for two reasons, told apart only by the body: `voice_busy` (the
+        // provider hit its limit) and `server_not_configured` (no session store or signing key). Any
+        // other 503 counts as busy, as before. A 500 always means a missing setting, and a 404
+        // means the route isn't deployed.
+        case 503:
             let error = (try? JSONSerialization.jsonObject(with: body) as? [String: Any])?["error"] as? String
             return .failure(error == "server_not_configured" ? .serverNotConfigured : .busy)
-        case 404: return .failure(.serverNotConfigured)
+        case 500, 404: return .failure(.serverNotConfigured)
         default: return .failure(.serverProblem(status: status))
         }
     }

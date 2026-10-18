@@ -13,6 +13,24 @@ The app calls two routes:
 - `POST /api/voice-token`: validates an active DODDY session and returns an ElevenLabs conversation
   token, OpenAI Realtime client secret, or the configured Picovoice key.
 
+### Replies from `/api/voice-token`
+
+The app reads these in `VoiceTokenServer.token` (DoddyCore). A 503 has two meanings, so the app
+reads its body; a 500 has only one.
+
+| Status | `error` in the body | Meaning | The app shows |
+|---|---|---|---|
+| 200 | none | `{"token"}` (ElevenLabs), `{"token","provider":"openai","model"}` (OpenAI) or `{"accessKey"}` (Picovoice) | the conversation starts |
+| 401 | `session_expired` | no valid DODDY session | sign in again |
+| 429 | `rate_limited`, with `Retry-After` | per-account or global hourly limit | how long to wait |
+| 500 | `server_not_configured` | a provider key or limit setting is missing or invalid | voice isn't set up |
+| 503 | `server_not_configured` | the session store or signing key is missing, or the store is unreachable | voice isn't set up |
+| 503 | `voice_busy` | the provider answered 429 (its concurrency or daily limit) | voice is busy |
+| 400, 405 | `unknown_provider`, `unknown_model`, `method_not_allowed` | a request this server doesn't accept | a server problem |
+| 502, 504 | `upstream_failed`, `upstream_unreachable`, `upstream_bad_response`, `upstream_timeout` | the provider failed or took over 10 s | a server problem |
+
+A 404 (the route isn't deployed) also reads as "voice isn't set up".
+
 Access tokens last 10 minutes and stay in app memory. Opaque refresh tokens rotate on use and last
 30 days; the app stores the current refresh token and Apple user identifier in the iOS Keychain with
 device-only accessibility. A revoked Apple credential, DODDY sign-out, or invalid refresh token

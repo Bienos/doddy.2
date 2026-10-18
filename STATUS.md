@@ -31,6 +31,7 @@ Merge one at a time, then rebuild and talk to Doddy before the next.
 
 | Branch / PR | What it changes | Risk to voice |
 |---|---|---|
+| `claude/epic-wright-vz93xh` (no PR yet) | `754e5d6`: first-launch profile flow; voice needs Sign in with Apple and a DODDY voice session from `server/voice-token` (`/api/voice-auth`); access codes and the public agent fallback are gone. Then the fixes for the core tests, the capability guard and the app type-check (ADR-483). | High: voice can't start until the owner sets the server's new variables (`server/voice-token/README.md`) and turns on Sign in with Apple for the app ID. Never built in Xcode or run on a device. |
 | `claude/admiring-curie-bsuwv9-all` (PR #67) | Quick start, the first-use fixes, Home's first visit and the shorter intro merged on 13 Oct (#76). Still open: "Hey Doddy" with one tap, the guided first conversation, Quick start shortcuts and "Ask me about it" (#53, #56, #57, #58). | High for what's left: the wake word and the first conversation |
 | `claude/trusting-dirac-o8ajzc` | Voice screen shows Doddy with a sound wave; the transcript is one tap away; the wave follows loudness | Medium: adds audio level meters to the live session |
 | `claude/affectionate-mayer-aovol9` | Island compact view draws a pre-cut round face | Low |

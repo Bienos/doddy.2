@@ -1,3 +1,6 @@
+import DoddyCore
+import Foundation
+
 /// Non-secret voice service configuration. The URL is a public endpoint, not a credential.
 enum VoiceConfig {
     /// Existing owner-controlled deployment. Provider credentials remain on that server.
