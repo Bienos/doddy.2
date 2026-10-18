@@ -4,7 +4,7 @@
 >
 > - Written 2026-10-18 from the code, docs, git history and read-only checks of the live services at `754e5d6` (default branch). Nothing in the app changes because of this file.
 > - **How to use it:** in each table, fill the **Owner** column with Ship, Hide or Cut. Leave it blank to accept the suggestion. Then answer the decisions in "Owner decisions" at the end.
-> - Once marked up, ADR-500 records the result and this file becomes the v1 scope. It replaces `docs/product/PRODUCT_REQUIREMENTS.md` (10 Oct). That file describes a typed-memory MVP the app has outgrown. It stays unchanged as history, because `scripts/verify_imported_pack.py` locks it byte for byte.
+> - Once marked up, ADR-520 records the result and this file becomes the v1 scope. It replaces `docs/product/PRODUCT_REQUIREMENTS.md` (10 Oct). That file describes a typed-memory MVP the app has outgrown. It stays unchanged as history, because `scripts/verify_imported_pack.py` locks it byte for byte.
 > - The steps to get this scope into testers' hands are in `docs/implementation/GO_LIVE_CHECKLIST.md`.
 
 ## What "v1" means

@@ -1,6 +1,6 @@
 # Voice token server: status
 
-> **Since `754e5d6` (16 Oct, ADR-502) the access code is retired.** Voice now needs a DODDY voice account made with Sign in with Apple, and the app has no token server field or public agent. The sections from 2026-10-09 below describe the access-code server and stay as history. What's current: "Current deployment (checked 2026-10-18)" below, and `server/voice-token/README.md`.
+> **Since `754e5d6` (16 Oct, ADR-522) the access code is retired.** Voice now needs a DODDY voice account made with Sign in with Apple, and the app has no token server field or public agent. The sections from 2026-10-09 below describe the access-code server and stay as history. What's current: "Current deployment (checked 2026-10-18)" below, and `server/voice-token/README.md`.
 
 Date: 2026-10-09. Owner instruction: "build" (the step recommended after V2). Closes ADR-034's
 "must change before TestFlight" **once deployed and the agent's authentication is on**. Neither has happened yet.
