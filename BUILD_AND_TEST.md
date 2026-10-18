@@ -109,7 +109,14 @@ docs/ schemas/ assets/ design/ reference/ prompts/   imported pack (read-only re
 
 None are committed. The app needs none. The Connected Apps backend needs secrets only in live mode
 (`COMPOSIO_API_KEY`, `DODDY_SESSION_SIGNING_KEY`); keep them in the ignored `backend/.env.local` or a secret
-manager — `backend/.env.example` lists names with empty values. No signing team, provider key, token or production identifier is committed;
+manager — `backend/.env.example` lists names with empty values.
+
+**1Password (ADR-493).**
+- **The record:** project secrets are recorded in 1Password. `secrets/manifest.json` lists each one and its hosts, and each service's `.env.op` holds 1Password references only.
+- **Local runs:** `npm run start:op` (backend, messaging server) or `op run --env-file=.env.op -- <command>`.
+- **Hosts:** the owner pushes changes with `tools/secrets/sync.mjs` (dry run by default; `--apply` needs the plan's code).
+- **Checks:** `node tools/secrets/sync.mjs check` and `node --test "tools/secrets/test/*.test.mjs"` run in `scripts/ci.sh`. They need no 1Password account and no network.
+- **Guide:** `docs/security/SECRETS_1PASSWORD.md`. No signing team, provider key, token or production identifier is committed;
 `DEVELOPMENT_TEAM` is blank (choose your own team in Xcode to run on a device). The bundle identifier
 `com.bienos.doddy2.dev` is a **development placeholder** pending an owner decision.
 
