@@ -92,6 +92,9 @@ struct CallBriefEditorView: View {
         }
         .disabled(list.isWorking)
         .overlay { if list.isWorking { ProgressView() } }
+        // The server's longest call can be shorter than the 4-minute default.
+        .onAppear { draft.maxDurationSecs = min(draft.maxDurationSecs, maxMinutes * 60) }
+        .onChange(of: maxMinutes) { draft.maxDurationSecs = min(draft.maxDurationSecs, maxMinutes * 60) }
         .background(ContactNumberPicker(isPresented: $pickingContact) { picked in
             draft.phone = picked.number
             draft.source = .contacts

@@ -9,7 +9,9 @@ struct CallCasesView: View {
     @Environment(ProfileStore.self) private var profiles
     @State private var model: CallCasesModel?
     @State private var editor: EditorItem?
-    @State private var opened: UUID?
+    /// Opened once the editor sheet has closed.
+    @State private var preparedCase: StoredCallCase?
+    @State private var opened: OpenedCase?
     @State private var exportText: String?
 
     var body: some View {
@@ -24,17 +26,26 @@ struct CallCasesView: View {
         .background(Theme.canvas)
         .navigationTitle("Calls for you")
         .navigationBarTitleDisplayMode(.inline)
-        .navigationDestination(item: $opened) { id in
-            if let model, let record = model.cases.first(where: { $0.id == id }) {
-                CallCaseView(model: model.caseModel(for: record, activity: CallLiveActivity.shared), list: model)
+        .navigationDestination(item: $opened) { open in
+            if let model {
+                CallCaseView(model: open.model, list: model,
+                             onOpen: { opened = OpenedCase(open: $0, in: model) },
+                             onClose: { opened = nil })
+                    // A replaced card is a new screen, not the old one's state with a new record.
+                    .id(open.id)
             }
         }
-        .sheet(item: $editor) { item in
+        .sheet(item: $editor, onDismiss: {
+            if let preparedCase, let model {
+                self.preparedCase = nil
+                opened = OpenedCase(open: preparedCase, in: model)
+            }
+        }) { item in
             if let model {
                 NavigationStack {
                     CallBriefEditorView(list: model, draft: item.draft, replacing: nil) { saved in
+                        preparedCase = saved
                         editor = nil
-                        opened = saved.id
                     }
                 }
             }
@@ -83,7 +94,7 @@ struct CallCasesView: View {
                 Section("Your calls") {
                     ForEach(model.cases) { record in
                         Button {
-                            opened = record.id
+                            opened = OpenedCase(open: record, in: model)
                         } label: {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(record.title).font(.headline).foregroundStyle(Theme.ink)
@@ -140,6 +151,22 @@ struct CallCasesView: View {
     private var firstName: String {
         profiles.profile.value(.name)?.split(separator: " ").first.map(String.init) ?? ""
     }
+}
+
+/// The call on screen, with its own model, so withdrawing or replacing the card in the list never
+/// leaves the screen blank.
+struct OpenedCase: Identifiable, Hashable {
+    let id: UUID
+    let model: CallCaseModel
+
+    @MainActor
+    init(open record: StoredCallCase, in list: CallCasesModel) {
+        id = record.id
+        model = list.caseModel(for: record, activity: CallLiveActivity.shared)
+    }
+
+    static func == (a: OpenedCase, b: OpenedCase) -> Bool { a.id == b.id && a.model === b.model }
+    func hash(into hasher: inout Hasher) { hasher.combine(id) }
 }
 
 struct EditorItem: Identifiable {

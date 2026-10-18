@@ -8,16 +8,25 @@ import SwiftUI
 struct CallCaseView: View {
     @State private var model: CallCaseModel
     let list: CallCasesModel
+    /// Shows another case in place of this one (a changed brief makes a new case).
+    let onOpen: (StoredCallCase) -> Void
+    /// Leaves this screen (the card was withdrawn).
+    let onClose: () -> Void
 
     @State private var confirmingCall = false
     @State private var rehearsing = false
     @State private var selfScript = false
     @State private var editor: EditorItem?
-    @State private var replacement: StoredCallCase?
+    /// Acted on once the sheet that chose it has closed: presenting while a sheet is still
+    /// closing fails silently.
+    @State private var rehearsalChoice: CallRehearsalView.Choice?
+    @State private var preparedCase: StoredCallCase?
 
-    init(model: CallCaseModel, list: CallCasesModel) {
+    init(model: CallCaseModel, list: CallCasesModel, onOpen: @escaping (StoredCallCase) -> Void, onClose: @escaping () -> Void) {
         _model = State(initialValue: model)
         self.list = list
+        self.onOpen = onOpen
+        self.onClose = onClose
     }
 
     var body: some View {
@@ -33,15 +42,12 @@ struct CallCaseView: View {
         .navigationBarTitleDisplayMode(.inline)
         .task { await model.refresh() }
         .onDisappear { model.stopWatching() }
-        .sheet(isPresented: $rehearsing) {
+        .sheet(isPresented: $rehearsing, onDismiss: actOnRehearsalChoice) {
             if let preview = model.preview {
                 NavigationStack {
                     CallRehearsalView(preview: preview) { choice in
+                        rehearsalChoice = choice
                         rehearsing = false
-                        switch choice {
-                        case .doddyCalls: confirmingCall = true
-                        case .callMyself: selfScript = true
-                        }
                     }
                 }
             }
@@ -51,17 +57,17 @@ struct CallCaseView: View {
                 NavigationStack { SelfCallScriptView(preview: preview) }
             }
         }
-        .sheet(item: $editor) { item in
+        .sheet(item: $editor, onDismiss: {
+            if let preparedCase {
+                self.preparedCase = nil
+                onOpen(preparedCase)
+            }
+        }) { item in
             NavigationStack {
                 CallBriefEditorView(list: list, draft: item.draft, replacing: model.record.result == nil ? model.record : nil) { saved in
+                    preparedCase = saved
                     editor = nil
-                    replacement = saved
                 }
-            }
-        }
-        .navigationDestination(item: Binding(get: { replacement?.id }, set: { if $0 == nil { replacement = nil } })) { _ in
-            if let replacement {
-                CallCaseView(model: list.caseModel(for: replacement, activity: CallLiveActivity.shared), list: list)
             }
         }
         .confirmationDialog(confirmTitle, isPresented: $confirmingCall, titleVisibility: .visible) {
@@ -69,6 +75,22 @@ struct CallCaseView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("Doddy says the opening line on the card first, asks the question and ends the call. You can take over or end it from this screen or the Lock Screen.")
+        }
+    }
+
+    /// "Doddy dzwoni" after a rehearsal goes through the same hours check as the card's button.
+    private func actOnRehearsalChoice() {
+        guard let choice = rehearsalChoice else { return }
+        rehearsalChoice = nil
+        switch choice {
+        case .callMyself:
+            selfScript = true
+        case .doddyCalls:
+            if let preview = model.preview, CallHours.fits(Date(), maxDurationSecs: preview.maxDurationSecs) {
+                confirmingCall = true
+            } else {
+                model.message = NSLocalizedString("Doddy calls only between 8:00 and 20:00 Polish time, and the whole call must fit. Pick a time:", comment: "")
+            }
         }
     }
 
@@ -161,7 +183,9 @@ struct CallCaseView: View {
                 Label("I'll call myself", systemImage: "phone")
             }
             Button("Change the brief") { editor = EditorItem(draft: model.record.brief) }
-            Button("Withdraw the card", role: .destructive) { Task { await list.withdraw(model.record) } }
+            Button("Withdraw the card", role: .destructive) {
+                Task { if await list.withdraw(model.record) { onClose() } }
+            }
         } footer: {
             Text(String(format: NSLocalizedString("Approving sends exactly this card. It can be approved until %@; after that, make a new one.", comment: ""),
                         model.approvableUntil.map(CallCaseText.time) ?? "–"))

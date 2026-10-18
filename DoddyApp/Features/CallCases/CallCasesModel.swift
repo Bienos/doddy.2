@@ -139,13 +139,15 @@ final class CallCasesModel {
 
     /// Cancels a card on the server. One that never dialled is also removed here; one with a call
     /// behind it stays, since its answer, cost and receipts are the user's record.
-    func withdraw(_ record: StoredCallCase) async {
-        guard let backend else { return }
+    /// True when the server cancelled it.
+    @discardableResult
+    func withdraw(_ record: StoredCallCase) async -> Bool {
+        guard let backend else { return false }
         do {
             try await backend.cancelCallCase(record.id)
         } catch {
             message = CallCaseText.error(error, describe: describe)
-            return
+            return false
         }
         do {
             if record.result == nil && record.state == "awaiting_approval" {
@@ -161,6 +163,7 @@ final class CallCasesModel {
         } catch {
             message = describe(error)
         }
+        return true
     }
 
     /// Deletes a call from this iPhone only. The server's copy is deleted when the result is

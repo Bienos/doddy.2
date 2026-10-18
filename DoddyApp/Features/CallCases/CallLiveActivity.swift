@@ -1,4 +1,4 @@
-import ActivityKit
+@preconcurrency import ActivityKit
 import DoddyCore
 import Foundation
 
@@ -44,8 +44,8 @@ final class CallLiveActivity: CallActivityPresenting {
         }
         endOthers(than: caseId)
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
-        do {
-            let started = try Activity.request(attributes: DoddyCallAttributes(caseId: caseId, startedAt: Date()), content: content, pushType: .token)
+        let attributes = DoddyCallAttributes(caseId: caseId, startedAt: Date())
+        if let started = try? Activity.request(attributes: attributes, content: content, pushType: .token) {
             activity = started
             tokenTask?.cancel()
             tokenTask = Task {
@@ -53,8 +53,10 @@ final class CallLiveActivity: CallActivityPresenting {
                     try? await ServerConfig.client()?.setCallLiveActivityToken(caseId, token: token, environment: ServerConfig.pushEnvironment)
                 }
             }
-        } catch {
-            // Not fatal: the call screen in the app shows the same.
+        } else {
+            // A build without push (the default entitlements) can't take a push token: the island
+            // then moves only while the app is open and polling. Not fatal either way.
+            activity = try? Activity.request(attributes: attributes, content: content, pushType: nil)
         }
     }
 

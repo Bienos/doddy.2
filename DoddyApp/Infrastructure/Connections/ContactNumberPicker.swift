@@ -23,7 +23,8 @@ struct ContactNumberPicker: UIViewControllerRepresentable {
 
     func updateUIViewController(_ host: UIViewController, context: Context) {
         context.coordinator.parent = self
-        guard isPresented, host.presentedViewController == nil else { return }
+        guard isPresented, !context.coordinator.presenting, host.presentedViewController == nil else { return }
+        context.coordinator.presenting = true
         let picker = CNContactPickerViewController()
         picker.delegate = context.coordinator
         picker.displayedPropertyKeys = [CNContactPhoneNumbersKey]
@@ -37,6 +38,8 @@ struct ContactNumberPicker: UIViewControllerRepresentable {
     @MainActor
     final class Coordinator: NSObject, CNContactPickerDelegate {
         var parent: ContactNumberPicker
+        /// Set while a picker is up, so a second update doesn't build another.
+        var presenting = false
 
         init(_ parent: ContactNumberPicker) {
             self.parent = parent
@@ -46,13 +49,17 @@ struct ContactNumberPicker: UIViewControllerRepresentable {
             let number = (contactProperty.value as? CNPhoneNumber)?.stringValue
             let name = CNContactFormatter.string(from: contactProperty.contact, style: .fullName) ?? ""
             MainActor.assumeIsolated {
+                presenting = false
                 parent.isPresented = false
                 if let number { parent.onPick(PickedPhoneNumber(name: name, number: number)) }
             }
         }
 
         nonisolated func contactPickerDidCancel(_ picker: CNContactPickerViewController) {
-            MainActor.assumeIsolated { parent.isPresented = false }
+            MainActor.assumeIsolated {
+                presenting = false
+                parent.isPresented = false
+            }
         }
     }
 }
