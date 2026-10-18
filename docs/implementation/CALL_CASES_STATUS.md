@@ -31,7 +31,7 @@ Last updated 2026-10-18. Branch `claude/modest-pasteur-7jnwfd`. Decisions: ADR-5
 ## Verified here (Linux, 2026-10-18)
 - Server: `npm run typecheck` and `npm test` against a throwaway Postgres 16: **115 tests pass** (call cases: payload binding, every limit, kill switch, agent drift, webhooks and their signatures, takeover, answer card, costs, deletion receipts, retry after voicemail; plus config).
 - `python3 -I scripts/voice_agent_spec.py check --agent task-call` passes; `node scripts/setup-task-call-agent.mjs --dry-run` builds a request that validates against ElevenLabs' published OpenAPI schema.
-- DoddyCore: `swift test` (Swift 6.2.3): 1,115 tests, **2 failures that predate this work** (`OpenAIRealtimeTests.testOpenAIGrantParsing`, `VoiceTokenTests.testWakeWordKeyFromTheTokenServer`). The call-case tests all pass.
+- DoddyCore: `swift test` (Swift 6.2.3 here, 6.1.3 in hosted CI): 1,133 tests, 0 failures, once PR #84's fix for two token-server test expectations (from 754e5d6) is carried here. The call-case tests all pass.
 - App: `scripts/typecheck_app_logic.sh` type-checks `CallCasesModel.swift` in Swift 6; `scripts/test_call_cases_model.sh` runs its 8 tests (answer saved before the server deletes it, an unconfirmed approval never resent, retry times, withdrawal, a case the server no longer has). A deliberate swap of save and delete made 2 of them fail.
 - `tools/build_strings_catalog.py --check` passes (Polish for every new string).
 
