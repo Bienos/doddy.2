@@ -245,6 +245,11 @@ struct VoiceView: View {
                                 .id("connectionNeeded")
                         }
 
+                        if let needed = controller.accountNeeded {
+                            accountCard(needed, controller: controller)
+                                .id("accountNeeded")
+                        }
+
                         if let card = controller.contactCard {
                             contactCard(card, controller: controller)
                                 .id("contactCard")
@@ -289,6 +294,9 @@ struct VoiceView: View {
                 }
                 .onChange(of: controller.saveSuggestions == nil) { _, isNil in
                     if !isNil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("saveSuggestions", anchor: .bottom) } }
+                }
+                .onChange(of: controller.accountNeeded?.offer) { _, offer in
+                    if offer != nil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("accountNeeded", anchor: .bottom) } }
                 }
             }
             controls(controller)
@@ -1126,6 +1134,93 @@ struct VoiceView: View {
             }
             .buttonStyle(PrimaryButtonStyle())
             .accessibilityIdentifier("voice.turnOnConnection")
+        }
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+    }
+
+    /// An online account the agent needed (ADR-483): one tap opens the provider's own sign-in page
+    /// in the system browser, then switches on only the tool that was asked for.
+    @ViewBuilder
+    private func accountCard(_ needed: VoiceSessionController.AccountNeeded, controller: VoiceSessionController) -> some View {
+        if needed.state == .connected {
+            // The server confirmed both steps: a one-line receipt instead of the card.
+            let offer = needed.offer
+            let title: LocalizedStringKey = offer.kind == .turnOn
+                ? "“\(offer.toolTitle)” is on."
+                : "\(offer.accountTitle) connected. “\(offer.toolTitle)” is on."
+            Label(title, systemImage: "checkmark.circle")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Theme.confirmed)
+                .padding(16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+                .accessibilityIdentifier("voice.connectAccount.connected")
+        } else {
+            accountOfferCard(needed, controller: controller)
+        }
+    }
+
+    private func accountOfferCard(_ needed: VoiceSessionController.AccountNeeded, controller: VoiceSessionController) -> some View {
+        let offer = needed.offer
+        let working = needed.state == .working
+        return VStack(alignment: .leading, spacing: 12) {
+            switch offer.kind {
+            case .connect:
+                Label("Connect \(offer.accountTitle)?", systemImage: "person.crop.circle.badge.plus")
+                    .font(.headline)
+                Text("Opens the sign-in page for \(offer.accountTitle). Then only “\(offer.toolTitle)” is switched on; you can switch it off in Settings, Online accounts.")
+                    .foregroundStyle(Theme.secondaryText)
+            case .reconnect:
+                Label("\(offer.accountTitle) needs connecting again", systemImage: "arrow.triangle.2.circlepath")
+                    .font(.headline)
+                Text("Its access expired or changed. Opens the sign-in page for \(offer.accountTitle), then switches on only “\(offer.toolTitle)”.")
+                    .foregroundStyle(Theme.secondaryText)
+            case .turnOn:
+                Label("“\(offer.toolTitle)” is off", systemImage: "switch.2")
+                    .font(.headline)
+                Text("Switch on just this, so Doddy can do what you asked. You can switch it off in Settings, Online accounts.")
+                    .foregroundStyle(Theme.secondaryText)
+            }
+            if offer.isDemo {
+                Label("Demo server: no real account is connected.", systemImage: "theatermasks")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+            }
+            switch needed.state {
+            case .canceled:
+                Text("Sign-in closed. Nothing was connected.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+                    .accessibilityIdentifier("voice.connectAccount.canceled")
+            case .failed(let message):
+                Label(message, systemImage: "exclamationmark.triangle")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.error)
+                    .accessibilityIdentifier("voice.connectAccount.failed")
+            case .offered, .working, .connected:
+                EmptyView()
+            }
+            Button {
+                Task { await controller.openAccountNeeded() }
+            } label: {
+                if working {
+                    let waiting: LocalizedStringKey = offer.kind == .turnOn ? "Switching on…" : "Waiting for \(offer.accountTitle)…"
+                    HStack(spacing: 8) {
+                        ProgressView()
+                        Text(waiting)
+                    }
+                } else {
+                    switch offer.kind {
+                    case .connect: Label("Connect \(offer.accountTitle)", systemImage: "link")
+                    case .reconnect: Label("Reconnect \(offer.accountTitle)", systemImage: "link")
+                    case .turnOn: Label("Turn it on", systemImage: "checkmark")
+                    }
+                }
+            }
+            .buttonStyle(PrimaryButtonStyle())
+            .disabled(working)
+            .accessibilityIdentifier("voice.connectAccount")
         }
         .padding(16)
         .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
