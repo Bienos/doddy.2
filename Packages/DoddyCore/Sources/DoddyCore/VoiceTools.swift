@@ -25,6 +25,8 @@ public enum VoiceToolName {
 /// need an iOS permission of its own.
 public enum VoiceConnection: String, CaseIterable, Sendable {
     case calendar, reminders, contacts, timers, maps, shortcuts, messages
+    /// BLIK phone transfers shown on a card for the user to send in their bank app (ADR-510).
+    case blik
 
     /// The name shown in Settings and in the agent's replies.
     public var title: String {
@@ -36,6 +38,7 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
         case .maps: "Maps"
         case .shortcuts: "Shortcuts"
         case .messages: "Messages and email"
+        case .blik: "BLIK transfers"
         }
     }
 
@@ -54,6 +57,7 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
         case VoiceToolName.openMap, VoiceToolName.remindWhenToLeave: .maps
         case VoiceToolName.runShortcut: .shortcuts
         case VoiceToolName.draftMessage: .messages
+        case VoiceToolName.draftBlikTransfer: .blik
         default: nil
         }
     }
@@ -193,6 +197,9 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case openMap(place: String)
     case runShortcut(name: String)
     case draftMessage(MessageDraft)
+    /// A BLIK phone transfer on a card for the user to send in their bank app (ADR-510). Doddy
+    /// never sends money.
+    case draftBlikTransfer(BlikTransferDraft)
     /// Gmail, Google Drive, Notion or Todoist through the Doddy server (see OnlineAccounts).
     case cloudTool(CloudToolCall)
     /// Translator mode (ADR-215): proposed on a card; the conversation switches on Start.
@@ -297,6 +304,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return .runShortcut(name: shortcut)
         case VoiceToolName.draftMessage:
             return parseMessage(args, name: name)
+        case VoiceToolName.draftBlikTransfer:
+            return parseBlikTransfer(args, name: name)
         case VoiceToolName.startTranslator:
             return parseStartTranslator(args, name: name)
         case VoiceToolName.stopTranslator:

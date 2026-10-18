@@ -11,6 +11,8 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
     case web
     /// The ECB's public rates file (ADR-300).
     case exchangeRates
+    /// A BLIK phone transfer shown for the user to send in their bank app (ADR-510).
+    case blik
 
     public var title: String {
         switch self {
@@ -29,6 +31,7 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
         case .outlook: "Outlook"
         case .web: "Web search"
         case .exchangeRates: "Exchange rates"
+        case .blik: "BLIK transfers"
         }
     }
 }
@@ -48,6 +51,9 @@ public enum ActivityOutcome: String, Codable, Sendable {
     case declined
     /// Written before a change runs. If Doddy closes before the result, it becomes `notSure`.
     case inProgress
+    /// Shown on a card for the user to do themselves, as a BLIK transfer in their bank app
+    /// (ADR-510). Doddy did nothing and can't see whether the user did.
+    case shown
 
     public var text: String {
         switch self {
@@ -59,6 +65,7 @@ public enum ActivityOutcome: String, Codable, Sendable {
         case .notDone: "Didn't happen"
         case .declined: "You said no"
         case .inProgress: "In progress"
+        case .shown: "Shown for you to send"
         }
     }
 }
@@ -189,6 +196,11 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(
                 app: .messages, title: draft.channel == .text ? "Draft a text" : "Draft an email",
                 detail: "to \(draft.recipientName)", isLookup: false)
+        case .draftBlikTransfer(let draft):
+            // The amount and title are on the card; the 30-day log keeps only who it was for.
+            return ActivityRequest(
+                app: .blik, title: "Prepare a BLIK transfer", detail: "\(draft.amount.agentText) to \(draft.recipientName)",
+                logDetail: "to \(draft.recipientName)", isLookup: false)
         case .cloudTool(let call):
             // Writes carry a key (ADR-322): a hash of the tool and its arguments, never the words.
             guard let request = describe(cloud: call.name), let key = CloudIdempotency.key(call) else { return describe(cloud: call.name) }
@@ -499,6 +511,8 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
         if starts(["added:", "saved:"]), alreadyThereTails.contains(where: withoutCheckedFirst(text).hasSuffix) { return (.alreadyThere, nil) }
         if starts(VoiceToolReply.donePrefixes) || starts(VoiceToolReply.listDonePrefixes) { return (.done, nil) }
         if text.hasPrefix("opened:") { return (.opened, nil) }
+        // A BLIK transfer card (ADR-510): the user sends it in their bank app; Doddy can't see it.
+        if text.hasPrefix("shown:") { return (.shown, "Doddy didn't send any money. You send it in your bank app.") }
         // Anything the app didn't phrase as a result is never shown as done.
         return (.notSure, nil)
     }

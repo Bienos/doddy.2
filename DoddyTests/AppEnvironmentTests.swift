@@ -66,8 +66,8 @@ final class AppEnvironmentTests: XCTestCase {
 
         let profiles = ProfileStore(environment: environment, arguments: ["-inMemoryStore"])
         await profiles.load()
-        // Only the introduction's own fields, never another profile field (`help` here). A field
-        // the profile doesn't have yet (`style`) is simply absent from the draft.
+        // Only the reviewed fields, and only those that have a value: a stored `help` is never a
+        // hidden edit in the introduction, and `style` isn't set here.
         XCTAssertTrue(Set(profiles.introductionDraft.values.keys).isSubset(of: Set(ProfileKey.introductionQuestions)))
         XCTAssertEqual(profiles.introductionDraft[.name], "Mika")
         XCTAssertNil(profiles.introductionDraft[.help])
