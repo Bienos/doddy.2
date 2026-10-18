@@ -50,8 +50,14 @@ public enum VoiceTokenServer {
             let seconds = retryAfter.flatMap { Int($0.trimmingCharacters(in: .whitespaces)) }.flatMap { $0 > 0 ? $0 : nil }
             return .failure(.rateLimited(retryAfterSeconds: seconds))
         case 503, 500:
+            // The server names the cause in the body. A reply that doesn't keeps the status's own
+            // meaning: 503 busy, 500 not set up (as `VoiceAuthSession` reads it too).
             let error = (try? JSONSerialization.jsonObject(with: body) as? [String: Any])?["error"] as? String
-            return .failure(error == "server_not_configured" ? .serverNotConfigured : .busy)
+            switch error {
+            case "server_not_configured": return .failure(.serverNotConfigured)
+            case "voice_busy": return .failure(.busy)
+            default: return .failure(status == 503 ? .busy : .serverNotConfigured)
+            }
         case 404: return .failure(.serverNotConfigured)
         default: return .failure(.serverProblem(status: status))
         }
