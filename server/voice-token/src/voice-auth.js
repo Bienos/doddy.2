@@ -1,14 +1,23 @@
 import {
+  createCipheriv,
+  createDecipheriv,
   createHash,
   createHmac,
+  createPrivateKey,
   createPublicKey,
   randomBytes,
+  sign as signWithKey,
   timingSafeEqual,
   verify as verifySignature,
 } from "node:crypto";
 
 const APPLE_ISSUER = "https://appleid.apple.com";
 const APPLE_KEYS_URL = "https://appleid.apple.com/auth/keys";
+const APPLE_TOKEN_URL = "https://appleid.apple.com/auth/token";
+const APPLE_REVOKE_URL = "https://appleid.apple.com/auth/revoke";
+const APPLE_CALL_TIMEOUT_MS = 5_000;
+const MAX_AUTHORIZATION_CODE_LENGTH = 1_024;
+const MAX_APPLE_TOKEN_LENGTH = 4_096;
 const ACCESS_TOKEN_SECONDS = 600;
 const REFRESH_TOKEN_SECONDS = 30 * 24 * 60 * 60;
 const NONCE_TTL_SECONDS = 600;
@@ -96,10 +105,12 @@ export function createVoiceAuthStore({ url, token, fetch: fetchImpl = fetch, tim
         redis.call('SET', KEYS[2], cjson.encode(state), 'EX', ARGV[1])
         redis.call('DEL', KEYS[1])
         redis.call('EXPIRE', KEYS[4], ARGV[1])
+        redis.call('EXPIRE', KEYS[5], ARGV[1])
         return cjson.encode(state)
       `;
       const result = await evalScript(script, [
         key("refresh", oldHash), key("session", prior.sessionId), key("refresh", newHash), key("user-sessions", prior.userId),
+        key("apple-token", prior.userId),
       ], [ttlSeconds, newHash]);
       return parseJSON(result);
     },
@@ -151,6 +162,16 @@ export function createVoiceAuthStore({ url, token, fetch: fetchImpl = fetch, tim
       return Number(await evalScript(script, [key("session", sessionId), `${STORE_PREFIX}refresh:`, key("user-sessions", userId)], [userId]));
     },
 
+    /** The Apple refresh token, sealed with a key derived from the signing key (ADR-524). */
+    async setAppleToken(userId, sealed, ttlSeconds) {
+      await exec([["SET", key("apple-token", userId), sealed, "EX", ttlSeconds]]);
+    },
+
+    async getAppleToken(userId) {
+      const [value] = await exec([["GET", key("apple-token", userId)]]);
+      return typeof value === "string" ? value : null;
+    },
+
     async deleteAccount(userId) {
       const script = `
         local sessions = redis.call('SMEMBERS', KEYS[1])
@@ -164,9 +185,11 @@ export function createVoiceAuthStore({ url, token, fetch: fetchImpl = fetch, tim
           end
         end
         redis.call('DEL', KEYS[1])
+        redis.call('DEL', KEYS[2])
         return #sessions
       `;
-      return Number(await evalScript(script, [key("user-sessions", userId)], [`${STORE_PREFIX}session:`, `${STORE_PREFIX}refresh:`]));
+      return Number(await evalScript(script, [key("user-sessions", userId), key("apple-token", userId)],
+        [`${STORE_PREFIX}session:`, `${STORE_PREFIX}refresh:`]));
     },
   };
 }
@@ -180,8 +203,8 @@ export async function handleVoiceAuthRequest(request, env, deps = {}) {
   const log = deps.log ?? ((entry) => console.log(JSON.stringify(entry)));
   const started = now();
   let action = "unknown";
-  const finish = (status, error, body = { error }, headers = {}) => {
-    log({ event: "voice_auth", action, status, error: error ?? null, ms: Math.max(0, now() - started) });
+  const finish = (status, error, body = { error }, headers = {}, extra = {}) => {
+    log({ event: "voice_auth", action, status, error: error ?? null, ms: Math.max(0, now() - started), ...extra });
     return json(status, body, headers);
   };
 
@@ -225,6 +248,18 @@ export async function handleVoiceAuthRequest(request, env, deps = {}) {
         nowSeconds: Math.floor(now() / 1_000),
       });
       if (created !== 1) return finish(401, "apple_sign_in_failed");
+      // Best effort: keep Apple's refresh token so deleting the account can revoke Sign in with
+      // Apple (ADR-524). A failure here never stops the sign-in.
+      if (appleRevocationConfigured(env) && typeof body.authorizationCode === "string"
+          && body.authorizationCode.length > 0 && body.authorizationCode.length <= MAX_AUTHORIZATION_CODE_LENGTH) {
+        try {
+          const appleToken = await (deps.exchangeAppleAuthorizationCode ?? exchangeAppleAuthorizationCode)(
+            body.authorizationCode, env, { fetch: deps.fetch ?? fetch, now: now(), expectedSub: claims.sub });
+          if (appleToken) await store.setAppleToken(userId, sealAppleToken(appleToken, signingKey), REFRESH_TOKEN_SECONDS);
+        } catch {
+          // The account works without it; deleting it later just can't revoke at Apple.
+        }
+      }
       return finish(200, null, sessionReply(signingKey, userId, sessionId, refreshToken, now()));
     }
 
@@ -250,8 +285,18 @@ export async function handleVoiceAuthRequest(request, env, deps = {}) {
       await store.revokeSession(access.sessionId, access.userId);
       return finish(200, null, { signedOut: true });
     }
+    // Revoke Sign in with Apple first (ADR-524), then delete everything. Apple failing never
+    // keeps the account: the reply says whether the Apple link was revoked.
+    let apple = "not_configured";
+    if (appleRevocationConfigured(env)) {
+      const sealed = await store.getAppleToken(access.userId);
+      const appleToken = sealed ? openAppleToken(sealed, signingKey) : null;
+      apple = !appleToken ? "no_token"
+        : await (deps.revokeAppleToken ?? revokeAppleToken)(appleToken, env, { fetch: deps.fetch ?? fetch, now: now() })
+          ? "revoked" : "failed";
+    }
     await store.deleteAccount(access.userId);
-    return finish(200, null, { deleted: true });
+    return finish(200, null, { deleted: true, appleRevoked: apple === "revoked" }, {}, { apple });
   } catch (error) {
     if (error instanceof VoiceAuthStoreUnavailable) return finish(503, "server_not_configured");
     return finish(500, "voice_auth_failed");
@@ -328,6 +373,100 @@ export async function verifyAppleIdentityToken(token, rawNonce, audience, { fetc
       || claims.nonce !== nonceHash || typeof claims.sub !== "string"
       || claims.sub.length < 1 || claims.sub.length > 255) return null;
   return { sub: claims.sub, nonce: rawNonce };
+}
+
+/** Revoking needs a Sign in with Apple key from the Apple Developer account (ADR-524). */
+export function appleRevocationConfigured(env) {
+  return [env.APPLE_BUNDLE_ID, env.APPLE_TEAM_ID, env.APPLE_SIGN_IN_KEY_ID, env.APPLE_SIGN_IN_PRIVATE_KEY]
+    .every((value) => typeof value === "string" && value.trim().length > 0);
+}
+
+/** The ES256 client secret Apple's token and revoke endpoints ask for; valid for 5 minutes. */
+export function appleClientSecret(env, nowMs = Date.now()) {
+  const iat = Math.floor(nowMs / 1_000);
+  const header = base64urlJSON({ alg: "ES256", kid: env.APPLE_SIGN_IN_KEY_ID.trim() });
+  const claims = base64urlJSON({
+    iss: env.APPLE_TEAM_ID.trim(), iat, exp: iat + 300, aud: APPLE_ISSUER, sub: env.APPLE_BUNDLE_ID.trim(),
+  });
+  const input = `${header}.${claims}`;
+  // Hosts often store a multi-line .p8 key with literal "\n".
+  const key = createPrivateKey(env.APPLE_SIGN_IN_PRIVATE_KEY.trim().replace(/\\n/g, "\n"));
+  const signature = signWithKey("sha256", Buffer.from(input), { key, dsaEncoding: "ieee-p1363" });
+  return `${input}.${signature.toString("base64url")}`;
+}
+
+/**
+ * Swaps the one-time authorization code from sign-in for Apple's refresh token, or null. The
+ * id_token in Apple's reply (straight from Apple over TLS) must name `expectedSub`, the person
+ * whose identity token was verified, so a code from another Apple account is never kept.
+ */
+export async function exchangeAppleAuthorizationCode(code, env, { fetch: fetchImpl = fetch, now = Date.now(), expectedSub } = {}) {
+  try {
+    if (typeof expectedSub !== "string" || !expectedSub) return null;
+    const response = await postAppleForm(APPLE_TOKEN_URL, {
+      client_id: env.APPLE_BUNDLE_ID.trim(), client_secret: appleClientSecret(env, now),
+      code, grant_type: "authorization_code",
+    }, fetchImpl);
+    if (!response.ok) return null;
+    const body = await response.json();
+    const idClaims = typeof body?.id_token === "string" ? JSON.parse(Buffer.from(body.id_token.split(".")[1] ?? "", "base64url")) : null;
+    if (idClaims?.sub !== expectedSub) return null;
+    const token = body?.refresh_token;
+    return typeof token === "string" && token.length > 0 && token.length <= MAX_APPLE_TOKEN_LENGTH ? token : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Tells Apple to end the app's Sign in with Apple link for this person. True only on a 200. */
+export async function revokeAppleToken(token, env, { fetch: fetchImpl = fetch, now = Date.now() } = {}) {
+  try {
+    const response = await postAppleForm(APPLE_REVOKE_URL, {
+      client_id: env.APPLE_BUNDLE_ID.trim(), client_secret: appleClientSecret(env, now),
+      token, token_type_hint: "refresh_token",
+    }, fetchImpl);
+    return response.status === 200;
+  } catch {
+    return false;
+  }
+}
+
+async function postAppleForm(url, fields, fetchImpl) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), APPLE_CALL_TIMEOUT_MS);
+  try {
+    return await fetchImpl(url, {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams(fields).toString(),
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function appleTokenKey(signingKey) {
+  return createHmac("sha256", signingKey).update("apple-refresh-token:v1").digest();
+}
+
+export function sealAppleToken(token, signingKey) {
+  const iv = randomBytes(12);
+  const cipher = createCipheriv("aes-256-gcm", appleTokenKey(signingKey), iv);
+  const sealed = Buffer.concat([cipher.update(token, "utf8"), cipher.final()]);
+  return Buffer.concat([iv, sealed, cipher.getAuthTag()]).toString("base64url");
+}
+
+export function openAppleToken(value, signingKey) {
+  try {
+    const raw = Buffer.from(value, "base64url");
+    if (raw.length < 12 + 16 + 1) return null;
+    const decipher = createDecipheriv("aes-256-gcm", appleTokenKey(signingKey), raw.subarray(0, 12));
+    decipher.setAuthTag(raw.subarray(raw.length - 16));
+    return Buffer.concat([decipher.update(raw.subarray(12, raw.length - 16)), decipher.final()]).toString("utf8");
+  } catch {
+    return null;
+  }
 }
 
 async function appleSigningKeys(fetchImpl, requiredKid) {

@@ -736,10 +736,15 @@ public actor NoteReminderCoordinator {
         let candidate = MemoryReminder(
             id: UUID(), memoryID: memoryID, trigger: trigger, createdAt: Self.wholeSeconds(current),
             repeats: repeats, firstSetFor: firstSetFor)
-        // The limit counts iOS slots, so a weekdays repeat uses five (owner decision R2).
+        // The limit counts iOS slots, so a weekdays repeat uses five (owner decision R2). It is
+        // also never more than the shared pool leaves once birthdays and Doddy's own
+        // notifications are counted (ADR-523), so iOS never drops one quietly.
         let others = all.filter { $0.memoryID != memoryID }.reduce(0) { $0 + $1.requestSlots }
-        if others + candidate.requestSlots > NoteReminderLimits.maxActive {
-            throw NoteReminderError.limitReached(maximum: NoteReminderLimits.maxActive)
+        let limit = min(
+            NoteReminderLimits.maxActive,
+            NotificationBudget.room(for: .noteReminders, pending: await center.pendingIdentifiers()))
+        if others + candidate.requestSlots > limit {
+            throw NoteReminderError.limitReached(maximum: limit)
         }
         guard let text = try await repository.currentText(ofMemory: memoryID) else { throw NoteReminderError.memoryNotFound }
         let reminder = try await repository.upsertReminder(candidate)

@@ -68,12 +68,14 @@ final class VoiceAuthSession {
         }
     }
 
-    func finishAppleSignIn(identityToken: String, rawNonce: String, userID: String, provider: VoiceProvider) async {
+    func finishAppleSignIn(identityToken: String, rawNonce: String, authorizationCode: String? = nil,
+                           userID: String, provider: VoiceProvider) async {
         isLoading = true
         message = nil
         defer { isLoading = false }
         do {
-            let reply = try await VoiceAuthAPI.shared.signIn(identityToken, rawNonce: rawNonce, provider: provider.rawValue)
+            let reply = try await VoiceAuthAPI.shared.signIn(identityToken, rawNonce: rawNonce,
+                                                             authorizationCode: authorizationCode, provider: provider.rawValue)
             save(reply, userID: userID)
         } catch {
             lastFailure = (error as? VoiceAuthFailure) ?? .rejected
