@@ -88,8 +88,24 @@ final class DoddyDirector {
     /// Every drawing of him that is on screen now, by the token of the view that draws it, and
     /// where and since when (for the one-Doddy check: a view that appears twice is still one).
     @ObservationIgnored private(set) var drawings: [UUID: (spot: String, since: Double)] = [:]
+    /// When `placement` last changed (the time base of `now`).
+    @ObservationIgnored private var placedSince = 0.0
+    /// A drawing that isn't where he is placed now is on its way out: SwiftUI reports a removed
+    /// view a frame or two after the new one appears (hosted probe run 39304818522 saw the old
+    /// slot drawing and the flight's drawing together for a few frames, never at rest). It counts
+    /// only if it has stayed longer than any hand-off, which is a hop's crouch or a fade (<400 ms).
+    static let handOff = 0.4
     /// How many drawings of him are on screen (for the one-Doddy check).
-    var drawnCount: Int { drawings.count }
+    var drawnCount: Int { counted.count }
+    private var counted: [(spot: String, since: Double)] {
+        let here: String? = switch placement {
+        case .hidden: nil
+        case .overlay: "overlay"
+        case .slot(let id): "slot \(id)"
+        }
+        let leaving = now() - placedSince > Self.handOff
+        return drawings.values.filter { $0.spot == here || leaving }
+    }
     /// The DEBUG checks (MV3), run every frame in debug builds.
     @ObservationIgnored private(set) var checks = MotionChecks()
     /// Frames ticked since launch (the annotated mode's frame counter).
@@ -463,7 +479,10 @@ final class DoddyDirector {
 
     private func publish() {
         let p = host.placement
-        if p != placement { placement = p }
+        if p != placement {
+            placement = p
+            placedSince = now()
+        }
         let f: DoddyFigure?
         if p == .hidden {
             f = nil

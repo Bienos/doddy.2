@@ -19,12 +19,11 @@ final class MotionRideTests: XCTestCase {
     }
 
     private func surface(_ name: String, in app: XCUIApplication) -> XCUIElement {
-        app.descendants(matching: .any)["doddy.surface.\(name)"]
+        app.marker("doddy.surface.\(name)")
     }
 
     private func drawings(in app: XCUIApplication) -> XCUIElementQuery {
-        app.descendants(matching: .any).matching(NSPredicate(
-            format: "identifier BEGINSWITH 'doddy.motion.' OR identifier BEGINSWITH 'doddy.pose.'"))
+        app.markers(startingWith: ["doddy.motion.", "doddy.pose."])
     }
 
     private func checksCount(in app: XCUIApplication) -> String {
@@ -34,8 +33,8 @@ final class MotionRideTests: XCTestCase {
     /// The surface whose top edge his drawing's bottom edge is on (±2 pt), if any.
     @MainActor
     private func surfaceUnderHim(in app: XCUIApplication, timeout: TimeInterval = 6) -> String? {
-        let him = app.descendants(matching: .any)["doddy.motion.idle"]
-        let edges = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'doddy.surface.'"))
+        let him = app.marker("doddy.motion.idle")
+        let edges = app.markers(startingWith: ["doddy.surface."])
         let end = Date().addingTimeInterval(timeout)
         while Date() < end {
             if him.exists {
@@ -43,7 +42,7 @@ final class MotionRideTests: XCTestCase {
                 for i in 0..<edges.count {
                     let edge = edges.element(boundBy: i)
                     if abs(edge.frame.minY - soles) <= 2, edge.frame.minX <= him.frame.midX, edge.frame.maxX >= him.frame.midX {
-                        return edge.identifier.replacingOccurrences(of: "doddy.surface.", with: "")
+                        return edge.label.replacingOccurrences(of: "doddy.surface.", with: "")
                     }
                 }
             }
@@ -85,7 +84,7 @@ final class MotionRideTests: XCTestCase {
         let input = app.textFields["ask.input"]
         XCTAssertTrue(input.waitForExistence(timeout: 5))
         XCTAssertEqual(surfaceUnderHim(in: app), "composer")
-        let him = app.descendants(matching: .any)["doddy.motion.idle"]
+        let him = app.marker("doddy.motion.idle")
         // His 48 pt clear zone ends at least 24 pt before Send (brief rule 8).
         XCTAssertLessThanOrEqual(him.frame.midX + 24 + 24, app.buttons["ask.send"].frame.minX + 1)
         XCTAssertEqual(drawings(in: app).count, 1)
