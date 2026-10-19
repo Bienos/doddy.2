@@ -170,6 +170,8 @@ final class MotionRidingTests: XCTestCase {
     // MARK: The undo bar
 
     func testTheUndoBarLiftsHimOffTheRailAndSetsHimDownAgain() {
+        // Waiting on the rail with no spot of his own on screen (otherwise he would go to it).
+        host.scene.mounted.remove(.stage)
         e.carried(to: host.railSpot(.home), "test: waiting on the rail")
         XCTAssertEqual(e.anchor?.surface, .rail)
         let x = e.anchor!.x

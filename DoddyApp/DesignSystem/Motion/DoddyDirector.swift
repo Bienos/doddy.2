@@ -341,7 +341,7 @@ final class DoddyDirector {
         if isActive { checks.check(host, drawn: drawnCount) }
         #endif
         guard let last = lastTime else { return }
-        if !isActive || (engine.isStill && host.pendingTab == nil && !host.wantsFrames) {
+        if !isActive || (host.isPlaced && engine.isStill && host.pendingTab == nil && !host.wantsFrames) {
             asleep = true
             let next = [engine.nextDue, host.nextDue].compactMap { $0 }.min()
             let due = isActive ? next.map { last + max(0.05, ($0 - engine.now) / 1000) } : nil
