@@ -18,6 +18,11 @@ xcuserdata/
 .env.*
 !.env.example
 !backend/.env.example
+# 1Password references (op://…), never values; `node tools/secrets/sync.mjs check` enforces it (ADR-493).
+!.env.op
+# The secrets sync tool's local record of what it last wrote to Vercel (fingerprints, no values).
+secrets/.sync-state.json
+secrets/.sync-state.json.tmp
 *.pem
 *.key
 *.p12

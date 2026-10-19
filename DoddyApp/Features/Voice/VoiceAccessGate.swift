@@ -109,7 +109,11 @@ struct VoiceAccessGate: View {
             }
             return
         }
+        // Apple's one-time code lets the server revoke Sign in with Apple if the account is
+        // deleted later (ADR-524). Sign-in works without it.
+        let authorizationCode = credential.authorizationCode.flatMap { String(data: $0, encoding: .utf8) }
         Task { await session.finishAppleSignIn(identityToken: identityToken, rawNonce: rawNonce,
+                                               authorizationCode: authorizationCode,
                                                userID: credential.user, provider: provider) }
         self.rawNonce = nil
     }

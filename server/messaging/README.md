@@ -82,10 +82,11 @@ DATABASE_URL=... npm start      # applies migrations, then serves on $PORT
 DATABASE_URL=... npm run worker # sends due updates every 2 s
 TEST_DATABASE_URL=postgres://…/doddy_test npm test   # WARNING: drops that DB's public schema
 ```
+With 1Password (ADR-493): `npm run start:op` takes the secrets from the `doddy-dev` vault through `.env.op` (references only) and the rest from `.env`. See `docs/security/SECRETS_1PASSWORD.md`.
 
 ## Before the first deploy (owner)
 1. Apply `render.yaml` in Render. This creates **paid** resources: 2 × starter + basic-256mb Postgres.
-2. Fill the `doddy-secrets` env group, then set `PUBLIC_BASE_URL` to the `doddy-api` URL.
+2. Render asks for each secret when the Blueprint is created, once for the web service and once for the worker (ADR-495). Take the values from 1Password, and set `PUBLIC_BASE_URL` to the service's URL. Later changes go through `tools/secrets/sync.mjs` (`docs/security/SECRETS_1PASSWORD.md`).
 3. Twilio:
    - Buy a number and create a Messaging Service with **Advanced Opt-Out** on.
    - Point the inbound webhook at `/webhooks/twilio/sms`.

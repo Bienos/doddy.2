@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 # Capability guard. Settings/Home copy makes specific privacy claims; this check keeps them true:
-#  - the app's own networking lives in four files: the voice token client (one POST of the access
-#    code to the token server), Connected Apps' transport (to the Doddy server), the typed-assistant
+#  - the app's own networking lives in four files: the voice token client (DODDY's session and the
+#    provider-token requests, all to the token server; ADR-494), Connected Apps' transport (to the Doddy server), the typed-assistant
 #    transport (to the M2 gateway, ADR-110) and the messaging server transport (server/messaging,
 #    ADR-148); the ElevenLabs SDK does the voice connection, except the OpenAI Realtime test voice
 #    (ADR-265), whose WebSocket lives in one file in Features/Voice, and the exchange-rate client
 #    (ADR-300), which downloads only the ECB's public rates file,
 #  - the system authentication browser is used only by Connected Apps; Sign in with Apple
 #    (AuthenticationServices without a browser or web view) only in the voice account sign-in
-#    (VoiceAccessGate, VoiceAuthSession), whose one network call posts to the voice token
-#    server's /api/voice-auth (ADR-484),
+#    (VoiceAccessGate, VoiceAuthSession), whose calls go to the voice token server's
+#    /api/voice-auth (ADR-484; they live in the token client since ADR-494), and no password,
+#    passkey or credential-provider API anywhere (ADR-494),
 #  - ASK-01 (ADR-483): every voice tool asks first. Each tool in voice-agent/tools.json runs on the
 #    phone with an x_doddy.ask; every server tool has a card (preview) and runs only through the
 #    one approval gate (backend/src/tools/askFirst.ts); the voice controller checks AskFirst
@@ -28,6 +29,9 @@
 #    camera or the whole photo library (ADR-218),
 #  - WatchConnectivity only in DoddyApp/Features/Watch and the watch app (DoddyWatch), which has no
 #    database or networking of its own (ADR-232),
+#  - no 1Password code or op:// references in any app target, and no 1Password SDK in the servers
+#    (ADR-493: hosts keep plain environment variables; .env.op files are checked by
+#    `node tools/secrets/sync.mjs check`),
 #  - no accounts, analytics or crash SDKs, no secrets (server/messaging and
 #    render.yaml are checked for key values only: the server legitimately names key headers),
 #  - AlarmKit only inside DoddyApp/Features/Alarms, plus the shared alarm metadata and the snooze
@@ -68,6 +72,7 @@ web_auth_only='ASWebAuthenticationSession|WKWebView|import WebKit|SFSafariViewCo
 auth_services='import AuthenticationServices'
 apple_sign_in_files='^(DoddyApp/Features/ConnectedApps/SystemWebAuthenticator.swift|DoddyApp/Features/Voice/VoiceAccessGate.swift|DoddyApp/Features/Voice/VoiceAuthSession.swift):'
 voice_auth=DoddyApp/Features/Voice/VoiceAuthSession.swift
+apple_sign_in_other='ASAuthorizationPasswordProvider|ASAuthorizationPlatformPublicKeyCredential|ASAuthorizationSecurityKey|ASCredentialProvider|ASAuthorizationProviderExtension|ASPasskey'
 voice_only='import ElevenLabs'
 memos_dir=DoddyApp/Features/VoiceMemos
 audio_only='import AVFoundation|import AVFAudio|AVAudio'
@@ -128,6 +133,9 @@ if grep -RInE --include='*.swift' "$web_auth_only" "${dirs[@]}" | code_only | gr
 fi
 if grep -RInE --include='*.swift' "$auth_services" "${dirs[@]}" | code_only | grep -vE "$apple_sign_in_files"; then
   echo "FAIL: AuthenticationServices outside Connected Apps and the voice account's Sign in with Apple (ADR-484)." >&2; status=1
+fi
+if grep -RInE --include='*.swift' "$apple_sign_in_other" "${dirs[@]}" | code_only; then
+  echo "FAIL: password, passkey or credential-provider APIs; only Sign in with Apple is allowed (ADR-494)." >&2; status=1
 fi
 # ASK-01 (ADR-483): a tool without a way to ask first fails here.
 if ! python3 -I - voice-agent/tools.json <<'PY'
@@ -278,7 +286,7 @@ for extra in backend/src backend/test contracts .env.example backend/.env.exampl
 if grep -RInE "$secrets" "${secret_paths[@]}" --exclude=check_forbidden_capabilities.sh; then
   echo "FAIL: possible secret found." >&2; status=1
 fi
-if [ -d server/messaging ] && grep -RInE "$messaging_secrets" server/messaging render.yaml --exclude-dir=node_modules --exclude-dir=dist; then
+if [ -d server/messaging ] && grep -RInE "$messaging_secrets" server/messaging render.yaml --exclude-dir=node_modules --exclude-dir=dist --exclude=.env.op; then
   echo "FAIL: possible secret found in server/messaging or render.yaml." >&2; status=1
 fi
 # The other deployed services (gateway, voice token server, site functions), the voice agent spec and
@@ -286,8 +294,18 @@ fi
 service_dirs=()
 for extra in gateway server/voice-token site voice-agent tools; do [ -d "$extra" ] && service_dirs+=("$extra"); done
 if [ "${#service_dirs[@]}" -gt 0 ] && grep -RInE "${messaging_secrets%)}|ak_[A-Za-z0-9_-]{20,}|monid_(live|test)_[A-Za-z0-9_-]{16,}|PASSWORD=[^[:space:]]{8,})" \
-    "${service_dirs[@]}" --exclude-dir=node_modules --exclude-dir=dist --exclude=package-lock.json; then
+    "${service_dirs[@]}" --exclude-dir=node_modules --exclude-dir=dist --exclude=package-lock.json --exclude=.env.op; then
   echo "FAIL: possible secret found in gateway, server/voice-token, site, voice-agent or tools." >&2; status=1
+fi
+# 1Password (ADR-493): the app ships no secrets and no 1Password code, and the servers read plain
+# environment variables (no 1Password SDK at boot). op:// references live only in the .env.op
+# templates and secrets/, which `node tools/secrets/sync.mjs check` keeps to references only.
+onepassword='op://|@1password/|onepassword-sdk|OnePasswordSDK|OP_SERVICE_ACCOUNT_TOKEN|OP_CONNECT_(HOST|TOKEN)'
+if grep -RInE "$onepassword" "${dirs[@]}" Config project.yml project-iphone.yml project-mac.yml; then
+  echo "FAIL: 1Password references or code in an app target (ADR-493)." >&2; status=1
+fi
+if grep -nE '"@1password/' backend/package.json server/*/package.json gateway/package.json site/package.json 2>/dev/null; then
+  echo "FAIL: a server depends on the 1Password SDK; hosts keep plain environment variables (ADR-493)." >&2; status=1
 fi
 if grep -RInE --include='*.swift' "$sharing_only" "${dirs[@]}" | code_only | grep -v "^$sharing_dir/"; then
   echo "FAIL: CloudKit outside $sharing_dir." >&2; status=1
@@ -298,5 +316,5 @@ fi
 if grep -RnoE 'NS[A-Za-z]+UsageDescription' project.yml DoddyApp DoddyWidgets DoddyShare Config | grep -vE "$allowed_permissions"; then
   echo "FAIL: only the alarms, microphone, speech recognition, calendar, reminders, contacts, While Using location and Face ID permissions are allowed." >&2; status=1
 fi
-[ "$status" -eq 0 ] && echo "PASS: ASK-01: every voice tool and every server tool asks first through one gate; networking only in the token client, the voice account sign-in, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice and the ECB rates client, web auth only in Connected Apps, ElevenLabs only in Voice, audio only in Voice and Voice memos, on-device speech recognition only in Voice memos, calendar, contacts and location only in Connections, photo reading and the photo picker only in Photos (no camera or photo library access), no Always/background location, no analytics, no secrets, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts, While Using location and Face ID (LocalAuthentication only in the app lock); backend has no write tools beyond the reviewed Gmail draft and reply draft, the Outlook draft and Todoist add, complete and move, and no proxy execution."
+[ "$status" -eq 0 ] && echo "PASS: ASK-01: every voice tool and every server tool asks first through one gate; networking only in the token client, the voice account sign-in, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice and the ECB rates client, web auth only in Connected Apps, Sign in with Apple only in the voice account sign-in and no password or passkey APIs, ElevenLabs only in Voice, audio only in Voice and Voice memos, on-device speech recognition only in Voice memos, calendar, contacts and location only in Connections, photo reading and the photo picker only in Photos (no camera or photo library access), no Always/background location, no analytics, no secrets, no 1Password code in the app or SDK in the servers, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts, While Using location and Face ID (LocalAuthentication only in the app lock); backend has no write tools beyond the reviewed Gmail draft and reply draft, the Outlook draft and Todoist add, complete and move, and no proxy execution."
 exit "$status"

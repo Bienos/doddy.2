@@ -101,6 +101,19 @@ struct VoiceView: View {
     @MainActor
     private func beginConversation() async {
         guard controller == nil else { return }
+        // One conversation at a time (ADR-496): one already starting or live, such as the one
+        // "Hey Doddy" just started, is shown instead of starting a second. What was asked for a
+        // new conversation (a shortcut's greeting, a translator, a check-in, a note) is dropped,
+        // so it can't start with a later conversation by surprise.
+        if let running = VoiceSessionController.runningConversation {
+            _ = ShortcutRouter.shared.takeTalkToDoddyOpening()
+            _ = ShortcutRouter.shared.takeTranslatorPreset()
+            _ = ShortcutRouter.shared.takeCheckInBriefing()
+            _ = ShortcutRouter.shared.takeNoteToAsk()
+            WakeWordListener.shared.conversationShown(running)
+            self.controller = running
+            return
+        }
         let controller = VoiceSessionController(store: store)
         self.controller = controller
         // Back Tap or another Talk to Doddy shortcut greets like Hey Doddy, after the same
