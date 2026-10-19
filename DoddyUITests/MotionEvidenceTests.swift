@@ -24,7 +24,7 @@ final class MotionEvidenceTests: XCTestCase {
     }
 
     private func everythingOfHim(in app: XCUIApplication) -> XCUIElementQuery {
-        app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'doddy.'"))
+        app.markers(startingWith: ["doddy."])
     }
 
     private func debugValue(_ name: String, in app: XCUIApplication) -> Int? {
@@ -42,8 +42,8 @@ final class MotionEvidenceTests: XCTestCase {
             app.buttons["tab.\(tab)"].tap()
             RunLoop.current.run(until: Date().addingTimeInterval(1))
         }
-        let stage = app.descendants(matching: .any)["doddy.surface.stage"]
-        let him = app.descendants(matching: .any)["doddy.motion.idle"]
+        let stage = app.marker("doddy.surface.stage")
+        let him = app.marker("doddy.motion.idle")
         XCTAssertTrue(him.waitForExistence(timeout: 5))
         XCTAssertEqual(him.frame.maxY, stage.frame.minY, accuracy: 2)
         XCTAssertEqual(debugValue("flights", in: app), 0, motionDebugReport(in: app))
@@ -90,9 +90,9 @@ final class MotionEvidenceTests: XCTestCase {
     @MainActor
     func testAtAccessibilityTextSizesHeIsOneTimesOnHome() {
         let app = launch(extra: ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"])
-        let him = app.descendants(matching: .any)["doddy.motion.idle"]
+        let him = app.marker("doddy.motion.idle")
         XCTAssertTrue(him.waitForExistence(timeout: 8))
-        let stage = app.descendants(matching: .any)["doddy.surface.stage"]
+        let stage = app.marker("doddy.surface.stage")
         XCTAssertEqual(him.frame.maxY, stage.frame.minY, accuracy: 2)
         XCTAssertEqual(him.frame.height, 96 / 0.72 * 0.94, accuracy: 3, "1.0×, not 1.4×")
     }
