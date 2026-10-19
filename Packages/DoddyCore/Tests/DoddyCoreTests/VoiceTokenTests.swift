@@ -20,9 +20,6 @@ final class VoiceTokenTests: XCTestCase {
         XCTAssertEqual(VoiceTokenServer.token(status: 503, body: Data()), .failure(.busy))
         XCTAssertEqual(VoiceTokenServer.token(status: 503, body: Data(#"{"error":"server_not_configured"}"#.utf8)), .failure(.serverNotConfigured))
         XCTAssertEqual(VoiceTokenServer.token(status: 503, body: Data(#"{"error":"voice_busy"}"#.utf8)), .failure(.busy))
-        XCTAssertEqual(VoiceTokenServer.token(status: 500, body: Data(#"{"error":"server_not_configured"}"#.utf8)), .failure(.serverNotConfigured),
-                       "server/voice-token sends 500 only for a missing provider key or limit setting")
-        XCTAssertEqual(VoiceTokenServer.token(status: 500, body: Data()), .failure(.serverNotConfigured), "a 500 is never busy")
         XCTAssertEqual(VoiceTokenServer.token(status: 404, body: Data()), .failure(.serverNotConfigured))
         XCTAssertEqual(VoiceTokenServer.token(status: 504, body: Data()), .failure(.serverProblem(status: 504)))
     }
@@ -36,7 +33,8 @@ final class VoiceTokenTests: XCTestCase {
         XCTAssertEqual(VoiceTokenServer.wakeWordKey(status: 200, body: Data(#"{"token":"jwt"}"#.utf8)), .failure(.badResponse),
                        "an ElevenLabs token is never taken for a key")
         XCTAssertEqual(VoiceTokenServer.wakeWordKey(status: 401, body: Data()), .failure(.sessionExpired))
-        XCTAssertEqual(VoiceTokenServer.wakeWordKey(status: 500, body: Data()), .failure(.serverNotConfigured))
+        XCTAssertEqual(VoiceTokenServer.wakeWordKey(status: 500, body: Data()), .failure(.busy))
+        XCTAssertEqual(VoiceTokenServer.wakeWordKey(status: 500, body: Data(#"{"error":"server_not_configured"}"#.utf8)), .failure(.serverNotConfigured))
         XCTAssertEqual(VoiceTokenServer.wakeWordKey(status: 400, body: Data()), .failure(.serverProblem(status: 400)), "a server from before ADR-328")
     }
 

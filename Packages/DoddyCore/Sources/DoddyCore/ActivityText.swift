@@ -21,6 +21,7 @@ extension ActivityApp {
         case .gmail, .drive, .notion, .todoist, .outlook: return title
         case .web: return "Wyszukiwanie w sieci"
         case .exchangeRates: return "Kursy walut"
+        case .blik: return "Przelewy BLIK"
         }
     }
 }
@@ -37,6 +38,7 @@ extension ActivityOutcome {
         case .notDone: return "Nie zrobiono"
         case .declined: return "Odrzucone"
         case .inProgress: return "W toku"
+        case .shown: return "Pokazano do wysłania"
         }
     }
 }
@@ -58,6 +60,7 @@ public enum ActivityText {
         "Open in Maps": "Otwórz w Mapach",
         "Run shortcut": "Uruchom skrót",
         "Draft a text": "Szkic SMS-a",
+        "Prepare a BLIK transfer": "Przygotuj przelew BLIK",
         "Draft an email": "Szkic e-maila",
         // Written before ADR-275 fixed the article; old rows still say it.
         "Draft a email": "Szkic e-maila",
@@ -95,6 +98,33 @@ public enum ActivityText {
         "Add ingredients to a list": "Dodaj składniki do listy",
         // Round 5.
         "Create a reply draft": "Utwórz szkic odpowiedzi",
+        "Send an email": "Wyślij e-mail",
+        "Send a reply": "Wyślij odpowiedź",
+        "Forward an email": "Przekaż e-mail",
+        "Archive or mark an email": "Zarchiwizuj lub oznacz e-mail",
+        "Move an email to Trash": "Przenieś e-mail do kosza",
+        "Read the Google Calendar": "Odczytano Kalendarz Google",
+        "Add a Google Calendar event": "Dodaj wydarzenie w Kalendarzu Google",
+        "Change a Google Calendar event": "Zmień wydarzenie w Kalendarzu Google",
+        "Delete a Google Calendar event": "Usuń wydarzenie z Kalendarza Google",
+        "Answer a Google Calendar invitation": "Odpowiedz na zaproszenie w Kalendarzu Google",
+        "Add an Outlook event": "Dodaj wydarzenie w Outlooku",
+        "Change an Outlook event": "Zmień wydarzenie w Outlooku",
+        "Delete an Outlook event": "Usuń wydarzenie z Outlooka",
+        "Accept an Outlook invitation": "Przyjmij zaproszenie w Outlooku",
+        "Decline an Outlook invitation": "Odrzuć zaproszenie w Outlooku",
+        "Send an Outlook email": "Wyślij e-mail z Outlooka",
+        "Send an Outlook reply": "Wyślij odpowiedź z Outlooka",
+        "Forward an Outlook email": "Przekaż e-mail z Outlooka",
+        "Archive or bin an Outlook email": "Zarchiwizuj lub usuń e-mail w Outlooku",
+        "Mark an Outlook email": "Oznacz e-mail w Outlooku",
+        "Rename a task": "Zmień nazwę zadania",
+        "Create a Notion page": "Utwórz stronę w Notion",
+        "Add to a Notion page": "Dodaj do strony w Notion",
+        "Move a Notion page to the trash": "Przenieś stronę Notion do kosza",
+        "Create a Google Doc": "Utwórz Dokument Google",
+        "Search the news": "Wyszukano wiadomości",
+        "Find places": "Wyszukano miejsca",
         "Read a Notion page": "Odczytano stronę Notion",
     ]
 
@@ -104,6 +134,7 @@ public enum ActivityText {
             "Connections were paused.": "Połączenia były wstrzymane.",
             "Doddy couldn't confirm it went through.": "Doddy nie mógł potwierdzić, że się udało.",
             "Demo data from a test server, not your account.": "Dane demonstracyjne z serwera testowego, nie z Twojego konta.",
+            "Doddy didn't send any money. You send it in your bank app.": "Doddy nie wysłał żadnych pieniędzy. Wysyłasz je w aplikacji banku.",
             ActivityLog.interruptedNote: "Doddy zamknął się, zanim to się skończyło. Sprawdź, zanim poprosisz ponownie, żeby nie zrobić tego dwa razy.",
             "Found in Reminders when you checked.": "Znalezione w Przypomnieniach przy sprawdzaniu.",
             "Not in Reminders when you checked. You can ask Doddy again.": "Nie było w Przypomnieniach przy sprawdzaniu. Możesz poprosić Doddy’ego ponownie.",
@@ -154,6 +185,7 @@ public enum ActivityText {
         case .maps: "Mapy"
         case .shortcuts: "Skróty"
         case .messages: "Wiadomości i e-mail"
+        case .blik: "Przelewy BLIK"
         }
     }
 

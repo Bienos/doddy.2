@@ -38,7 +38,8 @@ public protocol OnlineAccountsClient: Sendable {
     func complete(toolkit: String, _ request: CompleteRequest) async throws(OnlineAccountsError) -> ToolkitResult
     func disconnect(toolkit: String) async throws(OnlineAccountsError) -> ToolkitResult
     func setSwitch(tool: String, enabled: Bool) async throws(OnlineAccountsError) -> ToolkitResult
-    /// Writes only: asks the server for the preview and a single-use approval for exactly these arguments.
+    /// Every tool (ASK-01, ADR-483): asks the server for the card and a single-use approval for
+    /// exactly these arguments. For a read nothing is read; `run` refuses without the approval.
     func prepare(_ call: CloudToolCall) async throws(OnlineAccountsError) -> PrepareResult
     func run(_ call: CloudToolCall, timeZone: String, approvalId: UUID?) async throws(OnlineAccountsError) -> RunResult
     func receipts() async throws(OnlineAccountsError) -> [OnlineToolReceipt]
@@ -83,7 +84,8 @@ public struct BackendOnlineAccountsClient: OnlineAccountsClient {
     }
 
     public func prepare(_ call: CloudToolCall) async throws(OnlineAccountsError) -> PrepareResult {
-        try await self.call("POST", "v1/tools/prepare", body: PrepareBody(tool: call.name, arguments: call.arguments))
+        // The user's zone, for tools that find an item by its local time (a calendar event at 15:00).
+        try await self.call("POST", "v1/tools/prepare", body: PrepareBody(tool: call.name, arguments: call.arguments, timeZone: TimeZone.current.identifier))
     }
 
     public func run(_ call: CloudToolCall, timeZone: String, approvalId: UUID?) async throws(OnlineAccountsError) -> RunResult {
@@ -105,6 +107,7 @@ public struct BackendOnlineAccountsClient: OnlineAccountsClient {
     struct PrepareBody: Encodable, Equatable {
         let tool: String
         let arguments: [String: JSONValue]
+        let timeZone: String
     }
 
     struct RunBody: Encodable, Equatable {

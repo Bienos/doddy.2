@@ -363,9 +363,11 @@ final class VoiceToolsTests: XCTestCase {
         XCTAssertEqual(VoiceConnection.serving("open_map"), .maps)
         XCTAssertEqual(VoiceConnection.serving("run_shortcut"), .shortcuts)
         XCTAssertEqual(VoiceConnection.serving("draft_message"), .messages)
+        XCTAssertEqual(VoiceConnection.serving("draft_blik_transfer"), .blik)
         XCTAssertNil(VoiceConnection.serving("save_memory"))
         XCTAssertEqual(VoiceConnection.calendar.preferenceKey, "voiceConnection.calendar")
-        XCTAssertEqual(VoiceConnection.allCases.count, 7)
+        XCTAssertEqual(VoiceConnection.blik.preferenceKey, "voiceConnection.blik")
+        XCTAssertEqual(VoiceConnection.allCases.count, 8)
     }
 
     // MARK: Replies

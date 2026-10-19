@@ -59,9 +59,9 @@ struct VoiceTokenClient: Sendable {
     }
 }
 
-/// The DODDY voice account calls to `/api/voice-auth` (sign in with an Apple identity token,
-/// refresh, sign out, delete), used by `VoiceAuthSession`. It lives in this file so the app's
-/// voice networking stays in one place (ADR-070, ADR-483).
+/// DODDY's own session with the voice token server: Apple sign-in, refresh, sign-out and account
+/// deletion (commit 754e5d6). It lives here, beside the provider-token requests to the same
+/// server, so the app's networking stays in the files the capability guard allows (ADR-494).
 actor VoiceAuthAPI {
     static let shared = VoiceAuthAPI()
 

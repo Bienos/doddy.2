@@ -11,6 +11,8 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
     case web
     /// The ECB's public rates file (ADR-300).
     case exchangeRates
+    /// A BLIK phone transfer shown for the user to send in their bank app (ADR-510).
+    case blik
 
     public var title: String {
         switch self {
@@ -29,6 +31,7 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
         case .outlook: "Outlook"
         case .web: "Web search"
         case .exchangeRates: "Exchange rates"
+        case .blik: "BLIK transfers"
         }
     }
 }
@@ -48,6 +51,9 @@ public enum ActivityOutcome: String, Codable, Sendable {
     case declined
     /// Written before a change runs. If Doddy closes before the result, it becomes `notSure`.
     case inProgress
+    /// Shown on a card for the user to do themselves, as a BLIK transfer in their bank app
+    /// (ADR-510). Doddy did nothing and can't see whether the user did.
+    case shown
 
     public var text: String {
         switch self {
@@ -59,6 +65,7 @@ public enum ActivityOutcome: String, Codable, Sendable {
         case .notDone: "Didn't happen"
         case .declined: "You said no"
         case .inProgress: "In progress"
+        case .shown: "Shown for you to send"
         }
     }
 }
@@ -189,6 +196,11 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(
                 app: .messages, title: draft.channel == .text ? "Draft a text" : "Draft an email",
                 detail: "to \(draft.recipientName)", isLookup: false)
+        case .draftBlikTransfer(let draft):
+            // The amount and title are on the card; the 30-day log keeps only who it was for.
+            return ActivityRequest(
+                app: .blik, title: "Prepare a BLIK transfer", detail: "\(draft.amount.agentText) to \(draft.recipientName)",
+                logDetail: "to \(draft.recipientName)", isLookup: false)
         case .cloudTool(let call):
             // Writes carry a key (ADR-322): a hash of the tool and its arguments, never the words.
             guard let request = describe(cloud: call.name), let key = CloudIdempotency.key(call) else { return describe(cloud: call.name) }
@@ -279,11 +291,28 @@ public struct ActivityRequest: Equatable, Sendable {
 
     /// Online-account calls: names only. Email subjects, file names and task text are not kept.
     static func describe(cloud name: String) -> ActivityRequest? {
-        switch name {
+        // ADR-486/487: Google Calendar is listed under Calendar, Outlook's under Outlook.
+        if let more = CloudToolName.more[name] {
+            let app: ActivityApp = switch more.account {
+            case "Outlook": .outlook
+            case "Todoist": .todoist
+            case "Notion": .notion
+            case "Google Drive": .drive
+            case "Web search": .web
+            default: .calendar
+            }
+            return ActivityRequest(app: app, title: more.title, detail: nil, isLookup: !more.write)
+        }
+        return switch name {
         case CloudToolName.checkEmail: ActivityRequest(app: .gmail, title: "Checked email", detail: nil, isLookup: true)
         case CloudToolName.draftEmail: ActivityRequest(app: .gmail, title: "Create an email draft", detail: nil, isLookup: false)
         case CloudToolName.readEmail: ActivityRequest(app: .gmail, title: "Read an email", detail: nil, isLookup: true)
         case CloudToolName.draftEmailReply: ActivityRequest(app: .gmail, title: "Create a reply draft", detail: nil, isLookup: false)
+        case CloudToolName.sendEmail: ActivityRequest(app: .gmail, title: "Send an email", detail: nil, isLookup: false)
+        case CloudToolName.replyToEmail: ActivityRequest(app: .gmail, title: "Send a reply", detail: nil, isLookup: false)
+        case CloudToolName.forwardEmail: ActivityRequest(app: .gmail, title: "Forward an email", detail: nil, isLookup: false)
+        case CloudToolName.changeEmail: ActivityRequest(app: .gmail, title: "Archive or mark an email", detail: nil, isLookup: false)
+        case CloudToolName.trashEmail: ActivityRequest(app: .gmail, title: "Move an email to Trash", detail: nil, isLookup: false)
         case CloudToolName.readNotionPage: ActivityRequest(app: .notion, title: "Read a Notion page", detail: nil, isLookup: true)
         case CloudToolName.completeTodoistTask: ActivityRequest(app: .todoist, title: "Complete a task", detail: nil, isLookup: false)
         case CloudToolName.moveTodoistTask: ActivityRequest(app: .todoist, title: "Move a task", detail: nil, isLookup: false)
@@ -482,6 +511,8 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
         if starts(["added:", "saved:"]), alreadyThereTails.contains(where: withoutCheckedFirst(text).hasSuffix) { return (.alreadyThere, nil) }
         if starts(VoiceToolReply.donePrefixes) || starts(VoiceToolReply.listDonePrefixes) { return (.done, nil) }
         if text.hasPrefix("opened:") { return (.opened, nil) }
+        // A BLIK transfer card (ADR-510): the user sends it in their bank app; Doddy can't see it.
+        if text.hasPrefix("shown:") { return (.shown, "Doddy didn't send any money. You send it in your bank app.") }
         // Anything the app didn't phrase as a result is never shown as done.
         return (.notSure, nil)
     }

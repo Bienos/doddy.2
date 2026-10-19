@@ -1,15 +1,20 @@
 #!/usr/bin/env bash
 # Capability guard. Settings/Home copy makes specific privacy claims; this check keeps them true:
-#  - the app's own networking lives in four files: the voice token client (POSTs to
-#    server/voice-token: the DODDY voice account calls and the provider credential request,
-#    ADR-483), Connected Apps' transport (to the Doddy server), the typed-assistant
+#  - the app's own networking lives in four files: the voice token client (DODDY's session and the
+#    provider-token requests, all to the token server; ADR-494), Connected Apps' transport (to the Doddy server), the typed-assistant
 #    transport (to the M2 gateway, ADR-110) and the messaging server transport (server/messaging,
 #    ADR-148); the ElevenLabs SDK does the voice connection, except the OpenAI Realtime test voice
 #    (ADR-265), whose WebSocket lives in one file in Features/Voice, and the exchange-rate client
 #    (ADR-300), which downloads only the ECB's public rates file,
-#  - the system authentication browser is used only by Connected Apps; Sign in with Apple (Apple's
-#    own sheet, no web page) only for the DODDY voice account, in two Voice files; no other
-#    AuthenticationServices sign-in: passwords, passkeys, security keys, single sign-on (ADR-483),
+#  - the system authentication browser is used only by Connected Apps; Sign in with Apple
+#    (AuthenticationServices without a browser or web view) only in the voice account sign-in
+#    (VoiceAccessGate, VoiceAuthSession), whose calls go to the voice token server's
+#    /api/voice-auth (ADR-484; they live in the token client since ADR-494), and no password,
+#    passkey or credential-provider API anywhere (ADR-494),
+#  - ASK-01 (ADR-483): every voice tool asks first. Each tool in voice-agent/tools.json runs on the
+#    phone with an x_doddy.ask; every server tool has a card (preview) and runs only through the
+#    one approval gate (backend/src/tools/askFirst.ts); the voice controller checks AskFirst
+#    before any tool runs,
 #  - ElevenLabs code only inside DoddyApp/Features/Voice; audio (AVFoundation) only there and in
 #    DoddyApp/Features/VoiceMemos (recording and playing voice memos, ADR-230),
 #  - speech recognition (Speech) only inside DoddyApp/Features/VoiceMemos, and every recognition
@@ -24,6 +29,9 @@
 #    camera or the whole photo library (ADR-218),
 #  - WatchConnectivity only in DoddyApp/Features/Watch and the watch app (DoddyWatch), which has no
 #    database or networking of its own (ADR-232),
+#  - no 1Password code or op:// references in any app target, and no 1Password SDK in the servers
+#    (ADR-493: hosts keep plain environment variables; .env.op files are checked by
+#    `node tools/secrets/sync.mjs check`),
 #  - no accounts, analytics or crash SDKs, no secrets (server/messaging and
 #    render.yaml are checked for key values only: the server legitimately names key headers),
 #  - AlarmKit only inside DoddyApp/Features/Alarms, plus the shared alarm metadata and the snooze
@@ -34,7 +42,7 @@
 #  - backend: Composio tool slugs only in the adapters and the tool catalog (and the mock that mimics
 #    their answers), no write tools beyond the reviewed ones (Gmail draft and reply draft; Todoist add, complete and move,
 #    ADR-303), no proxy execution,
-#    and Monid only in the web search module, with one fixed endpoint (no discover/inspect: the model
+#    and Monid only in the web search module, with fixed endpoints (web search, news, places; ADR-489; no discover/inspect: the model
 #    can never pick another paid endpoint).
 # Exit 0 = clean, 1 = violation.
 set -euo pipefail
@@ -58,15 +66,13 @@ rates_client=DoddyApp/Infrastructure/Network/ExchangeRateClient.swift
 # URLSessionTransport type name is not networking and stays allowed.
 network_only='URLSession(WebSocketTask|DataTask|DownloadTask|UploadTask|StreamTask|Task|Configuration)?([^A-Za-z]|$)|URLRequest([^A-Za-z]|$)|\.resourceBytes|NSURLConnection|CFReadStream|CFHTTPMessage|contentsOf: *URL\(string:'
 web_auth_file=DoddyApp/Features/ConnectedApps/SystemWebAuthenticator.swift
+# A browser or web view: only Connected Apps (ADR-484 narrowed this from the whole framework).
 web_auth_only='ASWebAuthenticationSession|WKWebView|import WebKit|SFSafariViewController'
-# Sign in with Apple for the DODDY voice account (ADR-483). It is not the web authentication
-# browser: Apple shows its own sheet and Doddy opens no web page. Only these two files.
-apple_sign_in_files='^DoddyApp/Features/Voice/(VoiceAccessGate|VoiceAuthSession)\.swift:'
-apple_sign_in_only='ASAuthorization|SignInWithAppleButton'
-# AuthenticationServices may be imported by the web authenticator and the Sign in with Apple files.
-auth_services_files="^($web_auth_file|DoddyApp/Features/Voice/(VoiceAccessGate|VoiceAuthSession)\.swift):"
-# Passwords, passkeys, security keys and enterprise single sign-on: not used anywhere.
-other_sign_in='ASAuthorization(Password|PlatformPublicKey|SecurityKey|SingleSignOn|ProviderExtension)'
+# AuthenticationServices itself: Connected Apps, and Sign in with Apple for the voice account.
+auth_services='import AuthenticationServices'
+apple_sign_in_files='^(DoddyApp/Features/ConnectedApps/SystemWebAuthenticator.swift|DoddyApp/Features/Voice/VoiceAccessGate.swift|DoddyApp/Features/Voice/VoiceAuthSession.swift):'
+voice_auth=DoddyApp/Features/Voice/VoiceAuthSession.swift
+apple_sign_in_other='ASAuthorizationPasswordProvider|ASAuthorizationPlatformPublicKeyCredential|ASAuthorizationSecurityKey|ASCredentialProvider|ASAuthorizationProviderExtension|ASPasskey'
 voice_only='import ElevenLabs'
 memos_dir=DoddyApp/Features/VoiceMemos
 audio_only='import AVFoundation|import AVFAudio|AVAudio'
@@ -107,8 +113,12 @@ status=0
 if grep -RInE --include='*.swift' --include='*.plist' "$anywhere" "${dirs[@]}" Config; then
   echo "FAIL: forbidden capability code found (see matches above)." >&2; status=1
 fi
-if grep -RInE --include='*.swift' "$network_only" "${dirs[@]}" | code_only | grep -v -e "^$network_file:" -e "^$token_client:" -e "^$assistant_transport:" -e "^$messaging_transport:" -e "^$openai_voice:" -e "^$rates_client:"; then
-  echo "FAIL: networking code outside $network_file, $assistant_transport, $messaging_transport, $token_client, $openai_voice and $rates_client." >&2; status=1
+if grep -RInE --include='*.swift' "$network_only" "${dirs[@]}" | code_only | grep -v -e "^$network_file:" -e "^$token_client:" -e "^$assistant_transport:" -e "^$messaging_transport:" -e "^$openai_voice:" -e "^$rates_client:" -e "^$voice_auth:"; then
+  echo "FAIL: networking code outside $network_file, $assistant_transport, $messaging_transport, $token_client, $voice_auth, $openai_voice and $rates_client." >&2; status=1
+fi
+# The voice account client may only post to VoiceConfig.authEndpoint, never an address it builds (ADR-484).
+if [ -f "$voice_auth" ] && grep -nE 'URL\(string|URLComponents|appendingPathComponent|https?://' "$voice_auth" | code_only; then
+  echo "FAIL: $voice_auth may only post to VoiceConfig.authEndpoint." >&2; status=1
 fi
 # Face ID (ADR-310): LocalAuthentication only in the app lock.
 if grep -RInE --include='*.swift' 'import LocalAuthentication|LAContext' "${dirs[@]}" | code_only | grep -v "^DoddyApp/Features/Privacy/AppLock.swift:"; then
@@ -121,14 +131,30 @@ fi
 if grep -RInE --include='*.swift' "$web_auth_only" "${dirs[@]}" | code_only | grep -v "^$web_auth_file:"; then
   echo "FAIL: web authentication / web views outside $web_auth_file." >&2; status=1
 fi
-if grep -RInE --include='*.swift' 'import AuthenticationServices' "${dirs[@]}" | code_only | grep -vE "$auth_services_files"; then
-  echo "FAIL: AuthenticationServices outside $web_auth_file and the two Sign in with Apple files (ADR-483)." >&2; status=1
+if grep -RInE --include='*.swift' "$auth_services" "${dirs[@]}" | code_only | grep -vE "$apple_sign_in_files"; then
+  echo "FAIL: AuthenticationServices outside Connected Apps and the voice account's Sign in with Apple (ADR-484)." >&2; status=1
 fi
-if grep -RInE --include='*.swift' "$apple_sign_in_only" "${dirs[@]}" | code_only | grep -vE "$apple_sign_in_files"; then
-  echo "FAIL: Sign in with Apple outside DoddyApp/Features/Voice/VoiceAccessGate.swift and VoiceAuthSession.swift (ADR-483)." >&2; status=1
+if grep -RInE --include='*.swift' "$apple_sign_in_other" "${dirs[@]}" | code_only; then
+  echo "FAIL: password, passkey or credential-provider APIs; only Sign in with Apple is allowed (ADR-494)." >&2; status=1
 fi
-if grep -RInE --include='*.swift' "$other_sign_in" "${dirs[@]}" | code_only; then
-  echo "FAIL: password, passkey, security key or single sign-on code; Sign in with Apple is the only sign-in (ADR-483)." >&2; status=1
+# ASK-01 (ADR-483): a tool without a way to ask first fails here.
+if ! python3 -I - voice-agent/tools.json <<'PY'
+import json, sys
+bad = []
+for t in json.load(open(sys.argv[1], encoding="utf-8"))["tools"]:
+    x = t.get("x_doddy", {})
+    if x.get("runs_on") != "phone" or x.get("ask") not in ("yes_or_tap", "tap") or (x.get("ask") == "tap") != bool(x.get("confirm_on_screen")):
+        bad.append(t.get("name"))
+if bad:
+    print("tools without an ask:", ", ".join(map(str, bad)))
+    sys.exit(1)
+PY
+then
+  echo "FAIL: ASK-01: every voice tool must run on the phone and ask first (x_doddy.ask; 'tap' with confirm_on_screen)." >&2; status=1
+fi
+voice_controller=DoddyApp/Features/Voice/VoiceSessionController.swift
+if [ -f "$voice_controller" ] && ! { grep -q 'AskFirst.need(for: request)' "$voice_controller" && grep -q 'askLedger.mayRun(' "$voice_controller"; }; then
+  echo "FAIL: ASK-01: $voice_controller must check AskFirst before a tool runs." >&2; status=1
 fi
 if grep -RInE --include='*.swift' "$wake_only" "${dirs[@]}" | code_only | grep -v "^$wake_file:"; then
   echo "FAIL: wake-word engine code outside $wake_file." >&2; status=1
@@ -190,23 +216,60 @@ if [ -d "$backend_src" ]; then
   if grep -RInE '(^|[^A-Z_])(GOOGLECALENDAR|GOOGLESUPER|GMAIL|GOOGLEDRIVE|NOTION|TODOIST|OUTLOOK)_[A-Z]' --include='*.ts' "$backend_src" | code_only | grep -v -e "^$composio_adapter:" -e "^$tools_catalog:" -e "^$tools_mock:"; then
     echo "FAIL: Composio tool slugs outside $composio_adapter, $tools_catalog and $tools_mock." >&2; status=1
   fi
-  if grep -RInE 'GOOGLECALENDAR_(CREATE|UPDATE|DELETE|PATCH|QUICK_ADD|MOVE|REMOVE|CLEAR|INSERT)' "$backend_src"; then
-    echo "FAIL: calendar write tool referenced in the backend." >&2; status=1
+  # Google Calendar writes (ADR-486): only create, patch (move, rename, answer an invitation) and
+  # delete, in the catalog and its mock, each behind ASK-01's tap. No quick-add (free text), clear,
+  # move between calendars, or calendar-level changes.
+  if grep -RInE 'GOOGLECALENDAR_(CREATE|UPDATE|DELETE|PATCH|QUICK_ADD|MOVE|REMOVE|CLEAR|INSERT)' "$backend_src" \
+    | grep -vE "^($tools_catalog|$tools_mock):[0-9]+:[^G]*GOOGLECALENDAR_(CREATE_EVENT|PATCH_EVENT|DELETE_EVENT)([^A-Z0-9_]|$)"; then
+    echo "FAIL: a calendar write tool beyond the reviewed Google Calendar create, patch and delete is referenced in the backend." >&2; status=1
   fi
+  # ADR-488: Notion create, append and move-to-trash, and a new private Google Doc (drive.file).
+  # Since ADR-485 also the Gmail send, reply, forward, label and Trash tools (each behind ASK-01's
+  # tap on the exact payload), in the catalog and its mock only. Never a permanent or bulk delete.
   # The only write tools allowed are GMAIL_CREATE_EMAIL_DRAFT, TODOIST_CREATE_TASK and, since ADR-303,
   # TODOIST_CLOSE_TASK_V1 and TODOIST_UPDATE_TASK (each needs a fresh on-screen approval bound to the
   # task Todoist returned). Anything that sends, deletes, shares, edits or labels is refused here, and
   # the two Todoist writes may appear only in the catalog and its mock.
   if grep -RInE 'GMAIL_(SEND|DELETE|TRASH|REPLY|FORWARD|MODIFY|BATCH|ADD|REMOVE|CREATE_LABEL|PATCH|UPDATE|MOVE|UNTRASH)|GOOGLEDRIVE_(CREATE|UPDATE|DELETE|ADD_FILE_SHARING|EDIT|COPY|MOVE|TRASH|UPLOAD|DOWNLOAD|EMPTY|REMOVE)|NOTION_(CREATE|UPDATE|DELETE|ADD|APPEND|ARCHIVE|INSERT|DUPLICATE|MOVE)|TODOIST_(UPDATE|DELETE|CLOSE|REOPEN|BULK|MOVE|QUICK_ADD|ARCHIVE|ADD)' "$backend_src" \
     | grep -vE "^($tools_catalog|$tools_mock):[0-9]+:.*TODOIST_(CLOSE_TASK_V1|UPDATE_TASK)([^A-Z0-9_]|$)" \
+    | grep -vE "^($tools_catalog|$tools_mock):[0-9]+:[^G]*GMAIL_(SEND_EMAIL|REPLY_TO_THREAD|FORWARD_MESSAGE|ADD_LABEL_TO_EMAIL|MOVE_TO_TRASH)([^A-Z0-9_]|$)" \
+    | grep -vE "^($tools_catalog|$tools_mock):[0-9]+:[^GN]*(NOTION_(CREATE_NOTION_PAGE|APPEND_TEXT_BLOCKS|ARCHIVE_NOTION_PAGE)|GOOGLEDRIVE_CREATE_FILE_FROM_TEXT)([^A-Z0-9_]|$)" \
     | grep -E 'GMAIL_|GOOGLEDRIVE_|NOTION_|TODOIST_(UPDATE|DELETE|CLOSE|REOPEN|BULK|MOVE|QUICK_ADD|ARCHIVE|ADD)'; then
-    echo "FAIL: a write tool beyond the reviewed Gmail draft and the Todoist add, complete and move is referenced in the backend." >&2; status=1
+    echo "FAIL: a write tool beyond the reviewed Gmail ones (draft, send, reply, forward, labels, Trash) and the Todoist add, complete and move is referenced in the backend." >&2; status=1
   fi
   # Outlook (ADR-340): the only write is OUTLOOK_CREATE_DRAFT, in the catalog and its mock. Nothing
   # that sends, deletes, moves, replies, flags or changes the calendar.
+  # Since ADR-486/487 also the reviewed calendar and mail writes below, each behind ASK-01's tap.
+  # Never a "permanently" delete, a batch, a cancel-for-everyone or anything on another user's mailbox.
+  outlook_ok='OUTLOOK_(CREATE_DRAFT|CALENDAR_CREATE_EVENT|UPDATE_CALENDAR_EVENT|DELETE_CALENDAR_EVENT|ACCEPT_EVENT|DECLINE_EVENT|SEND_EMAIL|REPLY_EMAIL|FORWARD_MESSAGE|MOVE_MESSAGE|UPDATE_USER_MAIL_FOLDER_MESSAGE)'
   if grep -RInE 'OUTLOOK_(SEND|DELETE|MOVE|UPDATE|CREATE|REPLY|FORWARD|COPY|PATCH|FLAG|MARK|ADD|REMOVE|ACCEPT|DECLINE|CANCEL|TENTATIVE|SNOOZE|DISMISS|BATCH)' "$backend_src" \
-    | grep -vE "^($tools_catalog|$tools_mock):[0-9]+:([^O]|O[^U])*OUTLOOK_CREATE_DRAFT([^A-Z0-9_]|$)([^O]|O[^U])*$"; then
-    echo "FAIL: an Outlook write tool beyond the reviewed draft is referenced in the backend." >&2; status=1
+    | grep -vE "^($tools_catalog|$tools_mock):[0-9]+:([^O]|O[^U])*${outlook_ok}([^A-Z0-9_]|$)([^O]|O[^U])*$"; then
+    echo "FAIL: an Outlook write tool beyond the reviewed ones (ADR-340, ADR-486, ADR-487) is referenced in the backend." >&2; status=1
+  fi
+  if grep -RInE '(OUTLOOK|GOOGLECALENDAR|GMAIL|GOOGLEDRIVE|NOTION|TODOIST)_[A-Z_]*(PERMANENT|EMPTY_TRASH|PURGE)' "$backend_src"; then
+    echo "FAIL: a permanent-delete tool is referenced in the backend; permanent deletion is out of scope (ASK-01 prompt)." >&2; status=1
+  fi
+  # ASK-01: every server tool has a card and runs only through the one gate.
+  if grep -nE 'preview\?\(' "$tools_catalog"; then
+    echo "FAIL: ASK-01: a tool's preview (its card) is required in $tools_catalog." >&2; status=1
+  fi
+  if ! python3 -I - "$tools_catalog" <<'PY'
+import re, sys
+src = open(sys.argv[1], encoding="utf-8").read()
+blocks = re.findall(r"export const (\w+): CloudToolDefinition = \{(.*?)\n\};", src, re.S)
+missing = [name for name, body in blocks if "\n  preview:" not in body]
+if not blocks or missing:
+    print("tools without a card:", ", ".join(missing) or "(none found)")
+    sys.exit(1)
+PY
+  then
+    echo "FAIL: ASK-01: every tool in $tools_catalog needs a preview (its card)." >&2; status=1
+  fi
+  if grep -RInE 'consumeApproval\(' --include='*.ts' "$backend_src" | code_only | grep -vE "^$backend_src/(store|policy|tools/askFirst)\.ts:"; then
+    echo "FAIL: ASK-01: approvals are checked only in backend/src/tools/askFirst.ts (and the older policy.ts)." >&2; status=1
+  fi
+  if ! grep -q 'this.ask.allows(binding, request.approvalId' "$backend_src/tools/service.ts" || ! grep -q 'this.ask.allows(binding(target)' "$backend_src/tools/service.ts"; then
+    echo "FAIL: ASK-01: both run paths in backend/src/tools/service.ts must go through AskGate." >&2; status=1
   fi
   if grep -RInE 'tools\.proxy|proxyExecute|COMPOSIO_MULTI_EXECUTE|COMPOSIO_REMOTE' "$backend_src"; then
     echo "FAIL: generic proxy/meta-tool execution in the backend." >&2; status=1
@@ -223,7 +286,7 @@ for extra in backend/src backend/test contracts .env.example backend/.env.exampl
 if grep -RInE "$secrets" "${secret_paths[@]}" --exclude=check_forbidden_capabilities.sh; then
   echo "FAIL: possible secret found." >&2; status=1
 fi
-if [ -d server/messaging ] && grep -RInE "$messaging_secrets" server/messaging render.yaml --exclude-dir=node_modules --exclude-dir=dist; then
+if [ -d server/messaging ] && grep -RInE "$messaging_secrets" server/messaging render.yaml --exclude-dir=node_modules --exclude-dir=dist --exclude=.env.op; then
   echo "FAIL: possible secret found in server/messaging or render.yaml." >&2; status=1
 fi
 # The other deployed services (gateway, voice token server, site functions), the voice agent spec and
@@ -231,8 +294,18 @@ fi
 service_dirs=()
 for extra in gateway server/voice-token site voice-agent tools; do [ -d "$extra" ] && service_dirs+=("$extra"); done
 if [ "${#service_dirs[@]}" -gt 0 ] && grep -RInE "${messaging_secrets%)}|ak_[A-Za-z0-9_-]{20,}|monid_(live|test)_[A-Za-z0-9_-]{16,}|PASSWORD=[^[:space:]]{8,})" \
-    "${service_dirs[@]}" --exclude-dir=node_modules --exclude-dir=dist --exclude=package-lock.json; then
+    "${service_dirs[@]}" --exclude-dir=node_modules --exclude-dir=dist --exclude=package-lock.json --exclude=.env.op; then
   echo "FAIL: possible secret found in gateway, server/voice-token, site, voice-agent or tools." >&2; status=1
+fi
+# 1Password (ADR-493): the app ships no secrets and no 1Password code, and the servers read plain
+# environment variables (no 1Password SDK at boot). op:// references live only in the .env.op
+# templates and secrets/, which `node tools/secrets/sync.mjs check` keeps to references only.
+onepassword='op://|@1password/|onepassword-sdk|OnePasswordSDK|OP_SERVICE_ACCOUNT_TOKEN|OP_CONNECT_(HOST|TOKEN)'
+if grep -RInE "$onepassword" "${dirs[@]}" Config project.yml project-iphone.yml project-mac.yml; then
+  echo "FAIL: 1Password references or code in an app target (ADR-493)." >&2; status=1
+fi
+if grep -nE '"@1password/' backend/package.json server/*/package.json gateway/package.json site/package.json 2>/dev/null; then
+  echo "FAIL: a server depends on the 1Password SDK; hosts keep plain environment variables (ADR-493)." >&2; status=1
 fi
 if grep -RInE --include='*.swift' "$sharing_only" "${dirs[@]}" | code_only | grep -v "^$sharing_dir/"; then
   echo "FAIL: CloudKit outside $sharing_dir." >&2; status=1
@@ -243,5 +316,5 @@ fi
 if grep -RnoE 'NS[A-Za-z]+UsageDescription' project.yml DoddyApp DoddyWidgets DoddyShare Config | grep -vE "$allowed_permissions"; then
   echo "FAIL: only the alarms, microphone, speech recognition, calendar, reminders, contacts, While Using location and Face ID permissions are allowed." >&2; status=1
 fi
-[ "$status" -eq 0 ] && echo "PASS: networking only in the token client, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice and the ECB rates client, web auth only in Connected Apps, Sign in with Apple only for the voice account (two Voice files), ElevenLabs only in Voice, audio only in Voice and Voice memos, on-device speech recognition only in Voice memos, calendar, contacts and location only in Connections, photo reading and the photo picker only in Photos (no camera or photo library access), no Always/background location, no analytics, no secrets, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts, While Using location and Face ID (LocalAuthentication only in the app lock); backend has no write tools beyond the reviewed Gmail draft and reply draft, the Outlook draft and Todoist add, complete and move, and no proxy execution."
+[ "$status" -eq 0 ] && echo "PASS: ASK-01: every voice tool and every server tool asks first through one gate; networking only in the token client, the voice account sign-in, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice and the ECB rates client, web auth only in Connected Apps, Sign in with Apple only in the voice account sign-in and no password or passkey APIs, ElevenLabs only in Voice, audio only in Voice and Voice memos, on-device speech recognition only in Voice memos, calendar, contacts and location only in Connections, photo reading and the photo picker only in Photos (no camera or photo library access), no Always/background location, no analytics, no secrets, no 1Password code in the app or SDK in the servers, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts, While Using location and Face ID (LocalAuthentication only in the app lock); backend has no write tools beyond the reviewed Gmail draft and reply draft, the Outlook draft and Todoist add, complete and move, and no proxy execution."
 exit "$status"

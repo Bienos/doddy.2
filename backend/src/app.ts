@@ -64,6 +64,7 @@ export function buildApp(
     publicBaseUrl: config.publicBaseUrl,
     appReturnUrl: config.appReturnUrl,
     completionMode: toolsProvider.mode === "mock" ? "mock" : (config.composio?.completionMode ?? "verifier"),
+    log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`),
   });
   const handler = createHandler({ service, tools, verifier, appReturnUrl: config.appReturnUrl, maxBodyBytes: config.limits.maxBodyBytes });
   // Last line of defence: a handler failure closes that one connection, never the process.

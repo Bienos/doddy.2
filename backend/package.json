@@ -16,6 +16,7 @@
     "live-check": "node dist/src/liveCheck.js",
     "fixtures": "npm run build && node dist/test/fixtures.generate.js",
     "start:env": "node --env-file=.env.local dist/src/server.js",
+    "start:op": "op run --env-file=.env.op -- node --env-file-if-exists=.env.local dist/src/server.js",
     "setup:composio": "npm run build && node dist/src/setupComposio.js",
     "setup:tools": "npm run build && node dist/src/setupTools.js"
   },

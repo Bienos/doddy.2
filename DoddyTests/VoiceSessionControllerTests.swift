@@ -89,8 +89,11 @@ final class VoiceSessionControllerTests: XCTestCase {
         XCTAssertEqual(t.link.results.first?.text, VoiceToolReply.eventDeleted(event, calendar: .current))
     }
 
+    /// ASK-01 (ADR-483, `docs/trust/ASK_FIRST.md`): starting translator mode asks first, with a
+    /// spoken yes or a tap, and then starts at once with no second card (the 16 Oct change that
+    /// took out the translator's own setup card).
     @MainActor
-    func testTranslatorStartsImmediatelyWithoutShowingAConfirmationCard() async {
+    func testTranslatorAsksFirstThenStartsWithoutASecondCard() async {
         let t = Harness()
         defer { t.restore() }
         t.controller.beginForTesting(link: t.link)
@@ -98,7 +101,18 @@ final class VoiceSessionControllerTests: XCTestCase {
         await t.controller.receiveToolCallForTesting(
             name: VoiceToolName.startTranslator, id: "translator-1", parameters: #"{"their_language":"es"}"#).value
 
-        XCTAssertNil(t.controller.pendingAction)
+        guard case .ask(let id, _, let needsTap, let toolName, _)? = t.controller.pendingAction else {
+            return XCTFail("expected the ASK-01 question, got \(String(describing: t.controller.pendingAction))")
+        }
+        XCTAssertEqual(id, "translator-1")
+        XCTAssertEqual(toolName, VoiceToolName.startTranslator)
+        XCTAssertFalse(needsTap, "a spoken yes is enough")
+        XCTAssertNil(t.controller.translator, "nothing starts before the answer")
+        XCTAssertTrue(t.link.results.isEmpty)
+
+        await t.controller.confirmPendingAction()
+
+        XCTAssertNil(t.controller.pendingAction, "no second card after the yes")
         XCTAssertEqual(t.controller.translator?.setup.other?.code, "es")
         XCTAssertEqual(t.link.results.map(\.id), ["translator-1"])
         XCTAssertTrue(t.link.results.first?.text.hasPrefix("started:") == true)

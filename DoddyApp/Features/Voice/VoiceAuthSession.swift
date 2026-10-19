@@ -178,9 +178,6 @@ struct VoiceSessionReply: Decodable, Sendable {
     let expiresIn: Int
 }
 
-// `VoiceAuthAPI`, the HTTP client for these calls, is in VoiceTokenClient.swift: the app's voice
-// networking stays in that one file (ADR-070, ADR-483).
-
 /// A single Keychain item stores only the DODDY refresh token and Apple's opaque subject.
 /// The short-lived access token stays in memory.
 enum VoiceSessionKeychain {

@@ -13,8 +13,52 @@ Created with the Render API, which cannot set a root directory or health check p
 `cd backend` first; set the health check path to `/v1/health` in the dashboard if wanted.
 Since ADR-193 the backend starts in live mode with **only a Monid key** (web search); Composio is optional.
 
+**2026-10-18, first live Gmail attempt (owner asked the agent to do it end to end):**
+* Render's logs from 2026-10-11 to 2026-10-18 show no app request to this server, only `/v1/health` and unmatched
+  paths. The app has never used it. The old SLIYD service answers "This service has been suspended".
+* The agent replaced `DODDY_SESSION_SIGNING_KEY` with a new key (the owner agreed the value would appear in that
+  session's transcript; press **Generate** in the dashboard to replace it, then mint a new token). Deployed `754e5d6`.
+* **Temporary:** `DODDY_APP_RETURN_URL` is `https://doddy-yaci.onrender.com/v1/health`, so a desktop browser lands on
+  a real page with the connection ID in the address bar. **Set it back to `doddy-dev://connected-apps/return`** after
+  the test, or the app's sign-in can't return.
+* `GET /v1/tools`: Gmail and Google Drive set up (disconnected), Notion, Todoist and Outlook not set up, web search ready.
+* `POST /v1/tools/gmail/connect` → **502 `provider_unavailable` in 583 ms**: Composio refused the link request. A
+  local run of the same adapter with an invalid key gives the same answer (HTTP 401 underneath); an unknown auth
+  config would give a 404 (`connection_expired`) instead. Most likely cause: `COMPOSIO_API_KEY` is not a valid
+  project key (`ak_…` from platform.composio.dev; a `ck_…` key is for Composio's own apps and is refused). Unverified,
+  because the server never logs Composio's answer.
+* Every wake on the free plan is a new instance (a new instance ID in the logs), so the SQLite file, connections and
+  switches are lost after about 15 minutes idle, not only on redeploy.
+* Same day, after the owner put a new `ak_…` project key on Render and the agent set
+  `COMPOSIO_GMAIL_AUTH_CONFIG_ID=ac_XUGmWDS79r-R` (deploy `dep-dba9h6nbtjjs73eaou70`), the live path worked up to
+  the grant check:
+  1. `POST /v1/tools/gmail/connect` → 200 with a `connect.composio.dev/link/…` link.
+  2. The owner approved Google in a browser and landed on `/v1/health?attempt=…&status=success&connected_account_id=ca_…`.
+  3. `POST /v1/tools/gmail/complete` (callback mode) → 200. The server re-read the connection: active, owned by this
+     user, the right auth config. **Composio does report Gmail's granted scopes** (otherwise the verdict would have been
+     `grant_unverifiable`). They were broader than `gmail.readonly` + `gmail.compose`: status
+     `permission_insufficient`, reason `grant_too_broad`, receipt `blocked`, as designed.
+  4. Switching `check_email` on → 403 `permission_insufficient`; running it → 403. No email was read.
+  5. `POST /v1/tools/gmail/disconnect` → 200, revoked and deleted at Composio (`remoteCleanup: none`).
+* **Next:** limit auth config `ac_XUGmWDS79r-R` (or a new one) to `gmail.readonly` and `gmail.compose` (identity
+  scopes `openid`, `email`, `profile`, `userinfo.email`, `userinfo.profile` are also accepted), then connect again. If
+  Composio's managed Gmail app won't take a narrower list, it needs Doddy's own Google OAuth client.
+
 Earlier (2026-10-10): service `doddy` (`srv-db559odckfvc7390v2i0`, https://doddy.onrender.com) in workspace **SLIYD**,
 web search verified there. That account is no longer the one in use; delete the old service there if it still runs.
+
+## Secrets come from 1Password (ADR-493)
+The values for every secret below live in 1Password (`docs/security/SECRETS_1PASSWORD.md`). After the first setup, change them with the sync tool rather than by typing in the dashboard:
+```
+op run --env-file=secrets/deploy.env.op -- node tools/secrets/sync.mjs --target render:doddy
+```
+It prints the plan. Run it again with `--apply --confirm <code>` to write it, then deploy by hand, because auto-deploy is off.
+
+Two Render facts to know:
+- **Every Render API read returns values,** so the Render API key can read every secret. It lives only in the owner-only 1Password vault.
+- **`sync: false` doesn't work inside an environment group:** Render ignores those keys. So `render.yaml` puts the messaging secrets on the web service and on the worker as service-level `sync: false` (ADR-495), and Render asks for them twice when the Blueprint is created.
+
+On 18 Oct 2026 the workspace also runs copies of `doddy-voice-token` and `doddy-gateway` on a non-default branch. They aren't managed by the sync tool (owner decision pending).
 
 ## Web search only (fastest path)
 

@@ -45,6 +45,10 @@ final class VoiceSessionController {
         case shortcut(toolCallID: String, name: String)
         /// `address` is the phone number or email from Contacts. It is shown on screen only.
         case message(toolCallID: String, draft: MessageDraft, address: String)
+        /// A BLIK phone transfer to send in the user's bank app (ADR-510). `contactName` and
+        /// `numbers` come from Contacts when iOS allows it, and are shown on screen only. Doddy
+        /// never sends money; "I'll send it myself" only keeps the details on screen.
+        case blik(toolCallID: String, draft: BlikTransferDraft, contactName: String?, numbers: [BlikPhoneNumber])
         /// Gmail draft or Todoist task. `preview` and `approvalID` come from Doddy's server for exactly
         /// these arguments; the approval works once and expires after two minutes.
         case cloud(toolCallID: String, call: CloudToolCall, preview: ToolPreview, approvalID: UUID, mode: ConnectedAppsMode)
@@ -75,15 +79,22 @@ final class VoiceSessionController {
         case leaveBy(toolCallID: String, plan: LeaveByPlan)
         /// A dish's ingredients with ticks (ADR-305); `alreadyOpen` start unticked.
         case ingredients(toolCallID: String, listID: UUID, listName: String, dish: String, items: [String], alreadyOpen: Set<Int>)
+        /// ASK-01 (ADR-483): "Doddy wants to …" before a tool with no card of its own runs. A read
+        /// runs on a tap or the user's own spoken yes; a change (`needsTap`) only on a tap. The
+        /// call is kept as it came, and handled again after the yes.
+        case ask(toolCallID: String, card: AskCard, needsTap: Bool, toolName: String, parameters: Data)
+        /// ASK-01: an online-account read or web search. `preview` and `approvalID` come from
+        /// Doddy's server, which read nothing to make them and runs nothing without the approval.
+        case cloudRead(toolCallID: String, call: CloudToolCall, preview: ToolPreview, approvalID: UUID, mode: ConnectedAppsMode)
 
         var toolCallID: String {
             switch self {
             case .memory(let id, _), .event(let id, _), .reminder(let id, _), .timer(let id, _), .alarm(let id, _), .cancelAlarm(let id, _),
-                 .map(let id, _), .shortcut(let id, _), .message(let id, _, _), .cloud(let id, _, _, _, _),
+                 .map(let id, _), .shortcut(let id, _), .message(let id, _, _), .blik(let id, _, _, _), .cloud(let id, _, _, _, _),
                  .noteReminder(let id, _, _, _, _), .createList(let id, _, _), .plan(let id, _, _),
                  .changeEvent(let id, _), .changeReminder(let id, _, _), .deleteEvent(let id, _), .deleteReminder(let id, _),
                  .undo(let id, _), .bulk(let id, _, _, _), .parking(let id, _), .leaveBy(let id, _),
-                 .ingredients(let id, _, _, _, _, _):
+                 .ingredients(let id, _, _, _, _, _), .ask(let id, _, _, _, _), .cloudRead(let id, _, _, _, _):
                 id
             }
         }
@@ -111,6 +122,13 @@ final class VoiceSessionController {
     enum NoteReminderStatus: Equatable {
         case setting(ConfirmedNoteReminder)
         case done(ConfirmedNoteReminder, NoteReminderReceipt)
+    }
+
+    /// A BLIK transfer to send in the bank app (ADR-510), as shown on its card.
+    struct BlikCard: Equatable {
+        let draft: BlikTransferDraft
+        let contactName: String?
+        let numbers: [BlikPhoneNumber]
     }
 
     /// Contacts found by a lookup. Shown on screen only; the agent receives names.
@@ -183,6 +201,8 @@ final class VoiceSessionController {
     }
     private(set) var lines: [Line] = []
     private(set) var pendingAction: PendingAction? { didSet { syncIsland() } }
+    /// ASK-01 (ADR-483): which calls the user said yes to. Checked right before a tool runs.
+    private var askLedger = AskLedger()
     /// The type the user picks on the "Save this note?" card. Starts as Other for every proposal;
     /// the agent is never told or asked (ADR-202).
     var pendingMemoryCategory: MemoryCategory = .other
@@ -226,6 +246,10 @@ final class VoiceSessionController {
     private(set) var listReceipt: ListReceipt?
     /// The last change Doddy made in Calendar or Reminders, with Undo (ADR-258).
     private(set) var changeReceipt: ChangeReceipt?
+    /// The BLIK transfer the user said they'll send (ADR-510). It stays on screen until dismissed
+    /// or the next conversation, so the amount and number are there while they use their bank
+    /// app. In memory only; Doddy never sends it.
+    private(set) var blikCard: BlikCard?
     /// Translator mode (ADR-215), in memory only. While it is set the app runs no tool and the
     /// conversation is private.
     private(set) var translator: TranslatorSession? {
@@ -400,6 +424,13 @@ final class VoiceSessionController {
         byWakeWord: Bool = true
     ) async {
         guard !isLive else { return }
+        // Another controller's conversation is starting or live: don't open a second microphone.
+        guard Self.gate.request(self, isBusy: { $0.isBusy }) == .go else {
+            Self.audioLog.notice("a second conversation was not started: another one is starting or live")
+            return
+        }
+        startsInProgress += 1
+        defer { startsInProgress -= 1 }
         // The previous conversation's lines and unanswered cards are kept before they're cleared,
         // even when it ended in a failure nothing else recorded (ADR-360).
         keepLog()
@@ -440,6 +471,7 @@ final class VoiceSessionController {
         translator = nil
         listReceipt = nil
         changeReceipt = nil
+        blikCard = nil
         translatorSummary = nil
         translatorFactsSaved = nil
         holdToTalk = false
@@ -486,6 +518,11 @@ final class VoiceSessionController {
         startedAt = Date()
         countedAsConnected = false
         phase = .connecting
+        // For a phone log of a start that never got going (STATUS "Known problems"): which start,
+        // what started it, and whether Doddy was in the background. No notes or speech in it.
+        let inBackground = UIApplication.shared.applicationState == .background
+        let startNote = "starting a conversation: attempt \(attempt), by wake word \(startedByWakeWord), in background \(inBackground)"
+        Self.audioLog.notice("\(startNote, privacy: .public)")
 
         // The Dynamic Island / Lock Screen buttons reach this conversation through these.
         let actions = VoiceActivityActions.shared
@@ -614,6 +651,8 @@ final class VoiceSessionController {
             do throws(VoiceTokenError) {
                 auth = .conversationToken(try await VoiceTokenClient(endpoint: endpoint).fetchToken())
             } catch {
+                let tokenNote = "voice token not received: attempt \(attempt), \(LogSafeError.kind(of: error))"
+                Self.audioLog.notice("\(tokenNote, privacy: .public)")
                 if attempt == startAttempt, phase == .connecting {
                     if error == .offline { failOffline() } else { fail(VoiceTokenServer.message(for: error)) }
                 }
@@ -628,11 +667,15 @@ final class VoiceSessionController {
         guard attempt == startAttempt, phase == .connecting else { return }
 
         Self.allowOtherAppsAudio()
+        let connectNote = "connecting to ElevenLabs: attempt \(attempt)"
+        Self.audioLog.notice("\(connectNote, privacy: .public)")
         do {
             let started = try await ElevenLabs.startConversation(auth: auth, config: config)
             guard attempt == startAttempt, isLive else {
                 // Closed (or closed and started again) while connecting: end it so nothing keeps
                 // listening and its tool calls stop (review H1).
+                let replacedNote = "a replaced start connected and was ended: attempt \(attempt)"
+                Self.audioLog.notice("\(replacedNote, privacy: .public)")
                 await started.endConversation()
                 return
             }
@@ -640,6 +683,8 @@ final class VoiceSessionController {
             watchAudioInterruptions()
             Self.audioLog.notice("conversation started. \(Self.describeAudioSession(), privacy: .public)")
         } catch {
+            let failedNote = "ElevenLabs conversation didn't start: attempt \(attempt), \(LogSafeError.kind(of: error))"
+            Self.audioLog.notice("\(failedNote, privacy: .public)")
             // A replaced start's failure isn't the new conversation's.
             guard attempt == startAttempt else { return }
             if Offline.isNoConnection(error) {
@@ -685,6 +730,16 @@ final class VoiceSessionController {
     /// token server or the provider) never opens a second microphone (review H1). `AttemptRef`
     /// reads it, so it is fileprivate.
     fileprivate var startAttempt = 0
+    /// One conversation at a time across the app (ADR-496): the voice screen and "Hey Doddy" each
+    /// make their own controller, so `guard !isLive` alone can't stop two at once.
+    private static var gate = VoiceConversationGate<VoiceSessionController>()
+    /// Starts still running (waiting for the microphone, the token or the provider). A counter, not
+    /// a flag, so "Talk again" tapped twice can't clear it while the second start still runs.
+    private var startsInProgress = 0
+    private var isBusy: Bool { startsInProgress > 0 || isLive }
+    /// The conversation starting or live anywhere in the app, if any: the voice screen shows it
+    /// instead of starting a second, and "Hey Doddy" doesn't start one.
+    static var runningConversation: VoiceSessionController? { gate.running { $0.isBusy } }
 
     /// Same start as ElevenLabs from here on: same notes, conversations, lists and profile
     /// (`variables`), same tools and cards. Needs the token server: the OpenAI key stays there.
@@ -857,6 +912,7 @@ final class VoiceSessionController {
         let active = conversation
         conversation = nil
         pendingAction = nil
+        askLedger.clear()
         contactCard = nil
         parkingCard = nil
         connectionNeeded = nil
@@ -1153,6 +1209,22 @@ final class VoiceSessionController {
             await reply(id, opened
                 ? VoiceToolReply.messageOpened(draft, recipient: draft.recipientName)
                 : VoiceToolReply.notOpened("Messages or Mail didn't open."))
+        case .blik(let id, let draft, let contactName, let numbers):
+            // Nothing runs (ADR-510): the details stay on screen and the user sends it in their bank app.
+            if onScreen(attempt) { blikCard = BlikCard(draft: draft, contactName: contactName, numbers: numbers) }
+            await reply(id, VoiceToolReply.blikShown(draft, contactName: contactName))
+        case .ask(let id, _, _, let toolName, _):
+            guard askLedger.answer(.tapped, for: id, at: Date()) == .granted else {
+                await reply(id, AskFirst.notAsked(toolName))
+                return
+            }
+            await runAsked(action, attempt: attempt)
+        case .cloudRead(let id, let call, _, _, _):
+            guard askLedger.answer(.tapped, for: id, at: Date()) == .granted else {
+                await reply(id, AskFirst.notAsked(call.name))
+                return
+            }
+            await runAsked(action, attempt: attempt)
         case .cloud(let id, let call, _, let approvalID, _):
             retryChecks[id] = nil
             let record = await runConfirmedCloud(call, approvalID: approvalID, app: asked[id]?.app ?? .gmail)
@@ -1351,7 +1423,14 @@ final class VoiceSessionController {
         case .map(let id, _): await reply(id, VoiceToolReply.declinedMap)
         case .shortcut(let id, _): await reply(id, VoiceToolReply.declinedShortcut)
         case .message(let id, _, _): await reply(id, VoiceToolReply.declinedMessage)
+        case .blik(let id, _, _, _): await reply(id, VoiceToolReply.blikDeclined)
         case .cloud(let id, let call, _, _, _): await reply(id, VoiceToolReply.cloudDeclined(call.name))
+        case .ask(let id, _, _, let toolName, _):
+            _ = askLedger.answer(.declined, for: id, at: Date())
+            await reply(id, AskFirst.notAsked(toolName))
+        case .cloudRead(let id, let call, _, _, _):
+            _ = askLedger.answer(.declined, for: id, at: Date())
+            await reply(id, AskFirst.notAsked(call.name))
         case .noteReminder(let id, _, _, _, _): await reply(id, VoiceToolReply.declinedNoteReminder)
         case .createList(let id, _, _): await reply(id, VoiceToolReply.declinedList)
         case .changeEvent(let id, _), .changeReminder(let id, _, _): await reply(id, VoiceToolReply.changeDeclined)
@@ -1534,6 +1613,10 @@ final class VoiceSessionController {
         listReceipt = nil
     }
 
+    func dismissBlikCard() {
+        blikCard = nil
+    }
+
     /// The user fixed the name on the "Start a new list?" card.
     func changeNewListName(_ name: String) {
         guard case .createList(let id, _, let items) = pendingAction else { return }
@@ -1625,6 +1708,14 @@ final class VoiceSessionController {
             [["public.utf8-plain-text": summary.transcript]],
             options: [.localOnly: true, .expirationDate: summary.expiresAt])
         return true
+    }
+
+    /// Copy from the BLIK card (ADR-510): a phone number or the title, to paste in the bank app.
+    /// This iPhone only (no Universal Clipboard), and gone from the clipboard after ten minutes.
+    func copyForBlik(_ text: String) {
+        UIPasteboard.general.setItems(
+            [["public.utf8-plain-text": text]],
+            options: [.localOnly: true, .expirationDate: Date().addingTimeInterval(600)])
     }
 
     /// "Save the facts as a note": the exact facts, saved only on this tap and read back from the store.
@@ -1890,6 +1981,7 @@ final class VoiceSessionController {
             Task { await sendToAgent(FirstConversationPrompt.appMessage) }
         }
         if fromUser { firstConversationNeedsTour = false }
+        if fromUser { Task { await spokenAnswer(text) } }
         if !fromUser, let question = noteQuestion {
             noteQuestion = nil
             Task { await sendToAgent(question) }
@@ -2133,6 +2225,20 @@ final class VoiceSessionController {
         case .translatorRefused, .plan, .run:
             break
         }
+        // ASK-01 (ADR-483): nothing below runs before the user's yes for exactly this call. Tools
+        // with a payload card of their own (and the server's tools) ask through that card.
+        switch AskFirst.need(for: request) {
+        case .yesFirst(let card), .tapFirst(let card):
+            guard askLedger.mayRun(call.toolCallId, request: request, at: Date()) else {
+                let needsTap = AskFirst.needsTap(AskFirst.need(for: request))
+                askLedger.asked(call.toolCallId, request: request, needsTap: needsTap, at: Date())
+                propose(.ask(toolCallID: call.toolCallId, card: card, needsTap: needsTap, toolName: call.toolName, parameters: call.parametersData),
+                        toolCallID: call.toolCallId)
+                return
+            }
+        case .nothingRuns, .ownPayloadCard, .serverCard:
+            break
+        }
         switch request {
         case .searchMemories(let query):
             // "#car": exactly the notes with that tag (ADR-333). Private notes stay out.
@@ -2306,6 +2412,23 @@ final class VoiceSessionController {
                 propose(.message(toolCallID: call.toolCallId, draft: draft, address: address), toolCallID: call.toolCallId)
             } catch {
                 await reply(call.toolCallId, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
+            }
+        case .draftBlikTransfer(let draft):
+            // ADR-510: a card with the details, for the user to send in their bank app. Doddy never
+            // sends money. Contacts only adds the number, when iOS allows it; when several contacts
+            // have the name, the agent asks which one instead of the card guessing.
+            var recipient = BlikRecipient.nameOnly
+            if devices.access(for: .contacts) == .granted,
+               let matches = try? devices.findContacts(named: draft.recipientName) {
+                recipient = BlikRecipient.resolve(matches.map { (name: $0.name, phoneNumbers: $0.phoneNumbers) })
+            }
+            switch recipient {
+            case .several(let names):
+                await reply(call.toolCallId, VoiceToolReply.blikSeveralContacts(names, query: draft.recipientName))
+            case .nameOnly:
+                propose(.blik(toolCallID: call.toolCallId, draft: draft, contactName: nil, numbers: []), toolCallID: call.toolCallId)
+            case .contact(let name, let numbers):
+                propose(.blik(toolCallID: call.toolCallId, draft: draft, contactName: name, numbers: numbers), toolCallID: call.toolCallId)
             }
         case .cloudTool(let cloud):
             await handleCloud(cloud, toolCallID: call.toolCallId)
@@ -2652,12 +2775,63 @@ final class VoiceSessionController {
                     .cloud(toolCallID: toolCallID, call: cloud, preview: prepared.preview, approvalID: prepared.approvalId, mode: prepared.mode),
                     toolCallID: toolCallID)
             } else {
-                let result = try await client.run(cloud, timeZone: TimeZone.current.identifier, approvalId: nil)
-                await reply(toolCallID, VoiceToolReply.cloudResult(result))
+                // ASK-01: the server makes the card from the arguments alone (nothing is read) and a
+                // single-use approval; the read runs only after the user's yes (runAskedCloudRead).
+                let prepared = try await client.prepare(cloud)
+                askLedger.asked(toolCallID, request: .cloudTool(cloud), needsTap: false, at: Date())
+                propose(
+                    .cloudRead(toolCallID: toolCallID, call: cloud, preview: prepared.preview, approvalID: prepared.approvalId, mode: prepared.mode),
+                    toolCallID: toolCallID)
             }
         } catch {
             await reply(toolCallID, VoiceToolReply.cloudFailed(error, tool: cloud.name), isError: true)
         }
+    }
+
+    /// ASK-01: the user said yes to this read. The server checks the approval again and uses it up.
+    private func runAskedCloudRead(_ cloud: CloudToolCall, approvalID: UUID, toolCallID: String) async {
+        guard askLedger.mayRun(toolCallID, request: .cloudTool(cloud), at: Date()) else {
+            await reply(toolCallID, AskFirst.notAsked(cloud.name))
+            return
+        }
+        guard let client = OnlineAccountsClientFactory.make() else {
+            await reply(toolCallID, VoiceToolReply.cloudFailed(.notConfigured, tool: cloud.name), isError: true)
+            return
+        }
+        do {
+            let result = try await client.run(cloud, timeZone: TimeZone.current.identifier, approvalId: approvalID)
+            await reply(toolCallID, VoiceToolReply.cloudResult(result))
+        } catch {
+            await reply(toolCallID, VoiceToolReply.cloudFailed(error, tool: cloud.name), isError: true)
+        }
+    }
+
+    /// ASK-01: runs the call the user said yes to. For `.ask`, the call is handled again from the
+    /// start (Pause all and the switches are checked again); the ledger lets it through once.
+    private func runAsked(_ action: PendingAction, attempt: Int) async {
+        switch action {
+        case .ask(let id, _, _, let toolName, let parameters):
+            await handle(ClientToolCallEvent(toolName: toolName, toolCallId: id, parametersData: parameters, eventId: 0, expectsResponse: true),
+                         attempt: attempt)
+        case .cloudRead(let id, let call, _, let approvalID, _):
+            await runAskedCloudRead(call, approvalID: approvalID, toolCallID: id)
+        default:
+            break
+        }
+    }
+
+    /// ASK-01: the user's own words while a read's card is up. Only a short, clear yes counts
+    /// (`SpokenYes`); a change never runs on words, only on a tap.
+    private func spokenAnswer(_ text: String) async {
+        guard let action = pendingAction else { return }
+        let id: String
+        switch action {
+        case .ask(let callID, _, false, _, _), .cloudRead(let callID, _, _, _, _): id = callID
+        default: return
+        }
+        guard askLedger.answer(.userSaid(text), for: id, at: Date()) == .granted, pendingAction == action else { return }
+        pendingAction = nil
+        await runAsked(action, attempt: startAttempt)
     }
 
     /// The user tapped the card. The approval is for exactly the arguments the card showed. A lost
@@ -3492,7 +3666,9 @@ private extension VoiceSessionController.PendingAction {
              .deleteEvent, .deleteReminder, .bulk, .parking, .ingredients, .leaveBy: true
         // Each step of a plan is logged on its own (runPlan), not the plan as a whole. An undo
         // is recorded on the row it undoes (ADR-271).
-        case .map, .shortcut, .message, .translator, .plan, .undo: false
+        // ASK-01 asks: the change itself (a list item) is logged by the flow it runs. A BLIK card only
+        // shows what the user sends in their bank app (ADR-510).
+        case .map, .shortcut, .message, .blik, .plan, .undo, .ask, .cloudRead: false
         }
     }
 }
