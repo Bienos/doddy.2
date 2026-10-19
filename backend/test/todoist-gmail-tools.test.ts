@@ -16,7 +16,7 @@ afterEach(async () => rig?.close());
 const prepare = (r: Rig, tool: string, args: Record<string, unknown>, token = USER_A) =>
   r.call("POST", "/v1/tools/prepare", { token, body: { tool, arguments: args } });
 const slugs = (r: Rig) => r.provider.executed.map((e) => e.slug);
-const approvals = (r: Rig) => ((r.store as any).db.prepare("SELECT COUNT(*) AS n FROM approvals").get() as { n: number }).n;
+const approvals = async (r: Rig) => (await r.store.db.query<{ n: number }>("SELECT COUNT(*)::int AS n FROM approvals")).rows[0]!.n;
 const composioUser = (r: Rig, token = USER_A) => r.store.composioUserId(DEV_IDENTITIES[token]!, r.clock.now());
 
 // ------------------------------------------------------------------ list_todoist_tasks ids
@@ -113,7 +113,7 @@ test("an unknown or already completed task is refused at prepare, with a receipt
     assert.equal(res.body.error.receipt.errorCode, "not_found");
     assert.equal(res.body.error.receipt.operation, "write");
   }
-  assert.equal(approvals(rig), 0, "no approval was created");
+  assert.equal((await approvals(rig)), 0, "no approval was created");
   assert.ok(slugs(rig).every((s) => s === "TODOIST_GET_TASK2"), "only lookups ran");
 });
 
@@ -204,7 +204,7 @@ test("a task that disappeared after the card is not written, and the refusal say
   rig = await start();
   await ready(rig, "todoist", "complete_todoist_task");
   const prepared = await prepare(rig, "complete_todoist_task", { task_id: "t1" });
-  rig.provider.setScenario(composioUser(rig), "empty"); // the lookup now answers 404
+  rig.provider.setScenario((await composioUser(rig)), "empty"); // the lookup now answers 404
   const res = await run(rig, "complete_todoist_task", { task_id: "t1" }, { approvalId: prepared.body.approvalId });
   assert.equal(res.status, 404);
   assert.equal(res.body.error.receipt.status, "blocked");
@@ -216,7 +216,7 @@ test("move: an update answer without the new due date is 'outcome_unknown', neve
   await ready(rig, "todoist", "move_todoist_task");
   const args = { task_id: "t1", due: "friday" };
   const prepared = await prepare(rig, "move_todoist_task", args);
-  rig.provider.setScenario(composioUser(rig), "malformed_write");
+  rig.provider.setScenario((await composioUser(rig)), "malformed_write");
   const res = await run(rig, "move_todoist_task", args, { approvalId: prepared.body.approvalId });
   assert.equal(res.status, 502);
   assert.equal(res.body.error.code, "malformed_provider_result");
@@ -229,7 +229,7 @@ test("a lookup failure right before the write is 'failed' (nothing written), not
   rig = await start();
   await ready(rig, "todoist", "complete_todoist_task");
   const prepared = await prepare(rig, "complete_todoist_task", { task_id: "t1" });
-  rig.provider.setScenario(composioUser(rig), "provider_error");
+  rig.provider.setScenario((await composioUser(rig)), "provider_error");
   const res = await run(rig, "complete_todoist_task", { task_id: "t1" }, { approvalId: prepared.body.approvalId });
   assert.equal(res.status, 502);
   assert.equal(res.body.error.receipt.status, "failed");
@@ -280,7 +280,7 @@ test("read_email reads only the newest match, as information, with a content-fre
   const kept = JSON.stringify(res.body.receipt) + (await rig.call("GET", "/v1/tools/receipts")).text + rig.logs.join("\n");
   for (const secret of ["Lunch", "Are you free", "Anna", "from:anna", "demo.example"]) assert.ok(!kept.includes(secret), secret);
 
-  rig.provider.setScenario(composioUser(rig), "empty");
+  rig.provider.setScenario((await composioUser(rig)), "empty");
   const none = await run(rig, "read_email", { query: "from:nobody" });
   assert.equal(none.status, 200);
   assert.equal(none.body.count, 0);

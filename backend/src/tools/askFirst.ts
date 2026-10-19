@@ -35,7 +35,7 @@ export class AskGate {
   ) {}
 
   /** After the card is made: the approval the app sends back once the user said yes. */
-  issue(binding: AskBinding): { approvalId: string; expiresAt: number } {
+  issue(binding: AskBinding): Promise<{ approvalId: string; expiresAt: number }> {
     return this.store.createApproval({
       userId: binding.userId,
       capability: binding.tool,
@@ -51,7 +51,7 @@ export class AskGate {
    * leaves it unused (a refusal before the provider call shouldn't cost the user their yes);
    * "use" uses it up atomically, so two runs with one approval can't both pass.
    */
-  allows(binding: AskBinding, approvalId: string | undefined, mode: "check" | "use"): boolean {
+  async allows(binding: AskBinding, approvalId: string | undefined, mode: "check" | "use"): Promise<boolean> {
     if (approvalId === undefined) return false;
     return this.store.consumeApproval(
       {

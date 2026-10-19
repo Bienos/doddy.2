@@ -56,6 +56,8 @@ PR #44 (action status, session recovery, Stop listening, unfinished notes) and P
 
 PR #87 (`claude/trusting-sagan-7lky84`) is **on main** since 18 Oct, merged at the owner's request: ASK-01, every tool asks first (server gate, app ask cards, agent spec), and Gmail, Google Calendar, Outlook, Todoist, Notion, Drive and Monid tools behind cards (ADR-483 to 489). Hosted CI couldn't run, so its app code has never been built; the live agent sync is recorded in `43a94083`. Runbook: `docs/integrations/LIVE_GMAIL_TEST_RUNBOOK.md`. Risk to voice: high, because every tool call now waits for an answer.
 
+Branch `claude/elegant-hopper-6qrj3z` is **on main** since 19 Oct, merged at the owner's request: the Connected Apps server (Render `doddy-yaci`) keeps its data in Postgres instead of a SQLite file that Render's free plan lost on every sleep (ADR-525). For testing it uses the free Supabase project `doddy-gateway`, schema `doddy_backend`. Gmail was read and sent through that server on 19 Oct, with the owner's yes each time (`docs/integrations/DEPLOY_RENDER.md`). Risk to voice: none, the app is unchanged.
+
 ## Known problems
 - **Voice sessions sometimes start twice.** ElevenLabs logs from 2026-10-09 to 10-11 show:
   - two sessions starting in the same second;

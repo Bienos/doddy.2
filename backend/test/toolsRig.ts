@@ -29,7 +29,7 @@ export interface Rig {
 }
 
 export async function start(limits: Parameters<typeof testLimits>[0] = {}, o: { webSearch?: WebSearchProvider | null } = {}): Promise<Rig> {
-  const store = new Store(":memory:");
+  const store = await Store.memory();
   const clock = new Clock(Date.parse("2026-10-10T10:00:00Z"));
   const provider = new MockToolsProvider();
   const logs: string[] = [];
@@ -62,7 +62,7 @@ export async function start(limits: Parameters<typeof testLimits>[0] = {}, o: { 
       if (closed) return;
       closed = true;
       server.close();
-      store.close();
+      (await store.close());
     },
     async call(method, path, o = {}) {
       const headers: Record<string, string> = {};
