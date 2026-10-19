@@ -41,6 +41,11 @@ export interface DatabaseOptions {
 }
 
 const SERIALIZATION_FAILURE = new Set(["40001", "40P01"]);
+/**
+ * Per-connection settings, sent as a plain SET rather than startup parameters, which connection
+ * poolers (Supabase's Supavisor, PgBouncer) may refuse.
+ */
+const SESSION_SETUP = `SET search_path TO ${SCHEMA}; SET statement_timeout = 10000`;
 const MAX_TX_TRIES = 5;
 
 // int8 columns hold millisecond timestamps and counters, far below 2^53: read them as numbers.
@@ -53,16 +58,24 @@ export async function openDatabase(options: DatabaseOptions): Promise<Database> 
 
 // ------------------------------------------------------------------ hosted Postgres
 
+/** TLS parameters in the URL would replace the `ssl` option below (pg merges the URL last). */
+const URL_TLS_PARAMS = ["ssl", "sslmode", "sslcert", "sslkey", "sslrootcert", "uselibpqcompat"];
+
+export function withoutTlsParams(url: string): string {
+  const parsed = new URL(url);
+  for (const name of URL_TLS_PARAMS) parsed.searchParams.delete(name);
+  return parsed.toString();
+}
+
 async function openPostgres(url: string, caCert: string | undefined): Promise<Database> {
   const local = /^postgres(ql)?:\/\/[^@]*@(localhost|127\.0\.0\.1)(:\d+)?\//.test(url);
   const pool = new pg.Pool({
-    connectionString: url,
+    connectionString: withoutTlsParams(url),
     // Certificates are always verified outside loopback; a private CA can be supplied.
     ssl: local ? undefined : caCert ? { ca: caCert, rejectUnauthorized: true } : { rejectUnauthorized: true },
     max: 5,
     idleTimeoutMillis: 30_000,
     connectionTimeoutMillis: 10_000,
-    statement_timeout: 10_000,
   });
   // A dropped idle connection must not crash the process; the pool replaces it.
   pool.on("error", () => {});
@@ -77,7 +90,7 @@ async function openPostgres(url: string, caCert: string | undefined): Promise<Da
     async query<T>(sql: string, params?: readonly unknown[]) {
       const client = await pool.connect();
       try {
-        await client.query(`SET search_path TO ${SCHEMA}`);
+        await client.query(SESSION_SETUP);
         return await run<T>(client, sql, params);
       } finally {
         client.release();
@@ -87,7 +100,7 @@ async function openPostgres(url: string, caCert: string | undefined): Promise<Da
       for (let attempt = 1; ; attempt++) {
         const client = await pool.connect();
         try {
-          await client.query(`SET search_path TO ${SCHEMA}`);
+          await client.query(SESSION_SETUP);
           await client.query("BEGIN ISOLATION LEVEL SERIALIZABLE");
           const tx: Queryable = { query: <R>(sql: string, params?: readonly unknown[]) => run<R>(client, sql, params) };
           const result = await fn(tx);

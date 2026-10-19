@@ -107,7 +107,8 @@ On 18 Oct 2026 the workspace also runs copies of `doddy-voice-token` and `doddy-
    | `DODDY_HOST` | `0.0.0.0` |
    | `DODDY_PORT` | `10000` |
    | `DODDY_AUTH_MODE` | `signed` |
-   | `DODDY_DB_PATH` | `./data/doddy.sqlite` |
+   | `DATABASE_URL` | **secret**: the Postgres connection string (ADR-525; see "Database" below). Without it the data is lost on every sleep |
+   | `DATABASE_CA_CERT` | the database's root CA as PEM (Supabase: `prod-ca-2021.crt` from the project's Database settings) |
    | `DODDY_PUBLIC_BASE_URL` | the service's origin, e.g. `https://doddy-yaci.onrender.com` (no path) |
    | `DODDY_SESSION_SIGNING_KEY` | **secret**: Render's "Generate" button, or `openssl rand -base64 32`. Must decode to at least 32 bytes: a typed password or a 32-character hex string is refused |
    | `MONID_API_KEY` | **secret**: app.monid.ai → Access → API keys (`monid_live_…`) |
