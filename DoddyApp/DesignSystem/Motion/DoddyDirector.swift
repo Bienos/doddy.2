@@ -93,6 +93,9 @@ final class DoddyDirector {
     @ObservationIgnored private(set) var frameCount = 0
 
     @ObservationIgnored private var lastTime: Double?
+    /// DEBUG evidence (MV6): flights seen since launch, for the annotated mode's label.
+    @ObservationIgnored private(set) var flightsSeen = 0
+    @ObservationIgnored private var lastMode: MotionEngine.Mode = .attached
     @ObservationIgnored private var asleep = true
     /// Steps of at most this long (ms): four per 60 Hz frame, as the reference engine runs.
     static let substep = 1000.0 / 240
@@ -421,6 +424,9 @@ final class DoddyDirector {
         frameCount += 1
         #if DEBUG
         if isActive { checks.check(host, drawn: drawnCount) }
+        // MV6 evidence: how many hops took to the air (none under Reduce Motion: fades only).
+        if engine.mode == .flight, lastMode != .flight { flightsSeen += 1 }
+        lastMode = engine.mode
         #endif
         guard let last = lastTime else { return }
         if !isActive || (engine.isStill && host.pendingTab == nil && !host.wantsFrames) {
@@ -459,6 +465,11 @@ final class DoddyDirector {
             if case .slot(let id) = p, let frame = host.scene.frames[id] {
                 figure.slotDX = pose.x - frame.midX
                 figure.slotDY = pose.y - frame.minY
+                // In a slot only the offsets are drawn: leaving his window position out keeps a
+                // scroll (which moves it every frame) from redrawing him while the system moves
+                // him anyway.
+                figure.x = 0
+                figure.y = 0
             }
             f = figure
         }

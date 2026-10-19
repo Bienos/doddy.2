@@ -236,7 +236,9 @@ struct RootView: View {
                 DoddyDirector.shared.voiceListening(live)
             }
             // Reduce Motion: his hops become fades (brief rule 12).
-            .onChange(of: reduceMotion, initial: true) { _, on in DoddyDirector.shared.setReduceMotion(on) }
+            .onChange(of: reduceMotion || DoddyMotionDebug.forcesReduceMotion, initial: true) { _, on in
+                DoddyDirector.shared.setReduceMotion(on)
+            }
             // Q12: at accessibility text sizes he stays 1.0× on Home.
             .onChange(of: textSize.isAccessibilitySize, initial: true) { _, large in
                 DoddyDirector.shared.setHomeScale(large ? 1.0 : 1.4)

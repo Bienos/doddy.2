@@ -198,7 +198,8 @@ struct DoddyTouchArea: View {
 
     var body: some View {
         if let figure = director.figure {
-            let zone = MotionLayout.zone(soles: MotionPoint(x: figure.x, y: figure.y), scale: figure.scale)
+            // His clear zone's size at his scale (where it is comes from the slot, like him).
+            let zone = MotionLayout.zone(soles: MotionPoint(x: 0, y: 0), scale: figure.scale)
             Color.clear
                 .frame(width: CGFloat(zone.width), height: CGFloat(zone.height))
                 .contentShape(Rectangle())

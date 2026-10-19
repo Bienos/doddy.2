@@ -113,6 +113,17 @@ enum DoddyMotionDebug {
         false
         #endif
     }
+
+    /// UI tests only (MV6): `-doddyReduceMotion YES` makes him behave as with Reduce Motion on,
+    /// since a test can't turn the system setting on. DEBUG builds only; the app itself follows
+    /// the system setting.
+    static var forcesReduceMotion: Bool {
+        #if DEBUG
+        UserDefaults.standard.bool(forKey: "doddyReduceMotion")
+        #else
+        false
+        #endif
+    }
 }
 
 #if DEBUG
@@ -141,12 +152,12 @@ private struct DoddyDebugOverlay: View {
                 }
             }
             if let figure {
-                let zone = MotionLayout.zone(soles: MotionPoint(x: figure.x, y: figure.y), scale: figure.scale)
+                let zone = MotionLayout.zone(soles: e.pos, scale: figure.scale)
                 Rectangle().stroke(Color.red, lineWidth: 1)
                     .frame(width: CGFloat(zone.width), height: CGFloat(zone.height))
                     .position(x: CGFloat(zone.midX) - origin.x, y: CGFloat(zone.midY) - origin.y)
             }
-            Text(verbatim: "f \(d.frameCount) · \(e.mode.rawValue) · \(e.activity) · \(e.anchor?.surface.description ?? "–") · \(String(format: "%.2f", e.scale))× · \(String(describing: d.placement)) · checks \(d.checks.count)")
+            Text(verbatim: "f \(d.frameCount) · \(e.mode.rawValue) · \(e.activity) · \(e.anchor?.surface.description ?? "–") · \(String(format: "%.2f", e.scale))× · \(String(describing: d.placement)) · flights \(d.flightsSeen) · checks \(d.checks.count)")
                 .font(.caption2.monospaced())
                 .padding(4)
                 .background(Color.white.opacity(0.85))
