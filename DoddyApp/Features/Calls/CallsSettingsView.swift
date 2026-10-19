@@ -141,6 +141,19 @@ struct CallsSettingsView: View {
                 .foregroundStyle(Theme.secondaryText)
         }
 
+        Section {
+            NavigationLink {
+                CallCasesView()
+            } label: {
+                Label("Calls for you", systemImage: "phone.arrow.up.right")
+            }
+            .accessibilityIdentifier("calls.callCases")
+        } header: {
+            Text("Doddy calls for you")
+        } footer: {
+            Text("Doddy calls a business in Polish to ask one question for you, after you approve a card.")
+        }
+
         Section("Doddy calls you") {
             Toggle("Doddy may call me", isOn: Binding(
                 get: { s.outboundConsent },

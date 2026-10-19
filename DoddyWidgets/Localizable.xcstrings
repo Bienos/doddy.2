@@ -355,6 +355,28 @@
         }
       }
     },
+    "Call": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Połączenie"
+          }
+        }
+      }
+    },
+    "Call ended": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rozmowa zakończona"
+          }
+        }
+      }
+    },
     "Choose a list": {
       "extractionState": "manual",
       "localizations": {
@@ -410,6 +432,65 @@
           "stringUnit": {
             "state": "translated",
             "value": "选择清单"
+          }
+        }
+      }
+    },
+    "Connecting…": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wird verbunden…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conectando…"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connexion…"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Povezivanje…"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connessione…"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "接続中…"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Łączenie…"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conectando…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在连接…"
           }
         }
       }
@@ -473,6 +554,50 @@
         }
       }
     },
+    "Doddy is calling…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy dzwoni…"
+          }
+        }
+      }
+    },
+    "Doddy is on a call": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy prowadzi rozmowę"
+          }
+        }
+      }
+    },
+    "Doddy is talking": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy rozmawia"
+          }
+        }
+      }
+    },
+    "Doddy's call": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Połączenie Doddy’ego"
+          }
+        }
+      }
+    },
     "Doing the plan": {
       "extractionState": "manual",
       "localizations": {
@@ -532,6 +657,65 @@
         }
       }
     },
+    "End": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beenden"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terminar"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terminer"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Završi"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Termina"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "終了"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zakończ"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Encerrar"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "结束"
+          }
+        }
+      }
+    },
     "End conversation with Doddy": {
       "extractionState": "manual",
       "localizations": {
@@ -587,6 +771,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "结束与 Doddy 的对话"
+          }
+        }
+      }
+    },
+    "End the call": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zakończ rozmowę"
           }
         }
       }
@@ -1897,6 +2092,17 @@
         }
       }
     },
+    "Open Doddy to see the call as it is now.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz Doddy’ego, aby zobaczyć aktualny stan rozmowy."
+          }
+        }
+      }
+    },
     "Open Doddy to see the list as it is now.": {
       "extractionState": "manual",
       "localizations": {
@@ -2664,6 +2870,17 @@
         }
       }
     },
+    "Saying goodbye": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Żegna się"
+          }
+        }
+      }
+    },
     "Shopping mode": {
       "extractionState": "manual",
       "localizations": {
@@ -2959,6 +3176,28 @@
         }
       }
     },
+    "Take over": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przejmij"
+          }
+        }
+      }
+    },
+    "Take over the call": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przejmij rozmowę"
+          }
+        }
+      }
+    },
     "Talk to Doddy": {
       "extractionState": "manual",
       "localizations": {
@@ -3073,6 +3312,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "这个小组件显示的 Doddy 清单。"
+          }
+        }
+      }
+    },
+    "The answer card is in Doddy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Karta odpowiedzi jest w Doddym."
           }
         }
       }
@@ -3368,6 +3618,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在等待提醒事项确认"
+          }
+        }
+      }
+    },
+    "You're on the call": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Teraz Ty rozmawiasz"
           }
         }
       }

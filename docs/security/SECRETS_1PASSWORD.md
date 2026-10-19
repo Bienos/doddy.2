@@ -54,6 +54,8 @@ A reference such as `op://doddy-prod/openai-api/credential` names a vault, an it
 | `MONID_API_KEY` | `monid-api` | `render:doddy` | yes | yes |
 | `APNS_PRIVATE_KEY` | `apns-auth-key` (Secure Note, `notesPlain`) | `render:doddy-messaging` | yes | no |
 | `TWILIO_AUTH_TOKEN` | `twilio-auth-token` | `render:doddy-messaging` | yes | no |
+| `TWILIO_TASK_AUTH_TOKEN` | `twilio-task-auth-token` | `render:doddy-messaging` | yes | no |
+| `ELEVENLABS_WEBHOOK_SECRET` | `elevenlabs-webhook-secret` | `render:doddy-messaging` | **no**: ElevenLabs makes it for the post-call webhook, and the host must hold exactly that value | no |
 | `MEMORY_ENCRYPTION_KEY` | `memory-encryption-key` | `render:doddy-messaging` | **no**: a different value makes stored memory copies and call notes unreadable | yes |
 | `ELEVENLABS_TOOL_SECRET` | `elevenlabs-tool-secret` | `render:doddy-messaging` | **no**: it must change together with the ElevenLabs workspace secret `doddy_tool_secret` | yes |
 | `ANTHROPIC_API_KEY` | `anthropic-api` | `render:doddy-messaging` | yes | yes |

@@ -4,13 +4,15 @@ import { z } from "zod";
 import { parse, type Deps } from "../app.js";
 import { newDeviceToken, principal, requireDevice } from "../auth.js";
 import { inTransaction } from "../db.js";
+import type { TaskCallContext } from "../taskCalls/context.js";
+import { beforeAccountDeleted } from "../taskCalls/worker.js";
 
 const pushToken = z.object({
   token: z.string().regex(/^[0-9a-f]{64,200}$/),
   environment: z.enum(["sandbox", "production"]),
 });
 
-export const accountRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
+export const accountRoutes = (deps: Deps, taskCtx?: TaskCallContext): FastifyPluginAsync => async (app) => {
   const { db } = deps;
   const auth = requireDevice(db);
 
@@ -31,6 +33,9 @@ export const accountRoutes = (deps: Deps): FastifyPluginAsync => async (app) => 
 
   // Erases the account and everything tied to it (devices, phone number, queued and past messages).
   app.delete("/v1/account", { preHandler: auth }, async (req, reply) => {
+    // Calls Doddy is making for this account end first; their ElevenLabs copies are deleted
+    // promptly by jobs that outlive the account (call cases, ADR-506).
+    if (taskCtx) await beforeAccountDeleted(taskCtx, principal(req).accountId);
     await db.query("DELETE FROM accounts WHERE id = $1", [principal(req).accountId]);
     return reply.code(204).send();
   });

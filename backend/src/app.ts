@@ -1,5 +1,5 @@
 import { createServer, type Server } from "node:http";
-import { DevSessionVerifier, type SessionVerifier, SignedSessionVerifier } from "./auth.js";
+import { AnyOfSessionVerifier, DevSessionVerifier, type SessionVerifier, SignedSessionVerifier, SupabaseSessionVerifier } from "./auth.js";
 import { defaultRegistry } from "./capabilities.js";
 import type { Config } from "./config.js";
 import { createHandler } from "./http.js";
@@ -16,11 +16,12 @@ import { CloudToolsService } from "./tools/service.js";
 import { MockWebSearchProvider, MonidWebSearchProvider, type WebSearchProvider } from "./tools/websearch.js";
 
 /** Composition root: picks adapters strictly from validated config (mock never silently replaces live). */
-export function buildApp(
+export async function buildApp(
   config: Config,
-  overrides: { provider?: CalendarProvider; toolsProvider?: ToolsProvider; webSearch?: WebSearchProvider | null } = {},
+  overrides: { provider?: CalendarProvider; toolsProvider?: ToolsProvider; webSearch?: WebSearchProvider | null; store?: Store; verifier?: SessionVerifier } = {},
 ) {
-  const store = new Store(config.dbPath);
+  const store =
+    overrides.store ?? (await Store.open({ url: config.databaseUrl ?? undefined, caCert: config.databaseCaCert ?? undefined, dataDir: config.dbPath }));
   let provider: CalendarProvider;
   if (overrides.provider) provider = overrides.provider;
   else if (config.mode === "live") {
@@ -28,8 +29,7 @@ export function buildApp(
     provider = config.composio ? new ComposioCalendarProvider(config.composio) : new UnconfiguredCalendarProvider();
   } else provider = new MockCalendarProvider();
 
-  const verifier: SessionVerifier =
-    config.authMode === "signed" ? new SignedSessionVerifier(config.sessionSigningKey!) : new DevSessionVerifier();
+  const verifier: SessionVerifier = overrides.verifier ?? sessionVerifier(config);
 
   const service = new ConnectedAppsService({
     store,
@@ -85,4 +85,13 @@ export function buildApp(
   pruning.unref();
   server.on("close", () => clearInterval(pruning));
   return { server, store, service, tools, provider };
+}
+
+/** Which sign-ins this server accepts (ADR-526). */
+export function sessionVerifier(config: Config): SessionVerifier {
+  if (config.authMode === "dev") return new DevSessionVerifier();
+  if (config.authMode === "signed") return new SignedSessionVerifier(config.sessionSigningKey!);
+  const supabase = new SupabaseSessionVerifier({ projectUrl: config.supabaseUrl! });
+  // Development only (config enforces it): the owner's minted token still works next to Supabase.
+  return config.sessionSigningKey ? new AnyOfSessionVerifier([new SignedSessionVerifier(config.sessionSigningKey), supabase]) : supabase;
 }

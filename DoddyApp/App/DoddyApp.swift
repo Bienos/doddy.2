@@ -53,6 +53,9 @@ struct DoddyApp: App {
         // when iOS starts the app just to run them (ADR-241). Breathing and read-aloud don't.
         FocusController.shared.refresh()
         ToolLiveActivity.endLeftovers(keeping: [.focus])
+        // A call Doddy makes for the user runs on the server, so its island may outlive a
+        // relaunch; its Take over and End buttons reach the server from here (ADR-504).
+        CallLiveActivity.shared.registerActions()
         // "Hey Doddy" (ADR-254) starts conversations with the same notes and profile.
         WakeWordListener.shared.store = store
         WakeWordListener.shared.profiles = profiles

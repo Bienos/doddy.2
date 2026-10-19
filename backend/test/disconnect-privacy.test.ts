@@ -101,14 +101,17 @@ test("logs, receipts and the database hold no event content, tokens, nonces or s
 
   const dump = [
     h.logs.join("\n"),
-    JSON.stringify(h.store.db.prepare("SELECT * FROM receipts").all()),
-    JSON.stringify(h.store.db.prepare("SELECT * FROM connections").all()),
-    JSON.stringify(h.store.db.prepare("SELECT * FROM attempts").all()),
+    JSON.stringify((await h.store.db.query("SELECT * FROM receipts")).rows),
+    JSON.stringify((await h.store.db.query("SELECT * FROM connections")).rows),
+    JSON.stringify((await h.store.db.query("SELECT * FROM attempts")).rows),
   ].join("\n");
   for (const secret of ["Therapy", "private", PLANTED_TOKEN, "PLANTED-REFRESH", "SENSITIVE-SESSION", start.body.nonce, "dev-user-a"]) {
     assert.ok(!dump.includes(secret), `leaked: ${secret}`);
   }
-  const tables = (h.store.db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as { name: string }[]).map((t) => t.name);
+  const tables = (await h.store.db.query<{ name: string }>(
+    "SELECT table_name AS name FROM information_schema.tables WHERE table_schema = 'doddy_backend'",
+  )).rows.map((t) => t.name);
+  assert.ok(tables.includes("receipts"), "the schema's tables are listed");
   assert.ok(!tables.some((t) => /event|memor|chat|contact/i.test(t)), `no content tables: ${tables}`);
 });
 
@@ -132,30 +135,30 @@ const SYNTHETIC_WRITE: CapabilityDefinition = {
   evidence: "test only; never executes",
 };
 
-test("confirmation: missing, expired, replayed, changed-argument, other-user and other-account approvals are rejected", () => {
-  const store = new Store(":memory:");
+test("confirmation: missing, expired, replayed, changed-argument, other-user and other-account approvals are rejected", async () => {
+  const store = await Store.memory();
   const policy = new ConfirmationPolicy(store, 120);
   const t0 = Date.parse("2026-10-09T10:00:00Z");
   const base = { userId: "u1", capability: SYNTHETIC_WRITE, accountId: "acct1", args: { title: "Dinner" } };
   let executions = 0;
-  const execute = (approvalId: string | undefined, overrides: Partial<typeof base> = {}, now = t0 + 1_000) => {
-    policy.require({ ...base, ...overrides, approvalId, now });
+  const execute = async (approvalId: string | undefined, overrides: Partial<typeof base> = {}, now = t0 + 1_000) => {
+    await policy.require({ ...base, ...overrides, approvalId, now });
     executions += 1; // stands in for a handler; nothing real is executed
   };
 
-  assert.throws(() => execute(undefined));
-  const a1 = policy.approve({ ...base, now: t0 });
-  assert.throws(() => execute(a1.approvalId, { args: { title: "Dinner!" } }), "changed arguments");
-  assert.throws(() => execute(a1.approvalId, { userId: "u2" }), "other user");
-  assert.throws(() => execute(a1.approvalId, { accountId: "acct2" }), "other account");
-  execute(a1.approvalId);
-  assert.throws(() => execute(a1.approvalId), "replay");
-  const a2 = policy.approve({ ...base, now: t0 });
-  assert.throws(() => execute(a2.approvalId, {}, t0 + 121_000), "expired");
-  const a3 = policy.approve({ ...base, args: { title: "Dinner" }, now: t0 });
-  execute(a3.approvalId, { args: JSON.parse('{"title":"Dinner"}') });
+  await assert.rejects(() => execute(undefined));
+  const a1 = await policy.approve({ ...base, now: t0 });
+  await assert.rejects(() => execute(a1.approvalId, { args: { title: "Dinner!" } }), "changed arguments");
+  await assert.rejects(() => execute(a1.approvalId, { userId: "u2" }), "other user");
+  await assert.rejects(() => execute(a1.approvalId, { accountId: "acct2" }), "other account");
+  await execute(a1.approvalId);
+  await assert.rejects(() => execute(a1.approvalId), "replay");
+  const a2 = await policy.approve({ ...base, now: t0 });
+  await assert.rejects(() => execute(a2.approvalId, {}, t0 + 121_000), "expired");
+  const a3 = await policy.approve({ ...base, args: { title: "Dinner" }, now: t0 });
+  await execute(a3.approvalId, { args: JSON.parse('{"title":"Dinner"}') });
   assert.equal(executions, 2);
-  store.close();
+  (await store.close());
 });
 
 test("the registry keeps writes disabled and refuses unsafe write definitions", () => {
