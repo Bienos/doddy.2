@@ -389,8 +389,39 @@ final class MotionHostTests: XCTestCase {
         XCTAssertEqual(checks.count, 0, "\(checks.violations)")
     }
 
+    /// Hosted run 39282487184: the checks ran before he was placed, read his default 1.0× and then
+    /// flagged the first real size (1.4× on Home) as a size change on the ground.
+    func testChecksWaitUntilHeIsPlacedAndOneFrameOfTwoDrawingsIsNotTwo() {
+        let h = MotionHost()
+        var s = MotionScene()
+        s.frames[.rail] = Self.rail
+        s.mounted = [.rail]
+        h.scene = s
+        var checks = MotionChecks()
+        for _ in 0..<10 {
+            h.step(1000.0 / 240)
+            checks.check(h, drawn: 0)
+        }
+        h.scene.frames[.stage] = Self.stage
+        h.scene.mounted.insert(.stage)
+        XCTAssertTrue(h.placeOnCurrentScreen())
+        h.step(1000.0 / 240)
+        checks.check(h, drawn: 1)
+        XCTAssertEqual(checks.count, 0, "\(checks.violations)")
+        // SwiftUI swaps the drawings in one update: two for one check is not two.
+        checks.check(h, drawn: 2)
+        checks.check(h, drawn: 1)
+        XCTAssertEqual(checks.count, 0)
+        // Two that stay are.
+        checks.check(h, drawn: 2)
+        checks.check(h, drawn: 2)
+        XCTAssertEqual(checks.count, 1)
+        XCTAssertTrue(checks.lastDetail.hasPrefix("one Doddy"))
+    }
+
     func testChecksCatchTwoDrawingsAndAZoneOverSend() {
         var checks = MotionChecks()
+        checks.check(host, drawn: 2)
         checks.check(host, drawn: 2)
         XCTAssertEqual(checks.violations.last?.rule, "one Doddy")
         // A Send button right beside his spot on the stage.

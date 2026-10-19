@@ -167,6 +167,14 @@ private struct DoddyDebugOverlay: View {
                 .foregroundStyle(Color.black)
                 .position(x: 195, y: 70)
                 .accessibilityIdentifier("doddy.debug")
+            // The newest finding in words, so a failing run says what broke.
+            Text(verbatim: d.checks.lastDetail)
+                .font(.caption2.monospaced())
+                .padding(4)
+                .background(Color.white.opacity(0.85))
+                .foregroundStyle(Color.red)
+                .position(x: 195, y: 100)
+                .accessibilityIdentifier("doddy.debug.last")
         }
     }
 }
