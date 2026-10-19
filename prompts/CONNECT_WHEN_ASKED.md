@@ -4,6 +4,11 @@ Owner question, 2026-10-19, in their words: *"Is there any chance to have a flow
 the backend, but nothing is turned on until the user asks for it? So somebody asks, hey Doddy, can you send an email to
 XYZ to do XYZ? And then we have to come up with the flow of the user accepting and logging into his profile."*
 
+> **Status, 2026-10-19:** built on `claude/inspiring-volta-bkuat4` as ADR-511 to ADR-513, with the recommended answers
+> to D1 and D3 to D5. Server and shared core tested on Linux; the app code is not compiled yet; the live agent is not
+> synced; nothing has run against a real Google account. What's left is in `STATUS.md` ("Waiting on the owner") and
+> the Mac checklist section 4y. Use this prompt again only for what is still open.
+
 Give this file to an agent session working in `Bienos/doddy.2`. Read these first, in this order:
 `STATUS.md`, `CLAUDE.md`, `docs/trust/REPO_ALIGNMENT.md`, `docs/trust/config/doddy_rules.yaml`, `docs/trust/ASK_FIRST.md`,
 `docs/integrations/ONLINE_ACCOUNTS.md`, and the research behind this prompt, `docs/research/CONNECT_WHEN_ASKED_2026-10.md`.

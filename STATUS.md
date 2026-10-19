@@ -2,7 +2,7 @@
 
 Doddy is a voice-first memory companion for iPhone, with an Apple Watch app and a Mac menu bar prototype. This page is the short version. Update it when you merge something that changes what is below.
 
-Last updated 2026-10-18 (PR #85, BLIK transfers, with the fixes that let hosted CI build the app again). 1Password lines under "Waiting on the owner" added 2026-10-18 on branch `claude/laughing-darwin-hqxa63` (not merged).
+Last updated 2026-10-18 (PR #85, BLIK transfers, with the fixes that let hosted CI build the app again). Connect when asked added 2026-10-19 on branch `claude/inspiring-volta-bkuat4` (not merged). 1Password lines under "Waiting on the owner" added 2026-10-18 on branch `claude/laughing-darwin-hqxa63` (not merged).
 
 ## Known-good build
 - **Main branch:** `claude/loving-dirac-uuxoux`.
@@ -34,6 +34,7 @@ Merge one at a time, then rebuild and talk to Doddy before the next.
 | Branch / PR | What it changes | Risk to voice |
 |---|---|---|
 | `claude/trusting-sagan-7lky84` | ASK-01: every tool asks first (server gate, app ask cards, agent spec); Gmail, Google Calendar, Outlook, Todoist, Notion, Drive and Monid tools behind cards (ADR-483 to 489). App code not built; live agent not synced. Runbook: `docs/integrations/LIVE_GMAIL_TEST_RUNBOOK.md` | High: every tool call now waits for an answer; needs the live agent synced too |
+| `claude/inspiring-volta-bkuat4` | Connect when asked (ADR-511 to 513): nothing is on until the user asks; then a card in the conversation connects the account (or switches one tool on) and switches on only that tool. Gmail's first send asks Google only for sending. Builds on ASK-01 (its commits are in this branch). Server and shared core tested on Linux; app code not compiled; live agent not synced. Runbook: `docs/integrations/LIVE_GMAIL_TEST_RUNBOOK.md` §7 | Medium: changes the reply to every online-account tool and adds a card mid-conversation; needs the live agent synced |
 | `claude/admiring-curie-bsuwv9-all` (PR #67) | Quick start, the first-use fixes, Home's first visit and the shorter intro merged on 13 Oct (#76). Still open: "Hey Doddy" with one tap, the guided first conversation, Quick start shortcuts and "Ask me about it" (#53, #56, #57, #58). | High for what's left: the wake word and the first conversation |
 | `claude/trusting-dirac-o8ajzc` | Voice screen shows Doddy with a sound wave; the transcript is one tap away; the wave follows loudness | Medium: adds audio level meters to the live session |
 | `claude/affectionate-mayer-aovol9` | Island compact view draws a pre-cut round face | Low |
@@ -55,6 +56,11 @@ Merge one at a time, then rebuild and talk to Doddy before the next.
 - **Vercel:** the `doddy` project (team `doddyyyy`) built and published the site from the default branch on 2026-10-14 (www.doddy.lol); the earlier "account blocked" failures did not recur on that build. The free plan allows 100 deployments a day, and skipped ones count: on 18 October the limit was reached by 12:22 UTC (100 deployments since 09:34, 86 of them skipped), so Vercel refused new ones and showed "Account is blocked". On branch `claude/laughing-darwin-hqxa63`, only the production branch deploys (ADR-498); that takes effect once it is merged.
 
 ## Waiting on the owner
+- Connect when asked (ADR-511 to 513, branch `claude/inspiring-volta-bkuat4`):
+  - Composio: a second Gmail auth config with only `gmail.send`, its id on Render as `COMPOSIO_GMAIL_ONLY_SEND_AUTH_CONFIG_ID`.
+  - One live test on your own Gmail (runbook §7): does Composio's send work with only `gmail.send`, and does Composio report the granted scopes?
+  - Before anyone but you uses it: Doddy's own Google OAuth client, so Google's screen says Doddy instead of Composio (Google verification; until then an "unverified app" screen and at most 100 new users).
+  - Sync the live voice agent after reading the diff.
 - 1Password for project secrets (ADR-493, `docs/security/SECRETS_1PASSWORD.md`).
   - Create the four vaults and items, then run the sync tool one host at a time.
   - Built and tested on Linux against fakes only; it hasn't touched the real 1Password, Vercel or Render.

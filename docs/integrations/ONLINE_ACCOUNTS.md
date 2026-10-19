@@ -10,7 +10,8 @@ this session was rejected by Composio's REST API (HTTP 401, "Invalid API key"), 
 ## What the user gets
 
 Settings → **Online accounts**. One section per account (Gmail, Google Drive, Notion, Todoist): Connect / Disconnect,
-a status line, and under a connected account one switch per tool. Everything starts off.
+a status line, and under a connected account one switch per tool. Everything starts off. Since ADR-511 the user can
+also connect an account, or switch one tool on, from a card in the conversation when they first ask for it.
 
 | Tool (voice name) | Account | Kind | What it does | What it cannot do |
 |---|---|---|---|---|
@@ -21,6 +22,37 @@ a status line, and under a connected account one switch per tool. Everything sta
 | `list_todoist_tasks` | Todoist | read | Lists open tasks (today/overdue/upcoming/all) | Complete, change, delete |
 | `add_todoist_task` | Todoist | **write** | Adds one task after a tap on a card | Anything else |
 | `web_search` | — (Monid, no account) | read | Up to 5 web results: title, site, 300-char snippet | Open pages, pick other endpoints |
+
+## 2026-10-19: connect when asked (ADR-511 to ADR-513)
+
+**Nothing is on until the user asks; then Doddy offers to connect right in the conversation.** Built and tested
+against the mock provider only; never run against a real Google account, Composio, a Mac build or a phone.
+
+- **The refusal says how to fix it.** `prepare` or `run` for a tool that can't run returns the same error code as
+  before plus `error.connect`: `{toolkit, tool, need, accountTitle, toolTitle, permissions}`. `need` is `connect`,
+  `switch_on`, `more_permission` (connected, but the grant doesn't cover this tool) or `reconnect`. `permissions` is
+  what the sign-in will ask the user to allow, in plain words (`permissions` per account in `catalog.ts`). No approval
+  is made. An account the server hasn't set up answers `live_not_configured` with no offer.
+- **A sign-in for one tool.** `POST /v1/tools/{toolkit}/connect {"forTool":"send_email"}`. The tool must belong to the
+  account and need a sign-in, or it's a 400 before any sign-in starts. After a verified `complete`, only that tool is
+  switched on (receipt: "Gmail connected. Switched on: Send an email. Its other tools stay off until you ask for them.").
+  Settings' `{}` still switches nothing on.
+- **The user unticked the permission** on Google's screen: the receipt is `failed` / `permission_not_granted`, nothing
+  is recorded and the new connection is removed at Composio.
+- **More permission** (e.g. a send-only Gmail, then "check my email"): the working connection stays until the new
+  sign-in is verified; then it is replaced and removed. A canceled or refused upgrade leaves it as it was. A fresh
+  connection never inherits switches, so only the newly asked tool is on afterwards (known limit).
+- **Gmail send-only** (ADR-512): with `COMPOSIO_GMAIL_ONLY_SEND_AUTH_CONFIG_ID` set to a second auth config that asks
+  only for `gmail.send`, a first `send_email` uses it. Settings then says "Connected for sending only". Without it, the
+  full sign-in is used and the card lists all four permissions. Google rates `gmail.send` "sensitive"; the other
+  Gmail scopes are "restricted" (yearly security assessment when a server handles the data).
+- **Web search's** offer is its switch (`need: "switch_on"`, toolkit `websearch`).
+- **App:** a card on the voice screen with Connect / Not now (and Open in Mail instead for a send). Rules in
+  `ConnectOnAsk` (DoddyCore). Sign-in through the same system sheet as Settings (`ConnectFlow`), microphone muted while
+  it is up. The agent is told how it went and calls the tool again, which shows its own card (ASK-01).
+- **Fixtures:** `error-connect-offer-send`, `error-connect-offer-more-permission`, `toolkit-result-connected-for-send`,
+  `toolkit-result-permission-not-granted`; `error-tool-disabled` now carries an offer.
+- **Tests:** `backend/test/connect-when-asked.test.ts` (17), `Packages/DoddyCore/Tests/DoddyCoreTests/ConnectOnAskTests.swift` (15).
 
 ## 2026-10-18: always ask first (ASK-01, ADR-483) and Gmail writes (ADR-485)
 

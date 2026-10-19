@@ -444,6 +444,22 @@ Needs first: the new "First conversation" section on the live agent, with placeh
 | S7 | "Add milk to the shopping list", then End at once (slow device or many lists) | What Doddy did shows the add as done (or "in progress" for a moment), never "not done" when milk is on the list |
 | S8 | Confirm a plan with a note and a reminder, End and Start while it runs | Both steps run and are logged; the new conversation shows no plan progress and its saved-notes count starts at 0 |
 
+## 4y. Connect when asked (ADR-511 to ADR-513)
+`VoiceSessionController` (`offerConnect`, `connectFromCard`, `finishConnect`) and `VoiceView` (`connectAccountCard`) changed without a compile. Needs a server with online accounts (mock is fine for CW1–CW6). Start with Gmail disconnected.
+| # | Do this | Expect |
+|---|---|---|
+| CW1 | Build the app target | Compiles |
+| CW2 | "Send an email to <you> saying hi" | Doddy says it needs your OK to connect Gmail and nothing is sent yet. A card: "Connect Gmail?", "Send email on your behalf" (send-only config set) or the four permissions, Connect Gmail / Open in Mail instead / Not now. Mock server: a Demo label |
+| CW3 | Tap Connect Gmail | Live: the system sign-in sheet opens, and the microphone shows muted while it is up. Mock: no sheet. After: "Gmail is connected. Only "Send an email" is on." Doddy then shows the normal send card with the exact email; nothing is sent before Send |
+| CW4 | Settings → Online accounts | Gmail connected; only "Send an email" on; with the send-only config, "Connected for sending only" |
+| CW5 | Not now on the card (repeat from disconnected) | Card gone; Doddy says nothing was done; nothing connected |
+| CW6 | Open in Mail instead | Mail opens with To, subject and text filled in; Doddy says it didn't send it; What Doddy did shows "opened", never "sent" |
+| CW7 | Close the sign-in sheet without signing in | "Nothing was connected."; the microphone is back as it was; Gmail not connected |
+| CW8 | Start the sign-in, then End from the island before finishing it | Gmail may be connected if you finished signing in; nothing is sent; the ended screen says so once; a new conversation shows nothing about it |
+| CW9 | Turn on Pause all connections, ask to send | No connect card; the paused reply as before |
+| CW10 | "Check my email" with a send-only connection | "Give Gmail more access?" with the four permissions; Not now leaves sending working |
+| CW11 | Repeat CW2–CW3 with the OpenAI test voice | Same |
+
 ## 5b. After the 11 October merges of #36, #37 and #38 (ADR-277/278, the Swift reviews)
 These three merged without a compile (`REVIEW_DoddyCore_2026-10-11.md`, `REVIEW_iPhoneApp_2026-10-11.md`). Build first; every error here is new.
 | # | Do this | Expect |

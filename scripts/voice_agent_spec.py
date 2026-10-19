@@ -123,7 +123,9 @@ def check(tools, session, instructions):
     for tool in tools.get("tools", []):
         if "Settings, Online accounts" in tool.get("description", ""):
             errors.append(f"tool {tool.get('name')}: points to Settings, Online accounts; the app offers to connect in the conversation (ADR-511)")
-    if "not connected" not in instructions or "switched off" not in instructions:
+    # Only the app agent has online-account tools; the phone-call agent has none.
+    has_accounts = any(t.get("name") in ("check_email", "send_email", "web_search") for t in tools.get("tools", []))
+    if has_accounts and ("not connected" not in instructions or "switched off" not in instructions):
         errors.append("instructions: must say what a 'not connected' or 'switched off' result means (ADR-511)")
     return errors
 

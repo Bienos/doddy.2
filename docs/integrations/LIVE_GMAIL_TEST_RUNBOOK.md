@@ -68,3 +68,28 @@ Inbox.
 ## 6. Live voice agent (separate yes)
 The ElevenLabs agent still has the old prompt and tools. Syncing it (`voice-agent/README.md`) changes a live service:
 the agent will show you the exact diff and wait for your yes.
+
+## 7. Connect when asked (ADR-511 to ADR-513, added 2026-10-19)
+Nothing here has been run either. It needs the build from `claude/inspiring-volta-bkuat4` (or wherever it merges).
+1. **Send-only auth config (you, in Composio):** create a second Gmail auth config asking only for `gmail.send` (plus
+   the identity scopes). Put its id in Render as `COMPOSIO_GMAIL_ONLY_SEND_AUTH_CONFIG_ID` and redeploy. It must differ
+   from `COMPOSIO_GMAIL_AUTH_CONFIG_ID`, or the server won't start.
+2. **Start disconnected:** if Gmail is connected, disconnect it (`POST $B/v1/tools/gmail/disconnect` with `{}`).
+3. **The offer:**
+   ```text
+   curl -s -X POST $B/v1/tools/prepare -H "authorization: Bearer $T" -H 'content-type: application/json' \
+     -d '{"tool":"send_email","arguments":{"to":"<your address>","subject":"Doddy test","body":"Hi"},"timeZone":"Europe/Warsaw"}' | jq .error.connect
+   ```
+   Expect `need: "connect"` and `permissions: ["Send email on your behalf"]`.
+4. **Sign in for that tool:** the same as step 4 above, with `-d '{"forTool":"send_email"}'` on connect. Google's screen
+   should ask for one permission only. Render's `grant_checked` line should show `"profile":"narrow"`,
+   `"forTool":"send_email"` and only `gmail.send` (plus identity) in `scopes`. **If `scopes` is null, Composio doesn't
+   report granted scopes, and nothing will work: tell the agent session.**
+5. **Only Send is on:** `GET $B/v1/tools` → in Gmail only `send_email` is `enabled`, and `access` starts "Connected for
+   sending only".
+6. **One test send to yourself:** prepare `send_email` again (a card now), read it, run with its approvalId. **This is the
+   check that `GMAIL_SEND_EMAIL` works with only `gmail.send`.** Report "sent" or the error code only.
+7. **More permission:** prepare `check_email` → expect `need: "more_permission"` with the four permissions.
+8. **Unticked permission (optional):** disconnect, connect for `send_email` again, and on Google's screen don't allow
+   sending (if Google offers a checkbox). Expect receipt `permission_not_granted` and Gmail not connected.
+9. **On the phone (after the Mac build):** Mac checklist section 4y.

@@ -98,6 +98,19 @@ Not in `tools.json`, also covered:
 - **Server tools without a voice tool:** none; the server's 15 account tools and web search are the 16 cloud rows above.
 - **Plan card (`propose_plan`):** each step is a change shown on the one card; the tap is the yes for the ticked steps.
 
+## Connect when asked (ADR-511)
+
+A tool whose account isn't connected, or that is switched off, now gets a **connect card** in the conversation
+instead of "go to Settings". The card is not a yes for the tool:
+- The tool call is answered at once with `not connected:` / `switched off:` ("nothing was done"); no approval exists.
+- The card's tap connects the account (the user signs in on the provider's own page) or switches on **that one tool**.
+  Nothing else is switched on.
+- Afterwards the agent calls the tool again, and it asks first as before: a read's card (yes or tap), a change's card
+  with the exact payload (tap only). Connecting never sends, reads or changes anything.
+- Enforced in `backend/src/tools/service.ts` (`offerFor`, `toolForConnect`, `completeAttempt`) and
+  `Packages/DoddyCore/Sources/DoddyCore/OnlineAccounts/ConnectOnAsk.swift`; tests `connect-when-asked.test.ts` and
+  `ConnectOnAskTests.swift`.
+
 ## Phone actions (prompt step 2.5)
 
 Checked 2026-10-18 in code and pinned by `AskFirstTests.testPhoneActionsWaitForATapOnTheirOwnCard`:
