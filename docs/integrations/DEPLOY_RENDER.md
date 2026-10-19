@@ -133,14 +133,48 @@ Notion, Todoist), run `npm run setup:tools -- --create` (`ONLINE_ACCOUNTS.md`; i
 the printed `COMPOSIO_<TOOLKIT>_*` pairs, both values of a pair or neither. The three base values (`COMPOSIO_API_KEY`
 and the `COMPOSIO_GOOGLECALENDAR_*` pair) are all or none: half a setup stops the server.
 
+## Database (ADR-525)
+
+Since 19 Oct 2026 the server keeps its data in Postgres, so a sleep, restart or deploy no longer loses connections,
+switches, approvals or receipts. For testing it is the free Supabase project `doddy-gateway` (ref
+`sliondswemhneuzehpoq`, Frankfurt):
+
+* Schema `doddy_backend`, created by the migration `doddy_backend_schema`. The server creates its tables there at
+  startup. The public API roles (`anon`, `authenticated`) have no access and the schema is not exposed by the Data API.
+* Login role `doddy_backend` (no other rights, 10 connections at most), through the **session pooler**:
+  `postgresql://doddy_backend.sliondswemhneuzehpoq:<password>@aws-1-eu-central-1.pooler.supabase.com:5432/postgres`.
+  The direct host `db.<ref>.supabase.co` is IPv6 only on the free plan, which Render can't reach.
+* `DATABASE_CA_CERT` is Supabase's root CA (Dashboard → Database → Settings → SSL certificate, `prod-ca-2021.crt`).
+* **New password:** Supabase → SQL editor: `alter role doddy_backend password '<new>';`, then change
+  `DATABASE_URL` on Render. The 19 Oct password was generated in a Claude session and appears in its log: change it
+  before real users arrive.
+* **Free plan limits:** 500 MB, and the project pauses after a week without any use (Dashboard → Restore). Supabase
+  Pro ($25 a month) removes the pause. Moving to another Postgres (Render Postgres, Neon) needs only a new
+  `DATABASE_URL`.
+* Checked on Render on 19 Oct: the log line `"store":"postgres"`, and all nine tables present in `doddy_backend`.
+
+## Sign-in with Apple or Google (Supabase Auth, ADR-526)
+
+The server can accept Doddy accounts from Supabase Auth: `DODDY_AUTH_MODE=supabase` and
+`SUPABASE_URL=https://sliondswemhneuzehpoq.supabase.co`. It checks each access token against the project's public
+keys; no Supabase secret is needed. In development, when `DODDY_SESSION_SIGNING_KEY` is also set, the owner's minted
+token keeps working next to it; production accepts Supabase sign-ins only.
+
+Before people can sign in (owner):
+1. Supabase → Authentication → Sign In / Providers → **Apple**: on; Client IDs: the app's bundle ID. Needs the paid
+   Apple Developer team and the Sign in with Apple capability on the App ID (go-live checklist A5).
+2. Google Cloud → APIs & Services → Credentials → Create OAuth client ID → **iOS**, with the app's bundle ID. Then
+   Supabase → Providers → **Google**: on; Client IDs: that iOS client ID.
+3. The app's sign-in screens (not built yet, see ADR-526).
+
 ## Free plan caveats
 
 * Sleeps after idle time, so the first request (and an OAuth return) can be slow.
-* The SQLite file lives on the instance disk and **resets on restart and redeploy**: switches (including web search),
-  connections and receipts disappear; switch web search on again. Composio still holds any accounts; users reconnect.
-  A paid plan with a disk keeps them.
+* Without `DATABASE_URL` the server falls back to PGlite on the instance disk, which **resets on restart and
+  redeploy**. With it (ADR-525), nothing is lost.
 * Free plan is fine for one owner testing; it is not a production setup.
 
 ## Still not production
 
-Live + production is refused by the server until real app sign-in exists; tokens are owner-minted bearer tokens.
+Live + production needs `DODDY_AUTH_MODE=supabase` (ADR-526) and `DATABASE_URL`, and the server refuses to start
+without them. Until the app has its sign-in screens, the owner uses a minted bearer token in development.
