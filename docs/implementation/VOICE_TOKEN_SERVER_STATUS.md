@@ -1,4 +1,7 @@
 # Voice token server: status
+
+> **Since `754e5d6` (16 Oct, ADR-522) the access code is retired.** Voice now needs a DODDY voice account made with Sign in with Apple, and the app has no token server field or public agent. The sections from 2026-10-09 below describe the access-code server and stay as history. What's current: "Current deployment (checked 2026-10-18)" below, and `server/voice-token/README.md`.
+
 Date: 2026-10-09. Owner instruction: "build" (the step recommended after V2). Closes ADR-034's
 "must change before TestFlight" **once deployed and the agent's authentication is on**. Neither has happened yet.
 
@@ -26,6 +29,17 @@ Date: 2026-10-09. Owner instruction: "build" (the step recommended after V2). Cl
 2. Put `ELEVENLABS_API_KEY`, `ELEVENLABS_AGENT_ID`, `DODDY_ACCESS_CODES` into the host's environment yourself. The key must never be pasted into chat or the repo.
 3. Set the URL + your code in the app, and confirm "Private (token server)" works.
 4. Turn on agent authentication and set concurrency/daily call limits in ElevenLabs (the spending cap).
+
+## Current deployment (checked 2026-10-18)
+The project has moved; the table below (2026-10-09) describes the first one.
+| Item | State |
+|---|---|
+| Vercel project | `doddy-voice-token` (team `doddyyyy`), only domain `doddy-voice-token-beta.vercel.app` (production) |
+| The app's address | `VoiceConfig.tokenEndpointAddress` = `https://doddy-voice-token-beta.vercel.app/api/voice-token`; `/api/voice-auth` on the same host. Before 2026-10-18 the app pointed at `doddy-voice-token.vercel.app`, the first team's project, which answers `402 DEPLOYMENT_DISABLED` |
+| Code | Runs the Sign in with Apple server (`754e5d6`): `/api/voice-auth` exists |
+| Live check | `POST /api/voice-auth` and `/api/voice-token` → `503 {"error":"server_not_configured"}` |
+| Env set | `OPENAI_API_KEY`, `ELEVENLABS_API_KEY`, `ELEVENLABS_AGENT_ID`, `DODDY_ACCESS_CODES` (retired; remove once sign-in works) |
+| Env missing | `APPLE_BUNDLE_ID`, `DODDY_SESSION_SIGNING_KEY`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` (see `server/voice-token/README.md`). Until they are set and production is redeployed, voice can't start |
 
 ## Deployment (2026-10-09)
 | Item | State |

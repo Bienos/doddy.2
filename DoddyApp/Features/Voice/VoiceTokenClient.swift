@@ -65,8 +65,13 @@ struct VoiceTokenClient: Sendable {
 actor VoiceAuthAPI {
     static let shared = VoiceAuthAPI()
 
-    func signIn(_ identityToken: String, rawNonce: String, provider: String) async throws -> VoiceSessionReply {
-        try await post(["action": "sign-in", "identityToken": identityToken, "rawNonce": rawNonce, "provider": provider])
+    /// `authorizationCode` is Apple's one-time code from the same sign-in. The server swaps it for
+    /// the token it needs to revoke Sign in with Apple when the account is deleted (ADR-524).
+    func signIn(_ identityToken: String, rawNonce: String, authorizationCode: String? = nil,
+                provider: String) async throws -> VoiceSessionReply {
+        var body: [String: Any] = ["action": "sign-in", "identityToken": identityToken, "rawNonce": rawNonce, "provider": provider]
+        if let authorizationCode, !authorizationCode.isEmpty { body["authorizationCode"] = authorizationCode }
+        return try await post(body)
     }
 
     func refresh(_ refreshToken: String) async throws -> VoiceSessionReply {

@@ -16,7 +16,7 @@ enum BirthdayScheduler {
         let center = UNUserNotificationCenter.current()
         let pending = await center.pendingNotificationRequests().map(\.identifier)
         center.removePendingNotificationRequests(withIdentifiers: pending.filter(Birthdays.isBirthday(notificationID:)))
-        let chosen = Birthdays.toSchedule(contacts, picked: picked, now: .now, calendar: .current)
+        let chosen = Birthdays.toSchedule(contacts, picked: picked, now: .now, calendar: .current, pending: pending)
         guard !chosen.isEmpty else { return .off }
         var status = await center.notificationSettings().authorizationStatus
         if status == .notDetermined {
