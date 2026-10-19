@@ -24,6 +24,8 @@ npm run typecheck     # tsc over api/ and src/ (JSDoc types)
 
 ## Environment variables (names only; set them in the Vercel project, never in git)
 
+The secret ones live in 1Password and reach the Vercel project `doddy-gateway` through `tools/secrets/sync.mjs` (ADR-493, `docs/security/SECRETS_1PASSWORD.md`). `GATEWAY_TOKEN_SECRET` is recorded there but never written by the tool. Run locally with them: `op run --env-file=.env.op -- vercel dev`.
+
 | Name | Required | Meaning |
 |---|---|---|
 | `OPENAI_API_KEY` | yes | Provider key. Server only. |
