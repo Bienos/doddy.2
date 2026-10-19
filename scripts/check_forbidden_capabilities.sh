@@ -152,6 +152,11 @@ fi
 if grep -RInE --include='*.swift' 'import Stripe|STPAPIClient|StripeAPI\.' "${dirs[@]}" | code_only; then
   echo "FAIL: a Stripe SDK in the app. Payments go through Doddy's server (backend/src/payments)." >&2; status=1
 fi
+# With PassKit in the app (Apple Pay, ADR-530), iOS shows SwiftUI keyboard toolbars empty: the
+# capture screen lost its Done button that way (CI, 19 Oct). Put such buttons in the top bar instead.
+if grep -RInE --include='*.swift' 'placement: *\.keyboard' "${dirs[@]}" | code_only; then
+  echo "FAIL: a SwiftUI keyboard toolbar; with PassKit in the app it shows empty. Use the top bar (ADR-530)." >&2; status=1
+fi
 # Apple Pay (ADR-530): PassKit only where the sheet is shown and its token handed to Doddy's server.
 if grep -RInE --include='*.swift' 'import PassKit|PKPayment|PayWithApplePayButton|PKPaymentAuthorizationController' "${dirs[@]}" | code_only | grep -v "^$apple_pay_file:"; then
   echo "FAIL: Apple Pay (PassKit) outside $apple_pay_file." >&2; status=1

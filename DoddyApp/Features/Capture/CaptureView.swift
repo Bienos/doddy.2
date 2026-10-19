@@ -137,9 +137,13 @@ struct CaptureView: View {
                     Button(saved == nil ? "Cancel" : "Done", action: close)
                         .disabled(isSaving)
                 }
-                ToolbarItemGroup(placement: .keyboard) {
-                    Spacer()
-                    Button("Done") { editorFocused = false }.accessibilityIdentifier("capture.keyboardDone")
+                // "Done" while typing sits in the top bar, not above the keyboard: with Apple Pay's
+                // PassKit in the app (ADR-530), iOS shows SwiftUI's keyboard toolbar empty, so the
+                // button vanished there (CI, 19 Oct). The guard keeps keyboard toolbars out.
+                ToolbarItem(placement: .confirmationAction) {
+                    if editorFocused {
+                        Button("Done") { editorFocused = false }.accessibilityIdentifier("capture.keyboardDone")
+                    }
                 }
             }
             .navigationDestination(for: UUID.self) { MemoryDetailView(memoryID: $0) }

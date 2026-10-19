@@ -121,15 +121,15 @@ final class MemoryJourneyTests: XCTestCase {
 
     @MainActor
     private func dismissKeyboard(_ app: XCUIApplication) {
-        // The keyboard's Done button comes with the on-screen keyboard, which on a busy CI
-        // simulator can be a moment after typing: wait for it instead of checking once. The old
-        // fallback, a swipe, then scroll drags that start low on the screen, can land on the
-        // keyboard and type: three CI runs on PR #89 saved the note with a stray space that way.
+        // "Done" while typing is in the top bar (it was above the keyboard until PassKit emptied
+        // that toolbar, ADR-530). Wait for it rather than checking once. The old fallback, a
+        // swipe, then scroll drags that start low on the screen, landed on the keyboard and typed:
+        // CI runs on PR #89 saved the note with a stray space that way.
         let done = app.buttons["capture.keyboardDone"]
         if done.waitForExistence(timeout: 5) { done.tap(); return }
         // A hardware keyboard covers nothing; an on-screen keyboard without Done is a real fault.
         guard app.keyboards.count > 0 else { return }
-        XCTFail("The capture keyboard has no Done button. \(app.debugDescription)")
+        XCTFail("The capture screen has no Done button while typing. \(app.debugDescription)")
     }
 
     @MainActor
