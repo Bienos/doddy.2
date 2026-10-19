@@ -21,6 +21,13 @@ final class MotionSurfaceTests: XCTestCase {
         app.descendants(matching: .any)["doddy.surface.\(name)"]
     }
 
+    @MainActor
+    private func tapInSheet(_ button: XCUIElement, app: XCUIApplication) {
+        XCTAssertTrue(button.waitForExistence(timeout: 5))
+        for _ in 0..<6 where !button.isHittable { app.scrollStep() }
+        button.tap()
+    }
+
     /// Home's stage is a 140 pt line, centred; the rail is the tab bar's top edge.
     @MainActor
     func testHomeHasA140PtStageAndTheTabBarIsTheRail() {
@@ -69,11 +76,11 @@ final class MotionSurfaceTests: XCTestCase {
         XCTAssertTrue(editor.waitForExistence(timeout: 5))
         editor.tap(); editor.typeText("Synthetic blue kettle is on the top shelf.")
         if app.buttons["capture.keyboardDone"].exists { app.buttons["capture.keyboardDone"].tap() }
-        XCTAssertTrue(app.reveal(app.buttons["capture.save"]))
-        app.buttons["capture.save"].tap()
+        // Inside the capture sheet `reveal` never succeeds: the tab bar under the sheet is still
+        // in the hierarchy. Scroll the sheet until the button can be tapped instead.
+        tapInSheet(app.buttons["capture.save"], app: app)
         XCTAssertTrue(app.staticTexts["capture.saved"].waitForExistence(timeout: 6))
-        XCTAssertTrue(app.reveal(app.buttons["capture.done"]))
-        app.buttons["capture.done"].tap()
+        tapInSheet(app.buttons["capture.done"], app: app)
 
         app.buttons["tab.memories"].tap()
         let card = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'memory.open.'")).firstMatch
