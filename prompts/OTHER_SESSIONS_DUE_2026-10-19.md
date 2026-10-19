@@ -11,6 +11,14 @@ Repo `Bienos/doddy.2`, default branch `claude/loving-dirac-uuxoux`. Read `STATUS
 - **Merging:** merge only with green `core` and `ci`, no conflict, and `expectedHeadSha` set. Use merge commits only, never rebase or force-push. Never skip or loosen a test.
 - **Done means done:** don't say anything works on a device. Mark it not run.
 
+## My decisions (19 Oct) — record and build these
+- **Translator mode asks first,** like every other tool (ASK-01). No code change; the tests already expect it. Record it as a new ADR row in `DECISIONS.md`. Search for the highest number first, and don't reuse 483, 490–495 or 530. Mark #84's open question answered in `STATUS.md`.
+- **BLIK ceiling is 1,000 zł per transfer** (was 10,000 zł).
+  - Change `BlikTransferLimits.maxGrosze` in `Packages/DoddyCore/Sources/DoddyCore/BlikTransfer.swift` to 100,000 grosze, and its doc comment.
+  - Update `BlikTransferTests.swift`: 1000 is allowed, 1000.01 is refused.
+  - Update `docs/implementation/BLIK_TRANSFER_STATUS.md`, any user-facing string or agent text that names the limit (grep `10,000`, `10 000` and `10000` in `l10n/`, `voice-agent/` and `DoddyApp/`), and an ADR row.
+  - Do it in one PR from main. Merge it when `core` and `ci` are green.
+
 ## Work for you, in this order
 0. **Privacy fix first.** The fix that stops private notes reaching the calls server when "Memory on calls" is on was never merged; it's stranded on `claude/sweet-albattani-shbi30`.
    - Port it onto a new branch from main and open a PR with tests.
@@ -66,8 +74,6 @@ Repo `Bienos/doddy.2`, default branch `claude/loving-dirac-uuxoux`. Read `STATUS
   - decide on the Render copies of the voice-token server and the gateway.
 - **Calls (#90):** the legal basis for the recording notice, a Twilio subaccount limited to Poland, and a Polish calling agent.
 - **Decisions:**
-  - translator ask-first;
-  - the BLIK 10,000 zł limit;
   - the #90 secrets split;
   - repo visibility (GitHub says public, ADR-497 says private).
 - **Native review** of the translations.
