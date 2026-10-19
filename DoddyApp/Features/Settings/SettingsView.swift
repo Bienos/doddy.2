@@ -86,7 +86,6 @@ struct SettingsView: View {
                                         .padding(.bottom, 3)
                                         .motionSurface(.ledge("settings"))
                                 }
-                                .accessibilityHidden(true)
                         } else {
                             UploadedCharacterView(assetName: "UploadedDoddy_Privacy", height: 110)
                         }
