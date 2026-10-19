@@ -47,6 +47,9 @@ export class UnconfiguredToolsProvider implements ToolsProvider {
   authConfigId(_toolkit: ToolkitId): string {
     return "";
   }
+  narrowAuthConfigId(_toolkit: ToolkitId): string | null {
+    return null;
+  }
   async createConnectionLink(): Promise<{ pendingConnectionId: string | null; redirectUrl: string | null }> {
     throw notSetUp("This account");
   }

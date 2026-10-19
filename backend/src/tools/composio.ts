@@ -51,11 +51,23 @@ export class ComposioToolsProvider implements ToolsProvider {
     return s.authConfigId;
   }
 
-  async createConnectionLink(input: { toolkit: ToolkitId; composioUserId: string; callbackUrl: string; signal: AbortSignal }) {
+  narrowAuthConfigId(toolkit: ToolkitId): string | null {
+    return this.settings[toolkit]?.narrowAuthConfigId ?? null;
+  }
+
+  /** Only an auth config this server has set up for the toolkit; anything else is refused. */
+  private knownAuthConfig(toolkit: ToolkitId, authConfigId: string): string {
+    if (authConfigId !== this.authConfigId(toolkit) && authConfigId !== this.narrowAuthConfigId(toolkit)) {
+      throw new ProviderError("provider_unavailable");
+    }
+    return authConfigId;
+  }
+
+  async createConnectionLink(input: { toolkit: ToolkitId; authConfigId: string; composioUserId: string; callbackUrl: string; signal: AbortSignal }) {
     const request = await guard(() =>
       this.client.connectedAccounts.link(
         input.composioUserId,
-        this.authConfigId(input.toolkit),
+        this.knownAuthConfig(input.toolkit, input.authConfigId),
         { callbackUrl: input.callbackUrl, allowMultiple: false },
         { signal: input.signal },
       ),
@@ -86,12 +98,12 @@ export class ComposioToolsProvider implements ToolsProvider {
     };
   }
 
-  async isOwnedBy(input: { toolkit: ToolkitId; connectionId: string; composioUserId: string; signal: AbortSignal }): Promise<boolean> {
+  async isOwnedBy(input: { toolkit: ToolkitId; authConfigId: string; connectionId: string; composioUserId: string; signal: AbortSignal }): Promise<boolean> {
     const page = await guard(() =>
       this.client.connectedAccounts.list(
         {
           userIds: [input.composioUserId],
-          authConfigIds: [this.authConfigId(input.toolkit)],
+          authConfigIds: [this.knownAuthConfig(input.toolkit, input.authConfigId)],
           toolkitSlugs: [TOOLKITS[input.toolkit].composioToolkit],
           limit: 20,
         },

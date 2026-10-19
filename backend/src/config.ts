@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { TOOLKIT_IDS, type ToolkitId } from "./tools/catalog.js";
+import { TOOLKIT_IDS, TOOLKITS, type ToolkitId } from "./tools/catalog.js";
 import { MONID_DEFAULT_BASE_URL } from "./tools/websearch.js";
 
 /**
@@ -43,6 +43,11 @@ export interface ComposioSettings {
 export interface ToolkitSettings {
   authConfigId: string;
   toolkitVersion: string;
+  /**
+   * The smaller first sign-in (ADR-511), e.g. Gmail's send-only auth config from
+   * COMPOSIO_GMAIL_ONLY_SEND_AUTH_CONFIG_ID. Absent: every sign-in uses `authConfigId`.
+   */
+  narrowAuthConfigId?: string;
 }
 
 /** Monid web search. Absent: web search shows as "not set up" and never runs. */
@@ -110,6 +115,8 @@ const EnvSchema = z.object({
   DODDY_LIMIT_USER_DAILY_TOOL_RUNS: intSetting(100, 1, 10_000),
   COMPOSIO_GMAIL_AUTH_CONFIG_ID: z.string().optional(),
   COMPOSIO_GMAIL_TOOLKIT_VERSION: z.string().optional(),
+  /** ADR-511: a Gmail auth config asking only for gmail.send, used when the first request is a send. */
+  COMPOSIO_GMAIL_ONLY_SEND_AUTH_CONFIG_ID: z.string().optional(),
   COMPOSIO_GOOGLEDRIVE_AUTH_CONFIG_ID: z.string().optional(),
   COMPOSIO_GOOGLEDRIVE_TOOLKIT_VERSION: z.string().optional(),
   COMPOSIO_NOTION_AUTH_CONFIG_ID: z.string().optional(),
@@ -235,7 +242,24 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     else if (toolkitVersion === "") problems.push(`${prefix}_TOOLKIT_VERSION is required when ${prefix}_AUTH_CONFIG_ID is set`);
     else if (!/^\d{8}_\d{2}$/.test(toolkitVersion)) problems.push(`${prefix}_TOOLKIT_VERSION must be a pinned version like 20250909_00, not 'latest'`);
     else if (!e.COMPOSIO_API_KEY) problems.push("COMPOSIO_API_KEY is required in live mode");
-    else toolkits[id] = { authConfigId, toolkitVersion };
+    else {
+      // ADR-511: the optional smaller first sign-in uses the same toolkit version.
+      const narrow = TOOLKITS[id].narrow;
+      const narrowAuthConfigId = narrow ? (source[`${prefix}_${narrow.envKey}_AUTH_CONFIG_ID`] ?? "").trim() : "";
+      if (narrowAuthConfigId !== "" && narrowAuthConfigId === authConfigId) {
+        problems.push(`${prefix}_${narrow!.envKey}_AUTH_CONFIG_ID must be a different auth config from ${prefix}_AUTH_CONFIG_ID`);
+      }
+      toolkits[id] = { authConfigId, toolkitVersion, ...(narrowAuthConfigId !== "" ? { narrowAuthConfigId } : {}) };
+    }
+  }
+  // A smaller sign-in without its account's main settings is half a setup.
+  for (const id of TOOLKIT_IDS) {
+    const narrow = TOOLKITS[id].narrow;
+    if (!narrow || e.DODDY_MODE !== "live") continue;
+    const prefix = `COMPOSIO_${id.toUpperCase()}`;
+    if ((source[`${prefix}_${narrow.envKey}_AUTH_CONFIG_ID`] ?? "").trim() !== "" && !toolkits[id]) {
+      problems.push(`${prefix}_${narrow.envKey}_AUTH_CONFIG_ID needs ${prefix}_AUTH_CONFIG_ID and ${prefix}_TOOLKIT_VERSION too`);
+    }
   }
 
   // Web search. Optional in live mode; mock mode never calls Monid.

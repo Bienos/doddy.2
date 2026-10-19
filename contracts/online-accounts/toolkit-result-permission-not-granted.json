@@ -1,0 +1,89 @@
+{
+  "toolkit": {
+    "id": "gmail",
+    "title": "Gmail",
+    "access": "Doddy can list your recent emails (sender, subject, a short preview) and read one email aloud when you ask, after you say yes. It can write drafts, send an email, reply, forward, archive, mark read or unread, star, and move an email to Trash, each only after you tap the card that shows exactly what will happen. It never deletes email for good.",
+    "needsAccount": true,
+    "status": "disconnected",
+    "reason": null,
+    "connectedAt": null,
+    "remoteCleanup": "none",
+    "tools": [
+      {
+        "name": "check_email",
+        "title": "Check my email",
+        "blurb": "Lists your newest emails: sender, subject and a short preview. It doesn't open full messages.",
+        "risk": "read",
+        "enabled": false
+      },
+      {
+        "name": "read_email",
+        "title": "Read an email",
+        "blurb": "Reads one email aloud when you ask, the newest that matches. Off until you switch it on.",
+        "risk": "read",
+        "enabled": false
+      },
+      {
+        "name": "draft_email",
+        "title": "Draft an email",
+        "blurb": "Creates a draft in Gmail after you tap Create on the card. Doddy never sends it.",
+        "risk": "write",
+        "enabled": false
+      },
+      {
+        "name": "draft_email_reply",
+        "title": "Draft a reply",
+        "blurb": "Creates a reply draft in an email's conversation, to its sender, after you tap Create on the card. Doddy never sends it. Off until you switch it on.",
+        "risk": "write",
+        "enabled": false
+      },
+      {
+        "name": "send_email",
+        "title": "Send an email",
+        "blurb": "Sends an email from your Gmail after you tap Send on the card, which shows the recipient, subject and full text. Off until you switch it on.",
+        "risk": "write",
+        "enabled": false
+      },
+      {
+        "name": "reply_to_email",
+        "title": "Send a reply",
+        "blurb": "Sends a reply in an email's conversation, to its sender, after you tap Send reply. Off until you switch it on.",
+        "risk": "write",
+        "enabled": false
+      },
+      {
+        "name": "forward_email",
+        "title": "Forward an email",
+        "blurb": "Forwards one email, with its attachments, after you tap Forward on the card. Off until you switch it on.",
+        "risk": "write",
+        "enabled": false
+      },
+      {
+        "name": "change_email",
+        "title": "Archive or mark email",
+        "blurb": "Archives, marks read or unread, or stars one email after you tap the card. Off until you switch it on.",
+        "risk": "write",
+        "enabled": false
+      },
+      {
+        "name": "trash_email",
+        "title": "Move email to Trash",
+        "blurb": "Moves one email to Gmail's Trash after you tap the card. It can be restored for 30 days; Doddy never deletes for good. Off until you switch it on.",
+        "risk": "write",
+        "enabled": false
+      }
+    ]
+  },
+  "receipt": {
+    "operationId": "f2c18120-2385-4e93-9e41-44eef94c0afe",
+    "operation": "connect",
+    "toolkit": "gmail",
+    "tool": null,
+    "timestamp": "2026-10-10T10:00:00.000Z",
+    "mode": "mock",
+    "status": "failed",
+    "summary": "Gmail wasn't connected: the permission \"Send an email\" needs wasn't given. Nothing was done.",
+    "errorCode": "permission_not_granted",
+    "providerReference": null
+  }
+}

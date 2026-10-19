@@ -1,12 +1,13 @@
 import { randomUUID } from "node:crypto";
-import { type CompleteRequest, CompleteRequestSchema, type ConnectionReason, type ConnectResponse, EmptyRequestSchema, type ReceiptStatus } from "../contracts.js";
+import { type CompleteRequest, CompleteRequestSchema, type ConnectionReason, type ConnectOffer, type ConnectResponse, EmptyRequestSchema, type ReceiptStatus, ToolsConnectRequestSchema } from "../contracts.js";
 import type { Limits } from "../config.js";
 import { AppError, ProviderError } from "../errors.js";
 import { argumentDigest, UsageLimiter } from "../policy.js";
 import { AskGate, type AskBinding, WEB_ACCOUNT } from "./askFirst.js";
-import { CLEANUP_RETRY, type ConnectionRow, type QueuedCleanup, type Store } from "../store.js";
+import { type AttemptRow, CLEANUP_RETRY, type ConnectionRow, type QueuedCleanup, type Store } from "../store.js";
 import { isSupportedTimeZone } from "../time.js";
 import {
+  type AccessProfile,
   CLOUD_TOOLS,
   type CloudToolDefinition,
   type Context,
@@ -141,7 +142,8 @@ export class CloudToolsService {
     return {
       id,
       title: def.title,
-      access: def.access,
+      // A send-only Gmail sign-in (ADR-511) says what it can do, not what the full one could.
+      access: row && def.narrow && isNarrowGrant(def, scopes) ? def.narrow.access : def.access,
       needsAccount: true,
       status,
       reason: row?.reason ?? null,
@@ -194,14 +196,19 @@ export class CloudToolsService {
   async connect(userId: string, toolkitId: string, body: unknown): Promise<ConnectResponse> {
     if (toolkitId === WEB_SECTION_ID) throw new AppError("invalid_request", { message: "Web search needs no sign-in. Switch it on instead." });
     const id = toolkit(toolkitId);
-    parse(EmptyRequestSchema, body);
+    const request = parse(ToolsConnectRequestSchema, body);
     this.requireConfigured(id);
     const existing = this.store.getConnection(userId, id);
-    if (existing?.status === "connected") {
+    // ADR-511: a sign-in the user started from a conversation, for the one tool they asked for.
+    const forTool = request.forTool === undefined ? null : this.toolForConnect(userId, id, request.forTool);
+    // More permission for a working connection: the old one stays until the new one is verified,
+    // so a canceled sign-in loses nothing (completeAttempt replaces and removes it).
+    const upgrade = forTool !== null && forTool.offer.need === "more_permission";
+    if (existing?.status === "connected" && !upgrade) {
       throw new AppError("invalid_request", { message: `${TOOLKITS[id].title} is already connected. Disconnect it first.` });
     }
     // Reconnecting replaces the old connection; a failed remote cleanup is retried first.
-    if (existing || this.store.cleanupFor(userId, id)) {
+    if (!upgrade && (existing || this.store.cleanupFor(userId, id))) {
       if ((await this.removeRemote(userId, id)) === "failed") {
         throw new AppError("provider_unavailable", {
           message: `The previous ${TOOLKITS[id].title} connection couldn't be removed yet, so a new one wasn't started. Try again shortly.`,
@@ -210,12 +217,15 @@ export class CloudToolsService {
     }
     const now = this.now();
     const composioUserId = this.store.composioUserId(userId, now);
+    const profile: AccessProfile = forTool ? forTool.profile : "full";
+    const authConfigId = profile === "narrow" ? this.provider.narrowAuthConfigId(id)! : this.provider.authConfigId(id);
     const attempt = this.store.createAttempt({
       userId,
       provider: id,
-      authConfigId: this.provider.authConfigId(id),
+      authConfigId,
       now,
       ttlSeconds: this.limits.attemptTtlSeconds,
+      forTool: forTool?.tool.name ?? null,
     });
     // The unfinished attempt this one replaces can still be finished at the provider: its connection goes.
     await this.removeQueued(attempt.superseded);
@@ -223,7 +233,7 @@ export class CloudToolsService {
     const link = await this.limiter.withSlot(userId, async () => {
       if (this.mode === "live") this.limiter.reserveToolRun(userId, now);
       try {
-        return await this.provider.createConnectionLink({ toolkit: id, composioUserId, callbackUrl, signal: this.timeout() });
+        return await this.provider.createConnectionLink({ toolkit: id, authConfigId, composioUserId, callbackUrl, signal: this.timeout() });
       } catch (error) {
         throw toAppError(error, TOOLKITS[id].title);
       }
@@ -283,7 +293,7 @@ export class CloudToolsService {
     id: ToolkitId,
     title: string,
     request: CompleteRequest,
-    attempt: { pending_connection_id: string | null },
+    attempt: Pick<AttemptRow, "pending_connection_id" | "auth_config_id" | "for_tool">,
     composioUserId: string,
     fail: (errorCode: string, summary: string) => never,
     done: (status: ReceiptStatus, summary: string, errorCode?: string | null) => ToolkitResult,
@@ -317,9 +327,15 @@ export class CloudToolsService {
         connectionId = verified.connectionId;
       }
 
+      // The attempt's own auth config (full or the smaller first sign-in, ADR-511), and only while
+      // this server still has it set up for the account.
+      const authConfigId = attempt.auth_config_id;
+      if (authConfigId !== this.provider.authConfigId(id) && authConfigId !== this.provider.narrowAuthConfigId(id)) {
+        return fail("verification_failed", "The connection couldn't be verified. Nothing was connected.");
+      }
       const connection = await this.provider.getConnection({ connectionId, signal: this.timeout() });
-      const owned = await this.provider.isOwnedBy({ toolkit: id, connectionId, composioUserId, signal: this.timeout() });
-      if (!owned || connection.id !== connectionId || connection.toolkitSlug !== TOOLKITS[id].composioToolkit || connection.authConfigId !== this.provider.authConfigId(id)) {
+      const owned = await this.provider.isOwnedBy({ toolkit: id, authConfigId, connectionId, composioUserId, signal: this.timeout() });
+      if (!owned || connection.id !== connectionId || connection.toolkitSlug !== TOOLKITS[id].composioToolkit || connection.authConfigId !== authConfigId) {
         return fail("verification_failed", "The connection couldn't be verified. Nothing was connected.");
       }
       if (connection.status !== "active") return fail(`connection_${connection.status}`, `${title} didn't finish connecting.`);
@@ -332,11 +348,22 @@ export class CloudToolsService {
         level: "info",
         event: "grant_checked",
         toolkit: id,
+        profile: authConfigId === this.provider.narrowAuthConfigId(id) ? "narrow" : "full",
+        forTool: attempt.for_tool ?? null,
         verdict,
         scopes: connection.grantedScopes ?? null,
         notAllowed: allowed && connection.grantedScopes ? connection.grantedScopes.filter((g) => !allowed.has(g)) : null,
       });
+      // ADR-511: a sign-in for one tool the user asked for. If they didn't allow what that tool
+      // needs (Google lets them untick a permission), nothing usable stays connected: the new
+      // connection isn't recorded and is removed below, and an older one is left as it was.
+      const forTool = attempt.for_tool ? cloudTool(attempt.for_tool) : undefined;
+      if (forTool && forTool.toolkit === id && verdict === "ok" && !toolHasGrant(forTool, TOOLKITS[id].allowedGrants === null ? [] : connection.grantedScopes)) {
+        const asked = TOOL_COPY[forTool.name]?.title ?? forTool.name;
+        return done("failed", `${title} wasn't connected: the permission "${asked}" needs wasn't given. Nothing was done.`, "permission_not_granted");
+      }
       const { status, reason } = statusForVerdict(verdict);
+      const previous = this.store.getConnection(userId, id);
       this.store.upsertConnection({
         user_id: userId,
         provider: id,
@@ -351,9 +378,17 @@ export class CloudToolsService {
       markRecorded();
       // A fresh connection never inherits switches from an earlier one.
       this.store.disableTools(userId, toolNames(id), this.now());
-      return verdict === "ok"
-        ? done("succeeded", `${title} connected. Its tools are off until you switch them on.`)
-        : done("blocked", blockedSummary(title, verdict), reason);
+      // It replaced a connection that was still recorded (more permission, ADR-511): that one goes.
+      if (previous && previous.connection_id !== connectionId) await this.discardRemote(userId, id, [previous.connection_id]);
+      if (verdict !== "ok") return done("blocked", blockedSummary(title, verdict), reason);
+      if (forTool && forTool.toolkit === id) {
+        // Only the tool the user asked for, and only after the verified sign-in (ADR-511). Recorded
+        // after the connection, so a crash in between leaves it connected with everything off.
+        this.store.setToolEnabled(userId, forTool.name, true, this.now());
+        const asked = TOOL_COPY[forTool.name]?.title ?? forTool.name;
+        return done("succeeded", `${title} connected. Switched on: ${asked}. Its other tools stay off until you ask for them.`);
+      }
+      return done("succeeded", `${title} connected. Its tools are off until you switch them on.`);
     } catch (error) {
       if (error instanceof AppError) throw error;
       const appError = toAppError(error, title);
@@ -769,7 +804,14 @@ export class CloudToolsService {
       throw new AppError(code, { message, receipt: this.receipt(userId, WEB_SECTION_ID, "read", tool, "blocked", `Not done: ${message}`, code, null) });
     };
     if (!this.webSearch || !this.webSearch.isConfigured()) return blocked("live_not_configured", "Web search isn't set up on this server.");
-    if (!this.store.toolEnabled(userId, tool)) return blocked("capability_disabled", `${webTitle(tool)} is turned off in Settings.`);
+    if (!this.store.toolEnabled(userId, tool)) {
+      // ADR-511: no account to connect, only its switch, which the user can turn on from the card.
+      throw new AppError("capability_disabled", {
+        message: `${webTitle(tool)} is turned off in Settings.`,
+        receipt: this.receipt(userId, WEB_SECTION_ID, "read", tool, "blocked", `Not done: ${webTitle(tool)} is turned off in Settings.`, "capability_disabled", null),
+        connect: { toolkit: WEB_SECTION_ID, tool, need: "switch_on", accountTitle: WEB_SECTION.title, toolTitle: webTitle(tool), permissions: [] },
+      });
+    }
     const { approvalId, expiresAt } = this.ask.issue({ userId, tool, accountId: WEB_ACCOUNT, argsDigest: argumentDigest(args) });
     const preview =
       tool === WEB_SEARCH_TOOL
@@ -846,6 +888,60 @@ export class CloudToolsService {
     }
   }
 
+  /**
+   * ADR-511, "connect when asked": what the user could do right now, in the conversation, so this
+   * tool can run. Null when it can already run, or when no sign-in or switch can fix it (not set up).
+   */
+  private offerFor(userId: string, tool: CloudToolDefinition): ConnectOffer | null {
+    const def = TOOLKITS[tool.toolkit];
+    if (!this.provider.isConfigured(tool.toolkit)) return null;
+    const row = this.store.getConnection(userId, tool.toolkit);
+    const reason = this.blockReason(row, def, tool);
+    let need: ConnectOffer["need"];
+    if (!reason) {
+      if (this.store.toolEnabled(userId, tool.name)) return null;
+      need = "switch_on";
+    } else if (reason.code === "not_connected") {
+      need = "connect";
+    } else if (reason.code === "permission_insufficient" && row?.status === "connected" && evaluateToolkitGrant(def, parseScopes(row)) === "ok") {
+      // A working connection whose grant doesn't include this tool (a send-only Gmail sign-in).
+      need = "more_permission";
+    } else {
+      need = "reconnect";
+    }
+    const profile = this.profileFor(tool, need, row);
+    return {
+      toolkit: tool.toolkit,
+      tool: tool.name,
+      need,
+      accountTitle: def.title,
+      toolTitle: TOOL_COPY[tool.name]?.title ?? tool.name,
+      permissions: need === "switch_on" ? [] : [...(profile === "narrow" && def.narrow ? def.narrow.permissions : def.permissions)],
+    };
+  }
+
+  /**
+   * The smaller first sign-in (ADR-511) only for its own tools, only when this server has it set up,
+   * and never when it would give less than the user already had (a reconnect of a full grant).
+   */
+  private profileFor(tool: CloudToolDefinition, need: ConnectOffer["need"], row: ConnectionRow | null): AccessProfile {
+    const narrow = TOOLKITS[tool.toolkit].narrow;
+    if (!narrow || !narrow.tools.includes(tool.name) || this.provider.narrowAuthConfigId(tool.toolkit) === null) return "full";
+    if (need === "more_permission") return "full";
+    return !row || isNarrowGrant(TOOLKITS[tool.toolkit], parseScopes(row)) ? "narrow" : "full";
+  }
+
+  /** A connect from a conversation: the tool must belong to this account and need a sign-in. */
+  private toolForConnect(userId: string, id: ToolkitId, name: string): { tool: CloudToolDefinition; offer: ConnectOffer; profile: AccessProfile } {
+    const tool = cloudTool(name);
+    if (!tool || tool.toolkit !== id) throw new AppError("invalid_request", { message: `That isn't a ${TOOLKITS[id].title} tool.` });
+    const offer = this.offerFor(userId, tool);
+    if (!offer || offer.need === "switch_on") {
+      throw new AppError("invalid_request", { message: `${TOOLKITS[id].title} is already connected for that. Switch it on instead.` });
+    }
+    return { tool, offer, profile: this.profileFor(tool, offer.need, this.store.getConnection(userId, id)) };
+  }
+
   /** Why this tool cannot run right now, or null when it can. */
   private blockReason(
     row: ConnectionRow | null,
@@ -868,10 +964,17 @@ export class CloudToolsService {
   /** Switch on, account connected, grants fine. Writes a blocked receipt when not. */
   private checkUsable(userId: string, tool: CloudToolDefinition, op: "read" | "write"): ConnectionRow {
     const def = TOOLKITS[tool.toolkit];
-    const blocked = (code: "not_connected" | "permission_insufficient" | "connection_expired" | "capability_disabled", message: string): never => {
-      throw new AppError(code, { message, receipt: this.receipt(userId, tool.toolkit, op, tool.name, "blocked", `Not done: ${message}`.slice(0, 200), code, null) });
+    const blocked = (code: "not_connected" | "permission_insufficient" | "connection_expired" | "capability_disabled" | "live_not_configured", message: string): never => {
+      // ADR-511: when the user can fix this in the conversation, say how; the code stays as before.
+      const connect = code === "live_not_configured" ? null : this.offerFor(userId, tool);
+      throw new AppError(code, {
+        message,
+        receipt: this.receipt(userId, tool.toolkit, op, tool.name, "blocked", `Not done: ${message}`.slice(0, 200), code, null),
+        ...(connect ? { connect } : {}),
+      });
     };
-    if (!this.provider.isConfigured(tool.toolkit)) return blocked("not_connected", `${def.title} isn't set up on this server.`);
+    // Not set up is not "not connected": no sign-in can fix it, so no connect card is offered.
+    if (!this.provider.isConfigured(tool.toolkit)) return blocked("live_not_configured", `${def.title} isn't set up on this server.`);
     if (!this.store.toolEnabled(userId, tool.name)) {
       return blocked("capability_disabled", `${TOOL_COPY[tool.name]?.title ?? tool.name} is turned off in Settings.`);
     }
@@ -961,6 +1064,17 @@ function parseScopes(row: ConnectionRow | null): string[] | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * A grant from the smaller first sign-in (ADR-511): known scopes, none of them one that only the
+ * full sign-in asks for (for Gmail: no read, compose or modify).
+ */
+function isNarrowGrant(def: (typeof TOOLKITS)[ToolkitId], scopes: string[] | null): boolean {
+  if (!def.narrow || scopes === null) return false;
+  const narrow = new Set(def.narrow.requestedScopes);
+  const fullOnly = new Set(def.requestedScopes.filter((s) => !narrow.has(s)));
+  return scopes.some((s) => narrow.has(s)) && !scopes.some((s) => fullOnly.has(s));
 }
 
 function grantsOk(def: (typeof TOOLKITS)[ToolkitId], tool: CloudToolDefinition, scopes: string[] | null): boolean {

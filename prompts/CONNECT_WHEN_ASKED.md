@@ -162,7 +162,7 @@ did: make `ConnectOnAsk` run the tool after connecting, and show that tests fail
 4. **`complete` switches on only `forTool`**, in the same transaction that records the connection, and only if the
    granted scopes cover that tool. If they don't, follow D4. The receipt names the tool switched on.
 5. **Permission tiers as data in `catalog.ts`** (D1): each tool lists the scopes it needs. Gmail gets a send-only tier
-   (`gmail.send`, Composio auth config from a new env var such as `COMPOSIO_GMAIL_SEND_AUTH_CONFIG_ID`) and the full
+   (`gmail.send`, Composio auth config from a new env var such as `COMPOSIO_GMAIL_ONLY_SEND_AUTH_CONFIG_ID`) and the full
    tier (today's four scopes). `connection_required.permissions` and the auth config used by `connect` both come from
    this one table. If the send-only config isn't set, use the full one and say so honestly on the card. The upgrade
    (send-only → full) makes the new connection first and removes the old one only after the new one is verified.

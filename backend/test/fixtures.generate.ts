@@ -77,6 +77,23 @@ t2.provider.setScenario(t2.store.composioUserId("00000000-0000-4000-8000-0000000
 writeTool("error-rate-limited", (await runTool(t2, "list_todoist_tasks", {})).body);
 await on(t2, "web_search");
 writeTool("run-result-web-search", (await runTool(t2, "web_search", { query: "Demo Café opening hours" })).body);
+// ADR-511, connect when asked: the offer a new user's first ask gets, the sign-in for one tool,
+// the offer for more permission later, and a sign-in where the permission wasn't given.
+const t3 = await startRig();
+const sendArgs = { to: "anna@example.com", subject: "Running late", body: "I'll be ten minutes late." };
+writeTool("error-connect-offer-send", (await t3.call("POST", "/v1/tools/prepare", { body: { tool: "send_email", arguments: sendArgs } })).body);
+const beginFor = await t3.call("POST", "/v1/tools/gmail/connect", { body: { forTool: "send_email" } });
+writeTool("toolkit-result-connected-for-send", (await t3.call("POST", "/v1/tools/gmail/complete", {
+  body: { attemptId: beginFor.body.attemptId, nonce: beginFor.body.nonce, result: { kind: "mock", outcome: "approve" } },
+})).body);
+writeTool("error-connect-offer-more-permission", (await t3.call("POST", "/v1/tools/prepare", { body: { tool: "check_email", arguments: {} } })).body);
+const t4 = await startRig();
+const beginUnticked = await t4.call("POST", "/v1/tools/gmail/connect", { body: { forTool: "send_email" }, scenario: "missing_scope" });
+writeTool("toolkit-result-permission-not-granted", (await t4.call("POST", "/v1/tools/gmail/complete", {
+  body: { attemptId: beginUnticked.body.attemptId, nonce: beginUnticked.body.nonce, result: { kind: "mock", outcome: "approve" } },
+})).body);
 await t.close();
 await t2.close();
+await t3.close();
+await t4.close();
 process.stdout.write(`fixtures written to ${out} and ${outTools}\n`);

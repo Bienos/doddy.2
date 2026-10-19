@@ -152,5 +152,8 @@ test("the server logs which Gmail permissions were granted, by name only, so a t
   assert.equal(line.verdict, "too_broad");
   assert.deepEqual(line.notAllowed, ["https://mail.google.com/"]);
   assert.ok(line.scopes.includes("https://www.googleapis.com/auth/gmail.readonly"));
-  assert.deepEqual(Object.keys(line).sort(), ["event", "level", "notAllowed", "scopes", "toolkit", "verdict"], "nothing else: no ids, no tokens");
+  // ADR-511 adds which sign-in was used (full / narrow) and the tool a conversation asked for: names only.
+  assert.deepEqual(Object.keys(line).sort(), ["event", "forTool", "level", "notAllowed", "profile", "scopes", "toolkit", "verdict"], "nothing else: no ids, no tokens");
+  assert.equal(line.profile, "full");
+  assert.equal(line.forTool, null);
 });

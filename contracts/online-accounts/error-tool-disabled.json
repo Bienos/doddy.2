@@ -2,9 +2,9 @@
   "error": {
     "code": "capability_disabled",
     "message": "Check my email is turned off in Settings.",
-    "correlationId": "306b403b-6777-4372-aad0-0c28c76e5c55",
+    "correlationId": "b408e191-062d-496e-a9b4-eb11f697b097",
     "receipt": {
-      "operationId": "47c886b6-20b3-491f-a172-9ddacd72c566",
+      "operationId": "b8ae801f-ede4-404b-aed0-2c0150cb5ab7",
       "operation": "read",
       "toolkit": "gmail",
       "tool": "check_email",
@@ -14,6 +14,19 @@
       "summary": "Not done: Check my email is turned off in Settings.",
       "errorCode": "capability_disabled",
       "providerReference": null
+    },
+    "connect": {
+      "toolkit": "gmail",
+      "tool": "check_email",
+      "need": "connect",
+      "accountTitle": "Gmail",
+      "toolTitle": "Check my email",
+      "permissions": [
+        "Read your email",
+        "Create drafts",
+        "Send email on your behalf",
+        "Archive, label and move email to Trash"
+      ]
     }
   }
 }

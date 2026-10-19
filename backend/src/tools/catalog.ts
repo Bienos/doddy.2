@@ -90,7 +90,30 @@ export interface ToolkitDefinition {
   allowedGrants: ReadonlySet<string> | null;
   /** Plain description of what Doddy can do with the account, shown in the app. */
   access: string;
+  /**
+   * What the provider's sign-in screen will ask the user to allow, in plain words, one line per
+   * permission (ADR-511). The connect card shows these before sign-in, so they must match
+   * `requestedScopes` and the auth config set up for it.
+   */
+  permissions: readonly string[];
+  /**
+   * A smaller first sign-in for some tools (ADR-511, "connect when asked"). When the user's first
+   * request is one of `tools` and the server has this auth config set up
+   * (`COMPOSIO_<TOOLKIT>_<envKey>_AUTH_CONFIG_ID`), Doddy asks only for `requestedScopes`. Asking for
+   * any other tool of the account later needs the full sign-in.
+   */
+  narrow?: {
+    envKey: string;
+    tools: readonly string[];
+    requestedScopes: readonly string[];
+    permissions: readonly string[];
+    /** Shown in Settings instead of `access` while the connection has only this grant. */
+    access: string;
+  };
 }
+
+/** Which sign-in an attempt uses: the account's full set of permissions, or its smaller first one. */
+export type AccessProfile = "full" | "narrow";
 
 const GOOGLE_IDENTITY = [
   "openid",
@@ -140,6 +163,9 @@ export const TOOLKITS: Readonly<Record<ToolkitId, ToolkitDefinition>> = {
       "Doddy can read your Google Calendar for the days you ask about, after you say yes, and add, move, rename or delete an event, " +
       "or answer an invitation, each only after you tap the card that shows exactly what will happen. Deleted events stay in " +
       "Google Calendar's trash for 30 days. It never changes calendar settings or sharing.",
+    permissions: [
+      "See, add, change and delete events in your calendars",
+    ],
   },
   gmail: {
     id: "gmail",
@@ -152,6 +178,24 @@ export const TOOLKITS: Readonly<Record<ToolkitId, ToolkitDefinition>> = {
       "Doddy can list your recent emails (sender, subject, a short preview) and read one email aloud when you ask, after you say yes. " +
       "It can write drafts, send an email, reply, forward, archive, mark read or unread, star, and move an email to Trash, " +
       "each only after you tap the card that shows exactly what will happen. It never deletes email for good.",
+    permissions: [
+      "Read your email",
+      "Create drafts",
+      "Send email on your behalf",
+      "Archive, label and move email to Trash",
+    ],
+    // ADR-511: a first "send an email" needs only gmail.send. Google rates gmail.send "sensitive";
+    // the other Gmail scopes are "restricted" and need a yearly security assessment when a server
+    // handles the data (Google's Gmail scopes page, 2026-10-19).
+    narrow: {
+      envKey: "ONLY_SEND",
+      tools: ["send_email"],
+      requestedScopes: [GOOGLE_SEND_MAIL],
+      permissions: ["Send email on your behalf"],
+      access:
+        "Connected for sending only. Doddy can send an email after you tap the card that shows exactly what will be sent. " +
+        "It can't read your inbox. Asking Doddy for anything else in Gmail asks Google for more access first.",
+    },
   },
   googledrive: {
     id: "googledrive",
@@ -163,6 +207,10 @@ export const TOOLKITS: Readonly<Record<ToolkitId, ToolkitDefinition>> = {
     access:
       "Doddy can find files by name (name, type, last change) after you say yes, and create a private Google Doc after you tap " +
       "the card that shows its name and text. It can't open, change, share or delete your other files.",
+    permissions: [
+      "See the names and details of your Drive files",
+      "Create files, and change only the files Doddy made",
+    ],
   },
   notion: {
     id: "notion",
@@ -174,6 +222,10 @@ export const TOOLKITS: Readonly<Record<ToolkitId, ToolkitDefinition>> = {
       "Doddy can search the titles of pages you shared with it, and read one page aloud when you ask, after you say yes. It can create " +
       "a page, add text to the end of a page, or move a page to Notion's trash, each only after you tap the card that shows exactly what " +
       "will happen. It never deletes for good.",
+    permissions: [
+      "Search and read the pages you choose to share with Doddy",
+      "Create pages, add to them and move them to Notion's trash",
+    ],
   },
   todoist: {
     id: "todoist",
@@ -184,6 +236,9 @@ export const TOOLKITS: Readonly<Record<ToolkitId, ToolkitDefinition>> = {
     access:
       "Doddy can list your open tasks after you say yes, and add a task, mark one done, change its due date or rename it, each " +
       "after you tap the card. It can't delete tasks: Todoist deletes for good.",
+    permissions: [
+      "See, add, complete and change your tasks",
+    ],
   },
   outlook: {
     id: "outlook",
@@ -198,6 +253,13 @@ export const TOOLKITS: Readonly<Record<ToolkitId, ToolkitDefinition>> = {
       "and read your Outlook calendar for the days you ask about, after you say yes. It can create drafts, send, reply, forward, " +
       "mark read or flag, archive or move an email to Deleted Items, and add, change, delete or answer calendar events, " +
       "each only after you tap the card that shows exactly what will happen. It never deletes anything for good.",
+    permissions: [
+      "Read your email",
+      "Create drafts and change your email",
+      "Send email on your behalf",
+      "Read your calendar",
+      "Add, change and delete calendar events",
+    ],
   },
 };
 

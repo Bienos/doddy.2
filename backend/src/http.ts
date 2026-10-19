@@ -146,6 +146,7 @@ export function createHandler(deps: HttpDeps) {
           correlationId,
           ...(appError.options.retryAfterSeconds !== undefined ? { retryAfterSeconds: appError.options.retryAfterSeconds } : {}),
           ...(appError.options.receipt ? { receipt: appError.options.receipt as ErrorResponse["error"]["receipt"] } : {}),
+          ...(appError.options.connect ? { connect: appError.options.connect } : {}),
         },
       };
       if (appError.options.retryAfterSeconds !== undefined) res.setHeader("retry-after", String(appError.options.retryAfterSeconds));

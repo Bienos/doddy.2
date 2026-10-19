@@ -24,10 +24,15 @@ export interface ToolsProvider {
   readonly mode: "mock" | "live";
   /** Toolkits this server can connect (live: those with settings; mock: all). */
   isConfigured(toolkit: ToolkitId): boolean;
+  /** The account's full sign-in. */
   authConfigId(toolkit: ToolkitId): string;
+  /** The smaller first sign-in (ADR-511), or null when this server hasn't set one up. */
+  narrowAuthConfigId(toolkit: ToolkitId): string | null;
 
   createConnectionLink(input: {
     toolkit: ToolkitId;
+    /** One of this toolkit's auth configs (`authConfigId` or `narrowAuthConfigId`), chosen by the service. */
+    authConfigId: string;
     composioUserId: string;
     callbackUrl: string;
     signal: AbortSignal;
@@ -41,7 +46,7 @@ export interface ToolsProvider {
   getConnection(input: { connectionId: string; signal: AbortSignal }): Promise<ProviderConnection>;
 
   /** Authoritative ownership check: the connection belongs to this Composio user and auth config. */
-  isOwnedBy(input: { toolkit: ToolkitId; connectionId: string; composioUserId: string; signal: AbortSignal }): Promise<boolean>;
+  isOwnedBy(input: { toolkit: ToolkitId; authConfigId: string; connectionId: string; composioUserId: string; signal: AbortSignal }): Promise<boolean>;
 
   execute(call: ExecuteCall): Promise<ExecuteResult>;
 

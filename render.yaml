@@ -62,6 +62,9 @@ services:
         sync: false
       - key: COMPOSIO_GMAIL_TOOLKIT_VERSION
         sync: false
+      # Optional (ADR-511): Gmail auth config with only gmail.send, for a first "send an email".
+      - key: COMPOSIO_GMAIL_ONLY_SEND_AUTH_CONFIG_ID
+        sync: false
       - key: COMPOSIO_GOOGLEDRIVE_AUTH_CONFIG_ID
         sync: false
       - key: COMPOSIO_GOOGLEDRIVE_TOOLKIT_VERSION

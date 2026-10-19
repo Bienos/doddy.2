@@ -51,15 +51,23 @@ export class MockToolsProvider implements ToolsProvider {
     return `mock_auth_${toolkit}`;
   }
 
-  async createConnectionLink(input: { toolkit: ToolkitId; composioUserId: string }) {
-    this.calls.push(`createConnectionLink:${input.toolkit}`);
+  /** Mock mode sets up the smaller first sign-in (ADR-511) for every account that defines one. */
+  narrowAuthConfigId(toolkit: ToolkitId): string | null {
+    return TOOLKITS[toolkit].narrow ? `mock_auth_${toolkit}_narrow` : null;
+  }
+
+  async createConnectionLink(input: { toolkit: ToolkitId; authConfigId: string; composioUserId: string }) {
+    this.calls.push(`createConnectionLink:${input.toolkit}${input.authConfigId === this.narrowAuthConfigId(input.toolkit) ? ":narrow" : ""}`);
+    if (input.authConfigId !== this.authConfigId(input.toolkit) && input.authConfigId !== this.narrowAuthConfigId(input.toolkit)) {
+      throw new ProviderError("provider_unavailable");
+    }
     const id = `mock_ca_${randomBytes(6).toString("hex")}`;
     this.connections.set(id, {
       id,
       owner: input.composioUserId,
       status: "pending",
       toolkitSlug: TOOLKITS[input.toolkit].composioToolkit,
-      authConfigId: this.authConfigId(input.toolkit),
+      authConfigId: input.authConfigId,
       grantedScopes: null,
     });
     return { pendingConnectionId: id, redirectUrl: null };
@@ -83,16 +91,18 @@ export class MockToolsProvider implements ToolsProvider {
     pending.status = scenario === "expired" ? "expired" : "active";
     const toolkit = TOOLKITS[input.toolkit];
     const microsoft = input.toolkit === "outlook";
+    // The smaller first sign-in (ADR-511) grants only what it asks for.
+    const requested = pending.authConfigId === this.narrowAuthConfigId(input.toolkit) && toolkit.narrow ? toolkit.narrow.requestedScopes : toolkit.requestedScopes;
     pending.grantedScopes =
       toolkit.allowedGrants === null
         ? null
         : scenario === "broad_scope"
-          ? [...toolkit.requestedScopes, microsoft ? "MailboxSettings.ReadWrite" : "https://mail.google.com/"]
+          ? [...requested, microsoft ? "MailboxSettings.ReadWrite" : "https://mail.google.com/"]
           : scenario === "missing_scope"
             ? [microsoft ? "User.Read" : "https://www.googleapis.com/auth/userinfo.email"]
             : scenario === "read_compose_only" && input.toolkit === "gmail"
               ? ["https://www.googleapis.com/auth/gmail.readonly", "https://www.googleapis.com/auth/gmail.compose"]
-              : [...toolkit.requestedScopes];
+              : [...requested];
     return { connectionId: pending.id };
   }
 

@@ -22,6 +22,12 @@ export interface AttemptRow {
   expires_at: number;
   consumed_at: number | null;
   status_checks: number;
+  /**
+   * ADR-511: the one tool the user asked for when this sign-in started from a conversation
+   * ("connect when asked"). A verified completion switches on this tool and no other. Null for a
+   * sign-in started in Settings.
+   */
+  for_tool: string | null;
 }
 
 export interface ConnectionRow {
@@ -155,6 +161,9 @@ export class Store {
       if (!columns.has(name)) this.db.exec(`ALTER TABLE approvals ADD COLUMN ${name} ${type}`);
     }
     this.db.exec("CREATE INDEX IF NOT EXISTS approvals_writes ON approvals(user_id, capability, args_digest, finished_at)");
+    // ADR-511: which tool a conversation's sign-in is for. Added to databases made before it.
+    const attemptColumns = new Set((this.db.prepare("PRAGMA table_info(attempts)").all() as { name: string }[]).map((c) => c.name));
+    if (!attemptColumns.has("for_tool")) this.db.exec("ALTER TABLE attempts ADD COLUMN for_tool TEXT");
   }
 
   close(): void {
@@ -196,6 +205,8 @@ export class Store {
     authConfigId: string;
     now: number;
     ttlSeconds: number;
+    /** ADR-511: the tool a conversation's sign-in is for; absent for Settings. */
+    forTool?: string | null;
   }): { attemptId: string; nonce: string; expiresAt: number; superseded: QueuedCleanup[] } {
     const attemptId = randomUUID();
     const nonce = randomBytes(32).toString("base64url");
@@ -209,10 +220,10 @@ export class Store {
       const queued = this.endAttempts(open, input.now);
       this.db
         .prepare(
-          `INSERT INTO attempts (attempt_id, user_id, provider, auth_config_id, nonce_hash, created_at, expires_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO attempts (attempt_id, user_id, provider, auth_config_id, nonce_hash, created_at, expires_at, for_tool)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         )
-        .run(attemptId, input.userId, input.provider, input.authConfigId, sha256(nonce), input.now, expiresAt);
+        .run(attemptId, input.userId, input.provider, input.authConfigId, sha256(nonce), input.now, expiresAt, input.forTool ?? null);
       return queued;
     });
     return { attemptId, nonce, expiresAt, superseded };

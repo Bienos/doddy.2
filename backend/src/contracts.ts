@@ -193,6 +193,33 @@ export const ErrorCode = z.enum([
 ]);
 export type ErrorCode = z.infer<typeof ErrorCode>;
 
+/**
+ * ADR-511, "connect when asked": attached to a refused tool request when the user can fix it right
+ * there in the conversation. The error code stays what it always was, so older app builds that
+ * don't know this field behave as before.
+ */
+export const ConnectOfferSchema = z
+  .object({
+    /** An online account id, or "websearch" for web search and the other Monid tools (no account, a switch only). */
+    toolkit: z.string(),
+    tool: z.string(),
+    /**
+     * connect: not connected. switch_on: connected, this tool is off. more_permission: connected,
+     * but the grant doesn't cover this tool (e.g. a send-only Gmail sign-in). reconnect: the
+     * connection expired or isn't usable.
+     */
+    need: z.enum(["connect", "switch_on", "more_permission", "reconnect"]),
+    accountTitle: z.string(),
+    toolTitle: z.string(),
+    /** What the sign-in will ask the user to allow, in plain words. Empty for switch_on. */
+    permissions: z.array(z.string()),
+  })
+  .strict();
+export type ConnectOffer = z.infer<typeof ConnectOfferSchema>;
+
+/** Body of POST /v1/tools/{toolkit}/connect. `forTool`: the one tool a conversation's sign-in is for (ADR-511). */
+export const ToolsConnectRequestSchema = z.object({ forTool: z.string().min(1).max(64).optional() }).strict();
+
 export const ErrorResponseSchema = z
   .object({
     error: z
@@ -202,6 +229,7 @@ export const ErrorResponseSchema = z
         correlationId: z.string(),
         retryAfterSeconds: z.number().int().positive().optional(),
         receipt: ReceiptSchema.optional(),
+        connect: ConnectOfferSchema.optional(),
       })
       .strict(),
   })
