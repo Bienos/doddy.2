@@ -45,15 +45,15 @@ Typical sprawy [ASSUMPTION: examples for the beta, not research]:
 |---|---|---|
 | **Seen working on the owner's iPhone** | A live voice conversation on 11 Oct (139 s) used `save_memory`, `search_memories` and `web_search`. | [FACT: `STATUS.md`] |
 | **Tested on Linux** | The shared core: 1,146 DoddyCore tests pass (Swift 6.1.2, 19 Oct, this PR). | [FACT] |
-| **Compiled in hosted CI, never on a device** | The app at PR #84 (18 Oct): it builds, and the 29 UI tests pass on the simulator. Since then on main: ASK-01, every tool asks first (PR #87); BLIK hand-off (PR #85); one conversation at a time (ADR-496); the v1 scope proposal and go-live checklist (PR #88). | [FACT: `STATUS.md`] |
-| **Built, and what the sprawa loop can reuse** | Notes keep the original text unchanged after edits (`MemoryRecord.rawText`). Note reminders are local notifications with Open, In 1 hour, Tomorrow 09:00 and Done ("Gotowe") on a long press. The agent checks a date against the user's own words for it (`said_time`). "What Doddy did" lists changes with Undo for 24 hours. ASK-01 cards, and `note_capability_gap`. | [FACT: code; details and file references in `sprawa-loop.md`] |
-| **Missing for the sprawa loop** | A first screen with one question. Keeping the user's spoken words verbatim (today the note text is what the agent writes). One card that shows the words, the time and the state together. A prepared next step. A logged Done with undo: today, Done on a one-off note reminder deletes the reminder, with no log and no undo. Any metrics at all. | [FACT: `sprawa-loop.md` "What exists and what's missing"] |
+| **Compiled in hosted CI, never on a device** | On 18 Oct hosted CI built the app on PR #84's branch and passed the 29 UI tests on the simulator. Main now holds, in merge order: ASK-01, every tool asks first (PR #87, 18 Oct); the BLIK hand-off (PR #85); PR #84 itself (19 Oct: the build fixes, one conversation at a time ADR-496, start logging); then the v1 scope proposal, go-live checklist and two fixes (PR #88). | [FACT: `STATUS.md`, git history] |
+| **Built, and what the sprawa loop can reuse** | Notes keep the original text unchanged after edits (`MemoryRecord.rawText`). The user's spoken transcripts are kept on the iPhone with each conversation (`ConversationLogStore`). Note reminders are local notifications with Open, In 1 hour, Tomorrow 09:00 and Done ("Gotowe") on a long press. The agent checks a date against the user's own words for it (`said_time`). "What Doddy did" lists changes with Undo for 24 hours. ASK-01 cards, and `note_capability_gap`. | [FACT: code; details and file references in `sprawa-loop.md`] |
+| **Missing for the sprawa loop** | A first screen with one question. Tying the user's spoken words to the sprawa (the transcript is kept, but the note's text is what the agent writes). `said_time` accepting a proposed moment before a deadline (today it flags one). One card that shows the words, the time and the state together. A prepared next step. A logged Done with undo: today, Done on a one-off or place reminder deletes it, with no log and no undo. Any metrics at all. | [FACT: `sprawa-loop.md` "What exists and what's missing"] |
 | **Known broken** | Voice sessions sometimes start twice, or connect and stay silent for 30 s (`docs/implementation/VOICE_SESSION_STARTS.md`). On 18 Oct voice couldn't connect at all; the address fix is on main (#88). A 19 Oct check that the server's settings are all set is recorded only on branch `claude/epic-wright-vz93xh`. | [FACT] |
 | **Live voice agent settings (18 Oct)** | Authentication off; 10 calls a day for the whole agent; concurrency 2; recordings kept with no time limit. | [FACT: `STATUS.md`] |
 
 **External users:** zero. **Interviews on record:** none. [FACT]
 
-**Verdict:** the engineering is far ahead of the evidence, as it was on 17 Oct. The difference is that the sprawa loop needs very little new engineering. Most of its parts exist: exact text, local reminders with a Done action, ask-first cards and undo. What's missing is mostly joining them into one loop and measuring it. The beta should test that loop with 20 people, not add features.
+**Verdict:** the engineering is far ahead of the evidence, as it was on 17 Oct. The difference is that the sprawa loop adds no tools, integrations or platforms. Several of its parts exist: the original text kept unchanged, the user's transcripts kept on the phone, local reminders with a Done action, ask-first cards and undo. Joining them is still real work: nine changes in `sprawa-loop.md`, including a new first screen, a changed save path, a change to `said_time` and one data migration. Then it has to be measured. The beta should test that loop with 20 people, not add features.
 
 ---
 
@@ -128,7 +128,7 @@ Typical sprawy [ASSUMPTION: examples for the beta, not research]:
 
 **Copy to change later, not in this PR** [FACT: counted 19 Oct]:
 - The voice agent's first line: "You are Doddy, the AI companion inside the DODDY iPhone app" (`voice-agent/instructions.md:1`). Phase 4 rewrites the prompt anyway.
-- The website and blog: about 45 uses of "companion" in `site/`, 15 in `blog/`, 139 in `l10n/site/*.json` (10 of them in Polish).
+- The website and blog: about 45 uses of "companion" in `site/`, 15 in `blog/`, 12 in the English text of `l10n/site/en.json` (each locale file also repeats them as source keys), and the Polish text says "towarzysz" 13 times.
 - The app's own screens: none.
 
 ---
@@ -147,7 +147,7 @@ Typical sprawy [ASSUMPTION: examples for the beta, not research]:
 |---|---|---|---|
 | **Now: the 2-week private beta (M5)** | **Hold and bring back.** Keeps the sprawa in your words, asks one question, brings it back at the agreed time, logs Gotowe with undo. | The sprawa loop on the things v1 already ships: notes, note reminders, Reminders and Calendar, ASK-01. Polish and English. 20 Polish iPhone users. | Day-0 activation, sprawy closed after a bring-back, active days in week two (`VALIDATION.md`) |
 | **Next** | **Prepare.** The next step is ready when the sprawa comes back: a message drafted, an email drafted, a time free in the calendar. | Phase 4's skills (Message, Email, Summarize, Pilnuj sprawy, Plan dnia, Kalendarz) over tools that already exist, each with a preview card. | Users accept the prepared step without rewriting it; no false "done" |
-| **Later** | **Act with approval.** Doddy does the step after your tap: sends, books, moves. Money stays a hand-off to the bank app (BLIK, ADR-510). | Each action passes ASK-01 at its level: read = spoken yes; change = tap on a card with the exact payload; money = tap plus Face ID or the bank app. | Verified completion rate; zero actions without a tap |
+| **Later** | **Act with approval.** Doddy does the step after your tap: sends, books, moves. Money stays a hand-off to the bank app (BLIK, ADR-510). | Each action passes ASK-01 at its level. In code today there are two: a read takes a spoken yes or a tap; a change takes a tap on a card with the exact payload (`AskFirst.Need`, `scripts/voice_agent_spec.py`). Money is a hand-off to the bank app (BLIK). The owner's third level, a tap plus Face ID or the bank app, is Phase 2 work. | Verified completion rate; zero actions without a tap |
 | **Vision** | **More kinds of sprawa, one skill at a time.** | Connectors, still approval-first. | Users trust Doddy with consequential sprawy |
 
 ### Not doing in the beta (feature freeze) [OWNER: no new tools, integrations, platforms or UI features]
@@ -161,7 +161,7 @@ Typical sprawy [ASSUMPTION: examples for the beta, not research]:
 
 ### Must-fix before any tester (the five phases)
 1. **Voice starts once.** One session owner, no ghost sessions, a lifecycle log (Phase 2).
-2. **Every tool waits for its tap** at the right ASK-01 level, and a test fails if a tool has no level (Phase 2).
+2. **Every tool waits for its tap** at the right ASK-01 level (Phase 2). `scripts/voice_agent_spec.py` already fails when a tool in the spec has no level; Phase 2 checks that the server and the app enforce the same, and adds the money level.
 3. **AI disclosure at first launch and in Settings,** a privacy policy draft, the shortest provider retention that still works, and a server-side daily cap per user (Phase 3).
 4. **The bundle ID and team** for TestFlight (Phase 3, owner).
 5. **Metrics for the loop,** with no content in them (Phase 5, `VALIDATION.md`).
@@ -237,7 +237,7 @@ The owner's five phases, one PR each, with a stop for review after each:
 1. **Write the direction down** (this PR): this file, `sprawa-loop.md`, `VALIDATION.md`, `docs/branches.md`, STATUS.md pointing here, current milestone M5.
 2. **Stabilise main for a device run:** idempotent voice session start, lifecycle logging, the ASK-01 check, a device checklist. The owner runs it on their iPhone.
 3. **Clear the TestFlight blockers:** privacy policy draft (PL and EN), AI disclosure, retention settings, a daily usage cap, the bundle ID list, the token flow. The owner does legal, signing and App Store Connect.
-4. **A skill router in front of the 81 tools:** a core prompt under 25% of today's size, the P1 skills, evals in both languages.
+4. **A skill router in front of the voice tools** (82 in `voice-agent/tools.json`): a core prompt under 25% of today's size, the P1 skills, evals in both languages.
 5. **Polish quality and beta instrumentation:** the Polish string export, the speech-recognition comparison, the metrics and a weekly report.
 
 Then the 2-week beta with 20 users, and the decision M5 asks for: continue, narrow, pivot or stop (`docs/implementation/MILESTONES.md`).
@@ -251,6 +251,7 @@ Then the 2-week beta with 20 users, and the decision M5 asks for: continue, narr
 4. **Tagline:** keep "Your mate in your pocket", or retire it with "companion".
 5. **The beta thresholds** in section 9.
 6. **`docs/product/V1_SCOPE.md` decision 1** (the one promise) is answered by this direction. Its other rows still stand as proposals; ADR-520 records them once you mark them up.
+7. **M5 as written vs this beta.** `MILESTONES.md` asks for 20–24 non-friends, a comparison with each person's substitute, a character-light control and paid intent. Your plan is 20 Polish users for two weeks. The differences are listed in `docs/product/VALIDATION.md`; say which to keep.
 
 ## Sources
 - Repo: `STATUS.md`, `docs/product/V1_SCOPE.md`, `docs/implementation/GO_LIVE_CHECKLIST.md`, `docs/implementation/MILESTONES.md`, `docs/implementation/OFFLINE_STATUS.md`, `docs/implementation/VOICE_SESSION_STARTS.md`, `docs/quality/VALIDATION_AND_METRICS.md`, `docs/business/MONETIZATION_MODEL_V2.md`, `docs/trust/config/doddy_rules.yaml`, `voice-agent/instructions.md`, and the app and DoddyCore code cited in `sprawa-loop.md`.

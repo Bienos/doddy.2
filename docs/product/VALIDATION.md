@@ -17,7 +17,7 @@
 | **Day-0 activation** | The tester saves their first sprawa on the same local calendar day as their first app open. | Activated testers ÷ testers who opened the app. Also the median minutes from first open to first sprawa. |
 | **Sprawa completed** | The user marks a sprawa Gotowe (from the notification, the card or by voice). A Gotowe undone within 24 h doesn't count; undos are reported separately. | Completed sprawy per tester. Completion rate: sprawy done ÷ sprawy whose reminder time has passed. |
 | **Active days in week two** | Distinct local calendar days, from day 8 to day 14 after first open, on which the tester opened the app or acted on a Doddy notification. | Distribution per tester, and the share of testers with 3 or more. |
-| **Capability-gap events by category** | Each `note_capability_gap` call: the user asked for something no tool covers. A category only, never the words. Categories today: `send_message`, `payment`, `music`, `smart_home`, `other_app_control`, `web_action`, `unknown` (`CapabilityGapCategory`, `DoddyCore/Learning/LearningTypes.swift`). | Events and distinct testers per category, per week. |
+| **Capability-gap events by category** | The user asked for something no tool covers, and agreed to note it: under ASK-01, `note_capability_gap` shows a card ("Note that Doddy couldn't do this?") and records only after **Note it** (`AskFirst.swift`, ADR-483). A category only, never the words. Gaps the user declines to note aren't counted; Phase 5 decides whether to count the cards shown too. Categories today: `send_message`, `payment`, `music`, `smart_home`, `other_app_control`, `web_action`, `unknown` (`CapabilityGapCategory`, `DoddyCore/Learning/LearningTypes.swift`). | Events and distinct testers per category, per week. |
 
 ## North Star: weekly closers
 Testers who, in a given week, mark at least one sprawa Gotowe **after Doddy brought it back**, and don't undo it within 24 h. "Brought back" means the sprawa's reminder time had passed and its notification was scheduled at that time. iOS doesn't tell an app when a local notification is shown, so this is worked out from the scheduled time, not observed.
@@ -35,9 +35,9 @@ Testers who, in a given week, mark at least one sprawa Gotowe **after Doddy brou
 | `sprawa_done` | `via`: notification, card or voice · `after_bring_back`: yes or no | No. Today Done on a one-off reminder deletes it (`sprawa-loop.md`). |
 | `sprawa_done_undone` | — | No |
 | `sprawa_deleted` | — | No |
-| `capability_gap` | `category` | **Yes, on the iPhone only:** `LearningService.recordGap` writes an outcome event (`DoddyCore/Learning/LearningService.swift`). V1 scope hides the learning loop; Phase 5 checks the event is still written then. |
+| `capability_gap` | `category` | **Yes, on the iPhone only, after the user taps Note it:** `LearningService.recordGap` writes an outcome event (`DoddyCore/Learning/LearningService.swift`). V1 scope hides the learning loop; Phase 5 checks the event is still written then. |
 | `active_day` | — (one per local day at most) | No |
-| `ask_card` | `level`: read, change or money · `result`: approved, declined or timed out | No. ASK-01 cards exist (PR #87); nothing counts them. |
+| `ask_card` | `level`: read or change (money once Phase 2 adds it) · `result`: approved, declined or timed out | Partly, on the iPhone only: the learning loop's `OutcomeRecorder` already logs per tool whether it was done, declined or left unanswered. Not shaped or reported as a beta metric. |
 
 **Never in an event:** the sprawa's words, names, times, the time zone, note or memory IDs, search text, audio, transcripts, provider responses, contacts, or the device name. Same rule as `docs/quality/VALIDATION_AND_METRICS.md`. Times are reported as the relative day (day 0, day 1…) only.
 
@@ -55,7 +55,7 @@ The weekly report script (Phase 5) reads whichever is chosen.
 
 ## Guardrails (any breach stops the beta until fixed)
 - A "saved" or "done" without a verified store write, or without the provider's confirmation for a provider action.
-- An action without the user's approval at its ASK-01 level: read = spoken yes; change = tap on a card showing the exact payload; money = tap plus Face ID or the bank app.
+- An action without the user's approval at its ASK-01 level. Today's code has two levels: a read takes a spoken yes or a tap; a change takes a tap on a card showing the exact payload. Money is a hand-off to the bank app; the owner's tap-plus-Face ID level comes in Phase 2.
 - A sprawa shown with words the user didn't say, without a label saying Doddy wrote them.
 - A deleted sprawa that comes back.
 - Two voice sessions started for one request (Phase 2's session log shows this).
@@ -69,6 +69,17 @@ The weekly report script (Phase 5) reads whichever is chosen.
 - Willingness to pay (the beta is free).
 - Anything about the eight other languages, iPad, Watch or Mac.
 - Statistical significance: 20 people show direction, not proof.
+
+## How this beta differs from M5 as written
+`docs/implementation/MILESTONES.md` (locked, so unchanged) describes M5 differently from the owner's 19 Oct plan. The owner's plan is followed here; these differences need the owner's yes (strategy, open decision 7):
+
+| M5 as written | This beta |
+|---|---|
+| 20–24 adults who aren't friends | 20 Polish iPhone users, at most 20% from the founder's own circle |
+| A comparison with each person's real substitute (Notes, Reminders, Siri) | Only asked in the week-one call ("what would you have used?") |
+| A character-light control group | None: a second build variant would be a new feature under the freeze |
+| Spontaneous later retrieval of a memory | Sprawy closed after a bring-back |
+| Paid intent versus actual payment | Not measured (free beta); at most one question in the call |
 
 ## After the beta: the M5 decision
 Continue, narrow, pivot or stop, recorded as an ADR with these numbers and their denominators (`docs/implementation/MILESTONES.md`, M5).

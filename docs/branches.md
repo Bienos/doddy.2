@@ -17,7 +17,7 @@ Written 2026-10-19 for the owner's review (Phase 1 of the beta plan). **Nothing 
 - **On main:** "yes" when the branch tip is an ancestor of main. "changes on main" when it isn't, but every non-merge commit has an identical change on main (`git log --cherry-pick --right-only main...branch` is empty). Otherwise the number of commits whose change isn't on main.
 - **Behind:** commits on main that aren't on the branch.
 - **Open PR:** GitHub's list of open pull requests on 19 Oct.
-- **The suggestion and reason** come from reading each branch's own commits, `docs/product/V1_SCOPE.md` (ADR-500), the 11 Oct triage (`docs/implementation/BRANCH_TRIAGE_2026-10-11.md`), and the feature freeze. Nothing was built for this list.
+- **The suggestion and reason** come from reading each branch's own commits, `docs/product/V1_SCOPE.md` (ADR-520), the 11 Oct triage (`docs/implementation/BRANCH_TRIAGE_2026-10-11.md`), and the feature freeze. Nothing was built for this list.
 - Render deploys only from main (`docs/integrations/DEPLOY_RENDER.md`), and Vercel deploys only main since ADR-498, so deleting a branch can't stop a live deploy.
 
 ## Merge (6)
@@ -46,7 +46,7 @@ Each one separately, after review. The two marked optional can wait until after 
 | `claude/bold-noether-gtd1l5` | 2026-10-19 | `this PR` | no (this PR) | 0 |  | **keep** | This PR's branch (Phase 1): the docs listed here, not yet on main. |
 | `claude/motion-v2-plan` | 2026-10-18 | `44bbe294` | no (1 commit) | 62 |  | **keep** | Motion v2 stack, base. All of it is contained in `motion-mv6`. |
 | `claude/motion-mv1` | 2026-10-18 | `fd649a10` | no (3 commits) | 38 |  | **keep** | Motion v2 stack: motion engine in DoddyCore. |
-| `claude/modest-pasteur-7jnwfd` | 2026-10-18 | `ebf9d360` | no (15 commits) | 38 | #90 | **keep** | Doddy calls on your behalf (ADR-500 to 507 there; 500 is taken on main). New feature, frozen; V1 scope cuts calls. |
+| `claude/modest-pasteur-7jnwfd` | 2026-10-18 | `ebf9d360` | no (15 commits) | 38 | #90 | **keep** | Doddy calls on your behalf (ADR-500 to 507 there; free on main since the v1 scope moved to 520). New feature, frozen; V1 scope cuts calls. |
 | `claude/connect-in-conversation` | 2026-10-18 | `9e6eda44` | no (3 commits) | 62 | #86 | **keep** | Connect an online account from the conversation (draft; claims ADR-483, taken by ASK-01). Frozen while online accounts are hidden. |
 | `claude/awesome-cray-2lb9ia` | 2026-10-18 | `1a39a1b2` | no (11 commits) | 62 | #92 | **keep** | Doddy's own phone number, U0 to U4 (draft). New feature, frozen; V1 scope cuts calls and texts. |
 | `claude/affectionate-lovelace-4qyfwm` | 2026-10-18 | `ee97d606` | no (1 commit) | 62 | #93 | **keep** | Draft for the owner: `docs/ARCHITECTURE.md` and new rules in `CLAUDE.md`. Your call, since it changes the agent rules. |
@@ -76,7 +76,7 @@ Each one separately, after review. The two marked optional can wait until after 
 | `claude/quirky-allen-11ijel` | 2026-10-13 | `0a70ca2b` | no (1 commit) | 128 |  | **close** | A site page transition. Site polish, frozen. |
 | `claude/friendly-bohr-gy15jv` | 2026-10-13 | `06b2be17` | no (9 commits) | 128 |  | **close** | 13 Oct device-run notes and a UI-test tweak; all 29 UI tests pass on main in hosted CI since 18 Oct. |
 | `claude/elegant-bardeen-xgi7c9` | 2026-10-13 | `3e9c2351` | no (1 commit) | 306 |  | **close** | WhatsApp as a second channel, decision only (claims ADR-442, taken). New channel, frozen. |
-| `claude/affectionate-tesla-nqu0nj` | 2026-10-13 | `3d223a6c` | no (7 commits) | 306 |  | **close** | 13 Oct Render entry points and go-live runbook; replaced by `GO_LIVE_CHECKLIST.md` (ADR-500) and the current deployments. |
+| `claude/affectionate-tesla-nqu0nj` | 2026-10-13 | `3d223a6c` | no (7 commits) | 306 |  | **close** | 13 Oct Render entry points and go-live runbook; replaced by `GO_LIVE_CHECKLIST.md` (ADR-520) and the current deployments. |
 | `claude/adoring-ramanujan-n421km` | 2026-10-13 | `4102f557` | no (1 commit) | 198 |  | **close** | Mockup board for a site page; the site has moved on. |
 | `claude/admiring-curie-bsuwv9-all` | 2026-10-13 | `79a89e24` | changes on main | 225 |  | **close** | Every commit's change is already on main (#76, #53, #56, #57, #58). |
 | `claude/zealous-hopper-5ctdsc` | 2026-10-12 | `6f852650` | no (8 commits) | 321 | #71 | **close** | Moves the site to `doddy-nine.vercel.app`; the site is on www.doddy.lol now. |

@@ -6,8 +6,8 @@ Last updated 2026-10-19 (Phase 1 of the beta plan: the sprawa direction, ADR-540
 
 ## North star and current milestone
 - **North star: `docs/strategy/sprawa-loop.md`.** The first session, step by step: "Co ci wisi nad głową?" → the user's exact words → one question about when → a sprawa card → a notification with the next step and "Gotowe?" → logged done, with undo. It also lists what exists in the code, what's missing, and how each step fails. **The loop isn't built as one flow and has never run on a device.**
-- **Strategy:** `docs/strategy/STRATEGY.md` (one page: `STRATEGY_ONE_PAGER.md`; pitch: `PITCH.md`). It ends with six open decisions for the owner.
-- **Current milestone: M5, the 2-week private beta.** 20 Polish iPhone users on private TestFlight. Milestone text: `docs/implementation/MILESTONES.md`. What's measured: `docs/product/VALIDATION.md`.
+- **Strategy:** `docs/strategy/STRATEGY.md` (one page: `STRATEGY_ONE_PAGER.md`; pitch: `PITCH.md`). It ends with seven open decisions for the owner.
+- **Current milestone: M5, the 2-week private beta.** 20 Polish iPhone users on private TestFlight. Milestone text: `docs/implementation/MILESTONES.md` (locked; the owner's plan differs from it in five places, listed in `docs/product/VALIDATION.md`). What's measured: `docs/product/VALIDATION.md`.
 - **Feature freeze:** no new tools, integrations, platforms or UI features until the beta is done. `claude/payments-apple-pay-blik` isn't merged.
 - **The five phases to the beta,** one PR each, with a stop for the owner after each:
 
@@ -19,7 +19,7 @@ Last updated 2026-10-19 (Phase 1 of the beta plan: the sprawa direction, ADR-540
   | 4 | Skill router in front of the voice tools (82 in `voice-agent/tools.json` on 19 Oct), P1 skills with evals | Not started |
   | 5 | Polish review export, speech-recognition comparison, metrics and weekly report | Not started |
 
-**On 18 Oct, main was broken in three ways** (`docs/implementation/GO_LIVE_CHECKLIST.md`, stage A). Branch `claude/fervent-edison-3gnqpq` carries the code fixes for two of them; the rest needs the owner:
+**On 18 Oct, main was broken in three ways** (`docs/implementation/GO_LIVE_CHECKLIST.md`, stage A). PR #88 (`claude/fervent-edison-3gnqpq`, merged 19 Oct) carries the code fixes for two of them; the rest needs the owner:
 1. **Voice couldn't connect.** The app hard-coded `https://doddy-voice-token.vercel.app`, which answers 402 DEPLOYMENT_DISABLED, and `754e5d6` removed the public-agent fallback. The fix points the app at `doddy-voice-token-beta.vercel.app` (ADR-521). That server still needs its sign-in settings before anyone can talk (checklist A4).
 2. **Hosted CI was billing-blocked** from 16 Oct, so `f40861c` and `754e5d6` never compiled in CI. It ran again on 18 Oct at 15:08 UTC (run 39139146509, this branch): the app build failed on a missing `import DoddyCore` in `754e5d6`'s `VoiceAccessGate.swift`, and one DoddyCore test failed only on macOS. PR #84's `c819c24b` fixes both and is merged here. The last green macOS run is still `44f6934`, 14 Oct.
 3. **`scripts/check_forbidden_capabilities.sh` failed** on `754e5d6`. The fix is PR #84, on main since 19 Oct.
@@ -86,7 +86,7 @@ PR #87 (`claude/trusting-sagan-7lky84`) is **on main** since 18 Oct, merged at t
 
 ## Waiting on the owner
 - **Phase 1 review** (this branch):
-  - the six open decisions at the end of `docs/strategy/STRATEGY.md`, above all which of the loop's nine changes (`sprawa-loop.md`) count as fixes under the freeze;
+  - the seven open decisions at the end of `docs/strategy/STRATEGY.md`, above all which of the loop's nine changes (`sprawa-loop.md`) count as fixes under the freeze;
   - the beta thresholds in `docs/product/VALIDATION.md`, and how the beta's metrics reach you (on the iPhone, or Doddy's server);
   - the merge, keep and close list in `docs/branches.md`.
 - Mark up `docs/product/V1_SCOPE.md`: Ship, Hide or Cut for each feature, plus the eight decisions at its end. Decision 1, the one promise, is answered by the sprawa direction (ADR-540).
