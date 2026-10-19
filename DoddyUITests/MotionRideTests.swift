@@ -12,7 +12,7 @@ final class MotionRideTests: XCTestCase {
     private func launch() -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = UITestLaunch.arguments(store: .inMemory, appearance: "light")
-            + ["-doddyArtMarkers", "YES", "-hideCharacterArt", "NO", "-doddyMotionDebug", "YES"]
+            + ["-doddyArtMarkers", "YES", "-doddyQuietIdle", "YES", "-hideCharacterArt", "NO", "-doddyMotionDebug", "YES"]
         app.launch()
         XCTAssertTrue(app.buttons["tab.home"].waitForExistence(timeout: 10))
         return app

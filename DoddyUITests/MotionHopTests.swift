@@ -16,7 +16,7 @@ final class MotionHopTests: XCTestCase {
         // `-memoriesShowsLists NO` is an argument-domain value: it wins over what the picker
         // writes, so Lists would flip straight back to Notes. A test that opens Lists drops it.
         if lists, let i = arguments.firstIndex(of: "-memoriesShowsLists") { arguments.removeSubrange(i...(i + 1)) }
-        app.launchArguments = arguments + ["-doddyArtMarkers", "YES", "-hideCharacterArt", hideArt ? "YES" : "NO"]
+        app.launchArguments = arguments + ["-doddyArtMarkers", "YES", "-doddyQuietIdle", "YES", "-hideCharacterArt", hideArt ? "YES" : "NO"]
         if debug { app.launchArguments += ["-doddyMotionDebug", "YES"] }
         app.launch()
         XCTAssertTrue(app.buttons["tab.home"].waitForExistence(timeout: 10))
