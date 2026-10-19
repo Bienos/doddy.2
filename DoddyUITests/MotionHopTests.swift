@@ -34,17 +34,29 @@ final class MotionHopTests: XCTestCase {
     }
 
     /// There is exactly one drawing of him within `timeout` (a single frame of two or none is the
-    /// DEBUG checks' business; two that stay, or none, is this test's). Says what is on screen.
+    /// DEBUG checks' business; two that stay, or none, is this test's). Says what is on screen,
+    /// how the count moved while waiting, what the annotated mode said, and the tree; keeps a
+    /// screenshot.
     @MainActor
     private func assertOneDoddy(in app: XCUIApplication, timeout: TimeInterval = 3,
                                 file: StaticString = #filePath, line: UInt = #line) {
         let end = Date().addingTimeInterval(timeout)
-        while Date() < end, drawings(in: app).count != 1 {
+        var counts: [Int] = []
+        while Date() < end {
+            let n = drawings(in: app).count
+            counts.append(n)
+            if n == 1 { break }
             RunLoop.current.run(until: Date().addingTimeInterval(0.1))
         }
+        let count = drawings(in: app).count
+        guard count != 1 else { return }
         let all = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'doddy.'"))
         let seen = (0..<all.count).map { "\(all.element(boundBy: $0).identifier) \(all.element(boundBy: $0).frame)" }
-        XCTAssertEqual(drawings(in: app).count, 1, "on screen: \(seen)", file: file, line: line)
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.lifetime = .keepAlways
+        add(shot)
+        XCTFail("\(count) drawings, not 1. On screen: \(seen). Counts while waiting: \(counts). "
+                + "Annotated: \(motionDebugReport(in: app)). Tree: \(motionTreeReport(of: app))", file: file, line: line)
     }
 
     /// Waits until he stands still on `surfaceName` (his drawing's bottom edge on its top edge,
@@ -81,7 +93,7 @@ final class MotionHopTests: XCTestCase {
     /// A tab tap takes him to the new screen's spot; he is never drawn twice on the way.
     @MainActor
     func testTabTapsTakeHimToEachScreensSpot() {
-        let app = launch()
+        let app = launch(debug: true)
         waitUntilHeStands(on: "stage", in: app)
         app.buttons["tab.settings"].tap()
         let him = waitUntilHeStands(on: "ledge.settings", in: app)
@@ -127,7 +139,7 @@ final class MotionHopTests: XCTestCase {
     /// No lists yet: he waits cross-legged on the Lists spot (ADR-313), the only Doddy there.
     @MainActor
     func testEmptyListsHeSitsOnTheirSpot() {
-        let app = launch(lists: true)
+        let app = launch(debug: true, lists: true)
         app.buttons["tab.memories"].tap()
         let picker = app.segmentedControls["memories.notesOrLists"]
         XCTAssertTrue(picker.waitForExistence(timeout: 5))
@@ -163,7 +175,6 @@ final class MotionHopTests: XCTestCase {
             RunLoop.current.run(until: Date().addingTimeInterval(0.8))
         }
         waitUntilHeStands(on: "stage", in: app)
-        XCTAssertTrue(debug.label.hasSuffix("checks 0"),
-                      debug.label + " · " + app.staticTexts["doddy.debug.last"].label)
+        XCTAssertTrue(debug.label.hasSuffix("checks 0"), motionDebugReport(in: app))
     }
 }

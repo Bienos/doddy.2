@@ -428,8 +428,30 @@ final class MotionHostTests: XCTestCase {
         host.scene.marks["send"] = MotionRect(x: 200, y: 400, width: 40, height: 30)
         host.scene.mounted.insert(.composer)
         checks.check(host, drawn: 1)
+        XCTAssertEqual(checks.count, 1, "one frame under Send isn't a finding yet")
+        host.step(10)
+        host.settle()
+        checks.check(host, drawn: 1)
         XCTAssertEqual(checks.violations.last?.rule, "clear zone")
         XCTAssertEqual(checks.count, 2)
+        XCTAssertTrue(checks.lastDetail.contains("covers send"), checks.lastDetail)
+    }
+
+    /// The app reports Send and his spot in separate callbacks: a frame in which only one of them
+    /// has moved is not a finding; the next frame's agreement clears it.
+    func testAZoneOverSendForOneFrameOnlyIsNotAFinding() {
+        var checks = MotionChecks()
+        host.scene.marks["send"] = MotionRect(x: 200, y: 400, width: 40, height: 30)
+        host.scene.mounted.insert(.composer)
+        checks.check(host, drawn: 1)
+        host.scene.marks["send"] = MotionRect(x: 333, y: 712, width: 44, height: 44)
+        host.step(10)
+        host.settle()
+        checks.check(host, drawn: 1)
+        host.step(10)
+        host.settle()
+        checks.check(host, drawn: 1)
+        XCTAssertEqual(checks.count, 0, "\(checks.violations)")
     }
 
     // MARK: Art

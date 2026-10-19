@@ -11,11 +11,13 @@ final class MotionEvidenceTests: XCTestCase {
     override func setUp() { continueAfterFailure = false }
 
     @MainActor
-    private func launch(markers: Bool = true, hideArt: Bool = false, extra: [String] = []) -> XCUIApplication {
+    private func launch(markers: Bool = true, debug: Bool? = nil, hideArt: Bool = false, extra: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = UITestLaunch.arguments(store: .inMemory, appearance: "light")
             + ["-hideCharacterArt", hideArt ? "YES" : "NO"] + extra
-        if markers { app.launchArguments += ["-doddyArtMarkers", "YES", "-doddyMotionDebug", "YES"] }
+        if markers { app.launchArguments += ["-doddyArtMarkers", "YES"] }
+        // The annotated mode's texts are named `doddy.debug…`: on with the markers, unless a test says no.
+        if debug ?? markers { app.launchArguments += ["-doddyMotionDebug", "YES"] }
         app.launch()
         XCTAssertTrue(app.buttons["tab.home"].waitForExistence(timeout: 10))
         return app
@@ -44,14 +46,15 @@ final class MotionEvidenceTests: XCTestCase {
         let him = app.descendants(matching: .any)["doddy.motion.idle"]
         XCTAssertTrue(him.waitForExistence(timeout: 5))
         XCTAssertEqual(him.frame.maxY, stage.frame.minY, accuracy: 2)
-        XCTAssertEqual(debugValue("flights", in: app), 0, app.staticTexts["doddy.debug"].label)
-        XCTAssertEqual(debugValue("checks", in: app), 0, app.staticTexts["doddy.debug"].label)
+        XCTAssertEqual(debugValue("flights", in: app), 0, motionDebugReport(in: app))
+        XCTAssertEqual(debugValue("checks", in: app), 0, motionDebugReport(in: app))
     }
 
     /// "Hide Doddy's pictures": no Doddy, and no room kept for him where he would stand.
     @MainActor
     func testHiddenPicturesLeaveNoGap() {
-        let app = launch(hideArt: true)
+        // Without the annotated mode: its texts are named `doddy.debug…` too.
+        let app = launch(debug: false, hideArt: true)
         XCTAssertTrue(app.buttons["home.save"].waitForExistence(timeout: 5))
         XCTAssertEqual(everythingOfHim(in: app).count, 0)
         // Settings: the privacy line starts at the row's edge, not after a 73 pt box.
