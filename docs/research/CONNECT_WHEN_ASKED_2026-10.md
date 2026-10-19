@@ -119,7 +119,10 @@ Two small problems found while reading:
 
 ## To verify live (needs the owner's test account)
 
-1. `GMAIL_SEND_EMAIL` works with **only** `gmail.send` granted (Composio's action may call other Gmail endpoints).
+1. `GMAIL_SEND_EMAIL` works with **only** `gmail.send` granted. Composio's schema (read 2026-10-19) says that without
+   `from_email` it "attempts to resolve the primary email address from the authenticated Gmail profile"; Gmail's
+   profile lookup is, as far as known, not allowed with `gmail.send` alone. Doddy already sends
+   `include_signature: false`, so the signature settings aren't read.
 2. Composio reports the granted scopes on the connected account (`grant_checked` log line).
 3. Two Gmail auth configs for one user, and replacing a send-only connection with a full one.
 4. A contextual update (ElevenLabs) or system item (OpenAI Realtime) reaches the agent mid-conversation, and whether it

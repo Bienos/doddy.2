@@ -88,7 +88,11 @@ Nothing here has been run either. It needs the build from `claude/inspiring-volt
 5. **Only Send is on:** `GET $B/v1/tools` → in Gmail only `send_email` is `enabled`, and `access` starts "Connected for
    sending only".
 6. **One test send to yourself:** prepare `send_email` again (a card now), read it, run with its approvalId. **This is the
-   check that `GMAIL_SEND_EMAIL` works with only `gmail.send`.** Report "sent" or the error code only.
+   check that `GMAIL_SEND_EMAIL` works with only `gmail.send`.** Report "sent" or the error code only. Why it might
+   not: Composio's schema (read 2026-10-19) says that without `from_email` the tool "attempts to resolve the primary
+   email address from the authenticated Gmail profile", and as far as we know Gmail's profile lookup isn't allowed with
+   `gmail.send` alone. If the send fails, the fallbacks are: send `from_email` from the sign-in's own email (identity
+   scope), or keep the full Gmail sign-in for sends (unset `COMPOSIO_GMAIL_ONLY_SEND_AUTH_CONFIG_ID`).
 7. **More permission:** prepare `check_email` → expect `need: "more_permission"` with the four permissions.
 8. **Unticked permission (optional):** disconnect, connect for `send_email` again, and on Google's screen don't allow
    sending (if Google offers a checkbox). Expect receipt `permission_not_granted` and Gmail not connected.
