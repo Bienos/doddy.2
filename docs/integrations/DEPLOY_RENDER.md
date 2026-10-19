@@ -40,9 +40,38 @@ Since ADR-193 the backend starts in live mode with **only a Monid key** (web sea
      `permission_insufficient`, reason `grant_too_broad`, receipt `blocked`, as designed.
   4. Switching `check_email` on → 403 `permission_insufficient`; running it → 403. No email was read.
   5. `POST /v1/tools/gmail/disconnect` → 200, revoked and deleted at Composio (`remoteCleanup: none`).
-* **Next:** limit auth config `ac_XUGmWDS79r-R` (or a new one) to `gmail.readonly` and `gmail.compose` (identity
-  scopes `openid`, `email`, `profile`, `userinfo.email`, `userinfo.profile` are also accepted), then connect again. If
-  Composio's managed Gmail app won't take a narrower list, it needs Doddy's own Google OAuth client.
+* Again after PR #87 (ASK-01, deploy of `5904c9c`; allowed Gmail grants are now `gmail.readonly`, `gmail.compose`,
+  `gmail.send`, `gmail.modify` plus identity). Connect and complete worked; still `grant_too_broad`. The new
+  `grant_checked` log line shows what auth config `ac_XUGmWDS79r-R` asks Google for: `https://mail.google.com/` (full
+  mailbox, incl. permanent delete), `contacts.readonly`, `contacts.other.readonly`, `profile.emails.read`,
+  `user.birthday.read`, `user.addresses.read`, `user.emails.read`, `user.phonenumbers.read`,
+  `profile.language.read`, plus identity. Disconnected at once (revoked and deleted). No tool ran.
+* A sign-in approved at 12:13 UTC was never completed (the 10-minute attempt expired, then the instance slept), so its
+  Composio connection may still be live with the broad grant. Delete it in Composio (Connected Accounts, Gmail).
+* Narrowing the managed config's scopes in Composio's dashboard changed nothing: two more connects granted the
+  same list. Composio's managed Google app asks for its own fixed scopes.
+
+**2026-10-19: Gmail works end to end on Render (read and send, with ASK-01).**
+* The owner made Doddy's own Google OAuth client (Google Cloud project `doddy`, Web application client, redirect
+  URI `https://backend.composio.dev/api/v1/auth-apps/add`, app in Testing with the owner as test user, Gmail API
+  enabled in that project) and a Composio **custom** Gmail auth config, `ac_W0OsyA4HbILO`, with only the four
+  Gmail scopes plus `openid email profile`. Render: `COMPOSIO_GMAIL_AUTH_CONFIG_ID=ac_W0OsyA4HbILO`,
+  `DODDY_ATTEMPT_TTL_SECONDS=1800` (the 10-minute attempt expired twice while the owner was signing in; Composio's
+  own `lk_…` link still expires after about 10 minutes).
+* Connect → complete: `connected`. `grant_checked` verdict `ok`: `gmail.readonly`, `gmail.compose`, `gmail.send`,
+  `gmail.modify`, `openid`, `userinfo.email`, `userinfo.profile`.
+* ASK-01 live: `check_email` without an approval → 403 "Doddy has to ask first"; nothing read.
+* First read failed with 502 `provider_unavailable`: the Gmail API was enabled in another Google Cloud project
+  than the OAuth client's. After enabling it in `doddy`: `check_email` (owner's yes, max 5) → 200, 5 messages,
+  receipt `succeeded`. Only the count and times were shown in the session.
+* `send_email` (owner's yes on the exact card: to the owner's own address, subject "Doddy test") → 200,
+  "sent", Gmail message id returned, receipt `succeeded`.
+* Then `gmail/disconnect` → revoked and deleted, and `DODDY_APP_RETURN_URL` set back to
+  `doddy-dev://connected-apps/return`.
+* **Still to do:** the iPhone app talking to this server (new build from the main branch, token minted with a new
+  `DODDY_SESSION_SIGNING_KEY`); leftover Composio connections from expired attempts (delete in Composio); a paid
+  plan with a disk or an external database so connections survive the free plan's sleep; Google verification of
+  the OAuth app before anyone but test users can connect (tokens of a Testing app expire after 7 days).
 
 Earlier (2026-10-10): service `doddy` (`srv-db559odckfvc7390v2i0`, https://doddy.onrender.com) in workspace **SLIYD**,
 web search verified there. That account is no longer the one in use; delete the old service there if it still runs.
@@ -78,7 +107,8 @@ On 18 Oct 2026 the workspace also runs copies of `doddy-voice-token` and `doddy-
    | `DODDY_HOST` | `0.0.0.0` |
    | `DODDY_PORT` | `10000` |
    | `DODDY_AUTH_MODE` | `signed` |
-   | `DODDY_DB_PATH` | `./data/doddy.sqlite` |
+   | `DATABASE_URL` | **secret**: the Postgres connection string (ADR-525; see "Database" below). Without it the data is lost on every sleep |
+   | `DATABASE_CA_CERT` | the database's root CA as PEM (Supabase: `prod-ca-2021.crt` from the project's Database settings) |
    | `DODDY_PUBLIC_BASE_URL` | the service's origin, e.g. `https://doddy-yaci.onrender.com` (no path) |
    | `DODDY_SESSION_SIGNING_KEY` | **secret**: Render's "Generate" button, or `openssl rand -base64 32`. Must decode to at least 32 bytes: a typed password or a 32-character hex string is refused |
    | `MONID_API_KEY` | **secret**: app.monid.ai → Access → API keys (`monid_live_…`) |

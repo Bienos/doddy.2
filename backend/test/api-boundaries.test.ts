@@ -193,7 +193,7 @@ test("refused requests are capped before any receipt is written", async () => {
   }
   assert.deepEqual(statuses.slice(0, 8), Array(8).fill(409));
   assert.ok(statuses.slice(8).every((s) => s === 429));
-  const receipts = h.store.db.prepare("SELECT COUNT(*) AS n FROM receipts").get() as { n: number };
+  const receipts = (await h.store.db.query<{ n: number }>("SELECT COUNT(*)::int AS n FROM receipts")).rows[0]!;
   assert.equal(receipts.n, 8);
 });
 

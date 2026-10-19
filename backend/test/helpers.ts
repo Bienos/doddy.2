@@ -45,7 +45,7 @@ export async function harness(
     nowIso?: string;
   } = {},
 ): Promise<Harness> {
-  const store = new Store(":memory:");
+  const store = await Store.memory();
   const provider = opts.provider ?? new MockCalendarProvider();
   const clock = new Clock(Date.parse(opts.nowIso ?? "2026-10-09T10:00:00Z"));
   const logs: string[] = [];
@@ -88,7 +88,7 @@ export async function harness(
       if (closed) return;
       closed = true;
       server.close();
-      store.close();
+      (await store.close());
     },
     async call(method, path, o = {}) {
       const headers: Record<string, string> = { ...(o.headers ?? {}) };

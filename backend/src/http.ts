@@ -41,11 +41,11 @@ export function createHandler(deps: HttpDeps) {
   const routes: Record<string, Handler> = {
     "GET /v1/connected-apps": async ({ userId }) => ({
       mode: service.mode,
-      apps: [service.view(userId)],
+      apps: [await service.view(userId)],
       planned: PLANNED.map((id) => ({ id, status: "planned" })),
     }),
     "GET /v1/connected-apps/google-calendar": async ({ userId }) => service.refreshStatus(userId),
-    "GET /v1/connected-apps/google-calendar/receipts": async ({ userId }) => ({ receipts: service.receipts(userId) }),
+    "GET /v1/connected-apps/google-calendar/receipts": async ({ userId }) => ({ receipts: await service.receipts(userId) }),
     "POST /v1/connected-apps/google-calendar/connect": async ({ userId, body, scenario }) => service.connect(userId, body, scenario),
     "POST /v1/connected-apps/google-calendar/complete": async ({ userId, body }) => service.complete(userId, body),
     "POST /v1/connected-apps/google-calendar/events": async ({ userId, body, scenario }) => service.listEvents(userId, body, scenario),
@@ -56,7 +56,7 @@ export function createHandler(deps: HttpDeps) {
   const toolsRoutes: Record<string, (userId: string, body: unknown) => unknown | Promise<unknown>> = tools
     ? {
         "GET /v1/tools": (userId) => tools.catalog(userId),
-        "GET /v1/tools/receipts": (userId) => ({ receipts: tools.receipts(userId) }),
+        "GET /v1/tools/receipts": async (userId) => ({ receipts: await tools.receipts(userId) }),
         "PUT /v1/tools/switch": (userId, body) => tools.setSwitch(userId, body),
         "POST /v1/tools/prepare": (userId, body) => tools.prepare(userId, body),
         "POST /v1/tools/run": (userId, body) => tools.run(userId, body),
@@ -115,7 +115,7 @@ export function createHandler(deps: HttpDeps) {
         const rawTools = header(req, "x-doddy-tools-scenario");
         if (rawTools !== undefined) {
           if (!TOOLS_SCENARIOS.has(rawTools as ToolsMockScenario)) throw new AppError("invalid_request");
-          tools.applyMockScenario(user.userId, rawTools as ToolsMockScenario);
+          await tools.applyMockScenario(user.userId, rawTools as ToolsMockScenario);
         }
         let toolsResult: unknown;
         if (toolsHandler) toolsResult = await toolsHandler(user.userId, body);

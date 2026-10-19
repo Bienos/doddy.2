@@ -54,14 +54,14 @@ before(async () => {
       { status: 200 },
     );
   }) as typeof fetch;
-  const { server, store } = buildApp(config, { webSearch: new MonidWebSearchProvider(config.monid!, fakeMonid) });
+  const { server, store } = await buildApp(config, { webSearch: new MonidWebSearchProvider(config.monid!, fakeMonid) });
   server.listen(0, "127.0.0.1");
   await once(server, "listening");
   url = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   token = new SignedSessionVerifier(Buffer.from(KEY, "base64")).mint("00000000-0000-4000-8000-0000000000aa", new Date(), 3600);
-  close = () => {
+  close = async () => {
     server.close();
-    store.close();
+    void (await store.close());
   };
 });
 after(() => close());

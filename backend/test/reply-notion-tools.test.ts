@@ -28,7 +28,7 @@ afterEach(async () => rig?.close());
 const prepare = (r: Rig, tool: string, args: Record<string, unknown>, token = USER_A) =>
   r.call("POST", "/v1/tools/prepare", { token, body: { tool, arguments: args } });
 const slugs = (r: Rig) => r.provider.executed.map((e) => e.slug);
-const approvals = (r: Rig) => ((r.store as any).db.prepare("SELECT COUNT(*) AS n FROM approvals").get() as { n: number }).n;
+const approvals = async (r: Rig) => (await r.store.db.query<{ n: number }>("SELECT COUNT(*)::int AS n FROM approvals")).rows[0]!.n;
 const composioUser = (r: Rig, token = USER_A) => r.store.composioUserId(DEV_IDENTITIES[token]!, r.clock.now());
 const kept = async (r: Rig) => (await r.call("GET", "/v1/tools/receipts")).text + r.logs.join("\n");
 
@@ -151,7 +151,7 @@ test("no matching email, or a sender without an address, is refused at prepare w
   assert.match(nameOnly.body.error.message, /can't tell who to reply to/);
   assert.equal(nameOnly.body.error.receipt.status, "blocked");
 
-  assert.equal(approvals(rig), 0, "no approval was created");
+  assert.equal((await approvals(rig)), 0, "no approval was created");
   assert.deepEqual(slugs(rig), ["GMAIL_FETCH_EMAILS", "GMAIL_FETCH_EMAILS"], "only lookups ran");
   assert.ok(!(await kept(rig)).includes("Newsletter"));
 });
@@ -189,7 +189,7 @@ test("a draft answer without a draft id is 'outcome_unknown', never done, and is
   rig = await start();
   await ready(rig, "gmail", "draft_email_reply");
   const prepared = await prepare(rig, "draft_email_reply", REPLY);
-  rig.provider.setScenario(composioUser(rig), "malformed_write");
+  rig.provider.setScenario((await composioUser(rig)), "malformed_write");
   const res = await run(rig, "draft_email_reply", REPLY, { approvalId: prepared.body.approvalId });
   assert.equal(res.status, 502);
   assert.equal(res.body.error.code, "malformed_provider_result");
@@ -292,7 +292,7 @@ test("read_notion_page: input is strict (no page id from the agent), and the sea
 test("read_notion_page: a failed search or page read is an error with a receipt, never invented text", async () => {
   rig = await start();
   await ready(rig, "notion", "read_notion_page");
-  rig.provider.setScenario(composioUser(rig), "malformed");
+  rig.provider.setScenario((await composioUser(rig)), "malformed");
   const bad = await run(rig, "read_notion_page", { query: "trip" });
   assert.equal(bad.status, 502);
   assert.equal(bad.body.error.receipt.status, "failed");

@@ -58,7 +58,12 @@ export interface Config {
   port: number;
   publicBaseUrl: string;
   appReturnUrl: string;
+  /** PGlite data directory, used only when no DATABASE_URL is set (tests, mock mode, local development). */
   dbPath: string;
+  /** Hosted Postgres (ADR-525). Null: PGlite at dbPath, which a host without a disk loses on restart. */
+  databaseUrl: string | null;
+  /** PEM of a private CA for the database's certificate; null uses the system's trusted CAs. */
+  databaseCaCert: string | null;
   authMode: AuthMode;
   sessionSigningKey: Buffer | null;
   composio: ComposioSettings | null;
@@ -99,7 +104,9 @@ const EnvSchema = z.object({
   DODDY_PORT: intSetting(8787, 1, 65535),
   DODDY_PUBLIC_BASE_URL: z.string().optional(),
   DODDY_APP_RETURN_URL: z.string().default("doddy-dev://connected-apps/return"),
-  DODDY_DB_PATH: z.string().min(1).default("./data/doddy-backend.sqlite"),
+  DODDY_DB_PATH: z.string().min(1).default("./data/doddy-backend.pglite"),
+  DATABASE_URL: z.string().optional(),
+  DATABASE_CA_CERT: z.string().optional(),
   DODDY_AUTH_MODE: z.enum(["dev", "signed"]).default("dev"),
   DODDY_SESSION_SIGNING_KEY: z.string().optional(),
   COMPOSIO_API_KEY: z.string().optional(),
@@ -255,6 +262,13 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     if (base) monid = { apiKey: monidKey, baseUrl: base.origin };
   }
 
+  const databaseUrl = e.DATABASE_URL?.trim() ? e.DATABASE_URL.trim() : null;
+  if (databaseUrl !== null && !/^postgres(ql)?:\/\/\S+$/.test(databaseUrl)) {
+    problems.push("DATABASE_URL must be a postgres:// connection string");
+  }
+  // Production keeps its data: a file on an instance disk is lost on every restart of most hosts.
+  if (e.DODDY_ENV === "production" && databaseUrl === null) problems.push("DATABASE_URL is required in production");
+
   if (problems.length > 0) throw new ConfigError(problems);
 
   return {
@@ -265,6 +279,8 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     publicBaseUrl: publicBaseUrl.replace(/\/$/, ""),
     appReturnUrl: e.DODDY_APP_RETURN_URL,
     dbPath: e.DODDY_DB_PATH,
+    databaseUrl,
+    databaseCaCert: e.DATABASE_CA_CERT?.trim() ? e.DATABASE_CA_CERT.trim().replace(/\\n/g, "\n") : null,
     authMode: e.DODDY_AUTH_MODE,
     sessionSigningKey,
     composio,

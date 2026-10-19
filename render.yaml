@@ -18,7 +18,7 @@ services:
   - type: web
     name: doddy
     runtime: node
-    plan: free            # sleeps when idle; the SQLite file resets on every restart/deploy (see doc)
+    plan: free            # sleeps when idle and has no disk: data lives in Postgres (DATABASE_URL, ADR-525)
     region: frankfurt     # closest to Warsaw
     rootDir: backend
     buildCommand: npm ci && npm run build
@@ -27,7 +27,7 @@ services:
     autoDeploy: false
     envVars:
       - key: NODE_VERSION
-        value: "22"       # package.json needs >= 22.22.3 (node:sqlite)
+        value: "22"       # package.json needs >= 22.22.3 (@composio/core)
       - key: DODDY_MODE
         value: live
       # production + live is refused by the server until real app sign-in exists.
@@ -41,8 +41,13 @@ services:
         value: signed
       - key: DODDY_SESSION_SIGNING_KEY
         generateValue: true
-      - key: DODDY_DB_PATH
-        value: ./data/doddy.sqlite
+      # Hosted Postgres (ADR-525): postgres://… URL, and the CA's PEM when it isn't a public one
+      # (Supabase: its root CA). Without DATABASE_URL the server uses PGlite at DODDY_DB_PATH, which
+      # the free plan loses on every restart.
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_CA_CERT
+        sync: false
       # callback = single-owner development only (the server refuses it in production).
       - key: COMPOSIO_COMPLETION_MODE
         value: callback
