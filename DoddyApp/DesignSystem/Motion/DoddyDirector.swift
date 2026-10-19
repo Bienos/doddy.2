@@ -112,8 +112,18 @@ final class DoddyDirector {
     // MARK: Reports from the screens (MV2)
 
     func surfaceMoved(_ id: MotionSurfaceID, to frame: MotionRect) {
+        let old = frames[id]
         frames[id] = frame
         host.scene.frames[id] = frame
+        // iOS 17 (Q10): no scroll measurements, so the first card on screen moving by itself (same
+        // size) says the list scrolled. On iOS 18 the scroll view reports it (`listScrolled`).
+        if !host.scene.scroll.measured, case .rule(let i) = id.kind, let old, isMounted(id),
+           abs(old.height - frame.height) < 0.5, abs(old.width - frame.width) < 0.5,
+           !(0..<i).contains(where: { isMounted(.rule($0)) }) {
+            catchUp()
+            host.cardsMoved(by: frame.minY - old.minY)
+            poke()
+        }
     }
 
     func surfaceAppeared(_ id: MotionSurfaceID) {
@@ -126,7 +136,11 @@ final class DoddyDirector {
     func surfaceGone(_ id: MotionSurfaceID) {
         let n = (mountCount[id] ?? 0) - 1
         mountCount[id] = n > 0 ? n : nil
-        if n <= 0 { host.scene.mounted.remove(id) }
+        if n <= 0 {
+            catchUp()
+            host.scene.mounted.remove(id)
+            host.surfaceGone(id)
+        }
         poke()
     }
 
@@ -219,6 +233,44 @@ final class DoddyDirector {
         poke()
     }
 
+    // MARK: Riding (MV4)
+
+    /// iOS 18: the Memories list's content offset (pt).
+    func listScrolled(to offset: Double) {
+        catchUp()
+        host.listScrolled(to: offset)
+        poke()
+    }
+
+    /// iOS 18: the Memories list's scroll phase.
+    func listPhaseChanged(_ phase: MotionScroll.Phase) {
+        catchUp()
+        host.listPhaseChanged(phase)
+        poke()
+    }
+
+    /// Ask opened (its cover starts up): he comes up with it, on its composer (Q2).
+    func askOpened() {
+        catchUp()
+        host.talkOpened()
+        poke()
+    }
+
+    /// Ask is closing: he is back on Home's stage, under its cover until it has gone.
+    func askClosing() {
+        guard host.scene.screen == .talk else { return }
+        catchUp()
+        host.talkClosing()
+        poke()
+    }
+
+    /// The keyboard is up or down (playful moments wait while it is up).
+    func keyboardChanged(up: Bool) {
+        guard host.scene.keyboardUp != up else { return }
+        host.scene.keyboardUp = up
+        poke()
+    }
+
     func setReduceMotion(_ on: Bool) {
         guard engine.settings.reduceMotion != on else { return }
         catchUp()
@@ -289,9 +341,10 @@ final class DoddyDirector {
         if isActive { checks.check(host, drawn: drawnCount) }
         #endif
         guard let last = lastTime else { return }
-        if !isActive || (engine.isStill && host.pendingTab == nil) {
+        if !isActive || (engine.isStill && host.pendingTab == nil && !host.wantsFrames) {
             asleep = true
-            let due = isActive ? engine.nextDue.map { last + max(0.05, ($0 - engine.now) / 1000) } : nil
+            let next = [engine.nextDue, host.nextDue].compactMap { $0 }.min()
+            let due = isActive ? next.map { last + max(0.05, ($0 - engine.now) / 1000) } : nil
             clock?.sleep(until: due)
         } else {
             clock?.run()

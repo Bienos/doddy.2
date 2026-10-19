@@ -21,6 +21,14 @@ final class DoddyClock: NSObject, DoddyClockDriving {
         retained = clock
         director.now = { CACurrentMediaTime() }
         director.clock = clock
+        // MV4: whether the keyboard is up (he rides Ask's composer with it for free; the engine
+        // only needs to know, so playful moments wait).
+        let center = NotificationCenter.default
+        for (name, up) in [(UIResponder.keyboardWillShowNotification, true), (UIResponder.keyboardWillHideNotification, false)] {
+            _ = center.addObserver(forName: name, object: nil, queue: .main) { _ in
+                MainActor.assumeIsolated { director.keyboardChanged(up: up) }
+            }
+        }
     }
 
     /// The director holds its clock weakly; this keeps the app's one alive.

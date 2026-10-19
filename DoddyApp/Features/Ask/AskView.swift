@@ -33,13 +33,25 @@ struct AskView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close") {
                         controller.cancel()
-                        dismiss()
+                        close()
                     }
                 }
             }
         }
         .foregroundStyle(Theme.ink)
-        .onDisappear { controller.cancel() }
+        // Motion v2 (MV4, Q2): he comes up with this cover, on its composer, and is back on
+        // Home's stage as it goes.
+        .onAppear { DoddyDirector.shared.askOpened() }
+        .onDisappear {
+            controller.cancel()
+            DoddyDirector.shared.askClosing()
+        }
+    }
+
+    /// Closes Ask; he is back on Home's stage under the cover as it goes down.
+    private func close() {
+        DoddyDirector.shared.askClosing()
+        dismiss()
     }
 
     // MARK: Transcript
@@ -93,7 +105,7 @@ struct AskView: View {
                 .foregroundStyle(Theme.secondaryText)
             if !consent {
                 ProblemView(message: AssistantError.consentRequired.userMessage)
-                Button("Open Settings") { dismiss(); openSettings() }
+                Button("Open Settings") { close(); openSettings() }
                     .buttonStyle(SecondaryButtonStyle())
             }
         }
@@ -169,7 +181,7 @@ struct AskView: View {
                 .accessibilityIdentifier("ask.error")
             HStack {
                 if needsSettings(error) {
-                    Button("Open Settings") { dismiss(); openSettings() }
+                    Button("Open Settings") { close(); openSettings() }
                         .buttonStyle(SecondaryButtonStyle())
                 } else if error.canRetryNow {
                     Button("Try again") { send() }

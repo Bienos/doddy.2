@@ -41,8 +41,9 @@ public struct MotionChecks: Sendable {
             let limit = id == .composer ? 1.0 : 2.0
             if gap > limit { add(t, "feet on something real", "\(id) gap \(MotionMath.format(gap, digits: 1)) pt") }
         }
-        // Rule 13: his size changes only in the air or while he is faded out.
-        if let last = lastScale, abs(e.scale - last) > 1e-6, e.mode != .flight, e.opacity > 0.01 {
+        // Rule 13: his size changes only in the air or while he is faded out (or in the frame he
+        // is carried unseen, e.g. into Ask's composer as its cover starts up).
+        if let last = lastScale, abs(e.scale - last) > 1e-6, e.mode != .flight, e.opacity > 0.01, e.lastCarried != t {
             add(t, "two sizes, one figure", "scale \(MotionMath.format(e.scale, digits: 2)) while \(e.mode.rawValue)")
         }
         lastScale = e.scale

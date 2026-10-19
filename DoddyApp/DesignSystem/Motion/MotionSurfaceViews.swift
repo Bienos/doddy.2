@@ -31,6 +31,47 @@ extension View {
     func coversDoddy(_ isUp: Bool) -> some View {
         modifier(DoddyCoverModifier(isUp: isUp))
     }
+
+    /// The Memories list's scroll view (MV4): on iOS 18 its offset and phase, so he can ride it
+    /// and make lily-pad hops. iOS 17 has no such APIs (Q10): the cards' own frames say it
+    /// moved, and he waits on the rail during any scroll.
+    func reportsDoddysListScroll() -> some View {
+        modifier(DoddyScrollReporter())
+    }
+}
+
+private struct DoddyScrollReporter: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 18.0, *) {
+            if DoddyDirector.shared.isActive {
+                content
+                    .onScrollGeometryChange(for: Double.self) { Double($0.contentOffset.y) } action: { _, y in
+                        MainActor.assumeIsolated { DoddyDirector.shared.listScrolled(to: y) }
+                    }
+                    .onScrollPhaseChange { _, phase in
+                        MainActor.assumeIsolated { DoddyDirector.shared.listPhaseChanged(MotionScroll.Phase(phase)) }
+                    }
+            } else {
+                content
+            }
+        } else {
+            content
+        }
+    }
+}
+
+@available(iOS 18.0, *)
+extension MotionScroll.Phase {
+    init(_ phase: ScrollPhase) {
+        switch phase {
+        case .idle: self = .idle
+        case .tracking: self = .tracking
+        case .interacting: self = .interacting
+        case .decelerating: self = .decelerating
+        case .animating: self = .animating
+        @unknown default: self = .unknown
+        }
+    }
 }
 
 private struct DoddyCoverModifier: ViewModifier {

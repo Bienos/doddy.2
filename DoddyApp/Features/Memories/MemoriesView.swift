@@ -122,8 +122,10 @@ struct MemoriesView: View {
                 // The brief's 108 pt bottom inset: the last note can always scroll clear of him.
                 .padding(.bottom, DoddyDirector.shared.isActive ? CGFloat(MotionLayout.listBottomInset - 24) : 0)
             }
-            // Motion v2: the list's visible band, so he only rides a card that is on screen.
+            // Motion v2: the list's visible band, so he only rides a card that is on screen, and
+            // (MV4) its scroll, so he rides it.
             .motionMark("memories.list")
+            .reportsDoddysListScroll()
             .background(Theme.canvas).foregroundStyle(Theme.ink)
             .toolbar(.hidden, for: .navigationBar, .tabBar)
             .navigationDestination(for: MemoryNavigationRoute.self) { route in

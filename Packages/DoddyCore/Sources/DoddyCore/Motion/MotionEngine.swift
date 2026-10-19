@@ -1133,6 +1133,35 @@ public final class MotionEngine {
     /// The tab changed away from the screen he was hidden behind.
     public func leftCoveredScreen() { hiddenBehind = false }
 
+    /// When he was last moved without a hop (`carried`): his size may change in that frame,
+    /// because he is unseen or the thing that carries him appears with him.
+    public private(set) var lastCarried = -1.0
+
+    /// Moves him at once onto `spot`, with no hop (motion v2, MV4): the app carries him there,
+    /// either unseen (a cover going up hides him on Home while Ask's composer, inside it, brings
+    /// him up) or on a surface that appears or goes in one frame under him (the undo bar). Any
+    /// hop in progress ends; he stands on the new spot at its size.
+    public func carried(to spot: MotionSpot, _ why: String) {
+        flight = nil
+        target = nil
+        pendingStepOff = nil
+        resetArms()
+        tuck.target = 0
+        crouch.target = 0
+        lean.target = 0
+        hiddenBehind = false
+        anchor = spot
+        mode = .attached
+        scale = scaleFor(spot)
+        pos = anchorPoint(spot)
+        vel = MotionPoint(x: 0, y: 0)
+        z = S(spot.surface).layer + 0.2
+        memory[world.screenKey] = spot
+        lastCarried = now
+        activity = "resting"
+        note("carried to \(spot.surface): \(why)")
+    }
+
     public func bannerChanged(showing: Bool, at point: MotionPoint) {
         if showing {
             notice("offline banner", point, 600, mood: "concerned")

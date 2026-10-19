@@ -60,6 +60,8 @@ public struct MotionScene: Sendable {
     public var finger = MotionFinger()
     /// His size on Home's stage: 1.4×, or 1.0× at accessibility text sizes (Q12).
     public var homeScale = 1.4
+    /// The Memories list's scroll (MV4).
+    public var scroll = MotionScroll()
 
     public init() {}
 
@@ -83,13 +85,17 @@ public final class MotionHost: MotionWorld {
     /// Off: nothing is drawn (iPad's sidebar, "Hide Doddy's pictures").
     public var isActive = true
     /// A tab tap not yet answered because the new screen hadn't reported its surfaces.
-    public private(set) var pendingTab: (screen: MotionScreen, tapT: Double)?
+    public internal(set) var pendingTab: (screen: MotionScreen, tapT: Double)?
     /// A tap on him opens Talk (MV5 sets it; nil: nothing opens).
     public var onOpenTalk: ((Double) -> Void)?
     /// Press and hold on him starts voice if it can (MV5).
     public var onStartVoice: (() -> Bool)?
     /// The surface he was last moved off because it went away (so it is answered once).
-    private var relocatedFrom: MotionSpot?
+    var relocatedFrom: MotionSpot?
+    /// MV4: Ask is opening and its composer hasn't reported yet (he is unseen until it has).
+    var talkPending = false
+    /// The tab Ask was opened from (Home), where he goes back to as it closes.
+    var returnScreen: MotionScreen = .home
 
     public init(settings: MotionSettings = MotionSettings()) {
         engine = MotionEngine(settings: settings)
@@ -136,9 +142,27 @@ public final class MotionHost: MotionWorld {
     /// Find's spot appeared; he goes there once it has reported a frame.
     var findWaiting = false
 
+    /// The undo bar appeared; he is lifted with it once it has reported its frame (MV4).
+    var panelWaiting = false
+
     /// A surface's view appeared (the app calls this after marking it mounted).
     public func surfaceAppeared(_ id: MotionSurfaceID) {
         if id == .ledge(Self.findLedge) { findWaiting = true }
+        if id == .panel { panelWaiting = true }
+    }
+
+    /// A surface's view went (the app calls this after marking it gone).
+    public func surfaceGone(_ id: MotionSurfaceID) {
+        if id == .panel {
+            panelWaiting = false
+            panelChanged(shown: false)
+        }
+    }
+
+    func liftOntoPanelIfWaiting() {
+        guard panelWaiting, scene.frames[.panel] != nil else { return }
+        panelWaiting = false
+        panelChanged(shown: true)
     }
 
     func goToFindIfWaiting() {
@@ -194,6 +218,9 @@ public final class MotionHost: MotionWorld {
 
     /// After a frame's steps: answer a pending tab tap, and move him off a surface that went away.
     public func settle() {
+        settleScroll()
+        carryIntoTalkIfReady()
+        liftOntoPanelIfWaiting()
         if pendingTab != nil { resolvePendingTab() }
         goToFindIfWaiting()
         relocateIfSurfaceGone()
@@ -217,7 +244,7 @@ public final class MotionHost: MotionWorld {
     // MARK: Where the app draws him
 
     public var placement: MotionPlacement {
-        guard isActive, scene.covers == 0 else { return .hidden }
+        guard isActive, scene.covers == 0, !talkPending else { return .hidden }
         if engine.mode == .flight { return .overlay }
         guard let a = engine.anchor else { return .hidden }
         if scene.mounted.contains(a.surface) { return .slot(a.surface) }
@@ -235,6 +262,11 @@ public final class MotionHost: MotionWorld {
 
     /// The rail under a screen's tab (Ask is opened from Home, so it waits under Home).
     public func railSpot(_ screen: MotionScreen) -> MotionSpot {
+        // While the undo bar shows, it stands over the rail: he waits on it instead (brief:
+        // "the rail under the selected tab; fallback the strip").
+        if let strip = mountedFrame(.panel) {
+            return MotionSpot(.panel, x: MotionLayout.barSpotX(bar: strip, action: scene.marks["undo"]))
+        }
         let bar = scene.frames[.rail] ?? MotionRect(x: 0, y: 724, width: 390, height: 60)
         let tab = screen == .talk ? "home" : screen.rawValue
         let center = scene.marks["tab.\(tab)"]?.midX ?? bar.midX
@@ -312,8 +344,8 @@ public final class MotionHost: MotionWorld {
     /// His eyes' resting place. The pack has no gaze art (plan section 3), so nothing draws it.
     public func focusPoint() -> (point: MotionPoint, label: String)? { nil }
 
-    /// MV4 rides the Memories list; until then he only stands on its cards.
-    public func ridingList() -> (any MotionList)? { nil }
+    /// The Memories list while he can ride it (MV4): lily-pad hops, or the rail while it is fast.
+    public func ridingList() -> (any MotionList)? { canRideList ? HostList(host: self, riding: true) : nil }
 
     public var isCovered: Bool { scene.covers > 0 }
     public var isOnHome: Bool { scene.screen == .home }
@@ -391,33 +423,64 @@ struct HostSurface: MotionSurface {
     }
 
     func isVisible() -> Bool { host.scene.mounted.contains(id) }
-    func pointAhead(x: Double, dt: Double) -> MotionPoint? { nil }
+
+    /// A card scrolls with the list (MV4): where its edge will be `dt` seconds from now at the
+    /// list's speed. Everything else is still between reports.
+    private var listVelocity: Double? {
+        guard id.isRule, host.canRideList, host.scene.scroll.isMoving else { return nil }
+        return host.ridingVelocity
+    }
+
+    func pointAhead(x: Double, dt: Double) -> MotionPoint? {
+        guard let v = listVelocity else { return nil }
+        return MotionPoint(x: x, y: top() - v * dt)
+    }
+
     func predictedPoint(x: Double) -> MotionPoint? { nil }
-    func isMoving() -> Bool { false }
+    func isMoving() -> Bool { listVelocity != nil }
     func settleY() -> Double { top() }
 }
 
-/// The Memories list as the engine sees it (still in MV3: its cards' edges, no scroll physics).
+/// The Memories list as the engine sees it: its cards' edges, and its scroll (MV4).
 struct HostList: MotionList {
     unowned let host: MotionHost
+    /// Riding (MV4): the safe band is the scroll view's own visible band, since the content above
+    /// the first card scrolls away with it. Card 0 is never a spot (the picker and filters sit
+    /// right above it, where his body would be), so while riding it reads as above the band.
+    /// Choosing a spot (not riding) keeps the band below the first card's top instead.
+    var riding = false
 
     var ruleCount: Int { host.scene.ruleCount }
 
     func ruleY(_ i: Int, ahead dt: Double) -> Double {
-        if let f = host.mountedFrame(.rule(i)) { return f.minY }
+        if riding, i == 0 { return -1e6 }
+        if let f = host.mountedFrame(.rule(i)) { return f.minY - velocity * dt }
         // A card that isn't built (LazyVStack) is above or below the ones that are.
         guard let first = (0..<ruleCount).first(where: { host.scene.mounted.contains(.rule($0)) }) else { return 1e6 }
         return i < first ? -1e6 : 1e6
     }
 
-    var top: Double { host.listBand?.top ?? 1e6 }
+    var top: Double {
+        if riding, let viewport = host.scene.marks["memories.list"] { return viewport.minY }
+        return host.listBand?.top ?? 1e6
+    }
     var bottom: Double { host.listBand?.bottom ?? -1e6 }
-    var velocity: Double { 0 }
-    var isFlinging: Bool { false }
-    var isScrollingToTop: Bool { false }
-    var slowSince: Double? { nil }
+    var velocity: Double { host.ridingVelocity }
+    /// iOS 18: still decelerating faster than lily-pad speed. iOS 17: any move (Q10).
+    var isFlinging: Bool {
+        let s = host.scene.scroll
+        guard s.isMoving else { return false }
+        return s.measured ? s.phase == .decelerating && abs(s.velocity) > MotionTiming.lilySlow : true
+    }
+    /// A programmatic scroll (iOS 18's `.animating`) towards the top, such as a status bar tap.
+    var isScrollingToTop: Bool {
+        let s = host.scene.scroll
+        return s.measured && s.phase == .animating && s.velocity < -1
+    }
+    var slowSince: Double? { host.scene.scroll.slowSince }
+    /// Which card a finger is on isn't reported, only that one is down (iOS 18).
     func isUnderFinger(_ i: Int) -> Bool { false }
-    var isFingerDown: Bool { false }
+    var isFingerDown: Bool { host.scene.scroll.isFingerDown }
 
     var ruleX: Double {
         for i in 0..<ruleCount {

@@ -246,7 +246,8 @@ struct HomeView: View {
             }
             .fullScreenCover(isPresented: $showAsk) { AskView(openSettings: { selectedTab = .settings }) }
             // Motion v2: each sheet and cover from Home hides him in the frame it starts.
-            .coversDoddy(modal != nil || showDataFlow || tool != nil || showAsk || showTranslator)
+            // Ask isn't one of them (MV4): its cover carries him up on its composer.
+            .coversDoddy(modal != nil || showDataFlow || tool != nil || showTranslator)
             // The conversation opens once the start sheet has gone away.
             .sheet(isPresented: $showTranslator, onDismiss: {
                 if let choice = translatorChoice {
