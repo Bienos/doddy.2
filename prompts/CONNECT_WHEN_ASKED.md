@@ -5,7 +5,7 @@ the backend, but nothing is turned on until the user asks for it? So somebody as
 XYZ to do XYZ? And then we have to come up with the flow of the user accepting and logging into his profile."*
 
 > **Status, 2026-10-19:** built on `claude/inspiring-volta-bkuat4` as ADR-511 to ADR-513, with the recommended answers
-> to D1 and D3 to D5. Server and shared core tested on Linux; the app code is not compiled yet; the live agent is not
+> to D1 and D3 to D5. Server and shared core tested on Linux; the app compiled and its tests passed in hosted CI (run 39222117761); the live agent is not
 > synced; nothing has run against a real Google account. What's left is in `STATUS.md` ("Waiting on the owner") and
 > the Mac checklist section 4y. Use this prompt again only for what is still open.
 

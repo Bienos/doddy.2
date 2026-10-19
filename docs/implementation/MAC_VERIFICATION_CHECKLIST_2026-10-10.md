@@ -448,7 +448,7 @@ Needs first: the new "First conversation" section on the live agent, with placeh
 `VoiceSessionController` (`offerConnect`, `connectFromCard`, `finishConnect`) and `VoiceView` (`connectAccountCard`) changed without a compile. Needs a server with online accounts (mock is fine for CW1–CW6). Start with Gmail disconnected.
 | # | Do this | Expect |
 |---|---|---|
-| CW1 | Build the app target | Compiles |
+| CW1 | Build the app target | Compiles. **Done in hosted CI run 39222117761 (Xcode 26.6), unit + UI tests passed** |
 | CW2 | "Send an email to <you> saying hi" | Doddy says it needs your OK to connect Gmail and nothing is sent yet. A card: "Connect Gmail?", "Send email on your behalf" (send-only config set) or the four permissions, Connect Gmail / Open in Mail instead / Not now. Mock server: a Demo label |
 | CW3 | Tap Connect Gmail | Live: the system sign-in sheet opens, and the microphone shows muted while it is up. Mock: no sheet. After: "Gmail is connected. Only "Send an email" is on." Doddy then shows the normal send card with the exact email; nothing is sent before Send |
 | CW4 | Settings → Online accounts | Gmail connected; only "Send an email" on; with the send-only config, "Connected for sending only" |
