@@ -118,6 +118,13 @@ def check(tools, session, instructions):
         errors.append("instructions: must tell Doddy to say plainly it is an AI, not a person (DOD-03)")
     if "vague answer" in instructions.lower():
         errors.append("instructions: must not ask for a vague answer about being human or an AI (DOD-03)")
+    # ADR-511, connect when asked: a tool that isn't connected or is off gets a card in the
+    # conversation, so no tool may send the user to Settings for it instead.
+    for tool in tools.get("tools", []):
+        if "Settings, Online accounts" in tool.get("description", ""):
+            errors.append(f"tool {tool.get('name')}: points to Settings, Online accounts; the app offers to connect in the conversation (ADR-511)")
+    if "not connected" not in instructions or "switched off" not in instructions:
+        errors.append("instructions: must say what a 'not connected' or 'switched off' result means (ADR-511)")
     return errors
 
 
