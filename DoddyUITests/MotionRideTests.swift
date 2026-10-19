@@ -27,6 +27,11 @@ final class MotionRideTests: XCTestCase {
             format: "identifier BEGINSWITH 'doddy.motion.' OR identifier BEGINSWITH 'doddy.pose.'"))
     }
 
+    /// What the annotated mode says, with the newest finding, for a failure message.
+    private func debugReport(in app: XCUIApplication) -> String {
+        "\(app.staticTexts["doddy.debug"].label) | \(app.staticTexts["doddy.debug.last"].label)"
+    }
+
     private func checksCount(in app: XCUIApplication) -> String {
         app.staticTexts["doddy.debug"].label.components(separatedBy: "checks ").last ?? "?"
     }
@@ -97,7 +102,7 @@ final class MotionRideTests: XCTestCase {
         XCTAssertTrue(app.buttons["home.ask"].waitForExistence(timeout: 5))
         XCTAssertEqual(surfaceUnderHim(in: app), "stage")
         XCTAssertEqual(drawings(in: app).count, 1)
-        XCTAssertEqual(checksCount(in: app), "0", app.staticTexts["doddy.debug"].label)
+        XCTAssertEqual(checksCount(in: app), "0", debugReport(in: app))
     }
 
     /// Memories: he stands on a card, a page pushed over it covers him where he stands, and Back
@@ -127,7 +132,7 @@ final class MotionRideTests: XCTestCase {
         app.swipeDown(velocity: .fast)
         RunLoop.current.run(until: Date().addingTimeInterval(1.5))
         XCTAssertLessThanOrEqual(drawings(in: app).count, 1)
-        XCTAssertEqual(checksCount(in: app), "0", app.staticTexts["doddy.debug"].label)
+        XCTAssertEqual(checksCount(in: app), "0", debugReport(in: app))
     }
 
     /// Calm mode: tabs tapped faster than he could hop. He waits, then makes one hop to where you
@@ -141,6 +146,6 @@ final class MotionRideTests: XCTestCase {
         }
         XCTAssertEqual(surfaceUnderHim(in: app, timeout: 8), "ledge.settings")
         XCTAssertEqual(drawings(in: app).count, 1)
-        XCTAssertEqual(checksCount(in: app), "0", app.staticTexts["doddy.debug"].label)
+        XCTAssertEqual(checksCount(in: app), "0", debugReport(in: app))
     }
 }
