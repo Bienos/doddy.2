@@ -30,7 +30,7 @@ export class ConfirmationPolicy {
   ) {}
 
   /** Records that the user saw this exact preview. Returns the token the client sends back. */
-  approve(input: { userId: string; capability: CapabilityDefinition; accountId: string; args: unknown; now: number }) {
+  approve(input: { userId: string; capability: CapabilityDefinition; accountId: string; args: unknown; now: number }): Promise<{ approvalId: string; expiresAt: number }> {
     if (input.capability.confirmation !== "fresh_per_execution") throw new Error("capability does not take approvals");
     return this.store.createApproval({
       userId: input.userId,
@@ -43,25 +43,25 @@ export class ConfirmationPolicy {
   }
 
   /** Throws unless a matching, unexpired, unused approval exists; consumes it atomically. */
-  require(input: {
+  async require(input: {
     userId: string;
     capability: CapabilityDefinition;
     accountId: string;
     args: unknown;
     approvalId: string | undefined;
     now: number;
-  }): void {
+  }): Promise<void> {
     if (input.capability.confirmation === "none") return;
     const ok =
       input.approvalId !== undefined &&
-      this.store.consumeApproval({
+      (await this.store.consumeApproval({
         approvalId: input.approvalId,
         userId: input.userId,
         capability: input.capability.id,
         accountId: input.accountId,
         argsDigest: argumentDigest(input.args),
         now: input.now,
-      });
+      }));
     if (!ok) throw new AppError("capability_disabled", { message: "This action needs a fresh confirmation." });
   }
 }
@@ -70,7 +70,7 @@ const day = (now: number) => new Date(now).toISOString().slice(0, 10);
 const month = (now: number) => new Date(now).toISOString().slice(0, 7);
 
 /**
- * Doddy's own ceilings (not provider quotas). Daily/monthly counters are durable (SQLite, UTC
+ * Doddy's own ceilings (not provider quotas). Daily/monthly counters are durable (Postgres, UTC
  * periods) and reserved atomically before any provider call; each page and retry reserves again.
  * Concurrency is per process: this backend is designed to run as a single instance.
  */
@@ -84,8 +84,8 @@ export class UsageLimiter {
   ) {}
 
   /** One provider-call unit for this user. Throws quota_exceeded without calling anyone. */
-  reserveCall(userId: string, now: number): void {
-    const ok = this.store.reserveUsage(
+  async reserveCall(userId: string, now: number): Promise<void> {
+    const ok = await this.store.reserveUsage(
       [
         // A read may need up to maxPages pages, each with up to two retries — but one user may never
         // use more than a quarter of the service-wide daily allowance.
@@ -106,8 +106,8 @@ export class UsageLimiter {
    * Any events request, counted before anything is written (including blocked receipts), so a
    * client looping on a refused request cannot grow the database without bound.
    */
-  reserveRequest(userId: string, now: number): void {
-    const ok = this.store.reserveUsage(
+  async reserveRequest(userId: string, now: number): Promise<void> {
+    const ok = await this.store.reserveUsage(
       [{ counter: `user:${userId}:requests`, period: `day:${day(now)}`, limit: this.limits.userDailyReads * 4 }],
       1,
     );
@@ -118,8 +118,8 @@ export class UsageLimiter {
    * One online-account tool run (read or confirmed write) for this user today. `units` > 1 when a
    * write first looks its target up: the lookup counts like a read.
    */
-  reserveToolRun(userId: string, now: number, units = 1): void {
-    const ok = this.store.reserveUsage(
+  async reserveToolRun(userId: string, now: number, units = 1): Promise<void> {
+    const ok = await this.store.reserveUsage(
       [
         { counter: `user:${userId}:toolruns`, period: `day:${day(now)}`, limit: this.limits.userDailyToolRuns },
         { counter: "service:calls", period: `day:${day(now)}`, limit: this.limits.serviceDailyCalls },
@@ -134,8 +134,8 @@ export class UsageLimiter {
    * One web search (Monid, paid from Doddy's wallet): a per-user and a service-wide daily cap, on
    * top of the shared provider-call ceilings. Counted before the call, so a refused search costs nothing.
    */
-  reserveWebSearch(userId: string, now: number): void {
-    const ok = this.store.reserveUsage(
+  async reserveWebSearch(userId: string, now: number): Promise<void> {
+    const ok = await this.store.reserveUsage(
       [
         { counter: `user:${userId}:websearch`, period: `day:${day(now)}`, limit: this.limits.userDailyWebSearches },
         { counter: "service:websearch", period: `day:${day(now)}`, limit: this.limits.serviceDailyWebSearches },
@@ -148,8 +148,8 @@ export class UsageLimiter {
   }
 
   /** One user-visible read request (counted separately from the provider calls it causes). */
-  reserveRead(userId: string, now: number): void {
-    const ok = this.store.reserveUsage(
+  async reserveRead(userId: string, now: number): Promise<void> {
+    const ok = await this.store.reserveUsage(
       [{ counter: `user:${userId}:reads`, period: `day:${day(now)}`, limit: this.limits.userDailyReads }],
       1,
     );

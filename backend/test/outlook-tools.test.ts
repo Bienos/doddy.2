@@ -182,7 +182,7 @@ test("check_outlook_email with search words sends a search without orderby, and 
 test("an unreadable Outlook answer is an error with a receipt, never an empty inbox", async () => {
   rig = await start();
   await ready(rig, "outlook", "check_outlook_email");
-  rig.provider.setScenario(composioUser(rig), "malformed");
+  rig.provider.setScenario((await composioUser(rig)), "malformed");
   const res = await run(rig, "check_outlook_email", {});
   assert.equal(res.status, 502);
   assert.equal(res.body.error.code, "malformed_provider_result");
@@ -311,7 +311,7 @@ test("an Outlook draft answer without a draft id is 'outcome_unknown', never don
   rig = await start();
   await ready(rig, "outlook", "draft_outlook_email");
   const prepared = await prepare(rig, "draft_outlook_email", DRAFT);
-  rig.provider.setScenario(composioUser(rig), "malformed_write");
+  rig.provider.setScenario((await composioUser(rig)), "malformed_write");
   const res = await run(rig, "draft_outlook_email", DRAFT, { approvalId: prepared.body.approvalId });
   assert.equal(res.status, 502);
   assert.equal(res.body.error.code, "malformed_provider_result");
@@ -365,7 +365,7 @@ test("read_outlook_calendar lists the days' events in the user's zone, cleaned a
   const stored = JSON.stringify(res.body.receipt) + (await kept(rig));
   for (const secret of ["dentist", "birthday", "team call", "Clinic", "2026-10-12", "teams.demo"]) assert.ok(!stored.includes(secret), secret);
 
-  rig.provider.setScenario(composioUser(rig), "empty");
+  rig.provider.setScenario((await composioUser(rig)), "empty");
   const none = await run(rig, "read_outlook_calendar", { from: "2026-10-12", to: "2026-10-12" });
   assert.equal(none.status, 200);
   assert.equal(none.body.count, 0);

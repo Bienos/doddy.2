@@ -16,11 +16,12 @@ import { CloudToolsService } from "./tools/service.js";
 import { MockWebSearchProvider, MonidWebSearchProvider, type WebSearchProvider } from "./tools/websearch.js";
 
 /** Composition root: picks adapters strictly from validated config (mock never silently replaces live). */
-export function buildApp(
+export async function buildApp(
   config: Config,
-  overrides: { provider?: CalendarProvider; toolsProvider?: ToolsProvider; webSearch?: WebSearchProvider | null } = {},
+  overrides: { provider?: CalendarProvider; toolsProvider?: ToolsProvider; webSearch?: WebSearchProvider | null; store?: Store } = {},
 ) {
-  const store = new Store(config.dbPath);
+  const store =
+    overrides.store ?? (await Store.open({ url: config.databaseUrl ?? undefined, caCert: config.databaseCaCert ?? undefined, dataDir: config.dbPath }));
   let provider: CalendarProvider;
   if (overrides.provider) provider = overrides.provider;
   else if (config.mode === "live") {
