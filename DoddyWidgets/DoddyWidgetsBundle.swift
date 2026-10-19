@@ -1,7 +1,7 @@
 import SwiftUI
 import WidgetKit
 
-/// Widget extension: the voice conversation's Live Activity, the tools' Live Activity (focus,
+/// Widget extension: the voice conversation's Live Activity, Doddy's calls for the user, the tools' Live Activity (focus,
 /// breathing, read-aloud), the Home and Lock Screen widgets (ADR-219) and, on iOS 18+, the
 /// Talk to Doddy and New note controls.
 @main
@@ -27,6 +27,8 @@ struct DoddyWidgetsBundle: WidgetBundle {
     private var iOS18Widgets: some Widget {
         DoddyVoiceLiveActivity()
         ShoppingLiveActivity()
+        // Doddy on a call for the user (ADR-504).
+        DoddyCallLiveActivity()
         DoddyToolLiveActivityWithWatch()
         // One entry for all Home Screen widgets: the bundle builder has taken at most ten (ADR-331).
         DoddyHomeWidgets().body
@@ -44,6 +46,7 @@ struct DoddyWidgetsBundle: WidgetBundle {
     private var iOS17Widgets: some Widget {
         DoddyVoiceLiveActivity()
         ShoppingLiveActivity()
+        DoddyCallLiveActivity()
         DoddyToolLiveActivity()
         DoddyHomeWidgets().body
     }

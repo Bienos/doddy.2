@@ -27,6 +27,7 @@ run_step "Imported pack integrity" python3 -I scripts/verify_imported_pack.py
 run_step "Forbidden-capability guard" scripts/check_forbidden_capabilities.sh
 run_step "Voice agent spec" python3 -I scripts/voice_agent_spec.py check
 run_step "Phone agent spec" python3 -I scripts/voice_agent_spec.py check --agent phone
+run_step "Task-call agent spec" python3 -I scripts/voice_agent_spec.py check --agent task-call
 run_step "Blog pages up to date" python3 -I tools/build_blog.py --check
 run_step "Site pages in every language up to date" python3 -I tools/build_site_i18n.py --check
 run_step "String catalogs up to date" python3 -I tools/build_strings_catalog.py --check
@@ -49,6 +50,8 @@ if command -v swift >/dev/null 2>&1; then
     # A real compile of the app files that need no Apple UI framework (ADR-200). On a Mac the
     # full xcodebuild below compiles everything, so this step is Linux-only.
     run_step "App logic type-check (non-UI app files)" scripts/typecheck_app_logic.sh
+    # The call screens' state, run with fakes for the server and the store (ADR-500).
+    run_step "Call screens' state tests" scripts/test_call_cases_model.sh
     run_step "Unfinished notes on real files" scripts/check_unfinished_note_store.sh
   else
     run_step "Swift package tests (DoddyCore)" swift test --package-path Packages/DoddyCore

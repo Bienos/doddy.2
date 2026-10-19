@@ -99,6 +99,8 @@ files=(
   Shared/Share/ShareInboxFile.swift
   # SiriNoteLookup picks Doddy's pose for an answer (ADR-313); IslandRect is stubbed above.
   Shared/IslandArt/IslandPose.swift
+  # Calls Doddy places for the user (ADR-500): the screens' state, without the views.
+  DoddyApp/Features/CallCases/CallCasesModel.swift
 )
 for f in "${files[@]}"; do [ -f "$f" ] || { echo "FAIL: $f is missing; update scripts/typecheck_app_logic.sh"; exit 1; }; done
 

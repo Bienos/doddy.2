@@ -724,6 +724,8 @@ struct SettingsView: View {
             try await store.deleteAll()
             // Everything Doddy learned and the counts of corrections go with the notes (ADR-440).
             try await store.learning?.deleteAll()
+            // Calls Doddy made for the user: cards, answers and transcripts on this iPhone (ADR-500).
+            try await environment.callCaseRepository.deleteAll()
             UserDefaults.standard.removeObject(forKey: PreferenceKey.pinnedNotes)
         } catch {
             deleteError = UserFacingError.message(for: error)

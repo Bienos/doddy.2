@@ -529,7 +529,9 @@ public enum VoiceTextLimits {
     }
 }
 
-/// Links that open other apps. The user always taps; Doddy never sends a message or places a call.
+/// Links that open other apps. The user always taps; these links never send a message or place a
+/// call themselves. The one way Doddy places a call is a call case the user approved on its card
+/// (ADR-500, superseding ADR-065 for that case only); the voice conversation can't start one.
 public enum OpenLinks {
     public static func map(place: String) -> URL? {
         URL(string: "https://maps.apple.com/?q=\(encode(place))")

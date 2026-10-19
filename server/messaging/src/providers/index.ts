@@ -3,8 +3,11 @@ import { ApnsPushSender } from "./apns.js";
 import { TextCipher } from "../crypto.js";
 import { ElevenLabsOutboundCaller } from "./elevenlabs.js";
 import { TwilioClient } from "./twilio.js";
+import { ElevenLabsTaskClient, TwilioCallClient } from "./taskCalls.js";
 import { GNewsSearch, HttpFeedSource } from "../news/sources.js";
 import { ClaudeDigestWriter, OpenAIDigestWriter } from "../news/writer.js";
+import type { TaskCallDeps } from "../taskCalls/context.js";
+import { ClaudeResultWriter } from "../taskCalls/writer.js";
 
 /** Real provider adapters for whatever is configured; anything missing stays undefined. */
 export function providersFrom(config: Config) {
@@ -12,12 +15,26 @@ export function providersFrom(config: Config) {
     ? new TwilioClient(config.twilio, config.publicBaseUrl && `${config.publicBaseUrl}/webhooks/twilio/status`)
     : undefined;
   const cipher = config.memoryEncryptionKey ? TextCipher.fromBase64(config.memoryEncryptionKey) : undefined;
+  const push = config.apns ? new ApnsPushSender(config.apns) : undefined;
+  const t = config.taskCalls;
+  const taskCalls: TaskCallDeps | undefined = t ? {
+    telephony: new TwilioCallClient(t.twilioAccountSid, t.twilioAuthToken),
+    voice: new ElevenLabsTaskClient(t.elevenLabsApiKey),
+    config: t,
+    settings: config.taskCallSettings,
+    // Optional: points at the answer and writes the card's summary (Anthropic only; ADR-504).
+    writer: config.anthropicApiKey ? new ClaudeResultWriter(config.anthropicApiKey) : undefined,
+    liveActivity: push ? {
+      update: async (token, env, state, end) => { await push.sendLiveActivity({ deviceToken: token, environment: env }, state, end); },
+    } : undefined,
+  } : undefined;
   return {
-    push: config.apns ? new ApnsPushSender(config.apns) : undefined,
+    push,
     sms: twilio,
     verifier: twilio,
     outbound: config.phoneAgent ? new ElevenLabsOutboundCaller(config.phoneAgent) : undefined,
     cipher,
+    taskCalls,
     news: {
       cipher,
       feeds: new HttpFeedSource(),

@@ -72,6 +72,7 @@ Branch `claude/elegant-hopper-6qrj3z` is **on main** since 19 Oct, merged at the
 - **Vercel:** the `doddy` project (team `doddyyyy`) built and published the site from the default branch on 2026-10-14 (www.doddy.lol); the earlier "account blocked" failures did not recur on that build. The free plan allows 100 deployments a day, and skipped ones count: on 18 October the limit was reached by 12:22 UTC (100 deployments since 09:34, 86 of them skipped), so Vercel refused new ones and showed "Account is blocked". Since 18 October only the production branch deploys: preview deployments are off in all three projects' settings (go-live checklist A10), and each `vercel.json` says the same (ADR-498, PR #84, carried by `claude/fervent-edison-3gnqpq`). GitHub Actions stopped starting jobs on 16 October and ran again on 18 October at 15:08 UTC (run 39139146509).
 
 ## Waiting on the owner
+- Calls Doddy makes for you: the legal basis for transcribing the person called (the recording notice stays off until then), a Poland-only Twilio subaccount, the task-call agent with a Polish voice, then live tests #1 to #3 (`docs/implementation/CALL_CASES_STATUS.md`).
 - Mark up `docs/product/V1_SCOPE.md`: Ship, Hide or Cut for each feature, plus the eight decisions at its end.
 - Stage A of `docs/implementation/GO_LIVE_CHECKLIST.md`:
   - the voice token server's sign-in settings on Vercel (Upstash Redis, signing key, `APPLE_BUNDLE_ID`), then a redeploy;
