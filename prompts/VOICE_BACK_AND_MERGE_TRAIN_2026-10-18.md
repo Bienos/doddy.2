@@ -2,7 +2,7 @@
 
 You run tonight's work on `Bienos/doddy.2`. The default branch is `claude/loving-dirac-uuxoux`, head `c61f023df7cf2a0aaddf0b6c1462fe1e2c86a941`. Read `STATUS.md` and `CLAUDE.md` first.
 
-The facts below were checked read-only between 20:00 and 20:55 UTC on 18 Oct. Re-check each one before you act on it. If a fact no longer holds, stop and tell me rather than improvise.
+The facts below were checked read-only between 20:00 and 20:55 UTC on 18 Oct, and again at 04:50 UTC on 19 Oct (nothing had changed: no merges, the settings still missing, no new deployments). Re-check each one before you act on it. If a fact no longer holds, stop and tell me rather than improvise.
 
 ## What I (the owner) did before sending this
 - **Redis store:** made an Upstash Redis database in the Upstash console. I didn't use the Vercel Marketplace, because it adds `KV_REST_API_*` names the server doesn't read.
@@ -45,17 +45,19 @@ Never handle a secret value, and never ask me to paste one. That means:
   - Don't change the agent.
 
 ## Who drives what
-| Branch / PR | Full head SHA | Driving session | Check-in (UTC) | You may |
+Check-ins move, so run `list_triggers` (`enabled: true`) when you start and use what it shows. At 04:50 UTC on 19 Oct only two were left, and each was its session's last before it stops checking in.
+
+| Branch / PR | Full head SHA | Driving session | Check-in at 04:50 UTC 19 Oct | You may |
 |---|---|---|---|---|
-| #84 `claude/laughing-darwin-hqxa63` | `70f064f3c685a79237ddb40c1f839470f792673e` | `session_01RCEUyeoxYnUiigB8zf6MhZ` | 22:40 `trig_018znskcu45owKZ9FQDz2HMw` | merge the PR |
-| #88 `claude/fervent-edison-3gnqpq` | `cdd784e69d81e5c22efa94049e205a5c27d186ec` | `session_011RwsCsm428qSsqtzycvish` | 22:19 `trig_018AtBz4kcMjvt66b627kYAQ` | merge the PR; push only after a takeover (step 3) |
-| #90 `claude/modest-pasteur-7jnwfd` | `ebf9d3600d7d7f807c8e3cd974d61742d9619d72` | `session_014ACRWmczHwgRqrBLpE3QyF` | 23:36 `trig_0166MKBUaFM1UUyV4vLhrZ4w` | merge the PR; push only after a takeover (step 4) |
+| #84 `claude/laughing-darwin-hqxa63` | `70f064f3c685a79237ddb40c1f839470f792673e` | `session_01RCEUyeoxYnUiigB8zf6MhZ` | 06:40 UTC `trig_018znskcu45owKZ9FQDz2HMw` | merge the PR |
+| #88 `claude/fervent-edison-3gnqpq` | `cdd784e69d81e5c22efa94049e205a5c27d186ec` | `session_011RwsCsm428qSsqtzycvish` | 06:23 UTC `trig_01TotzLoTkmrQBxmdZ6KiTfY` | merge the PR; push only after a takeover (step 3) |
+| #90 `claude/modest-pasteur-7jnwfd` | `ebf9d3600d7d7f807c8e3cd974d61742d9619d72` | `session_014ACRWmczHwgRqrBLpE3QyF` | none (stopped) | merge the PR; push only after a takeover (step 4) |
 | #89 `claude/payments-apple-pay-blik` | | Cowork `session_01F7jUa7kUbN3RRMPdCoRzW6`, on my Mac | | nothing |
 | `claude/epic-wright-vz93xh` | | voice-token settings `session_01XvyTagkLivvU3GkxVe3WA7` | | nothing, and don't message it |
 | `claude/awesome-cray-2lb9ia` | | phone number `session_01TWmNMWhbDNzDVVkN5AfFhs` | | open a draft PR (step 5) |
 | `claude/affectionate-lovelace-4qyfwm` | | architecture `session_01EXT7JquEwaHx82KEY52Tdw` | | open a draft PR (step 5) |
-| `claude/elegant-hopper-6qrj3z` | | Composio `session_01VkU5sPUikrKpXEJvVA2SCJ`, working with me now | | nothing |
-| `claude/motion-mv1` | | `session_016KREaFAvF9A2hS5Pa8c72B` | 21:09 | nothing |
+| `claude/elegant-hopper-6qrj3z` | | Composio `session_01VkU5sPUikrKpXEJvVA2SCJ` | | nothing |
+| `claude/motion-mv1` | | `session_016KREaFAvF9A2hS5Pa8c72B` | | nothing |
 | `claude/admiring-curie-bsuwv9-hey-doddy-card` | | unknown | | nothing |
 | #86 `claude/connect-in-conversation` | | Cowork `session_01ArZvvveZvmZojLVjeTYk9q`, idle | | nothing (report only) |
 
@@ -75,12 +77,12 @@ How to work alongside these sessions:
 - **Before every merge or push,** run `git ls-remote origin` and compare against the head you expect.
 
 ## Time and order
-- **Expected timeline:** #84 merged by about 21:15 UTC, #88 by about 22:40, #90 by about 00:00, step 6 by about 00:30.
+- **Expected timeline from when you start:** #84 merged within about 15 minutes, #88 about 1.5 hours later, #90 about 1.5 hours after that, and step 6 about 30 minutes after that.
   - Each takeover or red CI run adds about 50 minutes.
-  - Going past midnight is fine; the Vercel cap is a rolling 24 hours. Date anything written after midnight 19 Oct.
+  - The Vercel cap is a rolling 24 hours, not a calendar day. Date everything with the actual date.
 - **While you wait for CI,** do steps 5 and 7 and the step 2 build retries. They don't depend on the merges.
-- **Other sessions wake** at 22:19 (#88), 22:40 (#84) and 23:36 (#90).
-- **Hard stop at 02:00 UTC** for merges and takeovers. After that, finish the step you're in, do step 6 with whatever is merged, and report. Only the step 2 voice build retries may carry on after 02:00 (see step 2).
+- **Other sessions wake** at the check-ins `list_triggers` shows, and whenever a GitHub event on their PR arrives.
+- **Hard stop 8 hours after you start** for merges and takeovers. After that, finish the step you're in, do step 6 with whatever is merged, and report. Only the step 2 voice build retries may carry on (see step 2).
 - **If #88 or #90 can't be merged tonight,** still do step 6 and list the PR as open.
 
 ## Step 0: checks before anything else
@@ -118,7 +120,7 @@ How to work alongside these sessions:
      - **If the call errors, times out or returns something unclear,** don't call it again. Run `list_deployments` for that SHA. If there's still nothing, treat that attempt as refused and wait for the next hour.
      - **If a deployment for that SHA exists but ends CANCELED or ERROR,** stop retrying and tell me its ID and the last build-log lines.
      - **Before you merge #90 or the step 6 PR,** try the build first if it's still missing. Those merges create deployments that are canceled but still count, so they mustn't take the first free slots. If the cap still refuses the build, merge anyway: a refused push creates nothing.
-     - **Keep trying hourly until 14:00 UTC on 19 Oct,** even after the 02:00 hard stop, with one `send_later` per try. If it still hasn't built by then, stop and put the exact call in the report.
+     - **Keep trying hourly for up to 24 hours after the first refusal,** even after the hard stop, with one `send_later` per try. If it still hasn't built by then, stop and put the exact call in the report.
    - **No status at all from `doddyyyy`:** tell me, and go on with step 3.
 3. **Probe without secrets,** once a deployment is READY:
    - `POST https://doddy-voice-token-beta.vercel.app/api/voice-auth` with `content-type: application/json` and body `{"action":"refresh","refreshToken":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}`.
@@ -132,7 +134,7 @@ How to work alongside these sessions:
 
 ## Step 3: #88
 1. **Ask #88's session** (`session_011RwsCsm428qSsqtzycvish`) with `send_message`:
-   > From the owner's merge session: #84 is merged; the default branch head is `<SHA>`. Please merge it into `claude/fervent-edison-3gnqpq` now with a merge commit (no rebase, no force-push) and add your pending go-live checklist A1 line. Push once and reply when it's pushed. A read-only merge test found conflicts only in `DECISIONS.md` (keep your ADR 520–524 section, once, before "## BLIK transfers") and `STATUS.md` (take your text in both hunks). After that one push, don't push again until #88 is merged, including at your 22:19 check-in. Put anything else in your reply instead.
+   > From the owner's merge session: #84 is merged; the default branch head is `<SHA>`. Please merge it into `claude/fervent-edison-3gnqpq` now with a merge commit (no rebase, no force-push) and add your pending go-live checklist A1 line. Push once and reply when it's pushed. A read-only merge test found conflicts only in `DECISIONS.md` (keep your ADR 520–524 section, once, before "## BLIK transfers") and `STATUS.md` (take your text in both hunks). After that one push, don't push again until #88 is merged, including at any check-in. Put anything else in your reply instead.
 2. **Check its push:**
    - `cdd784e6…` is an ancestor of the new head (so no force-push);
    - the new head has the default branch head as a parent;
@@ -143,7 +145,7 @@ How to work alongside these sessions:
    - 60 minutes pass with no push.
 
    While it is working, keep waiting: its local checks (`scripts/ci.sh --core-only`) take a while. To take over:
-   - Disable its check-in `trig_018AtBz4kcMjvt66b627kYAQ` with `update_trigger` (`enabled: false`). Never use `delete_trigger`.
+   - Disable its check-in, if it still has one (find it with `list_triggers`; at 04:50 UTC on 19 Oct it was `trig_01TotzLoTkmrQBxmdZ6KiTfY`), with `update_trigger` (`enabled: false`). Never use `delete_trigger`.
    - Send it: "The owner's merge session is taking over `claude/fervent-edison-3gnqpq`. Don't push, merge or commit to it again, including the A1 change, even if a GitHub event about #88 wakes you. Reply 'ok' and do nothing else."
    - Wait until `get_session` shows it idle. Then run `git ls-remote` right before your push. If the head is no longer `cdd784e6…`, don't push; look at what it pushed instead.
    - Do the merge yourself, resolved as in the message: one merge commit, never a rebase or force-push, one push. If the push is rejected, stop and tell me.
@@ -160,7 +162,7 @@ If #88 can't be merged tonight, don't start #90.
 
 1. **Ask #90's session** (`session_014ACRWmczHwgRqrBLpE3QyF`) with `send_message`. Tell it:
    - #84 and #88 are merged, and the default branch head is `<SHA>`.
-   - Merge that head into `claude/modest-pasteur-7jnwfd` with a merge commit, resolve as below, push once, and don't push again until #90 is merged, including at the 23:36 check-in.
+   - Merge that head into `claude/modest-pasteur-7jnwfd` with a merge commit, resolve as below, push once, and don't push again until #90 is merged, including at any check-in.
    - What the read-only merge test found, because resolving only the text conflicts turns `core` red:
 
    **`render.yaml`:**
@@ -187,7 +189,7 @@ If #88 can't be merged tonight, don't start #90.
    - `node --test "tools/secrets/test/*.test.mjs"`
    - `python3 -I tools/build_strings_catalog.py --check`
    - `scripts/ci.sh --core-only`. Without Swift installed this ends `RESULT: BLOCKED` (exit 2), with the Swift steps NOT RUN. That's acceptable if every step that ran is PASS, because CI's `core` job runs the Swift steps. Don't install a Swift toolchain for this.
-2. **Check its push, take over, handle red CI:** the same rules as step 3, items 2 to 4. Its check-in is `trig_0166MKBUaFM1UUyV4vLhrZ4w` (23:36 UTC).
+2. **Check its push, take over, handle red CI:** the same rules as step 3, items 2 to 4. Its check-ins had stopped by 04:50 UTC on 19 Oct; look with `list_triggers` in case it has armed a new one.
 3. **Merge** when `core` and `ci` are green on head H, H contains the current default branch including #88's merge, and GitHub shows no conflict. Set `expectedHeadSha` to H.
    - #90 doesn't touch the Vercel projects, so its Vercel builds will be canceled. That is expected.
    - If the step 2 build is still missing, try it right before this merge (see step 2).
@@ -217,7 +219,7 @@ Opening a PR doesn't push to the branch, so it doesn't get in its session's way.
   - its ADR-483 renumbered (it collides with ASK-01);
   - both the BLIK line and the card line kept in `voice-agent/instructions.md`.
 
-## Step 6: update STATUS.md (after step 4, or at the 02:00 hard stop)
+## Step 6: update STATUS.md (after step 4, or at the hard stop)
 On this session's own working branch, starting from the current default branch, open a docs-only PR. It runs changes and core (about 5 minutes); the macOS job is skipped. Merge it once `core` is green. Cover these:
 - **On main:** what merged, with merge SHAs, and what is still open.
 - **Voice:**
