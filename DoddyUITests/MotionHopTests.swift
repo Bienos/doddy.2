@@ -10,10 +10,13 @@ final class MotionHopTests: XCTestCase {
     override func setUp() { continueAfterFailure = false }
 
     @MainActor
-    private func launch(hideArt: Bool = false, debug: Bool = false) -> XCUIApplication {
+    private func launch(hideArt: Bool = false, debug: Bool = false, lists: Bool = false) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = UITestLaunch.arguments(store: .inMemory, appearance: "light")
-            + ["-doddyArtMarkers", "YES", "-hideCharacterArt", hideArt ? "YES" : "NO"]
+        var arguments = UITestLaunch.arguments(store: .inMemory, appearance: "light")
+        // `-memoriesShowsLists NO` is an argument-domain value: it wins over what the picker
+        // writes, so Lists would flip straight back to Notes. A test that opens Lists drops it.
+        if lists, let i = arguments.firstIndex(of: "-memoriesShowsLists") { arguments.removeSubrange(i...(i + 1)) }
+        app.launchArguments = arguments + ["-doddyArtMarkers", "YES", "-hideCharacterArt", hideArt ? "YES" : "NO"]
         if debug { app.launchArguments += ["-doddyMotionDebug", "YES"] }
         app.launch()
         XCTAssertTrue(app.buttons["tab.home"].waitForExistence(timeout: 10))
@@ -28,6 +31,20 @@ final class MotionHopTests: XCTestCase {
     private func drawings(in app: XCUIApplication) -> XCUIElementQuery {
         app.descendants(matching: .any).matching(NSPredicate(
             format: "identifier BEGINSWITH 'doddy.motion.' OR identifier BEGINSWITH 'doddy.pose.'"))
+    }
+
+    /// There is exactly one drawing of him within `timeout` (a single frame of two or none is the
+    /// DEBUG checks' business; two that stay, or none, is this test's). Says what is on screen.
+    @MainActor
+    private func assertOneDoddy(in app: XCUIApplication, timeout: TimeInterval = 3,
+                                file: StaticString = #filePath, line: UInt = #line) {
+        let end = Date().addingTimeInterval(timeout)
+        while Date() < end, drawings(in: app).count != 1 {
+            RunLoop.current.run(until: Date().addingTimeInterval(0.1))
+        }
+        let all = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'doddy.'"))
+        let seen = (0..<all.count).map { "\(all.element(boundBy: $0).identifier) \(all.element(boundBy: $0).frame)" }
+        XCTAssertEqual(drawings(in: app).count, 1, "on screen: \(seen)", file: file, line: line)
     }
 
     /// Waits until he stands still on `surfaceName` (his drawing's bottom edge on its top edge,
@@ -58,7 +75,7 @@ final class MotionHopTests: XCTestCase {
         XCTAssertEqual(him.frame.midX, surface("stage", in: app).frame.midX, accuracy: 2)
         // 1.4× of the 133 pt picture, cut at its ground (94 % of the strip): about 175 pt tall.
         XCTAssertEqual(him.frame.height, 96 / 0.72 * 1.4 * 0.94, accuracy: 3)
-        XCTAssertEqual(drawings(in: app).count, 1, "one Doddy")
+        assertOneDoddy(in: app)
     }
 
     /// A tab tap takes him to the new screen's spot; he is never drawn twice on the way.
@@ -70,15 +87,15 @@ final class MotionHopTests: XCTestCase {
         let him = waitUntilHeStands(on: "ledge.settings", in: app)
         // 1.0× off Home.
         XCTAssertEqual(him.frame.height, 96 / 0.72 * 0.94, accuracy: 3)
-        XCTAssertLessThanOrEqual(drawings(in: app).count, 1)
+        assertOneDoddy(in: app)
         app.buttons["tab.memories"].tap()
         XCTAssertTrue(app.descendants(matching: .any)["memories.empty"].waitForExistence(timeout: 5))
         // The empty notebook: he sits cross-legged on its spot, in place of the old picture.
         waitUntilHeStands(on: "ledge.emptyMemories", as: "doddy.pose.crosslegged", in: app)
-        XCTAssertEqual(drawings(in: app).count, 1)
+        assertOneDoddy(in: app)
         app.buttons["tab.home"].tap()
         waitUntilHeStands(on: "stage", in: app)
-        XCTAssertEqual(drawings(in: app).count, 1)
+        assertOneDoddy(in: app)
     }
 
     /// A sheet hides him while it is up; he is back where he stood when it has gone.
@@ -110,14 +127,14 @@ final class MotionHopTests: XCTestCase {
     /// No lists yet: he waits cross-legged on the Lists spot (ADR-313), the only Doddy there.
     @MainActor
     func testEmptyListsHeSitsOnTheirSpot() {
-        let app = launch()
+        let app = launch(lists: true)
         app.buttons["tab.memories"].tap()
         let picker = app.segmentedControls["memories.notesOrLists"]
         XCTAssertTrue(picker.waitForExistence(timeout: 5))
         picker.buttons["Lists"].tap()
         XCTAssertTrue(app.descendants(matching: .any)["lists.empty"].waitForExistence(timeout: 5))
         waitUntilHeStands(on: "ledge.emptyLists", as: "doddy.pose.crosslegged", in: app)
-        XCTAssertEqual(drawings(in: app).count, 1)
+        assertOneDoddy(in: app)
     }
 
     /// Find with nothing found: he comes out and shrugs on Find's spot (Q4), the only Doddy.
@@ -130,7 +147,7 @@ final class MotionHopTests: XCTestCase {
         query.tap(); query.typeText("zzqx nothing like this\n")
         XCTAssertTrue(app.staticTexts["memories.noMatch"].waitForExistence(timeout: 6))
         waitUntilHeStands(on: "ledge.find", as: "doddy.pose.shrug", in: app)
-        XCTAssertEqual(drawings(in: app).count, 1)
+        assertOneDoddy(in: app)
     }
 
     /// DEBUG annotated mode: across tab hops the DEBUG checks (one Doddy, soles on the surface,
@@ -146,6 +163,7 @@ final class MotionHopTests: XCTestCase {
             RunLoop.current.run(until: Date().addingTimeInterval(0.8))
         }
         waitUntilHeStands(on: "stage", in: app)
-        XCTAssertTrue(debug.label.hasSuffix("checks 0"), debug.label)
+        XCTAssertTrue(debug.label.hasSuffix("checks 0"),
+                      debug.label + " · " + app.staticTexts["doddy.debug.last"].label)
     }
 }
