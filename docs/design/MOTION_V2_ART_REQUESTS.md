@@ -37,8 +37,8 @@ Squash on landing and the lean are transforms of the whole current picture (Q7).
 
 | Needed by the brief | Pack today | What the app does until it exists |
 |---|---|---|
-| Gaze: pupils in 8 directions plus centre, on a front head that matches every body ("eyes first", glances, eyes following a finger, thinking's eyes up and right) | Nothing imported; an eye-direction sheet may exist at pack 008 (heads only) | No gaze at all. `MotionHost.focusPoint()` returns nothing, so the engine never asks for one. Not faked with a whole-pose turn. |
-| Blink, and the slow 280 ms blink | Possibly pack 007 (heads only), not imported | No blink. |
+| Gaze: pupils in 8 directions plus centre, on a front head that matches every body ("eyes first", glances, eyes following a finger, thinking's eyes up and right) | **Exists in the owner's Drive folder, not imported:** `008_doddy_eyes_v01.png` (read from the folder listing on 19 Oct; not opened). Its contents are not seen: the plan's reading is a sheet of heads | No gaze at all. `MotionHost.focusPoint()` returns nothing, so the engine never asks for one. Not faked with a whole-pose turn. |
+| Blink, and the slow 280 ms blink | **Exists in the Drive folder, not imported:** `007_doddy_blink_v02.png` (not opened; the plan's reading is a sequence of heads) | No blink. |
 | Eyes closed in contentment | `WholeDoddy_yawn_stretch` has closed eyes but yawns with raised arms | Not shown. |
 | Squint on touch | None | Not shown (MV5's touch-down dip is a whole-picture squash only). |
 | Head rub: eyes closed, head tipping with the stroke | None | A stroke across his head is a drag (lean) only. |
@@ -59,3 +59,9 @@ Squash on landing and the lean are transforms of the whole current picture (Q7).
    redrawn with the head separate. That is a drawing decision for the illustrator.
 2. The poses in the table above, as whole pictures at 1024 × 1536 like the rest of the pack.
 3. Whether to re-export the existing poses larger for Home's 1.4× (Q11).
+
+## Q6 answered by the Drive folder (19 Oct 2026)
+
+The owner's folder `DODDY-Numbered-Video-Assets-v01` (id `1inLT9oV7wx7UM4P6nxP8yU1-29JV0_ee`) was listed read-only with the Google Drive connector. It holds, besides the imported sets, these numbered sheets that are **not imported**: `004_doddy_expr_front_v02.png`, `005_doddy_expr_34_v02.png`, `006_doddy_mouths_v02.png`, `007_doddy_blink_v02.png`, `008_doddy_eyes_v01.png`, `009_doddy_hands_v01.png`, `010_doddy_props_v01.png`, `011_doddy_fx_v01.png`. The names say expressions, mouths, a blink, eyes, hands, props and effects; nothing here was opened or looked at, so what is on each sheet is unknown.
+
+Using them is not something an agent can decide: the owner's Q7 answer allows moving, scaling, rotating and squashing a **whole picture**, never cutting one up. Taking a head, an eye or a blink frame out of a sheet and putting it on a body is cutting up and compositing. It stays the owner's decision (Q6): either they approve cutting those sheets, or their illustrator delivers heads as separate layers that match the body poses. Until then gaze, blink and the other face reactions stay off.
