@@ -111,6 +111,8 @@ public enum ToolCatalog {
         .init(VoiceToolName.openMap, .handoff, .card),
         .init(VoiceToolName.runShortcut, .handoff, .card),
         .init(VoiceToolName.draftMessage, .handoff, .card),
+        // A BLIK transfer on a card; the user sends it in their bank app, never Doddy (ADR-510).
+        .init(VoiceToolName.draftBlikTransfer, .handoff, .card),
         // The conversation itself.
         .init(VoiceToolName.startTranslator, .session, .askFirst),
         .init(VoiceToolName.stopTranslator, .session, .askFirst),

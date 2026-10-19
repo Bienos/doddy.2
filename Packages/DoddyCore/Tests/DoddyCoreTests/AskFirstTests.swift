@@ -72,6 +72,8 @@ final class AskFirstTests: XCTestCase {
             ("cancel_alarm", #"{"time":"07:30"}"#),
             ("run_shortcut", #"{"name":"Home"}"#),
             ("draft_message", #"{"to":"Anna","body":"On my way"}"#),
+            // BLIK (ADR-510): the card shows the transfer; even its tap sends nothing.
+            ("draft_blik_transfer", #"{"to":"Ania","amount":50}"#),
             ("open_map", #"{"place":"Demo Café"}"#),
         ]
         for (name, json) in calls {

@@ -68,6 +68,8 @@ kind mismatch, verifier single use and cross-user session, redirect parameter al
 | Session signing key | Backend environment | In the app or repo |
 | Doddy session token | iOS Keychain, `AfterFirstUnlockThisDeviceOnly` (not migrated to other devices) | UserDefaults, bundle, logs |
 | Server URL | UserDefaults (not a secret) | — |
+| Every project secret (record) | 1Password vaults `doddy-prod` / `doddy-dev` (ADR-493, `docs/security/SECRETS_1PASSWORD.md`); hosts keep their own env vars | In the app, repo, CI, Claude sessions; never printed by the sync tool |
+| Host API tokens (Vercel, Render) | 1Password `doddy-deploy`, owner only, used by `tools/secrets/sync.mjs` through `op run` | On any host or in any agent's environment |
 
 `.gitignore` covers `.env*` (except `.env.example`), keys, SQLite files, logs, `node_modules`, `dist`. The guard script
 scans app, package, scripts, backend sources/tests, fixtures and `.env.example` for key-shaped strings.

@@ -2,7 +2,7 @@
 
 Doddy is a voice-first memory companion for iPhone, with an Apple Watch app and a Mac menu bar prototype. This page is the short version. Update it when you merge something that changes what is below.
 
-Last updated 2026-10-14, 12:00 UTC (PR #80, the ten languages, merged into the default branch).
+Last updated 2026-10-18 (PR #85, BLIK transfers, with the fixes that let hosted CI build the app again). 1Password lines under "Waiting on the owner" added 2026-10-18 on branch `claude/laughing-darwin-hqxa63` (not merged).
 
 ## Known-good build
 - **Main branch:** `claude/loving-dirac-uuxoux`.
@@ -10,6 +10,8 @@ Last updated 2026-10-14, 12:00 UTC (PR #80, the ten languages, merged into the d
 - **Hosted CI:** since `c8aff7ae` (#69 with #70), every target compiles on Xcode 26.6 and the unit and 26 UI tests pass on the simulator. That build has not been run on a device.
 - **Since then on main:** OpenAI Realtime is the default voice, with a model picker on Home (ADR-442), and the first-use screens landed (#76: ADR-324 to 327, ADR-443).
 - **Also on main (PR #80, 14 Oct):** the iPhone app and the landing page in ten languages, as machine-translated drafts (ADR-458 to 460). The landing page is live at https://www.doddy.lol in all ten. CI built the app and passed the unit and UI tests with these changes; the language picker and the translated screens have not been seen on a device, and no native speaker has read any of it (`l10n/REVIEW_NOTES.md`).
+- **Hosted CI on 18 Oct:** jobs start again after the owner fixed the account's GitHub billing. The first Mac build since 14 Oct showed that no branch had compiled since 754e5d6 (`VoiceAccessGate.swift` used `VoiceProvider` without `import DoddyCore`), and that two app unit tests had never run: the profile intro test from 754e5d6 and the translator test that ASK-01 made stale. PR #85 fixes all three. Its run 39138962699 built the app and passed the 29 UI tests, with only those two tests failing. Actions time is paid for (12–14 Oct used about $250, almost all of it the macOS build); on branch `claude/laughing-darwin-hqxa63` the Mac build waits for the Linux checks and skips pull requests that don't touch the app (ADR-497), and the UI tests take 26 minutes instead of 34 (ADR-499). That branch's run 39143827911 passed everything (Mac job 40 minutes).
+- **Also on main (PR #85, 18 Oct):** BLIK transfers by voice (ADR-510). "Send Ania 50 zł" shows a card to send in the bank app; Doddy never sends money. The `draft_blik_transfer` tool is behind an off-by-default switch and has been on the live ElevenLabs agent since 18 Oct (live `agtvrsn_2801m57etpkkfhfbjvqt95nptfha`). Compiled in hosted CI; not yet seen on a device. Details: `docs/implementation/BLIK_TRANSFER_STATUS.md`.
 - **Evidence:**
   - The live voice agent worked from this code on 2026-10-11 at 22:35 Warsaw time: a 139 s conversation that used `search_memories`, `save_memory` and `web_search`.
   - The variables the app sent to ElevenLabs match this branch, and not the unmerged `-all` branch.
@@ -45,10 +47,19 @@ Merge one at a time, then rebuild and talk to Doddy before the next.
   - a "ghost" session that connects but never sends its start data and stays silent for 30 s;
   - a session that can't hear the user.
 
-  Not fixed yet. It needs a device log to confirm the cause.
-- **Vercel:** the `doddy` project (team `doddyyyy`) built and published the site from the default branch on 2026-10-14 (www.doddy.lol); the earlier "account blocked" failures did not recur on that build. The daily deployment limit still applies, so `site/vercel.json` builds only when something under `site/` changed. GitHub Actions has run again since 2026-10-12.
+  Investigated 18 Oct (`docs/implementation/VOICE_SESSION_STARTS.md`, ElevenLabs list only, no transcripts):
+  - Two starts at once mostly predate the 11 Oct "review H1" fix.
+  - Silent 30-second sessions with zero messages still happen: six since that build, four of them within five minutes on 16 Oct at night.
+  - Leading suspect: a "Hey Doddy" start from the background that stalls before its start data and stops when iOS's roughly 30-second background allowance runs out.
+  - Branch `claude/laughing-darwin-hqxa63` adds the log lines a phone log needs. Not fixed yet: it still needs a device log to confirm the cause.
+- **Vercel:** the `doddy` project (team `doddyyyy`) built and published the site from the default branch on 2026-10-14 (www.doddy.lol); the earlier "account blocked" failures did not recur on that build. The free plan allows 100 deployments a day, and skipped ones count: on 18 October the limit was reached by 12:22 UTC (100 deployments since 09:34, 86 of them skipped), so Vercel refused new ones and showed "Account is blocked". On branch `claude/laughing-darwin-hqxa63`, only the production branch deploys (ADR-498); that takes effect once it is merged.
 
 ## Waiting on the owner
+- 1Password for project secrets (ADR-493, `docs/security/SECRETS_1PASSWORD.md`).
+  - Create the four vaults and items, then run the sync tool one host at a time.
+  - Built and tested on Linux against fakes only; it hasn't touched the real 1Password, Vercel or Render.
+- Delete the two old Supabase functions and their secrets (code saved in `docs/archive/supabase-functions-2026-10-18/`).
+  - Decide whether to keep the Render copies of `doddy-voice-token` and `doddy-gateway` (research report, decision 11).
 - A native review of the eight new app languages and of all nine landing-page translations, which are live as drafts (`l10n/REVIEW_NOTES.md`).
 - "Hey Doddy" cannot work until the keyword file and a Picovoice key are in place (`docs/implementation/HEY_DODDY_STATUS.md`, "What is missing").
 - Whether notes sync between the Mac and the iPhone (today they never do).

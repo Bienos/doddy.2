@@ -2,6 +2,9 @@
 # Runs the same scripts/ci.sh a contributor runs locally: pack check, guard, Swift package tests,
 # token server / backend / gateway tests, then XcodeGen + xcodebuild test (unit + UI) on the
 # first available iPhone simulator. No signing team or secrets are used; nothing is deployed.
+# The macOS job is the expensive one (about 52 minutes at $0.062 a minute), so it runs only after
+# the Linux checks pass, and on a pull request only when the change can reach the app build or its
+# tests (ADR-497, scripts/ci_needs_mac.sh). Run by hand, it always runs.
 name: iOS build and tests
 
 on:
@@ -16,7 +19,41 @@ permissions:
   contents: read
 
 jobs:
+  # Decides whether the macOS job is needed (ADR-497). Cheap: a shallow checkout and a file list.
+  changes:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      mac: ${{ steps.decide.outputs.mac }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # A pull request is checked out as its test merge commit. Its first parent is the base
+          # branch, so HEAD^1..HEAD is exactly what the pull request changes.
+          fetch-depth: 2
+
+      - name: Does this change need the macOS build?
+        id: decide
+        env:
+          EVENT: ${{ github.event_name }}
+        run: |
+          if [ "$EVENT" != "pull_request" ]; then
+            echo "Run by hand: the macOS build runs." >&2
+            echo "mac=true" >> "$GITHUB_OUTPUT"
+          elif git rev-parse --verify -q 'HEAD^2' >/dev/null \
+            && files=$(git diff --name-only --no-renames 'HEAD^1' HEAD); then
+            printf '%s\n' "$files" | scripts/ci_needs_mac.sh >> "$GITHUB_OUTPUT"
+          else
+            echo "Couldn't list what the pull request changes: the macOS build runs." >&2
+            echo "mac=true" >> "$GITHUB_OUTPUT"
+          fi
+
   ci:
+    # Only after the Linux checks pass (most of them run first in scripts/ci.sh on the Mac too, so
+    # a red one usually fails this job anyway), and only when `changes` says the app can be
+    # affected. A Linux-only failure (the app logic type-check) now holds the Mac build back too.
+    needs: [changes, core]
+    if: needs.changes.outputs.mac == 'true'
     runs-on: macos-latest
     timeout-minutes: 75
     steps:

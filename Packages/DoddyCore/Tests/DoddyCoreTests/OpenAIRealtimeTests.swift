@@ -61,7 +61,9 @@ final class OpenAIRealtimeTests: XCTestCase {
         XCTAssertEqual(VoiceTokenServer.openAIGrant(status: 200, body: Data(#"{"token":"","provider":"openai","model":"m"}"#.utf8)), .failure(.badResponse))
         XCTAssertEqual(VoiceTokenServer.openAIGrant(status: 401, body: Data()), .failure(.sessionExpired))
         XCTAssertEqual(VoiceTokenServer.openAIGrant(status: 503, body: Data()), .failure(.busy))
-        XCTAssertEqual(VoiceTokenServer.openAIGrant(status: 500, body: Data()), .failure(.serverNotConfigured))
+        // Since 754e5d6 a 500 or 503 means "not configured" only when the server says so (VoiceTokenTests).
+        XCTAssertEqual(VoiceTokenServer.openAIGrant(status: 500, body: Data()), .failure(.busy))
+        XCTAssertEqual(VoiceTokenServer.openAIGrant(status: 500, body: Data(#"{"error":"server_not_configured"}"#.utf8)), .failure(.serverNotConfigured))
         XCTAssertEqual(VoiceTokenServer.openAIGrant(status: 400, body: Data()), .failure(.serverProblem(status: 400)))
     }
 
