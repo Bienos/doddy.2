@@ -57,13 +57,12 @@ Each platform has its own project spec, so one platform's code can't break anoth
 | Shared core | `Packages/DoddyCore/` | Swift package, used by every platform | Tests run on Linux: 1,146 passing on 19 Oct (Swift 6.1.2, main at `01e7b345`) | `docs/platforms/README.md` |
 
 ## Not merged yet: every branch
-**`docs/branches.md`** lists all 141 remote branches (19 Oct), each with its last commit, whether it's on main, any open PR, and a suggestion: merge 6, keep 22, close 112. Nothing was deleted, closed or merged; the owner reviews the list. Merge one at a time, then rebuild and talk to Doddy before the next.
+**`docs/branches.md`** lists all 142 remote branches (19 Oct, against main at `29facd0c`), each with its last commit, whether it's on main, any open PR, and a suggestion: merge 5, keep 23, close 113. Nothing was deleted, closed or merged; the owner reviews the list. Merge one at a time, then rebuild and talk to Doddy before the next.
 
-The four merges that matter for the beta, each through its own PR:
+The three merges that matter for the beta, each through its own PR:
 - PR #94 `claude/happy-volta-9a11kw`: keeps private notes out of every Memory-on-calls upload (a privacy fix).
 - `claude/epic-wright-vz93xh`: the 19 Oct check that the voice token server has all its production settings.
 - `claude/trusting-sagan-7lky84`: the correct ASK-01 rollback version for the live agent.
-- `claude/elegant-hopper-6qrj3z`: the first live Gmail read and send, recorded.
 
 Since 18 Oct, `claude/admiring-curie-bsuwv9-all` and `claude/dismiss-ended-card` have nothing main needs. `claude/trusting-dirac-o8ajzc` (sound wave) and `claude/affectionate-mayer-aovol9` (island face) are frozen UI work, suggested close. PR #86 (connect in conversation) is kept, frozen.
 
