@@ -85,8 +85,11 @@ final class DoddyDirector {
     @ObservationIgnored private var coverTokens: Set<UUID> = []
     /// Screens showing a problem whose own picture of him was left out (Q4: he does the pose).
     @ObservationIgnored private var problems = 0
+    /// Every drawing of him that is on screen now, by the token of the view that draws it, and
+    /// where and since when (for the one-Doddy check: a view that appears twice is still one).
+    @ObservationIgnored private(set) var drawings: [UUID: (spot: String, since: Double)] = [:]
     /// How many drawings of him are on screen (for the one-Doddy check).
-    @ObservationIgnored private(set) var drawnCount = 0
+    var drawnCount: Int { drawings.count }
     /// The DEBUG checks (MV3), run every frame in debug builds.
     @ObservationIgnored private(set) var checks = MotionChecks()
     /// Frames ticked since launch (the annotated mode's frame counter).
@@ -288,8 +291,14 @@ final class DoddyDirector {
     }
 
     /// A drawing of him appeared or went (the one-Doddy check counts them).
-    func drawingAppeared() { drawnCount += 1 }
-    func drawingGone() { drawnCount = max(0, drawnCount - 1) }
+    func drawingAppeared(_ token: UUID, in spot: String) { drawings[token] = (spot, now()) }
+    func drawingGone(_ token: UUID) { drawings[token] = nil }
+    /// Where each drawing is and how long it has been there, for a finding's text.
+    var drawingsDescription: String {
+        let t = now()
+        return drawings.values.sorted { $0.since < $1.since }
+            .map { "\($0.spot) \(String(format: "%.1f", t - $0.since)) s" }.joined(separator: ", ")
+    }
 
     // MARK: The clock
 
@@ -338,7 +347,7 @@ final class DoddyDirector {
         publish()
         frameCount += 1
         #if DEBUG
-        if isActive { checks.check(host, drawn: drawnCount) }
+        if isActive { checks.check(host, drawn: drawnCount, drawnWhere: drawingsDescription) }
         #endif
         guard let last = lastTime else { return }
         if !isActive || (host.isPlaced && engine.isStill && host.pendingTab == nil && !host.wantsFrames) {
