@@ -1136,6 +1136,9 @@ public final class MotionEngine {
     /// When he was last moved without a hop (`carried`): his size may change in that frame,
     /// because he is unseen or the thing that carries him appears with him.
     public private(set) var lastCarried = -1.0
+    /// How many times he has been carried (the DEBUG checks compare it between frames: the engine's
+    /// clock doesn't move between a carry made outside a step and the next check).
+    public private(set) var carries = 0
 
     /// Moves him at once onto `spot`, with no hop (motion v2, MV4): the app carries him there,
     /// either unseen (a cover going up hides him on Home while Ask's composer, inside it, brings
@@ -1158,6 +1161,7 @@ public final class MotionEngine {
         z = S(spot.surface).layer + 0.2
         memory[world.screenKey] = spot
         lastCarried = now
+        carries += 1
         activity = "resting"
         note("carried to \(spot.surface): \(why)")
     }

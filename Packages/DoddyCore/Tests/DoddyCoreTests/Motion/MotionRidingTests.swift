@@ -167,6 +167,30 @@ final class MotionRidingTests: XCTestCase {
         XCTAssertEqual(checks.count, 0, "\(checks.violations)")
     }
 
+    /// The app's check may run a frame or two after the carry (the director's poke, then the next
+    /// display-link frame): the size change inside the carry is still not "two sizes".
+    func testACheckAFrameAfterTheCloseCarryIsNotATwoSizesFinding() {
+        var checks = MotionChecks()
+        host.talkOpened()
+        host.scene.frames[.composer] = Self.composer
+        host.scene.marks["send"] = Self.send
+        host.scene.mounted.insert(.composer)
+        run(maxMs: 50, each: { h in checks.check(h, drawn: h.placement == .hidden ? 0 : 1) })
+        XCTAssertEqual(host.placement, .slot(.composer))
+        host.scene.mounted.remove(.composer)
+        host.scene.mounted.insert(.stage)
+        host.talkClosing()
+        // Two engine steps pass before the check sees the new size.
+        host.step(1000.0 / 240)
+        host.settle()
+        host.step(1000.0 / 240)
+        host.settle()
+        checks.check(host, drawn: 1)
+        run(maxMs: 50, each: { h in checks.check(h, drawn: 1) })
+        XCTAssertEqual(e.scale, 1.4, accuracy: 1e-9)
+        XCTAssertEqual(checks.count, 0, "\(checks.violations)")
+    }
+
     // MARK: The undo bar
 
     func testTheUndoBarLiftsHimOffTheRailAndSetsHimDownAgain() {
