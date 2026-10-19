@@ -15,7 +15,7 @@ final class MotionEvidenceTests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = UITestLaunch.arguments(store: .inMemory, appearance: "light")
             + ["-hideCharacterArt", hideArt ? "YES" : "NO"] + extra
-        if markers { app.launchArguments += ["-doddyArtMarkers", "YES"] }
+        if markers { app.launchArguments += ["-doddyArtMarkers", "YES", "-doddyQuietIdle", "YES"] }
         // The annotated mode's texts are named `doddy.debug…`: on with the markers, unless a test says no.
         if debug ?? markers { app.launchArguments += ["-doddyMotionDebug", "YES"] }
         app.launch()
