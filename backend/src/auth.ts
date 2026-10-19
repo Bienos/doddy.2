@@ -123,6 +123,8 @@ const defaultFetchJson: FetchJson = async (url, signal) => {
 interface SupabaseOptions {
   /** https://<project-ref>.supabase.co (or the project's custom domain). Origin only. */
   projectUrl: string;
+  /** Sign-in methods that make a Doddy account (Supabase `app_metadata.provider`). */
+  providers?: readonly string[];
   fetchJson?: FetchJson;
   /** How long fetched keys are trusted before they are fetched again. */
   keysTtlMs?: number;
@@ -136,7 +138,8 @@ const JWT_SEGMENT = /^[A-Za-z0-9_-]+$/;
 /**
  * Checks a Supabase Auth access token: the signature against the project's published keys
  * (ES256 or RS256, never a shared secret), the issuer, the audience, the role and the expiry.
- * Anonymous Supabase users are refused: a Doddy account is always an Apple or Google sign-in.
+ * Anonymous users and other sign-in methods (email, phone) are refused: a Doddy account is always
+ * an Apple or Google sign-in, so the project's other Supabase settings can't open this server.
  *
  * A signed-out session's access token stays valid until it expires (Supabase default 1 hour).
  */
@@ -147,6 +150,7 @@ export class SupabaseSessionVerifier implements SessionVerifier {
   private readonly keysTtlMs: number;
   private readonly refetchMinMs: number;
   private readonly timeoutMs: number;
+  private readonly providers: ReadonlySet<string>;
   private keys = new Map<string, { alg: "ES256" | "RS256"; key: KeyObject }>();
   private fetchedAt = Number.NEGATIVE_INFINITY;
   private lastAttempt = Number.NEGATIVE_INFINITY;
@@ -160,6 +164,7 @@ export class SupabaseSessionVerifier implements SessionVerifier {
     this.keysTtlMs = options.keysTtlMs ?? 10 * 60_000;
     this.refetchMinMs = options.refetchMinMs ?? 30_000;
     this.timeoutMs = options.timeoutMs ?? 5_000;
+    this.providers = new Set(options.providers ?? ["apple", "google"]);
   }
 
   async verify(header: string | undefined, now: Date): Promise<AuthenticatedUser | null> {
@@ -198,6 +203,9 @@ export class SupabaseSessionVerifier implements SessionVerifier {
     ) {
       return null;
     }
+    const meta = claims.app_metadata;
+    const provider = typeof meta === "object" && meta !== null ? (meta as Record<string, unknown>).provider : undefined;
+    if (typeof provider !== "string" || !this.providers.has(provider)) return null;
     return { userId: claims.sub };
   }
 

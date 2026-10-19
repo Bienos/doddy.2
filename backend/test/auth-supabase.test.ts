@@ -36,6 +36,7 @@ function token(
     iat: NOW_S - 10,
     exp: NOW_S + 3600,
     is_anonymous: false,
+    app_metadata: { provider: "google", providers: ["google"] },
     ...claims,
   });
   const data = Buffer.from(`${header}.${body}`);
@@ -103,6 +104,17 @@ test("forged, re-signed, algorithm-swapped and malformed tokens are refused", as
   for (const bad of [undefined, "", "Basic abc", "Bearer a.b", `Bearer ${good}.x`, `Bearer ${good} extra`]) {
     assert.equal(await v.verify(bad, NOW), null, String(bad));
   }
+});
+
+test("only Apple and Google accounts count; email, phone or a missing method are refused", async () => {
+  const { fetchJson } = jwks([jwk(ec.publicKey, "k1", "ES256")]);
+  const v = new SupabaseSessionVerifier({ projectUrl: PROJECT, fetchJson });
+  assert.deepEqual(await v.verify(bearer(token({ app_metadata: { provider: "apple" } })), NOW), { userId: USER });
+  assert.deepEqual(await v.verify(bearer(token()), NOW), { userId: USER });
+  for (const app_metadata of [{ provider: "email" }, { provider: "phone" }, { providers: ["google"] }, {}, null, "google"]) {
+    assert.equal(await v.verify(bearer(token({ app_metadata })), NOW), null, JSON.stringify(app_metadata));
+  }
+  assert.equal(await v.verify(bearer(token({ app_metadata: undefined })), NOW), null, "no app_metadata");
 });
 
 test("an owner token is not mistaken for a Supabase one, and fetches nothing", async () => {
