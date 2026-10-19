@@ -7,12 +7,13 @@
 | [swift-crypto](https://github.com/apple/swift-crypto) (+ swift-asn1) | 3.15.1 (exact pin, `Packages/DoddyCore/Package.resolved`) | Apache-2.0 | **Linux only**: the CryptoKit API for testing the encrypted backup (ADR-222) in CI. The iPhone app uses Apple's CryptoKit and doesn't link it |
 | [ElevenLabs Swift SDK](https://github.com/elevenlabs/elevenlabs-swift-sdk) | 3.3.1 (exact pin in `project.yml`) | MIT | Voice conversations with the ElevenLabs agent (V1) |
 | [LiveKit Swift SDK](https://github.com/livekit/client-sdk-swift) | ≥ 2.10.0 (pulled in by the ElevenLabs SDK; also a direct dependency of the app since ADR-207) | Apache-2.0 | Real-time audio transport used by the ElevenLabs SDK; the app sets its audio session so a conversation survives other apps' sound |
-| [Porcupine](https://github.com/Picovoice/porcupine) (Picovoice) | v4.0 release commit `c794ad57b189f4b06e8128abd0324ad09e1a424d` (revision pin in `project.yml`; its two-part tags aren't SwiftPM versions) | Apache-2.0 for the repository; the bundled `PvPorcupine` binary only runs with a Picovoice AccessKey under Picovoice's terms (free plan for personal use; **commercial use needs a Picovoice plan, owner decision before any release**) | "Hey Doddy" on-device wake word (ADR-254). The user brings their own AccessKey and keyword file; none is in the repository. Picovoice checks the AccessKey online when listening starts; no audio leaves the iPhone |
-| [ios-voice-processor](https://github.com/Picovoice/ios-voice-processor) (via Porcupine) | ≥ 1.2.0 | Apache-2.0 | Porcupine's microphone recorder (sets `playAndRecord` with `mixWithOthers`; doesn't deactivate the session when it stops) |
 
 Everything else is Apple system frameworks (`SwiftUI`, `UIKit`, `Foundation`, `AVFAudio`, system SQLite). No analytics,
-no crash reporting, no fonts. Of these packages, the ElevenLabs voice session (while it is open) and, with "Hey Doddy" on,
-Porcupine's AccessKey check with Picovoice are the only network connections.
+no crash reporting, no fonts. Of these packages, the ElevenLabs voice session (while it is open) is the only network
+connection. "Hey Doddy" (ADR-472) uses Apple's on-device speech recognition (`Speech` framework), which needs no
+package, key or separate licence; **Picovoice Porcupine was removed because its free plan is personal, non-commercial
+use only** (a paid Picovoice plan would be needed to ship it commercially). `scripts/check_forbidden_capabilities.sh`
+fails if a wake-word vendor library comes back.
 
 ## Connected Apps backend (`backend/`, server-side only, never in the app)
 Pinned exactly in `backend/package.json`; full tree locked in `backend/package-lock.json`.

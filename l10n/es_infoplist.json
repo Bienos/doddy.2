@@ -28,7 +28,7 @@
     "es": "Doddy añade, cambia, completa o elimina un recordatorio solo después de que toques Añadir, Cambiar, Marcar como hecho o Eliminar. Desactívalo en Ajustes, Conexiones."
   },
   "NSSpeechRecognitionUsageDescription": {
-    "en": "Doddy writes out a voice memo on this iPhone when you record one, so you can check its words before saving. The recording and its words are not sent anywhere.",
-    "es": "Doddy transcribe una nota de voz en este iPhone cuando la grabas, para que puedas revisar su texto antes de guardarla. La grabación y su texto no se envían a ningún sitio."
+    "en": "Doddy writes out a voice memo on this iPhone when you record one, so you can check its words before saving. If you turn on Hey Doddy, it also listens for the wake word with speech recognition on this iPhone. The sound and its words are not kept or sent anywhere.",
+    "es": "Doddy transcribe una nota de voz en este iPhone cuando grabas una, para que puedas revisar sus palabras antes de guardarla. Si activas Hey Doddy, también escucha la palabra de activación con el reconocimiento de voz de este iPhone. El sonido y sus palabras no se guardan ni se envían a ningún sitio."
   }
 }

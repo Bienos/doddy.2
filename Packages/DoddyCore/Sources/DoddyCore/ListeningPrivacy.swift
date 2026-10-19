@@ -42,7 +42,7 @@ public struct MicrophoneSnapshot: Equatable, Sendable {
     public var conversation: Conversation
     /// What "Hey Doddy" would do now (`WakeListenerPolicy`).
     public var heyDoddy: WakeListenerState
-    /// Porcupine's recorder is running.
+    /// The wake-word listener's recorder is running.
     public var heyDoddyRunning: Bool
     public var voiceMemoRecording: Bool
 
@@ -67,7 +67,7 @@ public struct MicrophoneSnapshot: Equatable, Sendable {
     /// waiting for Doddy to open, or listening. Stop listening turns it off, so it can't.
     public var heyDoddyCouldListen: Bool {
         switch heyDoddy {
-        case .off, .needsSetUp, .microphoneDenied, .failed: heyDoddyRunning
+        case .off, .speechNotAllowed, .speechUnavailable, .microphoneDenied, .failed: heyDoddyRunning
         case .waitingForApp, .listening, .paused: true
         }
     }

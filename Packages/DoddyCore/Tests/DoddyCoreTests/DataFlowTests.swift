@@ -31,19 +31,14 @@ final class DataFlowTests: XCTestCase {
         XCTAssertEqual(row("elevenlabs", base).what, "Your voice, the conversation, your saved notes, your list names (items only when Doddy reads or changes a list) and your personality settings.")
     }
 
-    /// ADR-254: Picovoice only gets the AccessKey, and only while "Hey Doddy" is on; the sound it
-    /// listens to stays on the iPhone.
-    func testHeyDoddyRowFollowsTheSwitch() {
-        let off = row("picovoice", base)
-        XCTAssertFalse(off.isActive)
-        XCTAssertTrue(off.note?.contains("off") ?? false)
+    /// ADR-472: the wake-word listener sends nothing anywhere, so it has no network row; what it
+    /// does is listed under what stays on the iPhone.
+    func testHeyDoddyHasNoNetworkRowAndStaysOnThePhone() {
         var state = base
         state.heyDoddyOn = true
-        let on = row("picovoice", state)
-        XCTAssertTrue(on.isActive)
-        XCTAssertTrue(on.what.contains("AccessKey"))
-        XCTAssertTrue(on.what.contains("No sound"))
+        XCTAssertNil(DataFlow.rows(state).first { $0.id == "picovoice" })
         XCTAssertTrue(DataFlow.staysOnPhone(base).contains { $0.hasPrefix("\"Hey Doddy\":") })
+        XCTAssertFalse(DataFlow.networkSummary(state).contains("Picovoice"))
     }
 
     func testVoiceRowGrowsWithWhatIsSwitchedOn() {
@@ -159,7 +154,7 @@ final class DataFlowSummaryTests: XCTestCase {
             }
         }
         // The audit's missing ones are there when they're on.
-        for name in ["your Doddy messaging server", "Apple Maps", "European Central Bank", "iCloud", "Picovoice", "Siri", "the Ask Doddy gateway"] {
+        for name in ["your Doddy messaging server", "Apple Maps", "European Central Bank", "iCloud", "Siri", "the Ask Doddy gateway"] {
             XCTAssertTrue(summary.contains(name), name)
         }
     }
@@ -169,7 +164,7 @@ final class DataFlowSummaryTests: XCTestCase {
         state.siriReadsNotes = false
         state.pauseAll = true
         let summary = DataFlow.networkSummary(state)
-        for name in ["voice token server", "Doddy server", "messaging server", "Ask Doddy", "Siri", "Picovoice", "iCloud", "European Central Bank", "OpenAI"] {
+        for name in ["voice token server", "Doddy server", "messaging server", "Ask Doddy", "Siri", "iCloud", "European Central Bank", "OpenAI"] {
             XCTAssertFalse(summary.contains(name), "\(name) is off but named: \(summary)")
         }
         XCTAssertTrue(summary.hasPrefix("ElevenLabs (while talking)"), "voice is always possible")

@@ -19,8 +19,6 @@ targets:
         product: DoddyPersistence
       - package: ElevenLabs
       - package: LiveKit
-      - package: Porcupine
-        product: Porcupine
 # Only the iPhone app's scheme here; the watch app has its own in project.yml.
 schemes:REPLACE:
   Doddy:

@@ -28,7 +28,7 @@
     "pt-BR": "O Doddy só adiciona, altera, conclui ou apaga um lembrete depois que você toca em Adicionar, Alterar, Marcar como concluído ou Apagar. Desative em Ajustes, Conexões."
   },
   "NSSpeechRecognitionUsageDescription": {
-    "en": "Doddy writes out a voice memo on this iPhone when you record one, so you can check its words before saving. The recording and its words are not sent anywhere.",
-    "pt-BR": "O Doddy transcreve uma gravação de voz neste iPhone quando você grava uma, para você conferir as palavras antes de salvar. A gravação e as palavras dela não são enviadas a lugar nenhum."
+    "en": "Doddy writes out a voice memo on this iPhone when you record one, so you can check its words before saving. If you turn on Hey Doddy, it also listens for the wake word with speech recognition on this iPhone. The sound and its words are not kept or sent anywhere.",
+    "pt-BR": "O Doddy transcreve uma nota de voz neste iPhone quando você grava uma, para você conferir as palavras antes de salvar. Se você ativar o Hey Doddy, ele também escuta a palavra de ativação com o reconhecimento de fala deste iPhone. O som e suas palavras não são guardados nem enviados para lugar nenhum."
   }
 }

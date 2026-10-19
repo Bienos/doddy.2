@@ -28,7 +28,7 @@
     "zh-Hans": "只有在你轻点“添加”、“更改”、“标记为完成”或“删除”后，Doddy 才会添加、更改、完成或删除提醒。可在设置的“连接”中关闭。"
   },
   "NSSpeechRecognitionUsageDescription": {
-    "en": "Doddy writes out a voice memo on this iPhone when you record one, so you can check its words before saving. The recording and its words are not sent anywhere.",
-    "zh-Hans": "当你录制语音备忘录时，Doddy 会在这台 iPhone 上将其转写成文字，以便你在保存前检查内容。录音及其文字不会发送到任何地方。"
+    "en": "Doddy writes out a voice memo on this iPhone when you record one, so you can check its words before saving. If you turn on Hey Doddy, it also listens for the wake word with speech recognition on this iPhone. The sound and its words are not kept or sent anywhere.",
+    "zh-Hans": "你录制语音备忘录时，Doddy 会在这部 iPhone 上把它转成文字，方便你在保存前核对内容。如果你开启 Hey Doddy，它还会用这部 iPhone 上的语音识别聆听唤醒词。声音及其文字不会被保存，也不会被发送到任何地方。"
   }
 }
