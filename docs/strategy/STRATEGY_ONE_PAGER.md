@@ -17,7 +17,7 @@
 **Why we win:**
 - **It asks first and never fakes "done".** Every action waits for your tap, and "done" means you tapped Gotowe or the provider confirmed it.
 - **It works in Polish now,** and still holds your sprawy without the internet, honestly plainer.
-- **Several parts of the loop already exist:** the original text kept unchanged, local reminders with a Done button, ask-first cards and undo. Joining them is the work before the beta. None of it has run on a device yet.
+- **Several parts of the loop already exist:** the original text kept unchanged, local reminders with a Done button, ask-first cards and undo. Joining them is the work before the beta. The loop as one flow has never run on a device.
 
 **Money:** the beta is free. Pricing comes after, with measured voice costs.
 
