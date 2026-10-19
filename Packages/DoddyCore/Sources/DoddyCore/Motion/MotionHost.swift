@@ -119,6 +119,11 @@ public final class MotionHost: MotionWorld {
     /// screen with a surface on it). Returns false while the screen hasn't reported one.
     @discardableResult
     public func placeOnCurrentScreen(sitting: Bool = false, idleBehaviours: Bool = false) -> Bool {
+        // Wait (up to `screenReportWait`) for the screen to report its own spot: at launch the
+        // tab bar can report before Home's stage, and he must not start on the rail.
+        let asked = placeAskedAt ?? engine.now
+        placeAskedAt = asked
+        guard screenHasReported() || engine.now - asked >= Self.screenReportWait else { return false }
         guard let spot = preferredSpot(for: engine), scene.frames[spot.surface] != nil else { return false }
         var p = MotionEngine.Placement(spot: spot)
         p.sitting = sitting
@@ -146,6 +151,9 @@ public final class MotionHost: MotionWorld {
         relocatedFrom = nil
         pendingTab = (screen, tapT)
     }
+
+    /// When the app first asked to place him.
+    var placeAskedAt: Double?
 
     /// Memories' still spots: the empty notes screen and the empty Lists screen.
     public static let memoriesLedges = ["emptyMemories", "emptyLists"]
@@ -237,6 +245,17 @@ public final class MotionHost: MotionWorld {
         if pendingTab != nil { resolvePendingTab() }
         goToFindIfWaiting()
         relocateIfSurfaceGone()
+        returnToSpotIfWaitingForNothing()
+    }
+
+    /// He stands on the rail (or the strip) with nothing to wait for (no rapid switching, no
+    /// scroll) while his screen's own spot is on screen: he goes to it. A screen that reports its
+    /// spot late, or a spot that comes back, gets him.
+    func returnToSpotIfWaitingForNothing() {
+        guard isActive, scene.covers == 0, pendingTab == nil, engine.mode == .attached, !engine.calm, !engine.scrollWait,
+              let a = engine.anchor, a.surface == .rail || a.surface == .panel else { return }
+        guard let pref = preferredSpot(for: engine), !isWaitSpot(pref), mountedFrame(pref.surface) != nil else { return }
+        engine.updateDestination(MotionReason("his spot on this screen is here"))
     }
 
     func relocateIfSurfaceGone() {

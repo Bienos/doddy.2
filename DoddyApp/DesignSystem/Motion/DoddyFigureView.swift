@@ -51,12 +51,22 @@ struct PersistentDoddyView: View {
             .frame(width: width, height: height * ground, alignment: .top)
             .opacity(figure.opacity)
             .allowsHitTesting(false)
+            .accessibilityHidden(true)
             .onAppear { DoddyDirector.shared.drawingAppeared() }
             .onDisappear { DoddyDirector.shared.drawingGone() }
         if DoddyArtMarkers.isOn {
-            drawn.doddyArtMarker(art.marker)
+            // The UI tests' marker is a box exactly his laid-out size, its bottom edge his soles
+            // (the picture's own frame reaches below them, to its transparent margin).
+            drawn.overlay {
+                Rectangle()
+                    .fill(Color.white.opacity(0.01))
+                    .allowsHitTesting(false)
+                    .accessibilityElement()
+                    .accessibilityLabel(art.marker)
+                    .accessibilityIdentifier(art.marker)
+            }
         } else {
-            drawn.accessibilityHidden(true)
+            drawn
         }
     }
 }
@@ -68,8 +78,12 @@ struct DoddySlotFigure: View {
 
     var body: some View {
         if let figure = director.figure {
-            PersistentDoddyView(figure: figure)
-                .alignmentGuide(.top) { $0[.bottom] }
+            // A zero-size point on the surface's top edge, with him standing on it: his soles are
+            // on the edge whatever his height (an alignment guide doesn't pass through the slot's
+            // stack, which drew him hanging below the edge in hosted run 39210073005).
+            Color.clear
+                .frame(width: 0, height: 0)
+                .overlay(alignment: .bottom) { PersistentDoddyView(figure: figure).fixedSize() }
                 // Relative to the surface's own frame, so it stays exact while the system moves it.
                 .offset(x: CGFloat(figure.slotDX), y: CGFloat(figure.slotDY))
         }
