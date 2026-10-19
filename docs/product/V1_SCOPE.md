@@ -14,6 +14,8 @@
 
 ## The one promise (owner decision 1)
 
+> **Answered by the owner on 19 Oct (ADR-540):** the sprawa direction. You hand Doddy a sprawa, it keeps your exact words, brings it back at the right moment with the next step ready, and acts only on your tap. "Sharp online. Clumsy offline. Honest always." See `docs/strategy/sprawa-loop.md`. The suggestion below is kept as history; the rest of this file is still a proposal.
+
 Three different promises are in use today:
 
 | Where | Promise |

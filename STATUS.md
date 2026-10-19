@@ -1,8 +1,23 @@
 # Doddy: current status (read this first)
 
-Doddy is a voice-first memory companion for iPhone, with an Apple Watch app and a Mac menu bar prototype. This page is the short version. Update it when you merge something that changes what is below.
+Doddy is a Polish-first, voice-first **pomocnik** for iPhone, not a companion. You hand it a **sprawa** (an errand or a promise hanging over you). It keeps your exact words, brings the sprawa back at the right moment with the next step ready, and acts only on your tap. **Sharp online. Clumsy offline. Honest always.** An Apple Watch app and a Mac menu bar prototype exist, but they aren't part of the beta. This page is the short version. Update it when you merge something that changes what is below.
 
-Last updated 2026-10-18 (stage A, ADR-520 to ADR-524). Before that, the same day: PR #85, BLIK transfers (ADR-510), on main.
+Last updated 2026-10-19 (Phase 1 of the beta plan: the sprawa direction, ADR-540, branch `claude/bold-noether-gtd1l5`, waiting for the owner's review). Before that, 18 Oct: stage A (ADR-520 to ADR-524).
+
+## North star and current milestone
+- **North star: `docs/strategy/sprawa-loop.md`.** The first session, step by step: "Co ci wisi nad głową?" → the user's exact words → one question about when → a sprawa card → a notification with the next step and "Gotowe?" → logged done, with undo. It also lists what exists in the code, what's missing, and how each step fails. **The loop isn't built as one flow and has never run on a device.**
+- **Strategy:** `docs/strategy/STRATEGY.md` (one page: `STRATEGY_ONE_PAGER.md`; pitch: `PITCH.md`). It ends with six open decisions for the owner.
+- **Current milestone: M5, the 2-week private beta.** 20 Polish iPhone users on private TestFlight. Milestone text: `docs/implementation/MILESTONES.md`. What's measured: `docs/product/VALIDATION.md`.
+- **Feature freeze:** no new tools, integrations, platforms or UI features until the beta is done. `claude/payments-apple-pay-blik` isn't merged.
+- **The five phases to the beta,** one PR each, with a stop for the owner after each:
+
+  | Phase | What | State |
+  |---|---|---|
+  | 1 | Write the direction down: strategy, sprawa loop, metrics, branch list | Done on `claude/bold-noether-gtd1l5`; waiting for review |
+  | 2 | Stabilise main for a device run: one voice session at a time, lifecycle log, the ASK-01 check, device checklist | Not started |
+  | 3 | TestFlight blockers: privacy policy draft, AI disclosure, retention, daily cap, bundle ID list, token flow | Not started |
+  | 4 | Skill router in front of the voice tools (82 in `voice-agent/tools.json` on 19 Oct), P1 skills with evals | Not started |
+  | 5 | Polish review export, speech-recognition comparison, metrics and weekly report | Not started |
 
 **On 18 Oct, main was broken in three ways** (`docs/implementation/GO_LIVE_CHECKLIST.md`, stage A). Branch `claude/fervent-edison-3gnqpq` carries the code fixes for two of them; the rest needs the owner:
 1. **Voice couldn't connect.** The app hard-coded `https://doddy-voice-token.vercel.app`, which answers 402 DEPLOYMENT_DISABLED, and `754e5d6` removed the public-agent fallback. The fix points the app at `doddy-voice-token-beta.vercel.app` (ADR-521). That server still needs its sign-in settings before anyone can talk (checklist A4).
@@ -39,18 +54,18 @@ Each platform has its own project spec, so one platform's code can't break anoth
 | iPhone and iPad | `DoddyApp/`, `Shared/`, `DoddyWidgets/`, `DoddyShare/` | `project.yml` → `Doddy`; `project-iphone.yml` (no Watch app) → `Doddy` | Built and used by the owner on device. The voice agent was seen working on 2026-10-11. | `docs/platforms/iphone.md` |
 | Apple Watch | `DoddyWatch/`, `DoddyWatchWidgets/` | `project.yml` → `DoddyWatch` (embedded in the iPhone app) | Compiles in hosted CI since #69; never run | `docs/platforms/watch.md` |
 | Mac | `DoddyMac/`, `DoddyMacWidgets/` | `project-mac.yml` → `DoddyMac` | Prototype, on main since PR #61 (13 Oct); never compiled, and not in CI | `docs/platforms/mac.md` |
-| Shared core | `Packages/DoddyCore/` | Swift package, used by every platform | Tests run on Linux, 934 passing | `docs/platforms/README.md` |
+| Shared core | `Packages/DoddyCore/` | Swift package, used by every platform | Tests run on Linux: 1,146 passing on 19 Oct (Swift 6.1.2, main at `01e7b345`) | `docs/platforms/README.md` |
 
-## Not merged yet: what each branch would change
-Merge one at a time, then rebuild and talk to Doddy before the next.
+## Not merged yet: every branch
+**`docs/branches.md`** lists all 141 remote branches (19 Oct), each with its last commit, whether it's on main, any open PR, and a suggestion: merge 6, keep 22, close 112. Nothing was deleted, closed or merged; the owner reviews the list. Merge one at a time, then rebuild and talk to Doddy before the next.
 
-| Branch / PR | What it changes | Risk to voice |
-|---|---|---|
-| PR #86 `claude/connect-in-conversation` (draft) | Connect an online account from the conversation (claims ADR-483 too: renumber) | Hold until the v1 scope is marked up |
-| `claude/admiring-curie-bsuwv9-all` (PR #67, closed without merging) | 43 commits not on main. Its parts landed separately on 13 Oct: #76, then #53, #56, #57 and #58 | Check what's left before reusing it |
-| `claude/trusting-dirac-o8ajzc` | Voice screen shows Doddy with a sound wave; the transcript is one tap away; the wave follows loudness | Medium: adds audio level meters to the live session |
-| `claude/affectionate-mayer-aovol9` | Island compact view draws a pre-cut round face | Low |
-| `claude/dismiss-ended-card` | Nothing: its changes were reverted | None |
+The four merges that matter for the beta, each through its own PR:
+- PR #94 `claude/happy-volta-9a11kw`: keeps private notes out of every Memory-on-calls upload (a privacy fix).
+- `claude/epic-wright-vz93xh`: the 19 Oct check that the voice token server has all its production settings.
+- `claude/trusting-sagan-7lky84`: the correct ASK-01 rollback version for the live agent.
+- `claude/elegant-hopper-6qrj3z`: the first live Gmail read and send, recorded.
+
+Since 18 Oct, `claude/admiring-curie-bsuwv9-all` and `claude/dismiss-ended-card` have nothing main needs. `claude/trusting-dirac-o8ajzc` (sound wave) and `claude/affectionate-mayer-aovol9` (island face) are frozen UI work, suggested close. PR #86 (connect in conversation) is kept, frozen.
 
 PR #44 (action status, session recovery, Stop listening, unfinished notes) and PR #61 (iPad, Watch, Mac, per-platform projects) are **on main** since 13 Oct, through PR #79. They were compiled in CI and have never run on a device.
 
@@ -70,9 +85,13 @@ PR #87 (`claude/trusting-sagan-7lky84`) is **on main** since 18 Oct, merged at t
 - **Vercel:** the `doddy` project (team `doddyyyy`) built and published the site from the default branch on 2026-10-14 (www.doddy.lol); the earlier "account blocked" failures did not recur on that build. The free plan allows 100 deployments a day, and skipped ones count: on 18 October the limit was reached by 12:22 UTC (100 deployments since 09:34, 86 of them skipped), so Vercel refused new ones and showed "Account is blocked". Since 18 October only the production branch deploys: preview deployments are off in all three projects' settings (go-live checklist A10), and each `vercel.json` says the same (ADR-498, PR #84, carried by `claude/fervent-edison-3gnqpq`). GitHub Actions stopped starting jobs on 16 October and ran again on 18 October at 15:08 UTC (run 39139146509).
 
 ## Waiting on the owner
-- Mark up `docs/product/V1_SCOPE.md`: Ship, Hide or Cut for each feature, plus the eight decisions at its end.
+- **Phase 1 review** (this branch):
+  - the six open decisions at the end of `docs/strategy/STRATEGY.md`, above all which of the loop's nine changes (`sprawa-loop.md`) count as fixes under the freeze;
+  - the beta thresholds in `docs/product/VALIDATION.md`, and how the beta's metrics reach you (on the iPhone, or Doddy's server);
+  - the merge, keep and close list in `docs/branches.md`.
+- Mark up `docs/product/V1_SCOPE.md`: Ship, Hide or Cut for each feature, plus the eight decisions at its end. Decision 1, the one promise, is answered by the sprawa direction (ADR-540).
 - Stage A of `docs/implementation/GO_LIVE_CHECKLIST.md`:
-  - the voice token server's sign-in settings on Vercel (Upstash Redis, signing key, `APPLE_BUNDLE_ID`), then a redeploy;
+  - the voice token server's sign-in settings on Vercel (Upstash Redis, signing key, `APPLE_BUNDLE_ID`), then a redeploy. A 19 Oct check on branch `claude/epic-wright-vz93xh` (not on main) records them all set and production redeployed from `fc8a502`;
   - Sign in with Apple on the App ID (needs a paid team);
   - then build on a Mac and talk to Doddy on the phone.
 - GitHub Actions cost: 12–14 October used about $250, almost all of it the macOS build. ADR-497 (PR #84) makes that build wait for the Linux checks and skip pull requests that don't touch the app.
@@ -90,7 +109,7 @@ PR #87 (`claude/trusting-sagan-7lky84`) is **on main** since 18 Oct, merged at t
 - The final icons.
 
 ## How agents should read this repo
-1. This page, then **only** the page for the platform you are working on, under `docs/platforms/`.
+1. This page, then **only** the page for the platform you are working on, under `docs/platforms/`. For product work, also read `docs/strategy/sprawa-loop.md`, the north star.
 2. That page lists the folders and the status doc for each feature. Open those, not the whole tree.
 3. **Don't read `DECISIONS.md` (about 770 lines) whole.** Search it for an ADR number: `grep -n "| 452 |" DECISIONS.md`.
 4. Ignore `reference/`, which is historical.
