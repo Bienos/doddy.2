@@ -46,6 +46,32 @@ public struct MotionArt: Equatable, Sendable {
     /// the settle is done (about 280 ms).
     static let contactMs = 90.0, settleMs = 280.0
 
+    /// The wave strip (pack 016) frame by frame, 140 ms each, then it rests on the open hand
+    /// (as the app's wave has since ADR-380).
+    static let waveFrameMs = 140.0
+
+    /// A gesture's picture, if the pack has one. The welcome is the wave (Q15: the brief's eyes
+    /// and head roll can't be drawn yet); the stretch is the yawn-and-stretch pose. The others
+    /// (introduce, trace, look, edge sit) have no art and keep his standing picture.
+    static func gesture(_ name: String, at t: Double) -> Picture? {
+        switch name {
+        case "wave", "welcome", "welcomeEvening":
+            return .strip("wave", 1 + min(4, max(0, Int(t / waveFrameMs))))
+        case "stretch":
+            return .pose("yawn_stretch")
+        default:
+            return nil
+        }
+    }
+
+    /// Breathing on the pack's four-frame breath (013): frames 1 to 4 on the way in, back to 1 on
+    /// the way out, one breath per cycle of the engine's breath (4.2 s).
+    static func breathFrame(_ phase: Double) -> Int {
+        let f = phase - phase.rounded(.down)
+        let depth = (1 - cos(2 * Double.pi * f)) / 2
+        return 1 + Int((depth * 3).rounded())
+    }
+
     /// His picture now. `still` replaces the standing picture when the screen asks for one (the
     /// empty Memories spot is cross-legged; a problem on screen is the facepalm, plan Q4).
     public static func choose(_ e: MotionEngine, still: String? = nil) -> MotionArt {
@@ -71,10 +97,17 @@ public struct MotionArt: Equatable, Sendable {
         var picture: Picture
         if p.listening {
             picture = .pose("listening")
+        } else if e.isThinking {
+            // Waiting for Ask's reply: the voice screen's thinking pose (kneeling, glove at chin).
+            picture = .pose("kneeling_inspect")
+        } else if let g = e.gestureName, let art = gesture(g, at: e.gestureElapsed) {
+            picture = art
         } else if p.sit > 0.5 {
             picture = .pose("crosslegged")
         } else if let still {
             picture = .pose(still)
+        } else if let phase = e.breathPhase {
+            picture = .strip("idle", breathFrame(phase))
         } else {
             picture = .strip("idle", 1)
         }

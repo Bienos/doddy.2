@@ -20,6 +20,17 @@ owner's illustrator. Source: `MOTION_V2_PLAN.md` section 3; each milestone adds 
 | A screen-wide problem on his screen | `WholeDoddy_facepalm` (ADR-299 meaning) |
 | Listening (MV5, only from the voice session's real `.listening` phase) | `WholeDoddy_listening` |
 
+MV5 (19 Oct 2026) adds:
+
+| What the engine is doing | Picture shown |
+|---|---|
+| Three breaths | `DoddyMotion_idle_1` to `_4` on the way in, back to `_1` on the way out, one breath per 4.2 s (whether frame 4 is the deepest breath is to be checked by eye) |
+| The welcome (once a day) and the wave (the session's playful moment) | `DoddyMotion_wave_1` to `_5`, 140 ms each, resting on frame 5 (as ADR-380's wave). The brief's welcome is eyes and a head roll, which the pack can't draw (Q15) |
+| The stretch (playful moment while sitting) | `WholeDoddy_yawn_stretch` for the whole gesture |
+| Thinking in Ask (no reply after 600 ms) | `WholeDoddy_kneeling_inspect` |
+| An upward flick, the 3-day welcome hop | The hop strip, in place |
+| Touch-down dip, drag-lean | Squash and tilt of the current picture (Q7) |
+
 Squash on landing and the lean are transforms of the whole current picture (Q7).
 
 ## Missing, and what the app does instead
@@ -30,6 +41,9 @@ Squash on landing and the lean are transforms of the whole current picture (Q7).
 | Blink, and the slow 280 ms blink | Possibly pack 007 (heads only), not imported | No blink. |
 | Eyes closed in contentment | `WholeDoddy_yawn_stretch` has closed eyes but yawns with raised arms | Not shown. |
 | Squint on touch | None | Not shown (MV5's touch-down dip is a whole-picture squash only). |
+| Head rub: eyes closed, head tipping with the stroke | None | A stroke across his head is a drag (lean) only. |
+| Stand-up from sitting, sit-down to cross-legged | Sit strip (017) sits on a box | He cuts between standing and `WholeDoddy_crosslegged`. |
+| The rest of the stretch: onto his toes, eyes closed for 200 ms | `WholeDoddy_yawn_stretch` yawns, feet flat | The yawn-and-stretch pose stands in for the whole stretch. |
 | Head roll (welcome 5°, introduce −8°, thinking 4°) | None; only a whole-figure tilt | The default and evening welcomes are not played. |
 | Two shuffle step poses | `DoddyMotion_walk_*` is side-on travel, which the brief forbids for moving around | Every move is a hop. |
 | Brace, arms out, both feet down | `WholeDoddy_oneleg_balance` lifts a foot | No brace picture; he stays in his standing picture. |

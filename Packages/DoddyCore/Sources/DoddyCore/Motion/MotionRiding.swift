@@ -110,14 +110,19 @@ extension MotionHost {
     /// Whether the clock should keep running for the list: it is moving, or he is waiting on the
     /// rail for it to settle.
     public var wantsFrames: Bool {
+        if scene.finger.isDown { return true }
         guard canRideList else { return false }
         return scene.scroll.isMoving || engine.scrollWait
     }
 
-    /// The next moment the host needs a frame although he is still (the settle after a scroll).
+    /// The next moment the host needs a frame although he is still: the settle after a scroll,
+    /// thinking 600 ms after a question, the session's playful moment after 8 s of idle.
     public var nextDue: Double? {
-        guard canRideList, engine.scrollWait, let slow = scene.scroll.slowSince else { return nil }
-        return slow + MotionTiming.lilySettleFor + 1
+        var due: [Double] = []
+        if canRideList, engine.scrollWait, let slow = scene.scroll.slowSince { due.append(slow + MotionTiming.lilySettleFor + 1) }
+        if let sent = askSentAt, !engine.isThinking { due.append(sent + MotionHost.thinkingAfter + 1) }
+        if let t = playfulDue { due.append(t) }
+        return due.min()
     }
 
     // MARK: Ask's composer (Q2)

@@ -92,6 +92,14 @@ public final class MotionHost: MotionWorld {
     public var onStartVoice: (() -> Bool)?
     /// The surface he was last moved off because it went away (so it is answered once).
     var relocatedFrom: MotionSpot?
+    /// MV5: breaths, the 15 s sit, the welcome and the session's playful moment are on.
+    public var behaviours = false
+    /// Today's welcome, if he hasn't welcomed you today (MotionWelcome decides it).
+    public var welcomeToday: WelcomeKind?
+    /// Ask's question was sent at this time and the reply hasn't come (MV5: thinking).
+    var askSentAt: Double?
+    /// Where a touch on him started.
+    var touchStart: MotionPoint?
     /// MV4: Ask is opening and its composer hasn't reported yet (he is unseen until it has).
     var talkPending = false
     /// The tab Ask was opened from (Home), where he goes back to as it closes.
@@ -114,9 +122,13 @@ public final class MotionHost: MotionWorld {
         guard let spot = preferredSpot(for: engine), scene.frames[spot.surface] != nil else { return false }
         var p = MotionEngine.Placement(spot: spot)
         p.sitting = sitting
-        // MV3: no 15 s sit and no welcome yet (MV5 turns them on).
-        p.noSit = !idleBehaviours
-        p.welcome = false
+        // MV5: the 15 s sit, three breaths soon after he appears, and today's welcome, while the
+        // app has turned the behaviours on (MV3 had none of them).
+        let living = idleBehaviours || behaviours
+        p.noSit = !living
+        if living { p.breathAt = MotionHost.firstBreathAfter }
+        p.welcome = living && welcomeToday != nil
+        p.welcomeKind = welcomeToday
         var lastInput = scene.lastInput, lastTap = scene.lastTap
         engine.place(p, lastInputWillBe: &lastInput, lastTapWillBe: &lastTap)
         scene.lastInput = lastInput
@@ -221,6 +233,7 @@ public final class MotionHost: MotionWorld {
         settleScroll()
         carryIntoTalkIfReady()
         liftOntoPanelIfWaiting()
+        settleBehaviours()
         if pendingTab != nil { resolvePendingTab() }
         goToFindIfWaiting()
         relocateIfSurfaceGone()

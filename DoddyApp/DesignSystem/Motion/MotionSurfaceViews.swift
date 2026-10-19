@@ -148,6 +148,14 @@ struct DoddySlot: View {
             }
         }
         .allowsHitTesting(false)
+        // MV5 (Q14): on Home's stage, his clear zone takes a touch (a tap or a hold opens the
+        // voice screen, a drag leans him, a flick hops). Hidden from VoiceOver: Home's
+        // "Talk to Doddy" button stays the accessible way. The drawing itself never takes a tap.
+        .overlay(alignment: .top) {
+            if id == .stage, DoddyDirector.shared.placement == .slot(.stage) {
+                DoddyTouchArea()
+            }
+        }
     }
 
     /// `doddy.surface.stage`, `doddy.surface.rule.0`, `doddy.surface.ledge.settings`.
@@ -179,5 +187,39 @@ struct LedgeLine: View {
             .frame(width: width, height: 1)
             .accessibilityHidden(true)
             .motionSurface(.ledge(name))
+    }
+}
+
+/// His clear zone on Home's stage as a touch target (MV5, Q14). Only the zone above his soles,
+/// so Home scrolls everywhere else; within it a drag leans him instead.
+struct DoddyTouchArea: View {
+    @State private var down = false
+    private var director: DoddyDirector { .shared }
+
+    var body: some View {
+        if let figure = director.figure {
+            let zone = MotionLayout.zone(soles: MotionPoint(x: figure.x, y: figure.y), scale: figure.scale)
+            Color.clear
+                .frame(width: CGFloat(zone.width), height: CGFloat(zone.height))
+                .contentShape(Rectangle())
+                .gesture(
+                    DragGesture(minimumDistance: 0, coordinateSpace: .global)
+                        .onChanged { value in
+                            if !down {
+                                down = true
+                                director.touchDown(x: Double(value.startLocation.x), y: Double(value.startLocation.y))
+                            }
+                            director.touchMoved(x: Double(value.location.x), y: Double(value.location.y),
+                                                vx: Double(value.velocity.width), vy: Double(value.velocity.height))
+                        }
+                        .onEnded { value in
+                            down = false
+                            director.touchUp(vx: Double(value.velocity.width), vy: Double(value.velocity.height))
+                        }
+                )
+                .alignmentGuide(.top) { $0[.bottom] }
+                .offset(x: CGFloat(figure.slotDX), y: CGFloat(figure.slotDY))
+                .accessibilityHidden(true)
+        }
     }
 }

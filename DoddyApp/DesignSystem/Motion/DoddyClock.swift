@@ -29,6 +29,11 @@ final class DoddyClock: NSObject, DoddyClockDriving {
                 MainActor.assumeIsolated { director.keyboardChanged(up: up) }
             }
         }
+        // MV5: Low Power Mode turns off his breaths and glances.
+        director.setLowPower(ProcessInfo.processInfo.isLowPowerModeEnabled)
+        _ = center.addObserver(forName: .NSProcessInfoPowerStateDidChange, object: nil, queue: .main) { _ in
+            MainActor.assumeIsolated { director.setLowPower(ProcessInfo.processInfo.isLowPowerModeEnabled) }
+        }
     }
 
     /// The director holds its clock weakly; this keeps the app's one alive.

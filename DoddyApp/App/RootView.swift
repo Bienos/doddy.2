@@ -170,6 +170,10 @@ struct RootView: View {
                 if scenePhase == .active { heyDoddyAppBecameActive() }
                 pickUpSharedItem()
             }
+            .onChange(of: scenePhase, initial: true) { _, phase in
+                // MV5: today's welcome (once a day; a hop in place first after three days away).
+                if phase == .active { DoddyDirector.shared.appBecameActive() }
+            }
             .onChange(of: scenePhase) { _, phase in
                 if phase == .active {
                     Task { await noteReminders.refreshOnForeground() }
@@ -216,8 +220,21 @@ struct RootView: View {
             .onChange(of: hideArt) { WidgetSync.shared.refresh() }
             // Motion v2: the one persistent Doddy lives on iPhone layouts with his pictures shown
             // (Q13: iPad's sidebar keeps today's pictures; "Hide Doddy's pictures" turns him off).
-            .onChange(of: motionWorldOn, initial: true) { _, on in DoddyDirector.shared.isActive = on }
-            .onAppear { DoddyClock.install() }
+            .onChange(of: motionWorldOn, initial: true) { _, on in
+                DoddyDirector.shared.isActive = on
+                if on, scenePhase == .active { DoddyDirector.shared.appBecameActive() }
+            }
+            .onAppear {
+                DoddyClock.install()
+                // MV5: a tap or hold on him opens the voice screen, as "Talk to Doddy" does.
+                DoddyDirector.shared.onTalk = { ShortcutRouter.shared.isVoicePresented = true }
+            }
+            // MV5: his listening pose follows only a conversation's real capture. The wake word's
+            // conversation is the one that can be live on Home before the voice screen takes it
+            // (read only; the voice screen hides him while it is up).
+            .onChange(of: WakeWordListener.shared.wakeConversation?.phase == .listening, initial: true) { _, live in
+                DoddyDirector.shared.voiceListening(live)
+            }
             // Reduce Motion: his hops become fades (brief rule 12).
             .onChange(of: reduceMotion, initial: true) { _, on in DoddyDirector.shared.setReduceMotion(on) }
             // Q12: at accessibility text sizes he stays 1.0× on Home.

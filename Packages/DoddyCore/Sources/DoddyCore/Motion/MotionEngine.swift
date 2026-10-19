@@ -2117,6 +2117,8 @@ public final class MotionEngine {
 
     /// The gesture playing now ("wave", "stretch", "welcome", …) and how long it has played (ms).
     public var gestureName: String? { gesture?.kind.rawValue }
+    /// Waiting for a reply on Talk, past 600 ms (motion v2, MV5: the thinking pose).
+    public var isThinking: Bool { thinking != nil }
     public var gestureElapsed: Double { gesture?.t ?? 0 }
 
     /// Breathing now: the phase in breaths since it started (0 ..< 3), nil when not breathing.

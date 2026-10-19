@@ -42,6 +42,10 @@ struct AskView: View {
         // Motion v2 (MV4, Q2): he comes up with this cover, on its composer, and is back on
         // Home's stage as it goes.
         .onAppear { DoddyDirector.shared.askOpened() }
+        // MV5: thinking while the reply hasn't come (from 600 ms), and only then.
+        .onChange(of: controller.isSending) { _, sending in
+            DoddyDirector.shared.askSending(sending, failed: controller.error != nil)
+        }
         .onDisappear {
             controller.cancel()
             DoddyDirector.shared.askClosing()

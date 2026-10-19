@@ -101,13 +101,20 @@ final class DoddyDirector {
 
     init() {
         var settings = MotionSettings()
-        // MV3: hops only. Breaths, the 15 s sit, glances and the daily welcome come with MV5.
-        settings.noBreath = true
+        // MV5: breaths, the 15 s sit, the daily welcome and the playful moment are on; the welcome
+        // is armed per day by `appBecameActive`. Low Power Mode comes from the device (DoddyClock).
         settings.autoWelcome = false
-        settings.lowPower = true
         host = MotionHost(settings: settings)
         host.isActive = false
+        host.behaviours = true
+        // A tap or a hold on him opens the voice screen (Q2); a hold can't start capture on Home
+        // (plan section 5), so it acts as a tap.
+        host.onOpenTalk = { [weak self] _ in self?.onTalk?() }
+        host.onStartVoice = { false }
     }
+
+    /// Opens the voice screen, as Home's "Talk to Doddy" button does (set by RootView).
+    @ObservationIgnored var onTalk: (() -> Void)?
 
     // MARK: Reports from the screens (MV2)
 
@@ -261,6 +268,81 @@ final class DoddyDirector {
         guard host.scene.screen == .talk else { return }
         catchUp()
         host.talkClosing()
+        poke()
+    }
+
+    // MARK: Behaviours (MV5)
+
+    /// A finger on him on Home (his touch area), in window points.
+    func touchDown(x: Double, y: Double) {
+        catchUp()
+        host.touchDown(x: x, y: y)
+        poke()
+    }
+
+    func touchMoved(x: Double, y: Double, vx: Double, vy: Double) {
+        catchUp()
+        host.touchMoved(x: x, y: y, vx: vx, vy: vy)
+        poke()
+    }
+
+    func touchUp(vx: Double, vy: Double) {
+        catchUp()
+        host.touchUp(vx: vx, vy: vy)
+        poke()
+    }
+
+    /// Ask is waiting for its reply (thinking from 600 ms), or it came.
+    func askSending(_ sending: Bool, failed: Bool) {
+        catchUp()
+        host.askSending(sending, failed: failed)
+        poke()
+    }
+
+    /// A conversation's microphone is live and capturing (the session's real `.listening` phase).
+    func voiceListening(_ live: Bool) {
+        guard host.scene.voiceLive != live else { return }
+        catchUp()
+        host.voiceListening(live)
+        poke()
+    }
+
+    /// Low Power Mode: no breaths, no glances.
+    func setLowPower(_ on: Bool) {
+        guard engine.settings.lowPower != on else { return }
+        engine.settings.lowPower = on
+        poke()
+    }
+
+    /// The day his welcome last played (shared with Home's morning wave, ADR-380, so the two never
+    /// both play) and when Doddy was last opened, on this iPhone only. Neither is a note.
+    static let welcomeDayKey = "home.lastWaveDay"
+    static let lastVisitKey = "motion.lastVisit"
+
+    /// When Doddy was last opened before this visit (read from `lastVisitKey` once per launch).
+    @ObservationIgnored private var visitBefore: Date?
+    @ObservationIgnored private var visitLoaded = false
+
+    /// The app came to the front (or the motion world came on while it is): arms today's welcome
+    /// if it hasn't played (after three days away, with a hop in place first), then remembers
+    /// this visit. Safe to call more than once.
+    func appBecameActive(now date: Date = Date(), defaults: UserDefaults = .standard) {
+        if !visitLoaded {
+            visitLoaded = true
+            visitBefore = (defaults.object(forKey: Self.lastVisitKey) as? Double).map(Date.init(timeIntervalSince1970:))
+        }
+        // Only while he is drawn: with the motion world off (iPad's sidebar) Home's own morning
+        // wave (ADR-380) keeps the day.
+        if isActive {
+            if let welcome = MotionWelcome.decide(now: date, lastWelcomeDay: defaults.string(forKey: Self.welcomeDayKey),
+                                                  lastVisit: visitBefore) {
+                defaults.set(welcome.day, forKey: Self.welcomeDayKey)
+                catchUp()
+                if host.isPlaced { host.newDay(welcome: welcome.kind) } else { host.welcomeToday = welcome.kind }
+            }
+            visitBefore = date
+        }
+        defaults.set(date.timeIntervalSince1970, forKey: Self.lastVisitKey)
         poke()
     }
 
