@@ -126,7 +126,7 @@ private actor FakeClient: OnlineAccountsClient {
     }
 
     func catalog() async throws(OnlineAccountsError) -> ToolsCatalog { throw .notConfigured }
-    func connect(toolkit: String) async throws(OnlineAccountsError) -> ConnectResponse { throw .notConfigured }
+    func connect(toolkit: String, forTool: String?) async throws(OnlineAccountsError) -> ConnectResponse { throw .notConfigured }
     func complete(toolkit: String, _ request: CompleteRequest) async throws(OnlineAccountsError) -> ToolkitResult { throw .notConfigured }
     func disconnect(toolkit: String) async throws(OnlineAccountsError) -> ToolkitResult { throw .notConfigured }
     func setSwitch(tool: String, enabled: Bool) async throws(OnlineAccountsError) -> ToolkitResult { throw .notConfigured }

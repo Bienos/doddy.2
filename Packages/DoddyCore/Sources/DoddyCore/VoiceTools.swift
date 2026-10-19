@@ -558,6 +558,19 @@ public enum OpenLinks {
         return URL(string: "mailto:\(trimmed)?body=\(encode(body))")
     }
 
+    /// "Open in Mail instead" on the connect card (ADR-511): Mail opens with exactly the email the
+    /// agent asked to send, and the user sends it there. One plain address only: anything that could
+    /// add a recipient or another field to the link (`?`, `&`, `,`, `%`, spaces…) gives nil.
+    public static func email(address: String, subject: String, body: String) -> URL? {
+        let trimmed = address.trimmingCharacters(in: .whitespacesAndNewlines)
+        let parts = trimmed.split(separator: "@", omittingEmptySubsequences: false)
+        let forbidden = CharacterSet(charactersIn: "?&#=,;%<>\"'()[]\\/:").union(.whitespacesAndNewlines).union(.controlCharacters)
+        guard parts.count == 2, !parts[0].isEmpty, parts[1].contains("."), !parts[1].hasSuffix("."),
+              trimmed.unicodeScalars.allSatisfy({ $0.isASCII && !forbidden.contains($0) })
+        else { return nil }
+        return URL(string: "mailto:\(trimmed)?subject=\(encode(subject))&body=\(encode(body))")
+    }
+
     private static func dialable(_ number: String) -> String {
         String(number.enumerated().compactMap { index, character in
             character.isNumber || (index == 0 && character == "+") ? character : nil

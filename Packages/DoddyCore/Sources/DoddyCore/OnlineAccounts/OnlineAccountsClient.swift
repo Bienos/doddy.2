@@ -4,18 +4,25 @@ public enum OnlineAccountsError: Error, Equatable, Sendable {
     /// No server URL or session token is configured in this build.
     case notConfigured
     case unauthenticated
-    case server(code: String, message: String, retryAfterSeconds: Int?, receipt: OnlineToolReceipt?)
+    /// `connect`: what the user can do in the conversation so the tool can run (ADR-511), if anything.
+    case server(code: String, message: String, retryAfterSeconds: Int?, receipt: OnlineToolReceipt?, connect: ConnectOffer? = nil)
     case transport(String)
     /// The response did not match the contract. Nothing is shown instead.
     case unreadableResponse
 
     public var receipt: OnlineToolReceipt? {
-        if case .server(_, _, _, let receipt) = self { return receipt }
+        if case .server(_, _, _, let receipt, _) = self { return receipt }
         return nil
     }
 
     public var code: String? {
-        if case .server(let code, _, _, _) = self { return code }
+        if case .server(let code, _, _, _, _) = self { return code }
+        return nil
+    }
+
+    /// ADR-511: the server's offer to connect or switch on, attached to its refusal.
+    public var connectOffer: ConnectOffer? {
+        if case .server(_, _, _, _, let connect) = self { return connect }
         return nil
     }
 
@@ -23,7 +30,7 @@ public enum OnlineAccountsError: Error, Equatable, Sendable {
         switch self {
         case .notConfigured: "Online accounts need a Doddy server, which isn't set up in this build."
         case .unauthenticated: "Doddy's server didn't accept this device's session. Check the session token in Settings."
-        case .server(_, let message, _, _): message
+        case .server(_, let message, _, _, _): message
         case .transport: "Doddy's server couldn't be reached. Check your connection and try again."
         case .unreadableResponse: "Doddy's server sent something the app couldn't read, so nothing is shown."
         }
@@ -34,7 +41,9 @@ public enum OnlineAccountsError: Error, Equatable, Sendable {
 /// a tool is one of a fixed list, and the server decides everything else.
 public protocol OnlineAccountsClient: Sendable {
     func catalog() async throws(OnlineAccountsError) -> ToolsCatalog
-    func connect(toolkit: String) async throws(OnlineAccountsError) -> ConnectResponse
+    /// `forTool`: the one tool a sign-in started from a conversation is for (ADR-511); the server
+    /// switches on that tool alone after a verified sign-in. Nil from Settings.
+    func connect(toolkit: String, forTool: String?) async throws(OnlineAccountsError) -> ConnectResponse
     func complete(toolkit: String, _ request: CompleteRequest) async throws(OnlineAccountsError) -> ToolkitResult
     func disconnect(toolkit: String) async throws(OnlineAccountsError) -> ToolkitResult
     func setSwitch(tool: String, enabled: Bool) async throws(OnlineAccountsError) -> ToolkitResult
@@ -67,8 +76,8 @@ public struct BackendOnlineAccountsClient: OnlineAccountsClient {
         try await call("GET", "v1/tools", body: Optional<JSONValue>.none)
     }
 
-    public func connect(toolkit: String) async throws(OnlineAccountsError) -> ConnectResponse {
-        try await call("POST", "v1/tools/\(toolkit)/connect", body: [String: String]())
+    public func connect(toolkit: String, forTool: String?) async throws(OnlineAccountsError) -> ConnectResponse {
+        try await call("POST", "v1/tools/\(toolkit)/connect", body: ConnectBody(forTool: forTool))
     }
 
     public func complete(toolkit: String, _ request: CompleteRequest) async throws(OnlineAccountsError) -> ToolkitResult {
@@ -97,6 +106,11 @@ public struct BackendOnlineAccountsClient: OnlineAccountsClient {
     public func receipts() async throws(OnlineAccountsError) -> [OnlineToolReceipt] {
         let response: OnlineReceiptsResponse = try await call("GET", "v1/tools/receipts", body: Optional<JSONValue>.none)
         return response.receipts
+    }
+
+    /// `{}` from Settings; `{"forTool": …}` from a conversation (nil is left out, not sent as null).
+    struct ConnectBody: Encodable, Equatable {
+        let forTool: String?
     }
 
     struct SwitchBody: Encodable, Equatable {
@@ -145,7 +159,16 @@ public struct BackendOnlineAccountsClient: OnlineAccountsClient {
         }
         if status == 401 { throw .unauthenticated }
         guard let body = try? decoder.decode(OnlineErrorBody.self, from: data) else { throw .unreadableResponse }
-        throw .server(code: body.error.code, message: body.error.message, retryAfterSeconds: body.error.retryAfterSeconds, receipt: body.error.receipt)
+        throw .server(
+            code: body.error.code, message: body.error.message, retryAfterSeconds: body.error.retryAfterSeconds, receipt: body.error.receipt,
+            connect: body.error.connect)
+    }
+}
+
+public extension OnlineAccountsClient {
+    /// Settings' Connect: switches nothing on.
+    func connect(toolkit: String) async throws(OnlineAccountsError) -> ConnectResponse {
+        try await connect(toolkit: toolkit, forTool: nil)
     }
 }
 
@@ -153,7 +176,7 @@ public struct BackendOnlineAccountsClient: OnlineAccountsClient {
 public struct UnconfiguredOnlineAccountsClient: OnlineAccountsClient {
     public init() {}
     public func catalog() async throws(OnlineAccountsError) -> ToolsCatalog { throw .notConfigured }
-    public func connect(toolkit: String) async throws(OnlineAccountsError) -> ConnectResponse { throw .notConfigured }
+    public func connect(toolkit: String, forTool: String?) async throws(OnlineAccountsError) -> ConnectResponse { throw .notConfigured }
     public func complete(toolkit: String, _ request: CompleteRequest) async throws(OnlineAccountsError) -> ToolkitResult { throw .notConfigured }
     public func disconnect(toolkit: String) async throws(OnlineAccountsError) -> ToolkitResult { throw .notConfigured }
     public func setSwitch(tool: String, enabled: Bool) async throws(OnlineAccountsError) -> ToolkitResult { throw .notConfigured }

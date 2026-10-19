@@ -489,6 +489,10 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
         if text.hasPrefix("failed:") { return (.notDone, reason(in: text)) }
         if text.hasPrefix("paused:") { return (.notDone, "Connections were paused.") }
         if text.hasPrefix("refused:") { return (.notDone, "Translator mode was on, so nothing was run.") }
+        // ADR-511: the call was answered with a card to connect or switch on; nothing ran.
+        if text.hasPrefix("not connected:") { return (.notDone, "It needed connecting first.") }
+        if text.hasPrefix("switched off:") { return (.notDone, "It was switched off.") }
+        if text.hasPrefix("busy:") { return (.notDone, nil) }
         // VoiceToolReply.notConnected: "Calendar isn't connected. Tell the user …"
         if let connection = VoiceConnection.allCases.first(where: { text.hasPrefix("\($0.title) isn't connected") }) {
             return (.notDone, "\(connection.title) isn't connected.")

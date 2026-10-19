@@ -132,6 +132,8 @@ public struct OnlineErrorBody: Codable, Equatable, Sendable {
         public let correlationId: String
         public let retryAfterSeconds: Int?
         public let receipt: OnlineToolReceipt?
+        /// ADR-511: present when the user can fix this in the conversation.
+        public let connect: ConnectOffer?
     }
     public let error: Detail
 }

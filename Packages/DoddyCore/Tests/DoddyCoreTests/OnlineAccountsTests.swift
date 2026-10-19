@@ -135,7 +135,7 @@ final class OnlineAccountsContractTests: XCTestCase {
             ("error-rate-limited", 429, "rate_limited"),
         ] {
             XCTAssertThrowsError(try BackendOnlineAccountsClient.decode(status: status, data: try fixture(name)) as RunResult, name) {
-                guard case .server(let got, _, _, _)? = $0 as? OnlineAccountsError else { return XCTFail("\($0)") }
+                guard case .server(let got, _, _, _, _)? = $0 as? OnlineAccountsError else { return XCTFail("\($0)") }
                 XCTAssertEqual(got, code, name)
             }
         }
@@ -331,8 +331,8 @@ private actor FakeOnline: OnlineAccountsClient {
         return catalogView
     }
 
-    func connect(toolkit: String) async throws(OnlineAccountsError) -> ConnectResponse {
-        calls.append("connect:\(toolkit)")
+    func connect(toolkit: String, forTool: String?) async throws(OnlineAccountsError) -> ConnectResponse {
+        calls.append(forTool.map { "connect:\(toolkit):\($0)" } ?? "connect:\(toolkit)")
         return try! JSONDecoder().decode(ConnectResponse.self, from: fixture("connect-response-mock"))
     }
 

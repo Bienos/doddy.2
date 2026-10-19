@@ -56,7 +56,7 @@ extension VoiceToolReply {
             return isWrite ? maybeDone : "failed: Doddy's server couldn't be reached. Nothing was changed."
         case .unreadableResponse:
             return isWrite ? maybeDone : "failed: Doddy's server sent an answer the app couldn't read, so nothing is shown."
-        case .server(let code, _, _, let receipt):
+        case .server(let code, _, _, let receipt, _):
             // The server's own receipt outranks the code: it recorded that the provider may have done it.
             if receipt?.status == .outcomeUnknown { return maybeDone }
             switch code {
