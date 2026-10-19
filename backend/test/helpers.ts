@@ -1,7 +1,7 @@
 import { once } from "node:events";
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
-import { DevSessionVerifier } from "../src/auth.js";
+import { DevSessionVerifier, type SessionVerifier } from "../src/auth.js";
 import { defaultRegistry } from "../src/capabilities.js";
 import { type Limits, testLimits } from "../src/config.js";
 import { createHandler } from "../src/http.js";
@@ -43,6 +43,7 @@ export async function harness(
     completionMode?: "verifier" | "callback" | "mock";
     limits?: Partial<Limits>;
     nowIso?: string;
+    verifier?: SessionVerifier;
   } = {},
 ): Promise<Harness> {
   const store = await Store.memory();
@@ -65,7 +66,7 @@ export async function harness(
   });
   const handler = createHandler({
     service,
-    verifier: new DevSessionVerifier(),
+    verifier: opts.verifier ?? new DevSessionVerifier(),
     appReturnUrl: "doddy-dev://connected-apps/return",
     maxBodyBytes: 8 * 1024,
     now: () => new Date(clock.ms),
