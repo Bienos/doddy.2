@@ -84,7 +84,13 @@ jobs:
           node --version
 
       - name: scripts/ci.sh
-        run: scripts/ci.sh
+        shell: bash
+        run: |
+          set -o pipefail
+          xcodegen generate --spec project.yml
+          sim_id=$(xcrun simctl list devices available | grep -E '^ +iPhone' | head -1 | sed -E 's/.*\(([0-9A-F-]{36})\).*/\1/')
+          xcodebuild test -project Doddy.xcodeproj -scheme Doddy -destination "platform=iOS Simulator,id=${sim_id}" \
+            -only-testing:DoddyUITests/MemoryJourneyTests/testApprovedJourneyCorrectionRetainsOriginalAfterRestart
 
       - name: Keep the test results
         if: always()

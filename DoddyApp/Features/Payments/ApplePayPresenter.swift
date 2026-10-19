@@ -1,9 +1,14 @@
 import DoddyCore
 import PassKit
-import SwiftUI
+import UIKit
 
 // The only file that uses PassKit (ADR-530; scripts/check_forbidden_capabilities.sh). The Apple
 // Pay sheet's encrypted token goes to Doddy's server untouched; the phone never sees the card.
+//
+// This file must not import SwiftUI. With SwiftUI and PassKit in one file, Swift brings in
+// PassKit's SwiftUI overlay (PayWithApplePayButton), and with that in the app the capture
+// screen's keyboard toolbar came up empty on CI: no Done button (PR #89, 19 Oct). The button
+// is made here in UIKit and wrapped for SwiftUI in ApplePayButton.swift, which has no PassKit.
 
 /// Whether this build and this iPhone can show the Apple Pay sheet. Apple Pay needs a merchant
 /// ID in the build (`DODDY_APPLE_PAY_MERCHANT_ID`, project.yml) with the Apple Pay entitlement,
@@ -24,15 +29,10 @@ enum ApplePaySupport {
     }
 }
 
-/// Apple's own "Buy with Apple Pay" button.
-struct ApplePayButton: View {
-    let action: () -> Void
-
-    var body: some View {
-        PayWithApplePayButton(.buy, action: action)
-            .payWithApplePayButtonStyle(.automatic)
-            .frame(height: 48)
-            .accessibilityIdentifier("purchase.applePay")
+/// Apple's own "Buy with Apple Pay" button, as a UIKit control (wrapped in ApplePayButton.swift).
+enum ApplePayButtonFactory {
+    @MainActor static func make() -> UIControl {
+        PKPaymentButton(paymentButtonType: .buy, paymentButtonStyle: .automatic)
     }
 }
 
