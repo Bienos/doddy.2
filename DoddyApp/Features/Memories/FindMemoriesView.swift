@@ -239,7 +239,6 @@ private struct RecallResultsView: View {
                         .overlay(alignment: .bottom) {
                             Color.clear.frame(width: 96, height: 1).motionSurface(.ledge(MotionHost.findLedge))
                         }
-                        .accessibilityHidden(true)
                         .frame(maxWidth: .infinity)
                 } else {
                     WholeDoddyView(pose: .shrug, height: 170).frame(maxWidth: .infinity)

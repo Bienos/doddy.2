@@ -19,7 +19,6 @@ struct ListsOverview: View {
                     if DoddyDirector.shared.isActive {
                         Color.clear.frame(width: 50, height: 94)
                             .overlay(alignment: .bottom) { LedgeLine(name: "emptyLists", width: 50) }
-                            .accessibilityHidden(true)
                     } else {
                         WholeDoddyView(pose: .crosslegged, height: 80)
                     }

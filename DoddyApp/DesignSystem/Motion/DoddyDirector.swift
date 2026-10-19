@@ -289,7 +289,7 @@ final class DoddyDirector {
         if isActive { checks.check(host, drawn: drawnCount) }
         #endif
         guard let last = lastTime else { return }
-        if !isActive || (engine.isStill && host.pendingTab == nil) {
+        if !isActive || (host.isPlaced && engine.isStill && host.pendingTab == nil) {
             asleep = true
             let due = isActive ? engine.nextDue.map { last + max(0.05, ($0 - engine.now) / 1000) } : nil
             clock?.sleep(until: due)

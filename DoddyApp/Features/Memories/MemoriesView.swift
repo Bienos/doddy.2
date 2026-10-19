@@ -279,7 +279,6 @@ private struct EmptyMemoriesView: View {
                 // 22 pt up), so the 100 pt box of accessibility sizes would let him reach the picker.
                 Color.clear.frame(width: 100, height: 150)
                     .overlay(alignment: .bottom) { LedgeLine(name: "emptyMemories").padding(.bottom, 22) }
-                    .accessibilityHidden(true)
             } else {
                 UploadedCharacterView(assetName: "UploadedDoddy_Sitting", height: 150)
             }

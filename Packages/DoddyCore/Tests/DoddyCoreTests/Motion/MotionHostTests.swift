@@ -70,6 +70,41 @@ final class MotionHostTests: XCTestCase {
         XCTAssertEqual(host.placement, .slot(.stage))
     }
 
+    /// Hosted run 39210073005: at launch the tab bar reported before Home's stage, he was placed
+    /// on the rail and stayed there. He now waits for the screen's spot, and if he is ever left on
+    /// the rail with nothing to wait for, he goes to it.
+    func testAtLaunchHeWaitsForHomesStageNotTheRail() {
+        let h = MotionHost()
+        var s = MotionScene()
+        s.frames[.rail] = Self.rail
+        s.mounted = [.rail]
+        h.scene = s
+        XCTAssertFalse(h.placeOnCurrentScreen(), "Home hasn't reported its stage yet")
+        h.step(20)
+        XCTAssertFalse(h.placeOnCurrentScreen())
+        h.scene.frames[.stage] = Self.stage
+        h.scene.mounted.insert(.stage)
+        XCTAssertTrue(h.placeOnCurrentScreen())
+        XCTAssertEqual(h.engine.anchor?.surface, .stage)
+
+        // A stage that doesn't report within 60 ms: he starts on the rail, and goes to the stage
+        // once it is there (he has nothing to wait for on the rail).
+        let late = MotionHost()
+        late.scene = s
+        XCTAssertFalse(late.placeOnCurrentScreen())
+        late.step(70)
+        XCTAssertTrue(late.placeOnCurrentScreen())
+        XCTAssertEqual(late.engine.anchor?.surface, .rail)
+        late.scene.frames[.stage] = Self.stage
+        late.scene.mounted.insert(.stage)
+        for _ in 0..<480 where !(late.engine.anchor?.surface == .stage && late.engine.mode == .attached) {
+            late.step(1000.0 / 240)
+            late.settle()
+        }
+        XCTAssertEqual(late.engine.anchor?.surface, .stage)
+        XCTAssertEqual(late.engine.scale, 1.4, accuracy: 1e-9)
+    }
+
     func testTabHopToMemoriesLandsOnTheFirstCardWithRoomAndOnTime() {
         let tap = e.now
         host.tabChanged(to: .memories, tapT: tap)
