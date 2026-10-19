@@ -4,7 +4,7 @@ Companion to the pack's proposal table `docs/architecture/DECISIONS.md` (left un
 Status values: **Applied in M0 — owner approval pending**, **Not exercised in M0**, **Open**. Nothing here is
 owner-approved; the owner marks each `accepted / rejected / needs investigation`. Dates are 2026-10-08.
 
-**Numbers used twice** (found 18 Oct, ADR-520): 218 (repeating reminders; photo notes) and 458 (stale-session guard; screens in more languages). Cite those two by number and title. Open pull requests hold 490 (#89), 497–499 (#84), 500–507 (#90) and 510 (#85), so new rows start at 520 or above until they settle. The v1 scope rows below were first numbered 500–502 and moved to 520–522 on 18 October to stay clear of #90; commits from before the move use the old numbers.
+**Numbers used twice** (found 18 Oct, ADR-520; 217 added 19 Oct): 217 (voice and place reminder screens; list follow-ups), 218 (repeating reminders; photo notes) and 458 (stale-session guard; screens in more languages). Cite those by number and title. 497–499 (#84), 500–507 (#90), 510 (#85) and 520–526 are on main since 19 Oct. Open pull requests hold 530 (#89, not 490) and 540 (#96). #86 and `claude/epic-wright-vz93xh` (its commit `3dd1a00d`) reuse 483, which is ASK-01 on main, and #92 (`claude/awesome-cray-2lb9ia`) reuses 493–495, which are #84's on main; those need new numbers before they merge. New rows start at 541 or above until they settle. The v1 scope rows below were first numbered 500–502 and moved to 520–522 on 18 October to stay clear of #90; commits from before the move use the old numbers.
 
 ## Pack ADRs (001–012)
 
