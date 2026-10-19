@@ -108,6 +108,13 @@ Merge one at a time, then rebuild and talk to Doddy before the next. Checked 19 
   - PR #84 (on main since 19 Oct) adds one conversation at a time (ADR-496) and the log lines a phone log needs. Not fixed yet: it still needs a device log to confirm the cause.
 - **Vercel:** the `doddy` project (team `doddyyyy`) built and published the site from the default branch on 2026-10-14 (www.doddy.lol); the earlier "account blocked" failures did not recur on that build. The free plan allows 100 deployments a day, and skipped ones count: on 18 October the limit was reached by 12:22 UTC (100 deployments since 09:34, 86 of them skipped), so Vercel refused new ones and showed "Account is blocked". Since 18 October only the production branch deploys: preview deployments are off in all three projects' settings (go-live checklist A10), and each `vercel.json` says the same (ADR-498, PR #84, on main since 19 Oct). GitHub Actions stopped starting jobs on 16 October and ran again on 18 October at 15:08 UTC (run 39139146509). Since then, every commit also gets three red "Account is blocked." statuses with a generic Vercel help link, under the same names (`Vercel – doddy-voice-token` and so on) as `doddyyyy`'s real statuses. They probably come from the old team's projects. `doddyyyy` itself posts "Vercel is deploying your app", "Canceled by Ignored Build Step", "Deployment has completed" or "Deployment rate limited". None of these is a required check.
 
+- **Render backend is newer than the app on the owner's phone.** The live `doddy` service (https://doddy-yaci.onrender.com) runs the ASK-01 server (deploy of `5904c9c` after #87; on 19 Oct `check_email` without an approval answered 403 "Doddy has to ask first"). The build installed on the owner's iPhone is older and doesn't send the approval, so its cloud reads (Gmail, Calendar) are refused until a new build from main is installed. Not a server bug; see `docs/integrations/DEPLOY_RENDER.md`.
+- **Vercel `doddy-gateway` has no environment variables** (read on 19 Oct: none in any environment), while `secrets/manifest.json` targets it. Names it needs, no values:
+  - secrets: `OPENAI_API_KEY`, `GATEWAY_TOKEN_SECRET`, `GATEWAY_INVITE_CODES`, and `UPSTASH_REDIS_REST_URL` with `UPSTASH_REDIS_REST_TOKEN` (or a Vercel Marketplace Redis store, which sets `KV_REST_API_URL` and `KV_REST_API_TOKEN` itself);
+  - optional settings read by the code: `OPENAI_MODEL`, `GATEWAY_RATE_PER_MINUTE`, `GATEWAY_RATE_PER_DAY`, `GATEWAY_INVITE_PER_DAY`, `GATEWAY_GLOBAL_PER_DAY`, `DAILY_BUDGET_USD`, `DAILY_BUDGET_PER_INSTALL_USD`, `DAILY_BUDGET_PER_INVITE_USD`, `OPENAI_PRICE_INPUT_PER_MTOK_USD`, `OPENAI_PRICE_OUTPUT_PER_MTOK_USD`, `REQUIRE_SHARED_LIMITS`.
+
+  Until they're set, that gateway can't serve. Decide first which gateway the phone uses (owner decision 11); nothing was changed.
+
 ## Waiting on the owner
 **Added or confirmed on 19 Oct by the merge session:**
 - **Apple:** a paid Apple Developer Program membership, selected in Xcode, and the Sign in with Apple capability on App ID `com.bienos.doddy2.dev`. Voice can't sign in on a phone without both (ADR-522).
@@ -116,11 +123,11 @@ Merge one at a time, then rebuild and talk to Doddy before the next. Checked 19 
 - **Render:** paid plans. The free database is deleted on 10 Nov.
 - **Calls (#90):** the legal basis for the call recording notice. `CALL_RECORDING_NOTICE` stays `off` until then. After that: a Poland-only Twilio subaccount, the task-call agent with a Polish voice, then live tests #1 to #3 (`docs/implementation/CALL_CASES_STATUS.md`).
 - **#90's secrets split:** confirm which call names are secrets and their 1Password item names. Proposed: `TWILIO_TASK_AUTH_TOKEN` (item `twilio-task-auth-token`) and `ELEVENLABS_WEBHOOK_SECRET` (item `elevenlabs-webhook-secret`), with the other 11 under `notSecrets`. The sync tool can't reach `doddy-messaging-worker`, so its two secrets go there by hand.
-- **BLIK:** the 10,000 zł limit.
-- **Translator:** whether translator mode keeps asking first (ASK-01, as the tests expect) or is the one tool that doesn't.
+- ~~**BLIK:** the 10,000 zł limit~~: decided 19 Oct, 1,000 zł per transfer (ADR-541, #101).
+- ~~**Translator:** ask first or not~~: decided 19 Oct, it asks first like every other tool (ADR-542). This answers #84's open question.
 - **`DODDY_ACCESS_CODES`:** remove it once the signed-in build is on every tester's phone.
-- **Repository visibility:** GitHub reports the repository as public, but ADR-497 says private. Which is right?
-- **The live voice agent** lost `text_me`, `call_me_later` and three other tools at 08:22 UTC on 19 Oct (see "Voice agent" above). Confirm that was intended.
+- ~~**Repository visibility**~~: decided 19 Oct, it stays public (ADR-543); ADR-497's text is corrected.
+- ~~**The live voice agent** lost five tools on 19 Oct~~: intended. The owner had `upcoming_renewals`, `add_to_diary`, `pay_for_page`, `text_me` and `call_me_later` detached (ADR-544, `voice-agent/README.md`). Still open: trimming the prompt's "Texts and calls from Doddy's number" paragraph waits on the owner's yes.
 - **Old PRs:** close #63, #71 and #77 if you agree (recommendations in the table above). Decide on #78's art.
 
 **From before:**

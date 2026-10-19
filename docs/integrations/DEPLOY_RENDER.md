@@ -1,5 +1,11 @@
 # Deploying the backend to Render
 
+**Current state (2026-10-19):** the live `doddy` service runs the **ASK-01 server** (deploy of `5904c9c`, after
+PR #87), not the older one. Gmail read and send were verified end to end on 19 Oct (below). The app build on the
+owner's iPhone predates ASK-01 and doesn't send an approval, so the server refuses its cloud reads with 403 "Doddy
+has to ask first" until a new build from the main branch is installed. Composio (Gmail) was verified after the
+11 Oct note below was written; the app talking to this server is still **not verified**.
+
 Status 2026-10-11: **deployed again on a new Render account** (owner request). Workspace **Patryk's workspace**
 (`tea-db5kphqd0e5s73fqlpmg`), service **`doddy`** (`srv-db5kvu142hec739b9tu0`, https://doddy-yaci.onrender.com; the
 name `doddy.onrender.com` was taken), free plan, Frankfurt, branch `claude/loving-dirac-uuxoux` (first live deploy at
