@@ -86,6 +86,10 @@ final class VoiceSessionController {
         /// ASK-01: an online-account read or web search. `preview` and `approvalID` come from
         /// Doddy's server, which read nothing to make them and runs nothing without the approval.
         case cloudRead(toolCallID: String, call: CloudToolCall, preview: ToolPreview, approvalID: UUID, mode: ConnectedAppsMode)
+        /// "Pay for this?" (ADR-530): the purchase and the server's single-use approval for exactly
+        /// what the card shows. Its own buttons pay (Apple Pay, BLIK) or open the shop's checkout;
+        /// `purchaseFlow` runs it and answers the agent once.
+        case purchase(toolCallID: String, prepared: PurchasePrepareResult)
 
         var toolCallID: String {
             switch self {
@@ -94,7 +98,8 @@ final class VoiceSessionController {
                  .noteReminder(let id, _, _, _, _), .createList(let id, _, _), .plan(let id, _, _),
                  .changeEvent(let id, _), .changeReminder(let id, _, _), .deleteEvent(let id, _), .deleteReminder(let id, _),
                  .undo(let id, _), .bulk(let id, _, _, _), .parking(let id, _), .leaveBy(let id, _),
-                 .ingredients(let id, _, _, _, _, _), .ask(let id, _, _, _, _), .cloudRead(let id, _, _, _, _):
+                 .ingredients(let id, _, _, _, _, _), .ask(let id, _, _, _, _), .cloudRead(let id, _, _, _, _),
+                 .purchase(let id, _):
                 id
             }
         }
@@ -203,6 +208,9 @@ final class VoiceSessionController {
     private(set) var pendingAction: PendingAction? { didSet { syncIsland() } }
     /// ASK-01 (ADR-483): which calls the user said yes to. Checked right before a tool runs.
     private var askLedger = AskLedger()
+    /// The Buy card and, after the agent has its answer, its receipt (ADR-530). Stays on screen
+    /// after the conversation ends once a payment step was started, like the reminder receipt.
+    private(set) var purchaseFlow: PurchaseFlow?
     /// The type the user picks on the "Save this note?" card. Starts as Other for every proposal;
     /// the agent is never told or asked (ADR-202).
     var pendingMemoryCategory: MemoryCategory = .other
@@ -481,6 +489,7 @@ final class VoiceSessionController {
         readAloudProblem = nil
         privacyLocked = false
         pendingAction = nil
+        dropUntouchedPurchase()
         contactCard = nil
         parkingCard = nil
         reminderStatus = nil
@@ -913,6 +922,7 @@ final class VoiceSessionController {
         conversation = nil
         pendingAction = nil
         askLedger.clear()
+        dropUntouchedPurchase()
         contactCard = nil
         parkingCard = nil
         connectionNeeded = nil
@@ -1245,6 +1255,10 @@ final class VoiceSessionController {
             await reply(id, changeEvent(plan), undo: .changedEvent(plan))
         case .undo(let id, let entry):
             await reply(id, await undoFromVoice(entry, attempt: attempt))
+        case .purchase:
+            // The Buy card has its own buttons (Apple Pay, BLIK, checkout); the generic confirm
+            // never pays. Put the card back as it was.
+            pendingAction = action
         case .ingredients(let id, let listID, let listName, let dish, let items, _):
             // Only the ticked ones, through the same add as add_to_list (ADR-305).
             let ticked = items.indices.filter { !ingredientsUnticked.contains($0) }.map { items[$0] }
@@ -1438,6 +1452,14 @@ final class VoiceSessionController {
         case .undo(let id, _): await reply(id, VoiceToolReply.undoDeclined)
         case .parking(let id, _): await reply(id, VoiceToolReply.parkingDeclined)
         case .leaveBy(let id, _): await reply(id, VoiceToolReply.leaveByDeclined)
+        case .purchase(let id, let prepared):
+            // Same as "Don't pay" on the card: nothing was paid, and the server's purchase ends now.
+            if purchaseFlow?.toolCallID == id { purchaseFlow = nil }
+            await reply(id, VoiceToolReply.purchaseOutcome(Self.cancelledView(prepared.purchase)))
+            if let client = PaymentsClientFactory.make() {
+                let purchaseID = prepared.purchase.id
+                Task { _ = try? await client.cancel(purchaseId: purchaseID) }
+            }
         case .ingredients(let id, _, _, _, _, _):
             ingredientsUnticked = []
             await reply(id, VoiceToolReply.ingredientsDeclined)
@@ -2033,6 +2055,7 @@ final class VoiceSessionController {
         keepRecoveryDraft()
         phase = .failed(message)
         pendingAction = nil
+        dropUntouchedPurchase()
         dropLongTurn()
         // The lines and unanswered cards are kept now, not only at the next Close (ADR-360).
         keepLog()
@@ -2060,6 +2083,7 @@ final class VoiceSessionController {
         conversation = nil
         if wasLive { keepRecoveryDraft() }
         pendingAction = nil
+        dropUntouchedPurchase()
         keepLog()
         if case .failed = phase { return }
         // A drop is never shown as a normal end (ADR-360).
@@ -2476,6 +2500,8 @@ final class VoiceSessionController {
             }
             endTranslator()
             await reply(call.toolCallId, VoiceToolReply.translatorStopped)
+        case .preparePurchase(let draft):
+            await handlePurchase(draft, toolCallID: call.toolCallId)
         case .noteCapabilityGap(let category):
             // Nothing changes and no app is used: one row on this iPhone, as a category (ADR-440).
             await store.learning?.recordGap(category, requestID: call.toolCallId, sessionID: conversationID)
@@ -2909,6 +2935,77 @@ final class VoiceSessionController {
     var noteReminderReplaces: MemoryReminder? {
         guard case .noteReminder(_, let memoryID, _, _, _) = pendingAction else { return nil }
         return store.noteReminders?.reminder(forMemory: memoryID)
+    }
+
+    // MARK: Purchases (ADR-530)
+
+    /// The agent proposed a purchase: Doddy's server checks it against the limits and returns the
+    /// purchase with a single-use approval, and only then is the Buy card shown. Nothing is paid here.
+    private func handlePurchase(_ draft: PurchaseDraft, toolCallID: String) async {
+        guard let client = PaymentsClientFactory.make() else {
+            await reply(toolCallID, VoiceToolReply.purchaseNotPrepared(.notConfigured), isError: true)
+            return
+        }
+        // Tried too often without a confirmed result: stop before the card (ADR-322).
+        guard await mayTryAgain(toolCallID, app: .payments) else { return }
+        let prepared: PurchasePrepareResult
+        do {
+            prepared = try await client.prepare(draft.request)
+        } catch {
+            await reply(toolCallID, VoiceToolReply.purchaseNotPrepared(error), isError: true)
+            return
+        }
+        propose(.purchase(toolCallID: toolCallID, prepared: prepared), toolCallID: toolCallID)
+        // propose() refuses a stale call or a second card; the flow exists only for a card on screen.
+        guard case .purchase(let shown, _) = pendingAction, shown == toolCallID else { return }
+        purchaseFlow = PurchaseFlow(
+            toolCallID: toolCallID, prepared: prepared, client: client,
+            onStart: { [weak self] in self?.markStarted(toolCallID) },
+            onSettle: { [weak self] settlement in await self?.settlePurchase(toolCallID, settlement) })
+    }
+
+    /// The Buy card has its answer: the agent hears it once, and the card stays as a receipt.
+    private func settlePurchase(_ toolCallID: String, _ settlement: PurchaseFlow.Settlement) async {
+        if case .purchase(let shown, _) = pendingAction, shown == toolCallID { pendingAction = nil }
+        retryChecks[toolCallID] = nil
+        switch settlement {
+        case .purchase(let purchase):
+            await reply(toolCallID, VoiceToolReply.purchaseOutcome(purchase))
+        case .declined:
+            // "Don't pay" closes the card: there is nothing to keep as a receipt.
+            guard let flow = purchaseFlow, flow.toolCallID == toolCallID else {
+                await reply(toolCallID, "declined: the user chose not to pay. Nothing was paid.")
+                return
+            }
+            purchaseFlow = nil
+            await reply(toolCallID, VoiceToolReply.purchaseOutcome(Self.cancelledView(flow.prepared.purchase)))
+        case .lost:
+            let merchant = purchaseFlow?.prepared.purchase.merchantName ?? ""
+            await reply(toolCallID, VoiceToolReply.purchaseLost(merchant))
+        case .notOpened(let reason):
+            await reply(toolCallID, "failed: The shop's checkout couldn't be opened: \(reason) Nothing was paid.", isError: true)
+        }
+    }
+
+    /// A Buy card nobody tapped goes with the conversation, and its approval on Doddy's server
+    /// ends with it; one that started paying (or has the Apple Pay sheet open) stays as its
+    /// receipt and finishes on its own (ADR-530). Called on stop, failure, disconnect and a new start.
+    private func dropUntouchedPurchase() {
+        if purchaseFlow?.abandonIfUntouched() == true { purchaseFlow = nil }
+    }
+
+    /// Close on the receipt.
+    func dismissPurchase() {
+        guard pendingAction == nil || purchaseFlow.map({ !$0.isUntouched }) == true else { return }
+        purchaseFlow = nil
+    }
+
+    /// The prepared purchase as the user cancelled it, for the agent's reply.
+    private static func cancelledView(_ purchase: PurchaseView) -> PurchaseView {
+        PurchaseView(
+            id: purchase.id, kind: purchase.kind, merchantName: purchase.merchantName, description: purchase.description,
+            amountMinor: purchase.amountMinor, currency: purchase.currency, checkoutHost: purchase.checkoutHost, status: .cancelled,
+            method: nil, testMode: purchase.testMode, summary: purchase.summary, createdAt: purchase.createdAt, updatedAt: purchase.updatedAt)
     }
 
     /// Shows one card at a time. A second proposal while one is waiting is refused, so no tool
@@ -3667,8 +3764,9 @@ private extension VoiceSessionController.PendingAction {
         // Each step of a plan is logged on its own (runPlan), not the plan as a whole. An undo
         // is recorded on the row it undoes (ADR-271).
         // ASK-01 asks: the change itself (a list item) is logged by the flow it runs. A BLIK card only
-        // shows what the user sends in their bank app (ADR-510).
-        case .map, .shortcut, .message, .blik, .plan, .undo, .ask, .cloudRead: false
+        // shows what the user sends in their bank app (ADR-510). A purchase marks its own row as
+        // started when the user taps Apple Pay, BLIK or checkout (ADR-530), not when the card is shown.
+        case .map, .shortcut, .message, .blik, .plan, .undo, .ask, .cloudRead, .purchase: false
         }
     }
 }

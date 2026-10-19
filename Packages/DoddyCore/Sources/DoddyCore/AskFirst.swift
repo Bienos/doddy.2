@@ -37,7 +37,7 @@ public enum AskFirst {
         /// shows the exact change, and only a tap runs it.
         case tapFirst(AskCard)
         /// The tool's own flow shows the exact payload on a card and changes something only on a
-        /// tap (notes, calendar, reminders, alarms, timers, messages, shortcuts, Maps, plans).
+        /// tap (notes, calendar, reminders, alarms, timers, messages, shortcuts, Maps, plans, purchases).
         case ownPayloadCard
         /// Online accounts and web search: Doddy's server makes the card and a single-use approval
         /// (backend/src/tools/askFirst.ts). A read runs on a tap or a spoken yes; a write on a tap only.
@@ -102,6 +102,10 @@ public enum AskFirst {
         case .saveMemory, .createCalendarEvent, .createReminder, .remindAboutNote, .undoLast, .setTimer, .setAlarm, .cancelAlarm,
              .openMap, .runShortcut, .draftMessage, .draftBlikTransfer, .addIngredients, .createList, .changeCalendarEvent, .changeReminder,
              .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders, .leaveBy, .parkingSpot(.save):
+            return .ownPayloadCard
+        case .preparePurchase:
+            // The Buy card shows the exact purchase the server approved; only a tap on Apple Pay,
+            // BLIK or the shop's checkout moves money (ADR-530).
             return .ownPayloadCard
         case .cloudTool(let call):
             return .serverCard(isWrite: call.isWrite)

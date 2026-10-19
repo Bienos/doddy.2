@@ -64,6 +64,12 @@ settings:
     # Config/Doddy-Push-AppGroup-iCloud.entitlements with push). Create the container in the
     # developer account first. Empty: Doddy never touches CloudKit and offers no sharing.
     DODDY_CLOUD_CONTAINER: ""
+    # Apple Pay on the Buy card (ADR-530), off by default (needs a paid team). To turn on: register
+    # a merchant ID (merchant.com.bienos.doddy2.dev, say), make its payment processing certificate
+    # from the request in Stripe's Dashboard, then set DODDY_APPLE_PAY_MERCHANT_ID to it and
+    # DODDY_APP_ENTITLEMENTS = Config/Doddy-AppGroup-ApplePay.entitlements. Empty: the card offers
+    # BLIK and the shop's checkout only, and the app never shows the Apple Pay sheet.
+    DODDY_APPLE_PAY_MERCHANT_ID: ""
 targets:
   Doddy:
     type: application

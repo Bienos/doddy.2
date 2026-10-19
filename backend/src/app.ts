@@ -3,6 +3,9 @@ import { AnyOfSessionVerifier, DevSessionVerifier, type SessionVerifier, SignedS
 import { defaultRegistry } from "./capabilities.js";
 import type { Config } from "./config.js";
 import { createHandler } from "./http.js";
+import { MockPaymentGateway, type PaymentGateway } from "./payments/gateway.js";
+import { PaymentsService } from "./payments/service.js";
+import { StripeHttpGateway } from "./payments/stripe.js";
 import { ComposioCalendarProvider } from "./providers/composio.js";
 import { MockCalendarProvider } from "./providers/mock.js";
 import { UnconfiguredCalendarProvider, UnconfiguredToolsProvider } from "./providers/unconfigured.js";
@@ -18,7 +21,7 @@ import { MockWebSearchProvider, MonidWebSearchProvider, type WebSearchProvider }
 /** Composition root: picks adapters strictly from validated config (mock never silently replaces live). */
 export async function buildApp(
   config: Config,
-  overrides: { provider?: CalendarProvider; toolsProvider?: ToolsProvider; webSearch?: WebSearchProvider | null; store?: Store; verifier?: SessionVerifier } = {},
+  overrides: { provider?: CalendarProvider; toolsProvider?: ToolsProvider; webSearch?: WebSearchProvider | null; store?: Store; verifier?: SessionVerifier; paymentGateway?: PaymentGateway | null } = {},
 ) {
   const store =
     overrides.store ?? (await Store.open({ url: config.databaseUrl ?? undefined, caCert: config.databaseCaCert ?? undefined, dataDir: config.dbPath }));
@@ -66,7 +69,24 @@ export async function buildApp(
     completionMode: toolsProvider.mode === "mock" ? "mock" : (config.composio?.completionMode ?? "verifier"),
     log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`),
   });
-  const handler = createHandler({ service, tools, verifier, appReturnUrl: config.appReturnUrl, maxBodyBytes: config.limits.maxBodyBytes });
+  // Purchases (ADR-530). Mock: the demo gateway, never Stripe. Live: Stripe on a validated test key,
+  // or no gateway at all (native purchases say "not set up"; checkout still works). Never mock in live.
+  const paymentGateway =
+    overrides.paymentGateway !== undefined
+      ? overrides.paymentGateway
+      : config.mode === "live"
+        ? config.payments
+          ? new StripeHttpGateway({ secretKey: config.payments.stripeSecretKey, timeoutMs: config.limits.providerTimeoutMs })
+          : null
+        : new MockPaymentGateway();
+  const payments = new PaymentsService({
+    store,
+    gateway: paymentGateway,
+    mode: config.mode === "mock" ? "mock" : "test",
+    limits: config.limits,
+    checkoutHosts: config.checkoutHosts,
+  });
+  const handler = createHandler({ service, tools, payments, verifier, appReturnUrl: config.appReturnUrl, maxBodyBytes: config.limits.maxBodyBytes });
   // Last line of defence: a handler failure closes that one connection, never the process.
   const server: Server = createServer((req, res) => {
     handler(req, res).catch(() => res.destroy());
@@ -84,7 +104,7 @@ export async function buildApp(
   const pruning = setInterval(housekeeping, 3_600_000);
   pruning.unref();
   server.on("close", () => clearInterval(pruning));
-  return { server, store, service, tools, provider };
+  return { server, store, service, tools, payments, provider };
 }
 
 /** Which sign-ins this server accepts (ADR-526). */

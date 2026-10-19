@@ -110,6 +110,8 @@ public enum DataFlow {
         if state.askDoddyUsesNotes { ask += " and the saved notes that match them" }
 
         let openAIVoice = state.voiceProvider == .openAIRealtime
+        // ADR-530: Buy cards need the switch and the server; Pause all stops them like any connection.
+        let payments = state.doddyServerSet && apps.contains(.payments)
         return [
             DataFlowRow(
                 id: "elevenlabs", destination: "ElevenLabs (Doddy's voice)",
@@ -177,6 +179,14 @@ public enum DataFlow {
                     ? "No Doddy server is set, so nothing goes there."
                     : state.pauseAll ? "Connections are paused, so Doddy doesn't use it in conversations. The Connected Apps screen still works when you open it." : nil),
             DataFlowRow(
+                id: "payments", destination: "Your Doddy server and Stripe (payments)",
+                what: "For a Buy card: the shop, what you buy and the price. When you tap: the Apple Pay token (never your card number) or the BLIK code you typed, passed on to Stripe. For a shop's own checkout: that you opened it and your answer to \"Did you pay?\".",
+                when: "Only when Doddy prepares a Buy card, and when you tap on it.",
+                isActive: payments,
+                note: !payments
+                    ? (state.doddyServerSet ? "Payments is off in Connections, so nothing goes there." : "No Doddy server is set, so nothing goes there.")
+                    : "Test mode in this version: no real money moves. Doddy keeps no card number or BLIK code; a shop's page opens in Safari's view and what you type there goes to the shop."),
+            DataFlowRow(
                 id: "messagingServer", destination: "Your Doddy messaging server (Apple, Twilio, ElevenLabs, \(writer), GNews)",
                 what: sentence(messaging),
                 when: "When you turn on notifications, texts, phone calls or daily news, and while they are on.",
@@ -240,6 +250,7 @@ public enum DataFlow {
         "placeSearch": "Apple Maps (place searches)",
         "tokenServer": "your voice token server",
         "doddyServer": "your Doddy server (Connected Apps)",
+        "payments": "your Doddy server and Stripe (payments you tap)",
         "messagingServer": "your Doddy messaging server",
         "siri": "Siri (when you ask it)",
         "picovoice": "Picovoice (\"Hey Doddy\" key check)",

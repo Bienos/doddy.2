@@ -1,0 +1,19 @@
+{
+  "mode": "mock",
+  "purchase": {
+    "id": "8a9b0c1d-2e3f-4a5b-8c6d-7e8f9a0b1c2d",
+    "kind": "checkout",
+    "merchantName": "Pyszne Bistro",
+    "description": "Pad thai and spring rolls, delivery to home",
+    "amountMinor": 7450,
+    "currency": "PLN",
+    "checkoutHost": "shop.example.pl",
+    "status": "handed_off",
+    "method": null,
+    "testMode": false,
+    "summary": "Opened the checkout at shop.example.pl. Doddy can't see whether you paid there.",
+    "createdAt": "2026-10-18T10:00:00.000Z",
+    "updatedAt": "2026-10-18T10:00:30.000Z"
+  },
+  "checkoutUrl": "https://shop.example.pl/checkout?cart=abc123"
+}

@@ -94,6 +94,7 @@ Merge one at a time, then rebuild and talk to Doddy before the next. Checked 19 
 | `claude/affectionate-mayer-aovol9` | Island compact view draws a pre-cut round face | Low |
 | `claude/motion-mv1`, `claude/admiring-curie-bsuwv9-hey-doddy-card` | Not reviewed in the merge session | |
 | `claude/dismiss-ended-card` | Nothing: its changes were reverted | None |
+| `claude/payments-apple-pay-blik` (ADR-530) | Paying by voice: Buy card with Apple Pay or BLIK (Stripe **test mode** only), the shop's own checkout in Safari's view, Settings › Connections › Payments (off by default), `/v1/purchases` on the backend, `prepare_purchase` in the agent spec. Built on the BLIK-transfer merge (#85, ADR-510) and ASK-01; the Money group holds both. `docs/implementation/PAYMENTS_STATUS.md` | Medium: a new tool and card in the voice session; the live ElevenLabs agent needs `prepare_purchase` synced before it can call it |
 
 ## Known problems
 - **Voice sessions sometimes start twice.** ElevenLabs logs from 2026-10-09 to 10-11 show:

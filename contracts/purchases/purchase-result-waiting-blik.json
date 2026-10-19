@@ -1,0 +1,18 @@
+{
+  "mode": "mock",
+  "purchase": {
+    "id": "6f1c2b9e-3a4d-4f5e-8a7b-1c2d3e4f5a6b",
+    "kind": "native",
+    "merchantName": "Kino Muranów",
+    "description": "2 tickets, Friday 19:30",
+    "amountMinor": 5600,
+    "currency": "PLN",
+    "checkoutHost": null,
+    "status": "waiting_for_bank",
+    "method": "blik",
+    "testMode": true,
+    "summary": "Approve 56,00 zł in your bank app (test mode, no real money).",
+    "createdAt": "2026-10-18T10:00:00.000Z",
+    "updatedAt": "2026-10-18T10:00:05.000Z"
+  }
+}

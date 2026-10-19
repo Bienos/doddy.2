@@ -118,6 +118,7 @@ On 18 Oct 2026 the workspace also runs copies of `doddy-voice-token` and `doddy-
    | `DODDY_PUBLIC_BASE_URL` | the service's origin, e.g. `https://doddy-yaci.onrender.com` (no path) |
    | `DODDY_SESSION_SIGNING_KEY` | **secret**: Render's "Generate" button, or `openssl rand -base64 32`. Must decode to at least 32 bytes: a typed password or a 32-character hex string is refused |
    | `MONID_API_KEY` | **secret**: app.monid.ai → Access → API keys (`monid_live_…`) |
+   | `STRIPE_SECRET_KEY` | optional, **secret**, **test key only** (`sk_test_…` or `rk_test_…`; a live key stops the server): Stripe Dashboard → Developers → API keys, in test mode. Payments inside Doddy (ADR-530) need it, and a persistent disk before anything beyond testing (`docs/implementation/PAYMENTS_STATUS.md`) |
 
    Leave every `COMPOSIO_*` variable out (all of them, or all three Calendar ones plus a toolkit pair later).
 3. Deploy. `GET https://<service>/v1/health` should answer `"mode":"live"`. If the server refuses to start, the

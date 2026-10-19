@@ -22,6 +22,7 @@ extension ActivityApp {
         case .web: return "Wyszukiwanie w sieci"
         case .exchangeRates: return "Kursy walut"
         case .blik: return "Przelewy BLIK"
+        case .payments: return "Płatności"
         }
     }
 }
@@ -47,6 +48,9 @@ public enum ActivityText {
     /// Every title `ActivityRequest.describe` writes, in Polish.
     static let polishTitles: [String: String] = [
         "Searched your notes": "Przeszukano notatki",
+        // ADR-530.
+        "Pay for something": "Zapłać za coś",
+        "Open a checkout": "Otwórz stronę płatności",
         "Save a note": "Zapisz notatkę",
         "Read your calendar": "Odczytano kalendarz",
         "Looked for free time": "Szukano wolnego czasu",
@@ -186,6 +190,7 @@ public enum ActivityText {
         case .shortcuts: "Skróty"
         case .messages: "Wiadomości i e-mail"
         case .blik: "Przelewy BLIK"
+        case .payments: "Płatności"
         }
     }
 

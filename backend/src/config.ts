@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isShopHost } from "./payments/contracts.js";
 import { TOOLKIT_IDS, type ToolkitId } from "./tools/catalog.js";
 import { MONID_DEFAULT_BASE_URL } from "./tools/websearch.js";
 
@@ -30,6 +31,17 @@ export interface Limits {
   maxEvents: number;
   attemptTtlSeconds: number;
   maxBodyBytes: number;
+  /** Purchases (ADR-530): one purchase at most, in grosze. */
+  purchaseMaxMinor: number;
+  /** Per user per UTC day, counting everything paid, paying, waiting for the bank, unsure, handed off or reported paid. */
+  purchaseDailyMaxMinor: number;
+  /** Prepares per user per UTC day. */
+  userDailyPurchases: number;
+}
+
+/** Stripe on test keys (ADR-530). Absent: native purchases answer "Payments aren't set up". */
+export interface PaymentsSettings {
+  stripeSecretKey: string;
 }
 
 export interface ComposioSettings {
@@ -74,6 +86,10 @@ export interface Config {
   toolkits: Partial<Record<ToolkitId, ToolkitSettings>>;
   /** Live mode only; mock mode uses the offline demo search. */
   monid: MonidSettings | null;
+  /** Live mode only, test keys only; mock mode uses the demo payment gateway and ignores any key. */
+  payments: PaymentsSettings | null;
+  /** DODDY_CHECKOUT_HOSTS: shops whose checkout pages may open (exact host or a subdomain). Empty: any valid https host. */
+  checkoutHosts: string[];
   limits: Limits;
 }
 
@@ -142,6 +158,11 @@ const EnvSchema = z.object({
   DODDY_PAGE_SIZE: intSetting(50, 1, 250),
   DODDY_MAX_EVENTS: intSetting(100, 1, 500),
   DODDY_ATTEMPT_TTL_SECONDS: intSetting(600, 60, 3_600),
+  STRIPE_SECRET_KEY: z.string().optional(),
+  DODDY_CHECKOUT_HOSTS: z.string().optional(),
+  DODDY_PURCHASE_MAX_MINOR: intSetting(20_000, 200, 10_000_000),
+  DODDY_PURCHASE_DAILY_MAX_MINOR: intSetting(50_000, 200, 10_000_000),
+  DODDY_LIMIT_USER_DAILY_PURCHASES: intSetting(10, 1, 1_000),
 });
 
 /** Custom scheme (`doddy-dev://…`) or https. No query, no fragment: the server adds its own parameters. */
@@ -293,6 +314,29 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
   }
   // Production keeps its data: a file on an instance disk is lost on every restart of most hosts.
   if (e.DODDY_ENV === "production" && databaseUrl === null) problems.push("DATABASE_URL is required in production");
+  // Payments (ADR-530). Mock mode never calls Stripe, so it ignores any key. Live mode takes test
+  // keys only: Doddy charging users with live keys waits for the legal review. Names, never values.
+  let payments: PaymentsSettings | null = null;
+  const stripeKey = (e.STRIPE_SECRET_KEY ?? "").trim();
+  if (e.DODDY_MODE === "live" && stripeKey !== "") {
+    if (/^(sk|rk)_live_/.test(stripeKey)) {
+      problems.push("STRIPE_SECRET_KEY must be a test key; live payments are blocked until ADR-530's legal review");
+    } else if (!/^(sk|rk)_test_[A-Za-z0-9]{8,}$/.test(stripeKey)) {
+      problems.push("STRIPE_SECRET_KEY must look like sk_test_<secret> or rk_test_<secret>");
+    } else {
+      payments = { stripeSecretKey: stripeKey };
+    }
+  }
+  if (e.DODDY_PURCHASE_DAILY_MAX_MINOR < e.DODDY_PURCHASE_MAX_MINOR) {
+    problems.push("DODDY_PURCHASE_DAILY_MAX_MINOR must be at least DODDY_PURCHASE_MAX_MINOR");
+  }
+  const checkoutHosts = (e.DODDY_CHECKOUT_HOSTS ?? "")
+    .split(",")
+    .map((h) => h.trim().toLowerCase())
+    .filter((h) => h !== "");
+  if (checkoutHosts.some((h) => !isShopHost(h))) {
+    problems.push("DODDY_CHECKOUT_HOSTS must be comma-separated host names (no scheme, path, port or IP address)");
+  }
 
   if (problems.length > 0) throw new ConfigError(problems);
 
@@ -312,6 +356,8 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     composio,
     toolkits,
     monid,
+    payments,
+    checkoutHosts: [...new Set(checkoutHosts)],
     limits: {
       userDailyReads: e.DODDY_LIMIT_USER_DAILY_READS,
       userDailyToolRuns: e.DODDY_LIMIT_USER_DAILY_TOOL_RUNS,
@@ -327,6 +373,9 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
       maxEvents: e.DODDY_MAX_EVENTS,
       attemptTtlSeconds: e.DODDY_ATTEMPT_TTL_SECONDS,
       maxBodyBytes: 8 * 1024,
+      purchaseMaxMinor: e.DODDY_PURCHASE_MAX_MINOR,
+      purchaseDailyMaxMinor: e.DODDY_PURCHASE_DAILY_MAX_MINOR,
+      userDailyPurchases: e.DODDY_LIMIT_USER_DAILY_PURCHASES,
     },
   };
 }
@@ -348,6 +397,9 @@ export function testLimits(overrides: Partial<Limits> = {}): Limits {
     maxEvents: 100,
     attemptTtlSeconds: 600,
     maxBodyBytes: 8 * 1024,
+    purchaseMaxMinor: 20_000,
+    purchaseDailyMaxMinor: 50_000,
+    userDailyPurchases: 10,
     ...overrides,
   };
 }

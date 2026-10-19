@@ -52,6 +52,7 @@ A reference such as `op://doddy-prod/openai-api/credential` names a vault, an it
 | `DODDY_SESSION_SIGNING_KEY` | `backend-session-signing-key` | `render:doddy` | **no**: changing it signs every backend session out (Render generated the live value) | yes |
 | `COMPOSIO_API_KEY` | `composio-api` | `render:doddy` | yes | yes |
 | `MONID_API_KEY` | `monid-api` | `render:doddy` | yes | yes |
+| `STRIPE_SECRET_KEY` | `stripe-test-secret-key` | `render:doddy` | **no**: optional and test-only (ADR-530); set it on Render only to try payments, and the server refuses a live key | no |
 | `APNS_PRIVATE_KEY` | `apns-auth-key` (Secure Note, `notesPlain`) | `render:doddy-messaging` | yes | no |
 | `TWILIO_AUTH_TOKEN` | `twilio-auth-token` | `render:doddy-messaging` | yes | no |
 | `TWILIO_TASK_AUTH_TOKEN` | `twilio-task-auth-token` | `render:doddy-messaging` | yes | no |
@@ -154,6 +155,7 @@ The text comes from `rotate` in the manifest.
 | `DODDY_SESSION_SIGNING_KEY` (backend) | Signs every backend session out. Must differ from the voice server's key. Rotate only on purpose. |
 | `COMPOSIO_API_KEY` (backend) | Make a new project key in Composio, put it here, sync and deploy, then revoke the old one. Connected accounts stay in Composio. |
 | `MONID_API_KEY` (backend) | It spends Doddy's Monid wallet: revoke fast if it leaks. New key here, sync, deploy, revoke the old one. |
+| `STRIPE_SECRET_KEY` (backend) | Test key only. Roll it in Stripe's Dashboard, put the new one on Render, restart. Purchases already made stay in Stripe. |
 | `APNS_PRIVATE_KEY` (server/messaging) | Make a new APNs key in the Apple Developer account, paste the .p8 text into this Secure Note, update APNS_KEY_ID on the host, sync, deploy, then revoke the old key. |
 | `TWILIO_AUTH_TOKEN` (server/messaging) | Make a new token in Twilio, put it here, sync and deploy, then retire the old one. Texts and verify codes fail while the host has a retired token. |
 | `MEMORY_ENCRYPTION_KEY` (server/messaging) | Never rotate casually: there is no re-encryption migration. 1Password's job here is the backup copy. |

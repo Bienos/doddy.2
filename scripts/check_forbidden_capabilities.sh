@@ -43,7 +43,12 @@
 #    their answers), no write tools beyond the reviewed ones (Gmail draft and reply draft; Todoist add, complete and move,
 #    ADR-303), no proxy execution,
 #    and Monid only in the web search module, with fixed endpoints (web search, news, places; ADR-489; no discover/inspect: the model
-#    can never pick another paid endpoint).
+#    can never pick another paid endpoint),
+#  - backend: Stripe's API only in backend/src/payments/stripe.ts (ADR-530), so every request that can
+#    move money goes through the one file that encodes it, and no Stripe SDK or Stripe key in the app or repo,
+#  - Apple Pay (PassKit) only in DoddyApp/Features/Payments/ApplePayPresenter.swift, and Safari's view
+#    (SFSafariViewController, never a web view Doddy controls) besides Connected Apps only in
+#    DoddyApp/Features/Payments/CheckoutBrowser.swift, for a shop's own checkout page (ADR-530).
 # Exit 0 = clean, 1 = violation.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -72,6 +77,10 @@ web_auth_only='ASWebAuthenticationSession|WKWebView|import WebKit|SFSafariViewCo
 auth_services='import AuthenticationServices'
 apple_sign_in_files='^(DoddyApp/Features/ConnectedApps/SystemWebAuthenticator.swift|DoddyApp/Features/Voice/VoiceAccessGate.swift|DoddyApp/Features/Voice/VoiceAuthSession.swift):'
 voice_auth=DoddyApp/Features/Voice/VoiceAuthSession.swift
+# A shop's own checkout page in Safari's view (ADR-530): SFSafariViewController there, nothing else.
+checkout_browser=DoddyApp/Features/Payments/CheckoutBrowser.swift
+# Apple Pay (ADR-530): the sheet and its token in one file.
+apple_pay_file=DoddyApp/Features/Payments/ApplePayPresenter.swift
 apple_sign_in_other='ASAuthorizationPasswordProvider|ASAuthorizationPlatformPublicKeyCredential|ASAuthorizationSecurityKey|ASCredentialProvider|ASAuthorizationProviderExtension|ASPasskey'
 voice_only='import ElevenLabs'
 memos_dir=DoddyApp/Features/VoiceMemos
@@ -92,7 +101,7 @@ photos_only='import Vision|VNRecognizeText|VNImageRequestHandler|import PhotosUI
 photo_library='PHPhotoLibrary\.(requestAuthorization|authorizationStatus)|PHAsset\.fetch|UIImagePickerController|AVCaptureSession|NSCameraUsageDescription|NSPhotoLibrary(Add)?UsageDescription'
 location_tracking='requestAlwaysAuthorization|NSLocationAlways|allowsBackgroundLocationUpdates|startMonitoringSignificantLocationChanges|startMonitoringVisits|CLBackgroundActivitySession|UIBackgroundModes.*location'
 messaging_secrets='(sk-[A-Za-z0-9]{20,}|sk_[A-Za-z0-9]{20,}|AC[0-9a-f]{32}|SK[0-9a-f]{32}|BEGIN (RSA |EC )?PRIVATE KEY|(KEY|TOKEN|SECRET)=[^[:space:]]{8,})'
-secrets='(sk-[A-Za-z0-9]{20,}|sk_[A-Za-z0-9]{20,}|ak_[A-Za-z0-9_-]{20,}|monid_(live|test)_[A-Za-z0-9_-]{16,}|xi-api-key|api[_-]?key[[:space:]]*[:=][[:space:]]*"[^"]+"|BEGIN (RSA |EC )?PRIVATE KEY)'
+secrets='(sk-[A-Za-z0-9]{20,}|sk_[A-Za-z0-9]{20,}|(sk|rk)_(test|live)_[A-Za-z0-9]{10,}|whsec_[A-Za-z0-9]{10,}|ak_[A-Za-z0-9_-]{20,}|monid_(live|test)_[A-Za-z0-9_-]{16,}|xi-api-key|api[_-]?key[[:space:]]*[:=][[:space:]]*"[^"]+"|BEGIN (RSA |EC )?PRIVATE KEY)'
 allowed_permissions='NSAlarmKitUsageDescription|NSMicrophoneUsageDescription|NSSpeechRecognitionUsageDescription|NSCalendarsFullAccessUsageDescription|NSRemindersFullAccessUsageDescription|NSContactsUsageDescription|NSLocationWhenInUseUsageDescription|NSFaceIDUsageDescription'
 backend_src=backend/src
 # Drops comment-only lines from `grep -n` output (file:line:   // …, /// …, * …).
@@ -104,6 +113,8 @@ tools_catalog=backend/src/tools/catalog.ts
 tools_mock=backend/src/tools/mock.ts
 # Web search: the only file that may talk to Monid.
 websearch=backend/src/tools/websearch.ts
+# Payments (ADR-530): the only file that may talk to Stripe.
+stripe_gateway=backend/src/payments/stripe.ts
 # "Hey Doddy" (ADR-254): the wake-word engine and its recorder in one file, so "what it hears
 # isn't kept or sent" stays checkable.
 wake_file=DoddyApp/Features/Voice/WakeWordListener.swift
@@ -128,8 +139,27 @@ fi
 if [ -f "$rates_client" ] && grep -nE 'URL\(string|URLComponents|appendingPathComponent|https?://' "$rates_client" | code_only; then
   echo "FAIL: $rates_client may only fetch ExchangeRateSource.url." >&2; status=1
 fi
-if grep -RInE --include='*.swift' "$web_auth_only" "${dirs[@]}" | code_only | grep -v "^$web_auth_file:"; then
-  echo "FAIL: web authentication / web views outside $web_auth_file." >&2; status=1
+if grep -RInE --include='*.swift' "$web_auth_only" "${dirs[@]}" | code_only | grep -v "^$web_auth_file:" \
+    | grep -vE "^$checkout_browser:[0-9]+:"; then
+  echo "FAIL: web authentication / web views outside $web_auth_file and, for Safari's view, $checkout_browser." >&2; status=1
+fi
+
+# The checkout page (ADR-530): Safari's own view only, never WebKit or a web sign-in.
+if [ -f "$checkout_browser" ] && grep -nE 'WKWebView|import WebKit|ASWebAuthenticationSession|import AuthenticationServices|evaluateJavaScript' "$checkout_browser" | code_only; then
+  echo "FAIL: $checkout_browser may only show Safari's view (SFSafariViewController)." >&2; status=1
+fi
+# Payments (ADR-530): no Stripe SDK in any app target; the phone talks only to Doddy's server.
+if grep -RInE --include='*.swift' 'import Stripe|STPAPIClient|StripeAPI\.' "${dirs[@]}" | code_only; then
+  echo "FAIL: a Stripe SDK in the app. Payments go through Doddy's server (backend/src/payments)." >&2; status=1
+fi
+# With PassKit in the app (Apple Pay, ADR-530), iOS shows SwiftUI keyboard toolbars empty: the
+# capture screen lost its Done button that way (CI, 19 Oct). Put such buttons in the top bar instead.
+if grep -RInE --include='*.swift' 'placement: *\.keyboard' "${dirs[@]}" | code_only; then
+  echo "FAIL: a SwiftUI keyboard toolbar; with PassKit in the app it shows empty. Use the top bar (ADR-530)." >&2; status=1
+fi
+# Apple Pay (ADR-530): PassKit only where the sheet is shown and its token handed to Doddy's server.
+if grep -RInE --include='*.swift' 'import PassKit|PKPayment|PayWithApplePayButton|PKPaymentAuthorizationController' "${dirs[@]}" | code_only | grep -v "^$apple_pay_file:"; then
+  echo "FAIL: Apple Pay (PassKit) outside $apple_pay_file." >&2; status=1
 fi
 if grep -RInE --include='*.swift' "$auth_services" "${dirs[@]}" | code_only | grep -vE "$apple_sign_in_files"; then
   echo "FAIL: AuthenticationServices outside Connected Apps and the voice account's Sign in with Apple (ADR-484)." >&2; status=1
@@ -280,6 +310,10 @@ PY
   if grep -RInE '/v1/(discover|inspect)|monid_(discover|inspect|run)' --include='*.ts' "$backend_src"; then
     echo "FAIL: Monid endpoint discovery in the backend; web search must stay one fixed endpoint." >&2; status=1
   fi
+  # Comments count here too: a Stripe address anywhere else in the backend is a second way to pay.
+  if grep -RInE 'api\.stripe\.com|stripe\.com/v1' --include='*.ts' "$backend_src" | grep -v "^$stripe_gateway:"; then
+    echo "FAIL: Stripe called outside $stripe_gateway." >&2; status=1
+  fi
 fi
 secret_paths=("${dirs[@]}" project.yml scripts)
 for extra in backend/src backend/test contracts .env.example backend/.env.example; do [ -e "$extra" ] && secret_paths+=("$extra"); done
@@ -316,5 +350,5 @@ fi
 if grep -RnoE 'NS[A-Za-z]+UsageDescription' project.yml DoddyApp DoddyWidgets DoddyShare Config | grep -vE "$allowed_permissions"; then
   echo "FAIL: only the alarms, microphone, speech recognition, calendar, reminders, contacts, While Using location and Face ID permissions are allowed." >&2; status=1
 fi
-[ "$status" -eq 0 ] && echo "PASS: ASK-01: every voice tool and every server tool asks first through one gate; networking only in the token client, the voice account sign-in, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice and the ECB rates client, web auth only in Connected Apps, Sign in with Apple only in the voice account sign-in and no password or passkey APIs, ElevenLabs only in Voice, audio only in Voice and Voice memos, on-device speech recognition only in Voice memos, calendar, contacts and location only in Connections, photo reading and the photo picker only in Photos (no camera or photo library access), no Always/background location, no analytics, no secrets, no 1Password code in the app or SDK in the servers, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts, While Using location and Face ID (LocalAuthentication only in the app lock); backend has no write tools beyond the reviewed Gmail draft and reply draft, the Outlook draft and Todoist add, complete and move, and no proxy execution."
+[ "$status" -eq 0 ] && echo "PASS: ASK-01: every voice tool and every server tool asks first through one gate; networking only in the token client, the voice account sign-in, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice and the ECB rates client, web auth only in Connected Apps, Apple Pay only in the Payments presenter, Safari's view only for a shop's checkout, Sign in with Apple only in the voice account sign-in and no password or passkey APIs, ElevenLabs only in Voice, audio only in Voice and Voice memos, on-device speech recognition only in Voice memos, calendar, contacts and location only in Connections, photo reading and the photo picker only in Photos (no camera or photo library access), no Always/background location, no analytics, no secrets, no 1Password code in the app or SDK in the servers, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts, While Using location and Face ID (LocalAuthentication only in the app lock); backend has no write tools beyond the reviewed Gmail draft and reply draft, the Outlook draft and Todoist add, complete and move, no proxy execution, and Stripe only in backend/src/payments/stripe.ts."
 exit "$status"

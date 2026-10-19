@@ -1,0 +1,18 @@
+{
+  "mode": "mock",
+  "purchase": {
+    "id": "6f1c2b9e-3a4d-4f5e-8a7b-1c2d3e4f5a6b",
+    "kind": "native",
+    "merchantName": "Kino Muranów",
+    "description": "2 tickets, Friday 19:30",
+    "amountMinor": 5600,
+    "currency": "PLN",
+    "checkoutHost": null,
+    "status": "paid",
+    "method": "apple_pay",
+    "testMode": true,
+    "summary": "Paid 56,00 zł with Apple Pay (test mode, no real money).",
+    "createdAt": "2026-10-18T10:00:00.000Z",
+    "updatedAt": "2026-10-18T10:00:12.000Z"
+  }
+}

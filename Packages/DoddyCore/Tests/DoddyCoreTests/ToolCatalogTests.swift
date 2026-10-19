@@ -85,7 +85,20 @@ final class ToolCatalogTests: XCTestCase {
         let writes = Set(ToolCatalog.all.filter { $0.effect == .accountWrite }.map(\.name))
         let serverApproved = Set(ToolCatalog.all.filter { $0.approval == .serverApproval }.map(\.name))
         XCTAssertEqual(writes, CloudToolName.writes)
-        XCTAssertEqual(serverApproved, CloudToolName.writes)
+        // Plus paying (ADR-530): the server's single-use approval for exactly the purchase shown.
+        XCTAssertEqual(serverApproved, CloudToolName.writes.union([VoiceToolName.preparePurchase]))
+    }
+
+    func testPaymentsAreServerApprovedSwitchedAndNeverInAPlan() {
+        // A purchase is never a step of a plan card, always needs the server's approval and the
+        // Payments switch, and is the only tool with the payment effect (ADR-530).
+        let payments = ToolCatalog.all.filter { $0.effect == .payment }
+        XCTAssertEqual(payments.map(\.name), [VoiceToolName.preparePurchase])
+        let tool = try? XCTUnwrap(payments.first)
+        XCTAssertEqual(tool?.approval, .serverApproval)
+        XCTAssertEqual(tool?.connection, .payments)
+        XCTAssertEqual(tool?.planEligible, false)
+        XCTAssertEqual(tool?.runsOn, .phone)
     }
 
     func testHandoffsShowACard() {

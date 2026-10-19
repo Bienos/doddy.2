@@ -25,7 +25,7 @@ test("prune keeps live rows and drops expired attempts and approvals, old usage 
     for (let i = 1; i <= 205; i++) (await store.saveReceipt(USER, receipt(i), NOW - (205 - i) * 1000));
 
     const gone = (await store.prune(NOW));
-    assert.deepEqual(gone, { attempts: 1, approvals: 1, usage: 2, receipts: 6, toolReceipts: 0 });
+    assert.deepEqual(gone, { attempts: 1, approvals: 1, usage: 2, receipts: 6, toolReceipts: 0, purchases: 0 });
 
     assert.ok((await store.consumeAttempt({ attemptId: live.attemptId, userId: USER, provider: "gmail", nonce: live.nonce, now: NOW })), "a live attempt still works");
     assert.ok((await store.consumeApproval({ approvalId: approval.approvalId, userId: USER, capability: "draft_email", accountId: "ca", argsDigest: "d", now: NOW })));

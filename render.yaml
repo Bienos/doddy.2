@@ -95,6 +95,13 @@ services:
       # Web search through Monid (optional; empty = "not set up"). Paid from Doddy's Monid wallet.
       - key: MONID_API_KEY
         sync: false
+      # Payments (ADR-530, optional): a Stripe TEST secret key only; a live key stops the server.
+      # Empty = Apple Pay and BLIK "not set up"; the shop's own checkout still works.
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      # Optional comma-separated shop hosts whose checkout pages may open.
+      - key: DODDY_CHECKOUT_HOSTS
+        sync: false
 
   - type: web
     name: doddy-messaging

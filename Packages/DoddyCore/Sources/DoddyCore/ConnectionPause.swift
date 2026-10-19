@@ -19,7 +19,7 @@ public enum ConnectionPause {
              .openMap, .runShortcut, .draftMessage, .draftBlikTransfer, .cloudTool, .changeCalendarEvent, .changeReminder,
              .deleteCalendarEvent, .deleteReminder, .setAlarm, .undoLast,
              .deleteCalendarEvents, .moveReminders, .listAlarms, .cancelAlarm,
-             .convertCurrency:
+             .convertCurrency, .preparePurchase:
             // Currency rates come from the ECB's public file, another service (ADR-300).
             true
         case .remindAboutNote(let draft):

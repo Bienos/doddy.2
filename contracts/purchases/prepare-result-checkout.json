@@ -1,0 +1,22 @@
+{
+  "mode": "mock",
+  "purchase": {
+    "id": "8a9b0c1d-2e3f-4a5b-8c6d-7e8f9a0b1c2d",
+    "kind": "checkout",
+    "merchantName": "Pyszne Bistro",
+    "description": "Pad thai and spring rolls, delivery to home",
+    "amountMinor": 7450,
+    "currency": "PLN",
+    "checkoutHost": "shop.example.pl",
+    "status": "awaiting_tap",
+    "method": null,
+    "testMode": false,
+    "summary": "Ready to open the checkout at shop.example.pl. Expected price 74,50 zł; the shop's page shows the real one.",
+    "createdAt": "2026-10-18T10:00:00.000Z",
+    "updatedAt": "2026-10-18T10:00:00.000Z"
+  },
+  "approvalId": "1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f",
+  "expiresAt": "2026-10-18T10:05:00.000Z",
+  "methods": [],
+  "payee": "shop.example.pl"
+}

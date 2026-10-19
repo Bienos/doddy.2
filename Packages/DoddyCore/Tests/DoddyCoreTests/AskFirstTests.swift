@@ -75,6 +75,9 @@ final class AskFirstTests: XCTestCase {
             // BLIK (ADR-510): the card shows the transfer; even its tap sends nothing.
             ("draft_blik_transfer", #"{"to":"Ania","amount":50}"#),
             ("open_map", #"{"place":"Demo Café"}"#),
+            // Payments (ADR-530): the Buy card shows the server-approved purchase; only a tap pays.
+            ("prepare_purchase", #"{"kind":"native","merchant":"Doddy Café","description":"Coffee","amount_pln":10}"#),
+            ("prepare_purchase", #"{"kind":"checkout","merchant":"Kino","description":"2 tickets","amount_pln":56,"checkout_url":"https://kino.example/checkout"}"#),
         ]
         for (name, json) in calls {
             let request = VoiceToolRequest.parse(name: name, parametersJSON: Data(json.utf8))

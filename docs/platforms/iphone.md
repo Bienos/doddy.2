@@ -50,6 +50,7 @@ Code lives under `DoddyApp/Features/<Folder>/`. Status docs are in `docs/impleme
 | News, Updates | Daily news, server notifications and texts | 174, 175 | N1_NEWS_STATUS, S1_SERVER_STATUS |
 | Photos, VoiceMemos | Photo notes, voice memos | 218, 230 | PHOTO_NOTES_STATUS, VOICE_MEMOS_STATUS |
 | Privacy | Face ID lock, "What leaves this iPhone" | 310 | - |
+| Payments | Buy card: Apple Pay or BLIK (test mode), the shop's own checkout in Safari's view, receipt | 530 | PAYMENTS_STATUS |
 | QuickActions, Spotlight | Icon menu, iPhone search | 339, 330 | - |
 | Setup | Back Tap guide | 380 | V2_SHORTCUT_SETUP_STATUS |
 | Sharing | Shared lists through iCloud | 263 | SHARED_LISTS_STATUS |
