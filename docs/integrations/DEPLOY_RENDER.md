@@ -152,6 +152,8 @@ switches, approvals or receipts. For testing it is the free Supabase project `do
   Pro ($25 a month) removes the pause. Moving to another Postgres (Render Postgres, Neon) needs only a new
   `DATABASE_URL`.
 * Checked on Render on 19 Oct: the log line `"store":"postgres"`, and all nine tables present in `doddy_backend`.
+* **Data survives a restart** (19 Oct): Gmail was connected at 07:57 UTC on instance `xnphp`. A deploy at 08:05 started
+  a new instance, `xj6z4`, and its `GET /v1/tools` still showed Gmail connected, with no sign-in again.
 
 ## Sign-in with Apple or Google (Supabase Auth, ADR-526)
 
