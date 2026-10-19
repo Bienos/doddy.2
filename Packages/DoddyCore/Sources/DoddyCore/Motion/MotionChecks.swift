@@ -20,6 +20,10 @@ public struct MotionChecks: Sendable {
     private var lastCarries = 0
     /// When each mark was first found under his clear zone in the current stretch (-1: reported).
     private var zoneBlockedSince: [String: Double] = [:]
+    private var lastOpacity = 1.0
+    private var lastLandSeen = -99_999.0
+    /// Below this opacity a figure isn't a visible size change (a quarter).
+    static let visible = 0.25
     /// The newest finding in words (the annotated mode shows it).
     public var lastDetail: String { violations.last.map { "\($0.rule): \($0.detail)" } ?? "" }
     /// Keep the list short; the count keeps going.
@@ -43,6 +47,7 @@ public struct MotionChecks: Sendable {
             lastScale = nil
             doubleSeen = false
             lastCarries = e.carries
+            lastLandSeen = e.lastLand
             return
         }
         defer { lastCarries = e.carries }
@@ -64,14 +69,22 @@ public struct MotionChecks: Sendable {
             let limit = id == .composer ? 1.0 : 2.0
             if gap > limit { add(t, "feet on something real", "\(id) gap \(MotionMath.format(gap, digits: 1)) pt") }
         }
-        // Rule 13: his size changes only in the air or while he is faded out (or when he was carried
-        // unseen since the last check, e.g. into Ask's composer as its cover starts up; the check
-        // may run a frame or two after the carry, so "since the last check", not "this frame").
+        // Rule 13: his size changes only in the air or while he is faded out. Judged on what two
+        // frames show: the engine changes the size inside a 20 ms invisible gap, so a frame longer
+        // than the gap (a hitch) shows the gap's two sides back to back, each faint, and a resize
+        // counts only if he is clearly visible in both. The landing step finishes the hop's own
+        // size change (the flight's scale ends in the step that makes him attached), and so does
+        // a carry (he is moved unseen, e.g. into Ask's composer as its cover starts up; the check
+        // may run a frame or two after it, so "since the last check", not "this frame").
+        let landedSinceLastCheck = e.lastLand != lastLandSeen
         let carriedSinceLastCheck = e.carries != lastCarries
-        if let last = lastScale, abs(e.scale - last) > 1e-6, e.mode != .flight, e.opacity > 0.01, !carriedSinceLastCheck {
+        if let last = lastScale, abs(e.scale - last) > 1e-6, e.mode != .flight, !landedSinceLastCheck,
+           !carriedSinceLastCheck, e.opacity > Self.visible, lastOpacity > Self.visible {
             add(t, "two sizes, one figure", "scale \(MotionMath.format(e.scale, digits: 2)) while \(e.mode.rawValue)")
         }
         lastScale = e.scale
+        lastOpacity = e.opacity
+        lastLandSeen = e.lastLand
         // Rule 8: his clear zone keeps 24 pt from Send and the undo bar's Undo, and off the tabs.
         // The app reports a screen's surfaces and marks one by one, so a finding needs to hold at
         // two checks in a row: a frame in which Send has moved and his spot hasn't yet is not
