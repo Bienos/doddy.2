@@ -48,6 +48,9 @@ struct AppEnvironment: Sendable {
     /// The learning loop (ADR-440): learned facts, procedures and outcome events, in the same file.
     /// `nil` when the memory store is not open.
     var learningService: LearningService?
+    /// Calls Doddy places for the user (ADR-500): brief, card, answer with transcript, cost and
+    /// the server's deletion receipts, in the same file.
+    var callCaseRepository: any CallCaseRepository = UnavailableCallCaseRepository()
 
     static let unavailable = AppEnvironment(
         memoryRepository: UnavailableMemoryRepository(),
@@ -98,7 +101,8 @@ struct AppEnvironment: Sendable {
                 learningService: LearningService(
                     facts: SQLiteLearnedFactRepository(database: database),
                     procedures: SQLiteProcedureRepository(database: database),
-                    outcomes: SQLiteOutcomeEventRepository(database: database)))
+                    outcomes: SQLiteOutcomeEventRepository(database: database)),
+                callCaseRepository: SQLiteCallCaseRepository(database: database))
         } catch {
             return AppEnvironment(
                 memoryRepository: UnavailableMemoryRepository(),

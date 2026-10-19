@@ -4,57 +4,21 @@
 #  - doddy-messaging (+ worker + Postgres): notifications, texts, phone calls and the daily news
 #    (server/messaging/, ADR-139). Paid plans: confirm cost before applying. Owner decision
 #    2026-10-10: one Render setup; the backend is expected to move onto the same Postgres later.
-# Deploy: Render dashboard > New > Blueprint > pick this repo and branch. Render then asks for every
-# variable marked `sync: false`; type the secrets THERE (never in chat or in this file).
-# Status: neither is deployed or has run on Render. See docs/integrations/DEPLOY_RENDER.md and
+# Deploy: Render dashboard > New > Blueprint > pick this repo and branch. Render asks for every
+# variable marked `sync: false`, only when the Blueprint is first created, and keeps them on later
+# syncs. The messaging secrets sit on both doddy-messaging and its worker, so Render asks for them
+# twice (ADR-495: an environment group can't hold `sync: false` keys; Render ignores them there).
+# Secrets come from 1Password (ADR-493, docs/security/SECRETS_1PASSWORD.md); never type them in
+# chat or in this file.
+# Status (18 Oct 2026): this Blueprint has not been applied. The services running on Render were made
+# by hand: doddy, doddy-messaging (a free web service, no separate worker), and copies of
+# doddy-voice-token and doddy-gateway. See docs/integrations/DEPLOY_RENDER.md and
 # docs/implementation/S1_SERVER_STATUS.md.
-envVarGroups:
-  - name: doddy-messaging-secrets
-    envVars:
-      - key: APNS_TEAM_ID
-        sync: false
-      - key: APNS_KEY_ID
-        sync: false
-      - key: APNS_PRIVATE_KEY
-        sync: false
-      - key: APNS_BUNDLE_ID
-        sync: false
-      - key: TWILIO_ACCOUNT_SID
-        sync: false
-      - key: TWILIO_AUTH_TOKEN
-        sync: false
-      - key: TWILIO_MESSAGING_SERVICE_SID
-        sync: false
-      - key: TWILIO_VERIFY_SERVICE_SID
-        sync: false
-      - key: PUBLIC_BASE_URL
-        sync: false
-      # Phone calls (S2)
-      - key: ELEVENLABS_API_KEY
-        sync: false
-      - key: MEMORY_ENCRYPTION_KEY
-        sync: false
-      - key: ELEVENLABS_TOOL_SECRET
-        sync: false
-      - key: ELEVENLABS_PHONE_AGENT_ID
-        sync: false
-      - key: ELEVENLABS_PHONE_NUMBER_ID
-        sync: false
-      - key: DODDY_PHONE_NUMBER
-        sync: false
-      # Daily news (N1)
-      - key: ANTHROPIC_API_KEY
-        sync: false
-      - key: OPENAI_API_KEY # used only when ANTHROPIC_API_KEY is empty (ADR-197)
-        sync: false
-      - key: GNEWS_API_KEY
-        sync: false
-
 services:
   - type: web
     name: doddy
     runtime: node
-    plan: free            # sleeps when idle; the SQLite file resets on every restart/deploy (see doc)
+    plan: free            # sleeps when idle and has no disk: data lives in Postgres (DATABASE_URL, ADR-525)
     region: frankfurt     # closest to Warsaw
     rootDir: backend
     buildCommand: npm ci && npm run build
@@ -63,7 +27,7 @@ services:
     autoDeploy: false
     envVars:
       - key: NODE_VERSION
-        value: "22"       # package.json needs >= 22.22.3 (node:sqlite)
+        value: "22"       # package.json needs >= 22.22.3 (@composio/core)
       - key: DODDY_MODE
         value: live
       # production + live is refused by the server until real app sign-in exists.
@@ -73,12 +37,21 @@ services:
         value: 0.0.0.0
       - key: DODDY_PORT
         value: "10000"    # Render's default PORT
+      # signed = the owner's minted token; supabase = Apple or Google sign-in (ADR-526), plus the
+      # owner's token in development while DODDY_SESSION_SIGNING_KEY is set.
       - key: DODDY_AUTH_MODE
         value: signed
+      - key: SUPABASE_URL
+        sync: false
       - key: DODDY_SESSION_SIGNING_KEY
         generateValue: true
-      - key: DODDY_DB_PATH
-        value: ./data/doddy.sqlite
+      # Hosted Postgres (ADR-525): postgres://… URL, and the CA's PEM when it isn't a public one
+      # (Supabase: its root CA). Without DATABASE_URL the server uses PGlite at DODDY_DB_PATH, which
+      # the free plan loses on every restart.
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_CA_CERT
+        sync: false
       # callback = single-owner development only (the server refuses it in production).
       - key: COMPOSIO_COMPLETION_MODE
         value: callback
@@ -140,7 +113,69 @@ services:
         fromDatabase:
           name: doddy-db
           property: connectionString
-      - fromGroup: doddy-messaging-secrets
+      # Secrets: service-level `sync: false`, because Render asks for these when the Blueprint is
+      # first created and keeps them on later syncs. An environment group can't do that (ADR-495).
+      # The same keys are on doddy-messaging-worker; tools/secrets/sync.mjs can fill both from 1Password.
+      - key: APNS_TEAM_ID
+        sync: false
+      - key: APNS_KEY_ID
+        sync: false
+      - key: APNS_PRIVATE_KEY
+        sync: false
+      - key: APNS_BUNDLE_ID
+        sync: false
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_MESSAGING_SERVICE_SID
+        sync: false
+      - key: TWILIO_VERIFY_SERVICE_SID
+        sync: false
+      - key: PUBLIC_BASE_URL
+        sync: false
+      # Phone calls (S2)
+      - key: ELEVENLABS_API_KEY
+        sync: false
+      - key: MEMORY_ENCRYPTION_KEY
+        sync: false
+      - key: ELEVENLABS_TOOL_SECRET
+        sync: false
+      - key: ELEVENLABS_PHONE_AGENT_ID
+        sync: false
+      - key: ELEVENLABS_PHONE_NUMBER_ID
+        sync: false
+      - key: DODDY_PHONE_NUMBER
+        sync: false
+      # Calls Doddy makes for the user (ADR-500, docs/decisions/calls.md). Use a Poland-only
+      # Twilio subaccount; the TWILIO_TASK_* pair falls back to TWILIO_ACCOUNT_SID/AUTH_TOKEN.
+      - key: TWILIO_TASK_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_TASK_AUTH_TOKEN
+        sync: false
+      - key: TASK_CALL_FROM_NUMBER
+        sync: false
+      - key: ELEVENLABS_TASK_AGENT_ID
+        sync: false
+      - key: ELEVENLABS_WEBHOOK_SECRET
+        sync: false
+      - key: TASK_CALLS_KILL_SWITCH # "1" stops every call by Doddy at once
+        value: "0"
+      - key: CALL_RECORDING_NOTICE # off until the owner confirms the legal basis
+        value: "off"
+      - key: PRICE_TWILIO_TRANSCRIPTION_USD_PER_MIN
+        sync: false
+      - key: PRICE_TWILIO_CONFERENCE_USD_PER_PARTICIPANT_MIN
+        sync: false
+      - key: PRICE_ELEVENLABS_USD_PER_CREDIT
+        sync: false
+      # Daily news (N1); ANTHROPIC_API_KEY also writes the call answer card's summary
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY # used only when ANTHROPIC_API_KEY is empty (ADR-197)
+        sync: false
+      - key: GNEWS_API_KEY
+        sync: false
 
   - type: worker
     name: doddy-messaging-worker
@@ -158,7 +193,69 @@ services:
         fromDatabase:
           name: doddy-db
           property: connectionString
-      - fromGroup: doddy-messaging-secrets
+      # Secrets: service-level `sync: false`, because Render asks for these when the Blueprint is
+      # first created and keeps them on later syncs. An environment group can't do that (ADR-495).
+      # The same keys as doddy-messaging; tools/secrets/sync.mjs can fill both from 1Password.
+      - key: APNS_TEAM_ID
+        sync: false
+      - key: APNS_KEY_ID
+        sync: false
+      - key: APNS_PRIVATE_KEY
+        sync: false
+      - key: APNS_BUNDLE_ID
+        sync: false
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_MESSAGING_SERVICE_SID
+        sync: false
+      - key: TWILIO_VERIFY_SERVICE_SID
+        sync: false
+      - key: PUBLIC_BASE_URL
+        sync: false
+      # Phone calls (S2)
+      - key: ELEVENLABS_API_KEY
+        sync: false
+      - key: MEMORY_ENCRYPTION_KEY
+        sync: false
+      - key: ELEVENLABS_TOOL_SECRET
+        sync: false
+      - key: ELEVENLABS_PHONE_AGENT_ID
+        sync: false
+      - key: ELEVENLABS_PHONE_NUMBER_ID
+        sync: false
+      - key: DODDY_PHONE_NUMBER
+        sync: false
+      # Calls Doddy makes for the user (ADR-500, docs/decisions/calls.md). Use a Poland-only
+      # Twilio subaccount; the TWILIO_TASK_* pair falls back to TWILIO_ACCOUNT_SID/AUTH_TOKEN.
+      - key: TWILIO_TASK_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_TASK_AUTH_TOKEN
+        sync: false
+      - key: TASK_CALL_FROM_NUMBER
+        sync: false
+      - key: ELEVENLABS_TASK_AGENT_ID
+        sync: false
+      - key: ELEVENLABS_WEBHOOK_SECRET
+        sync: false
+      - key: TASK_CALLS_KILL_SWITCH # "1" stops every call by Doddy at once
+        value: "0"
+      - key: CALL_RECORDING_NOTICE # off until the owner confirms the legal basis
+        value: "off"
+      - key: PRICE_TWILIO_TRANSCRIPTION_USD_PER_MIN
+        sync: false
+      - key: PRICE_TWILIO_CONFERENCE_USD_PER_PARTICIPANT_MIN
+        sync: false
+      - key: PRICE_ELEVENLABS_USD_PER_CREDIT
+        sync: false
+      # Daily news (N1); ANTHROPIC_API_KEY also writes the call answer card's summary
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY # used only when ANTHROPIC_API_KEY is empty (ADR-197)
+        sync: false
+      - key: GNEWS_API_KEY
+        sync: false
 
 databases:
   - name: doddy-db

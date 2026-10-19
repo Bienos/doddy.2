@@ -289,6 +289,29 @@ public final class DoddyDatabase: Sendable {
                 CREATE INDEX outcome_events_request ON outcome_events(request_id);
                 """)
         }
+        // Calls Doddy places for the user (ADR-500): the brief, the answer card with its transcript,
+        // the cost and the server's deletion receipts. The transcript is kept only here once the
+        // server's copy is deleted.
+        migrator.registerMigration("v14_call_cases") { db in
+            try db.execute(sql: """
+                CREATE TABLE call_cases (
+                    id TEXT PRIMARY KEY NOT NULL,
+                    kind TEXT NOT NULL CHECK (kind IN (\(sqlList(CaseKind.allCases.map(\.rawValue))))),
+                    state TEXT NOT NULL CHECK (length(state) BETWEEN 1 AND 40),
+                    outcome TEXT,
+                    created_at_ms INTEGER NOT NULL,
+                    updated_at_ms INTEGER NOT NULL CHECK (updated_at_ms >= created_at_ms),
+                    brief_json TEXT NOT NULL,
+                    preview_json TEXT,
+                    result_attempt_id TEXT,
+                    result_json TEXT,
+                    cost_json TEXT,
+                    deletions_json TEXT NOT NULL DEFAULT '[]',
+                    CHECK ((result_json IS NULL) = (result_attempt_id IS NULL))
+                );
+                CREATE INDEX call_cases_created ON call_cases(created_at_ms);
+                """)
+        }
         return migrator
     }
 

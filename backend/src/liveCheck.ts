@@ -20,7 +20,7 @@ if (config.mode !== "live") {
   process.stderr.write("NOT RUN: DODDY_MODE must be live for the live check.\n");
   process.exit(2);
 }
-const { service, store } = buildApp(config);
+const { service, store } = await buildApp(config);
 try {
   const status = await service.refreshStatus(userId);
   process.stdout.write(`connection status: ${status.status}${status.reason ? ` (${status.reason})` : ""}\n`);
@@ -45,5 +45,5 @@ try {
   process.stderr.write(`live check failed: ${typeof code === "string" ? code : "unexpected error"}\n`);
   process.exitCode = 1;
 } finally {
-  store.close();
+  await store.close();
 }

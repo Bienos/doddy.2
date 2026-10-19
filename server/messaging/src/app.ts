@@ -14,6 +14,16 @@ import { accountRoutes } from "./routes/account.js";
 import { phoneRoutes } from "./routes/phone.js";
 import { updateRoutes } from "./routes/updates.js";
 import { twilioWebhookRoutes } from "./routes/twilioWebhooks.js";
+import { callCaseRoutes } from "./routes/callCases.js";
+import { taskCallWebhookRoutes } from "./routes/taskCallWebhooks.js";
+import { taskCallContext, type TaskCallContext, type TaskCallDeps } from "./taskCalls/context.js";
+
+declare module "fastify" {
+  interface FastifyInstance {
+    /** The call-case context the routes use (null when the feature is off); tests run worker passes on it. */
+    taskCallContext: TaskCallContext | null;
+  }
+}
 
 export interface Deps {
   db: Db;
@@ -36,6 +46,10 @@ export interface Deps {
   trustProxyHops?: number;
   /** Verify codes the whole server may start per UTC day. Default 200. */
   verifyDailyCap?: number;
+  /** Calls Doddy places for the user (ADR-500). Needs `cipher` and `publicBaseUrl` too. */
+  taskCalls?: TaskCallDeps;
+  /** Where task-call log lines go (tests capture them); default: the request logger. */
+  taskCallLog?: (msg: string, extra?: object) => void;
 }
 
 export async function buildApp(deps: Deps): Promise<FastifyInstance> {
@@ -48,7 +62,7 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
       level: "info",
       // Never log bearer tokens or signatures. Request bodies are not logged at all.
       redact: ["req.headers.authorization", 'req.headers["x-twilio-signature"]',
-        'req.headers["x-doddy-tool-secret"]', 'req.headers["x-doddy-session"]'],
+        'req.headers["x-doddy-tool-secret"]', 'req.headers["x-doddy-session"]', 'req.headers["elevenlabs-signature"]'],
     },
   });
   await app.register(formbody);
@@ -80,13 +94,20 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
     }
   });
 
-  await app.register(accountRoutes(deps));
+  // Logs carry ids, states, durations and codes only (calls.md, "Privacy summary").
+  const taskCtx = taskCallContext(deps.db, deps.taskCalls, deps.cipher, deps.publicBaseUrl, deps.push,
+    deps.taskCallLog ?? ((msg, extra = {}) => app.log.info(extra, msg)));
+  app.decorate("taskCallContext", taskCtx ?? null);
+
+  await app.register(accountRoutes(deps, taskCtx));
   await app.register(phoneRoutes(deps));
   await app.register(updateRoutes(deps));
   await app.register(twilioWebhookRoutes(deps));
   await app.register(callRoutes(deps));
   await app.register(elevenLabsRoutes(deps));
   await app.register(newsRoutes(deps));
+  await app.register(callCaseRoutes(deps, taskCtx));
+  await app.register(taskCallWebhookRoutes(deps, taskCtx));
   return app;
 }
 

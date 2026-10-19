@@ -46,6 +46,23 @@ All `/v1` routes except account creation need `Authorization: Bearer <deviceToke
   2. In ElevenLabs, import the Twilio number and assign it to the new agent.
   3. Set the call-start webhook (or use `--set-workspace-webhook`).
 
+## Calls Doddy makes for you (task calls, ADR-500)
+Doddy calls a business in Polish for the user, says it's an AI calling on their behalf, asks one question and brings the answer back as a card. Design, docs checked and open legal questions: `docs/decisions/calls.md`. Status and live-test steps: `docs/implementation/CALL_CASES_STATUS.md`. **Not tried on a real call yet.**
+
+| Area | Endpoints |
+|---|---|
+| App | `GET /v1/call-cases/availability` · `POST /v1/call-cases` (brief → preview built from the exact payload) · `GET /v1/call-cases` · `GET /v1/call-cases/:id` · `POST …/:id/approve {digest, at?}` · `GET …/:id/live?after=` · `POST …/:id/end` · `POST …/:id/takeover` · `POST …/:id/cancel` · `POST …/:id/ack {attemptId, resultDigest}` · `PUT/DELETE …/:id/live-activity` |
+| Twilio (signed with the task account's token) | `/webhooks/twilio/task-call/{answer,fallback,connect-ended,status,transcription,takeover-answer,takeover-digits,takeover-status,conference}` |
+| ElevenLabs (HMAC on the raw body) | `POST /webhooks/elevenlabs/post-call`: other agents' calls are dropped unread |
+
+- **Our server places the call; ElevenLabs is only the voice** (register-call). The approved payload is encrypted and bound to its digest by a foreign key; what Twilio and ElevenLabs receive is exactly that payload.
+- **Hard limits** (code ceilings; env can only lower them): Polish mobile, landline and 800 numbers only; the whole call inside 8:00–20:00 Warsaw time; per user 3/hour and 10/day; per number 2/day per user, 3/day in all, 15 min apart; 50/day in all; one live call per account; longest call 300 s; `TASK_CALLS_KILL_SWITCH=1` stops everything, live calls included. Dial and answer are refused while the live ElevenLabs agent differs from `voice-agent/task-call/`.
+- **Audio is never recorded.** A text transcript is: live from Twilio Real-Time Transcription, final from ElevenLabs. Both are encrypted here only until the app has saved the answer card; then they are deleted, with a receipt per deletion. The ElevenLabs conversation is deleted after processing and checked gone.
+- **Cost:** every dialled attempt gets cost items (Twilio price, transcription, ElevenLabs credits, model tokens) in the transaction that claims the dial. Unset prices make an item `unknown`, never zero.
+- **Env:** `TWILIO_TASK_ACCOUNT_SID`, `TWILIO_TASK_AUTH_TOKEN` (fall back to the main Twilio pair; use a Poland-only subaccount), `TASK_CALL_FROM_NUMBER`, `ELEVENLABS_API_KEY`, `ELEVENLABS_TASK_AGENT_ID`, `ELEVENLABS_WEBHOOK_SECRET`, `TASK_CALLS_KILL_SWITCH`, `CALL_RECORDING_NOTICE` (`off` by default), `TASK_CALL_LIMIT_*`, `TASK_CALL_MAX_SECS`, `PRICE_TWILIO_TRANSCRIPTION_USD_PER_MIN`, `PRICE_TWILIO_CONFERENCE_USD_PER_PARTICIPANT_MIN`, `PRICE_ELEVENLABS_USD_PER_CREDIT`, `TASK_CALL_SAY_VOICE`. `ANTHROPIC_API_KEY`, if set, lets Claude Haiku point at the answer and write the summary; the card works without it. `.env.example` explains each.
+- **Setup:** `node scripts/setup-task-call-agent.mjs --dry-run`, then for real; point the ElevenLabs post-call webhook (transcript on, audio off) at `/webhooks/elevenlabs/post-call` with its HMAC secret.
+- **Try it without the app:** `node scripts/task-call.mjs init|status|brief|approve|live|takeover|end|card|ack` (usage at the top of the script).
+
 ## News digests
 Once a day at the user's local time, the worker builds a short news message:
 1. **Gather:** curated RSS feeds per topic, the user's own feeds, and GNews keyword search for their own topics. Fetches are cached 30–60 minutes and shared across users.
@@ -65,10 +82,11 @@ DATABASE_URL=... npm start      # applies migrations, then serves on $PORT
 DATABASE_URL=... npm run worker # sends due updates every 2 s
 TEST_DATABASE_URL=postgres://…/doddy_test npm test   # WARNING: drops that DB's public schema
 ```
+With 1Password (ADR-493): `npm run start:op` takes the secrets from the `doddy-dev` vault through `.env.op` (references only) and the rest from `.env`. See `docs/security/SECRETS_1PASSWORD.md`.
 
 ## Before the first deploy (owner)
 1. Apply `render.yaml` in Render. This creates **paid** resources: 2 × starter + basic-256mb Postgres.
-2. Fill the `doddy-secrets` env group, then set `PUBLIC_BASE_URL` to the `doddy-api` URL.
+2. Render asks for each secret when the Blueprint is created, once for the web service and once for the worker (ADR-495). Take the values from 1Password, and set `PUBLIC_BASE_URL` to the service's URL. Later changes go through `tools/secrets/sync.mjs` (`docs/security/SECRETS_1PASSWORD.md`).
 3. Twilio:
    - Buy a number and create a Messaging Service with **Advanced Opt-Out** on.
    - Point the inbound webhook at `/webhooks/twilio/sms`.
