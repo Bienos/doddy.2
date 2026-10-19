@@ -19,6 +19,11 @@ Repo `Bienos/doddy.2`, default branch `claude/loving-dirac-uuxoux`. Read `STATUS
   - Update `docs/implementation/BLIK_TRANSFER_STATUS.md`, any user-facing string or agent text that names the limit (grep `10,000`, `10 000` and `10000` in `l10n/`, `voice-agent/` and `DoddyApp/`), and an ADR row.
   - Do it in one PR from main. Merge it when `core` and `ci` are green.
 
+- **The repository stays public.**
+  - Record it as an ADR row.
+  - Correct ADR-497's text, which says the repo is private and that Actions time is paid for; that's not true for a public repo on standard runners.
+  - Because it's public, grep the repo for anything that looks like a secret (keys, tokens, `sk-`, `GOCSPX`, `ac_`, `ca_` IDs, private URLs) with `scripts/check_forbidden_capabilities.sh` and a plain `git grep`, and list any hits to me, names and paths only.
+
 ## Work for you, in this order
 0. **Privacy fix first.** The fix that stops private notes reaching the calls server when "Memory on calls" is on was never merged; it's stranded on `claude/sweet-albattani-shbi30`.
    - Port it onto a new branch from main and open a PR with tests.
@@ -74,7 +79,6 @@ Repo `Bienos/doddy.2`, default branch `claude/loving-dirac-uuxoux`. Read `STATUS
   - decide on the Render copies of the voice-token server and the gateway.
 - **Calls (#90):** the legal basis for the recording notice, a Twilio subaccount limited to Poland, and a Polish calling agent.
 - **Decisions:**
-  - the #90 secrets split;
-  - repo visibility (GitHub says public, ADR-497 says private).
+  - the #90 secrets split.
 - **Native review** of the translations.
 - **Device log** of the double voice session bug.
