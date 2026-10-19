@@ -43,6 +43,14 @@ public struct ConnectCard: Equatable, Sendable {
     public let permissions: [String]
     public let confirmLabel: String
     public let cancelLabel: String
+
+    public init(title: String, lines: [String], permissions: [String], confirmLabel: String, cancelLabel: String) {
+        self.title = title
+        self.lines = lines
+        self.permissions = permissions
+        self.confirmLabel = confirmLabel
+        self.cancelLabel = cancelLabel
+    }
 }
 
 /// ADR-511, "connect when asked" (owner, 2026-10-19). Every account stays set up on Doddy's server,
@@ -183,7 +191,9 @@ public struct ConnectOnAsk: Equatable, Sendable {
         return Self.ended(.expired, open.offer)
     }
 
-    static func ending(of result: ToolkitResult, tool: String) -> Ending {
+    /// How the server's answer ended the offer. Public so a sign-in that outlived its conversation
+    /// can still say on screen whether the account was connected.
+    public static func ending(of result: ToolkitResult, tool: String) -> Ending {
         switch result.receipt.status {
         case .succeeded:
             // The server's own view of the tool, not the receipt's words.

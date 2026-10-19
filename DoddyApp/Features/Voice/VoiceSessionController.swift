@@ -235,6 +235,24 @@ final class VoiceSessionController {
     private(set) var selectedPlaceIndex = 0
     /// A function the agent asked for that is off or blocked. The screen offers to turn it on.
     private(set) var connectionNeeded: VoiceConnection?
+
+    /// "Connect when asked" (ADR-511): the card that offers to connect an online account, or switch
+    /// one tool on, right here, in answer to a tool the agent called. The call itself was already
+    /// answered ("nothing was done"), so it can't time out while the user signs in.
+    struct ConnectCardState: Equatable {
+        let card: ConnectCard
+        let offer: ConnectOffer
+        /// "Open in Mail instead" for a send (D5). Kept only while this card is on screen.
+        let mailLink: URL?
+        let isDemo: Bool
+        /// Signing in or switching on: the buttons wait.
+        var working = false
+        /// After the server answered: what happened, in one line.
+        var outcome: String?
+    }
+    private(set) var connectCard: ConnectCardState?
+    /// The rules for the card (DoddyCore): one at a time, ten minutes, this conversation only.
+    private var connectOnAsk = ConnectOnAsk()
     private(set) var isMuted = false {
         didSet {
             syncIsland()
@@ -487,6 +505,8 @@ final class VoiceSessionController {
         noteReminderStatus = nil
         planStatus = nil
         connectionNeeded = nil
+        connectCard = nil
+        connectOnAsk.forget()
         isMuted = false
         savedThisConversation = 0
         islandFlash = nil
@@ -916,6 +936,9 @@ final class VoiceSessionController {
         contactCard = nil
         parkingCard = nil
         connectionNeeded = nil
+        // A sign-in still open finishes on its own; this conversation's request is forgotten (ADR-511).
+        connectCard = nil
+        connectOnAsk.forget()
         if isLive { phase = .ended }
         keepLog()
         offerSaveSuggestions()
@@ -2784,8 +2807,138 @@ final class VoiceSessionController {
                     toolCallID: toolCallID)
             }
         } catch {
+            // ADR-511: the server says the user can connect it, or switch it on, right here.
+            if await offerConnect(error, cloud: cloud, toolCallID: toolCallID) { return }
             await reply(toolCallID, VoiceToolReply.cloudFailed(error, tool: cloud.name), isError: true)
         }
+    }
+
+    // MARK: Connect when asked (ADR-511)
+
+    /// Shows the connect card when the server's refusal carries an offer for this call, and answers
+    /// the call at once ("nothing was done; a card asks to connect"). False: answer as before.
+    private func offerConnect(_ error: OnlineAccountsError, cloud: CloudToolCall, toolCallID: String) async -> Bool {
+        guard isCurrent(toolCallID) else { return false }
+        let paused = UserDefaults.standard.bool(forKey: ConnectionPause.preferenceKey)
+        switch connectOnAsk.decide(error, tool: cloud.name, toolCallID: toolCallID, conversation: startAttempt, paused: paused, at: Date()) {
+        case .none:
+            return false
+        case .busy(let line):
+            await reply(toolCallID, line)
+            return true
+        case .offer(let card, let line):
+            guard let offer = connectOnAsk.pending?.offer else { return false }
+            connectCard = ConnectCardState(
+                card: card, offer: offer, mailLink: ConnectOnAsk.mailInstead(for: cloud), isDemo: error.receipt?.mode == .mock)
+            await reply(toolCallID, line)
+            return true
+        }
+    }
+
+    /// The card's main button: sign in for this one tool, or switch it on. While the sign-in sheet
+    /// is up the microphone is muted and Doddy is told to wait. Only Doddy's server decides what was
+    /// connected; the agent is told afterwards and calls the tool again, through its own card.
+    func connectFromCard() async {
+        let attempt = startAttempt
+        if let expired = connectOnAsk.expireIfNeeded(at: Date()) {
+            connectCard = nil
+            await sendToAgent(expired)
+            return
+        }
+        guard let state = connectCard, isLive, connectOnAsk.tap(conversation: attempt, at: Date()) else { return }
+        connectCard?.working = true
+        connectCard?.outcome = nil
+        let offer = state.offer
+        guard let client = OnlineAccountsClientFactory.make() else {
+            await finishConnect(.failure(.notConfigured), offer: offer, attempt: attempt)
+            return
+        }
+        var mutedForSignIn = false
+        if offer.needsSignIn {
+            if let conversation, !isMuted, longTurn == .off, (try? await conversation.setMuted(true)) != nil {
+                isMuted = true
+                mutedForSignIn = true
+            }
+            try? await conversation?.updateContext(
+                "\(TranslatorSession.appMessagePrefix) The user is signing in to \(offer.accountTitle) now. Wait quietly; the app will say how it went.")
+        }
+        let result = offer.needsSignIn
+            ? await ConnectFlow.signIn(toolkit: offer.toolkit, forTool: offer.tool, client: client, authenticator: SystemWebAuthenticator())
+            : await ConnectFlow.switchOn(tool: offer.tool, client: client)
+        // The microphone goes back only if this muted it, and only in the same conversation.
+        if mutedForSignIn, onScreen(attempt), isMuted, longTurn == .off, let conversation, (try? await conversation.setMuted(false)) != nil {
+            isMuted = false
+        }
+        await finishConnect(result, offer: offer, attempt: attempt)
+    }
+
+    private func finishConnect(_ result: Result<ToolkitResult, OnlineAccountsError>, offer: ConnectOffer, attempt: Int) async {
+        guard onScreen(attempt) else {
+            // The conversation ended while the sheet was up (ADR-458). A connection the user made
+            // stays, but the request is forgotten and nothing runs. The ended screen says so once;
+            // a newer conversation's screen shows nothing of it (Settings, Online accounts does).
+            if !isLive, case .success(let done) = result, ConnectOnAsk.ending(of: done, tool: offer.tool) == .connected {
+                connectCard = ConnectCardState(
+                    card: ConnectCard(title: "\(offer.accountTitle) is connected", lines: [], permissions: [], confirmLabel: "", cancelLabel: "Close"),
+                    offer: offer, mailLink: nil, isDemo: done.receipt.mode == .mock,
+                    outcome: "Only \"\(offer.toolTitle)\" is switched on. Nothing was done. Ask Doddy again when you want it.")
+            }
+            return
+        }
+        let line: String?
+        switch result {
+        case .success(let done):
+            let finished = connectOnAsk.finish(done, conversation: attempt)
+            line = finished?.1
+            connectCard?.outcome = Self.connectOutcome(finished?.0, offer: offer, summary: done.receipt.summary)
+        case .failure(let error):
+            line = connectOnAsk.fail(error, conversation: attempt)
+            connectCard?.outcome = error.userMessage
+        }
+        connectCard?.working = false
+        if let line { await sendToAgent(line) }
+    }
+
+    /// One line on the card after the server answered. Never "done": the action itself hasn't run.
+    private static func connectOutcome(_ ending: ConnectOnAsk.Ending?, offer: ConnectOffer, summary: String) -> String {
+        switch ending {
+        case .connected?:
+            return offer.kind == .switchOn
+                ? "\"\(offer.toolTitle)\" is on. Nothing was done yet."
+                : "\(offer.accountTitle) is connected. Only \"\(offer.toolTitle)\" is on. Nothing was done yet."
+        case .notGranted?:
+            return "\(offer.accountTitle) wasn't connected: the permission wasn't given. Nothing was done."
+        case .canceled?:
+            return "Nothing was connected."
+        default:
+            return summary
+        }
+    }
+
+    /// "Not now".
+    func declineConnectCard() async {
+        let line = connectOnAsk.decline(conversation: startAttempt)
+        connectCard = nil
+        if let line { await sendToAgent(line) }
+    }
+
+    /// "Open in Mail instead" (D5): Mail opens with the email filled in; the user sends it there.
+    func openMailFromConnectCard() async {
+        guard let url = connectCard?.mailLink, connectCard?.working == false else { return }
+        guard await open(url) else {
+            connectCard?.outcome = "Mail couldn't be opened. Nothing was sent."
+            return
+        }
+        let line = connectOnAsk.openedMail(conversation: startAttempt)
+        connectCard = nil
+        if let line { await sendToAgent(line) }
+    }
+
+    /// Closes the card once it has said how it went.
+    func dismissConnectCard() {
+        guard connectCard?.working != true else { return }
+        connectOnAsk.forget()
+        connectCard = nil
     }
 
     /// ASK-01: the user said yes to this read. The server checks the approval again and uses it up.

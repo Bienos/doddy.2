@@ -265,6 +265,11 @@ struct VoiceView: View {
                                 .id("connectionNeeded")
                         }
 
+                        if let connect = controller.connectCard {
+                            connectAccountCard(connect, controller: controller)
+                                .id("connectAccount")
+                        }
+
                         if let card = controller.contactCard {
                             contactCard(card, controller: controller)
                                 .id("contactCard")
@@ -275,7 +280,7 @@ struct VoiceView: View {
                                 .id("parkingCard")
                         }
 
-                        Text("While you talk, your voice, this conversation, your saved notes, your list names (and a list's items when Doddy reads or changes it), your last few conversations and any calendar entries, contact names and birthdays (day and month) or drafts Doddy uses are sent to OpenAI, or ElevenLabs if you switch Home's voice to it to run Doddy. Weather and Wikipedia lookups work only with ElevenLabs, from its servers. Nothing is saved, added, started, sent or opened unless you tap for it. If you leave the app, Doddy keeps listening (you'll see him in the Dynamic Island) until you tap End. If iOS stops Doddy in the background, the island says so instead of pretending he still hears you.")
+                        Text("While you talk, your voice, this conversation, your saved notes, your list names (and a list's items when Doddy reads or changes it), your last few conversations and any calendar entries, contact names and birthdays (day and month) or drafts Doddy uses are sent to OpenAI, or ElevenLabs if you switch Home's voice to it to run Doddy. Weather and Wikipedia lookups work only with ElevenLabs, from its servers. Nothing is saved, added, started, sent or opened unless you tap for it. If Doddy needs an online account you haven't connected, it asks on screen first, and you sign in on the provider's own page. If you leave the app, Doddy keeps listening (you'll see him in the Dynamic Island) until you tap End. If iOS stops Doddy in the background, the island says so instead of pretending he still hears you.")
                             .font(.footnote)
                             .foregroundStyle(Theme.secondaryText)
                             .padding(.top, 8)
@@ -1182,6 +1187,67 @@ struct VoiceView: View {
             }
             .buttonStyle(PrimaryButtonStyle())
             .accessibilityIdentifier("voice.turnOnConnection")
+        }
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+    }
+
+    /// "Connect when asked" (ADR-511): the server's offer to connect an account, or switch one tool
+    /// on, where the request was made, with exactly what the sign-in will ask to allow. Nothing runs
+    /// from here: once connected, Doddy calls the tool again and its own card asks first.
+    private func connectAccountCard(_ state: VoiceSessionController.ConnectCardState, controller: VoiceSessionController) -> some View {
+        let lines = state.card.lines
+        return VStack(alignment: .leading, spacing: 12) {
+            if state.isDemo {
+                Label("Demo — no real account is connected", systemImage: "theatermasks")
+                    .font(.footnote)
+            }
+            Text(state.card.title)
+                .font(.headline)
+            ForEach(Array(lines.prefix(2).enumerated()), id: \.offset) { _, line in
+                Text(line)
+                    .font(.body)
+            }
+            ForEach(state.card.permissions, id: \.self) { permission in
+                Label(permission, systemImage: "checkmark.circle")
+                    .font(.body)
+            }
+            ForEach(Array(lines.dropFirst(2).enumerated()), id: \.offset) { _, line in
+                Text(line)
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+            }
+            if let outcome = state.outcome {
+                Text(outcome)
+                    .font(.body.bold())
+                    .accessibilityIdentifier("voice.connect.outcome")
+                Button("Close") { controller.dismissConnectCard() }
+                    .buttonStyle(SecondaryButtonStyle())
+                    .accessibilityIdentifier("voice.connect.close")
+            } else if !state.card.confirmLabel.isEmpty {
+                Button {
+                    Task { await controller.connectFromCard() }
+                } label: {
+                    if state.working {
+                        ProgressView()
+                    } else {
+                        Text(state.card.confirmLabel)
+                    }
+                }
+                .buttonStyle(PrimaryButtonStyle())
+                .disabled(state.working)
+                .accessibilityIdentifier("voice.connect.confirm")
+                if state.mailLink != nil {
+                    Button("Open in Mail instead") { Task { await controller.openMailFromConnectCard() } }
+                        .buttonStyle(SecondaryButtonStyle())
+                        .disabled(state.working)
+                        .accessibilityIdentifier("voice.connect.mail")
+                }
+                Button(state.card.cancelLabel) { Task { await controller.declineConnectCard() } }
+                    .buttonStyle(SecondaryButtonStyle())
+                    .disabled(state.working)
+                    .accessibilityIdentifier("voice.connect.notNow")
+            }
         }
         .padding(16)
         .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
