@@ -16,6 +16,9 @@ public struct MotionChecks: Sendable {
     public private(set) var violations: [Violation] = []
     public private(set) var count = 0
     private var lastScale: Double?
+    private var doubleSeen = false
+    /// The newest finding in words (the annotated mode shows it).
+    public var lastDetail: String { violations.last.map { "\($0.rule): \($0.detail)" } ?? "" }
     /// Keep the list short; the count keeps going.
     public static let kept = 50
 
@@ -31,12 +34,26 @@ public struct MotionChecks: Sendable {
     public mutating func check(_ host: MotionHost, drawn: Int) {
         let e = host.engine
         let t = e.now
+        // Before he has a place there is nothing to check (his default size isn't a size he has).
+        guard host.isPlaced else {
+            lastScale = nil
+            doubleSeen = false
+            return
+        }
         let visible = host.placement != .hidden && e.opacity > 0.01
-        // Rule 1: one Doddy, never two (and never one hidden while the placement says drawn).
-        if drawn > 1 { add(t, "one Doddy", "\(drawn) drawings on screen") }
-        // Rule 4: soles on a real edge, within 2 pt (1 pt on the composer).
+        // Rule 1: one Doddy, never two. SwiftUI adds the new drawing and removes the old one in
+        // one update, so two are counted only if they are still there at the next check.
+        if drawn > 1 {
+            if doubleSeen { add(t, "one Doddy", "\(drawn) drawings on screen") }
+            doubleSeen = true
+        } else {
+            doubleSeen = false
+        }
+        // Rule 4: soles on a real edge, within 2 pt (1 pt on the composer). Against the edge the
+        // engine stood on at its last step: the system moves a slot's edge between his frames, and
+        // his drawing moves with it (it is offset by the dip alone, `DoddyFigure.slotDY`).
         if visible, case .slot(let id) = host.placement, e.mode != .flight, !e.hiddenBehind,
-           let frame = host.scene.frames[id] {
+           let frame = host.lastStepFrames[id] ?? host.scene.frames[id] {
             let gap = abs(e.pos.y - (frame.minY + e.surfaceDip(id)))
             let limit = id == .composer ? 1.0 : 2.0
             if gap > limit { add(t, "feet on something real", "\(id) gap \(MotionMath.format(gap, digits: 1)) pt") }

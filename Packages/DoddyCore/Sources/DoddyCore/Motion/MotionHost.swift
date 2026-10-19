@@ -198,7 +198,14 @@ public final class MotionHost: MotionWorld {
         engine.beginStep(dtMs)
         engine.stepSurfaceDips(dtMs / 1000)
         engine.finishStep(dtMs)
+        // The frames his position was worked out from: a surface the system moves between two
+        // steps (a scroll, the keyboard) is drawn with him already, so his drawing is placed
+        // against these, not against a frame that has moved since.
+        lastStepFrames = scene.frames
     }
+
+    /// The surface frames as they were at the engine's last step.
+    public private(set) var lastStepFrames: [MotionSurfaceID: MotionRect] = [:]
 
     /// After a frame's steps: answer a pending tab tap, and move him off a surface that went away.
     public func settle() {
