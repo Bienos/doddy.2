@@ -30,8 +30,9 @@ public struct MotionChecks: Sendable {
         if violations.count > Self.kept { violations.removeFirst() }
     }
 
-    /// One frame. `drawn` is how many drawings of him the screen has on it now.
-    public mutating func check(_ host: MotionHost, drawn: Int) {
+    /// One frame. `drawn` is how many drawings of him the screen has on it now, `drawnWhere` says
+    /// where each is (for the finding's text).
+    public mutating func check(_ host: MotionHost, drawn: Int, drawnWhere: String = "") {
         let e = host.engine
         let t = e.now
         // Before he has a place there is nothing to check (his default size isn't a size he has).
@@ -44,7 +45,7 @@ public struct MotionChecks: Sendable {
         // Rule 1: one Doddy, never two. SwiftUI adds the new drawing and removes the old one in
         // one update, so two are counted only if they are still there at the next check.
         if drawn > 1 {
-            if doubleSeen { add(t, "one Doddy", "\(drawn) drawings on screen") }
+            if doubleSeen { add(t, "one Doddy", "\(drawn) drawings on screen" + (drawnWhere.isEmpty ? "" : ": \(drawnWhere)")) }
             doubleSeen = true
         } else {
             doubleSeen = false
