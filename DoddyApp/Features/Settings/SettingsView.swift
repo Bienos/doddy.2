@@ -75,17 +75,21 @@ struct SettingsView: View {
                 Section {
                     JourneyHeading(eyebrow: "Less magic. More control.", title: "Yours to keep.\nYours to change.")
                     HStack(spacing: 18) {
-                        UploadedCharacterView(assetName: "UploadedDoddy_Privacy", height: 110)
-                            // Motion v2 (Q4): Doddy's spot on Settings is where this picture stands,
-                            // on its own floor (3 pt above the box: the picture's ground is at 97 %).
-                            // No new line: it replaces a picture of him with him.
-                            .overlay(alignment: .bottom) {
-                                if DoddyDirector.shared.isActive {
+                        if DoddyDirector.shared.isActive {
+                            // Motion v2 (Q4): Doddy's spot on Settings is where this picture
+                            // stands, on its own floor (3 pt above the box: the picture's ground
+                            // is at 97 %). No new line: the one Doddy stands here instead of a
+                            // picture of him, in the picture's place (same size, no gap).
+                            Color.clear.frame(width: 73, height: 110)
+                                .overlay(alignment: .bottom) {
                                     Color.clear.frame(width: 60, height: 1)
                                         .padding(.bottom, 3)
                                         .motionSurface(.ledge("settings"))
                                 }
-                            }
+                                .accessibilityHidden(true)
+                        } else {
+                            UploadedCharacterView(assetName: "UploadedDoddy_Privacy", height: 110)
+                        }
                         Text("You choose each saved memory. See the original, edit it or remove it.")
                             .font(.subheadline)
                     }
@@ -626,6 +630,10 @@ struct SettingsView: View {
             }
             .scrollContentBackground(.hidden)
             .background(Theme.canvas)
+            // Motion v2 (MV3): Settings pushes its pages without a path, so the form's own
+            // appearing says whether a page covers it (he stays where he stood, covered).
+            .onAppear { DoddyDirector.shared.pageChanged(on: .settings, open: false, detail: false) }
+            .onDisappear { DoddyDirector.shared.pageChanged(on: .settings, open: true, detail: false) }
             .navigationTitle("Settings")
             .toolbar(.hidden, for: .tabBar)
             .navigationBarTitleDisplayMode(.inline)
@@ -633,6 +641,8 @@ struct SettingsView: View {
                 prepareRestore(result)
             }
             .sheet(isPresented: $editingProfile) { ProfileEditSheet() }
+            // Motion v2 (MV3): a sheet or the file picker hides him in the frame it starts.
+            .coversDoddy(editingProfile || choosingRestoreFile)
         }
         .foregroundStyle(Theme.ink)
     }

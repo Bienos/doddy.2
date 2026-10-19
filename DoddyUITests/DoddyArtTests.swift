@@ -37,7 +37,13 @@ final class DoddyArtTests: XCTestCase {
             XCTAssertTrue(query.waitForExistence(timeout: 5))
             query.tap(); query.typeText("zzqx nothing like this\n")
             XCTAssertTrue(app.staticTexts["memories.noMatch"].waitForExistence(timeout: 6))
-            XCTAssertEqual(marker("doddy.pose.shrug", in: app).exists, !hide, "hide artwork: \(hide)")
+            // Motion v2 (MV3, Q4): the one Doddy comes out from behind the page and shrugs on
+            // Find's spot, so the shrug arrives after his hop.
+            if hide {
+                XCTAssertFalse(marker("doddy.pose.shrug", in: app).exists, "hide artwork: \(hide)")
+            } else {
+                XCTAssertTrue(marker("doddy.pose.shrug", in: app).waitForExistence(timeout: 5), "hide artwork: \(hide)")
+            }
             app.terminate()
         }
     }
@@ -64,7 +70,8 @@ final class DoddyArtTests: XCTestCase {
         XCTAssertTrue(picker.waitForExistence(timeout: 5))
         picker.buttons["Lists"].tap()
         XCTAssertTrue(app.descendants(matching: .any)["lists.empty"].waitForExistence(timeout: 5))
-        XCTAssertTrue(marker("doddy.pose.crosslegged", in: app).exists)
+        // Motion v2 (MV3): the one Doddy hops to the Lists spot and sits there.
+        XCTAssertTrue(marker("doddy.pose.crosslegged", in: app).waitForExistence(timeout: 5))
     }
 
     /// Pause all connections: Doddy lies low beside the explanation, only while paused (ADR-323).

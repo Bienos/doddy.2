@@ -2083,4 +2083,52 @@ public final class MotionEngine {
 
     public var squashAmount: Double { squash.x }
     public var slideOffset: Double { xOff.x }
+
+    // MARK: For the app's clock (MV3): read only, they change nothing
+
+    /// The gesture playing now ("wave", "stretch", "welcome", …) and how long it has played (ms).
+    public var gestureName: String? { gesture?.kind.rawValue }
+    public var gestureElapsed: Double { gesture?.t ?? 0 }
+
+    /// Breathing now: the phase in breaths since it started (0 ..< 3), nil when not breathing.
+    public var breathPhase: Double? {
+        breath != 0 && breathT > 0 ? (now - breathT) / 4200 : nil
+    }
+
+    /// Nothing about him changes until `nextDue` unless the screen calls in: he is standing on a
+    /// surface, not breathing or gesturing, and every spring has come to rest. The app stops its
+    /// display link then (the plan: the link runs only while he moves).
+    public var isStill: Bool {
+        guard mode == .attached, flight == nil, shuf == nil, gesture == nil, micro == nil, homeTouch == nil,
+              !ducking, blinkT < 0, opacity >= 1, !justLanded,
+              pendingStepOff == nil, pendingTransfer == nil, !pendingPickup, !brace.on else { return false }
+        if breath != 0 { return false }
+        let springs = [crouch, duck, dipSpring, dragC, sit, edge, lean, roll, facing, gx, gy,
+                       armL1, armL2, armR1, armR2, tuck, squash, stretchUp, xOff, toe, squint, shut]
+        for s in springs where s.x != s.target || s.v != 0 || s.force != 0 { return false }
+        // Surface dips decay without being snapped; at rest within the springs' own tolerance.
+        for (_, s) in dips where abs(s.x) >= 0.003 || abs(s.v) >= 0.02 { return false }
+        return true
+    }
+
+    /// The next moment (engine time, ms) his state changes by itself: a timer, a breath starting,
+    /// a reaction or mood ending, calm mode releasing, Home's daily welcome, glance or 15 s sit.
+    /// Nil: nothing is due; only the screen can move him.
+    public var nextDue: Double? {
+        var due = timers.map(\.at)
+        let breathes = !settings.reduceMotion && !settings.lowPower && !settings.noBreath
+        if breathes, breathT > now { due.append(breathT) }
+        if let r = reaction { due.append(r.until) }
+        if moodUntil != 0 { due.append(moodUntil) }
+        if calm { due.append(lastChange + MotionTiming.calmQuiet + 1) }
+        if thinking != nil { due.append(now + 16) }
+        if mode == .attached, let a = anchor, a.surface == .stage, host != nil, world.isOnHome {
+            if settings.autoWelcome, welcomeBudget > 0 { due.append(now + 16) }
+            if !satThisIdle, !settings.reduceMotion {
+                due.append(max(idleSince, world.lastInput, lastLand) + 15_001)
+            }
+            if visit.glances < 3, !settings.lowPower { due.append(visit.nextGlanceAt) }
+        }
+        return due.min()
+    }
 }

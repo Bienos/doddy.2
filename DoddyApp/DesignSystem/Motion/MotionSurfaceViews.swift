@@ -14,9 +14,10 @@ extension MotionRect {
 }
 
 extension View {
-    /// This view's top edge is a surface Doddy can stand on. Only while the motion world is on.
-    func motionSurface(_ id: MotionSurfaceID) -> some View {
-        modifier(MotionSurfaceModifier(id: id))
+    /// This view's top edge is a surface Doddy can stand on. Only while the motion world is on
+    /// (and `enabled`: the note page has no spot at accessibility text sizes).
+    func motionSurface(_ id: MotionSurfaceID, enabled: Bool = true) -> some View {
+        modifier(MotionSurfaceModifier(id: id, enabled: enabled))
     }
 
     /// Reports this view's frame by name: something his clear zone keeps away from (Ask's Send,
@@ -24,14 +25,33 @@ extension View {
     func motionMark(_ name: String) -> some View {
         modifier(MotionMarkModifier(name: name))
     }
+
+    /// A sheet or cover presented from this view is up while `isUp`: Doddy is hidden in the
+    /// frame it starts and comes back where he stood when it has gone (MV3).
+    func coversDoddy(_ isUp: Bool) -> some View {
+        modifier(DoddyCoverModifier(isUp: isUp))
+    }
+}
+
+private struct DoddyCoverModifier: ViewModifier {
+    let isUp: Bool
+    @State private var token = UUID()
+
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: isUp, initial: true) { _, up in DoddyDirector.shared.cover(token, isUp: up) }
+            .onDisappear { DoddyDirector.shared.cover(token, isUp: false) }
+            .onAppear { if isUp { DoddyDirector.shared.cover(token, isUp: true) } }
+    }
 }
 
 private struct MotionSurfaceModifier: ViewModifier {
     let id: MotionSurfaceID
+    var enabled = true
     private var director: DoddyDirector { .shared }
 
     func body(content: Content) -> some View {
-        if director.isActive {
+        if director.isActive && enabled {
             content
                 .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { [id] frame in
                     MainActor.assumeIsolated { DoddyDirector.shared.surfaceMoved(id, to: MotionRect(frame)) }
@@ -64,23 +84,29 @@ private struct MotionMarkModifier: ViewModifier {
     }
 }
 
-/// Where Doddy is drawn on a surface's top edge. MV2: nothing yet. With `-doddyArtMarkers YES`
-/// (UI tests, ADR-336) the edge is an accessibility element named `doddy.surface.<surface>`, so a
-/// test can check that the surface is there and where. Never hit-testable, never read by
-/// VoiceOver in normal use.
+/// Where Doddy is drawn on a surface's top edge: while the director places him on this surface
+/// (MV3), he is drawn here, inside the surface's own view, so a scroll, the keyboard or a page
+/// push moves or covers him in the same frame. With `-doddyArtMarkers YES` (UI tests, ADR-336)
+/// the edge is also an accessibility element named `doddy.surface.<surface>`, so a test can check
+/// that the surface is there and where. Never hit-testable, never read by VoiceOver in normal use.
 struct DoddySlot: View {
     let id: MotionSurfaceID
 
     var body: some View {
-        if DoddyArtMarkers.isOn {
-            Rectangle()
-                .fill(Color.white.opacity(0.01))
-                .frame(height: 2)
-                .accessibilityElement()
-                .accessibilityLabel(Self.marker(id))
-                .accessibilityIdentifier(Self.marker(id))
-                .allowsHitTesting(false)
+        ZStack(alignment: .top) {
+            if DoddyArtMarkers.isOn {
+                Rectangle()
+                    .fill(Color.white.opacity(0.01))
+                    .frame(height: 2)
+                    .accessibilityElement()
+                    .accessibilityLabel(Self.marker(id))
+                    .accessibilityIdentifier(Self.marker(id))
+            }
+            if DoddyDirector.shared.placement == .slot(id) {
+                DoddySlotFigure(id: id)
+            }
         }
+        .allowsHitTesting(false)
     }
 
     /// `doddy.surface.stage`, `doddy.surface.rule.0`, `doddy.surface.ledge.settings`.

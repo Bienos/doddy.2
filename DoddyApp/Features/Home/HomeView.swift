@@ -42,7 +42,8 @@ struct HomeView: View {
     /// waves instead (ADR-380). Waits a moment first, so an opening that is about to start wins.
     /// The opening's hand-over still lands on the usual sitting picture.
     private func breatheOnce() async {
-        guard !HomeIdle.played, !reduceMotion, !hideCharacterArt else { return }
+        // Motion v2: the one persistent Doddy stands on the stage instead of these strips.
+        guard !HomeIdle.played, !reduceMotion, !hideCharacterArt, !DoddyDirector.shared.isActive else { return }
         try? await Task.sleep(for: .seconds(0.6))
         guard !Task.isCancelled, !HomeIdle.played, opening?.play == nil, opening?.ready == nil, ready == nil else { return }
         HomeIdle.played = true
@@ -79,7 +80,11 @@ struct HomeView: View {
                             .font(.subheadline).foregroundStyle(Theme.secondaryText)
                     }
                     Group {
-                        if breathing {
+                        if DoddyDirector.shared.isActive && ready == nil {
+                            // Motion v2 (Q4): Home's picture becomes the persistent Doddy, drawn on
+                            // the stage line below. The box keeps his room (151 pt clear zone at 1.4×).
+                            Color.clear.frame(height: 210)
+                        } else if breathing {
                             // Idle (ADR-313): he stands and breathes, on the sitting pose's floor; or
                             // waves (ADR-380), whose strip stands on the same floor (564/600).
                             DoddyMotionView(motion: helloMotion, height: 170)
@@ -128,7 +133,7 @@ struct HomeView: View {
                         }
 
                     if let problem = store.environment.storageProblem {
-                        ProblemView(message: problem, showsDoddy: true)
+                        ProblemView(message: problem, showsDoddy: true, onDoddysScreen: true)
                     }
 
                     // "Continue what I was saving" (ADR-362): opens the capture screen with it.
@@ -203,7 +208,7 @@ struct HomeView: View {
                     // Today only points to Settings until something is connected; on the first
                     // visit that is one more thing to read before talking (ADR-326).
                     if hadFirstConversation || calendarOn || remindersOn {
-                        TodayCard(openSettings: { selectedTab = .settings })
+                        TodayCard(openSettings: { DoddyDirector.shared.tabTapped(.settings); selectedTab = .settings })
                     }
 
                     // Back Tap exists only on iPhone (ADR-337), and waits for the first conversation (ADR-326).
@@ -240,6 +245,8 @@ struct HomeView: View {
                 }
             }
             .fullScreenCover(isPresented: $showAsk) { AskView(openSettings: { selectedTab = .settings }) }
+            // Motion v2: each sheet and cover from Home hides him in the frame it starts.
+            .coversDoddy(modal != nil || showDataFlow || tool != nil || showAsk || showTranslator)
             // The conversation opens once the start sheet has gone away.
             .sheet(isPresented: $showTranslator, onDismiss: {
                 if let choice = translatorChoice {
@@ -249,6 +256,10 @@ struct HomeView: View {
             }) { TranslatorStartView(chosen: $translatorChoice) }
         }
         .foregroundStyle(Theme.ink)
+        // A note pushed over Home covers him where he stands.
+        .onChange(of: path.count, initial: true) { _, depth in
+            DoddyDirector.shared.pageChanged(on: .home, open: depth > 0, detail: false)
+        }
     }
 
     private var ready: OpeningReady? { opening?.ready }
@@ -325,7 +336,7 @@ struct HomeView: View {
     }
 
     private var findAction: some View {
-        Button { selectedTab = .memories; showFind = true } label: { HomeActionTile(title: "Find something", icon: "magnifyingglass") }
+        Button { DoddyDirector.shared.tabTapped(.memories); selectedTab = .memories; showFind = true } label: { HomeActionTile(title: "Find something", icon: "magnifyingglass") }
             .buttonStyle(.plain).accessibilityIdentifier("home.find")
     }
 

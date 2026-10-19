@@ -72,6 +72,7 @@ struct HeyDoddySettingsSection: View {
         .fileImporter(isPresented: $choosingFile, allowedContentTypes: [.data]) { result in
             importFile(result)
         }
+        .coversDoddy(choosingFile)
     }
 
     @ViewBuilder

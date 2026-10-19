@@ -2,67 +2,155 @@ import DoddyCore
 import Foundation
 import Observation
 
+/// What the drawing of him needs this frame: the picture and its transforms (`MotionArt`), and
+/// where (window points), how big and how visible.
+struct DoddyFigure: Equatable {
+    var art: MotionArt
+    /// His soles' centre in window points.
+    var x: Double
+    var y: Double
+    var scale: Double
+    var opacity: Double
+    /// In a slot: his soles relative to the surface's top edge centre, worked out from the same
+    /// frame the engine used. Relative, so it stays right while the system moves the surface
+    /// (a scroll, the keyboard) between his frames.
+    var slotDX = 0.0
+    var slotDY = 0.0
+}
+
+/// The clock the director runs on: a display link while he moves, asleep (or a timer) while he
+/// is still. The app supplies a CADisplayLink one (`DoddyClock`).
+@MainActor
+protocol DoddyClockDriving: AnyObject {
+    /// Ticks every frame from now on.
+    func run()
+    /// No more frames; one tick at `uptime` (seconds, the clock's own time base) if not nil.
+    func sleep(until uptime: Double?)
+}
+
 /// The one persistent Doddy's director (motion v2, docs/design/MOTION_V2_PLAN.md section 4,
-/// option B). MV2: the registry of the surfaces he can stand on. Each surface view reports its
-/// window frame here (`.motionSurface(_:)`) and offers a slot on its top edge where he will be
-/// drawn while he stands on it. Doddy doesn't move yet.
+/// option B). It owns the one `MotionEngine` (through `MotionHost`, which answers the engine's
+/// questions about the screen), keeps the registry of the surfaces the screens report (MV2), and
+/// publishes where he is drawn: attached to the surface he stands on (`.slot`), in the root
+/// overlay while he flies or fades (`.overlay`), or not at all while something covers him. The
+/// slots and the overlay read the same `placement`, so a hand-off happens in one SwiftUI update.
 ///
 /// UI-free on purpose (Foundation, Observation, DoddyCore), so `scripts/typecheck_app_logic.sh`
-/// compiles it on Linux. Frames change on every scroll frame, so they are not observed: no view
-/// redraws because a surface moved.
+/// compiles it on Linux. Frames change on every scroll frame, so they are not observed.
 @MainActor
 @Observable
 final class DoddyDirector {
     static let shared = DoddyDirector()
 
     /// The motion world is on: an iPhone-sized layout (Q13, iPad keeps today's pictures) with
-    /// Doddy's pictures shown. Off, the screens keep no room for him (no stage line, no card
-    /// gutter, no list inset), so "Hide Doddy's pictures" leaves no gap.
-    var isActive = false
+    /// Doddy's pictures shown. Off, the screens keep no room for him and nothing draws him.
+    var isActive = false {
+        didSet {
+            guard isActive != oldValue else { return }
+            host.isActive = isActive
+            poke()
+        }
+    }
 
-    /// The last window frame each surface reported (kept while it is off screen, so a surface
-    /// coming back with an unchanged frame still has one).
+    // MARK: Published every frame he moves (the only state the drawing observes)
+
+    /// Where he is drawn.
+    private(set) var placement: MotionPlacement = .hidden
+    /// What is drawn; nil when nothing is.
+    private(set) var figure: DoddyFigure?
+    /// Where the root overlay is in the window (it fills the window, so normally 0, 0).
+    private(set) var overlayOrigin = MotionPoint.zero
+
+    func overlayMoved(to origin: MotionPoint) {
+        if origin != overlayOrigin { overlayOrigin = origin }
+    }
+
+    // MARK: The engine and the screen's reports
+
+    let host: MotionHost
+    var engine: MotionEngine { host.engine }
+    @ObservationIgnored weak var clock: (any DoddyClockDriving)?
+    /// The time now, in seconds, on the clock's time base (CACurrentMediaTime in the app).
+    @ObservationIgnored var now: () -> Double = { ProcessInfo.processInfo.systemUptime }
+
+    /// The last window frame each surface reported (kept while it is off screen).
     @ObservationIgnored private(set) var frames: [MotionSurfaceID: MotionRect] = [:]
-    /// How many views report each surface right now (a list can briefly have two cards claim the
-    /// same rule while it reorders). On screen: more than zero.
+    /// How many views report each surface right now. On screen: more than zero.
     @ObservationIgnored private var mountCount: [MotionSurfaceID: Int] = [:]
-    /// Frames the layout around a surface needs: Ask's Send button ("send"), the undo bar's Undo
-    /// ("undo"), each tab button ("tab.home", "tab.memories", "tab.settings").
+    /// Named frames: "send", "undo", "tab.home", "memories.list" …
     @ObservationIgnored private(set) var marks: [String: MotionRect] = [:]
     /// The Memories cards in the order shown: `rule(i)` is the card of `ruleIDs[i]`.
     @ObservationIgnored private(set) var ruleIDs: [UUID] = []
+    /// Sheets and covers up now, by the token of the view that presents them.
+    @ObservationIgnored private var coverTokens: Set<UUID> = []
+    /// Screens showing a problem whose own picture of him was left out (Q4: he does the pose).
+    @ObservationIgnored private var problems = 0
+    /// How many drawings of him are on screen (for the one-Doddy check).
+    @ObservationIgnored private(set) var drawnCount = 0
+    /// The DEBUG checks (MV3), run every frame in debug builds.
+    @ObservationIgnored private(set) var checks = MotionChecks()
+    /// Frames ticked since launch (the annotated mode's frame counter).
+    @ObservationIgnored private(set) var frameCount = 0
 
-    init() {}
+    @ObservationIgnored private var lastTime: Double?
+    @ObservationIgnored private var asleep = true
+    /// Steps of at most this long (ms): four per 60 Hz frame, as the reference engine runs.
+    static let substep = 1000.0 / 240
+    /// A tick later than this after the last one (a hitch, the app coming back) isn't replayed.
+    static let longestFrame = 100.0
 
-    // MARK: Reports from the screens
+    init() {
+        var settings = MotionSettings()
+        // MV3: hops only. Breaths, the 15 s sit, glances and the daily welcome come with MV5.
+        settings.noBreath = true
+        settings.autoWelcome = false
+        settings.lowPower = true
+        host = MotionHost(settings: settings)
+        host.isActive = false
+    }
+
+    // MARK: Reports from the screens (MV2)
 
     func surfaceMoved(_ id: MotionSurfaceID, to frame: MotionRect) {
         frames[id] = frame
+        host.scene.frames[id] = frame
     }
 
     func surfaceAppeared(_ id: MotionSurfaceID) {
         mountCount[id, default: 0] += 1
+        host.scene.mounted.insert(id)
+        host.surfaceAppeared(id)
+        poke()
     }
 
     func surfaceGone(_ id: MotionSurfaceID) {
         let n = (mountCount[id] ?? 0) - 1
         mountCount[id] = n > 0 ? n : nil
+        if n <= 0 { host.scene.mounted.remove(id) }
+        poke()
     }
 
     func markMoved(_ name: String, to frame: MotionRect) {
         marks[name] = frame
+        host.scene.marks[name] = frame
     }
 
-    func markGone(_ name: String) {
-        marks[name] = nil
-    }
-
-    /// The Memories list shows these notes, in this order. Rules past the end are forgotten.
+    /// The Memories list shows these notes, in this order. If his card moved (a note saved above
+    /// it, one deleted), his rule number follows it.
     func cardsShown(_ ids: [UUID]) {
+        let old = ruleIDs
         ruleIDs = ids
+        host.scene.ruleCount = ids.count
         for id in Array(frames.keys) {
-            if let i = id.ruleIndex, i >= ids.count { frames[id] = nil }
+            if let i = id.ruleIndex, i >= ids.count {
+                frames[id] = nil
+                host.scene.frames[id] = nil
+            }
         }
+        if let i = engine.anchor?.surface.ruleIndex, i < old.count, let j = ids.firstIndex(of: old[i]), j != i {
+            engine.rulesShifted(insertedAt: min(i, j), by: j - i)
+        }
+        poke()
     }
 
     // MARK: Reading
@@ -72,5 +160,173 @@ final class DoddyDirector {
     /// The surface's frame if its view is on screen now.
     func frame(of id: MotionSurfaceID) -> MotionRect? {
         isMounted(id) ? frames[id] : nil
+    }
+
+    // MARK: What the app tells him
+
+    /// A tab button was tapped: called in the same action that changes the tab, so the surfaces of
+    /// the screen that is leaving are treated as gone in this very update, and he crouches in the
+    /// overlay where he stood (never zero Doddys while the tab content commits).
+    func tabTapped(_ screen: MotionScreen) {
+        guard screen != host.scene.screen else { return }
+        catchUp()
+        let leaving = host.scene.screen
+        for id in host.scene.mounted where MotionScene.screen(of: id) == leaving {
+            host.scene.mounted.remove(id)
+        }
+        host.tabChanged(to: screen, tapT: engine.now)
+        publish()
+        clock?.run()
+    }
+
+    /// The tab changed some other way (a link, a shortcut): the same, without a tap to answer.
+    func screenChanged(_ screen: MotionScreen) {
+        tabTapped(screen)
+    }
+
+    /// A page was pushed or popped on a tab (a note, Find, a Settings page).
+    func pageChanged(on screen: MotionScreen, open: Bool, detail: Bool) {
+        let was = host.scene.pages[screen] ?? MotionPage()
+        let page = MotionPage(open: open, detail: detail)
+        guard page != was else { return }
+        catchUp()
+        host.scene.pages[screen] = page
+        if screen == .memories, host.scene.screen == .memories {
+            if open, !was.open {
+                // On a card he stays and the page covers him; elsewhere he goes to the note's spot.
+                if engine.anchor?.surface.isRule == true || detail { engine.pagePushed() }
+            } else if !open, was.open {
+                engine.pagePopped()
+            }
+        }
+        poke()
+    }
+
+    /// A sheet or cover starts or ends (`token` names the view that presents it). He is hidden in
+    /// the frame it starts (plan, MV3: "every cover and sheet hides him in the frame it starts").
+    func cover(_ token: UUID, isUp: Bool) {
+        let changed = isUp ? coverTokens.insert(token).inserted : coverTokens.remove(token) != nil
+        guard changed else { return }
+        catchUp()
+        host.scene.covers = coverTokens.count
+        poke()
+    }
+
+    /// A problem view whose picture of him was left out appeared or went (he does the facepalm on
+    /// his spot instead, Q4).
+    func problemShown(_ shown: Bool) {
+        problems = max(0, problems + (shown ? 1 : -1))
+        poke()
+    }
+
+    func setReduceMotion(_ on: Bool) {
+        guard engine.settings.reduceMotion != on else { return }
+        catchUp()
+        engine.setReduceMotion(on)
+        poke()
+    }
+
+    /// Q12: 1.4× on Home, 1.0× at accessibility text sizes (the change happens while he is unseen).
+    func setHomeScale(_ scale: Double) {
+        guard host.scene.homeScale != scale else { return }
+        catchUp()
+        host.scene.homeScale = scale
+        engine.homeScaleChanged(scale)
+        poke()
+    }
+
+    /// A drawing of him appeared or went (the one-Doddy check counts them).
+    func drawingAppeared() { drawnCount += 1 }
+    func drawingGone() { drawnCount = max(0, drawnCount - 1) }
+
+    // MARK: The clock
+
+    /// Something changed: look again now, and keep the frames coming until he is still.
+    func poke() {
+        catchUp()
+        afterSteps()
+    }
+
+    /// One frame from the clock, at `time` (seconds).
+    func tick(at time: Double) {
+        advance(to: time)
+        afterSteps()
+    }
+
+    /// Brings the engine's clock up to now before an event is handed to it.
+    private func catchUp() {
+        advance(to: now())
+    }
+
+    private func advance(to time: Double) {
+        guard let last = lastTime else {
+            lastTime = time
+            return
+        }
+        guard time > last else { return }
+        lastTime = time
+        var dt = (time - last) * 1000
+        if asleep {
+            // He was still: the whole quiet stretch is one step (nothing was moving in it).
+            asleep = false
+            host.step(min(dt, 600_000))
+            return
+        }
+        dt = min(dt, Self.longestFrame)
+        while dt > 1e-6 {
+            let d = min(dt, Self.substep)
+            host.step(d)
+            dt -= d
+        }
+    }
+
+    private func afterSteps() {
+        if isActive, !host.isPlaced { host.placeOnCurrentScreen() }
+        host.settle()
+        publish()
+        frameCount += 1
+        #if DEBUG
+        if isActive { checks.check(host, drawn: drawnCount) }
+        #endif
+        guard let last = lastTime else { return }
+        if !isActive || (engine.isStill && host.pendingTab == nil) {
+            asleep = true
+            let due = isActive ? engine.nextDue.map { last + max(0.05, ($0 - engine.now) / 1000) } : nil
+            clock?.sleep(until: due)
+        } else {
+            clock?.run()
+        }
+    }
+
+    /// The pose a still screen asks for instead of standing: cross-legged on an empty list's spot,
+    /// the facepalm while a problem is shown (Q4: he does the pose on his spot).
+    private var stillPose: String? {
+        guard engine.mode == .attached, let a = engine.anchor else { return nil }
+        if case .ledge(let name) = a.surface.kind {
+            if MotionHost.memoriesLedges.contains(name) { return "crosslegged" }
+            if name == MotionHost.findLedge { return "shrug" }
+        }
+        // A problem view on his screen (Q4: he does its pose where he stands).
+        if problems > 0 { return "facepalm" }
+        return nil
+    }
+
+    private func publish() {
+        let p = host.placement
+        if p != placement { placement = p }
+        let f: DoddyFigure?
+        if p == .hidden {
+            f = nil
+        } else {
+            let pose = engine.pose
+            var figure = DoddyFigure(art: MotionArt.choose(engine, still: stillPose), x: pose.x, y: pose.y,
+                                     scale: pose.scale, opacity: pose.opacity)
+            if case .slot(let id) = p, let frame = host.scene.frames[id] {
+                figure.slotDX = pose.x - frame.midX
+                figure.slotDY = pose.y - frame.minY
+            }
+            f = figure
+        }
+        if f != figure { figure = f }
     }
 }

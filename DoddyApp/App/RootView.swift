@@ -93,6 +93,15 @@ enum PreferenceKey {
 
 enum AppTab: Hashable {
     case home, memories, settings
+
+    /// The tab as a screen in Doddy's motion world.
+    var motionScreen: MotionScreen {
+        switch self {
+        case .home: .home
+        case .memories: .memories
+        case .settings: .settings
+        }
+    }
 }
 
 struct RootView: View {
@@ -108,6 +117,7 @@ struct RootView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverOn
+    @Environment(\.dynamicTypeSize) private var textSize
     @Bindable private var router = ShortcutRouter.shared
     @State private var opening = OpeningModel()
     @AppStorage(PreferenceKey.pinnedNotes) private var pinnedRaw = "[]"
@@ -207,6 +217,15 @@ struct RootView: View {
             // Motion v2: the one persistent Doddy lives on iPhone layouts with his pictures shown
             // (Q13: iPad's sidebar keeps today's pictures; "Hide Doddy's pictures" turns him off).
             .onChange(of: motionWorldOn, initial: true) { _, on in DoddyDirector.shared.isActive = on }
+            .onAppear { DoddyClock.install() }
+            // Reduce Motion: his hops become fades (brief rule 12).
+            .onChange(of: reduceMotion, initial: true) { _, on in DoddyDirector.shared.setReduceMotion(on) }
+            // Q12: at accessibility text sizes he stays 1.0× on Home.
+            .onChange(of: textSize.isAccessibilitySize, initial: true) { _, large in
+                DoddyDirector.shared.setHomeScale(large ? 1.0 : 1.4)
+            }
+            // The first-use introduction and the Face ID cover are over the app: he is hidden.
+            .coversDoddy(profiles.isIntroductionPresented || AppLock.shared.isLocked || lockCovered)
             // A tapped note reminder opens its exact memory on Home.
             .task(id: noteReminders.pendingOpenMemoryID) {
                 guard let memoryID = noteReminders.pendingOpenMemoryID else { return }
@@ -255,6 +274,13 @@ struct RootView: View {
         ListeningIndicatorWindow.shared.install()
     }
 
+    /// A sheet or cover from the router is up (motion v2: Doddy is hidden while it is).
+    private var routerCovers: Bool {
+        router.isVoicePresented || router.isSetupPresented || router.isTidyUpPresented
+            || router.isWrapUpPresented || router.isLookBackPresented || router.isCheckInPresented
+            || router.shownDraft != nil || SharedListsController.shared.invite != nil
+    }
+
     /// Whether the motion world is on (motion v2): an iPhone layout, Doddy's pictures shown.
     private var motionWorldOn: Bool {
         !hideArt && !(horizontalSizeClass == .regular && DeviceSupport.hasSidebar)
@@ -290,6 +316,8 @@ struct RootView: View {
     private var tabs: some View {
         ZStack {
             tabContent
+            // Motion v2: the one Doddy in the air (flights and fades). Under every sheet and cover.
+            DoddyOverlay()
             // The opening (ADR-225) sits over the ready app and fades away to reveal it; a tap
             // ends it early. It is removed from the hierarchy entirely once it is done.
             if let play = opening.play {
@@ -304,6 +332,12 @@ struct RootView: View {
         .environment(opening)
         .tint(Theme.accentText)
         .background(Theme.canvas)
+        // The opening, and Home's ready pose after it, are a story that covers him (Q4).
+        .coversDoddy(opening.play != nil || opening.ready != nil)
+        // Every sheet and cover the router presents hides him in the frame it starts.
+        .coversDoddy(routerCovers)
+        // A tab changed without the tab bar (a link, a shortcut, a reminder): he follows.
+        .onChange(of: selectedTab) { _, tab in DoddyDirector.shared.screenChanged(tab.motionScreen) }
         // One presentation point for the conversation, so a shortcut invocation while it is
         // open focuses it instead of starting a second one.
         // Waiting drafts appear only once a cover or sheet has finished going away.

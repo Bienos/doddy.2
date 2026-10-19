@@ -280,7 +280,13 @@ struct DoddyTabBar: View {
     }
 
     private func tab(_ tab: AppTab, title: String, icon: String, id: String) -> some View {
-        Button { selectedTab = tab } label: {
+        Button {
+            // Motion v2 (MV3): Doddy hears of the tap in the same transaction as the tab change, so
+            // he leaves the old screen's surface in the frame its content goes (rule 2: the
+            // interface never waits for him).
+            DoddyDirector.shared.tabTapped(tab.motionScreen)
+            selectedTab = tab
+        } label: {
             VStack(spacing: 5) {
                 Image(systemName: icon).font(.body).accessibilityHidden(true)
                 Text(title).font(.caption2).lineLimit(1).minimumScaleFactor(0.8)
