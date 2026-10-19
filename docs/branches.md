@@ -4,7 +4,7 @@ Written 2026-10-19 for the owner's review (Phase 1 of the beta plan). **Nothing 
 
 ## Summary
 
-- **141 branches.** Fully on main: 78 (plus main itself). Every change already on main through other commits: 2. With commits that aren't on main: 60.
+- **141 branches.** Fully on main: 77 (plus main itself). Every change already on main through other commits: 2. With commits that aren't on main: 61.
 - **Suggested:** merge 6, keep 22, close 112.
 - **Merge** means it goes in through its own small PR after you review it, under the feature freeze: fixes and records of live state only. Nothing on the merge list adds a feature.
 - **Keep** means don't merge for the beta, and don't delete: payments, the strategy branch, work another session is still doing, and open PRs for features that may come back after the beta.
@@ -43,7 +43,7 @@ Each one separately, after review. The two marked optional can wait until after 
 | `claude/motion-mv4` | 2026-10-19 | `e77f11ad` | no (8 commits) | 38 |  | **keep** | Motion v2 stack: Doddy rides what moves. |
 | `claude/motion-mv3` | 2026-10-19 | `3106f3e6` | no (7 commits) | 38 |  | **keep** | Motion v2 stack: one Doddy across tabs. |
 | `claude/motion-mv2` | 2026-10-19 | `0fd451e8` | no (5 commits) | 38 |  | **keep** | Motion v2 stack: Doddy's surfaces. |
-| `claude/bold-noether-gtd1l5` | 2026-10-19 | `fc8a5027` | yes | 19 |  | **keep** | This PR's branch (Phase 1). |
+| `claude/bold-noether-gtd1l5` | 2026-10-19 | `this PR` | no (this PR) | 0 |  | **keep** | This PR's branch (Phase 1): the docs listed here, not yet on main. |
 | `claude/motion-v2-plan` | 2026-10-18 | `44bbe294` | no (1 commit) | 62 |  | **keep** | Motion v2 stack, base. All of it is contained in `motion-mv6`. |
 | `claude/motion-mv1` | 2026-10-18 | `fd649a10` | no (3 commits) | 38 |  | **keep** | Motion v2 stack: motion engine in DoddyCore. |
 | `claude/modest-pasteur-7jnwfd` | 2026-10-18 | `ebf9d360` | no (15 commits) | 38 | #90 | **keep** | Doddy calls on your behalf (ADR-500 to 507 there; 500 is taken on main). New feature, frozen; V1 scope cuts calls. |
