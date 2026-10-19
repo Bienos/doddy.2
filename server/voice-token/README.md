@@ -23,7 +23,9 @@ outcome, status, and duration only.
 ## Owner configuration required before deployment
 
 Set these as server environment variables in the owner-controlled host. Do not put values in this
-repository, app configuration, or build settings.
+repository, app configuration, or build settings. The secret ones live in 1Password and reach the
+Vercel project `doddy-voice-token` through `tools/secrets/sync.mjs` (ADR-493,
+`docs/security/SECRETS_1PASSWORD.md`). The signing key is recorded there but never written by the tool.
 
 | Name | Purpose |
 |---|---|

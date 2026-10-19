@@ -1,3 +1,5 @@
 .env*
+# 1Password references only, never values (ADR-493).
+!.env.op
 .vercel/
 node_modules/

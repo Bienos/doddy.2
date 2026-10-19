@@ -79,7 +79,9 @@ final class MemoryBaselineTests: XCTestCase {
         unmute.tap()
         app.activate()
         XCTAssertTrue(app.buttons["island.fixture.end"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["island.fixture.status"].waitForLabel("Fixture active", timeout: 5), "System Unmute must reach the app handler.")
+        // The system button reaches the app's handler a few seconds later, as with Stop below
+        // (20a6e031). 5 s was too short once on CI (run 39147513810, 18 Oct); Stop has 10.
+        XCTAssertTrue(app.staticTexts["island.fixture.status"].waitForLabel("Fixture active", timeout: 10), "System Unmute must reach the app handler.")
         XCUIDevice.shared.press(.home)
         let activeCompact = springboard.descendants(matching: .any).matching(NSPredicate(format: "label == 'Test activity'")).firstMatch
         XCTAssertTrue(activeCompact.waitForExistence(timeout: 15))
