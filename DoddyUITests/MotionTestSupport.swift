@@ -3,6 +3,24 @@ import XCTest
 /// Motion v2: what a failing motion UI test says about the screen. The annotated mode
 /// (`-doddyMotionDebug YES`) puts its counts, the newest DEBUG finding and the engine's last
 /// decisions in accessibility texts; the tree report is the accessibility tree as the test sees it.
+extension XCUIApplication {
+    /// The element a marker names, found by identifier or by label. The markers carry both (the
+    /// same name), because a container's `accessibilityIdentifier` (`memories.empty`,
+    /// `lists.empty`) replaces the identifier of everything inside it, his markers included: hosted
+    /// probe run 39304818522 read `identifier: 'lists.empty', label: 'doddy.pose.crosslegged'`.
+    func marker(_ name: String) -> XCUIElement {
+        descendants(matching: .any)
+            .matching(NSPredicate(format: "identifier == %@ OR label == %@", name, name)).firstMatch
+    }
+
+    /// Every marker whose name starts with one of `prefixes`, by identifier or label.
+    func markers(startingWith prefixes: [String]) -> XCUIElementQuery {
+        let format = prefixes.map { _ in "(identifier BEGINSWITH %@ OR label BEGINSWITH %@)" }.joined(separator: " OR ")
+        return descendants(matching: .any)
+            .matching(NSPredicate(format: format, argumentArray: prefixes.flatMap { [$0, $0] }))
+    }
+}
+
 extension XCTestCase {
     /// What the annotated mode says (its counts, the newest finding, the engine's last decisions
     /// and where each drawing of him is), or "-" for each text that isn't there.
