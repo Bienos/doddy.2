@@ -198,28 +198,33 @@ struct DoddyTouchArea: View {
 
     var body: some View {
         if let figure = director.figure {
-            let zone = MotionLayout.zone(soles: MotionPoint(x: figure.x, y: figure.y), scale: figure.scale)
+            // His clear zone's size at his scale; where it is comes from the slot, like him: it
+            // stands on a zero-size point on the stage's edge (see DoddySlotFigure).
+            let zone = MotionLayout.zone(soles: MotionPoint(x: 0, y: 0), scale: figure.scale)
             Color.clear
-                .frame(width: CGFloat(zone.width), height: CGFloat(zone.height))
-                .contentShape(Rectangle())
-                .gesture(
-                    DragGesture(minimumDistance: 0, coordinateSpace: .global)
-                        .onChanged { value in
-                            if !down {
-                                down = true
-                                director.touchDown(x: Double(value.startLocation.x), y: Double(value.startLocation.y))
-                            }
-                            director.touchMoved(x: Double(value.location.x), y: Double(value.location.y),
-                                                vx: Double(value.velocity.width), vy: Double(value.velocity.height))
-                        }
-                        .onEnded { value in
-                            down = false
-                            director.touchUp(vx: Double(value.velocity.width), vy: Double(value.velocity.height))
-                        }
-                )
-                .alignmentGuide(.top) { $0[.bottom] }
+                .frame(width: 0, height: 0)
+                .overlay(alignment: .bottom) {
+                    Color.clear
+                        .frame(width: CGFloat(zone.width), height: CGFloat(zone.height))
+                        .contentShape(Rectangle())
+                        .gesture(
+                            DragGesture(minimumDistance: 0, coordinateSpace: .global)
+                                .onChanged { value in
+                                    if !down {
+                                        down = true
+                                        director.touchDown(x: Double(value.startLocation.x), y: Double(value.startLocation.y))
+                                    }
+                                    director.touchMoved(x: Double(value.location.x), y: Double(value.location.y),
+                                                        vx: Double(value.velocity.width), vy: Double(value.velocity.height))
+                                }
+                                .onEnded { value in
+                                    down = false
+                                    director.touchUp(vx: Double(value.velocity.width), vy: Double(value.velocity.height))
+                                }
+                        )
+                        .accessibilityHidden(true)
+                }
                 .offset(x: CGFloat(figure.slotDX), y: CGFloat(figure.slotDY))
-                .accessibilityHidden(true)
         }
     }
 }
