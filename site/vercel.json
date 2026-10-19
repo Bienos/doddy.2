@@ -1,6 +1,11 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "ignoreCommand": "p=$VERCEL_GIT_PREVIOUS_SHA; git cat-file -e \"$p^{commit}\" 2>/dev/null || p=HEAD^; git cat-file -e \"$p^{commit}\" 2>/dev/null && git diff --quiet \"$p\" HEAD -- .",
+  "git": {
+    "deploymentEnabled": {
+      "claude/!(loving-dirac-uuxoux)": false
+    }
+  },
   "headers": [
     {
       "source": "/(.*)",

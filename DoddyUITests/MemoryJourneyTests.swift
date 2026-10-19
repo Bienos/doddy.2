@@ -128,10 +128,20 @@ final class MemoryJourneyTests: XCTestCase {
     @MainActor
     private func scrollTo(_ element: XCUIElement, app: XCUIApplication) {
         // Home at the largest text size is many screens tall.
+        var lastMinY: CGFloat?
         for _ in 0..<40 {
             let bar = app.buttons["tab.home"]
             let bottom = bar.exists ? bar.frame.minY - 8 : app.frame.maxY - 40
-            if element.exists && element.isHittable && element.frame.maxY < bottom && element.frame.minY > 90 { return }
+            let frame: CGRect? = element.exists ? element.frame : nil
+            if let frame, element.isHittable {
+                if frame.maxY < bottom && frame.minY > 90 { return }
+                // Tappable, and the last step didn't move it: the page can't scroll it any
+                // further (a pinned button, or the end of the page). Without this the loop ran
+                // all 40 steps, about 2 minutes each time on CI (ADR-499), and then the tap
+                // worked anyway.
+                if let lastMinY, abs(frame.minY - lastMinY) < 1 { return }
+            }
+            lastMinY = frame?.minY
             app.scrollStep()
         }
     }
