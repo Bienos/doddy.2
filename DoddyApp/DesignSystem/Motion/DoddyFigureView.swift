@@ -1,7 +1,7 @@
 import DoddyCore
 import SwiftUI
 
-// Motion v2, MV3: drawing the one persistent Doddy. One view (`DoddyFigureView`) draws him
+// Motion v2, MV3: drawing the one persistent Doddy. One view (`PersistentDoddyView`) draws him
 // wherever the director places him: inside the surface he stands on (`DoddySlotFigure`, so the
 // system moves him with it) or in the root overlay (`DoddyOverlay`, flights and fades). Only the
 // owner's pack pictures, as whole pictures (Q7): moved, scaled, squashed, tilted, mirrored.
@@ -30,7 +30,7 @@ enum DoddyFigureMetrics {
 /// Doddy as one pack picture, laid out so its bottom edge is his soles (the picture's transparent
 /// margin below the ground hangs below it). Never hit-testable; hidden from VoiceOver, except as
 /// a marker for UI tests (`-doddyArtMarkers YES`: `doddy.motion.idle`, `doddy.pose.crosslegged`).
-struct DoddyFigureView: View {
+struct PersistentDoddyView: View {
     let figure: DoddyFigure
     @Environment(\.colorScheme) private var colorScheme
 
@@ -68,7 +68,7 @@ struct DoddySlotFigure: View {
 
     var body: some View {
         if let figure = director.figure {
-            DoddyFigureView(figure: figure)
+            PersistentDoddyView(figure: figure)
                 .alignmentGuide(.top) { $0[.bottom] }
                 // Relative to the surface's own frame, so it stays exact while the system moves it.
                 .offset(x: CGFloat(figure.slotDX), y: CGFloat(figure.slotDY))
@@ -89,7 +89,7 @@ struct DoddyOverlay: View {
             if director.placement == .overlay, let figure = director.figure {
                 let picture = DoddyFigureMetrics.picture(figure.art.picture)
                 let soleBox = CGFloat(DoddyFigureMetrics.pictureHeight * figure.scale * picture.ground)
-                DoddyFigureView(figure: figure)
+                PersistentDoddyView(figure: figure)
                     .position(x: CGFloat(figure.x) - origin.x, y: CGFloat(figure.y) - origin.y - soleBox / 2)
             }
             #if DEBUG
