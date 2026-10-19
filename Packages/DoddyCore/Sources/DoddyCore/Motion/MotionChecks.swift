@@ -17,6 +17,10 @@ public struct MotionChecks: Sendable {
     public private(set) var count = 0
     private var lastScale: Double?
     private var doubleSeen = false
+    private var lastOpacity = 1.0
+    private var lastLandSeen = -99_999.0
+    /// Below this opacity a figure isn't a visible size change (a quarter).
+    static let visible = 0.25
     /// The newest finding in words (the annotated mode shows it).
     public var lastDetail: String { violations.last.map { "\($0.rule): \($0.detail)" } ?? "" }
     /// Keep the list short; the count keeps going.
@@ -39,6 +43,7 @@ public struct MotionChecks: Sendable {
         guard host.isPlaced else {
             lastScale = nil
             doubleSeen = false
+            lastLandSeen = e.lastLand
             return
         }
         let visible = host.placement != .hidden && e.opacity > 0.01
@@ -59,11 +64,19 @@ public struct MotionChecks: Sendable {
             let limit = id == .composer ? 1.0 : 2.0
             if gap > limit { add(t, "feet on something real", "\(id) gap \(MotionMath.format(gap, digits: 1)) pt") }
         }
-        // Rule 13: his size changes only in the air or while he is faded out.
-        if let last = lastScale, abs(e.scale - last) > 1e-6, e.mode != .flight, e.opacity > 0.01 {
+        // Rule 13: his size changes only in the air or while he is faded out. Judged on what two
+        // frames show: the engine changes the size inside a 20 ms invisible gap, so a frame longer
+        // than the gap (a hitch) shows the gap's two sides back to back, each faint, and a resize
+        // counts only if he is clearly visible in both. The landing step finishes the hop's own
+        // size change (the flight's scale ends in the step that makes him attached).
+        let landedSinceLastCheck = e.lastLand != lastLandSeen
+        if let last = lastScale, abs(e.scale - last) > 1e-6, e.mode != .flight, !landedSinceLastCheck,
+           e.opacity > Self.visible, lastOpacity > Self.visible {
             add(t, "two sizes, one figure", "scale \(MotionMath.format(e.scale, digits: 2)) while \(e.mode.rawValue)")
         }
         lastScale = e.scale
+        lastOpacity = e.opacity
+        lastLandSeen = e.lastLand
         // Rule 8: his clear zone keeps 24 pt from Send and the undo bar's Undo, and off the tabs.
         if visible, e.mode == .attached, let a = e.anchor {
             let zone = MotionLayout.zone(soles: MotionPoint(x: e.pos.x, y: e.pos.y), scale: e.scale)

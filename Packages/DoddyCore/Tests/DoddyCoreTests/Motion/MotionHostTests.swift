@@ -389,6 +389,40 @@ final class MotionHostTests: XCTestCase {
         XCTAssertEqual(checks.count, 0, "\(checks.violations)")
     }
 
+    /// Probe run 39309734417: a hop's size change finishes in the step that lands him, so the last
+    /// frame of the flight and the first on the ground can differ in size at any frame length; and
+    /// under Reduce Motion a frame longer than the 20 ms invisible gap shows the fade's two faint
+    /// sides back to back. Neither is a visible resize on the ground. Swept over frame lengths
+    /// (in 4 ms steps), both ways, Home's 1.4× and Settings' 1.0×.
+    func testChecksAreCleanAtAnyFrameLengthAcrossTabHopsAndFades() {
+        for reduce in [false, true] {
+            for frameSteps in 1...14 {
+                setUp()
+                var checks = MotionChecks()
+                e.setReduceMotion(reduce)
+                var step = 0
+                let each: (MotionHost) -> Void = { h in
+                    step += 1
+                    if step % frameSteps == 0 { checks.check(h, drawn: h.placement == .hidden ? 0 : 1) }
+                }
+                let tabs: [(MotionScreen, MotionSurfaceID)] = [(.settings, .ledge("settings")), (.home, .stage), (.settings, .ledge("settings")), (.home, .stage)]
+                for (screen, surface) in tabs {
+                    host.tabChanged(to: screen, tapT: e.now)
+                    if screen == .settings {
+                        host.scene.mounted.remove(.stage)
+                        host.scene.frames[.ledge("settings")] = MotionRect(x: 24, y: 300, width: 80, height: 2)
+                        host.scene.mounted.insert(.ledge("settings"))
+                    } else {
+                        host.scene.mounted.remove(.ledge("settings"))
+                        host.scene.mounted.insert(.stage)
+                    }
+                    run(maxMs: 2000, until: { $0.engine.anchor?.surface == surface && $0.engine.now - $0.engine.lastLand > 300 }, each: each)
+                }
+                XCTAssertEqual(checks.count, 0, "reduce \(reduce), \(frameSteps * 4) ms frames: \(checks.violations)")
+            }
+        }
+    }
+
     /// Hosted run 39282487184: the checks ran before he was placed, read his default 1.0× and then
     /// flagged the first real size (1.4× on Home) as a size change on the ground.
     func testChecksWaitUntilHeIsPlacedAndOneFrameOfTwoDrawingsIsNotTwo() {
