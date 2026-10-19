@@ -37,8 +37,12 @@ services:
         value: 0.0.0.0
       - key: DODDY_PORT
         value: "10000"    # Render's default PORT
+      # signed = the owner's minted token; supabase = Apple or Google sign-in (ADR-526), plus the
+      # owner's token in development while DODDY_SESSION_SIGNING_KEY is set.
       - key: DODDY_AUTH_MODE
         value: signed
+      - key: SUPABASE_URL
+        sync: false
       - key: DODDY_SESSION_SIGNING_KEY
         generateValue: true
       # Hosted Postgres (ADR-525): postgres://… URL, and the CA's PEM when it isn't a public one

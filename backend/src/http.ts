@@ -103,7 +103,7 @@ export function createHandler(deps: HttpDeps) {
       // Route templates only in logs, so the set of values stays small.
       route = toolkitRoute ? `POST /v1/tools/:toolkit/${toolkitRoute[2]}` : key;
 
-      const user = deps.verifier.verify(header(req, "authorization"), now());
+      const user = await deps.verifier.verify(header(req, "authorization"), now());
       if (!user) throw new AppError("unauthenticated");
 
       const rawScenario = header(req, "x-doddy-demo-scenario");
