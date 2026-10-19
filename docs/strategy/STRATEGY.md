@@ -117,7 +117,7 @@ Typical sprawy [ASSUMPTION: examples for the beta, not research]:
 
 **One-line promise** [ASSUMPTION: draft; Polish needs a native read, Phase 5]:
 - EN: "Hand Doddy what's hanging over you. It brings it back at the right moment, with the next step ready."
-- PL: "Powiedz Doddy'emu, co ci wisi nad głową. Wróci z tym we właściwym momencie, z gotowym następnym krokiem."
+- PL: "Powiedz Doddy’emu, co ci wisi nad głową. Wróci z tym we właściwym momencie, z gotowym następnym krokiem."
 
 **What this replaces:**
 - "Tell Doddy before you forget. Find your exact words later." (17 Oct strategy)
