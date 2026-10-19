@@ -24,16 +24,16 @@ const live = {
 };
 
 async function serve(env: Record<string, string>) {
-  const app = buildApp(loadConfig(env));
+  const app = await buildApp(loadConfig(env));
   app.server.listen(0, "127.0.0.1");
   await once(app.server, "listening");
   const url = `http://127.0.0.1:${(app.server.address() as AddressInfo).port}`;
   return {
     app,
     url,
-    close: () => {
+    close: async () => {
       app.server.close();
-      app.store.close();
+      await app.store.close();
     },
   };
 }
@@ -53,7 +53,7 @@ test("mock mode: the demo gateway, mock mode on every answer", async () => {
     assert.equal(body.mode, "mock");
     assert.equal(body.purchase.testMode, true);
   } finally {
-    s.close();
+    await s.close();
   }
 });
 
@@ -65,7 +65,7 @@ test("live mode with a test key: Stripe over HTTPS, test mode", async () => {
     const health = (await (await fetch(`${s.url}/v1/health`)).json()) as any;
     assert.deepEqual(health.capabilities, ["calendar.listEvents", "payments"]);
   } finally {
-    s.close();
+    await s.close();
   }
 });
 
@@ -85,6 +85,6 @@ test("live mode without a key: native purchases are not set up, never the demo",
     const health = (await (await fetch(`${s.url}/v1/health`)).json()) as any;
     assert.deepEqual(health.capabilities, ["calendar.listEvents"]);
   } finally {
-    s.close();
+    await s.close();
   }
 });

@@ -99,7 +99,7 @@ afterEach(async () => {
 });
 
 async function start(o: { limits?: Partial<Limits>; gateway?: PaymentGateway | null; mode?: "mock" | "test"; checkoutHosts?: string[]; nowIso?: string } = {}): Promise<Rig> {
-  const store = new Store(":memory:");
+  const store = await Store.memory();
   const clock = new Clock(Date.parse(o.nowIso ?? "2026-10-18T10:00:00.000Z"));
   const limits = testLimits(o.limits);
   const mode = o.mode ?? "mock";
@@ -126,7 +126,7 @@ async function start(o: { limits?: Partial<Limits>; gateway?: PaymentGateway | n
       if (closed) return;
       closed = true;
       server.close();
-      store.close();
+      await store.close();
     },
     async call(method, path, c = {}) {
       const headers: Record<string, string> = {};
@@ -287,7 +287,7 @@ test("every purchases route needs a valid session", async () => {
 });
 
 test("purchases routes exist only when the service is wired", async () => {
-  const store = new Store(":memory:");
+  const store = await Store.memory();
   const service = new ConnectedAppsService({
     store, provider: new MockCalendarProvider(), registry: defaultRegistry(), limits: testLimits(), publicBaseUrl: "https://api.doddy.test",
     appReturnUrl: "doddy-dev://connected-apps/return", completionMode: "mock",
@@ -301,7 +301,7 @@ test("purchases routes exist only when the service is wired", async () => {
     assert.equal(res.status, 404);
   } finally {
     server.close();
-    store.close();
+    await store.close();
   }
 });
 
@@ -507,7 +507,7 @@ test("the approval is bound to the stored purchase, its owner and its kind", asy
 test("a changed stored purchase no longer matches its approval", async () => {
   rig = await start();
   const p = await prepared(rig);
-  rig.store.db.prepare("UPDATE purchases SET amount_minor = 19900 WHERE purchase_id = ?").run(p.purchase.id);
+  await rig.store.db.query("UPDATE purchases SET amount_minor = 19900 WHERE purchase_id = $1", [p.purchase.id]);
   const res = await payApple(rig, p);
   assert.equal(res.status, 403);
   assert.equal(rig.gateway!.calls.length, 0);
@@ -546,13 +546,13 @@ test("Apple Pay success is paid, with the token passed through untouched and nev
   assert.equal(res.body.purchase.status, "paid");
   assert.equal(res.body.purchase.method, "apple_pay");
   assert.deepEqual(rig.gateway!.calls[0]!.applePay, APPLE_PAY);
-  const row = rig.store.getPurchase("00000000-0000-4000-8000-00000000000a", p.purchase.id)!;
+  const row = (await rig.store.getPurchase("00000000-0000-4000-8000-00000000000a", p.purchase.id))!;
   assert.equal(row.payment_id, "mock_pi_1");
-  const dump = JSON.stringify(rig.store.db.prepare("SELECT * FROM purchases").all()) + JSON.stringify(rig.store.db.prepare("SELECT * FROM approvals").all());
+  const dump = JSON.stringify((await rig.store.db.query("SELECT * FROM purchases")).rows) + JSON.stringify((await rig.store.db.query("SELECT * FROM approvals")).rows);
   assert.ok(!dump.includes("EC_v1") && !dump.includes("ZmFrZQ"), "no token in the database");
   assert.ok(!rig.logs.join("\n").includes("EC_v1"), "no token in the logs");
   // ADR-322: the approval's outcome is recorded with the payment id.
-  const approval = rig.store.db.prepare("SELECT outcome, external_id FROM approvals WHERE approval_id = ?").get(p.approvalId) as any;
+  const approval = (await rig.store.db.query("SELECT outcome, external_id FROM approvals WHERE approval_id = $1", [p.approvalId])).rows[0] as any;
   assert.deepEqual({ ...approval }, { outcome: "succeeded", external_id: "mock_pi_1" });
 });
 
@@ -581,7 +581,7 @@ test("BLIK waits for the bank, then status after 3 seconds says paid; the code i
   const done = await status(rig, p.purchase.id);
   assert.equal(done.body.purchase.status, "paid");
   assert.equal(done.body.purchase.summary, "Paid 56,00 zł with BLIK (test mode, no real money).");
-  const dump = JSON.stringify(rig.store.db.prepare("SELECT * FROM purchases").all());
+  const dump = JSON.stringify((await rig.store.db.query("SELECT * FROM purchases")).rows);
   assert.ok(!dump.includes("777123"), "no BLIK code in the database");
   assert.ok(!rig.logs.join("\n").includes("777123"), "no BLIK code in the logs");
   // Paid stays paid; status reads nothing more.
@@ -596,7 +596,7 @@ test("BLIK 000000 is declined: failed, nothing charged", async () => {
   const res = await payBlik(rig, p, "000000");
   assert.equal(res.body.purchase.status, "failed");
   assert.equal(res.body.purchase.summary, "The payment of 56,00 zł was declined. Nothing was charged (test mode, no real money).");
-  const approval = rig.store.db.prepare("SELECT outcome FROM approvals WHERE approval_id = ?").get(p.approvalId) as any;
+  const approval = (await rig.store.db.query("SELECT outcome FROM approvals WHERE approval_id = $1", [p.approvalId])).rows[0] as any;
   assert.equal(approval.outcome, "failed");
   // A malformed code never reaches the gateway.
   const q = await prepared(rig);
@@ -634,9 +634,9 @@ test("unknown outcome: never paid, never retried; status keeps it unknown until 
   const found = await status(rig, p.purchase.id);
   assert.equal(found.body.purchase.status, "paid");
   assert.equal(g.count("apple_pay"), 1, "never charged again");
-  assert.equal(rig.store.getPurchase("00000000-0000-4000-8000-00000000000a", p.purchase.id)!.payment_id, "pi_found_1");
+  assert.equal((await rig.store.getPurchase("00000000-0000-4000-8000-00000000000a", p.purchase.id))!.payment_id, "pi_found_1");
   // The approval stayed unfinished while unsure, then succeeded.
-  const approval = rig.store.db.prepare("SELECT outcome, external_id FROM approvals WHERE approval_id = ?").get(p.approvalId) as any;
+  const approval = (await rig.store.db.query("SELECT outcome, external_id FROM approvals WHERE approval_id = $1", [p.approvalId])).rows[0] as any;
   assert.deepEqual({ ...approval }, { outcome: "succeeded", external_id: "pi_found_1" });
 });
 
@@ -794,18 +794,18 @@ test("prune drops purchases older than 90 days", async () => {
   await prepared(rig);
   rig.clock.advance(91 * 86_400_000);
   const kept = await prepared(rig);
-  const gone = rig.store.prune(rig.clock.now());
+  const gone = await rig.store.prune(rig.clock.now());
   assert.equal(gone.purchases, 1);
   assert.deepEqual((await rig.call("GET", "/v1/purchases")).body.purchases.map((p: any) => p.id), [kept.purchase.id]);
 });
 
-test("a mock gateway can't be used with test mode, nor Stripe with mock mode", () => {
-  const store = new Store(":memory:");
+test("a mock gateway can't be used with test mode, nor Stripe with mock mode", async () => {
+  const store = await Store.memory();
   try {
     assert.throws(() => new PaymentsService({ store, gateway: new MockPaymentGateway(), mode: "test", limits: testLimits(), checkoutHosts: [] }));
     assert.throws(() => new PaymentsService({ store, gateway: new StripeHttpGateway({ secretKey: TEST_KEY, timeoutMs: 1000 }), mode: "mock", limits: testLimits(), checkoutHosts: [] }));
   } finally {
-    store.close();
+    await store.close();
   }
 });
 

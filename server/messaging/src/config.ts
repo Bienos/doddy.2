@@ -41,6 +41,36 @@ const schema = z.object({
   OPENAI_MODEL: optional, // default gpt-5-mini
   GNEWS_API_KEY: optional, // keyword search across news sources (paid plan for commercial use)
   DODDY_PHONE_NUMBER: z.string().regex(/^\+[1-9][0-9]{6,14}$/).optional(),
+
+  // Calls Doddy makes for the user (call cases, ADR-500). Our server places the Twilio call and
+  // ElevenLabs is only the voice (register-call). docs/decisions/calls.md.
+  // "1" stops every task call: no new cases, approvals, dials or takeovers; calls in progress end.
+  TASK_CALLS_KILL_SWITCH: z.enum(["0", "1"]).default("0"),
+  // A dedicated Twilio subaccount (Poland-only voice permissions) is recommended; without these the
+  // main TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN are used.
+  TWILIO_TASK_ACCOUNT_SID: optional,
+  TWILIO_TASK_AUTH_TOKEN: optional,
+  // The number the callee sees; must belong to that Twilio account. Default DODDY_PHONE_NUMBER.
+  TASK_CALL_FROM_NUMBER: z.string().regex(/^\+[1-9][0-9]{6,14}$/).optional(),
+  ELEVENLABS_TASK_AGENT_ID: optional,
+  // Secret of the ElevenLabs post-call webhook (HMAC).
+  ELEVENLABS_WEBHOOK_SECRET: z.string().min(16).optional(),
+  // Spoken after the AI disclosure. "off" until the owner confirms the legal basis (calls.md).
+  CALL_RECORDING_NOTICE: z.enum(["off", "nagrywana", "zapisywana"]).default("off"),
+  // Limits: these can only be lowered; the maximums are the code's ceilings.
+  TASK_CALL_LIMIT_USER_HOUR: z.coerce.number().int().min(0).max(3).default(3),
+  TASK_CALL_LIMIT_USER_DAY: z.coerce.number().int().min(0).max(10).default(10),
+  TASK_CALL_LIMIT_DEST_USER_DAY: z.coerce.number().int().min(0).max(2).default(2),
+  TASK_CALL_LIMIT_DEST_DAY: z.coerce.number().int().min(0).max(3).default(3),
+  TASK_CALL_DEST_GAP_MINUTES: z.coerce.number().int().min(15).max(1440).default(15),
+  TASK_CALL_LIMIT_GLOBAL_DAY: z.coerce.number().int().min(0).max(200).default(50),
+  TASK_CALL_MAX_SECS: z.coerce.number().int().min(60).max(300).default(300),
+  // Prices for the parts Twilio and ElevenLabs don't report per call. Unset = that cost is "unknown".
+  PRICE_TWILIO_TRANSCRIPTION_USD_PER_MIN: z.coerce.number().positive().max(1).optional(),
+  PRICE_TWILIO_CONFERENCE_USD_PER_PARTICIPANT_MIN: z.coerce.number().positive().max(1).optional(),
+  PRICE_ELEVENLABS_USD_PER_CREDIT: z.coerce.number().positive().max(1).optional(),
+  // Twilio's own voice for the short fixed lines (apology, goodbye, "przekazuję rozmowę").
+  TASK_CALL_SAY_VOICE: z.string().regex(/^[A-Za-z0-9.\-]{1,40}$/).default("Polly.Ewa"),
 });
 
 export interface ApnsConfig { teamId: string; keyId: string; privateKey: string; bundleId: string }
@@ -48,6 +78,27 @@ export interface TwilioConfig {
   accountSid: string; authToken: string; messagingServiceSid: string; verifyServiceSid: string;
 }
 export interface PhoneAgentConfig { apiKey: string; agentId: string; phoneNumberId: string }
+
+export type RecordingNotice = "off" | "nagrywana" | "zapisywana";
+
+export interface TaskCallLimits {
+  userPerHour: number; userPerDay: number; destinationPerUserDay: number; destinationPerDay: number;
+  destinationGapMinutes: number; globalPerDay: number; maxDurationSecs: number;
+}
+
+export interface TaskCallPrices {
+  transcriptionUsdPerMin?: number; conferenceUsdPerParticipantMin?: number; elevenLabsUsdPerCredit?: number;
+}
+
+/** Everything a task call needs. Missing pieces leave `taskCalls` undefined: the API answers 503. */
+export interface TaskCallConfig {
+  twilioAccountSid: string; twilioAuthToken: string; fromNumber: string;
+  elevenLabsApiKey: string; agentId: string; webhookSecret: string;
+}
+
+export interface TaskCallSettings {
+  killSwitch: boolean; notice: RecordingNotice; limits: TaskCallLimits; prices: TaskCallPrices; sayVoice: string;
+}
 
 export interface Config {
   databaseUrl: string;
@@ -66,10 +117,13 @@ export interface Config {
   openaiApiKey?: string;
   openaiModel?: string;
   gnewsApiKey?: string;
+  taskCalls?: TaskCallConfig;
+  taskCallSettings: TaskCallSettings;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
-  const e = schema.parse(env);
+  // A variable left empty (as in a copied .env.example) counts as unset, not as an invalid value.
+  const e = schema.parse(Object.fromEntries(Object.entries(env).filter(([, v]) => v !== "")));
   const all = <T extends object>(o: { [K in keyof T]: T[K] | undefined }): T | undefined =>
     Object.values(o).every((v) => v !== undefined) ? (o as T) : undefined;
   return {
@@ -98,5 +152,44 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     openaiApiKey: e.OPENAI_API_KEY,
     openaiModel: e.OPENAI_MODEL,
     gnewsApiKey: e.GNEWS_API_KEY,
+    taskCalls: all<TaskCallConfig>({
+      twilioAccountSid: e.TWILIO_TASK_ACCOUNT_SID ?? e.TWILIO_ACCOUNT_SID,
+      twilioAuthToken: e.TWILIO_TASK_AUTH_TOKEN ?? e.TWILIO_AUTH_TOKEN,
+      fromNumber: e.TASK_CALL_FROM_NUMBER ?? e.DODDY_PHONE_NUMBER,
+      elevenLabsApiKey: e.ELEVENLABS_API_KEY,
+      agentId: e.ELEVENLABS_TASK_AGENT_ID,
+      webhookSecret: e.ELEVENLABS_WEBHOOK_SECRET,
+    }),
+    taskCallSettings: {
+      killSwitch: e.TASK_CALLS_KILL_SWITCH === "1",
+      notice: e.CALL_RECORDING_NOTICE,
+      limits: {
+        userPerHour: e.TASK_CALL_LIMIT_USER_HOUR,
+        userPerDay: e.TASK_CALL_LIMIT_USER_DAY,
+        destinationPerUserDay: e.TASK_CALL_LIMIT_DEST_USER_DAY,
+        destinationPerDay: e.TASK_CALL_LIMIT_DEST_DAY,
+        destinationGapMinutes: e.TASK_CALL_DEST_GAP_MINUTES,
+        globalPerDay: e.TASK_CALL_LIMIT_GLOBAL_DAY,
+        maxDurationSecs: e.TASK_CALL_MAX_SECS,
+      },
+      prices: {
+        transcriptionUsdPerMin: e.PRICE_TWILIO_TRANSCRIPTION_USD_PER_MIN,
+        conferenceUsdPerParticipantMin: e.PRICE_TWILIO_CONFERENCE_USD_PER_PARTICIPANT_MIN,
+        elevenLabsUsdPerCredit: e.PRICE_ELEVENLABS_USD_PER_CREDIT,
+      },
+      sayVoice: e.TASK_CALL_SAY_VOICE,
+    },
   };
 }
+
+/** The defaults a test or a server without the variables gets: the code's ceilings, switch off. */
+export const DEFAULT_TASK_CALL_SETTINGS: TaskCallSettings = {
+  killSwitch: false,
+  notice: "off",
+  limits: {
+    userPerHour: 3, userPerDay: 10, destinationPerUserDay: 2, destinationPerDay: 3,
+    destinationGapMinutes: 15, globalPerDay: 50, maxDurationSecs: 300,
+  },
+  prices: {},
+  sayVoice: "Polly.Ewa",
+};

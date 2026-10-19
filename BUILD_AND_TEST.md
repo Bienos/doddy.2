@@ -155,7 +155,7 @@ memory. Settings › Connected Apps.
 ### Prerequisites
 | Need | For |
 |---|---|
-| Node.js ≥ 22.22.3 (tests ran on 22.22.0) | `backend/` (uses `node:sqlite`) |
+| Node.js ≥ 22.22.3 (tests ran on 22.22.0) | `backend/` (Postgres; PGlite in tests, ADR-525) |
 | Swift 6 toolchain | `Packages/DoddyCore` tests (any OS) |
 | macOS + Xcode 16+ and XcodeGen | the iOS app (see `BUILD_AND_TEST.md`) |
 | Composio account, Google account, HTTPS URL | live mode only |
@@ -213,4 +213,3 @@ Without the backend you can drive the same flow with curl, e.g.
 | "Needs attention" after connecting | Granted access isn't provably read-only (auth config scopes too broad, or scopes not reported). Fix the auth config and reconnect |
 | Simulator can't reach `http://localhost:8787` | App Transport Security may block plain http (unverified); use an HTTPS tunnel |
 | `Not starting. Invalid configuration: …` | Read the named variables; values are never printed |
-| `ExperimentalWarning: SQLite` | Expected on Node 22 (`node:sqlite`) |

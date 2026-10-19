@@ -108,17 +108,17 @@ export class PaymentsService {
     }
     const now = this.now();
     const counter = { counter: `user:${userId}:purchases`, period: `day:${utcDay(now)}`, limit: this.limits.userDailyPurchases };
-    if (this.store.usage(counter.counter, counter.period) >= counter.limit) throw this.tooManyToday();
+    if ((await this.store.usage(counter.counter, counter.period)) >= counter.limit) throw this.tooManyToday();
     if (request.amountMinor > this.limits.purchaseMaxMinor) {
       throw new AppError("capability_disabled", {
         message: `That's more than Doddy's limit of ${formatPln(this.limits.purchaseMaxMinor)} for one purchase. Nothing was paid.`,
       });
     }
-    if (!this.withinDailyCap(userId, request.amountMinor, now)) throw this.overDailyCap();
+    if (!(await this.withinDailyCap(userId, request.amountMinor, now))) throw this.overDailyCap();
     // Counted only when a purchase is really made, so a refused proposal costs the user nothing.
-    if (!this.store.reserveUsage([counter], 1)) throw this.tooManyToday();
+    if (!(await this.store.reserveUsage([counter], 1))) throw this.tooManyToday();
 
-    const row = this.store.createPurchase(
+    const row = await this.store.createPurchase(
       {
         purchase_id: randomUUID(),
         user_id: userId,
@@ -156,7 +156,7 @@ export class PaymentsService {
 
   async pay(userId: string, body: unknown): Promise<PurchaseResult> {
     const request = parse(PayRequestSchema, body);
-    const row = this.own(userId, request.purchaseId);
+    const row = await this.own(userId, request.purchaseId);
     if (row.kind !== "native") throw new AppError("invalid_request", { message: "This purchase opens the shop's own checkout; it isn't paid inside Doddy." });
     // Already sent with this approval (a repeated tap, or the phone lost the answer): say where it
     // is, charge nothing. The status re-read only reads.
@@ -166,7 +166,7 @@ export class PaymentsService {
     }
     const now = this.now();
     if (row.status === "awaiting_tap" && now >= row.expires_at) {
-      this.expire(row, now);
+      await this.expire(row, now);
       throw freshConfirmation();
     }
     if (row.status !== "awaiting_tap") throw freshConfirmation();
@@ -175,11 +175,11 @@ export class PaymentsService {
 
     // The approval is used up in the same transaction that marks the purchase `paying`, before any
     // money can move: a second request with it (a double tap, a replay) loses here and charges nothing.
-    const used = this.store.usePurchaseApproval(
+    const used = await this.store.usePurchaseApproval(
       { approvalId: request.approvalId, userId, capability: PURCHASE_CAPABILITY.native, purchaseId: row.purchase_id, argsDigest: purchaseDigest(row), now },
       ["awaiting_tap"],
       { status: "paying", method: request.method },
-      (current) => this.withinDailyCap(userId, current.amount_minor, now),
+      this.dailyCap(now),
     );
     if (used === "limit") throw this.overDailyCap();
     if (used === "refused") throw freshConfirmation();
@@ -202,7 +202,7 @@ export class PaymentsService {
       // Anything but a typed gateway answer happened mid-call: it may or may not have gone through.
       answer = error instanceof GatewayError ? error : new GatewayError("unknown");
     }
-    const sent = this.store.getPurchase(userId, row.purchase_id) ?? row;
+    const sent = (await this.store.getPurchase(userId, row.purchase_id)) ?? row;
     // A definite answer also replaces an "unsure" a status check wrote meanwhile.
     return this.result(await this.apply(sent, answer, ["paying", "outcome_unknown"]));
   }
@@ -212,23 +212,23 @@ export class PaymentsService {
   /** Re-reads an unsettled native payment from the gateway. Never pays, never retries a payment. */
   async status(userId: string, body: unknown): Promise<PurchaseResult> {
     const request = parse(PurchaseIdRequestSchema, body);
-    return this.result(await this.refresh(this.own(userId, request.purchaseId)));
+    return this.result(await this.refresh(await this.own(userId, request.purchaseId)));
   }
 
   /** Before paying, or while BLIK waits for the bank. Anything else is answered as it is. */
   async cancel(userId: string, body: unknown): Promise<PurchaseResult> {
     const request = parse(PurchaseIdRequestSchema, body);
-    const row = this.own(userId, request.purchaseId);
+    const row = await this.own(userId, request.purchaseId);
     const now = this.now();
     if (row.status === "awaiting_tap") {
-      this.store.updatePurchase(userId, row.purchase_id, ["awaiting_tap"], { status: "cancelled", now });
-      return this.result(this.reload(row));
+      await this.store.updatePurchase(userId, row.purchase_id, ["awaiting_tap"], { status: "cancelled", now });
+      return this.result(await this.reload(row));
     }
     const gateway = this.gateway;
     if (row.status !== "waiting_for_bank" || row.kind !== "native" || !gateway) return this.result(row);
 
     // Remembered first, so a cancellation Stripe reports later reads as the user's own.
-    this.store.updatePurchase(userId, row.purchase_id, ["waiting_for_bank"], { status: "waiting_for_bank", now, reason: "cancel_requested" });
+    await this.store.updatePurchase(userId, row.purchase_id, ["waiting_for_bank"], { status: "waiting_for_bank", now, reason: "cancel_requested" });
     let payment: GatewayPayment | null = null;
     try {
       const paymentId = row.payment_id ?? (await gateway.findByPurchase(row.purchase_id))?.paymentId ?? null;
@@ -243,7 +243,7 @@ export class PaymentsService {
     } catch {
       payment = null;
     }
-    const current = this.reload(row);
+    const current = await this.reload(row);
     if (!payment) return this.result(current);
     return this.result(await this.apply(current, payment, ["waiting_for_bank"]));
   }
@@ -253,7 +253,7 @@ export class PaymentsService {
   /** Uses up the checkout's approval and returns the page to open. A repeat with the same approval answers the same. */
   async handoff(userId: string, body: unknown): Promise<HandoffResult> {
     const request = parse(HandoffRequestSchema, body);
-    const row = this.own(userId, request.purchaseId);
+    const row = await this.own(userId, request.purchaseId);
     if (row.kind !== "checkout" || !row.checkout_url) {
       throw new AppError("invalid_request", { message: "This purchase is paid inside Doddy; it has no checkout page." });
     }
@@ -263,27 +263,27 @@ export class PaymentsService {
     }
     const now = this.now();
     if (row.status === "awaiting_tap" && now >= row.expires_at) {
-      this.expire(row, now);
+      await this.expire(row, now);
       throw freshConfirmation();
     }
     if (row.status !== "awaiting_tap") throw freshConfirmation();
-    const used = this.store.usePurchaseApproval(
+    const used = await this.store.usePurchaseApproval(
       { approvalId: request.approvalId, userId, capability: PURCHASE_CAPABILITY.checkout, purchaseId: row.purchase_id, argsDigest: purchaseDigest(row), now },
       ["awaiting_tap"],
       { status: "handed_off" },
-      (current) => this.withinDailyCap(userId, current.amount_minor, now),
+      this.dailyCap(now),
     );
     if (used === "limit") throw this.overDailyCap();
     if (used === "refused") throw freshConfirmation();
     // What was approved (opening the page) happened. Whether the user paid there is theirs to say.
-    this.store.finishApproval(row.approval_id, "succeeded", null, now);
-    return this.handoffResult(this.reload(row));
+    await this.store.finishApproval(row.approval_id, "succeeded", null, now);
+    return this.handoffResult(await this.reload(row));
   }
 
   /** After a hand-off: the user's own answer, recorded as theirs and never as Doddy's confirmation. */
   async report(userId: string, body: unknown): Promise<PurchaseResult> {
     const request = parse(ReportRequestSchema, body);
-    const row = this.own(userId, request.purchaseId);
+    const row = await this.own(userId, request.purchaseId);
     if (row.kind !== "checkout") throw new AppError("invalid_request", { message: "Doddy reads payments made inside Doddy itself; there's nothing to report." });
     const target: PurchaseStatusValue = request.paid ? "user_reported_paid" : "cancelled";
     const reason: Reason | null = request.paid ? null : "user_reported_unpaid";
@@ -293,43 +293,54 @@ export class PaymentsService {
       throw new AppError("invalid_request", { message: "You already answered for this checkout." });
     }
     if (row.status !== "handed_off") throw new AppError("invalid_request", { message: "Doddy only asks about a checkout after it was opened." });
-    this.store.updatePurchase(userId, row.purchase_id, ["handed_off"], { status: target, now: this.now(), reason });
-    return this.result(this.reload(row));
+    await this.store.updatePurchase(userId, row.purchase_id, ["handed_off"], { status: target, now: this.now(), reason });
+    return this.result(await this.reload(row));
   }
 
   // ---------------------------------------------------------------- list
 
-  list(userId: string): PurchasesList {
+  async list(userId: string): Promise<PurchasesList> {
     const now = this.now();
-    const rows = this.store.listPurchases(userId, now - LIST_DAYS * DAY_MS, LIST_LIMIT);
-    return { purchases: rows.map((row) => this.view(this.expireIfDue(row, now))) };
+    const rows = await this.store.listPurchases(userId, now - LIST_DAYS * DAY_MS, LIST_LIMIT);
+    const purchases: PurchaseView[] = [];
+    for (const row of rows) purchases.push(this.view(await this.expireIfDue(row, now)));
+    return { purchases };
   }
 
   // ---------------------------------------------------------------- internals
 
-  private own(userId: string, purchaseId: string): PurchaseRow {
-    const row = this.store.getPurchase(userId, purchaseId);
+  private async own(userId: string, purchaseId: string): Promise<PurchaseRow> {
+    const row = await this.store.getPurchase(userId, purchaseId);
     if (!row) throw new AppError("not_found");
     return row;
   }
 
-  private reload(row: PurchaseRow): PurchaseRow {
-    return this.store.getPurchase(row.user_id, row.purchase_id) ?? row;
+  private async reload(row: PurchaseRow): Promise<PurchaseRow> {
+    return (await this.store.getPurchase(row.user_id, row.purchase_id)) ?? row;
   }
 
-  private expire(row: PurchaseRow, now: number): PurchaseRow {
-    this.store.updatePurchase(row.user_id, row.purchase_id, ["awaiting_tap"], { status: "expired", now });
+  private async expire(row: PurchaseRow, now: number): Promise<PurchaseRow> {
+    await this.store.updatePurchase(row.user_id, row.purchase_id, ["awaiting_tap"], { status: "expired", now });
     return this.reload(row);
   }
 
-  private expireIfDue(row: PurchaseRow, now: number): PurchaseRow {
-    return row.status === "awaiting_tap" && now >= row.expires_at ? this.expire(row, now) : row;
+  private expireIfDue(row: PurchaseRow, now: number): Promise<PurchaseRow> {
+    return row.status === "awaiting_tap" && now >= row.expires_at ? this.expire(row, now) : Promise.resolve(row);
   }
 
   /** Today's committed total (UTC day, both kinds) plus this amount stays within the daily cap. */
-  private withinDailyCap(userId: string, amountMinor: number, now: number): boolean {
-    const committed = this.store.committedPurchaseMinor(userId, startOfUtcDay(now), COMMITTED);
+  private async withinDailyCap(userId: string, amountMinor: number, now: number): Promise<boolean> {
+    const committed = await this.store.committedPurchaseMinor(userId, startOfUtcDay(now), COMMITTED);
     return committed + amountMinor <= this.limits.purchaseDailyMaxMinor;
+  }
+
+  /** The same cap, counted again inside the transaction that uses the approval. */
+  private dailyCap(now: number) {
+    return {
+      since: startOfUtcDay(now),
+      statuses: COMMITTED,
+      allows: (purchase: PurchaseRow, committedMinor: number) => committedMinor + purchase.amount_minor <= this.limits.purchaseDailyMaxMinor,
+    };
   }
 
   private overDailyCap(): AppError {
@@ -352,7 +363,7 @@ export class PaymentsService {
    */
   private async refresh(row: PurchaseRow): Promise<PurchaseRow> {
     const now = this.now();
-    row = this.expireIfDue(row, now);
+    row = await this.expireIfDue(row, now);
     const gateway = this.gateway;
     if (!UNSETTLED.has(row.status) || row.kind !== "native" || !gateway) return row;
     let payment: GatewayPayment | null;
@@ -361,9 +372,9 @@ export class PaymentsService {
     } catch {
       return this.reload(row);
     }
-    if (payment) return this.apply(this.reload(row), payment, [row.status]);
+    if (payment) return this.apply(await this.reload(row), payment, [row.status]);
     const stale = row.status === "paying" && row.payment_id === null && now - row.updated_at > 3 * this.limits.providerTimeoutMs;
-    if (stale) this.store.updatePurchase(row.user_id, row.purchase_id, ["paying"], { status: "outcome_unknown", now });
+    if (stale) await this.store.updatePurchase(row.user_id, row.purchase_id, ["paying"], { status: "outcome_unknown", now });
     return this.reload(row);
   }
 
@@ -414,15 +425,15 @@ export class PaymentsService {
       }
     }
     const now = this.now();
-    this.store.updatePurchase(row.user_id, row.purchase_id, from, {
+    await this.store.updatePurchase(row.user_id, row.purchase_id, from, {
       status,
       now,
       ...(paymentId ? { paymentId } : {}),
       ...(reason !== undefined ? { reason } : {}),
     });
-    const updated = this.reload(row);
-    if (updated.status === "paid") this.store.finishApproval(updated.approval_id, "succeeded", updated.payment_id, now);
-    else if (updated.status === "failed" || updated.status === "cancelled") this.store.finishApproval(updated.approval_id, "failed", updated.payment_id, now);
+    const updated = await this.reload(row);
+    if (updated.status === "paid") await this.store.finishApproval(updated.approval_id, "succeeded", updated.payment_id, now);
+    else if (updated.status === "failed" || updated.status === "cancelled") await this.store.finishApproval(updated.approval_id, "failed", updated.payment_id, now);
     return updated;
   }
 

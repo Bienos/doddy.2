@@ -40,6 +40,7 @@ Code lives under `DoddyApp/Features/<Folder>/`. Status docs are in `docs/impleme
 | Backup | Encrypted backup file | 222 | ENCRYPTED_BACKUP_STATUS |
 | Birthdays | Birthday reminders from contacts | 288 | BIRTHDAYS_STATUS |
 | Calls | Calling Doddy on the phone, PIN | - | S2_CALLS_STATUS |
+| CallCases | Calls Doddy makes for you: brief, card, live call with take over, answer card, rehearsal, Live Activity | 500–507 | CALL_CASES_STATUS |
 | Connections, ConnectedApps, OnlineAccounts | Calendar, Reminders, Contacts; online apps | 291, 309 | - |
 | Focus, Tools | Focus timer, breathing, their Live Activity | 241, 242 | - |
 | Import | Google Keep and text import | 231 | NOTE_IMPORT_STATUS |

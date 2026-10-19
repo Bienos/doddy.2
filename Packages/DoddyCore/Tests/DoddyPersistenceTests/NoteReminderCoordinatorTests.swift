@@ -134,6 +134,28 @@ final class NoteReminderCoordinatorTests: XCTestCase {
         XCTAssertEqual(Set(stored.map(\.memoryID)).contains(memory.id), false, "rejected requests store nothing")
     }
 
+    // ADR-523: birthdays and Doddy's own notifications share iOS's 64, so the note reminder
+    // limit shrinks with them instead of iOS dropping one quietly.
+    func testTheLimitLeavesRoomForBirthdaysAndDoddysOwnNotifications() async throws {
+        let (repo, center, coordinator, _) = try make()
+        for index in 0..<20 { await center.injectOrphan(Birthdays.notificationID(for: "contact-\(index)")) }
+        for index in 0..<20 { await center.injectOrphan("doddy.timer.\(index)") }
+        let expected = NotificationBudget.systemLimit - 20 - 20
+        XCTAssertEqual(expected, 24)
+        for index in 0..<expected {
+            let other = try await note(repo, "note \(index)")
+            _ = try await coordinator.schedule(memoryID: other.id, at: now.addingTimeInterval(3600), timeZone: warsaw)
+        }
+        let extra = try await note(repo, "one too many")
+        await assertThrows(.limitReached(maximum: expected)) {
+            _ = try await coordinator.schedule(memoryID: extra.id, at: self.now.addingTimeInterval(3600), timeZone: self.warsaw)
+        }
+        let pending = await center.pending
+        XCTAssertEqual(pending.count, NotificationBudget.systemLimit, "full, never over")
+        let count = try await repo.reminderCount()
+        XCTAssertEqual(count, expected)
+    }
+
     // N-06, N-07: the reminder row goes with the memory, also after reopening the file.
     func testDeletingAMemoryDeletesItsReminder() async throws {
         let path = FileManager.default.temporaryDirectory.appendingPathComponent("doddy-\(UUID()).sqlite").path

@@ -18,7 +18,7 @@ services:
   - type: web
     name: doddy
     runtime: node
-    plan: free            # sleeps when idle; the SQLite file resets on every restart/deploy (see doc)
+    plan: free            # sleeps when idle and has no disk: data lives in Postgres (DATABASE_URL, ADR-525)
     region: frankfurt     # closest to Warsaw
     rootDir: backend
     buildCommand: npm ci && npm run build
@@ -27,7 +27,7 @@ services:
     autoDeploy: false
     envVars:
       - key: NODE_VERSION
-        value: "22"       # package.json needs >= 22.22.3 (node:sqlite)
+        value: "22"       # package.json needs >= 22.22.3 (@composio/core)
       - key: DODDY_MODE
         value: live
       # production + live is refused by the server until real app sign-in exists.
@@ -37,12 +37,21 @@ services:
         value: 0.0.0.0
       - key: DODDY_PORT
         value: "10000"    # Render's default PORT
+      # signed = the owner's minted token; supabase = Apple or Google sign-in (ADR-526), plus the
+      # owner's token in development while DODDY_SESSION_SIGNING_KEY is set.
       - key: DODDY_AUTH_MODE
         value: signed
+      - key: SUPABASE_URL
+        sync: false
       - key: DODDY_SESSION_SIGNING_KEY
         generateValue: true
-      - key: DODDY_DB_PATH
-        value: ./data/doddy.sqlite
+      # Hosted Postgres (ADR-525): postgres://… URL, and the CA's PEM when it isn't a public one
+      # (Supabase: its root CA). Without DATABASE_URL the server uses PGlite at DODDY_DB_PATH, which
+      # the free plan loses on every restart.
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_CA_CERT
+        sync: false
       # callback = single-owner development only (the server refuses it in production).
       - key: COMPOSIO_COMPLETION_MODE
         value: callback
@@ -145,7 +154,29 @@ services:
         sync: false
       - key: DODDY_PHONE_NUMBER
         sync: false
-      # Daily news (N1)
+      # Calls Doddy makes for the user (ADR-500, docs/decisions/calls.md). Use a Poland-only
+      # Twilio subaccount; the TWILIO_TASK_* pair falls back to TWILIO_ACCOUNT_SID/AUTH_TOKEN.
+      - key: TWILIO_TASK_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_TASK_AUTH_TOKEN
+        sync: false
+      - key: TASK_CALL_FROM_NUMBER
+        sync: false
+      - key: ELEVENLABS_TASK_AGENT_ID
+        sync: false
+      - key: ELEVENLABS_WEBHOOK_SECRET
+        sync: false
+      - key: TASK_CALLS_KILL_SWITCH # "1" stops every call by Doddy at once
+        value: "0"
+      - key: CALL_RECORDING_NOTICE # off until the owner confirms the legal basis
+        value: "off"
+      - key: PRICE_TWILIO_TRANSCRIPTION_USD_PER_MIN
+        sync: false
+      - key: PRICE_TWILIO_CONFERENCE_USD_PER_PARTICIPANT_MIN
+        sync: false
+      - key: PRICE_ELEVENLABS_USD_PER_CREDIT
+        sync: false
+      # Daily news (N1); ANTHROPIC_API_KEY also writes the call answer card's summary
       - key: ANTHROPIC_API_KEY
         sync: false
       - key: OPENAI_API_KEY # used only when ANTHROPIC_API_KEY is empty (ADR-197)
@@ -203,7 +234,29 @@ services:
         sync: false
       - key: DODDY_PHONE_NUMBER
         sync: false
-      # Daily news (N1)
+      # Calls Doddy makes for the user (ADR-500, docs/decisions/calls.md). Use a Poland-only
+      # Twilio subaccount; the TWILIO_TASK_* pair falls back to TWILIO_ACCOUNT_SID/AUTH_TOKEN.
+      - key: TWILIO_TASK_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_TASK_AUTH_TOKEN
+        sync: false
+      - key: TASK_CALL_FROM_NUMBER
+        sync: false
+      - key: ELEVENLABS_TASK_AGENT_ID
+        sync: false
+      - key: ELEVENLABS_WEBHOOK_SECRET
+        sync: false
+      - key: TASK_CALLS_KILL_SWITCH # "1" stops every call by Doddy at once
+        value: "0"
+      - key: CALL_RECORDING_NOTICE # off until the owner confirms the legal basis
+        value: "off"
+      - key: PRICE_TWILIO_TRANSCRIPTION_USD_PER_MIN
+        sync: false
+      - key: PRICE_TWILIO_CONFERENCE_USD_PER_PARTICIPANT_MIN
+        sync: false
+      - key: PRICE_ELEVENLABS_USD_PER_CREDIT
+        sync: false
+      # Daily news (N1); ANTHROPIC_API_KEY also writes the call answer card's summary
       - key: ANTHROPIC_API_KEY
         sync: false
       - key: OPENAI_API_KEY # used only when ANTHROPIC_API_KEY is empty (ADR-197)

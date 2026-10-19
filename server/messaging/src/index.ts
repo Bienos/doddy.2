@@ -2,6 +2,7 @@ import { buildApp } from "./app.js";
 import { loadConfig } from "./config.js";
 import { createPool, migrateOrExit } from "./db.js";
 import { providersFrom } from "./providers/index.js";
+import { taskCallContext } from "./taskCalls/context.js";
 import { log, runWorkerLoop } from "./workerLoop.js";
 
 const config = loadConfig();
@@ -17,6 +18,7 @@ app.log.info({
   push: !!providers.push, sms: !!providers.sms, webhooks: !!config.publicBaseUrl,
   calls: !!(config.toolSecret && providers.cipher), outboundCalls: !!providers.outbound,
   newsWriter: !!providers.news.writer, newsSearch: !!providers.news.search,
+  taskCalls: !!(providers.taskCalls && providers.cipher && config.publicBaseUrl), taskCallsKillSwitch: config.taskCallSettings.killSwitch,
 }, "configured features");
 
 // One service instead of web + worker (a small or free deploy): RUN_WORKER_IN_WEB=1 runs the
@@ -26,7 +28,8 @@ let stopping = false;
 let workerDone: Promise<void> | undefined;
 if (config.runWorkerInWeb) {
   log("worker started in the web process", { push: !!providers.push, sms: !!providers.sms });
-  workerDone = runWorkerLoop(db, providers, () => stopping);
+  const taskCtx = taskCallContext(db, providers.taskCalls, providers.cipher, config.publicBaseUrl, providers.push, log);
+  workerDone = runWorkerLoop(db, { ...providers, taskCalls: taskCtx }, () => stopping);
 }
 
 const shutdown = async () => {

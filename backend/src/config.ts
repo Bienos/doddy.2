@@ -11,7 +11,7 @@ import { MONID_DEFAULT_BASE_URL } from "./tools/websearch.js";
 
 export type Mode = "mock" | "live";
 export type Env = "development" | "test" | "production";
-export type AuthMode = "dev" | "signed";
+export type AuthMode = "dev" | "signed" | "supabase";
 export type CompletionMode = "verifier" | "callback";
 
 export interface Limits {
@@ -70,9 +70,17 @@ export interface Config {
   port: number;
   publicBaseUrl: string;
   appReturnUrl: string;
+  /** PGlite data directory, used only when no DATABASE_URL is set (tests, mock mode, local development). */
   dbPath: string;
+  /** Hosted Postgres (ADR-525). Null: PGlite at dbPath, which a host without a disk loses on restart. */
+  databaseUrl: string | null;
+  /** PEM of a private CA for the database's certificate; null uses the system's trusted CAs. */
+  databaseCaCert: string | null;
   authMode: AuthMode;
+  /** Owner-minted tokens (`signed`; also accepted next to Supabase in development when set). */
   sessionSigningKey: Buffer | null;
+  /** Supabase Auth project origin for `supabase` mode (ADR-526): Apple and Google sign-in. */
+  supabaseUrl: string | null;
   composio: ComposioSettings | null;
   /** Gmail, Drive, Notion, Todoist, Outlook: only toolkits with both an auth config and a pinned version. */
   toolkits: Partial<Record<ToolkitId, ToolkitSettings>>;
@@ -115,8 +123,11 @@ const EnvSchema = z.object({
   DODDY_PORT: intSetting(8787, 1, 65535),
   DODDY_PUBLIC_BASE_URL: z.string().optional(),
   DODDY_APP_RETURN_URL: z.string().default("doddy-dev://connected-apps/return"),
-  DODDY_DB_PATH: z.string().min(1).default("./data/doddy-backend.sqlite"),
-  DODDY_AUTH_MODE: z.enum(["dev", "signed"]).default("dev"),
+  DODDY_DB_PATH: z.string().min(1).default("./data/doddy-backend.pglite"),
+  DATABASE_URL: z.string().optional(),
+  DATABASE_CA_CERT: z.string().optional(),
+  DODDY_AUTH_MODE: z.enum(["dev", "signed", "supabase"]).default("dev"),
+  SUPABASE_URL: z.string().optional(),
   DODDY_SESSION_SIGNING_KEY: z.string().optional(),
   COMPOSIO_API_KEY: z.string().optional(),
   COMPOSIO_GOOGLECALENDAR_AUTH_CONFIG_ID: z.string().optional(),
@@ -201,12 +212,33 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
   }
 
   let sessionSigningKey: Buffer | null = null;
-  if (e.DODDY_AUTH_MODE === "signed") {
+  // In supabase mode the owner's minted tokens keep working in development only, while the app
+  // gets Apple and Google sign-in; production accepts Supabase sign-ins alone.
+  const ownerTokens =
+    e.DODDY_AUTH_MODE === "signed" ||
+    (e.DODDY_AUTH_MODE === "supabase" && e.DODDY_ENV !== "production" && (e.DODDY_SESSION_SIGNING_KEY ?? "").trim() !== "");
+  if (ownerTokens) {
     const key = e.DODDY_SESSION_SIGNING_KEY ? Buffer.from(e.DODDY_SESSION_SIGNING_KEY, "base64") : null;
     if (!key || key.length < 32) {
       problems.push("DODDY_SESSION_SIGNING_KEY must be base64 of at least 32 random bytes");
     } else {
       sessionSigningKey = key;
+    }
+  }
+
+  let supabaseUrl: string | null = null;
+  if (e.DODDY_AUTH_MODE === "supabase") {
+    const raw = (e.SUPABASE_URL ?? "").trim();
+    let parsed: URL | null = null;
+    try {
+      parsed = raw ? new URL(raw) : null;
+    } catch {
+      parsed = null;
+    }
+    if (!parsed || parsed.protocol !== "https:" || parsed.username || parsed.password || parsed.search || parsed.hash || (parsed.pathname !== "/" && parsed.pathname !== "")) {
+      problems.push("SUPABASE_URL must be the project's https origin, e.g. https://<project-ref>.supabase.co");
+    } else {
+      supabaseUrl = parsed.origin;
     }
   }
 
@@ -216,12 +248,12 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
   const composioNames = ["COMPOSIO_API_KEY", "COMPOSIO_GOOGLECALENDAR_AUTH_CONFIG_ID", "COMPOSIO_GOOGLECALENDAR_TOOLKIT_VERSION"] as const;
   const composioGiven = composioNames.some((name) => (e[name] ?? "").trim() !== "");
   if (e.DODDY_MODE === "live") {
-    if (e.DODDY_ENV === "production") {
-      // The only session mechanism built is an owner-minted signed token. A public release needs a
-      // vetted sign-in (e.g. Sign in with Apple) first; until then production live mode is refused.
-      problems.push("DODDY_MODE=live with DODDY_ENV=production is blocked until real app sign-in exists");
+    if (e.DODDY_ENV === "production" && e.DODDY_AUTH_MODE !== "supabase") {
+      // Owner-minted tokens are for one owner in development. Production needs real sign-in:
+      // Apple or Google through Supabase Auth (ADR-526).
+      problems.push("DODDY_MODE=live with DODDY_ENV=production requires DODDY_AUTH_MODE=supabase (Apple or Google sign-in)");
     }
-    if (e.DODDY_AUTH_MODE !== "signed") problems.push("DODDY_MODE=live requires DODDY_AUTH_MODE=signed");
+    if (e.DODDY_AUTH_MODE === "dev") problems.push("DODDY_MODE=live requires DODDY_AUTH_MODE=signed or supabase");
     if (!composioGiven && (e.MONID_API_KEY ?? "").trim() === "") {
       problems.push("DODDY_MODE=live needs Composio (COMPOSIO_API_KEY and the Google Calendar pair) or MONID_API_KEY");
     }
@@ -276,6 +308,12 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     if (base) monid = { apiKey: monidKey, baseUrl: base.origin };
   }
 
+  const databaseUrl = e.DATABASE_URL?.trim() ? e.DATABASE_URL.trim() : null;
+  if (databaseUrl !== null && !/^postgres(ql)?:\/\/\S+$/.test(databaseUrl)) {
+    problems.push("DATABASE_URL must be a postgres:// connection string");
+  }
+  // Production keeps its data: a file on an instance disk is lost on every restart of most hosts.
+  if (e.DODDY_ENV === "production" && databaseUrl === null) problems.push("DATABASE_URL is required in production");
   // Payments (ADR-530). Mock mode never calls Stripe, so it ignores any key. Live mode takes test
   // keys only: Doddy charging users with live keys waits for the legal review. Names, never values.
   let payments: PaymentsSettings | null = null;
@@ -310,8 +348,11 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     publicBaseUrl: publicBaseUrl.replace(/\/$/, ""),
     appReturnUrl: e.DODDY_APP_RETURN_URL,
     dbPath: e.DODDY_DB_PATH,
+    databaseUrl,
+    databaseCaCert: e.DATABASE_CA_CERT?.trim() ? e.DATABASE_CA_CERT.trim().replace(/\\n/g, "\n") : null,
     authMode: e.DODDY_AUTH_MODE,
     sessionSigningKey,
+    supabaseUrl,
     composio,
     toolkits,
     monid,

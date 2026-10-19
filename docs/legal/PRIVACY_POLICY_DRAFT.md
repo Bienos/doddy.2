@@ -115,11 +115,13 @@ Common points:
 
 | Item | Detail |
 |---|---|
-| Who | Doddy's own small server (`server/voice-token`), written for Vercel Functions. `VOICE_TOKEN_SERVER_STATUS.md` and `GO_LIVE_STATUS` say a token server is deployed with one owner code. **[CONFIRM: host, region and what is live]** |
-| What is sent | Your access code, when a conversation starts. |
-| What it does | Swaps the code for a one-conversation ElevenLabs token (or, for the OpenAI voice, a 120-second OpenAI client secret for the model you picked), so the ElevenLabs API key stays on the server. |
-| Logged | One JSON line per request: status, error, tester label, upstream status, duration. No codes, tokens, keys, IP addresses or spoken content. (`server/voice-token/README.md`.) The hosting platform may keep its own request logs. **[CONFIRM: Vercel log retention and IP logging]** |
-| Opt-in? | Only if a token server address is set in Settings, Voice. |
+| Who | Doddy's own small server (`server/voice-token`) on Vercel Functions: project `doddy-voice-token`, team `doddyyyy`, address `doddy-voice-token-beta.vercel.app` (ADR-521). It keeps its records in Upstash Redis. **[CONFIRM: Vercel and Upstash regions, and the processor agreements with both]** |
+| What is sent | **Signing in (once):** Apple's identity token from Sign in with Apple, a one-time number (nonce) that ties it to this request, and Apple's one-time authorization code (used only so the link can be revoked later; ADR-524). **Each conversation:** a short-lived Doddy access token and the voice provider you picked (and, for OpenAI, the model). No audio, transcripts, notes or profile. (ADR-522, `server/voice-token/README.md`.) |
+| What it does | Checks the Apple token with Apple's published keys. If Doddy's Sign in with Apple key is set up, it also swaps the authorization code with Apple for a token that lets it end the Sign in with Apple link when you delete your voice account. Then it swaps your Doddy session for a one-conversation ElevenLabs token or a short-lived OpenAI client secret, so the provider API keys stay on the server. It limits each account to 30 conversations an hour by default. |
+| What it keeps | A keyed pseudonym of your Apple account ID (not the ID itself), your session records, hashes of your refresh tokens (not the tokens), and short-lived counters for one-time numbers and rate limits. If Doddy's Sign in with Apple key is set up, also Apple's refresh token for you, encrypted, kept only to revoke the link and deleted with your account. Refresh tokens last 30 days and rotate on use; access tokens last 10 minutes and stay on the iPhone. **[CONFIRM: whether Apple's identity token carries your email and whether the server reads it; the code keeps only the subject]** |
+| Logged | One line per request: action or provider, outcome, status and duration. No content, credentials, Apple account ID or user identifier (`server/voice-token/README.md`). The hosting platform may keep its own request logs. **[CONFIRM: Vercel log retention and IP logging]** |
+| Opt-in? | Required for voice; nothing else in the app needs it. Settings, Voice has Sign out of voice and Delete voice account. Deleting removes your sessions on the server. Once Doddy's Sign in with Apple key is set up, it first asks Apple to revoke the Sign in with Apple link (ADR-524); the account is deleted even if Apple doesn't answer. Until then, and for accounts made before it, the app tells you to remove it in your Apple ID settings (go-live checklist C8). **[CONFIRM: the key is set and a revoke was seen to work, before this sentence is published]** |
+| Legal basis | **[CONFIRM: proposed: performance of the service you asked for]** |
 
 ### 5.3 OpenAI: Doddy's voice (the default where a token server is set)
 
@@ -213,7 +215,7 @@ Common points:
 | What the app sends | Only with Settings › Connections › Payments on. When Doddy shows a Buy card: the shop's name, what is bought, the price and, for a checkout, the page's address. When you tap Apple Pay: the encrypted Apple Pay token (the card number never reaches the phone's code or Doddy). When you send a BLIK code: the six digits, once. For a checkout you opened: your own answer to "Did you pay?". (`DataFlow` row `payments`, `contracts/purchases/README.md`.) |
 | What goes to Stripe | The amount, the description, a random purchase ID, and the Apple Pay token or the BLIK code. Stripe and your card issuer or bank process them under their own terms. |
 | Stored by the backend | One purchase record: shop, what, price, status, method (Apple Pay or BLIK), Stripe's payment ID, times. The card name Apple Pay shows (e.g. "Visa 1234") is passed to Stripe and not kept. Never a card number, a token or a BLIK code. Deleted after 90 days (`store.ts` `prune`). |
-| Retention caveat | On Render's free plan the database file resets on restart or deploy (`render.yaml`), so purchase records, approvals and the daily limits can be lost; Stripe's own records stay. A real deployment needs a persistent disk before payments are turned on. |
+| Retention caveat | Kept in the backend's Postgres (ADR-525). Without a hosted database (`DATABASE_URL`), a restart loses purchase records, approvals and the daily limits; Stripe's own records stay. Payments with real money need the hosted database. |
 | Opt-in? | Yes: Payments is off until you turn it on, and nothing is paid without your tap on the card (and Face ID or your bank app's approval). |
 
 ### 5.11 Other services the app reaches
@@ -336,7 +338,7 @@ What the app **cannot** delete:
 | Verification-start records | 2 days (hash of number only) | `routes/phone.ts` |
 | News sent records / digests / feed cache | 14 days / 30 days / 24 hours | `news/digest.ts`, `news/sources.ts` |
 | Backend receipts and usage counters | **[CONFIRM: no pruning today]** | `SECURITY_AND_PERMISSIONS.md` |
-| Purchase records (no card number, token or BLIK code) | 90 days; lost earlier on a free-plan restart | ADR-530, `backend/src/store.ts` |
+| Purchase records (no card number, token or BLIK code) | 90 days; lost earlier on a restart without a hosted database | ADR-530, `backend/src/store.ts` |
 | Waitlist | **[CONFIRM]** | `site/README.md` |
 | Web server logs | **[CONFIRM: Vercel and Render]** | |
 

@@ -1,0 +1,16 @@
+{
+  "format": "doddy-voice-tools/1",
+  "note": "The task-call agent 'Doddy (calls for you)' (ADR-500, docs/decisions/calls.md) has no webhook or client tools on purpose: it cannot pay, book, send, read memories or transfer. Only these ElevenLabs system tools. voice_agent_spec.py --agent task-call fails if anything else is added; the server's drift check (server/messaging/src/taskCalls/agentSafety.ts) refuses calls if the live agent has anything else.",
+  "tools": [],
+  "system_tools": [
+    {
+      "name": "end_call",
+      "description": "End the call after saying goodbye, once you have the answer, they can't give one, or anything outside the brief was asked."
+    },
+    {
+      "name": "voicemail_detection",
+      "description": "Use when a voicemail greeting or answering machine answers. Leave no message.",
+      "voicemail_message": ""
+    }
+  ]
+}

@@ -47,7 +47,7 @@ From the payments research (owner's doc "Doddy Payments Research", 2026-10-18, w
 
 ## Hosting: the database must survive a restart
 
-Purchases, their single-use approvals and the daily limits live in the backend's SQLite file (`DODDY_DB_PATH`). On Render's free plan (`render.yaml`) that file resets on every restart or deploy. In test mode that only loses records (Stripe keeps its own; "Check again" then can't find the purchase and the card stays "not sure", never "paid"). **Before any real money, the backend needs a persistent disk** (a Render paid plan with a disk mounted at the database path, or another host), otherwise the daily limit could be bypassed by a restart and a payment's record could be lost.
+Purchases, their single-use approvals and the daily limits live in the backend's database. Since ADR-525 that is Postgres: hosted Postgres when `DATABASE_URL` is set (required with `DODDY_ENV=production`), otherwise PGlite at `DODDY_DB_PATH`. With hosted Postgres the records survive restarts and deploys. Without it (PGlite on an instance with no disk, as on Render's free plan) a restart loses them: in test mode that only loses records (Stripe keeps its own; "Check again" then can't find the purchase and the card stays "not sure", never "paid"), but **before any real money `DATABASE_URL` must be set**, or a restart would reset the daily limit and could lose a payment's record. The purchases table is in the same `doddy_backend` schema as the rest (`backend/src/store.ts`).
 
 ## Not done, and before real money
 
