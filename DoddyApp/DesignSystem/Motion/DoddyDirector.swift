@@ -123,9 +123,18 @@ final class DoddyDirector {
         // MV5: breaths, the 15 s sit, the daily welcome and the playful moment are on; the welcome
         // is armed per day by `appBecameActive`. Low Power Mode comes from the device (DoddyClock).
         settings.autoWelcome = false
+        // UI tests that wait for his standing picture ask for no idle life (`-doddyQuietIdle YES`,
+        // DEBUG builds): a breath, a wave or the 15 s sit would change the picture they are
+        // waiting for (hosted probe run 39315718021). Only the tests that check those behaviours
+        // leave it off.
+        var quiet = false
+        #if DEBUG
+        quiet = UserDefaults.standard.bool(forKey: "doddyQuietIdle")
+        #endif
+        if quiet { settings.noBreath = true }
         host = MotionHost(settings: settings)
         host.isActive = false
-        host.behaviours = true
+        host.behaviours = !quiet
         // A tap or a hold on him opens the voice screen (Q2); a hold can't start capture on Home
         // (plan section 5), so it acts as a tap.
         host.onOpenTalk = { [weak self] _ in self?.onTalk?() }
