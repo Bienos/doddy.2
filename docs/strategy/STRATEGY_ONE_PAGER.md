@@ -1,22 +1,31 @@
 # Doddy on one page
 
-**Who:** Busy EU iPhone users (Poland first) who message themselves or keep a Notes dump.
+*19 Oct 2026. Owner direction (ADR-540); targets are proposals. Full version: `STRATEGY.md`.*
 
-**Problem:** Small, useful things (codes, names, recommendations) get saved everywhere and lost exactly when you need them.
+**Who:** busy iPhone users in Poland with a pile of small errands and promises hanging over them.
 
-**Doddy:** A hand-drawn voice mate. Tell him things; ask later; he brings back your exact words with when and where you saved them, or says he can't find it.
+**Problem:** sprawy slip. The return window closes, the bill is late, the friend is still waiting. Reminders come back with no context, and notes to yourself never come back at all.
+
+**Doddy:** a pomocnik, not a companion.
+- You hand it a **sprawa** in one sentence: "Muszę oddać buty na Zalando do piątku."
+- It keeps your exact words and asks one thing: "Mam ci przypomnieć w czwartek wieczorem?"
+- It brings the sprawa back at that moment, with the next step ready.
+- It acts only on your tap. One more tap, **Gotowe**, and it's logged done, with undo.
+
+**Line:** Sharp online. Clumsy offline. Honest always.
 
 **Why we win:**
-- **Honest by design.** Every answer shows its source, Doddy never guesses, and he never acts without your tap.
-- **Speaks Polish now.** Siri still doesn't, so we have a window to win the first market.
-- **A character people remember and share,** which makes our content cheap to spread.
+- **It asks first and never fakes "done".** Every action waits for your tap, and "done" means you tapped Gotowe or the provider confirmed it.
+- **It works in Polish now,** and still holds your sprawy without the internet, honestly plainer.
+- **The loop is mostly built.** Exact text, local reminders with a Done button, ask-first cards and undo exist. The beta joins them up.
 
-**How we make money:** Memory is free forever. Best Mate adds voice, AI answers and reminders, with a 7-day trial after your first save. EU prices carry the business.
+**Money:** the beta is free. Pricing comes after, with measured voice costs.
 
-**How we get users:** Hand-picked beta testers, then character videos, in-app sharing and Polish press. No paid ads yet.
+**Getting users:** 20 hand-picked Polish iPhone users, 2 weeks, private TestFlight. Each brings a real sprawa.
 
-**What we're proving next, and how we'll know:**
-- **People come back to find things:** at least 30% of activated users find a saved memory on a later day within a week, and at least 25% are still active at week 4.
-- **People would pay:** at least 5% reserve a Founding Mate spot in a no-charge price test, before we build payments.
+**What we're proving, and how we'll know** (thresholds proposed, owner sets them before the beta):
+- **People hand it a sprawa on day 0:** at least 80% save their first sprawa on install day.
+- **The bring-back works:** at least 50% close a sprawa after Doddy brought it back, in week one.
+- **They keep using it:** at least 40% are active on 3 or more days in week two.
 
-**The one thing we're not doing:** "do it all." Doddy remembers first, then earns each new skill one at a time.
+**The one thing we're not doing:** new features during the beta. Doddy proves one loop first.

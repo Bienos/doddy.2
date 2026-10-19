@@ -1,320 +1,257 @@
 # Doddy strategy
 
-**Date:** 17 October 2026. **Status:** proposal; owner approval pending. **Short version:** `STRATEGY_ONE_PAGER.md`. **Pitch:** `PITCH.md`.
+**Date:** 19 October 2026. **Status:** the direction is the owner's (19 Oct instruction, ADR-540). The targets, thresholds and dates in it are proposals until the owner confirms them. **Short version:** `STRATEGY_ONE_PAGER.md`. **Pitch:** `PITCH.md`. **The first session, step by step:** `sprawa-loop.md`. **How we'll measure it:** `docs/product/VALIDATION.md`.
+
+**What changed from the 17 Oct version:** that version made Doddy a personal memory app ("Tell Doddy before you forget. Find your exact words later."), with recall on a later day as the North Star. The owner replaced it on 19 Oct. Doddy is now a **pomocnik** (a helper) you hand a **sprawa** to, and the North Star is sprawy closed after Doddy brings them back. The 17 Oct text stays on branch `claude/doddy-strategy-docs`; this file's history on main shows the full diff.
 
 **Labels used throughout:**
-- **[FACT]** means it was observed in this repo, in a device log, or on a dated official or press source.
-- **[EVIDENCE]** means it comes from secondary research or a study that supports, but doesn't prove, the point.
-- **[ASSUMPTION]** means it is the founder's or this document's belief, and needs a test.
-
-**Owner inputs this strategy rests on (interview, 17 October 2026):**
-- The 6-month goal is **real users and retention**, not funding or revenue. [FACT]
-- The vision is an agent that "can connect to anything and do anything for you". [FACT]
-- The market is the **EU**, because one set of rules covers it. [FACT]
-- The ask in every pitch is **join the beta**. [FACT]
-- The first user is "anyone", and the character's role is "I don't know". Both were left to this document to decide, so both are marked [ASSUMPTION] below.
+- **[FACT]**: observed in this repo, in a device log, or on a dated official or press source.
+- **[EVIDENCE]**: secondary research that supports the point but doesn't prove it.
+- **[ASSUMPTION]**: the owner's or this document's belief. It needs a test.
+- **[OWNER]**: the owner said it, in their instruction of 19 Oct 2026.
 
 ---
 
-## 1. Where we are now
+## 1. The direction in one paragraph
+
+Doddy is a pomocnik, not a companion. **[OWNER]** You hand it a **sprawa**: an errand or a promise hanging over you ("Muszę oddać buty na Zalando do piątku"). It keeps your exact words. It brings the sprawa back at the right moment with the next step ready. It acts only on your tap. **[OWNER]**
+
+**Positioning line:** **"Sharp online. Clumsy offline. Honest always."** **[OWNER]**
+
+What the line means in practice [ASSUMPTION: this document's reading; the owner confirms it, open decision 1]:
+- **Sharp online.** With the network and the AI, Doddy understands "do piątku", proposes "czwartek wieczorem", prepares the next step and does the phone-side work.
+- **Clumsy offline.** Without the network, Doddy still keeps the sprawa and still brings it back, because notes and reminders live on the iPhone. But it's plainer: it asks "Kiedy ci przypomnieć?" with a few buttons instead of guessing. It never pretends to be sharp. The app already does a version of this: offline, the voice screen says voice needs the internet and offers to save a note on the iPhone (ADR-289, `docs/implementation/OFFLINE_STATUS.md`). [FACT]
+- **Honest always.** Doddy says what it did, what it didn't do, and what it can't do. "Done" means the user tapped Gotowe, or a provider confirmed the action. [FACT: constitution DOD-02, DOD-08; ASK-01 on main since 18 Oct]
+
+**What "sprawa" means here.** The word is everyday Polish for a matter you have to deal with ("mam sprawę do załatwienia"). In this product, a sprawa is one thing with:
+- **your words**, kept exactly;
+- **a moment** when it should come back: a deadline, or a time you agree on;
+- **a next step** Doddy prepares, or that you add;
+- **a state**: open, done, or dropped, with undo.
+
+Typical sprawy [ASSUMPTION: examples for the beta, not research]:
+- returns ("oddać buty na Zalando do piątku");
+- bills and renewals ("zapłacić za prąd", "OC do 15-go");
+- appointments ("zadzwonić do dentysty, przełożyć wizytę");
+- promises to people ("wysłać Marcie zdjęcia");
+- paperwork ("PIT do końca kwietnia");
+- a parcel to pick up ("paczka w paczkomacie do jutra").
+
+---
+
+## 2. Where we are now (19 Oct 2026)
 
 | State | What | Label |
 |---|---|---|
-| **Built and seen working** | Native SwiftUI iPhone app. You save notes in your own words and search them; results show the original text, the date and where it came from. | [FACT] |
-| | A live voice agent ran on the founder's iPhone on 11 Oct 2026: a 139 s conversation that used `save_memory`, `search_memories` and `web_search`. | [FACT] |
-| | The shared core package has 934 tests passing on Linux. Hosted CI compiles every target and passes the unit and 26 UI tests on the simulator. | [FACT] |
-| | Landing page live at doddy.lol in 10 languages, with an early-access waitlist. | [FACT] |
-| | A written AI constitution with 12 principles and release gates. | [FACT] |
-| **In testing** (built, tried only by the founder) | Voice conversations; calendar, reminders, timers, lists, maps, message drafts, weather, multi-step plans, and personality settings. | [FACT] |
-| **Built but never run** | Apple Watch app (compiles, never run). Mac menu bar app (prototype, never compiled). App screens in 8 extra languages (machine-translated, never seen on a device, never read by a native speaker). | [FACT] |
-| **Known broken** | Voice sessions sometimes start twice, connect but stay silent for 30 s, or can't hear the user. | [FACT] |
-| | The ElevenLabs voice agent is public with no authentication, by the owner's choice for development. The token server code exists; deploying it and turning on authentication is pending. | [FACT: `V1_VOICE_STATUS.md`] |
-| **Planned, not built** | Payments, the quota server, the paywall and trial, family sharing, the wake word ("Hey Doddy" needs a Picovoice key and a keyword file). | [FACT] |
-| **Claimed but unproven** | "A companion that wants to do it all for you" (blog title). That anyone besides the founder wants this. That the character helps. That anyone will pay. | [ASSUMPTION] |
+| **Seen working on the owner's iPhone** | A live voice conversation on 11 Oct (139 s) used `save_memory`, `search_memories` and `web_search`. | [FACT: `STATUS.md`] |
+| **Tested on Linux** | The shared core: 1,146 DoddyCore tests pass (Swift 6.1.2, 19 Oct, this PR). | [FACT] |
+| **Compiled in hosted CI, never on a device** | The app at PR #84 (18 Oct): it builds, and the 29 UI tests pass on the simulator. Since then on main: ASK-01, every tool asks first (PR #87); BLIK hand-off (PR #85); one conversation at a time (ADR-496); the v1 scope proposal and go-live checklist (PR #88). | [FACT: `STATUS.md`] |
+| **Built, and what the sprawa loop can reuse** | Notes keep the original text unchanged after edits (`MemoryRecord.rawText`). Note reminders are local notifications with Open, In 1 hour, Tomorrow 09:00 and Done ("Gotowe") on a long press. The agent checks a date against the user's own words for it (`said_time`). "What Doddy did" lists changes with Undo for 24 hours. ASK-01 cards, and `note_capability_gap`. | [FACT: code; details and file references in `sprawa-loop.md`] |
+| **Missing for the sprawa loop** | A first screen with one question. Keeping the user's spoken words verbatim (today the note text is what the agent writes). One card that shows the words, the time and the state together. A prepared next step. A logged Done with undo: today, Done on a one-off note reminder deletes the reminder, with no log and no undo. Any metrics at all. | [FACT: `sprawa-loop.md` "What exists and what's missing"] |
+| **Known broken** | Voice sessions sometimes start twice, or connect and stay silent for 30 s (`docs/implementation/VOICE_SESSION_STARTS.md`). On 18 Oct voice couldn't connect at all; the address fix is on main (#88). A 19 Oct check that the server's settings are all set is recorded only on branch `claude/epic-wright-vz93xh`. | [FACT] |
+| **Live voice agent settings (18 Oct)** | Authentication off; 10 calls a day for the whole agent; concurrency 2; recordings kept with no time limit. | [FACT: `STATUS.md`] |
 
-**External users:** zero. **Interviews on record:** none. **Waitlist size:** not recorded in the repo. [FACT]
+**External users:** zero. **Interviews on record:** none. [FACT]
 
-**Verdict:** the product is far ahead of the evidence. Doddy has the engineering surface of a 1.0 release: four platforms, ten languages, and about ten tools. It has the user evidence of an idea, because H1, the hypothesis everything rests on, has never been tested on another person. The next 90 days have to close that gap, not widen the product.
+**Verdict:** the engineering is far ahead of the evidence, as it was on 17 Oct. The difference is that the sprawa loop needs very little new engineering. Most of its parts exist: exact text, local reminders with a Done action, ask-first cards and undo. What's missing is mostly joining them into one loop and measuring it. The beta should test that loop with 20 people, not add features.
 
 ---
 
-## 2. The problem
+## 3. The problem
 
-**The problem:** people save small, useful facts all over the place, then can't find them at the moment they need them. Examples are a parcel-locker code, the book a friend recommended, a child's shoe size, the restaurant for a birthday, or where the car is parked.
-- These things end up in Notes, a WhatsApp chat with yourself, screenshots, reminders or nowhere. [ASSUMPTION]
-- Search fails because you don't remember where you put it or which words you used. [ASSUMPTION]
+**The problem:** small errands and promises pile up and hang over you. Each has a deadline or a person waiting. You carry them in your head, or in a note or a reminder that comes back at the wrong moment with no context. So they slip: the return window closes, the fee lands, the friend is still waiting. [ASSUMPTION]
 
-**Who has it:** adults whose day produces a steady stream of "I'll need this later" moments. [ASSUMPTION]
+**Why this is sharper than "I can't find my note"** [ASSUMPTION]:
+- The 17 Oct strategy admitted the recall pain was mild: "a vitamin" that people tolerate daily and rarely look to fix.
+- A sprawa has a **deadline and a consequence**: money (a missed return, a late fee), time, or a promise broken.
+- It also has an obvious **moment of value**: the notification that arrives on Thursday evening, while there's still time.
 
-**How often:** several times a week per person. [ASSUMPTION: no measurement exists]
+**How people handle it today** [ASSUMPTION]:
+- In their head.
+- Apple Reminders: free, but it knows only a title and a time. It doesn't know what the sprawa is or what comes next, and Siri doesn't speak Polish.
+- A note to self, or a WhatsApp chat with yourself.
+- A calendar entry.
+- A task app (Todoist, TickTick), which asks you to keep a system.
 
-**How they solve it today:** they scroll back through chats, search Notes with guessed words, ask the person again, or give up. All of these are free and already on the phone. [ASSUMPTION]
-
-**What it costs them:** a few minutes, some mild embarrassment when they ask again, and lost recommendations or commitments. Each instance is a small cost. [ASSUMPTION]
+**What it costs:** mental load, missed deadlines, small sums of money, and other people's trust. [ASSUMPTION: unmeasured; the beta's interviews ask for a recent example]
 
 **Supporting evidence (indirect):**
-- People already use AI for everyday life. 24% of US adults use a chatbot daily, and the most common use is looking things up. [EVIDENCE: Pew Research, June 2026]
-- More than 70% of ChatGPT messages are about life outside work. [EVIDENCE: NBER w34255]
-- 32.7% of EU adults used generative AI in 2025. [EVIDENCE: Eurostat]
-- None of this shows that people lose saved information or would switch tools to fix it.
-
-**The hard truth:** this is a real but low-intensity pain. People tolerate it daily and rarely go looking for a fix. That makes Doddy a "vitamin" unless two conditions hold. Capture must be close to effortless (a few seconds, by voice or the share sheet). The first successful recall must feel like magic. If either fails, people will keep using the free tools they already have. [ASSUMPTION; this is the biggest risk in the strategy]
+- People want AI help but not unsupervised action. Only 9% would let an AI agent finish a purchase on its own; 32% want it to choose and let them confirm. [EVIDENCE: Accenture Consumer Pulse 2026, as cited in the 17 Oct strategy]
+- None of this shows that people will hand sprawy to an app, or come back when it reminds them. The beta tests exactly that.
 
 ---
 
-## 3. The target user
+## 4. The target user
 
-### Primary user: "the self-messager" [ASSUMPTION; H1 tests it]
-- A working adult, aged about 25–40, in the EU, starting in Poland.
-- Uses an iPhone, has a WhatsApp or Messenger chat with themselves, or a Notes app full of untitled fragments.
-- Saves at least 3 small things a week and often says "I wrote it down somewhere".
-- Comfortable talking to a phone, and has tried ChatGPT.
-- **Job to be done:** *"When someone tells me something I'll need later, let me put it somewhere in two seconds. When I need it, give me back the exact thing, without me remembering where I put it."*
-- **Why this person:** this is the user hypothesis H1 already names. They are easy to find (almost everyone with a smartphone does some version of this). Their current workaround proves the job exists. A five-second screening question identifies them: *"Do you send messages to yourself?"*
+### Primary: "the person with a pile of sprawy" [ASSUMPTION; the beta tests it]
+- A working adult, about 25–45, in Poland, with an iPhone. Comfortable talking to a phone.
+- Juggles small errands: returns, bills, appointments, paperwork, promises to friends and family.
+- Already uses at least one workaround (Reminders, notes to self, a calendar) and still lets things slip.
+- **Job to be done:** *"When something lands on me that I'll have to deal with later, let me hand it off in one sentence. Bring it back when I can actually do it, with the next step ready. Don't do anything without my tap."*
+- **Screening questions (10 seconds):**
+  1. "Co ci teraz wisi nad głową?" Someone who names two or more things without thinking is in.
+  2. "Kiedy ostatnio coś małego ci przepadło: zwrot, płatność, odpowiedź?" A recent, specific answer is the signal.
 
-### Secondary 1: the family organiser [ASSUMPTION]
-- A parent who holds the household's codes, schedules, sizes, school information and who-said-what.
-- **Job:** *"Be the shared memory my family can ask, so it isn't always me."*
-- This segment fits the Doddy Crew plan and has a stronger reason to pay. Test it after the primary user's retention is known.
+### Secondary [ASSUMPTION]
+- **The family organiser:** holds the household's sprawy (school forms, vaccinations, the car's inspection). Test after the primary user.
+- **Adults for whom forgetting is costly,** including people with ADHD. Their pain is higher. Copy must make no health claims, and sprawy can be sensitive.
 
-### Secondary 2: adults for whom forgetting is costly [ASSUMPTION]
-- People who actively look for external-memory tools, including adults with ADHD.
-- **Job:** *"Catch the thing before it disappears, without needing a system."*
-- Their pain is higher and they seek out tools. Messaging must not make health claims, and memories here can be sensitive. Reach them through communities, carefully.
-
-**Rejected for now:** students (low ability to pay, and character appeal could drift into entertainment) and "everyone". A product for everyone gets generic onboarding, generic copy and no first channel.
-
----
-
-## 4. The insight and the right to win
-
-### Why now
-1. **Voice got cheap enough.** Turn-by-turn voice costs about €0.020 a minute, against about €0.081 for live speech-to-speech. Voice can now be part of a paid plan without destroying the margin. [FACT: repo cost model from verified provider prices, 10 Oct 2026]
-2. **Siri still doesn't speak Polish.** Apple Intelligence is unavailable when the phone is set to Polish, and the new Gemini-based Siri launches in English first, with no Polish date. [FACT: Spider's Web, 8 Jun 2026] This is a window in Poland and other smaller EU languages. It will close, but it is open now.
-3. **People want help but don't trust agents to act.** Only 9% would let an AI agent finish a purchase on its own, while 32% want it to choose and let them confirm. [EVIDENCE: Accenture Consumer Pulse 2026] "Asks first, shows its work" is what the market is asking for.
-4. **EU rules now reward honesty.** AI Act Article 50 transparency duties have applied since 2 August 2026. [FACT, per repo] Doddy was designed around disclosure and verified outcomes, which competitors are adding after the fact.
-
-### What Doddy does that others don't
-
-| Alternative | What it does well | Where Doddy wins | Where Doddy loses |
-|---|---|---|---|
-| **ChatGPT / Claude memory** | Remembers facts about you across chats; free users get memory from recent chats. [FACT] Huge capability. | It hands back the user's **exact original, with date and source**, and says "I couldn't find that" instead of guessing. [ASSUMPTION that users value this difference] | Everything else. ChatGPT Go costs 34,99 zł a month [FACT, repo] and does far more. |
-| **Apple Notes, Reminders, Siri** | Free, already installed, private, synced. | Talking in Polish; finding things by meaning rather than exact words; one place to put everything. [ASSUMPTION] | Zero friction to adopt and deep system access. Once Siri speaks Polish and gets personal context, the gap narrows sharply. |
-| **Replika, Pi, Character.AI** | Emotional companionship and character. | Doddy is useful and refuses dependency mechanics. [FACT: constitution DOD-10] | Emotional pull. Doddy deliberately doesn't compete on it. |
-| **AI "second brain" apps** (Second Brain – AI Memory, Memora, Remember AI) | Same job, already in the App Store. [FACT] | Character, voice, Polish, and honesty about sources. [ASSUMPTION] | They exist today; Doddy doesn't, publicly. |
-
-### Candidate moats, ranked
-
-| Rank | Candidate | Verdict | Why |
-|---|---|---|---|
-| 1 | **Trust and honesty**: exact sources, "I couldn't find that", verified receipts, asks before acting | **Real differentiator, not yet a moat** | Anyone can copy the features. The moat is a *reputation* for never lying, earned over time and protected by the constitution. This is the positioning anchor. |
-| 2 | **The user's own memories**: local-first, with provenance | **Real moat after usage; zero today** | After 200 saved memories, switching hurts. It only exists once people use Doddy for months. |
-| 3 | **Polish- and EU-language-first** | **Real, but temporary** | A wedge for the first 12–24 months, not a defence. Apple and Google will close it. |
-| 4 | **Character IP** (hand-drawn Doddy) | **Wishful as a product moat; plausible as a distribution advantage** | Characters make content shareable and brands memorable. There's no evidence yet that the character improves retention (H2). |
-| 5 | **Voice UX** | **Wishful** | Commoditised, dependent on providers, and currently buggy. |
-
-**Honest summary:** Doddy has **no moat today**. It has a **wedge** (exact recall, honesty and Polish) and **two candidate moats** (accumulated personal memory and a well-loved character brand). The strategy is to use the wedge to get people far enough in that the moats start to form.
+**Rejected for now:**
+- Students, who have less to lose and less to pay.
+- People looking for a companion to talk to. Doddy isn't one (section 5).
+- "Everyone."
 
 ---
 
 ## 5. Positioning
 
-**Category: a personal memory app.**
-- Not "AI companion": that category is tied to Replika-style dependency and a 2026 study linking companion use with lower well-being. [EVIDENCE: Nature Human Behaviour, Aug 2026]
-- Not "AI agent": too broad, and it invites a fight with Apple, Google and OpenAI on their ground.
+**Category: a pomocnik for the things hanging over you.**
+- **Not "AI companion."** That category is tied to dependency mechanics and a 2026 study linking companion use with lower well-being. [EVIDENCE: Nature Human Behaviour, Aug 2026, as cited on 17 Oct] The constitution already refuses dependency (DOD-10). [FACT]
+- **Not "AI agent that does everything."** That means competing with Apple, Google and OpenAI on breadth. Doddy acts one step at a time, on your tap.
+- **Not "memory app."** Memory is how Doddy keeps your words. It isn't the promise.
 
 **Positioning statement:**
-> For busy iPhone users who save small things everywhere and can't find them later, **Doddy is a voice-first memory mate** that keeps what you tell it in your own words and finds the exact original when you ask. Unlike ChatGPT's memory or Apple Notes, Doddy shows where every answer came from, says so when it can't find something, and never acts without your tap.
+> For busy iPhone users in Poland who carry a pile of small errands and promises in their head, **Doddy is a pomocnik you hand a sprawa to.** It keeps your exact words, brings the sprawa back at the right moment with the next step ready, and does nothing without your tap. Unlike Reminders or a note to yourself, it knows what the sprawa is and what comes next. Unlike an AI agent, it never acts on its own and never says "done" unless it is.
 
-**One-line promise:** **"Tell Doddy before you forget. Find your exact words later."**
+**Line:** **Sharp online. Clumsy offline. Honest always.** [OWNER]
 
-### Resolving "do it all" versus "remember for you"
-**Recommendation:** *remember for you* wins in every public message from now until the beta proves retention. *Do it all* becomes the vision, not the promise.
+**One-line promise** [ASSUMPTION: draft; Polish needs a native read, Phase 5]:
+- EN: "Hand Doddy what's hanging over you. It brings it back at the right moment, with the next step ready."
+- PL: "Powiedz Doddy'emu, co ci wisi nad głową. Wróci z tym we właściwym momencie, z gotowym następnym krokiem."
 
-Why:
-1. **Credibility.** A solo founder promising "do anything" competes with Apple, Google and OpenAI on breadth, and loses the comparison in the first minute of use. "Finds your exact words" is a promise Doddy can keep today. [ASSUMPTION]
-2. **Honesty.** The website already has to label nine of its ten "do it all" moments as "in testing" or "later, maybe". [FACT: website copy deck] Leading with breadth works against the constitution's own rule DOD-02.
-3. **Measurability.** One job gives one North Star. "Everything" gives none.
-4. **The vision still holds.** Memory is the foundation of an agent people trust. An assistant that knows what you actually said, and has never lied to you about it, has earned the right to act for you. The ladder is **Remember → Remind → Act**.
+**What this replaces:**
+- "Tell Doddy before you forget. Find your exact words later." (17 Oct strategy)
+- "Tell Doddy before you forget. He remembers it, reminds you, and finds it when you ask." (`docs/product/V1_SCOPE.md`, decision 1)
+- "Say it once. Tap once. Done." (homepage hero, ADR-482)
 
-**Concrete changes:**
-- Retitle the blog post. For example: "Meet Doddy: tell him before you forget, find your exact words later".
-- Lead the homepage with the 18:45 "My brain has left the chat" moment, which is the built one.
-- Keep "one skill at a time, and it asks first" as the "where we're going" section.
+"Your mate in your pocket" can stay as a tagline if the owner wants it. It doesn't contradict the direction, but "mate" leans towards companion (open decision 4).
+
+**Copy to change later, not in this PR** [FACT: counted 19 Oct]:
+- The voice agent's first line: "You are Doddy, the AI companion inside the DODDY iPhone app" (`voice-agent/instructions.md:1`). Phase 4 rewrites the prompt anyway.
+- The website and blog: about 45 uses of "companion" in `site/`, 15 in `blog/`, 139 in `l10n/site/*.json` (10 of them in Polish).
+- The app's own screens: none.
 
 ---
 
 ## 6. Product strategy
 
-### The wedge
-**Capture in a few seconds, then recall the exact original with its source.**
-- Capture works by voice, text or the share sheet. Text must work fully without voice. [FACT: PRD]
-- Success is measured on **recall on a later day**, not on saves.
+### The wedge: the sprawa loop
+**Hand it over → keep your words → one question → bring it back with the next step → you tap → done, with undo.**
+- The first session is exactly this loop and nothing else. No tour. [OWNER]
+- Typing works fully without voice. Voice is the faster way in, not the only one. [FACT: PRD rule; OWNER: text fallback]
+- Step by step, with what exists in the code today: `sprawa-loop.md`.
 
-### The ladder: outcomes tied to autonomy levels
+### The ladder: outcomes tied to how much Doddy does on its own
 
-| Horizon | Autonomy level | What ships | Outcome that unlocks the next step |
+| Horizon | What Doddy does | What ships | What unlocks the next step |
 |---|---|---|---|
-| **Now** (0–3 months) | **L0: save and recall** | Capture by voice and text, recall with source, edit, export and delete. Polish and English only. Private TestFlight, then open TestFlight. | ≥30% of activated users recall a memory on a later day within 7 days; 4-week retention ≥25% among activated users. [ASSUMPTION: targets] |
-| **Next** (3–6 months) | **L1: suggest** | Doddy proposes a reminder from something you saved ("Marta's book: remind you on Saturday?"). One verified action, Apple Reminders (H4). Paywall and trial in a Polish App Store soft launch. | Reminder follow-through beats the no-reminder group; trial → paid ≥25%; paid share heading towards 4%. |
-| **Later** (6–18 months) | **L2: act with approval** | Calendar, lists, message drafts, multi-step plans, each passing the three tests (asks first, checks its work, can be switched off). English-speaking EU markets, then Germany. Family plan. | Verified task completion rate; zero false "done". |
-| **Vision** | **L3: "anything", one skill at a time** | Connectors to other apps and services, still approval-first. | Users trust Doddy with consequential actions. |
+| **Now: the 2-week private beta (M5)** | **Hold and bring back.** Keeps the sprawa in your words, asks one question, brings it back at the agreed time, logs Gotowe with undo. | The sprawa loop on the things v1 already ships: notes, note reminders, Reminders and Calendar, ASK-01. Polish and English. 20 Polish iPhone users. | Day-0 activation, sprawy closed after a bring-back, active days in week two (`VALIDATION.md`) |
+| **Next** | **Prepare.** The next step is ready when the sprawa comes back: a message drafted, an email drafted, a time free in the calendar. | Phase 4's skills (Message, Email, Summarize, Pilnuj sprawy, Plan dnia, Kalendarz) over tools that already exist, each with a preview card. | Users accept the prepared step without rewriting it; no false "done" |
+| **Later** | **Act with approval.** Doddy does the step after your tap: sends, books, moves. Money stays a hand-off to the bank app (BLIK, ADR-510). | Each action passes ASK-01 at its level: read = spoken yes; change = tap on a card with the exact payload; money = tap plus Face ID or the bank app. | Verified completion rate; zero actions without a tap |
+| **Vision** | **More kinds of sprawa, one skill at a time.** | Connectors, still approval-first. | Users trust Doddy with consequential sprawy |
 
-### Not doing (until the "Now" gate passes)
-1. **Mac app and Apple Watch app.** Freeze them; they aren't needed to prove H1.
-2. **Eight of the ten languages.** Keep Polish and English. Unreviewed machine translations are a trust risk in a product sold on honesty.
-3. **New tools.** Hide weather, maps, timers, lists, drafts and plans from the beta by default. They dilute the test of the core job and add failure surface. Reminders stays, because it is H4.
-4. **"Hey Doddy" wake word, Live talk, and the Pro tier.** These are expensive and secondary.
-5. **Family plan, Money Saver, packs, NFC keychain.** Not until paid share and retention are known.
-6. **Passive or ambient memory, cloud sync, Android, web app.** Already excluded by the PRD. [FACT]
+### Not doing in the beta (feature freeze) [OWNER: no new tools, integrations, platforms or UI features]
+1. New tools, integrations or platforms. The Mac and Watch apps stay out of the beta build.
+2. Payments. `claude/payments-apple-pay-blik` is not merged. [OWNER]
+3. The eight machine-translated languages. Polish and English only. [FACT: `V1_SCOPE.md` suggestion 2]
+4. "Hey Doddy", the plan card, online accounts, phone calls and texts: hidden or cut, as `V1_SCOPE.md` suggests.
+5. The first-conversation tour, replaced by the one question. [OWNER]
 
-**Must-fix before any external user:**
-- Fix the voice double-start, ghost-session and can't-hear bugs, or ship the beta with voice clearly marked experimental and text as the main path.
-- Deploy the existing token server, turn on authentication for the voice agent, and add per-user quotas. [FACT: currently public; `V1_VOICE_STATUS.md` says this must change before anyone else uses it]
-- Add content-free analytics events for activation, saves, recall attempts, found or not found, and retention.
+**The freeze and the loop pull against each other in a few places.** Joining the loop changes existing screens (the first screen, the reminder's notification, the Done log). Those changes are listed in `sprawa-loop.md`. The owner decides which of them count as fixes inside the freeze (open decision 2).
 
----
-
-## 7. The business model
-
-### What the proposal gets right [FACT: `MONETIZATION_MODEL_V2.md`]
-- The free plan uses no cloud AI, so each free user costs about €0.01.
-- Export and delete are never paywalled.
-- The trial is offered after the first save, when value has just been felt.
-- Session caps protect voice costs.
-- It already defines its own decision thresholds.
-
-### What's weak
-1. **The core job is free, so people pay for the interface, not the outcome.** Paid plans sell voice minutes and AI answers. If the self-messager is happy with free text recall, the paid share stays at the freemium norm of about 2–3%. [ASSUMPTION; this is the repo model's own top risk]
-2. **Too many products for zero users.** The proposal has three plans, three yearly plans, three packs and a lifetime deal. At launch, ship **Free plus Best Mate (monthly and yearly)**, nothing else.
-3. **The price sits above a strong anchor.** Best Mate at 44,99 zł is above ChatGPT Go at 34,99 zł, which does far more. [FACT: repo price research] Widen the test to **29,99 / 39,99 / 49,99 zł**, not 39,99 / 44,99 / 49,99. A wider spread teaches more.
-4. **Poland alone can't carry the business.** A founder salary needs about 29k monthly users with 5% paying; at 100k users and 5% paying, net margin with a €20k team is about 2%. [FACT: repo model] The EU decision fixes this direction. Polish prices are for learning; the business case runs on EU prices (€9.99 for Best Mate).
-5. **Provider dependency.** Voice runs on ElevenLabs and OpenAI. Price or terms changes hit the margin directly. Keep providers swappable, as the repo plans. [FACT]
-
-### Test order (money comes third)
-1. **Does anyone come back to find something?** Activation and later-day recall (H1). Without this, pricing is irrelevant.
-2. **Would they pay?** Do this before building payments. In week 9 of the beta, show the price screen as a fake door: "Best Mate, 39,99 zł a month: reserve a Founding Mate spot, no charge today." Measure the click-through rate and the reservation rate.
-3. **Do they pay?** Run the soft launch with StoreKit, the 7-day trial after the first save, and the three-price test. Use the repo's thresholds: trial → paid ≥25%; paid share ≥4% by month 3; monthly churn ≤21%. [FACT: repo thresholds]
+### Must-fix before any tester (the five phases)
+1. **Voice starts once.** One session owner, no ghost sessions, a lifecycle log (Phase 2).
+2. **Every tool waits for its tap** at the right ASK-01 level, and a test fails if a tool has no level (Phase 2).
+3. **AI disclosure at first launch and in Settings,** a privacy policy draft, the shortest provider retention that still works, and a server-side daily cap per user (Phase 3).
+4. **The bundle ID and team** for TestFlight (Phase 3, owner).
+5. **Metrics for the loop,** with no content in them (Phase 5, `VALIDATION.md`).
 
 ---
 
-## 8. Go-to-market
+## 7. The business model (not tested in this beta)
 
-**Principle:** organic only until the numbers are known. Paid installs in Poland cost about $0.8–2.5 each; at 2–5% install-to-paid, that's $16–125 per payer, which wipes out profit. [FACT: repo estimate]
+- **The beta is free.** No paywall or StoreKit. [FACT: `V1_SCOPE.md` suggestion 7]
+- **What changes with the direction** [ASSUMPTION]: a sprawa that saves money or a deadline (a return, a renewal, a trial to cancel) is a clearer reason to pay than finding a note. The pricing work in `docs/business/MONETIZATION_MODEL_V2.md` was built around memory; it gets revisited after the beta, with measured voice costs.
+- **Voice cost is the risk to watch:** one measured 14-minute session cost $2.05. [FACT: `MONETIZATION_MODEL_V2.md`, cited in `V1_SCOPE.md` §7] The per-user daily cap (Phase 3) and provider spend limits come before the beta.
 
-### First 100 users (weeks 1–8): hand-picked, not broadcast
-1. **Screen everyone.** Use one question, *"Do you send messages to yourself or keep a notes dump?"*, plus *"When did you last fail to find something you saved?"* Only people who answer yes join the beta.
-2. **Sources:**
-   - Convert the existing waitlist.
-   - The founder's network: no more than 20% of the beta, to limit friendly bias.
-   - Polish communities on Facebook groups, r/Polska and Wykop, framed as "help me break this".
-   - A LinkedIn build-in-public series, which plays to the founder's commercial strength.
-3. **Every beta user** gets a 15-minute call at week 2. Every "couldn't find it" moment becomes an eval case.
+---
 
-### First 1,000 users (months 3–6)
-1. **Character content is the engine.** The ten "ordinary day" moments in the website copy are ready-made short-video scripts for TikTok, Reels and Shorts. Measure **qualified waitlist sign-ups per post**, not views. [ASSUMPTION: H2]
-2. **Built-in sharing.** The share lines already written ("Send this to someone who's always late") become referral prompts in the app after a successful recall.
-3. **Polish press angle.** Polish tech media keep asking when Siri will speak Polish (Spider's Web, Antyweb, June 2026). [FACT] The story: *"A Polish founder built the Polish-speaking pocket mate Apple hasn't."*
-4. **App Store soft launch in Poland**, then English-speaking EU markets (Ireland, Netherlands, the Nordics), then Germany at € prices once Polish thresholds pass.
+## 8. Go-to-market for the beta
 
-**The character's job in GTM:** distribution and memorability, under the rule "Useful first. Charming second." [FACT: blog] It never claims feelings and never slows a task. Its effect on retention is tested, not assumed.
+- **20 Polish iPhone users, 2 weeks, private TestFlight.** [OWNER]
+- **Screen everyone** with the two questions in section 4. No more than 20% from the founder's own circle, to limit friendly bias. [ASSUMPTION: carried over from 17 Oct]
+- **Ask each tester for one real sprawa before install**, and see whether they hand it to Doddy on day 0.
+- **A 15-minute call at the end of week one.** Every slipped sprawa and every "Doddy couldn't" becomes an eval case.
+- **The character's job:** recognisable and warm, never in the way of the task. No jokes in sensitive sprawy (health, money, family trouble). [FACT: constitution]
+- **After the beta:** the character content and the "Siri still doesn't speak Polish" story from the 17 Oct strategy still apply. Re-check the Siri claim before any use; it was true in June 2026. [FACT: Spider's Web, 8 Jun 2026]
 
 ---
 
 ## 9. Metrics
 
-**North Star: Weekly Recalling Users (WRU).** These are users who, in a given week, successfully retrieve a memory they saved on an earlier day. This measures the whole promise: they saved it, came back, and Doddy found it. Saves alone can be a diary nobody reads; conversations alone can be entertainment.
+**North Star: weekly closers.** Users who, in a given week, mark at least one sprawa Gotowe after Doddy brought it back. This measures the whole promise: they handed it over, it came back at a useful moment, and they finished it. Saves alone can be a list nobody opens. Conversations alone can be entertainment.
 
-**Input metrics** (formulas pre-registered in `MONETIZATION_MODEL_V2.md`):
+**The four the owner named, defined in `docs/product/VALIDATION.md`:**
+- **Day-0 activation:** first sprawa saved on the day of install.
+- **Sprawa completed:** Gotowe on a sprawa, with undo counted separately.
+- **Active days in week two.**
+- **Capability-gap events by category.**
 
-| Metric | Definition |
-|---|---|
-| Activation | ≥1 save within 24 h of install |
-| Aha rate | activated users who recall a memory on a later day within 7 days |
-| Capture speed | median seconds from opening Doddy to a verified save |
-| Recall success | searches that return the right original ÷ searches for something that was saved (sampled by asking the user "Was this it?") |
-| Retention | 4-week and 8-week retention of activated users |
-| Voice share | share of captures made by voice (H3) |
-| Reminder follow-through | share of reminders created from memories that get completed (H4) |
+**Trust guardrails** (any breach blocks the beta) [FACT: release gates, constitution]:
+- Zero "saved" or "done" without a verified store write or provider confirmation.
+- Zero actions without the user's tap at the right ASK-01 level.
+- Zero sprawy shown with words the user didn't say, without a label saying Doddy wrote them.
+- Zero deleted sprawy that come back.
 
-**Trust guardrails** (any breach blocks release) [FACT: release gates]:
-- Zero false "saved" outcomes.
-- Zero recall answers not backed by a real stored record.
-- Zero actions without the user's tap.
-- Zero memories retrievable after deletion.
-- Crash-free sessions ≥99.5%. [ASSUMPTION: threshold]
+**Beta thresholds** [ASSUMPTION: proposals; the owner sets them before the beta starts, checklist C10]:
+- Day-0 activation ≥ 80%. It's the first screen; anything lower means the question doesn't land.
+- ≥ 50% of activated users close at least one sprawa after a bring-back in week one.
+- ≥ 40% of users active on 3 or more days in week two.
+- Undo after Gotowe ≤ 10%. More means the button fires by mistake or the bring-back was wrong.
 
-**"The MVP worked"** after 8 weeks and at least 100 activated beta users [ASSUMPTION: targets, owner to confirm]:
-- Activation ≥50%.
-- Aha rate ≥30%.
-- 4-week retention of activated users ≥25%.
-- ≥40% of users with 3 or more recalls say they'd be "very disappointed" without Doddy (the Sean Ellis test).
-
-**"Kill or pivot"** signals:
-- Aha rate below 15% after two onboarding iterations.
-- 4-week retention below 10%.
-- Below 20% "very disappointed".
-- Users save but almost never recall. That means Doddy is a journal, not a memory, and the job is wrong.
+**Change-course signals:**
+- People save sprawy but don't close them after the bring-back. The moment or the notification is wrong.
+- People don't save a second sprawa after day 0. The loop didn't pay off the first time.
+- Capability gaps cluster in one category. That's the first skill after the beta.
 
 ---
 
-## 10. Risks and kill criteria
+## 10. Risks
 
 | # | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|---|
-| 1 | **The pain is too mild.** People don't change habits for it (H1 fails). | High | High | Test H1 before building more. Make capture take seconds. Use a 7-day diary study before the beta. |
-| 2 | **Scope sprawl.** One founder spread across four platforms, ten languages and about ten tools ships nothing well. | High | High | The "not doing" list. One milestone at a time, as `CLAUDE.md` already requires. |
-| 3 | **Paid share stays at 2–3%,** so the business never pays a salary. | High | High | Fake-door price test before payments. EU pricing. Yearly plans. Decide by month 4 against the thresholds. |
-| 4 | **Platforms absorb the job.** Siri gains Polish and personal context; ChatGPT memory gets exact recall. | Medium | High | Move fast in the window. Build the trust reputation and the accumulated-memory lock-in. Stay the honest, local-first option. |
-| 5 | **Voice is unreliable** (double sessions, latency, Polish speech recognition). | High | Medium | Text is the main path in the beta. Fix bugs before inviting anyone. Latency gate: first audio in 1.2 s or less. |
-| 6 | **Security or privacy incident.** The voice agent is public with no authentication; sensitive memories go to US providers. | Medium | High | Authentication and quotas before the beta. Data processing agreements, a data protection impact assessment, minimal context sent to models, clear disclosure. |
-| 7 | **The character pulls the wrong users** (teens, people seeking entertainment) or the "AI companion" label brings the wrong associations. | Medium | Medium | An 18+ gate. Position as a memory app, not a companion. Measure task completion with and without the character. |
-| 8 | **Provider costs or terms change** (ElevenLabs, OpenAI). | Medium | Medium | Swappable providers, session caps, per-account budget alerts, a 15% currency buffer. |
-
-**Stop or pivot when any of these is true:**
-1. After 12 weeks and 100 or more activated users, the aha rate is below 15% **and** 4-week retention is below 10%. The wedge is wrong. Pivot the job (for example to the family organiser) or stop.
-2. The fake-door price test shows under 5% reserving at any price **and** 4-week retention is under 25%. Nobody would pay for this version.
-3. By month 4 of the soft launch, paid share is below 2.5%. The business doesn't work at these prices. Rethink packaging or the segment before EU expansion.
+| 1 | **Notifications are denied or ignored.** The loop depends on the bring-back. | Medium | High | Ask for notifications at the moment it matters ("Mam ci przypomnieć…?" → tap yes → then the iOS prompt), not at install. If refused, show the sprawa on Home with its time, and say plainly that it can't come back on its own. |
+| 2 | **The wrong moment.** "do piątku" → Thursday evening is a guess. | Medium | Medium | Always one question with the proposed time; never set it silently. Measure snoozes and "In 1 hour" taps. |
+| 3 | **Voice is unreliable** (ghost sessions, can't hear the user). | High | High | Phase 2. Text works fully from the first screen. |
+| 4 | **Polish speech recognition mangles the words** that Doddy promises to keep exactly. | Medium | High | Show the words on the card before saving; easy correction. Phase 5 measures word error rate on 50 real recordings. |
+| 5 | **Privacy on the Lock Screen.** A sprawa's words in a notification can be personal. | Medium | Medium | Today the note's text is hidden in notifications by default. Owner decides the sprawa default (open decision 3). |
+| 6 | **Scope sprawl.** Phases 4–5 and the open branches pull towards more features. | High | High | The freeze; `docs/branches.md`; one PR per phase. |
+| 7 | **Another assistant covers it in Polish.** Siri gains Polish, or people already use Gemini or ChatGPT reminders in Polish. | Medium | High | Re-check before the pitch is used publicly [ASSUMPTION: not researched for this document]. The difference to keep is honesty and the tap, not language alone. |
+| 8 | **"Done" that isn't.** | Low | High | Gotowe is the user's own tap; provider actions need the provider's confirmation (ASK-01, DOD-08). `unknown` is never success. |
 
 ---
 
-## 11. The next 90 days
+## 11. The plan to the beta
 
-| Week | Priority | Done when |
-|---|---|---|
-| 1 | **Freeze and decide.** The owner approves this strategy and the "not doing" list. Hide non-core tools behind a flag. Retitle public "do it all" copy. | Flags in place; homepage and blog lead with memory |
-| 1–2 | **H1 diary study** (cheapest test, no app needed): 20 screened people log every "I saved it somewhere" search for 7 days. | 20 diaries; frequency and failure rate known |
-| 2 | **Fix the foundations:** voice bugs, authentication on the voice agent, content-free analytics, AI disclosure and privacy copy. | Device log shows no double sessions in 20 test calls |
-| 3 | **Ten problem interviews** with diary participants, before they see the app. | Written notes, quotes tagged [EVIDENCE] |
-| 4 | **Private TestFlight,** 30 screened users, Polish and English. | 30 installs |
-| 5–6 | **Measure and fix onboarding** (iteration 1). Week-2 calls with every user. | Activation and aha rate reported |
-| 6 | **H2 character test:** two landing pages (character-led versus plain memory app), €100 of social ads each, measuring qualified sign-ups. In the app, compare task completion with the character on and off. | Cost per qualified sign-up for each page |
-| 7–8 | **Open TestFlight to 100+** from the waitlist and community posts. Onboarding iteration 2. Reminders action enabled for half the cohort (H4). | ≥100 activated users |
-| 9 | **Fake-door pricing:** Founding Mate reservation at three prices. | Reservation rate per price |
-| 10 | **Retention read:** 4-week cohort, Sean Ellis survey, H3 (voice versus text captures and their retention). | Numbers against the thresholds in section 9 |
-| 11–12 | **Decision prep:** write up the evidence log; turn every "couldn't find it" case into an eval. | Evidence log complete |
-| 13 | **Go / change / stop.** If the MVP gate passes: payments milestone and Polish App Store soft launch. If not: pivot per section 10. | A recorded decision (ADR) |
+The owner's five phases, one PR each, with a stop for review after each:
+1. **Write the direction down** (this PR): this file, `sprawa-loop.md`, `VALIDATION.md`, `docs/branches.md`, STATUS.md pointing here, current milestone M5.
+2. **Stabilise main for a device run:** idempotent voice session start, lifecycle logging, the ASK-01 check, a device checklist. The owner runs it on their iPhone.
+3. **Clear the TestFlight blockers:** privacy policy draft (PL and EN), AI disclosure, retention settings, a daily usage cap, the bundle ID list, the token flow. The owner does legal, signing and App Store Connect.
+4. **A skill router in front of the 81 tools:** a core prompt under 25% of today's size, the P1 skills, evals in both languages.
+5. **Polish quality and beta instrumentation:** the Polish string export, the speech-recognition comparison, the metrics and a weekly report.
 
-### Cheapest validation per hypothesis
-
-| Hypothesis | Cheapest test | Pass signal [ASSUMPTION: thresholds] |
-|---|---|---|
-| **H1** People save, then return to find things, and prefer Doddy | 7-day diary study (no app), then TestFlight later-day recall | ≥3 lost-item searches a week per person in the diary; aha rate ≥30% |
-| **H2** The character helps acquisition without hurting tasks | Two-landing-page ad test; character on/off in the beta | Character page converts ≥1.3× the plain page; no drop in task completion |
-| **H3** Voice reduces friction once text works | Compare voice and text capture share and speed among beta users | Voice capture faster; voice users retain at least as well |
-| **H4** One verified action (Reminders) improves follow-through | Reminders on for half the cohort | Higher follow-through in the reminder group, with ≥70% permission acceptance |
+Then the 2-week beta with 20 users, and the decision M5 asks for: continue, narrow, pivot or stop (`docs/implementation/MILESTONES.md`).
 
 ---
 
 ## Open decisions for the owner
-1. Approve the primary user (the self-messager) and the category (personal memory app). Both are currently [ASSUMPTION].
-2. Approve the "not doing" list, especially freezing Mac, Watch and eight languages.
-3. Confirm the MVP-worked and kill thresholds in sections 9 and 10.
-4. Approve the copy changes that move the blog and homepage from "do it all" to memory.
+1. **Confirm the reading of "Clumsy offline"** in section 1: offline, Doddy still holds and brings back sprawy, but asks plainly instead of guessing. The other possible reading is about the character (small and clumsy in the physical world, like "Big brain. Small body." on branch `claude/youthful-pasteur-25tuhv`).
+2. **Which loop changes count as fixes under the freeze.** The list is in `sprawa-loop.md`, "Changes the loop needs".
+3. **Lock Screen default:** show the sprawa's words in its notification, or keep today's private default.
+4. **Tagline:** keep "Your mate in your pocket", or retire it with "companion".
+5. **The beta thresholds** in section 9.
+6. **`docs/product/V1_SCOPE.md` decision 1** (the one promise) is answered by this direction. Its other rows still stand as proposals; ADR-520 records them once you mark them up.
 
 ## Sources
-- Repo: `STATUS.md`, `README.md`, `docs/00_START_HERE/DECISIONS_AND_STATUS.md`, `docs/product/PRODUCT_REQUIREMENTS.md`, `docs/business/MONETIZATION_MODEL_V2.md`, `docs/trust/01_THE_DODDY_CONSTITUTION.md`, `docs/trust/05_RELEASE_CRITERIA_AND_METRICS.md`, `design/website-what-can-doddy-do/COPY.md`, `blog/posts/2026-10-10-meet-doddy-ai-agent.md`.
-- [Spider's Web: iOS 27, Apple Intelligence and Siri in Poland (8 Jun 2026)](https://spidersweb.pl/2026/06/ios-27-aktualizacja-iphone-apple-intelligence-ai-polska-siri.html)
-- [The Decoder: OpenAI brings longer-term memory to free ChatGPT users (Jun 2025)](https://the-decoder.com/openai-brings-longer-term-memory-feature-to-free-chatgpt-users/)
-- [App Store: Second Brain – AI Memory](https://apps.apple.com/app/id6760254340) · [App Store: Remember AI](https://apps.apple.com/us/app/remember-ai/id6743806304)
-- Pew Research (2026), NBER w34255, Eurostat (2025), Accenture Consumer Pulse 2026 and Nature Human Behaviour (Aug 2026), as cited in the repo blog post with links.
+- Repo: `STATUS.md`, `docs/product/V1_SCOPE.md`, `docs/implementation/GO_LIVE_CHECKLIST.md`, `docs/implementation/MILESTONES.md`, `docs/implementation/OFFLINE_STATUS.md`, `docs/implementation/VOICE_SESSION_STARTS.md`, `docs/quality/VALIDATION_AND_METRICS.md`, `docs/business/MONETIZATION_MODEL_V2.md`, `docs/trust/config/doddy_rules.yaml`, `voice-agent/instructions.md`, and the app and DoddyCore code cited in `sprawa-loop.md`.
+- The 17 Oct strategy on branch `claude/doddy-strategy-docs` (`38161c11`), for the Accenture, Nature Human Behaviour and Spider's Web citations.
