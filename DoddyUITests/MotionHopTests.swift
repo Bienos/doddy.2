@@ -24,13 +24,12 @@ final class MotionHopTests: XCTestCase {
     }
 
     private func surface(_ name: String, in app: XCUIApplication) -> XCUIElement {
-        app.descendants(matching: .any)["doddy.surface.\(name)"]
+        app.marker("doddy.surface.\(name)")
     }
 
     /// Every drawing of him: the persistent Doddy and any picture of him still on screen.
     private func drawings(in app: XCUIApplication) -> XCUIElementQuery {
-        app.descendants(matching: .any).matching(NSPredicate(
-            format: "identifier BEGINSWITH 'doddy.motion.' OR identifier BEGINSWITH 'doddy.pose.'"))
+        app.markers(startingWith: ["doddy.motion.", "doddy.pose."])
     }
 
     /// There is exactly one drawing of him within `timeout` (a single frame of two or none is the
@@ -50,8 +49,8 @@ final class MotionHopTests: XCTestCase {
         }
         let count = drawings(in: app).count
         guard count != 1 else { return }
-        let all = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'doddy.'"))
-        let seen = (0..<all.count).map { "\(all.element(boundBy: $0).identifier) \(all.element(boundBy: $0).frame)" }
+        let all = app.markers(startingWith: ["doddy."])
+        let seen = (0..<all.count).map { "\(all.element(boundBy: $0).label) \(all.element(boundBy: $0).frame)" }
         let shot = XCTAttachment(screenshot: app.screenshot())
         shot.lifetime = .keepAlways
         add(shot)
@@ -67,7 +66,7 @@ final class MotionHopTests: XCTestCase {
                                    in app: XCUIApplication, timeout: TimeInterval = 6,
                                    file: StaticString = #filePath, line: UInt = #line) -> XCUIElement {
         let edge = surface(surfaceName, in: app)
-        let him = app.descendants(matching: .any)[picture]
+        let him = app.marker(picture)
         let end = Date().addingTimeInterval(timeout)
         while Date() < end {
             if edge.exists, him.exists, abs(him.frame.maxY - edge.frame.minY) <= 2 { return him }
@@ -117,7 +116,7 @@ final class MotionHopTests: XCTestCase {
         waitUntilHeStands(on: "stage", in: app)
         app.buttons["home.save"].tap()
         XCTAssertTrue(app.textViews.firstMatch.waitForExistence(timeout: 5))
-        XCTAssertFalse(app.descendants(matching: .any)["doddy.motion.idle"].exists, "hidden under the sheet")
+        XCTAssertFalse(app.marker("doddy.motion.idle").exists, "hidden under the sheet")
         // Nothing typed: Cancel closes the sheet.
         app.navigationBars.buttons["Cancel"].tap()
         waitUntilHeStands(on: "stage", in: app)
