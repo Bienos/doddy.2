@@ -32,7 +32,10 @@ enum DoddyFigureMetrics {
 /// a marker for UI tests (`-doddyArtMarkers YES`: `doddy.motion.idle`, `doddy.pose.crosslegged`).
 struct PersistentDoddyView: View {
     let figure: DoddyFigure
+    /// Where this view draws him (`slot ledge:settings`, `overlay`), for the one-Doddy check.
+    let spot: String
     @Environment(\.colorScheme) private var colorScheme
+    @State private var token = UUID()
 
     var body: some View {
         let picture = DoddyFigureMetrics.picture(figure.art.picture)
@@ -52,8 +55,8 @@ struct PersistentDoddyView: View {
             .opacity(figure.opacity)
             .allowsHitTesting(false)
             .accessibilityHidden(true)
-            .onAppear { DoddyDirector.shared.drawingAppeared() }
-            .onDisappear { DoddyDirector.shared.drawingGone() }
+            .onAppear { DoddyDirector.shared.drawingAppeared(token, in: spot) }
+            .onDisappear { DoddyDirector.shared.drawingGone(token) }
         if DoddyArtMarkers.isOn {
             // The UI tests' marker is a box exactly his laid-out size, its bottom edge his soles
             // (the picture's own frame reaches below them, to its transparent margin).
@@ -83,7 +86,7 @@ struct DoddySlotFigure: View {
             // stack, which drew him hanging below the edge in hosted run 39210073005).
             Color.clear
                 .frame(width: 0, height: 0)
-                .overlay(alignment: .bottom) { PersistentDoddyView(figure: figure).fixedSize() }
+                .overlay(alignment: .bottom) { PersistentDoddyView(figure: figure, spot: "slot \(id)").fixedSize() }
                 // Relative to the surface's own frame, so it stays exact while the system moves it.
                 .offset(x: CGFloat(figure.slotDX), y: CGFloat(figure.slotDY))
         }
@@ -103,7 +106,7 @@ struct DoddyOverlay: View {
             if director.placement == .overlay, let figure = director.figure {
                 let picture = DoddyFigureMetrics.picture(figure.art.picture)
                 let soleBox = CGFloat(DoddyFigureMetrics.pictureHeight * figure.scale * picture.ground)
-                PersistentDoddyView(figure: figure)
+                PersistentDoddyView(figure: figure, spot: "overlay")
                     .position(x: CGFloat(figure.x) - origin.x, y: CGFloat(figure.y) - origin.y - soleBox / 2)
             }
             #if DEBUG
@@ -175,6 +178,15 @@ private struct DoddyDebugOverlay: View {
                 .foregroundStyle(Color.red)
                 .position(x: 195, y: 100)
                 .accessibilityIdentifier("doddy.debug.last")
+            // The engine's last decisions and where each drawing of him is, for a failing run.
+            Text(verbatim: "drawn: \(d.drawingsDescription) | " + e.metrics.events.suffix(5).map { "\(Int($0.t)) \($0.message)" }.joined(separator: " | "))
+                .font(.system(size: 8, design: .monospaced))
+                .padding(2)
+                .background(Color.white.opacity(0.85))
+                .foregroundStyle(Color.black)
+                .frame(width: 380, alignment: .leading)
+                .position(x: 195, y: 150)
+                .accessibilityIdentifier("doddy.debug.trail")
         }
     }
 }
