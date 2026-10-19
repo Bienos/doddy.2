@@ -18,6 +18,8 @@ public struct MotionChecks: Sendable {
     private var lastScale: Double?
     private var doubleSeen = false
     private var lastCarries = 0
+    /// When each mark was first found under his clear zone in the current stretch (-1: reported).
+    private var zoneBlockedSince: [String: Double] = [:]
     /// The newest finding in words (the annotated mode shows it).
     public var lastDetail: String { violations.last.map { "\($0.rule): \($0.detail)" } ?? "" }
     /// Keep the list short; the count keeps going.
@@ -71,6 +73,10 @@ public struct MotionChecks: Sendable {
         }
         lastScale = e.scale
         // Rule 8: his clear zone keeps 24 pt from Send and the undo bar's Undo, and off the tabs.
+        // The app reports a screen's surfaces and marks one by one, so a finding needs to hold at
+        // two checks in a row: a frame in which Send has moved and his spot hasn't yet is not
+        // something anyone sees, while a wrong spot stays.
+        var blockedNow: Set<String> = []
         if visible, e.mode == .attached, let a = e.anchor {
             let zone = MotionLayout.zone(soles: MotionPoint(x: e.pos.x, y: e.pos.y), scale: e.scale)
             var keep: [(String, Double)] = [("send", MotionLayout.sendClearance), ("undo", MotionLayout.sendClearance)]
@@ -78,10 +84,22 @@ public struct MotionChecks: Sendable {
             for (name, clearance) in keep {
                 guard let r = host.scene.marks[name], host.scene.mounted.contains(Self.owner(of: name)) else { continue }
                 if !MotionLayout.blocked(zone: zone, by: [r], clearance: clearance).isEmpty {
-                    add(t, "clear zone", "on \(a.surface) his zone covers \(name)")
+                    blockedNow.insert(name)
+                    if let since = zoneBlockedSince[name] {
+                        if since >= 0, t > since {
+                            zoneBlockedSince[name] = -1  // reported once for this stretch
+                            add(t, "clear zone", "on \(a.surface) his zone (x \(MotionMath.format(zone.minX, digits: 0))–\(MotionMath.format(zone.maxX, digits: 0)), "
+                                + "y \(MotionMath.format(zone.minY, digits: 0))–\(MotionMath.format(zone.maxY, digits: 0)), scale \(MotionMath.format(e.scale, digits: 2))) "
+                                + "covers \(name) (x \(MotionMath.format(r.minX, digits: 0))–\(MotionMath.format(r.maxX, digits: 0)), "
+                                + "y \(MotionMath.format(r.minY, digits: 0))–\(MotionMath.format(r.maxY, digits: 0)))")
+                        }
+                    } else {
+                        zoneBlockedSince[name] = t
+                    }
                 }
             }
         }
+        for name in zoneBlockedSince.keys where !blockedNow.contains(name) { zoneBlockedSince[name] = nil }
         // Rule 10: no listening pose unless the microphone is live.
         if visible, e.pose.listening, !host.scene.voiceLive { add(t, "honest always", "listening without a live microphone") }
     }
