@@ -35,7 +35,7 @@ final class BlikTransferTests: XCTestCase {
     func testAmountsAreExactInGrosze() throws {
         // Values that aren't exact as a Double still give their grosze, not one less.
         for (amount, grosze) in [("0.01", 1), ("0.1", 10), ("0.29", 29), ("1.15", 115), ("4.35", 435), ("49.99", 4_999),
-                                 ("9999.99", 999_999), ("10000", 1_000_000)] {
+                                 ("999.99", 99_999), ("1000", 100_000)] {
             XCTAssertEqual(try draft(#"{"to": "Ania", "amount": \#(amount)}"#).amount.grosze, grosze, "number \(amount)")
             XCTAssertEqual(try draft(#"{"to": "Ania", "amount": "\#(amount)"}"#).amount.grosze, grosze, "text \(amount)")
         }
@@ -54,8 +54,9 @@ final class BlikTransferTests: XCTestCase {
         XCTAssertEqual(reason(#"{"to": "Ania", "amount": "-5"}"#), BlikAmountProblem.notPositive.reason)
         XCTAssertEqual(reason(#"{"to": "Ania", "amount": "0.00"}"#), BlikAmountProblem.notPositive.reason)
         let tooLarge = BlikAmountProblem.tooLarge.reason
-        XCTAssertEqual(reason(#"{"to": "Ania", "amount": 10000.01}"#), tooLarge)
-        XCTAssertEqual(reason(#"{"to": "Ania", "amount": "10000.01"}"#), tooLarge)
+        XCTAssertEqual(reason(#"{"to": "Ania", "amount": 1000.01}"#), tooLarge)
+        XCTAssertEqual(reason(#"{"to": "Ania", "amount": "1000.01"}"#), tooLarge)
+        XCTAssertEqual(reason(#"{"to": "Ania", "amount": 5000}"#), tooLarge, "the old 10,000 zł ceiling no longer applies")
         XCTAssertEqual(reason(#"{"to": "Ania", "amount": 1e300}"#), tooLarge, "no trap on a huge number")
         XCTAssertEqual(reason(#"{"to": "Ania", "amount": "99999999999999999999999"}"#), tooLarge, "no overflow on a long one")
         let notANumber = BlikAmountProblem.notANumber.reason

@@ -35,10 +35,10 @@ public struct BlikAmount: Equatable, Hashable, Sendable {
 }
 
 public enum BlikTransferLimits {
-    /// Doddy's own ceiling for one prepared transfer: 10,000 zł. Not BLIK's limit or a bank's
-    /// (each bank sets its own); it stops a misheard amount from reaching the card. The owner can
-    /// change it (ADR-510).
-    public static let maxGrosze = 1_000_000
+    /// Doddy's own ceiling for one prepared transfer: 1,000 zł (the owner's choice, ADR-531; was
+    /// 10,000 zł in ADR-510). Not BLIK's limit or a bank's (each bank sets its own); it stops a
+    /// misheard amount from reaching the card.
+    public static let maxGrosze = 100_000
 }
 
 /// What the agent asked for. Nothing here has been sent anywhere.
