@@ -76,6 +76,16 @@ struct SettingsView: View {
                     JourneyHeading(eyebrow: "Less magic. More control.", title: "Yours to keep.\nYours to change.")
                     HStack(spacing: 18) {
                         UploadedCharacterView(assetName: "UploadedDoddy_Privacy", height: 110)
+                            // Motion v2 (Q4): Doddy's spot on Settings is where this picture stands,
+                            // on its own floor (3 pt above the box: the picture's ground is at 97 %).
+                            // No new line: it replaces a picture of him with him.
+                            .overlay(alignment: .bottom) {
+                                if DoddyDirector.shared.isActive {
+                                    Color.clear.frame(width: 60, height: 1)
+                                        .padding(.bottom, 3)
+                                        .motionSurface(.ledge("settings"))
+                                }
+                            }
                         Text("You choose each saved memory. See the original, edit it or remove it.")
                             .font(.subheadline)
                     }

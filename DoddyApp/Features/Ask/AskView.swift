@@ -73,6 +73,9 @@ struct AskView: View {
                 }
                 .padding(24)
             }
+            // Motion v2: Doddy stands on the composer's top edge; the conversation keeps 108 pt
+            // above it, so the newest line can always scroll clear of him (brief rule 8).
+            .contentMargins(.bottom, DoddyDirector.shared.isActive ? CGFloat(MotionLayout.listBottomInset) : 0, for: .scrollContent)
             .onChange(of: controller.messages.count) { _, _ in
                 if let last = controller.messages.last { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo(last.id, anchor: .bottom) } }
             }
@@ -213,10 +216,15 @@ struct AskView: View {
                 .disabled(!controller.canSend)
                 .accessibilityLabel("Send")
                 .accessibilityIdentifier("ask.send")
+                // His zone stays 24 pt from Send (brief rule 8).
+                .motionMark("send")
             }
         }
         .padding(16)
         .background(Theme.canvas)
+        // Motion v2 (Q2): Ask's composer is "the composer" he stands on, left of Send, and rides
+        // with the keyboard.
+        .motionSurface(.composer)
     }
 
     private func send() {

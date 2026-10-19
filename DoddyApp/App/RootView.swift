@@ -204,6 +204,9 @@ struct RootView: View {
             .onChange(of: widgetsOn) { WidgetSync.shared.refresh() }
             .onChange(of: showNoteText) { WidgetSync.shared.refresh() }
             .onChange(of: hideArt) { WidgetSync.shared.refresh() }
+            // Motion v2: the one persistent Doddy lives on iPhone layouts with his pictures shown
+            // (Q13: iPad's sidebar keeps today's pictures; "Hide Doddy's pictures" turns him off).
+            .onChange(of: motionWorldOn, initial: true) { _, on in DoddyDirector.shared.isActive = on }
             // A tapped note reminder opens its exact memory on Home.
             .task(id: noteReminders.pendingOpenMemoryID) {
                 guard let memoryID = noteReminders.pendingOpenMemoryID else { return }
@@ -250,6 +253,11 @@ struct RootView: View {
         listener.appBecameActive()
         // The listening indicator above every screen (ADR-361).
         ListeningIndicatorWindow.shared.install()
+    }
+
+    /// Whether the motion world is on (motion v2): an iPhone layout, Doddy's pictures shown.
+    private var motionWorldOn: Bool {
+        !hideArt && !(horizontalSizeClass == .regular && DeviceSupport.hasSidebar)
     }
 
     /// What the opening's rules need to know right now (ADR-225). Read at decision time, so a
@@ -452,11 +460,15 @@ private struct UndoDeleteBar: View {
                 .frame(minHeight: 44)
                 .disabled(isUndoing)
                 .accessibilityIdentifier("undoDelete")
+                .motionMark("undo")
             }
         }
         .padding(.horizontal, 16)
         .frame(minHeight: 52)
         .background(Theme.quietSurface)
+        // Motion v2 (Q3): the bar above the tab bar is "the strip if showing", a surface that
+        // comes and goes under him.
+        .motionSurface(.panel)
         .foregroundStyle(Theme.ink)
         .accessibilityElement(children: .contain)
         .task(id: deleted.deletedAt) {

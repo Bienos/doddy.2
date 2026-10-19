@@ -81,12 +81,18 @@ struct MemoriesView: View {
                             MemoryTagRow(tags: tags, selection: $tag, active: activeTag)
                         }
                         let pins = PinnedNotes(stored: pinnedRaw)
+                        // Pinned notes first (ADR-187), then the chosen order.
+                        let shown = pins.apply(to: MemorySort(stored: sortRaw).apply(to: NoteTags.filter(MemoryFilter.apply(active, to: store.memories), tag: activeTag)))
+                        // Motion v2 (Q5): each card keeps a right gutter free for Doddy, who stands
+                        // on a card's top edge with his body beside the card above.
+                        let motion = DoddyDirector.shared.isActive
                         LazyVStack(spacing: 12) {
-                            // Pinned notes first (ADR-187), then the chosen order.
-                            ForEach(pins.apply(to: MemorySort(stored: sortRaw).apply(to: NoteTags.filter(MemoryFilter.apply(active, to: store.memories), tag: activeTag)))) { record in
+                            ForEach(Array(shown.enumerated()), id: \.element.id) { index, record in
                                 let isPinned = pins.isPinned(record.id)
                                 let hides = PrivateNotesStore.current().contains(record.id) && !AppLock.shared.privateUnlocked
-                                MemoryLinkCard(record: record, isPinned: isPinned, hidesText: hides)
+                                MemoryLinkCard(record: record, isPinned: isPinned, hidesText: hides,
+                                               gutter: motion ? CGFloat(MotionLayout.cardGutter) : 0)
+                                    .motionSurface(.rule(index))
                                     .contextMenu {
                                         // The same actions as on the note's screen, without opening it (ADR-188).
                                         Button {
@@ -107,9 +113,14 @@ struct MemoriesView: View {
                                     }
                             }
                         }
+                        .onChange(of: shown.map(\.id), initial: true) { _, ids in
+                            DoddyDirector.shared.cardsShown(ids)
+                        }
                     }
                 }
                 .padding(24)
+                // The brief's 108 pt bottom inset: the last note can always scroll clear of him.
+                .padding(.bottom, DoddyDirector.shared.isActive ? CGFloat(MotionLayout.listBottomInset - 24) : 0)
             }
             .background(Theme.canvas).foregroundStyle(Theme.ink)
             .toolbar(.hidden, for: .navigationBar, .tabBar)
@@ -251,6 +262,13 @@ private struct EmptyMemoriesView: View {
     var body: some View {
         VStack(spacing: 20) {
             UploadedCharacterView(assetName: "UploadedDoddy_Sitting", height: 150)
+                // Motion v2 (Q4): his spot when there are no notes, a short line on the
+                // picture's floor (22 pt above its bottom: the sitting picture's ground is at 85 %).
+                .overlay(alignment: .bottom) {
+                    if DoddyDirector.shared.isActive {
+                        LedgeLine(name: "emptyMemories").padding(.bottom, 22)
+                    }
+                }
             Text("No memories yet").font(.title2.weight(.medium)).accessibilityAddTraits(.isHeader)
             Text("Only what you choose to save appears here. Nothing is added automatically.")
                 .foregroundStyle(Theme.secondaryText).multilineTextAlignment(.center)

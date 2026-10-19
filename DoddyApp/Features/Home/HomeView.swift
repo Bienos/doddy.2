@@ -95,6 +95,13 @@ struct HomeView: View {
                             UploadedCharacterView(assetName: ready != nil ? "UploadedDoddy_Listening" : "UploadedDoddy_Sitting", height: 210)
                         }
                     }
+                        // Motion v2 (MV2): his stage, on the pictures' floor (31 pt above the box's
+                        // bottom). Only while the motion world is on, so hidden pictures leave no line.
+                        .overlay(alignment: .bottom) {
+                            if DoddyDirector.shared.isActive {
+                                StageLine().padding(.bottom, 31)
+                            }
+                        }
                         // The opening lands Doddy exactly here, so it needs to know where "here" is.
                         .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { [opening] rect in
                             Task { @MainActor in

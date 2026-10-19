@@ -8,11 +8,15 @@ import Foundation
 /// Which edge he is on. The names follow the owner's brief and reference engine; the plan's
 /// section 1 maps them onto this app (stage: Home's art; composer: Ask's composer; rail: the
 /// tab bar's top edge; panel: a bar that rises and falls under him, the undo bar in this app;
-/// detail: the note page's card; rule: the n-th row edge of a scrolling list).
+/// detail: the note page's card; rule: the n-th row edge of a scrolling list; ledge: a fixed
+/// edge on one screen that is none of those, MV2: the spot where Settings' Privacy picture was
+/// and the empty Memories heading, plan Q4).
 public struct MotionSurfaceID: Hashable, Sendable, CustomStringConvertible {
     public enum Kind: Hashable, Sendable {
         case stage, composer, panel, rail, detail
         case rule(Int)
+        /// A still edge on one screen, named for it ("settings", "emptyMemories").
+        case ledge(String)
     }
 
     public var kind: Kind
@@ -25,6 +29,7 @@ public struct MotionSurfaceID: Hashable, Sendable, CustomStringConvertible {
     public static let rail = MotionSurfaceID(.rail)
     public static let detail = MotionSurfaceID(.detail)
     public static func rule(_ i: Int) -> MotionSurfaceID { MotionSurfaceID(.rule(i)) }
+    public static func ledge(_ name: String) -> MotionSurfaceID { MotionSurfaceID(.ledge(name)) }
 
     /// The row index for a list rule, nil otherwise.
     public var ruleIndex: Int? {
@@ -42,6 +47,7 @@ public struct MotionSurfaceID: Hashable, Sendable, CustomStringConvertible {
         case .rail: "rail"
         case .detail: "detail"
         case .rule(let i): "rule:\(i)"
+        case .ledge(let name): "ledge:\(name)"
         }
     }
 }

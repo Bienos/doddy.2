@@ -38,6 +38,8 @@ struct MemoryDetailView: View {
                 } else if let record = store.record(id: memoryID) {
                     JourneyHeading(eyebrow: "Straight from your note", title: "The original\nis right here.")
                     MemoryPaperCard(record: record, textIdentifier: "detail.currentText")
+                        // Motion v2: the card's top edge, right end, is Doddy's spot on a note page.
+                        .motionSurface(.detail)
                     NotePhotoSection(memoryID: memoryID)
                     NoteRecordingSection(memoryID: memoryID)
                     if record.userEdited {

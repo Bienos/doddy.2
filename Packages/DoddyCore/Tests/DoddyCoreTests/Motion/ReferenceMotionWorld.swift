@@ -1110,7 +1110,7 @@ struct RefSurface: MotionSurface {
 
     var layer: Double {
         switch id.kind {
-        case .stage, .composer, .rule: 1
+        case .stage, .composer, .rule, .ledge: 1
         case .panel: 2
         case .rail: 2.5
         case .detail: 1.5
@@ -1127,6 +1127,8 @@ struct RefSurface: MotionSurface {
         case .rail: RefLayout.rail
         case .detail: RefLayout.detailSourceY
         case .rule(let i): w.ruleY(i)
+        // The reference layout has no ledge; the app's screens add them (MV2).
+        case .ledge: RefLayout.H
         }
     }
 
@@ -1137,7 +1139,7 @@ struct RefSurface: MotionSurface {
         case .stage: 150...240
         case .composer: 44...w.composerMaxX()
         case .panel: w.panelMode == .open ? 40...330 : 40...(RefLayout.reviewHitX0 - 48)
-        case .rail, .detail: 40...350
+        case .rail, .detail, .ledge: 40...350
         case .rule: 306...340
         }
     }
@@ -1152,6 +1154,7 @@ struct RefSurface: MotionSurface {
         case .rail: return 0...RefLayout.W
         case .detail: return (16 + w.detailX.x)...(374 + w.detailX.x)
         case .rule: return 24...366
+        case .ledge: return 0...0
         }
     }
 
@@ -1163,6 +1166,7 @@ struct RefSurface: MotionSurface {
         case .rail: true
         case .detail: w.tab == "memories" && w.detailOpen
         case .rule(let i): w.tab == "memories" && i < w.layout.count
+        case .ledge: false
         }
     }
 
