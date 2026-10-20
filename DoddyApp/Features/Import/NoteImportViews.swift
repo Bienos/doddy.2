@@ -17,6 +17,7 @@ struct NoteImportSettingsSection: View {
                 .font(.footnote).foregroundStyle(Theme.secondaryText)
         }
         .sheet(isPresented: $showImport) { NoteImportView() }
+        .coversDoddy(showImport)
     }
 }
 
