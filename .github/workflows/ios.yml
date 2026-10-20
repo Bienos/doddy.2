@@ -1,14 +1,10 @@
-# Hosted macOS build for Doddy (owner approval 2026-10-10, closes ADR-022's open choice).
-# Runs the same scripts/ci.sh a contributor runs locally: pack check, guard, Swift package tests,
-# token server / backend / gateway tests, then XcodeGen + xcodebuild test (unit + UI) on the
-# first available iPhone simulator. No signing team or secrets are used; nothing is deployed.
-# The macOS job is the expensive one (about 52 minutes at $0.062 a minute), so it runs only after
-# the Linux checks pass, and on a pull request only when the change can reach the app build or its
-# tests (ADR-497, scripts/ci_needs_mac.sh). Run by hand, it always runs.
+# THROWAWAY PROBE (claude/probe-iphone-device): never merge. Builds the owner's own path, the
+# iPhone project (make project-iphone: DoddyiPhone.xcodeproj, no entitlements, no Watch app) for a
+# real iPhone (generic/platform=iOS), without signing. The main workflow builds project.yml for the
+# simulator only, so this path isn't covered there.
 name: iOS build and tests
 
 on:
-  pull_request:
   workflow_dispatch:
 
 concurrency:
@@ -19,121 +15,32 @@ permissions:
   contents: read
 
 jobs:
-  # Decides whether the macOS job is needed (ADR-497). Cheap: a shallow checkout and a file list.
-  changes:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 5
-    outputs:
-      mac: ${{ steps.decide.outputs.mac }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          # A pull request is checked out as its test merge commit. Its first parent is the base
-          # branch, so HEAD^1..HEAD is exactly what the pull request changes.
-          fetch-depth: 2
-
-      - name: Does this change need the macOS build?
-        id: decide
-        env:
-          EVENT: ${{ github.event_name }}
-        run: |
-          if [ "$EVENT" != "pull_request" ]; then
-            echo "Run by hand: the macOS build runs." >&2
-            echo "mac=true" >> "$GITHUB_OUTPUT"
-          elif git rev-parse --verify -q 'HEAD^2' >/dev/null \
-            && files=$(git diff --name-only --no-renames 'HEAD^1' HEAD); then
-            printf '%s\n' "$files" | scripts/ci_needs_mac.sh >> "$GITHUB_OUTPUT"
-          else
-            echo "Couldn't list what the pull request changes: the macOS build runs." >&2
-            echo "mac=true" >> "$GITHUB_OUTPUT"
-          fi
-
-  ci:
-    # Only after the Linux checks pass (most of them run first in scripts/ci.sh on the Mac too, so
-    # a red one usually fails this job anyway), and only when `changes` says the app can be
-    # affected. A Linux-only failure (the app logic type-check) now holds the Mac build back too.
-    needs: [changes, core]
-    if: needs.changes.outputs.mac == 'true'
+  iphone-device-build:
     runs-on: macos-latest
-    timeout-minutes: 75
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
-
       - name: Select the latest stable Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: latest-stable
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-
       - name: Install XcodeGen
         run: brew install xcodegen
-
-      # scripts/check_platform_specs.py reads the per-platform XcodeGen specs.
-      - name: Install PyYAML
-        # Not --user: ci.sh runs python3 -I, which ignores the user site-packages.
-        run: python3 -m pip install --break-system-packages pyyaml || python3 -m pip install pyyaml
-
       - name: Tool versions
         run: |
           xcodebuild -version
-          swift --version
           xcodegen --version
-          node --version
-
-      - name: scripts/ci.sh
-        run: scripts/ci.sh
-
-      - name: Keep the test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: xcode-test-results
-          path: ~/Library/Developer/Xcode/DerivedData/**/Logs/Test/*.xcresult
-          if-no-files-found: ignore
-          retention-days: 7
-
-  # Everything except the iOS build, on Linux (ADR-137): pack check, guards, agent spec, Swift
-  # package tests, token server, backend, gateway and messaging server tests (with Postgres). Cheaper than the macOS job and gives
-  # every pull request a real signal even when no hosted Mac is available.
-  core:
-    runs-on: ubuntu-24.04
-    # Official Swift image, same toolchain the Linux checks were run with (Swift 6.1).
-    container: swift:6.1-noble
-    timeout-minutes: 30
-    # Disposable database for the messaging server's tests (server/messaging, ADR-139).
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: doddy
-          POSTGRES_PASSWORD: doddy
-          POSTGRES_DB: doddy_test
-        options: >-
-          --health-cmd "pg_isready -U doddy -d doddy_test"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-    env:
-      TEST_DATABASE_URL: postgres://doddy:doddy@postgres:5432/doddy_test
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-
-      - name: SQLite headers and Python for the checks
-        run: apt-get update && apt-get install -y --no-install-recommends libsqlite3-dev python3 python3-yaml
-
-      - name: Tool versions
+      - name: make project-iphone
+        run: make project-iphone
+      - name: Schemes
+        run: xcodebuild -list -project DoddyiPhone.xcodeproj
+      - name: Build Doddy for a real iPhone (Debug, unsigned)
         run: |
-          swift --version
-          node --version
-          python3 --version
-
-      - name: scripts/ci.sh --core-only
-        run: scripts/ci.sh --core-only
-
+          set -o pipefail
+          xcodebuild build -project DoddyiPhone.xcodeproj -scheme Doddy -configuration Debug \
+            -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
+            2>&1 | tee build.log | grep -E "error:|warning: .*entitlement|BUILD (SUCCEEDED|FAILED)" || true
+          grep -q "BUILD SUCCEEDED" build.log
+      - name: Errors, if any
+        if: failure()
+        run: grep -n "error:" build.log | head -60 || true
