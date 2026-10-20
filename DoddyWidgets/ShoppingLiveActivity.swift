@@ -8,7 +8,9 @@ import WidgetKit
 /// that runs `ToggleListItemIntent` in the Doddy app (after the iPhone is unlocked): the app ticks
 /// it through the store, reads it back and redraws this from the list as it now is. A stale or
 /// tapped-twice item changes nothing (the intent checks the item still looks as shown).
-/// Doddy is on tiptoe, "on the way" (ADR-323), on the island and the cream card.
+/// Doddy is on tiptoe, "on the way" (ADR-323), on the island and the cream card; the fist pump
+/// when the stored list is all ticked, the facepalm when the card is stale (`DoddyActivityPose`,
+/// ADR-546).
 struct ShoppingLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: ShoppingActivityAttributes.self) { context in
@@ -21,7 +23,8 @@ struct ShoppingLiveActivity: Widget {
                         Image(systemName: "cart").font(.title3).foregroundStyle(.white).padding(.leading, 6)
                             .accessibilityHidden(true)
                     } else {
-                        IslandPoseView(pose: .tiptoe, maxSize: CGSize(width: 44, height: 40))
+                        IslandPoseView(pose: DoddyActivityPose.shopping(isFinished: context.state.isFinished, isStale: context.isStale),
+                                       maxSize: CGSize(width: 44, height: 40))
                             .padding(.leading, 6)
                     }
                 }
@@ -73,7 +76,7 @@ private struct ShoppingLockScreen: View {
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
             content
-            WidgetPose(pose: .tiptoe, height: 64)
+            WidgetPose(pose: DoddyActivityPose.shopping(isFinished: state.isFinished, isStale: isStale), height: 64)
         }
         .foregroundStyle(Color("Ink"))
         .padding(14)

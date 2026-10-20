@@ -163,7 +163,9 @@ extension DoddyVoiceAttributes.ContentState {
             case .translating: return nil
             }
         }
-        if isEnded { return .fistpump }
+        // The fist pump only after the store returned a saved note (`savedCount`, ADR-240); an
+        // ended conversation with nothing saved sits and waits, as on the Lock Screen card.
+        if isEnded { return savedCount > 0 ? .fistpump : .crosslegged }
         if showsMuted { return .shush }
         let greets = !(greeting ?? "").isEmpty
         switch status {
@@ -175,7 +177,7 @@ extension DoddyVoiceAttributes.ContentState {
         case .needsConfirmation: return .reachingHigh
         case .wakeListening: return .crosslegged
         case .wakePaused: return .leaning
-        case .ended: return .fistpump
+        case .ended: return savedCount > 0 ? .fistpump : .crosslegged
         #if DEBUG
         case .testFixture: return .listening
         #endif

@@ -75,6 +75,71 @@ enum IslandPose: String, CaseIterable, Sendable {
     }
 }
 
+/// The pose on the Live Activities that are not the voice island or the focus, breathing and
+/// read-aloud tools (ADR-546). Plain values in, a pose out, so scripts/check_island_art.sh can
+/// check every mapping on Linux; the widget files call these and name no pose themselves.
+/// One pose means one thing everywhere: a lost activity is the facepalm, the fist pump only
+/// when the store has confirmed the thing it celebrates.
+enum DoddyActivityPose {
+    /// The snooze countdown (ADR-283, ADR-323): Doddy stretching awake.
+    static let alarmSnooze: IslandPose = .yawnStretch
+
+    /// Shopping mode (ADR-257, ADR-323). `isFinished` comes from the list as the store holds it
+    /// now (`ShoppingModeState.make` runs on the stored list after each change), so the fist
+    /// pump follows a ticked store, never a tap. Finished is checked before stale, as the
+    /// Lock Screen card does: its "All ticked" line is a store fact.
+    static func shopping(isFinished: Bool, isStale: Bool) -> IslandPose {
+        if isFinished { return .fistpump }
+        if isStale { return .facepalm }
+        return .tiptoe
+    }
+
+    /// A call Doddy makes for the user (ADR-504). The phase is the server's: ringing, connecting,
+    /// talking, taken_over, ending, ended. An ended call is not a success (it may have failed),
+    /// so he only sits; the card claims nothing that can go out of date, so ended beats stale.
+    /// While the app has not refreshed it, he is not shown listening.
+    static func call(phase: String, isStale: Bool) -> IslandPose {
+        if phase == "ended" { return .crosslegged }
+        if isStale { return .facepalm }
+        return .listening
+    }
+}
+
+/// The notifications that carry Doddy's picture (ADR-313, ADR-323, ADR-546). The picture is the
+/// owner's pack pose as a local thumbnail; the words never change. Each kind names its pose
+/// here, in a file the Linux check compiles; `NotificationArt.attachment(for:)` is the only way
+/// a notification gets a picture. A notification that waits for you is the reach; the fist pump
+/// only for a thing the app itself finished.
+enum DoddyNotificationKind: String, CaseIterable, Sendable {
+    /// A reminder on a note, time or place (ADR-196, ADR-211): reaching for it.
+    case noteReminder
+    /// The morning check-in: stretching awake.
+    case morningCheckIn
+    /// A birthday: waving, "maybe say hello".
+    case birthday
+    /// The evening wrap-up and the weekly look-back: sitting cross-legged, winding down.
+    case eveningWrapUp, weeklyLookBack
+    /// "Time to leave" (ADR-335): on tiptoe, on the way, as in shopping mode.
+    case leaveBy
+    /// The weekly tidy-up: kneeling to look the notes over.
+    case tidyUp
+    /// The focus timer ran out: the same fist pump as the island's "Time's up". A time the
+    /// app scheduled itself and cancels when the focus is stopped.
+    case focusDone
+
+    var pose: IslandPose {
+        switch self {
+        case .noteReminder: .reachingHigh
+        case .morningCheckIn: .yawnStretch
+        case .birthday: .wave
+        case .eveningWrapUp, .weeklyLookBack: .crosslegged
+        case .leaveBy: .tiptoe
+        case .tidyUp: .kneelingInspect
+        case .focusDone: .fistpump
+        }
+    }
+}
+
 /// What the in-app voice screen draws (ADR-299): the island's pose for the same moment, except
 /// while Doddy speaks, when the six frames of the pack's talking strip (020) play in turn.
 /// Kept here, beside the poses, so the mapping is checked on any machine with Swift.

@@ -31,7 +31,7 @@ enum BirthdayScheduler {
             content.title = Birthdays.title(showNames ? contact.name : nil, language)
             content.body = Birthdays.body(language)
             // Doddy waving: "maybe say hello" (ADR-323). Each notification gets its own copy.
-            if let art = NotificationArt.attachment(.wave) { content.attachments = [art] }
+            if let art = NotificationArt.attachment(for: .birthday) { content.attachments = [art] }
             content.sound = .default
             let day = Birthdays.scheduledDay(contact)
             let when = DateComponents(month: day.month, day: day.day, hour: Birthdays.hour)

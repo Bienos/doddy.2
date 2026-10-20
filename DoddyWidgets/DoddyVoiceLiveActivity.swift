@@ -99,7 +99,7 @@ private struct DoddyArt: View {
     let size: CGFloat
 
     private var pose: IslandPose {
-        if shown.state.isEnded { return shown.state.savedCount > 0 ? .fistpump : .crosslegged }
+        // Ended: the fist pump only if a note was saved, else he sits (`wholeDoddyPose`).
         // Translating keeps its board on the island (no pose); here he listens.
         return shown.state.wholeDoddyPose(stale: shown.isStale) ?? .listening
     }

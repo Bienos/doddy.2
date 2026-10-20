@@ -22,7 +22,7 @@ enum WeeklyLookBackScheduler {
         content.title = WeeklyLookBack.title(language)
         content.body = WeeklyLookBack.body(language)
         // Doddy sitting cross-legged, as on the look-back's rooftop (ADR-323).
-        if let art = NotificationArt.attachment(.crosslegged) { content.attachments = [art] }
+        if let art = NotificationArt.attachment(for: .weeklyLookBack) { content.attachments = [art] }
         var when = DateComponents()
         when.weekday = settings.weekday
         when.hour = settings.hour

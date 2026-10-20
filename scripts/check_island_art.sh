@@ -78,5 +78,60 @@ for file in Contents.json art@2x.png art@3x.png; do
         echo "FAIL: DoddyWidgets/Assets.xcassets/WidgetDoddy_face.imageset/$file is missing"; missing=1
     fi
 done
+# Notifications and the other Live Activities (ADR-546). The mappings are checked by the binary
+# above; these greps check the app and widget files really use them (they can't be compiled here).
+# Each notification kind is named at exactly one call site, in the file that schedules it.
+notification_file() {
+    case "$1" in
+        noteReminder)   echo DoddyApp/Infrastructure/Connections/NoteReminderNotifications.swift ;;
+        morningCheckIn) echo DoddyApp/Features/MorningCheckIn/MorningCheckInScheduler.swift ;;
+        birthday)       echo DoddyApp/Features/Birthdays/BirthdayViews.swift ;;
+        eveningWrapUp)  echo DoddyApp/Features/EveningWrapUp/EveningWrapUpViews.swift ;;
+        weeklyLookBack) echo DoddyApp/Features/WeeklyLookBack/WeeklyLookBackViews.swift ;;
+        leaveBy)        echo DoddyApp/Features/LeaveBy/LeaveByScheduler.swift ;;
+        tidyUp)         echo DoddyApp/Features/TidyUp/TidyUpViews.swift ;;
+        focusDone)      echo DoddyApp/Features/Focus/FocusController.swift ;;
+        *)              echo "" ;;
+    esac
+}
+for kind in $("$work/island-check" --notification-kinds); do
+    file="$(notification_file "$kind")"
+    if [ -z "$file" ]; then
+        echo "FAIL: notification kind '$kind' has no call site listed in scripts/check_island_art.sh"; missing=1; continue
+    fi
+    count="$(grep -c "NotificationArt.attachment(for: \.$kind)" "$file" || true)"
+    if [ "$count" -ne 1 ]; then
+        echo "FAIL: $file should name NotificationArt.attachment(for: .$kind) once, found $count"; missing=1
+    fi
+done
+# No call site may hold a raw pose: `attachment(.crosslegged)` would dodge the mapping above.
+if grep -rn "NotificationArt\.attachment(\." DoddyApp --include=*.swift; then
+    echo "FAIL: NotificationArt.attachment must be called with 'for: <DoddyNotificationKind>'"; missing=1
+fi
+# Every file that builds a local notification either uses a picture or is listed here as one
+# that deliberately has none (DeviceConnections.swift: the event nudge and "Timer done", left
+# without a picture until the owner decides; WHOLE_DODDY_ISLAND_STATUS.md).
+for file in $(grep -rl "UNMutableNotificationContent" DoddyApp --include=*.swift); do
+    case "$file" in
+        DoddyApp/Infrastructure/Connections/DeviceConnections.swift) continue ;;
+    esac
+    if ! grep -q "NotificationArt\.attachment(for:" "$file"; then
+        echo "FAIL: $file builds a notification with no Doddy picture (add a DoddyNotificationKind, or list it as pictureless here)"; missing=1
+    fi
+done
+# The Live Activities that draw through DoddyActivityPose name no pose themselves, so a mapping
+# can't be changed in a widget file without the binary's checks seeing it.
+for file in DoddyWidgets/AlarmLiveActivity.swift DoddyWidgets/ShoppingLiveActivity.swift DoddyWidgets/DoddyCallLiveActivity.swift; do
+    if grep -nE "(IslandPoseView|WidgetPose)\(pose: \." "$file"; then
+        echo "FAIL: $file names a pose directly; use DoddyActivityPose"; missing=1
+    fi
+    if ! grep -q "DoddyActivityPose\." "$file"; then
+        echo "FAIL: $file does not use DoddyActivityPose"; missing=1
+    fi
+done
+# The conversation island keeps one rule for "ended": the fist pump needs a saved note.
+if ! grep -q "isEnded { return savedCount > 0 ? .fistpump : .crosslegged }" Shared/IslandArt/IslandScene.swift; then
+    echo "FAIL: IslandScene.swift lost the 'ended needs a saved note for the fist pump' rule"; missing=1
+fi
 [ "$missing" -eq 0 ] || exit 1
 "$work/island-check" "$@"

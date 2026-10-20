@@ -20,6 +20,8 @@ enum TidyUpScheduler {
         let content = UNMutableNotificationContent()
         content.title = TidyUp.title(language)
         content.body = TidyUp.body(language)
+        // Doddy kneeling to look the notes over (ADR-546); the words are unchanged.
+        if let art = NotificationArt.attachment(for: .tidyUp) { content.attachments = [art] }
         var when = DateComponents()
         when.weekday = settings.weekday
         when.hour = settings.hour

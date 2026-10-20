@@ -14,6 +14,11 @@ struct IslandArtCheck {
             for pose in IslandPose.allCases { print(pose.assetName) }
             return
         }
+        // scripts/check_island_art.sh checks each notification kind's call site names it (ADR-546).
+        if args.contains("--notification-kinds") {
+            for kind in DoddyNotificationKind.allCases { print(kind.rawValue) }
+            return
+        }
         // ...and the voice screen's talking frames (ADR-299) and the strips (ADR-313), app catalog only.
         if args.contains("--story-assets") {
             for story in PanelStory.allCases {
@@ -60,6 +65,7 @@ struct IslandArtCheck {
         }
         failures += IslandSceneChecks.run()
         failures += IslandSceneChecks.wholeDoddy()
+        failures += IslandSceneChecks.activitiesAndNotifications()
         failures += IslandSceneChecks.voiceScreen()
         if failures > 0 {
             print("FAIL: \(failures) problem(s) in \(drawings) drawings")

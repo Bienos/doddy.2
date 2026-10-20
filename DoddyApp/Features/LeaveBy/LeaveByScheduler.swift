@@ -29,6 +29,8 @@ final class LeaveByScheduler: LeaveByWriter {
         let content = UNMutableNotificationContent()
         content.title = text.title
         content.body = text.body
+        // Doddy on tiptoe, "on the way" (ADR-546); the words are unchanged.
+        if let art = NotificationArt.attachment(for: .leaveBy) { content.attachments = [art] }
         content.sound = .default
         let parts = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: plan.leaveAt)
         let request = UNNotificationRequest(identifier: identifier, content: content,

@@ -11,7 +11,7 @@ struct AlarmLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: AlarmAttributes<DoddyAlarmMetadata>.self) { context in
             HStack(spacing: 12) {
-                WidgetPose(pose: .yawnStretch, height: 64)
+                WidgetPose(pose: DoddyActivityPose.alarmSnooze, height: 64)
                 Label("Snoozed", systemImage: "zzz")
                     .font(.headline)
                 Spacer()
@@ -26,7 +26,7 @@ struct AlarmLiveActivity: Widget {
                     if WidgetDoddyArt.isHidden {
                         Image(systemName: "alarm")
                     } else {
-                        IslandPoseView(pose: .yawnStretch, maxSize: CGSize(width: 44, height: 52))
+                        IslandPoseView(pose: DoddyActivityPose.alarmSnooze, maxSize: CGSize(width: 44, height: 52))
                             .padding(.leading, 6)
                     }
                 }

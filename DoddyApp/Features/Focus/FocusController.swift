@@ -142,6 +142,8 @@ final class FocusController {
         let content = UNMutableNotificationContent()
         content.title = "Focus done"
         content.body = session.label ?? "Your \(Int((session.duration / 60).rounded()))-minute focus is over."
+        // The fist pump, as on the island's "Time's up" (ADR-546); the words are unchanged.
+        if let art = NotificationArt.attachment(for: .focusDone) { content.attachments = [art] }
         content.sound = .default
         let id = Self.notificationID(session)
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: max(1, end.timeIntervalSinceNow), repeats: false)

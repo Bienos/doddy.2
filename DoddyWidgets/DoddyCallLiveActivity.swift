@@ -5,7 +5,9 @@ import WidgetKit
 
 /// Doddy on a call for the user, on the Lock Screen and in the Dynamic Island (ADR-504): what is
 /// happening and for how long, with Take over and End. Never who is called or what was said
-/// (ADR-240); that is only in the app. Doddy's listening pose, as on the conversation island.
+/// (ADR-240); that is only in the app. Doddy's listening pose, as on the conversation island;
+/// he sits when the call has ended and is not shown listening when the card is stale
+/// (`DoddyActivityPose.call`, ADR-546).
 struct DoddyCallLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: DoddyCallAttributes.self) { context in
@@ -18,7 +20,9 @@ struct DoddyCallLiveActivity: Widget {
                         Image(systemName: "phone.arrow.up.right").font(.title3).foregroundStyle(.white).padding(.leading, 6)
                             .accessibilityHidden(true)
                     } else {
-                        IslandPoseView(pose: .listening, maxSize: CGSize(width: 44, height: 40)).padding(.leading, 6)
+                        IslandPoseView(pose: DoddyActivityPose.call(phase: context.state.phase, isStale: context.isStale),
+                                       maxSize: CGSize(width: 44, height: 40))
+                            .padding(.leading, 6)
                     }
                 }
                 DynamicIslandExpandedRegion(.center) {
@@ -129,7 +133,7 @@ private struct CallLockScreen: View {
                     CallButtons(caseId: caseId, state: state, onIsland: false)
                 }
             }
-            WidgetPose(pose: .listening, height: 64)
+            WidgetPose(pose: DoddyActivityPose.call(phase: state.phase, isStale: isStale), height: 64)
         }
         .foregroundStyle(Color("Ink"))
         .padding(14)

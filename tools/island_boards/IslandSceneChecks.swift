@@ -220,9 +220,16 @@ enum IslandSceneChecks {
         expect(pose(State(status: .listening, isMuted: false, greeting: "Hey Pat, what's up?")) == .wave, "greeting waves until you speak")
         expect(pose(State(status: .speaking, isMuted: false, greeting: "Hey Pat, what's up?")) == .shrug, "greeting gone once speaking")
         expect(pose(State(status: .listening, isMuted: true, greeting: "Hey Pat, what's up?")) == .shush, "muted beats greeting")
+        // The fist pump only after the store returned a saved note (`savedCount`, ADR-546); an
+        // ended conversation with nothing saved sits, and the island agrees with the Lock Screen card.
         var ended = State(status: .ended, isMuted: false)
         ended.savedCount = 1
-        expect(pose(ended) == .fistpump, "ended")
+        expect(pose(ended) == .fistpump, "ended after a saved note")
+        ended.savedCount = 0
+        expect(pose(ended) == .crosslegged, "ended with nothing saved is not a fist pump")
+        var endedStale = State(status: .ended, isMuted: false)
+        endedStale.savedCount = 0
+        expect(pose(endedStale, stale: true) == .crosslegged, "an ended card is never stale")
         let moments: [(State.Moment, IslandPose?)] = [
             (.noteWaiting, .reachingHigh), (.noteSaved, .fistpump), (.reminderWaiting, .reachingHigh),
             (.reminderAdding, .reachingHigh), (.reminderSet, .fistpump), (.planWaiting(steps: 3), .tiptoe),
@@ -265,6 +272,55 @@ enum IslandSceneChecks {
             guard let head = p.facePose.head else { expect(false, "\(p) face pose \(p.facePose) has no head"); continue }
             expect(head.diameter > 0.2 && head.diameter < 0.7 && head.x > 0.2 && head.x < 0.8 && head.y > 0 && head.y < 0.5, "\(p) head")
         }
+        return failures
+    }
+
+    /// The other Live Activities and the notifications (ADR-546): every pose-to-state mapping the
+    /// widget and app files read from `DoddyActivityPose` and `DoddyNotificationKind`.
+    static func activitiesAndNotifications() -> Int {
+        var failures = 0
+        func expect(_ ok: Bool, _ message: String) {
+            if !ok { print("FAIL: activities: \(message)"); failures += 1 }
+        }
+        // Shopping mode: tiptoe while shopping, the fist pump only when the stored list is all
+        // ticked, the facepalm when the card is stale. Finished is checked before stale.
+        expect(DoddyActivityPose.shopping(isFinished: false, isStale: false) == .tiptoe, "shopping on tiptoe")
+        expect(DoddyActivityPose.shopping(isFinished: true, isStale: false) == .fistpump, "shopping all ticked")
+        expect(DoddyActivityPose.shopping(isFinished: false, isStale: true) == .facepalm, "shopping stale")
+        expect(DoddyActivityPose.shopping(isFinished: true, isStale: true) == .fistpump, "shopping all ticked beats stale")
+        // A call: listening; never the fist pump (an ended call may have failed); ended beats stale.
+        for phase in ["ringing", "connecting", "talking", "taken_over", "ending"] {
+            expect(DoddyActivityPose.call(phase: phase, isStale: false) == .listening, "call \(phase) listens")
+            expect(DoddyActivityPose.call(phase: phase, isStale: true) == .facepalm, "call \(phase) stale")
+        }
+        expect(DoddyActivityPose.call(phase: "ended", isStale: false) == .crosslegged, "call ended sits")
+        expect(DoddyActivityPose.call(phase: "ended", isStale: true) == .crosslegged, "call ended is never stale")
+        expect(DoddyActivityPose.call(phase: "something-new", isStale: false) == .listening, "unknown phase keeps listening")
+        for phase in ["ringing", "connecting", "talking", "taken_over", "ending", "ended", "other"] {
+            for stale in [false, true] {
+                expect(DoddyActivityPose.call(phase: phase, isStale: stale) != .fistpump, "call \(phase) never celebrates")
+            }
+        }
+        expect(DoddyActivityPose.alarmSnooze == .yawnStretch, "alarm snooze stretches")
+
+        // Notifications: the exact pose of each kind. A new kind has to be added here, so nobody
+        // adds a picture without saying what it means.
+        let expected: [DoddyNotificationKind: IslandPose] = [
+            .noteReminder: .reachingHigh, .morningCheckIn: .yawnStretch, .birthday: .wave,
+            .eveningWrapUp: .crosslegged, .weeklyLookBack: .crosslegged,
+            .leaveBy: .tiptoe, .tidyUp: .kneelingInspect, .focusDone: .fistpump,
+        ]
+        expect(Set(DoddyNotificationKind.allCases) == Set(expected.keys), "every notification kind is in the check")
+        for (kind, pose) in expected { expect(kind.pose == pose, "notification \(kind) shows \(pose), not \(kind.pose)") }
+        // The fist pump on a notification is only the focus timer the app scheduled itself; a
+        // notification that waits for you is never a celebration.
+        expect(DoddyNotificationKind.allCases.filter { $0.pose == .fistpump } == [.focusDone], "only focus done celebrates")
+        // A reminder is the reach, as in the conversation island's "reminder waiting".
+        var waiting = State(status: .listening, isMuted: false)
+        waiting.moment = .reminderWaiting
+        waiting.islandStyle = .wholeDoddy
+        expect(waiting.islandScene(isStale: false).pose == DoddyNotificationKind.noteReminder.pose,
+               "a reminder notification matches the island's reminder waiting")
         return failures
     }
 
