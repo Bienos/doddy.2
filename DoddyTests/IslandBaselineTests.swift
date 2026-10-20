@@ -77,6 +77,30 @@ final class IslandBaselineTests: XCTestCase {
         XCTAssertTrue(ended)
     }
 
+    /// ADR-562: a start without opening Doddy checks `isShowing` before it takes the microphone,
+    /// and `expand()` (the alert update that opens the island up) keeps the state it shows.
+    @MainActor
+    func testIsShowingFollowsTheActivityAndExpandKeepsItsState() async throws {
+        try requireActivities()
+        await clearActivities()
+        let island = VoiceLiveActivity()
+        defer { island.end() }
+        XCTAssertFalse(island.isShowing)
+        island.expand()  // nothing to open up: no activity is started for it
+        XCTAssertTrue(Activity<DoddyVoiceAttributes>.activities.isEmpty)
+        let greeting = DoddyVoiceAttributes.ContentState(status: .speaking, isMuted: false, greeting: "Hey Pat, what's up?")
+        island.show(greeting, startedAt: .now)
+        XCTAssertTrue(island.isShowing)
+        island.expand()
+        await island.settle()
+        let activity = try XCTUnwrap(Activity<DoddyVoiceAttributes>.activities.first)
+        XCTAssertEqual(activity.content.state, greeting)
+        island.end()
+        XCTAssertFalse(island.isShowing)
+        let ended = await waitUntil { Activity<DoddyVoiceAttributes>.activities.isEmpty }
+        XCTAssertTrue(ended)
+    }
+
     @MainActor
     func testMuteAndEndIntentsReachHandlersAndRemoveActivity() async throws {
         try requireActivities()

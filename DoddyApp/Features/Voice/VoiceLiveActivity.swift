@@ -29,8 +29,12 @@ final class VoiceLiveActivity {
     /// The last `finish`/`end` request, so callers can wait until iOS has it.
     private var ending: Task<Void, Never>?
 
-    /// Shows `state`, starting the activity on first use. iOS only allows starting one while the
-    /// app is in the foreground, which is where every conversation starts.
+    /// True while the conversation's activity is up (iOS accepted the request and it hasn't ended).
+    var isShowing: Bool { activity != nil }
+
+    /// Shows `state`, starting the activity on first use. iOS allows starting one while the app is
+    /// in the foreground, or from a `LiveActivityIntent` running without it ("Talk in the Island",
+    /// ADR-562).
     func show(_ state: DoddyVoiceAttributes.ContentState, startedAt: Date) {
         if let activity {
             guard state != shown else { return }
@@ -55,14 +59,17 @@ final class VoiceLiveActivity {
         }
     }
 
-    /// Asks iOS to open the island up once with `greeting` (the big island: it unfolds and plays a
-    /// sound). Only for a conversation the app is running, so no push is needed; a no-op when
-    /// there is no activity. iOS decides the final size, so this is a request.
-    func openForGreeting(_ greeting: String) {
+    /// Asks iOS to open the island up for a few seconds with what it shows now (the big island:
+    /// it unfolds and plays the alert sound). `IslandExpansion` (ADR-562) decides when. iOS does
+    /// this only while Doddy is not the app on screen, and decides the final size, so this is a
+    /// request. The alert's words are only shown on a paired Apple Watch: the status, never
+    /// anything said. A no-op when there is no activity. Only for a conversation the app is
+    /// running, so no push is needed.
+    func expand() {
         guard let activity, let shown else { return }
         let alert = AlertConfiguration(
-            title: LocalizedStringResource(stringLiteral: greeting),
-            body: LocalizedStringResource(stringLiteral: ""),
+            title: LocalizedStringResource(stringLiteral: "Doddy"),
+            body: LocalizedStringResource(stringLiteral: shown.title),
             sound: .default)
         let previous = updating
         updating = Task {

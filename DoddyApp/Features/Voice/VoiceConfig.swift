@@ -27,6 +27,14 @@ enum VoiceConfig {
     static var directVoiceEnabled: Bool { false }
     #endif
 
+    /// How a conversation reaches the voice service: the Debug developer connection when it is on
+    /// (ADR-551), otherwise the token server. The voice screen and Talk in the Island (ADR-562) both
+    /// start with it.
+    static var connectionMode: VoiceConnectionMode {
+        if directVoiceEnabled { return .directAgent(agentID: directAgentID) }
+        return VoiceConnectionMode.resolve(serverAddress: tokenEndpointAddress)
+    }
+
     static var authEndpoint: URL? {
         guard let tokenEndpoint else { return nil }
         var components = URLComponents(url: tokenEndpoint, resolvingAgainstBaseURL: false)
