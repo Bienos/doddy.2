@@ -2,6 +2,13 @@ import XCTest
 @testable import DoddyCore
 
 final class VoiceTokenTests: XCTestCase {
+    func testResolveNeverReturnsTheDevelopmentDirectConnection() {
+        // ADR-551: the direct agent connection is built only by Debug app code, never by `resolve`.
+        for address in ["", "https://doddy.example/api/voice-token", "http://x", "agent_0501m4et27vyeawrwqfdxxfszfa6"] {
+            if case .directAgent = VoiceConnectionMode.resolve(serverAddress: address) { XCTFail(address) }
+        }
+    }
+
     func testVoiceServerMustBeConfiguredOverHTTPSAndNeverFallsBackToPublicAgent() {
         XCTAssertEqual(
             VoiceConnectionMode.resolve(serverAddress: "https://doddy.example/api/voice-token"),

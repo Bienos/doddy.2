@@ -4,6 +4,10 @@ import Foundation
 /// token server and a DODDY session; it never falls back to a public provider agent.
 public enum VoiceConnectionMode: Equatable, Sendable {
     case tokenServer(endpoint: URL)
+    /// Development builds only (ADR-551): connect straight to the ElevenLabs agent, without a DODDY
+    /// voice account. `resolve` never returns it; only Debug code in the app builds it, and a Release
+    /// build can't (`VoiceConfig.directVoiceEnabled` is false there).
+    case directAgent(agentID: String)
     case notSetUp(reason: String)
 
     /// HTTPS only. An unset or malformed endpoint fails closed and never starts a public agent.

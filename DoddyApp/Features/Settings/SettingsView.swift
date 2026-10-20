@@ -8,6 +8,9 @@ struct SettingsView: View {
     @AppStorage(PreferenceKey.appearance) private var appearanceRaw = AppearancePreference.system.rawValue
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
     @AppStorage(PreferenceKey.listenOnOpen) private var listenOnOpen = OpeningPreferences.listenOnOpenDefault
+    #if DEBUG
+    @AppStorage(VoiceConfig.directVoiceKey) private var directVoice = true
+    #endif
     @AppStorage(PreferenceKey.widgetsShowContent) private var widgetsOn = true
     @AppStorage(PreferenceKey.backTapAction) private var backTapActionRaw = BackTapAction.conversation.rawValue
     @AppStorage(PreferenceKey.rememberConversations) private var rememberConversations = true
@@ -423,6 +426,13 @@ struct SettingsView: View {
                         .foregroundStyle(Theme.secondaryText)
                         .accessibilityIdentifier("settings.listenOnOpen.note")
                     VoiceProviderPicker(idPrefix: "settings")
+                    #if DEBUG
+                    Toggle("Developer: talk without Apple sign-in", isOn: $directVoice)
+                        .accessibilityIdentifier("settings.directVoice")
+                    Text("Debug builds only. Connects straight to Doddy's ElevenLabs agent, so voice works with a free Apple ID. Turn it off to try the real Apple sign-in. Release and TestFlight builds always use a voice account.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                    #endif
                     VoiceAccountSettings()
                     StatusRow(title: "Connection", value: connectionText)
                         .accessibilityIdentifier("settings.voiceConnection")

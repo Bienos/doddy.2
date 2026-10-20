@@ -37,6 +37,7 @@ Last updated 2026-10-19 (the owner's merge session: #84, #88, #90 and the #97 fi
   - a new phone build;
   - the first conversation (`MAC_VERIFICATION_CHECKLIST` rows V0a to V0f).
 - **Voice works on no device yet.**
+- **Debug builds can talk without Apple sign-in (ADR-551):** run from Xcode with a free Apple ID, voice connects straight to the agent (Settings › Voice › Developer switch, on by default in Debug only). Release builds still need a voice account.
 - **Default voice (ADR-546) and agent limits (ADR-548):** ElevenLabs is the default for everyone. On 20 Oct the owner chose to raise the live agent's limits (read back from ElevenLabs after saving): **1,000 calls a day and 10 at once** (were 10 and 2), bursting still off. **Authentication on the agent is still off** (read 20 Oct), so anyone with the agent id can start calls on the owner's bill; it was not changed (the owner was told and chose the raise-the-cap option).
 
 **The v1 scope is a proposal waiting on the owner:** `docs/product/V1_SCOPE.md`. Until it's marked up, merge fixes only.

@@ -27,7 +27,9 @@ struct VoiceView: View {
 
     /// The app endpoint is fixed in the build; users never enter server URLs or access codes.
     private var mode: VoiceConnectionMode {
-        VoiceConnectionMode.resolve(serverAddress: VoiceConfig.tokenEndpointAddress)
+        // Debug builds only (ADR-551): no DODDY voice account, straight to the agent.
+        if VoiceConfig.directVoiceEnabled { return .directAgent(agentID: VoiceConfig.directAgentID) }
+        return VoiceConnectionMode.resolve(serverAddress: VoiceConfig.tokenEndpointAddress)
     }
 
     var body: some View {
@@ -76,7 +78,7 @@ struct VoiceView: View {
         .foregroundStyle(Theme.ink)
         .task {
             await authSession.restore()
-            if authSession.isSignedIn && VoiceProviderConsent.isGranted(for: provider) {
+            if (authSession.isSignedIn || VoiceConfig.directVoiceEnabled) && VoiceProviderConsent.isGranted(for: provider) {
                 await beginConversation()
             }
         }

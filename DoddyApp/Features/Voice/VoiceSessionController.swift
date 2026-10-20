@@ -638,6 +638,9 @@ final class VoiceSessionController {
                 }
                 return
             }
+        case .directAgent(let agentID):
+            // Debug builds only (ADR-551): no token, no DODDY voice account.
+            auth = .publicAgent(id: agentID)
         case .notSetUp(let reason):
             fail(reason)
             return
