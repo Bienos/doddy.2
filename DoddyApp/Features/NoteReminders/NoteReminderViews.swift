@@ -32,6 +32,7 @@ struct NoteReminderSection: View {
             }
         }
         .sheet(isPresented: $showSheet) { NoteReminderSheet(memoryID: memoryID, startAtTime: sheetAtTime) }
+        .coversDoddy(showSheet)
         .confirmationDialog(stopQuestion, isPresented: $confirmStop, titleVisibility: .visible) {
             Button("Stop", role: .destructive) { Task { await reminders.cancel(memoryID: memoryID) } }
             Button("Keep it", role: .cancel) {}

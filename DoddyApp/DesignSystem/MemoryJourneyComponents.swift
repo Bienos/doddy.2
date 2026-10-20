@@ -217,6 +217,9 @@ struct MemoryLinkCard: View {
     var isPinned = false
     /// A private note before Face ID (ADR-310): its words are not shown.
     var hidesText = false
+    /// Room kept free on the card's right side, from its edge (motion v2, Q5: 66 pt in Memories,
+    /// where Doddy stands on the card below). 0: the usual 18 pt padding.
+    var gutter: CGFloat = 0
 
     var body: some View {
         NavigationLink(value: MemoryNavigationRoute.note(record.id)) {
@@ -241,7 +244,9 @@ struct MemoryLinkCard: View {
                         .font(.caption).foregroundStyle(Theme.accentText)
                 }
             }
-            .padding(18).frame(maxWidth: .infinity, alignment: .leading)
+            .padding(18)
+            .padding(.trailing, max(0, gutter - 18))
+            .frame(maxWidth: .infinity, alignment: .leading)
             .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 17))
             .overlay(RoundedRectangle(cornerRadius: 17).strokeBorder(Theme.separator, lineWidth: 1))
         }
@@ -262,6 +267,9 @@ struct DoddyTabBar: View {
         }
         .padding(8).background(Theme.quietSurface, in: Capsule())
         .overlay(Capsule().strokeBorder(Theme.separator, lineWidth: 1))
+        // Motion v2: the capsule's top edge is "the rail", where Doddy waits during rapid
+        // switching, under the selected tab.
+        .motionSurface(.rail)
         .padding(.horizontal, 24).padding(.top, 8).padding(.bottom, 8)
         .background(Theme.canvas)
         // Like the system tab bar, keep navigation compact; the screen's content
@@ -272,7 +280,13 @@ struct DoddyTabBar: View {
     }
 
     private func tab(_ tab: AppTab, title: String, icon: String, id: String) -> some View {
-        Button { selectedTab = tab } label: {
+        Button {
+            // Motion v2 (MV3): Doddy hears of the tap in the same transaction as the tab change, so
+            // he leaves the old screen's surface in the frame its content goes (rule 2: the
+            // interface never waits for him).
+            DoddyDirector.shared.tabTapped(tab.motionScreen)
+            selectedTab = tab
+        } label: {
             VStack(spacing: 5) {
                 Image(systemName: icon).font(.body).accessibilityHidden(true)
                 Text(title).font(.caption2).lineLimit(1).minimumScaleFactor(0.8)
@@ -283,6 +297,8 @@ struct DoddyTabBar: View {
         }
         .buttonStyle(.plain).accessibilityIdentifier(id).accessibilityLabel(title)
         .accessibilityAddTraits(selectedTab == tab ? .isSelected : [])
+        // Where the rail spot under this tab is, and where his eyes go when he looks at it.
+        .motionMark(id)
     }
 }
 

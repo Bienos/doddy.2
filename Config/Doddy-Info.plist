@@ -53,6 +53,11 @@
 	</array>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
+	<!-- Motion v2 (owner answer to Q9): lets Doddy's display link run at 120 Hz on ProMotion
+	     iPhones while he moves, so he keeps up with scrolling and the keyboard. The link runs
+	     only while he moves, never while he is still. -->
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
 	<!-- Alarms (ADR-260): AlarmKit, iOS 26 and later only. Kept here rather than as an
 	     INFOPLIST_KEY_ build setting, which older Xcode versions don't know. -->
 	<key>NSAlarmKitUsageDescription</key>

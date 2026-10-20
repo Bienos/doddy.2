@@ -33,13 +33,29 @@ struct AskView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close") {
                         controller.cancel()
-                        dismiss()
+                        close()
                     }
                 }
             }
         }
         .foregroundStyle(Theme.ink)
-        .onDisappear { controller.cancel() }
+        // Motion v2 (MV4, Q2): he comes up with this cover, on its composer, and is back on
+        // Home's stage as it goes.
+        .onAppear { DoddyDirector.shared.askOpened() }
+        // MV5: thinking while the reply hasn't come (from 600 ms), and only then.
+        .onChange(of: controller.isSending) { _, sending in
+            DoddyDirector.shared.askSending(sending, failed: controller.error != nil)
+        }
+        .onDisappear {
+            controller.cancel()
+            DoddyDirector.shared.askClosing()
+        }
+    }
+
+    /// Closes Ask; he is back on Home's stage under the cover as it goes down.
+    private func close() {
+        DoddyDirector.shared.askClosing()
+        dismiss()
     }
 
     // MARK: Transcript
@@ -73,6 +89,9 @@ struct AskView: View {
                 }
                 .padding(24)
             }
+            // Motion v2: Doddy stands on the composer's top edge; the conversation keeps 108 pt
+            // above it, so the newest line can always scroll clear of him (brief rule 8).
+            .contentMargins(.bottom, DoddyDirector.shared.isActive ? CGFloat(MotionLayout.listBottomInset) : 0, for: .scrollContent)
             .onChange(of: controller.messages.count) { _, _ in
                 if let last = controller.messages.last { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo(last.id, anchor: .bottom) } }
             }
@@ -90,7 +109,7 @@ struct AskView: View {
                 .foregroundStyle(Theme.secondaryText)
             if !consent {
                 ProblemView(message: AssistantError.consentRequired.userMessage)
-                Button("Open Settings") { dismiss(); openSettings() }
+                Button("Open Settings") { close(); openSettings() }
                     .buttonStyle(SecondaryButtonStyle())
             }
         }
@@ -166,7 +185,7 @@ struct AskView: View {
                 .accessibilityIdentifier("ask.error")
             HStack {
                 if needsSettings(error) {
-                    Button("Open Settings") { dismiss(); openSettings() }
+                    Button("Open Settings") { close(); openSettings() }
                         .buttonStyle(SecondaryButtonStyle())
                 } else if error.canRetryNow {
                     Button("Try again") { send() }
@@ -213,10 +232,15 @@ struct AskView: View {
                 .disabled(!controller.canSend)
                 .accessibilityLabel("Send")
                 .accessibilityIdentifier("ask.send")
+                // His zone stays 24 pt from Send (brief rule 8).
+                .motionMark("send")
             }
         }
         .padding(16)
         .background(Theme.canvas)
+        // Motion v2 (Q2): Ask's composer is "the composer" he stands on, left of Send, and rides
+        // with the keyboard.
+        .motionSurface(.composer)
     }
 
     private func send() {

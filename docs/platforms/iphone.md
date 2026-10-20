@@ -27,6 +27,7 @@ Code lives under `DoddyApp/Features/<Folder>/`. Status docs are in `docs/impleme
 | Voice | Voice conversation, plan cards, island, wake word | 254, 265 | V1_VOICE_STATUS, VOICE_PROVIDER_TEST_STATUS |
 | Voice (BLIK card), Connections › Money | BLIK phone transfer shown for the user to send in their bank app; Doddy never sends money | 483 | BLIK_TRANSFER_STATUS |
 | Opening | Animated intro, listen on open | 225 | OPENING_SCENE_STATUS |
+| DesignSystem/Motion (branches `claude/motion-mv1` to `mv6`, not on main yet) | One persistent Doddy: director, drawing, clock; the engine is in DoddyCore `Motion/` | 550, 551 | MOTION_V2_PLAN (in `docs/design/`), MOTION_V2_DEVICE_CHECKLIST, MOTION_V2_ART_REQUESTS |
 | Onboarding | Introduction, storybook welcome | 299, 380 | ONBOARDING_STATUS |
 | Home | Home screen | 323, 380 | ONBOARDING_STATUS |
 | Memories | Notes list, find, detail, corrections | 252, 310 | MEMORY_HISTORY_STATUS, M1_STATUS |

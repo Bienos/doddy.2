@@ -106,6 +106,14 @@ struct HomeView: View {
             }) { TranslatorStartView(chosen: $translatorChoice) }
         }
         .foregroundStyle(Theme.ink)
+        // Motion v2: each sheet and cover from Home hides him in the frame it starts. Ask isn't
+        // one of them (MV4: its cover carries him up on its composer), and the Memories sheet
+        // isn't either: the calm Home lifts him above it (ADR-545), and he rides with the box.
+        .coversDoddy(modal != nil || showDataFlow || tool != nil || showTranslator || showToday || showVoicePicker)
+        // A note pushed over Home covers him where he stands.
+        .onChange(of: path.count, initial: true) { _, depth in
+            DoddyDirector.shared.pageChanged(on: .home, open: depth > 0, detail: false)
+        }
     }
 
     // MARK: Top
@@ -180,7 +188,7 @@ struct HomeView: View {
         VStack(spacing: 12) {
             DueRemindersView()
             if let problem = store.environment.storageProblem {
-                ProblemView(message: problem, showsDoddy: true)
+                ProblemView(message: problem, showsDoddy: true, onDoddysScreen: true)
             }
             // "Continue what I was saving" (ADR-362): opens the capture screen with it.
             if let draft = UnfinishedNoteStore.shared.book.newest {
@@ -207,6 +215,15 @@ struct HomeView: View {
                 if ready != nil {
                     // The opening's hand-over lands on this picture, in this place.
                     UploadedCharacterView(assetName: "UploadedDoddy_Listening", height: 210)
+                } else if DoddyDirector.shared.isActive {
+                    // Motion v2: this picture becomes the persistent Doddy, drawn on the stage below
+                    // (the same 210 pt box, so nothing else on Home moves). A tap anywhere in the
+                    // box still talks; a touch on him leans him and a tap on him talks (MV5).
+                    Color.clear
+                        .overlay(alignment: .bottom) {
+                            // No visible line on the calm Home: the stage is the picture's floor.
+                            StageLine(visible: false).padding(.bottom, 31)
+                        }
                 } else if waving {
                     // The first visit of a morning waves (ADR-380), then he sits.
                     DoddyMotionView(motion: .wave, height: 190)
@@ -348,7 +365,8 @@ struct HomeView: View {
     /// Once per launch, when Home appears without the opening: the first time on a morning he waves
     /// (ADR-380), then sits. Waits a moment first, so an opening that is about to start wins.
     private func waveOnce() async {
-        guard !HomeIdle.played, !reduceMotion, !hideCharacterArt else { return }
+        // Motion v2: the one persistent Doddy has his own daily welcome (ADR-551).
+        guard !HomeIdle.played, !reduceMotion, !hideCharacterArt, !DoddyDirector.shared.isActive else { return }
         try? await Task.sleep(for: .seconds(0.6))
         guard !Task.isCancelled, !HomeIdle.played, opening?.play == nil, ready == nil else { return }
         HomeIdle.played = true
