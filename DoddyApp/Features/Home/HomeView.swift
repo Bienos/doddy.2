@@ -372,7 +372,7 @@ struct HomeView: View {
     /// Once per launch, when Home appears without the opening: the first time on a morning he waves
     /// (ADR-380), then sits. Waits a moment first, so an opening that is about to start wins.
     private func waveOnce() async {
-        // Motion v2: the one persistent Doddy has his own daily welcome (ADR-551).
+        // Motion v2: the one persistent Doddy has his own daily welcome (ADR-555).
         guard !HomeIdle.played, !reduceMotion, !hideCharacterArt, !DoddyDirector.shared.isActive else { return }
         try? await Task.sleep(for: .seconds(0.6))
         guard !Task.isCancelled, !HomeIdle.played, opening?.play == nil, ready == nil else { return }
