@@ -85,6 +85,15 @@ enum PreferenceKey {
 
 enum AppTab: Hashable {
     case home, memories, settings
+
+    /// The tab as a screen in Doddy's motion world.
+    var motionScreen: MotionScreen {
+        switch self {
+        case .home: .home
+        case .memories: .memories
+        case .settings: .settings
+        }
+    }
 }
 
 struct RootView: View {
@@ -100,6 +109,7 @@ struct RootView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverOn
+    @Environment(\.dynamicTypeSize) private var textSize
     @Bindable private var router = ShortcutRouter.shared
     @State private var opening = OpeningModel()
     @AppStorage(PreferenceKey.pinnedNotes) private var pinnedRaw = "[]"
@@ -158,6 +168,10 @@ struct RootView: View {
                 if scenePhase == .active { listeningIndicatorBecameActive() }
                 pickUpSharedItem()
             }
+            .onChange(of: scenePhase, initial: true) { _, phase in
+                // MV5: today's welcome (once a day; a hop in place first after three days away).
+                if phase == .active { DoddyDirector.shared.appBecameActive() }
+            }
             .onChange(of: scenePhase) { _, phase in
                 if phase == .active {
                     Task { await noteReminders.refreshOnForeground() }
@@ -196,6 +210,34 @@ struct RootView: View {
             .onChange(of: widgetsOn) { WidgetSync.shared.refresh() }
             .onChange(of: showNoteText) { WidgetSync.shared.refresh() }
             .onChange(of: hideArt) { WidgetSync.shared.refresh() }
+            // Motion v2: the one persistent Doddy lives on iPhone layouts with his pictures shown
+            // (Q13: iPad's sidebar keeps today's pictures; "Hide Doddy's pictures" turns him off).
+            .onChange(of: motionWorldOn, initial: true) { _, on in
+                DoddyDirector.shared.isActive = on
+                if on, scenePhase == .active { DoddyDirector.shared.appBecameActive() }
+            }
+            .onAppear {
+                DoddyClock.install()
+                // MV5: a tap or hold on him opens the voice screen, as "Talk to Doddy" does.
+                let store = store
+                DoddyDirector.shared.onTalk = {
+                    // As Home's own Talk button: not while voice input isn't available.
+                    if store.environment.capabilities.isAvailable(.voiceInput) { ShortcutRouter.shared.isVoicePresented = true }
+                }
+            }
+            // MV5's listening pose read the wake word's conversation, the only one that could be
+            // live on Home. "Hey Doddy" is gone (ADR-549, PR #108) and the voice screen hides him
+            // while it is up, so nothing calls DoddyDirector.voiceListening here any more.
+            // Reduce Motion: his hops become fades (brief rule 12).
+            .onChange(of: reduceMotion || DoddyMotionDebug.forcesReduceMotion, initial: true) { _, on in
+                DoddyDirector.shared.setReduceMotion(on)
+            }
+            // Q12: at accessibility text sizes he stays 1.0× on Home.
+            .onChange(of: textSize.isAccessibilitySize, initial: true) { _, large in
+                DoddyDirector.shared.setHomeScale(large ? 1.0 : 1.4)
+            }
+            // The first-use introduction and the Face ID cover are over the app: he is hidden.
+            .coversDoddy(profiles.isIntroductionPresented || AppLock.shared.isLocked || lockCovered)
             // A tapped note reminder opens its exact memory on Home.
             .task(id: noteReminders.pendingOpenMemoryID) {
                 guard let memoryID = noteReminders.pendingOpenMemoryID else { return }
@@ -234,6 +276,18 @@ struct RootView: View {
         ListeningIndicatorWindow.shared.install()
     }
 
+    /// A sheet or cover from the router is up (motion v2: Doddy is hidden while it is).
+    private var routerCovers: Bool {
+        router.isVoicePresented || router.isSetupPresented || router.isTidyUpPresented
+            || router.isWrapUpPresented || router.isLookBackPresented || router.isCheckInPresented
+            || router.shownDraft != nil || SharedListsController.shared.invite != nil
+    }
+
+    /// Whether the motion world is on (motion v2): an iPhone layout, Doddy's pictures shown.
+    private var motionWorldOn: Bool {
+        !hideArt && !(horizontalSizeClass == .regular && DeviceSupport.hasSidebar)
+    }
+
     /// What the opening's rules need to know right now (ADR-225). Read at decision time, so a
     /// switch changed in Settings counts from the next opening.
     private var openingConditions: OpeningConditions {
@@ -264,6 +318,8 @@ struct RootView: View {
     private var tabs: some View {
         ZStack {
             tabContent
+            // Motion v2: the one Doddy in the air (flights and fades). Under every sheet and cover.
+            DoddyOverlay()
             // The opening (ADR-225) sits over the ready app and fades away to reveal it; a tap
             // ends it early. It is removed from the hierarchy entirely once it is done.
             if let play = opening.play {
@@ -278,6 +334,12 @@ struct RootView: View {
         .environment(opening)
         .tint(Theme.accentText)
         .background(Theme.canvas)
+        // The opening, and Home's ready pose after it, are a story that covers him (Q4).
+        .coversDoddy(opening.play != nil || opening.ready != nil)
+        // Every sheet and cover the router presents hides him in the frame it starts.
+        .coversDoddy(routerCovers)
+        // A tab changed without the tab bar (a link, a shortcut, a reminder): he follows.
+        .onChange(of: selectedTab) { _, tab in DoddyDirector.shared.screenChanged(tab.motionScreen) }
         // One presentation point for the conversation, so a shortcut invocation while it is
         // open focuses it instead of starting a second one.
         // Waiting drafts appear only once a cover or sheet has finished going away.
@@ -435,11 +497,15 @@ private struct UndoDeleteBar: View {
                 .frame(minHeight: 44)
                 .disabled(isUndoing)
                 .accessibilityIdentifier("undoDelete")
+                .motionMark("undo")
             }
         }
         .padding(.horizontal, 16)
         .frame(minHeight: 52)
         .background(Theme.quietSurface)
+        // Motion v2 (Q3): the bar above the tab bar is "the strip if showing", a surface that
+        // comes and goes under him.
+        .motionSurface(.panel)
         .foregroundStyle(Theme.ink)
         .accessibilityElement(children: .contain)
         .task(id: deleted.deletedAt) {

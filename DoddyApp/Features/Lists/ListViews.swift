@@ -13,8 +13,15 @@ struct ListsOverview: View {
         VStack(alignment: .leading, spacing: 12) {
             if store.lists.isEmpty {
                 HStack(alignment: .top, spacing: 14) {
-                    // No lists yet: he waits, cross-legged (ADR-313).
-                    WholeDoddyView(pose: .crosslegged, height: 80)
+                    // No lists yet: he waits, cross-legged (ADR-313). With the motion world on
+                    // (MV3) the one Doddy sits here himself, at 1.0× (94 pt cross-legged), on a
+                    // line at the foot of a box his size, so nothing above him is covered.
+                    if DoddyDirector.shared.isActive {
+                        Color.clear.frame(width: 50, height: 94)
+                            .overlay(alignment: .bottom) { LedgeLine(name: "emptyLists", width: 50) }
+                    } else {
+                        WholeDoddyView(pose: .crosslegged, height: 80)
+                    }
                     VStack(alignment: .leading, spacing: 8) {
                         Text("No lists yet").font(.title3.weight(.medium)).accessibilityAddTraits(.isHeader)
                         Text("Make one here, or tell Doddy: “add milk to my shopping list”. Lists stay on this iPhone.")
@@ -44,6 +51,7 @@ struct ListsOverview: View {
             }
         }
         .sheet(isPresented: $creating) { NewListSheet() }
+        .coversDoddy(creating)
     }
 }
 
@@ -250,6 +258,7 @@ struct ListDetailView: View {
             Button("Cancel", role: .cancel) {}
         }
         .sheet(isPresented: $showReminder) { NoteReminderSheet(memoryID: list.id, startAtTime: false) }
+        .coversDoddy(showReminder || cloudShare != nil)
         .sheet(item: $cloudShare) { sheet in
             CloudSharingView(sheet: sheet, listName: list.name, onStopped: {
                 // Apple's "Stop Sharing" removes only the share, so the copy in iCloud and the
