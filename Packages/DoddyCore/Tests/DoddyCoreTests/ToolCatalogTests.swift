@@ -37,7 +37,7 @@ final class ToolCatalogTests: XCTestCase {
             let tap = approval == .card || approval == .serverApproval
             XCTAssertEqual(tool.confirmOnScreen, tap, "\(tool.name): confirm_on_screen vs \(approval)")
             // ASK-01: the spec says how the user answers, and it matches what the app asks for.
-            XCTAssertEqual(tool.ask, tap ? .tap : .yesOrTap, tool.name)
+            XCTAssertEqual(tool.ask, tap ? .tap : approval == .runsNow ? .runsNow : .yesOrTap, tool.name)
         }
     }
 
@@ -45,7 +45,7 @@ final class ToolCatalogTests: XCTestCase {
         // The agent's wait covers the user reading the card; a short timeout would end the call
         // before the tap and leave the change unanswered.
         // ASK-01: every tool waits for an answer now, reads included.
-        for tool in try spec() {
+        for tool in try spec() where tool.ask != .runsNow {
             XCTAssertGreaterThanOrEqual(tool.timeoutSeconds, 60, tool.name)
         }
     }
@@ -69,16 +69,29 @@ final class ToolCatalogTests: XCTestCase {
         for name in withoutCard { XCTAssertEqual(ToolCatalog.descriptor(name)?.approval, .askFirst, name) }
     }
 
-    func testLookupsAskFirst() {
-        // ASK-01: reads ask too (a spoken yes or a tap). There is no approval that means "runs at once".
+    func testLookupsAskFirstExceptPublicOnes() {
+        // ASK-01: reads of the user's own data ask (a spoken yes or a tap). Since ADR-564 only public
+        // lookups, which read nothing of the user's, run at once.
         for tool in ToolCatalog.all where tool.effect == .lookup {
-            XCTAssertEqual(tool.approval, tool.isCloud ? .serverAsk : .askFirst, tool.name)
+            let expected: ToolDescriptor.Approval = AskFirst.publicLookups.contains(tool.name)
+                ? .runsNow : tool.isCloud ? .serverAsk : .askFirst
+            XCTAssertEqual(tool.approval, expected, tool.name)
         }
+        XCTAssertEqual(Set(ToolCatalog.all.filter { $0.approval == .runsNow }.map(\.name)), AskFirst.publicLookups)
+        XCTAssertEqual(AskFirst.publicLookups, ["calculate", "convert_units", "convert_currency", "web_search", "news_search", "find_places",
+                                                "geocode_place", "get_weather", "wikipedia_search", "wikipedia_summary"])
+        for name in AskFirst.publicLookups { XCTAssertEqual(ToolCatalog.descriptor(name)?.effect, .lookup, name) }
     }
 
-    func testEveryToolRunsOnThePhoneWhereTheAppCanAsk() throws {
-        // ElevenLabs runs web tools itself, so the app could never ask before them (ASK-01).
-        for tool in try spec() { XCTAssertEqual(tool.runsOn, .phone, tool.name) }
+    func testEveryToolThatAsksRunsOnThePhoneWhereTheAppCanAsk() throws {
+        // ElevenLabs runs web tools itself, so the app could never ask before them (ASK-01). Only
+        // the public lookups that run at once may run there (ADR-564).
+        for tool in try spec() where tool.runsOn != .phone {
+            XCTAssertEqual(tool.runsOn, .web, tool.name)
+            XCTAssertEqual(tool.ask, .runsNow, tool.name)
+            XCTAssertTrue(ToolCatalog.webLookups.contains(tool.name), tool.name)
+        }
+        XCTAssertEqual(Set(try spec().filter { $0.runsOn == .web }.map(\.name)), ToolCatalog.webLookups)
     }
 
     func testAccountWritesAreExactlyTheServerApprovedOnes() {

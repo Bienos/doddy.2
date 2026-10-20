@@ -9,6 +9,12 @@ import Foundation
 // documents never counts as a yes: only the user's tap, or the user's own transcribed words for a
 // read, reach `AskLedger`.
 //
+// One exception since 21 Oct 2026 (owner: "You don't say you don't have a weather app. You check on
+// the internet. Just be on it.", ADR-564): public lookups that read nothing of the user's and change
+// nothing (a sum, a unit or currency conversion, the web, the news, places) run at once. Only the
+// words searched for leave the phone. Everything that reads the user's own data or changes anything
+// still asks first.
+//
 // This file is the rule as code, so it is tested on Linux: which ask each tool needs (`AskFirst`),
 // what counts as a spoken yes (`SpokenYes`), and the one check the app makes before running a
 // tool (`AskLedger.mayRun`).
@@ -39,10 +45,21 @@ public enum AskFirst {
         /// The tool's own flow shows the exact payload on a card and changes something only on a
         /// tap (notes, calendar, reminders, alarms, timers, messages, shortcuts, Maps, plans).
         case ownPayloadCard
-        /// Online accounts and web search: Doddy's server makes the card and a single-use approval
+        /// Online accounts: Doddy's server makes the card and a single-use approval
         /// (backend/src/tools/askFirst.ts). A read runs on a tap or a spoken yes; a write on a tap only.
         case serverCard(isWrite: Bool)
+        /// A public lookup (`publicLookups`, ADR-564): runs at once, no card. For the web ones the
+        /// app still gets the server's single-use approval and uses it straight away.
+        case runsNow
     }
+
+    /// Tools that run without asking (ADR-564): they read nothing of the user's, change nothing,
+    /// and send at most the words searched for. Web search, news and places cost Doddy a little
+    /// per search (ADR-489); the weather and Wikipedia ones run on ElevenLabs (`ToolCatalog.webLookups`).
+    public static let publicLookups: Set<String> = Set([
+        VoiceToolName.calculate, VoiceToolName.convertUnits, VoiceToolName.convertCurrency,
+        CloudToolName.webSearch, "news_search", "find_places",
+    ]).union(ToolCatalog.webLookups)
 
     /// Every request has an answer here; the switch has no default, so a new tool doesn't compile
     /// until it says how it asks.
@@ -64,15 +81,8 @@ public enum AskFirst {
             return .yesFirst(AskCard(title: "Look up a contact?", lines: ["Name: \(name)"], confirmLabel: "Yes, look it up"))
         case .upcomingBirthdays(let days):
             return .yesFirst(AskCard(title: "Check birthdays in Contacts?", lines: ["The next \(days) days"], confirmLabel: "Yes, check"))
-        case .calculate(let expression):
-            return .yesFirst(AskCard(title: "Work this out?", lines: [expression], confirmLabel: "Yes"))
-        case .convertUnits(let request):
-            return .yesFirst(AskCard(title: "Convert this?", lines: ["\(number(request.value)) \(request.from) to \(request.to)"], confirmLabel: "Yes"))
-        case .convertCurrency(let request):
-            return .yesFirst(AskCard(
-                title: "Convert this currency?",
-                lines: ["\(number(request.amount)) \(request.from) to \(request.to)", "Uses the European Central Bank's public daily rates."],
-                confirmLabel: "Yes, convert"))
+        case .calculate, .convertUnits, .convertCurrency:
+            return .runsNow
         case .listAlarms:
             return .yesFirst(AskCard(title: "Check Doddy's alarms?", lines: ["The alarms Doddy set on this iPhone"], confirmLabel: "Yes, check"))
         case .readList(let name):
@@ -104,7 +114,7 @@ public enum AskFirst {
              .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders, .leaveBy, .parkingSpot(.save):
             return .ownPayloadCard
         case .cloudTool(let call):
-            return .serverCard(isWrite: call.isWrite)
+            return !call.isWrite && publicLookups.contains(call.name) ? .runsNow : .serverCard(isWrite: call.isWrite)
         }
     }
 
@@ -112,17 +122,13 @@ public enum AskFirst {
     public static func needsTap(_ need: Need) -> Bool {
         switch need {
         case .tapFirst, .ownPayloadCard, .serverCard(isWrite: true): true
-        case .nothingRuns, .yesFirst, .serverCard(isWrite: false): false
+        case .nothingRuns, .yesFirst, .serverCard(isWrite: false), .runsNow: false
         }
     }
 
     /// What the agent hears when the user said no, didn't answer, or the card went away.
     public static func notAsked(_ toolName: String) -> String {
         "declined: the user didn't say yes to \(toolName), so Doddy did nothing and read nothing. Say so in one short sentence; don't try again unless the user asks."
-    }
-
-    private static func number(_ value: Double) -> String {
-        value.rounded() == value && abs(value) < 1e15 ? String(Int64(value)) : String(value)
     }
 
     private static func day(_ date: Date, calendar: Calendar) -> String {

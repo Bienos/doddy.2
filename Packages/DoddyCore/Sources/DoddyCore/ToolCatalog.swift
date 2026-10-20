@@ -22,8 +22,11 @@ public struct ToolDescriptor: Equatable, Sendable {
         case session
     }
 
-    /// ASK-01 (ADR-483): there is no "runs when the agent calls it". Every tool asks first.
+    /// ASK-01 (ADR-483): every tool asks first, except the public lookups that run at once (ADR-564).
     public enum Approval: String, Sendable, CaseIterable {
+        /// A public lookup that reads nothing of the user's and changes nothing (`AskFirst.publicLookups`):
+        /// runs when the agent calls it (owner, 21 Oct 2026, ADR-564).
+        case runsNow
         /// Changes nothing: the app shows what it will do and runs it on a tap or the user's own
         /// spoken yes (`AskFirst.Need.yesFirst`).
         case askFirst
@@ -57,9 +60,18 @@ public struct ToolDescriptor: Equatable, Sendable {
 }
 
 public enum ToolCatalog {
-    /// Every tool in `voice-agent/tools.json`, by name. There are no `runs_on: web` tools any more:
-    /// ElevenLabs ran those itself, where the app can't ask first (ASK-01), so they were taken out.
-    public static let all: [ToolDescriptor] = phone + cloud
+    /// Every tool in `voice-agent/tools.json`, by name. The `runs_on: web` tools are public
+    /// lookups ElevenLabs runs itself (weather, Wikipedia). ASK-01 took them out because the app
+    /// can't ask before them; since ADR-564 public lookups run at once, so they are back.
+    public static let all: [ToolDescriptor] = phone + cloud + web
+
+    /// Public lookups ElevenLabs runs on its own servers (ADR-564). With OpenAI Realtime the app
+    /// answers them as not available (`OpenAISpec.webTools`).
+    public static let webLookups: Set<String> = ["geocode_place", "get_weather", "wikipedia_search", "wikipedia_summary"]
+
+    private static let web: [ToolDescriptor] = webLookups.sorted().map {
+        ToolDescriptor($0, .lookup, .runsNow, runsOn: .web)
+    }
 
     public static func descriptor(_ name: String) -> ToolDescriptor? {
         byName[name]
@@ -103,10 +115,10 @@ public enum ToolCatalog {
         // the strictest of its three actions.
         .init(VoiceToolName.parkingSpot, .localChange, .card),
         .init(VoiceToolName.remindWhenToLeave, .localChange, .card),
-        // Worked out on the iPhone, or the ECB's public rates file (ADR-270, ADR-300).
-        .init(VoiceToolName.calculate, .lookup, .askFirst),
-        .init(VoiceToolName.convertUnits, .lookup, .askFirst),
-        .init(VoiceToolName.convertCurrency, .lookup, .askFirst),
+        // Worked out on the iPhone, or the ECB's public rates file (ADR-270, ADR-300). Run at once (ADR-564).
+        .init(VoiceToolName.calculate, .lookup, .runsNow),
+        .init(VoiceToolName.convertUnits, .lookup, .runsNow),
+        .init(VoiceToolName.convertCurrency, .lookup, .runsNow),
         // Another app opens with it filled in; nothing is sent by Doddy.
         .init(VoiceToolName.openMap, .handoff, .card),
         .init(VoiceToolName.runShortcut, .handoff, .card),
@@ -123,6 +135,6 @@ public enum ToolCatalog {
     private static let cloud: [ToolDescriptor] = CloudToolName.all.sorted().map { name in
         CloudToolName.isWrite(name)
             ? ToolDescriptor(name, .accountWrite, .serverApproval)
-            : ToolDescriptor(name, .lookup, .serverAsk)
+            : ToolDescriptor(name, .lookup, AskFirst.publicLookups.contains(name) ? .runsNow : .serverAsk)
     }
 }

@@ -1,7 +1,7 @@
 import Foundation
 
-/// The language Doddy's screens are shown in (ADR-459): English unless the person picks another
-/// in Settings. iOS decides the screens' language when the app starts, from the app's own
+/// The language Doddy's screens are shown in (ADR-459): Polish unless the person picks another
+/// in Settings (ADR-562; it was English until 21 Oct 2026). iOS decides the screens' language when the app starts, from the app's own
 /// `AppleLanguages` setting (the one iOS Settings › Doddy › Language writes too), so a change
 /// shows the next time Doddy is opened. This type holds the choices and the rule for what to
 /// write at launch; the app does the writing.
@@ -24,10 +24,11 @@ public enum AppLanguage: String, CaseIterable, Sendable {
     /// No choice of Doddy's own: the language of the iPhone, as for any app.
     case followPhone = "system"
 
-    /// What a person gets before choosing (owner, 2026-10-13: "english by default").
-    public static let `default`: AppLanguage = .english
+    /// What a person gets before choosing (owner, 21 Oct 2026: "it should be Polish", ADR-562;
+    /// before that, 13 Oct: "english by default").
+    public static let `default`: AppLanguage = .polish
 
-    /// The saved choice, or English when nothing valid is saved.
+    /// The saved choice, or Polish when nothing valid is saved.
     public init(stored: String?) {
         self = stored.flatMap(AppLanguage.init(rawValue:)) ?? .default
     }
@@ -69,7 +70,7 @@ public enum AppLanguage: String, CaseIterable, Sendable {
     }
 
     /// What the picker shows. A saved choice wins. With none, a language set in iOS Settings ›
-    /// Doddy › Language (read from the app's own `AppleLanguages`), else English.
+    /// Doddy › Language (read from the app's own `AppleLanguages`), else Polish.
     public static func chosen(stored: String?, appLanguages: [String]?) -> AppLanguage {
         if let stored { return AppLanguage(stored: stored) }
         if let first = appLanguages?.first, let language = matching(first) { return language }
@@ -89,9 +90,14 @@ public enum AppLanguage: String, CaseIterable, Sendable {
     ///
     /// - A choice made in Doddy is written (or removed, for "same as this iPhone").
     /// - With no choice, a language set in iOS Settings › Doddy is left alone.
-    /// - With no choice and no setting at all, English is written: that is the default.
-    public static func launchAction(stored: String?, appLanguages: [String]?) -> LaunchAction {
+    /// - With no choice and no setting at all, Polish is written: that is the default.
+    /// - Once (`polishDefaultApplied` false): builds before ADR-562 wrote English on their first
+    ///   launch, and that reads like a setting. With no choice made in Doddy, exactly that English
+    ///   is replaced by Polish. The app then remembers it did this, so English set again later in
+    ///   iOS Settings › Doddy stays.
+    public static func launchAction(stored: String?, appLanguages: [String]?, polishDefaultApplied: Bool = true) -> LaunchAction {
         guard let stored else {
+            if !polishDefaultApplied, appLanguages == [AppLanguage.english.rawValue] { return .set([AppLanguage.default.rawValue]) }
             return appLanguages == nil ? .set([AppLanguage.default.rawValue]) : .leave
         }
         let language = AppLanguage(stored: stored)

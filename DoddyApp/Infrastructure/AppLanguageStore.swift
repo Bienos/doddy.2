@@ -22,11 +22,17 @@ enum AppLanguageStore {
         AppLanguage.chosen(stored: defaults.string(forKey: PreferenceKey.appLanguage), appLanguages: appLanguages(defaults))
     }
 
-    /// Before the first screen. UI-test launches leave the simulator's setting alone.
+    /// Set once the English that builds before ADR-562 wrote has been replaced by Polish.
+    private static let polishDefaultAppliedKey = "appLanguage.polishDefaultApplied"
+
+    /// Before the first screen. UI-test launches leave the simulator's setting alone. iOS has
+    /// already picked this launch's language, so a language written here shows from the next launch.
     static func applyAtLaunch(defaults: UserDefaults = .standard) {
         guard !ProcessInfo.processInfo.arguments.contains("-inMemoryStore") else { return }
         write(AppLanguage.launchAction(
-            stored: defaults.string(forKey: PreferenceKey.appLanguage), appLanguages: appLanguages(defaults)), to: defaults)
+            stored: defaults.string(forKey: PreferenceKey.appLanguage), appLanguages: appLanguages(defaults),
+            polishDefaultApplied: defaults.bool(forKey: polishDefaultAppliedKey)), to: defaults)
+        defaults.set(true, forKey: polishDefaultAppliedKey)
     }
 
     /// The person picked a language in Settings.

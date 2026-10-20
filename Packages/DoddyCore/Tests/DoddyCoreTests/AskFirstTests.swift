@@ -21,10 +21,16 @@ final class AskFirstTests: XCTestCase {
         let spec = try RealtimeToolCatalog.decode(Data(contentsOf: root.appendingPathComponent("voice-agent/tools.json")))
         XCTAssertFalse(spec.isEmpty)
         for tool in spec {
+            // ElevenLabs runs the web lookups itself; they never reach the app (ADR-564).
+            if tool.runsOn == .web {
+                XCTAssertEqual(tool.ask, .runsNow, tool.name)
+                XCTAssertTrue(AskFirst.publicLookups.contains(tool.name), tool.name)
+                continue
+            }
             let request = VoiceToolRequest.parse(name: tool.name, parametersJSON: Data("{}".utf8))
             if case .unsupported = request, tool.name != VoiceToolName.proposePlan { XCTFail("\(tool.name) isn't parsed") }
             switch AskFirst.need(for: request) {
-            case .nothingRuns, .yesFirst, .tapFirst, .ownPayloadCard, .serverCard: break
+            case .nothingRuns, .yesFirst, .tapFirst, .ownPayloadCard, .serverCard, .runsNow: break
             }
             XCTAssertNotNil(tool.ask, "\(tool.name): no x_doddy.ask in tools.json")
         }
@@ -61,6 +67,25 @@ final class AskFirstTests: XCTestCase {
         }
         XCTAssertEqual(AskFirst.need(for: .unsupported(name: "x")), .nothingRuns)
         XCTAssertEqual(AskFirst.need(for: .invalid(name: "x", reason: "y")), .nothingRuns)
+    }
+
+    func testPublicLookupsRunAtOnceAndPrivateReadsStillAsk() {
+        // ADR-564 (owner, 21 Oct 2026: "just be on it"): the weather, the web, the news, places,
+        // sums and conversions read nothing of the user's and change nothing, so they run at once.
+        let now: [VoiceToolRequest] = [
+            .calculate(expression: "2+2"),
+            .convertCurrency(CurrencyConversionRequest(amount: 10, from: "EUR", to: "PLN")),
+            .cloudTool(CloudToolCall(name: CloudToolName.webSearch, arguments: ["query": .string("weather Warsaw tomorrow")])),
+            .cloudTool(CloudToolCall(name: "news_search", arguments: ["query": .string("Warsaw")])),
+            .cloudTool(CloudToolCall(name: "find_places", arguments: ["query": .string("pharmacy"), "near": .string("Mokotów")])),
+        ]
+        for request in now { XCTAssertEqual(AskFirst.need(for: request), .runsNow, "\(request)") }
+        // The user's own data still asks first, and every change still needs a tap.
+        XCTAssertNotEqual(AskFirst.need(for: .searchMemories(query: "keys")), .runsNow)
+        XCTAssertNotEqual(AskFirst.need(for: checkEmail), .runsNow)
+        XCTAssertNotEqual(AskFirst.need(for: .readList(name: "Shopping")), .runsNow)
+        XCTAssertEqual(AskFirst.need(for: .cloudTool(CloudToolCall(name: CloudToolName.draftEmail, arguments: [:]))), .serverCard(isWrite: true))
+        XCTAssertTrue(AskFirst.needsTap(AskFirst.need(for: addMilk)))
     }
 
     func testPhoneActionsWaitForATapOnTheirOwnCard() {

@@ -19,6 +19,9 @@ reaches OpenAI with the next app build, and ElevenLabs only after the sync below
 
 ## Source of truth and syncing
 
+**Partly applied to the live agent, 20 Oct ~23:50 UTC (ADR-563, ADR-564; the owner's report of 21 Oct, Warsaw):** only the `calculate` and `convert_currency` tool descriptions (now "runs at once", `pre_tool_speech` auto). The next tool update was refused by the session's permission check as a production change, so the other eight tools, the four webhook tools' re-attachment and the prompt (translator first, lookups without asking) were **not** sent. Everything still to send, the exact prompt diff against `agtvrsn_5201m5dtmpvne48vt1hxc6h53hh0` and the checks are in `docs/implementation/LIVE_AGENT_EDIT_2026-10-21.md`. Until then `compare` reports those tools and the prompt as drift. The owner's own saves just before (default language Polish, an English preset) were not touched.
+
+
 **Applied to the live agent 2026-10-20, about 14:08 UTC (ADR-556, Brand Guidelines V2.2; owner: "do it"):** the guide's verbal identity (pp.49–66). The live prompt is the owner's own rewrite, so this folder's new "# Who you are" and "# How you speak" were not copied in. Eleven short lines were added in the live prompt's own style, and nothing else in the prompt changed:
 - **Identity:** what he says when asked what he is, and that he explains tools, permissions and data plainly when asked.
 - **Personality:** no loyalty speeches, no manufactured closeness.

@@ -2202,7 +2202,8 @@ final class VoiceSessionController {
                         toolCallID: call.toolCallId)
                 return
             }
-        case .nothingRuns, .ownPayloadCard, .serverCard:
+        case .nothingRuns, .ownPayloadCard, .serverCard, .runsNow:
+            // .runsNow (ADR-564): a public lookup (a sum, a conversion, the web) runs at once.
             break
         }
         switch request {
@@ -2740,6 +2741,13 @@ final class VoiceSessionController {
                 propose(
                     .cloud(toolCallID: toolCallID, call: cloud, preview: prepared.preview, approvalID: prepared.approvalId, mode: prepared.mode),
                     toolCallID: toolCallID)
+            } else if AskFirst.need(for: .cloudTool(cloud)) == .runsNow {
+                // ADR-564: web search, news and places read nothing of the user's, so they run at
+                // once. The server's single-use approval is still made for exactly these words and
+                // used straight away.
+                let prepared = try await client.prepare(cloud)
+                let result = try await client.run(cloud, timeZone: TimeZone.current.identifier, approvalId: prepared.approvalId)
+                await reply(toolCallID, VoiceToolReply.cloudResult(result))
             } else {
                 // ASK-01: the server makes the card from the arguments alone (nothing is read) and a
                 // single-use approval; the read runs only after the user's yes (runAskedCloudRead).
