@@ -1,15 +1,15 @@
 import Foundation
 
-// OpenAI Realtime as Doddy's default live voice (ADR-265, default since ADR-442). ElevenLabs stays
-// as the fallback switch. Everything here is pure: what the app sends over the WebSocket
+// OpenAI Realtime as a choice for Doddy's live voice (ADR-265; the default from ADR-442 until
+// ADR-546 made ElevenLabs the default again). Everything here is pure: what the app sends over the WebSocket
 // and how it reads what comes back. The socket and audio live in DoddyApp/Features/Voice.
 // Wire shapes follow the GA Realtime API (session.type "realtime", audio/pcm at 24 kHz).
 
 // MARK: Provider choice
 
-/// Which company runs Doddy's live voice. OpenAI Realtime is the default (cheaper, ADR-442) when
-/// the token server is set; ElevenLabs is the fallback switch on Home. Notes, lists and every
-/// tool are the same on both: they live on this iPhone, not with either provider.
+/// Which company runs Doddy's live voice. ElevenLabs is the default (ADR-546); OpenAI Realtime
+/// is a choice in the voice picker. Notes, lists and every tool are the same on both: they live
+/// on this iPhone, not with either provider.
 public enum VoiceProvider: String, CaseIterable, Sendable, Identifiable {
     case elevenLabs = "elevenlabs"
     case openAIRealtime = "openai"
@@ -31,12 +31,12 @@ public enum VoiceProvider: String, CaseIterable, Sendable, Identifiable {
         self = stored.flatMap(VoiceProvider.init(rawValue:)) ?? .elevenLabs
     }
 
-    /// The voice that runs the next conversation. A choice the user made wins. With none, OpenAI
-    /// Realtime is the default, but only where it can start: it needs the token server (the OpenAI
-    /// key lives there), so without one the default stays ElevenLabs instead of an error.
+    /// The voice that runs the next conversation. A choice the user made wins. With none (or an
+    /// unknown stored value), ElevenLabs is the default (ADR-546, which replaces ADR-442's default),
+    /// whether or not the token server is set. `tokenServerSet` stays in the signature so callers
+    /// don't change; it no longer picks the default.
     public static func effective(stored: String?, tokenServerSet: Bool) -> VoiceProvider {
-        if let chosen = stored.flatMap(VoiceProvider.init(rawValue:)) { return chosen }
-        return tokenServerSet ? .openAIRealtime : .elevenLabs
+        stored.flatMap(VoiceProvider.init(rawValue:)) ?? .elevenLabs
     }
 }
 
@@ -197,9 +197,10 @@ public enum OpenAIRealtimeWire {
 
     /// Fallback greeting when the app has no opening line of its own (it normally sends
     /// `WakeGreeting`'s, ADR-254): `voice-agent/session.json` `first_message` for the language, then
-    /// English. A `{{placeholder}}` there is never spoken; the plain English line is used instead.
+    /// English. A `{{placeholder}}` there is never spoken; the plain English line (the familiar
+    /// return of ADR-556) is used instead.
     public static func greetingLine(sessionJSON: Data, languageCode: String?) -> String {
-        let fallback = "Hey, it's Doddy. What's up?"
+        let fallback = "I'm here. What's up?"
         guard let session = try? JSONSerialization.jsonObject(with: sessionJSON) as? [String: Any],
               let lines = session["first_message"] as? [String: String]
         else { return fallback }

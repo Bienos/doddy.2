@@ -108,6 +108,8 @@ files=(
   Shared/Share/ShareInboxFile.swift
   # SiriNoteLookup picks Doddy's pose for an answer (ADR-313); IslandRect is stubbed above.
   Shared/IslandArt/IslandPose.swift
+  # Motion v2: the one Doddy's director, kept free of SwiftUI so it is compiled here.
+  DoddyApp/DesignSystem/Motion/DoddyDirector.swift
   # Calls Doddy places for the user (ADR-500): the screens' state, without the views.
   DoddyApp/Features/CallCases/CallCasesModel.swift
 )

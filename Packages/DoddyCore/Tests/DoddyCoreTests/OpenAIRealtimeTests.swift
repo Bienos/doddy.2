@@ -21,15 +21,22 @@ final class OpenAIRealtimeTests: XCTestCase {
         XCTAssertEqual(VoiceProvider(stored: "elevenlabs"), .elevenLabs)
     }
 
-    func testOpenAIIsTheDefaultVoiceOnlyWhereItCanStart() {
-        // No choice yet: OpenAI where the token server is set, ElevenLabs where it can't start otherwise.
-        XCTAssertEqual(VoiceProvider.effective(stored: nil, tokenServerSet: true), .openAIRealtime)
+    func testElevenLabsIsTheDefaultVoice() {
+        // ADR-546: no choice yet means ElevenLabs, with the token server set or not.
+        XCTAssertEqual(VoiceProvider.effective(stored: nil, tokenServerSet: true), .elevenLabs)
         XCTAssertEqual(VoiceProvider.effective(stored: nil, tokenServerSet: false), .elevenLabs)
-        XCTAssertEqual(VoiceProvider.effective(stored: "", tokenServerSet: true), .openAIRealtime)
-        XCTAssertEqual(VoiceProvider.effective(stored: "something else", tokenServerSet: true), .openAIRealtime)
-        // A choice the user made always wins.
-        XCTAssertEqual(VoiceProvider.effective(stored: "elevenlabs", tokenServerSet: true), .elevenLabs)
+        // The picker's empty value and anything unknown also mean "never chose".
+        XCTAssertEqual(VoiceProvider.effective(stored: "", tokenServerSet: true), .elevenLabs)
+        XCTAssertEqual(VoiceProvider.effective(stored: "something else", tokenServerSet: true), .elevenLabs)
+        XCTAssertEqual(VoiceProvider.effective(stored: "something else", tokenServerSet: false), .elevenLabs)
+    }
+
+    func testAChoiceTheUserMadeAlwaysWins() {
+        // Someone who picked OpenAI before this change keeps it.
+        XCTAssertEqual(VoiceProvider.effective(stored: "openai", tokenServerSet: true), .openAIRealtime)
         XCTAssertEqual(VoiceProvider.effective(stored: "openai", tokenServerSet: false), .openAIRealtime)
+        XCTAssertEqual(VoiceProvider.effective(stored: "elevenlabs", tokenServerSet: true), .elevenLabs)
+        XCTAssertEqual(VoiceProvider.effective(stored: "elevenlabs", tokenServerSet: false), .elevenLabs)
     }
 
     func testRealtimeModelsAreTheTwoTheServerAllows() {
@@ -117,7 +124,7 @@ final class OpenAIRealtimeTests: XCTestCase {
         XCTAssertEqual(OpenAIRealtimeWire.greetingLine(sessionJSON: spec, languageCode: "pl"), "Hej, tu Doddy.")
         XCTAssertEqual(OpenAIRealtimeWire.greetingLine(sessionJSON: spec, languageCode: nil), "Hey, it's Doddy.")
         XCTAssertEqual(OpenAIRealtimeWire.greetingLine(sessionJSON: spec, languageCode: "de"), "Hey, it's Doddy.")
-        XCTAssertEqual(OpenAIRealtimeWire.greetingLine(sessionJSON: Data(), languageCode: "pl"), "Hey, it's Doddy. What's up?")
+        XCTAssertEqual(OpenAIRealtimeWire.greetingLine(sessionJSON: Data(), languageCode: "pl"), "I'm here. What's up?")
         // The repo's spec uses {{opening_line}} (ADR-254); the fallback must still be plain words.
         let session = try Data(contentsOf: repoRoot.appendingPathComponent("voice-agent/session.json"))
         XCTAssertFalse(OpenAIRealtimeWire.greetingLine(sessionJSON: session, languageCode: "pl").contains("{{"))

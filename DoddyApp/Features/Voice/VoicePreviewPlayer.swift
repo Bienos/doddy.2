@@ -36,8 +36,6 @@ final class VoicePreviewPlayer {
             problem = NSLocalizedString("This sample is missing from the app.", comment: "")
             return
         }
-        // "Hey Doddy" listening (ADR-254) steps aside while a sample plays.
-        WakeWordListener.shared.appSound(ObjectIdentifier(self), playing: true)
         do {
             let session = AVAudioSession.sharedInstance()
             try session.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
@@ -81,7 +79,6 @@ final class VoicePreviewPlayer {
 
     private func deactivateSession() {
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-        WakeWordListener.shared.appSound(ObjectIdentifier(self), playing: false)
     }
 }
 

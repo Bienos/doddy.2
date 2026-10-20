@@ -7,12 +7,10 @@
 | [swift-crypto](https://github.com/apple/swift-crypto) (+ swift-asn1) | 3.15.1 (exact pin, `Packages/DoddyCore/Package.resolved`) | Apache-2.0 | **Linux only**: the CryptoKit API for testing the encrypted backup (ADR-222) in CI. The iPhone app uses Apple's CryptoKit and doesn't link it |
 | [ElevenLabs Swift SDK](https://github.com/elevenlabs/elevenlabs-swift-sdk) | 3.3.1 (exact pin in `project.yml`) | MIT | Voice conversations with the ElevenLabs agent (V1) |
 | [LiveKit Swift SDK](https://github.com/livekit/client-sdk-swift) | ≥ 2.10.0 (pulled in by the ElevenLabs SDK; also a direct dependency of the app since ADR-207) | Apache-2.0 | Real-time audio transport used by the ElevenLabs SDK; the app sets its audio session so a conversation survives other apps' sound |
-| [Porcupine](https://github.com/Picovoice/porcupine) (Picovoice) | v4.0 release commit `c794ad57b189f4b06e8128abd0324ad09e1a424d` (revision pin in `project.yml`; its two-part tags aren't SwiftPM versions) | Apache-2.0 for the repository; the bundled `PvPorcupine` binary only runs with a Picovoice AccessKey under Picovoice's terms (free plan for personal use; **commercial use needs a Picovoice plan, owner decision before any release**) | "Hey Doddy" on-device wake word (ADR-254). The user brings their own AccessKey and keyword file; none is in the repository. Picovoice checks the AccessKey online when listening starts; no audio leaves the iPhone |
-| [ios-voice-processor](https://github.com/Picovoice/ios-voice-processor) (via Porcupine) | ≥ 1.2.0 | Apache-2.0 | Porcupine's microphone recorder (sets `playAndRecord` with `mixWithOthers`; doesn't deactivate the session when it stops) |
 
 Everything else is Apple system frameworks (`SwiftUI`, `UIKit`, `Foundation`, `AVFAudio`, system SQLite). No analytics,
-no crash reporting, no fonts. Of these packages, the ElevenLabs voice session (while it is open) and, with "Hey Doddy" on,
-Porcupine's AccessKey check with Picovoice are the only network connections.
+no crash reporting, no fonts. Of these packages, the ElevenLabs voice session (while it is open) is the only network
+connection. (Picovoice Porcupine and ios-voice-processor, for the "Hey Doddy" wake word, were removed on 20 Oct 2026, ADR-549.)
 
 ## Connected Apps backend (`backend/`, server-side only, never in the app)
 Pinned exactly in `backend/package.json`; full tree locked in `backend/package-lock.json`.
@@ -46,15 +44,16 @@ declares `engines.node >= 22.22.3`; the authoring environment ran Node 22.22.0 �
 
 ## Fonts
 No font binaries in the repository or app (pack policy). The UI uses system fonts with Dynamic Type.
-Inter and Caveat (SIL OFL) appear only as notices in `design/interface-v1.2/assets/` for the browser
-prototype; using Caveat in the app needs an owner decision and a licence check.
+Inter and Caveat (SIL OFL) appear only as notices in `docs/legal/fonts/` (moved there on 20 Oct 2026 when
+`design/interface-v1.2` was deleted, ADR-548); using Caveat in the app needs an owner decision and a licence check.
 
 ## Artwork
-`DoddyApp/Resources/Assets.xcassets` contains two PNG imagesets (`Doddy_waving`, `Doddy_memory_card`)
-copied unchanged from `design/ios-ready-asset-catalog/`. They are **candidate art**: generated PNG
-exports of SVGs whose provenance file states they are original revisions produced for the design task,
-not illustrator-approved, with trademark/rights review not done. They are labelled "Candidate art — not
-final" in the UI. Rights review is an open owner decision (see `DECISIONS.md`).
+`DoddyApp/Resources/Assets.xcassets` no longer contains the candidate-art imagesets `Doddy_waving`,
+`Doddy_approaching`, `Doddy_listening` and `Doddy_memory_card` (generated PNG exports of SVGs, not
+illustrator-approved, rights review not done). They were removed on 20 Oct 2026 (ADR-547): nothing loaded
+them by name, because `CandidateCharacterView` already draws the owner's pack poses. The app's character
+art is the owner's `UploadedDoddy_*` and `WholeDoddy_*` pack (`docs/design/UPLOADED_MEMORY_ASSETS.md`); the
+rights review of the pack is still an open owner decision (see `DECISIONS.md`).
 
 ## Voice samples
 

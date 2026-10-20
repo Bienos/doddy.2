@@ -1,23 +1,22 @@
 import Foundation
 
-// Audio privacy signal and stop (OP-024, ADR-361). Doddy has three things that can have the
-// microphone open: a voice conversation, "Hey Doddy" waiting for its wake word, and a voice memo
-// being recorded. While any of them has it, Doddy shows one indicator that says which, above
+// Audio privacy signal and stop (OP-024, ADR-361). Doddy has two things that can have the
+// microphone open: a voice conversation and a voice memo being recorded ("Hey Doddy", a third,
+// was removed in ADR-549). While either has it, Doddy shows one indicator that says which, above
 // every screen, with Stop listening. "Stop listening" (the indicator, or Siri) ends the
-// conversation, turns "Hey Doddy" off and stops the memo, then reads each one's own state again:
+// conversation and stops the memo, then reads each one's own state again:
 // "Stopped" only when every one says it is closed and iOS let go of Doddy's audio. Nothing is
 // saved by stopping: a note Doddy was asking about and the memo stay as drafts.
 // Plain Swift for the Linux tests; ListeningStop.swift in the app uses it.
 
 /// What in Doddy can have the microphone open.
 public enum MicrophoneUser: String, CaseIterable, Sendable {
-    case conversation, heyDoddy, voiceMemo
+    case conversation, voiceMemo
 
     public func name(_ language: NotificationLanguage) -> String {
         switch (self, language) {
         case (.conversation, .english): "the conversation"
         case (.conversation, .polish): "rozmowa"
-        case (.heyDoddy, _): "“Hey Doddy”"
         case (.voiceMemo, .english): "the voice memo"
         case (.voiceMemo, .polish): "notatka głosowa"
         }
@@ -40,17 +39,10 @@ public struct MicrophoneSnapshot: Equatable, Sendable {
     }
 
     public var conversation: Conversation
-    /// What "Hey Doddy" would do now (`WakeListenerPolicy`).
-    public var heyDoddy: WakeListenerState
-    /// Porcupine's recorder is running.
-    public var heyDoddyRunning: Bool
     public var voiceMemoRecording: Bool
 
-    public init(conversation: Conversation = .none, heyDoddy: WakeListenerState = .off,
-                heyDoddyRunning: Bool = false, voiceMemoRecording: Bool = false) {
+    public init(conversation: Conversation = .none, voiceMemoRecording: Bool = false) {
         self.conversation = conversation
-        self.heyDoddy = heyDoddy
-        self.heyDoddyRunning = heyDoddyRunning
         self.voiceMemoRecording = voiceMemoRecording
     }
 
@@ -58,18 +50,8 @@ public struct MicrophoneSnapshot: Equatable, Sendable {
     public var open: [MicrophoneUser] {
         var users: [MicrophoneUser] = []
         if conversation != .none { users.append(.conversation) }
-        if heyDoddyRunning || heyDoddy == .listening { users.append(.heyDoddy) }
         if voiceMemoRecording { users.append(.voiceMemo) }
         return users
-    }
-
-    /// "Hey Doddy" is switched on in some way that can start listening without the user: paused,
-    /// waiting for Doddy to open, or listening. Stop listening turns it off, so it can't.
-    public var heyDoddyCouldListen: Bool {
-        switch heyDoddy {
-        case .off, .needsSetUp, .microphoneDenied, .failed: heyDoddyRunning
-        case .waitingForApp, .listening, .paused: true
-        }
     }
 }
 
@@ -77,7 +59,7 @@ public struct MicrophoneSnapshot: Equatable, Sendable {
 /// has it, so it never says "listening" when nothing is.
 public struct ListeningIndicator: Equatable, Sendable {
     public enum Kind: Equatable, Sendable {
-        case connecting, conversation, muted, longTurn, voiceMemo, heyDoddy
+        case connecting, conversation, muted, longTurn, voiceMemo
     }
 
     /// In the order they are shown; the first decides the symbol.
@@ -93,7 +75,6 @@ public struct ListeningIndicator: Equatable, Sendable {
         case .longTurn: kinds.append(.longTurn)
         }
         if snapshot.voiceMemoRecording { kinds.append(.voiceMemo) }
-        if snapshot.heyDoddyRunning || snapshot.heyDoddy == .listening { kinds.append(.heyDoddy) }
         return kinds.isEmpty ? nil : ListeningIndicator(kinds: kinds)
     }
 
@@ -113,7 +94,6 @@ public struct ListeningIndicator: Equatable, Sendable {
         case .muted: "mic.slash.fill"
         case .longTurn: "waveform"
         case .voiceMemo: "record.circle"
-        case .heyDoddy: "ear"
         }
     }
 
@@ -129,7 +109,6 @@ public struct ListeningIndicator: Equatable, Sendable {
         case .muted: return polish ? "Mikrofon wyciszony" : "Microphone muted"
         case .longTurn: return polish ? "Słucham, aż skończysz" : "Listening until you finish"
         case .voiceMemo: return polish ? "Nagrywanie notatki głosowej" : "Recording a voice memo"
-        case .heyDoddy: return polish ? "Czeka na „Hey Doddy”" : "Listening for “Hey Doddy”"
         }
     }
 
@@ -146,8 +125,6 @@ public struct ListeningIndicator: Equatable, Sendable {
             return polish ? "Nagrywane na tym iPhonie; po Gotowe wysyłane są tylko słowa." : "Recorded on this iPhone; only the words are sent when you tap Done."
         case .voiceMemo:
             return polish ? "Tylko na tym iPhonie." : "On this iPhone only."
-        case .heyDoddy:
-            return polish ? "Tylko na tym iPhonie; nic nie jest zachowywane ani wysyłane, dopóki tego nie powiesz." : "On this iPhone only; nothing is kept or sent until you say it."
         }
     }
 }
@@ -174,7 +151,6 @@ public enum AudioRelease: Equatable, Sendable {
 
 public struct ListeningStopReport: Equatable, Sendable {
     public let conversation: MicrophoneStopOutcome
-    public let heyDoddy: MicrophoneStopOutcome
     public let voiceMemo: MicrophoneStopOutcome
     public let release: AudioRelease
     /// The "Save this note?" card that was showing is kept as a draft on the voice screen.
@@ -190,9 +166,6 @@ public struct ListeningStopReport: Equatable, Sendable {
             return wasOn ? .closed : .wasOff
         }
         conversation = outcome(.conversation, wasOn: before.open.contains(.conversation))
-        // "Hey Doddy" that could start by itself counts as on: stopping must turn it off.
-        heyDoddy = after.heyDoddyCouldListen
-            ? .stillOpen : outcome(.heyDoddy, wasOn: before.open.contains(.heyDoddy) || before.heyDoddyCouldListen)
         voiceMemo = outcome(.voiceMemo, wasOn: before.open.contains(.voiceMemo))
         self.release = release
         self.keptNoteDraft = keptNoteDraft
@@ -200,7 +173,7 @@ public struct ListeningStopReport: Equatable, Sendable {
     }
 
     public var stillOpen: [MicrophoneUser] {
-        [(MicrophoneUser.conversation, conversation), (.heyDoddy, heyDoddy), (.voiceMemo, voiceMemo)]
+        [(MicrophoneUser.conversation, conversation), (.voiceMemo, voiceMemo)]
             .filter { $0.1 == .stillOpen }.map(\.0)
     }
 
@@ -212,7 +185,7 @@ public struct ListeningStopReport: Equatable, Sendable {
     }
 
     public var nothingWasOn: Bool {
-        [conversation, heyDoddy, voiceMemo].allSatisfy { $0 == .wasOff }
+        [conversation, voiceMemo].allSatisfy { $0 == .wasOff }
     }
 
     /// What Siri says and the indicator shows. "Stopped" only when `stopped`.
@@ -236,9 +209,6 @@ public struct ListeningStopReport: Equatable, Sendable {
         if conversation == .closed { parts.append(polish ? "Rozmowa zakończona." : "The conversation is ended.") }
         if keptNoteDraft {
             parts.append(polish ? "Notatka, o którą pytał Doddy, czeka jako szkic; nic nie zostało zapisane." : "The note Doddy was asking about is kept as a draft; nothing was saved.")
-        }
-        if heyDoddy == .closed {
-            parts.append(polish ? "„Hey Doddy” jest wyłączone; włączysz je z powrotem w Ustawieniach." : "“Hey Doddy” is off; turn it back on in Settings.")
         }
         if voiceMemo == .closed {
             parts.append(keptMemoDraft

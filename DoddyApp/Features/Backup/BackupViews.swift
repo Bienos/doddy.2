@@ -69,6 +69,7 @@ struct BackupSettingsSection: View {
         }
         .sheet(isPresented: $showMake) { MakeBackupView() }
         .sheet(isPresented: $showRestore) { RestoreBackupView() }
+        .coversDoddy(showMake || showRestore)
     }
 }
 

@@ -56,7 +56,7 @@ struct MorningCheckInView: View {
                     }
                     .buttonStyle(PrimaryButtonStyle())
                     .accessibilityIdentifier("checkin.talk")
-                    Text("Talking sends these reminders and list names to OpenAI, or ElevenLabs if you switch Home's voice to it to run the conversation, as any conversation does. Calendar events are read only if Calendar is on in Settings, Connections.")
+                    Text("Talking sends these reminders and list names to ElevenLabs, or OpenAI if you switch Home's voice to it to run the conversation, as any conversation does. Calendar events are read only if Calendar is on in Settings, Connections.")
                         .font(.footnote).foregroundStyle(Theme.secondaryText)
                     Button("Not now") { dismiss() }.frame(minHeight: 44)
                 }

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=390">
+<title>Doddy v2 stage</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #F3EDDF; overflow: hidden; }
+  #root { width: 390px; height: 844px; }
+  #root .dp-phone { border-radius: 0; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="engine-core.js"></script>
+<script src="rig.js"></script>
+<script src="engine.js"></script>
+<script src="scripts.js"></script>
+<script>
+  window.makeApp = function (settings) {
+    window.app = DoddyEngine.createApp(document.getElementById('root'), { settings: settings || {} });
+    return true;
+  };
+  window.setupStudy = function (id, annotate) {
+    const st = DoddyStudies.get(id);
+    makeApp(Object.assign({ label: st.code, annotate: !!annotate, autoWelcome: false }, st.settings || {}));
+    app.place(st.scene || {});
+    app.caption = st.title || '';
+    app.settings.annotate = !!annotate;
+    app.runScript(st.script(app));
+    app.render();
+    return { frames: Math.round((st.duration / 1000) * 60), code: st.code, file: st.file };
+  };
+  window.frame = function () { app.stepFrame(); return app.simT; };
+</script>
+</body>
+</html>

@@ -1,7 +1,8 @@
 import Foundation
 
-/// CANDIDATE design tokens from `design/interface-v1.2/docs/DESIGN-SYSTEM.md` (Pocket Notebook).
-/// Not an approved brand. Nothing here is from `assets/brand_candidate/` (historical palette),
+/// CANDIDATE design tokens from `design/interface-v1.2/docs/DESIGN-SYSTEM.md (deleted 20 Oct 2026, ADR-548; see git history)` (Pocket Notebook).
+/// Ink, paper and orange follow Brand Guidelines V2.2 (`design/brand-v2.2/`, ADR-556): the orange
+/// is the brand's `#FF6A00`. Nothing here is from `assets/brand_candidate/` (historical palette),
 /// per docs/design/CANONICAL_DESIGN_DIRECTION.md. Bright orange is decoration, never body text.
 public struct HexColor: Equatable, Sendable {
     public let red: UInt8, green: UInt8, blue: UInt8
@@ -48,7 +49,7 @@ public enum CandidateColorRole: String, CaseIterable, Sendable {
         switch self {
         case .readingInk: ("#171715", "#FFF7E9")
         case .canvas: ("#FFF7E9", "#171F29")
-        case .orangeCue: ("#F58A24", "#F58A24")
+        case .orangeCue: ("#FF6A00", "#FF6A00")
         case .secondaryText: ("#655F56", "#C5BCAD")
         case .quietSurface: ("#F5EAD8", "#252E39")
         case .separator: ("#DFD5C6", "#414953")

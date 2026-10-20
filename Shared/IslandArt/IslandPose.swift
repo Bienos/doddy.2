@@ -216,13 +216,14 @@ enum DoddyMotion: String, CaseIterable, Hashable, Sendable {
 /// The pack's storyboards, played as cross-faded panels (ADR-299, ADR-380). Panels are cropped
 /// from the pack only (`tools/whole_doddy/cut_panels.py`, `cut_storyboards.py`).
 enum PanelStory: String, CaseIterable, Hashable, Sendable {
-    /// 038: a notebook's page turns and Doddy waves. The welcome.
+    /// 038: a notebook's page turns and Doddy waves. No screen shows it now (the welcome's `StorybookView`
+    /// was removed, 20 Oct); the preview gallery does.
     case page
     /// 037: Doddy steps out of a phone onto the desk. The Back Tap guide.
     case phone
     /// 039: Doddy draws a door and walks through. The Face ID lock.
     case door
-    /// 040: an ink drop, a splash, Doddy in a real street. "What I can do".
+    /// 040: an ink drop, a splash, Doddy in a real street. "What I can do" (Home's ••• menu, ADR-548).
     case ink
     /// 041: keys found under a cushion. An example in "What I can do", never played.
     case keys

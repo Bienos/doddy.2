@@ -163,6 +163,7 @@ private struct RecallResultsView: View {
     var foundElsewhere = false
     /// Narrows the matches to one note type (ADR-199). Ignored once no match has that type.
     @State private var category: MemoryCategory?
+    @Environment(\.dynamicTypeSize) private var textSize
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -229,8 +230,19 @@ private struct RecallResultsView: View {
                 Text("No note has those words.").font(.subheadline).foregroundStyle(Theme.secondaryText)
                     .accessibilityIdentifier("memories.noMatch")
             case .some(.noMatch):
-                // Open hands: nothing to show, and nothing made up (ADR-299).
-                WholeDoddyView(pose: .shrug, height: 170).frame(maxWidth: .infinity)
+                // Open hands: nothing to show, and nothing made up (ADR-299). With the motion world
+                // on (MV3, Q4) the one Doddy comes out and shrugs here himself, at 1.0× (111 pt), on
+                // a spot the picture's size (at accessibility sizes a box just his height).
+                if DoddyDirector.shared.isActive {
+                    let height: CGFloat = textSize.isAccessibilitySize ? 114 : 170
+                    Color.clear.frame(width: 122, height: height)
+                        .overlay(alignment: .bottom) {
+                            Color.clear.frame(width: 96, height: 1).motionSurface(.ledge(MotionHost.findLedge))
+                        }
+                        .frame(maxWidth: .infinity)
+                } else {
+                    WholeDoddyView(pose: .shrug, height: 170).frame(maxWidth: .infinity)
+                }
                 JourneyHeading(eyebrow: "No match in your saved notes", title: "I haven't\nfound that.",
                                subtitle: "I won't fill in the gaps. Try a distinctive word from the note.")
                 Text(RecallCopy.noMatch).font(.subheadline).foregroundStyle(Theme.secondaryText)

@@ -6,8 +6,9 @@ mockups for implementation. No new generated characters, downloaded fonts or out
 art were added. Existing candidate image sets and archived packs remain unchanged.
 This records provenance, not an independent commercial-rights determination.
 
-All five native `UploadedDoddy_*.imageset/art.png` files are byte-identical to these
-ZIP entries. Prefix for every entry below:
+Until 20 October 2026 all five native `UploadedDoddy_*.imageset/art.png` files were byte-identical to
+these ZIP entries. **Since 20 October (ADR-547) they are smaller copies of the same drawings** (see
+"Shipped size" below); the SHA-256 column is the owner's ZIP entry, not the shipped file. Prefix for every entry below:
 
 `DODDY-Numbered-Video-Assets-v01/doddy-extra-poses-expressions-v02/doddy-extra-poses-expressions-v02/01-transparent-poses/`
 
@@ -24,6 +25,28 @@ compared with `shasum -a 256` of the corresponding native PNG; all five pairs ma
 Dark appearance adds a light paper backing around the unchanged image. Artwork is
 decorative, can be hidden in Settings, and has no invented animation/state behaviour.
 The existing development app icon is not replaced or represented as final branding.
+
+## Shipped size (20 October 2026, ADR-547)
+
+The ZIP entries are 1024 × 1536 px, about 1 MB each. The app draws them at most 210 pt tall (Home), and the
+opening scene's Doddy at most about 310 pt tall on an iPhone (about 480 pt on an iPad), so the app ships
+downscaled copies: `UploadedDoddy_Listening` at 800 × 1200 (the opening scene needs up to about 960 px),
+the other four at 512 × 768 (drawn at most 180 pt tall, which is 540 px at 3x). Same 2:3 proportions, so the
+opening scene's fractions (soles at 88.9% of the height and the rest, `OpeningScene.swift`) still hold.
+Method: Pillow `Image.resize(..., LANCZOS)` on the RGBA image (it premultiplies alpha internally), then
+`optimize=True`. Nothing else changed: no redrawing, recolouring or cropping. Compared with the original at
+the size it is drawn, the mean absolute difference is about 0.2 out of 255 per channel.
+
+| Native image set | Shipped size | Shipped bytes (was) | SHA-256 of the shipped file |
+| --- | --- | --- | --- |
+| UploadedDoddy_Listening | 800 × 1200 | 276,512 (1,034,947) | eb8ca5c7227005bba5c28a37455a987b795d5c44758006b8e2d9ff89f8637a7e |
+| UploadedDoddy_Sitting | 512 × 768 | 142,742 (992,288) | f19b8219ed1c2567b32c46bddd06f69ecdb72b267d69d8451158428cbfdeb762 |
+| UploadedDoddy_Inspect | 512 × 768 | 135,154 (972,958) | b73e61505069c03d21578018d70353c16baefc4fd68c9316edea9063ed66819a |
+| UploadedDoddy_Kept | 512 × 768 | 148,206 (1,059,525) | 031acbbbf4bc510439ddf247bdeb44258c6974d897929b61e5d10e4fc057b6d4 |
+| UploadedDoddy_Privacy | 512 × 768 | 161,292 (1,003,372) | b9622bc4572d88c92defdaa01d9b258a889da4b304255c76c9d913ef99d5b7d7 |
+
+The full-size originals stay in the owner's ZIP. Not seen on a device: check Home, the opening scene and
+Settings › Privacy at default and large Dynamic Type.
 
 ## Widget copies (Live Activity, 10 October 2026)
 
@@ -162,6 +185,28 @@ number is cropped away); nothing is redrawn, recoloured or generated.
 
 Not used: the five `*_fg_v01.png` foreground layers (024, 027, 030, 033, 035). They are not imported
 (ADR-380 explains why), and the umbrella pose still waits on the owner's weather decision.
+
+## The app icon (ADR-557, 20 October 2026)
+
+Owner: "use the wave frame from the pack for the icon", then candidate A (on paper) of the three shown.
+Source: `016_doddy_wave_v01.png` from the Drive folder, downloaded in the session and verified against the
+SHA-256 above (`817a2b87…`); frame 4 cut by `tools/whole_doddy/cut_wave.py` (488 × 733, SHA-256
+`20b648fd…`, as above). `tools/whole_doddy/make_app_icon.py` places the 410 px square x 35–445, y 95–505 of
+that cut-out (the head, the waving hand and the orange marks, cut at the torso: the website favicon's framing)
+on brand paper `#FFF7E9` (Brand Guidelines V2.2 p.20, ADR-556) and Lanczos-resizes it to 1024 px, RGB, no
+alpha. Nothing is redrawn or recoloured.
+
+| File | Made how | SHA-256 of the file written |
+| --- | --- | --- |
+| `DoddyApp/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png` | as above | ba28b129703cb656b39c414f82d47ab23bcd057f820ea408d5b467d9ebe3e393 |
+| `DoddyWatch/Assets.xcassets/AppIcon.appiconset/AppIcon.png` | byte-identical copy | the same |
+
+The dark appearance (`AppIcon-dark.png`, v1.3 art from ADR-050) is removed: the pack's ink (`#181814`) would
+vanish on night, and recolouring it is not allowed. iOS shows this icon on a dark Home Screen too and derives
+the tinted one. The strip's frames are about 450 px tall, so the 1024 px file is a 2.5× upscale; the Home
+Screen draws the icon at 180 px at most. A larger or vector wave from the artist replaces it by rerunning the
+script. This was the last v1.3 drawing in the shipped app's icon; the opening scene still reads the v1.3
+basketball SVGs (ADR-225).
 
 ## Mac menu bar and desktop widget (ADR-438, ADR-439, 11 October 2026)
 | Image set | Pack source | SHA-256 of the source | Made how |

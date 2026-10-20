@@ -254,7 +254,7 @@ public enum PolishGenitive {
     }
 }
 
-/// Calling hours: the whole call must fit inside 8:00–20:00 Warsaw time (server/…/hours.ts).
+/// Calling hours: the whole call must fit inside 8:00–23:00 Warsaw time (server/…/hours.ts).
 public enum CallHours {
     public static let ringSecs = 25
     public static let graceSecs = 20
@@ -271,7 +271,7 @@ public enum CallHours {
         let s = cal.dateComponents([.hour, .minute, .second], from: start)
         let e = cal.dateComponents([.hour, .minute, .second], from: end)
         let secs = { (c: DateComponents) in (c.hour ?? 0) * 3600 + (c.minute ?? 0) * 60 + (c.second ?? 0) }
-        return secs(s) >= 8 * 3600 && secs(e) <= 20 * 3600
+        return secs(s) >= 8 * 3600 && secs(e) <= 23 * 3600
     }
 
     /// Times offered for "Zadzwoń ponownie o …": in an hour (rounded up to a quarter), then 9:00,

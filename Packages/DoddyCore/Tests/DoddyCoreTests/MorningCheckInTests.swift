@@ -29,6 +29,8 @@ final class MorningCheckInTests: XCTestCase {
         XCTAssertEqual(weekdays.compactMap(\.weekday), [2, 3, 4, 5, 6])
         XCTAssertTrue(weekdays.allSatisfy { MorningCheckIn.isCheckIn(notificationID: $0.id) })
         XCTAssertEqual(Set(weekdays.map(\.id)).count, 5)
+        XCTAssertEqual(weekdays.map(\.id), (2...6).map { "doddy.morning-checkin.weekday\($0)" },
+                       "the id carries the weekday number, not \"Optional(2)\"")
 
         MorningCheckInSettings(isOn: true, hour: 25, minute: -3, weekdaysOnly: true).store(defaults)
         XCTAssertEqual(MorningCheckInSettings.stored(defaults), MorningCheckInSettings(isOn: true, hour: 23, minute: 0, weekdaysOnly: true))

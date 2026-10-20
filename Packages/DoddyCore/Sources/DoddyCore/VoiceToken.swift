@@ -4,6 +4,10 @@ import Foundation
 /// token server and a DODDY session; it never falls back to a public provider agent.
 public enum VoiceConnectionMode: Equatable, Sendable {
     case tokenServer(endpoint: URL)
+    /// Development builds only (ADR-551): connect straight to the ElevenLabs agent, without a DODDY
+    /// voice account. `resolve` never returns it; only Debug code in the app builds it, and a Release
+    /// build can't (`VoiceConfig.directVoiceEnabled` is false there).
+    case directAgent(agentID: String)
     case notSetUp(reason: String)
 
     /// HTTPS only. An unset or malformed endpoint fails closed and never starts a public agent.
@@ -55,21 +59,6 @@ public enum VoiceTokenServer {
         case 404: return .failure(.serverNotConfigured)
         default: return .failure(.serverProblem(status: status))
         }
-    }
-
-    /// "Hey Doddy" for everyone (ADR-328): asks for the owner's Picovoice AccessKey.
-    public static let wakeWordKeyRequestBody = Data(#"{"provider":"picovoice"}"#.utf8)
-
-    /// Reply `{"accessKey": "…"}`, cleaned like a key the user would paste.
-    public static func wakeWordKey(status: Int, body: Data) -> Result<String, VoiceTokenError> {
-        guard status == 200 else {
-            if case .failure(let error) = token(status: status, body: body) { return .failure(error) }
-            return .failure(.serverProblem(status: status))
-        }
-        guard let json = try? JSONSerialization.jsonObject(with: body) as? [String: Any],
-              let raw = json["accessKey"] as? String, let key = WakeAccessKey.clean(raw)
-        else { return .failure(.badResponse) }
-        return .success(key)
     }
 
     public static func message(for error: VoiceTokenError) -> String {

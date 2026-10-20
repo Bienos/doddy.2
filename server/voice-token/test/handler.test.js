@@ -9,7 +9,6 @@ const ENV = {
   ELEVENLABS_API_KEY: "elevenlabs-server-secret",
   ELEVENLABS_AGENT_ID: "agent_test",
   OPENAI_API_KEY: "openai-server-secret",
-  PICOVOICE_ACCESS_KEY: "owner-picovoice-secret",
 };
 
 function store({ allowed = true } = {}) {
@@ -130,14 +129,10 @@ test("OpenAI grant is short-lived and restricted to the model allowlist", async 
   assert.equal(bad.calls.length, 0);
 });
 
-test("Picovoice key requires the same authenticated session and is never logged", async () => {
-  const { response, body, calls, logs } = await run(request({ provider: "picovoice" }));
-  assert.equal(response.status, 200);
-  assert.deepEqual(body, { accessKey: "owner-picovoice-secret" });
+test("a request for the removed Picovoice key is refused and sends nothing upstream (ADR-549)", async () => {
+  const { response, calls } = await run(request({ provider: "picovoice" }));
+  assert.equal(response.status, 400);
   assert.equal(calls.length, 0);
-  assert.ok(!JSON.stringify(logs).includes("owner-picovoice-secret"));
-  const unauthenticated = await run(request({ provider: "picovoice" }), { authenticateSession: async () => null });
-  assert.equal(unauthenticated.response.status, 401);
 });
 
 test("only POST and bounded valid provider requests are accepted", async () => {

@@ -1,5 +1,7 @@
 # Quick start (ADR-324): status
 
+> **Removed from the app 20 Oct 2026.** `QuickStartView.swift` was deleted: nothing has shown it since 754e5d6 (first-launch profile flow), and no UI test used it. The tested rules (`QuickStart` in DoddyCore, `QuickStartTests`) are kept; no screen uses them now. Its on-screen texts left all ten string tables. The notes below describe the screen as it was.
+
 Owner request, 11 October 2026: "tak, zrób ekran Szybki start z tymi godzinami". It followed
 Claude's list of which settings make Doddy easy to use and which have to stay off until the user
 says yes.

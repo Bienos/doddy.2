@@ -10,6 +10,8 @@ struct VoiceAccessGate: View {
     @State private var session = VoiceAuthSession.shared
     @State private var rawNonce: String?
     @State private var consented = false
+    /// A DODDY voice account, or (Debug builds only, ADR-551) the developer's direct connection.
+    private var accessReady: Bool { session.isSignedIn || VoiceConfig.directVoiceEnabled }
 
     var body: some View {
         ScrollView {
@@ -17,15 +19,15 @@ struct VoiceAccessGate: View {
             VoiceDoddyView(art: .pose(.listening))
                 .frame(height: 140)
                 .accessibilityHidden(true)
-            Text(session.isSignedIn ? "Before Doddy listens" : "Talk to Doddy")
+            Text(accessReady ? "Before Doddy listens" : "Talk to Doddy")
                 .font(.title2.bold())
                 .multilineTextAlignment(.center)
 
             if session.isLoading {
                 ProgressView("Connecting your voice account…")
                     .accessibilityIdentifier("voice.auth.loading")
-            } else if !session.isSignedIn && session.hasSavedSession {
-                Text("Your DODDY voice account is saved on this iPhone. Reconnecting doesn’t require another Apple sign-in.")
+            } else if !accessReady && session.hasSavedSession {
+                Text("Your Doddy voice account is saved on this iPhone. Reconnecting doesn’t require another Apple sign-in.")
                     .font(.body)
                     .foregroundStyle(Theme.secondaryText)
                     .multilineTextAlignment(.center)
@@ -34,8 +36,8 @@ struct VoiceAccessGate: View {
                         .buttonStyle(.borderedProminent)
                         .accessibilityIdentifier("voice.auth.retryConnection")
                 }
-            } else if !session.isSignedIn {
-                Text("Sign in once with Apple to set up your DODDY voice account. Apple sends a signed identity token to DODDY only to verify your account and create the session. The protected session stays on this iPhone, so you won’t need to sign in every time. Sign-in doesn’t share your voice or notes.")
+            } else if !accessReady {
+                Text("Sign in once with Apple to set up your Doddy voice account. Apple sends a signed identity token to Doddy only to verify your account and create the session. The protected session stays on this iPhone, so you won’t need to sign in every time. Sign-in doesn’t share your voice or notes.")
                     .font(.body)
                     .foregroundStyle(Theme.secondaryText)
                     .multilineTextAlignment(.center)

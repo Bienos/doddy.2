@@ -20,8 +20,8 @@
     "ja": "Doddyが位置情報を使うのは、あなたが頼んだときだけです。場所で設定したリマインダーのため（「今いる場所を使う」をタップしたときに現在地を調べ、到着時や出発時にiOSがリマインドできるようにするため）、駐車した場所を保存するため、そしてAppleのマップでどこかへの出発時刻を計算するためです。Doddyは位置情報を保存せず、あなたの行き先を追跡することもありません。"
   },
   "NSMicrophoneUsageDescription": {
-    "en": "Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. If you turn on Hey Doddy, the microphone also listens on this iPhone for the wake word; that sound isn't kept or sent. Your voice in a conversation is sent to OpenAI to run it, or to ElevenLabs if you switch Home's voice to ElevenLabs. A voice memo you record on a note stays on this iPhone.",
-    "ja": "Doddyが聞いているのは、あなたがDoddyと話している間です。「Doddyと話す」をタップした後、または設定でオンにしている場合はDoddyを開いてすぐに聞き始めます。「Hey Doddy」をオンにすると、マイクはこのiPhone上でウェイクワードも待ち受けますが、その音声は保存も送信もされません。会話中のあなたの声は、会話を処理するためにOpenAIに送られます。ホームの声をElevenLabsに切り替えている場合はElevenLabsに送られます。メモに録音したボイスメモは、このiPhoneにとどまります。"
+    "en": "To hear you, Doddy needs the microphone. Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. Your voice in a conversation is sent to ElevenLabs to run it, or to OpenAI if you switch Home's voice to OpenAI. A voice memo you record on a note stays on this iPhone.",
+    "ja": "あなたの声を聞くために、Doddyはマイクが必要です。Doddyが聞いているのは、あなたがDoddyと話している間です。「Doddyと話す」をタップした後、または設定でオンにしている場合はDoddyを開いてすぐに聞き始めます。会話中のあなたの声は、会話を処理するためにElevenLabsに送られます。ホームの声をOpenAIに切り替えている場合はOpenAIに送られます。メモに録音したボイスメモは、このiPhoneにとどまります。"
   },
   "NSRemindersFullAccessUsageDescription": {
     "en": "Doddy adds, changes, completes or deletes a reminder only after you tap Add, Change, Mark done or Delete. Turn this off in Settings, Connections.",
