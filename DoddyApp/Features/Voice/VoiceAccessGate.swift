@@ -25,7 +25,7 @@ struct VoiceAccessGate: View {
                 ProgressView("Connecting your voice account…")
                     .accessibilityIdentifier("voice.auth.loading")
             } else if !session.isSignedIn && session.hasSavedSession {
-                Text("Your DODDY voice account is saved on this iPhone. Reconnecting doesn’t require another Apple sign-in.")
+                Text("Your Doddy voice account is saved on this iPhone. Reconnecting doesn’t require another Apple sign-in.")
                     .font(.body)
                     .foregroundStyle(Theme.secondaryText)
                     .multilineTextAlignment(.center)
@@ -35,7 +35,7 @@ struct VoiceAccessGate: View {
                         .accessibilityIdentifier("voice.auth.retryConnection")
                 }
             } else if !session.isSignedIn {
-                Text("Sign in once with Apple to set up your DODDY voice account. Apple sends a signed identity token to DODDY only to verify your account and create the session. The protected session stays on this iPhone, so you won’t need to sign in every time. Sign-in doesn’t share your voice or notes.")
+                Text("Sign in once with Apple to set up your Doddy voice account. Apple sends a signed identity token to Doddy only to verify your account and create the session. The protected session stays on this iPhone, so you won’t need to sign in every time. Sign-in doesn’t share your voice or notes.")
                     .font(.body)
                     .foregroundStyle(Theme.secondaryText)
                     .multilineTextAlignment(.center)

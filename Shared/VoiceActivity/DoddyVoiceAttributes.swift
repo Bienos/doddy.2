@@ -126,7 +126,7 @@ extension DoddyVoiceAttributes.ContentState {
         case .listening: return "Listening"
         case .wakeListening: return "Say “Hey Doddy”"
         case .wakePaused: return "“Hey Doddy” paused"
-        case .thinking: return "Thinking…"
+        case .thinking: return "Working on it…"
         case .speaking: return "Speaking"
         case .needsConfirmation: return "Confirm in Doddy"
         case .ended: return "Conversation ended"
