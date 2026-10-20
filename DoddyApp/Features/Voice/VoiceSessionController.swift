@@ -234,8 +234,18 @@ final class VoiceSessionController {
     private(set) var planStatus: PlanStatus? { didSet { syncIsland() } }
     /// Which Apple Maps result the user picked on a place card (the first until they tap another).
     private(set) var selectedPlaceIndex = 0
-    /// A function the agent asked for that is off or blocked. The screen offers to turn it on.
-    private(set) var connectionNeeded: VoiceConnection?
+    /// The access card (ADR-562): a function the agent asked for is off, or iOS hasn't allowed it.
+    /// The screen asks "Allow Doddy to use …?"; nothing turns on without the user's tap there.
+    private(set) var accessRequest: ConnectionApprovalCard?
+    /// The function the access card is about. The paths that find one off or blocked set it; a
+    /// card already up for the same function is kept as it is (it may be waiting for iOS).
+    private(set) var connectionNeeded: VoiceConnection? {
+        get { accessRequest?.connection }
+        set {
+            guard newValue != accessRequest?.connection else { return }
+            accessRequest = newValue.map { ConnectionApprovalCard(connection: $0, permission: systemPermissionNow($0)) }
+        }
+    }
     private(set) var isMuted = false {
         didSet {
             syncIsland()
@@ -3445,17 +3455,118 @@ final class VoiceSessionController {
         return result
     }
 
+    /// Nothing ran yet. The access card goes up and the agent says one line ("Allow it on screen and
+    /// I'll carry on"); after the tap it is told, and tries once more (ADR-562).
     private func notConnected(_ toolCallID: String, _ connection: VoiceConnection) async {
         // Some callers waited first (notification access): no prompt in a later conversation.
         guard isCurrent(toolCallID) else { return dropStale(toolCallID) }
-        connectionNeeded = connection
-        await reply(toolCallID, VoiceToolReply.notConnected(connection))
+        let permission = await systemPermission(connection)
+        guard isCurrent(toolCallID) else { return dropStale(toolCallID) }
+        if accessRequest?.connection != connection {
+            accessRequest = ConnectionApprovalCard(connection: connection, permission: permission)
+        }
+        await reply(toolCallID, VoiceToolReply.notConnected(connection, card: accessRequest?.card ?? .allow))
     }
 
-    /// Called after the Connections sheet closes: the prompt goes away once the switch is on.
-    func refreshConnectionNeeded() {
-        guard let needed = connectionNeeded, isOn(needed) else { return }
-        connectionNeeded = nil
+    // MARK: Access card (ADR-562)
+
+    /// "Allow": the switch turns on, after iOS's own prompt when iOS has never asked (a refusal
+    /// from before is returned as it is, with no prompt). On a yes the card goes and the agent
+    /// tries once more, still asking for the action's own yes (ASK-01); on a no in iOS's prompt
+    /// nothing changes; when iOS had already said no, the card offers iPhone Settings instead.
+    func allowConnection() async {
+        guard var request = accessRequest else { return }
+        guard request.beginAllow() else { return }
+        accessRequest = request
+        let connection = request.connection
+        let attempt = startAttempt
+        let before = await systemPermission(connection)
+        // The switch is stored on only when iOS allows it, as in Settings › Connections.
+        if await devices.request(connection) == .granted {
+            UserDefaults.standard.set(true, forKey: connection.preferenceKey)
+        }
+        // Only the card on screen is answered (ADR-458): End, or a newer card, drops this one.
+        guard onScreen(attempt), accessRequest?.connection == connection else { return }
+        let outcome = ConnectionApproval.outcome(before: before, switchIsOn: isOn(connection))
+        if request.finish(outcome) {
+            accessRequest = request
+        } else {
+            accessRequest = nil
+            await tellAgent(outcome, connection)
+        }
+    }
+
+    /// "Open iPhone Settings": Doddy's own page there, the only place iOS lets a refused
+    /// permission change. Looked at again when Doddy is in front (`recheckConnectionAccess`).
+    func openSettingsForConnection() async {
+        guard var request = accessRequest else { return }
+        guard request.sendToSettings() else { return }
+        accessRequest = request
+        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+        _ = await open(url)
+    }
+
+    /// Doddy is in front again. After the card sent the user to iPhone Settings, the switch turns
+    /// on only if iOS now allows it: that tap and their own change there are the yes.
+    func recheckConnectionAccess() async {
+        guard let request = accessRequest, request.sentToSettings else { return }
+        let attempt = startAttempt
+        let now = await systemPermission(request.connection)
+        guard request.allowsOnReturn(now), onScreen(attempt), accessRequest == request else { return }
+        UserDefaults.standard.set(true, forKey: request.connection.preferenceKey)
+        accessRequest = nil
+        await tellAgent(.allowed, request.connection)
+    }
+
+    /// "Not now": nothing changes, and the agent is told quietly not to ask again.
+    func declineConnection() async {
+        guard let request = accessRequest, request.canDecline else { return }
+        accessRequest = nil
+        await tellAgent(.declined, request.connection)
+    }
+
+    /// Called after the Connections sheet (the card's Details) closes: if the user turned it on
+    /// there, the card goes and the agent is told, as after Allow.
+    func refreshConnectionNeeded() async {
+        guard let request = accessRequest, !request.isWorking, isOn(request.connection) else { return }
+        let attempt = startAttempt
+        guard await systemPermission(request.connection) == .granted, onScreen(attempt), accessRequest == request else { return }
+        accessRequest = nil
+        await tellAgent(.allowed, request.connection)
+    }
+
+    /// An "(app)" message: after a yes Doddy carries on now; after a no it is background only.
+    private func tellAgent(_ outcome: ConnectionApproval.Outcome, _ connection: VoiceConnection) async {
+        guard isLive else { return }
+        switch outcome {
+        case .allowed:
+            await sendToAgent(ConnectionApproval.allowedMessage(connection))
+        case .declined:
+            try? await conversation?.updateContext("\(TranslatorSession.appMessagePrefix) \(ConnectionApproval.declinedContext(connection))")
+        case .blockedBySystem:
+            break
+        }
+    }
+
+    /// iOS's answer for the permission `connection` needs. Timers use notification permission,
+    /// which iOS reports only asynchronously.
+    private func systemPermission(_ connection: VoiceConnection) async -> ConnectionApproval.SystemPermission {
+        if connection == .timers { return Self.permission(await devices.notificationAccess()) }
+        return Self.permission(devices.access(for: connection))
+    }
+
+    /// The same without waiting, for the paths that can't: timers read as not asked here, and
+    /// the Allow tap reads them properly.
+    private func systemPermissionNow(_ connection: VoiceConnection) -> ConnectionApproval.SystemPermission {
+        Self.permission(devices.access(for: connection))
+    }
+
+    private static func permission(_ access: DeviceConnections.Access) -> ConnectionApproval.SystemPermission {
+        switch access {
+        case .granted: .granted
+        case .notDetermined: .notAsked
+        case .denied: .denied
+        }
     }
 
     private func open(_ url: URL) async -> Bool {

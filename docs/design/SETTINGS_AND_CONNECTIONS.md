@@ -87,6 +87,17 @@ The locked row shows a short reason: "Doddy always shows you a change before mak
 - **Pause** keeps the iOS permission, Doddy stops using it immediately.
 - **Disconnect** clears Doddy's own settings and receipts for this app and explains, truthfully, that iOS permission has to be switched off in iOS Settings (apps cannot revoke their own permission). Things Doddy already created (for example reminders) stay in the other app.
 
+### 3.6 Allowing from the conversation (ADR-562, built for the on-phone functions)
+
+The person shouldn't have to go to Settings to switch a tool on. When Doddy asks for a function that is off, or that iOS hasn't been asked about yet, the conversation shows a card and Doddy says one line: "Allow it on screen and I'll carry on."
+
+- **Card:** "Allow Doddy to use Calendar?", what leaves the phone (the same words as the detail sheet), and **Allow**, **Not now** and **Details** (the detail sheet, with the full terms).
+- **Allow** turns the switch on in one tap. If iOS has never asked, iOS shows its own prompt first, and the switch stays off if the person says no there. On a yes, Doddy is told ("(app)" message) and tries once more; the action itself still shows its own card or asks for its own yes (ASK-01).
+- **iOS said no before:** iOS doesn't let an app ask again, so the card says so and its button is **Open iPhone Settings** (Doddy's own page there). When the person comes back and iOS now allows it, the switch turns on and Doddy carries on; otherwise the card stays.
+- **Not now:** nothing changes; Doddy is told quietly not to ask again unless the person does.
+- **Never:** a switch turned on, or access claimed, without the person's tap on the card (or in the sheet); the card from an ended conversation answering in the next one.
+- **Not built yet:** online accounts (Connect Gmail from the card, then the tool's switch), the alarm, location and leave-by notification permissions, and Pause all (its own card already turns connections back on in one tap).
+
 ## 4. Using several apps at once: the plan card
 
 When one request needs more than one connection, Doddy answers with **one plan card** instead of a string of separate confirmations.

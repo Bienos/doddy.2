@@ -688,9 +688,18 @@ public enum VoiceToolReply {
             + ToolData.block([quoted("Tool", name)])
     }
 
-    /// Used when a function is off or its iOS permission is not granted.
-    public static func notConnected(_ connection: VoiceConnection) -> String {
-        "\(connection.title) isn't connected. Tell the user they can connect it in Settings, Connections."
+    /// Used when a function is off or its iOS permission is not granted. The conversation screen
+    /// shows the access card for it at the same time (ADR-562), so the agent asks for the tap in one
+    /// line instead of sending the user to Settings. It starts "<title> isn't connected" as before,
+    /// which What Doddy did reads.
+    public static func notConnected(_ connection: VoiceConnection, card: ConnectionApproval.Card = .allow) -> String {
+        let after = "Nothing was looked up or changed. If they allow it, a message starting with \"(app)\" tells you; then try what they asked once more."
+        switch card {
+        case .allow:
+            return "\(connection.title) isn't connected yet. A card on screen asks the user to allow it. Say only: \"Allow it on screen and I'll carry on.\" Don't send them to Settings. " + after
+        case .openSystemSettings:
+            return "\(connection.title) isn't connected yet: iPhone has it turned off for Doddy, and only iPhone Settings can change that. A card on screen opens Doddy's page there. Say only: \"iPhone has this switched off for me. Tap the card to allow it and I'll carry on.\" " + after
+        }
     }
 
     public static func calendarEvents(_ events: [CalendarEventSummary], range: VoiceTimeRange, calendar: Calendar, limit: Int = 20) -> String {

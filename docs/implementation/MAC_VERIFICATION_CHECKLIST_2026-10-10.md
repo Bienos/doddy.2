@@ -533,3 +533,16 @@ These three merged without a compile (`REVIEW_DoddyCore_2026-10-11.md`, `REVIEW_
 | LT4 | Turn off Speech Recognition for Doddy in Settings; try again | The draft card says it's off; type the words and tap Send; Doddy answers |
 | LT5 | Start, then tap End mid-recording | Nothing sent; no DoddyTurn-*.m4a left in the app's tmp folder (Xcode › Devices › container) |
 | LT6 | Start, wait past 3:00 | It finishes by itself and sends what it heard |
+
+## 4z. Allowing a function from the conversation (ADR-562, `docs/design/SETTINGS_AND_CONNECTIONS.md` §3.6)
+| # | Do this | Expect |
+|---|---|---|
+| AC1 | Fresh install (Calendar never asked). Settings › Connections › Calendar off. Ask "What's on tomorrow?" | No Settings mention. Doddy says "Allow it on screen and I'll carry on"; the card "Allow Doddy to use Calendar?" scrolls into view with Allow, Not now and Details |
+| AC2 | Tap Allow | iOS's own Calendar prompt; Allow there → the card goes, Doddy asks "Read your calendar?" (ASK-01) by itself, yes → the events. Settings › Connections shows Calendar On |
+| AC3 | Same as AC1, but Don't Allow in iOS's prompt | The card goes; Doddy doesn't retry or ask again; Calendar still Off |
+| AC4 | Calendar refused earlier in iOS. Ask again; tap Open iPhone Settings; allow Full Access there; come back | The card says iPhone has it turned off; the button opens Doddy's page in iPhone Settings. Back in Doddy the switch turns on and Doddy carries on by itself. Coming back without allowing: the card stays |
+| AC5 | Timers off (notifications never asked). "Set a timer for ten minutes" → Allow | iOS notification prompt, then the timer card |
+| AC6 | Card up, tap Not now | Nothing changes; Doddy says nothing more about it |
+| AC7 | Card up, tap End, start a new conversation | No card in the new conversation |
+| AC8 | Card up, tap Details, turn it on in the sheet, close the sheet | The card goes and Doddy carries on |
+| AC9 | ElevenLabs conversation log for AC1 to AC5 | The "(app) The user just allowed …" message reached the agent and it called the tool again once |
