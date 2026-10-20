@@ -29,7 +29,7 @@ extension DataFlowState {
             heyDoddyOn: flag(PreferenceKey.heyDoddyOn, default: false),
             sharedLists: SharedListsController.shared.links.count,
             // OpenAI is the default where the token server is set (ADR-442); a choice in Settings wins.
-            voiceProvider: VoiceProvider.effective(
+            voiceProvider: VoiceAccess.provider(
                 stored: defaults.string(forKey: VoiceProvider.preferenceKey), tokenServerSet: true),
             learnedSharedWithVoice: defaults.bool(forKey: PreferenceKey.shareLearnedWithVoice))
     }

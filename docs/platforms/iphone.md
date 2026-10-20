@@ -13,7 +13,7 @@
   - ElevenLabs `agent_0501m4et27vyeawrwqfdxxfszfa6`. The prompt and tools are in `voice-agent/` (`instructions.md`, `tools.json`, `session.json`). `python3 -I scripts/voice_agent_spec.py check` validates them.
   - The live agent is changed by the owner, never from the app.
   - The app sends dynamic variables at start (notes, lists, profile, `learned_context`, opening line). A variable the live prompt requires but the app doesn't send stops the call before it starts.
-- **Talking before Sign in with Apple is set up:** a debug build (Xcode ▶ Run) shows a "Test build" box on the sign-in screen, in place of the Apple button, with "I agree. Talk without signing in" (ADR-548, `DebugVoiceTesting.swift`). It uses ElevenLabs only and lasts until the app is relaunched. Release builds don't have it.
+- **Talking before Sign in with Apple is set up:** `VoiceAccess.requiresAppleSignIn` is `false` for now, in every build (ADR-549). Talk goes straight to the ElevenLabs consent and connects to the live agent with no account; OpenAI's voice is unavailable. Set it to `true` before TestFlight or the App Store.
 - **Providers:** ElevenLabs (default) or OpenAI Realtime, as a test switch on Home (ADR-265). `docs/implementation/VOICE_PROVIDER_TEST_STATUS.md`.
 - **Status docs:** `V1_VOICE_STATUS`, `V3_ISLAND_STATUS` (Dynamic Island), `HEY_DODDY_STATUS`, `OPENING_SCENE_STATUS` (the intro and listen-on-open).
 - **To debug a voice problem,** look at the ElevenLabs conversation log for the agent first:

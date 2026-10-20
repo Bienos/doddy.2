@@ -23,7 +23,7 @@ struct VoiceView: View {
     /// What was last copied from a BLIK card (ADR-510), to show "Copied" next to it.
     @State private var copiedForBlik: String?
 
-    private var provider: VoiceProvider { VoiceProvider.effective(stored: voiceProvider, tokenServerSet: true) }
+    private var provider: VoiceProvider { VoiceAccess.provider(stored: voiceProvider, tokenServerSet: true) }
 
     /// The app endpoint is fixed in the build; users never enter server URLs or access codes.
     private var mode: VoiceConnectionMode {
@@ -80,15 +80,9 @@ struct VoiceView: View {
                 self.controller = started
                 return
             }
-            #if DEBUG
-            // "Talk without signing in" was tapped earlier in this launch (ADR-548): no sign-in screen again.
-            if DebugVoiceTesting.isOn && VoiceProviderConsent.isGranted(for: .elevenLabs) {
-                await beginConversation()
-                return
-            }
-            #endif
             await authSession.restore()
-            if authSession.isSignedIn && VoiceProviderConsent.isGranted(for: provider) {
+            // With Apple sign-in off (VoiceAccess, ADR-549) the provider consent is the only gate.
+            if (!VoiceAccess.requiresAppleSignIn || authSession.isSignedIn) && VoiceProviderConsent.isGranted(for: provider) {
                 await beginConversation()
             }
         }

@@ -376,23 +376,18 @@ final class VoiceSessionController {
         self.devices = devices
     }
 
-    /// The voice provider a conversation uses. A debug build with "Talk without signing in" on
-    /// always uses ElevenLabs: OpenAI's voice needs a DODDY session (ADR-548).
+    /// The voice provider a conversation uses. While Apple sign-in is off (`VoiceAccess`, ADR-549)
+    /// it is always ElevenLabs: OpenAI's voice needs a DODDY session.
     private static func effectiveProvider(tokenServerSet: Bool) -> VoiceProvider {
-        #if DEBUG
-        if DebugVoiceTesting.isOn { return .elevenLabs }
-        #endif
-        return VoiceProvider.effective(
+        VoiceAccess.provider(
             stored: UserDefaults.standard.string(forKey: VoiceProvider.preferenceKey), tokenServerSet: tokenServerSet)
     }
 
-    /// Debug builds only: connect straight to the live ElevenLabs agent, with no DODDY session.
-    /// Always nil in a Release build (ADR-548, ADR-522).
-    private static func debugDirectAuth() -> ElevenLabsConfiguration? {
-        #if DEBUG
-        if DebugVoiceTesting.isOn { return .publicAgent(id: DebugVoiceTesting.agentID) }
-        #endif
-        return nil
+    /// While Apple sign-in is off (`VoiceAccess`, ADR-549): connect straight to the live
+    /// ElevenLabs agent, with no DODDY session. Nil once sign-in is required again (ADR-522).
+    private static func directAuth() -> ElevenLabsConfiguration? {
+        if VoiceAccess.requiresAppleSignIn { return nil }
+        return .publicAgent(id: VoiceAccess.directAgentID)
     }
 
     #if DEBUG
@@ -665,7 +660,7 @@ final class VoiceSessionController {
         let auth: ElevenLabsConfiguration
         switch mode {
         case .tokenServer(let endpoint):
-            if let direct = Self.debugDirectAuth() {
+            if let direct = Self.directAuth() {
                 auth = direct
             } else {
                 do throws(VoiceTokenError) {

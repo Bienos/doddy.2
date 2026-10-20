@@ -425,7 +425,8 @@ struct SettingsView: View {
                         .foregroundStyle(Theme.secondaryText)
                         .accessibilityIdentifier("settings.listenOnOpen.note")
                     VoiceProviderPicker(idPrefix: "settings")
-                    VoiceAccountSettings()
+                    // Nothing to sign in to, out of or delete while Apple sign-in is off (ADR-549).
+                    if VoiceAccess.requiresAppleSignIn { VoiceAccountSettings() }
                     StatusRow(title: "Connection", value: connectionText)
                         .accessibilityIdentifier("settings.voiceConnection")
                     Text("DODDY keeps your voice session on this iPhone. When you start a conversation, it requests a short-lived connection credential from DODDY’s server. Your voice and conversation go to the selected provider only after you agree on first use. You never need a provider key or access code.")
@@ -1004,7 +1005,7 @@ struct VoiceProviderPicker: View {
     @AppStorage(OpenAIRealtimeModel.preferenceKey) private var realtimeModel = OpenAIRealtimeModel.default.rawValue
 
     var body: some View {
-        let provider = VoiceProvider.effective(stored: voiceProvider, tokenServerSet: true)
+        let provider = VoiceAccess.provider(stored: voiceProvider, tokenServerSet: true)
         VStack(alignment: .leading, spacing: 6) {
             Picker("Voice", selection: Binding(get: { provider.rawValue }, set: { voiceProvider = $0 })) {
                 ForEach(VoiceProvider.allCases) { option in
@@ -1021,6 +1022,10 @@ struct VoiceProviderPicker: View {
                 }
                 .pickerStyle(.segmented)
                 .accessibilityIdentifier("\(idPrefix).realtimeModel")
+            }
+            if !VoiceAccess.requiresAppleSignIn {
+                Text(verbatim: "Apple sign-in is off for now, so ElevenLabs runs every conversation. OpenAI's voice needs the sign-in.")
+                    .font(.caption2).foregroundStyle(Theme.secondaryText)
             }
             Text(verbatim: provider == .openAIRealtime
                 ? "OpenAI Realtime \(OpenAIRealtimeModel(stored: realtimeModel).shortName) runs your next conversation, through the token server. Weather and Wikipedia don't work with it."

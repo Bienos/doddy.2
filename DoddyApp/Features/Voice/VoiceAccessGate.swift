@@ -11,20 +11,23 @@ struct VoiceAccessGate: View {
     @State private var rawNonce: String?
     @State private var consented = false
 
+    /// Signed in, or Apple sign-in is off for now (`VoiceAccess`, ADR-549): then only the consent step is left.
+    private var accessGranted: Bool { !VoiceAccess.requiresAppleSignIn || session.isSignedIn }
+
     var body: some View {
         ScrollView {
         VStack(spacing: 20) {
             VoiceDoddyView(art: .pose(.listening))
                 .frame(height: 140)
                 .accessibilityHidden(true)
-            Text(session.isSignedIn ? "Before Doddy listens" : "Talk to Doddy")
+            Text(accessGranted ? "Before Doddy listens" : "Talk to Doddy")
                 .font(.title2.bold())
                 .multilineTextAlignment(.center)
 
             if session.isLoading {
                 ProgressView("Connecting your voice account…")
                     .accessibilityIdentifier("voice.auth.loading")
-            } else if !session.isSignedIn && session.hasSavedSession {
+            } else if !accessGranted && session.hasSavedSession {
                 Text("Your DODDY voice account is saved on this iPhone. Reconnecting doesn’t require another Apple sign-in.")
                     .font(.body)
                     .foregroundStyle(Theme.secondaryText)
@@ -34,14 +37,7 @@ struct VoiceAccessGate: View {
                         .buttonStyle(.borderedProminent)
                         .accessibilityIdentifier("voice.auth.retryConnection")
                 }
-            } else if !session.isSignedIn {
-                #if DEBUG
-                // Sign in with Apple is off in builds run from Xcode until it is set up (ADR-548).
-                Text(verbatim: "Sign in with Apple is switched off in this test build until it is set up. Use the button below to talk.")
-                    .font(.body)
-                    .foregroundStyle(Theme.secondaryText)
-                    .multilineTextAlignment(.center)
-                #else
+            } else if !accessGranted {
                 Text("Sign in once with Apple to set up your DODDY voice account. Apple sends a signed identity token to DODDY only to verify your account and create the session. The protected session stays on this iPhone, so you won’t need to sign in every time. Sign-in doesn’t share your voice or notes.")
                     .font(.body)
                     .foregroundStyle(Theme.secondaryText)
@@ -57,7 +53,6 @@ struct VoiceAccessGate: View {
                 .signInWithAppleButtonStyle(.black)
                 .frame(height: 50)
                 .accessibilityIdentifier("voice.auth.appleSignIn")
-                #endif
             } else {
                 VStack(alignment: .leading, spacing: 12) {
                     Label("Voice runs through \(provider.shortName)", systemImage: "waveform")
@@ -84,10 +79,6 @@ struct VoiceAccessGate: View {
                 .accessibilityIdentifier("voice.auth.continue")
             }
 
-            #if DEBUG
-            if !session.isSignedIn { debugTestingSection }
-            #endif
-
             if let message = session.message {
                 VStack(spacing: 8) {
                     Text(message)
@@ -109,36 +100,6 @@ struct VoiceAccessGate: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .task { consented = VoiceProviderConsent.isGranted(for: provider) }
     }
-
-    #if DEBUG
-    /// Debug builds only (ADR-548): a way to talk before Sign in with Apple is set up. Not in a
-    /// Release, TestFlight or App Store build. Tapping the button is the consent for ElevenLabs.
-    private var debugTestingSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Label {
-                Text(verbatim: "Test build")
-            } icon: {
-                Image(systemName: "hammer")
-            }
-            .font(.headline)
-            Text(verbatim: "Skips the Apple sign-in. Your voice and this conversation go straight to ElevenLabs, which keeps a recording and transcript of each one. This button is only in builds run from Xcode.")
-                .font(.footnote)
-                .foregroundStyle(Theme.secondaryText)
-            Button {
-                DebugVoiceTesting.turnOn()
-                VoiceProviderConsent.grant(for: .elevenLabs)
-                onContinue()
-            } label: {
-                Text(verbatim: "I agree. Talk without signing in")
-            }
-            .buttonStyle(.bordered)
-            .accessibilityIdentifier("voice.auth.debugTalk")
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 16))
-    }
-    #endif
 
     private func completeSignIn(_ result: Result<ASAuthorization, Error>) {
         guard case .success(let authorization) = result,
