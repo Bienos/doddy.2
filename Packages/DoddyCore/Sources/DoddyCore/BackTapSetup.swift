@@ -23,7 +23,7 @@ public struct BackTapGuideStep: Equatable, Sendable, Identifiable {
     }
 }
 
-/// The versioned walkthrough (design/interface-v1.2, GUIDED-BACK-TAP-AND-VOICE-SETUP.md).
+/// The versioned walkthrough (design/interface-v1.2 (deleted 20 Oct 2026, ADR-548; see git history), GUIDED-BACK-TAP-AND-VOICE-SETUP.md).
 /// Guidance follows the page the user *reports*; the app never claims to see their screen.
 public enum BackTapGuide {
     /// Bump when the step text or order changes. Stored next to the user's completion marker.

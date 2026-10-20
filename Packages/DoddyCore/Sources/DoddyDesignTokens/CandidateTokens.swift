@@ -1,6 +1,6 @@
 import Foundation
 
-/// CANDIDATE design tokens from `design/interface-v1.2/docs/DESIGN-SYSTEM.md` (Pocket Notebook).
+/// CANDIDATE design tokens from `design/interface-v1.2/docs/DESIGN-SYSTEM.md (deleted 20 Oct 2026, ADR-548; see git history)` (Pocket Notebook).
 /// Ink, paper and orange follow Brand Guidelines V2.2 (`design/brand-v2.2/`, ADR-546): the orange
 /// is the brand's `#FF6A00`. Nothing here is from `assets/brand_candidate/` (historical palette),
 /// per docs/design/CANONICAL_DESIGN_DIRECTION.md. Bright orange is decoration, never body text.

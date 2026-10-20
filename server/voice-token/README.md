@@ -11,7 +11,7 @@ The app calls two routes:
   DODDY voice-session deletion. The selected provider must be configured before a voice account
   session can be created.
 - `POST /api/voice-token`: validates an active DODDY session and returns an ElevenLabs conversation
-  token, OpenAI Realtime client secret, or the configured Picovoice key.
+  token or OpenAI Realtime client secret.
 
 Access tokens last 10 minutes and stay in app memory. Opaque refresh tokens rotate on use and last
 30 days; the app stores the current refresh token and Apple user identifier in the iOS Keychain with
@@ -40,7 +40,6 @@ Vercel project `doddy-voice-token` through `tools/secrets/sync.mjs` (ADR-493,
 | `OPENAI_API_KEY` | Owner-held OpenAI API credential, if OpenAI voice is enabled. |
 | `OPENAI_REALTIME_MODEL` | Optional server default; the app's model is restricted to the allowlist in `src/handler.js`. |
 | `OPENAI_REALTIME_VOICE` | Optional server default voice. |
-| `PICOVOICE_ACCESS_KEY` | Optional owner-held key for one-tap Hey Doddy setup. |
 | `DODDY_TOKENS_PER_HOUR` | Optional shared per-account issuance limit; defaults to `30`. |
 | `DODDY_GLOBAL_TOKENS_PER_HOUR` | Optional shared global issuance limit; defaults to `100`. |
 | `APPLE_TEAM_ID` | Optional, with the next two: the Apple Developer team ID. Lets "Delete voice account" also revoke Sign in with Apple (ADR-524). |

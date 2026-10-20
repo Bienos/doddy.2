@@ -135,6 +135,17 @@ final class LaunchSmokeTests: XCTestCase {
     }
 
     @MainActor
+    func testWhatICanDoOpensFromTheHomeMenu() {
+        // ADR-548: the capability list, generated from the catalog, in Home's ••• menu.
+        let app = launch(onboardingDone: true)
+        XCTAssertTrue(app.buttons["home.talk"].waitForExistence(timeout: 5))
+        app.tapHomeMenuItem("home.capabilities")
+        XCTAssertTrue(app.staticTexts["capabilities.introduction"].waitForExistence(timeout: 5))
+        app.buttons["Done"].tap()
+        XCTAssertTrue(app.staticTexts["capabilities.introduction"].waitForNonExistence(timeout: 5))
+    }
+
+    @MainActor
     func testAskDoddyIsOffByDefaultAndSaysWhyWithoutAnyNetworkCall() {
         let app = launch(onboardingDone: true)
         XCTAssertTrue(app.buttons["home.ask"].waitForExistence(timeout: 5))

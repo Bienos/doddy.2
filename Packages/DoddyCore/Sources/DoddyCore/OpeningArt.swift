@@ -1,7 +1,7 @@
 import Foundation
 
 // The character drawings for the opening (ADR-225), read from the supplied v1.3-r1 SVGs
-// (`design/interface-v1.2/assets/doddy-pose-basketball-*-light-v1.3-r1.svg`, copied into the
+// (`design/interface-v1.2/assets/doddy-pose-basketball-*-light-v1.3-r1.svg (deleted 20 Oct 2026, ADR-548; see git history)`, copied into the
 // app bundle). They are line art: a few dozen stroked paths, circles and ellipses in nested
 // groups with translate/scale/rotate transforms, in three colours. Reading them as paths lets
 // the app draw Doddy stroke by stroke, like a pen, and recolour him for dark appearance. The

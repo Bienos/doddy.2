@@ -85,12 +85,13 @@ final class CallCaseTests: XCTestCase {
         XCTAssertTrue(CallHours.fits(iso.date(from: "2026-10-24T06:00:00Z")!, maxDurationSecs: 240))
         XCTAssertFalse(CallHours.fits(iso.date(from: "2026-10-25T06:30:00Z")!, maxDurationSecs: 240))
         XCTAssertTrue(CallHours.fits(iso.date(from: "2026-10-25T07:00:00Z")!, maxDurationSecs: 240))
-        XCTAssertTrue(CallHours.fits(iso.date(from: "2026-10-24T17:55:15Z")!, maxDurationSecs: 240))
-        XCTAssertFalse(CallHours.fits(iso.date(from: "2026-10-24T17:55:16Z")!, maxDurationSecs: 240))
+        XCTAssertTrue(CallHours.fits(iso.date(from: "2026-10-24T20:55:15Z")!, maxDurationSecs: 240))
+        XCTAssertFalse(CallHours.fits(iso.date(from: "2026-10-24T20:55:16Z")!, maxDurationSecs: 240))
+        XCTAssertTrue(CallHours.fits(iso.date(from: "2026-10-24T19:30:00Z")!, maxDurationSecs: 240), "21:30 Warsaw fits")
     }
 
     func testRetrySuggestionsAllFitTheHours() {
-        let now = ISO8601DateFormatter().date(from: "2026-10-19T17:30:00Z")! // 19:30 Warsaw
+        let now = ISO8601DateFormatter().date(from: "2026-10-19T20:30:00Z")! // 22:30 Warsaw
         let slots = CallHours.retrySuggestions(after: now, maxDurationSecs: 240)
         XCTAssertEqual(slots.count, 4)
         XCTAssertTrue(slots.allSatisfy { CallHours.fits($0, maxDurationSecs: 240) && $0 > now })

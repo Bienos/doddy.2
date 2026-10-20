@@ -24,13 +24,6 @@ packages:
   LiveKit:
     url: https://github.com/livekit/client-sdk-swift
     from: 2.10.0
-  # "Hey Doddy" wake word (ADR-254): on-device keyword spotting. Pinned to the v4.0 release commit
-  # (its tags have two parts, which Swift Package Manager can't read as versions). The Swift code
-  # is Apache-2.0; the bundled PvPorcupine library runs under Picovoice's terms and needs the
-  # user's own AccessKey (docs/DEPENDENCIES_AND_LICENSES.md).
-  Porcupine:
-    url: https://github.com/Picovoice/porcupine
-    revision: c794ad57b189f4b06e8128abd0324ad09e1a424d
 settings:
   base:
     SWIFT_VERSION: "6.0"
@@ -95,8 +88,6 @@ targets:
         product: DoddyPersistence
       - package: ElevenLabs
       - package: LiveKit
-      - package: Porcupine
-        product: Porcupine
     settings:
       base:
         # Development identifier only; the production identifier is an owner decision.
@@ -118,7 +109,7 @@ targets:
         TARGETED_DEVICE_FAMILY: "1,2"
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight
         # Only these permissions. Each is asked for only when the user turns the matching toggle on in Settings, Connections.
-        INFOPLIST_KEY_NSMicrophoneUsageDescription: "To hear you, Doddy needs the microphone. Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. If you turn on Hey Doddy, the microphone also listens on this iPhone for the wake word; that sound isn't kept or sent. Your voice in a conversation is sent to OpenAI to run it, or to ElevenLabs if you switch Home's voice to ElevenLabs. A voice memo you record on a note stays on this iPhone."
+        INFOPLIST_KEY_NSMicrophoneUsageDescription: "To hear you, Doddy needs the microphone. Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. Your voice in a conversation is sent to ElevenLabs to run it, or to OpenAI if you switch Home's voice to OpenAI. A voice memo you record on a note stays on this iPhone."
         # Voice memos only (ADR-230): on-device recognition is required, so the audio isn't sent.
         INFOPLIST_KEY_NSSpeechRecognitionUsageDescription: "Doddy writes out a voice memo on this iPhone when you record one, so you can check its words before saving. The recording and its words are not sent anywhere."
         INFOPLIST_KEY_NSCalendarsFullAccessUsageDescription: "Doddy reads your events for the days you ask about, and adds, changes or deletes an event only after you tap Add, Change or Delete. Turn this off in Settings, Connections."

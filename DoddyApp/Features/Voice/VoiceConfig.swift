@@ -10,6 +10,23 @@ enum VoiceConfig {
 
     static var tokenEndpoint: URL? { VoiceTokenServer.endpoint(from: tokenEndpointAddress) }
 
+    // MARK: Developer connection (ADR-551)
+
+    /// Settings key of the Debug-only switch "Talk without Apple sign-in".
+    static let directVoiceKey = "developer.directVoice"
+
+    #if DEBUG
+    /// The live ElevenLabs agent's id (public: it is in the repo's docs, and the agent has no
+    /// authentication). A Debug build may connect to it directly, so voice can be tried with a free
+    /// Apple ID, which can't have Sign in with Apple. On by default in Debug; Release and TestFlight
+    /// builds compile this to `false` and always need a DODDY voice account.
+    static let directAgentID = "agent_0501m4et27vyeawrwqfdxxfszfa6"
+    static var directVoiceEnabled: Bool { UserDefaults.standard.object(forKey: directVoiceKey) as? Bool ?? true }
+    #else
+    static let directAgentID = ""
+    static var directVoiceEnabled: Bool { false }
+    #endif
+
     static var authEndpoint: URL? {
         guard let tokenEndpoint else { return nil }
         var components = URLComponents(url: tokenEndpoint, resolvingAgainstBaseURL: false)

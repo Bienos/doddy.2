@@ -9,7 +9,7 @@ final class FocusFilterTests: XCTestCase {
         XCTAssertTrue(FocusFilterSettings().changesNothing)
         XCTAssertEqual(FocusFilterSettings(stored: nil), .none)
         XCTAssertEqual(FocusFilterSettings(stored: "not json"), .none)
-        let set = FocusFilterSettings(pausesHeyDoddy: true, listFirstID: UUID())
+        let set = FocusFilterSettings(listFirstID: UUID())
         XCTAssertFalse(set.changesNothing)
         XCTAssertEqual(FocusFilterSettings(stored: set.stored), set)
     }

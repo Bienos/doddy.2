@@ -68,3 +68,15 @@ One agent per language made each table (`l10n/site/<code>.json`, 187 strings). E
 - **Polish:** "Dołącz do wczesnego dostępu" is about 60% longer; "Później" drops "ask"; "Poziom B2" may read as a language level; "...and Polish alongside English" states Polish support as in testing, so check it does not read as available.
 
 **Terms for a native reviewer:** Doddy's pronoun in each language (the app's table decides); "mate" as the app translates it (companion, Begleiter, compañero, tip, compagnon); "receipt" (Bestätigung, potwierdzenie, Tiques, justificatif); "wake word" (palabra de activación, not in the app's table); "Blog" with the English note "(English)" in brackets after it.
+
+## Seven texts back in English after ADR-546 (20 Oct)
+
+ElevenLabs became the default voice (ADR-546), so seven privacy texts that named OpenAI first were rewritten. English and Polish were rewritten; the microphone prompt was rewritten by hand in all nine languages. For **de, es, fr, hr, it, ja, pt-BR and zh-Hans** the old translations of these seven texts were removed, because swapping the two company names would have left pronouns such as "darauf" or "a ella" pointing at the wrong company. Until retranslated they show English. New English keys (first 90 characters):
+
+- `Both voices go to ElevenLabs, or OpenAI if you switch Home's voice to it to be translated.…`
+- `Doddy is an AI, not a person. Notes are kept on this iPhone, and because Memory on calls i…`
+- `Doddy is an AI, not a person. Notes stay on this iPhone; while a conversation is open they…`
+- `Optional. When set, it's sent to ElevenLabs, or OpenAI if you switch Home's voice to it wi…`
+- `Stored on this iPhone with your memories, but separately: forgetting these doesn't delete …`
+- `Talking sends these reminders and list names to ElevenLabs, or OpenAI if you switch Home's…`
+- `While you talk, your voice, this conversation, your saved notes, your list names (and a li…`

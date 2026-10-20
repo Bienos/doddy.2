@@ -27,7 +27,7 @@ A reference such as `op://doddy-prod/openai-api/credential` names a vault, an it
 | `doddy-prod` | Runtime secrets for the live hosts | Owner |
 | `doddy-dev` | Separate values for local development: low-limit provider keys, fresh signing and encryption keys | Owner, and collaborators if any |
 | `doddy-deploy` | Host API tokens: `vercel-token`, `render-api-key` | **Owner only.** A Render API key can read every Render secret |
-| `doddy-accounts` | Dashboard logins with two-factor, the original APNs `.p8`, the Picovoice keyword file, recovery codes | Owner only |
+| `doddy-accounts` | Dashboard logins with two-factor, the original APNs `.p8`, recovery codes | Owner only |
 
 **Plan:** Individual (owner's choice, 18 Oct). Move to Business if a second person needs access or you want 1Password's access history.
 
@@ -42,7 +42,6 @@ A reference such as `op://doddy-prod/openai-api/credential` names a vault, an it
 |---|---|---|---|---|
 | `ELEVENLABS_API_KEY` | `elevenlabs-api` | `vercel:doddy-voice-token`, `render:doddy-messaging` | yes | yes |
 | `OPENAI_API_KEY` | `openai-api` | `vercel:doddy-voice-token`, `vercel:doddy-gateway`, `render:doddy-messaging` | yes | yes |
-| `PICOVOICE_ACCESS_KEY` | `picovoice-access-key` | `vercel:doddy-voice-token` | yes | no |
 | `DODDY_SESSION_SIGNING_KEY` | `voice-token-session-signing-key` | `vercel:doddy-voice-token` | **no**: changing it signs everyone out and changes the Apple ids the server derives from it | yes |
 | `UPSTASH_REDIS_REST_TOKEN` | `upstash-voice-token` | `vercel:doddy-voice-token` | yes | no |
 | `UPSTASH_REDIS_REST_TOKEN` | `upstash-gateway` | `vercel:doddy-gateway` | yes | no |
@@ -144,7 +143,6 @@ The text comes from `rotate` in the manifest.
 |---|---|
 | `ELEVENLABS_API_KEY` (server/voice-token, server/messaging) | Make a new key in ElevenLabs, put it here, sync and redeploy both hosts, then delete the old key in ElevenLabs. A host still holding the deleted key can't start voice or phone calls. |
 | `OPENAI_API_KEY` (server/voice-token, gateway, server/messaging) | Make a new key in the OpenAI project, put it here, sync and redeploy all three, then revoke the old one. Plan: one key per service at the next rotation. |
-| `PICOVOICE_ACCESS_KEY` (server/voice-token) | Phones keep the old key in their Keychain (ADR-328). After rotating, Hey Doddy fails on each phone until it fetches the new key; whether the app refetches on its own is not verified. |
 | `DODDY_SESSION_SIGNING_KEY` (server/voice-token) | Signs everyone out and changes the pseudonymous Apple subject ids. Rotate only with a written plan; never as part of a sync. |
 | `UPSTASH_REDIS_REST_TOKEN` (server/voice-token) | Reset the token in Upstash, put it here, sync and redeploy. The server fails closed until it has the new token. |
 | `UPSTASH_REDIS_REST_TOKEN` (gateway) | Only if the gateway uses Upstash directly; a Vercel Marketplace store sets KV_REST_API_* itself. Reset in Upstash, sync, redeploy. |
