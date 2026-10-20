@@ -6,8 +6,6 @@ import Foundation
 
 /// What the island says and Doddy speaks first.
 public enum WakeGreeting {
-    /// Used when the user hasn't given Doddy a name to call them.
-    public static let fallbackName = "bud"
     /// The voice agent's first message is `{{opening_line}}` (voice-agent/session.json).
     public static let variableName = "opening_line"
 
@@ -22,20 +20,26 @@ public enum WakeGreeting {
         return Nickname.clean(first)
     }
 
-    /// "Hey Pat, what's up?" — "Hey bud, what's up?" without a name. Polish has no "bud":
-    /// "Hej Pat, co słychać?" or "Hej, co słychać?".
+    /// "Hey Pat, what's up?" — "Hey, what's up?" without a name (no "bud" tic, ADR-546).
+    /// Polish: "Hej Pat, co słychać?" or "Hej, co słychać?".
     public static func line(name: String?, polish: Bool = false) -> String {
         let name = Nickname.clean(name)
         if polish {
             return name.map { "Hej \($0), co słychać?" } ?? "Hej, co słychać?"
         }
-        return "Hey \(name ?? fallbackName), what's up?"
+        return name.map { "Hey \($0), what's up?" } ?? "Hey, what's up?"
     }
 
-    /// What Doddy says first. After the wake word: the greeting. Otherwise the live agent's own
-    /// opening (as read from ElevenLabs on 2026-10-11), so a tap conversation sounds as it did.
-    public static func openingLine(afterWakeWord: Bool, name: String?, polish: Bool) -> String {
+    /// What Doddy says first (Brand Guidelines V2.2 p.53, ADR-546). After the wake word: the
+    /// greeting. The user's very first conversation: "Hi, I'm Doddy. What's on your mind?".
+    /// Otherwise the familiar return, "I'm here. What's up?", the same words as Home.
+    /// The Polish lines are drafts until a Polish speaker has read them (l10n/REVIEW_NOTES.md).
+    public static func openingLine(afterWakeWord: Bool, name: String?, polish: Bool,
+                                   firstConversation: Bool = false) -> String {
         if afterWakeWord { return line(name: name, polish: polish) }
-        return polish ? "Hej, tu Doddy. Co słychać?" : "Hey, it's Doddy. What's up?"
+        if firstConversation {
+            return polish ? "Cześć, tu Doddy. Co ci chodzi po głowie?" : "Hi, I'm Doddy. What's on your mind?"
+        }
+        return polish ? "Jestem. Co słychać?" : "I'm here. What's up?"
     }
 }
