@@ -376,6 +376,25 @@ final class VoiceSessionController {
         self.devices = devices
     }
 
+    /// The voice provider a conversation uses. A debug build with "Talk without signing in" on
+    /// always uses ElevenLabs: OpenAI's voice needs a DODDY session (ADR-548).
+    private static func effectiveProvider(tokenServerSet: Bool) -> VoiceProvider {
+        #if DEBUG
+        if DebugVoiceTesting.isOn { return .elevenLabs }
+        #endif
+        return VoiceProvider.effective(
+            stored: UserDefaults.standard.string(forKey: VoiceProvider.preferenceKey), tokenServerSet: tokenServerSet)
+    }
+
+    /// Debug builds only: connect straight to the live ElevenLabs agent, with no DODDY session.
+    /// Always nil in a Release build (ADR-548, ADR-522).
+    private static func debugDirectAuth() -> ElevenLabsConfiguration? {
+        #if DEBUG
+        if DebugVoiceTesting.isOn { return .publicAgent(id: DebugVoiceTesting.agentID) }
+        #endif
+        return nil
+    }
+
     #if DEBUG
     /// Test seam only (AppTests review finding 2): shows `action` as if the agent had proposed it,
     /// with `link` standing in for the provider so a test can read the reply. The app never calls it.
@@ -504,8 +523,7 @@ final class VoiceSessionController {
             fail(reason)
             return
         }
-        let consentProvider = VoiceProvider.effective(
-            stored: UserDefaults.standard.string(forKey: VoiceProvider.preferenceKey), tokenServerSet: true)
+        let consentProvider = Self.effectiveProvider(tokenServerSet: true)
         guard VoiceProviderConsent.isGranted(for: consentProvider) else {
             fail("Open Talk to Doddy to review voice data sharing before starting a conversation.")
             return
@@ -589,8 +607,7 @@ final class VoiceSessionController {
         // OpenAI Realtime is the default where the token server is set (ADR-442); a choice on Home wins.
         let tokenServerSet: Bool
         if case .tokenServer = mode { tokenServerSet = true } else { tokenServerSet = false }
-        provider = VoiceProvider.effective(
-            stored: UserDefaults.standard.string(forKey: VoiceProvider.preferenceKey), tokenServerSet: tokenServerSet)
+        provider = Self.effectiveProvider(tokenServerSet: tokenServerSet)
         openAIModel = OpenAIRealtimeModel(stored: UserDefaults.standard.string(forKey: OpenAIRealtimeModel.preferenceKey))
         if provider == .openAIRealtime {
             await startOpenAI(mode, variables: variables)
@@ -648,15 +665,19 @@ final class VoiceSessionController {
         let auth: ElevenLabsConfiguration
         switch mode {
         case .tokenServer(let endpoint):
-            do throws(VoiceTokenError) {
-                auth = .conversationToken(try await VoiceTokenClient(endpoint: endpoint).fetchToken())
-            } catch {
-                let tokenNote = "voice token not received: attempt \(attempt), \(LogSafeError.kind(of: error))"
-                Self.audioLog.notice("\(tokenNote, privacy: .public)")
-                if attempt == startAttempt, phase == .connecting {
-                    if error == .offline { failOffline() } else { fail(VoiceTokenServer.message(for: error)) }
+            if let direct = Self.debugDirectAuth() {
+                auth = direct
+            } else {
+                do throws(VoiceTokenError) {
+                    auth = .conversationToken(try await VoiceTokenClient(endpoint: endpoint).fetchToken())
+                } catch {
+                    let tokenNote = "voice token not received: attempt \(attempt), \(LogSafeError.kind(of: error))"
+                    Self.audioLog.notice("\(tokenNote, privacy: .public)")
+                    if attempt == startAttempt, phase == .connecting {
+                        if error == .offline { failOffline() } else { fail(VoiceTokenServer.message(for: error)) }
+                    }
+                    return
                 }
-                return
             }
         case .notSetUp(let reason):
             fail(reason)

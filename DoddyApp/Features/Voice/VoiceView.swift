@@ -80,6 +80,13 @@ struct VoiceView: View {
                 self.controller = started
                 return
             }
+            #if DEBUG
+            // "Talk without signing in" was tapped earlier in this launch (ADR-548): no sign-in screen again.
+            if DebugVoiceTesting.isOn && VoiceProviderConsent.isGranted(for: .elevenLabs) {
+                await beginConversation()
+                return
+            }
+            #endif
             await authSession.restore()
             if authSession.isSignedIn && VoiceProviderConsent.isGranted(for: provider) {
                 await beginConversation()

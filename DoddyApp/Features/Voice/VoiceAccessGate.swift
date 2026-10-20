@@ -76,6 +76,10 @@ struct VoiceAccessGate: View {
                 .accessibilityIdentifier("voice.auth.continue")
             }
 
+            #if DEBUG
+            if !session.isSignedIn { debugTestingSection }
+            #endif
+
             if let message = session.message {
                 VStack(spacing: 8) {
                     Text(message)
@@ -97,6 +101,36 @@ struct VoiceAccessGate: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .task { consented = VoiceProviderConsent.isGranted(for: provider) }
     }
+
+    #if DEBUG
+    /// Debug builds only (ADR-548): a way to talk before Sign in with Apple is set up. Not in a
+    /// Release, TestFlight or App Store build. Tapping the button is the consent for ElevenLabs.
+    private var debugTestingSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label {
+                Text(verbatim: "Test build")
+            } icon: {
+                Image(systemName: "hammer")
+            }
+            .font(.headline)
+            Text(verbatim: "Skips the Apple sign-in. Your voice and this conversation go straight to ElevenLabs, which keeps a recording and transcript of each one. This button is only in builds run from Xcode.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+            Button {
+                DebugVoiceTesting.turnOn()
+                VoiceProviderConsent.grant(for: .elevenLabs)
+                onContinue()
+            } label: {
+                Text(verbatim: "I agree. Talk without signing in")
+            }
+            .buttonStyle(.bordered)
+            .accessibilityIdentifier("voice.auth.debugTalk")
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 16))
+    }
+    #endif
 
     private func completeSignIn(_ result: Result<ASAuthorization, Error>) {
         guard case .success(let authorization) = result,
