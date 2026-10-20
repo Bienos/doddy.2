@@ -155,7 +155,9 @@ struct RootView: View {
                 }
             }
             .task {
+                let notesLoad = LaunchWork.signposter.beginInterval("Notes load")
                 await store.reload()
+                LaunchWork.signposter.endInterval("Notes load", notesLoad)
                 // Memory on calls, at launch: once after the update, the server copy is replaced with
                 // one that has no private notes (ADR-310), only if the notes were read successfully.
                 MemoryCopySync.shared.retryIfNeeded(PrivateNotesStore.current().shareable(store.memories),
@@ -170,7 +172,8 @@ struct RootView: View {
                     FocusController.shared.refresh()
                     BreathingController.shared.refresh()
                     // Shared lists (ADR-263): changes others made arrive when Doddy comes to the front.
-                    Task { await SharedListsController.shared.syncAll() }
+                    // A cold launch also syncs (LaunchWork), so one that just ran is not repeated (ADR-547).
+                    Task { await SharedListsController.shared.syncAllUnlessRecent() }
                     // Memory on calls: a copy upload that failed or was cut off is sent again, and once
                     // after the update, a copy that may hold private notes is replaced (ADR-310).
                     MemoryCopySync.shared.retryIfNeeded(PrivateNotesStore.current().shareable(store.memories),
