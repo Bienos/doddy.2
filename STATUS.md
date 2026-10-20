@@ -2,9 +2,9 @@
 
 Doddy is a voice-first memory companion for iPhone, with an Apple Watch app and a Mac menu bar prototype. This page is the short version. Update it when you merge something that changes what is below.
 
-Last updated 2026-10-20, 22:00 UTC (the day's merges: #106, #113, #108, #111, #110, #112 and #114; his eyes on the new Home). Before that, 2026-10-19 (the owner's merge session: #84, #88, #90 and the #97 fix). Before that, 18 Oct: stage A (ADR-520 to ADR-524) and PR #85, BLIK transfers (ADR-510).
+Last updated 2026-10-20, 22:10 UTC (the day's merges: #106, #113, #108, #111, #110, #112 and #114; his eyes on the new Home). Before that, 2026-10-19 (the owner's merge session: #84, #88, #90 and the #97 fix). Before that, 18 Oct: stage A (ADR-520 to ADR-524) and PR #85, BLIK transfers (ADR-510).
 
-**Merged to main on 20 Oct** (UTC, all as merge commits). Five of them (#108, #111, #110, #112, #114) merged while their Mac build was still running (or not yet started), so **main at `5633b8f4` has not had a full Mac build and UI-test pass as one commit.** Run states below were read at 21:58 UTC: the Mac jobs of #108, #111, #110 and #112 finished green, and **#114's Mac job failed** (12 of 52 UI tests, all with one runner error; see its row). The tree of main at `01d3329c` (#113, #108, #111, #110 and #112 together) has passed a Mac build, in #112's run. The three direct commits and #114 on top of it have no green Mac run, so **main at `5633b8f4` has none**. Run the Mac build on main by hand before building it for a phone ("Waiting on the owner"). Three direct commits to main at 20:56 UTC (`8ece39ba`, `fb7b6d67`, `b9f5ad86`: the iPhone project drops its entitlements so a Personal Apple team can sign it, turns off generated string symbols, and a comment names #108's Debug voice switch) come after #112 and before #114; no hosted run was started for them on their own.
+**Merged to main on 20 Oct** (UTC, all as merge commits). Five of them (#108, #111, #110, #112, #114) merged while their Mac build was still running (or not yet started), so **main at `5633b8f4` has not had a full Mac build and UI-test pass as one commit.** Run states below were read at 21:58 UTC: the Mac jobs of #108, #111, #110 and #112 finished green, and **#114's Mac job failed** (12 of 52 UI tests, all with one runner error; see its row). The tree of main at `01d3329c` (#113, #108, #111, #110 and #112 together) has passed a Mac build, in #112's run. The three direct commits and #114 on top of it have no green Mac run, so **main at `5633b8f4` has none**. A Mac build of main was started by hand at 22:02 UTC on `a73625a5` ([run 39505150180](https://github.com/Bienos/doddy.2/actions/runs/39505150180)); that commit changes only this page, so the app is the one at `5633b8f4`. Read that run before building main for a phone. Three direct commits to main at 20:56 UTC (`8ece39ba`, `fb7b6d67`, `b9f5ad86`: the iPhone project drops its entitlements so a Personal Apple team can sign it, turns off generated string symbols, and a comment names #108's Debug voice switch) come after #112 and before #114; no hosted run was started for them on their own.
 
 | When | PR | Merge commit | CI on the head |
 |---|---|---|---|
@@ -17,6 +17,16 @@ Last updated 2026-10-20, 22:00 UTC (the day's merges: #106, #113, #108, #111, #1
 | 21:14 | #114: his eyes on the persistent Doddy (gaze, blink, squint), and a finger anywhere on Home moves them (ADR-560) | `5633b8f4` | head `c5feebbd`: [run 39496321722](https://github.com/Bienos/doddy.2/actions/runs/39496321722): `core` green at 21:05; **Mac job failed at 21:55 UTC**: `xcodebuild test` exit 65, 52 UI tests, 1 skipped, 12 failures. All 12 failures are one message, "Failed to get background assertion for target app … Timed out while acquiring background assertion": 5 tests of `DoddyArtTests` and the first 7 of `LaunchSmokeTests`, one after another between 21:24:27 and 21:26:47, each failing in 12 to 21 seconds. No assertion about the app failed. The other 39 tests passed, among them the rest of `LaunchSmokeTests` from 21:27:53 and the motion tests. That pattern looks like the simulator and not the code, but it is not proven; the same classes passed in the runs of #110 and #112. It was merged while the Mac job ran. A trial merge of `b9f5ad86` and `c5feebbd` has the same tree as main at `5633b8f4` (checked with git); the run's own merge ref is gone since the merge, so I could not confirm it built that tree |
 
 None of these has been seen on a device. The live ElevenLabs agent was updated for #110 before it merged (ADR-556, `voice-agent/README.md`).
+
+**The fixes #108, #111, #110 and #112 needed together** (found on the test build `claude/wizardly-cannon-k0u1mv`, notes in its `docs/implementation/TEST_BUILD_2026-10-20.md`), each a commit on the PR that merged second:
+- **#111:** motion v2's listening pose no longer reads `WakeWordListener`, which #108 deleted; the "What I can do" sheet hides the persistent Doddy like Home's other sheets.
+- **#110:** its greeting changes moved into `WakeGreeting.swift` (no "bud"; "Hi, I'm Doddy. What's on your mind?" the first time, then "I'm here. What's up?"). The microphone prompt is #108's text after #110's first sentence, in all ten languages; Settings' privacy text is #108's with "Doddy" casing.
+- **#112:** `PreferenceKey.connectedConversations` and the voice controller's counter stay. #108 had removed them with the Hey Doddy card, but #112's card return and reminder read them, so main would not have compiled.
+- **ADR numbers:** #108 keeps 546 to 551. #111's 550 and 551 became 554 and 555; #110's 546 and 547 became 556 and 557; #112's 546 and 547 became 558 and 559.
+
+**Linux checks:** `scripts/ci.sh --core-only` (Swift 6.1.2) passed on main's tree after each of those merges: DoddyCore 1,149 tests after #108, 1,219 after #111 and #110, 1,244 after #112, 0 failures; the messaging server's database tests SKIPPED (no `TEST_DATABASE_URL`).
+
+**Deploys** (Vercel team `doddyyyy`, read about 21:10 UTC): production builds READY for `doddy-voice-token` from `a74e6e17` (#108, `dpl_GKtjwZVy8mMdv2dSKZb1QC8jL5kU`) and the site `doddy` from `a74e6e17` and then `40af3dba` (#110, `dpl_536XKjNR3AZ4kY9xvRun8gHd2WBM`). The other builds from these merges show CANCELED; why wasn't checked (the Ignored Build Step cancels a build whose folder didn't change). Render (the messaging server, #113's hours) was not checked.
 
 **Merged to main on 19 Oct** (UTC, all as merge commits). The merge session merged #84, #88, #97 and #90 only with `core` and `ci` green on the head it merged.
 
@@ -68,6 +78,7 @@ None of these has been seen on a device. The live ElevenLabs agent was updated f
   - The live voice agent worked from this code on 2026-10-11 at 22:35 Warsaw time: a 139 s conversation that used `search_memories`, `save_memory` and `web_search`.
   - The variables the app sent to ElevenLabs match this branch, and not the unmerged `-all` branch.
 - **To get back to a build that works,** build this branch: `make project`, open `Doddy.xcodeproj`, scheme `Doddy`.
+- **On a free (Personal) Apple team,** use `make project-iphone` and open `DoddyiPhone.xcodeproj` instead. It has no entitlements (since 20 Oct), so widgets and "Save to Doddy" say they aren't set up, and a Debug build talks to Doddy without Apple sign-in (ADR-551).
 - **Voice agent:** ElevenLabs agent `agent_0501m4et27vyeawrwqfdxxfszfa6`. Its spec is `voice-agent/`.
   - **Live version since 20 Oct 14:08 UTC (ADR-556):** `agtvrsn_8701m5ct8dxsf8htebwpdykppqbv`, saved over `agtvrsn_9601m5cg7h2jf0ctpbggw15zzq4n` (read just before saving; not the 19 Oct version below, and who saved it isn't recorded). Eleven prompt lines and the `opening_line` placeholder changed; the 82 tools did not.
   - **Earlier, read 19 Oct 09:21 UTC:** `agtvrsn_8901m59m3bdqe6takgkfbcmfh2yh`, 82 tools. It was saved at 08:22:55 UTC on 19 Oct over `agtvrsn_0601m57kxxh3eaprt27bk83ta8vx` (87 tools; saved 18 Oct 13:41 UTC from `claude/awesome-cray-2lb9ia`, commit `6672259f`). Which session saved it isn't recorded here.
@@ -76,7 +87,7 @@ None of these has been seen on a device. The live ElevenLabs agent was updated f
     - Three other tools: `tool_8801m4p10mbbe2avb1a9ygw4vjky`, `tool_8201m4p10nhsfdqayngyjt5g2pp7` and `tool_1401m4rmxkm5eg3v87sphf87c45p`. Their names aren't recorded in this repository.
 
     Nothing was changed on the agent by the merge session.
-  - **`voice-agent/README.md` on main is out of date:** it still names `agtvrsn_2801m57etpkkfhfbjvqt95nptfha` (the ASK-01 restore of 18 Oct) as live.
+  - **`voice-agent/README.md`** names `agtvrsn_8701m5ct8dxsf8htebwpdykppqbv` as live since #110 (20 Oct). That the live agent runs Eleven Realtime Max is recorded only on the unmerged `claude/ecstatic-allen-ptjm3u`.
   - Live version at the last working call (11 Oct): `agtvrsn_5201m4p132brf30th15nggeqarf0`. ASK-01 exactly: `agtvrsn_6401m57e22qwepwtr1ywwe64x2k4`.
   - Settings on 18 Oct: authentication off, 10 calls a day for the whole agent, concurrency 2, recordings kept with no time limit. **Changed 20 Oct (ADR-548): 1,000 a day, 10 at once; authentication still off; recordings still kept with no time limit (read back).**
   - The ElevenLabs logs show device calls on 14–16 Oct from a build newer than `ce02763`; which commit isn't recorded.
@@ -86,13 +97,13 @@ Each platform has its own project spec, so one platform's code can't break anoth
 
 | Platform | Code | Spec → project, scheme | State | Page |
 |---|---|---|---|---|
-| iPhone and iPad | `DoddyApp/`, `Shared/`, `DoddyWidgets/`, `DoddyShare/` | `project.yml` → `Doddy`; `project-iphone.yml` (no Watch app) → `Doddy` | Built and used by the owner on device. The voice agent was seen working on 2026-10-11. | `docs/platforms/iphone.md` |
+| iPhone and iPad | `DoddyApp/`, `Shared/`, `DoddyWidgets/`, `DoddyShare/` | `project.yml` → `Doddy`; `project-iphone.yml` (no Watch app, and since 20 Oct no entitlements, for a free Apple team) → `Doddy` | Built and used by the owner on device. The voice agent was seen working on 2026-10-11. | `docs/platforms/iphone.md` |
 | Apple Watch | `DoddyWatch/`, `DoddyWatchWidgets/` | `project.yml` → `DoddyWatch` (embedded in the iPhone app) | Compiles in hosted CI since #69; never run | `docs/platforms/watch.md` |
 | Mac | `DoddyMac/`, `DoddyMacWidgets/` | `project-mac.yml` → `DoddyMac` | Prototype, on main since PR #61 (13 Oct); never compiled, and not in CI | `docs/platforms/mac.md` |
 | Shared core | `Packages/DoddyCore/` | Swift package, used by every platform | Swift package tests run in the hosted `core` job (green in the runs of #108, #111, #110, #112 and #114); the last count read is 1,244 passing, in the local core-only run for #112 on 20 Oct (the 934 from 13 Oct is out of date) | `docs/platforms/README.md` |
 
 ## Not merged yet: what each branch would change
-Merge one at a time, then rebuild and talk to Doddy before the next. Rows other than the first two were last checked 19 Oct against main at `8c25e7da`; the 20 Oct merges (table above) may have changed what they conflict with.
+Merge one at a time, then rebuild and talk to Doddy before the next. Rows other than the first two were last checked 19 Oct against main at `8c25e7da`; the 20 Oct merges (table above) may have changed what they conflict with. The rows for #104, `claude/ecstatic-allen-ptjm3u`, `claude/busy-volta-qgwgz3`, `claude/sweet-newton-2z7asj`, the test branch and `claude/admiring-curie-bsuwv9-hey-doddy-card` were checked on 20 Oct against main at `5633b8f4`.
 
 | Branch / PR | What it changes | State and what it needs |
 |---|---|---|
@@ -111,7 +122,12 @@ Merge one at a time, then rebuild and talk to Doddy before the next. Rows other 
 | `claude/epic-wright-vz93xh` | Voice token server settings work | <ul><li>Superseded: main plus #84 and #88 carry most of its 3 commits.</li><li>Dropped on purpose: the reply table in `server/voice-token/README.md`, reading a bare HTTP 500 as "not set up", and its ADR-483 (collides with ASK-01).</li><li>Kept, not deleted.</li></ul> |
 | `claude/trusting-dirac-o8ajzc` | Voice screen shows Doddy with a sound wave; the transcript is one tap away | Medium risk to voice: adds audio level meters to the live session |
 | `claude/affectionate-mayer-aovol9` | Island compact view draws a pre-cut round face | Low |
-| `claude/admiring-curie-bsuwv9-hey-doddy-card` | Not reviewed in the merge session | |
+| PR #104 `claude/bold-hawking-38iysy` (draft) | "Hey Doddy" with Apple's on-device speech recognition instead of Picovoice (ADR-472) | Hey Doddy was removed on main (#108, ADR-549). Owner decision: close it, or rework it on top of main. |
+| `claude/ecstatic-allen-ptjm3u` | Docs only: the live agent runs Eleven Realtime Max (read back 20 Oct) | Merges cleanly into main. |
+| `claude/busy-volta-qgwgz3` | Its two `project-iphone.yml` commits are on main since 20 Oct | Its three voice commits do what #108's Debug switch (ADR-551) does. Nothing left to merge. |
+| `claude/sweet-newton-2z7asj` | Breathing removal; no PR, never compiled | Duplicates #108 (ADR-550). Nothing left to merge. |
+| `claude/wizardly-cannon-k0u1mv` | The 20 Oct test build: #108, #111, #110, #112 and #113 merged together for the owner's iPhone | Not for main. Main has all of it except `claude/ecstatic-allen-ptjm3u`'s docs (and adds #114); build main instead. |
+| `claude/admiring-curie-bsuwv9-hey-doddy-card` | Already in main (nothing ahead, 20 Oct). Hey Doddy itself was removed on 20 Oct (ADR-549) | None |
 | `claude/dismiss-ended-card` | Nothing: its changes were reverted | None |
 
 ## Known problems
@@ -136,8 +152,10 @@ Merge one at a time, then rebuild and talk to Doddy before the next. Rows other 
 
 ## Waiting on the owner
 **Added on 20 Oct (after #108, #110 and #111):**
-- **Run the Mac build on main before building it for a phone.** #114's Mac job failed on 12 UI tests, all with one runner error (the 20 Oct table), and this workflow does not run on a push to main. "iOS build and tests" started by hand (`workflow_dispatch`) on `claude/loving-dirac-uuxoux` always runs the Mac job: about 52 minutes, roughly $3 of Actions time. If the same 12 tests fail again, the cause is in #114 or the three direct commits and not in the runner.
-- **Build main and look at it on a phone:** the new app icon on the Home Screen and the watch; "Hi, I'm Doddy. What's on your mind?" on a first conversation and "I'm here. What's up?" after that; "Working on it…"; the motion v2 Doddy; the new options screen for opening Doddy (#112). Then one conversation with the updated live agent (it has run no conversation yet). If it feels off, roll the live agent back to `agtvrsn_9601m5cg7h2jf0ctpbggw15zzq4n`.
+- **Read the Mac build of main before building it for a phone.** #114's Mac job failed on 12 UI tests, all with one runner error (the 20 Oct table), and this workflow does not run on a push to main, so it was started by hand at 22:02 UTC: [run 39505150180](https://github.com/Bienos/doddy.2/actions/runs/39505150180) on `a73625a5` (about 52 minutes). If the same 12 tests fail again, the cause is in #114 or the three direct commits and not in the runner.
+- **Build main and look at it on a phone** (on a free Apple team: `make project-iphone`): the new app icon on the Home Screen and the watch; "Hi, I'm Doddy. What's on your mind?" on a first conversation and "I'm here. What's up?" after that; "Working on it…"; the motion v2 Doddy; the new options screen for opening Doddy (#112). Then one conversation with the updated live agent (it has run no conversation yet). If it feels off, roll the live agent back to `agtvrsn_9601m5cg7h2jf0ctpbggw15zzq4n`.
+- **Open PRs the merges affect:** #104 (Hey Doddy, which is removed) and #109 (see "Not merged yet"): close or rework them.
+- **Docs:** merge `claude/ecstatic-allen-ptjm3u` (Eleven Realtime Max), if it's still true.
 - **Brand review leftovers** (`docs/design/BRAND_V2_2_REVIEW.md`): step 3b, the dark canvas `#171F29` against the guide's night `#16171C`, after the new orange has been seen on a device; item 7, the homepage copy (the owner said "later"); a Polish speaker for the two spoken lines "Cześć, tu Doddy. Co ci chodzi po głowie?" and "Jestem. Co słychać?", and for the nine machine-drafted "Working on it…" lines (`l10n/REVIEW_NOTES.md`).
 - **Motion v2 (#111) and his eyes (#114), never run on a device:** 80 to 120 Hz riding, the keyboard, haptics, hand-off alignment, the system's Reduce Motion and VoiceOver; how small the eyes read (2 to 4 pt) and the seam where his own eye was covered (D20 to D23). Checklist: `docs/design/MOTION_V2_DEVICE_CHECKLIST.md`. The owner confirmed on 20 Oct ("Confirm and ok for home") the plan's answers for Q2, Q3, Q4, Q8, Q10, Q13, Q14, Q15 and Q16; Home stays 1.4x (the agent's reading). Still open: Q6 (blink and eye art) and Q11 (larger exports). Art the pack lacks: `docs/design/MOTION_V2_ART_REQUESTS.md`.
 
