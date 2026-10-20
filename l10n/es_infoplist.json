@@ -20,8 +20,8 @@
     "es": "Doddy usa tu ubicación solo cuando se lo pides: para los recordatorios que pones en un lugar (para saber dónde estás cuando tocas Usar donde estoy ahora, y para que iOS pueda recordártelo cuando llegues o salgas), para guardar dónde aparcaste y para calcular con Mapas de Apple cuándo salir hacia algún sitio. Doddy no la guarda ni rastrea adónde vas."
   },
   "NSMicrophoneUsageDescription": {
-    "en": "Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. If you turn on Hey Doddy, the microphone also listens on this iPhone for the wake word; that sound isn't kept or sent. Your voice in a conversation is sent to ElevenLabs to run it, or to OpenAI if you switch Home's voice to OpenAI. A voice memo you record on a note stays on this iPhone.",
-    "es": "Doddy escucha mientras hablas con él: después de que toques Hablar con Doddy, o en cuanto abres Doddy si lo activaste en Ajustes. Si activas Hey Doddy, el micrófono también escucha en este iPhone la palabra de activación; ese sonido no se guarda ni se envía. Tu voz en una conversación se envía a ElevenLabs para ejecutarla, o a OpenAI si cambias la voz de Inicio a OpenAI. Una nota de voz que grabes en una nota se queda en este iPhone."
+    "en": "Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. Your voice in a conversation is sent to ElevenLabs to run it, or to OpenAI if you switch Home's voice to OpenAI. A voice memo you record on a note stays on this iPhone.",
+    "es": "Doddy escucha mientras hablas con él: después de que toques Hablar con Doddy, o en cuanto abres Doddy si lo activaste en Ajustes. Tu voz en una conversación se envía a ElevenLabs para ejecutarla, o a OpenAI si cambias la voz de Inicio a OpenAI. Una nota de voz que grabes en una nota se queda en este iPhone."
   },
   "NSRemindersFullAccessUsageDescription": {
     "en": "Doddy adds, changes, completes or deletes a reminder only after you tap Add, Change, Mark done or Delete. Turn this off in Settings, Connections.",

@@ -1,4 +1,7 @@
 # Audio privacy signal and stop: status (ADR-361)
+
+> **Update 20 Oct 2026 (ADR-549):** "Hey Doddy" was removed, so the listening indicator and Stop listening now cover two microphone users: the conversation and a voice memo. References to "Hey Doddy" below are history.
+
 Date: 2026-10-11. Owner instruction: "do the Polish pass then OP-024" (audio privacy signal and stop), from the research backlog. User story: "Stop listening now." → "Stopped." Acceptance: audio capture actually closed.
 
 ## What was wrong

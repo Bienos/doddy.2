@@ -26,7 +26,6 @@ extension DataFlowState {
             memoryCopyOn: flag(PreferenceKey.memoryCopyOn, default: false),
             morningCheckInOn: defaults.bool(forKey: MorningCheckInSettings.isOnKey),
             siriReadsNotes: flag(PreferenceKey.siriReadsNotes, default: true),
-            heyDoddyOn: flag(PreferenceKey.heyDoddyOn, default: false),
             sharedLists: SharedListsController.shared.links.count,
             // ElevenLabs is the default (ADR-546); a choice in Settings wins.
             voiceProvider: VoiceProvider.effective(
@@ -46,7 +45,6 @@ struct DataFlowView: View {
     @AppStorage(PreferenceKey.pushUpdatesOn) private var pushOn = false
     @AppStorage(PreferenceKey.memoryCopyOn) private var memoryCopyOn = false
     @AppStorage(PreferenceKey.siriReadsNotes) private var siriReadsNotes = true
-    @AppStorage(PreferenceKey.heyDoddyOn) private var heyDoddyOn = false
     @AppStorage(VoiceProvider.preferenceKey) private var voiceProvider = ""
 
     /// The @AppStorage values above redraw this screen when a switch changes; the state itself is

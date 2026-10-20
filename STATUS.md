@@ -105,7 +105,7 @@ Merge one at a time, then rebuild and talk to Doddy before the next. Checked 19 
   Investigated 18 Oct (`docs/implementation/VOICE_SESSION_STARTS.md`, ElevenLabs list only, no transcripts):
   - Two starts at once mostly predate the 11 Oct "review H1" fix.
   - Silent 30-second sessions with zero messages still happen: six since that build, four of them within five minutes on 16 Oct at night.
-  - Leading suspect: a "Hey Doddy" start from the background that stalls before its start data and stops when iOS's roughly 30-second background allowance runs out.
+  - Leading suspect: a "Hey Doddy" start from the background that stalls before its start data and stops when iOS's roughly 30-second background allowance runs out. **That start path was removed with the wake word (ADR-549), so this cause is gone; check the next device log for silent sessions.**
   - PR #84 (on main since 19 Oct) adds one conversation at a time (ADR-496) and the log lines a phone log needs. Not fixed yet: it still needs a device log to confirm the cause.
 - **Vercel:** the `doddy` project (team `doddyyyy`) built and published the site from the default branch on 2026-10-14 (www.doddy.lol); the earlier "account blocked" failures did not recur on that build. The free plan allows 100 deployments a day, and skipped ones count: on 18 October the limit was reached by 12:22 UTC (100 deployments since 09:34, 86 of them skipped), so Vercel refused new ones and showed "Account is blocked". Since 18 October only the production branch deploys: preview deployments are off in all three projects' settings (go-live checklist A10), and each `vercel.json` says the same (ADR-498, PR #84, on main since 19 Oct). GitHub Actions stopped starting jobs on 16 October and ran again on 18 October at 15:08 UTC (run 39139146509). Since then, every commit also gets three red "Account is blocked." statuses with a generic Vercel help link, under the same names (`Vercel – doddy-voice-token` and so on) as `doddyyyy`'s real statuses. They probably come from the old team's projects. `doddyyyy` itself posts "Vercel is deploying your app", "Canceled by Ignored Build Step", "Deployment has completed" or "Deployment rate limited". None of these is a required check.
 
@@ -144,7 +144,7 @@ Merge one at a time, then rebuild and talk to Doddy before the next. Checked 19 
 - Delete the two old Supabase functions and their secrets (code saved in `docs/archive/supabase-functions-2026-10-18/`).
   - Decide whether to keep the Render copies of `doddy-voice-token` and `doddy-gateway` (research report, decision 11).
 - A native review of the eight new app languages and of all nine landing-page translations, which are live as drafts (`l10n/REVIEW_NOTES.md`).
-- "Hey Doddy" cannot work until the keyword file and a Picovoice key are in place (`docs/implementation/HEY_DODDY_STATUS.md`, "What is missing").
+- "Hey Doddy" and Picovoice were removed on 20 Oct (ADR-549): the wake word had never run on a device. The Vercel project `doddy-voice-token` may still hold a `PICOVOICE_ACCESS_KEY` value; remove it (`tools/secrets/sync.mjs --prune`).
 - Whether notes sync between the Mac and the iPhone (today they never do).
 - The kitchen timer Live Activity.
 - A Pencil drawing canvas.
