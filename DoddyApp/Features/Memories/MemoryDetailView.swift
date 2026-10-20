@@ -8,6 +8,7 @@ struct MemoryDetailView: View {
     @Environment(MemoryStore.self) private var store
     @Environment(NoteReminderStore.self) private var noteReminders
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.dynamicTypeSize) private var textSize
     let memoryID: UUID
     @State private var correction: MemoryRecord?
     @State private var confirmDelete = false
@@ -38,6 +39,10 @@ struct MemoryDetailView: View {
                 } else if let record = store.record(id: memoryID) {
                     JourneyHeading(eyebrow: "Straight from your note", title: "The original\nis right here.")
                     MemoryPaperCard(record: record, textIdentifier: "detail.currentText")
+                        // Motion v2: the card's top edge, right end, is Doddy's spot on a note page.
+                        // Not at accessibility text sizes, where the heading reaches his clear zone:
+                        // he stays on the list underneath, covered (plan section 1, "Detail page").
+                        .motionSurface(.detail, enabled: !textSize.isAccessibilitySize)
                     NotePhotoSection(memoryID: memoryID)
                     NoteRecordingSection(memoryID: memoryID)
                     if record.userEdited {
@@ -134,6 +139,7 @@ struct MemoryDetailView: View {
         .toolbar(.visible, for: .navigationBar)
         .toolbar { ToolbarItem(placement: .principal) { DoddyWordmark() } }
         .sheet(item: $correction) { CorrectionView(record: $0) }
+        .coversDoddy(correction != nil)
     }
 
     /// Undo (ADR-183) brings the note back, not its reminder, so the message says so.

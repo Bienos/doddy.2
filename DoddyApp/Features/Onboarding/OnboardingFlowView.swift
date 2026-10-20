@@ -54,23 +54,6 @@ struct DoddySaysCard: View {
     }
 }
 
-struct CalloutView: View {
-    let title: String
-    let message: String
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title).font(.headline)
-            Text(message).foregroundStyle(Theme.secondaryText)
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 16).strokeBorder(Theme.separator, lineWidth: 1))
-        .accessibilityElement(children: .combine)
-    }
-}
-
 /// Scrollable onboarding page with the standard padding.
 struct OnboardingPage<Content: View>: View {
     @ViewBuilder let content: Content

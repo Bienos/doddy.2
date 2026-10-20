@@ -1,7 +1,7 @@
 /// One voice conversation at a time across the whole app (ADR-496).
 ///
-/// The voice screen and "Hey Doddy" each make their own conversation, and each one's own guards
-/// only stop it from starting twice. This gate is shared: a start goes ahead only if no *other*
+/// The voice screen, a Talk to Doddy shortcut and the call rehearsal each make their own conversation,
+/// and each one's own guards only stop it from starting twice. This gate is shared: a start goes ahead only if no *other*
 /// conversation is still starting, connecting or talking.
 ///
 /// It remembers who asked last and asks the caller whether that one is still busy, instead of

@@ -53,7 +53,7 @@ struct MemoriesView: View {
                     .pickerStyle(.segmented)
                     .accessibilityIdentifier("memories.notesOrLists")
                     if let problem = store.environment.storageProblem ?? store.loadError {
-                        ProblemView(message: problem, showsDoddy: true)
+                        ProblemView(message: problem, showsDoddy: true, onDoddysScreen: true)
                     } else if !store.hasLoaded {
                         ProgressView("Loading notes")
                     } else if showsLists {
@@ -81,12 +81,18 @@ struct MemoriesView: View {
                             MemoryTagRow(tags: tags, selection: $tag, active: activeTag)
                         }
                         let pins = PinnedNotes(stored: pinnedRaw)
+                        // Pinned notes first (ADR-187), then the chosen order.
+                        let shown = pins.apply(to: MemorySort(stored: sortRaw).apply(to: NoteTags.filter(MemoryFilter.apply(active, to: store.memories), tag: activeTag)))
+                        // Motion v2 (Q5): each card keeps a right gutter free for Doddy, who stands
+                        // on a card's top edge with his body beside the card above.
+                        let motion = DoddyDirector.shared.isActive
                         LazyVStack(spacing: 12) {
-                            // Pinned notes first (ADR-187), then the chosen order.
-                            ForEach(pins.apply(to: MemorySort(stored: sortRaw).apply(to: NoteTags.filter(MemoryFilter.apply(active, to: store.memories), tag: activeTag)))) { record in
+                            ForEach(Array(shown.enumerated()), id: \.element.id) { index, record in
                                 let isPinned = pins.isPinned(record.id)
                                 let hides = PrivateNotesStore.current().contains(record.id) && !AppLock.shared.privateUnlocked
-                                MemoryLinkCard(record: record, isPinned: isPinned, hidesText: hides)
+                                MemoryLinkCard(record: record, isPinned: isPinned, hidesText: hides,
+                                               gutter: motion ? CGFloat(MotionLayout.cardGutter) : 0)
+                                    .motionSurface(.rule(index))
                                     .contextMenu {
                                         // The same actions as on the note's screen, without opening it (ADR-188).
                                         Button {
@@ -107,10 +113,19 @@ struct MemoriesView: View {
                                     }
                             }
                         }
+                        .onChange(of: shown.map(\.id), initial: true) { _, ids in
+                            DoddyDirector.shared.cardsShown(ids)
+                        }
                     }
                 }
                 .padding(24)
+                // The brief's 108 pt bottom inset: the last note can always scroll clear of him.
+                .padding(.bottom, DoddyDirector.shared.isActive ? CGFloat(MotionLayout.listBottomInset - 24) : 0)
             }
+            // Motion v2: the list's visible band, so he only rides a card that is on screen, and
+            // (MV4) its scroll, so he rides it.
+            .motionMark("memories.list")
+            .reportsDoddysListScroll()
             .background(Theme.canvas).foregroundStyle(Theme.ink)
             .toolbar(.hidden, for: .navigationBar, .tabBar)
             .navigationDestination(for: MemoryNavigationRoute.self) { route in
@@ -135,6 +150,14 @@ struct MemoriesView: View {
                 Text(pinMessage ?? "")
             }
             .sheet(item: $modal) { _ in CaptureView() }
+        }
+        // Motion v2 (MV3): the capture sheet hides him in the frame it starts; a note's page
+        // covers him where he stood on its card (plan section 1).
+        .coversDoddy(modal != nil)
+        .onChange(of: path, initial: true) { _, path in
+            let detail: Bool
+            if case .note(_)? = path.last { detail = true } else { detail = false }
+            DoddyDirector.shared.pageChanged(on: .memories, open: !path.isEmpty, detail: detail)
         }
         .onChange(of: showFind, initial: true) { _, requested in
             guard requested else { return }
@@ -250,7 +273,17 @@ private struct EmptyMemoriesView: View {
     let onSave: () -> Void
     var body: some View {
         VStack(spacing: 20) {
-            UploadedCharacterView(assetName: "UploadedDoddy_Sitting", height: 150)
+            if DoddyDirector.shared.isActive {
+                // Motion v2 (Q4): with the motion world on, the one Doddy sits here himself; the
+                // picture's place stays (same size, no layout gap) with a short line on its floor
+                // (the sitting picture's ground is at 85 %).
+                // 150 pt at every text size: he is drawn at 1.0× (94 pt cross-legged, on a line
+                // 22 pt up), so the 100 pt box of accessibility sizes would let him reach the picker.
+                Color.clear.frame(width: 100, height: 150)
+                    .overlay(alignment: .bottom) { LedgeLine(name: "emptyMemories").padding(.bottom, 22) }
+            } else {
+                UploadedCharacterView(assetName: "UploadedDoddy_Sitting", height: 150)
+            }
             Text("No memories yet").font(.title2.weight(.medium)).accessibilityAddTraits(.isHeader)
             Text("Only what you choose to save appears here. Nothing is added automatically.")
                 .foregroundStyle(Theme.secondaryText).multilineTextAlignment(.center)

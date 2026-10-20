@@ -19,10 +19,9 @@ final class SessionRecoveryTests: XCTestCase {
             XCTAssertEqual(VoiceSessionEnd.afterDisconnect(kind, userAsked: true), .userEnded, "after End, any disconnect is the user's end")
         }
         XCTAssertTrue(VoiceSessionEnd.dropped(.offline).isDrop)
-        XCTAssertFalse(VoiceSessionEnd.quietTimeout.isDrop)
         XCTAssertEqual(
-            [VoiceSessionEnd.userEnded, .doddyEnded, .quietTimeout, .dropped(.offline), .dropped(.connectionLost), .dropped(.error("x"))].map(\.code),
-            ["user", "doddy", "quiet", "dropped-offline", "dropped-connection", "dropped-error"])
+            [VoiceSessionEnd.userEnded, .doddyEnded, .dropped(.offline), .dropped(.connectionLost), .dropped(.error("x"))].map(\.code),
+            ["user", "doddy", "dropped-offline", "dropped-connection", "dropped-error"])
     }
 
     func testADropAfterListeningIsNeverCouldntConnectOrEnded() {

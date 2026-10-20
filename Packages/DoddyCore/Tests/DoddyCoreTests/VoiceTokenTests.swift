@@ -2,6 +2,13 @@ import XCTest
 @testable import DoddyCore
 
 final class VoiceTokenTests: XCTestCase {
+    func testResolveNeverReturnsTheDevelopmentDirectConnection() {
+        // ADR-551: the direct agent connection is built only by Debug app code, never by `resolve`.
+        for address in ["", "https://doddy.example/api/voice-token", "http://x", "agent_0501m4et27vyeawrwqfdxxfszfa6"] {
+            if case .directAgent = VoiceConnectionMode.resolve(serverAddress: address) { XCTFail(address) }
+        }
+    }
+
     func testVoiceServerMustBeConfiguredOverHTTPSAndNeverFallsBackToPublicAgent() {
         XCTAssertEqual(
             VoiceConnectionMode.resolve(serverAddress: "https://doddy.example/api/voice-token"),
@@ -22,20 +29,6 @@ final class VoiceTokenTests: XCTestCase {
         XCTAssertEqual(VoiceTokenServer.token(status: 503, body: Data(#"{"error":"voice_busy"}"#.utf8)), .failure(.busy))
         XCTAssertEqual(VoiceTokenServer.token(status: 404, body: Data()), .failure(.serverNotConfigured))
         XCTAssertEqual(VoiceTokenServer.token(status: 504, body: Data()), .failure(.serverProblem(status: 504)))
-    }
-
-    /// ADR-328: the owner's Picovoice key from the token server.
-    func testWakeWordKeyFromTheTokenServer() {
-        let key = "AbCdEfGhIjKlMnOpQrStUvWxYz0123456789+/=="
-        XCTAssertEqual(String(data: VoiceTokenServer.wakeWordKeyRequestBody, encoding: .utf8), #"{"provider":"picovoice"}"#)
-        XCTAssertEqual(VoiceTokenServer.wakeWordKey(status: 200, body: Data(#"{"accessKey":"  \#(key) "}"#.utf8)), .success(key))
-        XCTAssertEqual(VoiceTokenServer.wakeWordKey(status: 200, body: Data(#"{"accessKey":"short"}"#.utf8)), .failure(.badResponse))
-        XCTAssertEqual(VoiceTokenServer.wakeWordKey(status: 200, body: Data(#"{"token":"jwt"}"#.utf8)), .failure(.badResponse),
-                       "an ElevenLabs token is never taken for a key")
-        XCTAssertEqual(VoiceTokenServer.wakeWordKey(status: 401, body: Data()), .failure(.sessionExpired))
-        XCTAssertEqual(VoiceTokenServer.wakeWordKey(status: 500, body: Data()), .failure(.busy))
-        XCTAssertEqual(VoiceTokenServer.wakeWordKey(status: 500, body: Data(#"{"error":"server_not_configured"}"#.utf8)), .failure(.serverNotConfigured))
-        XCTAssertEqual(VoiceTokenServer.wakeWordKey(status: 400, body: Data()), .failure(.serverProblem(status: 400)), "a server from before ADR-328")
     }
 
     func testRateLimitSaysHowLongToWaitInsteadOfTryAgainInAMoment() {

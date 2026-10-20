@@ -58,7 +58,7 @@ struct CallBriefEditorView: View {
             } header: {
                 Text("Length")
             } footer: {
-                Text("Doddy says goodbye when the time is up. Calls happen only between 8:00 and 20:00 Polish time, and the whole call must fit.")
+                Text("Doddy says goodbye when the time is up. Calls happen only between 8:00 and 23:00 Polish time, and the whole call must fit.")
             }
 
             let problems = draft.problems

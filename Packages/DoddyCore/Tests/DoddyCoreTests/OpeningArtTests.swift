@@ -6,7 +6,7 @@ final class OpeningArtTests: XCTestCase {
     private static let assets = URL(fileURLWithPath: #filePath)
         .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
         .deletingLastPathComponent().deletingLastPathComponent()
-        .appendingPathComponent("design/interface-v1.2/assets")
+        .appendingPathComponent("DoddyApp/Resources/Character")
 
     private func drawing(_ name: String) throws -> DoddyDrawing {
         let url = Self.assets.appendingPathComponent("doddy-pose-basketball-\(name)-light-v1.3-r1.svg")

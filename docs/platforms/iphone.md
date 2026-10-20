@@ -13,7 +13,7 @@
   - ElevenLabs `agent_0501m4et27vyeawrwqfdxxfszfa6`. The prompt and tools are in `voice-agent/` (`instructions.md`, `tools.json`, `session.json`). `python3 -I scripts/voice_agent_spec.py check` validates them.
   - The live agent is changed by the owner, never from the app.
   - The app sends dynamic variables at start (notes, lists, profile, `learned_context`, opening line). A variable the live prompt requires but the app doesn't send stops the call before it starts.
-- **Providers:** ElevenLabs (default) or OpenAI Realtime, as a test switch on Home (ADR-265). `docs/implementation/VOICE_PROVIDER_TEST_STATUS.md`.
+- **Providers:** ElevenLabs (default, ADR-546) or OpenAI Realtime, chosen in Settings › Voice (and on Home after the first conversation) (ADR-265, ADR-442, ADR-443). `docs/implementation/VOICE_PROVIDER_TEST_STATUS.md`.
 - **Status docs:** `V1_VOICE_STATUS`, `V3_ISLAND_STATUS` (Dynamic Island), `HEY_DODDY_STATUS`, `OPENING_SCENE_STATUS` (the intro and listen-on-open).
 - **To debug a voice problem,** look at the ElevenLabs conversation log for the agent first:
   - no conversation at all means the app failed before connecting;
@@ -27,13 +27,14 @@ Code lives under `DoddyApp/Features/<Folder>/`. Status docs are in `docs/impleme
 | Voice | Voice conversation, plan cards, island, wake word | 254, 265 | V1_VOICE_STATUS, VOICE_PROVIDER_TEST_STATUS |
 | Voice (BLIK card), Connections › Money | BLIK phone transfer shown for the user to send in their bank app; Doddy never sends money | 483 | BLIK_TRANSFER_STATUS |
 | Opening | Animated intro, listen on open | 225 | OPENING_SCENE_STATUS |
+| DesignSystem/Motion (branches `claude/motion-mv1` to `mv6`, not on main yet) | One persistent Doddy: director, drawing, clock; the engine is in DoddyCore `Motion/` | 554, 555 | MOTION_V2_PLAN (in `docs/design/`), MOTION_V2_DEVICE_CHECKLIST, MOTION_V2_ART_REQUESTS |
 | Onboarding | Introduction, storybook welcome | 299, 380 | ONBOARDING_STATUS |
 | Home | Home screen | 323, 380 | ONBOARDING_STATUS |
 | Memories | Notes list, find, detail, corrections | 252, 310 | MEMORY_HISTORY_STATUS, M1_STATUS |
 | Capture | New-note editor, "Save to Doddy" | 179 | M1_STATUS |
 | Lists | Lists, templates, share card, shopping mode | 216, 257, 334 | LISTS_STATUS, SHOPPING_MODE_STATUS |
 | NoteReminders | Time and place reminders on notes | 196, 211 | M4A_NOTE_REMINDERS_STATUS, PLACE_REMINDERS_STATUS |
-| Settings | Settings, Hey Doddy, island style, personality, what Doddy learned | 254, 440 | HEY_DODDY_STATUS, M6_LEARNING_LOOP_STATUS |
+| Settings | Settings, island style, personality, what Doddy learned ("Hey Doddy" was removed, ADR-549) | 254, 440, 549 | HEY_DODDY_STATUS (history), M6_LEARNING_LOOP_STATUS |
 | Ask | Typed questions (gateway) | - | M2_STATUS |
 | Activity | "What Doddy did" and undo | 268, 271 | ACTIVITY_UNDO_STATUS |
 | Alarms | Alarms by voice (AlarmKit, iOS 26) | 260, 283 | ALARMS_STATUS |
@@ -42,7 +43,7 @@ Code lives under `DoddyApp/Features/<Folder>/`. Status docs are in `docs/impleme
 | Calls | Calling Doddy on the phone, PIN | - | S2_CALLS_STATUS |
 | CallCases | Calls Doddy makes for you: brief, card, live call with take over, answer card, rehearsal, Live Activity | 500–507 | CALL_CASES_STATUS |
 | Connections, ConnectedApps, OnlineAccounts | Calendar, Reminders, Contacts; online apps | 291, 309 | - |
-| Focus, Tools | Focus timer, breathing, their Live Activity | 241, 242 | - |
+| Focus, Tools | Focus timer and its Live Activity (the breathing exercise was removed, ADR-550) | 241, 242, 550 | - |
 | Import | Google Keep and text import | 231 | NOTE_IMPORT_STATUS |
 | LeaveBy, Parking, Today | Time to leave, parking spot, Today card | 335, 301 | TODAY_STATUS |
 | Meaning | Find by meaning (on-device) | 227 | MEANING_SEARCH_STATUS |

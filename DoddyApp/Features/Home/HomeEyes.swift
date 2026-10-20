@@ -1,7 +1,7 @@
 import DoddyCore
 import SwiftUI
 
-// Home's Doddy gets his eyes (ADR-546): they follow a finger anywhere on Home, half close while a
+// Home's Doddy gets his eyes (ADR-560): they follow a finger anywhere on Home, half close while a
 // finger is on him, and after 21:00 he gives one slow blink, once a day. The eyes are cut from the
 // owner's sheets 007 and 008 (`DoddyEyes`); looking at you, the picture is the pack's own.
 

@@ -4,7 +4,7 @@ import UIKit
 import XCTest
 @testable import Doddy
 
-/// ADR-546: his eyes on Home are only drawn if the app has the pictures (every cut eye, and every
+/// ADR-560: his eyes on Home are only drawn if the app has the pictures (every cut eye, and every
 /// picture the face table measures, at the size those measurements assume), and the pieces land on
 /// the eyes the picture drew.
 final class DoddyEyesAssetsTests: XCTestCase {

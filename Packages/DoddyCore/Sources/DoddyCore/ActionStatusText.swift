@@ -62,7 +62,7 @@ extension SessionRecovery {
         let english = status(end, connected: connected)
         guard language == .polish else { return english }
         switch end {
-        case .userEnded, .doddyEnded, .quietTimeout:
+        case .userEnded, .doddyEnded:
             return ("Rozmowa zakończona", nil)
         case .stoppedListening:
             return ("Przestano słuchać", "Mikrofon Doddy’ego jest wyłączony.")

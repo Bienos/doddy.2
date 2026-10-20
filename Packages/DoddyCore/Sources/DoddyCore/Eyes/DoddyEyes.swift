@@ -1,6 +1,6 @@
 import Foundation
 
-// Doddy's eyes (ADR-546). The owner's pack has no picture of Doddy looking somewhere or blinking,
+// Doddy's eyes (ADR-560). The owner's pack has no picture of Doddy looking somewhere or blinking,
 // but its sheets 007 (a blink) and 008 (nine looks) have the eyes. On 20 Oct 2026 the owner said
 // "Make blink and gaze" (Q6), then "minimum plus the eyes" for the calm Home (ADR-545).
 // `tools/whole_doddy/build_face_pieces.py` cuts each eye out of those sheets as ink on a
@@ -171,7 +171,7 @@ public enum DoddyEyes {
     }
 }
 
-/// His eyes on the calm Home (ADR-546): they follow a finger anywhere on Home and come back to you
+/// His eyes on the calm Home (ADR-560): they follow a finger anywhere on Home and come back to you
 /// 300 ms after it lifts; half close while a finger is on him; and after 21:00 he gives one slow
 /// blink, once a day. Nothing else: no blinking on a loop (brief rule 9, stillness by default).
 public enum HomeEyes {

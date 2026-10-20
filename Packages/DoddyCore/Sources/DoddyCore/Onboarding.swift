@@ -1,6 +1,6 @@
 import Foundation
 
-// First-use flow (design/interface-v1.2/docs/GUIDED-BACK-TAP-AND-VOICE-SETUP.md):
+// First-use flow (design/interface-v1.2/docs/GUIDED-BACK-TAP-AND-VOICE-SETUP.md (deleted 20 Oct 2026, ADR-548; see git history)):
 // optional guided Back Tap setup → optional introduction → Home.
 //
 // Doddy cannot read the iPhone's Back Tap setting, and no public API reports it. Every

@@ -2,7 +2,7 @@
 
 Doddy is a voice-first memory companion for iPhone, with an Apple Watch app and a Mac menu bar prototype. This page is the short version. Update it when you merge something that changes what is below.
 
-Last updated 2026-10-19 (the owner's merge session: #84, #88, #90 and the #97 fix). Before that, 18 Oct: stage A (ADR-520 to ADR-524) and PR #85, BLIK transfers (ADR-510).
+Last updated 2026-10-20 (adds the motion v2 branches under "Not merged yet"). Before that, 2026-10-19 (the owner's merge session: #84, #88, #90 and the #97 fix). Before that, 18 Oct: stage A (ADR-520 to ADR-524) and PR #85, BLIK transfers (ADR-510).
 
 **Merged to main on 19 Oct** (UTC, all as merge commits). The merge session merged #84, #88, #97 and #90 only with `core` and `ci` green on the head it merged.
 
@@ -37,6 +37,8 @@ Last updated 2026-10-19 (the owner's merge session: #84, #88, #90 and the #97 fi
   - a new phone build;
   - the first conversation (`MAC_VERIFICATION_CHECKLIST` rows V0a to V0f).
 - **Voice works on no device yet.**
+- **Debug builds can talk without Apple sign-in (ADR-551):** run from Xcode with a free Apple ID, voice connects straight to the agent (Settings › Voice › Developer switch, on by default in Debug only). Release builds still need a voice account.
+- **Default voice (ADR-546) and agent limits (ADR-548):** ElevenLabs is the default for everyone. On 20 Oct the owner chose to raise the live agent's limits (read back from ElevenLabs after saving): **1,000 calls a day and 10 at once** (were 10 and 2), bursting still off. **Authentication on the agent is still off** (read 20 Oct), so anyone with the agent id can start calls on the owner's bill; it was not changed (the owner was told and chose the raise-the-cap option).
 
 **The v1 scope is a proposal waiting on the owner:** `docs/product/V1_SCOPE.md`. Until it's marked up, merge fixes only.
 
@@ -44,7 +46,7 @@ Last updated 2026-10-19 (the owner's merge session: #84, #88, #90 and the #97 fi
 - **Main branch:** `claude/loving-dirac-uuxoux`.
 - **Last build seen working on a device:** head `ce02763` (PR #60, the learning loop).
 - **Hosted CI:** since `c8aff7ae` (#69 with #70), every target compiles on Xcode 26.6 and the unit and 26 UI tests pass on the simulator. That build has not been run on a device.
-- **Since then on main:** OpenAI Realtime is the default voice, with a model picker on Home (ADR-442), and the first-use screens landed (#76: ADR-324 to 327, ADR-443).
+- **Since then on main:** OpenAI Realtime became the default voice with a model picker on Home (ADR-442) and the first-use screens landed (#76: ADR-324 to 327, ADR-443). **On the branch `claude/friendly-volta-3recsi` (20 Oct, ADR-546 and ADR-547):** ElevenLabs is the default again and OpenAI is a choice in the picker; four unused views and four old image sets are gone, five pack poses ship smaller, and start-up jobs wait for the first screen (`docs/implementation/LAUNCH_PROFILING.md`, never measured; `docs/implementation/REPO_DIET_2026-10-20.md`). "What I can do" is back in Home's ••• menu (ADR-548) and the old design folders are deleted (the design now is the app, `design/dynamic-island-v4` and the site's folders). DoddyCore tests pass on Linux; the iOS build is NOT RUN.
 - **Also on main (PR #80, 14 Oct):** the iPhone app and the landing page in ten languages, as machine-translated drafts (ADR-458 to 460). The landing page is live at https://www.doddy.lol in all ten. CI built the app and passed the unit and UI tests with these changes; the language picker and the translated screens have not been seen on a device, and no native speaker has read any of it (`l10n/REVIEW_NOTES.md`).
 - **Hosted CI on 18 Oct:** jobs start again after the owner fixed the account's GitHub billing. The first Mac build since 14 Oct showed that no branch had compiled since 754e5d6 (`VoiceAccessGate.swift` used `VoiceProvider` without `import DoddyCore`), and that two app unit tests had never run: the profile intro test from 754e5d6 and the translator test that ASK-01 made stale. PR #85 fixes all three. Its run 39138962699 built the app and passed the 29 UI tests, with only those two tests failing. Actions time is paid for (12–14 Oct used about $250, almost all of it the macOS build); since #84 (on main 19 Oct) the Mac build waits for the Linux checks and skips pull requests that don't touch the app (ADR-497), and the UI tests take 26 minutes instead of 34 (ADR-499). #84's run 39143827911 passed everything (Mac job 40 minutes).
 - **Also on main (PR #85, 18 Oct):** BLIK transfers by voice (ADR-510). "Send Ania 50 zł" shows a card to send in the bank app; Doddy never sends money. The `draft_blik_transfer` tool is behind an off-by-default switch and was added to the live ElevenLabs agent on 18 Oct (see "Voice agent" below for today's live version). Compiled in hosted CI; not yet seen on a device. Details: `docs/implementation/BLIK_TRANSFER_STATUS.md`.
@@ -61,7 +63,7 @@ Last updated 2026-10-19 (the owner's merge session: #84, #88, #90 and the #97 fi
     Nothing was changed on the agent by the merge session.
   - **`voice-agent/README.md` on main is out of date:** it still names `agtvrsn_2801m57etpkkfhfbjvqt95nptfha` (the ASK-01 restore of 18 Oct) as live.
   - Live version at the last working call (11 Oct): `agtvrsn_5201m4p132brf30th15nggeqarf0`. ASK-01 exactly: `agtvrsn_6401m57e22qwepwtr1ywwe64x2k4`.
-  - Settings on 18 Oct: authentication off, 10 calls a day for the whole agent, concurrency 2, recordings kept with no time limit.
+  - Settings on 18 Oct: authentication off, 10 calls a day for the whole agent, concurrency 2, recordings kept with no time limit. **Changed 20 Oct (ADR-548): 1,000 a day, 10 at once; authentication still off; recordings still kept with no time limit (read back).**
   - The ElevenLabs logs show device calls on 14–16 Oct from a build newer than `ce02763`; which commit isn't recorded.
 
 ## Platforms
@@ -79,7 +81,7 @@ Merge one at a time, then rebuild and talk to Doddy before the next. Checked 19 
 
 | Branch / PR | What it changes | State and what it needs |
 |---|---|---|
-| `claude/calm-home-eyes` | Home's Doddy gets eyes (follow a finger, half close while pressed, one slow blink after 21:00) cut from the owner's pack sheets 007 and 008, and Type opens as a bottom sheet (ADR-546). On top of the calm Home (#106) | PR #109. Hosted macOS green on `dc28a0d1` (run 39446957094): DoddyCore 1185, app unit 48, UI 29 (1 skipped), 0 failures. The default branch `f3bd10d6` it sits on is green too (run 39435586291). Not run on a device. |
+| `claude/calm-home-eyes` | Home's Doddy gets eyes (follow a finger, half close while pressed, one slow blink after 21:00) cut from the owner's pack sheets 007 and 008, and Type opens as a bottom sheet (ADR-560). On top of the calm Home (#106) | PR #109. Hosted macOS green on `dc28a0d1` (run 39446957094): DoddyCore 1185, app unit 48, UI 29 (1 skipped), 0 failures. The default branch `f3bd10d6` it sits on is green too (run 39435586291). Not run on a device. |
 | PR #92 `claude/awesome-cray-2lb9ia` (draft) | Doddy's own phone number, U0 to U4 (`text_me`, `call_me_later`, texts and calls) | <ul><li>Its session (`session_01TWmNMWhbDNzDVVkN5AfFhs`) still drives it, and Render may deploy from it.</li><li>Needs main merged in: 16 files conflicted against `fc8a5027`.</li><li>Drop `6abc1546`, which duplicates the guard fix on main.</li><li>Give `text_me` and `call_me_later` `x_doddy.ask='tap'` with `confirm_on_screen` (ASK-01).</li><li>Renumber its ADR-493 to 495 from 531 up.</li></ul> |
 | PR #93 `claude/affectionate-lovelace-4qyfwm` (draft) | `docs/ARCHITECTURE.md` and case-first rules in `CLAUDE.md` | <ul><li>Owner review: it changes the agent rules.</li><li>Merges cleanly and passes `verify_imported_pack.py`.</li><li>Its notes on the guard, ASK-01 and list actions are out of date.</li></ul> |
 | PR #86 `claude/connect-in-conversation` (draft) | Connect an online account from the conversation | <ul><li>Hold until the v1 scope is marked up.</li><li>Needs main merged in (conflicts in `DECISIONS.md` and `voice-agent/instructions.md`).</li><li>Renumber its ADR-483, which collides with ASK-01.</li><li>Keep both the BLIK line and the card line in `voice-agent/instructions.md`.</li></ul> |
@@ -93,7 +95,8 @@ Merge one at a time, then rebuild and talk to Doddy before the next. Checked 19 
 | `claude/epic-wright-vz93xh` | Voice token server settings work | <ul><li>Superseded: main plus #84 and #88 carry most of its 3 commits.</li><li>Dropped on purpose: the reply table in `server/voice-token/README.md`, reading a bare HTTP 500 as "not set up", and its ADR-483 (collides with ASK-01).</li><li>Kept, not deleted.</li></ul> |
 | `claude/trusting-dirac-o8ajzc` | Voice screen shows Doddy with a sound wave; the transcript is one tap away | Medium risk to voice: adds audio level meters to the live session |
 | `claude/affectionate-mayer-aovol9` | Island compact view draws a pre-cut round face | Low |
-| `claude/motion-mv1`, `claude/admiring-curie-bsuwv9-hey-doddy-card` | Not reviewed in the merge session | |
+| `claude/motion-v2-plan`, then `claude/motion-mv1` to `claude/motion-mv6` (stacked: merge in that order, or MV6 alone, which contains the rest and main at `b5f29e04`) | One persistent Doddy that hops between the tabs, rides lists and Ask's composer, and has idle behaviours (ADR-554, ADR-555; ADR-552 puts him on the calm Home). Engine in DoddyCore `Motion/`; director and drawing in `DoddyApp/DesignSystem/Motion/`; the old pictures on Home, Memories, Settings and Find become him | <ul><li>Hosted macOS green on every branch. MV6 head `85f11836` ([run 39320204816](https://github.com/Bienos/doddy.2/actions/runs/39320204816)): DoddyCore 1239 tests, app unit 43, UI 50 (1 skipped), 0 failures.</li><li>Never run on a device: 80 to 120 Hz riding, the keyboard, haptics, hand-off alignment, the system's Reduce Motion and VoiceOver. Checklist: `docs/design/MOTION_V2_DEVICE_CHECKLIST.md`.</li><li>Owner, 20 Oct ("Confirm and ok for home"): the plan's answers for Q2, Q3, Q4, Q8, Q10, Q13, Q14, Q15, Q16 confirmed; Home stays 1.4x (the agent's reading). Still open: Q6 (blink and eye art), Q11 (larger exports). Art the pack lacks: `docs/design/MOTION_V2_ART_REQUESTS.md`.</li></ul> |
+| `claude/admiring-curie-bsuwv9-hey-doddy-card` | Not reviewed in the merge session | |
 | `claude/dismiss-ended-card` | Nothing: its changes were reverted | None |
 
 ## Known problems
@@ -105,7 +108,7 @@ Merge one at a time, then rebuild and talk to Doddy before the next. Checked 19 
   Investigated 18 Oct (`docs/implementation/VOICE_SESSION_STARTS.md`, ElevenLabs list only, no transcripts):
   - Two starts at once mostly predate the 11 Oct "review H1" fix.
   - Silent 30-second sessions with zero messages still happen: six since that build, four of them within five minutes on 16 Oct at night.
-  - Leading suspect: a "Hey Doddy" start from the background that stalls before its start data and stops when iOS's roughly 30-second background allowance runs out.
+  - Leading suspect: a "Hey Doddy" start from the background that stalls before its start data and stops when iOS's roughly 30-second background allowance runs out. **That start path was removed with the wake word (ADR-549), so this cause is gone; check the next device log for silent sessions.**
   - PR #84 (on main since 19 Oct) adds one conversation at a time (ADR-496) and the log lines a phone log needs. Not fixed yet: it still needs a device log to confirm the cause.
 - **Vercel:** the `doddy` project (team `doddyyyy`) built and published the site from the default branch on 2026-10-14 (www.doddy.lol); the earlier "account blocked" failures did not recur on that build. The free plan allows 100 deployments a day, and skipped ones count: on 18 October the limit was reached by 12:22 UTC (100 deployments since 09:34, 86 of them skipped), so Vercel refused new ones and showed "Account is blocked". Since 18 October only the production branch deploys: preview deployments are off in all three projects' settings (go-live checklist A10), and each `vercel.json` says the same (ADR-498, PR #84, on main since 19 Oct). GitHub Actions stopped starting jobs on 16 October and ran again on 18 October at 15:08 UTC (run 39139146509). Since then, every commit also gets three red "Account is blocked." statuses with a generic Vercel help link, under the same names (`Vercel – doddy-voice-token` and so on) as `doddyyyy`'s real statuses. They probably come from the old team's projects. `doddyyyy` itself posts "Vercel is deploying your app", "Canceled by Ignored Build Step", "Deployment has completed" or "Deployment rate limited". None of these is a required check.
 
@@ -144,7 +147,7 @@ Merge one at a time, then rebuild and talk to Doddy before the next. Checked 19 
 - Delete the two old Supabase functions and their secrets (code saved in `docs/archive/supabase-functions-2026-10-18/`).
   - Decide whether to keep the Render copies of `doddy-voice-token` and `doddy-gateway` (research report, decision 11).
 - A native review of the eight new app languages and of all nine landing-page translations, which are live as drafts (`l10n/REVIEW_NOTES.md`).
-- "Hey Doddy" cannot work until the keyword file and a Picovoice key are in place (`docs/implementation/HEY_DODDY_STATUS.md`, "What is missing").
+- "Hey Doddy" and Picovoice were removed on 20 Oct (ADR-549): the wake word had never run on a device. The Vercel project `doddy-voice-token` may still hold a `PICOVOICE_ACCESS_KEY` value; remove it (`tools/secrets/sync.mjs --prune`).
 - Whether notes sync between the Mac and the iPhone (today they never do).
 - The kitchen timer Live Activity.
 - A Pencil drawing canvas.

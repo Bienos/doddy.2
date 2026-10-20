@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// ADR-546: his eyes. The pieces are cut from the owner's sheets 007 and 008 by
+/// ADR-560: his eyes. The pieces are cut from the owner's sheets 007 and 008 by
 /// `tools/whole_doddy/build_face_pieces.py`; these check which piece a moment chooses, that every
 /// piece and picture the table names is there, that the table is plausible against the pictures'
 /// own geometry, and what Home does with a finger, a touch and the evening.
