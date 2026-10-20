@@ -6,7 +6,7 @@ Investigation written 18 October 2026; the status below is 20 October. The secti
 
 ## Status (20 Oct 2026)
 
-- **Owner answers:** Q1 commit the handoff folder (done); Q7 whole-picture transforms of pack art are allowed (move, scale, rotate, squash), never redrawn, recoloured, cut up or generated; Q9 add `CADisableMinimumFrameDurationOnPhone` in MV2. Every other question took this plan's recommendation. Still open: Q6 (blink and eye sheets) and Q11 (larger exports).
+- **Owner answers:** Q1 commit the handoff folder (done); Q7 whole-picture transforms of pack art are allowed (move, scale, rotate, squash), never redrawn, recoloured, cut up or generated; Q9 add `CADisableMinimumFrameDurationOnPhone` in MV2. Every other question took this plan's recommendation; on 20 Oct the owner confirmed the recommendations for Q2, Q3, Q4, Q8, Q10, Q13, Q14, Q15 and Q16 ("Confirm and ok for home") and Home stays at 1.4x (the agent's reading of "ok for home"). Still open: Q6 (blink and eye sheets) and Q11 (larger exports).
 - **Built, on stacked branches, not merged:** MV1 `claude/motion-mv1` (engine in DoddyCore, golden tests against all 25 telemetry clips), MV2 surfaces and look, MV3 one Doddy hopping, MV4 riding, MV5 behaviours, MV6 evidence. ADR-545 and ADR-546 in `DECISIONS.md`.
 - **Evidence:** hosted macOS (`scripts/ci.sh`) is green on every branch; on MV6 head `85f11836` DoddyCore ran 1239 tests, the app 43, the UI tests 50 (1 skipped), 0 failures, 21 of the UI tests on the motion world.
 - **Not run:** anything on a device (80 to 120 Hz, the keyboard, haptics, the system's Reduce Motion and VoiceOver) and any screen recording: `MOTION_V2_DEVICE_CHECKLIST.md`.

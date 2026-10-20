@@ -34,6 +34,8 @@ his surfaces, his clear zone, a frame counter, the flights count and the DEBUG c
 
 ## Hallway test: his size on Home (1.3×, 1.4×, 1.5×)
 
+Not required before merge: on 20 Oct the owner said "ok for home", read as keeping 1.4× (the brief's size). Keep this script for if anyone questions the size, or D17 finds the picture too soft.
+
 Plan section 6, MV6: five people, one at a time, about five minutes each. Nobody is told what is
 being tested.
 
