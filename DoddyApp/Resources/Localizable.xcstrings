@@ -1407,13 +1407,13 @@
         }
       }
     },
-    "A new try uses the same card, approved again for the time you pick. Only times when the whole call fits inside 8:00–20:00.": {
+    "A new try uses the same card, approved again for the time you pick. Only times when the whole call fits inside 8:00–23:00.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nowa próba używa tej samej karty, zatwierdzonej ponownie na wybraną godzinę. Tylko godziny, w których cała rozmowa mieści się między 8:00 a 20:00."
+            "value": "Nowa próba używa tej samej karty, zatwierdzonej ponownie na wybraną godzinę. Tylko godziny, w których cała rozmowa mieści się między 8:00 a 23:00."
           }
         }
       }
@@ -17196,13 +17196,13 @@
         }
       }
     },
-    "Doddy calls only between 8:00 and 20:00 Polish time, and the whole call must fit. Pick a time:": {
+    "Doddy calls only between 8:00 and 23:00 Polish time, and the whole call must fit. Pick a time:": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy dzwoni tylko między 8:00 a 20:00 czasu polskiego i cała rozmowa musi się w tym zmieścić. Wybierz godzinę:"
+            "value": "Doddy dzwoni tylko między 8:00 a 23:00 czasu polskiego i cała rozmowa musi się w tym zmieścić. Wybierz godzinę:"
           }
         }
       }
@@ -19917,24 +19917,24 @@
         }
       }
     },
-    "Doddy only calls between 8:00 and 20:00 Polish time, and the whole call must fit. Nothing was dialled.": {
+    "Doddy only calls between 8:00 and 23:00 Polish time, and the whole call must fit. Nothing was dialled.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy dzwoni tylko między 8:00 a 20:00 czasu polskiego i cała rozmowa musi się w tym zmieścić. Nic nie zostało wybrane."
+            "value": "Doddy dzwoni tylko między 8:00 a 23:00 czasu polskiego i cała rozmowa musi się w tym zmieścić. Nic nie zostało wybrane."
           }
         }
       }
     },
-    "Doddy only calls between 8:00 and 20:00 Polish time, and the whole call must fit. Pick a later time.": {
+    "Doddy only calls between 8:00 and 23:00 Polish time, and the whole call must fit. Pick a later time.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy dzwoni tylko między 8:00 a 20:00 czasu polskiego i cała rozmowa musi się w tym zmieścić. Wybierz późniejszą godzinę."
+            "value": "Doddy dzwoni tylko między 8:00 a 23:00 czasu polskiego i cała rozmowa musi się w tym zmieścić. Wybierz późniejszą godzinę."
           }
         }
       }
@@ -20171,13 +20171,13 @@
         }
       }
     },
-    "Doddy says goodbye when the time is up. Calls happen only between 8:00 and 20:00 Polish time, and the whole call must fit.": {
+    "Doddy says goodbye when the time is up. Calls happen only between 8:00 and 23:00 Polish time, and the whole call must fit.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Gdy czas się skończy, Doddy się pożegna. Połączenia odbywają się tylko między 8:00 a 20:00 czasu polskiego i cała rozmowa musi się w tym zmieścić."
+            "value": "Gdy czas się skończy, Doddy się pożegna. Połączenia odbywają się tylko między 8:00 a 23:00 czasu polskiego i cała rozmowa musi się w tym zmieścić."
           }
         }
       }
