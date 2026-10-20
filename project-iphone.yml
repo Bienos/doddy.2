@@ -15,6 +15,10 @@ settings:
     DODDY_APP_ENTITLEMENTS: ""
     DODDY_WIDGET_ENTITLEMENTS: ""
     DODDY_SHARE_ENTITLEMENTS: ""
+    # The code uses plain string literals, never Xcode's generated string symbols. With them on, the
+    # widgets' catalog has two keys that differ only by a capital ("New note in Doddy" and
+    # "New Note in Doddy") and Xcode refuses to build.
+    STRING_CATALOG_GENERATE_SYMBOLS: NO
 targets:
   Doddy:
     dependencies:REPLACE:
