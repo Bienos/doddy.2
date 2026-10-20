@@ -5,7 +5,7 @@
 
 extension MotionFace {
     /// The cover over a picture's own eye is its box plus `coverPad`, its edge softened by `coverBlur` (pixels of the @3x picture).
-    static let coverPad = 4.0, coverBlur = 1.8
+    static let coverPad = 6.0, coverBlur = 2.0
 
     static let pieces: [Piece] = [
         Piece(asset: "DoddyEye_g00_L", cell: .gaze(column: 0, row: 0), side: .left, dx: -0.0754, dy: -0.0846, w: 0.2298, h: 0.3519, normW: 0.1649, normH: 0.3154),
@@ -35,20 +35,20 @@ extension MotionFace {
                   left: Eye(x: 127.0, y: 159.0, w: 9.0, h: 21.0, fill: [254, 247, 236]),
                   right: Eye(x: 168.0, y: 153.0, w: 9.0, h: 21.0, fill: [254, 247, 235])),
         "strip:idle:2": Fit(radius: 61.25,
-                  left: Eye(x: 127.5, y: 174.0, w: 8.0, h: 21.0, fill: [254, 247, 235]),
+                  left: Eye(x: 127.5, y: 174.0, w: 8.0, h: 21.0, fill: [254, 247, 236]),
                   right: Eye(x: 168.0, y: 167.5, w: 9.0, h: 22.0, fill: [254, 247, 235])),
         "strip:idle:3": Fit(radius: 62.25,
                   left: Eye(x: 125.0, y: 160.0, w: 9.0, h: 21.0, fill: [254, 247, 235]),
                   right: Eye(x: 166.0, y: 154.0, w: 9.0, h: 21.0, fill: [254, 247, 235])),
         "strip:idle:4": Fit(radius: 62.75,
                   left: Eye(x: 124.0, y: 147.0, w: 9.0, h: 21.0, fill: [254, 247, 236]),
-                  right: Eye(x: 164.5, y: 139.0, w: 8.0, h: 21.0, fill: [254, 247, 236])),
+                  right: Eye(x: 164.5, y: 139.0, w: 8.0, h: 21.0, fill: [254, 247, 235])),
         "strip:wave:1": Fit(radius: 62.75,
                   left: Eye(x: 127.0, y: 147.5, w: 7.0, h: 20.0, fill: [254, 245, 231]),
                   right: Eye(x: 168.5, y: 141.5, w: 8.0, h: 20.0, fill: [253, 245, 231])),
         "strip:wave:2": Fit(radius: 62.00,
                   left: Eye(x: 111.5, y: 148.0, w: 8.0, h: 19.0, fill: [253, 245, 231]),
-                  right: Eye(x: 153.5, y: 142.0, w: 8.0, h: 19.0, fill: [254, 245, 231])),
+                  right: Eye(x: 153.5, y: 142.0, w: 8.0, h: 19.0, fill: [253, 245, 231])),
         "strip:wave:3": Fit(radius: 62.25,
                   left: Eye(x: 102.5, y: 147.5, w: 8.0, h: 20.0, fill: [253, 245, 231]),
                   right: Eye(x: 144.5, y: 141.5, w: 8.0, h: 20.0, fill: [253, 245, 231])),
@@ -60,6 +60,6 @@ extension MotionFace {
                   right: Eye(x: 138.5, y: 142.5, w: 8.0, h: 20.0, fill: [253, 245, 231])),
         "pose:crosslegged": Fit(radius: 66.00,
                   left: Eye(x: 127.0, y: 133.5, w: 9.0, h: 22.0, fill: [253, 244, 230]),
-                  right: Eye(x: 170.0, y: 125.5, w: 9.0, h: 22.0, fill: [253, 245, 230])),
+                  right: Eye(x: 170.0, y: 125.5, w: 9.0, h: 22.0, fill: [253, 244, 230])),
     ]
 }

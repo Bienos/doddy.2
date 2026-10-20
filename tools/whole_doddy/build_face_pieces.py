@@ -49,8 +49,8 @@ REFERENCE_RADIUS = 64.0
 MARGIN = 4
 # The cover over a picture's own eye is its box plus this many pixels (of the @3x picture), with an
 # edge softened by COVER_BLUR pixels.
-COVER_PAD = 4.0
-COVER_BLUR = 1.8
+COVER_PAD = 6.0
+COVER_BLUR = 2.0
 INK = 14
 DARK = 110
 
