@@ -123,7 +123,7 @@ These hold even if the model, the prompt or the app misbehaves. Each has a test 
   Checked when the brief is created, at approval, at dial and at answer.
 
 **When and how often:**
-- **Hours:** the whole call (ring + max duration + 20 s) must fit inside 8:00–20:00 Europe/Warsaw. Every day of the week (see the open questions). Checked at dial and again at answer.
+- **Hours:** the whole call (ring + max duration + 20 s) must fit inside 8:00–23:00 Europe/Warsaw. Every day of the week (see the open questions). Checked at dial and again at answer.
 - **Rate limits:**
   - per user: 3 an hour and 10 a day;
   - per destination: 2 a day from one user and 3 a day from all users, at least 15 minutes apart;
@@ -176,7 +176,7 @@ Fixed template in server code (`server/messaging/src/taskCalls/opening.ts`):
 4. **Processors.** Twilio (telephony, live transcription) and ElevenLabs (voice, final transcript) need to be in the privacy policy and processor agreements.
 5. **Do-not-call list.** Before anyone other than the owner uses this: a way for a number's owner to ask never to be called by Doddy again.
 6. **Call-backs.** The callee sees Doddy's Twilio number. If they call back, they reach the S2 memory agent, which greets in English and treats them as an unknown caller. Options: a Polish greeting for unknown callers on that agent, or a dedicated Polish number (needs a Twilio regulatory bundle, which can take days).
-7. **Days.** v1 allows every day 8:00–20:00. Should Sundays and public holidays be excluded?
+7. **Days.** v1 allows every day 8:00–23:00. Should Sundays and public holidays be excluded?
 8. **Polish numbering.** The allowlist uses the mobile and geographic prefixes of the national numbering plan (Dz.U. 2024 poz. 1862). Confirm `800` should be allowed and `39` refused.
 9. **Twilio's call log** keeps numbers, times and price. Should the server delete each call record at Twilio once the cost is read?
 

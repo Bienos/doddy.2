@@ -318,7 +318,7 @@ describe("call cases against real Postgres", { skip: dbSkip }, () => {
   });
 
   test("calling hours and limits are checked at dial time", async () => {
-    const late = await world({ start: "2026-10-19T17:56:00Z" }); // 19:56 Warsaw: a 4-minute call wouldn't fit
+    const late = await world({ start: "2026-10-19T20:56:00Z" }); // 22:56 Warsaw: a 4-minute call wouldn't fit
     const u = await user(late);
     const p = (await createCase(late, u.h)).json();
     assert.equal(p.callableNow, false);

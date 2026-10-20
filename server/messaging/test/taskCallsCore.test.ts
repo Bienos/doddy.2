@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import { TextCipher } from "../src/crypto.js";
 import { briefSchema, checkBriefContent, commits, isBankAccount, isCardNumber, isPesel, type BriefInput } from "../src/taskCalls/brief.js";
-import { callFits, warsawClock } from "../src/taskCalls/hours.js";
+import { DAY_END_MINUTES, DAY_START_MINUTES, callFits, clockText, warsawClock } from "../src/taskCalls/hours.js";
 import { openingLine } from "../src/taskCalls/opening.js";
 import { AGENT_VARIABLE_NAMES, canonicalJson, caseKeys, compilePayload, payloadDigest, previewOf } from "../src/taskCalls/payload.js";
 import { classifyDestination, GEOGRAPHIC_PREFIXES, MOBILE_PREFIXES } from "../src/taskCalls/phone.js";
@@ -70,12 +70,18 @@ describe("calling hours (Warsaw)", () => {
     assert.equal(warsawClock(new Date("2026-10-25T07:00:00Z")).seconds, 8 * 3600);
   });
 
-  test("the whole call must end by 20:00", () => {
-    assert.equal(callFits(new Date("2026-10-24T17:55:15Z"), max), true);  // ends 20:00:00 CEST
-    assert.equal(callFits(new Date("2026-10-24T17:55:16Z"), max), false);
-    assert.equal(callFits(new Date("2026-10-26T18:55:15Z"), max), true);  // 19:55:15 CET
-    assert.equal(callFits(new Date("2026-10-26T18:55:16Z"), max), false);
+  test("the whole call must end by 23:00", () => {
+    assert.equal(callFits(new Date("2026-10-24T20:55:15Z"), max), true);  // ends 23:00:00 CEST
+    assert.equal(callFits(new Date("2026-10-24T20:55:16Z"), max), false);
+    assert.equal(callFits(new Date("2026-10-26T21:55:15Z"), max), true);  // 22:55:15 CET
+    assert.equal(callFits(new Date("2026-10-26T21:55:16Z"), max), false);
     assert.equal(callFits(new Date("2026-10-26T22:00:00Z"), max), false); // 23:00
+  });
+
+  test("an evening start still fits, and the availability text follows the same limits", () => {
+    assert.equal(callFits(new Date("2026-10-24T19:30:00Z"), max), true);  // 21:30 CEST
+    assert.equal(clockText(DAY_START_MINUTES), "08:00");
+    assert.equal(clockText(DAY_END_MINUTES), "23:00");
   });
 });
 
