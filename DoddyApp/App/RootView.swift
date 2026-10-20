@@ -162,7 +162,6 @@ struct RootView: View {
                 if phase == .active {
                     Task { await noteReminders.refreshOnForeground() }
                     FocusController.shared.refresh()
-                    BreathingController.shared.refresh()
                     // Shared lists (ADR-263): changes others made arrive when Doddy comes to the front.
                     // A cold launch also syncs (LaunchWork), so one that just ran is not repeated (ADR-547).
                     Task { await SharedListsController.shared.syncAllUnlessRecent() }

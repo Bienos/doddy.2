@@ -95,7 +95,6 @@ struct HomeView: View {
             .sheet(item: $tool) { tool in
                 switch tool {
                 case .focus: FocusView()
-                case .breathe: BreathingView()
                 }
             }
             .fullScreenCover(isPresented: $showAsk) { AskView(openSettings: { selectedTab = .settings }) }
@@ -143,8 +142,6 @@ struct HomeView: View {
                     }
                 }
                 .accessibilityIdentifier("home.focus")
-                Button { tool = .breathe } label: { Label("Breathe", systemImage: "wind") }
-                    .accessibilityIdentifier("home.breathe")
                 // Today only points to Settings until something is connected (ADR-326).
                 if hadFirstConversation || calendarOn || remindersOn {
                     Button { showToday = true } label: { Label("Today", systemImage: "calendar") }
@@ -786,7 +783,7 @@ private struct SlideIn: ViewModifier {
 }
 
 private enum HomeTool: String, Identifiable {
-    case focus, breathe
+    case focus
     var id: String { rawValue }
 }
 
