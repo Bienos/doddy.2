@@ -55,6 +55,9 @@ final class ShortcutRouter {
         // A shared draft's capture sheet is up on the same view as the conversation cover: a
         // second presentation would be dropped and leave drafts queued behind it for good.
         if drafts.shown != nil { return }
+        // Whatever started it, the shortcut ran: the card and the weekly reminder have done their job.
+        setup.noteShortcutRan()
+        Task { await OpenWaysReminderScheduler.refresh(setup) }
         if setup.deliver(ShortcutReceipt(receivedAt: now)) {
             isVoicePresented = false
             isSetupPresented = true
@@ -91,6 +94,13 @@ final class ShortcutRouter {
         guard !isVoicePresented, !isWrapUpPresented, drafts.shown == nil else { return }
         isSetupPresented = false
         isCheckInPresented = true
+    }
+
+    /// The weekly "Open Doddy faster" reminder was tapped: show the ways, unless something else is up.
+    func openWaysOpened() {
+        guard !isVoicePresented, !isCheckInPresented, !isTidyUpPresented, !isWrapUpPresented, !isLookBackPresented,
+              !isOnboardingShown, drafts.shown == nil else { return }
+        isSetupPresented = true
     }
 
     /// The tidy-up notification was tapped, or Settings asked for it.
@@ -227,20 +237,59 @@ final class ShortcutRouter {
 @Observable
 final class BackTapSetupModel {
     private(set) var coordinator: BackTapSetupCoordinator
+    /// What decides when the Home card comes back and when the weekly reminder stops (ADR-547).
+    /// Counts and flags only.
+    private(set) var offer: OpenWaysOfferState
     private let defaults: UserDefaults
 
     init(defaults: UserDefaults = .standard, now: Date = .now) {
         self.defaults = defaults
         coordinator = BackTapSetupCoordinator(summary: Self.load(from: defaults), now: now)
+        offer = Self.loadOffer(from: defaults)
     }
 
     var phase: BackTapSetupPhase { coordinator.phase }
+
+    /// The user is using a way (Doddy's shortcut ran) or said their Back Tap test worked.
+    var isUsingAWay: Bool { OpenWaysOffer.isDone(phase: phase, state: offer) }
+
+    func cardDue(connectedConversations: Int) -> Bool {
+        OpenWaysOffer.cardDue(phase: phase, state: offer, connectedConversations: connectedConversations)
+    }
+
+    func reminderWanted(connectedConversations: Int) -> Bool {
+        OpenWaysOffer.reminderWanted(phase: phase, state: offer, connectedConversations: connectedConversations)
+    }
 
     @discardableResult
     func send(_ event: BackTapSetupEvent) -> BackTapSetupOutcome {
         let outcome = coordinator.handle(event)
         persist()
+        if event == .deferSetup, outcome == .accepted {
+            offer.deferred(atConversations: defaults.integer(forKey: PreferenceKey.connectedConversations))
+            persistOffer()
+        }
         return outcome
+    }
+
+    /// Doddy's "Talk to Doddy" shortcut ran, from Back Tap, the Action Button, a control, Siri or
+    /// the Shortcuts app. Doddy can't tell which; it is enough to stop offering and reminding.
+    func noteShortcutRan() {
+        guard !offer.usedAWay else { return }
+        offer.wayUsed()
+        persistOffer()
+    }
+
+    /// Settings → "Remind me about ways to open Doddy".
+    func setReminders(on: Bool) {
+        offer.setReminders(on: on)
+        persistOffer()
+    }
+
+    /// A round of weekly reminders was put in iOS just now.
+    func reminderRoundArmed(at date: Date) {
+        offer.remindersArmedAt = date
+        persistOffer()
     }
 
     /// True when the receipt matched an active test (the coordinator decides; stale, early or
@@ -253,6 +302,19 @@ final class BackTapSetupModel {
         if let data = try? JSONEncoder().encode(coordinator.summary) {
             defaults.set(data, forKey: PreferenceKey.backTapSetup)
         }
+    }
+
+    private func persistOffer() {
+        if let data = try? JSONEncoder().encode(offer) {
+            defaults.set(data, forKey: PreferenceKey.openWaysOffer)
+        }
+    }
+
+    private static func loadOffer(from defaults: UserDefaults) -> OpenWaysOfferState {
+        guard let data = defaults.data(forKey: PreferenceKey.openWaysOffer),
+              let state = try? JSONDecoder().decode(OpenWaysOfferState.self, from: data)
+        else { return OpenWaysOfferState() }
+        return state
     }
 
     private static func load(from defaults: UserDefaults) -> BackTapSetupSummary {

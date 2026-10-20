@@ -67,7 +67,7 @@ struct SettingsView: View {
         case .notStarted: NSLocalizedString("Not set up", comment: "")
         case .deferred: NSLocalizedString("Set up later", comment: "")
         case .userReportedTested(let at): "Tested by you · \(DateText.full(at))"
-        case .shortcutPreparation, .guiding, .testing, .receiptReceived: NSLocalizedString("In progress", comment: "")
+        case .guiding, .testing, .receiptReceived: NSLocalizedString("In progress", comment: "")
         }
     }
 
@@ -459,10 +459,22 @@ struct SettingsView: View {
                     if DeviceSupport.hasBackTap {
                         StatusRow(title: "Double Back Tap", value: backTapStatus)
                             .accessibilityIdentifier("settings.backTap.status")
-                        Button(router.setup.coordinator.isDone ? "Go through the setup again" : "Set up Double Back Tap") {
+                        // The Back Tap guide, the Action Button, the controls and Siri (ADR-546).
+                        Button("Ways to open Doddy") {
                             router.isSetupPresented = true
                         }
                         .accessibilityIdentifier("settings.backTap")
+                        // One reminder a week for four weeks, until a way is in use (ADR-547).
+                        Toggle("Remind me about ways to open Doddy", isOn: Binding(
+                            get: { !router.setup.offer.remindersOff },
+                            set: { on in
+                                router.setup.setReminders(on: on)
+                                Task { await OpenWaysReminderScheduler.refresh(router.setup) }
+                            }))
+                            .accessibilityIdentifier("settings.waysReminder")
+                        Text("One quiet reminder a week for four weeks, only until you use a way to open Doddy. It is sent only if notifications are already allowed; Doddy doesn't ask for them just for this.")
+                            .font(.footnote)
+                            .foregroundStyle(Theme.secondaryText)
                     }
                     // What "Talk to Doddy" does, for Back Tap, the Action Button, Siri and the control.
                     Picker("When I use Talk to Doddy", selection: $backTapActionRaw) {

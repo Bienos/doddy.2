@@ -228,6 +228,28 @@ extension MemoryCategory {
 enum DeviceSupport {
     /// Accessibility › Touch › Back Tap is an iPhone setting; iPad has none.
     @MainActor static var hasBackTap: Bool { UIDevice.current.userInterfaceIdiom == .phone }
+    /// What "Ways to open Doddy" can offer here (ADR-546). The Action Button is read from the model
+    /// identifier, since iOS has no call that says whether one is there; the simulator names the
+    /// model it pretends to be in an environment variable.
+    @MainActor static var openDoddyDevice: OpenDoddyDevice {
+        var supportsControls = false
+        if #available(iOS 18.0, *) { supportsControls = true }
+        return OpenDoddyDevice(
+            isPhone: UIDevice.current.userInterfaceIdiom == .phone, supportsControls: supportsControls,
+            actionButton: .forModel(modelIdentifier))
+    }
+
+    private static var modelIdentifier: String? {
+        if let simulated = ProcessInfo.processInfo.environment["SIMULATOR_MODEL_IDENTIFIER"], !simulated.isEmpty {
+            return simulated
+        }
+        var info = utsname()
+        uname(&info)
+        let machine = withUnsafeBytes(of: &info.machine) { raw in
+            String(decoding: raw.prefix(while: { $0 != 0 }), as: UTF8.self)
+        }
+        return machine.isEmpty ? nil : machine
+    }
     /// Live Activities: every iPhone, and iPad from iPadOS 26 (ADR-453; earlier iPads have none, so
     /// shopping mode is hidden there instead of saying "turn them on in Settings", ADR-432).
     @MainActor static var hasLiveActivities: Bool {

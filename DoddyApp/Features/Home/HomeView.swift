@@ -37,6 +37,8 @@ struct HomeView: View {
     /// First visit (ADR-326): until a conversation has really connected, Home keeps to talking and
     /// holds back the voice picker (ADR-443) and the Back Tap and Today offers.
     @AppStorage(PreferenceKey.hadFirstConversation) private var hadFirstConversation = false
+    /// For when the "Open Doddy faster" card comes back after "Later" (ADR-547).
+    @AppStorage(PreferenceKey.connectedConversations) private var connectedConversations = 0
     @AppStorage(VoiceConnection.calendar.preferenceKey) private var calendarOn = false
     @AppStorage(VoiceConnection.reminders.preferenceKey) private var remindersOn = false
     @AppStorage(PreferenceKey.memoriesShowsLists) private var memoriesShowsLists = false
@@ -200,7 +202,8 @@ struct HomeView: View {
                 getToKnowCard
             }
             // Back Tap exists only on iPhone (ADR-337), and waits for the first conversation (ADR-326).
-            if router.setup.phase == .notStarted, DeviceSupport.hasBackTap, hadFirstConversation {
+            // After "Later" it comes back once, three conversations on; never once a way is in use (ADR-547).
+            if router.setup.cardDue(connectedConversations: connectedConversations), DeviceSupport.hasBackTap, hadFirstConversation {
                 backTapCard
             }
         }
@@ -450,14 +453,14 @@ struct HomeView: View {
     /// unless the user reported a successful tap test.
     private var backTapCard: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Reach Doddy with two taps")
+            Text("Open Doddy faster")
                 .font(.headline)
                 .accessibilityAddTraits(.isHeader)
-            Text("Double-tap the back of your iPhone to start talking. It takes a minute in Settings, and Doddy walks you through it.")
+            Text("Double-tap the back of your iPhone, press a button or just ask Siri. Pick a way; it takes about a minute.")
                 .font(.subheadline)
                 .foregroundStyle(Theme.secondaryText)
             HStack(spacing: 12) {
-                Button("Set up") { router.isSetupPresented = true }
+                Button("Show me the ways") { router.isSetupPresented = true }
                     .buttonStyle(PrimaryButtonStyle())
                     .accessibilityIdentifier("home.backTap.setup")
                 Button("Later") { router.setup.send(.deferSetup) }
