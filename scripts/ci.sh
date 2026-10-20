@@ -19,9 +19,14 @@ record() { results+=("$1|$2|$3"); }
 run_step() {  # name, command...
   local name=$1; shift
   echo; echo "=== $name"; echo "\$ $*"
-  if "$@"; then record "$name" PASS ""; else record "$name" FAIL "exit $?"; failed=1; fi
+  if "$@"; then record "$name" PASS ""; else record "$name" FAIL "exit $?"; failed=1; return 1; fi
 }
 not_run() { record "$1" "NOT RUN" "$2"; blocked=1; echo; echo "=== $1"; echo "NOT RUN: $2"; }
+# Shut a simulator down and boot it again, waiting until it has finished booting (ADR-561).
+restart_simulator() {
+  xcrun simctl shutdown "$1" 2>/dev/null || true  # fails harmlessly if it is already shut down
+  xcrun simctl bootstatus "$1" -b                 # -b boots it first, then waits for the boot
+}
 
 run_step "Imported pack integrity" python3 -I scripts/verify_imported_pack.py
 run_step "Forbidden-capability guard" scripts/check_forbidden_capabilities.sh
@@ -130,10 +135,25 @@ else
   else
     echo "Destination: $dest"
     run_step "xcodebuild -list" xcodebuild -list -project Doddy.xcodeproj
+    # Build once, then run the unit tests and the UI tests as two passes, with the simulator
+    # restarted in between (ADR-561). The unit tests run inside the app on the simulator; right
+    # after them its first launches are slow, and on 20 Oct (run 39496321722) XCTest could not take
+    # hold of the app for three minutes, so the first 12 UI tests failed before any test code ran.
     # Keep compiling the other targets after the first error, so one run lists every compile
     # error instead of stopping at the first target that fails (owner request, 2026-10-12).
-    run_step "xcodebuild test (unit + UI)" xcodebuild test -project Doddy.xcodeproj -scheme Doddy -destination "$dest" \
-      -IDEBuildingContinueBuildingAfterErrors=YES
+    if run_step "xcodebuild build-for-testing" xcodebuild build-for-testing -project Doddy.xcodeproj -scheme Doddy \
+      -destination "$dest" -IDEBuildingContinueBuildingAfterErrors=YES; then
+      run_step "xcodebuild test: unit tests" xcodebuild test-without-building -project Doddy.xcodeproj -scheme Doddy \
+        -destination "$dest" -only-testing:DoddyTests
+      # Only when this script picked the simulator: a DODDY_DESTINATION may name one by name.
+      if [ -n "${sim_id:-}" ]; then
+        run_step "Restart the simulator before the UI tests" restart_simulator "$sim_id"
+      fi
+      run_step "xcodebuild test: UI tests" xcodebuild test-without-building -project Doddy.xcodeproj -scheme Doddy \
+        -destination "$dest" -only-testing:DoddyUITests
+    else
+      not_run "xcodebuild test (unit + UI)" "the build for testing failed"
+    fi
   fi
 fi
 

@@ -66,7 +66,9 @@ scripts/ci.sh                  # set DODDY_DESTINATION to override the simulator
 - `changes` (Ubuntu, seconds): decides whether the pull request needs the macOS build
   (`scripts/ci_needs_mac.sh`). It does when any changed file can reach an Xcode target or its tests;
   a change made only of docs, servers, site or other non-app files skips it.
-- `ci` (macOS): the full `scripts/ci.sh`, including `xcodebuild test`. It runs only after `core`
+- `ci` (macOS): the full `scripts/ci.sh`. Its iOS part builds once (`xcodebuild build-for-testing`), runs
+  the unit tests (`-only-testing:DoddyTests`), restarts the simulator, then runs the UI tests
+  (`-only-testing:DoddyUITests`), so the UI tests start on a fresh simulator (ADR-561). It runs only after `core`
   passes and only when `changes` says so. Run the workflow by hand (Actions → iOS build and tests →
   Run workflow) and it always runs.
 

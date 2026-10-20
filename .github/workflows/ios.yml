@@ -1,7 +1,8 @@
 # Hosted macOS build for Doddy (owner approval 2026-10-10, closes ADR-022's open choice).
 # Runs the same scripts/ci.sh a contributor runs locally: pack check, guard, Swift package tests,
-# token server / backend / gateway tests, then XcodeGen + xcodebuild test (unit + UI) on the
-# first available iPhone simulator. No signing team or secrets are used; nothing is deployed.
+# token server / backend / gateway tests, then XcodeGen, one build, and the unit tests and then
+# the UI tests on the first available iPhone simulator, restarted between the two (ADR-561).
+# No signing team or secrets are used; nothing is deployed.
 # The macOS job is the expensive one (about 52 minutes at $0.062 a minute), so it runs only after
 # the Linux checks pass, and on a pull request only when the change can reach the app build or its
 # tests (ADR-497, scripts/ci_needs_mac.sh). Run by hand, it always runs.
