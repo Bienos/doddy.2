@@ -216,14 +216,11 @@ struct HomeView: View {
                     // The opening's hand-over lands on this picture, in this place.
                     UploadedCharacterView(assetName: "UploadedDoddy_Listening", height: 210)
                 } else if DoddyDirector.shared.isActive {
-                    // Motion v2: this picture becomes the persistent Doddy, drawn on the stage below
-                    // (the same 210 pt box, so nothing else on Home moves). A tap anywhere in the
-                    // box still talks; a touch on him leans him and a tap on him talks (MV5).
+                    // Motion v2: this picture becomes the persistent Doddy, drawn on the stage
+                    // overlaid below (the same 210 pt box, so nothing else on Home moves). A tap
+                    // anywhere in the box still talks; a touch on him leans him and a tap on him
+                    // talks (MV5).
                     Color.clear
-                        .overlay(alignment: .bottom) {
-                            // No visible line on the calm Home: the stage is the picture's floor.
-                            StageLine(visible: false).padding(.bottom, 31)
-                        }
                 } else if waving {
                     // The first visit of a morning waves (ADR-380), then he sits.
                     DoddyMotionView(motion: .wave, height: 190)
@@ -239,6 +236,15 @@ struct HomeView: View {
         .disabled(!canTalk)
         .accessibilityLabel("Talk to Doddy")
         .accessibilityIdentifier("home.talk")
+        // Motion v2: his stage is the picture's floor, 31 pt above the box's bottom. It is laid over
+        // the button, not inside it: a button is one accessibility element and would swallow the
+        // stage's frame (hosted run 39454393739 read the whole 210 pt box as "the stage"). No visible
+        // line, because the calm Home's mockup has none.
+        .overlay(alignment: .bottom) {
+            if DoddyDirector.shared.isActive && ready == nil {
+                StageLine(visible: false).padding(.bottom, 31)
+            }
+        }
         .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { [opening] rect in
             Task { @MainActor in
                 opening?.homeArtBox = ScreenBox(centerX: rect.midX, centerY: rect.midY, height: rect.height)

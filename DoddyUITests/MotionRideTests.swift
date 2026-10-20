@@ -53,7 +53,8 @@ final class MotionRideTests: XCTestCase {
 
     @MainActor
     private func saveNote(_ text: String, in app: XCUIApplication) {
-        app.buttons["tab.home"].tap()
+        // Home has no tab bar (ADR-545): from Home there is nothing to tap.
+        if app.buttons["tab.home"].exists { app.buttons["tab.home"].tap() }
         XCTAssertTrue(app.buttons["home.save"].waitForExistence(timeout: 5))
         app.buttons["home.save"].tap()
         let editor = app.textViews.firstMatch

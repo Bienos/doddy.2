@@ -152,7 +152,7 @@ final class MotionHopTests: XCTestCase {
     @MainActor
     func testFindWithNothingFoundHeShrugsThere() {
         let app = launch()
-        app.buttons["home.find"].tap()
+        app.tapHomeMenuItem("home.find")
         let query = app.textFields["memories.query"]
         XCTAssertTrue(query.waitForExistence(timeout: 5))
         query.tap(); query.typeText("zzqx nothing like this\n")
@@ -170,7 +170,7 @@ final class MotionHopTests: XCTestCase {
         XCTAssertTrue(debug.waitForExistence(timeout: 5))
         waitUntilHeStands(on: "stage", in: app)
         for tab in ["memories", "settings", "home", "settings", "memories", "home"] {
-            app.buttons["tab.\(tab)"].tap()
+            app.openTab(tab)
             RunLoop.current.run(until: Date().addingTimeInterval(0.8))
         }
         waitUntilHeStands(on: "stage", in: app)
