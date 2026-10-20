@@ -9,7 +9,7 @@ struct IslandStyleView: View {
     @State private var previewState = PreviewState.listening
 
     enum PreviewState: String, CaseIterable, Identifiable {
-        case listening = "Listening", speaking = "Speaking", thinking = "Thinking", muted = "Muted"
+        case listening = "Listening", speaking = "Speaking", thinking = "Working on it", muted = "Muted"
         var id: String { rawValue }
 
         var content: DoddyVoiceAttributes.ContentState {

@@ -19,6 +19,20 @@ reaches OpenAI with the next app build, and ElevenLabs only after the sync below
 
 ## Source of truth and syncing
 
+**Applied to the live agent 2026-10-20, about 14:08 UTC (ADR-556, Brand Guidelines V2.2; owner: "do it"):** the guide's verbal identity (pp.49–66). The live prompt is the owner's own rewrite, so this folder's new "# Who you are" and "# How you speak" were not copied in. Eleven short lines were added in the live prompt's own style, and nothing else in the prompt changed:
+- **Identity:** what he says when asked what he is, and that he explains tools, permissions and data plainly when asked.
+- **Personality:** no loyalty speeches, no manufactured closeness.
+- **Tone and speaking style:** natural contractions and "the useful bit comes first"; three more "do not say" lines ("Unlock your full potential!", "Trust me, I always find a way.", "Anything you need, no limits."); "warmth without sugary reassurance".
+- **Humour:** "a joke is optional, the answer must still stand without it"; "never make someone feel foolish for needing help".
+- **Thinking together:** the kind-disagreement example. **Sensitive situations:** the opening line "That sounds difficult. What would be most useful right now?"
+- **Tool results:** the plain receipt, "never 'All sorted!' without a result", and the unknown-outcome line. **Unsupported capabilities:** "I can help draft it, but I can't send it from here."
+- **Placeholder:** `opening_line` is now "I'm here. What's up?"; the other eleven placeholders were re-sent exactly as read, because the API replaces the set.
+- **Read first:** `agtvrsn_9601m5cg7h2jf0ctpbggw15zzq4n` (82 tools), read immediately before saving. It is not the 19 Oct version named in `STATUS.md`; whoever saved it later isn't recorded. **Rollback to exactly that:** `agtvrsn_9601m5cg7h2jf0ctpbggw15zzq4n`.
+- **Saved:** `agtvrsn_0301m5ct85ywet5tp3hadj85gf5h` (the prompt), then `agtvrsn_8701m5ct8dxsf8htebwpdykppqbv` (the placeholder): the live version now.
+- **Checked after saving:** both full agent documents were read back and compared leaf by leaf. Only the prompt, `opening_line` and the version id differ. The new prompt equals the intended text byte for byte (SHA-256 `b3030a46…`). The 82 tool ids are identical and in the same order. `first_message` is still `{{opening_line}}`. The language presets, voice, turn-taking, workflow and every other setting are unchanged.
+- **Not checked:** a real conversation with the new prompt. The Polish and other language presets use the app's `opening_line`, so they follow the app build, which sends "Hi, I'm Doddy. What's on your mind?" for a first conversation and "I'm here. What's up?" after that.
+- **Still different:** this folder's `instructions.md` wording and the live prompt differ, as before, so `compare` reports the whole prompt as drift. OpenAI Realtime reads `instructions.md` from the app build.
+
 **Not yet applied (ADR-309, camera shortcut help):** one sentence in the "Opening the camera" line differs from the live prompt on purpose. In `instructions.md`, the "camera didn't open" sentence sends the user to "Don't have the shortcut?" on the camera card or to Settings, Connections, Shortcuts. The live prompt still has the ADR-291 sentence. Apply it once an app build with that card button ships; until then, the compare step reports this one sentence.
 
 **Applied to the live agent 2026-10-11 (ADR-291, open camera; owner: "Zgoda", then "zrob to ty"):** `run_shortcut` (`tool_1601m4gj37f5etbres37pgtvrq3c`) has the new `name` sentence. Two edits went into the live prompt in place: the "Opening the camera" line after `run_shortcut`, and "open the camera" in the last strict timer/map/shortcut rule. Version `agtvrsn_8101m4nf7332e9d9s4vcvvyd1zbx` (rollback) → `agtvrsn_8701m4nqkm9sezbaqxeyddwrey89`. Both the tool and the prompt were read back after saving; the tool list is unchanged.

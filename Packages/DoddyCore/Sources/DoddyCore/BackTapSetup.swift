@@ -1,33 +1,15 @@
 import Foundation
 
-// MARK: - Step map
+// MARK: - The guide
 
-/// One card of the guided Double Back Tap setup. Pure data the app shows; nothing here reads
-/// iOS Settings, detects a gesture or knows what Back Tap is set to.
-public struct BackTapGuideStep: Equatable, Sendable, Identifiable {
-    public let id: String
-    public let title: String
-    /// Where the user is, e.g. "Settings → Accessibility → Touch".
-    public let route: String
-    /// What Doddy says or shows for this step.
-    public let instruction: String
-    /// The button the user taps to report being on this page, e.g. "I'm in Touch".
-    public let reportLabel: String
-
-    public init(id: String, title: String, route: String, instruction: String, reportLabel: String) {
-        self.id = id
-        self.title = title
-        self.route = route
-        self.instruction = instruction
-        self.reportLabel = reportLabel
-    }
-}
-
-/// The versioned walkthrough (design/interface-v1.2 (deleted 20 Oct 2026, ADR-548; see git history), GUIDED-BACK-TAP-AND-VOICE-SETUP.md).
-/// Guidance follows the page the user *reports*; the app never claims to see their screen.
+/// The Double Back Tap guide (design v1.2, "Two taps. A little help."). It is one screen with three
+/// steps, not a card per Settings page: Doddy can't see Settings, so asking people to report which
+/// page they are on only added taps. Nothing here reads iOS Settings, detects a gesture or knows
+/// what Back Tap is set to.
 public enum BackTapGuide {
-    /// Bump when the step text or order changes. Stored next to the user's completion marker.
-    public static let version = 1
+    /// Bump when the guide's steps change. Stored next to the user's completion marker.
+    /// 2: one screen with three steps instead of six cards (the Ways to open Doddy screen).
+    public static let version = 2
     /// The built-in App Shortcut. Observed 2026-10-09 on the owner's iPhone: Back Tap's Shortcuts
     /// section lists it directly, so nothing has to be created first.
     public static let appShortcutTitle = "Talk to Doddy"
@@ -36,57 +18,6 @@ public enum BackTapGuide {
     public static let fallbackShortcutName = "Open Doddy"
     /// The manual path. There is no public API to assign Back Tap or to read its assignment.
     public static let settingsPath = ["Settings", "Accessibility", "Touch", "Back Tap", "Double Tap", appShortcutTitle]
-
-    public static let steps: [BackTapGuideStep] = [
-        BackTapGuideStep(
-            id: "settings", title: "Open Settings", route: "Settings",
-            instruction: "Open the Settings app. On its main list, choose Accessibility.",
-            reportLabel: "I'm in Settings"),
-        BackTapGuideStep(
-            id: "accessibility", title: "Choose Touch", route: "Settings → Accessibility",
-            instruction: "In Accessibility, find the Physical and Motor section, then choose Touch.",
-            reportLabel: "I'm in Accessibility"),
-        BackTapGuideStep(
-            id: "touch", title: "Find Back Tap", route: "Settings → Accessibility → Touch",
-            instruction: "Scroll down in Touch and choose Back Tap.",
-            reportLabel: "I'm in Touch"),
-        BackTapGuideStep(
-            id: "back-tap", title: "Choose Double Tap", route: "Settings → Accessibility → Touch → Back Tap",
-            instruction: "Choose Double Tap. If it already has an action you want to keep, you can leave this for later.",
-            reportLabel: "I'm in Back Tap"),
-        BackTapGuideStep(
-            id: "double-tap", title: "Choose your shortcut", route: "Back Tap → Double Tap",
-            instruction: "Scroll to the Shortcuts section and choose Talk to Doddy. Then go back.",
-            reportLabel: "I'm in Double Tap"),
-        BackTapGuideStep(
-            id: "assigned", title: "Let's try it", route: "Double Tap → Talk to Doddy",
-            instruction: "With the shortcut chosen, come back to Doddy and start the test. Then double-tap the back of your iPhone.",
-            reportLabel: "I chose Talk to Doddy"),
-    ]
-
-    /// Index of the step the user can be sent back to when the shortcut arrived some other way.
-    public static let chooseShortcutStepIndex = 4
-
-    /// Steps on which the user can report a Settings page (the last step is the test intro).
-    public static var reportableSteps: ArraySlice<BackTapGuideStep> { steps.dropLast() }
-
-    /// The step matching a reported page: its id, title, report label or bare page name
-    /// ("Touch", "Back Tap"), ignoring case and curly apostrophes. Nil when unknown, in which
-    /// case the app asks which page the user is on instead of guessing.
-    public static func stepIndex(reportedPage: String) -> Int? {
-        let wanted = normalize(reportedPage)
-        guard !wanted.isEmpty else { return nil }
-        return steps.firstIndex { step in
-            let page = step.route.components(separatedBy: "→").last ?? ""
-            return [step.id, step.title, step.reportLabel, page].map(normalize).contains(wanted)
-        }
-    }
-
-    static func normalize(_ text: String) -> String {
-        text.lowercased()
-            .replacingOccurrences(of: "\u{2019}", with: "'")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-    }
 }
 
 // MARK: - Test evidence
@@ -126,10 +57,8 @@ public struct ShortcutReceipt: Equatable, Sendable {
 
 public enum BackTapSetupPhase: Equatable, Sendable {
     case notStarted
-    /// "Nothing to create first": the built-in shortcut, plus the personal-shortcut fallback.
-    case shortcutPreparation
-    /// Settings walkthrough, by step index into `BackTapGuide.steps`.
-    case guiding(step: Int)
+    /// The three steps are on screen.
+    case guiding
     /// Waiting for the shortcut to open Doddy.
     case testing(BackTapTestWindow)
     /// The shortcut arrived during the test; waiting for the user to say how they triggered it.
@@ -141,20 +70,18 @@ public enum BackTapSetupPhase: Equatable, Sendable {
 }
 
 public enum BackTapSetupEvent: Equatable, Sendable {
+    /// Show the steps (first time, or again after "later").
     case start
-    case shortcutReady
-    /// The user reports which Settings page they are on (a report label, step id or page name).
-    case report(page: String)
-    case next
-    case previous
     case startTest(now: Date)
     case receipt(ShortcutReceipt)
     /// "Yes, I used Double Back Tap."
     case confirmDoubleTap(now: Date)
-    /// "I ran it another way": the receipt is discarded and the guide resumes.
+    /// "I ran it another way": the receipt is discarded and the steps come back.
     case otherTrigger
+    /// "It didn't work, show me the steps."
+    case backToSteps
     case deferSetup
-    /// Reopen the guide from Settings after it was deferred or completed.
+    /// Show the steps again after they were deferred or completed.
     case revisit
 }
 
@@ -163,8 +90,8 @@ public enum BackTapSetupOutcome: Equatable, Sendable {
     case ignored(String)
 }
 
-/// Deterministic guided-setup state. It stores what the user reported and whether Doddy's
-/// intent ran during an active test window. It never stores a system-verified assignment,
+/// Deterministic guided-setup state. It stores whether Doddy's intent ran during an active test
+/// window and what the user said about it. It never stores a system-verified assignment,
 /// because iOS offers no API for that; and it cannot reach a finished state without a receipt.
 public struct BackTapSetupCoordinator: Equatable, Sendable {
     /// How long a started test accepts a shortcut receipt.
@@ -190,13 +117,6 @@ public struct BackTapSetupCoordinator: Equatable, Sendable {
         }
     }
 
-    public var currentStep: BackTapGuideStep? {
-        if case .guiding(let index) = phase, BackTapGuide.steps.indices.contains(index) {
-            return BackTapGuide.steps[index]
-        }
-        return nil
-    }
-
     public var isDone: Bool {
         if case .userReportedTested = phase { return true }
         return false
@@ -217,7 +137,7 @@ public struct BackTapSetupCoordinator: Equatable, Sendable {
             BackTapSetupSummary(status: .deferred, testedAt: nil, guideVersion: BackTapGuide.version, activeTest: nil)
         case .testing(let window), .receiptReceived(let window, _):
             BackTapSetupSummary(status: .notStarted, testedAt: nil, guideVersion: BackTapGuide.version, activeTest: window)
-        case .notStarted, .shortcutPreparation, .guiding:
+        case .notStarted, .guiding:
             BackTapSetupSummary(status: .notStarted, testedAt: nil, guideVersion: BackTapGuide.version, activeTest: nil)
         }
     }
@@ -226,47 +146,18 @@ public struct BackTapSetupCoordinator: Equatable, Sendable {
     public mutating func handle(_ event: BackTapSetupEvent) -> BackTapSetupOutcome {
         switch (event, phase) {
         case (.start, .notStarted), (.start, .deferred), (.revisit, .deferred), (.revisit, .userReportedTested):
-            phase = .shortcutPreparation
+            phase = .guiding
             return .accepted
         case (.start, _):
             return .ignored("already started")
         case (.revisit, _):
             return .ignored("setup is in progress")
 
-        case (.shortcutReady, .shortcutPreparation):
-            phase = .guiding(step: 0)
-            return .accepted
-        case (.shortcutReady, _):
-            return .ignored("not at the shortcut step")
-
-        case (.report(let page), .shortcutPreparation), (.report(let page), .guiding),
-             (.report(let page), .testing), (.report(let page), .receiptReceived):
-            guard let index = BackTapGuide.stepIndex(reportedPage: page) else {
-                return .ignored("unknown page")
-            }
-            phase = .guiding(step: index)
-            return .accepted
-        case (.report, _):
-            return .ignored("not guiding")
-
-        case (.next, .guiding(let index)):
-            guard index + 1 < BackTapGuide.steps.count else { return .ignored("last step; start the test") }
-            phase = .guiding(step: index + 1)
-            return .accepted
-        case (.next, _):
-            return .ignored("not guiding")
-
-        case (.previous, .guiding(let index)):
-            phase = index == 0 ? .shortcutPreparation : .guiding(step: index - 1)
-            return .accepted
-        case (.previous, _):
-            return .ignored("not guiding")
-
-        case (.startTest(let now), .shortcutPreparation), (.startTest(let now), .guiding), (.startTest(let now), .testing):
+        case (.startTest(let now), .guiding), (.startTest(let now), .testing):
             phase = .testing(BackTapTestWindow(startedAt: now, duration: Self.testWindowDuration))
             return .accepted
         case (.startTest, _):
-            return .ignored("start the guide first")
+            return .ignored("show the steps first")
 
         case (.receipt(let receipt), .testing(let window)):
             guard receipt.receivedAt >= window.startedAt else { return .ignored("receipt predates the test") }
@@ -287,10 +178,16 @@ public struct BackTapSetupCoordinator: Equatable, Sendable {
             return .ignored("no test to confirm")
 
         case (.otherTrigger, .receiptReceived):
-            phase = .guiding(step: BackTapGuide.chooseShortcutStepIndex)
+            phase = .guiding
             return .accepted
         case (.otherTrigger, _):
             return .ignored("no receipt to discard")
+
+        case (.backToSteps, .testing), (.backToSteps, .receiptReceived):
+            phase = .guiding
+            return .accepted
+        case (.backToSteps, _):
+            return .ignored("no test to leave")
 
         case (.deferSetup, .userReportedTested):
             return .ignored("already tested")

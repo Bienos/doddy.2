@@ -332,61 +332,61 @@
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy hört zu, während du mit ihm redest: nachdem du auf Mit Doddy reden getippt hast, oder sobald du Doddy öffnest, wenn du das in den Einstellungen eingeschaltet hast. Deine Stimme in einem Gespräch wird an ElevenLabs gesendet, um es auszuführen, oder an OpenAI, wenn du die Stimme unter Home auf OpenAI umstellst. Ein Sprachmemo, das du zu einer Notiz aufnimmst, bleibt auf diesem iPhone."
+            "value": "Um dich zu hören, braucht Doddy das Mikrofon. Doddy hört zu, während du mit ihm redest: nachdem du auf Mit Doddy reden getippt hast, oder sobald du Doddy öffnest, wenn du das in den Einstellungen eingeschaltet hast. Deine Stimme in einem Gespräch wird an ElevenLabs gesendet, um es auszuführen, oder an OpenAI, wenn du die Stimme unter Home auf OpenAI umstellst. Ein Sprachmemo, das du zu einer Notiz aufnimmst, bleibt auf diesem iPhone."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. Your voice in a conversation is sent to ElevenLabs to run it, or to OpenAI if you switch Home's voice to OpenAI. A voice memo you record on a note stays on this iPhone."
+            "value": "To hear you, Doddy needs the microphone. Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. Your voice in a conversation is sent to ElevenLabs to run it, or to OpenAI if you switch Home's voice to OpenAI. A voice memo you record on a note stays on this iPhone."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy escucha mientras hablas con él: después de que toques Hablar con Doddy, o en cuanto abres Doddy si lo activaste en Ajustes. Tu voz en una conversación se envía a ElevenLabs para ejecutarla, o a OpenAI si cambias la voz de Inicio a OpenAI. Una nota de voz que grabes en una nota se queda en este iPhone."
+            "value": "Para oírte, Doddy necesita el micrófono. Doddy escucha mientras hablas con él: después de que toques Hablar con Doddy, o en cuanto abres Doddy si lo activaste en Ajustes. Tu voz en una conversación se envía a ElevenLabs para ejecutarla, o a OpenAI si cambias la voz de Inicio a OpenAI. Una nota de voz que grabes en una nota se queda en este iPhone."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy écoute pendant que tu lui parles : après que tu as touché Parler à Doddy, ou dès que tu ouvres Doddy si tu l’as activé dans Réglages. Ta voix en conversation est envoyée à ElevenLabs pour la mener, ou à OpenAI si tu as choisi OpenAI comme voix sur l’Accueil. Un mémo vocal que tu enregistres sur une note reste sur cet iPhone."
+            "value": "Pour t'entendre, Doddy a besoin du micro. Doddy écoute pendant que tu lui parles : après que tu as touché Parler à Doddy, ou dès que tu ouvres Doddy si tu l’as activé dans Réglages. Ta voix en conversation est envoyée à ElevenLabs pour la mener, ou à OpenAI si tu as choisi OpenAI comme voix sur l’Accueil. Un mémo vocal que tu enregistres sur une note reste sur cet iPhone."
           }
         },
         "hr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy sluša dok razgovaraš s njim: nakon što dodirneš Razgovaraj s Doddyjem ili čim otvoriš Doddyja ako je to uključeno u Postavkama. Tvoj glas u razgovoru šalje se u ElevenLabs radi vođenja razgovora, ili u OpenAI ako na Početnoj prebaciš glas na OpenAI. Glasovna bilješka koju snimiš uz bilješku ostaje na ovom iPhoneu."
+            "value": "Da bi te čuo, Doddy treba mikrofon. Doddy sluša dok razgovaraš s njim: nakon što dodirneš Razgovaraj s Doddyjem ili čim otvoriš Doddyja ako je to uključeno u Postavkama. Tvoj glas u razgovoru šalje se u ElevenLabs radi vođenja razgovora, ili u OpenAI ako na Početnoj prebaciš glas na OpenAI. Glasovna bilješka koju snimiš uz bilješku ostaje na ovom iPhoneu."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy ascolta mentre parli con lui: dopo che tocchi Parla con Doddy, o appena apri Doddy se l'hai attivato in Impostazioni. La tua voce in una conversazione viene inviata a ElevenLabs per condurla, o a OpenAI se in Home passi la voce a OpenAI. Un memo vocale che registri su una nota resta su questo iPhone."
+            "value": "Per sentirti, Doddy ha bisogno del microfono. Doddy ascolta mentre parli con lui: dopo che tocchi Parla con Doddy, o appena apri Doddy se l'hai attivato in Impostazioni. La tua voce in una conversazione viene inviata a ElevenLabs per condurla, o a OpenAI se in Home passi la voce a OpenAI. Un memo vocale che registri su una nota resta su questo iPhone."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddyが聞いているのは、あなたがDoddyと話している間です。「Doddyと話す」をタップした後、または設定でオンにしている場合はDoddyを開いてすぐに聞き始めます。会話中のあなたの声は、会話を処理するためにElevenLabsに送られます。ホームの声をOpenAIに切り替えている場合はOpenAIに送られます。メモに録音したボイスメモは、このiPhoneにとどまります。"
+            "value": "あなたの声を聞くために、Doddyはマイクが必要です。Doddyが聞いているのは、あなたがDoddyと話している間です。「Doddyと話す」をタップした後、または設定でオンにしている場合はDoddyを開いてすぐに聞き始めます。会話中のあなたの声は、会話を処理するためにElevenLabsに送られます。ホームの声をOpenAIに切り替えている場合はOpenAIに送られます。メモに録音したボイスメモは、このiPhoneにとどまります。"
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy słucha, gdy z nim rozmawiasz: po stuknięciu Porozmawiaj z Doddym albo od razu po otwarciu aplikacji, jeśli włączysz to w Ustawieniach. Twój głos w rozmowie jest wysyłany do ElevenLabs, żeby ją prowadzić, albo do OpenAI, jeśli przełączysz głos na ekranie głównym na OpenAI. Notatka głosowa, którą nagrasz przy notatce, zostaje na tym iPhonie."
+            "value": "Żeby Cię słyszeć, Doddy potrzebuje mikrofonu. Doddy słucha, gdy z nim rozmawiasz: po stuknięciu Porozmawiaj z Doddym albo od razu po otwarciu aplikacji, jeśli włączysz to w Ustawieniach. Twój głos w rozmowie jest wysyłany do ElevenLabs, żeby ją prowadzić, albo do OpenAI, jeśli przełączysz głos na ekranie głównym na OpenAI. Notatka głosowa, którą nagrasz przy notatce, zostaje na tym iPhonie."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "O Doddy escuta enquanto você fala com ele: depois que você toca em Falar com o Doddy, ou assim que você abre o Doddy, se ativou isso nos Ajustes. Sua voz em uma conversa é enviada à ElevenLabs para executá-la, ou à OpenAI se você trocar a voz do Início para a OpenAI. Uma gravação de voz que você faz em uma nota fica neste iPhone."
+            "value": "Para ouvir você, o Doddy precisa do microfone. O Doddy escuta enquanto você fala com ele: depois que você toca em Falar com o Doddy, ou assim que você abre o Doddy, se ativou isso nos Ajustes. Sua voz em uma conversa é enviada à ElevenLabs para executá-la, ou à OpenAI se você trocar a voz do Início para a OpenAI. Uma gravação de voz que você faz em uma nota fica neste iPhone."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy 会在你和他聊天时聆听：在你轻点“和 Doddy 聊聊”之后，或者如果你在设置中开启了相应选项，则在你打开 Doddy 时立即开始。你在对话中的语音会发送给 ElevenLabs 来运行对话，如果你在首页把语音切换为 OpenAI，则发送给 OpenAI。你在笔记上录制的语音备忘录只保留在这台 iPhone 上。"
+            "value": "为了听到你，Doddy 需要使用麦克风。Doddy 会在你和他聊天时聆听：在你轻点“和 Doddy 聊聊”之后，或者如果你在设置中开启了相应选项，则在你打开 Doddy 时立即开始。你在对话中的语音会发送给 ElevenLabs 来运行对话，如果你在首页把语音切换为 OpenAI，则发送给 OpenAI。你在笔记上录制的语音备忘录只保留在这台 iPhone 上。"
           }
         }
       }

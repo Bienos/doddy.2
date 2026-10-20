@@ -13,6 +13,15 @@ Eight languages were machine-translated in one pass, each by a separate Claude a
 
 Answers on 2026-10-13: Japanese ぼく, Croatian gender handling and the Siri read-aloud test were accepted as they are (the Siri test still has to be done on a device). The three new Settings strings for the language picker ("App language", "Same as this iPhone" and the footer) were written by the same agent that made this page, not by the translation agents, and need the same native review.
 
+## Added 20 October 2026 (ADR-556, Brand Guidelines V2.2)
+
+Written by the agent that applied the guide, not by the translation agents; the same native review applies:
+
+- "Working on it…" (the voice screen's pending state, was "Thinking…") in all nine tables.
+- The microphone prompt now opens with "To hear you, Doddy needs the microphone."; each `<code>_infoplist.json` got that sentence in front of its existing text.
+- "Development build. Doddy is an AI assistant…" is the same string with "Doddy" instead of "DODDY".
+- Spoken, not in the tables (DoddyCore `WakeGreeting`): the Polish opening lines "Cześć, tu Doddy. Co ci chodzi po głowie?" (first conversation) and "Jestem. Co słychać?" (after that). A Polish speaker should say them aloud; "Co ci chodzi po głowie?" is meant as the informal "What's on your mind?".
+
 ## Per language
 
 **French (fr).** Uses non-breaking spaces before `? ! : ;` and inside « ». Unsure: "Receipts" → "Confirmations" (#782); "is now due" (#1357); "Item" → "Objet" (#449); "Way" → "Moyen" (#1233); "Focusing" (#384); "Grounded" → "Posé" (#405). Terms: memories = souvenirs; Morning check-in = Point du matin; Evening wrap-up = Bilan du soir; Weekly look-back = Retour sur la semaine; Shopping mode = Mode courses; Focus = Concentration (also Doddy's own focus timer); "Hey Siri" = « Dis Siri ».
