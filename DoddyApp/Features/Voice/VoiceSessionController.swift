@@ -581,10 +581,12 @@ final class VoiceSessionController {
             MorningCheckInPrompt.variableName: MorningCheckInPrompt.render(checkIn),
             FirstConversationPrompt.variableName: FirstConversationPrompt.render(isFirst: isFirstConversation),
             // What Doddy says first (ADR-254): the greeting after "Hey Doddy", otherwise his
-            // usual opening. Used once the agent's first message is {{opening_line}}
+            // usual opening ("Hi, I'm Doddy. What's on your mind?" the first time, then "I'm here.
+            // What's up?", ADR-546). Used once the agent's first message is {{opening_line}}
             // (voice-agent/session.json); an agent without it ignores the variable.
             WakeGreeting.variableName: wakeGreeting ?? WakeGreeting.openingLine(
-                afterWakeWord: false, name: nil, polish: ConversationLanguage.stored() == .polish),
+                afterWakeWord: false, name: nil, polish: ConversationLanguage.stored() == .polish,
+                firstConversation: isFirstConversation),
         ]
         // OpenAI Realtime is the default where the token server is set (ADR-442); a choice on Home wins.
         let tokenServerSet: Bool
