@@ -14,21 +14,15 @@ enum ListeningStop {
 
     /// Who has the microphone open now, from each one's own state.
     static func snapshot() -> MicrophoneSnapshot {
-        let listener = WakeWordListener.shared
-        return MicrophoneSnapshot(
+        MicrophoneSnapshot(
             conversation: VoiceSessionController.microphone,
-            heyDoddy: listener.state,
-            heyDoddyRunning: listener.isEngineRunning,
             voiceMemoRecording: MicrophoneHolders.shared.isRecording)
     }
 
-    /// Ends the conversation, turns "Hey Doddy" off and stops a voice memo, then reads each one
+    /// Ends the conversation and stops a voice memo, then reads each one
     /// again and asks iOS to let go of Doddy's audio. Nothing is saved by it.
     static func stopAll() async -> ListeningStopReport {
         let before = snapshot()
-        // "Hey Doddy" first, so the conversation ending doesn't hand the microphone back to it.
-        // Off, not paused: it must not start again by itself (the user turns it on in Settings).
-        if before.heyDoddyCouldListen { WakeWordListener.shared.turnOff() }
         var keptNoteDraft = false
         if let conversation = VoiceSessionController.current {
             keptNoteDraft = await conversation.stopListening()
@@ -36,7 +30,7 @@ enum ListeningStop {
         let keptMemoDraft = MicrophoneHolders.shared.stopAll()
         var after = snapshot()
         let release: AudioRelease
-        if before.open.isEmpty && !before.heyDoddyCouldListen {
+        if before.open.isEmpty {
             release = .notNeeded
         } else if !after.open.isEmpty {
             // Still open: don't pull the audio from under it; the report says what is still on.
@@ -94,7 +88,7 @@ final class MicrophoneHolders {
     }
 }
 
-/// What the indicator shows. Refreshed whenever a conversation, "Hey Doddy" or a memo changes.
+/// What the indicator shows. Refreshed whenever a conversation or a memo changes.
 @MainActor
 @Observable
 final class ListeningIndicatorModel {

@@ -48,3 +48,8 @@ This replaces the "Character for interface" line near the top for all new work.
 
 # Where to start (2026-10-11, ADR-457)
 **Start here:** read `STATUS.md` (one page: the known-good build, each platform's state, unmerged branches), then only the page for your platform in `docs/platforms/`. Don't read `DECISIONS.md` whole; search it for an ADR number.
+
+---
+
+# Design (owner, 2026-10-20, ADR-548)
+Use only the new design: what the app shows now (Home as the calm "I'm here" screen, ADR-545, and the memory-journey screens), `design/dynamic-island-v4` for the island, and `design/website-what-can-doddy-do` plus the chosen `design/website-homepage-vision/g-sort-thursday.html` for the site. The old design folders were deleted: `design/interface-v1.2` (Pocket Notebook), `VISUAL_REVIEW/`, `design/ios-ready-asset-catalog/`, `design/landing-film-mockup/` and the seven rejected homepage options. Where the text above names them it is history; a deleted file can be read with `git show f7eedf0:<path>`. Colour and type tokens live in `DoddyDesignTokens` and `Theme`. This replaces the "Primary current visual reference is Pocket Notebook" line near the top.

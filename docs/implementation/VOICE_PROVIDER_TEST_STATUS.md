@@ -1,4 +1,8 @@
-# Voice provider: OpenAI Realtime (default) or ElevenLabs (ADR-265, ADR-442)
+# Voice provider: ElevenLabs (default) or OpenAI Realtime (ADR-265, ADR-442, ADR-546)
+
+## Update 2026-10-20 (ADR-546): ElevenLabs is the default again
+
+Owner: "default should be elevenlabs voice agent". `VoiceProvider.effective` returns ElevenLabs for a missing, empty or unknown stored value, with the token server set or not. A stored `"openai"` or `"elevenlabs"` still wins, so someone who chose OpenAI keeps it. The OpenAI choice, the 2.1 / 2.1 mini picker (default mini) and the token server's model allowlist are unchanged. The ADR-442 section below describes the rule it replaced.
 
 ## Update 2026-10-13 (ADR-442): OpenAI Realtime is the default, with a model picker
 

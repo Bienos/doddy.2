@@ -53,15 +53,12 @@ final class ReadAloudController: NSObject, AVSpeechSynthesizerDelegate {
             return
         }
         if synthesizer.isSpeaking { synthesizer.stopSpeaking(at: .immediate) }
-        // "Hey Doddy" listening (ADR-254) steps aside while a note is read.
-        WakeWordListener.shared.appSound(ObjectIdentifier(self), playing: true)
         do {
             let session = AVAudioSession.sharedInstance()
             try session.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
             try session.setActive(true)
         } catch {
             problem = "iOS didn't let Doddy play sound just now."
-            WakeWordListener.shared.appSound(ObjectIdentifier(self), playing: false)
             return
         }
         let utterance = AVSpeechUtterance(string: record.currentText)
@@ -109,7 +106,6 @@ final class ReadAloudController: NSObject, AVSpeechSynthesizerDelegate {
             island.end(final: nil)
         }
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-        WakeWordListener.shared.appSound(ObjectIdentifier(self), playing: false)
     }
 
     /// The installed voice for the note's language (on-device language guess), else the

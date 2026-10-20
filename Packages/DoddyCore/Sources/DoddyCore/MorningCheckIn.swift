@@ -59,8 +59,10 @@ public enum MorningCheckIn {
         guard settings.weekdaysOnly else {
             return [Request(id: "\(notificationPrefix).daily", weekday: nil, hour: settings.hour, minute: settings.minute)]
         }
-        return (2...6).map {
-            Request(id: "\(notificationPrefix).weekday\($0)", weekday: $0, hour: settings.hour, minute: settings.minute)
+        // A named parameter: `$0` here was read as an optional (it is passed on as `Int?`), which put
+        // "Optional(2)" in the id.
+        return (2...6).map { (weekday: Int) in
+            Request(id: "\(notificationPrefix).weekday\(weekday)", weekday: weekday, hour: settings.hour, minute: settings.minute)
         }
     }
 

@@ -68,7 +68,7 @@ The app has no analytics, no crash reporter and no advertising code. (`DEPENDENC
 | Apple Watch sync | The iPhone sends the same snapshot to the watch by WatchConnectivity. The watch app has no database or networking. | ADR-232. On by default. A switch exists in Settings, Apple Watch. |
 | Share extension inbox ("Save to Doddy") | `share-inbox.json` in the App Group, complete file protection, removed when read | ADR-311 |
 | iPhone search index (CoreSpotlight) | Doddy's own index domain | ADR-330. Off by default. Private notes are never indexed. |
-| Access codes and tokens (voice token server code, Doddy server token, Ask Doddy token, Picovoice AccessKey) | iOS Keychain | The server token is `AfterFirstUnlockThisDeviceOnly` (ADR-149). **[CONFIRM: accessibility class of each other secret]** |
+| Access codes and tokens (voice token server code, Doddy server token, Ask Doddy token) | iOS Keychain | The server token is `AfterFirstUnlockThisDeviceOnly` (ADR-149). **[CONFIRM: accessibility class of each other secret]** |
 | Exchange-rate file (last good copy) | On the iPhone | ADR-300 |
 | Exported files and encrypted backup files | Wherever you save them | Section 8 |
 
@@ -99,7 +99,7 @@ Common points:
 | Who | ElevenLabs (runs the voice agent: speech to text, the language model, text to speech). **[CONFIRM: ElevenLabs legal entity, location and processor terms]** |
 | What is sent | Your voice. The conversation. Your saved notes, newest first, up to 6,000 characters (never notes marked Private). List names (a list's items only when Doddy reads or changes a list). Your personality settings. If on: your last few conversations (up to 4,000 characters) and your About you answers. Your nickname or first name appears in the profile when About you is shared. A random install ID is sent as the conversation user ID. In a morning check-in conversation: today's Doddy reminders and lists with things left. |
 | Also sent when you use the matching switch | Calendar entries, reminders, contact names with birthday day and month (never the year or an age), message drafts, results from your online accounts (for example email previews, file names, Notion page titles, Todoist tasks, and one whole email or page if "Read an email" or "Read a Notion page" is on) |
-| When | Only while a conversation is open (maximum 10 minutes per conversation, `voice-agent/session.json`). The microphone is used only while you talk, or from app open if you turned that on, or with "Hey Doddy" on (see 5.11). |
+| When | Only while a conversation is open (maximum 10 minutes per conversation, `voice-agent/session.json`). The microphone is used only while you talk, or from app open if you turned that on. |
 | Opt-in? | Starting a conversation is your action. Using the voice feature sends the data above. The extra items depend on your switches (Settings, Connections). |
 | Language model behind the agent | The agent is configured to use Google's `gemini-3.5-flash` model (`voice-agent/session.json`, `V1_VOICE_STATUS.md`). So your conversation is also processed by Google through ElevenLabs. **[CONFIRM: ElevenLabs' sub-processors, Google's terms for this route, and whether Google keeps or trains on it. The app's own screens do not mention Google]** |
 | Weather and facts | ElevenLabs makes the request for Doddy. The place name and coordinates go to Open-Meteo. Search words go to Wikipedia. The app makes no such request itself. (`DataFlow` row `lookups`.) |
@@ -123,15 +123,15 @@ Common points:
 | Opt-in? | Required for voice; nothing else in the app needs it. Settings, Voice has Sign out of voice and Delete voice account. Deleting removes your sessions on the server. Once Doddy's Sign in with Apple key is set up, it first asks Apple to revoke the Sign in with Apple link (ADR-524); the account is deleted even if Apple doesn't answer. Until then, and for accounts made before it, the app tells you to remove it in your Apple ID settings (go-live checklist C8). **[CONFIRM: the key is set and a revoke was seen to work, before this sentence is published]** |
 | Legal basis | **[CONFIRM: proposed: performance of the service you asked for]** |
 
-### 5.3 OpenAI: Doddy's voice (the default where a token server is set)
+### 5.3 OpenAI: Doddy's voice (a choice in the voice picker; ElevenLabs is the default, ADR-546)
 
 | Item | Detail |
 |---|---|
 | Who | OpenAI (Realtime API). **[CONFIRM: OpenAI entity, terms, region]** |
 | What is sent | The same as 5.1: your voice, the conversation, notes, list names, personality settings and the rest of the prompt. The prompt, notes and tools go from the phone straight to OpenAI, not through Doddy's server. (`server/voice-token/README.md`, ADR-265.) |
-| When | Only while a conversation is open and Home's voice switch says OpenAI. OpenAI is the default when a token server is set (ADR-442); with none, ElevenLabs runs. |
+| When | Only while a conversation is open and the voice picker says OpenAI. ElevenLabs is the default (ADR-546), including for people who never chose; someone who chose OpenAI under ADR-442 keeps it. |
 | Retention | The app says: how long OpenAI keeps the audio and transcript "isn't verified in this build" (`DataFlow`). **[CONFIRM]** |
-| Opt-in? | No longer a separate switch: it is the default once a token server is set. You can switch to ElevenLabs under Talk to Doddy on Home; Home also picks the model (`gpt-realtime-2.1` or `gpt-realtime-2.1-mini`). **[CONFIRM: the consent wording for a default that sends voice to OpenAI]** |
+| Opt-in? | Yes: nothing goes to OpenAI for voice unless you pick OpenAI in Settings › Voice (or on Home after your first conversation); the picker also picks the model (`gpt-realtime-2.1` or `gpt-realtime-2.1-mini`). **[CONFIRM: the consent wording for people who chose OpenAI while it was the default]** |
 
 ### 5.4 Ask Doddy (typed questions): Doddy's gateway and OpenAI
 
@@ -211,7 +211,6 @@ Common points:
 
 | Service | What is sent | When | Opt-in | Source |
 |---|---|---|---|---|
-| **Picovoice** ("Hey Doddy" wake word) | Your own Picovoice AccessKey, so Picovoice can check it and count its use. No sound: the wake word is detected on the iPhone. After the wake word, the conversation goes to ElevenLabs as in 5.1. | When "Hey Doddy" listening starts | Yes, off by default. You bring your own key. | `DataFlow` row `picovoice`, ADR-254. **[CONFIRM: what else Picovoice's SDK sends, such as device or platform data; licence terms for a public release]** |
 | **Apple Maps** (MapKit) | Words you type to find a place, and roughly where you are if Doddy already knows. For "remind me when to leave": where your iPhone is and the place you name. | Only when you search for a place or ask when to leave | You do it | `DataFlow` row `placeSearch`, ADR-196, ADR-335 |
 | **European Central Bank** | Nothing about you. The app downloads the public daily rates file (`eurofxref-daily.xml`). The ECB server sees your IP address as any web server does. | When you ask Doddy to convert money, at most every 6 hours | You ask | `DataFlow` row `exchangeRates`, ADR-300 |
 | **Apple Siri** | What you say to Siri and the matching note Siri reads back. Doddy searches on the iPhone. Siri works under your Siri settings and can use Apple's servers. | Only when you say "Ask Doddy what I saved" with the iPhone unlocked | Settings, "Siri can read my notes aloud". The code defaults the switch to on (`DataFlowView` `@AppStorage`). **[CONFIRM: default on or off]** | `DataFlow` row `siri`, ADR-248 |
@@ -244,7 +243,7 @@ The app asks for these only. Each text below is the app's own wording (`project.
 
 | Permission | Why (the app's own words) |
 |---|---|
-| **Microphone** | "Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. If you turn on Hey Doddy, the microphone also listens on this iPhone for the wake word; that sound isn't kept or sent. Your voice in a conversation is sent to OpenAI to run it, or to ElevenLabs if you switch Home's voice to ElevenLabs. A voice memo you record on a note stays on this iPhone." |
+| **Microphone** | "Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. Your voice in a conversation is sent to ElevenLabs to run it, or to OpenAI if you switch Home's voice to OpenAI. A voice memo you record on a note stays on this iPhone." |
 | **Speech recognition** | "Doddy writes out a voice memo on this iPhone when you record one, so you can check its words before saving. The recording and its words are not sent anywhere." |
 | **Contacts** | "Doddy looks up a contact by name, or whose birthday is coming up, when you ask, and reads birthdays for the people you pick to be reminded of. In a voice conversation, the names it finds and their birthday's day and month go to ElevenLabs, which runs Doddy's voice; numbers, email addresses and birth years stay on this iPhone. Turn this off in Settings, Connections." |
 | **Calendar (full access)** | "Doddy reads your events for the days you ask about, and adds, changes or deletes an event only after you tap Add, Change or Delete. Turn this off in Settings, Connections." |
@@ -254,7 +253,7 @@ The app asks for these only. Each text below is the app's own wording (`project.
 | **Alarms (AlarmKit, iOS 26+)** | "Doddy sets an alarm only when you ask and tap Set alarm. Its alarms ring even in Silent mode or a Focus. Turn them off in Doddy's Settings, Alarms." |
 | **Notifications** | Asked when you turn on timers, reminders, check-ins or push. No usage-description text is needed. Reminder text is hidden by default (ADR-190). |
 | **Live Activities and Dynamic Island** | Shows the state of a conversation, focus timer or shopping list on the Lock Screen. Shopping mode asks you to confirm that its items will be readable on the Lock Screen (ADR-257). |
-| **Background audio** | Keeps a conversation you started running after you leave the app (ADR-053). With "Hey Doddy" on, it keeps the wake-word listening running (ADR-254). |
+| **Background audio** | Keeps a conversation you started running after you leave the app (ADR-053). |
 | **Background remote notifications** | Used only for iCloud's "a shared list changed" wake-up (ADR-284). |
 
 The Share extension and the widgets ask for nothing (ADR-311). The Apple Watch app has no permissions of its own in `project.yml`. **[CONFIRM after the first build]**
@@ -302,7 +301,7 @@ What the app lets you do today:
 What the app **cannot** delete:
 
 - Recordings and transcripts already at ElevenLabs, and anything its model providers keep. No app function deletes them. **[CONFIRM: how a user can have them deleted; whether you can delete through the ElevenLabs API by conversation or install ID]**
-- Data already at OpenAI (voice test, Ask Doddy, news writer), Anthropic, GNews, Twilio (SMS and call records, Verify), Apple (APNs, Siri, iCloud, Maps), Composio, Monid, Google, Microsoft, Notion, Todoist, Vercel and Render logs, and Picovoice. **[CONFIRM for each]**
+- Data already at OpenAI (voice test, Ask Doddy, news writer), Anthropic, GNews, Twilio (SMS and call records, Verify), Apple (APNs, Siri, iCloud, Maps), Composio, Monid, Google, Microsoft, Notion, Todoist, Vercel and Render logs. **[CONFIRM for each]**
 - Backend records for online accounts. Backend account deletion and export "are not built" (`SECURITY_AND_PERMISSIONS.md`). **[CONFIRM]**
 - Your own exported files, backup files and iPhone or iCloud device backups. Your device backups contain Doddy's database because it is ordinary app data (ADR-028).
 - A note you put into a list someone else shares, once the other person has copied it.
@@ -344,7 +343,7 @@ What the app **cannot** delete:
 
 ### 9.3 International transfers
 
-Servers named in the code: Render, Frankfurt, EU; Vercel Blob, Frankfurt. The location of Vercel Functions, ElevenLabs, OpenAI, Google (Gemini), Anthropic, GNews, Twilio, Composio, Monid, Picovoice, Upstash and Google Analytics is not shown in the repository. **[CONFIRM: for each, the data location, the transfer mechanism (adequacy, standard contractual clauses, data privacy framework) and sub-processors]**
+Servers named in the code: Render, Frankfurt, EU; Vercel Blob, Frankfurt. The location of Vercel Functions, ElevenLabs, OpenAI, Google (Gemini), Anthropic, GNews, Twilio, Composio, Monid, Upstash and Google Analytics is not shown in the repository. **[CONFIRM: for each, the data location, the transfer mechanism (adequacy, standard contractual clauses, data privacy framework) and sub-processors]**
 
 ### 9.4 Changes to this policy
 
@@ -387,7 +386,7 @@ Paths are relative to the repository root. "ADR" means a row in `DECISIONS.md`.
 | A23 | Web search through Monid, search words not stored | `ONLINE_ACCOUNTS.md` (ADR-173) |
 | A24 | Gmail compose scope can send | ADR-099 |
 | A25 | Production live mode refused until sign-in | ADR-077; `SECURITY_AND_PERMISSIONS.md` |
-| A26 | Picovoice AccessKey only; wake word on device | `DataFlow.swift` row `picovoice`; ADR-254 |
+| A26 | Removed 20 Oct 2026: Picovoice and the "Hey Doddy" wake word are gone from the app (ADR-549) | none |
 | A27 | Apple Maps place search and travel time | `DataFlow.swift` row `placeSearch`; ADR-196, ADR-335 |
 | A28 | ECB rates file | `DataFlow.swift` row `exchangeRates`; `Packages/DoddyCore/Sources/DoddyCore/Currency.swift`; ADR-300 |
 | A29 | Siri readback | `DataFlow.swift` row `siri`; ADR-248; `DataFlowView.swift` (`siriReadsNotes` default true) |
@@ -418,7 +417,7 @@ Paths are relative to the repository root. "ADR" means a row in `DECISIONS.md`.
 3. **Whole notes go to voice in every conversation** (up to 6,000 characters). The Settings paragraph does say this. The website privacy panel says notes "leave it only for things you switch on". Starting a conversation is the switch. Make sure users see it before the first conversation.
 4. **Web search (Monid) has no row in `DataFlow`.** It is in the Settings paragraph and in `ONLINE_ACCOUNTS.md`. Monid is also not in the "Network" status row, and `PrivacyInfo.xcprivacy` does not list search queries.
 5. **Settings "Account required: No"** is true for using the app. The messaging server creates an anonymous account, and the phone feature stores a phone number. The website says "No account. No sign-up, no email, no password." Say "no account to use Doddy; optional features create an anonymous server account".
-6. **The "Network" status row** (`SettingsView`) lists ElevenLabs, token server, Connected Apps and Ask Doddy only. It omits the messaging server, Apple Maps, ECB, Picovoice, CloudKit and OpenAI voice.
+6. **The "Network" status row** (`SettingsView`) lists ElevenLabs, token server, Connected Apps and Ask Doddy only. It omits the messaging server, Apple Maps, ECB, CloudKit and OpenAI voice.
 7. **Location text says "Doddy doesn't keep it"** but the parking spot is kept in UserDefaults (ADR-301).
 8. **Siri note readback default.** `DataFlowView` defaults `siriReadsNotes` to true. The Settings text says "it can be turned off".
 9. **"What leaves" for the voice token server** shows only "Your access code". The OpenAI token mint also goes through it.
@@ -445,7 +444,6 @@ Paths are relative to the repository root. "ADR" means a row in `DECISIONS.md`.
 - [ ] Anthropic (news writer). GNews. Twilio (Verify, SMS, calls). Apple (APNs, Maps, Siri, CloudKit).
 - [ ] Composio and Monid: terms, regions, sub-processors, retention, agreement.
 - [ ] Render (Frankfurt), Vercel (site, Blob, Functions), Upstash: agreements, log retention, IP logging, transfers.
-- [ ] Picovoice: what the SDK sends; commercial licence.
 
 **Legal basis and consent**
 - [ ] Basis per purpose: service you ask for, consent for microphone and optional items, consent for SMS and calls, consent for GA, legitimate interests for security logs.

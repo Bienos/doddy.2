@@ -1,12 +1,12 @@
 @preconcurrency import ActivityKit
 import Foundation
 
-/// Starts, updates and ends one tool's Live Activity (focus, breathing, read-aloud), like
+/// Starts, updates and ends one tool's Live Activity (focus, read-aloud), like
 /// `VoiceLiveActivity` does for a conversation. Optional: if Live Activities are off for Doddy,
 /// or the request fails, the tool still works in the app.
 ///
 /// Stale dates keep the island honest when the app is not running:
-/// - focus and breathing: the end time, so once it passes iOS marks it stale and the island
+/// - focus: the end time, so once it passes iOS marks it stale and the island
 ///   says the time is up instead of a running countdown;
 /// - read-aloud: 90 s ahead, pushed forward by a heartbeat while the app is reading, so a
 ///   killed app can't leave "Reading aloud" behind.

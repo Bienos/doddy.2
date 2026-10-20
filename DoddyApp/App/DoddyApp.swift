@@ -14,6 +14,8 @@ struct DoddyApp: App {
     @State private var noteReminders: NoteReminderStore
 
     init() {
+        LaunchWork.appInitBegan()
+        defer { LaunchWork.appInitEnded() }
         // The screens' language is read when the app starts: English unless the person picked another (ADR-459).
         AppLanguageStore.applyAtLaunch()
         VoiceSessionKeychain.removeLegacySetup()
@@ -50,15 +52,12 @@ struct DoddyApp: App {
         // A conversation never survives a relaunch, so neither may its island.
         VoiceLiveActivity.endStale()
         // A focus timer does survive one (it is saved); this also lets its island's buttons work
-        // when iOS starts the app just to run them (ADR-241). Breathing and read-aloud don't.
+        // when iOS starts the app just to run them (ADR-241). Read-aloud doesn't.
         FocusController.shared.refresh()
         ToolLiveActivity.endLeftovers(keeping: [.focus])
         // A call Doddy makes for the user runs on the server, so its island may outlive a
         // relaunch; its Take over and End buttons reach the server from here (ADR-504).
         CallLiveActivity.shared.registerActions()
-        // "Hey Doddy" (ADR-254) starts conversations with the same notes and profile.
-        WakeWordListener.shared.store = store
-        WakeWordListener.shared.profiles = profiles
     }
 
     var body: some Scene {
@@ -68,22 +67,14 @@ struct DoddyApp: App {
                 .environment(profiles)
                 .environment(noteReminders)
                 .environment(\.appEnvironment, store.environment)
-                // If the user turned Doddy's notifications on earlier, re-send the (possibly new) token.
-                .task { await UpdatesModel().syncPushTokenIfOn() }
-                .task { await SystemNoteNotifications.registerCategory() }
-                .task { await store.learning?.reload() }
-                .task { ShoppingModeController.shared.reattach() }
-                .task {
-                    await SharedListsController.shared.load()
-                    await SharedListsController.shared.syncAll()
-                    await SharedListsController.shared.startLiveUpdates()
+                // Start-up work waits for the first screen (ADR-547): the cheap local jobs at once,
+                // the network and notification jobs a moment later, one at a time (`LaunchWork`).
+                .task(id: profiles.hasLoaded) {
+                    guard profiles.hasLoaded else { return }
+                    LaunchWork.firstScreenShown()
+                    await LaunchWork.afterFirstScreen(store: store)
+                    await LaunchWork.later()
                 }
-                // Keeps the morning check-in's words in the iPhone's current language (ADR-220).
-                .task { if MorningCheckInSettings.stored().isOn { _ = await MorningCheckInScheduler.apply(.stored()) } }
-                .task { if TidyUpSettings.stored().isOn { _ = await TidyUpScheduler.apply(.stored()) } }
-                .task { if EveningWrapUpSettings.stored().isOn { _ = await EveningWrapUpScheduler.apply(.stored()) } }
-                .task { if WeeklyLookBackSettings.stored().isOn { _ = await WeeklyLookBackScheduler.apply(.stored()) } }
-                .task { await BirthdayScheduler.refresh() }
         }
     }
 }

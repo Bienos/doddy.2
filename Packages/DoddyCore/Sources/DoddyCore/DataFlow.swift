@@ -25,11 +25,9 @@ public struct DataFlowState: Equatable, Sendable {
     public var morningCheckInOn: Bool
     /// Siri may read saved notes aloud (ADR-248).
     public var siriReadsNotes: Bool
-    /// "Hey Doddy" listening is switched on (ADR-254).
-    public var heyDoddyOn: Bool
     /// Lists shared through iCloud, by this user or with them (ADR-263).
     public var sharedLists: Int
-    /// Who runs the live voice: Home's voice switch, or its default (ADR-265, ADR-442).
+    /// Who runs the live voice: the voice picker's choice, or its default, ElevenLabs (ADR-265, ADR-546).
     public var voiceProvider: VoiceProvider
     /// Settings → What I've learned → "Use in voice conversations" (ADR-440).
     public var learnedSharedWithVoice: Bool
@@ -43,7 +41,7 @@ public struct DataFlowState: Equatable, Sendable {
         askDoddyOn: Bool, askDoddyUsesNotes: Bool,
         messagingServerSet: Bool = false, pushOn: Bool = false, memoryCopyOn: Bool = false,
         morningCheckInOn: Bool = false,
-        siriReadsNotes: Bool = false, heyDoddyOn: Bool = false, sharedLists: Int = 0,
+        siriReadsNotes: Bool = false, sharedLists: Int = 0,
         voiceProvider: VoiceProvider = .elevenLabs,
         learnedSharedWithVoice: Bool = false,
         newsWriterProvider: String? = nil
@@ -65,7 +63,6 @@ public struct DataFlowState: Equatable, Sendable {
         self.pushOn = pushOn
         self.memoryCopyOn = memoryCopyOn
         self.siriReadsNotes = siriReadsNotes
-        self.heyDoddyOn = heyDoddyOn
     }
 }
 
@@ -117,8 +114,8 @@ public enum DataFlow {
                 when: openAIVoice
                     ? "Only while a conversation is open, and not while Home's voice switch says OpenAI."
                     : "Only while a conversation is open.",
-                // OpenAI Realtime is the default where the token server is set (ADR-442); then
-                // nothing goes to ElevenLabs for voice, and the row says so instead of claiming it.
+                // When OpenAI Realtime was chosen (and the token server is set), nothing goes to
+                // ElevenLabs for voice, and the row says so instead of claiming it.
                 isActive: !(openAIVoice && state.tokenServerSet),
                 note: "ElevenLabs keeps a recording and transcript of each conversation. Notes you mark Private are never sent."),
             DataFlowRow(
@@ -193,14 +190,6 @@ public enum DataFlow {
                     ? "Doddy searches on this iPhone; Siri hears the request and speaks the answer as your Siri settings allow, which can include Apple's servers."
                     : "Reading notes aloud with Siri is off, so Siri gets no notes from Doddy."),
             DataFlowRow(
-                id: "picovoice", destination: "Picovoice (the \"Hey Doddy\" detector)",
-                what: "The Picovoice AccessKey (your own, or the one Doddy's token server gave this iPhone), so Picovoice can check it and count its use. No sound: the wake word is detected on this iPhone.",
-                when: "When \"Hey Doddy\" listening starts.",
-                isActive: state.heyDoddyOn,
-                note: state.heyDoddyOn
-                    ? "After the wake word, the conversation goes to ElevenLabs exactly as if you had tapped Talk."
-                    : "\"Hey Doddy\" is off, so nothing goes there and the microphone isn't used for it."),
-            DataFlowRow(
                 id: "askDoddy", destination: "Ask Doddy gateway (OpenAI)",
                 what: ask + ".", when: "Only when you send a typed question.", isActive: state.askDoddyOn,
                 note: state.askDoddyOn ? "A separate server from your Doddy server." : "Ask Doddy is off, so nothing goes there."),
@@ -242,7 +231,6 @@ public enum DataFlow {
         "doddyServer": "your Doddy server (Connected Apps)",
         "messagingServer": "your Doddy messaging server",
         "siri": "Siri (when you ask it)",
-        "picovoice": "Picovoice (\"Hey Doddy\" key check)",
         "askDoddy": "the Ask Doddy gateway",
     ]
 
@@ -275,7 +263,6 @@ public enum DataFlow {
             "Notes suggested after a conversation: picked from your own words on this iPhone.",
             // ADR-440: proposals are picked here; only what you confirm and switch on is ever handed over.
             "What Doddy learned (facts, routines, and counts of what you corrected): kept here; confirmed ones go to a conversation only if you turn that on.",
-            "\"Hey Doddy\": what the microphone hears while it waits for the wake word is checked on this iPhone and not kept or sent.",
             "DODDY voice refresh sessions and connected-app credentials, in this iPhone's Keychain; short-lived provider credentials stay in memory.",
         ]
     }
