@@ -212,3 +212,21 @@ basketball SVGs (ADR-225).
 | Image set | Pack source | SHA-256 of the source | Made how |
 |---|---|---|---|
 | `MenuBarDoddy` (Mac app) and `MacDoddy_face` (Mac desktop widget) | 01-transparent-poses/doddy_listening_v02.png | 96375303e59d4b5f272805abb896a14ba3fcec37e8420a2dd04ec8b66823bc41 | byte-identical copies of `WidgetDoddy_face` `art@2x.png` (120×120, SHA-256 `cdb24f36e3069738…`); nothing redrawn or generated |
+
+## Eyes cut from the blink and eye sheets (ADR-560, 20 October 2026)
+
+Owner, 20 Oct: "Make blink and gaze". Same pack (`DODDY-Numbered-Video-Assets-v01`, Drive folder
+`1inLT9oV7wx7UM4P6nxP8yU1-29JV0_ee`). `tools/whole_doddy/build_face_pieces.py` cuts each eye out of two
+sheets as ink on a transparent background (the alpha is how dark the sheet's pixel is against that
+head's own fill; nothing redrawn, recoloured or generated) and measures where the eyes are on the
+pictures the engine draws with a front-facing head. It writes `DoddyEye_*` image sets (20, 2 × 10:
+`g00` to `g22` without `g11`, `half`, `closed`, left and right) and `MotionFacePieces.swift`.
+
+| Image sets | Pack file | SHA-256 of the original | What was done |
+| --- | --- | --- | --- |
+| `DoddyEye_g00_L` … `DoddyEye_g22_R` (16) | 008_doddy_eyes_v01.png (1254 × 1254, a 3 × 3 grid of heads: row 0 up, column 0 left; the middle head looks at you) | aa4b775be3b79d71dc6e1bba30ad24408d9f23e0d45ded8058dc7a50a5767117 | Each eye cut from its head (4 px margin), scaled so the head's radius is 64 px (Lanczos), @2x and @3x. The middle head only gives the reference: the picture's own eyes are the looking-at-you eyes |
+| `DoddyEye_half_L/_R`, `DoddyEye_closed_L/_R` | 007_doddy_blink_v02.png (2172 × 724: open, half closed, closed, half closed) | 1de78fb26e69b50cb7984630a5f994f26274307749a961ca2b56f90bcb267a2a | Tiles 2 and 3 of 4 cut the same way; tile 1 (open) is the reference |
+
+Not used: sheets 004 to 006, 009 to 011 (expressions, mouths, hands, props, effects), and the fourth
+head of 007 (the second half closed, the same as the second). The pictures the pieces go on:
+`DoddyMotion_idle_1` to `_4`, `DoddyMotion_wave_1` to `_5` and `WholeDoddy_crosslegged`.

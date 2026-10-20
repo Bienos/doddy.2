@@ -100,6 +100,9 @@ public final class MotionHost: MotionWorld {
     var askSentAt: Double?
     /// Where a touch on him started.
     var touchStart: MotionPoint?
+    /// When a finger elsewhere on Home last moved (MV7): a touch the system cancelled never says
+    /// it lifted, so his eyes let go of it after `fingerStaleAfter`.
+    var elsewhereAt = 0.0
     /// MV4: Ask is opening and its composer hasn't reported yet (he is unseen until it has).
     var talkPending = false
     /// The tab Ask was opened from (Home), where he goes back to as it closes.

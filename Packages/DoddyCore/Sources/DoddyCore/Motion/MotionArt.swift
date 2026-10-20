@@ -2,9 +2,12 @@ import Foundation
 
 // Motion v2, MV3: which of the owner's pack pictures shows him this frame, and the whole-picture
 // transforms on it (owner answer to Q7: move, scale, rotate and squash a whole picture; never
-// redraw, recolour, cut up or generate). The mapping is plan section 3 and nothing else; what
-// that section marks missing is not drawn (docs/design/MOTION_V2_ART_REQUESTS.md). Names, not
-// images: the app looks the pictures up (`DoddyMotion_<strip>_<n>`, `WholeDoddy_<pose>`).
+// redraw, recolour or generate). The mapping is plan section 3 and nothing else; what that
+// section marks missing is not drawn (docs/design/MOTION_V2_ART_REQUESTS.md). One exception, by
+// the owner's instruction of 20 Oct 2026 ("Make blink and gaze", Q6): his eyes, drawn from eyes
+// cut out of the pack's sheets 007 and 008 over the pictures with a front-facing head
+// (`MotionFace`, ADR-560). Names, not images: the app looks the pictures up
+// (`DoddyMotion_<strip>_<n>`, `WholeDoddy_<pose>`, `DoddyEye_<cell>_<side>`).
 
 public struct MotionArt: Equatable, Sendable {
     public enum Picture: Equatable, Sendable {
@@ -24,6 +27,11 @@ public struct MotionArt: Equatable, Sendable {
     /// Whole-figure tilt around his soles, in degrees: the engine's lean. The pack has no
     /// separate head, so head roll is not drawn (plan section 3: "Head roll: missing").
     public var tilt: Double
+    /// Where his eyes are (MV7). Only meaningful on a picture with a measured face; at you, the
+    /// picture is exactly as the pack drew it.
+    public var eyes: MotionEyes
+    /// What to draw over the picture for his eyes: nothing at you.
+    public var faceLayers: [MotionFaceLayer] { MotionFace.layers(for: picture, eyes: eyes) }
     /// The UI tests' marker for this picture (ADR-336): `doddy.motion.jump`, `doddy.pose.listening`.
     public var marker: String {
         switch picture {
@@ -32,12 +40,14 @@ public struct MotionArt: Equatable, Sendable {
         }
     }
 
-    public init(picture: Picture, mirrored: Bool = false, scaleX: Double = 1, scaleY: Double = 1, tilt: Double = 0) {
+    public init(picture: Picture, mirrored: Bool = false, scaleX: Double = 1, scaleY: Double = 1, tilt: Double = 0,
+                eyes: MotionEyes = .atYou) {
         self.picture = picture
         self.mirrored = mirrored
         self.scaleX = scaleX
         self.scaleY = scaleY
         self.tilt = tilt
+        self.eyes = eyes
     }
 
     /// The hop strip (pack 015): crouch, take-off, apex, contact, stand.
@@ -74,7 +84,7 @@ public struct MotionArt: Equatable, Sendable {
 
     /// His picture now. `still` replaces the standing picture when the screen asks for one (the
     /// empty Memories spot is cross-legged; a problem on screen is the facepalm, plan Q4).
-    public static func choose(_ e: MotionEngine, still: String? = nil) -> MotionArt {
+    public static func choose(_ e: MotionEngine, still: String? = nil, previousEyes: MotionEyes? = nil) -> MotionArt {
         let p = e.pose
         let rm = e.settings.reduceMotion
         // The hop: crouch, take-off and apex frames, mirrored when travelling left.
@@ -120,6 +130,9 @@ public struct MotionArt: Equatable, Sendable {
             sy *= 1 + MotionMath.clamp(p.stretchUp, 0, 0.06)
         }
         let sx = 1 + (1 - sy) * 0.5
-        return MotionArt(picture: picture, scaleX: sx, scaleY: sy, tilt: rm ? 0 : MotionMath.clamp(p.lean, -12, 12))
+        // His eyes, on the pictures that have a measured front-facing head (MV7). Under Reduce
+        // Motion they still move: eyes lead, and a fade is not eye movement.
+        let eyes = MotionFace.hasFace(picture) ? MotionFace.choose(e.eyeState, previous: previousEyes) : .atYou
+        return MotionArt(picture: picture, scaleX: sx, scaleY: sy, tilt: rm ? 0 : MotionMath.clamp(p.lean, -12, 12), eyes: eyes)
     }
 }

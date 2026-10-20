@@ -62,6 +62,15 @@ struct HomeView: View {
                     .frame(minHeight: proxy.size.height)
                 }
                 .scrollBounceBehavior(.basedOnSize)
+                // Motion v2 (ADR-560): his eyes follow a finger anywhere on Home. Simultaneous, so
+                // taps and scrolling work as before; a finger on him is his touch area's.
+                .simultaneousGesture(
+                    DragGesture(minimumDistance: 0, coordinateSpace: .global)
+                        .onChanged {
+                            DoddyDirector.shared.fingerElsewhere(x: Double($0.location.x), y: Double($0.location.y))
+                        }
+                        .onEnded { _ in DoddyDirector.shared.fingerElsewhereLifted() }
+                )
             }
             .safeAreaInset(edge: .bottom) {
                 bottomBar
