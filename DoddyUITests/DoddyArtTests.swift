@@ -14,7 +14,7 @@ final class DoddyArtTests: XCTestCase {
                                "-doddyArtMarkers", "YES", "-hideCharacterArt", hideArt ? "YES" : "NO"]
         if pauseAll { app.launchArguments += ["-connections.pauseAll", "YES"] }
         app.launch()
-        XCTAssertTrue(app.buttons["tab.home"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.waitForTab("home", timeout: 10))
         return app
     }
 
@@ -32,7 +32,7 @@ final class DoddyArtTests: XCTestCase {
     func testNoMatchShrugsAndHidingTheArtRemovesIt() {
         for hide in [false, true] {
             let app = launch(hideArt: hide)
-            app.buttons["home.find"].tap()
+            app.tapHomeMenuItem("home.find")
             let query = app.textFields["memories.query"]
             XCTAssertTrue(query.waitForExistence(timeout: 5))
             query.tap(); query.typeText("zzqx nothing like this\n")
@@ -59,7 +59,7 @@ final class DoddyArtTests: XCTestCase {
     @MainActor
     func testEmptyListsShowDoddyWaiting() {
         let app = launch()
-        app.buttons["tab.memories"].tap()
+        app.goToTab("memories")
         let picker = app.segmentedControls["memories.notesOrLists"]
         XCTAssertTrue(picker.waitForExistence(timeout: 5))
         picker.buttons["Lists"].tap()
@@ -72,7 +72,7 @@ final class DoddyArtTests: XCTestCase {
     func testPauseAllShowsDoddyLyingLowOnlyWhilePaused() {
         for paused in [true, false] {
             let app = launch(pauseAll: paused)
-            app.buttons["tab.settings"].tap()
+            app.goToTab("settings")
             let toggle = app.switches["settings.pauseAll"]
             // A lazy Form row: it exists only once scrolled to.
             XCTAssertTrue(app.reveal(toggle))
@@ -90,7 +90,7 @@ final class DoddyArtTests: XCTestCase {
     @MainActor
     func testEmptyActivityShowsDoddyWaiting() {
         let app = launch()
-        app.buttons["tab.settings"].tap()
+        app.goToTab("settings")
         let row = app.buttons["settings.activity"]
         XCTAssertTrue(app.reveal(row))
         row.tap()

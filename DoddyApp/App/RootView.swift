@@ -409,7 +409,10 @@ struct RootView: View {
                 }
                 // A sibling reserves real viewport space. A TabView-level safeAreaInset
                 // left nested NavigationStack's final action behind the bar on iOS 27.
-                DoddyTabBar(selectedTab: $selectedTab)
+                // Home has its own bar and ••• menu, which reach Memories and Settings (ADR-545).
+                if selectedTab != .home {
+                    DoddyTabBar(selectedTab: $selectedTab)
+                }
             }
         }
     }

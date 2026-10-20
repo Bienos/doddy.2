@@ -22,8 +22,8 @@ final class MemoryBaselineTests: XCTestCase {
 
         app.terminate()
         app.launch()
-        XCTAssertTrue(app.buttons["tab.memories"].waitForExistence(timeout: 8))
-        app.buttons["tab.memories"].tap()
+        XCTAssertTrue(app.waitForTab("memories", timeout: 8))
+        app.goToTab("memories")
         app.buttons["memories.find"].tap()
         let search = app.textFields["memories.query"]
         XCTAssertTrue(search.waitForExistence(timeout: 5))
@@ -42,7 +42,7 @@ final class MemoryBaselineTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["memories.noMatch"].waitForExistence(timeout: 5))
         app.terminate()
         app.launch()
-        app.buttons["tab.memories"].tap()
+        app.goToTab("memories")
         XCTAssertTrue(app.text("No memories yet").waitForExistence(timeout: 5))
     }
 

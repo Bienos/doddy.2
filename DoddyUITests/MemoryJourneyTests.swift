@@ -33,7 +33,7 @@ final class MemoryJourneyTests: XCTestCase {
         app.navigationBars.buttons["Back"].tap()
         scrollTo(app.buttons["capture.done"], app: app)
         app.buttons["capture.done"].tap()
-        app.buttons["tab.memories"].tap()
+        app.goToTab("memories")
         let savedCard = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'memory.open.'")).firstMatch
         // The notes are a lazy stack below the heading, scenery, Find and the picker.
         scrollTo(savedCard, app: app)
@@ -43,8 +43,8 @@ final class MemoryJourneyTests: XCTestCase {
         app.navigationBars.buttons["Back"].tap()
         app.buttons["tab.home"].tap()
         app.terminate(); app.launch()
-        XCTAssertTrue(app.buttons["home.find"].waitForExistence(timeout: 8))
-        app.buttons["home.find"].tap()
+        XCTAssertTrue(app.buttons["home.more"].waitForExistence(timeout: 8))
+        app.tapHomeMenuItem("home.find")
         let query = app.textFields["memories.query"]
         XCTAssertTrue(query.waitForExistence(timeout: 5))
         query.tap(); query.typeText("violet\n")
@@ -75,7 +75,7 @@ final class MemoryJourneyTests: XCTestCase {
         XCTAssertEqual(app.staticTexts["detail.originalText"].label, original)
         screenshot(app, "Native correction with original provenance")
         app.terminate(); app.launch()
-        app.buttons["home.find"].tap()
+        app.tapHomeMenuItem("home.find")
         let reopened = app.textFields["memories.query"]
         XCTAssertTrue(reopened.waitForExistence(timeout: 5))
         reopened.tap(); reopened.typeText("violet\n")
@@ -88,7 +88,7 @@ final class MemoryJourneyTests: XCTestCase {
         XCTAssertTrue(app.buttons["Delete"].waitForExistence(timeout: 5), app.debugDescription)
         app.buttons["Delete"].tap()
         XCTAssertTrue(app.staticTexts["memories.noMatch"].waitForExistence(timeout: 6))
-        app.terminate(); app.launch(); app.buttons["tab.memories"].tap()
+        app.terminate(); app.launch(); app.goToTab("memories")
         XCTAssertTrue(app.text("No memories yet").waitForExistence(timeout: 5))
     }
 
@@ -115,7 +115,7 @@ final class MemoryJourneyTests: XCTestCase {
         XCTAssertTrue(app.buttons["capture.save"].isHittable)
         screenshot(app, "Native dark accessibility capture")
         app.buttons["Cancel"].tap()
-        app.buttons["tab.memories"].tap()
+        app.goToTab("memories")
         XCTAssertTrue(app.text("No memories yet").waitForExistence(timeout: 5))
     }
 
