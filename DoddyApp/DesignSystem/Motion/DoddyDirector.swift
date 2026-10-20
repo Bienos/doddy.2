@@ -152,7 +152,9 @@ final class DoddyDirector {
     func surfaceMoved(_ id: MotionSurfaceID, to frame: MotionRect) {
         let old = frames[id]
         frames[id] = frame
-        host.scene.frames[id] = frame
+        // A surface that slides sideways (a layout at another width: a rotation, or one while the
+        // app is in the background) carries him with it, so he never comes back off his spot.
+        host.surfaceMoved(id, to: frame)
         // iOS 17 (Q10): no scroll measurements, so the first card on screen moving by itself (same
         // size) says the list scrolled. On iOS 18 the scroll view reports it (`listScrolled`).
         if !host.scene.scroll.measured, case .rule(let i) = id.kind, let old, isMounted(id),

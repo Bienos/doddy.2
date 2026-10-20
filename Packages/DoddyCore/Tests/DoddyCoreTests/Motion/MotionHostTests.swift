@@ -366,6 +366,96 @@ final class MotionHostTests: XCTestCase {
         XCTAssertEqual(host.railSpot(.talk).x, 87, accuracy: 1e-9)
     }
 
+    // MARK: A surface that moves sideways
+
+    /// The 393 pt iPhone laid out in landscape (852 × 393): the stage is centred at 426.
+    static let landscapeStage = MotionRect(x: 356, y: 250, width: 140, height: 1)
+
+    /// The owner, 20 Oct: "When I minimize the window and then turn it back on, Doddy jumps in,
+    /// but he stands not in the middle, he stands next to the middle." While the app was away it
+    /// was laid out at another width, so Home's stage reported a frame centred elsewhere, and a
+    /// step ran before it came back. His spot was a window x that stayed behind; the clear-zone
+    /// shuffle hopped him to the near end of the stage's stand range (389.6 on a stage centred at
+    /// 426), and back in portrait to the near end again: 232.9 on a stage centred at 196.5, 36 pt
+    /// right of the middle, after two hops. He now goes with the stage: centred, and no hop.
+    func testBackFromTheBackgroundHeRestsAtTheStagesCentreWithoutAHop() {
+        var checks = MotionChecks()
+        let each: (MotionHost) -> Void = { h in checks.check(h, drawn: h.placement == .hidden ? 0 : 1) }
+        run(maxMs: 500, each: each)
+        let hops = e.metrics.hops.count
+        host.surfaceMoved(.stage, to: Self.landscapeStage)
+        // What the slot draws (`DoddyFigure.slotDX`): his soles against the stage's own centre.
+        XCTAssertEqual(e.pose.x - host.lastStepFrames[.stage]!.midX, 0, accuracy: 1e-9)
+        var worst = 0.0
+        run(maxMs: 1500, each: { h in
+            each(h)
+            worst = max(worst, abs(h.engine.pos.x - Self.landscapeStage.midX))
+        })
+        XCTAssertEqual(e.anchor, MotionSpot(.stage, x: 426))
+        XCTAssertEqual(worst, 0, accuracy: 1e-9, "every step saw him on the stage's centre")
+        // Back at the front, laid out in portrait again.
+        host.surfaceMoved(.stage, to: Self.stage)
+        XCTAssertEqual(e.pose.x - host.lastStepFrames[.stage]!.midX, 0, accuracy: 1e-9)
+        run(maxMs: 2500, each: { h in
+            each(h)
+            worst = max(worst, abs(h.engine.pos.x - Self.stage.midX))
+        })
+        XCTAssertEqual(worst, 0, accuracy: 1e-9)
+        XCTAssertEqual(e.anchor, MotionSpot(.stage, x: 196.5))
+        XCTAssertEqual(e.pos.x, Self.stage.midX, accuracy: 1e-9)
+        XCTAssertEqual(e.mode, .attached)
+        XCTAssertEqual(e.metrics.hops.count, hops, "no hop: he never left his spot")
+        XCTAssertEqual(host.placement, .slot(.stage))
+        XCTAssertEqual(checks.count, 0, "\(checks.violations)")
+    }
+
+    /// The other order: nothing steps while the app is away (the clock sleeps), the stage reports
+    /// its away frame, and the first frame back is one long step before portrait is reported.
+    func testTheFirstLongStepBackSeesHimCentredWhateverTheReportOrder() {
+        run(maxMs: 500)
+        let hops = e.metrics.hops.count
+        host.surfaceMoved(.stage, to: Self.landscapeStage)
+        host.step(60_000)
+        host.settle()
+        XCTAssertEqual(e.mode, .attached)
+        XCTAssertEqual(e.anchor, MotionSpot(.stage, x: 426))
+        host.surfaceMoved(.stage, to: Self.stage)
+        run(maxMs: 1500)
+        XCTAssertEqual(e.anchor, MotionSpot(.stage, x: 196.5))
+        XCTAssertEqual(e.pos.x, 196.5, accuracy: 1e-9)
+        XCTAssertEqual(e.metrics.hops.count, hops)
+    }
+
+    /// A hop to Home while the stage slides (a rotation mid-hop): he lands on its new centre.
+    func testAHopLandsOnTheStagesCentreWhenItSlidesMidFlight() {
+        host.scene.frames[.ledge("settings")] = Self.settingsLedge
+        host.tabChanged(to: .settings, tapT: e.now)
+        host.scene.mounted = [.rail, .ledge("settings")]
+        run(maxMs: 1500, until: { $0.engine.anchor?.surface == .ledge("settings") && $0.engine.now - $0.engine.lastLand > 300 })
+        host.tabChanged(to: .home, tapT: e.now)
+        host.scene.mounted = [.rail, .stage]
+        run(maxMs: 1500, until: { $0.engine.mode == .flight && $0.engine.target?.surface == .stage })
+        XCTAssertEqual(e.mode, .flight)
+        host.surfaceMoved(.stage, to: MotionRect(x: 156.5, y: 430, width: 140, height: 1))
+        XCTAssertEqual(e.target, MotionSpot(.stage, x: 226.5))
+        run(maxMs: 1500, until: { $0.engine.mode == .attached && $0.engine.anchor?.surface == .stage })
+        XCTAssertEqual(e.anchor, MotionSpot(.stage, x: 226.5))
+        run(maxMs: 1000)
+        XCTAssertEqual(e.anchor, MotionSpot(.stage, x: 226.5), "no clear-zone shuffle after the landing")
+    }
+
+    /// Up and down (the Memories sheet lifting Home's box, a scroll) moves nothing sideways: his x
+    /// is untouched and his soles follow the edge, as before.
+    func testAnUpAndDownMoveLeavesHisXAlone() {
+        run(maxMs: 300)
+        let lifted = MotionRect(x: Self.stage.minX, y: Self.stage.minY - 120, width: Self.stage.width, height: 1)
+        host.surfaceMoved(.stage, to: lifted)
+        XCTAssertEqual(host.lastStepFrames[.stage], Self.stage, "the drawing's frame waits for the step, as his y does")
+        run(maxMs: 300)
+        XCTAssertEqual(e.anchor, MotionSpot(.stage, x: 196.5))
+        XCTAssertEqual(e.pos.y, lifted.minY, accuracy: 0.5)
+    }
+
     // MARK: DEBUG checks
 
     func testChecksPassThroughTabHopsAndAHomeSizeChange() {

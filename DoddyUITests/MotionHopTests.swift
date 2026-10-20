@@ -89,6 +89,46 @@ final class MotionHopTests: XCTestCase {
         assertOneDoddy(in: app)
     }
 
+    /// The owner, 20 Oct: away from Doddy and back, he came back with a hop to about 36 pt right
+    /// of the middle. Away and back twice: each time he stands in the middle of the stage. (Whether
+    /// the simulator lays the app out at another size while it is away, as an iPhone can, isn't
+    /// known; the rotation test below moves the stage sideways for certain.)
+    @MainActor
+    func testBackFromTheBackgroundHeStandsInTheMiddleOfTheStage() {
+        let app = launch(debug: true)
+        waitUntilHeStands(on: "stage", in: app)
+        for _ in 0..<2 {
+            XCUIDevice.shared.press(.home)
+            RunLoop.current.run(until: Date().addingTimeInterval(2))
+            app.activate()
+            XCTAssertTrue(app.buttons["home.save"].waitForExistence(timeout: 5))
+            // Long enough for a hop he mustn't make to start and land.
+            RunLoop.current.run(until: Date().addingTimeInterval(1.5))
+            let him = waitUntilHeStands(on: "stage", in: app)
+            XCTAssertEqual(him.frame.midX, surface("stage", in: app).frame.midX, accuracy: 2, motionDebugReport(in: app))
+        }
+        assertOneDoddy(in: app)
+    }
+
+    /// Sideways and back on Home: the stage's centre moves and he goes with it (MotionHost's
+    /// `surfaceMoved`). Before, his spot stayed at its old window x and the clear-zone shuffle
+    /// hopped him to the end of the stage's stand range, 36 pt off the middle.
+    @MainActor
+    func testTurningThePhoneSidewaysAndBackKeepsHimInTheMiddle() {
+        let app = launch(debug: true)
+        waitUntilHeStands(on: "stage", in: app)
+        XCUIDevice.shared.orientation = .landscapeLeft
+        RunLoop.current.run(until: Date().addingTimeInterval(1.5))
+        // Upright again before anything can fail, so a failure never leaves the simulator sideways.
+        XCUIDevice.shared.orientation = .portrait
+        RunLoop.current.run(until: Date().addingTimeInterval(1.5))
+        let him = waitUntilHeStands(on: "stage", in: app)
+        XCTAssertEqual(him.frame.midX, surface("stage", in: app).frame.midX, accuracy: 2, motionDebugReport(in: app))
+        let trail = app.staticTexts["doddy.debug.trail"]
+        if trail.exists { XCTAssertFalse(trail.label.contains("clear zone"), motionDebugReport(in: app)) }
+        assertOneDoddy(in: app)
+    }
+
     /// A tab tap takes him to the new screen's spot; he is never drawn twice on the way.
     @MainActor
     func testTabTapsTakeHimToEachScreensSpot() {
