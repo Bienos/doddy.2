@@ -266,7 +266,7 @@ final class CallCaseModel {
         return result.outcome.isRetryable && (attemptNo ?? 1) < 3
     }
 
-    /// "Zadzwoń ponownie o …": only times the whole call fits inside 8:00–20:00, within the day
+    /// "Zadzwoń ponownie o …": only times the whole call fits inside 8:00–23:00, within the day
     /// the server allows and before the card's payload is dropped (two days after it was made).
     func retryTimes(now: Date = Date()) -> [Date] {
         guard let preview else { return [] }
@@ -571,7 +571,7 @@ enum CallCaseText {
 
     static func gate(_ gate: String) -> String {
         switch gate {
-        case "outside_hours": NSLocalizedString("Doddy only calls between 8:00 and 20:00 Polish time, and the whole call must fit. Nothing was dialled.", comment: "")
+        case "outside_hours": NSLocalizedString("Doddy only calls between 8:00 and 23:00 Polish time, and the whole call must fit. Nothing was dialled.", comment: "")
         case "kill_switch": NSLocalizedString("Calls by Doddy are switched off on the server right now. Nothing was dialled.", comment: "")
         case "agent_drift": NSLocalizedString("Doddy's calling voice doesn't match its approved settings, so nothing was dialled.", comment: "")
         case "one_live_call": NSLocalizedString("Another call by Doddy is still on. One at a time. Nothing was dialled.", comment: "")
@@ -600,7 +600,7 @@ enum CallCaseText {
     static func notApprovable(_ code: String) -> String {
         switch code {
         case "digest_mismatch": NSLocalizedString("This card doesn't match what the server holds. Make a new one.", comment: "")
-        case "outside_hours": NSLocalizedString("Doddy only calls between 8:00 and 20:00 Polish time, and the whole call must fit. Pick a later time.", comment: "")
+        case "outside_hours": NSLocalizedString("Doddy only calls between 8:00 and 23:00 Polish time, and the whole call must fit. Pick a later time.", comment: "")
         case "attempt_open": NSLocalizedString("A call for this card is already on or waiting for its time.", comment: "")
         case "already_answered": NSLocalizedString("This call was already answered. For another call, make a new card.", comment: "")
         case "no_more_attempts": NSLocalizedString("That was the last try for this card. Make a new one to call again.", comment: "")
