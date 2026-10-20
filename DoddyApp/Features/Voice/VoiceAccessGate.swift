@@ -35,6 +35,13 @@ struct VoiceAccessGate: View {
                         .accessibilityIdentifier("voice.auth.retryConnection")
                 }
             } else if !session.isSignedIn {
+                #if DEBUG
+                // Sign in with Apple is off in builds run from Xcode until it is set up (ADR-548).
+                Text(verbatim: "Sign in with Apple is switched off in this test build until it is set up. Use the button below to talk.")
+                    .font(.body)
+                    .foregroundStyle(Theme.secondaryText)
+                    .multilineTextAlignment(.center)
+                #else
                 Text("Sign in once with Apple to set up your DODDY voice account. Apple sends a signed identity token to DODDY only to verify your account and create the session. The protected session stays on this iPhone, so you won’t need to sign in every time. Sign-in doesn’t share your voice or notes.")
                     .font(.body)
                     .foregroundStyle(Theme.secondaryText)
@@ -50,6 +57,7 @@ struct VoiceAccessGate: View {
                 .signInWithAppleButtonStyle(.black)
                 .frame(height: 50)
                 .accessibilityIdentifier("voice.auth.appleSignIn")
+                #endif
             } else {
                 VStack(alignment: .leading, spacing: 12) {
                     Label("Voice runs through \(provider.shortName)", systemImage: "waveform")
