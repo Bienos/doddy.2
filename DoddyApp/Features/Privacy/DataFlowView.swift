@@ -28,7 +28,7 @@ extension DataFlowState {
             siriReadsNotes: flag(PreferenceKey.siriReadsNotes, default: true),
             heyDoddyOn: flag(PreferenceKey.heyDoddyOn, default: false),
             sharedLists: SharedListsController.shared.links.count,
-            // OpenAI is the default where the token server is set (ADR-442); a choice in Settings wins.
+            // ElevenLabs is the default (ADR-546); a choice in Settings wins.
             voiceProvider: VoiceProvider.effective(
                 stored: defaults.string(forKey: VoiceProvider.preferenceKey), tokenServerSet: true),
             learnedSharedWithVoice: defaults.bool(forKey: PreferenceKey.shareLearnedWithVoice))

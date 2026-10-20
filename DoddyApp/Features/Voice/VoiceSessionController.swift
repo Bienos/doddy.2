@@ -586,7 +586,7 @@ final class VoiceSessionController {
             WakeGreeting.variableName: wakeGreeting ?? WakeGreeting.openingLine(
                 afterWakeWord: false, name: nil, polish: ConversationLanguage.stored() == .polish),
         ]
-        // OpenAI Realtime is the default where the token server is set (ADR-442); a choice on Home wins.
+        // ElevenLabs is the default (ADR-546); a choice in the voice picker wins.
         let tokenServerSet: Bool
         if case .tokenServer = mode { tokenServerSet = true } else { tokenServerSet = false }
         provider = VoiceProvider.effective(

@@ -20,8 +20,8 @@
     "zh-Hans": "Doddy 只在你提出请求时使用你的位置：用于你在某个地点设置的提醒（在你轻点“使用我现在的位置”时确定你的位置，并让 iOS 在你到达或离开时提醒你），用于保存你的停车位置，以及通过 Apple 地图计算何时该出发去某个地方。Doddy 不会保留你的位置，也不会追踪你去了哪里。"
   },
   "NSMicrophoneUsageDescription": {
-    "en": "Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. If you turn on Hey Doddy, the microphone also listens on this iPhone for the wake word; that sound isn't kept or sent. Your voice in a conversation is sent to OpenAI to run it, or to ElevenLabs if you switch Home's voice to ElevenLabs. A voice memo you record on a note stays on this iPhone.",
-    "zh-Hans": "Doddy 会在你和他聊天时聆听：在你轻点“和 Doddy 聊聊”之后，或者如果你在设置中开启了相应选项，则在你打开 Doddy 时立即开始。如果你开启了 Hey Doddy，麦克风还会在这台 iPhone 上聆听唤醒词；这些声音不会保留或发送。你在对话中的语音会发送给 OpenAI 来运行对话，如果你在首页把语音切换为 ElevenLabs，则发送给 ElevenLabs。你在笔记上录制的语音备忘录只保留在这台 iPhone 上。"
+    "en": "Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. If you turn on Hey Doddy, the microphone also listens on this iPhone for the wake word; that sound isn't kept or sent. Your voice in a conversation is sent to ElevenLabs to run it, or to OpenAI if you switch Home's voice to OpenAI. A voice memo you record on a note stays on this iPhone.",
+    "zh-Hans": "Doddy 会在你和他聊天时聆听：在你轻点“和 Doddy 聊聊”之后，或者如果你在设置中开启了相应选项，则在你打开 Doddy 时立即开始。如果你开启了 Hey Doddy，麦克风还会在这台 iPhone 上聆听唤醒词；这些声音不会保留或发送。你在对话中的语音会发送给 ElevenLabs 来运行对话，如果你在首页把语音切换为 OpenAI，则发送给 OpenAI。你在笔记上录制的语音备忘录只保留在这台 iPhone 上。"
   },
   "NSRemindersFullAccessUsageDescription": {
     "en": "Doddy adds, changes, completes or deletes a reminder only after you tap Add, Change, Mark done or Delete. Turn this off in Settings, Connections.",

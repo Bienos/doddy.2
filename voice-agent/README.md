@@ -10,7 +10,8 @@ adding one adapter, not rewriting the app or the agent.
 | `tools.json` | 10 function tools (`type`, `name`, `description`, `parameters`) + `x_doddy` | Client tools (`runs_on: phone`) and webhook tools (`runs_on: web`) | `session.tools` (drop `x_doddy`); every call comes to the app |
 | `session.json` | First message, languages, variables, turn-taking, per-provider settings | Agent settings | `session.update` body |
 
-**OpenAI Realtime voice (ADR-265; the default since ADR-442):** Home's switch runs these same files on OpenAI Realtime (`gpt-realtime-2.1` or `gpt-realtime-2.1-mini`, picked on Home).
+**OpenAI Realtime voice (ADR-265; a choice in the voice picker, not the default: ElevenLabs is, ADR-546):** the picker runs these same files on OpenAI Realtime (`gpt-realtime-2.1` or `gpt-realtime-2.1-mini`, picked in the picker).
+**Live version not re-checked on 20 Oct (ADR-546).** The last version this folder records was read on 19 Oct; the ElevenLabs agent is the default voice now, so check the live version before relying on any `agtvrsn_` id in this file.
 The app bundles `instructions.md`, `tools.json` and `session.json`, renders the prompt itself and sends it
 with the tools in `session.update`; see `docs/implementation/VOICE_PROVIDER_TEST_STATUS.md`. A change here
 reaches OpenAI with the next app build, and ElevenLabs only after the sync below.

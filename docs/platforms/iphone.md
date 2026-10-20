@@ -13,7 +13,7 @@
   - ElevenLabs `agent_0501m4et27vyeawrwqfdxxfszfa6`. The prompt and tools are in `voice-agent/` (`instructions.md`, `tools.json`, `session.json`). `python3 -I scripts/voice_agent_spec.py check` validates them.
   - The live agent is changed by the owner, never from the app.
   - The app sends dynamic variables at start (notes, lists, profile, `learned_context`, opening line). A variable the live prompt requires but the app doesn't send stops the call before it starts.
-- **Providers:** ElevenLabs (default) or OpenAI Realtime, as a test switch on Home (ADR-265). `docs/implementation/VOICE_PROVIDER_TEST_STATUS.md`.
+- **Providers:** ElevenLabs (default, ADR-546) or OpenAI Realtime, chosen in Settings › Voice (and on Home after the first conversation) (ADR-265, ADR-442, ADR-443). `docs/implementation/VOICE_PROVIDER_TEST_STATUS.md`.
 - **Status docs:** `V1_VOICE_STATUS`, `V3_ISLAND_STATUS` (Dynamic Island), `HEY_DODDY_STATUS`, `OPENING_SCENE_STATUS` (the intro and listen-on-open).
 - **To debug a voice problem,** look at the ElevenLabs conversation log for the agent first:
   - no conversation at all means the app failed before connecting;

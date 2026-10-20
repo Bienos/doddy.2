@@ -29,7 +29,7 @@ public struct DataFlowState: Equatable, Sendable {
     public var heyDoddyOn: Bool
     /// Lists shared through iCloud, by this user or with them (ADR-263).
     public var sharedLists: Int
-    /// Who runs the live voice: Home's voice switch, or its default (ADR-265, ADR-442).
+    /// Who runs the live voice: the voice picker's choice, or its default, ElevenLabs (ADR-265, ADR-546).
     public var voiceProvider: VoiceProvider
     /// Settings → What I've learned → "Use in voice conversations" (ADR-440).
     public var learnedSharedWithVoice: Bool
@@ -117,8 +117,8 @@ public enum DataFlow {
                 when: openAIVoice
                     ? "Only while a conversation is open, and not while Home's voice switch says OpenAI."
                     : "Only while a conversation is open.",
-                // OpenAI Realtime is the default where the token server is set (ADR-442); then
-                // nothing goes to ElevenLabs for voice, and the row says so instead of claiming it.
+                // When OpenAI Realtime was chosen (and the token server is set), nothing goes to
+                // ElevenLabs for voice, and the row says so instead of claiming it.
                 isActive: !(openAIVoice && state.tokenServerSet),
                 note: "ElevenLabs keeps a recording and transcript of each conversation. Notes you mark Private are never sent."),
             DataFlowRow(

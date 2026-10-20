@@ -123,15 +123,15 @@ Common points:
 | Opt-in? | Required for voice; nothing else in the app needs it. Settings, Voice has Sign out of voice and Delete voice account. Deleting removes your sessions on the server. Once Doddy's Sign in with Apple key is set up, it first asks Apple to revoke the Sign in with Apple link (ADR-524); the account is deleted even if Apple doesn't answer. Until then, and for accounts made before it, the app tells you to remove it in your Apple ID settings (go-live checklist C8). **[CONFIRM: the key is set and a revoke was seen to work, before this sentence is published]** |
 | Legal basis | **[CONFIRM: proposed: performance of the service you asked for]** |
 
-### 5.3 OpenAI: Doddy's voice (the default where a token server is set)
+### 5.3 OpenAI: Doddy's voice (a choice in the voice picker; ElevenLabs is the default, ADR-546)
 
 | Item | Detail |
 |---|---|
 | Who | OpenAI (Realtime API). **[CONFIRM: OpenAI entity, terms, region]** |
 | What is sent | The same as 5.1: your voice, the conversation, notes, list names, personality settings and the rest of the prompt. The prompt, notes and tools go from the phone straight to OpenAI, not through Doddy's server. (`server/voice-token/README.md`, ADR-265.) |
-| When | Only while a conversation is open and Home's voice switch says OpenAI. OpenAI is the default when a token server is set (ADR-442); with none, ElevenLabs runs. |
+| When | Only while a conversation is open and the voice picker says OpenAI. ElevenLabs is the default (ADR-546), including for people who never chose; someone who chose OpenAI under ADR-442 keeps it. |
 | Retention | The app says: how long OpenAI keeps the audio and transcript "isn't verified in this build" (`DataFlow`). **[CONFIRM]** |
-| Opt-in? | No longer a separate switch: it is the default once a token server is set. You can switch to ElevenLabs under Talk to Doddy on Home; Home also picks the model (`gpt-realtime-2.1` or `gpt-realtime-2.1-mini`). **[CONFIRM: the consent wording for a default that sends voice to OpenAI]** |
+| Opt-in? | Yes: nothing goes to OpenAI for voice unless you pick OpenAI in Settings › Voice (or on Home after your first conversation); the picker also picks the model (`gpt-realtime-2.1` or `gpt-realtime-2.1-mini`). **[CONFIRM: the consent wording for people who chose OpenAI while it was the default]** |
 
 ### 5.4 Ask Doddy (typed questions): Doddy's gateway and OpenAI
 
@@ -244,7 +244,7 @@ The app asks for these only. Each text below is the app's own wording (`project.
 
 | Permission | Why (the app's own words) |
 |---|---|
-| **Microphone** | "Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. If you turn on Hey Doddy, the microphone also listens on this iPhone for the wake word; that sound isn't kept or sent. Your voice in a conversation is sent to OpenAI to run it, or to ElevenLabs if you switch Home's voice to ElevenLabs. A voice memo you record on a note stays on this iPhone." |
+| **Microphone** | "Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. If you turn on Hey Doddy, the microphone also listens on this iPhone for the wake word; that sound isn't kept or sent. Your voice in a conversation is sent to ElevenLabs to run it, or to OpenAI if you switch Home's voice to OpenAI. A voice memo you record on a note stays on this iPhone." |
 | **Speech recognition** | "Doddy writes out a voice memo on this iPhone when you record one, so you can check its words before saving. The recording and its words are not sent anywhere." |
 | **Contacts** | "Doddy looks up a contact by name, or whose birthday is coming up, when you ask, and reads birthdays for the people you pick to be reminded of. In a voice conversation, the names it finds and their birthday's day and month go to ElevenLabs, which runs Doddy's voice; numbers, email addresses and birth years stay on this iPhone. Turn this off in Settings, Connections." |
 | **Calendar (full access)** | "Doddy reads your events for the days you ask about, and adds, changes or deletes an event only after you tap Add, Change or Delete. Turn this off in Settings, Connections." |
