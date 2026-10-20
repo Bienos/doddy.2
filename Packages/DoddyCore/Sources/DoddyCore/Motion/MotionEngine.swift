@@ -1164,6 +1164,10 @@ public final class MotionEngine {
         lastCarried = now
         carries += 1
         activity = "resting"
+        // Arriving restarts his idle (a landing does the same): after a long time on Ask's
+        // composer he stood back on Home's stage and sat down at once, because the 15 s were
+        // counted from before he left (hosted run 39379870387, MotionRideTests).
+        idleSince = now
         note("carried to \(spot.surface): \(why)")
     }
 
