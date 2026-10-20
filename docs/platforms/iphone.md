@@ -52,7 +52,7 @@ Code lives under `DoddyApp/Features/<Folder>/`. Status docs are in `docs/impleme
 | Photos, VoiceMemos | Photo notes, voice memos | 218, 230 | PHOTO_NOTES_STATUS, VOICE_MEMOS_STATUS |
 | Privacy | Face ID lock, "What leaves this iPhone" | 310 | - |
 | QuickActions, Spotlight | Icon menu, iPhone search | 339, 330 | - |
-| Setup | Back Tap guide | 380 | V2_SHORTCUT_SETUP_STATUS |
+| Setup | Ways to open Doddy: Back Tap guide, Action Button, control, Siri | 380, 558 | V2_SHORTCUT_SETUP_STATUS |
 | Sharing | Shared lists through iCloud | 263 | SHARED_LISTS_STATUS |
 | Translator | Translator mode | 215 | TRANSLATOR_STATUS |
 | Watch | iPhone side of the Watch app | 232 | APPLE_WATCH_STATUS |

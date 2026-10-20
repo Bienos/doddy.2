@@ -170,6 +170,15 @@ final class VoiceSessionController {
             default: break
             }
             syncIsland()
+            // Listening comes only from the provider's own event: this conversation really
+            // connected. Counted once per conversation, for when the "Open Doddy faster" card
+            // returns after "Later" (ADR-559; it was the Hey Doddy card's, ADR-328).
+            if phase == .listening, !countedAsConnected {
+                countedAsConnected = true
+                let defaults = UserDefaults.standard
+                defaults.set(defaults.integer(forKey: PreferenceKey.connectedConversations) + 1,
+                             forKey: PreferenceKey.connectedConversations)
+            }
             // Listening comes only from the provider's own event, so this marks a conversation
             // that really connected, not a tap that failed (ADR-326).
             if phase == .listening, !UserDefaults.standard.bool(forKey: PreferenceKey.hadFirstConversation) {
@@ -177,6 +186,7 @@ final class VoiceSessionController {
             }
         }
     }
+    private var countedAsConnected = false
     /// True while any conversation holds the microphone (the island keeps it alive in other
     /// screens). Voice samples in Settings don't play then, so they never take over its audio.
     static private(set) var conversationInProgress = false
@@ -498,6 +508,7 @@ final class VoiceSessionController {
         }
         guard attempt == startAttempt else { return }
         startedAt = Date()
+        countedAsConnected = false
         phase = .connecting
         // For a phone log of a start that never got going (STATUS "Known problems"): which start,
         // what started it, and whether Doddy was in the background. No notes or speech in it.

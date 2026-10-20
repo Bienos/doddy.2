@@ -33,6 +33,8 @@ enum PreferenceKey {
     static let backTapAction = "backTapAction"
     /// JSON `BackTapSetupSummary` (outcome and any active test window), never transcripts.
     static let backTapSetup = "backTapSetup"
+    /// JSON `OpenWaysOfferState`: counts and flags for the Home card's return and the weekly reminder (ADR-559).
+    static let openWaysOffer = "openWaysOffer"
     /// UI-test override of the outcome: "-backTapSetupStatus deferred".
     static let backTapSetupStatus = "backTapSetupStatus"
     /// Settings toggle: send the last few conversations to Doddy at the start of the next one.
@@ -81,6 +83,10 @@ enum PreferenceKey {
     /// listening). Until then Home keeps to Talk to Doddy and holds back the setup cards (ADR-326)
     /// and the voice picker (ADR-443).
     static let hadFirstConversation = "hadFirstConversation"
+    /// Voice conversations that really connected on this iPhone (the provider said Listening),
+    /// counted once each; for when the "Open Doddy faster" card returns (ADR-559). It was the
+    /// Hey Doddy card's (ADR-328); PR #108 removed it with that card, and this PR keeps it.
+    static let connectedConversations = "connectedConversations"
 }
 
 enum AppTab: Hashable {
@@ -167,6 +173,8 @@ struct RootView: View {
                 await noteReminders.refreshOnForeground()
                 if scenePhase == .active { listeningIndicatorBecameActive() }
                 pickUpSharedItem()
+                // The weekly "Open Doddy faster" reminder, if it is still wanted (ADR-559).
+                await OpenWaysReminderScheduler.refresh(router.setup)
             }
             .onChange(of: scenePhase, initial: true) { _, phase in
                 // MV5: today's welcome (once a day; a hop in place first after three days away).
@@ -184,6 +192,7 @@ struct RootView: View {
                     MemoryCopySync.shared.retryIfNeeded(PrivateNotesStore.current().shareable(store.memories),
                                                         notesLoaded: store.hasLoaded && store.loadError == nil)
                     pickUpSharedItem()
+                    Task { await OpenWaysReminderScheduler.refresh(router.setup) }
                 }
                 if phase == .background {
                     // What is being typed on a capture screen is on disk before iOS may end Doddy (ADR-362).
@@ -201,6 +210,8 @@ struct RootView: View {
                 default: break
                 }
             }
+            // A tested or used way ends the weekly reminder at once (ADR-559).
+            .onChange(of: router.setup.isUsingAWay) { Task { await OpenWaysReminderScheduler.refresh(router.setup) } }
             // Widgets (ADR-219) follow every change to notes, lists, pins and reminders.
             .onChange(of: store.revision) { WidgetSync.shared.refresh() }
             // Siri learns the list names for "Add to my shopping list in Doddy" (ADR-226).
@@ -345,7 +356,7 @@ struct RootView: View {
         // Waiting drafts appear only once a cover or sheet has finished going away.
         .fullScreenCover(isPresented: $router.isVoicePresented, onDismiss: { router.showWaitingDraft() }) { VoiceView() }
         .sheet(isPresented: $router.isSetupPresented, onDismiss: { router.showWaitingDraft() }) {
-            BackTapSetupView(model: router.setup)
+            OpenDoddyWaysView(model: router.setup)
         }
         // The weekly tidy-up (ADR-228), from its notification or Settings.
         .sheet(isPresented: $router.isTidyUpPresented, onDismiss: { router.showWaitingDraft() }) { TidyUpView() }

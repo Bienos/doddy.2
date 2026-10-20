@@ -551,6 +551,17 @@
         }
       }
     },
+    "A button\nfor Doddy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przycisk\ndla Doddy’ego."
+          }
+        }
+      }
+    },
     "A call for this card is already on or waiting for its time.": {
       "extractionState": "manual",
       "localizations": {
@@ -990,65 +1001,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "帮你找一找"
-          }
-        }
-      }
-    },
-    "A little setup help": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kleine Einrichtungshilfe"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ayuda para configurar"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Un peu d’aide aux réglages"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mala pomoć pri postavljanju"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Un piccolo aiuto con le impostazioni"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "設定のちょっとした手助け"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Trochę pomocy przy ustawieniach"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Uma ajudinha na configuração"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "设置小帮手"
           }
         }
       }
@@ -2099,6 +2051,17 @@
         }
       }
     },
+    "A received shortcut proves the route reached Doddy. You then say whether Double Back Tap triggered it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odebrany skrót dowodzi, że droga dotarła do Doddy’ego. Potem sam mówisz, czy uruchomiło go podwójne stuknięcie w tył."
+          }
+        }
+      }
+    },
     "A rehearsal needs the microphone. Turn it on in Settings › Doddy.": {
       "extractionState": "manual",
       "localizations": {
@@ -2947,6 +2910,17 @@
         }
       }
     },
+    "Action Button": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przycisk czynności"
+          }
+        }
+      }
+    },
     "Add": {
       "extractionState": "manual",
       "localizations": {
@@ -3120,6 +3094,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "将 %lld 项添加到清单"
+          }
+        }
+      }
+    },
+    "Add a Doddy button": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj przycisk Doddy’ego"
           }
         }
       }
@@ -4636,6 +4621,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "已全部勾选。购物模式会自动结束。"
+          }
+        }
+      }
+    },
+    "All ways": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wszystkie sposoby"
           }
         }
       }
@@ -6771,6 +6767,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "问 Doddy 我存了什么"
+          }
+        }
+      }
+    },
+    "Ask Siri": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapytaj Siri"
           }
         }
       }
@@ -10148,6 +10155,17 @@
         }
       }
     },
+    "Choose Talk to Doddy in Settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wybierz „Porozmawiaj z Doddym” w Ustawieniach."
+          }
+        }
+      }
+    },
     "Choose a backup file": {
       "extractionState": "manual",
       "localizations": {
@@ -12043,6 +12061,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "不保存并继续"
+          }
+        }
+      }
+    },
+    "Control Center and Lock Screen": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Centrum sterowania i ekran blokady"
           }
         }
       }
@@ -16457,6 +16486,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy nie może zadzwonić na ten numer. Tylko polskie numery komórkowe, stacjonarne i 800."
+          }
+        }
+      }
+    },
+    "Doddy can't see Settings, can't set Back Tap for you and can't check what your iPhone lists.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie widzi Ustawień, nie ustawi za Ciebie stuknięcia w tył i nie sprawdzi, co pokazuje Twój iPhone."
           }
         }
       }
@@ -21166,6 +21206,17 @@
         }
       }
     },
+    "Double-tap the back of your iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stuknij dwa razy w tył iPhone’a"
+          }
+        }
+      }
+    },
     "Double-tap the back of your iPhone to start talking to Doddy. \"Talk to Doddy\" also works with Siri, in the Shortcuts app and from the Action Button on iPhones that have one.": {
       "extractionState": "manual",
       "localizations": {
@@ -21225,61 +21276,13 @@
         }
       }
     },
-    "Double-tap the back of your iPhone to start talking. It takes a minute in Settings, and Doddy walks you through it.": {
+    "Double-tap the back of your iPhone, press a button or just ask Siri. Pick a way; it takes about a minute.": {
       "extractionState": "manual",
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tippe zweimal auf die Rückseite deines iPhones, um loszureden. Das dauert eine Minute in den Einstellungen, und Doddy führt dich durch."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Toca dos veces la parte trasera de tu iPhone para empezar a hablar. Lleva un minuto en Ajustes, y Doddy te guía paso a paso."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Touche deux fois le dos de ton iPhone pour commencer à parler. Ça prend une minute dans Réglages, et Doddy te guide."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dvaput dodirni stražnju stranu iPhonea da počneš razgovor. Traje minutu u Postavkama, a Doddy te vodi kroz to."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tocca due volte il retro del tuo iPhone per iniziare a parlare. Ci vuole un minuto in Impostazioni, e Doddy ti guida passo passo."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "iPhoneの背面をダブルタップして会話を始めます。設定は1分ほどで、Doddyが手順を案内します。"
-          }
-        },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Stuknij dwa razy w tył iPhone’a, aby zacząć rozmowę. To minuta w Ustawieniach, a Doddy Cię przez to przeprowadzi."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Toque duas vezes na parte de trás do seu iPhone para começar a falar. Leva um minuto nos Ajustes, e o Doddy guia você passo a passo."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "轻点两下 iPhone 背面就能开始聊天。在设置里花一分钟就能搞定，Doddy 会一步步带你完成。"
+            "value": "Stuknij dwa razy w tył iPhone’a, naciśnij przycisk albo po prostu zapytaj Siri. Wybierz sposób; to zajmuje około minuty."
           }
         }
       }
@@ -24109,65 +24112,6 @@
         }
       }
     },
-    "First, let's make Doddy easy to reach. I'll walk you through Double Back Tap, one step at a time.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zuerst machen wir Doddy leicht erreichbar. Ich führe dich Schritt für Schritt durch das Doppeltippen auf die Rückseite."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Primero, hagamos que Doddy sea fácil de alcanzar. Te guío por Tocar atrás dos veces, paso a paso."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "D’abord, rendons Doddy facile à joindre. Je vais te guider pour le double toucher au dos, une étape à la fois."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prvo, da me bude lako dozvati. Provest ću te kroz Dvostruki dodir stražnje strane, korak po korak."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prima rendiamo Doddy facile da raggiungere. Ti guido nel Doppio tocco posteriore, un passo alla volta."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "まずは、Doddyをすぐ呼び出せるようにしましょう。背面ダブルタップの設定を、一歩ずつ案内します。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Najpierw sprawmy, żeby łatwo było mnie wywołać. Przeprowadzę Cię krok po kroku przez podwójne stuknięcie w tył."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Primeiro, vamos deixar o Doddy fácil de alcançar. Eu guio você pelo Toque Duplo na Parte Traseira, um passo de cada vez."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "首先，让我们把 Doddy 变得随手可及。我会一步一步带你设置“轻点两下背面”。"
-          }
-        }
-      }
-    },
     "Five cards are waiting already. Use or cancel one first.": {
       "extractionState": "manual",
       "localizations": {
@@ -24647,6 +24591,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "用于导游讲解、演讲或广播。Doddy 会翻译成你的语言，绝不会对你周围的人说话。不要用于别人的私人对话。"
+          }
+        }
+      }
+    },
+    "For the Lock Screen, touch and hold it, tap Customize, choose Lock Screen, tap a control at the bottom and search for Doddy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na ekranie blokady: przytrzymaj go, stuknij Dostosuj, wybierz ekran blokady, stuknij element sterujący na dole i wyszukaj Doddy."
           }
         }
       }
@@ -26458,6 +26413,17 @@
         }
       }
     },
+    "How do you want\nto open me?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jak chcesz\nmnie otwierać?"
+          }
+        }
+      }
+    },
     "How the island looks while you talk to Doddy from another app. These are previews, not a running conversation.": {
       "extractionState": "manual",
       "localizations": {
@@ -26834,6 +26800,17 @@
         }
       }
     },
+    "I've done it, let me try": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gotowe, chcę spróbować"
+          }
+        }
+      }
+    },
     "If it repeats, only this time changes. Nothing is deleted.": {
       "extractionState": "manual",
       "localizations": {
@@ -27029,6 +27006,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "如果你的 iPhone 在“轻点背面”下没有列出它"
+          }
+        }
+      }
+    },
+    "If your iPhone has one.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jeśli Twój iPhone go ma."
           }
         }
       }
@@ -27324,6 +27312,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "1 小时后"
+          }
+        }
+      }
+    },
+    "In Control Center or on the Lock Screen.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W Centrum sterowania lub na ekranie blokady."
           }
         }
       }
@@ -29499,6 +29498,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dołączenie Cię do rozmowy (Twilio)"
+          }
+        }
+      }
+    },
+    "Just ask.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Po prostu zapytaj."
           }
         }
       }
@@ -34065,6 +34075,17 @@
         }
       }
     },
+    "Make the Action Button start a conversation with Doddy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niech przycisk czynności zaczyna rozmowę z Doddym."
+          }
+        }
+      }
+    },
     "Manage what Doddy remembers": {
       "extractionState": "manual",
       "localizations": {
@@ -34356,6 +34377,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "可能与另一条笔记矛盾"
+          }
+        }
+      }
+    },
+    "Maybe later": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Może później"
           }
         }
       }
@@ -36297,6 +36329,17 @@
         }
       }
     },
+    "Name the shortcut Open Doddy, tap Done, then run it once. Then choose it under Back Tap instead.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nazwij skrót Open Doddy, stuknij Gotowe i uruchom go raz. Potem wybierz go w Stuknięciu w tył."
+          }
+        }
+      }
+    },
     "Name this place": {
       "extractionState": "manual",
       "localizations": {
@@ -36765,6 +36808,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "需要注意"
+          }
+        }
+      }
+    },
+    "Needs iOS 18 or later. Doddy can't add it for you and can't see whether it is there.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wymaga iOS 18 lub nowszego. Doddy nie doda go za Ciebie i nie widzi, czy już tam jest."
           }
         }
       }
@@ -41689,65 +41743,6 @@
         }
       }
     },
-    "Nothing to create first": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nichts, das zuerst erstellt werden muss"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No hay nada que crear primero"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rien à créer d’abord"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nema što prvo stvoriti"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Niente da creare prima"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "先に作るものはありません"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nie ma czego najpierw tworzyć"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nada para criar antes"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "没有需要先创建的内容"
-          }
-        }
-      }
-    },
     "Nothing to keep. That's fine: you can use Doddy without any of this.": {
       "extractionState": "manual",
       "localizations": {
@@ -43954,6 +43949,17 @@
         }
       }
     },
+    "One quiet reminder a week for four weeks, only until you use a way to open Doddy. It is sent only if notifications are already allowed; Doddy doesn't ask for them just for this.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jedno ciche przypomnienie tygodniowo przez cztery tygodnie, tylko dopóki nie użyjesz któregoś ze sposobów otwierania Doddy’ego. Przychodzi tylko wtedy, gdy powiadomienia są już dozwolone; Doddy nie prosi o nie specjalnie z tego powodu."
+          }
+        }
+      }
+    },
     "One thing at a time.": {
       "extractionState": "manual",
       "localizations": {
@@ -44315,6 +44321,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "只有你自己设置的提醒。"
+          }
+        }
+      }
+    },
+    "Only some iPhones have an Action Button. If yours doesn't, pick another way.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przycisk czynności mają tylko niektóre iPhone’y. Jeśli Twój go nie ma, wybierz inny sposób."
           }
         }
       }
@@ -44907,6 +44924,17 @@
         }
       }
     },
+    "Only you can tell which gesture ran it. iOS doesn't report that to apps.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tylko Ty wiesz, który gest go uruchomił. iOS nie przekazuje tego aplikacjom."
+          }
+        }
+      }
+    },
     "Open Doddy": {
       "extractionState": "manual",
       "localizations": {
@@ -44962,6 +44990,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "打开 Doddy"
+          }
+        }
+      }
+    },
+    "Open Doddy faster": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwieraj Doddy’ego szybciej"
           }
         }
       }
@@ -45685,6 +45724,28 @@
         }
       }
     },
+    "Open Settings and choose Action Button.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz Ustawienia i wybierz Przycisk czynności."
+          }
+        }
+      }
+    },
+    "Open Settings, then choose Accessibility and Touch.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz Ustawienia, potem wybierz Dostępność i Dotyk."
+          }
+        }
+      }
+    },
     "Open Shortcuts": {
       "extractionState": "manual",
       "localizations": {
@@ -45976,6 +46037,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "在信息中打开"
+          }
+        }
+      }
+    },
+    "Open the Shortcuts app, tap the plus button, search for Doddy and add “Talk to Doddy”. If it isn't offered, add “Open App” and choose Doddy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz aplikację Skróty, stuknij plus, wyszukaj Doddy i dodaj „Porozmawiaj z Doddym”. Jeśli go nie ma, dodaj „Otwórz aplikację” i wybierz Doddy."
           }
         }
       }
@@ -48082,6 +48154,17 @@
         }
       }
     },
+    "Pick Talk to Doddy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wybierz „Porozmawiaj z Doddym”."
+          }
+        }
+      }
+    },
     "Pick a date and time": {
       "extractionState": "manual",
       "localizations": {
@@ -48384,6 +48467,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wybierz z Kontaktów"
+          }
+        }
+      }
+    },
+    "Pick one. Each takes about a minute, and you can add another any time.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wybierz jeden. Każdy zajmuje około minuty, a kolejny możesz dodać w dowolnej chwili."
           }
         }
       }
@@ -49617,6 +49711,28 @@
         }
       }
     },
+    "Press it to talk.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Naciśnij, żeby rozmawiać."
+          }
+        }
+      }
+    },
+    "Press the Action Button": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Naciśnij przycisk czynności"
+          }
+        }
+      }
+    },
     "Preview": {
       "extractionState": "manual",
       "localizations": {
@@ -49672,65 +49788,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "预览"
-          }
-        }
-      }
-    },
-    "Previous step": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vorheriger Schritt"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Paso anterior"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Étape précédente"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prethodni korak"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Passaggio precedente"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "前の手順"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Poprzedni krok"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Passo anterior"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "上一步"
           }
         }
       }
@@ -50282,6 +50339,17 @@
         }
       }
     },
+    "Put Talk to Doddy one tap away, even from the Lock Screen.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Miej „Porozmawiaj z Doddym” pod jednym dotknięciem, nawet z ekranu blokady."
+          }
+        }
+      }
+    },
     "Put back as it was. Checked.": {
       "extractionState": "manual",
       "localizations": {
@@ -50595,65 +50663,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cytat dosłownie z zapisu rozmowy"
-          }
-        }
-      }
-    },
-    "Reach Doddy with two taps": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy mit zweimal Tippen erreichen"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Llega a Doddy con dos toques"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Joindre Doddy en deux touchers"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dozovi Doddyja s dva dodira"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Raggiungi Doddy con due tocchi"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "2回タップでDoddyを呼ぶ"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wywołaj Doddy’ego dwoma stuknięciami"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chame o Doddy com dois toques"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "轻点两下找到 Doddy"
           }
         }
       }
@@ -52291,6 +52300,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "提醒我这件事"
+          }
+        }
+      }
+    },
+    "Remind me about ways to open Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypominaj mi o sposobach otwierania Doddy’ego"
           }
         }
       }
@@ -58228,6 +58248,28 @@
         }
       }
     },
+    "Say “Hey Siri, Talk to Doddy”. Nothing to set up.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powiedz „Hej Siri, porozmawiaj w aplikacji Doddy”. Nic nie trzeba ustawiać."
+          }
+        }
+      }
+    },
+    "Say “Hey Siri, Talk to Doddy”. There is nothing to set up.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powiedz „Hej Siri, porozmawiaj w aplikacji Doddy”. Nic nie trzeba ustawiać."
+          }
+        }
+      }
+    },
     "Saying goodbye": {
       "extractionState": "manual",
       "localizations": {
@@ -58294,6 +58336,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "说出你某个 Doddy 清单上还剩什么。"
+          }
+        }
+      }
+    },
+    "Scroll down to Back Tap and choose Double Tap.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przewiń w dół do Stuknięcia w tył i wybierz Podwójne stuknięcie."
           }
         }
       }
@@ -58412,6 +58465,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "搜索"
+          }
+        }
+      }
+    },
+    "Search for Doddy and choose Talk to Doddy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyszukaj Doddy i wybierz „Porozmawiaj z Doddym”."
           }
         }
       }
@@ -58833,6 +58897,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "See the other ways": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zobacz inne sposoby"
           }
         }
       }
@@ -60095,124 +60170,6 @@
         }
       }
     },
-    "Set up": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Einrichten"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Configurar"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Configurer"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Postavi"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Configura"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "設定する"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ustaw"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Configurar"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "设置"
-          }
-        }
-      }
-    },
-    "Set up Double Back Tap": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doppeltippen auf Rückseite einrichten"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Configurar Tocar atrás dos veces"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Configurer le double toucher au dos"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Postavi Dvostruki dodir stražnje strane"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Configura il Doppio tocco posteriore"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "背面ダブルタップを設定"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ustaw podwójne stuknięcie w tył"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Configurar o Toque Duplo na Parte Traseira"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "设置轻点两下背面"
-          }
-        }
-      }
-    },
     "Set up later": {
       "extractionState": "manual",
       "localizations": {
@@ -60563,65 +60520,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "设置"
-          }
-        }
-      }
-    },
-    "Settings walkthrough": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Einstellungshilfe"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Guía por Ajustes"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Guide des Réglages"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vodič kroz Postavke"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Guida alle Impostazioni"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "設定の手順案内"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Przewodnik po Ustawieniach"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Passo a passo nos Ajustes"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "设置引导"
           }
         }
       }
@@ -61663,61 +61561,13 @@
         }
       }
     },
-    "Show me the steps": {
+    "Show me the ways": {
       "extractionState": "manual",
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zeig mir die Schritte"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Enséñame los pasos"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Montre-moi les étapes"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pokaži mi korake"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mostrami i passaggi"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "手順を見る"
-          }
-        },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pokaż mi kroki"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Me mostre os passos"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "给我看看步骤"
+            "value": "Pokaż mi sposoby"
           }
         }
       }
@@ -62512,6 +62362,17 @@
         }
       }
     },
+    "Siri": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Siri"
+          }
+        }
+      }
+    },
     "Siri can read my notes aloud": {
       "extractionState": "manual",
       "localizations": {
@@ -62571,61 +62432,13 @@
         }
       }
     },
-    "Skip ahead to the tap test": {
+    "Siri is Apple's and has to be turned on in iPhone Settings. It hears your request; Doddy starts after that.": {
       "extractionState": "manual",
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Direkt zum Tipp-Test springen"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Saltar a la prueba de los toques"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Passer directement au test de toucher"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Preskoči na test dodira"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vai subito alla prova del tocco"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "タップのテストまで飛ばす"
-          }
-        },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Przejdź od razu do testu stuknięcia"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pular direto para o teste de toque"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "直接跳到轻点测试"
+            "value": "Siri należy do Apple i musi być włączona w Ustawieniach iPhone’a. To ona słyszy Twoją prośbę; Doddy włącza się dopiero potem."
           }
         }
       }
@@ -65293,6 +65106,28 @@
         }
       }
     },
+    "Swipe down from the top right corner to open Control Center.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przesuń w dół z prawego górnego rogu, żeby otworzyć Centrum sterowania."
+          }
+        }
+      }
+    },
+    "Swipe to Controls (Shortcut on iOS 17) and tap the button under it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przesuń do Elementów sterujących (na iOS 17: Skrót) i stuknij przycisk pod nimi."
+          }
+        }
+      }
+    },
     "Switch off in Doddy": {
       "extractionState": "manual",
       "localizations": {
@@ -66045,6 +65880,17 @@
         }
       }
     },
+    "Tap the plus at the top left, then Add a Control.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stuknij plus w lewym górnym rogu, potem Dodaj element sterujący."
+          }
+        }
+      }
+    },
     "Tap to skip": {
       "extractionState": "manual",
       "localizations": {
@@ -66104,61 +65950,13 @@
         }
       }
     },
-    "Tell Doddy where you are": {
+    "Tested by you": {
       "extractionState": "manual",
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sag Doddy, wo du bist"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dile a Doddy dónde estás"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dire à Doddy où tu es"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Reci Doddyju gdje si"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Di' a Doddy dove sei"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddyに現在地を伝える"
-          }
-        },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Powiedz Doddy’emu, gdzie jesteś"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Diga ao Doddy onde você está"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "告诉 Doddy 你在哪里"
+            "value": "Sprawdzone przez Ciebie"
           }
         }
       }
@@ -70015,6 +69813,17 @@
         }
       }
     },
+    "The names can differ a little between iOS versions. Doddy can't see this setting.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nazwy mogą się trochę różnić między wersjami iOS. Doddy nie widzi tego ustawienia."
+          }
+        }
+      }
+    },
     "The note couldn't be confirmed. Check your notes.": {
       "extractionState": "manual",
       "localizations": {
@@ -73831,6 +73640,17 @@
         }
       }
     },
+    "This is your report. iOS doesn't tell apps what Back Tap is set to, so Doddy hasn't verified it and never will claim to.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To Twoje zgłoszenie. iOS nie mówi aplikacjom, co jest ustawione w Stuknięciu w tył, więc Doddy tego nie sprawdził i nigdy nie powie, że sprawdził."
+          }
+        }
+      }
+    },
     "This isn't a Google Keep note.": {
       "extractionState": "manual",
       "localizations": {
@@ -74739,6 +74559,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "This opens Doddy's own page in Settings. Tap Settings at the top left to reach the main list.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwiera to stronę Doddy’ego w Ustawieniach. Stuknij Ustawienia w lewym górnym rogu, żeby dojść do głównej listy."
           }
         }
       }
@@ -75652,61 +75483,24 @@
         }
       }
     },
-    "Those taps already have a destination.": {
+    "Three steps in Settings.": {
       "extractionState": "manual",
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dieses Tippen ist schon belegt."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Esos toques ya tienen una acción asignada."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ces touchers ont déjà une destination."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ti dodiri već imaju odredište."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Quei tocchi hanno già una destinazione."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "そのタップには、すでに別の動作が割り当てられています。"
-          }
-        },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Te stuknięcia mają już przypisaną akcję."
+            "value": "Trzy kroki w Ustawieniach."
           }
-        },
-        "pt-BR": {
+        }
+      }
+    },
+    "Three steps,\nthen try it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Esses toques já têm um destino."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "这个轻点手势已经分配了其他操作。"
+            "value": "Trzy kroki,\npotem wypróbuj."
           }
         }
       }
@@ -78596,65 +78390,6 @@
         }
       }
     },
-    "Two taps.\nA little help.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zweimal tippen.\nEin bisschen Hilfe."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dos toques.\nUna pequeña ayuda."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Deux touchers.\nUn petit coup de main."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dva dodira.\nMalo pomoći."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Due tocchi.\nUn piccolo aiuto."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "2回タップで、\nちょっとした手助け。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dwa stuknięcia.\nTrochę pomocy."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dois toques.\nUma ajudinha."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "轻点两下。\n帮你一把。"
-          }
-        }
-      }
-    },
     "Type": {
       "extractionState": "manual",
       "localizations": {
@@ -78780,6 +78515,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wpisany ręcznie"
+          }
+        }
+      }
+    },
+    "Under Shortcuts, choose Talk to Doddy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W sekcji Skróty wybierz „Porozmawiaj z Doddym”."
           }
         }
       }
@@ -81325,6 +81071,17 @@
         }
       }
     },
+    "Ways to open Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sposoby na otwarcie Doddy’ego"
+          }
+        }
+      }
+    },
     "Weekdays": {
       "extractionState": "manual",
       "localizations": {
@@ -81922,6 +81679,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "我学到的"
+          }
+        }
+      }
+    },
+    "What happens when you use one, a conversation or only opening Doddy, is set under Settings › Back Tap and Siri.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To, co się dzieje po użyciu któregoś z nich (rozmowa albo samo otwarcie Doddy’ego), ustawisz w Ustawienia › Stuknięcie w tył i Siri."
           }
         }
       }
@@ -85409,6 +85177,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "由你检查并自己发送。Doddy 绝不会代为发送。"
+          }
+        }
+      }
+    },
+    "You choose each one in iPhone Settings or Control Center. Doddy can't change them and can't see what they are set to.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Każdy wybierasz w Ustawieniach iPhone’a lub Centrum sterowania. Doddy nie może ich zmienić i nie widzi, co jest ustawione."
           }
         }
       }
@@ -90065,6 +89844,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "“%@”的到期时间现在是 %@。"
+          }
+        }
+      }
+    },
+    "“Hey Siri, Open Doddy” works too.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„Hej Siri, otwórz Doddy” też działa."
           }
         }
       }
