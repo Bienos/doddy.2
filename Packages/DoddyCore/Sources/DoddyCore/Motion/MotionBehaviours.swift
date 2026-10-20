@@ -6,8 +6,9 @@ import Foundation
 // after 15 s idle, the listening pose only while a conversation's microphone is really live,
 // thinking in Ask while the reply hasn't come, the wave or the stretch as the session's one
 // playful moment, and the daily welcome (a hop in place first after three days away). Everything
-// the pack can't draw (gaze, blink, head roll, brace, shuffle) stays off and is listed in
-// docs/design/MOTION_V2_ART_REQUESTS.md.
+// the pack can't draw (head roll, brace, shuffle, and gaze or blink on the three-quarter pictures)
+// stays off and is listed in docs/design/MOTION_V2_ART_REQUESTS.md. Gaze and blink (MV7, ADR-560)
+// are drawn on the pictures with a front-facing head.
 
 /// The daily welcome (brief rule 9, Q15): once a day, on Home. After three days or more away it
 /// starts with one hop in place. The welcome itself is the wave (Q15: the default and evening
@@ -64,6 +65,31 @@ extension MotionHost {
         touchStart = nil
     }
 
+    // MARK: A finger elsewhere on Home (MV7)
+
+    /// A finger is down on Home away from him (the app watches the whole screen without taking
+    /// the touch from the scroll view, so taps and scrolling are unchanged). Only his eyes follow
+    /// it. It is not a touch on him: no dip, no lean, no tap or hold. A finger on him is
+    /// `touchDown`. Called again on every move.
+    public func fingerElsewhere(x: Double, y: Double) {
+        guard isActive, scene.covers == 0, scene.screen == .home, !scene.finger.isDown else { return }
+        let first = !engine.followFinger
+        // Position only: `isDown` stays false, so the hold check never sees this finger.
+        scene.finger = MotionFinger(isDown: false, x: x, y: y)
+        elsewhereAt = engine.now
+        if first { engine.fingerDownElsewhereOnHome() }
+    }
+
+    /// A finger that stops moving for this long (ms) is let go of: the system cancels some touches
+    /// (a menu opening over it) without saying so, and his eyes must not stay on a point forever.
+    public static let fingerStaleAfter = 4000.0
+
+    /// That finger lifted: his eyes come back to you 300 ms later.
+    public func fingerElsewhereLifted() {
+        guard !scene.finger.isDown else { return }
+        engine.fingerLifted()
+    }
+
     // MARK: Ask: thinking while the reply hasn't come
 
     /// Ask sent a question (`sending` true) or its reply (or failure) came.
@@ -99,6 +125,9 @@ extension MotionHost {
     func settleBehaviours() {
         guard behaviours, isActive else { return }
         if scene.finger.isDown { engine.checkHold() }
+        if engine.followFinger, !scene.finger.isDown, engine.now - elsewhereAt > Self.fingerStaleAfter {
+            engine.fingerLifted()
+        }
         if let sent = askSentAt, scene.screen == .talk {
             engine.waitingForReply(sentAt: sent, thinkingAt: sent + Self.thinkingAfter, replyAt: .greatestFiniteMagnitude)
         }

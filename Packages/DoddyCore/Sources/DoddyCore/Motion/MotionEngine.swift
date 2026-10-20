@@ -14,8 +14,9 @@ import Foundation
 // squash a whole picture; never redraw, recolour, cut up or generate).
 //
 // Gaze is kept as data (what he looks at and why) because the reference uses it to sequence
-// reactions; the pack has no art that moves his eyes on their own (plan section 3), so the
-// app must not draw it until that art exists.
+// reactions. Until MV7 the pack had no art that moves his eyes on their own (plan section 3), so
+// the app didn't draw it; `MotionFace` now draws it on the pictures that have a front-facing
+// head, from the pieces cut from the owner's sheets 007 and 008 (ADR-560).
 
 public struct MotionSettings: Sendable {
     public var reduceMotion = false
@@ -1163,6 +1164,10 @@ public final class MotionEngine {
         lastCarried = now
         carries += 1
         activity = "resting"
+        // Arriving restarts his idle (a landing does the same): after a long time on Ask's
+        // composer he stood back on Home's stage and sat down at once, because the 15 s were
+        // counted from before he left (hosted run 39379870387, MotionRideTests).
+        idleSince = now
         note("carried to \(spot.surface): \(why)")
     }
 
@@ -2107,6 +2112,12 @@ public final class MotionEngine {
             squash: squash.x, stretchUp: max(0, stretchUp.x), lean: lean.x, roll: roll.x, facing: facing.x,
             toe: MotionMath.clamp(toe.x, 0, 1), breath: breath, mood: mood, activity: activity,
             listening: listenOn, bracing: brace.on)
+    }
+
+    /// His eyes this frame (MV7): where they point, a blink or shut eyes, a squint. Read only.
+    public var eyeState: MotionEyeState {
+        MotionEyeState(gazeX: gx.x, gazeY: gy.x, closed: MotionMath.clamp(max(blink, shut.x), 0, 1),
+                       squint: MotionMath.clamp(squint.x, 0, 1))
     }
 
     /// The reference's listening-pose test (an arm at the ear and the head rolled).

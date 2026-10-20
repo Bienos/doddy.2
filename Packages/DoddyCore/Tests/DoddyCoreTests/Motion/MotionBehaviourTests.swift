@@ -61,6 +61,23 @@ final class MotionBehaviourTests: XCTestCase {
         XCTAssertEqual(MotionArt.choose(e).picture, .pose("crosslegged"))
     }
 
+    /// Hosted run 39379870387: after a long time on Ask's composer he was carried back to Home's
+    /// stage and sat down at once, because his 15 s of idle were counted from before he left.
+    func testBeingCarriedBackToTheStageRestartsHisIdleSoHeDoesNotSitAtOnce() throws {
+        host.behaviours = false
+        var settings = e.settings
+        settings.noBreath = true
+        settings.autoWelcome = false
+        e.settings = settings
+        run(14_000)
+        XCTAssertNotEqual(MotionArt.choose(e).picture, .pose("crosslegged"), "not yet: 14 s")
+        e.carried(to: try XCTUnwrap(e.anchor), "back from Ask")
+        let after = run(4_000)
+        XCTAssertFalse(after.contains(.pose("crosslegged")), "his 15 s start again when he arrives")
+        let later = run(14_000)
+        XCTAssertTrue(later.contains(.pose("crosslegged")), "and he sits 15 s after arriving")
+    }
+
     func testTheWelcomeIsTheWaveAndThereIsNoPlayfulMomentOnThatVisit() {
         makeHost(welcome: .standard)
         let seen = run(14_000)

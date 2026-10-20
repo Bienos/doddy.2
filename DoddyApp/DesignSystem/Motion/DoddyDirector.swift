@@ -323,6 +323,23 @@ final class DoddyDirector {
         poke()
     }
 
+    /// A finger is down on Home away from him (Home's whole-screen watcher; the scroll view keeps
+    /// the touch): his eyes follow it (MV7). Called on every move.
+    func fingerElsewhere(x: Double, y: Double) {
+        guard isActive else { return }
+        catchUp()
+        host.fingerElsewhere(x: x, y: y)
+        poke()
+    }
+
+    /// That finger lifted.
+    func fingerElsewhereLifted() {
+        guard isActive else { return }
+        catchUp()
+        host.fingerElsewhereLifted()
+        poke()
+    }
+
     /// Ask is waiting for its reply (thinking from 600 ms), or it came.
     func askSending(_ sending: Bool, failed: Bool) {
         catchUp()
@@ -497,8 +514,8 @@ final class DoddyDirector {
             f = nil
         } else {
             let pose = engine.pose
-            var figure = DoddyFigure(art: MotionArt.choose(engine, still: stillPose), x: pose.x, y: pose.y,
-                                     scale: pose.scale, opacity: pose.opacity)
+            var figure = DoddyFigure(art: MotionArt.choose(engine, still: stillPose, previousEyes: self.figure?.art.eyes),
+                                     x: pose.x, y: pose.y, scale: pose.scale, opacity: pose.opacity)
             if case .slot(let id) = p, let frame = host.lastStepFrames[id] ?? host.scene.frames[id] {
                 figure.slotDX = pose.x - frame.midX
                 figure.slotDY = pose.y - frame.minY
