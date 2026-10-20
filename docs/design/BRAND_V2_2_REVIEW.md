@@ -1,6 +1,6 @@
 # Brand Guidelines V2.2: review and proposed changes
 
-**Status: approved by the owner on 20 October 2026 ("all of it, 2A, 3a, 7 later") and applied on `claude/nice-shannon-9gxk6s` as ADR-546 and ADR-547, except item 7 (later) and the live ElevenLabs agent (a separate "do it"). What was done, and what was not, is in "Applied" at the end.** The proposals below are kept as written for the record.
+**Status: approved by the owner on 20 October 2026 ("all of it, 2A, 3a, 7 later") and applied on `claude/nice-shannon-9gxk6s` as ADR-546 and ADR-547, except item 7 (later); the live ElevenLabs agent followed on the owner's separate "do it" (20 Oct, about 14:08 UTC). What was done, and what was not, is in "Applied" at the end.** The proposals below are kept as written for the record.
 
 The owner uploaded `DODDY — Brand Guidelines V2.2 — review draft` (66 pages, "Review edition · 13 October 2026", every page labelled PROPOSED) and asked for it to be used for Doddy, including how he speaks, with changes reviewed and approved first. This page compares the guide with what the repository does today and lists each change as a numbered item the owner can accept or reject by number.
 
@@ -199,7 +199,7 @@ Owner's answer: "all of it, 2A, 3a, 7 later".
 | 2 | Candidate A, no dark variant | `tools/whole_doddy/make_app_icon.py`; both `AppIcon.png` files (SHA-256 `ba28b129…`); `AppIcon-dark.png` removed; ADR-547; `UPLOADED_MEMORY_ASSETS.md`; go-live C3 |
 | 3a | Yes | `CandidateTokens.swift` orange `#FF6A00`; `site/tokens.css` regenerated; `site/court.js` |
 | 3b | Not yet | After the owner sees 3a on a device |
-| 4 | Yes, in the spec | `voice-agent/instructions.md` "# Who you are" and "# How you speak" (the approved text, plus the sentence "This is a spoken conversation." kept from before). **Not the live agent:** `voice-agent/README.md` says how to apply it on the owner's "do it" |
+| 4 | Yes, in the spec | `voice-agent/instructions.md` "# Who you are" and "# How you speak" (the approved text, plus the sentence "This is a spoken conversation." kept from before). **The live agent too, on the owner's "do it" (20 Oct):** eleven short lines added to the owner's own prompt in its style, plus the `opening_line` placeholder, version `agtvrsn_8701m5ct8dxsf8htebwpdykppqbv`; `voice-agent/README.md` |
 | 5 | Yes | `WakeWord.swift` (`openingLine` takes `firstConversation`; "Hey, what's up?" without a name), `OpenAIRealtime.swift` fallback, `VoiceSessionController.swift` passes the flag, `session.json` placeholder and note, `WakeWordTests`, `OpenAIRealtimeTests`; Polish drafts listed in `l10n/REVIEW_NOTES.md` |
 | 6 | Yes | `VoiceView.swift`, `DoddyVoiceAttributes.swift` (island title), `IslandStyleView.swift` (preview label), `IslandSceneChecks.swift`; "Working on it…" with drafts in nine tables; catalogs regenerated |
 | 7 | Later (owner) | Nothing on the site changed except the orange token and the game's ball colour |
@@ -208,4 +208,4 @@ Owner's answer: "all of it, 2A, 3a, 7 later".
 | 10 | Owner's default kept | Home's hop stays (ADR-545) |
 | 11, 12 | No change | |
 
-Checks run here, on Linux: `python3 -I scripts/voice_agent_spec.py check` PASS; `python3 -I tools/gen_site_tokens.py --check` PASS; `python3 -I tools/build_strings_catalog.py --check` PASS; `bash scripts/check_forbidden_capabilities.sh` PASS; `npm test` in `site/` 19 of 19 PASS. **NOT RUN:** the DoddyCore tests and `swiftc -parse` (no Swift toolchain in this session), so `WakeWordTests` and `OpenAIRealtimeTests` are updated by hand and CI's macOS job is the first compile; the app on a device; the icon on a device or the watch; a conversation with the new prompt (OpenAI reads it from the app build; ElevenLabs only after the live agent is updated).
+Checks run here, on Linux: `python3 -I scripts/voice_agent_spec.py check` PASS; `python3 -I tools/gen_site_tokens.py --check` PASS; `python3 -I tools/build_strings_catalog.py --check` PASS; `bash scripts/check_forbidden_capabilities.sh` PASS; `npm test` in `site/` 19 of 19 PASS. **NOT RUN:** the DoddyCore tests and `swiftc -parse` (no Swift toolchain in this session), so `WakeWordTests` and `OpenAIRealtimeTests` are updated by hand and CI's macOS job is the first compile; the app on a device; the icon on a device or the watch; a conversation with the new prompt (OpenAI reads it from the app build; ElevenLabs reads the live prompt updated on 20 Oct).
