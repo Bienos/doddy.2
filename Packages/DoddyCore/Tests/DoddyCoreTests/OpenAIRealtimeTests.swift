@@ -124,7 +124,7 @@ final class OpenAIRealtimeTests: XCTestCase {
         XCTAssertEqual(OpenAIRealtimeWire.greetingLine(sessionJSON: spec, languageCode: "pl"), "Hej, tu Doddy.")
         XCTAssertEqual(OpenAIRealtimeWire.greetingLine(sessionJSON: spec, languageCode: nil), "Hey, it's Doddy.")
         XCTAssertEqual(OpenAIRealtimeWire.greetingLine(sessionJSON: spec, languageCode: "de"), "Hey, it's Doddy.")
-        XCTAssertEqual(OpenAIRealtimeWire.greetingLine(sessionJSON: Data(), languageCode: "pl"), "Hey, it's Doddy. What's up?")
+        XCTAssertEqual(OpenAIRealtimeWire.greetingLine(sessionJSON: Data(), languageCode: "pl"), "I'm here. What's up?")
         // The repo's spec uses {{opening_line}} (ADR-254); the fallback must still be plain words.
         let session = try Data(contentsOf: repoRoot.appendingPathComponent("voice-agent/session.json"))
         XCTAssertFalse(OpenAIRealtimeWire.greetingLine(sessionJSON: session, languageCode: "pl").contains("{{"))

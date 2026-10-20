@@ -1,6 +1,8 @@
 # DODDY brand guidelines — voice, writing, typography and visual rules
 
 **Version:** 0.1 proposal · **Date:** 9 October 2026 · **Status:** PROPOSED, not owner-approved.
+
+**20 October 2026 (ADR-546):** Brand Guidelines V2.2 (`design/brand-v2.2/`) is the owner-approved reference and overrides this document wherever they differ: the wordmark is Caveat (V2.2 option C), not Lobster Two; the app icon exists (ADR-547); the brand orange is `#FF6A00`; V2.2's verbal identity (pp.49–66) replaces section 2 where the two disagree. Sections 3 (product copy, state copy, English and Polish) and 9 (checklists) stay in force, since V2.2 does not cover them. `docs/design/BRAND_V2_2_REVIEW.md` lists what was adopted.
 **Scope:** everything a person or agent needs when they write copy for Doddy, write *as* Doddy, choose or set type, or place the character and marks. Colour, motion and layout are summarised here and specified in the documents they link to.
 
 This document consolidates rules that already exist in three places, which until now disagreed in small ways: the Pocket Notebook interface handoff (`design/interface-v1.2/docs/`), the Character Bible (`reference/character_evals/` and the Character Bible ZIP) and the two v1.3 brand archives (`reference/original_archives/`). Where they conflict, the precedence in section 0 applies and the conflict is recorded in section 10 for the owner to settle.
@@ -11,7 +13,7 @@ Nothing here claims that the brand is final, that fonts are licensed for the shi
 
 ## 0. Precedence and how to use this document
 
-1. **Owner-approved brand guidelines** (none recorded yet) override everything below.
+1. **Owner-approved brand guidelines** override everything below: Brand Guidelines V2.2, `design/brand-v2.2/`, since 20 October 2026 (ADR-546).
 2. **This document** is the working consolidation for copy and typography. It follows `docs/design/CANONICAL_DESIGN_DIRECTION.md`, which makes Pocket Notebook (`design/interface-v1.2/`) the visual reference.
 3. **`design/interface-v1.2/docs/DESIGN-SYSTEM.md`** remains the source of truth for colour tokens, spacing and component contracts. Native values live in `Packages/DoddyCore/Sources/DoddyDesignTokens/CandidateTokens.swift` and are contrast-tested.
 4. **Character behaviour** follows `reference/character_evals/doddy_persona_v1.yaml` and `character_quick_reference.md`. The eval set in `behavioural_evals_64.csv` is the regression test for anything written in Doddy's voice.
@@ -358,12 +360,12 @@ Full construction rules are in `docs/design/BRAND_AND_CHARACTER.md`, the interfa
 
 ### 6.2 Wordmark and face mark
 
-- The wordmark is **"Doddy"** in Lobster Two Bold Italic, rotated −3°, with an orange underline stroke. It is a font-based SVG, not outlined and not trademark-cleared. Treat it as a placeholder.
+- The wordmark is **"Doddy"** in Caveat bold, V2.2's option C (p.18), as the website already sets it; the Lobster Two SVG from the v1.3 archives is superseded (ADR-546). It is font-based, not outlined and not trademark-cleared (V2.2 p.19, p.46). Treat it as a placeholder.
 - In the app header, "Doddy" is set in the display accent face at the Pocket Notebook scale. This is not the logo.
 - The face mark (round ivory head, three tufts, two vertical oval pupils, off-centre smile, ink stroke) is the small-size mark for icons and avatars from 24 to 64 px.
 - Clear space (proposed): at least the height of the lowercase "o" in the wordmark, or the pupil height for the face mark. Proposed minimum wordmark width 96 px on screen.
 - Do not recolour the marks beyond ink, paper reverse, and the single orange underline. No gradients, shadows, outlines or 3D.
-- There is **no approved app icon.** The build intentionally ships without one until the owner approves it.
+- The app icon is the pack's wave frame on paper (ADR-547, 20 October 2026); provenance in `docs/design/UPLOADED_MEMORY_ASSETS.md`.
 
 ---
 
@@ -449,7 +451,9 @@ Full construction rules are in `docs/design/BRAND_AND_CHARACTER.md`, the interfa
 | 7 | App icon | none | Approve a face-mark-based icon tested at 1024 px and at small sizes |
 | 8 | Humour default | off · subtle · playful | Subtle, user can switch off, as in the persona YAML |
 
-Until these are recorded, every artefact that depends on them stays labelled "candidate" in the app and in documentation.
+Settled by Brand Guidelines V2.2 on 20 October 2026 (ADR-546): 1 Caveat; 3 the Caveat wordmark, outlines and trademark search still open; 4 `#FF6A00`; 7 the icon (ADR-547); 8 subtle, as before. Still open: 2 (no font is bundled), 5 and 6.
+
+Until the rest are recorded, every artefact that depends on them stays labelled "candidate" in the app and in documentation.
 
 ---
 

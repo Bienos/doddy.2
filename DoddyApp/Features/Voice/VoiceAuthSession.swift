@@ -103,7 +103,7 @@ final class VoiceAuthSession {
             clearLocalSession()
             message = nil
         } catch {
-            message = (error as? VoiceAuthFailure)?.message ?? "Couldn’t delete the DODDY voice account. Check your connection and retry."
+            message = (error as? VoiceAuthFailure)?.message ?? "Couldn’t delete the Doddy voice account. Check your connection and retry."
         }
     }
 
@@ -165,11 +165,11 @@ enum VoiceAuthFailure: Error, Equatable {
 
     var message: String {
         switch self {
-        case .offline: "Couldn’t reach DODDY. Check your connection and retry."
+        case .offline: "Couldn’t reach Doddy. Check your connection and retry."
         case .sessionExpired: "Your voice session expired. Sign in with Apple again."
         case .serverNotConfigured: "Voice isn’t set up yet. Try again later; you don’t need a code or provider key."
         case .rejected: "Apple sign-in couldn’t be verified. Try again."
-        case .badResponse: "DODDY’s voice service sent an unexpected reply. Try again."
+        case .badResponse: "Doddy’s voice service sent an unexpected reply. Try again."
         }
     }
 }

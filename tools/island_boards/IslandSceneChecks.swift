@@ -57,7 +57,7 @@ enum IslandSceneChecks {
         expect(greeted.islandScene(isStale: false).title == "Hey Pat, what's up?", "greeting while connecting")
         expect(greeted.islandScene(isStale: false).label == "VOICE", "greeting is a conversation")
         greeted.status = .thinking
-        expect(greeted.islandScene(isStale: false).title == "Thinking…", "greeting gone once thinking")
+        expect(greeted.islandScene(isStale: false).title == "Working on it…", "greeting gone once thinking")
         let greetedMuted = State(status: .listening, isMuted: true, greeting: "Hey Pat, what's up?")
         expect(greetedMuted.islandScene(isStale: false).title == "Muted", "muted beats greeting")
         let wakeConversation = State(
