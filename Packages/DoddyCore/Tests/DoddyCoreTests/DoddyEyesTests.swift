@@ -234,4 +234,35 @@ final class DoddyEyesTests: XCTestCase {
         XCTAssertNil(HomeEyes.eveningBlinkDay(now: at(22), lastDay: "2026-10-20", calendar: cal), "once a day")
         XCTAssertNil(HomeEyes.eveningBlinkDay(now: at(9, day: 21), lastDay: "2026-10-20", calendar: cal), "morning: no")
     }
+
+    // MARK: The persistent Doddy (motion v2, ADR-552)
+
+    func testTheMovingDoddysHomePicturesHaveFaces() {
+        // On Home's stage he breathes (idle 1 to 4), waves his welcome (wave 1 to 5) and sits
+        // cross-legged after a while (ADR-555): his eyes can be drawn on every one of them.
+        for n in 1...4 { XCTAssertTrue(DoddyEyes.hasFace("DoddyMotion_idle_\(n)"), "idle \(n)") }
+        for n in 1...5 { XCTAssertTrue(DoddyEyes.hasFace("DoddyMotion_wave_\(n)"), "wave \(n)") }
+        XCTAssertTrue(DoddyEyes.hasFace("WholeDoddy_crosslegged"))
+        // The hop strip turns his head, so it keeps the eyes it was drawn with.
+        XCTAssertFalse(DoddyEyes.hasFace("DoddyMotion_jump_3"))
+    }
+
+    func testAMirroredPictureSwapsLeftAndRightAndNothingElse() throws {
+        XCTAssertEqual(DoddyLook.gaze(column: 0, row: 2).mirrored, .gaze(column: 2, row: 2))
+        XCTAssertEqual(DoddyLook.gaze(column: 2, row: 0).mirrored, .gaze(column: 0, row: 0))
+        XCTAssertEqual(DoddyLook.atYou.mirrored, .atYou)
+        XCTAssertEqual(DoddyLook.half.mirrored, .half)
+        XCTAssertEqual(DoddyLook.closed.mirrored, .closed)
+        for column in 0...2 {
+            for row in 0...2 {
+                let look = DoddyLook.gaze(column: column, row: row)
+                XCTAssertEqual(look.mirrored.mirrored, look)
+            }
+        }
+        let asset = "DoddyMotion_idle_1"
+        let centre = try XCTUnwrap(DoddyEyes.eyesCentre(asset))
+        let flipped = try XCTUnwrap(DoddyEyes.eyesCentre(asset, mirrored: true))
+        XCTAssertEqual(flipped.x, DoddyEyes.pictureWidth - centre.x, accuracy: 1e-9)
+        XCTAssertEqual(flipped.y, centre.y)
+    }
 }

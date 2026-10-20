@@ -198,6 +198,9 @@ struct LedgeLine: View {
 /// so Home scrolls everywhere else; within it a drag leans him instead.
 struct DoddyTouchArea: View {
     @State private var down = false
+    /// A finger on him half closes his eyes (ADR-560). Gesture state, so a cancelled touch opens
+    /// them again.
+    @GestureState private var touching = false
     private var director: DoddyDirector { .shared }
 
     var body: some View {
@@ -213,6 +216,7 @@ struct DoddyTouchArea: View {
                         .contentShape(Rectangle())
                         .gesture(
                             DragGesture(minimumDistance: 0, coordinateSpace: .global)
+                                .updating($touching) { _, touching, _ in touching = true }
                                 .onChanged { value in
                                     if !down {
                                         down = true
@@ -229,6 +233,9 @@ struct DoddyTouchArea: View {
                         .accessibilityHidden(true)
                 }
                 .offset(x: CGFloat(figure.slotDX), y: CGFloat(figure.slotDY))
+                .onChange(of: touching) { _, touching in HomeEyesModel.shared.setPressed(touching) }
+                // He hopped away from under the finger.
+                .onDisappear { if touching { HomeEyesModel.shared.setPressed(false) } }
         }
     }
 }

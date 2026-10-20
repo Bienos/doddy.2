@@ -26,6 +26,14 @@ public enum DoddyLook: Equatable, Sendable {
 
     public var isAtYou: Bool { self == .atYou }
 
+    /// The piece to draw on a picture shown mirrored (the motion world flips a whole picture to
+    /// face left): the mirror swaps left and right, so a look to the screen's left is drawn as the
+    /// picture's own look to the right.
+    public var mirrored: DoddyLook {
+        if case .gaze(let column, let row) = self { return .gaze(column: 2 - column, row: row) }
+        return self
+    }
+
     /// For the UI tests' markers: `half`, `closed`, `gaze02`; nil when he looks at you.
     public var name: String? {
         switch self {
@@ -147,9 +155,11 @@ public enum DoddyEyes {
     // MARK: Layers
 
     /// The middle of the picture's two eyes, in pixels of its @3x file: where he looks from.
-    public static func eyesCentre(_ asset: String) -> DoddyEyePoint? {
+    /// `mirrored`: the picture is drawn flipped round its middle, so the point is too.
+    public static func eyesCentre(_ asset: String, mirrored: Bool = false) -> DoddyEyePoint? {
         guard let fit = fits[asset] else { return nil }
-        return DoddyEyePoint(x: (fit.left.x + fit.right.x) / 2, y: (fit.left.y + fit.right.y) / 2)
+        let x = (fit.left.x + fit.right.x) / 2
+        return DoddyEyePoint(x: mirrored ? pictureWidth - x : x, y: (fit.left.y + fit.right.y) / 2)
     }
 
     /// What to draw over `asset` for `look`: nothing at you, or on a picture with no measured face.

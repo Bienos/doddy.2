@@ -53,7 +53,12 @@ final class DoddyEyesAssetsTests: XCTestCase {
     private func render(_ look: DoddyLook) -> Pixels? {
         let eyes = HomeEyesModel()
         eyes.show(look)
-        let renderer = ImageRenderer(content: HomeDoddyFigure(pose: .crosslegged, height: 190, eyes: eyes))
+        return pixels(of: HomeDoddyFigure(pose: .crosslegged, height: 190, eyes: eyes))
+    }
+
+    @MainActor
+    private func pixels(of view: some View) -> Pixels? {
+        let renderer = ImageRenderer(content: view)
         renderer.scale = 3
         guard let cg = renderer.uiImage?.cgImage else { return nil }
         let w = cg.width, h = cg.height
@@ -135,5 +140,73 @@ final class DoddyEyesAssetsTests: XCTestCase {
         XCTAssertEqual(eyes.look, .gaze(column: 2, row: 1), "still there just after it lifts")
         try await Task.sleep(for: .seconds(0.6))
         XCTAssertEqual(eyes.look, .atYou, "back at you")
+    }
+
+    /// A touch the system cancels never sends its end: his eyes come back all the same.
+    @MainActor
+    func testACancelledTouchLetsHisEyesComeBack() async throws {
+        let eyes = HomeEyesModel()
+        let centre = try XCTUnwrap(DoddyEyes.eyesCentre(IslandPose.crosslegged.assetName))
+        eyes.pictureMoved(asset: IslandPose.crosslegged.assetName,
+                          frame: CGRect(x: 100 - centre.x, y: 300 - centre.y,
+                                        width: DoddyEyes.pictureWidth, height: DoddyEyes.pictureHeight))
+        eyes.fingerMoved(to: CGPoint(x: 100, y: 0))
+        XCTAssertEqual(eyes.look, .gaze(column: 1, row: 0), "up")
+        eyes.fingerGone()
+        XCTAssertEqual(eyes.look, .gaze(column: 1, row: 0), "still there just after")
+        try await Task.sleep(for: .seconds(0.6))
+        XCTAssertEqual(eyes.look, .atYou, "back at you")
+        eyes.fingerGone()
+        XCTAssertEqual(eyes.look, .atYou, "nothing when it had already lifted")
+    }
+
+    // MARK: On the persistent Doddy (motion v2, ADR-552)
+
+    /// The persistent Doddy breathing on Home's stage (`DoddyMotion_idle_1`), with Home's eyes
+    /// showing `look`, or with no eyes at all (`nil`: anywhere but Home's stage).
+    @MainActor
+    private func renderMoving(_ look: DoddyLook?, mirrored: Bool = false) -> Pixels? {
+        let figure = DoddyFigure(art: MotionArt(picture: .strip("idle", 1), mirrored: mirrored), x: 0, y: 0, scale: 1, opacity: 1)
+        var eyes: HomeEyesModel?
+        if let look {
+            eyes = HomeEyesModel()
+            eyes?.show(look)
+        }
+        return pixels(of: PersistentDoddyView(figure: figure, spot: "test", homeEyes: eyes))
+    }
+
+    @MainActor
+    func testTheMovingDoddyGetsHomesEyesOnlyWhenTheyArentOnYou() throws {
+        XCTAssertTrue(DoddyEyes.hasFace("DoddyMotion_idle_1"))
+        let plain = try XCTUnwrap(renderMoving(nil), "he renders")
+        let atYou = try XCTUnwrap(renderMoving(.atYou))
+        let closed = try XCTUnwrap(renderMoving(.closed))
+        XCTAssertEqual(plain.width, closed.width)
+        XCTAssertEqual(plain.data, atYou.data, "at you, the picture is the pack's own")
+        XCTAssertNotEqual(plain.data, closed.data, "closed eyes are drawn on him")
+    }
+
+    /// Mirrored, he still looks where the finger is: his mirrored picture looking to the screen's
+    /// left, flipped back, is the picture looking to its own right, not to its left.
+    @MainActor
+    func testMirroredHeStillLooksTowardsTheFinger() throws {
+        let mirroredLeft = try XCTUnwrap(renderMoving(.gaze(column: 0, row: 1), mirrored: true))
+        let right = try XCTUnwrap(renderMoving(.gaze(column: 2, row: 1)))
+        let left = try XCTUnwrap(renderMoving(.gaze(column: 0, row: 1)))
+        XCTAssertEqual(mirroredLeft.width, right.width)
+        XCTAssertEqual(mirroredLeft.height, right.height)
+        var flipped = mirroredLeft
+        for y in 0..<flipped.height {
+            for x in 0..<flipped.width {
+                let from = (y * flipped.width + (flipped.width - 1 - x)) * 4
+                let to = (y * flipped.width + x) * 4
+                for c in 0..<4 { flipped.data[to + c] = mirroredLeft.data[from + c] }
+            }
+        }
+        func difference(_ a: Pixels, _ b: Pixels) -> Int {
+            zip(a.data, b.data).reduce(0) { $0 + abs(Int($1.0) - Int($1.1)) }
+        }
+        XCTAssertNotEqual(right.data, left.data, "the two looks differ")
+        XCTAssertLessThan(difference(flipped, right), difference(flipped, left))
     }
 }

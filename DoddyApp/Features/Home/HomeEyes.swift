@@ -4,11 +4,17 @@ import SwiftUI
 // Home's Doddy gets his eyes (ADR-560): they follow a finger anywhere on Home, half close while a
 // finger is on him, and after 21:00 he gives one slow blink, once a day. The eyes are cut from the
 // owner's sheets 007 and 008 (`DoddyEyes`); looking at you, the picture is the pack's own.
+// On an iPhone with his pictures shown, Home's Doddy is the persistent one (motion v2, ADR-552):
+// his eyes are drawn on him while he stands on Home's stage (`PersistentDoddyView`). Otherwise
+// (iPad, motion off) they are drawn on Home's own seated picture (`HomeDoddyFigure`).
 
 /// Where his eyes are on Home, from the finger, a press on him and the evening blink.
 @MainActor
 @Observable
 final class HomeEyesModel {
+    /// Home's eyes: Home feeds it the finger, and whichever picture of him is on Home draws it.
+    static let shared = HomeEyesModel()
+
     /// The piece he shows when no blink is playing.
     private(set) var look: DoddyLook = .atYou
     /// When the evening blink started; nil when none is playing.
@@ -22,9 +28,10 @@ final class HomeEyesModel {
     /// Set by `show(_:)` (previews and tests): the look stays, whatever the finger does.
     @ObservationIgnored private var forced: DoddyLook?
 
-    /// Where his eyes are on the screen (window points), from the picture's frame.
-    func pictureMoved(asset: String, frame: CGRect) {
-        guard let centre = DoddyEyes.eyesCentre(asset) else { return }
+    /// Where his eyes are on the screen (window points), from the picture's frame (`mirrored`: the
+    /// picture is drawn flipped round its middle).
+    func pictureMoved(asset: String, frame: CGRect, mirrored: Bool = false) {
+        guard let centre = DoddyEyes.eyesCentre(asset, mirrored: mirrored) else { return }
         let unit = frame.width / CGFloat(DoddyEyes.pictureWidth)
         eyes = DoddyEyePoint(x: Double(frame.minX + CGFloat(centre.x) * unit), y: Double(frame.minY + CGFloat(centre.y) * unit))
         update()
@@ -49,6 +56,13 @@ final class HomeEyesModel {
             self.lifted = nil
             self.update()
         }
+    }
+
+    /// The touch ended without a lift (the system cancelled it): as if it lifted where it last was.
+    /// Nothing if it already lifted.
+    func fingerGone() {
+        guard let finger else { return }
+        fingerLifted(at: CGPoint(x: finger.x, y: finger.y))
     }
 
     func setPressed(_ down: Bool) {
@@ -134,11 +148,13 @@ struct HomeDoddyFigure: View {
 
 /// The cut eyes over the picture: for each eye, a soft cover in the paper's colour over the
 /// picture's own eye, then the eye from the owner's sheet. Positions are in pixels of the picture's
-/// @3x file, `unit` points each. Nothing at all when he looks at you.
-private struct HomeEyesLayer: View {
+/// @3x file, `unit` points each. Nothing at all when he looks at you. `mirrored`: the picture (and
+/// this layer with it) is drawn flipped, so a look to the screen's left draws the picture's right.
+struct HomeEyesLayer: View {
     let asset: String
     let unit: CGFloat
     let eyes: HomeEyesModel
+    var mirrored = false
 
     var body: some View {
         Group {
@@ -157,7 +173,7 @@ private struct HomeEyesLayer: View {
     }
 
     private func pieces(_ look: DoddyLook) -> some View {
-        let layers = DoddyEyes.layers(for: asset, look: look)
+        let layers = DoddyEyes.layers(for: asset, look: mirrored ? look.mirrored : look)
         return ZStack(alignment: .topLeading) {
             ForEach(Array(layers.enumerated()), id: \.offset) { _, layer in
                 piece(layer)

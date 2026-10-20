@@ -34,6 +34,10 @@ struct PersistentDoddyView: View {
     let figure: DoddyFigure
     /// Where this view draws him (`slot ledge:settings`, `overlay`), for the one-Doddy check.
     let spot: String
+    /// Home's eyes (ADR-560), drawn while he stands on Home's stage: they follow a finger on Home,
+    /// half close while he is touched and blink once in the evening. Nil everywhere else, where
+    /// his eyes stay as the pack drew them.
+    var homeEyes: HomeEyesModel?
     @Environment(\.colorScheme) private var colorScheme
     @State private var token = UUID()
 
@@ -47,6 +51,10 @@ struct PersistentDoddyView: View {
         let drawn = Image(picture.asset)
             .resizable()
             .frame(width: width, height: height)
+            // Over the picture, so they squash, tilt, mirror and fade with it. Only pictures with
+            // a measured, front-facing face (breathing, the wave, sitting); nothing at all while
+            // his eyes are on you.
+            .modifier(HomeEyesOnFigure(eyes: homeEyes, asset: picture.asset, width: width, mirrored: art.mirrored))
             .scaleEffect(x: CGFloat((art.mirrored ? -1 : 1) * art.scaleX), y: CGFloat(art.scaleY), anchor: soles)
             .rotationEffect(.degrees(art.tilt), anchor: soles)
             // In dark appearance the black outline gets the island's thin cream edge (plan section 2).
@@ -74,6 +82,30 @@ struct PersistentDoddyView: View {
     }
 }
 
+/// Home's eyes on his picture, and where his eyes are on the screen for them to look from. The
+/// frame is the picture's own (before it is squashed, tilted or mirrored), which is close enough
+/// for which of nine looks to show.
+private struct HomeEyesOnFigure: ViewModifier {
+    let eyes: HomeEyesModel?
+    let asset: String
+    let width: CGFloat
+    let mirrored: Bool
+
+    func body(content: Content) -> some View {
+        if let eyes, DoddyEyes.hasFace(asset) {
+            content
+                .overlay(alignment: .topLeading) {
+                    HomeEyesLayer(asset: asset, unit: width / CGFloat(DoddyEyes.pictureWidth), eyes: eyes, mirrored: mirrored)
+                }
+                .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { [asset, mirrored] frame in
+                    MainActor.assumeIsolated { eyes.pictureMoved(asset: asset, frame: frame, mirrored: mirrored) }
+                }
+        } else {
+            content
+        }
+    }
+}
+
 /// Him in a surface's slot: soles on the surface's top edge, at his spot along it.
 struct DoddySlotFigure: View {
     let id: MotionSurfaceID
@@ -86,7 +118,9 @@ struct DoddySlotFigure: View {
             // stack, which drew him hanging below the edge in hosted run 39210073005).
             Color.clear
                 .frame(width: 0, height: 0)
-                .overlay(alignment: .bottom) { PersistentDoddyView(figure: figure, spot: "slot \(id)").fixedSize() }
+                .overlay(alignment: .bottom) {
+                    PersistentDoddyView(figure: figure, spot: "slot \(id)", homeEyes: id == .stage ? .shared : nil).fixedSize()
+                }
                 // Relative to the surface's own frame, so it stays exact while the system moves it.
                 .offset(x: CGFloat(figure.slotDX), y: CGFloat(figure.slotDY))
         }

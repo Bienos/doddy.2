@@ -34,7 +34,10 @@ struct HomeView: View {
     @State private var showToday = false
     @State private var showVoicePicker = false
     /// His eyes (ADR-560): they follow a finger on Home, half close while he is pressed, and blink once in the evening.
-    @State private var eyes = HomeEyesModel()
+    @State private var eyes = HomeEyesModel.shared
+    /// A finger is down on Home. Reset by the system when it cancels the touch (a scroll can),
+    /// when `onEnded` never comes: his eyes then come back as if it had lifted.
+    @GestureState private var fingerDown = false
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
     /// First visit (ADR-326): until a conversation has really connected, Home keeps to talking and
     /// holds back the voice picker (ADR-443) and the Back Tap and Today offers.
@@ -66,9 +69,14 @@ struct HomeView: View {
                 // scrolling work as before.
                 .simultaneousGesture(
                     DragGesture(minimumDistance: 0, coordinateSpace: .global)
+                        .updating($fingerDown) { _, down, _ in down = true }
                         .onChanged { eyes.fingerMoved(to: $0.location) }
                         .onEnded { eyes.fingerLifted(at: $0.location) }
                 )
+                .onChange(of: fingerDown) { _, down in
+                    if !down { eyes.fingerGone() }
+                }
+                .onDisappear { eyes.fingerGone() }
             }
             .safeAreaInset(edge: .bottom) {
                 bottomBar
@@ -405,6 +413,9 @@ struct HomeView: View {
         guard !hideCharacterArt else { return }
         try? await Task.sleep(for: .seconds(1.0))
         guard !Task.isCancelled, opening?.play == nil, ready == nil, !waving, !perking else { return }
+        // The persistent Doddy (ADR-552) blinks only standing on Home's stage, where his eyes are drawn.
+        let director = DoddyDirector.shared
+        guard !director.isActive || director.placement == .slot(.stage) else { return }
         guard HomeIdle.blinksThisEvening(now: .now) else { return }
         eyes.blink()
     }
