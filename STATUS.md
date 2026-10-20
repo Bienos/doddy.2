@@ -37,6 +37,8 @@ Last updated 2026-10-19 (the owner's merge session: #84, #88, #90 and the #97 fi
   - a new phone build;
   - the first conversation (`MAC_VERIFICATION_CHECKLIST` rows V0a to V0f).
 - **Voice works on no device yet.**
+- **Debug builds can talk without Apple sign-in (ADR-551):** run from Xcode with a free Apple ID, voice connects straight to the agent (Settings › Voice › Developer switch, on by default in Debug only). Release builds still need a voice account.
+- **Default voice (ADR-546) and agent limits (ADR-548):** ElevenLabs is the default for everyone. On 20 Oct the owner chose to raise the live agent's limits (read back from ElevenLabs after saving): **1,000 calls a day and 10 at once** (were 10 and 2), bursting still off. **Authentication on the agent is still off** (read 20 Oct), so anyone with the agent id can start calls on the owner's bill; it was not changed (the owner was told and chose the raise-the-cap option).
 
 **The v1 scope is a proposal waiting on the owner:** `docs/product/V1_SCOPE.md`. Until it's marked up, merge fixes only.
 
@@ -44,7 +46,7 @@ Last updated 2026-10-19 (the owner's merge session: #84, #88, #90 and the #97 fi
 - **Main branch:** `claude/loving-dirac-uuxoux`.
 - **Last build seen working on a device:** head `ce02763` (PR #60, the learning loop).
 - **Hosted CI:** since `c8aff7ae` (#69 with #70), every target compiles on Xcode 26.6 and the unit and 26 UI tests pass on the simulator. That build has not been run on a device.
-- **Since then on main:** OpenAI Realtime is the default voice, with a model picker on Home (ADR-442), and the first-use screens landed (#76: ADR-324 to 327, ADR-443).
+- **Since then on main:** OpenAI Realtime became the default voice with a model picker on Home (ADR-442) and the first-use screens landed (#76: ADR-324 to 327, ADR-443). **On the branch `claude/friendly-volta-3recsi` (20 Oct, ADR-546 and ADR-547):** ElevenLabs is the default again and OpenAI is a choice in the picker; four unused views and four old image sets are gone, five pack poses ship smaller, and start-up jobs wait for the first screen (`docs/implementation/LAUNCH_PROFILING.md`, never measured; `docs/implementation/REPO_DIET_2026-10-20.md`). "What I can do" is back in Home's ••• menu (ADR-548) and the old design folders are deleted (the design now is the app, `design/dynamic-island-v4` and the site's folders). DoddyCore tests pass on Linux; the iOS build is NOT RUN.
 - **Also on main (PR #80, 14 Oct):** the iPhone app and the landing page in ten languages, as machine-translated drafts (ADR-458 to 460). The landing page is live at https://www.doddy.lol in all ten. CI built the app and passed the unit and UI tests with these changes; the language picker and the translated screens have not been seen on a device, and no native speaker has read any of it (`l10n/REVIEW_NOTES.md`).
 - **Hosted CI on 18 Oct:** jobs start again after the owner fixed the account's GitHub billing. The first Mac build since 14 Oct showed that no branch had compiled since 754e5d6 (`VoiceAccessGate.swift` used `VoiceProvider` without `import DoddyCore`), and that two app unit tests had never run: the profile intro test from 754e5d6 and the translator test that ASK-01 made stale. PR #85 fixes all three. Its run 39138962699 built the app and passed the 29 UI tests, with only those two tests failing. Actions time is paid for (12–14 Oct used about $250, almost all of it the macOS build); since #84 (on main 19 Oct) the Mac build waits for the Linux checks and skips pull requests that don't touch the app (ADR-497), and the UI tests take 26 minutes instead of 34 (ADR-499). #84's run 39143827911 passed everything (Mac job 40 minutes).
 - **Also on main (PR #85, 18 Oct):** BLIK transfers by voice (ADR-510). "Send Ania 50 zł" shows a card to send in the bank app; Doddy never sends money. The `draft_blik_transfer` tool is behind an off-by-default switch and was added to the live ElevenLabs agent on 18 Oct (see "Voice agent" below for today's live version). Compiled in hosted CI; not yet seen on a device. Details: `docs/implementation/BLIK_TRANSFER_STATUS.md`.
@@ -61,7 +63,7 @@ Last updated 2026-10-19 (the owner's merge session: #84, #88, #90 and the #97 fi
     Nothing was changed on the agent by the merge session.
   - **`voice-agent/README.md` on main is out of date:** it still names `agtvrsn_2801m57etpkkfhfbjvqt95nptfha` (the ASK-01 restore of 18 Oct) as live.
   - Live version at the last working call (11 Oct): `agtvrsn_5201m4p132brf30th15nggeqarf0`. ASK-01 exactly: `agtvrsn_6401m57e22qwepwtr1ywwe64x2k4`.
-  - Settings on 18 Oct: authentication off, 10 calls a day for the whole agent, concurrency 2, recordings kept with no time limit.
+  - Settings on 18 Oct: authentication off, 10 calls a day for the whole agent, concurrency 2, recordings kept with no time limit. **Changed 20 Oct (ADR-548): 1,000 a day, 10 at once; authentication still off; recordings still kept with no time limit (read back).**
   - The ElevenLabs logs show device calls on 14–16 Oct from a build newer than `ce02763`; which commit isn't recorded.
 
 ## Platforms
@@ -104,7 +106,7 @@ Merge one at a time, then rebuild and talk to Doddy before the next. Checked 19 
   Investigated 18 Oct (`docs/implementation/VOICE_SESSION_STARTS.md`, ElevenLabs list only, no transcripts):
   - Two starts at once mostly predate the 11 Oct "review H1" fix.
   - Silent 30-second sessions with zero messages still happen: six since that build, four of them within five minutes on 16 Oct at night.
-  - Leading suspect: a "Hey Doddy" start from the background that stalls before its start data and stops when iOS's roughly 30-second background allowance runs out.
+  - Leading suspect: a "Hey Doddy" start from the background that stalls before its start data and stops when iOS's roughly 30-second background allowance runs out. **That start path was removed with the wake word (ADR-549), so this cause is gone; check the next device log for silent sessions.**
   - PR #84 (on main since 19 Oct) adds one conversation at a time (ADR-496) and the log lines a phone log needs. Not fixed yet: it still needs a device log to confirm the cause.
 - **Vercel:** the `doddy` project (team `doddyyyy`) built and published the site from the default branch on 2026-10-14 (www.doddy.lol); the earlier "account blocked" failures did not recur on that build. The free plan allows 100 deployments a day, and skipped ones count: on 18 October the limit was reached by 12:22 UTC (100 deployments since 09:34, 86 of them skipped), so Vercel refused new ones and showed "Account is blocked". Since 18 October only the production branch deploys: preview deployments are off in all three projects' settings (go-live checklist A10), and each `vercel.json` says the same (ADR-498, PR #84, on main since 19 Oct). GitHub Actions stopped starting jobs on 16 October and ran again on 18 October at 15:08 UTC (run 39139146509). Since then, every commit also gets three red "Account is blocked." statuses with a generic Vercel help link, under the same names (`Vercel – doddy-voice-token` and so on) as `doddyyyy`'s real statuses. They probably come from the old team's projects. `doddyyyy` itself posts "Vercel is deploying your app", "Canceled by Ignored Build Step", "Deployment has completed" or "Deployment rate limited". None of these is a required check.
 
@@ -143,7 +145,7 @@ Merge one at a time, then rebuild and talk to Doddy before the next. Checked 19 
 - Delete the two old Supabase functions and their secrets (code saved in `docs/archive/supabase-functions-2026-10-18/`).
   - Decide whether to keep the Render copies of `doddy-voice-token` and `doddy-gateway` (research report, decision 11).
 - A native review of the eight new app languages and of all nine landing-page translations, which are live as drafts (`l10n/REVIEW_NOTES.md`).
-- "Hey Doddy" cannot work until the keyword file and a Picovoice key are in place (`docs/implementation/HEY_DODDY_STATUS.md`, "What is missing").
+- "Hey Doddy" and Picovoice were removed on 20 Oct (ADR-549): the wake word had never run on a device. The Vercel project `doddy-voice-token` may still hold a `PICOVOICE_ACCESS_KEY` value; remove it (`tools/secrets/sync.mjs --prune`).
 - Whether notes sync between the Mac and the iPhone (today they never do).
 - The kitchen timer Live Activity.
 - A Pencil drawing canvas.

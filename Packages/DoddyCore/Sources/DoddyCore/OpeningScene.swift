@@ -181,7 +181,7 @@ public enum OpeningLayout {
     /// The ready artwork (2:3), centred under the same spot, placed so its feet (not the image's
     /// transparent bottom margin) stand on the floor.
     public static let ready = StageRect(x: 0.1665, y: 0.7977, width: 0.467, height: 0.70)
-    /// In `UploadedDoddy_Listening` (1024 × 1536), the soles end at 88.9% of the height
+    /// In `UploadedDoddy_Listening` (1024 × 1536 in the owner's file, shipped at 800 × 1200: same 2:3 shape), the soles end at 88.9% of the height
     /// (measured on the image's alpha).
     public static let readyFeetFraction = 0.889
     public static let ringCenter = StagePoint(x: 0.80, y: 0.62)
@@ -591,7 +591,7 @@ public struct PlacedDoddy: Equatable, Sendable {
 /// fills on Home (measured there); at the end of the opening the picture is in exactly that box,
 /// at scale 1, so Home's own picture takes over with no jump.
 public enum OpeningHandover {
-    /// `UploadedDoddy_Listening` is 1024 × 1536.
+    /// `UploadedDoddy_Listening` is 1024 × 1536 in the owner's file and 800 × 1200 as shipped (ADR-547); only the 2:3 shape matters here.
     public static let artAspect = 2.0 / 3.0
 
     /// The ready pose on the court, on a screen `width` × `height` points, with the camera at 1:1

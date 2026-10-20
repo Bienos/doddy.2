@@ -83,7 +83,7 @@ The newest commits (`f40861c`, `754e5d6`, 16 Oct) have never compiled (checklist
 | Model picker | Realtime 2.1 or mini on Home and in Settings | CI | none | **Hide** | A test switch, not a user choice | |
 | Plan card (`propose_plan`) | Up to 5 changes (note, event, reminder, timer) approved in one card | built; never called | as above | **Hide** | Never called. One action per card is enough for v1 and easier to verify. The homepage hero shows this card, so the site needs a line saying it isn't in the beta | |
 | Dynamic Island and Lock Screen | Doddy's island while you talk; Back Tap's big island | base built; big island CI | none | **Ship** if the device pass is clean | The owner saw the island on 10 Oct (ADR-207 report). Check whether App Review accepts a `LiveActivityIntent` as a button action | |
-| "Hey Doddy" | Wake word while Doddy is in the background | built; never run (no keyword file, no key) | none (Picovoice gets the AccessKey) | **Hide** | Needs a Picovoice commercial licence and the `.ppn` file. Always-on listening is the biggest App Review question. A false wake starts a paid conversation | |
+| "Hey Doddy" | Wake word while Doddy is in the background | **removed 20 Oct 2026 (ADR-549)**; had never run (no keyword file, no key) | none | **Cut (done)** | Needs a Picovoice commercial licence and the `.ppn` file. Always-on listening is the biggest App Review question. A false wake starts a paid conversation | |
 | Read aloud | Reads a note with iOS's own voice | built | none | **Ship** | On the phone, free. Uses the Tools Live Activity, so keep that code | |
 | Back Tap guide | Shows how to bind Double Back Tap to "Talk to Doddy" | device (owner's spoken report, 9 Oct, earlier branch) | none | **Ship** | Low risk, and the fastest way to start talking | |
 | Translator | Face-to-face translation inside a conversation | device (10-16 logs; one call titled "Translator activation failed") | Both people's speech goes to the voice provider | **Hide** | Failed once on a device. The latest change isn't on the live agent. The other person never agreed to be recorded | |
@@ -107,7 +107,7 @@ The newest commits (`f40861c`, `754e5d6`, 16 Oct) have never compiled (checklist
 | Alarms | "Wake me at 7" by voice (AlarmKit) | CI; never rang | none | **Hide** | iOS 26 only, and never rang | |
 | Leave by | Travel time and a "leave now" notification | CI | Position and place to Apple Maps | **Hide** | Needs location | |
 | Parking | Save and find where you parked | built | none (location stays local) | **Hide** | Needs location | |
-| Focus and breathing | Timers on the Lock Screen and island | built | none | **Hide the screens** | Keep the Tools code: read aloud uses its Live Activity | |
+| Focus and breathing | Timers on the Lock Screen and island | focus built; **breathing removed 20 Oct 2026 (ADR-550)** | none | **Hide the screens** | Keep the Tools code: read aloud uses its Live Activity | |
 | Widgets | Home and Lock Screen widgets, New note widget, controls | base built; New note CI | none | **Ship** read-only widgets and New note; **Hide** tick-from-widget | A tick from a cold start is untested and may do nothing | |
 | Shared lists (iCloud) | Share a list with other people | CI; off at runtime | iCloud | **Cut** | Needs a paid team, an iCloud container and the Production schema. Remove the `remote-notification` background mode and `CKSharingSupported` so App Review doesn't see an unused mode | |
 

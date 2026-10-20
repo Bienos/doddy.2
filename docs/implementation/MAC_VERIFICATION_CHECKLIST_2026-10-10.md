@@ -1,5 +1,7 @@
 # Mac and iPhone verification checklist (branch `claude/hopeful-fermat-1a63x0`)
 
+> **20 Oct 2026 (ADR-549):** every row about "Hey Doddy" or the Picovoice AccessKey is void: the wake word was removed. The rows stay as history.
+
 Date: 2026-10-10 (updated for ADR-210 to ADR-225). Everything below was written and tested only on Linux (`scripts/ci.sh --core-only`,
 486 Swift package tests, gateway and backend tests). **None of the app code has been compiled with Xcode or
 run on a device.** Nothing here is verified until a person ticks it. Record the Xcode version, the device
