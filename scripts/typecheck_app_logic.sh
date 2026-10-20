@@ -65,6 +65,15 @@ final class PlaceLocation {
 }
 SWIFT
 
+# ShortcutRouter asks the weekly reminder scheduler (UserNotifications) to look again when the
+# shortcut has run (ADR-547); only its one entry point is needed.
+cat > "$work/OpenWaysReminderSchedulerStub.swift" <<'SWIFT'
+@MainActor
+enum OpenWaysReminderScheduler {
+    static func refresh(_ setup: BackTapSetupModel) async {}
+}
+SWIFT
+
 # The one type IslandPose.swift needs from the island drawing model (ADR-313).
 cat > "$work/IslandRectStub.swift" <<'SWIFT'
 struct IslandRect: Equatable, Sendable {
@@ -105,7 +114,7 @@ files=(
 for f in "${files[@]}"; do [ -f "$f" ] || { echo "FAIL: $f is missing; update scripts/typecheck_app_logic.sh"; exit 1; }; done
 
 echo "Type-checking ${#files[@]} app files against DoddyCore (Swift 6)"
-swiftc -typecheck -swift-version 6 -I "$modules" "$work/PreferenceKey.swift" "$work/AppEnvironmentStub.swift" "$work/PlaceLocationStub.swift" "$work/SystemNoteNotificationsStub.swift" "$work/IslandRectStub.swift" "${files[@]}"
+swiftc -typecheck -swift-version 6 -I "$modules" "$work/PreferenceKey.swift" "$work/AppEnvironmentStub.swift" "$work/PlaceLocationStub.swift" "$work/SystemNoteNotificationsStub.swift" "$work/IslandRectStub.swift" "$work/OpenWaysReminderSchedulerStub.swift" "${files[@]}"
 echo "PASS: ${#files[@]} app files type-check (SwiftUI, App Intents and widget code are not covered)"
 
 # App files that import no UI framework but aren't in the list: most use types this script can't

@@ -45727,6 +45727,17 @@
         }
       }
     },
+    "One quiet reminder a week for four weeks, only until you use a way to open Doddy. It is sent only if notifications are already allowed; Doddy doesn't ask for them just for this.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jedno ciche przypomnienie tygodniowo przez cztery tygodnie, tylko dopóki nie użyjesz któregoś ze sposobów otwierania Doddy’ego. Przychodzi tylko wtedy, gdy powiadomienia są już dozwolone; Doddy nie prosi o nie specjalnie z tego powodu."
+          }
+        }
+      }
+    },
     "One thing at a time.": {
       "extractionState": "manual",
       "localizations": {
@@ -54399,6 +54410,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "提醒我这件事"
+          }
+        }
+      }
+    },
+    "Remind me about ways to open Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypominaj mi o sposobach otwierania Doddy’ego"
           }
         }
       }

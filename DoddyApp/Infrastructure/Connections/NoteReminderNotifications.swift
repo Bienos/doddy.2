@@ -168,6 +168,13 @@ extension TimerBanners {
             }
             return
         }
+        // The weekly "Open Doddy faster" reminder (ADR-547) opens the ways to open Doddy.
+        if OpenWaysReminder.isReminder(notificationID: requestID) {
+            if action != UNNotificationDismissActionIdentifier {
+                await MainActor.run { ShortcutRouter.shared.openWaysOpened() }
+            }
+            return
+        }
         // A birthday (ADR-288) just opens Doddy; nothing else happens.
         if Birthdays.isBirthday(notificationID: requestID) { return }
         // The weekly look-back (ADR-306) opens its screen.

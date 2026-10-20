@@ -36,6 +36,8 @@ struct HomeView: View {
     /// First visit (ADR-326): until a conversation has really connected, Home keeps to talking and
     /// holds back the voice picker (ADR-443) and the Back Tap and Today offers.
     @AppStorage(PreferenceKey.hadFirstConversation) private var hadFirstConversation = false
+    /// For when the "Open Doddy faster" card comes back after "Later" (ADR-547).
+    @AppStorage(PreferenceKey.connectedConversations) private var connectedConversations = 0
     @AppStorage(VoiceConnection.calendar.preferenceKey) private var calendarOn = false
     @AppStorage(VoiceConnection.reminders.preferenceKey) private var remindersOn = false
     @AppStorage(PreferenceKey.memoriesShowsLists) private var memoriesShowsLists = false
@@ -190,7 +192,8 @@ struct HomeView: View {
                 getToKnowCard
             }
             // Back Tap exists only on iPhone (ADR-337), and waits for the first conversation (ADR-326).
-            if router.setup.phase == .notStarted, DeviceSupport.hasBackTap, hadFirstConversation {
+            // After "Later" it comes back once, three conversations on; never once a way is in use (ADR-547).
+            if router.setup.cardDue(connectedConversations: connectedConversations), DeviceSupport.hasBackTap, hadFirstConversation {
                 backTapCard
             }
             HeyDoddyCard()

@@ -196,6 +196,10 @@ final class LaunchSmokeTests: XCTestCase {
         app.goToTab("settings")
         let entry = app.buttons["settings.backTap"]
         XCTAssertTrue(app.reveal(entry))
+        // The weekly reminder is on until the user turns it off; it only sends with notifications already allowed.
+        let reminder = app.switches["settings.waysReminder"]
+        XCTAssertTrue(app.reveal(reminder))
+        XCTAssertEqual(reminder.value as? String, "1")
         entry.tap()
         XCTAssertTrue(app.buttons["ways.backTap"].waitForExistence(timeout: 5), app.debugDescription)
         XCTAssertTrue(app.buttons["ways.siri"].exists, "Siri needs no setup, so it is always offered")
