@@ -425,14 +425,14 @@ struct HomeView: View {
     /// unless the user reported a successful tap test.
     private var backTapCard: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Reach Doddy with two taps")
+            Text("Open Doddy faster")
                 .font(.headline)
                 .accessibilityAddTraits(.isHeader)
-            Text("Double-tap the back of your iPhone to start talking. It takes a minute in Settings, and Doddy walks you through it.")
+            Text("Double-tap the back of your iPhone, press a button or just ask Siri. Pick a way; it takes about a minute.")
                 .font(.subheadline)
                 .foregroundStyle(Theme.secondaryText)
             HStack(spacing: 12) {
-                Button("Set up") { router.isSetupPresented = true }
+                Button("Show me the ways") { router.isSetupPresented = true }
                     .buttonStyle(PrimaryButtonStyle())
                     .accessibilityIdentifier("home.backTap.setup")
                 Button("Later") { router.setup.send(.deferSetup) }

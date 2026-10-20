@@ -1,4 +1,6 @@
 # V2 status — "Talk to Doddy" shortcut and guided Back Tap setup
+
+> **Changed 2026-10-20 (ADR-546):** the guide below is now one screen with three steps inside "Ways to open Doddy" (Back Tap, Action Button, a Doddy control, Siri). The six step cards, the "I'm in …" report chips and the shortcut-preparation screen are gone; the receipt, the test window and the "tested by you" rule are unchanged. DoddyCore: `OpenDoddyWays.swift`, `BackTapSetup.swift`. App: `Features/Setup/OpenDoddyWaysView.swift`. The tables below describe the 9 Oct build. Not compiled and not seen on a device; the Action Button and Control Center steps are unverified.
 Date: 2026-10-09. Owner instruction: build the App Shortcut plus the guided Back Tap setup (research doc
 `docs/research/VOICE_SHORTCUT_ISLAND_TOOLS_2026-10.md` §1 and §5, design `design/interface-v1.2/docs/GUIDED-BACK-TAP-AND-VOICE-SETUP.md`).
 **Status: written on Linux, never compiled for iOS.** The core state machine is unit-tested on Linux (see "Verified");

@@ -65,7 +65,7 @@ struct SettingsView: View {
         case .notStarted: NSLocalizedString("Not set up", comment: "")
         case .deferred: NSLocalizedString("Set up later", comment: "")
         case .userReportedTested(let at): "Tested by you · \(DateText.full(at))"
-        case .shortcutPreparation, .guiding, .testing, .receiptReceived: NSLocalizedString("In progress", comment: "")
+        case .guiding, .testing, .receiptReceived: NSLocalizedString("In progress", comment: "")
         }
     }
 
@@ -441,7 +441,8 @@ struct SettingsView: View {
                     if DeviceSupport.hasBackTap {
                         StatusRow(title: "Double Back Tap", value: backTapStatus)
                             .accessibilityIdentifier("settings.backTap.status")
-                        Button(router.setup.coordinator.isDone ? "Go through the setup again" : "Set up Double Back Tap") {
+                        // The Back Tap guide, the Action Button, the controls and Siri (ADR-546).
+                        Button("Ways to open Doddy") {
                             router.isSetupPresented = true
                         }
                         .accessibilityIdentifier("settings.backTap")

@@ -187,6 +187,29 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertFalse(status.label.localizedCaseInsensitiveContains("verified"))
     }
 
+    /// Ways to open Doddy (ADR-546): Settings opens a list with Double Back Tap and Siri on every
+    /// iPhone; Back Tap is three steps on one screen, and nothing on the way says "verified".
+    @MainActor
+    func testWaysToOpenDoddyListsBackTapAndSiriAndBackTapIsOneScreen() throws {
+        try XCTSkipIf(UIDevice.current.userInterfaceIdiom == .pad, "the Settings entry is iPhone-only")
+        let app = launch(onboardingDone: true, backTapSetup: "notStarted")
+        app.goToTab("settings")
+        let entry = app.buttons["settings.backTap"]
+        XCTAssertTrue(app.reveal(entry))
+        entry.tap()
+        XCTAssertTrue(app.buttons["ways.backTap"].waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertTrue(app.buttons["ways.siri"].exists, "Siri needs no setup, so it is always offered")
+
+        app.buttons["ways.backTap"].tap()
+        XCTAssertTrue(app.buttons["setup.startTest"].waitForExistence(timeout: 5), "the three steps and the test button share one screen")
+        XCTAssertTrue(app.buttons["ways.openSettings"].exists)
+
+        app.buttons["ways.all"].tap()
+        XCTAssertTrue(app.buttons["ways.siri"].waitForExistence(timeout: 5))
+        app.buttons["ways.siri"].tap()
+        XCTAssertTrue(app.buttons["ways.all"].waitForExistence(timeout: 5), "a way without a test still has a way back")
+    }
+
     /// iPad full screen (ADR-337, ADR-430): a sidebar in place of the tab bar, and no Back Tap
     /// card or row, even with Back Tap set up as "not started".
     @MainActor

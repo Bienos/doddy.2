@@ -304,7 +304,7 @@ struct RootView: View {
         // Waiting drafts appear only once a cover or sheet has finished going away.
         .fullScreenCover(isPresented: $router.isVoicePresented, onDismiss: { router.showWaitingDraft() }) { VoiceView() }
         .sheet(isPresented: $router.isSetupPresented, onDismiss: { router.showWaitingDraft() }) {
-            BackTapSetupView(model: router.setup)
+            OpenDoddyWaysView(model: router.setup)
         }
         // The weekly tidy-up (ADR-228), from its notification or Settings.
         .sheet(isPresented: $router.isTidyUpPresented, onDismiss: { router.showWaitingDraft() }) { TidyUpView() }
