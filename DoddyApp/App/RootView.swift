@@ -225,12 +225,9 @@ struct RootView: View {
                     if store.environment.capabilities.isAvailable(.voiceInput) { ShortcutRouter.shared.isVoicePresented = true }
                 }
             }
-            // MV5: his listening pose follows only a conversation's real capture. The wake word's
-            // conversation is the one that can be live on Home before the voice screen takes it
-            // (read only; the voice screen hides him while it is up).
-            .onChange(of: WakeWordListener.shared.wakeConversation?.phase == .listening, initial: true) { _, live in
-                DoddyDirector.shared.voiceListening(live)
-            }
+            // MV5's listening pose read the wake word's conversation, the only one that could be
+            // live on Home. "Hey Doddy" is gone (ADR-549, PR #108) and the voice screen hides him
+            // while it is up, so nothing calls DoddyDirector.voiceListening here any more.
             // Reduce Motion: his hops become fades (brief rule 12).
             .onChange(of: reduceMotion || DoddyMotionDebug.forcesReduceMotion, initial: true) { _, on in
                 DoddyDirector.shared.setReduceMotion(on)
