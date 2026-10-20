@@ -46,8 +46,8 @@ declares `engines.node >= 22.22.3`; the authoring environment ran Node 22.22.0 â
 
 ## Fonts
 No font binaries in the repository or app (pack policy). The UI uses system fonts with Dynamic Type.
-Inter and Caveat (SIL OFL) appear only as notices in `design/interface-v1.2/assets/` for the browser
-prototype; using Caveat in the app needs an owner decision and a licence check.
+Inter and Caveat (SIL OFL) appear only as notices in `docs/legal/fonts/` (moved there on 20 Oct 2026 when
+`design/interface-v1.2` was deleted, ADR-548); using Caveat in the app needs an owner decision and a licence check.
 
 ## Artwork
 `DoddyApp/Resources/Assets.xcassets` no longer contains the candidate-art imagesets `Doddy_waving`,

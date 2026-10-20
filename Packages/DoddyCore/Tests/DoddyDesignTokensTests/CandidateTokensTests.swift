@@ -17,7 +17,7 @@ final class CandidateTokensTests: XCTestCase {
     }
 
     func testMatchesPublishedContrastFigures() {
-        // design/interface-v1.2/verification/contrast.json (rounded to 2 dp there).
+        // design/interface-v1.2/verification/contrast.json (deleted 20 Oct 2026, ADR-548; see git history) (rounded to 2 dp there).
         let cases: [(CandidateColorRole, CandidateColorRole, CandidateColorScheme, Double)] = [
             (.readingInk, .canvas, .light, 16.87), (.secondaryText, .canvas, .light, 5.94),
             (.secondaryText, .quietSurface, .light, 5.31), (.accentText, .canvas, .light, 5.44),
