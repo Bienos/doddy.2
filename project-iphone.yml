@@ -7,9 +7,10 @@ include:
   - project.yml
 name: DoddyiPhone
 # No entitlements in this project, so a Personal (free) Apple team can sign and install it: such a
-# team can't have Sign in with Apple, App Groups or push. Apple sign-in is off in the code anyway
-# (VoiceAccess, ADR-549). The cost: widgets and "Save to Doddy" say they aren't set up. The shipping
-# project (project.yml) keeps its entitlements.
+# team can't have Sign in with Apple, App Groups or push. A Debug build talks to Doddy without Apple
+# sign-in (Settings > Voice > "Developer: talk without Apple sign-in", PR #108). The cost: widgets
+# and "Save to Doddy" say they aren't set up. The shipping project (project.yml) keeps its
+# entitlements.
 settings:
   base:
     DODDY_APP_ENTITLEMENTS: ""
