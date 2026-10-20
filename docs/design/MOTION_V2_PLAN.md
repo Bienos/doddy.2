@@ -1,14 +1,15 @@
 # Motion v2 in the iPhone app: what it takes
 
-Investigation only, 18 October 2026. No app code, tokens, assets or voice-agent files were changed. Nothing in this document is implemented.
+Investigation written 18 October 2026; the status below is 20 October. The sections after it are the plan as written, before the build.
 
 **Source of the motion world:** the `design/motion-v2/` handoff (README, BRIEF, DECISIONS, `reference/` engine and prototype, `telemetry/`). Committed with MV1 (owner answer to Q1, 18 Oct 2026): MV1's golden tests read its telemetry.
 
-## Status (18 Oct 2026)
+## Status (20 Oct 2026)
 
-- **Owner answers:** Q1 commit the handoff folder (done); Q7 whole-picture transforms of pack art are allowed (move, scale, rotate, squash), never redrawn, recoloured, cut up or generated; Q9 add `CADisableMinimumFrameDurationOnPhone` in MV2. Every other question takes this plan's recommendation until the owner overrules it.
-- **MV1 done (branch `claude/motion-mv1`):** `Packages/DoddyCore/Sources/DoddyCore/Motion/` (`MotionEngine`, `MotionSurface`, `HopPlan`, `MotionMath`). `MotionTelemetryTests` drives the engine through all 25 studies on the reference layout and matches every clip's telemetry within ±1 ms and ±0.5 pt, including the event log. No app code changed.
-- **MV2–MV6:** not started. They need Xcode and a simulator (see the MV1 report).
+- **Owner answers:** Q1 commit the handoff folder (done); Q7 whole-picture transforms of pack art are allowed (move, scale, rotate, squash), never redrawn, recoloured, cut up or generated; Q9 add `CADisableMinimumFrameDurationOnPhone` in MV2. Every other question took this plan's recommendation. Still open: Q6 (blink and eye sheets) and Q11 (larger exports).
+- **Built, on stacked branches, not merged:** MV1 `claude/motion-mv1` (engine in DoddyCore, golden tests against all 25 telemetry clips), MV2 surfaces and look, MV3 one Doddy hopping, MV4 riding, MV5 behaviours, MV6 evidence. ADR-545 and ADR-546 in `DECISIONS.md`.
+- **Evidence:** hosted macOS (`scripts/ci.sh`) is green on every branch; on MV6 head `85f11836` DoddyCore ran 1239 tests, the app 43, the UI tests 50 (1 skipped), 0 failures, 21 of the UI tests on the motion world.
+- **Not run:** anything on a device (80 to 120 Hz, the keyboard, haptics, the system's Reduce Motion and VoiceOver) and any screen recording: `MOTION_V2_DEVICE_CHECKLIST.md`.
 
 ## In short
 
