@@ -19,6 +19,8 @@ final class HomeEyesModel {
     @ObservationIgnored private var lifted: (point: DoddyEyePoint, at: Date)?
     @ObservationIgnored private var pressed = false
     @ObservationIgnored private var comeBack: Task<Void, Never>?
+    /// Set by `show(_:)` (previews and tests): the look stays, whatever the finger does.
+    @ObservationIgnored private var forced: DoddyLook?
 
     /// Where his eyes are on the screen (window points), from the picture's frame.
     func pictureMoved(asset: String, frame: CGRect) {
@@ -65,7 +67,10 @@ final class HomeEyesModel {
     }
 
     /// Previews and the app's tests only: show one piece.
-    func show(_ look: DoddyLook) { self.look = look }
+    func show(_ look: DoddyLook) {
+        forced = look
+        self.look = look
+    }
 
     /// The piece to draw at `date` (a playing blink wins).
     func currentLook(at date: Date) -> DoddyLook {
@@ -77,6 +82,10 @@ final class HomeEyesModel {
     }
 
     private func update() {
+        if let forced {
+            if look != forced { look = forced }
+            return
+        }
         guard let eyes else { return }
         let new = HomeEyes.look(eyes: eyes, finger: finger,
                                 lifted: lifted.map { (point: $0.point, ago: Date().timeIntervalSince($0.at)) },
@@ -132,19 +141,30 @@ private struct HomeEyesLayer: View {
     let eyes: HomeEyesModel
 
     var body: some View {
-        // Frames only while the evening blink plays; otherwise it redraws when his look changes.
-        TimelineView(.animation(minimumInterval: 1.0 / 60, paused: eyes.blinkStart == nil)) { context in
-            let layers = DoddyEyes.layers(for: asset, look: eyes.currentLook(at: context.date))
-            ZStack(alignment: .topLeading) {
-                ForEach(Array(layers.enumerated()), id: \.offset) { _, layer in
-                    piece(layer)
-                        .frame(width: CGFloat(layer.width) * unit, height: CGFloat(layer.height) * unit)
-                        .position(x: CGFloat(layer.x) * unit, y: CGFloat(layer.y) * unit)
+        Group {
+            if eyes.blinkStart != nil {
+                // Frames only while the evening blink plays.
+                TimelineView(.animation(minimumInterval: 1.0 / 60)) { context in
+                    pieces(eyes.currentLook(at: context.date))
                 }
+            } else {
+                // Otherwise it redraws when his look changes.
+                pieces(eyes.look)
             }
         }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
+    }
+
+    private func pieces(_ look: DoddyLook) -> some View {
+        let layers = DoddyEyes.layers(for: asset, look: look)
+        return ZStack(alignment: .topLeading) {
+            ForEach(Array(layers.enumerated()), id: \.offset) { _, layer in
+                piece(layer)
+                    .frame(width: CGFloat(layer.width) * unit, height: CGFloat(layer.height) * unit)
+                    .position(x: CGFloat(layer.x) * unit, y: CGFloat(layer.y) * unit)
+            }
+        }
     }
 
     @ViewBuilder
