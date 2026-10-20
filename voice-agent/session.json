@@ -63,6 +63,7 @@
   },
   "elevenlabs": {
     "agent_id": "agent_0501m4et27vyeawrwqfdxxfszfa6",
+    "realtime_model": "eleven_realtime_v1_max",
     "llm": "gemini-3.5-flash",
     "temperature": 0.5,
     "timezone": "Europe/Warsaw",
