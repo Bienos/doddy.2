@@ -237,7 +237,7 @@ final class ShortcutRouter {
 @Observable
 final class BackTapSetupModel {
     private(set) var coordinator: BackTapSetupCoordinator
-    /// What decides when the Home card comes back and when the weekly reminder stops (ADR-547).
+    /// What decides when the Home card comes back and when the weekly reminder stops (ADR-559).
     /// Counts and flags only.
     private(set) var offer: OpenWaysOfferState
     private let defaults: UserDefaults

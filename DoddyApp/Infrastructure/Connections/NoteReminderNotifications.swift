@@ -168,7 +168,7 @@ extension TimerBanners {
             }
             return
         }
-        // The weekly "Open Doddy faster" reminder (ADR-547) opens the ways to open Doddy.
+        // The weekly "Open Doddy faster" reminder (ADR-559) opens the ways to open Doddy.
         if OpenWaysReminder.isReminder(notificationID: requestID) {
             if action != UNNotificationDismissActionIdentifier {
                 await MainActor.run { ShortcutRouter.shared.openWaysOpened() }

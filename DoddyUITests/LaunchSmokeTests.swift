@@ -198,7 +198,7 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertFalse(status.label.localizedCaseInsensitiveContains("verified"))
     }
 
-    /// Ways to open Doddy (ADR-546): Settings opens a list with Double Back Tap and Siri on every
+    /// Ways to open Doddy (ADR-558): Settings opens a list with Double Back Tap and Siri on every
     /// iPhone; Back Tap is three steps on one screen, and nothing on the way says "verified".
     @MainActor
     func testWaysToOpenDoddyListsBackTapAndSiriAndBackTapIsOneScreen() throws {

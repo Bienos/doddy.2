@@ -33,7 +33,7 @@ enum PreferenceKey {
     static let backTapAction = "backTapAction"
     /// JSON `BackTapSetupSummary` (outcome and any active test window), never transcripts.
     static let backTapSetup = "backTapSetup"
-    /// JSON `OpenWaysOfferState`: counts and flags for the Home card's return and the weekly reminder (ADR-547).
+    /// JSON `OpenWaysOfferState`: counts and flags for the Home card's return and the weekly reminder (ADR-559).
     static let openWaysOffer = "openWaysOffer"
     /// UI-test override of the outcome: "-backTapSetupStatus deferred".
     static let backTapSetupStatus = "backTapSetupStatus"
@@ -169,7 +169,7 @@ struct RootView: View {
                 await noteReminders.refreshOnForeground()
                 if scenePhase == .active { listeningIndicatorBecameActive() }
                 pickUpSharedItem()
-                // The weekly "Open Doddy faster" reminder, if it is still wanted (ADR-547).
+                // The weekly "Open Doddy faster" reminder, if it is still wanted (ADR-559).
                 await OpenWaysReminderScheduler.refresh(router.setup)
             }
             .onChange(of: scenePhase, initial: true) { _, phase in
@@ -206,7 +206,7 @@ struct RootView: View {
                 default: break
                 }
             }
-            // A tested or used way ends the weekly reminder at once (ADR-547).
+            // A tested or used way ends the weekly reminder at once (ADR-559).
             .onChange(of: router.setup.isUsingAWay) { Task { await OpenWaysReminderScheduler.refresh(router.setup) } }
             // Widgets (ADR-219) follow every change to notes, lists, pins and reminders.
             .onChange(of: store.revision) { WidgetSync.shared.refresh() }

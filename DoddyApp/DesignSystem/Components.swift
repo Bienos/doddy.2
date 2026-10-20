@@ -228,7 +228,7 @@ extension MemoryCategory {
 enum DeviceSupport {
     /// Accessibility › Touch › Back Tap is an iPhone setting; iPad has none.
     @MainActor static var hasBackTap: Bool { UIDevice.current.userInterfaceIdiom == .phone }
-    /// What "Ways to open Doddy" can offer here (ADR-546). The Action Button is read from the model
+    /// What "Ways to open Doddy" can offer here (ADR-558). The Action Button is read from the model
     /// identifier, since iOS has no call that says whether one is there; the simulator names the
     /// model it pretends to be in an environment variable.
     @MainActor static var openDoddyDevice: OpenDoddyDevice {

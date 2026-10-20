@@ -66,7 +66,7 @@ final class PlaceLocation {
 SWIFT
 
 # ShortcutRouter asks the weekly reminder scheduler (UserNotifications) to look again when the
-# shortcut has run (ADR-547); only its one entry point is needed.
+# shortcut has run (ADR-559); only its one entry point is needed.
 cat > "$work/OpenWaysReminderSchedulerStub.swift" <<'SWIFT'
 @MainActor
 enum OpenWaysReminderScheduler {

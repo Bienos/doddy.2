@@ -2,7 +2,7 @@ import DoddyCore
 import Foundation
 import UserNotifications
 
-/// Puts the weekly "Open Doddy faster" reminders in iOS and takes them out again (ADR-547). Four
+/// Puts the weekly "Open Doddy faster" reminders in iOS and takes them out again (ADR-559). Four
 /// one-time notifications, a week apart, for someone who hasn't used a way to open Doddy yet. They
 /// are removed the moment Doddy's shortcut runs, the Back Tap test is confirmed, or the Settings
 /// switch is turned off.

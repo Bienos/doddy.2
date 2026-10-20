@@ -1,6 +1,6 @@
 import Foundation
 
-// When Doddy offers "Ways to open Doddy" again, and when it sends the weekly reminder (ADR-547).
+// When Doddy offers "Ways to open Doddy" again, and when it sends the weekly reminder (ADR-559).
 // Both stop for good once the person is using one of the ways. Pure rules: the app stores the
 // state and talks to iOS, this file only decides.
 //

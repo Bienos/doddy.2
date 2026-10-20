@@ -459,12 +459,12 @@ struct SettingsView: View {
                     if DeviceSupport.hasBackTap {
                         StatusRow(title: "Double Back Tap", value: backTapStatus)
                             .accessibilityIdentifier("settings.backTap.status")
-                        // The Back Tap guide, the Action Button, the controls and Siri (ADR-546).
+                        // The Back Tap guide, the Action Button, the controls and Siri (ADR-558).
                         Button("Ways to open Doddy") {
                             router.isSetupPresented = true
                         }
                         .accessibilityIdentifier("settings.backTap")
-                        // One reminder a week for four weeks, until a way is in use (ADR-547).
+                        // One reminder a week for four weeks, until a way is in use (ADR-559).
                         Toggle("Remind me about ways to open Doddy", isOn: Binding(
                             get: { !router.setup.offer.remindersOff },
                             set: { on in

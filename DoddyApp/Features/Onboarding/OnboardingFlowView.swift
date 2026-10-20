@@ -2,7 +2,7 @@ import DoddyCore
 import SwiftUI
 
 /// First use: the optional introduction. It can be skipped; Home is reachable without it.
-/// The Back Tap guide is not part of first use: it is V2's `OpenDoddyWaysView` (ways to open Doddy, ADR-546), offered from a
+/// The Back Tap guide is not part of first use: it is V2's `OpenDoddyWaysView` (ways to open Doddy, ADR-558), offered from a
 /// Home card and Settings (DECISIONS.md ADR-040, ADR-089).
 struct OnboardingFlowView: View {
     @Environment(ProfileStore.self) private var profiles
