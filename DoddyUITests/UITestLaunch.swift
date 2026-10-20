@@ -72,6 +72,40 @@ extension XCUIApplication {
         return !bar.exists || element.frame.maxY <= bar.frame.minY
     }
 
+    /// Waits until the app can go to tab `name`: its tab bar button, or, on Home, which has no tab
+    /// bar (ADR-545), the ••• menu.
+    @MainActor
+    func waitForTab(_ name: String, timeout: TimeInterval) -> Bool {
+        descendants(matching: .button)
+            .matching(NSPredicate(format: "identifier IN %@", ["tab.\(name)", "home.more"]))
+            .firstMatch
+            .waitForExistence(timeout: timeout)
+    }
+
+    /// Goes to tab `name` ("memories", "settings"): the tab bar where there is one, else Home's
+    /// ••• menu (ADR-545).
+    @MainActor
+    func goToTab(_ name: String) {
+        _ = waitForTab(name, timeout: 5)
+        let tab = buttons["tab.\(name)"]
+        if tab.exists && tab.isHittable {
+            tab.tap()
+        } else {
+            tapHomeMenuItem("home.menu.\(name)")
+        }
+    }
+
+    /// Opens Home's ••• menu and taps the item with this identifier (ADR-545).
+    @MainActor
+    func tapHomeMenuItem(_ identifier: String) {
+        let more = buttons["home.more"]
+        _ = more.waitForExistence(timeout: 5)
+        more.tap()
+        let item = buttons[identifier]
+        _ = item.waitForExistence(timeout: 5)
+        item.tap()
+    }
+
     /// A button found by what it says. A Section's accessibility identifier (Settings' Privacy
     /// section has `settings.privacy`) replaces its rows' own, so `buttons["settings.dataFlow"]`
     /// never matches there.

@@ -67,9 +67,9 @@ final class LaunchSmokeTests: XCTestCase {
         app.buttons["profile.save"].tap()
         XCTAssertTrue(app.alerts["Saved on this iPhone"].waitForExistence(timeout: 5))
         app.alerts.buttons["Done"].tap()
-        XCTAssertTrue(app.buttons["tab.home"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.waitForTab("home", timeout: 5))
         XCTAssertEqual(app.staticTexts["home.greeting"].label, "Hi, Ola.")
-        app.buttons["tab.settings"].tap()
+        app.goToTab("settings")
         let share = app.switches["settings.shareProfileWithVoice"]
         XCTAssertTrue(app.reveal(share))
         XCTAssertEqual(share.value as? String, "0", "saving preferences does not enable voice sharing")
@@ -78,15 +78,18 @@ final class LaunchSmokeTests: XCTestCase {
     @MainActor
     func testThreeTabsAndHonestPlaceholders() {
         let app = launch(onboardingDone: true)
-        XCTAssertTrue(app.buttons["tab.home"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.waitForTab("home", timeout: 5))
         XCTAssertTrue(app.buttons["home.save"].exists)
-        // Calendar and Reminders start off, so Today only points to Settings.
+        // Calendar and Reminders start off, so Today (in Home's ••• menu, ADR-545) only points to Settings.
+        app.tapHomeMenuItem("home.today")
         XCTAssertTrue(app.buttons["today.openSettings"].waitForExistence(timeout: 5))
+        app.buttons["Done"].tap()
+        XCTAssertTrue(app.buttons["today.openSettings"].waitForNonExistence(timeout: 5))
 
-        app.buttons["tab.memories"].tap()
+        app.goToTab("memories")
         XCTAssertTrue(app.text("No memories yet").waitForExistence(timeout: 5))
 
-        app.buttons["tab.settings"].tap()
+        app.goToTab("settings")
         // Settings is a lazy Form under a header section; scroll until the row has been created.
         XCTAssertTrue(app.reveal(app.text("Nothing saved. Doddy only keeps what you review and save.")))
         // Privacy sits below About you and Your memories.
@@ -104,15 +107,19 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertFalse(app.buttons["today.openSettings"].exists, "nothing connected yet, so no Today card")
         XCTAssertFalse(app.segmentedControls["home.voiceProvider"].exists, "the voice picker waits for the first conversation (ADR-443)")
 
+        // In Home's ••• menu (ADR-545); before the first conversation it has no Today or Voice.
+        app.buttons["home.more"].tap()
+        XCTAssertFalse(app.buttons["home.today"].waitForExistence(timeout: 2), "nothing connected yet, so no Today")
+        XCTAssertFalse(app.buttons["home.voice"].exists, "the voice picker waits for the first conversation (ADR-443)")
         let link = app.buttons["home.dataFlow"]
-        XCTAssertTrue(app.reveal(link))
+        XCTAssertTrue(link.waitForExistence(timeout: 5))
         link.tap()
         XCTAssertTrue(app.navigationBars["What leaves this iPhone"].waitForExistence(timeout: 5))
         app.buttons["Done"].tap()
         XCTAssertTrue(app.navigationBars["What leaves this iPhone"].waitForNonExistence(timeout: 5))
 
         // Settings › Voice has the picker from the start.
-        app.buttons["tab.settings"].tap()
+        app.goToTab("settings")
         XCTAssertTrue(app.reveal(app.segmentedControls["settings.voiceProvider"]))
     }
 
@@ -121,7 +128,9 @@ final class LaunchSmokeTests: XCTestCase {
         // ADR-443: the provider (and OpenAI's model) picker from ADR-442, once there has been a conversation.
         let app = launch(onboardingDone: true)
         XCTAssertTrue(app.buttons["home.talk"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.reveal(app.segmentedControls["home.voiceProvider"]))
+        // In Home's ••• menu (ADR-545).
+        app.tapHomeMenuItem("home.voice")
+        XCTAssertTrue(app.segmentedControls["home.voiceProvider"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.staticTexts["home.firstHint"].exists)
     }
 
@@ -141,8 +150,8 @@ final class LaunchSmokeTests: XCTestCase {
     @MainActor
     func testSettingsShowsAskDoddyOffUntilTheUserTurnsItOn() {
         let app = launch(onboardingDone: true)
-        XCTAssertTrue(app.buttons["tab.settings"].waitForExistence(timeout: 5))
-        app.buttons["tab.settings"].tap()
+        XCTAssertTrue(app.waitForTab("settings", timeout: 5))
+        app.goToTab("settings")
         let consent = app.switches["settings.assistantConsent"]
         // The long Settings form creates rows lazily; scroll until the section is on screen.
         XCTAssertTrue(app.reveal(consent))
@@ -163,13 +172,13 @@ final class LaunchSmokeTests: XCTestCase {
             // A partially visible card can report hittable behind the pill bar;
             // bring the whole button above navigation before sending the tap.
             let later = app.buttons["home.backTap.later"]
-            if later.isHittable && later.frame.maxY < app.buttons["tab.home"].frame.minY { break }
+            if later.isHittable && later.frame.maxY < app.buttons["home.save"].frame.minY { break }
             app.swipeUp()
         }
         app.buttons["home.backTap.later"].tap()
         XCTAssertTrue(app.buttons["home.backTap.later"].waitForNonExistence(timeout: 5), app.debugDescription)
 
-        app.buttons["tab.settings"].tap()
+        app.goToTab("settings")
         let status = app.descendants(matching: .any)["settings.backTap.status"].firstMatch
         // The long Settings form lazily creates rows; scroll to the status rather than
         // treating an off-screen label as a product failure.
@@ -204,7 +213,8 @@ final class LaunchSmokeTests: XCTestCase {
     @MainActor
     func testPauseAllStopsTodayReadingCalendarAndReminders() {
         let app = launch(onboardingDone: true, pauseAll: true)
-        XCTAssertTrue(app.buttons["tab.home"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.waitForTab("home", timeout: 5))
+        app.tapHomeMenuItem("home.today")
         XCTAssertTrue(app.buttons["today.openSettings.paused"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["today.openSettings"].exists)
     }
@@ -212,8 +222,8 @@ final class LaunchSmokeTests: XCTestCase {
     @MainActor
     func testWhatLeavesThisIPhoneFollowsSettings() {
         let app = launch(onboardingDone: true)
-        XCTAssertTrue(app.buttons["tab.settings"].waitForExistence(timeout: 5))
-        app.buttons["tab.settings"].tap()
+        XCTAssertTrue(app.waitForTab("settings", timeout: 5))
+        app.goToTab("settings")
         let link = app.button(labelled: "What leaves this iPhone")
         XCTAssertTrue(app.reveal(link))
         link.tap()
@@ -228,8 +238,8 @@ final class LaunchSmokeTests: XCTestCase {
     @MainActor
     func testWhatDoddyDidOpensFromSettings() {
         let app = launch(onboardingDone: true)
-        XCTAssertTrue(app.buttons["tab.settings"].waitForExistence(timeout: 5))
-        app.buttons["tab.settings"].tap()
+        XCTAssertTrue(app.waitForTab("settings", timeout: 5))
+        app.goToTab("settings")
         let row = app.buttons["settings.activity"]
         XCTAssertTrue(app.reveal(row))
         row.tap()
@@ -239,8 +249,8 @@ final class LaunchSmokeTests: XCTestCase {
     @MainActor
     func testPracticePlanCardCountsTicksAndNeverSaysDone() {
         let app = launch(onboardingDone: true)
-        XCTAssertTrue(app.buttons["tab.settings"].waitForExistence(timeout: 5))
-        app.buttons["tab.settings"].tap()
+        XCTAssertTrue(app.waitForTab("settings", timeout: 5))
+        app.goToTab("settings")
         let row = app.buttons["settings.planPractice"]
         XCTAssertTrue(app.reveal(row))
         row.tap()
@@ -305,8 +315,8 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertTrue(app.buttons["home.talk"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.navigationBars["Talk to Doddy"].waitForExistence(timeout: 3), "nothing opens before the microphone is allowed")
 
-        XCTAssertTrue(app.buttons["tab.settings"].waitForExistence(timeout: 5))
-        app.buttons["tab.settings"].tap()
+        XCTAssertTrue(app.waitForTab("settings", timeout: 5))
+        app.goToTab("settings")
         let toggle = app.switches["settings.listenOnOpen"]
         XCTAssertTrue(app.reveal(toggle))
         XCTAssertEqual(toggle.value as? String, "0")
@@ -315,7 +325,7 @@ final class LaunchSmokeTests: XCTestCase {
     @MainActor
     func testNoFakeListeningOrMicControls() {
         let app = launch(onboardingDone: true)
-        XCTAssertTrue(app.buttons["tab.home"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.waitForTab("home", timeout: 5))
         for label in ["Listening…", "Tap to talk", "Record", "Mic"] {
             XCTAssertFalse(app.buttons[label].exists, label)
             XCTAssertFalse(app.staticTexts[label].exists, label)
