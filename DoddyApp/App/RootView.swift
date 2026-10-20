@@ -168,7 +168,6 @@ struct RootView: View {
                 if phase == .active {
                     Task { await noteReminders.refreshOnForeground() }
                     FocusController.shared.refresh()
-                    BreathingController.shared.refresh()
                     // Shared lists (ADR-263): changes others made arrive when Doddy comes to the front.
                     Task { await SharedListsController.shared.syncAll() }
                     // Memory on calls: a copy upload that failed or was cut off is sent again, and once

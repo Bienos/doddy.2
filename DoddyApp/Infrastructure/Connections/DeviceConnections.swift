@@ -559,6 +559,8 @@ final class DeviceConnections {
         let content = UNMutableNotificationContent()
         content.title = "Doddy"
         content.body = plan.body(time: time)
+        // Doddy reaching, as for a reminder (ADR-547); the words are unchanged.
+        if let art = NotificationArt.attachment(for: .eventNudge) { content.attachments = [art] }
         content.sound = .default
         let components = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second], from: plan.fireAt)
         let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
@@ -602,6 +604,8 @@ final class DeviceConnections {
         let content = UNMutableNotificationContent()
         content.title = "Timer done"
         content.body = draft.label ?? "Your timer is done."
+        // Doddy reaching, as for a reminder (ADR-547); the words are unchanged.
+        if let art = NotificationArt.attachment(for: .timerDone) { content.attachments = [art] }
         content.sound = .default
         content.userInfo = ["firesAt": Date().addingTimeInterval(TimeInterval(draft.seconds)).timeIntervalSince1970]
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: TimeInterval(draft.seconds), repeats: false)

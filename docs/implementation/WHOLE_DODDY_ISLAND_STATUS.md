@@ -171,9 +171,24 @@ memory, and a real notification showing its picture.
 
 ## Decisions for the owner (ADR-546)
 1. Tool Lock Screen cards (focus, breathing, read aloud): keep the V4 board, or show the island's pose?
-2. Event nudge and "Timer done": a picture, and which pose?
-3. Remote pushes: add a notification service extension so server notifications carry a picture? (A new target,
-   a new App ID on the paid team, and an extension's own memory limit.)
+2. ~~Event nudge and "Timer done": a picture, and which pose?~~ Decided 20 Oct ("pick sth"): the reach, as for a reminder, not the fist pump (ADR-547).
+3. ~~Remote pushes: add a notification service extension so server notifications carry a picture?~~ Skipped for now (owner, 20 Oct). Still no picture on server pushes.
 4. Compact and minimal views of alarm, shopping and call: keep symbols, or measure heads for face crops?
 5. The in-app voice screen (`VoiceScreenArt.shown(.ended)`) still shows the fist pump for every ended
    conversation. It is not a Live Activity or a notification, so it was left; it has the same flaw the island had.
+
+## Follow-up, 20 October 2026 (ADR-547)
+- **Breathing is removed** (owner: "remove breathing, no need for that"): the Breathe screen and its Home menu entry,
+  `BreathingController`, the breathing Live Activity kind and its Calm Tide island scene, `BreathingSession` and
+  its tests (`FocusAndBreathingTests.swift` is now `FocusTests.swift`), the `WholeDoddy_oneleg_balance` pose and
+  its two image sets, and eight now-unused strings in the ten language tables. The rows above that mention breathing
+  describe the state before this. The Calm Tide drawing stays in the generated board data, which mirrors the pack.
+  An activity left running by an older build with kind `breathing` can no longer be decoded and just disappears.
+- **Event nudge and "Timer done" now have a picture** (`DoddyNotificationKind.eventNudge`, `.timerDone`): the reach.
+  Every local notification has one; the check fails if one is added without.
+- Remote pushes still have none (decision 3 skipped).
+- **Verified after this follow-up (Linux, Swift 6.2.1):** `scripts/check_island_art.sh` PASS; `scripts/ci.sh --core-only`
+  "RESULT: PASS for core-only scope; iOS app NOT verified", DoddyCore 1,166 tests (1,169 before, minus the three
+  breathing tests), 0 failures, messaging database tests SKIPPED; `build_strings_catalog.py --check` PASS. Planted
+  bugs (the timer notification losing its picture; `timerDone` mapped to the fist pump) each failed the check and were
+  reverted. **Not compiled or run:** the app, widget extension, UI tests; no hosted CI run exists for the branch.

@@ -84,7 +84,7 @@ Date: 2026-10-10. Owner: "do all of them" (item 7).
   - what "Open note" does from the watch. It is a foreground action, and may open the Doddy watch app rather than the note.
 
 ## Focus in the Smart Stack (ADR-454, deck slide 02)
-- **What it does:** from iOS 18 the iPhone's focus, breathing and read-aloud Live Activity has its own Apple Watch layout (`.small` family). It shows what is running, the time left, and Pause or Resume. The button runs on the iPhone.
+- **What it does:** from iOS 18 the iPhone's focus and read-aloud Live Activity has its own Apple Watch layout (`.small` family). It shows what is running, the time left, and Pause or Resume. The button runs on the iPhone.
 - **Without it:** watchOS would show its own default layout.
 - **Apple's description:** [WWDC24 "Bring your Live Activity to Apple Watch"](https://developer.apple.com/videos/play/wwdc2024/10068/).
 - **NOT RUN on a watch:**

@@ -107,7 +107,7 @@ The newest commits (`f40861c`, `754e5d6`, 16 Oct) have never compiled (checklist
 | Alarms | "Wake me at 7" by voice (AlarmKit) | CI; never rang | none | **Hide** | iOS 26 only, and never rang | |
 | Leave by | Travel time and a "leave now" notification | CI | Position and place to Apple Maps | **Hide** | Needs location | |
 | Parking | Save and find where you parked | built | none (location stays local) | **Hide** | Needs location | |
-| Focus and breathing | Timers on the Lock Screen and island | built | none | **Hide the screens** | Keep the Tools code: read aloud uses its Live Activity | |
+| Focus (breathing was removed, ADR-547) | Timer on the Lock Screen and island | built | none | **Hide the screens** | Keep the Tools code: read aloud uses its Live Activity | |
 | Widgets | Home and Lock Screen widgets, New note widget, controls | base built; New note CI | none | **Ship** read-only widgets and New note; **Hide** tick-from-widget | A tick from a cold start is untested and may do nothing | |
 | Shared lists (iCloud) | Share a list with other people | CI; off at runtime | iCloud | **Cut** | Needs a paid team, an iCloud container and the Production schema. Remove the `remote-notification` background mode and `CKSharingSupported` so App Review doesn't see an unused mode | |
 

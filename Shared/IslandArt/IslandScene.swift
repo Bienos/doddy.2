@@ -307,18 +307,17 @@ enum IslandLanguageCode {
 }
 
 extension DoddyToolAttributes {
-    /// The island for the focus timer (Tiny Promise, ADR-241), breathing (Calm Tide, ADR-242)
-    /// and reading a note aloud (Story Spool, ADR-243). `isStale`: iOS says the app has not
-    /// updated it; a focus or breathing activity is given its end time as its stale date, so
-    /// stale there means the time is up.
+    /// The island for the focus timer (Tiny Promise, ADR-241) and reading a note aloud (Story
+    /// Spool, ADR-243). `isStale`: iOS says the app has not updated it; a focus activity is
+    /// given its end time as its stale date, so stale there means the time is up.
     func islandScene(_ state: ContentState, isStale: Bool, now: Date = Date()) -> IslandScene {
         var shown = boardScene(state, isStale: isStale, now: now)
         if state.islandStyle == .wholeDoddy { shown.pose = wholeDoddyPose(state, isStale: isStale) }
         return shown
     }
 
-    /// Whole Doddy's pose for a tool (ADR-299, ADR-313): dribbling while focusing, balancing on
-    /// one leg while breathing, reading lying on his front. Done, waiting and lost are the same
+    /// Whole Doddy's pose for a tool (ADR-299, ADR-313): dribbling while focusing, reading lying
+    /// on his front. Done, waiting and lost are the same
     /// poses as in a conversation (fist pump, cross-legged, facepalm).
     func wholeDoddyPose(_ state: ContentState, isStale: Bool) -> IslandPose {
         if isStale && kind == .readAloud { return .facepalm }
@@ -326,7 +325,6 @@ extension DoddyToolAttributes {
         if state.isPaused { return .crosslegged }
         switch kind {
         case .focus: return .basketballDribble
-        case .breathing: return .onelegBalance
         case .readAloud: return .bellyReading
         }
     }
@@ -360,14 +358,6 @@ extension DoddyToolAttributes {
             return scene(.tinyPromise, 0, label: "FOCUS", time: .text(minutes), title: "Focusing",
                          bigTitle: .countdown(end), subtitle: state.label ?? "One thing at a time",
                          compact: .countdown(end), minimal: .countdown(end), centred: true)
-        case .breathing:
-            if over {
-                return scene(.calmTide, 1, label: "BREATHE", time: .text("Done"), title: "Breathing done",
-                             subtitle: "Nicely done", compact: .check, minimal: .none)
-            }
-            let end = state.endsAt ?? now
-            return scene(.calmTide, 0, label: "BREATHE", time: .countdown(end), title: "Breathing",
-                         subtitle: "Open Doddy to follow along", compact: .countdown(end), minimal: .none)
         case .readAloud:
             var shown: IslandScene
             if lost {

@@ -309,6 +309,7 @@ enum IslandSceneChecks {
             .noteReminder: .reachingHigh, .morningCheckIn: .yawnStretch, .birthday: .wave,
             .eveningWrapUp: .crosslegged, .weeklyLookBack: .crosslegged,
             .leaveBy: .tiptoe, .tidyUp: .kneelingInspect, .focusDone: .fistpump,
+            .eventNudge: .reachingHigh, .timerDone: .reachingHigh,
         ]
         expect(Set(DoddyNotificationKind.allCases) == Set(expected.keys), "every notification kind is in the check")
         for (kind, pose) in expected { expect(kind.pose == pose, "notification \(kind) shows \(pose), not \(kind.pose)") }
@@ -416,11 +417,6 @@ enum IslandSceneChecks {
         let due = focus.islandScene(.init(isPaused: false, endsAt: end), isStale: true, now: now)
         expect(due.title == "Time's up" && !due.live, "focus time up")
 
-        let breathing = DoddyToolAttributes(kind: .breathing, startedAt: now, duration: 120)
-        let b = breathing.islandScene(.init(isPaused: false, endsAt: end), isStale: false, now: now)
-        expect(b.board == .calmTide && b.time == .countdown(end), "breathing")
-        expect(!b.title.contains("in") || b.title == "Breathing", "breathing shows no phase")
-
         let read = DoddyToolAttributes(kind: .readAloud, startedAt: now, duration: 0)
         expect(read.islandScene(.init(isPaused: false), isStale: false, now: now).compactSign == .bars, "reading")
         let lost = read.islandScene(.init(isPaused: false), isStale: true, now: now)
@@ -439,7 +435,7 @@ enum IslandSceneChecks {
         var leanIn = DoddyToolAttributes.ContentState(isPaused: false)
         leanIn.islandStyle = .leanIn
         expect(read.islandScene(leanIn, isStale: false, now: now).pose == nil, "lean in keeps the board")
-        // Focus dribbles and breathing balances (ADR-313); paused waits, done is the fist pump.
+        // Focus dribbles (ADR-313); paused waits, done is the fist pump.
         let wholeFocus = { (s: DoddyToolAttributes.ContentState, stale: Bool) in
             var s = s
             s.islandStyle = .wholeDoddy
@@ -448,11 +444,6 @@ enum IslandSceneChecks {
         expect(wholeFocus(.init(isPaused: false, endsAt: end), false) == .basketballDribble, "focus dribbles")
         expect(wholeFocus(.init(isPaused: true, endsAt: nil, remaining: 300), false) == .crosslegged, "focus paused")
         expect(wholeFocus(.init(isPaused: false, endsAt: end), true) == .fistpump, "focus time up")
-        var breathe = DoddyToolAttributes.ContentState(isPaused: false, endsAt: end)
-        breathe.islandStyle = .wholeDoddy
-        expect(breathing.islandScene(breathe, isStale: false, now: now).pose == .onelegBalance, "breathing balances")
-        breathe.isFinished = true
-        expect(breathing.islandScene(breathe, isStale: false, now: now).pose == .fistpump, "breathing done")
         expect(focus.islandScene(.init(isPaused: false, endsAt: end), isStale: false, now: now).pose == nil,
                "focus without a style keeps its board")
         expect(focus.islandScene(.init(isPaused: false, endsAt: end), isStale: false, now: now).board == .tinyPromise,

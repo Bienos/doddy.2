@@ -48,13 +48,6 @@ private typealias Voice = DoddyVoiceAttributes.ContentState
     DoddyToolAttributes.ContentState(isPaused: false, endsAt: .now.addingTimeInterval(900), islandStyle: .wholeDoddy)
 }
 
-#Preview("Breathing · island", as: .dynamicIsland(.expanded),
-         using: DoddyToolAttributes(kind: .breathing, startedAt: .now, duration: 120)) {
-    DoddyToolLiveActivity()
-} contentStates: {
-    DoddyToolAttributes.ContentState(isPaused: false, endsAt: .now.addingTimeInterval(90), islandStyle: .wholeDoddy)
-}
-
 #Preview("Shopping · Lock Screen", as: .content, using: ShoppingActivityAttributes(listID: UUID())) {
     ShoppingLiveActivity()
 } contentStates: {

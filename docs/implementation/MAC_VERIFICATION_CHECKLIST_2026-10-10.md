@@ -298,7 +298,7 @@ Needs a free Picovoice account: copy the AccessKey, and in the Porcupine section
 ## 4i. Doddy moving, and outside the app (ADR-313, `DODDY_MOVES_STATUS.md`)
 | # | Do this | Expect |
 |---|---|---|
-| Y1 | Whole Doddy style. Start a focus timer, pause, resume, let it finish; then a breathing session | Island: dribbling, cross-legged when paused, fist pump at the end; breathing: balancing on one leg. Lean In: the boards as before |
+| Y1 | Whole Doddy style. Start a focus timer, pause, resume, let it finish (the breathing session was removed, ADR-547) | Island: dribbling, cross-legged when paused, fist pump at the end. Lean In: the boards as before |
 | Y2 | Open Focus: before starting, while running, paused, finished, stopped early | Court strip at the top: no Doddy before starting, dribbling, cross-legged, fist pump, none after a stop. No text over the court |
 | Y3 | Open the weekly look-back in light and dark mode | Rooftop strip under the heading with Doddy cross-legged; text clean |
 | Y4 | Talk to Doddy and watch the screen while it connects; ask for a plan with several steps and confirm it | Doddy walks while connecting, runs while the steps run, talks when he speaks. Reduce Motion: still frames. Island unchanged (stretch while connecting) |
@@ -540,6 +540,7 @@ Nothing here has been run: the change was built on Linux only. Do W1 to W6 (sect
 | N1 | Whole Doddy style. Talk to Doddy, say nothing to save, End. Then talk again, save a note, End. Look at the island and the Lock Screen card each time | Nothing saved: cross-legged on both. A note saved: fist pump on both. The island and the card never differ |
 | N2 | Start shopping mode on a list; lock the iPhone. Tick every item from the Lock Screen | While items are open: tiptoe. When the last one is ticked: a fist pump on the card and the island, then the card goes. Hide character artwork on: no pictures, the cart symbol |
 | N3 | Doddy's call (rehearsal if there is no Twilio): let the call end | Cream card: cross-legged Doddy beside "The answer card is in Doddy". Never a fist pump. A call card that iOS marks stale: facepalm, not listening |
-| N4 | Schedule a Leave by a minute ahead; turn on the weekly tidy-up for the next minute; start a 1-minute focus | Each notification shows its picture, same words: tiptoe (Time to leave), kneeling (Tidy up), fist pump (Focus done). Stop the focus early: no notification |
+| N4 | Schedule a Leave by a minute ahead; turn on the weekly tidy-up for the next minute; start a 1-minute focus; set a 1-minute timer by voice; add a calendar event nudge | Each notification shows its picture, same words: tiptoe (Time to leave), kneeling (Tidy up), fist pump (Focus done), reaching (Timer done, the event nudge). Stop the focus early: no notification |
+| N7 | Home › ••• menu; Settings; the Dynamic Island with a focus timer running (ADR-547) | No Breathe entry anywhere; the focus timer and read aloud still work; nothing else on Home moved |
 | N5 | Repeat N4 with Hide Doddy's pictures on; and with notifications shown on a locked iPhone | No pictures with Hide on. On a real phone, the picture is the thumbnail on the banner and large when you long-press it; the sound and timing are unchanged |
 | N6 | With the shopping, call and voice activities running, watch the widget extension in Xcode's debug gauge or Instruments | Memory stays well under the extension limit while the poses change; no crash or blank picture. (Pictures are the existing 200×300 / 300×450 sets) |

@@ -127,8 +127,9 @@ STRIPS = [
 
 
 def build_313(pack, strips, app, widgets):
-    # Focus and breathing islands: two more poses from 01-transparent-poses.
-    for name in ("basketball_dribble", "oneleg_balance"):
+    # The focus island: one more pose from 01-transparent-poses (breathing, and with it
+    # oneleg_balance, was removed in ADR-547).
+    for name in ("basketball_dribble",):
         pose = Image.open(os.path.join(pack, f"poses/doddy_{name}_v02.png")).convert("RGBA")
         for catalog in (app, widgets):
             scaled_set(catalog, f"WholeDoddy_{name}", pose, (200, 300))

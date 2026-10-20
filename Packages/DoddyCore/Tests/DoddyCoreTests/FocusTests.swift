@@ -74,32 +74,3 @@ final class FocusSessionTests: XCTestCase {
         XCTAssertEqual(back, s)
     }
 }
-
-final class BreathingSessionTests: XCTestCase {
-    private let t0 = Date(timeIntervalSince1970: 2_000_000)
-
-    func testPhasesFollowTheClock() {
-        let s = BreathingSession(minutes: 1, now: t0)
-        XCTAssertEqual(s.phase(at: t0).phase, .breatheIn)
-        XCTAssertEqual(s.phase(at: t0.addingTimeInterval(2)).progress, 0.5, accuracy: 0.0001)
-        XCTAssertEqual(s.phase(at: t0.addingTimeInterval(4)).phase, .breatheOut)
-        XCTAssertEqual(s.phase(at: t0.addingTimeInterval(7)).secondsLeft, 3, accuracy: 0.0001)
-        XCTAssertEqual(s.phase(at: t0.addingTimeInterval(10)).phase, .breatheIn)
-        XCTAssertEqual(s.cyclesDone(at: t0.addingTimeInterval(25)), 2)
-    }
-
-    func testEndsAfterTheChosenMinutes() {
-        let s = BreathingSession(minutes: 2, now: t0)
-        XCTAssertEqual(s.endsAt, t0.addingTimeInterval(120))
-        XCTAssertFalse(s.isOver(at: t0.addingTimeInterval(119)))
-        XCTAssertTrue(s.isOver(at: t0.addingTimeInterval(120)))
-        XCTAssertEqual(s.remaining(at: t0.addingTimeInterval(200)), 0)
-        // After the end the phase stays where it stopped instead of running on.
-        XCTAssertEqual(s.cyclesDone(at: t0.addingTimeInterval(1000)), 12)
-    }
-
-    func testMinutesAreClamped() {
-        XCTAssertEqual(BreathingSession(minutes: 0, now: t0).duration, 60)
-        XCTAssertEqual(BreathingSession(minutes: 50, now: t0).duration, 600)
-    }
-}

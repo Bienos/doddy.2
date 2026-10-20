@@ -108,7 +108,7 @@ jumps between frames. Nothing is redrawn or recoloured.
 | Image set(s) | Pack file | SHA-256 of the original | What was done |
 | --- | --- | --- | --- |
 | `WholeDoddy_basketball_dribble` (app, widgets) | 01-transparent-poses/doddy_basketball_dribble_v02.png | 2e1d8f08f7c239a6fa68d77ba2f4d9163078f87fe051b86b34cdf3051ae13624 | Lanczos to 200×300 and 300×450 |
-| `WholeDoddy_oneleg_balance` (app, widgets) | 01-transparent-poses/doddy_oneleg_balance_v02.png | 8aa54d224682cee586e06db0afc81304364f08dc48263675c5cd3d50154e58cc | as above (back after ADR-290 removed it as the greeting) |
+| ~~`WholeDoddy_oneleg_balance` (app, widgets)~~ removed in ADR-547 (breathing was removed); the image sets are deleted, the pack file is unchanged and can be re-imported | 01-transparent-poses/doddy_oneleg_balance_v02.png | 8aa54d224682cee586e06db0afc81304364f08dc48263675c5cd3d50154e58cc | as above (back after ADR-290 removed it as the greeting) |
 | `DoddyMotion_walk_1` … `_8` | 012_doddy_walk_v01.png | dc5f4bfc2caaef3b2665bfa6c0f4bd66a47dbf858f68ac3be4c32454964802f8 | `cut_frames.py --shared --rows-max-y 567`; Lanczos to 200×300 / 300×450 |
 | `DoddyMotion_run_1` … `_6` | 014_doddy_run_v01.png | 9b6b9dddcaada8b85156a75869c8d9fbb61f9aeff4c62501629cc30b0e137813 | `--shared --rows-max-y 568` |
 | `DoddyMotion_jump_1` … `_5` | 015_doddy_jump_v01.png | 4904739cd7352b767d05c9edfc0a44966e6e632f198672922c5905ba0488df0b | `--shared --rows-max-y 596 --min-fraction 0.3` |

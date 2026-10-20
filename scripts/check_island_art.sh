@@ -91,6 +91,8 @@ notification_file() {
         leaveBy)        echo DoddyApp/Features/LeaveBy/LeaveByScheduler.swift ;;
         tidyUp)         echo DoddyApp/Features/TidyUp/TidyUpViews.swift ;;
         focusDone)      echo DoddyApp/Features/Focus/FocusController.swift ;;
+        eventNudge)     echo DoddyApp/Infrastructure/Connections/DeviceConnections.swift ;;
+        timerDone)      echo DoddyApp/Infrastructure/Connections/DeviceConnections.swift ;;
         *)              echo "" ;;
     esac
 }
@@ -108,15 +110,13 @@ done
 if grep -rn "NotificationArt\.attachment(\." DoddyApp --include=*.swift; then
     echo "FAIL: NotificationArt.attachment must be called with 'for: <DoddyNotificationKind>'"; missing=1
 fi
-# Every file that builds a local notification either uses a picture or is listed here as one
-# that deliberately has none (DeviceConnections.swift: the event nudge and "Timer done", left
-# without a picture until the owner decides; WHOLE_DODDY_ISLAND_STATUS.md).
+# Every local notification gets a picture (ADR-547: none is left without): each file names
+# NotificationArt.attachment(for:) as many times as it builds a UNMutableNotificationContent.
 for file in $(grep -rl "UNMutableNotificationContent" DoddyApp --include=*.swift); do
-    case "$file" in
-        DoddyApp/Infrastructure/Connections/DeviceConnections.swift) continue ;;
-    esac
-    if ! grep -q "NotificationArt\.attachment(for:" "$file"; then
-        echo "FAIL: $file builds a notification with no Doddy picture (add a DoddyNotificationKind, or list it as pictureless here)"; missing=1
+    built="$(grep -c "UNMutableNotificationContent()" "$file" || true)"
+    pictured="$(grep -c "NotificationArt\.attachment(for:" "$file" || true)"
+    if [ "$built" -ne "$pictured" ]; then
+        echo "FAIL: $file builds $built notification(s) but names $pictured Doddy picture(s) (add a DoddyNotificationKind)"; missing=1
     fi
 done
 # The Live Activities that draw through DoddyActivityPose name no pose themselves, so a mapping

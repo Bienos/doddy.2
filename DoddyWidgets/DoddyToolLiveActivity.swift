@@ -3,8 +3,8 @@ import AppIntents
 import SwiftUI
 import WidgetKit
 
-/// Dynamic Island and Lock Screen for the focus timer (Tiny Promise, ADR-241), breathing
-/// (Calm Tide, ADR-242) and reading a note aloud (Story Spool, ADR-243), from the owner's V4
+/// Dynamic Island and Lock Screen for the focus timer (Tiny Promise, ADR-241)
+/// and reading a note aloud (Story Spool, ADR-243), from the owner's V4
 /// boards. Countdowns tick on their own; everything else changes only when the app sends a new
 /// state or iOS marks it stale (see `ToolLiveActivity` for what stale means for each).
 struct DoddyToolLiveActivity: Widget {
@@ -100,7 +100,7 @@ private struct ToolWatchView: View {
                 }
             }
             Text(scene.title).font(.headline).lineLimit(1)
-            if !over, attributes.kind != .breathing {
+            if !over {
                 Button(intent: ToggleDoddyToolPauseIntent(attributes.kind)) {
                     Label(state.isPaused ? "Resume" : "Pause", systemImage: state.isPaused ? "play.fill" : "pause.fill")
                         .font(.caption)
@@ -121,14 +121,12 @@ private struct ToolButtons: View {
     var body: some View {
         HStack(spacing: 6) {
             if !over {
-                if kind != .breathing {
-                    Button(intent: ToggleDoddyToolPauseIntent(kind)) {
-                        IslandPillLabel(title: state.isPaused ? "Resume" : "Pause",
-                                        systemImage: state.isPaused ? "play.fill" : "pause.fill",
-                                        prominent: state.isPaused)
-                    }
-                    .buttonStyle(.plain)
+                Button(intent: ToggleDoddyToolPauseIntent(kind)) {
+                    IslandPillLabel(title: state.isPaused ? "Resume" : "Pause",
+                                    systemImage: state.isPaused ? "play.fill" : "pause.fill",
+                                    prominent: state.isPaused)
                 }
+                .buttonStyle(.plain)
                 Button(intent: StopDoddyToolIntent(kind)) {
                     IslandPillLabel(title: "Stop", systemImage: "stop.fill")
                 }

@@ -15,8 +15,6 @@ enum IslandPose: String, CaseIterable, Sendable {
     case bellyReading = "belly_reading"
     /// The focus timer (ADR-313): dribbling, busy with one thing.
     case basketballDribble = "basketball_dribble"
-    /// Breathing (ADR-313): balancing on one leg.
-    case onelegBalance = "oneleg_balance"
     /// "Pause all connections" is on (ADR-323): crouching, lying low.
     case sneakyCrouch = "sneaky_crouch"
     /// Notes hidden from widgets or the watch (ADR-331): turned away, not looking. Frame 5 of
@@ -44,7 +42,6 @@ enum IslandPose: String, CaseIterable, Sendable {
         case .wave: (58, 100, 341, 548)
         case .bellyReading: (17, 196, 384, 413)
         case .basketballDribble: (34, 83, 375, 467)
-        case .onelegBalance: (10, 78, 389, 531)
         case .sneakyCrouch: (77, 89, 338, 524)
         case .turnedAway: (112, 118, 287, 564)
         }
@@ -75,7 +72,7 @@ enum IslandPose: String, CaseIterable, Sendable {
     }
 }
 
-/// The pose on the Live Activities that are not the voice island or the focus, breathing and
+/// The pose on the Live Activities that are not the voice island or the focus and
 /// read-aloud tools (ADR-546). Plain values in, a pose out, so scripts/check_island_art.sh can
 /// check every mapping on Linux; the widget files call these and name no pose themselves.
 /// One pose means one thing everywhere: a lost activity is the facepalm, the fist pump only
@@ -126,6 +123,9 @@ enum DoddyNotificationKind: String, CaseIterable, Sendable {
     /// The focus timer ran out: the same fist pump as the island's "Time's up". A time the
     /// app scheduled itself and cancels when the focus is stopped.
     case focusDone
+    /// A heads-up before a calendar event, and "Timer done" (ADR-547): both wait for you, so the
+    /// reach, as for a reminder. Not the fist pump: a timer ending is not Doddy finishing something.
+    case eventNudge, timerDone
 
     var pose: IslandPose {
         switch self {
@@ -136,6 +136,7 @@ enum DoddyNotificationKind: String, CaseIterable, Sendable {
         case .leaveBy: .tiptoe
         case .tidyUp: .kneelingInspect
         case .focusDone: .fistpump
+        case .eventNudge, .timerDone: .reachingHigh
         }
     }
 }

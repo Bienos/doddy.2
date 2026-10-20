@@ -18,7 +18,7 @@
   - "New note" opens the note screen (`doddy://watch/new-note`). Nothing records until you tap.
 - **iPhone side:** `DoddyApp/Features/Watch/PhoneWatchLink.swift`, through WatchConnectivity.
 - **From the iPhone, no Watch code** (iOS 18):
-  - the focus, breathing and read-aloud Live Activity has a Smart Stack layout with Pause/Resume (`DoddyWidgets/DoddyToolLiveActivity.swift`);
+  - the focus and read-aloud Live Activity has a Smart Stack layout with Pause/Resume (`DoddyWidgets/DoddyToolLiveActivity.swift`);
   - reminder notifications come with Done and Later actions.
 
 ## Rules and tests
