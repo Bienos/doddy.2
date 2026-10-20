@@ -1,6 +1,6 @@
 import Foundation
 
-/// CANDIDATE design tokens from `design/interface-v1.2/docs/DESIGN-SYSTEM.md` (Pocket Notebook).
+/// CANDIDATE design tokens from `design/interface-v1.2/docs/DESIGN-SYSTEM.md (deleted 20 Oct 2026, ADR-548; see git history)` (Pocket Notebook).
 /// Not an approved brand. Nothing here is from `assets/brand_candidate/` (historical palette),
 /// per docs/design/CANONICAL_DESIGN_DIRECTION.md. Bright orange is decoration, never body text.
 public struct HexColor: Equatable, Sendable {

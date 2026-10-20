@@ -10,7 +10,9 @@ adding one adapter, not rewriting the app or the agent.
 | `tools.json` | 10 function tools (`type`, `name`, `description`, `parameters`) + `x_doddy` | Client tools (`runs_on: phone`) and webhook tools (`runs_on: web`) | `session.tools` (drop `x_doddy`); every call comes to the app |
 | `session.json` | First message, languages, variables, turn-taking, per-provider settings | Agent settings | `session.update` body |
 
-**OpenAI Realtime voice (ADR-265; the default since ADR-442):** Home's switch runs these same files on OpenAI Realtime (`gpt-realtime-2.1` or `gpt-realtime-2.1-mini`, picked on Home).
+**OpenAI Realtime voice (ADR-265; a choice in the voice picker, not the default: ElevenLabs is, ADR-546):** the picker runs these same files on OpenAI Realtime (`gpt-realtime-2.1` or `gpt-realtime-2.1-mini`, picked in the picker).
+**Applied to the live agent 2026-10-20 (ADR-548, owner: "raise, don't remove"):** `platform_settings.call_limits` only: daily limit 10 → 1,000, concurrency 2 → 10, bursting off. Version `agtvrsn_0201m5a37jq9f0rtzdf9hwpfewxq` (rollback) → `agtvrsn_9601m5cg7h2jf0ctpbggw15zzq4n`. No prompt, tool or model setting was sent. Read back: the limits, and the tool ids came back as a list (not diffed against the previous version). Authentication stayed off.
+**The live prompt and tool list were not re-checked on 20 Oct.** The last version this folder records for them was read on 19 Oct; the ElevenLabs agent is the default voice now, so check the live version before relying on any `agtvrsn_` id in this file.
 The app bundles `instructions.md`, `tools.json` and `session.json`, renders the prompt itself and sends it
 with the tools in `session.update`; see `docs/implementation/VOICE_PROVIDER_TEST_STATUS.md`. A change here
 reaches OpenAI with the next app build, and ElevenLabs only after the sync below.

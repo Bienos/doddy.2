@@ -27,7 +27,7 @@ Platform safety, law and hard code gates > the user's permissions and boundaries
 | DOD-05 / UX-05 preferences | `PersonalitySettings` (Codable) with a Settings screen; `PersonalityTests` | — |
 | DOD-11 privacy | Per-connection switches, "What leaves this iPhone" screen (per commit history) | Legal review still open |
 | DOD-12 regression | `voice_agent_spec.py` structure checks + the new DOD-03 check | No character regression set (sycophancy, sensitive-context humour) yet; `docs/trust/evals/` is an inventory |
-| Honest capability claims (T35/T42) | `CapabilityCatalog`; onboarding "What I can do" paragraph generated from it (`CapabilityIntroduction`, ADR-195) | — |
+| Honest capability claims (T35/T42) | `CapabilityCatalog`; `CapabilityIntroduction` (ADR-195) generated the onboarding "What I can do" paragraph | Gap 20 Oct 2026 (ADR-547): `CapabilitiesSheet` had been removed, and nothing had shown it since 754e5d6. **Closed the same day (ADR-548):** it is back, reached from Home's ••• menu ("What I can do"), with a UI test (`testWhatICanDoOpensFromTheHomeMenu`, not run: no Xcode). |
 
 ## What was not ported from `claude/confident-planck-0gf6qo`, and why
 - **`ActionLedger` + simulated adapter + approval-flow demo:** this line already enforces the same rules through per-tool cards, `ActivityLog` and `ReminderAction`. A second action architecture would compete with it.

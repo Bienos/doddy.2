@@ -7,6 +7,7 @@ import { principal, requireDevice } from "../auth.js";
 import { ackResult, cancelCase, getCase, listCases, setLiveActivityToken } from "../taskCalls/cases.js";
 import type { TaskCallContext } from "../taskCalls/context.js";
 import { approve, caseOwnedBy, createCase, endCall, latestAttempt, liveView, type Refusal } from "../taskCalls/service.js";
+import { CALL_ZONE, DAY_END_MINUTES, DAY_START_MINUTES, clockText } from "../taskCalls/hours.js";
 import { startTakeover } from "../taskCalls/takeover.js";
 
 const idParam = z.strictObject({ id: z.uuid() });
@@ -46,7 +47,7 @@ export const callCaseRoutes = (deps: Deps, ctx: TaskCallContext | undefined): Fa
       recordingNotice: ctx?.settings.notice ?? "off",
       recordsAudio: false,
       maxDurationSecs: ctx?.settings.limits.maxDurationSecs ?? 300,
-      hours: { zone: "Europe/Warsaw", from: "08:00", to: "20:00" },
+      hours: { zone: CALL_ZONE, from: clockText(DAY_START_MINUTES), to: clockText(DAY_END_MINUTES) },
       // Names of agent settings that differ from the spec (no values); calls are refused while any are listed.
       agentProblems,
     };

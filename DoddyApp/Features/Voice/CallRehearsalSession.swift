@@ -71,15 +71,12 @@ final class CallRehearsalSession {
         }
         guard mine == attempt, state == .connecting else { return }
 
-        // "Hey Doddy" steps aside while the rehearsal holds the microphone.
-        WakeWordListener.shared.appSound(ObjectIdentifier(self), playing: true)
         let session = OpenAIRealtimeSession(grant: grant) { [weak self] event in self?.apply(event, attempt: mine) }
         self.session = session
         do {
             try await session.start(sessionUpdate: sessionUpdate, greeting: OpenAIRealtimeWire.greeting(CallRehearsal.greeting(for: preview)))
         } catch {
             if self.session === session { self.session = nil }
-            WakeWordListener.shared.appSound(ObjectIdentifier(self), playing: false)
             if mine == attempt {
                 state = .failed(String(format: NSLocalizedString("Couldn't connect the rehearsal. Check your internet connection and try again. (%@)", comment: ""),
                                        error.localizedDescription))
@@ -105,7 +102,6 @@ final class CallRehearsalSession {
         session = nil
         doddySpeaking = false
         if isRunning { state = .ended }
-        WakeWordListener.shared.appSound(ObjectIdentifier(self), playing: false)
         await running?.endConversation()
     }
 

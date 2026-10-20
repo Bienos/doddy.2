@@ -13,10 +13,8 @@ public enum VoiceSessionEnd: Equatable, Sendable {
     case userEnded
     /// Doddy ended the call (its end_call tool), for example after the user said goodbye.
     case doddyEnded
-    /// Started by "Hey Doddy" and nobody spoke (ADR-254).
-    case quietTimeout
-    /// "Stop listening" (OP-024, ADR-361): from Siri or the listening indicator, which also turn
-    /// off "Hey Doddy" and stop a voice memo.
+    /// "Stop listening" (OP-024, ADR-361): from Siri or the listening indicator, which also stop
+    /// a voice memo.
     case stoppedListening
     /// It stopped before either side ended it.
     case dropped(Drop)
@@ -57,7 +55,6 @@ public enum VoiceSessionEnd: Equatable, Sendable {
         switch self {
         case .userEnded: "user"
         case .doddyEnded: "doddy"
-        case .quietTimeout: "quiet"
         case .stoppedListening: "stopped"
         case .dropped(.offline): "dropped-offline"
         case .dropped(.connectionLost): "dropped-connection"
@@ -116,7 +113,7 @@ public enum SessionRecovery {
     /// "Couldn't connect" and never "Conversation ended".
     public static func status(_ end: VoiceSessionEnd, connected: Bool) -> (title: String, detail: String?) {
         switch end {
-        case .userEnded, .doddyEnded, .quietTimeout:
+        case .userEnded, .doddyEnded:
             return ("Conversation ended", nil)
         case .stoppedListening:
             return ("Stopped listening", "Doddy's microphone is off.")

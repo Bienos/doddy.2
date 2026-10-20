@@ -89,7 +89,7 @@ struct CallCaseView: View {
             if let preview = model.preview, CallHours.fits(Date(), maxDurationSecs: preview.maxDurationSecs) {
                 confirmingCall = true
             } else {
-                model.message = NSLocalizedString("Doddy calls only between 8:00 and 20:00 Polish time, and the whole call must fit. Pick a time:", comment: "")
+                model.message = NSLocalizedString("Doddy calls only between 8:00 and 23:00 Polish time, and the whole call must fit. Pick a time:", comment: "")
             }
         }
     }
@@ -165,7 +165,7 @@ struct CallCaseView: View {
                 .buttonStyle(.borderedProminent)
                 .accessibilityIdentifier("callCase.approve")
             } else {
-                Text("Doddy calls only between 8:00 and 20:00 Polish time, and the whole call must fit. Pick a time:")
+                Text("Doddy calls only between 8:00 and 23:00 Polish time, and the whole call must fit. Pick a time:")
                 ForEach(model.retryTimes(), id: \.self) { time in
                     Button(String(format: NSLocalizedString("Call at %@", comment: ""), CallCaseText.time(time))) {
                         Task { await model.approve(at: time) }
@@ -206,7 +206,7 @@ struct CallCaseView: View {
         } header: {
             Text("Try again")
         } footer: {
-            Text("A new try uses the same card, approved again for the time you pick. Only times when the whole call fits inside 8:00–20:00.")
+            Text("A new try uses the same card, approved again for the time you pick. Only times when the whole call fits inside 8:00–23:00.")
         }
     }
 

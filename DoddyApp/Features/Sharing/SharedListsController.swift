@@ -50,6 +50,9 @@ final class SharedListsController {
     }
 
     private var syncAgain = false
+    /// When the last full pass ended. A cold launch asks for a sync twice, from the launch work and
+    /// from "came to the front"; `syncAllUnlessRecent` lets the second one go (ADR-547).
+    @ObservationIgnored private var lastSyncEndedAt: Date?
     /// After a failed sync, a local change doesn't start another one until then (review I2).
     private var retryAfter: Date?
     private var retryTask: Task<Void, Never>?
@@ -251,13 +254,25 @@ final class SharedListsController {
         if changed { Task { await syncAll() } }
     }
 
+    /// `syncAll()`, unless one is running or ended in the last `seconds`: for the calls that can
+    /// arrive twice at launch (the launch work and Doddy coming to the front). A person tapping
+    /// "Sync now" or opening a list still calls `syncAll()`.
+    func syncAllUnlessRecent(within seconds: TimeInterval = 5) async {
+        if isSyncing { return }
+        if let last = lastSyncEndedAt, Date().timeIntervalSince(last) < seconds { return }
+        await syncAll()
+    }
+
     /// Every shared list, one at a time. Called when Doddy comes to the front, when a list opens,
     /// after a local change, and from "Sync now".
     func syncAll() async {
         guard let cloud, let store, !links.isEmpty else { return }
         if isSyncing { syncAgain = true; return }
         isSyncing = true
-        defer { isSyncing = false }
+        defer {
+            isSyncing = false
+            lastSyncEndedAt = Date()
+        }
         repeat {
             syncAgain = false
             guard await cloud.isSignedIn() else {

@@ -19,12 +19,12 @@ final class VoiceConversationGateTests: XCTestCase {
 
     func testASecondConversationIsRefusedWhileTheFirstIsStartingOrLive() {
         var gate = VoiceConversationGate<Conversation>()
-        let wakeWord = Conversation()
+        let second = Conversation()
         let screen = Conversation()
-        XCTAssertEqual(gate.request(wakeWord, isBusy: isBusy), .go)
-        wakeWord.busy = true
+        XCTAssertEqual(gate.request(second, isBusy: isBusy), .go)
+        second.busy = true
         XCTAssertEqual(gate.request(screen, isBusy: isBusy), .anotherIsRunning)
-        XCTAssertTrue(gate.running(isBusy: isBusy) === wakeWord, "the refused one never becomes the holder")
+        XCTAssertTrue(gate.running(isBusy: isBusy) === second, "the refused one never becomes the holder")
     }
 
     func testAnEndedConversationNeverKeepsTheGateShut() {
@@ -58,14 +58,14 @@ final class VoiceConversationGateTests: XCTestCase {
 
     func testAfterARefusalTheRunningOneStaysTheHolderUntilItEnds() {
         var gate = VoiceConversationGate<Conversation>()
-        let wakeWord = Conversation()
+        let second = Conversation()
         let screen = Conversation()
-        _ = gate.request(wakeWord, isBusy: isBusy)
-        wakeWord.busy = true
+        _ = gate.request(second, isBusy: isBusy)
+        second.busy = true
         XCTAssertEqual(gate.request(screen, isBusy: isBusy), .anotherIsRunning)
-        wakeWord.busy = false
+        second.busy = false
         XCTAssertEqual(gate.request(screen, isBusy: isBusy), .go)
         screen.busy = true
-        XCTAssertEqual(gate.request(wakeWord, isBusy: isBusy), .anotherIsRunning)
+        XCTAssertEqual(gate.request(second, isBusy: isBusy), .anotherIsRunning)
     }
 }

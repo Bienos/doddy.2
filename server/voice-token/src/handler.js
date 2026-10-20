@@ -5,11 +5,6 @@
 // one-conversation OpenAI Realtime client secret instead; the model must be on the allowlist. The secret carries only the model and voice; Doddy's prompt,
 // notes and tools go from the phone straight to OpenAI, never through this server.
 //
-// "Hey Doddy" for everyone (ADR-328): a body of {"provider":"picovoice"} returns the owner's
-// Picovoice AccessKey (PICOVOICE_ACCESS_KEY), so an authenticated user can switch the wake word on with one
-// tap instead of making their own Picovoice account. Porcupine needs the key on the phone; it is
-// kept in the iPhone's Keychain. It starts no paid conversation, so it isn't counted per hour.
-//
 // Web-standard (Request -> Response), so the same handler runs on Vercel, Supabase Edge,
 // Cloudflare Workers or Node. Logs are content-free: outcome, provider, upstream status, ms.
 
@@ -38,7 +33,6 @@ export const OPENAI_DEFAULT_VOICE = "marin";
  * @property {string} [OPENAI_API_KEY]        server-only secret; only needed for the OpenAI test voice
  * @property {string} [OPENAI_REALTIME_MODEL] used when the app names no model; default "gpt-realtime-2.1-mini"
  * @property {string} [OPENAI_REALTIME_VOICE] default "marin"
- * @property {string} [PICOVOICE_ACCESS_KEY]  the owner's Picovoice AccessKey for "Hey Doddy" (ADR-328)
  */
 
 /**
@@ -89,9 +83,7 @@ export async function handleTokenRequest(request, env, deps = {}) {
   const globalPerHour = tokensPerHour(env.DODDY_GLOBAL_TOKENS_PER_HOUR, DEFAULT_GLOBAL_TOKENS_PER_HOUR);
   const providerConfigured = provider === "openai"
     ? Boolean(env.OPENAI_API_KEY)
-    : provider === "picovoice"
-      ? Boolean(env.PICOVOICE_ACCESS_KEY && env.PICOVOICE_ACCESS_KEY.trim())
-      : Boolean(env.ELEVENLABS_API_KEY && env.ELEVENLABS_AGENT_ID);
+    : Boolean(env.ELEVENLABS_API_KEY && env.ELEVENLABS_AGENT_ID);
   if (!providerConfigured || perHour === null || globalPerHour === null || !store.hitLimits) {
     return finish(500, "server_not_configured", { provider });
   }
@@ -104,11 +96,6 @@ export async function handleTokenRequest(request, env, deps = {}) {
   }
   if (!decision.allowed) {
     return finish(429, "rate_limited", { provider }, undefined, { "retry-after": String(decision.retryAfterSeconds) });
-  }
-
-  // The wake word key starts nothing paid; the app asks for it once and keeps it (ADR-328).
-  if (provider === "picovoice") {
-    return finish(200, null, { provider }, { accessKey: env.PICOVOICE_ACCESS_KEY.trim() });
   }
 
   return provider === "openai"
@@ -196,8 +183,8 @@ async function callUpstream(fetchImpl, url, init) {
 
 /**
  * `{provider: "elevenlabs"}` (no body, as every app build before ADR-265 sends), `{provider:
- * "openai", model?}`, `{provider: "picovoice"}` (ADR-328), or null when the body names something
- * else or isn't JSON. A `model` that isn't a string is returned as-is so the caller refuses it.
+ * "openai", model?}`, or null when the body names something else or isn't JSON (a build from
+ * before ADR-549 that asks for `{provider: "picovoice"}` gets a 400). A `model` that isn't a string is returned as-is so the caller refuses it.
  * @param {Request} request
  */
 async function requestedProvider(request) {
@@ -225,7 +212,7 @@ async function requestedProvider(request) {
     return null;
   }
   const provider = body?.provider ?? "elevenlabs";
-  if (provider !== "elevenlabs" && provider !== "openai" && provider !== "picovoice") return null;
+  if (provider !== "elevenlabs" && provider !== "openai") return null;
   return { provider, model: body?.model === undefined || body?.model === null ? undefined : body.model };
 }
 

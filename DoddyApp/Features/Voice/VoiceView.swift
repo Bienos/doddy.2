@@ -27,7 +27,9 @@ struct VoiceView: View {
 
     /// The app endpoint is fixed in the build; users never enter server URLs or access codes.
     private var mode: VoiceConnectionMode {
-        VoiceConnectionMode.resolve(serverAddress: VoiceConfig.tokenEndpointAddress)
+        // Debug builds only (ADR-551): no DODDY voice account, straight to the agent.
+        if VoiceConfig.directVoiceEnabled { return .directAgent(agentID: VoiceConfig.directAgentID) }
+        return VoiceConnectionMode.resolve(serverAddress: VoiceConfig.tokenEndpointAddress)
     }
 
     var body: some View {
@@ -75,13 +77,8 @@ struct VoiceView: View {
         }
         .foregroundStyle(Theme.ink)
         .task {
-            // "Hey Doddy" already started this conversation (ADR-254): show it, don't start another.
-            if self.controller == nil, let started = WakeWordListener.shared.takeConversation() {
-                self.controller = started
-                return
-            }
             await authSession.restore()
-            if authSession.isSignedIn && VoiceProviderConsent.isGranted(for: provider) {
+            if (authSession.isSignedIn || VoiceConfig.directVoiceEnabled) && VoiceProviderConsent.isGranted(for: provider) {
                 await beginConversation()
             }
         }
@@ -101,8 +98,8 @@ struct VoiceView: View {
     @MainActor
     private func beginConversation() async {
         guard controller == nil else { return }
-        // One conversation at a time (ADR-496): one already starting or live, such as the one
-        // "Hey Doddy" just started, is shown instead of starting a second. What was asked for a
+        // One conversation at a time (ADR-496): one already starting or live is shown instead of
+        // starting a second. What was asked for a
         // new conversation (a shortcut's greeting, a translator, a check-in, a note) is dropped,
         // so it can't start with a later conversation by surprise.
         if let running = VoiceSessionController.runningConversation {
@@ -110,13 +107,12 @@ struct VoiceView: View {
             _ = ShortcutRouter.shared.takeTranslatorPreset()
             _ = ShortcutRouter.shared.takeCheckInBriefing()
             _ = ShortcutRouter.shared.takeNoteToAsk()
-            WakeWordListener.shared.conversationShown(running)
             self.controller = running
             return
         }
         let controller = VoiceSessionController(store: store)
         self.controller = controller
-        // Back Tap or another Talk to Doddy shortcut greets like Hey Doddy, after the same
+        // Back Tap or another Talk to Doddy shortcut greets with "Hey <name>, what's up?", after the same
         // account and provider-consent gate used by a tap in the app.
         let openedByShortcut = ShortcutRouter.shared.takeTalkToDoddyOpening()
         let action = BackTapAction.stored(UserDefaults.standard.string(forKey: PreferenceKey.backTapAction))
@@ -126,8 +122,7 @@ struct VoiceView: View {
         await controller.start(
             mode, profile: profiles.profile, translator: ShortcutRouter.shared.takeTranslatorPreset(),
             checkIn: ShortcutRouter.shared.takeCheckInBriefing(),
-            wakeGreeting: greeting, aboutNote: ShortcutRouter.shared.takeNoteToAsk(),
-            byWakeWord: false)
+            wakeGreeting: greeting, aboutNote: ShortcutRouter.shared.takeNoteToAsk())
         if let greeting, action.opensIsland { VoiceLiveActivity.shared.openForGreeting(greeting) }
     }
 
@@ -275,7 +270,7 @@ struct VoiceView: View {
                                 .id("parkingCard")
                         }
 
-                        Text("While you talk, your voice, this conversation, your saved notes, your list names (and a list's items when Doddy reads or changes it), your last few conversations and any calendar entries, contact names and birthdays (day and month) or drafts Doddy uses are sent to OpenAI, or ElevenLabs if you switch Home's voice to it to run Doddy. Weather and Wikipedia lookups work only with ElevenLabs, from its servers. Nothing is saved, added, started, sent or opened unless you tap for it. If you leave the app, Doddy keeps listening (you'll see him in the Dynamic Island) until you tap End. If iOS stops Doddy in the background, the island says so instead of pretending he still hears you.")
+                        Text("While you talk, your voice, this conversation, your saved notes, your list names (and a list's items when Doddy reads or changes it), your last few conversations and any calendar entries, contact names and birthdays (day and month) or drafts Doddy uses are sent to ElevenLabs, or OpenAI if you switch Home's voice to it to run Doddy. Weather and Wikipedia lookups work only with ElevenLabs, from its servers. Nothing is saved, added, started, sent or opened unless you tap for it. If you leave the app, Doddy keeps listening (you'll see him in the Dynamic Island) until you tap End. If iOS stops Doddy in the background, the island says so instead of pretending he still hears you.")
                             .font(.footnote)
                             .foregroundStyle(Theme.secondaryText)
                             .padding(.top, 8)

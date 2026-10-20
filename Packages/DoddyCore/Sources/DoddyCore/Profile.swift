@@ -1,6 +1,6 @@
 import Foundation
 
-// Reviewed personal profile (design/interface-v1.2/docs/ONBOARDING-AND-PERSONAL-HOME.md).
+// Reviewed personal profile (design/interface-v1.2/docs/ONBOARDING-AND-PERSONAL-HOME.md (deleted 20 Oct 2026, ADR-548; see git history)).
 // Answers are a transient draft until the user reviews them and taps Save; only then are
 // the approved fields stored. Nothing here is inferred, and the profile is separate from
 // saved memories.

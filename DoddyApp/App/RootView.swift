@@ -75,20 +75,12 @@ enum PreferenceKey {
     static let suggestSavesAfterConversation = "suggestSavesAfterConversation"
     /// Siri may read saved notes aloud (ADR-248). On unless turned off; the phone must be unlocked.
     static let siriReadsNotes = "siriReadsNotes"
-    /// "Hey Doddy" listening (ADR-254). Off unless turned on. The AccessKey is in the Keychain and
-    /// the keyword file in Application Support, never here.
-    static let heyDoddyOn = "heyDoddy.on"
     /// The Quick start screen (ADR-324) was shown once, at the end of first use; never again.
     static let quickStartOffered = "quickStartOffered"
     /// A voice conversation has really connected once on this iPhone (the provider said it is
     /// listening). Until then Home keeps to Talk to Doddy and holds back the setup cards (ADR-326)
     /// and the voice picker (ADR-443).
     static let hadFirstConversation = "hadFirstConversation"
-    /// Voice conversations that really connected on this iPhone (the provider said Listening),
-    /// counted once each; only for when the Hey Doddy card may show (ADR-328).
-    static let connectedConversations = "connectedConversations"
-    /// The Home card offering "Hey Doddy" was answered (Turn on or Not now); it never shows again.
-    static let heyDoddyOfferDone = "heyDoddy.offerDone"
 }
 
 enum AppTab: Hashable {
@@ -165,13 +157,15 @@ struct RootView: View {
                 }
             }
             .task {
+                let notesLoad = LaunchWork.signposter.beginInterval("Notes load")
                 await store.reload()
+                LaunchWork.signposter.endInterval("Notes load", notesLoad)
                 // Memory on calls, at launch: once after the update, the server copy is replaced with
                 // one that has no private notes (ADR-310), only if the notes were read successfully.
                 MemoryCopySync.shared.retryIfNeeded(PrivateNotesStore.current().shareable(store.memories),
                                                     notesLoaded: store.hasLoaded && store.loadError == nil)
                 await noteReminders.refreshOnForeground()
-                if scenePhase == .active { heyDoddyAppBecameActive() }
+                if scenePhase == .active { listeningIndicatorBecameActive() }
                 pickUpSharedItem()
             }
             .onChange(of: scenePhase, initial: true) { _, phase in
@@ -182,9 +176,9 @@ struct RootView: View {
                 if phase == .active {
                     Task { await noteReminders.refreshOnForeground() }
                     FocusController.shared.refresh()
-                    BreathingController.shared.refresh()
                     // Shared lists (ADR-263): changes others made arrive when Doddy comes to the front.
-                    Task { await SharedListsController.shared.syncAll() }
+                    // A cold launch also syncs (LaunchWork), so one that just ran is not repeated (ADR-547).
+                    Task { await SharedListsController.shared.syncAllUnlessRecent() }
                     // Memory on calls: a copy upload that failed or was cut off is sent again, and once
                     // after the update, a copy that may hold private notes is replaced (ADR-310).
                     MemoryCopySync.shared.retryIfNeeded(PrivateNotesStore.current().shareable(store.memories),
@@ -199,12 +193,7 @@ struct RootView: View {
                     QuickActions.install()
                 }
                 if phase == .active { AppLock.shared.cameBack() }
-                // "Hey Doddy" (ADR-254): the microphone can only start while Doddy is open.
-                switch phase {
-                case .active: heyDoddyAppBecameActive()
-                case .background: WakeWordListener.shared.appWentToBackground()
-                default: break
-                }
+                if phase == .active { listeningIndicatorBecameActive() }
                 // On later returns, only the separately opted-in listen-on-open preference applies.
                 switch phase {
                 case .background: opening.appWentToBackground()
@@ -278,8 +267,6 @@ struct RootView: View {
         }
     }
 
-    /// Starts "Hey Doddy" listening if it is on, and opens the conversation the wake word
-    /// started while Doddy was in the background, if it is running or left notes to look at.
     /// Text or a link shared from another app with "Save to Doddy" (ADR-311): opens the capture
     /// screen with it, as the shortcut does. Nothing is saved until Save there.
     private func pickUpSharedItem() {
@@ -287,15 +274,7 @@ struct RootView: View {
         ShortcutRouter.shared.saveToDoddyInvoked(text: item.text)
     }
 
-    private func heyDoddyAppBecameActive() {
-        let listener = WakeWordListener.shared
-        if listener.hasConversationToShow {
-            // Never over another sheet: then it opens the next time Doddy comes to the front.
-            _ = router.showWakeConversation()
-        } else {
-            listener.forgetFinishedConversation()
-        }
-        listener.appBecameActive()
+    private func listeningIndicatorBecameActive() {
         // The listening indicator above every screen (ADR-361).
         ListeningIndicatorWindow.shared.install()
     }
@@ -407,8 +386,6 @@ struct RootView: View {
         // A conversation that comes up on its own (Back Tap, Siri, the island) ends the opening.
         .onChange(of: router.isVoicePresented) { _, presented in
             if presented { opening.conversationOpened() }
-            // "Hey Doddy" pauses while the voice screen is open and listens again when it closes.
-            WakeWordListener.shared.refresh()
         }
         // A Spotlight result (ADR-330) opens that note or list, as a widget's link does.
         .onContinueUserActivity(CSSearchableItemActionType) { activity in
