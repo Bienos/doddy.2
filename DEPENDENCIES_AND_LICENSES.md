@@ -50,11 +50,12 @@ Inter and Caveat (SIL OFL) appear only as notices in `design/interface-v1.2/asse
 prototype; using Caveat in the app needs an owner decision and a licence check.
 
 ## Artwork
-`DoddyApp/Resources/Assets.xcassets` contains two PNG imagesets (`Doddy_waving`, `Doddy_memory_card`)
-copied unchanged from `design/ios-ready-asset-catalog/`. They are **candidate art**: generated PNG
-exports of SVGs whose provenance file states they are original revisions produced for the design task,
-not illustrator-approved, with trademark/rights review not done. They are labelled "Candidate art — not
-final" in the UI. Rights review is an open owner decision (see `DECISIONS.md`).
+`DoddyApp/Resources/Assets.xcassets` no longer contains the candidate-art imagesets `Doddy_waving`,
+`Doddy_approaching`, `Doddy_listening` and `Doddy_memory_card` (generated PNG exports of SVGs, not
+illustrator-approved, rights review not done). They were removed on 20 Oct 2026 (ADR-547): nothing loaded
+them by name, because `CandidateCharacterView` already draws the owner's pack poses. The app's character
+art is the owner's `UploadedDoddy_*` and `WholeDoddy_*` pack (`docs/design/UPLOADED_MEMORY_ASSETS.md`); the
+rights review of the pack is still an open owner decision (see `DECISIONS.md`).
 
 ## Voice samples
 
