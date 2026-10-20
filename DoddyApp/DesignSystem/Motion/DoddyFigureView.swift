@@ -47,6 +47,11 @@ struct PersistentDoddyView: View {
         let drawn = Image(picture.asset)
             .resizable()
             .frame(width: width, height: height)
+            // His eyes (MV7), over the picture so they squash, tilt and mirror with it: nothing
+            // at all when they are on you, the picture exactly as the pack drew it.
+            .overlay(alignment: .topLeading) {
+                DoddyEyesLayer(layers: art.faceLayers, unit: width / CGFloat(MotionFace.pictureWidth))
+            }
             .scaleEffect(x: CGFloat((art.mirrored ? -1 : 1) * art.scaleX), y: CGFloat(art.scaleY), anchor: soles)
             .rotationEffect(.degrees(art.tilt), anchor: soles)
             // In dark appearance the black outline gets the island's thin cream edge (plan section 2).
@@ -61,15 +66,58 @@ struct PersistentDoddyView: View {
             // The UI tests' marker is a box exactly his laid-out size, its bottom edge his soles
             // (the picture's own frame reaches below them, to its transparent margin).
             drawn.overlay {
-                Rectangle()
-                    .fill(Color.white.opacity(0.01))
-                    .allowsHitTesting(false)
-                    .accessibilityElement()
-                    .accessibilityLabel(art.marker)
-                    .accessibilityIdentifier(art.marker)
+                ZStack {
+                    Rectangle()
+                        .fill(Color.white.opacity(0.01))
+                        .allowsHitTesting(false)
+                        .accessibilityElement()
+                        .accessibilityLabel(art.marker)
+                        .accessibilityIdentifier(art.marker)
+                    // Eyes that aren't at you get their own marker (`doddy.eyes.half`).
+                    if let eyes = art.eyes.marker, !art.faceLayers.isEmpty {
+                        Rectangle()
+                            .fill(Color.white.opacity(0.01))
+                            .allowsHitTesting(false)
+                            .accessibilityElement()
+                            .accessibilityLabel(eyes)
+                            .accessibilityIdentifier(eyes)
+                    }
+                }
             }
         } else {
             drawn
+        }
+    }
+}
+
+/// His eyes when they aren't at you (MV7, ADR-558): for each eye a cover in the paper's colour
+/// over the picture's own eye, then the eye cut from the owner's sheet. Positions are in pixels of
+/// the picture's @3x file, `unit` points each; the layer fills the picture's frame.
+private struct DoddyEyesLayer: View {
+    let layers: [MotionFaceLayer]
+    let unit: CGFloat
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            ForEach(Array(layers.enumerated()), id: \.offset) { _, layer in
+                piece(layer)
+                    .frame(width: CGFloat(layer.width) * unit, height: CGFloat(layer.height) * unit)
+                    .position(x: CGFloat(layer.x) * unit, y: CGFloat(layer.y) * unit)
+            }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
+    @ViewBuilder
+    private func piece(_ layer: MotionFaceLayer) -> some View {
+        switch layer.kind {
+        case .cover(let fill, let blur):
+            Ellipse()
+                .fill(Color(red: Double(fill[0]) / 255, green: Double(fill[1]) / 255, blue: Double(fill[2]) / 255))
+                .blur(radius: CGFloat(blur) * unit)
+        case .piece(let asset):
+            Image(asset).resizable()
         }
     }
 }
@@ -174,7 +222,7 @@ private struct DoddyDebugOverlay: View {
                     .frame(width: CGFloat(zone.width), height: CGFloat(zone.height))
                     .position(x: CGFloat(zone.midX) - origin.x, y: CGFloat(zone.midY) - origin.y)
             }
-            Text(verbatim: "f \(d.frameCount) · \(e.mode.rawValue) · \(e.activity) · \(e.anchor?.surface.description ?? "–") · \(String(format: "%.2f", e.scale))× · \(String(describing: d.placement)) · flights \(d.flightsSeen) · checks \(d.checks.count)")
+            Text(verbatim: "f \(d.frameCount) · \(e.mode.rawValue) · \(e.activity) · \(e.anchor?.surface.description ?? "–") · \(String(format: "%.2f", e.scale))× · \(String(describing: d.placement)) · eyes \(figure?.art.eyes.marker?.replacingOccurrences(of: "doddy.eyes.", with: "") ?? "you") · flights \(d.flightsSeen) · checks \(d.checks.count)")
                 .font(.caption2.monospaced())
                 .padding(4)
                 .background(Color.white.opacity(0.85))

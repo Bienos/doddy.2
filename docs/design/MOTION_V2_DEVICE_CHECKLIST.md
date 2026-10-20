@@ -31,6 +31,10 @@ his surfaces, his clear zone, a frame counter, the flights count and the DEBUG c
 | D17 | 1.4× softness | On Home, at 1.4×, is the picture visibly soft? (the exports are 300 × 450 px, Q11) | `docs/design/MOTION_V2_ART_REQUESTS.md` |
 | D18 | The journey with the debug overlay | Home → Memories → a note → back → scroll → Settings → Home → Ask → type → close, then a quick run of tab taps: checks stay 0 | `MotionChecks.swift` |
 | D19 | Battery | Leave Home open 10 minutes: the frame counter barely moves after the first minute (breaths, the sit, the playful moment, then still) | `MotionEngine.isStill`, `nextDue` |
+| D20 | Gaze (MV7, ADR-558) | On Home, put a finger down away from him (and drag it): his eyes follow it, one of eight looks, level, and come back to you 300 ms after the finger lifts. They are small (2 to 3 pt at normal size, 3 to 4 pt on Home); is that readable, or too subtle? | `MotionFace`, `MotionEngine.gazeVector` |
+| D21 | Blink and squint | Put a finger on him: eyes half closed while it is down. Stroke his head slowly: eyes close, open after. After 21:00 (set the clock, delete `home.lastWaveDay`): one slow blink during the welcome wave. No blink at any other time while he stands still. | `MotionFace.choose`, `MotionEngine.homeTouchDown`, `startRub` |
+| D22 | The seam | Look at his face from 20 cm at 1.4× on Home with the eyes looking away and when they blink: is any lighter patch or ring visible around where his own eye was? Do the two eyes stay level and the same size as his own eyes? Also in dark appearance | `MotionFace.layers` (`coverPad`, `coverBlur`), `build_face_pieces.py` |
+| D23 | Where eyes are not drawn | During a hop (the hop strip), while listening, while thinking in Ask and in the stretch his eyes stay as the picture drew them; none of these should show a patch or a double eye | `MotionFace.fits` has only front-facing pictures |
 
 ## Hallway test: his size on Home (1.3×, 1.4×, 1.5×)
 

@@ -122,6 +122,7 @@ extension MotionHost {
         if canRideList, engine.scrollWait, let slow = scene.scroll.slowSince { due.append(slow + MotionTiming.lilySettleFor + 1) }
         if let sent = askSentAt, !engine.isThinking { due.append(sent + MotionHost.thinkingAfter + 1) }
         if let t = playfulDue { due.append(t) }
+        if engine.followFinger, !scene.finger.isDown { due.append(elsewhereAt + MotionHost.fingerStaleAfter + 1) }
         return due.min()
     }
 
