@@ -186,14 +186,14 @@ number is cropped away); nothing is redrawn, recoloured or generated.
 Not used: the five `*_fg_v01.png` foreground layers (024, 027, 030, 033, 035). They are not imported
 (ADR-380 explains why), and the umbrella pose still waits on the owner's weather decision.
 
-## The app icon (ADR-547, 20 October 2026)
+## The app icon (ADR-557, 20 October 2026)
 
 Owner: "use the wave frame from the pack for the icon", then candidate A (on paper) of the three shown.
 Source: `016_doddy_wave_v01.png` from the Drive folder, downloaded in the session and verified against the
 SHA-256 above (`817a2b87…`); frame 4 cut by `tools/whole_doddy/cut_wave.py` (488 × 733, SHA-256
 `20b648fd…`, as above). `tools/whole_doddy/make_app_icon.py` places the 410 px square x 35–445, y 95–505 of
 that cut-out (the head, the waving hand and the orange marks, cut at the torso: the website favicon's framing)
-on brand paper `#FFF7E9` (Brand Guidelines V2.2 p.20, ADR-546) and Lanczos-resizes it to 1024 px, RGB, no
+on brand paper `#FFF7E9` (Brand Guidelines V2.2 p.20, ADR-556) and Lanczos-resizes it to 1024 px, RGB, no
 alpha. Nothing is redrawn or recoloured.
 
 | File | Made how | SHA-256 of the file written |

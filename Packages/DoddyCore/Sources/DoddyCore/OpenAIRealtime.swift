@@ -198,7 +198,7 @@ public enum OpenAIRealtimeWire {
     /// Fallback greeting when the app has no opening line of its own (it normally sends
     /// `WakeGreeting`'s, ADR-254): `voice-agent/session.json` `first_message` for the language, then
     /// English. A `{{placeholder}}` there is never spoken; the plain English line (the familiar
-    /// return of ADR-546) is used instead.
+    /// return of ADR-556) is used instead.
     public static func greetingLine(sessionJSON: Data, languageCode: String?) -> String {
         let fallback = "I'm here. What's up?"
         guard let session = try? JSONSerialization.jsonObject(with: sessionJSON) as? [String: Any],

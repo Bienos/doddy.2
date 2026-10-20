@@ -1,4 +1,4 @@
-"""The app icon from the pack's wave frame (ADR-547, Brand Guidelines V2.2).
+"""The app icon from the pack's wave frame (ADR-557, Brand Guidelines V2.2).
 
 The owner chose frame 4 of 016_doddy_wave_v01.png (the pack's only wave) for the icon. Start from
 cut_wave.py's output (488 x 733, transparent; SHA-256 20b648fd…). A 410 px square of it, x 35–445
@@ -14,7 +14,7 @@ import os
 import sys
 from PIL import Image
 
-PAPER = (0xFF, 0xF7, 0xE9)  # brand.paper (Brand Guidelines V2.2 p.20, ADR-546)
+PAPER = (0xFF, 0xF7, 0xE9)  # brand.paper (Brand Guidelines V2.2 p.20, ADR-556)
 X0, Y0, SIDE = 35, 95, 410
 SIZE = 1024
 TARGETS = [

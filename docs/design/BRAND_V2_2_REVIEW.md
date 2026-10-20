@@ -1,6 +1,6 @@
 # Brand Guidelines V2.2: review and proposed changes
 
-**Status: approved by the owner on 20 October 2026 ("all of it, 2A, 3a, 7 later") and applied on `claude/nice-shannon-9gxk6s` as ADR-546 and ADR-547, except item 7 (later); the live ElevenLabs agent followed on the owner's separate "do it" (20 Oct, about 14:08 UTC). What was done, and what was not, is in "Applied" at the end.** The proposals below are kept as written for the record.
+**Status: approved by the owner on 20 October 2026 ("all of it, 2A, 3a, 7 later") and applied on `claude/nice-shannon-9gxk6s` as ADR-556 and ADR-557, except item 7 (later); the live ElevenLabs agent followed on the owner's separate "do it" (20 Oct, about 14:08 UTC). What was done, and what was not, is in "Applied" at the end.** The proposals below are kept as written for the record.
 
 The owner uploaded `DODDY — Brand Guidelines V2.2 — review draft` (66 pages, "Review edition · 13 October 2026", every page labelled PROPOSED) and asked for it to be used for Doddy, including how he speaks, with changes reviewed and approved first. This page compares the guide with what the repository does today and lists each change as a numbered item the owner can accept or reject by number.
 
@@ -31,7 +31,7 @@ Each item: what changes, where, and why. "Owner" marks a choice only the owner c
 ### 1. Adopt V2.2 as the brand reference and record it
 
 - Add the PDF to the repository as `design/brand-v2.2/DODDY_Brand_Guidelines_V2.2_review_draft.pdf` with a provenance note (date, SHA-256 of the file as uploaded). The guide's own pages stay labelled PROPOSED; the ADR records what the owner approved from it.
-- Record ADR-546: V2.2 is the first reference for character, colour, type, motion and verbal identity. `docs/design/CANONICAL_DESIGN_DIRECTION.md` already says "owner-approved future brand guidelines override this plan after explicit review"; this is that review.
+- Record ADR-556: V2.2 is the first reference for character, colour, type, motion and verbal identity. `docs/design/CANONICAL_DESIGN_DIRECTION.md` already says "owner-approved future brand guidelines override this plan after explicit review"; this is that review.
 - Mark `docs/design/BRAND_GUIDELINES.md` (11 Oct) as superseded where V2.2 differs: the Lobster Two wordmark (V2.2 recommends Caveat, which the site already uses), "there is no approved app icon", and the colour decision it left open. Keep its sections V2.2 does not cover: product copy (its §3), the English and Polish localisation rules (§3.8) and the state-copy table (§3.4), which agree with the guide's p.40.
 - **Owner:** the repository is public (owner decision, 19 Oct). Committing the guide publishes its reference images and internal scores. If that is not wanted, the ADR links the Drive copy instead and the PDF stays out.
 
@@ -177,7 +177,7 @@ Not changed by this review, listed so nobody reads adoption as clearance (p.45�
 
 Order, each as its own small commit on this branch, with the ADR and status docs updated in the same commit:
 
-1. Item 2 (icon) and item 1 (reference and ADR-546). Both image sets, `UPLOADED_MEMORY_ASSETS.md`, go-live C3.
+1. Item 2 (icon) and item 1 (reference and ADR-556). Both image sets, `UPLOADED_MEMORY_ASSETS.md`, go-live C3.
 2. Item 3a (orange), then the site tokens regenerate.
 3. Items 4, 5, 6, 8, 9: prompt spec, opening lines, status word, casing, permission text, with the Linux tests and the strings catalog check.
 4. Item 7 (site), only with the owner's yes, because merging it deploys.
@@ -195,8 +195,8 @@ Owner's answer: "all of it, 2A, 3a, 7 later".
 
 | Item | Done | Where |
 |---|---|---|
-| 1 | Yes, with the PDF | `design/brand-v2.2/` (PDF and provenance README), ADR-546; `CLAUDE.md`, `CANONICAL_DESIGN_DIRECTION.md`, `BRAND_GUIDELINES.md` (superseded notes), `STATUS.md` |
-| 2 | Candidate A, no dark variant | `tools/whole_doddy/make_app_icon.py`; both `AppIcon.png` files (SHA-256 `ba28b129…`); `AppIcon-dark.png` removed; ADR-547; `UPLOADED_MEMORY_ASSETS.md`; go-live C3 |
+| 1 | Yes, with the PDF | `design/brand-v2.2/` (PDF and provenance README), ADR-556; `CLAUDE.md`, `CANONICAL_DESIGN_DIRECTION.md`, `BRAND_GUIDELINES.md` (superseded notes), `STATUS.md` |
+| 2 | Candidate A, no dark variant | `tools/whole_doddy/make_app_icon.py`; both `AppIcon.png` files (SHA-256 `ba28b129…`); `AppIcon-dark.png` removed; ADR-557; `UPLOADED_MEMORY_ASSETS.md`; go-live C3 |
 | 3a | Yes | `CandidateTokens.swift` orange `#FF6A00`; `site/tokens.css` regenerated; `site/court.js` |
 | 3b | Not yet | After the owner sees 3a on a device |
 | 4 | Yes, in the spec | `voice-agent/instructions.md` "# Who you are" and "# How you speak" (the approved text, plus the sentence "This is a spoken conversation." kept from before). **The live agent too, on the owner's "do it" (20 Oct):** eleven short lines added to the owner's own prompt in its style, plus the `opening_line` placeholder, version `agtvrsn_8701m5ct8dxsf8htebwpdykppqbv`; `voice-agent/README.md` |

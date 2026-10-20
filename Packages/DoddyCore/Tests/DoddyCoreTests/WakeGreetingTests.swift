@@ -12,7 +12,7 @@ final class WakeGreetingTests: XCTestCase {
     func testFallsBackToFirstNameThenNoName() {
         XCTAssertEqual(WakeGreeting.name(nickname: nil, profileName: "Patryk Nowak"), "Patryk")
         XCTAssertEqual(WakeGreeting.name(nickname: "  ", profileName: nil), nil)
-        // No "bud" or "mate" as a tic (ADR-546).
+        // No "bud" or "mate" as a tic (ADR-556).
         XCTAssertEqual(WakeGreeting.line(name: nil), "Hey, what's up?")
     }
 
@@ -29,7 +29,7 @@ final class WakeGreetingTests: XCTestCase {
     }
 
     func testOpeningLineForATapAndTheFirstConversation() {
-        // Brand Guidelines V2.2 p.53 (ADR-546): the familiar return for a tap, the first meeting once.
+        // Brand Guidelines V2.2 p.53 (ADR-556): the familiar return for a tap, the first meeting once.
         XCTAssertEqual(WakeGreeting.openingLine(afterWakeWord: false, name: "Pat", polish: false),
                        "I'm here. What's up?")
         XCTAssertEqual(WakeGreeting.openingLine(afterWakeWord: false, name: "Pat", polish: true),

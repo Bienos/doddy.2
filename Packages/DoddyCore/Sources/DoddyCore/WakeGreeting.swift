@@ -20,7 +20,7 @@ public enum WakeGreeting {
         return Nickname.clean(first)
     }
 
-    /// "Hey Pat, what's up?" — "Hey, what's up?" without a name (no "bud" tic, ADR-546).
+    /// "Hey Pat, what's up?" — "Hey, what's up?" without a name (no "bud" tic, ADR-556).
     /// Polish: "Hej Pat, co słychać?" or "Hej, co słychać?".
     public static func line(name: String?, polish: Bool = false) -> String {
         let name = Nickname.clean(name)
@@ -30,7 +30,7 @@ public enum WakeGreeting {
         return name.map { "Hey \($0), what's up?" } ?? "Hey, what's up?"
     }
 
-    /// What Doddy says first (Brand Guidelines V2.2 p.53, ADR-546). After the wake word: the
+    /// What Doddy says first (Brand Guidelines V2.2 p.53, ADR-556). After the wake word: the
     /// greeting. The user's very first conversation: "Hi, I'm Doddy. What's on your mind?".
     /// Otherwise the familiar return, "I'm here. What's up?", the same words as Home.
     /// The Polish lines are drafts until a Polish speaker has read them (l10n/REVIEW_NOTES.md).

@@ -46,7 +46,7 @@ This replaces the "Character for interface" line near the top for all new work.
 
 ---
 
-# Brand reference (owner, 2026-10-20, ADR-546)
+# Brand reference (owner, 2026-10-20, ADR-556)
 `design/brand-v2.2/` (Brand Guidelines V2.2) is the reference for colour, type, motion and how Doddy speaks; `docs/design/BRAND_V2_2_REVIEW.md` records what was adopted and what waits (homepage copy, the dark canvas). It changes neither the character-art rule above nor the constitution. The live ElevenLabs prompt is changed only on the owner's separate instruction.
 
 ---

@@ -19,7 +19,7 @@ reaches OpenAI with the next app build, and ElevenLabs only after the sync below
 
 ## Source of truth and syncing
 
-**Applied to the live agent 2026-10-20, about 14:08 UTC (ADR-546, Brand Guidelines V2.2; owner: "do it"):** the guide's verbal identity (pp.49–66). The live prompt is the owner's own rewrite, so this folder's new "# Who you are" and "# How you speak" were not copied in. Eleven short lines were added in the live prompt's own style, and nothing else in the prompt changed:
+**Applied to the live agent 2026-10-20, about 14:08 UTC (ADR-556, Brand Guidelines V2.2; owner: "do it"):** the guide's verbal identity (pp.49–66). The live prompt is the owner's own rewrite, so this folder's new "# Who you are" and "# How you speak" were not copied in. Eleven short lines were added in the live prompt's own style, and nothing else in the prompt changed:
 - **Identity:** what he says when asked what he is, and that he explains tools, permissions and data plainly when asked.
 - **Personality:** no loyalty speeches, no manufactured closeness.
 - **Tone and speaking style:** natural contractions and "the useful bit comes first"; three more "do not say" lines ("Unlock your full potential!", "Trust me, I always find a way.", "Anything you need, no limits."); "warmth without sugary reassurance".

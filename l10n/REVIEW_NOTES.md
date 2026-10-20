@@ -13,7 +13,7 @@ Eight languages were machine-translated in one pass, each by a separate Claude a
 
 Answers on 2026-10-13: Japanese ぼく, Croatian gender handling and the Siri read-aloud test were accepted as they are (the Siri test still has to be done on a device). The three new Settings strings for the language picker ("App language", "Same as this iPhone" and the footer) were written by the same agent that made this page, not by the translation agents, and need the same native review.
 
-## Added 20 October 2026 (ADR-546, Brand Guidelines V2.2)
+## Added 20 October 2026 (ADR-556, Brand Guidelines V2.2)
 
 Written by the agent that applied the guide, not by the translation agents; the same native review applies:
 

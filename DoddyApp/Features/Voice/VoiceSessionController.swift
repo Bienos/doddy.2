@@ -563,7 +563,7 @@ final class VoiceSessionController {
             FirstConversationPrompt.variableName: FirstConversationPrompt.render(isFirst: isFirstConversation),
             // What Doddy says first (ADR-254): the shortcut greeting ("Hey Pat, what's up?"), otherwise his
             // usual opening ("Hi, I'm Doddy. What's on your mind?" the first time, then "I'm here.
-            // What's up?", ADR-546). Used once the agent's first message is {{opening_line}}
+            // What's up?", ADR-556). Used once the agent's first message is {{opening_line}}
             // (voice-agent/session.json); an agent without it ignores the variable.
             WakeGreeting.variableName: wakeGreeting ?? WakeGreeting.openingLine(
                 afterWakeWord: false, name: nil, polish: ConversationLanguage.stored() == .polish,
