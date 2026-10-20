@@ -497,8 +497,8 @@ final class DoddyDirector {
             f = nil
         } else {
             let pose = engine.pose
-            var figure = DoddyFigure(art: MotionArt.choose(engine, still: stillPose), x: pose.x, y: pose.y,
-                                     scale: pose.scale, opacity: pose.opacity)
+            var figure = DoddyFigure(art: MotionArt.choose(engine, still: stillPose, previousEyes: self.figure?.art.eyes),
+                                     x: pose.x, y: pose.y, scale: pose.scale, opacity: pose.opacity)
             if case .slot(let id) = p, let frame = host.lastStepFrames[id] ?? host.scene.frames[id] {
                 figure.slotDX = pose.x - frame.midX
                 figure.slotDY = pose.y - frame.minY

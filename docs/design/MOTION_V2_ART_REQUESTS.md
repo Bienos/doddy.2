@@ -37,11 +37,11 @@ Squash on landing and the lean are transforms of the whole current picture (Q7).
 
 | Needed by the brief | Pack today | What the app does until it exists |
 |---|---|---|
-| Gaze: pupils in 8 directions plus centre, on a front head that matches every body ("eyes first", glances, eyes following a finger, thinking's eyes up and right) | **Exists in the owner's Drive folder, not imported:** `008_doddy_eyes_v01.png` (read from the folder listing on 19 Oct; not opened). Its contents are not seen: the plan's reading is a sheet of heads | No gaze at all. `MotionHost.focusPoint()` returns nothing, so the engine never asks for one. Not faked with a whole-pose turn. |
-| Blink, and the slow 280 ms blink | **Exists in the Drive folder, not imported:** `007_doddy_blink_v02.png` (not opened; the plan's reading is a sequence of heads) | No blink. |
-| Eyes closed in contentment | `WholeDoddy_yawn_stretch` has closed eyes but yawns with raised arms | Not shown. |
-| Squint on touch | None | Not shown (MV5's touch-down dip is a whole-picture squash only). |
-| Head rub: eyes closed, head tipping with the stroke | None | A stroke across his head is a drag (lean) only. |
+| Gaze: pupils in 8 directions plus centre, on a front head that matches every body ("eyes first", glances, eyes following a finger, thinking's eyes up and right) | **Drawn from MV7 (ADR-547):** `008_doddy_eyes_v01.png`, a 3 × 3 grid of heads with the eyes in nine places, cut into eight pairs of eyes. **Only on the front-facing pictures** (standing, waving, cross-legged). Needs a gaze set for the three-quarter pictures (the hop strip, listening, the shrug) and for the kneeling thinking pose | Gaze on the front pictures. On the hop strip and the other turned heads his eyes stay as drawn. The sheet's eyes move about 0.1 to 0.15 of a head radius (2 to 3 pt at normal size), so the look is subtle; a wider set would need new art. |
+| Blink, and the slow 280 ms blink | **Drawn from MV7:** `007_doddy_blink_v02.png` (open, half closed, closed, half closed), the half and closed eyes cut out | The evening welcome's one slow blink and the thinking blink (the thinking pose kneels, so that one isn't drawn). No idle blinking: the brief's rule 9 forbids loops. |
+| Eyes closed in contentment | **Drawn from MV7** (the closed eyes of sheet 007) on the front pictures | The head rub closes his eyes. |
+| Squint on touch | **Drawn from MV7** (the half-closed eyes of sheet 007) | A touch on him squints (on top of MV5's dip). |
+| Head rub: eyes closed, head tipping with the stroke | Eyes: from MV7. The head tip needs a head that moves apart from the body | A stroke across his head closes his eyes and leans him; the head doesn't tip. |
 | Stand-up from sitting, sit-down to cross-legged | Sit strip (017) sits on a box | He cuts between standing and `WholeDoddy_crosslegged`. |
 | The rest of the stretch: onto his toes, eyes closed for 200 ms | `WholeDoddy_yawn_stretch` yawns, feet flat | The yawn-and-stretch pose stands in for the whole stretch. |
 | Head roll (welcome 5°, introduce −8°, thinking 4°) | None; only a whole-figure tilt | The default and evening welcomes are not played. |
@@ -60,7 +60,20 @@ Squash on landing and the lean are transforms of the whole current picture (Q7).
 2. The poses in the table above, as whole pictures at 1024 × 1536 like the rest of the pack.
 3. Whether to re-export the existing poses larger for Home's 1.4× (Q11).
 
-## Q6 answered by the Drive folder (19 Oct 2026)
+## Q6: answered by the owner, 20 Oct 2026 ("Make blink and gaze")
+
+The agent read this as the owner approving the first of the two ways below (cutting those sheets), the
+only one that can be done today. MV7 (ADR-547) cuts the eyes out of sheets 007 and 008 and draws them
+on the pictures with a front-facing head. `tools/whole_doddy/build_face_pieces.py` does the cutting
+and measuring, and can draw proof sheets. If the owner would rather have heads delivered as layers,
+MV7 can be replaced by them without touching the engine: only `MotionFace` draws.
+
+What MV7 does not do: gaze or blink on the three-quarter head pictures (the hop strip, listening,
+the shrug, the turn strip) and on the kneeling thinking pose; a head roll; eyebrow or mouth moods
+(sheets 004 to 006, not used). The sheets' eyes are drawn by hand, so the pair moves as one (the
+tool uses each tile's mean shift) and the range is small.
+
+## Q6 as it stood on 19 Oct 2026 (the Drive folder listing)
 
 The owner's folder `DODDY-Numbered-Video-Assets-v01` (id `1inLT9oV7wx7UM4P6nxP8yU1-29JV0_ee`) was listed read-only with the Google Drive connector. It holds, besides the imported sets, these numbered sheets that are **not imported**: `004_doddy_expr_front_v02.png`, `005_doddy_expr_34_v02.png`, `006_doddy_mouths_v02.png`, `007_doddy_blink_v02.png`, `008_doddy_eyes_v01.png`, `009_doddy_hands_v01.png`, `010_doddy_props_v01.png`, `011_doddy_fx_v01.png`. The names say expressions, mouths, a blink, eyes, hands, props and effects; nothing here was opened or looked at, so what is on each sheet is unknown.
 
