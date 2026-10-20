@@ -22,9 +22,11 @@ struct CapturePhotoPicker: View {
                     item = nil
                 }
             } else {
+                // PhotosPicker's label isn't on the main actor, so it gets a copy of the state.
+                let reading = isReading
                 PhotosPicker(selection: $item, matching: .images, photoLibrary: .shared()) {
                     HStack {
-                        Text(isReading ? "Reading the photo…" : "Add a photo")
+                        Text(reading ? "Reading the photo…" : "Add a photo")
                         Spacer()
                         Image(systemName: "photo")
                     }
@@ -170,9 +172,11 @@ struct ListPhotoPicker: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
+            // PhotosPicker's label isn't on the main actor, so it gets a copy of the state.
+            let reading = isReading
             PhotosPicker(selection: $item, matching: .images, photoLibrary: .shared()) {
                 HStack {
-                    if isReading { Text("Reading the photo…") } else { Text("Read a list from a photo") }
+                    if reading { Text("Reading the photo…") } else { Text("Read a list from a photo") }
                     Spacer()
                     Image(systemName: "text.viewfinder")
                 }

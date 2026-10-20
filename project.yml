@@ -9,6 +9,11 @@
 #   project-mac.yml     the Mac menu bar app and its widget, nothing else    -> DoddyMac.xcodeproj
 name: Doddy
 options:
+  # Marks the generated project as already checked against this Xcode, so Xcode stops offering
+  # "Update to recommended settings". Accepting that offer would change the generated project only
+  # (the next `make project` undoes it) and can turn on settings the specs keep off, such as the
+  # generated string symbols project-iphone.yml turns off. Raise it after moving to a newer Xcode.
+  xcodeVersion: "26.6"
   deploymentTarget:
     iOS: "17.0"
     watchOS: "10.0"

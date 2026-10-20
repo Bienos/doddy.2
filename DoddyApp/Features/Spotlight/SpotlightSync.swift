@@ -33,11 +33,11 @@ final class SpotlightSync {
             attributes.keywords = entry.keywords
             return CSSearchableItem(uniqueIdentifier: entry.id.uuidString, domainIdentifier: SpotlightIndex.domain, attributeSet: attributes)
         }
-        let index = index
+        let batch = SpotlightBatch(index: index, items: items)
         // Rebuilt as a whole: notes that were deleted or made private go too.
-        index.deleteSearchableItems(withDomainIdentifiers: [SpotlightIndex.domain]) { _ in
-            guard !items.isEmpty else { return }
-            index.indexSearchableItems(items) { _ in }
+        batch.index.deleteSearchableItems(withDomainIdentifiers: [SpotlightIndex.domain]) { _ in
+            guard !batch.items.isEmpty else { return }
+            batch.index.indexSearchableItems(batch.items) { _ in }
         }
     }
 
@@ -47,6 +47,14 @@ final class SpotlightSync {
               let id = activity.userInfo?[CSSearchableItemActivityIdentifier] as? String else { return nil }
         return UUID(uuidString: id)
     }
+}
+
+/// The index and the finished items, handed to CoreSpotlight's completion handler. CoreSpotlight
+/// doesn't mark them Sendable, but its index methods can be called from any thread and the items
+/// aren't changed after they're built, so passing them across is safe.
+private struct SpotlightBatch: @unchecked Sendable {
+    let index: CSSearchableIndex
+    let items: [CSSearchableItem]
 }
 
 /// Settings › Privacy: "Show in iPhone search", off by default.
