@@ -167,3 +167,26 @@ Not used: the five `*_fg_v01.png` foreground layers (024, 027, 030, 033, 035). T
 | Image set | Pack source | SHA-256 of the source | Made how |
 |---|---|---|---|
 | `MenuBarDoddy` (Mac app) and `MacDoddy_face` (Mac desktop widget) | 01-transparent-poses/doddy_listening_v02.png | 96375303e59d4b5f272805abb896a14ba3fcec37e8420a2dd04ec8b66823bc41 | byte-identical copies of `WidgetDoddy_face` `art@2x.png` (120×120, SHA-256 `cdb24f36e3069738…`); nothing redrawn or generated |
+
+## Island and notification refresh: nothing imported (ADR-546, 20 October 2026)
+
+Checked on 20 Oct 2026 for the island and notification refresh: the Drive folder
+`DODDY-Numbered-Video-Assets-v01` (`1inLT9oV7wx7UM4P6nxP8yU1-29JV0_ee`) was last modified on 9 Oct 2026, and a
+search of the folder, its three sub-folders and the pose folders found no file modified after 10 Oct. The
+sets imported on 10–11 Oct are therefore current, and **no image set, hash or row was added**. Nothing was
+redrawn, recoloured or generated; `tools/whole_doddy/build_imagesets.py` was not run.
+
+The refresh only changes which existing `WholeDoddy_*` set a surface shows (each is in both
+`DoddyApp/Resources/Assets.xcassets` and `DoddyWidgets/Assets.xcassets`, 200×300 and 300×450, byte-unchanged):
+
+| Image set | Newly shown on |
+|---|---|
+| `WholeDoddy_fistpump` | Shopping mode when every item is ticked; the "Focus done" notification |
+| `WholeDoddy_facepalm` | Shopping mode and Doddy's call when the card is stale |
+| `WholeDoddy_crosslegged` | Doddy's call when it has ended; the island when a conversation ended with nothing saved |
+| `WholeDoddy_tiptoe` | The "Time to leave" notification |
+| `WholeDoddy_kneeling_inspect` | The weekly tidy-up notification |
+
+The table of every surface, state and pose is in `docs/implementation/WHOLE_DODDY_ISLAND_STATUS.md`
+(ADR-546). `scripts/check_island_art.sh` checks that every pose a mapping can return has all its files in both
+catalogs.

@@ -531,3 +531,15 @@ These three merged without a compile (`REVIEW_DoddyCore_2026-10-11.md`, `REVIEW_
 | LT4 | Turn off Speech Recognition for Doddy in Settings; try again | The draft card says it's off; type the words and tap Send; Doddy answers |
 | LT5 | Start, then tap End mid-recording | Nothing sent; no DoddyTurn-*.m4a left in the app's tmp folder (Xcode › Devices › container) |
 | LT6 | Start, wait past 3:00 | It finishes by itself and sends what it heard |
+
+## 4z. Island and notification pictures (ADR-546, `WHOLE_DODDY_ISLAND_STATUS.md`)
+Nothing here has been run: the change was built on Linux only. Do W1 to W6 (section 4f) as well.
+
+| # | Do this | Expect |
+|---|---|---|
+| N1 | Whole Doddy style. Talk to Doddy, say nothing to save, End. Then talk again, save a note, End. Look at the island and the Lock Screen card each time | Nothing saved: cross-legged on both. A note saved: fist pump on both. The island and the card never differ |
+| N2 | Start shopping mode on a list; lock the iPhone. Tick every item from the Lock Screen | While items are open: tiptoe. When the last one is ticked: a fist pump on the card and the island, then the card goes. Hide character artwork on: no pictures, the cart symbol |
+| N3 | Doddy's call (rehearsal if there is no Twilio): let the call end | Cream card: cross-legged Doddy beside "The answer card is in Doddy". Never a fist pump. A call card that iOS marks stale: facepalm, not listening |
+| N4 | Schedule a Leave by a minute ahead; turn on the weekly tidy-up for the next minute; start a 1-minute focus | Each notification shows its picture, same words: tiptoe (Time to leave), kneeling (Tidy up), fist pump (Focus done). Stop the focus early: no notification |
+| N5 | Repeat N4 with Hide Doddy's pictures on; and with notifications shown on a locked iPhone | No pictures with Hide on. On a real phone, the picture is the thumbnail on the banner and large when you long-press it; the sound and timing are unchanged |
+| N6 | With the shopping, call and voice activities running, watch the widget extension in Xcode's debug gauge or Instruments | Memory stays well under the extension limit while the poses change; no crash or blank picture. (Pictures are the existing 200×300 / 300×450 sets) |
