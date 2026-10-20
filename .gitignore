@@ -42,3 +42,6 @@ npm-debug.log*
 # Python bytecode
 __pycache__/
 *.pyc
+
+# Temporary git worktrees made by Claude Code helper agents
+.claude/worktrees/
