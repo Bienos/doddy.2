@@ -83,6 +83,9 @@ enum PreferenceKey {
     /// listening). Until then Home keeps to Talk to Doddy and holds back the setup cards (ADR-326)
     /// and the voice picker (ADR-443).
     static let hadFirstConversation = "hadFirstConversation"
+    /// Voice conversations that really connected on this iPhone (the provider said Listening),
+    /// counted once each; for when the "Open Doddy faster" card returns (ADR-547, PR #112).
+    static let connectedConversations = "connectedConversations"
 }
 
 enum AppTab: Hashable {
