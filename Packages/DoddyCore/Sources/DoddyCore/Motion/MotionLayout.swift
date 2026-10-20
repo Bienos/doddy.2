@@ -132,6 +132,16 @@ public enum MotionLayout {
     /// A ledge (Settings' spot, the empty Memories line): its centre.
     public static func ledgeSpotX(ledge: MotionRect) -> Double { ledge.midX }
 
+    /// Where a spot at `x` on a surface's edge is once the surface's frame has gone from `old` to
+    /// `new`: the same place along the edge. A surface that only slides carries it by exactly the
+    /// slide (his spot at the stage's centre stays at its centre); one that changes width keeps
+    /// its fraction of the width. A frame with no width (a view mid-layout) keeps its offset from
+    /// the centre, so a report that comes back to the old frame brings the spot back exactly.
+    public static func carriedX(_ x: Double, from old: MotionRect, to new: MotionRect) -> Double {
+        guard old.width >= 1, new.width >= 1 else { return x + new.midX - old.midX }
+        return new.minX + (x - old.minX) * new.width / old.width
+    }
+
     /// What his zone would cover among `obstacles` (text, buttons, hit areas), each grown by
     /// `clearance` first. Empty: the spot keeps rule 8.
     public static func blocked(zone: MotionRect, by obstacles: [MotionRect], clearance: Double = 0) -> [MotionRect] {
