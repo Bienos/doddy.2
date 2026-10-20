@@ -186,6 +186,28 @@ number is cropped away); nothing is redrawn, recoloured or generated.
 Not used: the five `*_fg_v01.png` foreground layers (024, 027, 030, 033, 035). They are not imported
 (ADR-380 explains why), and the umbrella pose still waits on the owner's weather decision.
 
+## The app icon (ADR-557, 20 October 2026)
+
+Owner: "use the wave frame from the pack for the icon", then candidate A (on paper) of the three shown.
+Source: `016_doddy_wave_v01.png` from the Drive folder, downloaded in the session and verified against the
+SHA-256 above (`817a2b87…`); frame 4 cut by `tools/whole_doddy/cut_wave.py` (488 × 733, SHA-256
+`20b648fd…`, as above). `tools/whole_doddy/make_app_icon.py` places the 410 px square x 35–445, y 95–505 of
+that cut-out (the head, the waving hand and the orange marks, cut at the torso: the website favicon's framing)
+on brand paper `#FFF7E9` (Brand Guidelines V2.2 p.20, ADR-556) and Lanczos-resizes it to 1024 px, RGB, no
+alpha. Nothing is redrawn or recoloured.
+
+| File | Made how | SHA-256 of the file written |
+| --- | --- | --- |
+| `DoddyApp/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png` | as above | ba28b129703cb656b39c414f82d47ab23bcd057f820ea408d5b467d9ebe3e393 |
+| `DoddyWatch/Assets.xcassets/AppIcon.appiconset/AppIcon.png` | byte-identical copy | the same |
+
+The dark appearance (`AppIcon-dark.png`, v1.3 art from ADR-050) is removed: the pack's ink (`#181814`) would
+vanish on night, and recolouring it is not allowed. iOS shows this icon on a dark Home Screen too and derives
+the tinted one. The strip's frames are about 450 px tall, so the 1024 px file is a 2.5× upscale; the Home
+Screen draws the icon at 180 px at most. A larger or vector wave from the artist replaces it by rerunning the
+script. This was the last v1.3 drawing in the shipped app's icon; the opening scene still reads the v1.3
+basketball SVGs (ADR-225).
+
 ## Mac menu bar and desktop widget (ADR-438, ADR-439, 11 October 2026)
 | Image set | Pack source | SHA-256 of the source | Made how |
 |---|---|---|---|

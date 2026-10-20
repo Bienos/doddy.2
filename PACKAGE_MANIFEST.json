@@ -120,8 +120,8 @@
     },
     {
       "path": "docs/design/CANONICAL_DESIGN_DIRECTION.md",
-      "sha256": "05814ecf26bb50f567a13cf836d710acb31cd0c85bdbd5213a13f8585f6d3848",
-      "bytes": 5101
+      "sha256": "3aa3012327aab75ec94487680da0719108e3269654bcf77c44daa13be35e1cae",
+      "bytes": 5765
     },
     {
       "path": "docs/design/GAPS_AND_DECISIONS.md",
