@@ -32,6 +32,8 @@ struct HomeView: View {
     @State private var showDataFlow = false
     @State private var showToday = false
     @State private var showVoicePicker = false
+    /// His eyes (ADR-546): they follow a finger on Home, half close while he is pressed, and blink once in the evening.
+    @State private var eyes = HomeEyesModel()
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
     /// First visit (ADR-326): until a conversation has really connected, Home keeps to talking and
     /// holds back the voice picker (ADR-443) and the Back Tap and Today offers.
@@ -59,6 +61,13 @@ struct HomeView: View {
                     .frame(minHeight: proxy.size.height)
                 }
                 .scrollBounceBehavior(.basedOnSize)
+                // His eyes follow a finger anywhere on Home (ADR-546). Simultaneous, so taps and
+                // scrolling work as before.
+                .simultaneousGesture(
+                    DragGesture(minimumDistance: 0, coordinateSpace: .global)
+                        .onChanged { eyes.fingerMoved(to: $0.location) }
+                        .onEnded { eyes.fingerLifted(at: $0.location) }
+                )
             }
             .safeAreaInset(edge: .bottom) {
                 bottomBar
@@ -96,7 +105,12 @@ struct HomeView: View {
                 case .breathe: BreathingView()
                 }
             }
-            .fullScreenCover(isPresented: $showAsk) { AskView(openSettings: { selectedTab = .settings }) }
+            // Type (Ask Doddy) rises from the bottom as a sheet, like everything else on Home
+            // (owner, 20 Oct); swipe it down or tap Close.
+            .sheet(isPresented: $showAsk) {
+                AskView(openSettings: { selectedTab = .settings })
+                    .presentationDragIndicator(.visible)
+            }
             // The conversation opens once the start sheet has gone away.
             .sheet(isPresented: $showTranslator, onDismiss: {
                 if let choice = translatorChoice {
@@ -211,14 +225,14 @@ struct HomeView: View {
                     // The first visit of a morning waves (ADR-380), then he sits.
                     DoddyMotionView(motion: .wave, height: 190)
                 } else {
-                    AliveDoddy(pose: perking ? .listening : .crosslegged, height: 190, hopTrigger: tapHops)
+                    AliveDoddy(pose: perking ? .listening : .crosslegged, height: 190, hopTrigger: tapHops, eyes: eyes)
                 }
             }
             .frame(height: 210, alignment: .bottom)
             .frame(maxWidth: .infinity)
             .contentShape(Rectangle())
         }
-        .buttonStyle(DoddyPressStyle())
+        .buttonStyle(DoddyPressStyle(onPress: { eyes.setPressed($0) }))
         .disabled(!canTalk)
         .accessibilityLabel("Talk to Doddy")
         .accessibilityIdentifier("home.talk")
@@ -236,6 +250,7 @@ struct HomeView: View {
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: waving)
         .animation(reduceMotion ? nil : .spring(duration: 0.3, bounce: 0.3), value: perking)
         .task { await waveOnce() }
+        .task { await eveningBlink() }
     }
 
     private var status: some View {
@@ -359,6 +374,16 @@ struct HomeView: View {
         waving = false
     }
 
+    /// After 21:00, the first time Home shows that evening: one slow blink (ADR-546). Eyes only, so
+    /// also under Reduce Motion.
+    private func eveningBlink() async {
+        guard !hideCharacterArt else { return }
+        try? await Task.sleep(for: .seconds(1.0))
+        guard !Task.isCancelled, opening?.play == nil, ready == nil, !waving, !perking else { return }
+        guard HomeIdle.blinksThisEvening(now: .now) else { return }
+        eyes.blink()
+    }
+
     private var ready: OpeningReady? { opening?.ready }
 
     /// Hidden under the opening until its hand-over, then they slide in as Doddy jumps into
@@ -451,11 +476,13 @@ struct HomeView: View {
 /// Doddy at rest on Home (ADR-545): one of the owner's pack poses, never redrawn. He breathes (a
 /// slow rise anchored at his feet), sways a little, and every so often gives a small hop; a tap
 /// hops him too. Still under Reduce Motion, with his pictures hidden, or with the app in the
-/// background. The pictures are single drawings, so he doesn't blink or move his face.
+/// background. Sitting cross-legged, his eyes move (ADR-546): eyes cut from the owner's sheets,
+/// laid over the picture only while they aren't on you.
 private struct AliveDoddy: View {
     let pose: IslandPose
     let height: CGFloat
     let hopTrigger: Int
+    let eyes: HomeEyesModel
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
@@ -470,11 +497,17 @@ private struct AliveDoddy: View {
             // 0…1, one breath every 3.6 s; and a slow sway, −1…1 every 9 s.
             let breath = (1 - cos(t * 2 * .pi / 3.6)) / 2
             let sway = sin(t * 2 * .pi / 9)
-            WholeDoddyView(pose: pose, height: height)
-                .id(pose)
-                .transition(.opacity)
-                .scaleEffect(x: 1 - breath * 0.008, y: 1 + breath * 0.022, anchor: .bottom)
-                .rotationEffect(.degrees(sway * 1.4), anchor: .bottom)
+            Group {
+                if DoddyEyes.hasFace(pose.assetName) {
+                    HomeDoddyFigure(pose: pose, height: height, eyes: eyes)
+                } else {
+                    WholeDoddyView(pose: pose, height: height)
+                }
+            }
+            .id(pose)
+            .transition(.opacity)
+            .scaleEffect(x: 1 - breath * 0.008, y: 1 + breath * 0.022, anchor: .bottom)
+            .rotationEffect(.degrees(sway * 1.4), anchor: .bottom)
         }
         .keyframeAnimator(initialValue: Hop(), trigger: hopTrigger &+ idleHops) { content, hop in
             content
@@ -529,8 +562,10 @@ private struct ReadyDot: View {
     }
 }
 
-/// Buttons on the new Home shrink a touch while pressed.
+/// Buttons on the new Home shrink a touch while pressed. `onPress` hears the press go down and up
+/// (Doddy half closes his eyes while he is pressed, ADR-546).
 private struct DoddyPressStyle: ButtonStyle {
+    var onPress: ((Bool) -> Void)? = nil
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.isEnabled) private var isEnabled
 
@@ -539,6 +574,7 @@ private struct DoddyPressStyle: ButtonStyle {
             .scaleEffect(configuration.isPressed && !reduceMotion ? 0.94 : 1)
             .opacity(isEnabled ? 1 : 0.4)
             .animation(.spring(duration: 0.2), value: configuration.isPressed)
+            .onChange(of: configuration.isPressed) { _, down in onPress?(down) }
     }
 }
 
@@ -798,6 +834,16 @@ enum HomeIdle {
     static func wavesThisMorning(now: Date, defaults: UserDefaults = .standard) -> Bool {
         guard let day = MorningWave.dayToRecord(now: now, lastWaveDay: defaults.string(forKey: waveDayKey)) else { return false }
         defaults.set(day, forKey: waveDayKey)
+        return true
+    }
+
+    /// The evening Home last blinked (ADR-546), on this iPhone only. Not a note.
+    static let eveningBlinkDayKey = "home.lastEveningBlinkDay"
+
+    /// True the first time it is asked after 21:00 on a day; it then records the day (`HomeEyes`).
+    static func blinksThisEvening(now: Date, defaults: UserDefaults = .standard) -> Bool {
+        guard let day = HomeEyes.eveningBlinkDay(now: now, lastDay: defaults.string(forKey: eveningBlinkDayKey)) else { return false }
+        defaults.set(day, forKey: eveningBlinkDayKey)
         return true
     }
 }
