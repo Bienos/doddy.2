@@ -72,6 +72,30 @@ extension XCUIApplication {
         return !bar.exists || element.frame.maxY <= bar.frame.minY
     }
 
+    /// Scrolls back (the content down), a quarter of the screen at a time, until `element` is
+    /// clear of the navigation bar at the top as well as the tab bar. For a row that revealing
+    /// something below it has pushed up under the navigation bar, where a tap lands on the bar:
+    /// hosted run 39496321722 (attempt 2) had Settings' "Ways to open Doddy" row at y 51 to 103
+    /// under the bar at 62 to 116, so its tap opened nothing. Returns whether it got there.
+    @MainActor @discardableResult
+    func revealAbove(_ element: XCUIElement, maxSteps: Int = 8) -> Bool {
+        for _ in 0..<maxSteps {
+            if isClear(element) { return true }
+            let from = coordinate(withNormalizedOffset: CGVector(dx: 0.04, dy: 0.4))
+            let to = coordinate(withNormalizedOffset: CGVector(dx: 0.04, dy: 0.65))
+            from.press(forDuration: 0.05, thenDragTo: to, withVelocity: .default, thenHoldForDuration: 0.2)
+        }
+        return isClear(element)
+    }
+
+    /// Reachable, and not under the navigation bar.
+    @MainActor
+    private func isClear(_ element: XCUIElement) -> Bool {
+        guard isReachable(element) else { return false }
+        let navigation = navigationBars.firstMatch
+        return !navigation.exists || element.frame.minY >= navigation.frame.maxY
+    }
+
     /// Waits until the app can go to tab `name`: its tab bar button, or, on Home, which has no tab
     /// bar (ADR-545), the ••• menu.
     @MainActor

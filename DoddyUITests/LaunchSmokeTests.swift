@@ -211,6 +211,9 @@ final class LaunchSmokeTests: XCTestCase {
         let reminder = app.switches["settings.waysReminder"]
         XCTAssertTrue(app.reveal(reminder))
         XCTAssertEqual(reminder.value as? String, "1")
+        // Showing the switch can push the row up under the navigation bar, where the tap would
+        // land on the bar (hosted run 39496321722, attempt 2): bring the row back first.
+        XCTAssertTrue(app.revealAbove(entry))
         entry.tap()
         XCTAssertTrue(app.buttons["ways.backTap"].waitForExistence(timeout: 5), app.debugDescription)
         XCTAssertTrue(app.buttons["ways.siri"].exists, "Siri needs no setup, so it is always offered")
