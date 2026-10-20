@@ -6,7 +6,7 @@ import Foundation
 // section marks missing is not drawn (docs/design/MOTION_V2_ART_REQUESTS.md). One exception, by
 // the owner's instruction of 20 Oct 2026 ("Make blink and gaze", Q6): his eyes, drawn from eyes
 // cut out of the pack's sheets 007 and 008 over the pictures with a front-facing head
-// (`MotionFace`, ADR-558). Names, not images: the app looks the pictures up
+// (`MotionFace`, ADR-560). Names, not images: the app looks the pictures up
 // (`DoddyMotion_<strip>_<n>`, `WholeDoddy_<pose>`, `DoddyEye_<cell>_<side>`).
 
 public struct MotionArt: Equatable, Sendable {

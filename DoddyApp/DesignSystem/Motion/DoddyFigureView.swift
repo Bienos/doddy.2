@@ -90,7 +90,7 @@ struct PersistentDoddyView: View {
     }
 }
 
-/// His eyes when they aren't at you (MV7, ADR-558): for each eye a cover in the paper's colour
+/// His eyes when they aren't at you (MV7, ADR-560): for each eye a cover in the paper's colour
 /// over the picture's own eye, then the eye cut from the owner's sheet. Positions are in pixels of
 /// the picture's @3x file, `unit` points each; the layer fills the picture's frame.
 private struct DoddyEyesLayer: View {

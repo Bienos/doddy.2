@@ -213,7 +213,7 @@ basketball SVGs (ADR-225).
 |---|---|---|---|
 | `MenuBarDoddy` (Mac app) and `MacDoddy_face` (Mac desktop widget) | 01-transparent-poses/doddy_listening_v02.png | 96375303e59d4b5f272805abb896a14ba3fcec37e8420a2dd04ec8b66823bc41 | byte-identical copies of `WidgetDoddy_face` `art@2x.png` (120×120, SHA-256 `cdb24f36e3069738…`); nothing redrawn or generated |
 
-## Eyes cut from the blink and eye sheets (ADR-558, 20 October 2026)
+## Eyes cut from the blink and eye sheets (ADR-560, 20 October 2026)
 
 Owner, 20 Oct: "Make blink and gaze". Same pack (`DODDY-Numbered-Video-Assets-v01`, Drive folder
 `1inLT9oV7wx7UM4P6nxP8yU1-29JV0_ee`). `tools/whole_doddy/build_face_pieces.py` cuts each eye out of two

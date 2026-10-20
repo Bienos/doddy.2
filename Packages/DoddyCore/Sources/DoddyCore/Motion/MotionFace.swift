@@ -1,6 +1,6 @@
 import Foundation
 
-// Motion v2, MV7 (ADR-558): his eyes. The engine has always known where he looks and when he
+// Motion v2, MV7 (ADR-560): his eyes. The engine has always known where he looks and when he
 // blinks or squints (`MotionEngine.eyeState`); the pack had no picture of it. On 20 Oct 2026 the
 // owner said "Make blink and gaze" (Q6), and the pack's sheets 007 (a blink) and 008 (nine
 // gazes) have the eyes. `tools/whole_doddy/build_face_pieces.py` cuts each eye out of them as ink

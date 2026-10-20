@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// MV7 (ADR-558): his eyes. The pieces are cut from the owner's sheets 007 and 008 by
+/// MV7 (ADR-560): his eyes. The pieces are cut from the owner's sheets 007 and 008 by
 /// `tools/whole_doddy/build_face_pieces.py`; these check what the code does with them: which eyes
 /// the engine's state chooses, that every piece and picture the table names exists, that the
 /// table is plausible against the pictures' own geometry, and that the engine's real events (a

@@ -4,7 +4,7 @@ import UIKit
 import XCTest
 @testable import Doddy
 
-/// MV7 (ADR-558): the eyes the engine can choose are only drawn if the app has the pictures: every
+/// MV7 (ADR-560): the eyes the engine can choose are only drawn if the app has the pictures: every
 /// cut eye, and every picture the face table measures, in the size those measurements assume.
 final class MotionFaceAssetsTests: XCTestCase {
     func testEveryCutEyeIsInTheApp() {

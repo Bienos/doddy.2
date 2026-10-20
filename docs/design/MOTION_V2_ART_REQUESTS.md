@@ -37,7 +37,7 @@ Squash on landing and the lean are transforms of the whole current picture (Q7).
 
 | Needed by the brief | Pack today | What the app does until it exists |
 |---|---|---|
-| Gaze: pupils in 8 directions plus centre, on a front head that matches every body ("eyes first", glances, eyes following a finger, thinking's eyes up and right) | **Drawn from MV7 (ADR-558):** `008_doddy_eyes_v01.png`, a 3 × 3 grid of heads with the eyes in nine places, cut into eight pairs of eyes. **Only on the front-facing pictures** (standing, waving, cross-legged). Needs a gaze set for the three-quarter pictures (the hop strip, listening, the shrug) and for the kneeling thinking pose | Gaze on the front pictures. On the hop strip and the other turned heads his eyes stay as drawn. The sheet's eyes move about 0.1 to 0.15 of a head radius (2 to 3 pt at normal size), so the look is subtle; a wider set would need new art. |
+| Gaze: pupils in 8 directions plus centre, on a front head that matches every body ("eyes first", glances, eyes following a finger, thinking's eyes up and right) | **Drawn from MV7 (ADR-560):** `008_doddy_eyes_v01.png`, a 3 × 3 grid of heads with the eyes in nine places, cut into eight pairs of eyes. **Only on the front-facing pictures** (standing, waving, cross-legged). Needs a gaze set for the three-quarter pictures (the hop strip, listening, the shrug) and for the kneeling thinking pose | Gaze on the front pictures. On the hop strip and the other turned heads his eyes stay as drawn. The sheet's eyes move about 0.1 to 0.15 of a head radius (2 to 3 pt at normal size), so the look is subtle; a wider set would need new art. |
 | Blink, and the slow 280 ms blink | **Drawn from MV7:** `007_doddy_blink_v02.png` (open, half closed, closed, half closed), the half and closed eyes cut out | The evening welcome's one slow blink and the thinking blink (the thinking pose kneels, so that one isn't drawn). No idle blinking: the brief's rule 9 forbids loops. |
 | Eyes closed in contentment | **Drawn from MV7** (the closed eyes of sheet 007) on the front pictures | The head rub closes his eyes. |
 | Squint on touch | **Drawn from MV7** (the half-closed eyes of sheet 007) | A touch on him squints (on top of MV5's dip). |
@@ -63,7 +63,7 @@ Squash on landing and the lean are transforms of the whole current picture (Q7).
 ## Q6: answered by the owner, 20 Oct 2026 ("Make blink and gaze")
 
 The agent read this as the owner approving the first of the two ways below (cutting those sheets), the
-only one that can be done today. MV7 (ADR-558) cuts the eyes out of sheets 007 and 008 and draws them
+only one that can be done today. MV7 (ADR-560) cuts the eyes out of sheets 007 and 008 and draws them
 on the pictures with a front-facing head. `tools/whole_doddy/build_face_pieces.py` does the cutting
 and measuring, and can draw proof sheets. If the owner would rather have heads delivered as layers,
 MV7 can be replaced by them without touching the engine: only `MotionFace` draws.

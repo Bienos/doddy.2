@@ -16,7 +16,7 @@ import Foundation
 // Gaze is kept as data (what he looks at and why) because the reference uses it to sequence
 // reactions. Until MV7 the pack had no art that moves his eyes on their own (plan section 3), so
 // the app didn't draw it; `MotionFace` now draws it on the pictures that have a front-facing
-// head, from the pieces cut from the owner's sheets 007 and 008 (ADR-558).
+// head, from the pieces cut from the owner's sheets 007 and 008 (ADR-560).
 
 public struct MotionSettings: Sendable {
     public var reduceMotion = false

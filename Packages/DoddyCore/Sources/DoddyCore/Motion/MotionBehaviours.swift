@@ -7,7 +7,7 @@ import Foundation
 // thinking in Ask while the reply hasn't come, the wave or the stretch as the session's one
 // playful moment, and the daily welcome (a hop in place first after three days away). Everything
 // the pack can't draw (head roll, brace, shuffle, and gaze or blink on the three-quarter pictures)
-// stays off and is listed in docs/design/MOTION_V2_ART_REQUESTS.md. Gaze and blink (MV7, ADR-558)
+// stays off and is listed in docs/design/MOTION_V2_ART_REQUESTS.md. Gaze and blink (MV7, ADR-560)
 // are drawn on the pictures with a front-facing head.
 
 /// The daily welcome (brief rule 9, Q15): once a day, on Home. After three days or more away it
