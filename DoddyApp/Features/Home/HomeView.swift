@@ -30,6 +30,7 @@ struct HomeView: View {
     @State private var showTranslator = false
     @State private var translatorChoice: TranslatorSetup?
     @State private var showDataFlow = false
+    @State private var showCapabilities = false
     @State private var showToday = false
     @State private var showVoicePicker = false
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
@@ -71,6 +72,7 @@ struct HomeView: View {
             .navigationDestination(for: UUID.self) { MemoryOrListView(id: $0) }
             .sheet(item: $modal) { _ in CaptureView() }
             .sheet(isPresented: $showDataFlow) { DataFlowSheet() }
+            .sheet(isPresented: $showCapabilities) { CapabilitiesSheet() }
             .sheet(isPresented: $showMemories) {
                 HomeMemoriesSheet(
                     openNotes: { leaveForMemories(lists: false) },
@@ -161,6 +163,9 @@ struct HomeView: View {
                     .accessibilityIdentifier("home.menu.memories")
                 Button { selectedTab = .settings } label: { Label("Settings", systemImage: "slider.horizontal.3") }
                     .accessibilityIdentifier("home.menu.settings")
+                // What is built and what isn't, from the capability catalog (T35/T42, ADR-195, ADR-548).
+                Button { showCapabilities = true } label: { Label("What I can do", systemImage: "sparkles") }
+                    .accessibilityIdentifier("home.capabilities")
                 Button { showDataFlow = true } label: { Label("What leaves this iPhone", systemImage: "lock.shield") }
                     .accessibilityIdentifier("home.dataFlow")
             }

@@ -1304,5 +1304,14 @@
   "Pick a starting vibe. You can change it whenever you want.": "最初の雰囲気を選んでください。いつでも変更できます。",
   "Your name and response style are saved on this iPhone. You can edit or clear them in Settings.": "名前と応答スタイルをこのiPhoneに保存しました。設定から編集または削除できます。",
   "On your first launch, Doddy makes a quick basketball entrance. You can skip it; with Reduce Motion on, it stays calm and still. Voice and microphone access never start from the intro.": "初回起動時に、Doddyがバスケットボールの演出で登場します。スキップできます。「視差効果を減らす」がオンの場合は、静止した落ち着いた表示になります。この演出から音声やマイクが起動することはありません。",
-  "Only the answers shown here are changed. They're saved on this iPhone.": "ここに表示されている回答だけを変更します。このiPhoneに保存されます。"
+  "Only the answers shown here are changed. They're saved on this iPhone.": "ここに表示されている回答だけを変更します。このiPhoneに保存されます。",
+  "An example: lost keys": "例：なくした鍵",
+  "Doddy can only find what you told it. It can't see your home or track your things.": "Doddyが見つけられるのは、あなたが伝えたことだけです。家の中が見えるわけでも、持ち物を追跡しているわけでもありません。",
+  "Doddy looks through what you told it.": "Doddyが、あなたが伝えたことの中から探します。",
+  "Found, from your own note.": "あなた自身のメモから見つかりました。",
+  "The keys aren't on the hook.": "鍵がフックにありません。",
+  "There they are.": "ありました。",
+  "What I can do": "できること",
+  "You ask Doddy where they are.": "あなたがDoddyに、どこにあるか聞きます。",
+  "You'd saved “keys under the sofa cushion”.": "「鍵はソファのクッションの下」と保存していました。"
 }

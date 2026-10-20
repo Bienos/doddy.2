@@ -223,10 +223,9 @@ enum PanelStory: String, CaseIterable, Hashable, Sendable {
     case phone
     /// 039: Doddy draws a door and walks through. The Face ID lock.
     case door
-    /// 040: an ink drop, a splash, Doddy in a real street. No screen shows it now ("What I can do"
-    /// was removed, 20 Oct); the Xcode preview gallery still does.
+    /// 040: an ink drop, a splash, Doddy in a real street. "What I can do" (Home's ••• menu, ADR-548).
     case ink
-    /// 041: keys found under a cushion. No screen shows it now; the preview gallery does.
+    /// 041: keys found under a cushion. An example in "What I can do", never played.
     case keys
 
     var panelCount: Int { self == .keys ? 6 : 4 }
