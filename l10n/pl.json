@@ -441,7 +441,6 @@
   "Every day": "Codziennie",
   "Every month works for days 1 to 28, so every month has the day.": "Co miesiąc działa dla dni od 1 do 28, żeby każdy miesiąc miał ten dzień.",
   "Everyone on the list can be reminded at “%@”.": "Wszyscy na liście mogą dostać przypomnienie w miejscu „%@”.",
-  "Everything here starts off. Doddy uses a tool only while its switch is on and, for an account, while it's connected. Anything that adds or creates something shows you a card first and waits for your tap.": "Wszystko tutaj jest na początku wyłączone. Doddy używa narzędzia tylko, gdy jego przełącznik jest włączony, a w przypadku konta — gdy jest połączone. Wszystko, co coś dodaje lub tworzy, najpierw pokazuje kartę i czeka na Twoje stuknięcie.",
   "Everything in this backup is already on this iPhone. Nothing to add.": "Wszystko z tej kopii zapasowej już jest na tym iPhonie. Nie ma nic do dodania.",
   "Expired": "Wygasło",
   "Export as JSON": "Eksportuj jako JSON",
@@ -1634,5 +1633,7 @@
   "The photo couldn't be read, so it wasn't added. Try taking it again.": "Nie udało się odczytać zdjęcia, więc nie zostało dodane. Spróbuj zrobić je jeszcze raz.",
   "These stay on this iPhone. Doddy's voice hears only how many there are and when they were taken.": "Zostają na tym iPhonie. Głos Doddy’ego słyszy tylko, ile ich jest i kiedy zostały zrobione.",
   "You let Doddy see only some of your photos, so there may be more.": "Pozwoliłeś Doddy’emu widzieć tylko część zdjęć, więc może ich być więcej.",
-  "Your photos": "Twoje zdjęcia"
+  "Your photos": "Twoje zdjęcia",
+  "Web search is on, and an account's tools come on when you connect it. Doddy still asks before every look, and anything that sends, adds or changes something shows you a card first and waits for your tap. Switch any tool off here.": "Wyszukiwanie w sieci jest włączone, a narzędzia konta włączają się, gdy je połączysz. Doddy i tak pyta przed każdym sprawdzeniem, a wszystko, co coś wysyła, dodaje lub zmienia, najpierw pokazuje kartę i czeka na Twoje stuknięcie. Tutaj możesz wyłączyć każde narzędzie.",
+  "It takes a minute or two. Open it now; it shows the file as soon as it's ready.": "To potrwa minutę lub dwie. Otwórz teraz; plik pokaże się, gdy tylko będzie gotowy."
 }

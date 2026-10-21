@@ -320,7 +320,6 @@
   "Every day": "每天",
   "Every month works for days 1 to 28, so every month has the day.": "“每月”适用于 1 到 28 日，这样每个月都有这一天。",
   "Everyone on the list can be reminded at “%@”.": "清单上的每个人都可以在“%@”收到提醒。",
-  "Everything here starts off. Doddy uses a tool only while its switch is on and, for an account, while it's connected. Anything that adds or creates something shows you a card first and waits for your tap.": "这里的一切初始都是关闭的。只有在工具的开关打开时，Doddy 才会使用它；对于账户，还需要处于已连接状态。任何会添加或创建内容的操作都会先向你显示一张卡片，并等待你轻点。",
   "Everything in this backup is already on this iPhone. Nothing to add.": "这个备份中的所有内容都已在这台 iPhone 上。没有可添加的内容。",
   "Expired": "已过期",
   "Export as JSON": "导出为 JSON",
@@ -1277,5 +1276,6 @@
   "There they are.": "找到了。",
   "What I can do": "我能做什么",
   "You ask Doddy where they are.": "你问 Doddy 它们在哪里。",
-  "You'd saved “keys under the sofa cushion”.": "你之前记下了“钥匙在沙发垫下面”。"
+  "You'd saved “keys under the sofa cushion”.": "你之前记下了“钥匙在沙发垫下面”。",
+  "Web search is on, and an account's tools come on when you connect it. Doddy still asks before every look, and anything that sends, adds or changes something shows you a card first and waits for your tap. Switch any tool off here.": "网页搜索已开启，账户的工具会在你连接账户后开启。Doddy 每次查看前仍会询问，任何会发送、添加或更改内容的操作都会先显示一张卡片，等你轻点确认。你可以在这里关闭任何工具。"
 }

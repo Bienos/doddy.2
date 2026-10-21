@@ -1,20 +1,25 @@
 import DoddyCore
 import SwiftUI
 
-/// Builds the model from the development server settings. Without a server address and a session
-/// token the screen says online accounts aren't set up; it never shows invented connections.
+/// Builds the model for Doddy's server (built in, or Settings' development address). The phone signs
+/// itself in first (ADR-563). Without a server or a session the screen says online accounts aren't
+/// set up; it never shows invented connections.
 struct OnlineAccountsScreen: View {
     @AppStorage(PreferenceKey.connectedAppsServerURL) private var serverURL = ""
+    @State private var signedIn = false
 
     var body: some View {
         OnlineAccountsView(
             model: OnlineAccountsModel(client: OnlineAccountsClientFactory.make(), authenticator: SystemWebAuthenticator()))
-            .id(serverURL)
+            .id("\(serverURL)|\(signedIn)")
+            .task(id: serverURL) {
+                if let url = DeviceSession.serverURL() { signedIn = await DeviceSession.ensure(server: url) }
+            }
     }
 }
 
-/// Settings → Online accounts. One section per account, one switch per tool. Everything starts
-/// off; a switch moves only after Doddy's server accepts it.
+/// Settings → Online accounts. One section per account, one switch per tool. Web search starts on and
+/// an account's tools come on with it (ADR-563); a switch moves only after Doddy's server accepts it.
 struct OnlineAccountsView: View {
     @State private var model: OnlineAccountsModel
     @State private var confirmConnect: ToolkitView?
@@ -61,7 +66,7 @@ struct OnlineAccountsView: View {
 
             if let catalog = model.catalog {
                 Section {
-                    Text("Everything here starts off. Doddy uses a tool only while its switch is on and, for an account, while it's connected. Anything that adds or creates something shows you a card first and waits for your tap.")
+                    Text("Web search is on, and an account's tools come on when you connect it. Doddy still asks before every look, and anything that sends, adds or changes something shows you a card first and waits for your tap. Switch any tool off here.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }

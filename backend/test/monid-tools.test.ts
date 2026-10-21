@@ -33,8 +33,9 @@ test("the card shows the words and what Doddy pays; the yes runs exactly that on
   assert.equal((await prepare(rig, "find_places", { query: "cafe", near: "Warsaw", provider: "x", endpoint: "/v1/run" })).status, 400);
 });
 
-test("news: switched off is refused; on, the articles come with their sites and dates", async () => {
+test("news: on by default (ADR-563); the user's off is refused; on, the articles come with their sites and dates", async () => {
   rig = await start();
+  await rig.call("PUT", "/v1/tools/switch", { body: { tool: "news_search", enabled: false } });
   assert.equal((await prepare(rig, "news_search", { query: "tram" })).status, 403);
   await on(rig, "news_search");
   const card = await prepare(rig, "news_search", { query: "tram", recent: "day" });

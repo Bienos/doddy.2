@@ -35,7 +35,7 @@ extension VoiceToolReply {
     }
 
     /// The result words the server starts a line with (backend/src/tools/catalog.ts).
-    static let cloudResultPrefixes = ["drafted:", "added:", "completed:", "moved:", "email:", "page:", "sent:", "changed:", "trashed:", "deleted:", "answered:"]
+    static let cloudResultPrefixes = ["drafted:", "added:", "completed:", "moved:", "email:", "page:", "sent:", "changed:", "trashed:", "deleted:", "answered:", "started:"]
 
     public static func cloudDeclined(_ tool: String) -> String {
         "declined: the user chose not to do \"\(CloudToolName.title(tool))\". Nothing was done."
@@ -51,7 +51,8 @@ extension VoiceToolReply {
         case .notConfigured:
             return "failed: Online accounts aren't set up in this version of the app. Tell the user in one sentence. Nothing was done."
         case .unauthenticated:
-            return "failed: Doddy's server didn't accept this device. Tell the user to check Settings, Online accounts. Nothing was done."
+            // ADR-563: the app signs in again by itself after this.
+            return "failed: Doddy had to sign in to his server again. Nothing was done. Try once more."
         case .transport:
             return isWrite ? maybeDone : "failed: Doddy's server couldn't be reached. Nothing was changed."
         case .unreadableResponse:
@@ -72,9 +73,12 @@ extension VoiceToolReply {
                 if receipt?.errorCode == "earlier_outcome_unknown" || receipt?.status == .outcomeUnknown { return maybeDone }
                 return "failed: \"\(CloudToolName.title(tool))\" is switched off. Tell the user they can switch it on in Settings, Online accounts. Nothing was done."
             case "not_connected", "connection_expired", "permission_insufficient":
-                return "failed: \(account) isn't connected or needs reconnecting. Tell the user they can connect it in Settings, Online accounts. Nothing was done."
+                // ADR-563: the app puts a Connect button on screen for this account.
+                return "not_connected: \(account) isn't connected yet, or needs reconnecting. A \"Connect \(account)\" button is on the user's screen now. Ask in one short sentence whether they'd like to connect it; it takes a few seconds. When it's connected the app tells you, and then you do what they asked. Nothing was done yet."
             case "live_not_configured":
                 return "failed: \(account) isn't set up on Doddy's server. Nothing was done."
+            case "quota_exceeded" where account == CloudToolName.claudeAccount:
+                return "failed: today's Claude limit was reached. Tell the user it works again tomorrow; you can still help in your own words. Nothing was sent to Claude."
             case "quota_exceeded" where !CloudToolName.needsAccount(tool):
                 return "failed: today's web search limit was reached. Tell the user it works again tomorrow and answer from what you know if you can, saying it may be out of date. Nothing was looked up."
             case "rate_limited", "quota_exceeded", "busy":
