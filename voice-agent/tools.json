@@ -1251,7 +1251,7 @@
         },
         "required": ["task", "request"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 60, "elevenlabs_tool_id": "not_synced"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 60, "elevenlabs_tool_id": "tool_1601m5f15swpeetbygr32gwr4h5a"}
     },
     {
       "type": "function",
@@ -1267,7 +1267,7 @@
         },
         "required": ["kind", "title", "request"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 60, "elevenlabs_tool_id": "not_synced"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 60, "elevenlabs_tool_id": "tool_2101m5f15tckfy0v74g5gyaqm3td"}
     }
   ]
 }
