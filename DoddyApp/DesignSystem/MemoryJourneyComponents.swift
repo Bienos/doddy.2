@@ -12,12 +12,21 @@ enum MemoryNavigationRoute: Hashable {
     case note(UUID)
 }
 
+/// The guide's logo: "Doddy" in Caveat Bold, Brand Guidelines V2.2 p.18 option C (ADR-562). A vector
+/// template cut from the guide's own glyphs (tools/brand/extract_wordmark.py), so no font ships; it
+/// takes the ink colour, paper on night in dark appearance. Grows with Dynamic Type up to xxLarge's
+/// size, as the old text did.
 struct DoddyWordmark: View {
+    @ScaledMetric(relativeTo: .title) private var height: CGFloat = 34
+
     var body: some View {
-        (Text("doddy").foregroundColor(Theme.ink) + Text(".").foregroundColor(Theme.accentText))
-            .font(.title.weight(.medium))
-            .dynamicTypeSize(...DynamicTypeSize.xxLarge)
-            .tracking(-1.5)
+        Image("DoddyWordmark")
+            .renderingMode(.template)
+            .resizable()
+            .scaledToFit()
+            .frame(height: min(height, 42))
+            .foregroundStyle(Theme.ink)
+            .accessibilityElement()
             .accessibilityLabel("Doddy")
     }
 }
