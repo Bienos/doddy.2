@@ -3,6 +3,8 @@
 # token server / backend / gateway tests, then XcodeGen, one build, and the unit tests and then
 # the UI tests on the first available iPhone simulator, restarted between the two (ADR-561).
 # No signing team or secrets are used; nothing is deployed.
+# Builds the iPhone/iPad app only: the Apple Watch and Mac apps are paused (ADR-572) and are in no
+# target of project.yml. The "macOS" below is the runner Xcode needs, not an app being built.
 # The macOS job is the expensive one (about 52 minutes at $0.062 a minute), so it runs only after
 # the Linux checks pass, and on a pull request only when the change can reach the app build or its
 # tests (ADR-497, scripts/ci_needs_mac.sh). Run by hand, it always runs.

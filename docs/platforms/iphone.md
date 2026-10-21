@@ -1,8 +1,8 @@
 # iPhone and iPad
 
 **Build:**
-- `make project-iphone`, scheme `Doddy`: no Watch app, the fastest way to work on the iPhone.
-- `make project`, scheme `Doddy`: the shipping build, with the Watch app embedded.
+- `make project`, scheme `Doddy`: the shipping build. The Apple Watch app is paused (ADR-572) and is not in it.
+- `make project-iphone`, scheme `Doddy`: the same with no entitlements, so a free Apple team can sign it.
 - iPad is the same app target (`TARGETED_DEVICE_FAMILY 1,2`).
 
 **State:** this is what the owner builds and uses. The known-good branch and the unmerged changes are in `/STATUS.md`. iPad work (sidebar, fixes) is in `docs/implementation/IPAD_STATUS.md`. Most of it is not compiled yet (PR #61).

@@ -8,6 +8,7 @@ build/
 # Xcode (the project is generated from project.yml; see docs/BUILD_AND_TEST.md)
 Doddy.xcodeproj/
 DoddyiPhone.xcodeproj/
+DoddyWithWatch.xcodeproj/
 DoddyMac.xcodeproj/
 DoddyApp/Info.plist
 *.xcworkspace/xcuserdata/
