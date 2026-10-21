@@ -366,11 +366,13 @@ final class VoiceToolsTests: XCTestCase {
         XCTAssertEqual(VoiceConnection.serving("draft_blik_transfer"), .blik)
         XCTAssertEqual(VoiceConnection.serving("make_presentation"), .presentations)
         XCTAssertEqual(VoiceConnection.serving("read_steps"), .steps)
+        XCTAssertEqual(VoiceConnection.serving("find_photos"), .photos)
+        XCTAssertEqual(VoiceConnection.serving("open_camera"), .camera)
         XCTAssertNil(VoiceConnection.serving("save_memory"))
         XCTAssertEqual(VoiceConnection.calendar.preferenceKey, "voiceConnection.calendar")
         XCTAssertEqual(VoiceConnection.blik.preferenceKey, "voiceConnection.blik")
-        // ADR-563 and ADR-564 added Presentations and Steps.
-        XCTAssertEqual(VoiceConnection.allCases.count, 10)
+        // ADR-563 and ADR-564 added Presentations and Steps; ADR-565 Photos and Camera.
+        XCTAssertEqual(VoiceConnection.allCases.count, 12)
     }
 
     // MARK: Replies

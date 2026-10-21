@@ -131,6 +131,71 @@
         }
       }
     },
+    "NSCameraUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy öffnet die Kamera nur, wenn du auf „Foto aufnehmen“ oder „Kamera öffnen“ tippst. Das Foto, das du behältst, kommt in eine Notiz auf diesem iPhone und sein Text wird hier gelesen; es wird nie irgendwohin gesendet oder in deiner Fotomediathek gespeichert."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy opens the camera only when you tap Take a photo or Open camera. The photo you keep goes into a note on this iPhone and its text is read here; it is never sent anywhere or saved to your photo library."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy abre la cámara solo cuando tocas Hacer una foto o Abrir cámara. La foto que conservas va a una nota en este iPhone y su texto se lee aquí; nunca se envía a ningún sitio ni se guarda en tu fototeca."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy ouvre l’appareil photo seulement quand tu touches Prendre une photo ou Ouvrir l’appareil photo. La photo que tu gardes va dans une note sur cet iPhone et son texte est lu ici ; elle n’est jamais envoyée nulle part ni enregistrée dans ta photothèque."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy otvara kameru samo kad dodirneš Snimi fotografiju ili Otvori kameru. Fotografija koju zadržiš ide u bilješku na ovom iPhoneu, a njezin se tekst čita ovdje; nikad se nikamo ne šalje niti sprema u tvoju knjižnicu fotografija."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy apre la fotocamera solo quando tocchi Scatta una foto o Apri fotocamera. La foto che tieni finisce in una nota su questo iPhone e il suo testo viene letto qui; non viene mai inviata da nessuna parte né salvata nella tua libreria foto."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddyがカメラを開くのは、「写真を撮る」または「カメラを開く」をタップしたときだけです。残した写真はこのiPhone上のメモに入り、その文字はここで読み取られます。どこにも送信されず、写真ライブラリにも保存されません。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy otwiera aparat tylko wtedy, gdy stukniesz Zrób zdjęcie albo Otwórz aparat. Zdjęcie, które zachowasz, trafia do notatki na tym iPhonie, a jego tekst jest odczytywany tutaj; nigdy nie jest nigdzie wysyłane ani zapisywane w Twojej bibliotece zdjęć."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Doddy abre a câmera só quando você toca em Tirar foto ou Abrir câmera. A foto que você mantém vai para uma nota neste iPhone e o texto dela é lido aqui; ela nunca é enviada a lugar nenhum nem salva na sua fototeca."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "只有在你轻点“拍照”或“打开相机”时，Doddy 才会打开相机。你保留的照片会放进这台 iPhone 上的一条笔记，其中的文字在这里读取；照片绝不会发送到任何地方，也不会存入你的照片图库。"
+          }
+        }
+      }
+    },
     "NSContactsUsageDescription": {
       "extractionState": "manual",
       "localizations": {
@@ -452,6 +517,71 @@
           "stringUnit": {
             "state": "translated",
             "value": "只有在你提出请求时，Doddy 才会从“运动与健身”读取最近七天中某一天的步数、步行距离和爬楼层数。在语音对话中，这些数字会发送给运行 Doddy 语音的 ElevenLabs；如果你在主屏幕把语音切换为 OpenAI，则发送给 OpenAI。Doddy 不保存这些数据，也不读取“健康”中的任何内容。可在设置的“连接”中关闭。"
+          }
+        }
+      }
+    },
+    "NSPhotoLibraryUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy zählt die Fotos und Videos, die du an den erfragten Tagen aufgenommen hast, und zeigt sie auf deinem Bildschirm. Nur wie viele es sind und wann sie aufgenommen wurden, geht in diesem Gespräch an die Stimme von Doddy (ElevenLabs oder OpenAI, wenn du die Stimme auf dem Startbildschirm darauf umstellst); die Bilder verlassen dieses iPhone nie. Doddy ändert deine Mediathek nie. Schalte das unter Einstellungen, Verbindungen aus."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy counts the photos and videos you took on the days you ask about and shows them on your screen. Only how many there are and when they were taken go to Doddy's voice in that conversation (ElevenLabs, or OpenAI if you switch Home's voice to it); the pictures never leave this iPhone. Doddy never changes your library. Turn this off in Settings, Connections."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy cuenta las fotos y vídeos que hiciste los días que preguntas y los muestra en tu pantalla. Solo cuántos hay y cuándo se hicieron van a la voz de Doddy en esa conversación (ElevenLabs, u OpenAI si cambias a ella la voz de Inicio); las imágenes nunca salen de este iPhone. Doddy nunca cambia tu fototeca. Desactívalo en Ajustes, Conexiones."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy compte les photos et vidéos que tu as prises les jours que tu demandes et les affiche sur ton écran. Seuls leur nombre et le moment où elles ont été prises vont à la voix de Doddy dans cette conversation (ElevenLabs, ou OpenAI si tu choisis cette voix sur l’écran d’accueil) ; les images ne quittent jamais cet iPhone. Doddy ne modifie jamais ta photothèque. Désactive ceci dans Réglages, Connexions."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy broji fotografije i videozapise snimljene u danima za koje pitaš i prikazuje ih na tvom zaslonu. Samo njihov broj i vrijeme snimanja idu Doddyjevom glasu u tom razgovoru (ElevenLabs ili OpenAI ako na početnom zaslonu prebaciš glas na njega); same slike nikad ne napuštaju ovaj iPhone. Doddy nikad ne mijenja tvoju knjižnicu. Isključi to u Postavkama, Veze."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy conta le foto e i video che hai fatto nei giorni che chiedi e li mostra sul tuo schermo. Solo quanti sono e quando sono stati fatti vanno alla voce di Doddy in quella conversazione (ElevenLabs, o OpenAI se scegli quella voce nella schermata Home); le immagini non lasciano mai questo iPhone. Doddy non modifica mai la tua libreria. Disattivalo in Impostazioni, Collegamenti."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddyは、あなたが尋ねた日に撮った写真とビデオの数を数え、画面に表示します。その会話でDoddyの声（ElevenLabs、またはホームの音声をOpenAIに切り替えた場合はOpenAI）に送られるのは、枚数と撮影日時だけです。写真そのものがこのiPhoneから出ることはありません。Doddyがライブラリを変更することはありません。オフにするには、設定の「連携」を使ってください。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy liczy zdjęcia i filmy zrobione w dniach, o które pytasz, i pokazuje je na Twoim ekranie. Do głosu Doddy'ego w tej rozmowie trafia tylko ich liczba i czas zrobienia (do ElevenLabs albo do OpenAI, jeśli przełączysz na nie głos na ekranie głównym); same zdjęcia nigdy nie opuszczają tego iPhone'a. Doddy nigdy nie zmienia Twojej biblioteki. Wyłączysz to w Ustawieniach, w sekcji Połączenia."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Doddy conta as fotos e vídeos que você fez nos dias sobre os quais pergunta e os mostra na sua tela. Só quantos são e quando foram feitos vão para a voz do Doddy nessa conversa (ElevenLabs, ou OpenAI se você mudar a voz da tela inicial para ela); as imagens nunca saem deste iPhone. O Doddy nunca altera sua fototeca. Desative em Ajustes, Conexões."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy 会统计你在所问日期拍摄的照片和视频，并在你的屏幕上显示。在那次对话中，只有数量和拍摄时间会发送给 Doddy 的语音（ElevenLabs；如果你在主屏幕把语音切换为 OpenAI，则为 OpenAI）；图片本身绝不会离开这台 iPhone。Doddy 绝不会更改你的图库。可在设置的“连接”中关闭。"
           }
         }
       }

@@ -69,6 +69,9 @@ final class DeviceConnections {
         case .reminders: Self.eventAccess(EKEventStore.authorizationStatus(for: .reminder))
         case .contacts: Self.contactAccess(CNContactStore.authorizationStatus(for: .contacts))
         case .steps: Self.motionAccess()
+        // ADR-565: the library (PhotoLibrarySearch) and the camera (CameraAccess), each its own file.
+        case .photos: PhotoLibrarySearch.access()
+        case .camera: CameraAccess.access()
         case .timers: .notDetermined
         // BLIK transfers (ADR-510) need no iOS permission: the card only shows what to send.
         // Presentations (ADR-563) are a file Doddy makes; the user picks where it goes.
@@ -88,6 +91,10 @@ final class DeviceConnections {
             return .granted
         case .steps:
             return await requestMotion()
+        case .photos:
+            return await PhotoLibrarySearch.request()
+        case .camera:
+            return await CameraAccess.request()
         case .calendar, .reminders, .contacts:
             guard access(for: connection) == .notDetermined else { return access(for: connection) }
             let granted: Bool
@@ -148,6 +155,14 @@ final class DeviceConnections {
     }
 
     var stepCountingAvailable: Bool { CMPedometer.isStepCountingAvailable() }
+
+    // MARK: Photos and camera (ADR-565)
+
+    var cameraAvailable: Bool { CameraAccess.isAvailable }
+
+    func findPhotos(_ request: PhotoSearchRequest, now: Date) -> PhotoSearchFound {
+        PhotoLibrarySearch.find(request, now: now)
+    }
 
     // MARK: Steps (ADR-564)
 
@@ -752,6 +767,8 @@ protocol DeviceConnecting: ReminderStore, CalendarEventWriter, TimerWriter, Send
     func notificationAccess() async -> DeviceConnections.Access
     var stepCountingAvailable: Bool { get }
     func steps(on day: StepDay, now: Date) async throws -> StepTotals
+    var cameraAvailable: Bool { get }
+    func findPhotos(_ request: PhotoSearchRequest, now: Date) -> PhotoSearchFound
     func changeEvent(_ plan: EventChangePlan) throws -> DeviceConnections.ChangeOutcome
     func undo(_ undo: ActivityUndo) async -> UndoResult
     func eventLocation(_ event: CalendarEventSummary) -> String?
@@ -772,6 +789,8 @@ extension DeviceConnecting {
     func request(_ connection: VoiceConnection) async -> DeviceConnections.Access { access(for: connection) }
     var stepCountingAvailable: Bool { false }
     func steps(on day: StepDay, now: Date) async throws -> StepTotals { throw DeviceConnections.Failure.stepsNotAllowed }
+    var cameraAvailable: Bool { false }
+    func findPhotos(_ request: PhotoSearchRequest, now: Date) -> PhotoSearchFound { .empty }
 }
 
 /// Resumes a continuation once: whichever comes first, EventKit's answer or the timeout.

@@ -19,6 +19,13 @@ reaches OpenAI with the next app build, and ElevenLabs only after the sync below
 
 ## Source of truth and syncing
 
+**Sync started 2026-10-21, about 01:30 UTC, and stopped (ADR-562 to 565; owner: "Ok", to "Should I sync the live agent").**
+- **Read first:** live version `agtvrsn_5201m5dtmpvne48vt1hxc6h53hh0`, 82 tools. Its prompt is byte for byte the 20 Oct text (SHA-256 `b3030a46…`); this version id is newer than the `agtvrsn_8701m5ct…` named below, for a change outside the prompt that isn't recorded here. The full document is not kept in the repository.
+- **Done:** client tool `make_presentation` created as `tool_9601m5em00c3f66tbpag9f27kf4h`, exactly as `voice_agent_spec.py elevenlabs` renders it. **It is not attached to the agent**, so the live agent can't call it yet.
+- **Not done:** creating `read_steps` was refused by Claude Code's permission check (an account change), so the sync stopped there. The agent's tool list and prompt were **not** changed; the live version is still `agtvrsn_5201m5dtmpvne48vt1hxc6h53hh0`.
+- **Still to apply, in one save after reading the version again:** create `read_steps`, `find_photos` and `open_camera`; attach those three plus `tool_9601m5em00c3f66tbpag9f27kf4h` (82 → 86 tools); and add to the live prompt, in its own style: a "## Presentations" and a "## Steps" section after "## BLIK transfers", "made" in the success prefixes, the "made" and "not allowed" result lines after "shown", and "Control Keynote, Pages or Numbers…" under "# Unsupported capabilities". Photos and the camera need their own lines too (the live "## Camera" section still sends everything to the "Doddy Camera" Shortcut). The live "## Access" section already tells Doddy to say "Allow it on screen and I'll carry on", which fits the permission sheet as it is.
+
+
 **Applied to the live agent 2026-10-20, about 14:08 UTC (ADR-556, Brand Guidelines V2.2; owner: "do it"):** the guide's verbal identity (pp.49–66). The live prompt is the owner's own rewrite, so this folder's new "# Who you are" and "# How you speak" were not copied in. Eleven short lines were added in the live prompt's own style, and nothing else in the prompt changed:
 - **Identity:** what he says when asked what he is, and that he explains tools, permissions and data plainly when asked.
 - **Personality:** no loyalty speeches, no manufactured closeness.

@@ -29,7 +29,7 @@ Date: 2026-10-10. Owner: "do all of them" (item 3 of the proposed list).
 - Data Protection on the photo files and their presence in an iPhone backup not checked on a device.
 
 ## Decisions for the owner
-- **Camera capture:** owner said no (ADR-224). Photo notes stay picker-only.
+- **Camera capture:** owner said no (ADR-224), then yes on 21 Oct (ADR-565): **Take a photo** next to Add a photo, and "take a photo" by voice, both through iOS's camera screen. The photo is prepared and kept exactly as a picked one; nothing is saved to the photo library.
 - **Photos in the encrypted backup file** (ADR-219 work): included by default there, since that file is the user's own.
 
 ## Constitution evidence log (docs/trust/config/doddy_rules.yaml)

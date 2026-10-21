@@ -67,6 +67,8 @@ struct ConnectionGroup: Identifiable {
         ConnectionGroup(title: "People", items: [.contacts, .messages]),
         // ADR-563: a presentation is a file made here, opened in Keynote by the user.
         ConnectionGroup(title: "Places and apps", items: [.maps, .shortcuts, .presentations]),
+        // ADR-565: the photo library (counts, pictures on screen only) and Doddy's camera.
+        ConnectionGroup(title: "Photos and camera", items: [.photos, .camera]),
         // ADR-510: shown, never sent; the user sends it in their bank app.
         ConnectionGroup(title: "Money", items: [.blik]),
     ]
@@ -392,6 +394,28 @@ struct ConnectionInfo {
                 ],
                 leavesPhone: "That day's numbers, when Doddy uses them in a conversation.",
                 staysHere: "Doddy keeps none of it and reads nothing from the Health app. iPhone asks once for Motion & Fitness.")
+        case .photos:
+            // ADR-565: counts and times to the voice, pictures on this screen only.
+            ConnectionInfo(
+                symbol: "photo.on.rectangle",
+                examples: ["How many photos did I take on Saturday?", "Show me my photos from last week"],
+                canDo: [
+                    "Count the photos and videos you took on a day or over up to a month, after you say yes or tap",
+                    "Show the newest of them on your screen, with a button to open Photos",
+                ],
+                leavesPhone: "Only how many there are and when the first and last were taken, when Doddy uses them in a conversation. Never the pictures or where they were taken.",
+                staysHere: "The pictures are shown on this screen only. Doddy never changes, deletes or adds anything in your photo library. If you let Doddy see only some photos, it says so.")
+        case .camera:
+            // ADR-565: iOS's own camera screen; a kept photo becomes a note the user saves.
+            ConnectionInfo(
+                symbol: "camera",
+                examples: ["Take a photo", "Open the camera"],
+                canDo: [
+                    "Open Doddy's camera, after you tap Open camera",
+                    "Put the photo you keep into a new note, with its text read on this iPhone, for you to check and save",
+                ],
+                leavesPhone: "Nothing from the camera. Only the words you save in the note can reach Doddy's voice, like any note.",
+                staysHere: "The photo is kept with the note on this iPhone, never sent anywhere and never saved to your photo library. You can also tap Take a photo when writing a note.")
         case .blik:
             // ADR-510: BLIK has no way for an app to send money, so Doddy only shows the details.
             ConnectionInfo(

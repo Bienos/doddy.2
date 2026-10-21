@@ -34,5 +34,13 @@
   "NSMotionUsageDescription": {
     "en": "Doddy reads your steps, walking distance and floors climbed from Motion & Fitness only when you ask, for one day of the last seven. In a voice conversation those numbers go to ElevenLabs, which runs Doddy's voice, or to OpenAI if you switch Home's voice to it. Doddy keeps none of them and reads nothing from Health. Turn this off in Settings, Connections.",
     "fr": "Doddy lit tes pas, la distance parcourue à pied et les étages montés dans Mouvements et forme uniquement quand tu le demandes, pour un jour parmi les sept derniers. Dans une conversation vocale, ces chiffres vont à ElevenLabs, qui fait tourner la voix de Doddy, ou à OpenAI si tu choisis cette voix sur l’écran d’accueil. Doddy n’en garde rien et ne lit rien dans Santé. Désactive ceci dans Réglages, Connexions."
+  },
+  "NSCameraUsageDescription": {
+    "en": "Doddy opens the camera only when you tap Take a photo or Open camera. The photo you keep goes into a note on this iPhone and its text is read here; it is never sent anywhere or saved to your photo library.",
+    "fr": "Doddy ouvre l’appareil photo seulement quand tu touches Prendre une photo ou Ouvrir l’appareil photo. La photo que tu gardes va dans une note sur cet iPhone et son texte est lu ici ; elle n’est jamais envoyée nulle part ni enregistrée dans ta photothèque."
+  },
+  "NSPhotoLibraryUsageDescription": {
+    "en": "Doddy counts the photos and videos you took on the days you ask about and shows them on your screen. Only how many there are and when they were taken go to Doddy's voice in that conversation (ElevenLabs, or OpenAI if you switch Home's voice to it); the pictures never leave this iPhone. Doddy never changes your library. Turn this off in Settings, Connections.",
+    "fr": "Doddy compte les photos et vidéos que tu as prises les jours que tu demandes et les affiche sur ton écran. Seuls leur nombre et le moment où elles ont été prises vont à la voix de Doddy dans cette conversation (ElevenLabs, ou OpenAI si tu choisis cette voix sur l’écran d’accueil) ; les images ne quittent jamais cet iPhone. Doddy ne modifie jamais ta photothèque. Désactive ceci dans Réglages, Connexions."
   }
 }

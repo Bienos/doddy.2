@@ -17,6 +17,8 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
     case presentations
     /// Motion & Fitness step counts (ADR-564).
     case steps
+    /// The photo library and Doddy's camera (ADR-565).
+    case photos, camera
 
     public var title: String {
         switch self {
@@ -38,6 +40,8 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
         case .blik: "BLIK transfers"
         case .presentations: "Presentations"
         case .steps: "Steps"
+        case .photos: "Photos"
+        case .camera: "Camera"
         }
     }
 }
@@ -213,6 +217,10 @@ public struct ActivityRequest: Equatable, Sendable {
                 logDetail: "\(draft.slideCount) slides", isLookup: false)
         case .readSteps(let day):
             return ActivityRequest(app: .steps, title: "Read steps", detail: day.text, isLookup: true)
+        case .findPhotos(let request):
+            return ActivityRequest(app: .photos, title: "Looked through photos", detail: request.text(calendar: calendar), isLookup: true)
+        case .openCamera:
+            return ActivityRequest(app: .camera, title: "Open the camera", detail: nil, isLookup: false)
         case .cloudTool(let call):
             // Writes carry a key (ADR-322): a hash of the tool and its arguments, never the words.
             guard let request = describe(cloud: call.name), let key = CloudIdempotency.key(call) else { return describe(cloud: call.name) }

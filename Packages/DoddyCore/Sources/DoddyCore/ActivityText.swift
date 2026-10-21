@@ -24,6 +24,8 @@ extension ActivityApp {
         case .blik: return "Przelewy BLIK"
         case .presentations: return "Prezentacje"
         case .steps: return "Kroki"
+        case .photos: return "Zdjęcia"
+        case .camera: return "Aparat"
         }
     }
 }
@@ -65,6 +67,8 @@ public enum ActivityText {
         "Prepare a BLIK transfer": "Przygotuj przelew BLIK",
         "Make a presentation": "Przygotuj prezentację",
         "Read steps": "Odczytano kroki",
+        "Looked through photos": "Przejrzano zdjęcia",
+        "Open the camera": "Otwórz aparat",
         "Draft an email": "Szkic e-maila",
         // Written before ADR-275 fixed the article; old rows still say it.
         "Draft a email": "Szkic e-maila",
@@ -192,6 +196,8 @@ public enum ActivityText {
         case .blik: "Przelewy BLIK"
         case .presentations: "Prezentacje"
         case .steps: "Kroki"
+        case .photos: "Zdjęcia"
+        case .camera: "Aparat"
         }
     }
 

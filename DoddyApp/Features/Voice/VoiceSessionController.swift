@@ -89,6 +89,8 @@ final class VoiceSessionController {
         /// "Make this presentation?" (ADR-563): every slide as it will be in the file. Nothing is
         /// made until the user taps Make presentation.
         case presentation(toolCallID: String, draft: PresentationDraft)
+        /// "Open the camera?" (ADR-565). The camera opens only on the tap.
+        case camera(toolCallID: String)
 
         var toolCallID: String {
             switch self {
@@ -98,7 +100,7 @@ final class VoiceSessionController {
                  .changeEvent(let id, _), .changeReminder(let id, _, _), .deleteEvent(let id, _), .deleteReminder(let id, _),
                  .undo(let id, _), .bulk(let id, _, _, _), .parking(let id, _), .leaveBy(let id, _),
                  .ingredients(let id, _, _, _, _, _), .ask(let id, _, _, _, _), .cloudRead(let id, _, _, _, _),
-                 .presentation(let id, _):
+                 .presentation(let id, _), .camera(let id):
                 id
             }
         }
@@ -140,6 +142,13 @@ final class VoiceSessionController {
         let parameters: Data
 
         var id: String { toolCallID }
+    }
+
+    /// What a photo search found (ADR-565), shown on screen only.
+    struct PhotoResults: Equatable {
+        let request: PhotoSearchRequest
+        let summary: PhotoSearchSummary
+        let identifiers: [String]
     }
 
     /// A presentation file written and read back on this iPhone (ADR-563).
@@ -271,6 +280,10 @@ final class VoiceSessionController {
     private var callsAsReceived: [String: (toolName: String, parameters: Data)] = [:]
     /// The presentation made in this conversation (ADR-563), for the share sheet and its card.
     private(set) var presentationReady: PresentationReady?
+    /// The last photo search's results (ADR-565): counts and pictures, on this screen only.
+    private(set) var photoResults: PhotoResults?
+    /// Set when the user tapped Open camera (ADR-565); the screen shows the camera while it is set.
+    private(set) var cameraRequest: UUID?
     private(set) var isMuted = false {
         didSet {
             syncIsland()
@@ -518,6 +531,8 @@ final class VoiceSessionController {
         declinedPermissions = []
         callsAsReceived = [:]
         presentationReady = nil
+        photoResults = nil
+        cameraRequest = nil
         isMuted = false
         savedThisConversation = 0
         islandFlash = nil
@@ -1259,6 +1274,10 @@ final class VoiceSessionController {
             } catch {
                 await reply(id, VoiceToolReply.presentationFailed(UserFacingError.message(for: error)), isError: true)
             }
+        case .camera(let id):
+            // ADR-565: the camera opens on this screen; a kept photo goes into a new note.
+            if onScreen(attempt) { cameraRequest = UUID() }
+            await reply(id, VoiceToolReply.cameraOpened)
         case .ask(let id, _, _, let toolName, _):
             guard askLedger.answer(.tapped, for: id, at: Date()) == .granted else {
                 await reply(id, AskFirst.notAsked(toolName))
@@ -1471,6 +1490,7 @@ final class VoiceSessionController {
         case .message(let id, _, _): await reply(id, VoiceToolReply.declinedMessage)
         case .blik(let id, _, _, _): await reply(id, VoiceToolReply.blikDeclined)
         case .presentation(let id, _): await reply(id, VoiceToolReply.presentationDeclined)
+        case .camera(let id): await reply(id, VoiceToolReply.cameraDeclined)
         case .cloud(let id, let call, _, _, _): await reply(id, VoiceToolReply.cloudDeclined(call.name))
         case .ask(let id, _, _, let toolName, _):
             _ = askLedger.answer(.declined, for: id, at: Date())
@@ -2471,6 +2491,27 @@ final class VoiceSessionController {
             } catch {
                 await reply(call.toolCallId, VoiceToolReply.stepsFailed(UserFacingError.message(for: error)), isError: true)
             }
+        case .findPhotos(let request):
+            // ADR-565: counts and times to the agent; the pictures stay on this screen.
+            guard devices.access(for: .photos) == .granted else {
+                await notConnected(call.toolCallId, .photos)
+                return
+            }
+            let found = devices.findPhotos(request, now: Date())
+            if isCurrent(call.toolCallId) {
+                photoResults = PhotoResults(request: request, summary: found.summary, identifiers: found.identifiers)
+            }
+            await reply(call.toolCallId, VoiceToolReply.photosFound(found.summary, request: request, calendar: .current))
+        case .openCamera:
+            guard devices.cameraAvailable else {
+                await reply(call.toolCallId, VoiceToolReply.cameraUnavailable)
+                return
+            }
+            guard devices.access(for: .camera) == .granted else {
+                await notConnected(call.toolCallId, .camera)
+                return
+            }
+            propose(.camera(toolCallID: call.toolCallId), toolCallID: call.toolCallId)
         case .cloudTool(let cloud):
             await handleCloud(cloud, toolCallID: call.toolCallId)
         case .startTranslator(let proposal):
@@ -3527,6 +3568,10 @@ final class VoiceSessionController {
             await reply(toolCallID, VoiceToolReply.stepsUnavailable)
             return
         }
+        if connection == .camera, !devices.cameraAvailable {
+            await reply(toolCallID, VoiceToolReply.cameraUnavailable)
+            return
+        }
         // ADR-562: hold the call and slide the permission sheet up, instead of answering "not
         // connected" and leaving the user to find Settings. One sheet at a time; a connection the
         // user said Not now to isn't asked for again in this conversation.
@@ -3605,6 +3650,15 @@ final class VoiceSessionController {
 
     func dismissPresentationReady() {
         presentationReady = nil
+    }
+
+    func dismissPhotoResults() {
+        photoResults = nil
+    }
+
+    /// The camera screen went away, with or without a photo.
+    func cameraClosed() {
+        cameraRequest = nil
     }
 
     /// Called after the Connections sheet closes: the prompt goes away once the switch is on.
@@ -3790,7 +3844,7 @@ private extension VoiceSessionController.PendingAction {
         // is recorded on the row it undoes (ADR-271).
         // ASK-01 asks: the change itself (a list item) is logged by the flow it runs. A BLIK card only
         // shows what the user sends in their bank app (ADR-510).
-        case .map, .shortcut, .message, .blik, .plan, .undo, .ask, .cloudRead: false
+        case .map, .shortcut, .message, .blik, .plan, .undo, .ask, .cloudRead, .camera: false
         }
     }
 }

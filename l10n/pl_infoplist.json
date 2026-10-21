@@ -34,5 +34,13 @@
  "NSMotionUsageDescription": {
   "en": "Doddy reads your steps, walking distance and floors climbed from Motion & Fitness only when you ask, for one day of the last seven. In a voice conversation those numbers go to ElevenLabs, which runs Doddy's voice, or to OpenAI if you switch Home's voice to it. Doddy keeps none of them and reads nothing from Health. Turn this off in Settings, Connections.",
   "pl": "Doddy odczytuje Twoje kroki, przebyty dystans i pokonane piętra z danych Ruch i fitness tylko wtedy, gdy o to poprosisz, dla jednego dnia z ostatnich siedmiu. W rozmowie głosowej te liczby trafiają do ElevenLabs, które obsługuje głos Doddy'ego, albo do OpenAI, jeśli przełączysz na nie głos na ekranie głównym. Doddy niczego z tego nie zachowuje i nie czyta nic z aplikacji Zdrowie. Wyłączysz to w Ustawieniach, w sekcji Połączenia."
+ },
+ "NSCameraUsageDescription": {
+  "en": "Doddy opens the camera only when you tap Take a photo or Open camera. The photo you keep goes into a note on this iPhone and its text is read here; it is never sent anywhere or saved to your photo library.",
+  "pl": "Doddy otwiera aparat tylko wtedy, gdy stukniesz Zrób zdjęcie albo Otwórz aparat. Zdjęcie, które zachowasz, trafia do notatki na tym iPhonie, a jego tekst jest odczytywany tutaj; nigdy nie jest nigdzie wysyłane ani zapisywane w Twojej bibliotece zdjęć."
+ },
+ "NSPhotoLibraryUsageDescription": {
+  "en": "Doddy counts the photos and videos you took on the days you ask about and shows them on your screen. Only how many there are and when they were taken go to Doddy's voice in that conversation (ElevenLabs, or OpenAI if you switch Home's voice to it); the pictures never leave this iPhone. Doddy never changes your library. Turn this off in Settings, Connections.",
+  "pl": "Doddy liczy zdjęcia i filmy zrobione w dniach, o które pytasz, i pokazuje je na Twoim ekranie. Do głosu Doddy'ego w tej rozmowie trafia tylko ich liczba i czas zrobienia (do ElevenLabs albo do OpenAI, jeśli przełączysz na nie głos na ekranie głównym); same zdjęcia nigdy nie opuszczają tego iPhone'a. Doddy nigdy nie zmienia Twojej biblioteki. Wyłączysz to w Ustawieniach, w sekcji Połączenia."
  }
 }

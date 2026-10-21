@@ -31,6 +31,10 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
     case presentations
     /// Step count, walking distance and floors from Motion & Fitness (ADR-564).
     case steps
+    /// Counting the photos in the user's library for a day or a span (ADR-565).
+    case photos
+    /// Doddy's own camera, for a photo note (ADR-565).
+    case camera
 
     /// The name shown in Settings and in the agent's replies.
     public var title: String {
@@ -45,6 +49,8 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
         case .blik: "BLIK transfers"
         case .presentations: "Presentations"
         case .steps: "Steps"
+        case .photos: "Photos"
+        case .camera: "Camera"
         }
     }
 
@@ -66,6 +72,8 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
         case VoiceToolName.draftBlikTransfer: .blik
         case VoiceToolName.makePresentation: .presentations
         case VoiceToolName.readSteps: .steps
+        case VoiceToolName.findPhotos: .photos
+        case VoiceToolName.openCamera: .camera
         default: nil
         }
     }
@@ -212,6 +220,10 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case makePresentation(PresentationDraft)
     /// One day's steps from Motion & Fitness, read only (ADR-564).
     case readSteps(StepDay)
+    /// Counts of the photos in the library for a span of days; pictures on screen only (ADR-565).
+    case findPhotos(PhotoSearchRequest)
+    /// Doddy's camera, after a card (ADR-565). A kept photo goes into a new note the user saves.
+    case openCamera
     /// Gmail, Google Drive, Notion or Todoist through the Doddy server (see OnlineAccounts).
     case cloudTool(CloudToolCall)
     /// Translator mode (ADR-215): proposed on a card; the conversation switches on Start.
@@ -322,6 +334,10 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return parsePresentation(args, name: name)
         case VoiceToolName.readSteps:
             return parseSteps(args, name: name, now: now, calendar: calendar)
+        case VoiceToolName.findPhotos:
+            return parsePhotoSearch(args, name: name, now: now, calendar: calendar)
+        case VoiceToolName.openCamera:
+            return .openCamera
         case VoiceToolName.startTranslator:
             return parseStartTranslator(args, name: name)
         case VoiceToolName.stopTranslator:

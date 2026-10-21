@@ -49,6 +49,8 @@ Before = `voice-agent/tools.json` at `2278430`. "Card, tap" tools already asked;
 | `convert_currency` | **Doesn't ask**: runs on the agent's call | Card; **spoken yes or tap** |
 | `read_steps` (new, ADR-564) | (new tool) | Card; **spoken yes or tap**. If Steps is off, the permission sheet (ADR-562) shows the same question and its Allow is the tap |
 | `make_presentation` (new, ADR-563) | (new tool) | Card with every slide; **tap only**. The file is made on the tap; the share sheet hands it on |
+| `find_photos` (new, ADR-565) | (new tool) | Card; **spoken yes or tap**. Counts and times to the agent; the pictures on screen only |
+| `open_camera` (new, ADR-565) | (new tool) | Card; **tap only**. The camera opens on the tap; a kept photo becomes a note the user saves |
 | `geocode_place` | Doesn't ask: ElevenLabs runs it, the app never sees it | Removed from the agent (the app can't ask before it); weather and facts go through `web_search`, which asks |
 | `get_weather` | Doesn't ask: ElevenLabs runs it, the app never sees it | Removed from the agent (the app can't ask before it); weather and facts go through `web_search`, which asks |
 | `wikipedia_search` | Doesn't ask: ElevenLabs runs it, the app never sees it | Removed from the agent (the app can't ask before it); weather and facts go through `web_search`, which asks |

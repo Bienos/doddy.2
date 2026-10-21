@@ -50,7 +50,7 @@ Code lives under `DoddyApp/Features/<Folder>/`. Status docs are in `docs/impleme
 | Meaning | Find by meaning (on-device) | 227 | MEANING_SEARCH_STATUS |
 | MorningCheckIn, EveningWrapUp, WeeklyLookBack, TidyUp | Daily and weekly routines | 220, 261, 306, 228 | MORNING_CHECKIN_STATUS, EVENING_WRAPUP_STATUS, TIDY_UP_STATUS |
 | News, Updates | Daily news, server notifications and texts | 174, 175 | N1_NEWS_STATUS, S1_SERVER_STATUS |
-| Photos, VoiceMemos | Photo notes, voice memos | 218, 230 | PHOTO_NOTES_STATUS, VOICE_MEMOS_STATUS |
+| Photos, VoiceMemos | Photo notes (picker and, since ADR-565, Doddy's camera), the photo search card, voice memos | 218, 230, 565 | PHOTO_NOTES_STATUS, VOICE_MEMOS_STATUS, APPLE_CONNECTIONS |
 | Privacy | Face ID lock, "What leaves this iPhone" | 310 | - |
 | QuickActions, Spotlight | Icon menu, iPhone search | 339, 330 | - |
 | Setup | Ways to open Doddy: Back Tap guide, Action Button, control, Siri | 380, 558 | V2_SHORTCUT_SETUP_STATUS |

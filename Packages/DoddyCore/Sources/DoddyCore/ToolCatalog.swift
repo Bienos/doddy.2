@@ -97,6 +97,8 @@ public enum ToolCatalog {
         .init(VoiceToolName.upcomingBirthdays, .lookup, .askFirst),
         // Motion & Fitness, read only (ADR-564).
         .init(VoiceToolName.readSteps, .lookup, .askFirst),
+        // Counts and times from the photo library; the pictures stay on screen (ADR-565).
+        .init(VoiceToolName.findPhotos, .lookup, .askFirst),
         .init(VoiceToolName.setTimer, .localChange, .card),
         .init(VoiceToolName.setAlarm, .localChange, .card),
         .init(VoiceToolName.listAlarms, .lookup, .askFirst),
@@ -117,6 +119,8 @@ public enum ToolCatalog {
         .init(VoiceToolName.draftBlikTransfer, .handoff, .card),
         // A file made on the iPhone on a tap, then the share sheet to Keynote or Files (ADR-563).
         .init(VoiceToolName.makePresentation, .handoff, .card),
+        // Doddy's camera opens on the tap; a kept photo becomes a note the user saves (ADR-565).
+        .init(VoiceToolName.openCamera, .handoff, .card),
         // The conversation itself.
         .init(VoiceToolName.startTranslator, .session, .askFirst),
         .init(VoiceToolName.stopTranslator, .session, .askFirst),

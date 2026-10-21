@@ -1623,5 +1623,16 @@
   "Your presentation is ready": "Twoja prezentacja jest gotowa",
   "It's in Doddy's temporary files until iOS clears them. Save it in Keynote or Files to keep it.": "Jest w plikach tymczasowych Doddy’ego, dopóki iOS ich nie wyczyści. Zapisz ją w Keynote albo w Plikach, żeby ją zachować.",
   "Open in Keynote or share": "Otwórz w Keynote albo udostępnij",
-  "Make presentation": "Przygotuj prezentację"
+  "Make presentation": "Przygotuj prezentację",
+  "A photo you keep goes into a new note that you check and save. Its text is read on this iPhone. Nothing is saved to your photo library, and the photo is never sent anywhere.": "Zdjęcie, które zachowasz, trafia do nowej notatki, którą sprawdzasz i zapisujesz. Jego tekst jest odczytywany na tym iPhonie. Nic nie trafia do Twojej biblioteki zdjęć, a zdjęcie nigdy nie jest nigdzie wysyłane.",
+  "Open Photos": "Otwórz Zdjęcia",
+  "Open camera": "Otwórz aparat",
+  "Open the camera?": "Otworzyć aparat?",
+  "Photos and camera": "Zdjęcia i aparat",
+  "Take a photo": "Zrób zdjęcie",
+  "The camera is off for Doddy. You can allow it in iPhone Settings, Doddy, Camera.": "Aparat jest wyłączony dla Doddy’ego. Możesz go włączyć w Ustawieniach iPhone’a, Doddy, Aparat.",
+  "The photo couldn't be read, so it wasn't added. Try taking it again.": "Nie udało się odczytać zdjęcia, więc nie zostało dodane. Spróbuj zrobić je jeszcze raz.",
+  "These stay on this iPhone. Doddy's voice hears only how many there are and when they were taken.": "Zostają na tym iPhonie. Głos Doddy’ego słyszy tylko, ile ich jest i kiedy zostały zrobione.",
+  "You let Doddy see only some of your photos, so there may be more.": "Pozwoliłeś Doddy’emu widzieć tylko część zdjęć, więc może ich być więcej.",
+  "Your photos": "Twoje zdjęcia"
 }

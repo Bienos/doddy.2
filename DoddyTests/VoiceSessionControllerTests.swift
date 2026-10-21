@@ -475,6 +475,53 @@ final class PermissionSheetTests: XCTestCase {
     }
 }
 
+/// find_photos and open_camera (ADR-565) with the fake device: a read asks first and the agent
+/// hears counts only; a device without a camera says so instead of asking for a permission.
+final class PhotosAndCameraControllerTests: XCTestCase {
+    private typealias Harness = VoiceSessionControllerTests.Harness
+
+    @MainActor
+    func testFindPhotosAsksThenShowsCountsOnly() async {
+        let t = Harness()
+        defer { t.restore() }
+        let key = VoiceConnection.photos.preferenceKey
+        let saved = UserDefaults.standard.object(forKey: key)
+        defer { UserDefaults.standard.set(saved, forKey: key) }
+        UserDefaults.standard.set(true, forKey: key)
+        t.controller.beginForTesting(link: t.link)
+
+        await t.controller.receiveToolCallForTesting(name: VoiceToolName.findPhotos, id: "photos-1", parameters: #"{"day":"today"}"#).value
+        guard case .ask? = t.controller.pendingAction else {
+            return XCTFail("ASK-01: a read asks first, got \(String(describing: t.controller.pendingAction))")
+        }
+        XCTAssertTrue(t.link.results.isEmpty)
+
+        await t.controller.confirmPendingAction()
+
+        XCTAssertEqual(t.link.results.map(\.id), ["photos-1"])
+        XCTAssertTrue(t.link.results.first?.text.hasPrefix("No photos or videos") == true, t.link.results.first?.text ?? "")
+        XCTAssertEqual(t.controller.photoResults?.summary.photos, 0)
+    }
+
+    @MainActor
+    func testADeviceWithoutACameraSaysSoInsteadOfAsking() async {
+        let t = Harness()
+        defer { t.restore() }
+        let key = VoiceConnection.camera.preferenceKey
+        let saved = UserDefaults.standard.object(forKey: key)
+        defer { UserDefaults.standard.set(saved, forKey: key) }
+        UserDefaults.standard.set(false, forKey: key)
+        t.controller.beginForTesting(link: t.link)
+
+        await t.controller.receiveToolCallForTesting(name: VoiceToolName.openCamera, id: "camera-1", parameters: "{}").value
+
+        XCTAssertNil(t.controller.permissionRequest, "no sheet for a camera that isn't there")
+        XCTAssertNil(t.controller.cameraRequest)
+        XCTAssertEqual(t.link.results.map(\.id), ["camera-1"])
+        XCTAssertEqual(t.link.results.first?.text, VoiceToolReply.cameraUnavailable)
+    }
+}
+
 /// Calendar and Reminders that record every write and return what the test set.
 @MainActor
 private final class FakeDevices: DeviceConnecting {
