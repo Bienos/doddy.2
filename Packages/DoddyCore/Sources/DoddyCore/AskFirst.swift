@@ -75,6 +75,10 @@ public enum AskFirst {
                 title: "Convert this currency?",
                 lines: ["\(number(request.amount)) \(request.from) to \(request.to)", "Uses the European Central Bank's public daily rates."],
                 confirmLabel: "Yes, convert"))
+        case .findPhotos(let request):
+            return .yesFirst(AskCard(title: "Look through your photos?", lines: [request.text(calendar: calendar), "Only the counts and times go to Doddy's voice; the photos stay on your screen."], confirmLabel: "Yes, look"))
+        case .readSteps(let day):
+            return .yesFirst(AskCard(title: "Read your steps?", lines: ["\(day.text), from Motion & Fitness"], confirmLabel: "Yes, read them"))
         case .listAlarms:
             return .yesFirst(AskCard(title: "Check Doddy's alarms?", lines: ["The alarms Doddy set on this iPhone"], confirmLabel: "Yes, check"))
         case .readList(let name):
@@ -107,7 +111,7 @@ public enum AskFirst {
                 lines: ["Kept on this iPhone as a category only: \(category.rawValue.replacingOccurrences(of: "_", with: " "))"],
                 confirmLabel: "Note it"))
         case .saveMemory, .createCalendarEvent, .createReminder, .remindAboutNote, .undoLast, .setTimer, .setAlarm, .cancelAlarm,
-             .openMap, .runShortcut, .draftMessage, .draftBlikTransfer, .addIngredients, .createList, .changeCalendarEvent, .changeReminder,
+             .openMap, .runShortcut, .draftMessage, .draftBlikTransfer, .makePresentation, .openCamera, .addIngredients, .createList, .changeCalendarEvent, .changeReminder,
              .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders, .leaveBy, .parkingSpot(.save):
             return .ownPayloadCard
         case .cloudTool(let call):

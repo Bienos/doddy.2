@@ -30,5 +30,17 @@
   "NSSpeechRecognitionUsageDescription": {
     "en": "Doddy writes out a voice memo on this iPhone when you record one, so you can check its words before saving. The recording and its words are not sent anywhere.",
     "it": "Doddy trascrive un memo vocale su questo iPhone quando lo registri, così puoi controllarne il testo prima di salvare. La registrazione e il suo testo non vengono inviati da nessuna parte."
+  },
+  "NSMotionUsageDescription": {
+    "en": "Doddy reads your steps, walking distance and floors climbed from Motion & Fitness only when you ask, for one day of the last seven. In a voice conversation those numbers go to ElevenLabs, which runs Doddy's voice, or to OpenAI if you switch Home's voice to it. Doddy keeps none of them and reads nothing from Health. Turn this off in Settings, Connections.",
+    "it": "Doddy legge i tuoi passi, la distanza percorsa a piedi e i piani saliti da Movimento e fitness solo quando lo chiedi, per un giorno degli ultimi sette. In una conversazione vocale questi numeri vanno a ElevenLabs, che fa funzionare la voce di Doddy, o a OpenAI se scegli quella voce nella schermata Home. Doddy non conserva nulla e non legge nulla da Salute. Disattivalo in Impostazioni, Collegamenti."
+  },
+  "NSCameraUsageDescription": {
+    "en": "Doddy opens the camera only when you tap Take a photo or Open camera. The photo you keep goes into a note on this iPhone and its text is read here; it is never sent anywhere or saved to your photo library.",
+    "it": "Doddy apre la fotocamera solo quando tocchi Scatta una foto o Apri fotocamera. La foto che tieni finisce in una nota su questo iPhone e il suo testo viene letto qui; non viene mai inviata da nessuna parte né salvata nella tua libreria foto."
+  },
+  "NSPhotoLibraryUsageDescription": {
+    "en": "Doddy counts the photos and videos you took on the days you ask about and shows them on your screen. Only how many there are and when they were taken go to Doddy's voice in that conversation (ElevenLabs, or OpenAI if you switch Home's voice to it); the pictures never leave this iPhone. Doddy never changes your library. Turn this off in Settings, Connections.",
+    "it": "Doddy conta le foto e i video che hai fatto nei giorni che chiedi e li mostra sul tuo schermo. Solo quanti sono e quando sono stati fatti vanno alla voce di Doddy in quella conversazione (ElevenLabs, o OpenAI se scegli quella voce nella schermata Home); le immagini non lasciano mai questo iPhone. Doddy non modifica mai la tua libreria. Disattivalo in Impostazioni, Collegamenti."
   }
 }

@@ -1,10 +1,11 @@
 import Contacts
+import CoreMotion
 import DoddyCore
 import EventKit
 import Foundation
 import UserNotifications
 
-/// The only code that touches the calendar, reminders, contacts and notifications. Nothing here
+/// The only code that touches the calendar, reminders, contacts, Motion & Fitness and notifications. Nothing here
 /// runs unless the user turned the matching switch on in Settings, Connections; the caller checks
 /// that first. Each call also checks iOS permission. The guard script keeps the EventKit and
 /// Contacts imports in this folder.
@@ -40,31 +41,41 @@ final class DeviceConnections {
     enum Failure: LocalizedError {
         case noDefaultCalendar
         case noDefaultReminderList
+        case stepsNotAllowed
+        case stepsTimedOut
 
         var errorDescription: String? {
             switch self {
             case .noDefaultCalendar: "There is no calendar to add the event to."
             case .noDefaultReminderList: "There is no list to add the reminder to."
+            case .stepsNotAllowed: "Motion & Fitness isn't allowed for Doddy."
+            case .stepsTimedOut: "Motion & Fitness didn't answer in time."
             }
         }
     }
 
     private let eventStore = EKEventStore()
     private let contactStore = CNContactStore()
+    private let pedometer = CMPedometer()
 
     // MARK: Permission
 
     /// Synchronous for calendar, reminders and contacts. Timers use notification permission, which
-    /// iOS only reports asynchronously; use `notificationAccess()` for those. Maps, Shortcuts and
-    /// Messages need no permission of their own.
+    /// iOS only reports asynchronously; use `notificationAccess()` for those. Maps, Shortcuts,
+    /// Messages and Presentations need no permission of their own.
     func access(for connection: VoiceConnection) -> Access {
         switch connection {
         case .calendar: Self.eventAccess(EKEventStore.authorizationStatus(for: .event))
         case .reminders: Self.eventAccess(EKEventStore.authorizationStatus(for: .reminder))
         case .contacts: Self.contactAccess(CNContactStore.authorizationStatus(for: .contacts))
+        case .steps: Self.motionAccess()
+        // ADR-569: the library (PhotoLibrarySearch) and the camera (CameraAccess), each its own file.
+        case .photos: PhotoLibrarySearch.access()
+        case .camera: CameraAccess.access()
         case .timers: .notDetermined
         // BLIK transfers (ADR-510) need no iOS permission: the card only shows what to send.
-        case .maps, .shortcuts, .messages, .blik: .granted
+        // Presentations (ADR-567) are a file Doddy makes; the user picks where it goes.
+        case .maps, .shortcuts, .messages, .blik, .presentations: .granted
         }
     }
 
@@ -76,8 +87,14 @@ final class DeviceConnections {
             guard current == .notDetermined else { return current }
             let granted = (try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])) ?? false
             return granted ? .granted : .denied
-        case .maps, .shortcuts, .messages, .blik:
+        case .maps, .shortcuts, .messages, .blik, .presentations:
             return .granted
+        case .steps:
+            return await requestMotion()
+        case .photos:
+            return await PhotoLibrarySearch.request()
+        case .camera:
+            return await CameraAccess.request()
         case .calendar, .reminders, .contacts:
             guard access(for: connection) == .notDetermined else { return access(for: connection) }
             let granted: Bool
@@ -108,6 +125,69 @@ final class DeviceConnections {
         case .fullAccess: .granted
         case .notDetermined: .notDetermined
         default: .denied
+        }
+    }
+
+    /// An iPad has no step counter; it counts as refused, and the voice controller says so first.
+    private static func motionAccess() -> Access {
+        guard CMPedometer.isStepCountingAvailable() else { return .denied }
+        switch CMPedometer.authorizationStatus() {
+        case .authorized: return .granted
+        case .notDetermined: return .notDetermined
+        default: return .denied
+        }
+    }
+
+    /// CoreMotion has no "ask" call: the first query shows iOS's prompt. Its answer arrives
+    /// separately from the query's, so the status is read until it is no longer undecided (at most
+    /// 30 seconds, then it counts as not allowed).
+    private func requestMotion() async -> Access {
+        let current = Self.motionAccess()
+        guard current == .notDetermined else { return current }
+        let now = Date()
+        pedometer.queryPedometerData(from: now.addingTimeInterval(-60), to: now) { @Sendable _, _ in }
+        for _ in 0..<60 {
+            try? await Task.sleep(for: .milliseconds(500))
+            let answer = Self.motionAccess()
+            if answer != .notDetermined { return answer }
+        }
+        return .notDetermined
+    }
+
+    var stepCountingAvailable: Bool { CMPedometer.isStepCountingAvailable() }
+
+    // MARK: Photos and camera (ADR-569)
+
+    var cameraAvailable: Bool { CameraAccess.isAvailable }
+
+    func findPhotos(_ request: PhotoSearchRequest, now: Date) -> PhotoSearchFound {
+        PhotoLibrarySearch.find(request, now: now)
+    }
+
+    // MARK: Steps (ADR-568)
+
+    /// One day's totals from Motion & Fitness (the iPhone keeps seven days). Read only, nothing kept.
+    func steps(on day: StepDay, now: Date) async throws -> StepTotals {
+        guard Self.motionAccess() == .granted else { throw Failure.stepsNotAllowed }
+        let range = day.range(now: now, calendar: .current)
+        let once = OnceContinuation<StepTotals>()
+        let timeout = Self.reminderReadTimeout
+        return try await withCheckedThrowingContinuation { continuation in
+            once.set(continuation)
+            // CoreMotion calls back on its own queue: @Sendable so the closure isn't main-actor code.
+            pedometer.queryPedometerData(from: range.start, to: range.end) { @Sendable data, error in
+                if let error {
+                    once.resume(.failure(error))
+                } else {
+                    once.resume(.success(StepTotals(
+                        steps: data?.numberOfSteps.intValue ?? 0, distanceMeters: data?.distance?.doubleValue,
+                        floorsUp: data?.floorsAscended?.intValue)))
+                }
+            }
+            Task {
+                try? await Task.sleep(for: timeout)
+                once.resume(.failure(Failure.stepsTimedOut))
+            }
         }
     }
 
@@ -682,7 +762,13 @@ extension DeviceConnections: TimerWriter {}
 /// and read back (ADR-319, ADR-320).
 protocol DeviceConnecting: ReminderStore, CalendarEventWriter, TimerWriter, Sendable {
     func access(for connection: VoiceConnection) -> DeviceConnections.Access
+    /// Asks iOS when it never has (the permission sheet's Allow, ADR-566).
+    func request(_ connection: VoiceConnection) async -> DeviceConnections.Access
     func notificationAccess() async -> DeviceConnections.Access
+    var stepCountingAvailable: Bool { get }
+    func steps(on day: StepDay, now: Date) async throws -> StepTotals
+    var cameraAvailable: Bool { get }
+    func findPhotos(_ request: PhotoSearchRequest, now: Date) -> PhotoSearchFound
     func changeEvent(_ plan: EventChangePlan) throws -> DeviceConnections.ChangeOutcome
     func undo(_ undo: ActivityUndo) async -> UndoResult
     func eventLocation(_ event: CalendarEventSummary) -> String?
@@ -697,6 +783,15 @@ protocol DeviceConnecting: ReminderStore, CalendarEventWriter, TimerWriter, Send
 }
 
 extension DeviceConnections: DeviceConnecting {}
+
+/// Fakes that don't model them answer like a device without the permission (tests).
+extension DeviceConnecting {
+    func request(_ connection: VoiceConnection) async -> DeviceConnections.Access { access(for: connection) }
+    var stepCountingAvailable: Bool { false }
+    func steps(on day: StepDay, now: Date) async throws -> StepTotals { throw DeviceConnections.Failure.stepsNotAllowed }
+    var cameraAvailable: Bool { false }
+    func findPhotos(_ request: PhotoSearchRequest, now: Date) -> PhotoSearchFound { .empty }
+}
 
 /// Resumes a continuation once: whichever comes first, EventKit's answer or the timeout.
 private final class OnceContinuation<Value: Sendable>: @unchecked Sendable {
