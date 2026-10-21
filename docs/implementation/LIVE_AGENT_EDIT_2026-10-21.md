@@ -15,6 +15,12 @@
 
 **Still to check:** no conversation has run on the new version. One test each: translator (English ⇄ Polish, open with "Doddy, …"), "what's the weather in Warsaw tomorrow?" and "how many people live on Earth right now?". The weather and Wikipedia tools run on ElevenLabs' side, so they work with the app already on the phone. `web_search`, `news_search`, `find_places` and the sums run in the app: an app build older than this branch still asks before them.
 
+## Then: the Claude tools (#118), 10:53 UTC
+
+`agtvrsn_4101m5f1gzv0edfat0kvfmmn1sd1` was saved over `agtvrsn_3101m5f03ak6e3wtdjfqbb2qs95e` at 10:53 UTC, not from this branch (another session, after #118 merged). It attached `ask_claude` (`tool_1601m5f15swpeetbygr32gwr4h5a`) and `make_document` (`tool_2101m5f15tckfy0v74g5gyaqm3td`), 92 tools, and added a "## Claude" section and the "started" result to the prompt. Read back at about 11:00 UTC: the two tools' descriptions match `voice-agent/tools.json` word for word, and the translator, lookup and weather changes above are still in the prompt. The owner asked for exactly this ("add the two Claude tools to the live agent") and it was already done, so nothing was sent from here.
+
+Both tools run through Doddy's server. On 21 Oct about 11:00 UTC the Render service answered `POST /v1/session/device` (400 for an empty body, not 404), so #118's device sign-in is deployed there. Whether `ANTHROPIC_API_KEY` is set was not checked: that needs a device session, and with `first-device` sign-up the first device to sign in owns the server. The app on the owner's phone predates #118 and can't sign in; a build of this branch can.
+
 ## The draft as first made (history)
 
 Made against `agtvrsn_5201m5dtmpvne48vt1hxc6h53hh0` (the owner's 23:34 UTC save of 20 Oct), before the other save above. Kept as the record of what changed; it doesn't apply to the live prompt as it is now.
