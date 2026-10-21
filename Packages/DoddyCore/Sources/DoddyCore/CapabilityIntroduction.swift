@@ -9,7 +9,8 @@ public enum CapabilityIntroduction {
             sentences.append("When we talk, your voice and the notes I use go to ElevenLabs to run the conversation.")
         }
         if isBuilt(.reminders, in: catalog) {
-            sentences.append("I can add a reminder or a calendar event and help with a few other apps, but only after you confirm each one on screen, and only for the apps you turn on in Settings › Connections.")
+            // ADR-567: the first time an app is needed, the conversation asks for it on screen.
+            sentences.append("I can add a reminder or a calendar event and help with a few other apps, but only after you confirm each one on screen. The first time I need one of your apps, I ask you on screen to allow it.")
             sentences.append("I never send a message myself.")
         } else {
             sentences.append("I can't add reminders or use other apps in this build.")

@@ -4,7 +4,15 @@ Doddy is a voice-first memory companion for iPhone, with an Apple Watch app and 
 
 Last updated 2026-10-20, 21:45 UTC (the day's merges: #106, #113, #108, #111, #110, #112 and #114; his eyes on the new Home). Before that, 2026-10-19 (the owner's merge session: #84, #88, #90 and the #97 fix). Before that, 18 Oct: stage A (ADR-520 to ADR-524) and PR #85, BLIK transfers (ADR-510).
 
-**Branch `claude/vigilant-gates-uxg63p`, 21 Oct (Warsaw), not merged:** the owner's report (ADR-562 to ADR-564): Polish by default for screens and voice; translator mode translates every line (the "Doddy, …" quiet word is off, its rules come first in the prompt); public lookups (weather, Wikipedia, web, news, places, sums, conversions) run without asking, and the four weather and Wikipedia tools are back in the spec. DoddyCore 1,269 tests pass on Linux; app code not compiled. **Live agent half-applied:** two tool descriptions only; the prompt and the rest wait for the owner's go-ahead (`docs/implementation/LIVE_AGENT_EDIT_2026-10-21.md`). The owner set the live agent's default language to Polish themselves at 23:25 UTC.
+**Branch `claude/vigilant-gates-uxg63p`, 21 Oct (Warsaw), not merged:** the owner's report (ADR-562 to ADR-567).
+- Polish by default for screens and voice.
+- Translator mode translates every line (the "Doddy, …" quiet word is off; its rules come first in the prompt).
+- Public lookups (weather, Wikipedia, web, news, places, sums, conversions) run without asking; the four weather and Wikipedia tools are back.
+- Doddy stays centred after a return from the background or a rotation (ADR-565).
+- "Talk in the Island": an Action Button control that talks without opening Doddy, and the island opens up when he speaks (ADR-566; whether iOS allows the microphone from a cold background start is unknown).
+- A tool that is off is allowed from a card in the conversation, not from Settings, for the on-phone tools (ADR-567; online accounts not yet).
+
+`scripts/ci.sh --core-only` passes (DoddyCore 1,289 tests); the iOS app is not compiled. **Live agent half-applied:** two tool descriptions only; the prompt and the rest wait for the owner's go-ahead (`docs/implementation/LIVE_AGENT_EDIT_2026-10-21.md`). The owner set the live agent's default language to Polish themselves at 23:25 UTC.
 
 **Merged to main on 20 Oct** (UTC, all as merge commits). Five of them (#108, #111, #110, #112, #114) merged while their Mac build was still running (or not yet started), so **main at `5633b8f4` has not had a full Mac build and UI-test pass as one commit.** Run states below were read at 22:06 UTC. The Mac jobs of #108, #111, #110 and #112 finished green, so main's tree at `01d3329c` (everything before #114) is built and passed its unit and UI tests. #114's Mac job built the app, but its first 12 UI tests failed (see its row), so main at `5633b8f4` has no green UI-test pass yet. Before building main for a phone, read the runs below again. Three direct commits to main at 20:56 UTC (`8ece39ba`, `fb7b6d67`, `b9f5ad86`: the iPhone project drops its entitlements so a Personal Apple team can sign it, turns off generated string symbols, and a comment names #108's Debug voice switch) come after #112 and before #114; no hosted run was started for them on their own.
 

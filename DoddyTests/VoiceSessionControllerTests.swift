@@ -385,6 +385,128 @@ final class StaleToolCallTests: XCTestCase {
     }
 }
 
+/// The access card (ADR-567): a tool whose switch is off answers at once with "allow it on
+/// screen", nothing is asked or turned on before the tap, and after the tap the agent is told to
+/// carry on (yes) or quietly not to ask again (no). Contacts is used because the harness leaves
+/// its switch alone; each test puts it back. NOT RUN in the authoring environment (no Xcode).
+final class ConnectionApprovalCardTests: XCTestCase {
+    private typealias Harness = VoiceSessionControllerTests.Harness
+
+    @MainActor
+    func testAnOffSwitchAsksOnScreenAndOneTapAllowsItAndTellsDoddyToCarryOn() async {
+        let t = Harness()
+        let saved = Self.contactsOff()
+        defer { t.restore(); Self.restoreContacts(saved) }
+        t.devices.accessResult = .notDetermined
+        t.devices.promptAnswer = .granted
+        t.controller.beginForTesting(link: t.link)
+
+        await t.controller.receiveToolCallForTesting(name: VoiceToolName.lookupContact, id: "who-1", parameters: #"{"name":"Ana"}"#).value
+
+        XCTAssertEqual(t.link.results.map(\.id), ["who-1"], "answered at once, so Doddy can say the one line")
+        XCTAssertEqual(t.link.results.first?.text, VoiceToolReply.notConnected(.contacts, card: .allow))
+        XCTAssertEqual(t.controller.accessRequest?.connection, .contacts)
+        XCTAssertEqual(t.controller.accessRequest?.card, .allow)
+        XCTAssertEqual(t.devices.requested, [], "iOS isn't asked before the tap")
+        XCTAssertFalse(UserDefaults.standard.bool(forKey: VoiceConnection.contacts.preferenceKey), "nothing turns on by itself")
+        XCTAssertNil(t.controller.contactCard, "nothing was looked up")
+
+        await t.controller.allowConnection()
+
+        XCTAssertEqual(t.devices.requested, [.contacts], "iOS's own prompt, once")
+        XCTAssertTrue(UserDefaults.standard.bool(forKey: VoiceConnection.contacts.preferenceKey))
+        XCTAssertNil(t.controller.accessRequest)
+        XCTAssertEqual(t.link.messages, ["(app) " + ConnectionApproval.allowedMessage(.contacts)])
+        XCTAssertEqual(t.link.contexts, [])
+    }
+
+    @MainActor
+    func testANoInIOSsPromptChangesNothingAndDoddyIsToldQuietly() async {
+        let t = Harness()
+        let saved = Self.contactsOff()
+        defer { t.restore(); Self.restoreContacts(saved) }
+        t.devices.accessResult = .notDetermined
+        t.devices.promptAnswer = .denied
+        t.controller.beginForTesting(link: t.link)
+        await t.controller.receiveToolCallForTesting(name: VoiceToolName.lookupContact, id: "who-2", parameters: #"{"name":"Ana"}"#).value
+
+        await t.controller.allowConnection()
+
+        XCTAssertFalse(UserDefaults.standard.bool(forKey: VoiceConnection.contacts.preferenceKey))
+        XCTAssertNil(t.controller.accessRequest, "the user's no: the card goes")
+        XCTAssertEqual(t.link.messages, [], "Doddy doesn't carry on")
+        XCTAssertEqual(t.link.contexts, ["(app) " + ConnectionApproval.declinedContext(.contacts)])
+    }
+
+    @MainActor
+    func testARefusalFromBeforeOffersIPhoneSettingsAndAllowAsksNothing() async {
+        let t = Harness()
+        let saved = Self.contactsOff()
+        defer { t.restore(); Self.restoreContacts(saved) }
+        t.devices.accessResult = .denied
+        t.controller.beginForTesting(link: t.link)
+        await t.controller.receiveToolCallForTesting(name: VoiceToolName.lookupContact, id: "who-3", parameters: #"{"name":"Ana"}"#).value
+
+        XCTAssertEqual(t.controller.accessRequest?.card, .openSystemSettings)
+        XCTAssertEqual(t.link.results.first?.text, VoiceToolReply.notConnected(.contacts, card: .openSystemSettings))
+        await t.controller.allowConnection()  // not offered on this card
+        XCTAssertEqual(t.devices.requested, [])
+        await t.controller.recheckConnectionAccess()  // Doddy in front again, but the card never sent the user away
+        XCTAssertEqual(t.controller.accessRequest?.card, .openSystemSettings)
+        XCTAssertFalse(UserDefaults.standard.bool(forKey: VoiceConnection.contacts.preferenceKey))
+        XCTAssertEqual(t.link.messages, [])
+    }
+
+    @MainActor
+    func testNotNowChangesNothing() async {
+        let t = Harness()
+        let saved = Self.contactsOff()
+        defer { t.restore(); Self.restoreContacts(saved) }
+        t.devices.accessResult = .granted
+        t.controller.beginForTesting(link: t.link)
+        await t.controller.receiveToolCallForTesting(name: VoiceToolName.lookupContact, id: "who-4", parameters: #"{"name":"Ana"}"#).value
+
+        await t.controller.declineConnection()
+
+        XCTAssertNil(t.controller.accessRequest)
+        XCTAssertEqual(t.devices.requested, [])
+        XCTAssertFalse(UserDefaults.standard.bool(forKey: VoiceConnection.contacts.preferenceKey))
+        XCTAssertEqual(t.link.messages, [])
+        XCTAssertEqual(t.link.contexts, ["(app) " + ConnectionApproval.declinedContext(.contacts)])
+    }
+
+    @MainActor
+    func testEndTakesTheCardAwaySoALateTapAllowsNothing() async {
+        let t = Harness()
+        let saved = Self.contactsOff()
+        defer { t.restore(); Self.restoreContacts(saved) }
+        t.devices.accessResult = .notDetermined
+        t.devices.promptAnswer = .granted
+        t.controller.beginForTesting(link: t.link)
+        await t.controller.receiveToolCallForTesting(name: VoiceToolName.lookupContact, id: "who-5", parameters: #"{"name":"Ana"}"#).value
+
+        await t.controller.stop()
+        await t.controller.allowConnection()
+
+        XCTAssertNil(t.controller.accessRequest)
+        XCTAssertEqual(t.devices.requested, [])
+        XCTAssertFalse(UserDefaults.standard.bool(forKey: VoiceConnection.contacts.preferenceKey))
+    }
+
+    // MARK: Helpers
+
+    /// Switches Contacts off for one test and returns what was there.
+    private static func contactsOff() -> Any? {
+        let saved = UserDefaults.standard.object(forKey: VoiceConnection.contacts.preferenceKey)
+        UserDefaults.standard.set(false, forKey: VoiceConnection.contacts.preferenceKey)
+        return saved
+    }
+
+    private static func restoreContacts(_ saved: Any?) {
+        UserDefaults.standard.set(saved, forKey: VoiceConnection.contacts.preferenceKey)
+    }
+}
+
 private struct FakeWriteError: Error {}
 
 /// Calendar and Reminders that record every write and return what the test set.
@@ -425,6 +547,18 @@ private final class FakeDevices: DeviceConnecting {
     func notificationAccess() async -> DeviceConnections.Access {
         await read()
         return accessResult
+    }
+
+    /// What iOS's own prompt answers on the access card's Allow (ADR-567). As on a real iPhone,
+    /// the prompt shows only while `accessResult` is `.notDetermined`; otherwise it is returned.
+    var promptAnswer: DeviceConnections.Access = .denied
+    /// Every `request` call: the access card asks iOS only after the user's tap.
+    private(set) var requested: [VoiceConnection] = []
+    func request(_ connection: VoiceConnection) async -> DeviceConnections.Access {
+        requested.append(connection)
+        guard accessResult == .notDetermined else { return accessResult }
+        accessResult = promptAnswer
+        return promptAnswer
     }
     func events(in range: VoiceTimeRange) -> [CalendarEventSummary] { [] }
 
@@ -500,16 +634,22 @@ private final class FakeLink: LiveVoiceLink, @unchecked Sendable {
 
     private let lock = NSLock()
     private var sent: [Sent] = []
+    private var sentMessages: [String] = []
+    private var sentContext: [String] = []
 
     var results: [Sent] { lock.withLock { sent } }
+    /// Messages Doddy answers now (the app's "(app)" messages included).
+    var messages: [String] { lock.withLock { sentMessages } }
+    /// Background context Doddy doesn't answer.
+    var contexts: [String] { lock.withLock { sentContext } }
 
     func sendToolResult(for toolCallId: String, result: String, isError: Bool) async throws {
         lock.withLock { sent.append(Sent(id: toolCallId, text: result, isError: isError)) }
     }
 
     func setMuted(_ muted: Bool) async throws {}
-    func sendMessage(_ text: String) async throws {}
-    func updateContext(_ context: String) async throws {}
+    func sendMessage(_ text: String) async throws { lock.withLock { sentMessages.append(text) } }
+    func updateContext(_ context: String) async throws { lock.withLock { sentContext.append(context) } }
     func endConversation() async {}
     func setAgentVolume(_ volume: Double) -> Double? { nil }
 }

@@ -6,7 +6,7 @@
 
 **What to send:**
 1. **Tools (already applied, 20 Oct ~23:50 UTC):** `calculate` (`tool_7001m4n80pe0f7wrkgp6kcv9h5wj`) and `convert_currency` (`tool_9001m4nf3w1demytz6bvyxvyj756`): description and `pre_tool_speech: auto` as in `voice-agent/tools.json`. Rollback: the descriptions in `git show f919216:voice-agent/tools.json` (main before this change), `pre_tool_speech: force`.
-2. **Tools (not applied):** the same for `convert_units`, `web_search`, `news_search`, `find_places`, and the descriptions of the webhook tools `geocode_place`, `get_weather`, `wikipedia_search`, `wikipedia_summary`, all exactly as `python3 -I scripts/voice_agent_spec.py elevenlabs` renders them.
+2. **Tools (not applied):** the same for `convert_units`, `web_search`, `news_search`, `find_places`, the descriptions of the webhook tools `geocode_place`, `get_weather`, `wikipedia_search`, `wikipedia_summary`, and (ADR-567) of `read_calendar`, `lookup_contact` and `upcoming_birthdays` ("Allow it on screen and I'll carry on" instead of Settings), all exactly as `python3 -I scripts/voice_agent_spec.py elevenlabs` renders them. Send the ADR-567 three only with an app build that has the Allow card.
 3. **Tool ids (not applied):** the 82 live ids plus `tool_5701m4f28p90fm186x0zhn54sy71` (geocode_place), `tool_0601m4f25r0bfdhtb12v4g21x8ac` (get_weather), `tool_0901m4f25swxft090rnfkczn5jhj` (wikipedia_search), `tool_1101m4f25rx2fx7ttcempcvx8s89` (wikipedia_summary).
 4. **Prompt (not applied):** the diff below, applied to the live prompt.
 

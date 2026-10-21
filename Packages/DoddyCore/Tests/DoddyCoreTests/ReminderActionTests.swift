@@ -284,7 +284,10 @@ final class ReminderActionTests: XCTestCase {
                        ReminderScreenText(headline: "Couldn't confirm",
                                           lines: ["“Buy milk”", "Mon 12 Oct 2026, 18:00 (Europe/Warsaw)",
                                                   "It may or may not be in Reminders. Check the Reminders app before asking again."], isProblem: true))
-        XCTAssertTrue(ReminderOutcome.notAdded(.notAllowed).screen(for: milk).lines.last!.contains("Settings, Connections"))
+        // ADR-567: the access card under it asks for Reminders; the screen no longer sends the user to Settings.
+        let notAllowed = ReminderOutcome.notAdded(.notAllowed).screen(for: milk).lines.last!
+        XCTAssertTrue(notAllowed.contains("Allow it on the card below"))
+        XCTAssertFalse(notAllowed.contains("Settings"))
     }
 
     func testAgentRepliesKeepThePromptPrefixesAndLeaveTheListOut() {

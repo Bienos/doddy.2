@@ -683,6 +683,8 @@ extension DeviceConnections: TimerWriter {}
 protocol DeviceConnecting: ReminderStore, CalendarEventWriter, TimerWriter, Sendable {
     func access(for connection: VoiceConnection) -> DeviceConnections.Access
     func notificationAccess() async -> DeviceConnections.Access
+    /// iOS's own prompt, only if iOS has never asked (the access card's Allow, ADR-567).
+    func request(_ connection: VoiceConnection) async -> DeviceConnections.Access
     func changeEvent(_ plan: EventChangePlan) throws -> DeviceConnections.ChangeOutcome
     func undo(_ undo: ActivityUndo) async -> UndoResult
     func eventLocation(_ event: CalendarEventSummary) -> String?
