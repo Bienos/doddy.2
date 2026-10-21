@@ -17,7 +17,7 @@ It holds provider keys so the iPhone app never does, and sends updates by **push
 | Memory on calls (opt-in) | `PUT /v1/memory-copy` `{enabled}` (off deletes every copy) · `PUT /v1/memory-copy/snapshot` (replaces the copy) |
 | Notes from calls | `GET /v1/call-notes` · `DELETE /v1/call-notes/:id` (after the user confirms or discards) |
 | ElevenLabs (S2) | `POST /webhooks/elevenlabs/call-start` · `POST /webhooks/elevenlabs/tools/{verify-pin,search-memories,save-note}`; all need `X-Doddy-Tool-Secret`, tools also `X-Doddy-Session` |
-| Errands (ADR-563) | `POST /v1/errands` · `POST /v1/errands/:id/{approve,cancel,ack}` · `GET /v1/errands` · `GET/DELETE /v1/errands/:id` (below) |
+| Errands (ADR-566) | `POST /v1/errands` · `POST /v1/errands/:id/{approve,cancel,ack}` · `GET /v1/errands` · `GET/DELETE /v1/errands/:id` (below) |
 | News digests | `GET /v1/news/catalog` · `GET/PUT /v1/news/settings` (topics, own keywords, own feeds, time, zone, channels, language) · `POST /v1/news/feeds/check` · `POST /v1/news/send-now` · `GET /v1/news/digests` |
 | Health | `GET /healthz` |
 
@@ -64,7 +64,7 @@ Doddy calls a business in Polish for the user, says it's an AI calling on their 
 - **Setup:** `node scripts/setup-task-call-agent.mjs --dry-run`, then for real; point the ElevenLabs post-call webhook (transcript on, audio off) at `/webhooks/elevenlabs/post-call` with its HMAC secret.
 - **Try it without the app:** `node scripts/task-call.mjs init|status|brief|approve|live|takeover|end|card|ack` (usage at the top of the script).
 
-## Errands: Doddy works on a task in the background (ADR-563)
+## Errands: Doddy works on a task in the background (ADR-566)
 The user hands Doddy a task ("sprawdź loty i hotele do Rzymu…"), says yes once, and Doddy researches it on the web while the app is closed. Contract: `docs/implementation/ERRANDS.md`. **Not run against the real Anthropic API, APNs or a device yet**; the tests use a fake researcher and a local stand-in for the API.
 
 | Route | Body | Reply |

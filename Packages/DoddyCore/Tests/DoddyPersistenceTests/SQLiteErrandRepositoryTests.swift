@@ -3,7 +3,7 @@
 import GRDB
 import XCTest
 
-/// Tasks handed to Doddy, kept on the iPhone (ADR-563, `v15_errands`).
+/// Tasks handed to Doddy, kept on the iPhone (ADR-566, `v15_errands`).
 final class SQLiteErrandRepositoryTests: XCTestCase {
     private let words = "chcę jechać do Rzymu w przyszłym miesiącu na 7 dni,\nsprawdź loty i hotele do 2000 zł"
 

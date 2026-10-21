@@ -170,7 +170,7 @@ services:
       - key: PRICE_ELEVENLABS_USD_PER_CREDIT
         sync: false
       # Daily news (N1); ANTHROPIC_API_KEY also writes the call answer card's summary and runs
-      # errands (ADR-563)
+      # errands (ADR-566)
       - key: ANTHROPIC_API_KEY
         sync: false
       - key: ERRANDS_ENABLED # "0" (the default) refuses new errands and starts no queued one; "1" turns them on
@@ -253,7 +253,7 @@ services:
       - key: PRICE_ELEVENLABS_USD_PER_CREDIT
         sync: false
       # Daily news (N1); ANTHROPIC_API_KEY also writes the call answer card's summary and runs
-      # errands (ADR-563)
+      # errands (ADR-566)
       - key: ANTHROPIC_API_KEY
         sync: false
       - key: ERRANDS_ENABLED # "0" (the default) refuses new errands and starts no queued one; "1" turns them on

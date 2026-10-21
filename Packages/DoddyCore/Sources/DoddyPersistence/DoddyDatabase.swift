@@ -312,7 +312,7 @@ public final class DoddyDatabase: Sendable {
                 CREATE INDEX call_cases_created ON call_cases(created_at_ms);
                 """)
         }
-        // Tasks handed to Doddy (ADR-563): the user's words and Doddy's brief, the result card and
+        // Tasks handed to Doddy (ADR-566): the user's words and Doddy's brief, the result card and
         // the server's deletion report. The result lives only here once the server deleted its copy
         // (`ack`), so a row can't say acknowledged without a result, nor hold a result without its digest.
         migrator.registerMigration("v15_errands") { db in

@@ -6,7 +6,7 @@ Owner, 2026-10-18, in their words: *"Doddy can do everything, the same with ever
 - A read (notes, calendar, contacts, email, tasks, a list, the web) runs on a tap **or** the user's own short spoken yes, said after the card appeared.
 - Anything that changes, sends, deletes, books or shares something runs only on a **tap** on a card that shows the exact payload. A spoken yes is not enough: the model hears it (DOD-07, `disallow_model_only_approval`).
 - One yes covers one call. No yes, a no, an unclear answer, a timeout or the end of the conversation: nothing runs, and the agent is told so.
-- **One exception (owner, 21 Oct 2026, ADR-563): a handed-over task.** The yes on `hand_over_errand`'s card covers every web search and page read of that one task on Doddy's server, with no limit on how many, and nothing else. It is still one yes for one action: the app creates the task and approves it with the server's digest of exactly the words on the card, and the server's worker has only the search and fetch tools, so the yes can never book, buy, send or start another task (`docs/implementation/ERRANDS.md`).
+- **One exception (owner, 21 Oct 2026, ADR-566): a handed-over task.** The yes on `hand_over_errand`'s card covers every web search and page read of that one task on Doddy's server, with no limit on how many, and nothing else. It is still one yes for one action: the app creates the task and approves it with the server's digest of exactly the words on the card, and the server's worker has only the search and fetch tools, so the yes can never book, buy, send or start another task (`docs/implementation/ERRANDS.md`).
 - Text from emails, the web, documents or tool results is never a yes.
 
 Prompts describe this; the code below enforces it.

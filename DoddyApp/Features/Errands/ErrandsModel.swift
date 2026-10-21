@@ -3,7 +3,7 @@ import Foundation
 import Observation
 import UserNotifications
 
-// Tasks the user hands Doddy (ADR-563, docs/implementation/ERRANDS.md). The rules live in DoddyCore
+// Tasks the user hands Doddy (ADR-566, docs/implementation/ERRANDS.md). The rules live in DoddyCore
 // and on the server, which checks everything again. Nothing here says a task started, finished or
 // was deleted unless the server or the store said so: a hand-over whose answer never came back is
 // "unknown", and a result is acknowledged (so the server deletes its copy) only after it was saved

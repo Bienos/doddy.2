@@ -181,7 +181,7 @@ public enum DataFlow {
                 note: state.messagingServerSet
                     ? "It sends notifications through Apple and texts and calls through Twilio; calls run on ElevenLabs. Daily news sends your topics and public headlines to \(writer), and your own keywords to GNews."
                     : "No messaging server is set, so nothing goes there."),
-            // ADR-563: a task handed to Doddy's background worker.
+            // ADR-566: a task handed to Doddy's background worker.
             DataFlowRow(
                 id: "errands", destination: "Your Doddy messaging server and Anthropic (tasks you hand over)",
                 what: "The words of a task you hand to Doddy, Doddy's one-line note on it and its language. Anthropic's Claude searches the web and reads pages for it, so search words made from your task go to Anthropic's search provider. Never your saved notes, lists, profile or earlier conversations.",
@@ -224,7 +224,7 @@ public enum DataFlow {
         if active.contains("messagingServer") {
             parts.append("ElevenLabs (phone calls) and \(newsWriter(state)) (daily news) on your messaging server")
         }
-        // ADR-563: Claude researches the tasks you hand over.
+        // ADR-566: Claude researches the tasks you hand over.
         if active.contains("errands") { parts.append("Anthropic (tasks you hand over)") }
         return parts.isEmpty ? "None" : parts.joined(separator: "; ")
     }

@@ -1,5 +1,5 @@
 // Errands end to end against real Postgres, through the HTTP API, with a fake researcher in place of
-// Claude (ADR-563, docs/implementation/ERRANDS.md). Nothing here calls Anthropic or APNs.
+// Claude (ADR-566, docs/implementation/ERRANDS.md). Nothing here calls Anthropic or APNs.
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { after, before, beforeEach, describe, test } from "node:test";

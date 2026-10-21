@@ -1,4 +1,4 @@
--- Errands (ADR-563, docs/implementation/ERRANDS.md): Doddy researches a task in the background
+-- Errands (ADR-566, docs/implementation/ERRANDS.md): Doddy researches a task in the background
 -- after one yes. The user's words, Doddy's brief and the title exist only as one encrypted blob whose
 -- SHA-256 the user approved; the result card is encrypted too and is kept only until the app has
 -- saved it (ack) or for 30 days. Content columns hold AES-256-GCM ciphertext only (no plaintext

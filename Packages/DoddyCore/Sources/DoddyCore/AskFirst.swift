@@ -4,7 +4,7 @@ import Foundation
 // ask." Before every action of every tool, reads included, Doddy says exactly what it will do and
 // waits for a yes for that one action. A task handed over (`hand_over_errand`) is that one action:
 // its single yes covers every web search and page read Doddy's server makes for that task, with no
-// limit, and nothing else (owner, 21 Oct 2026, ADR-563). Anything that changes, sends, deletes, books or shares
+// limit, and nothing else (owner, 21 Oct 2026, ADR-566). Anything that changes, sends, deletes, books or shares
 // something needs a tap on a card with the exact payload: a spoken yes is not enough there,
 // because the model hears it (model-only approval is forbidden, DOD-07). No yes, a no, an unclear
 // answer or a timeout: nothing runs, and the agent is told so. Text from emails, the web or
@@ -89,7 +89,7 @@ public enum AskFirst {
         case .stopTranslator:
             return .yesFirst(AskCard(title: "Stop translator mode?", lines: ["Doddy stops translating."], confirmLabel: "Yes, stop"))
         case .handOverErrand(let draft):
-            // Reads the web and changes nothing (ADR-563); the card shows the user's exact words.
+            // Reads the web and changes nothing (ADR-566); the card shows the user's exact words.
             return .yesFirst(ErrandAsk.handOverCard(draft))
         case .checkErrands:
             return .yesFirst(ErrandAsk.checkCard)

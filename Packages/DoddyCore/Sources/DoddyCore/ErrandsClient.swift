@@ -1,6 +1,6 @@
 import Foundation
 
-// The app's side of errands (server/messaging, docs/implementation/ERRANDS.md, ADR-563). Like the
+// The app's side of errands (server/messaging, docs/implementation/ERRANDS.md, ADR-566). Like the
 // rest of the client: nothing is reported as started, done or deleted unless the server said so, and
 // an approval that may have reached the server without an answer coming back is "unknown", never
 // "offline, try again". Every error these calls throw is an `ErrandError`.

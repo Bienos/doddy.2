@@ -1,7 +1,7 @@
 @testable import DoddyCore
 import XCTest
 
-/// Errands (ADR-563, docs/implementation/ERRANDS.md): the draft keeps the user's words, the server's
+/// Errands (ADR-566, docs/implementation/ERRANDS.md): the draft keeps the user's words, the server's
 /// replies decode as the contract writes them (and a newer server's states don't break the app), the
 /// client never reports "started" without the server's word, the ask is a read under ASK-01, and what
 /// the voice agent hears is bounded, honest and marks web content as data.

@@ -282,7 +282,7 @@ public struct ActivityRequest: Equatable, Sendable {
             // A category Doddy notes for itself (ADR-440); no app is used and nothing changes.
             return nil
         case .handOverErrand(let draft):
-            // ADR-563: the 30-day log keeps that a task was handed over, not its title or words.
+            // ADR-566: the 30-day log keeps that a task was handed over, not its title or words.
             return ActivityRequest(app: .web, title: "Hand over a task", detail: "“\(draft.title)”", logDetail: nil, isLookup: false)
         case .checkErrands:
             return ActivityRequest(app: .web, title: "Checked your tasks", detail: nil, isLookup: true)

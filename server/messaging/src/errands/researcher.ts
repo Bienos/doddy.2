@@ -1,4 +1,4 @@
-// The errand runner (ADR-563, ERRANDS.md "The runner"). Phase 1: Claude researches with Anthropic's
+// The errand runner (ADR-566, ERRANDS.md "The runner"). Phase 1: Claude researches with Anthropic's
 // web search and web fetch tools (no other tool exists, so nothing it reads can book, buy, send or
 // start anything), resuming `pause_turn` until the model ends its turn. Phase 2: a second call
 // writes the result card in a fixed schema, then card.ts applies the code rules (links only from

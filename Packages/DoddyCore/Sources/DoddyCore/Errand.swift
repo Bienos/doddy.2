@@ -5,7 +5,7 @@ import CryptoKit
 import Crypto
 #endif
 
-// Errands (ADR-563, docs/implementation/ERRANDS.md): a task ("sprawa") the user hands Doddy in a
+// Errands (ADR-566, docs/implementation/ERRANDS.md): a task ("sprawa") the user hands Doddy in a
 // conversation. The app shows one ask card; on a yes it creates the errand on Doddy's messaging
 // server and approves it with the digest the server returned for exactly those words. The server
 // researches it in the background (web search and web fetch, nothing else) and writes a result

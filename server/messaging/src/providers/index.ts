@@ -30,7 +30,7 @@ export function providersFrom(config: Config) {
       update: async (token, env, state, end) => { await push.sendLiveActivity({ deviceToken: token, environment: env }, state, end); },
     } : undefined,
   } : undefined;
-  // Errands (ADR-563): a researcher only with an Anthropic key and the switch on. Without
+  // Errands (ADR-566): a researcher only with an Anthropic key and the switch on. Without
   // MEMORY_ENCRYPTION_KEY the routes answer 503 errands_disabled whatever is set here.
   const es = config.errandSettings;
   const errands: ErrandDeps = {

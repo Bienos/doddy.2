@@ -51,7 +51,7 @@ struct AppEnvironment: Sendable {
     /// Calls Doddy places for the user (ADR-500): brief, card, answer with transcript, cost and
     /// the server's deletion receipts, in the same file.
     var callCaseRepository: any CallCaseRepository = UnavailableCallCaseRepository()
-    /// Tasks handed to Doddy's background worker (ADR-563): the user's words, the state, and the
+    /// Tasks handed to Doddy's background worker (ADR-566): the user's words, the state, and the
     /// result once it is saved here (then the server deletes its copy), in the same file.
     var errandRepository: any ErrandRepository = UnavailableErrandRepository()
 
