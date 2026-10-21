@@ -3,7 +3,7 @@ import SwiftUI
 import WidgetKit
 
 /// "Talk in the Island" for the Action Button, Control Center and the Lock Screen (iOS 18+,
-/// ADR-566): starts a conversation without opening Doddy (`TalkInIslandIntent`); he greets you and
+/// ADR-567): starts a conversation without opening Doddy (`TalkInIslandIntent`); he greets you and
 /// stays in the Dynamic Island. The user adds it themselves (Settings › Action Button › Controls);
 /// Doddy can't place it or tell whether it was added. "Talk to Doddy" stays the control that
 /// opens the app.

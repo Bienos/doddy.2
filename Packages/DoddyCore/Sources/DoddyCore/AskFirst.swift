@@ -10,7 +10,7 @@ import Foundation
 // read, reach `AskLedger`.
 //
 // One exception since 21 Oct 2026 (owner: "You don't say you don't have a weather app. You check on
-// the internet. Just be on it.", ADR-564): public lookups that read nothing of the user's and change
+// the internet. Just be on it.", ADR-565): public lookups that read nothing of the user's and change
 // nothing (a sum, a unit or currency conversion, the web, the news, places) run at once. Only the
 // words searched for leave the phone. Everything that reads the user's own data or changes anything
 // still asks first.
@@ -48,12 +48,12 @@ public enum AskFirst {
         /// Online accounts: Doddy's server makes the card and a single-use approval
         /// (backend/src/tools/askFirst.ts). A read runs on a tap or a spoken yes; a write on a tap only.
         case serverCard(isWrite: Bool)
-        /// A public lookup (`publicLookups`, ADR-564): runs at once, no card. For the web ones the
+        /// A public lookup (`publicLookups`, ADR-565): runs at once, no card. For the web ones the
         /// app still gets the server's single-use approval and uses it straight away.
         case runsNow
     }
 
-    /// Tools that run without asking (ADR-564): they read nothing of the user's, change nothing,
+    /// Tools that run without asking (ADR-565): they read nothing of the user's, change nothing,
     /// and send at most the words searched for. Web search, news and places cost Doddy a little
     /// per search (ADR-489); the weather and Wikipedia ones run on ElevenLabs (`ToolCatalog.webLookups`).
     public static let publicLookups: Set<String> = Set([

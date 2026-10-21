@@ -22,7 +22,7 @@ enum AppLanguageStore {
         AppLanguage.chosen(stored: defaults.string(forKey: PreferenceKey.appLanguage), appLanguages: appLanguages(defaults))
     }
 
-    /// Set once the English that builds before ADR-562 wrote has been replaced by Polish.
+    /// Set once the English that builds before ADR-563 wrote has been replaced by Polish.
     private static let polishDefaultAppliedKey = "appLanguage.polishDefaultApplied"
 
     /// Before the first screen. UI-test launches leave the simulator's setting alone. iOS has

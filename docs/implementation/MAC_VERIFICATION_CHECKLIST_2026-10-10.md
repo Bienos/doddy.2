@@ -534,7 +534,7 @@ These three merged without a compile (`REVIEW_DoddyCore_2026-10-11.md`, `REVIEW_
 | LT5 | Start, then tap End mid-recording | Nothing sent; no DoddyTurn-*.m4a left in the app's tmp folder (Xcode › Devices › container) |
 | LT6 | Start, wait past 3:00 | It finishes by itself and sends what it heard |
 
-## 4z. Allowing a function from the conversation (ADR-567, `docs/design/SETTINGS_AND_CONNECTIONS.md` §3.6)
+## 4z. Allowing a function from the conversation (ADR-568, `docs/design/SETTINGS_AND_CONNECTIONS.md` §3.6)
 | # | Do this | Expect |
 |---|---|---|
 | AC1 | Fresh install (Calendar never asked). Settings › Connections › Calendar off. Ask "What's on tomorrow?" | No Settings mention. Doddy says "Allow it on screen and I'll carry on"; the card "Allow Doddy to use Calendar?" scrolls into view with Allow, Not now and Details |

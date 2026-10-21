@@ -4,13 +4,13 @@ Doddy is a voice-first memory companion for iPhone, with an Apple Watch app and 
 
 Last updated 2026-10-20, 21:45 UTC (the day's merges: #106, #113, #108, #111, #110, #112 and #114; his eyes on the new Home). Before that, 2026-10-19 (the owner's merge session: #84, #88, #90 and the #97 fix). Before that, 18 Oct: stage A (ADR-520 to ADR-524) and PR #85, BLIK transfers (ADR-510).
 
-**Branch `claude/vigilant-gates-uxg63p`, 21 Oct (Warsaw), not merged:** the owner's report (ADR-562 to ADR-567).
+**Branch `claude/vigilant-gates-uxg63p`, 21 Oct (Warsaw), not merged:** the owner's report (ADR-563 to ADR-568).
 - Polish by default for screens and voice.
 - Translator mode translates every line (the "Doddy, …" quiet word is off; its rules come first in the prompt).
 - Public lookups (weather, Wikipedia, web, news, places, sums, conversions) run without asking; the four weather and Wikipedia tools are back.
-- Doddy stays centred after a return from the background or a rotation (ADR-565).
-- "Talk in the Island": an Action Button control that talks without opening Doddy, and the island opens up when he speaks (ADR-566; whether iOS allows the microphone from a cold background start is unknown).
-- A tool that is off is allowed from a card in the conversation, not from Settings, for the on-phone tools (ADR-567; online accounts not yet).
+- Doddy stays centred after a return from the background or a rotation (ADR-566).
+- "Talk in the Island": an Action Button control that talks without opening Doddy, and the island opens up when he speaks (ADR-567; whether iOS allows the microphone from a cold background start is unknown).
+- A tool that is off is allowed from a card in the conversation, not from Settings, for the on-phone tools (ADR-568; online accounts not yet).
 
 `scripts/ci.sh --core-only` passes (DoddyCore 1,289 tests); the iOS app is not compiled. **Live agent half-applied:** two tool descriptions only; the prompt and the rest wait for the owner's go-ahead (`docs/implementation/LIVE_AGENT_EDIT_2026-10-21.md`). The owner set the live agent's default language to Polish themselves at 23:25 UTC.
 

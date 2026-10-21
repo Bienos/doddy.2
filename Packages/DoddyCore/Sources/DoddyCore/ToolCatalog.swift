@@ -22,10 +22,10 @@ public struct ToolDescriptor: Equatable, Sendable {
         case session
     }
 
-    /// ASK-01 (ADR-483): every tool asks first, except the public lookups that run at once (ADR-564).
+    /// ASK-01 (ADR-483): every tool asks first, except the public lookups that run at once (ADR-565).
     public enum Approval: String, Sendable, CaseIterable {
         /// A public lookup that reads nothing of the user's and changes nothing (`AskFirst.publicLookups`):
-        /// runs when the agent calls it (owner, 21 Oct 2026, ADR-564).
+        /// runs when the agent calls it (owner, 21 Oct 2026, ADR-565).
         case runsNow
         /// Changes nothing: the app shows what it will do and runs it on a tap or the user's own
         /// spoken yes (`AskFirst.Need.yesFirst`).
@@ -62,10 +62,10 @@ public struct ToolDescriptor: Equatable, Sendable {
 public enum ToolCatalog {
     /// Every tool in `voice-agent/tools.json`, by name. The `runs_on: web` tools are public
     /// lookups ElevenLabs runs itself (weather, Wikipedia). ASK-01 took them out because the app
-    /// can't ask before them; since ADR-564 public lookups run at once, so they are back.
+    /// can't ask before them; since ADR-565 public lookups run at once, so they are back.
     public static let all: [ToolDescriptor] = phone + cloud + web
 
-    /// Public lookups ElevenLabs runs on its own servers (ADR-564). With OpenAI Realtime the app
+    /// Public lookups ElevenLabs runs on its own servers (ADR-565). With OpenAI Realtime the app
     /// answers them as not available (`OpenAISpec.webTools`).
     public static let webLookups: Set<String> = ["geocode_place", "get_weather", "wikipedia_search", "wikipedia_summary"]
 
@@ -115,7 +115,7 @@ public enum ToolCatalog {
         // the strictest of its three actions.
         .init(VoiceToolName.parkingSpot, .localChange, .card),
         .init(VoiceToolName.remindWhenToLeave, .localChange, .card),
-        // Worked out on the iPhone, or the ECB's public rates file (ADR-270, ADR-300). Run at once (ADR-564).
+        // Worked out on the iPhone, or the ECB's public rates file (ADR-270, ADR-300). Run at once (ADR-565).
         .init(VoiceToolName.calculate, .lookup, .runsNow),
         .init(VoiceToolName.convertUnits, .lookup, .runsNow),
         .init(VoiceToolName.convertCurrency, .lookup, .runsNow),

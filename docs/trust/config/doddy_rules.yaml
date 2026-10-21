@@ -44,7 +44,7 @@ action_policy:
   trusted_statuses: [proposed, drafted, needs_approval, executing, confirmed, failed, unknown, cancelled]
   untrusted_tool_outputs_are_instructions: false
   # ASK-01 (owner, 2026-10-18; ADR-483): every action of every tool, reads included, asks first.
-  # Exception (owner, 2026-10-21; ADR-564): public lookups that read nothing of the user's and change
+  # Exception (owner, 2026-10-21; ADR-565): public lookups that read nothing of the user's and change
   # nothing run at once (AskFirst.publicLookups: weather, Wikipedia, web, news, places, sums, conversions).
   ask_first:
     applies_to: every_tool_every_platform_except_public_lookups

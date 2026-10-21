@@ -269,7 +269,7 @@ struct OpenDoddyWaysView: View {
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 16))
-            // ADR-566: the control that starts the conversation without bringing Doddy forward.
+            // ADR-567: the control that starts the conversation without bringing Doddy forward.
             Text("To talk without Doddy opening, pick Talk in the Island instead (iOS 18 or later). He greets you and stays in the Dynamic Island; tap it to see the conversation.")
             openSettingsButton
             Text("The names can differ a little between iOS versions. Doddy can't see this setting.")

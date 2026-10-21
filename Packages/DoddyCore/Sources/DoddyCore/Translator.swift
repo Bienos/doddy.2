@@ -6,7 +6,7 @@ import Foundation
 // is kept on the iPhone; the owner may copy the text or save the facts as a note on a tap within
 // five minutes of the end (T3). Who is talking is told by language, with hold-to-talk as a fallback
 // (T4). The quiet word ("Doddy, …" answered on the owner's half, T5) is off since 21 Oct 2026
-// (ADR-563): every line is translated, including ones that name Doddy.
+// (ADR-564): every line is translated, including ones that name Doddy.
 // Native voices per language (T6) wait for a listening pass; this build uses Doddy's voice.
 
 public enum TranslatorKind: String, Equatable, Sendable, CaseIterable {
@@ -244,7 +244,7 @@ public enum TranslatorLanguages {
         settingCode.flatMap(named) ?? deviceCode.flatMap(named) ?? english
     }
 
-    /// What Home › Translate shows before the owner picks (ADR-563): the two languages used last
+    /// What Home › Translate shows before the owner picks (ADR-564): the two languages used last
     /// time, so a second go is one tap. The first time: the owner's default, and for them English,
     /// or Polish when the owner speaks English. "Detect" made the first sentence wait for a guess,
     /// so it is only the default when it was the last choice. `lastOther` is a code or "detect".
@@ -526,7 +526,7 @@ public struct TranslatorRouter: Sendable {
     }
 
     /// Was this a quiet word for Doddy only? Never, since 21 Oct 2026 (owner: "it answers what I'm
-    /// saying instead of translating it", ADR-563). It used to be "Doddy, …" or "hey Doddy …" at the
+    /// saying instead of translating it", ADR-564). It used to be "Doddy, …" or "hey Doddy …" at the
     /// start, but people say his name while talking through him ("Yo, Doddy, I want to tell you
     /// something"), and then nothing was translated. Every line is translated now; the screen's
     /// quiet-word card stays unused until it gets a trigger nobody says by accident.
