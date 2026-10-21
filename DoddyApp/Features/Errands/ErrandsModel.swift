@@ -11,6 +11,8 @@ import UserNotifications
 
 /// What the task screens and the voice controller need from Doddy's server: `DoddyServerClient`.
 protocol ErrandsBackend: Sendable {
+    /// True once this iPhone has an account on the messaging server. Checking never creates one.
+    func hasAccount() async -> Bool
     func createErrand(_ draft: ErrandDraft) async throws -> ErrandPreview
     func approveErrand(_ id: UUID, digest: String) async throws -> ErrandApproval
     func errands() async throws -> [ErrandSummary]
@@ -112,8 +114,13 @@ final class ErrandsModel {
         defer { isRefreshing = false }
         if !hasLoaded { await load() }
         guard loadProblem == nil else { return }
-        await adoptUnknown(from: backend, now: now)
-        for errand in errands where !errand.state.isFinished || errand.needsAcknowledgement {
+        let pending = errands.filter { !$0.state.isFinished || $0.needsAcknowledgement }
+        // Nothing here to ask about and no account yet: no request at all, so coming to the front
+        // never makes a server account for someone who has never handed over a task.
+        let hasAccount = await backend.hasAccount()
+        guard !pending.isEmpty || hasAccount else { return }
+        if hasAccount { await adoptUnknown(from: backend, now: now) }
+        for errand in pending {
             await update(errand, from: backend, now: now)
         }
     }
