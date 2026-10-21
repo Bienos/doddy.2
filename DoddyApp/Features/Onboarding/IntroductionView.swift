@@ -235,7 +235,7 @@ private struct ProfileReviewView: View {
         isSaving = true
         defer { isSaving = false }
         do {
-            try await profiles.commitIntroduction(draft)
+            _ = try await profiles.commitIntroduction(draft)
             errorText = nil
             showSavedConfirmation = true
         } catch {
