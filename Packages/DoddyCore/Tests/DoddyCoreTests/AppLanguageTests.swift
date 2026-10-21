@@ -3,7 +3,7 @@ import XCTest
 
 final class AppLanguageTests: XCTestCase {
     func testPolishIsTheDefault() {
-        // Owner, 21 Oct 2026 (ADR-563): "it should be Polish".
+        // Owner, 21 Oct 2026 (ADR-565): "it should be Polish".
         XCTAssertEqual(AppLanguage.default, .polish)
         XCTAssertEqual(AppLanguage(stored: nil), .polish)
         XCTAssertEqual(AppLanguage(stored: "klingon"), .polish)
@@ -62,7 +62,7 @@ final class AppLanguageTests: XCTestCase {
     }
 
     func testTheEnglishOldBuildsWroteBecomesPolishOnce() {
-        // Builds before ADR-563 wrote ["en"] on their first launch: replaced once, if no choice was made in Doddy.
+        // Builds before ADR-565 wrote ["en"] on their first launch: replaced once, if no choice was made in Doddy.
         XCTAssertEqual(AppLanguage.launchAction(stored: nil, appLanguages: ["en"], polishDefaultApplied: false), .set(["pl"]))
         // English picked in Doddy itself is a choice and stays.
         XCTAssertEqual(AppLanguage.launchAction(stored: "en", appLanguages: ["en"], polishDefaultApplied: false), .leave)

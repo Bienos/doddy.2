@@ -1,6 +1,6 @@
 import AppIntents
 
-/// "Talk in the Island" (ADR-567): starts a voice conversation without opening Doddy. Doddy says
+/// "Talk in the Island" (ADR-569): starts a voice conversation without opening Doddy. Doddy says
 /// "Hey Pat, what's up?", the Dynamic Island opens up while he talks, and Mute and Stop are on the
 /// island and the Lock Screen. Used by the "Talk in the Island" control, which the Action Button
 /// can run (Settings › Action Button › Controls), and listed in the Shortcuts app.

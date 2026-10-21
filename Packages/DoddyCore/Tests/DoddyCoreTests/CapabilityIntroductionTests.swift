@@ -9,7 +9,7 @@ final class CapabilityIntroductionTests: XCTestCase {
             XCTAssertTrue(text.hasPrefix("I'm an AI assistant, not a person."))
             XCTAssertTrue(text.contains("I can add a reminder"))
             XCTAssertTrue(text.contains("only after you confirm each one on screen"))
-            // ADR-568: apps are allowed from the conversation, the first time one is needed.
+            // ADR-570: apps are allowed from the conversation, the first time one is needed.
             XCTAssertTrue(text.contains("I ask you on screen to allow it"))
             XCTAssertFalse(text.contains("Settings › Connections"))
             XCTAssertTrue(text.contains("ElevenLabs"))

@@ -70,7 +70,7 @@ final class ToolCatalogTests: XCTestCase {
     }
 
     func testLookupsAskFirstExceptPublicOnes() {
-        // ASK-01: reads of the user's own data ask (a spoken yes or a tap). Since ADR-565 only public
+        // ASK-01: reads of the user's own data ask (a spoken yes or a tap). Since ADR-567 only public
         // lookups, which read nothing of the user's, run at once.
         for tool in ToolCatalog.all where tool.effect == .lookup {
             let expected: ToolDescriptor.Approval = AskFirst.publicLookups.contains(tool.name)
@@ -85,7 +85,7 @@ final class ToolCatalogTests: XCTestCase {
 
     func testEveryToolThatAsksRunsOnThePhoneWhereTheAppCanAsk() throws {
         // ElevenLabs runs web tools itself, so the app could never ask before them (ASK-01). Only
-        // the public lookups that run at once may run there (ADR-565).
+        // the public lookups that run at once may run there (ADR-567).
         for tool in try spec() where tool.runsOn != .phone {
             XCTAssertEqual(tool.runsOn, .web, tool.name)
             XCTAssertEqual(tool.ask, .runsNow, tool.name)

@@ -160,7 +160,7 @@ public struct RealtimeToolSpec: Equatable, Sendable, Decodable {
         case yesOrTap = "yes_or_tap"
         /// A change: only a tap on the card.
         case tap
-        /// A public lookup (web, news, places, sums, conversions): runs at once (ADR-565).
+        /// A public lookup (web, news, places, sums, conversions): runs at once (ADR-567).
         case runsNow = "runs_now"
     }
     public let ask: Ask?

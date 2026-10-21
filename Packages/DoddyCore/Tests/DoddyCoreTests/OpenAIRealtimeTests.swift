@@ -115,7 +115,7 @@ final class OpenAIRealtimeTests: XCTestCase {
             XCTAssertNotNil(tool["parameters"] as? [String: Any])
         }
         // ASK-01: every tool that asks runs on the phone, where the app asks first. The only web
-        // tools are ADR-565's public lookups (weather, Wikipedia), which the app answers as not
+        // tools are ADR-567's public lookups (weather, Wikipedia), which the app answers as not
         // available with OpenAI (ElevenLabs runs them itself).
         XCTAssertEqual(Set(spec.filter { $0.runsOn == .web }.map(\.name)), ToolCatalog.webLookups)
         XCTAssertTrue(spec.filter { $0.runsOn == .web }.allSatisfy { $0.ask == .runsNow })

@@ -4,13 +4,13 @@ Doddy is a voice-first memory companion for iPhone, with an Apple Watch app and 
 
 Last updated 2026-10-21, 01:00 UTC (the manual Mac run on main that settled #114's failure, and the app's wordmark, ADR-562, whose run first built the Xcode warning fixes). Before that, 23:35 UTC (the Xcode warning fixes, below the 20 Oct table). Before that, 21:45 UTC (the day's merges: #106, #113, #108, #111, #110, #112 and #114; his eyes on the new Home). Before that, 2026-10-19 (the owner's merge session: #84, #88, #90 and the #97 fix). Before that, 18 Oct: stage A (ADR-520 to ADR-524) and PR #85, BLIK transfers (ADR-510).
 
-**Branch `claude/vigilant-gates-uxg63p`, 21 Oct (Warsaw), not merged:** the owner's report (ADR-563 to ADR-568).
+**Branch `claude/vigilant-gates-uxg63p`, 21 Oct (Warsaw), not merged:** the owner's report (ADR-565 to ADR-570).
 - Polish by default for screens and voice.
 - Translator mode translates every line (the "Doddy, …" quiet word is off; its rules come first in the prompt).
 - Public lookups (weather, Wikipedia, web, news, places, sums, conversions) run without asking; the four weather and Wikipedia tools are back.
-- Doddy stays centred after a return from the background or a rotation (ADR-566).
-- "Talk in the Island": an Action Button control that talks without opening Doddy, and the island opens up when he speaks (ADR-567; whether iOS allows the microphone from a cold background start is unknown).
-- A tool that is off is allowed from a card in the conversation, not from Settings, for the on-phone tools (ADR-568; online accounts not yet).
+- Doddy stays centred after a return from the background or a rotation (ADR-568).
+- "Talk in the Island": an Action Button control that talks without opening Doddy, and the island opens up when he speaks (ADR-569; whether iOS allows the microphone from a cold background start is unknown).
+- A tool that is off is allowed from a card in the conversation, not from Settings, for the on-phone tools (ADR-570; online accounts not yet).
 
 `scripts/ci.sh --core-only` passes (DoddyCore 1,289 tests); the iOS app is not compiled. **Live agent updated 21 Oct 10:28 UTC** on the owner's go-ahead: translator first, public lookups and weather without asking, 90 tools; `agtvrsn_3101m5f03ak6e3wtdjfqbb2qs95e`, rollback `agtvrsn_8301m5ey4kc9e9cat0w22asdgctc` (`docs/implementation/LIVE_AGENT_EDIT_2026-10-21.md`). No conversation has run on it yet. The owner set the live agent's default language to Polish themselves at 23:25 UTC.
 
@@ -95,7 +95,7 @@ None of these has been seen on a device. The live ElevenLabs agent was updated f
 - **To get back to a build that works,** build this branch: `make project`, open `Doddy.xcodeproj`, scheme `Doddy`.
 - **On a free (Personal) Apple team,** use `make project-iphone` and open `DoddyiPhone.xcodeproj` instead. It has no entitlements (since 20 Oct), so widgets and "Save to Doddy" say they aren't set up, and a Debug build talks to Doddy without Apple sign-in (ADR-551).
 - **Voice agent:** ElevenLabs agent `agent_0501m4et27vyeawrwqfdxxfszfa6`. Its spec is `voice-agent/`.
-  - **Live version since 21 Oct 10:28 UTC (ADR-564, ADR-565):** `agtvrsn_3101m5f03ak6e3wtdjfqbb2qs95e`, 90 tools, saved over `agtvrsn_8301m5ey4kc9e9cat0w22asdgctc` (09:54 UTC, not from this repository: it added presentations, steps, photos and the camera tool). Details: `docs/implementation/LIVE_AGENT_EDIT_2026-10-21.md`.
+  - **Live version since 21 Oct 10:28 UTC (ADR-566, ADR-567):** `agtvrsn_3101m5f03ak6e3wtdjfqbb2qs95e`, 90 tools, saved over `agtvrsn_8301m5ey4kc9e9cat0w22asdgctc` (09:54 UTC, not from this repository: it added presentations, steps, photos and the camera tool). Details: `docs/implementation/LIVE_AGENT_EDIT_2026-10-21.md`.
   - **Before that, from 20 Oct 14:08 UTC (ADR-556):** `agtvrsn_8701m5ct8dxsf8htebwpdykppqbv`, saved over `agtvrsn_9601m5cg7h2jf0ctpbggw15zzq4n` (read just before saving; not the 19 Oct version below, and who saved it isn't recorded). Eleven prompt lines and the `opening_line` placeholder changed; the 82 tools did not.
   - **Earlier, read 19 Oct 09:21 UTC:** `agtvrsn_8901m59m3bdqe6takgkfbcmfh2yh`, 82 tools. It was saved at 08:22:55 UTC on 19 Oct over `agtvrsn_0601m57kxxh3eaprt27bk83ta8vx` (87 tools; saved 18 Oct 13:41 UTC from `claude/awesome-cray-2lb9ia`, commit `6672259f`). Which session saved it isn't recorded here.
   - **What that save removed:**
