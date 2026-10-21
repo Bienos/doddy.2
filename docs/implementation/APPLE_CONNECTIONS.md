@@ -2,7 +2,7 @@
 
 Owner, 20 Oct 2026: "Connect to all of the Apple tools … every time you want to have access to it, have the pop-up that asks for permission, sliding from the bottom." This page lists every Apple app and system service a third-party iPhone app could use, what Doddy does with each today, and what blocks the rest. ADR-562 to ADR-564 are the decisions behind this round.
 
-**State of this round:** written and tested on Linux (DoddyCore), app code compiled only in the hosted Mac CI job, **never seen on a device**. Rows marked "new" are in that state.
+**State of this round:** tested on Linux (DoddyCore) and built and tested in the hosted Mac job ([run 39519425630](https://github.com/Bienos/doddy.2/actions/runs/39519425630), Xcode 26.6, simulator), **never seen on a device**. Rows marked "new" are in that state.
 
 ## How Doddy asks (all of them)
 
@@ -88,6 +88,6 @@ No third-party app can do these on iPhone; Doddy says so rather than pretending.
 
 - **Ran here (Linux, Swift 6.1.2, 21 Oct):** `swift test` for DoddyCore, 1,293 tests, 0 failures (1,267 before; the new ones are `PermissionAskTests`, `PresentationTests` and `StepCountTests`, plus the tool lists in `ToolGateTests`, `ActivityTextTests` and `VoiceToolsTests`). `scripts/ci.sh --core-only`: every other step PASS (guard, the three agent specs with 84 app tools, string catalogs with the Motion & Fitness prompt in all ten languages as machine drafts, platform specs, the app logic type-check, the servers' tests); its only FAIL was `VoiceToolsTests`' old count of 8 connections, fixed and re-run above. The iOS build is NOT RUN there.
 - **The presentation file:** a sample deck written by the tests was opened with python-pptx 1.0.2 (4 slides, every text read back) and rendered by LibreOffice to images; a deck at every limit at once still fits. **Not opened in Keynote or PowerPoint yet.**
-- **NOT RUN here:** the iPhone app build and its tests (`PermissionSheetTests` in `DoddyTests/VoiceSessionControllerTests.swift`) need Xcode; they run in the hosted Mac job.
+- **Hosted Mac job, run by hand on `867c0cc9` (21 Oct, [run 39519425630](https://github.com/Bienos/doddy.2/actions/runs/39519425630)):** `core` green; the Mac job built the app on Xcode 26.6 and `scripts/ci.sh` ended `RESULT: PASS`: unit tests PASS (the new `PermissionSheetTests` are in `DoddyTests/VoiceSessionControllerTests.swift`; the log GitHub returns doesn't reach their lines, only the step's PASS), UI tests 52 with 1 skipped and 0 failures. Simulator only.
 - **On a device, still to check:** the sheet sliding up over a live conversation; iOS's prompts for Calendar and Motion & Fitness after Allow; the share sheet listing Keynote; Keynote opening the file; a call held longer than its tool timeout (60–120 s).
 - **The live ElevenLabs agent was not changed.** `make_presentation` and `read_steps` are `not_synced` in `voice-agent/tools.json`, and the instruction lines about the sheet are only in this repository. Until the owner syncs them, the live agent can't call the two new tools, and it still tells the user to go to Settings when it hears "not connected" (which the new app no longer sends while it asks on screen).
