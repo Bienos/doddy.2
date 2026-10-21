@@ -87,7 +87,7 @@ The locked row shows a short reason: "Doddy always shows you a change before mak
 - **Pause** keeps the iOS permission, Doddy stops using it immediately.
 - **Disconnect** clears Doddy's own settings and receipts for this app and explains, truthfully, that iOS permission has to be switched off in iOS Settings (apps cannot revoke their own permission). Things Doddy already created (for example reminders) stay in the other app.
 
-### 3.6 Allowing from the conversation (ADR-571, built for the on-phone functions)
+### 3.6 Allowing from the conversation (ADR-577, built for the on-phone functions)
 
 The person shouldn't have to go to Settings to switch a tool on. When Doddy asks for a function that is off, or that iOS hasn't been asked about yet, the conversation shows a card and Doddy says one line: "Allow it on screen and I'll carry on."
 

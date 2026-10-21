@@ -385,7 +385,7 @@ final class StaleToolCallTests: XCTestCase {
     }
 }
 
-/// The access card (ADR-571): a tool whose switch is off answers at once with "allow it on
+/// The access card (ADR-577): a tool whose switch is off answers at once with "allow it on
 /// screen", nothing is asked or turned on before the tap, and after the tap the agent is told to
 /// carry on (yes) or quietly not to ask again (no). Contacts is used because the harness leaves
 /// its switch alone; each test puts it back. NOT RUN in the authoring environment (no Xcode).
@@ -549,7 +549,7 @@ private final class FakeDevices: DeviceConnecting {
         return accessResult
     }
 
-    /// What iOS's own prompt answers on the access card's Allow (ADR-571). As on a real iPhone,
+    /// What iOS's own prompt answers on the access card's Allow (ADR-577). As on a real iPhone,
     /// the prompt shows only while `accessResult` is `.notDetermined`; otherwise it is returned.
     var promptAnswer: DeviceConnections.Access = .denied
     /// Every `request` call: the access card asks iOS only after the user's tap.

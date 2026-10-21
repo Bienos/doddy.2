@@ -689,7 +689,7 @@ public enum VoiceToolReply {
     }
 
     /// Used when a function is off or its iOS permission is not granted. The conversation screen
-    /// shows the access card for it at the same time (ADR-571), so the agent asks for the tap in one
+    /// shows the access card for it at the same time (ADR-577), so the agent asks for the tap in one
     /// line instead of sending the user to Settings. It starts "<title> isn't connected" as before,
     /// which What Doddy did reads.
     public static func notConnected(_ connection: VoiceConnection, card: ConnectionApproval.Card = .allow) -> String {

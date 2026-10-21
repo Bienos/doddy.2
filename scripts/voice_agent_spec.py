@@ -31,7 +31,7 @@ AGENTS = {"app": SPEC, "phone": SPEC / "phone", "task-call": SPEC / "task-call"}
 PLACEHOLDER = re.compile(r"\{\{\s*([a-z_][a-z0-9_]*)\s*\}\}")
 RUNS_ON = {"phone", "web"}
 SPEAK_BEFORE = {"auto", "force"}
-# ASK-01: a read takes the user's spoken yes or a tap; a change only a tap. ADR-568: a public
+# ASK-01: a read takes the user's spoken yes or a tap; a change only a tap. ADR-574: a public
 # lookup (the web, the weather, Wikipedia, news, places, sums, conversions) runs at once.
 ASK = {"yes_or_tap", "tap", "runs_now"}
 # Read nothing of the user's and change nothing (AskFirst.publicLookups in DoddyCore must match).
@@ -217,7 +217,7 @@ def check_app(tools, sources=APP_SOURCES):
             errors.append(f"tool {name}: x_doddy.elevenlabs_tool_id must be the live tool id, or 'not_synced' until it is synced")
         if x.get("runs_on") == "phone" and f'"{name}"' not in swift:
             errors.append(f"tool {name}: runs on the phone but no Swift source names it, so the app would answer it as unsupported")
-        # ASK-01 (ADR-483): every tool asks first, except public lookups that run at once (ADR-568).
+        # ASK-01 (ADR-483): every tool asks first, except public lookups that run at once (ADR-574).
         # The app can only ask for a tool it runs itself, a change needs a tap on a card, and the
         # agent always says what it is about to do before an ask.
         runs_now = x.get("ask") == "runs_now"
@@ -228,7 +228,7 @@ def check_app(tools, sources=APP_SOURCES):
         if (x.get("ask") == "tap") != bool(x.get("confirm_on_screen")):
             errors.append(f"tool {name}: x_doddy.ask 'tap' and confirm_on_screen go together (ASK-01)")
         if runs_now and name not in PUBLIC_LOOKUPS:
-            errors.append(f"tool {name}: only the public lookups {sorted(PUBLIC_LOOKUPS)} may run without asking (ADR-568)")
+            errors.append(f"tool {name}: only the public lookups {sorted(PUBLIC_LOOKUPS)} may run without asking (ADR-574)")
         if not runs_now and x.get("speak_before") != "force":
             errors.append(f"tool {name}: ASK-01 needs speak_before 'force', so Doddy says what it will do before the tool runs")
         if not runs_now and x.get("ask") and (not isinstance(x.get("timeout_secs"), int) or x["timeout_secs"] < 60):

@@ -1,6 +1,6 @@
 import Foundation
 
-/// Allowing an on-phone function from the conversation (ADR-571). When a tool is blocked only
+/// Allowing an on-phone function from the conversation (ADR-577). When a tool is blocked only
 /// because its switch in Settings › Connections is off, or because iOS hasn't been asked yet, the
 /// conversation screen shows "Allow Doddy to use Calendar?" and one tap turns the switch on, with
 /// iOS's own prompt first when iOS has never asked. The agent hears that a card is up, says one

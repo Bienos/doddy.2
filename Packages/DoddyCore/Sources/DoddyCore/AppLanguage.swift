@@ -1,7 +1,7 @@
 import Foundation
 
 /// The language Doddy's screens are shown in (ADR-459): Polish unless the person picks another
-/// in Settings (ADR-566; it was English until 21 Oct 2026). iOS decides the screens' language when the app starts, from the app's own
+/// in Settings (ADR-572; it was English until 21 Oct 2026). iOS decides the screens' language when the app starts, from the app's own
 /// `AppleLanguages` setting (the one iOS Settings › Doddy › Language writes too), so a change
 /// shows the next time Doddy is opened. This type holds the choices and the rule for what to
 /// write at launch; the app does the writing.
@@ -24,7 +24,7 @@ public enum AppLanguage: String, CaseIterable, Sendable {
     /// No choice of Doddy's own: the language of the iPhone, as for any app.
     case followPhone = "system"
 
-    /// What a person gets before choosing (owner, 21 Oct 2026: "it should be Polish", ADR-566;
+    /// What a person gets before choosing (owner, 21 Oct 2026: "it should be Polish", ADR-572;
     /// before that, 13 Oct: "english by default").
     public static let `default`: AppLanguage = .polish
 
@@ -91,7 +91,7 @@ public enum AppLanguage: String, CaseIterable, Sendable {
     /// - A choice made in Doddy is written (or removed, for "same as this iPhone").
     /// - With no choice, a language set in iOS Settings › Doddy is left alone.
     /// - With no choice and no setting at all, Polish is written: that is the default.
-    /// - Once (`polishDefaultApplied` false): builds before ADR-566 wrote English on their first
+    /// - Once (`polishDefaultApplied` false): builds before ADR-572 wrote English on their first
     ///   launch, and that reads like a setting. With no choice made in Doddy, exactly that English
     ///   is replaced by Polish. The app then remembers it did this, so English set again later in
     ///   iOS Settings › Doddy stays.

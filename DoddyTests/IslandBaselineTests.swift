@@ -77,7 +77,7 @@ final class IslandBaselineTests: XCTestCase {
         XCTAssertTrue(ended)
     }
 
-    /// ADR-570: a start without opening Doddy checks `isShowing` before it takes the microphone,
+    /// ADR-576: a start without opening Doddy checks `isShowing` before it takes the microphone,
     /// and `expand()` (the alert update that opens the island up) keeps the state it shows.
     @MainActor
     func testIsShowingFollowsTheActivityAndExpandKeepsItsState() async throws {

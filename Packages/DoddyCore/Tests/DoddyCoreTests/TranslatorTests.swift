@@ -120,7 +120,7 @@ final class TranslatorTests: XCTestCase {
     }
 
     func testDoddyAtTheStartIsTranslatedLikeEverythingElse() {
-        // ADR-567: the owner opened with "Yo, Doddy, …" and got answers instead of translations.
+        // ADR-573: the owner opened with "Yo, Doddy, …" and got answers instead of translations.
         var router = TranslatorRouter(setup: faceToFace())
         XCTAssertFalse(TranslatorRouter.isAside("Yo, Doddy. I want to tell you something."))
         XCTAssertFalse(TranslatorRouter.isAside("Doddy, jak poprosić, żeby jechał wolniej?"))

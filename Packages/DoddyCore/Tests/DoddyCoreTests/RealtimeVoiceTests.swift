@@ -44,13 +44,13 @@ final class RealtimeVoiceTests: XCTestCase {
         XCTAssertEqual(Set(cloud.filter(\.confirmOnScreen).map(\.name)), CloudToolName.writes)
         XCTAssertEqual(Set(cloud.filter { $0.ask == .yesOrTap }.map(\.name)),
                        CloudToolName.all.subtracting(CloudToolName.writes).subtracting(AskFirst.publicLookups))
-        // Web search, news and places run at once (ADR-568).
+        // Web search, news and places run at once (ADR-574).
         XCTAssertEqual(Set(cloud.filter { $0.ask == .runsNow }.map(\.name)), ["web_search", "news_search", "find_places"])
         let save = try XCTUnwrap(tools.first { $0.name == VoiceToolName.saveMemory })
         XCTAssertEqual(save.runsOn, .phone)
         XCTAssertTrue(save.confirmOnScreen)
         XCTAssertEqual(save.requiredParameters, ["text"])
-        // ASK-01: every tool that asks runs on the phone. The web tools are ADR-568's public
+        // ASK-01: every tool that asks runs on the phone. The web tools are ADR-574's public
         // lookups (weather, Wikipedia), which run at once on ElevenLabs.
         XCTAssertEqual(tools.first { $0.name == "get_weather" }?.runsOn, .web)
         XCTAssertTrue(tools.allSatisfy { ($0.runsOn == .phone || $0.ask == .runsNow) && $0.ask != nil })

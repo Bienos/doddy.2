@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// Allowing an on-phone function from the conversation (ADR-571): which card shows, what the
+/// Allowing an on-phone function from the conversation (ADR-577): which card shows, what the
 /// Allow tap came to, and that nothing counts as allowed without the user's tap and iOS's yes.
 final class ConnectionApprovalTests: XCTestCase {
     typealias Permission = ConnectionApproval.SystemPermission

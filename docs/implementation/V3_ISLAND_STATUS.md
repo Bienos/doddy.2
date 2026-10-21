@@ -120,7 +120,7 @@ is unknown until step 3.
 | DOD-11 observable_privacy | No conversation text in the activity; the new log holds a bundle identifier and a yes/no only (`privacy: .public` on those two values, nothing else) | Guard PASS | Logs are readable in Console on a connected Mac; that is the point, and they contain nothing personal |
 | Honest capability claims (T35/T42) | This document and the ADR rows keep "unbuilt / not run"; the user-facing text in `VoiceView` already says iOS may stop Doddy in the background | — | Do not describe the island as working until step 3 above is recorded |
 
-## Talk in the Island, and an island that opens up (ADR-570, 2026-10-20)
+## Talk in the Island, and an island that opens up (ADR-576, 2026-10-20)
 Owner: "The live island stuff is just so bad. It's not expanding, it's not doing anything really",
 and "The Action Button should open the Doddy Dynamic Island, the big expanded one, when he starts
 talking, not open the app. I don't want to hold it."

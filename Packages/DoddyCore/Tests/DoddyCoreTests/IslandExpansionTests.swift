@@ -1,7 +1,7 @@
 @testable import DoddyCore
 import XCTest
 
-/// ADR-570: when the conversation's island asks iOS to open up into the big island.
+/// ADR-576: when the conversation's island asks iOS to open up into the big island.
 final class IslandExpansionTests: XCTestCase {
     private let start = Date(timeIntervalSince1970: 1_000)
 
