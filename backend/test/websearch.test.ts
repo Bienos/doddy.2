@@ -14,19 +14,20 @@ const search = (r: Rig, query: unknown, token = USER_A, extra: Record<string, un
 
 // ------------------------------------------------------------------ Settings section and switch
 
-test("web search is its own section: no account, starts off, demo provider in mock mode", async () => {
+test("web search is its own section: no account, starts on (ADR-563), demo provider in mock mode", async () => {
   rig = await start();
   const catalog = (await rig.call("GET", "/v1/tools")).body;
   const web = section(catalog);
   assert.equal(web.title, "Web search");
   assert.equal(web.needsAccount, false);
   assert.equal(web.status, "connected");
-  assert.deepEqual(web.tools.map((t: any) => [t.name, t.risk, t.enabled]), [["web_search", "read", false], ["news_search", "read", false], ["find_places", "read", false]]);
+  assert.deepEqual(web.tools.map((t: any) => [t.name, t.risk, t.enabled]), [["web_search", "read", true], ["news_search", "read", true], ["find_places", "read", true]]);
   for (const account of catalog.toolkits.filter((t: any) => t.id !== "websearch")) assert.equal(account.needsAccount, true);
 });
 
 test("a search while the switch is off is blocked, recorded, and never reaches the provider", async () => {
   rig = await start();
+  await rig.call("PUT", "/v1/tools/switch", { body: { tool: "web_search", enabled: false } });
   const res = await search(rig, "Demo Café opening hours");
   assert.equal(res.status, 403);
   assert.equal(res.body.error.code, "capability_disabled");

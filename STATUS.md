@@ -4,6 +4,8 @@ Doddy is a voice-first memory companion for iPhone, with an Apple Watch app and 
 
 Last updated 2026-10-21, 01:00 UTC (the manual Mac run on main that settled #114's failure, and the app's wordmark, ADR-562, whose run first built the Xcode warning fixes). Before that, 23:35 UTC (the Xcode warning fixes, below the 20 Oct table). Before that, 21:45 UTC (the day's merges: #106, #113, #108, #111, #110, #112 and #114; his eyes on the new Home). Before that, 2026-10-19 (the owner's merge session: #84, #88, #90 and the #97 fix). Before that, 18 Oct: stage A (ADR-520 to ADR-524) and PR #85, BLIK transfers (ADR-510).
 
+**On main since 21 Oct (#118, `claude/doddy-just-works`, ADR-563, ADR-564).** Why web search and Gmail never worked on the phone: the app had no server address and no way to get a session, so every server tool said "not set up" before leaving the iPhone (Render logs: no `/v1/tools/run` since 19 Oct). The branch adds device sign-in (the first iPhone owns the server), web lookups on by default, an account's tools on when it's connected, a "Connect Gmail?" card in the conversation, and Claude on the server (`ask_claude`, `make_document`: decks, Word, Excel, PDF, blog posts). Backend tests run on Linux; **the app has not been compiled** (no Xcode here; the PR's CI is the first compile). To use it: deploy this branch to Render `doddy`, set `DODDY_DEVICE_SIGNUP=first-device` and `ANTHROPIC_API_KEY` there, and add the two Claude tools to the live ElevenLabs agent.
+
 **Branch `claude/vigilant-gates-uxg63p`, 21 Oct (Warsaw), not merged:** the owner's report (ADR-565 to ADR-570).
 - Polish by default for screens and voice.
 - Translator mode translates every line (the "Doddy, …" quiet word is off; its rules come first in the prompt).

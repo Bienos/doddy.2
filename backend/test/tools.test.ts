@@ -8,7 +8,7 @@ import { ADD_TODOIST_TASK, CHECK_EMAIL, DRAFT_EMAIL, driveQuoted, FIND_DRIVE_FIL
 import { ComposioToolsProvider, type ComposioToolsLike } from "../src/tools/composio.js";
 import { CloudToolsService } from "../src/tools/service.js";
 import { USER_A, USER_B } from "./helpers.js";
-import { connect, on, type Rig, ready, run, start } from "./toolsRig.js";
+import { connect, off, on, type Rig, ready, run, start } from "./toolsRig.js";
 
 let rig: Rig;
 afterEach(async () => rig?.close());
@@ -59,45 +59,50 @@ test("strict bodies: user, connection and slug fields are rejected, not ignored"
 
 // ------------------------------------------------------------------ switches
 
-test("everything starts off and nothing runs until the user switches it on", async () => {
+test("accounts start disconnected; connecting turns an account's tools on (ADR-563); the user's off blocks at once", async () => {
   rig = await start();
   const catalog = await rig.call("GET", "/v1/tools");
   assert.equal(catalog.status, 200);
   assert.deepEqual(catalog.body.toolkits.map((t: any) => t.id), ["gmail", "googledrive", "notion", "todoist", "outlook", "gcalendar", "websearch"]);
   for (const toolkit of catalog.body.toolkits) {
-    // Web search has no account (test/websearch.test.ts); every account starts disconnected.
+    // Web search has no account and starts on (test/websearch.test.ts); every account starts disconnected, so nothing of it is usable.
     assert.equal(toolkit.status, toolkit.id === "websearch" ? "connected" : "disconnected");
-    for (const tool of toolkit.tools) assert.equal(tool.enabled, false);
+    for (const tool of toolkit.tools) assert.equal(tool.enabled, toolkit.id === "websearch");
   }
-  // Not connected: a switch cannot be turned on, and running is refused.
+  // Not connected: a switch cannot be turned on, and running says "not connected" (the app offers Connect).
   assert.equal((await on(rig, "check_email")).status, 409);
-  assert.equal((await run(rig, "check_email", {})).status, 403);
+  const unconnected = await run(rig, "check_email", {});
+  assert.equal(unconnected.status, 409);
+  assert.equal(unconnected.body.error.code, "not_connected");
+  assert.equal(rig.provider.executed.length, 0);
 
-  // Connected but switch still off: connecting does not switch tools on.
+  // Connected: the tools are on with it, and a read still runs only after its yes (run() asks first).
   assert.equal((await connect(rig, "gmail")).status, 200);
+  const ok = await run(rig, "check_email", {});
+  assert.equal(ok.status, 200, ok.text);
+  assert.equal(rig.provider.executed.length, 1);
+
+  // The user's own off blocks at once and is recorded.
+  assert.equal((await off(rig, "check_email")).status, 200);
   const blocked = await run(rig, "check_email", {});
   assert.equal(blocked.status, 403);
   assert.equal(blocked.body.error.code, "capability_disabled");
   assert.equal(blocked.body.error.receipt.status, "blocked");
-  assert.equal(rig.provider.executed.length, 0);
-
-  assert.equal((await on(rig, "check_email")).status, 200);
-  const ok = await run(rig, "check_email", {});
-  assert.equal(ok.status, 200, ok.text);
   assert.equal(rig.provider.executed.length, 1);
 });
 
 test("switching one tool does not switch its neighbours, and off is immediate", async () => {
   rig = await start();
   await ready(rig, "todoist", "list_todoist_tasks");
+  assert.equal((await off(rig, "add_todoist_task")).status, 200);
   const catalog = await rig.call("GET", "/v1/tools");
   const todoist = catalog.body.toolkits.find((t: any) => t.id === "todoist");
   assert.equal(todoist.tools.find((t: any) => t.name === "list_todoist_tasks").enabled, true);
   assert.equal(todoist.tools.find((t: any) => t.name === "add_todoist_task").enabled, false);
   assert.equal((await run(rig, "add_todoist_task", { content: "x" })).status, 403);
 
-  const off = await rig.call("PUT", "/v1/tools/switch", { body: { tool: "list_todoist_tasks", enabled: false } });
-  assert.equal(off.status, 200);
+  const switchedOff = await rig.call("PUT", "/v1/tools/switch", { body: { tool: "list_todoist_tasks", enabled: false } });
+  assert.equal(switchedOff.status, 200);
   const after = await run(rig, "list_todoist_tasks", {});
   assert.equal(after.status, 403);
   assert.equal(after.body.error.code, "capability_disabled");
@@ -107,7 +112,8 @@ test("switches and connections are per user", async () => {
   rig = await start();
   await ready(rig, "gmail", "check_email", USER_A);
   const b = await run(rig, "check_email", {}, {}, USER_B);
-  assert.equal(b.status, 403);
+  assert.equal(b.status, 409);
+  assert.equal(b.body.error.code, "not_connected");
   assert.equal((await rig.call("GET", "/v1/tools", { token: USER_B })).body.toolkits[0].status, "disconnected");
   assert.equal((await on(rig, "check_email", USER_B)).status, 409);
   // B's receipts never show A's operations.
@@ -122,10 +128,14 @@ test("disconnect switches the account's tools off and blocks them at once", asyn
   assert.equal(gone.body.toolkit.status, "disconnected");
   assert.equal(gone.body.receipt.status, "succeeded");
   const res = await run(rig, "list_todoist_tasks", {});
-  assert.equal(res.status, 403);
-  // Reconnecting does not bring the old switch back.
+  assert.equal(res.status, 409);
+  assert.equal(res.body.error.code, "not_connected");
+  // A fresh connection never inherits old switches: it starts with every tool on (ADR-563), not the old set.
+  await off(rig, "add_todoist_task");
   await connect(rig, "todoist");
-  assert.equal((await run(rig, "list_todoist_tasks", {})).status, 403);
+  const view = (await rig.call("GET", "/v1/tools")).body.toolkits.find((t: any) => t.id === "todoist");
+  for (const tool of view.tools) assert.equal(tool.enabled, true, tool.name);
+  assert.equal((await run(rig, "list_todoist_tasks", {})).status, 200);
 });
 
 // ------------------------------------------------------------------ grants
@@ -322,9 +332,9 @@ test("an approval expires", async () => {
 test("prepare refuses tools that are switched off; a read gets a card too, and nothing is read for it (ASK-01)", async () => {
   rig = await start();
   await connect(rig, "gmail");
-  const off = await rig.call("POST", "/v1/tools/prepare", { body: { tool: "draft_email", arguments: { to: "anna@example.com", subject: "Hi", body: "Hello" } } });
-  assert.equal(off.status, 403);
-  await on(rig, "check_email");
+  await off(rig, "draft_email");
+  const switchedOff = await rig.call("POST", "/v1/tools/prepare", { body: { tool: "draft_email", arguments: { to: "anna@example.com", subject: "Hi", body: "Hello" } } });
+  assert.equal(switchedOff.status, 403);
   const read = await rig.call("POST", "/v1/tools/prepare", { body: { tool: "check_email", arguments: {} } });
   assert.equal(read.status, 200, read.text);
   assert.equal(read.body.preview.title, "Check your Gmail?");
@@ -653,10 +663,11 @@ test("after a lost answer, a Todoist task is looked for, only with the list read
   await run(rig, "add_todoist_task", args, { approvalId: prepared.body.approvalId });
   rig.provider.setScenario((await rigComposioUser(rig, USER_A)), "normal");
 
-  // "List my tasks" is off: Doddy doesn't read the user's tasks; the card only warns.
-  const off = await prepare(rig, "add_todoist_task", args);
-  assert.equal(off.body.earlier.status, "outcome_unknown");
-  assert.match(off.body.preview.lines.at(-1), /may have gone through\. Check Todoist before doing it again\./);
+  // "List my tasks" switched off by the user: Doddy doesn't read the user's tasks; the card only warns.
+  await off(rig, "list_todoist_tasks");
+  const unlisted = await prepare(rig, "add_todoist_task", args);
+  assert.equal(unlisted.body.earlier.status, "outcome_unknown");
+  assert.match(unlisted.body.preview.lines.at(-1), /may have gone through\. Check Todoist before doing it again\./);
   assert.equal(rig.provider.executed.filter((e) => e.slug === "TODOIST_GET_ALL_TASKS").length, 0);
 
   await on(rig, "list_todoist_tasks");

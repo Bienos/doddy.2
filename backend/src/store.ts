@@ -147,7 +147,34 @@ export const SCHEMA_SQL = `
     seq BIGINT GENERATED ALWAYS AS IDENTITY
   );
   CREATE INDEX IF NOT EXISTS tool_receipts_user ON tool_receipts(user_id, created_at);
+  CREATE TABLE IF NOT EXISTS device_owner (
+    slot INTEGER PRIMARY KEY CHECK (slot = 1),
+    user_id TEXT NOT NULL,
+    claimed_at BIGINT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS documents (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    status TEXT NOT NULL,
+    name TEXT NOT NULL,
+    mime TEXT NOT NULL,
+    body BYTEA,
+    created_at BIGINT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS documents_user ON documents(user_id, created_at);
 `;
+
+/** A file Claude makes for the user (ADR-564). Kept a week, then pruned. */
+export interface DocumentRow {
+  id: string;
+  user_id: string;
+  /** `working` while Claude makes it, then `ready` (with a body) or `failed`. */
+  status: "working" | "ready" | "failed";
+  name: string;
+  mime: string;
+  body: Buffer | null;
+  created_at: number;
+}
 
 export class Store {
   private constructor(readonly db: Database) {}
@@ -427,10 +454,16 @@ export class Store {
 
   // ------------------------------------------------------------ online-account tools
 
-  /** Tools start off. A missing row means off. */
+  /** A missing row means off for an account tool; connecting writes every row on (ADR-563). Web tools read `toolSwitch` and default to on. */
   async toolEnabled(userId: string, tool: string): Promise<boolean> {
     const row = await this.one<{ enabled: number }>(this.db, "SELECT enabled FROM tool_switches WHERE user_id = $1 AND tool = $2", [userId, tool]);
     return row?.enabled === 1;
+  }
+
+  /** The switch as stored: true, false, or null when the user never touched it (ADR-563 defaults). */
+  async toolSwitch(userId: string, tool: string): Promise<boolean | null> {
+    const row = await this.one<{ enabled: number }>(this.db, "SELECT enabled FROM tool_switches WHERE user_id = $1 AND tool = $2", [userId, tool]);
+    return row ? row.enabled === 1 : null;
   }
 
   async enabledTools(userId: string): Promise<Set<string>> {
@@ -521,6 +554,49 @@ export class Store {
         toolReceipts: await receipts("tool_receipts"),
       };
     });
+  }
+
+  // ------------------------------------------------------------ device owner (ADR-563)
+
+  /**
+   * "Only me" for the beta: the first device user to sign in claims the server; the answer is the
+   * owner's user ID afterwards. One row, slot 1; a second claim never replaces the first.
+   */
+  async claimDeviceOwner(userId: string, now: number): Promise<string> {
+    await this.db.query("INSERT INTO device_owner (slot, user_id, claimed_at) VALUES (1, $1, $2) ON CONFLICT (slot) DO NOTHING", [userId, now]);
+    const row = await this.one<{ user_id: string }>(this.db, "SELECT user_id FROM device_owner WHERE slot = 1", []);
+    return row?.user_id ?? userId;
+  }
+
+  // ------------------------------------------------------------ documents (ADR-564)
+
+  /** A new document while Claude works on it. Returns its unguessable ID (144 random bits). */
+  async startDocument(userId: string, name: string, mime: string, now: number): Promise<string> {
+    const id = randomBytes(18).toString("base64url");
+    await this.db.query(
+      "INSERT INTO documents (id, user_id, status, name, mime, body, created_at) VALUES ($1, $2, 'working', $3, $4, NULL, $5)",
+      [id, userId, name, mime, now],
+    );
+    return id;
+  }
+
+  async finishDocument(id: string, name: string, mime: string, body: Buffer): Promise<void> {
+    await this.db.query("UPDATE documents SET status = 'ready', name = $2, mime = $3, body = $4 WHERE id = $1", [id, name, mime, body]);
+  }
+
+  async failDocument(id: string): Promise<void> {
+    await this.db.query("UPDATE documents SET status = 'failed', body = NULL WHERE id = $1 AND status = 'working'", [id]);
+  }
+
+  async getDocument(id: string): Promise<DocumentRow | null> {
+    const row = await this.one<DocumentRow>(this.db, "SELECT id, user_id, status, name, mime, body, created_at FROM documents WHERE id = $1", [id]);
+    if (!row) return null;
+    return { ...row, body: row.body === null ? null : Buffer.from(row.body as unknown as Uint8Array) };
+  }
+
+  /** Documents older than a week go. Separate from `prune` so its counts stay as they were. */
+  async pruneDocuments(now: number): Promise<number> {
+    return (await this.db.query("DELETE FROM documents WHERE created_at < $1", [now - 7 * 86_400_000])).rowCount;
   }
 
   async usage(counter: string, period: string): Promise<number> {

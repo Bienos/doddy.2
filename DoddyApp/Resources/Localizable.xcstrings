@@ -22511,65 +22511,6 @@
         }
       }
     },
-    "Everything here starts off. Doddy uses a tool only while its switch is on and, for an account, while it's connected. Anything that adds or creates something shows you a card first and waits for your tap.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Alles hier ist anfangs aus. Doddy nutzt ein Werkzeug nur, solange sein Schalter an ist und, bei einem Konto, solange es verbunden ist. Alles, was etwas hinzufügt oder erstellt, zeigt dir zuerst eine Karte und wartet auf dein Tippen."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Todo lo de aquí empieza desactivado. Doddy usa una herramienta solo mientras su interruptor está activado y, para una cuenta, mientras está conectada. Todo lo que añade o crea algo te muestra primero una tarjeta y espera a que toques."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tout ici commence désactivé. Doddy n’utilise un outil que si son interrupteur est activé et, pour un compte, s’il est connecté. Tout ce qui ajoute ou crée quelque chose te montre d’abord une carte et attend que tu touches."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sve je ovdje na početku isključeno. Doddy koristi alat samo dok je njegov prekidač uključen, a za račun dok je povezan. Sve što nešto dodaje ili stvara prvo ti pokaže karticu i čeka tvoj dodir."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tutto qui parte disattivato. Doddy usa uno strumento solo mentre il suo interruttore è attivo e, per un account, mentre è collegato. Tutto ciò che aggiunge o crea qualcosa ti mostra prima una scheda e aspetta il tuo tocco."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ここにあるものは最初はすべてオフです。Doddyがツールを使うのは、そのスイッチがオンの間だけで、アカウントの場合は接続されている間だけです。何かを追加したり作成したりするものは、まずカードを表示して、あなたのタップを待ちます。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wszystko tutaj jest na początku wyłączone. Doddy używa narzędzia tylko, gdy jego przełącznik jest włączony, a w przypadku konta — gdy jest połączone. Wszystko, co coś dodaje lub tworzy, najpierw pokazuje kartę i czeka na Twoje stuknięcie."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tudo aqui começa desligado. O Doddy usa uma ferramenta só enquanto o interruptor dela está ligado e, no caso de uma conta, enquanto ela está conectada. Qualquer coisa que adicione ou crie algo mostra um cartão primeiro e espera seu toque."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "这里的一切初始都是关闭的。只有在工具的开关打开时，Doddy 才会使用它；对于账户，还需要处于已连接状态。任何会添加或创建内容的操作都会先向你显示一张卡片，并等待你轻点。"
-          }
-        }
-      }
-    },
     "Everything in this backup is already on this iPhone. Nothing to add.": {
       "extractionState": "manual",
       "localizations": {
@@ -28538,6 +28479,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "即使在静音模式或专注模式下也会响，可稍后提醒 9 分钟。在设置的“闹钟”中关闭，或者让 Doddy 关闭。"
+          }
+        }
+      }
+    },
+    "It takes a minute or two. Open it now; it shows the file as soon as it's ready.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To potrwa minutę lub dwie. Otwórz teraz; plik pokaże się, gdy tylko będzie gotowy."
           }
         }
       }
@@ -81089,6 +81041,65 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sposoby na otwarcie Doddy’ego"
+          }
+        }
+      }
+    },
+    "Web search is on, and an account's tools come on when you connect it. Doddy still asks before every look, and anything that sends, adds or changes something shows you a card first and waits for your tap. Switch any tool off here.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Websuche ist an, und die Werkzeuge eines Kontos gehen an, sobald du es verbindest. Doddy fragt trotzdem vor jedem Nachsehen, und alles, was etwas sendet, hinzufügt oder ändert, zeigt dir zuerst eine Karte und wartet auf dein Tippen. Hier kannst du jedes Werkzeug ausschalten."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La búsqueda web está activada, y las herramientas de una cuenta se activan al conectarla. Doddy sigue preguntando antes de cada consulta, y todo lo que envía, añade o cambia algo te muestra primero una tarjeta y espera tu toque. Aquí puedes desactivar cualquier herramienta."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La recherche web est activée, et les outils d’un compte s’activent quand vous le connectez. Doddy demande quand même avant chaque consultation, et tout ce qui envoie, ajoute ou modifie quelque chose vous montre d’abord une carte et attend votre toucher. Désactivez ici n’importe quel outil."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pretraživanje weba je uključeno, a alati računa uključuju se kad ga povežeš. Doddy ipak pita prije svakog pregleda, a sve što nešto šalje, dodaje ili mijenja najprije ti pokaže karticu i čeka tvoj dodir. Ovdje možeš isključiti bilo koji alat."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La ricerca web è attiva, e gli strumenti di un account si attivano quando lo colleghi. Doddy chiede comunque prima di ogni controllo, e tutto ciò che invia, aggiunge o modifica qualcosa ti mostra prima una scheda e aspetta il tuo tocco. Qui puoi disattivare qualsiasi strumento."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ウェブ検索はオンです。アカウントのツールは、接続するとオンになります。それでもDoddyは確認のたびに尋ね、何かを送信・追加・変更するものは、まずカードを表示してあなたのタップを待ちます。ここでどのツールもオフにできます。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyszukiwanie w sieci jest włączone, a narzędzia konta włączają się, gdy je połączysz. Doddy i tak pyta przed każdym sprawdzeniem, a wszystko, co coś wysyła, dodaje lub zmienia, najpierw pokazuje kartę i czeka na Twoje stuknięcie. Tutaj możesz wyłączyć każde narzędzie."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A busca na web está ativada, e as ferramentas de uma conta são ativadas quando você a conecta. O Doddy ainda pergunta antes de cada consulta, e tudo o que envia, adiciona ou muda algo mostra primeiro um cartão e espera seu toque. Desative qualquer ferramenta aqui."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "网页搜索已开启，账户的工具会在你连接账户后开启。Doddy 每次查看前仍会询问，任何会发送、添加或更改内容的操作都会先显示一张卡片，等你轻点确认。你可以在这里关闭任何工具。"
           }
         }
       }

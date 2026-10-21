@@ -135,8 +135,16 @@ final class ToolCatalogTests: XCTestCase {
         let source = try String(contentsOf: repoRoot.appendingPathComponent("backend/src/tools/catalog.ts"), encoding: .utf8)
         let server = Self.serverRisks(source)
         XCTAssertFalse(server.isEmpty, "couldn't read CLOUD_TOOLS from catalog.ts")
-        // websearch.ts also holds the fixed Monid tools (ADR-489).
-        XCTAssertEqual(Set(server.keys).union([CloudToolName.webSearch, "news_search", "find_places"]), CloudToolName.all)
+        // websearch.ts also holds the fixed Monid tools (ADR-489); claude.ts the Claude tools (ADR-564).
+        XCTAssertEqual(
+            Set(server.keys).union([CloudToolName.webSearch, "news_search", "find_places", CloudToolName.askClaude, CloudToolName.makeDocument]),
+            CloudToolName.all)
+        let claude = try String(contentsOf: repoRoot.appendingPathComponent("backend/src/tools/claude.ts"), encoding: .utf8)
+        for name in [CloudToolName.askClaude, CloudToolName.makeDocument] {
+            XCTAssertTrue(claude.contains("\"\(name)\""), "\(name) not in claude.ts")
+            XCTAssertFalse(CloudToolName.isWrite(name), "\(name) changes nothing outside Doddy")
+            XCTAssertFalse(CloudToolName.needsAccount(name), name)
+        }
         XCTAssertEqual(Set(server.filter { $0.value == "write" }.keys), CloudToolName.writes)
         let websearch = try String(contentsOf: repoRoot.appendingPathComponent("backend/src/tools/websearch.ts"), encoding: .utf8)
         XCTAssertTrue(websearch.contains("\"\(CloudToolName.webSearch)\""), "web_search not found in websearch.ts")

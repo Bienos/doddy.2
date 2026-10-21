@@ -248,6 +248,20 @@ final class VoiceSessionController {
             accessRequest = newValue.map { ConnectionApprovalCard(connection: $0, permission: systemPermissionNow($0)) }
         }
     }
+    /// ADR-563: an online account (Gmail, Notion, …) the agent needed that isn't connected. The
+    /// screen offers Connect right here; the sign-in sheet opens over the conversation.
+    struct AccountNeeded: Equatable {
+        /// The server's toolkit ID, e.g. "gmail".
+        let toolkit: String
+        /// "Gmail"
+        let title: String
+    }
+    private(set) var accountNeeded: AccountNeeded?
+    private(set) var isConnectingAccount = false
+    /// What went wrong the last time Connect was tapped, for the card.
+    private(set) var accountMessage: String?
+    /// ADR-564: files Claude is making in this conversation, newest first. Each opens by its link.
+    private(set) var documents: [RunDocument] = []
     private(set) var isMuted = false {
         didSet {
             syncIsland()
@@ -495,6 +509,8 @@ final class VoiceSessionController {
         noteReminderStatus = nil
         planStatus = nil
         connectionNeeded = nil
+        accountNeeded = nil
+        accountMessage = nil
         isMuted = false
         savedThisConversation = 0
         islandFlash = nil
@@ -970,6 +986,8 @@ final class VoiceSessionController {
         contactCard = nil
         parkingCard = nil
         connectionNeeded = nil
+        accountNeeded = nil
+        accountMessage = nil
         if isLive { phase = .ended }
         keepLog()
         offerSaveSuggestions()
@@ -2705,7 +2723,7 @@ final class VoiceSessionController {
     }
 
     private func prepareCloud(_ call: CloudToolCall) async -> CloudPrepared {
-        guard let client = OnlineAccountsClientFactory.make() else {
+        guard let client = await OnlineAccountsClientFactory.ready() else {
             return .blocked(.onlineAccount(
                 screen: OnlineAccountsError.notConfigured.userMessage,
                 reply: VoiceToolReply.cloudFailed(.notConfigured, tool: call.name)))
@@ -2729,7 +2747,7 @@ final class VoiceSessionController {
         func written(_ record: CloudWriteRecord) -> WriteResult {
             WriteResult(reply: record.reply, receipt: record.receipt, attempted: record.attempted)
         }
-        guard let client = OnlineAccountsClientFactory.make() else {
+        guard let client = await OnlineAccountsClientFactory.ready() else {
             return written(CloudWriteRecord(.failure(.notConfigured), tool: call.name, app: app, readAt: Date()))
         }
         var approvalID = approval?.approvalID
@@ -2793,7 +2811,7 @@ final class VoiceSessionController {
     /// Gmail, Drive, Notion, Todoist and web search go through Doddy's server, which checks the tool's
     /// switch (and, for accounts, the connection and the grant). Reads answer at once; writes show a card first.
     private func handleCloud(_ cloud: CloudToolCall, toolCallID: String) async {
-        guard let client = OnlineAccountsClientFactory.make() else {
+        guard let client = await OnlineAccountsClientFactory.ready() else {
             await reply(toolCallID, VoiceToolReply.cloudFailed(.notConfigured, tool: cloud.name), isError: true)
             return
         }
@@ -2828,7 +2846,7 @@ final class VoiceSessionController {
                     toolCallID: toolCallID)
             }
         } catch {
-            await reply(toolCallID, VoiceToolReply.cloudFailed(error, tool: cloud.name), isError: true)
+            await reply(toolCallID, await cloudFailureReply(error, tool: cloud.name), isError: true)
         }
     }
 
@@ -2838,16 +2856,56 @@ final class VoiceSessionController {
             await reply(toolCallID, AskFirst.notAsked(cloud.name))
             return
         }
-        guard let client = OnlineAccountsClientFactory.make() else {
+        guard let client = await OnlineAccountsClientFactory.ready() else {
             await reply(toolCallID, VoiceToolReply.cloudFailed(.notConfigured, tool: cloud.name), isError: true)
             return
         }
         do {
             let result = try await client.run(cloud, timeZone: TimeZone.current.identifier, approvalId: approvalID)
+            // ADR-564: a file Claude is making gets a button on screen; the agent never gets its link.
+            if let document = result.document { documents.insert(document, at: 0) }
             await reply(toolCallID, VoiceToolReply.cloudResult(result))
         } catch {
-            await reply(toolCallID, VoiceToolReply.cloudFailed(error, tool: cloud.name), isError: true)
+            await reply(toolCallID, await cloudFailureReply(error, tool: cloud.name), isError: true)
         }
+    }
+
+    /// ADR-563: what the agent hears when a server tool fails. An account that isn't connected gets
+    /// a Connect button on screen; a refused session is renewed so the next try works.
+    private func cloudFailureReply(_ error: OnlineAccountsError, tool: String) async -> String {
+        if case .unauthenticated = error { _ = await OnlineAccountsClientFactory.renewed() }
+        if ["not_connected", "connection_expired", "permission_insufficient"].contains(error.code ?? ""),
+           CloudToolName.needsAccount(tool), let toolkit = error.receipt?.toolkit {
+            accountNeeded = AccountNeeded(toolkit: toolkit, title: CloudToolName.account(tool))
+            accountMessage = nil
+        }
+        return VoiceToolReply.cloudFailed(error, tool: tool)
+    }
+
+    /// "Connect Gmail" on the card: the provider's own sign-in sheet over the conversation, then the
+    /// agent hears it worked and does what the user asked (still asking first, as always).
+    func connectAccount() async {
+        guard let needed = accountNeeded, !isConnectingAccount else { return }
+        isConnectingAccount = true
+        defer { isConnectingAccount = false }
+        guard let client = await OnlineAccountsClientFactory.ready() else {
+            accountMessage = OnlineAccountsError.notConfigured.userMessage
+            return
+        }
+        let model = OnlineAccountsModel(client: client, authenticator: SystemWebAuthenticator())
+        await model.connect(needed.toolkit)
+        if model.lastReceipt?.toolkit == needed.toolkit, model.lastReceipt?.operation == .connect, model.lastReceipt?.status == .succeeded {
+            accountNeeded = nil
+            accountMessage = nil
+            await sendToAgent("\(needed.title) is connected now. Do what the user asked before, the same way, and ask first as usual.")
+        } else {
+            accountMessage = model.message ?? "\(needed.title) wasn't connected. Nothing changed."
+        }
+    }
+
+    func dismissAccountNeeded() {
+        accountNeeded = nil
+        accountMessage = nil
     }
 
     /// ASK-01: runs the call the user said yes to. For `.ask`, the call is handled again from the
@@ -2881,7 +2939,7 @@ final class VoiceSessionController {
     /// The user tapped the card. The approval is for exactly the arguments the card showed. A lost
     /// answer is asked for once more with the same approval, which can't run it twice (ADR-322).
     private func runConfirmedCloud(_ cloud: CloudToolCall, approvalID: UUID, app: ActivityApp) async -> CloudWriteRecord {
-        guard let client = OnlineAccountsClientFactory.make() else {
+        guard let client = await OnlineAccountsClientFactory.ready() else {
             return CloudWriteRecord(.failure(.notConfigured), tool: cloud.name, app: app, readAt: Date())
         }
         let outcome = await CloudRun.confirmed(cloud, approvalId: approvalID, timeZone: TimeZone.current.identifier, client: client)
