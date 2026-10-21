@@ -19,6 +19,8 @@ reaches OpenAI with the next app build, and ElevenLabs only after the sync below
 
 ## Source of truth and syncing
 
+**Not yet applied to the live agent (ADR-562, 21 Oct 2026, the sidekick's Talk and Task modes):** `instructions.md` has a new identity line, additions to "Who you are" and "How you speak", "# Talk or task: pick one every time" and "# How you work a task" in place of "# Thinking well", and three items in "What you cannot do yet". The live prompt is the owner's own rewrite, so applying this means adding those sections in its style, as with ADR-556, after the owner says yes to the exact text (`docs/product/SIDEKICK_CHARACTER.md`, decision 5). Until then only OpenAI Realtime gets them, from the next app build.
+
 **Applied to the live agent 2026-10-20, about 14:08 UTC (ADR-556, Brand Guidelines V2.2; owner: "do it"):** the guide's verbal identity (pp.49–66). The live prompt is the owner's own rewrite, so this folder's new "# Who you are" and "# How you speak" were not copied in. Eleven short lines were added in the live prompt's own style, and nothing else in the prompt changed:
 - **Identity:** what he says when asked what he is, and that he explains tools, permissions and data plainly when asked.
 - **Personality:** no loyalty speeches, no manufactured closeness.
