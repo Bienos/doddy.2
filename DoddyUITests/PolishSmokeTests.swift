@@ -9,7 +9,7 @@ final class PolishSmokeTests: XCTestCase {
     @MainActor
     func testHomeCaptureMemoriesAndSettingsWorkInPolish() {
         let app = XCUIApplication()
-        app.launchArguments = UITestLaunch.arguments(store: .inMemory) + ["-AppleLanguages", "(pl)", "-AppleLocale", "pl_PL"]
+        app.launchArguments = UITestLaunch.arguments(store: .inMemory, language: .polish)
         app.launch()
 
         XCTAssertTrue(app.buttons["home.save"].waitForExistence(timeout: 8))

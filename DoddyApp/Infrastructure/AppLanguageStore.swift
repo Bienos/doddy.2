@@ -25,10 +25,15 @@ enum AppLanguageStore {
     /// Set once the English that builds before ADR-563 wrote has been replaced by Polish.
     private static let polishDefaultAppliedKey = "appLanguage.polishDefaultApplied"
 
-    /// Before the first screen. UI-test launches leave the simulator's setting alone. iOS has
-    /// already picked this launch's language, so a language written here shows from the next launch.
+    /// Before the first screen. Test runs leave the simulator's setting alone: UI tests (an
+    /// in-memory or per-test store) and the unit tests' host app. Writing the Polish default there
+    /// (ADR-563) made every later test run in Polish. iOS has already picked this launch's
+    /// language, so a language written here shows from the next launch.
     static func applyAtLaunch(defaults: UserDefaults = .standard) {
-        guard !ProcessInfo.processInfo.arguments.contains("-inMemoryStore") else { return }
+        let process = ProcessInfo.processInfo
+        let isTestRun = process.arguments.contains("-inMemoryStore") || process.arguments.contains("-memoryTestID")
+            || process.environment["XCTestConfigurationFilePath"] != nil
+        guard !isTestRun else { return }
         write(AppLanguage.launchAction(
             stored: defaults.string(forKey: PreferenceKey.appLanguage), appLanguages: appLanguages(defaults),
             polishDefaultApplied: defaults.bool(forKey: polishDefaultAppliedKey)), to: defaults)

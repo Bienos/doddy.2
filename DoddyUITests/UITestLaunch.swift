@@ -15,15 +15,23 @@ enum UITestLaunch {
     /// How much slower than real time the opening plays when a test turns it on.
     static let openingTimeScale = 6
 
+    /// The screens' language for a test. The app's default is Polish (ADR-563), so every test
+    /// says which language it reads; the argument wins over anything a launch stored before.
+    enum Language: String {
+        case english = "en", polish = "pl"
+        var locale: String { self == .english ? "en_US" : "pl_PL" }
+    }
+
     static func arguments(
         store: Store, onboardingDone: Bool = true, appearance: String = "system", backTapSetup: String = "deferred",
-        opening: Bool = false, listen: Bool = false
+        opening: Bool = false, listen: Bool = false, language: Language = .english
     ) -> [String] {
         var arguments: [String]
         switch store {
         case .inMemory: arguments = ["-inMemoryStore", "YES"]
         case .persistent(let id): arguments = ["-memoryTestID", id.uuidString]
         }
+        arguments += ["-AppleLanguages", "(\(language.rawValue))", "-AppleLocale", language.locale]
         if onboardingDone { arguments += ["-onboardingDone", "YES"] }
         arguments += ["-appearance", appearance, "-backTapSetupStatus", backTapSetup]
         // No agent ID: a conversation stops at "Couldn't connect" before the microphone or ElevenLabs.
