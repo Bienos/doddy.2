@@ -4,7 +4,7 @@ import { DEV_IDENTITIES } from "../src/auth.js";
 import { ProviderError } from "../src/errors.js";
 import { COMPLETE_TODOIST_TASK, EMAIL_TEXT_MAX, emailText, MOVE_TODOIST_TASK, READ_EMAIL, TOOL_COPY, TOOLKITS } from "../src/tools/catalog.js";
 import { USER_A, USER_B } from "./helpers.js";
-import { connect, on, type Rig, ready, run, start } from "./toolsRig.js";
+import { connect, off, on, type Rig, ready, run, start } from "./toolsRig.js";
 
 /**
  * complete_todoist_task, move_todoist_task (writes that look the real task up first) and
@@ -35,7 +35,7 @@ test("list_todoist_tasks text gives each task's id, says ids are for the two Tod
 
 // ------------------------------------------------------------------ switches start off
 
-test("the three new switches start off; the writes and read_email refuse until switched on", async () => {
+test("the three new switches come on with the connection (ADR-563); switched off, the writes and read_email refuse", async () => {
   rig = await start();
   await connect(rig, "todoist");
   await connect(rig, "gmail");
@@ -44,12 +44,13 @@ test("the three new switches start off; the writes and read_email refuse until s
   for (const name of ["read_email", "complete_todoist_task", "move_todoist_task"]) {
     const tool = tools.find((t: any) => t.name === name);
     assert.ok(tool, name);
-    assert.equal(tool.enabled, false, name);
+    assert.equal(tool.enabled, true, name);
     assert.equal(tool.blurb, TOOL_COPY[name]!.blurb);
+    assert.equal((await off(rig, name)).status, 200, name);
   }
   assert.equal(tools.find((t: any) => t.name === "read_email").risk, "read");
   assert.equal(tools.find((t: any) => t.name === "complete_todoist_task").risk, "write");
-  assert.equal(TOOL_COPY.read_email!.blurb, "Reads one email aloud when you ask, the newest that matches. Off until you switch it on.");
+  assert.equal(TOOL_COPY.read_email!.blurb, "Reads one email aloud when you ask, the newest that matches. On when you connect the account; switch it off any time.");
   assert.match(TOOLKITS.gmail.access, /read one email aloud when you ask/);
 
   const email = await run(rig, "read_email", { query: "from:anna" });

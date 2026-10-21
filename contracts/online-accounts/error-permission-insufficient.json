@@ -2,6 +2,6 @@
   "error": {
     "code": "permission_insufficient",
     "message": "The access granted to Gmail isn't what Doddy expects, so it won't use it. Disconnect and reconnect.",
-    "correlationId": "113f0202-1818-4ae0-871f-24c856462020"
+    "correlationId": "8791d517-bb7b-4eaa-97f9-4c3f591a3335"
   }
 }

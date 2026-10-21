@@ -21,9 +21,9 @@
         {
           "name": "read_email",
           "title": "Read an email",
-          "blurb": "Reads one email aloud when you ask, the newest that matches. Off until you switch it on.",
+          "blurb": "Reads one email aloud when you ask, the newest that matches. On when you connect the account; switch it off any time.",
           "risk": "read",
-          "enabled": false
+          "enabled": true
         },
         {
           "name": "draft_email",
@@ -35,44 +35,44 @@
         {
           "name": "draft_email_reply",
           "title": "Draft a reply",
-          "blurb": "Creates a reply draft in an email's conversation, to its sender, after you tap Create on the card. Doddy never sends it. Off until you switch it on.",
+          "blurb": "Creates a reply draft in an email's conversation, to its sender, after you tap Create on the card. Doddy never sends it. On when you connect the account; switch it off any time.",
           "risk": "write",
-          "enabled": false
+          "enabled": true
         },
         {
           "name": "send_email",
           "title": "Send an email",
-          "blurb": "Sends an email from your Gmail after you tap Send on the card, which shows the recipient, subject and full text. Off until you switch it on.",
+          "blurb": "Sends an email from your Gmail after you tap Send on the card, which shows the recipient, subject and full text. On when you connect the account; switch it off any time.",
           "risk": "write",
-          "enabled": false
+          "enabled": true
         },
         {
           "name": "reply_to_email",
           "title": "Send a reply",
-          "blurb": "Sends a reply in an email's conversation, to its sender, after you tap Send reply. Off until you switch it on.",
+          "blurb": "Sends a reply in an email's conversation, to its sender, after you tap Send reply. On when you connect the account; switch it off any time.",
           "risk": "write",
-          "enabled": false
+          "enabled": true
         },
         {
           "name": "forward_email",
           "title": "Forward an email",
-          "blurb": "Forwards one email, with its attachments, after you tap Forward on the card. Off until you switch it on.",
+          "blurb": "Forwards one email, with its attachments, after you tap Forward on the card. On when you connect the account; switch it off any time.",
           "risk": "write",
-          "enabled": false
+          "enabled": true
         },
         {
           "name": "change_email",
           "title": "Archive or mark email",
-          "blurb": "Archives, marks read or unread, or stars one email after you tap the card. Off until you switch it on.",
+          "blurb": "Archives, marks read or unread, or stars one email after you tap the card. On when you connect the account; switch it off any time.",
           "risk": "write",
-          "enabled": false
+          "enabled": true
         },
         {
           "name": "trash_email",
           "title": "Move email to Trash",
-          "blurb": "Moves one email to Gmail's Trash after you tap the card. It can be restored for 30 days; Doddy never deletes for good. Off until you switch it on.",
+          "blurb": "Moves one email to Gmail's Trash after you tap the card. It can be restored for 30 days; Doddy never deletes for good. On when you connect the account; switch it off any time.",
           "risk": "write",
-          "enabled": false
+          "enabled": true
         }
       ]
     },
@@ -96,7 +96,7 @@
         {
           "name": "create_drive_doc",
           "title": "Create a Google Doc",
-          "blurb": "Creates a private Google Doc with the text on the card after you tap Create doc. Off until you switch it on.",
+          "blurb": "Creates a private Google Doc with the text on the card after you tap Create doc. On when you connect the account; switch it off any time.",
           "risk": "write",
           "enabled": false
         }
@@ -122,28 +122,28 @@
         {
           "name": "read_notion_page",
           "title": "Read a Notion page",
-          "blurb": "Reads one page aloud when you ask, the best match among pages shared with Doddy. Off until you switch it on.",
+          "blurb": "Reads one page aloud when you ask, the best match among pages shared with Doddy. On when you connect the account; switch it off any time.",
           "risk": "read",
           "enabled": false
         },
         {
           "name": "create_notion_page",
           "title": "Create a Notion page",
-          "blurb": "Creates a page inside a page shared with Doddy after you tap Create page. Off until you switch it on.",
+          "blurb": "Creates a page inside a page shared with Doddy after you tap Create page. On when you connect the account; switch it off any time.",
           "risk": "write",
           "enabled": false
         },
         {
           "name": "append_notion_page",
           "title": "Add to a Notion page",
-          "blurb": "Adds text to the end of one page after you tap Add. Off until you switch it on.",
+          "blurb": "Adds text to the end of one page after you tap Add. On when you connect the account; switch it off any time.",
           "risk": "write",
           "enabled": false
         },
         {
           "name": "trash_notion_page",
           "title": "Move a Notion page to the trash",
-          "blurb": "Moves one page to Notion's trash after you tap the card. It can be restored there. Off until you switch it on.",
+          "blurb": "Moves one page to Notion's trash after you tap the card. It can be restored there. On when you connect the account; switch it off any time.",
           "risk": "write",
           "enabled": false
         }
@@ -190,7 +190,7 @@
         {
           "name": "rename_todoist_task",
           "title": "Rename a task",
-          "blurb": "Changes a Todoist task's text after you tap Rename. The card shows the task as Todoist has it. Off until you switch it on.",
+          "blurb": "Changes a Todoist task's text after you tap Rename. The card shows the task as Todoist has it. On when you connect the account; switch it off any time.",
           "risk": "write",
           "enabled": false
         }
@@ -209,98 +209,98 @@
         {
           "name": "check_outlook_email",
           "title": "Check my Outlook email",
-          "blurb": "Lists your newest Outlook emails: sender, subject and a short preview. It doesn't open full messages. Off until you switch it on.",
+          "blurb": "Lists your newest Outlook emails: sender, subject and a short preview. It doesn't open full messages. On when you connect the account; switch it off any time.",
           "risk": "read",
           "enabled": false
         },
         {
           "name": "read_outlook_email",
           "title": "Read an Outlook email",
-          "blurb": "Reads one Outlook email aloud when you ask, the newest that matches. Off until you switch it on.",
+          "blurb": "Reads one Outlook email aloud when you ask, the newest that matches. On when you connect the account; switch it off any time.",
           "risk": "read",
           "enabled": false
         },
         {
           "name": "draft_outlook_email",
           "title": "Draft an Outlook email",
-          "blurb": "Creates a draft in Outlook after you tap Create on the card. Doddy never sends it. Off until you switch it on.",
+          "blurb": "Creates a draft in Outlook after you tap Create on the card. Doddy never sends it. On when you connect the account; switch it off any time.",
           "risk": "write",
           "enabled": false
         },
         {
           "name": "read_outlook_calendar",
           "title": "Read my Outlook calendar",
-          "blurb": "Reads your Outlook calendar for the days you ask about: title, time and place. It can't change events. Off until you switch it on.",
+          "blurb": "Reads your Outlook calendar for the days you ask about: title, time and place. It can't change events. On when you connect the account; switch it off any time.",
           "risk": "read",
           "enabled": false
         },
         {
           "name": "create_outlook_event",
           "title": "Add an Outlook event",
-          "blurb": "Adds an event to your Outlook calendar after you tap Add on the card. Off until you switch it on.",
+          "blurb": "Adds an event to your Outlook calendar after you tap Add on the card. On when you connect the account; switch it off any time.",
           "risk": "write",
           "enabled": false
         },
         {
           "name": "change_outlook_event",
           "title": "Change an Outlook event",
-          "blurb": "Moves or renames one event after you tap Change. Its guests are told. Off until you switch it on.",
+          "blurb": "Moves or renames one event after you tap Change. Its guests are told. On when you connect the account; switch it off any time.",
           "risk": "write",
           "enabled": false
         },
         {
           "name": "delete_outlook_event",
           "title": "Delete an Outlook event",
-          "blurb": "Deletes one event after you tap Delete. It goes to Deleted Items. Off until you switch it on.",
+          "blurb": "Deletes one event after you tap Delete. It goes to Deleted Items. On when you connect the account; switch it off any time.",
           "risk": "write",
           "enabled": false
         },
         {
           "name": "accept_outlook_invite",
           "title": "Accept an Outlook invitation",
-          "blurb": "Answers yes or maybe to one invitation after you tap the card. Off until you switch it on.",
+          "blurb": "Answers yes or maybe to one invitation after you tap the card. On when you connect the account; switch it off any time.",
           "risk": "write",
           "enabled": false
         },
         {
           "name": "decline_outlook_invite",
           "title": "Decline an Outlook invitation",
-          "blurb": "Declines one invitation after you tap the card. Off until you switch it on.",
+          "blurb": "Declines one invitation after you tap the card. On when you connect the account; switch it off any time.",
           "risk": "write",
           "enabled": false
         },
         {
           "name": "send_outlook_email",
           "title": "Send an Outlook email",
-          "blurb": "Sends an email after you tap Send on the card, which shows the recipient, subject and full text. Off until you switch it on.",
+          "blurb": "Sends an email after you tap Send on the card, which shows the recipient, subject and full text. On when you connect the account; switch it off any time.",
           "risk": "write",
           "enabled": false
         },
         {
           "name": "reply_outlook_email",
           "title": "Send an Outlook reply",
-          "blurb": "Replies to one email's sender after you tap Send reply. Off until you switch it on.",
+          "blurb": "Replies to one email's sender after you tap Send reply. On when you connect the account; switch it off any time.",
           "risk": "write",
           "enabled": false
         },
         {
           "name": "forward_outlook_email",
           "title": "Forward an Outlook email",
-          "blurb": "Forwards one email, with its attachments, after you tap Forward. Off until you switch it on.",
+          "blurb": "Forwards one email, with its attachments, after you tap Forward. On when you connect the account; switch it off any time.",
           "risk": "write",
           "enabled": false
         },
         {
           "name": "move_outlook_email",
           "title": "Archive or bin an Outlook email",
-          "blurb": "Moves one email to Archive or Deleted Items (or back to the inbox) after you tap the card. Never deletes for good. Off until you switch it on.",
+          "blurb": "Moves one email to Archive or Deleted Items (or back to the inbox) after you tap the card. Never deletes for good. On when you connect the account; switch it off any time.",
           "risk": "write",
           "enabled": false
         },
         {
           "name": "mark_outlook_email",
           "title": "Mark an Outlook email",
-          "blurb": "Marks one email read or unread, or flags it, after you tap the card. Off until you switch it on.",
+          "blurb": "Marks one email read or unread, or flags it, after you tap the card. On when you connect the account; switch it off any time.",
           "risk": "write",
           "enabled": false
         }
@@ -319,35 +319,35 @@
         {
           "name": "read_google_calendar",
           "title": "Read my Google Calendar",
-          "blurb": "Reads your Google Calendar for the days you ask about: title, time and place, after you say yes. Off until you switch it on.",
+          "blurb": "Reads your Google Calendar for the days you ask about: title, time and place, after you say yes. On when you connect the account; switch it off any time.",
           "risk": "read",
           "enabled": false
         },
         {
           "name": "create_google_event",
           "title": "Add a Google event",
-          "blurb": "Adds an event to your Google Calendar after you tap Add on the card. No guests, no Meet link. Off until you switch it on.",
+          "blurb": "Adds an event to your Google Calendar after you tap Add on the card. No guests, no Meet link. On when you connect the account; switch it off any time.",
           "risk": "write",
           "enabled": false
         },
         {
           "name": "change_google_event",
           "title": "Change a Google event",
-          "blurb": "Moves or renames one event after you tap Change. Its guests are told. Off until you switch it on.",
+          "blurb": "Moves or renames one event after you tap Change. Its guests are told. On when you connect the account; switch it off any time.",
           "risk": "write",
           "enabled": false
         },
         {
           "name": "delete_google_event",
           "title": "Delete a Google event",
-          "blurb": "Deletes one event after you tap Delete. It stays in Google Calendar's trash for 30 days. Off until you switch it on.",
+          "blurb": "Deletes one event after you tap Delete. It stays in Google Calendar's trash for 30 days. On when you connect the account; switch it off any time.",
           "risk": "write",
           "enabled": false
         },
         {
           "name": "answer_google_invite",
           "title": "Answer a Google invitation",
-          "blurb": "Answers yes, no or maybe to one invitation after you tap the card. Off until you switch it on.",
+          "blurb": "Answers yes, no or maybe to one invitation after you tap the card. On when you connect the account; switch it off any time.",
           "risk": "write",
           "enabled": false
         }
@@ -368,21 +368,21 @@
           "title": "Search the web",
           "blurb": "Looks up current information (opening hours, news, prices) and tells you where it came from.",
           "risk": "read",
-          "enabled": false
+          "enabled": true
         },
         {
           "name": "news_search",
           "title": "Search the news",
-          "blurb": "Looks up recent news articles when you ask and says where each came from. Doddy pays per search. Off until you switch it on.",
+          "blurb": "Looks up recent news articles when you ask and says where each came from. Doddy pays per search. On until you switch it off.",
           "risk": "read",
-          "enabled": false
+          "enabled": true
         },
         {
           "name": "find_places",
           "title": "Find places",
-          "blurb": "Finds places (cafés, shops, opening hours, ratings) near a town you name. Doddy pays per search. Off until you switch it on.",
+          "blurb": "Finds places (cafés, shops, opening hours, ratings) near a town you name. Doddy pays per search. On until you switch it off.",
           "risk": "read",
-          "enabled": false
+          "enabled": true
         }
       ]
     }

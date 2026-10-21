@@ -260,6 +260,16 @@ struct VoiceView: View {
                                 .id("connectionNeeded")
                         }
 
+                        if let needed = controller.accountNeeded {
+                            accountCard(needed, controller: controller)
+                                .id("accountNeeded")
+                        }
+
+                        ForEach(controller.documents, id: \.url) { document in
+                            documentCard(document)
+                                .id("document-\(document.url.absoluteString)")
+                        }
+
                         if let card = controller.contactCard {
                             contactCard(card, controller: controller)
                                 .id("contactCard")
@@ -1177,6 +1187,63 @@ struct VoiceView: View {
             }
             .buttonStyle(PrimaryButtonStyle())
             .accessibilityIdentifier("voice.turnOnConnection")
+        }
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+    }
+
+    /// ADR-563: an online account Doddy needs for what was asked. Connect opens the provider's own
+    /// sign-in sheet right here (passwords and passkeys fill in as usual, 1Password included).
+    private func accountCard(_ needed: VoiceSessionController.AccountNeeded, controller: VoiceSessionController) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Connect \(needed.title)?", systemImage: "link")
+                .font(.headline)
+            Text("Doddy needs \(needed.title) for this. You sign in with \(needed.title) itself; Doddy never sees your password, and still asks before every look and every send.")
+                .foregroundStyle(Theme.secondaryText)
+            if let message = controller.accountMessage {
+                Text(message)
+                    .font(.callout)
+                    .foregroundStyle(Theme.secondaryText)
+            }
+            HStack(spacing: 12) {
+                Button {
+                    Task { await controller.connectAccount() }
+                } label: {
+                    if controller.isConnectingAccount {
+                        ProgressView()
+                    } else {
+                        Label("Connect \(needed.title)", systemImage: "checkmark")
+                    }
+                }
+                .buttonStyle(PrimaryButtonStyle())
+                .disabled(controller.isConnectingAccount)
+                .accessibilityIdentifier("voice.connectAccount")
+                Button("Not now") { controller.dismissAccountNeeded() }
+                    .accessibilityIdentifier("voice.connectAccountLater")
+            }
+        }
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+    }
+
+    /// ADR-564: a file Claude is making. The link opens in Safari: Quick Look shows the deck,
+    /// document or PDF, with Share to save or send it; until it's ready the page says so.
+    private func documentCard(_ document: RunDocument) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("\(document.label) from Claude", systemImage: "doc.richtext")
+                .font(.headline)
+            Text(document.name)
+                .foregroundStyle(Theme.secondaryText)
+            Text("It takes a minute or two. Open it now; it shows the file as soon as it's ready.")
+                .font(.callout)
+                .foregroundStyle(Theme.secondaryText)
+            Button {
+                UIApplication.shared.open(document.url)
+            } label: {
+                Label("Open", systemImage: "arrow.up.forward.app")
+            }
+            .buttonStyle(PrimaryButtonStyle())
+            .accessibilityIdentifier("voice.openDocument")
         }
         .padding(16)
         .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))

@@ -17,7 +17,7 @@ import {
   toolHasGrant,
 } from "../src/tools/catalog.js";
 import { USER_A, USER_B } from "./helpers.js";
-import { connect, on, type Rig, ready, run, start } from "./toolsRig.js";
+import { connect, off, on, type Rig, ready, run, start } from "./toolsRig.js";
 
 /**
  * Outlook (Microsoft 365 / Outlook.com): check_outlook_email, read_outlook_email, draft_outlook_email
@@ -63,10 +63,10 @@ test("Outlook's tools, each named once; every write behind a tap; nothing delete
   assert.ok(CLOUD_TOOLS.filter((t) => t.risk === "write").every((t) => t.maxRetries === 0), "a write is never retried");
   assert.match(TOOLKITS.outlook.access, /each only after you tap the card/);
   assert.match(TOOLKITS.outlook.access, /never deletes anything for good/);
-  for (const name of OUTLOOK_TOOLS) assert.match(TOOL_COPY[name]!.blurb, /Off until you switch it on\.$/, name);
+  for (const name of OUTLOOK_TOOLS) assert.match(TOOL_COPY[name]!.blurb, /On when you connect the account; switch it off any time\.$/, name);
 });
 
-test("every Outlook switch starts off; each tool refuses until switched on, and nothing reaches the provider", async () => {
+test("connecting Outlook turns every switch on (ADR-563); each tool switched off refuses, and nothing reaches the provider", async () => {
   rig = await start();
   const connected = await connect(rig, "outlook");
   assert.equal(connected.status, 200, connected.text);
@@ -74,8 +74,9 @@ test("every Outlook switch starts off; each tool refuses until switched on, and 
   const toolkit = (await rig.call("GET", "/v1/tools")).body.toolkits.find((t: any) => t.id === "outlook");
   assert.equal(toolkit.title, "Outlook");
   assert.equal(toolkit.needsAccount, true);
-  assert.deepEqual(toolkit.tools.map((t: any) => [t.name, t.enabled]), OUTLOOK_TOOLS.map((n) => [n, false]));
+  assert.deepEqual(toolkit.tools.map((t: any) => [t.name, t.enabled]), OUTLOOK_TOOLS.map((n) => [n, true]));
   for (const tool of toolkit.tools) assert.equal(tool.blurb, TOOL_COPY[tool.name]!.blurb);
+  for (const name of OUTLOOK_TOOLS) assert.equal((await off(rig, name)).status, 200, name);
 
   for (const [tool, args] of [
     ["check_outlook_email", {}],

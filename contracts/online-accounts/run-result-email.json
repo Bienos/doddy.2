@@ -21,7 +21,7 @@
     }
   ],
   "receipt": {
-    "operationId": "4bb34dbe-76af-4a67-ba3f-3fb1102911c1",
+    "operationId": "7b3af2fc-e93b-4de5-9f26-ff6a2200ad4d",
     "operation": "read",
     "toolkit": "gmail",
     "tool": "check_email",
@@ -30,6 +30,6 @@
     "status": "succeeded",
     "summary": "Checked email: 2 messages listed.",
     "errorCode": null,
-    "providerReference": "mock_log_1ec7e638"
+    "providerReference": "mock_log_ae9c994e"
   }
 }

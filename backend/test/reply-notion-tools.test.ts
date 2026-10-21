@@ -15,7 +15,7 @@ import {
 } from "../src/tools/catalog.js";
 import type { ExecuteCall } from "../src/tools/provider.js";
 import { USER_A, USER_B } from "./helpers.js";
-import { connect, type Rig, ready, run, start } from "./toolsRig.js";
+import { connect, off, type Rig, ready, run, start } from "./toolsRig.js";
 
 /**
  * draft_email_reply (a write that looks the email up first; recipient and thread come from Gmail)
@@ -39,7 +39,7 @@ const REPLY = { query: "from:anna", body: "Yes, 1pm works." };
 
 // ------------------------------------------------------------------ switches start off
 
-test("both new switches start off; each refuses until switched on, and nothing reaches the provider", async () => {
+test("both new switches come on with the connection (ADR-563); each switched off refuses, and nothing reaches the provider", async () => {
   rig = await start();
   await connect(rig, "gmail");
   await connect(rig, "notion");
@@ -47,13 +47,14 @@ test("both new switches start off; each refuses until switched on, and nothing r
   for (const [name, risk] of [["draft_email_reply", "write"], ["read_notion_page", "read"]] as const) {
     const tool = tools.find((t: any) => t.name === name);
     assert.ok(tool, name);
-    assert.equal(tool.enabled, false, name);
+    assert.equal(tool.enabled, true, name);
+    assert.equal((await off(rig, name)).status, 200, name);
     assert.equal(tool.risk, risk);
     assert.equal(tool.blurb, TOOL_COPY[name]!.blurb);
   }
   assert.deepEqual(TOOL_COPY.read_notion_page, {
     title: "Read a Notion page",
-    blurb: "Reads one page aloud when you ask, the best match among pages shared with Doddy. Off until you switch it on.",
+    blurb: "Reads one page aloud when you ask, the best match among pages shared with Doddy. On when you connect the account; switch it off any time.",
   });
   assert.match(TOOLKITS.notion.access, /read one page aloud when you ask/);
   assert.doesNotMatch(TOOLKITS.notion.access, /doesn't read page content/);

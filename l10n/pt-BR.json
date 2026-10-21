@@ -320,7 +320,6 @@
   "Every day": "Todo dia",
   "Every month works for days 1 to 28, so every month has the day.": "Todo mês funciona para os dias 1 a 28, para que todo mês tenha o dia.",
   "Everyone on the list can be reminded at “%@”.": "Todos na lista podem ser lembrados em “%@”.",
-  "Everything here starts off. Doddy uses a tool only while its switch is on and, for an account, while it's connected. Anything that adds or creates something shows you a card first and waits for your tap.": "Tudo aqui começa desligado. O Doddy usa uma ferramenta só enquanto o interruptor dela está ligado e, no caso de uma conta, enquanto ela está conectada. Qualquer coisa que adicione ou crie algo mostra um cartão primeiro e espera seu toque.",
   "Everything in this backup is already on this iPhone. Nothing to add.": "Tudo neste backup já está neste iPhone. Nada a adicionar.",
   "Expired": "Expirado",
   "Export as JSON": "Exportar como JSON",
@@ -1277,5 +1276,6 @@
   "There they are.": "Olha elas aí.",
   "What I can do": "O que eu sei fazer",
   "You ask Doddy where they are.": "Você pergunta ao Doddy onde elas estão.",
-  "You'd saved “keys under the sofa cushion”.": "Você tinha salvado “chaves embaixo da almofada do sofá”."
+  "You'd saved “keys under the sofa cushion”.": "Você tinha salvado “chaves embaixo da almofada do sofá”.",
+  "Web search is on, and an account's tools come on when you connect it. Doddy still asks before every look, and anything that sends, adds or changes something shows you a card first and waits for your tap. Switch any tool off here.": "A busca na web está ativada, e as ferramentas de uma conta são ativadas quando você a conecta. O Doddy ainda pergunta antes de cada consulta, e tudo o que envia, adiciona ou muda algo mostra primeiro um cartão e espera seu toque. Desative qualquer ferramenta aqui."
 }

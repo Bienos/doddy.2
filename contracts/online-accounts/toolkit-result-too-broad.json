@@ -19,7 +19,7 @@
       {
         "name": "read_email",
         "title": "Read an email",
-        "blurb": "Reads one email aloud when you ask, the newest that matches. Off until you switch it on.",
+        "blurb": "Reads one email aloud when you ask, the newest that matches. On when you connect the account; switch it off any time.",
         "risk": "read",
         "enabled": false
       },
@@ -33,49 +33,49 @@
       {
         "name": "draft_email_reply",
         "title": "Draft a reply",
-        "blurb": "Creates a reply draft in an email's conversation, to its sender, after you tap Create on the card. Doddy never sends it. Off until you switch it on.",
+        "blurb": "Creates a reply draft in an email's conversation, to its sender, after you tap Create on the card. Doddy never sends it. On when you connect the account; switch it off any time.",
         "risk": "write",
         "enabled": false
       },
       {
         "name": "send_email",
         "title": "Send an email",
-        "blurb": "Sends an email from your Gmail after you tap Send on the card, which shows the recipient, subject and full text. Off until you switch it on.",
+        "blurb": "Sends an email from your Gmail after you tap Send on the card, which shows the recipient, subject and full text. On when you connect the account; switch it off any time.",
         "risk": "write",
         "enabled": false
       },
       {
         "name": "reply_to_email",
         "title": "Send a reply",
-        "blurb": "Sends a reply in an email's conversation, to its sender, after you tap Send reply. Off until you switch it on.",
+        "blurb": "Sends a reply in an email's conversation, to its sender, after you tap Send reply. On when you connect the account; switch it off any time.",
         "risk": "write",
         "enabled": false
       },
       {
         "name": "forward_email",
         "title": "Forward an email",
-        "blurb": "Forwards one email, with its attachments, after you tap Forward on the card. Off until you switch it on.",
+        "blurb": "Forwards one email, with its attachments, after you tap Forward on the card. On when you connect the account; switch it off any time.",
         "risk": "write",
         "enabled": false
       },
       {
         "name": "change_email",
         "title": "Archive or mark email",
-        "blurb": "Archives, marks read or unread, or stars one email after you tap the card. Off until you switch it on.",
+        "blurb": "Archives, marks read or unread, or stars one email after you tap the card. On when you connect the account; switch it off any time.",
         "risk": "write",
         "enabled": false
       },
       {
         "name": "trash_email",
         "title": "Move email to Trash",
-        "blurb": "Moves one email to Gmail's Trash after you tap the card. It can be restored for 30 days; Doddy never deletes for good. Off until you switch it on.",
+        "blurb": "Moves one email to Gmail's Trash after you tap the card. It can be restored for 30 days; Doddy never deletes for good. On when you connect the account; switch it off any time.",
         "risk": "write",
         "enabled": false
       }
     ]
   },
   "receipt": {
-    "operationId": "84f2e631-4e17-4cb3-b606-807eb6db1e3d",
+    "operationId": "734b01a7-204b-464d-8bb9-1c2922d441b7",
     "operation": "connect",
     "toolkit": "gmail",
     "tool": null,
