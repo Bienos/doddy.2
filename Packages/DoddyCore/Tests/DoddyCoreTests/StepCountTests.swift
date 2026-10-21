@@ -2,7 +2,7 @@ import Foundation
 import XCTest
 @testable import DoddyCore
 
-/// read_steps (ADR-567): which day, the seven-day limit, and the exact numbers the agent hears.
+/// read_steps (ADR-568): which day, the seven-day limit, and the exact numbers the agent hears.
 final class StepCountTests: XCTestCase {
     private let calendar: Calendar = {
         var calendar = Calendar(identifier: .gregorian)

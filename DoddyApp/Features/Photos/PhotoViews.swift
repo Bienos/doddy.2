@@ -6,7 +6,7 @@ import UIKit
 /// "Add a photo" while writing a note (ADR-218). Apple's photo picker runs outside Doddy, so no
 /// photo library permission is asked and Doddy sees only the one photo the user picks. Its text
 /// is read on this iPhone and added to the editor for the user to check before saving.
-/// "Take a photo" (ADR-568) opens Doddy's camera instead; the photo is read the same way.
+/// "Take a photo" (ADR-569) opens Doddy's camera instead; the photo is read the same way.
 struct CapturePhotoPicker: View {
     @Binding var text: String
     @Binding var prepared: PhotoTextReader.Prepared?

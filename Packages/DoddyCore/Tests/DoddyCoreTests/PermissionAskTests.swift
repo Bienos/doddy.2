@@ -2,7 +2,7 @@ import Foundation
 import XCTest
 @testable import DoddyCore
 
-/// "Let Doddy use Calendar?" (ADR-565): which sheet, when it may show, and what the agent hears.
+/// "Let Doddy use Calendar?" (ADR-566): which sheet, when it may show, and what the agent hears.
 final class PermissionAskTests: XCTestCase {
     func testKind() {
         XCTAssertEqual(PermissionAsk.kind(iosRefused: false), .turnOn)

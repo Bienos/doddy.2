@@ -2,7 +2,7 @@ import DoddyCore
 import SwiftUI
 import UIKit
 
-/// The card before a presentation is made (ADR-566): every slide exactly as the file will hold it.
+/// The card before a presentation is made (ADR-567): every slide exactly as the file will hold it.
 struct PresentationCardContent: View {
     let draft: PresentationDraft
 

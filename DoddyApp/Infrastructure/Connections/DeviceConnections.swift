@@ -69,12 +69,12 @@ final class DeviceConnections {
         case .reminders: Self.eventAccess(EKEventStore.authorizationStatus(for: .reminder))
         case .contacts: Self.contactAccess(CNContactStore.authorizationStatus(for: .contacts))
         case .steps: Self.motionAccess()
-        // ADR-568: the library (PhotoLibrarySearch) and the camera (CameraAccess), each its own file.
+        // ADR-569: the library (PhotoLibrarySearch) and the camera (CameraAccess), each its own file.
         case .photos: PhotoLibrarySearch.access()
         case .camera: CameraAccess.access()
         case .timers: .notDetermined
         // BLIK transfers (ADR-510) need no iOS permission: the card only shows what to send.
-        // Presentations (ADR-566) are a file Doddy makes; the user picks where it goes.
+        // Presentations (ADR-567) are a file Doddy makes; the user picks where it goes.
         case .maps, .shortcuts, .messages, .blik, .presentations: .granted
         }
     }
@@ -156,7 +156,7 @@ final class DeviceConnections {
 
     var stepCountingAvailable: Bool { CMPedometer.isStepCountingAvailable() }
 
-    // MARK: Photos and camera (ADR-568)
+    // MARK: Photos and camera (ADR-569)
 
     var cameraAvailable: Bool { CameraAccess.isAvailable }
 
@@ -164,7 +164,7 @@ final class DeviceConnections {
         PhotoLibrarySearch.find(request, now: now)
     }
 
-    // MARK: Steps (ADR-567)
+    // MARK: Steps (ADR-568)
 
     /// One day's totals from Motion & Fitness (the iPhone keeps seven days). Read only, nothing kept.
     func steps(on day: StepDay, now: Date) async throws -> StepTotals {
@@ -762,7 +762,7 @@ extension DeviceConnections: TimerWriter {}
 /// and read back (ADR-319, ADR-320).
 protocol DeviceConnecting: ReminderStore, CalendarEventWriter, TimerWriter, Sendable {
     func access(for connection: VoiceConnection) -> DeviceConnections.Access
-    /// Asks iOS when it never has (the permission sheet's Allow, ADR-565).
+    /// Asks iOS when it never has (the permission sheet's Allow, ADR-566).
     func request(_ connection: VoiceConnection) async -> DeviceConnections.Access
     func notificationAccess() async -> DeviceConnections.Access
     var stepCountingAvailable: Bool { get }

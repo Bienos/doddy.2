@@ -27,13 +27,13 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
     case calendar, reminders, contacts, timers, maps, shortcuts, messages
     /// BLIK phone transfers shown on a card for the user to send in their bank app (ADR-510).
     case blik
-    /// Presentations made on the iPhone as a file Keynote opens (ADR-566). No iOS permission.
+    /// Presentations made on the iPhone as a file Keynote opens (ADR-567). No iOS permission.
     case presentations
-    /// Step count, walking distance and floors from Motion & Fitness (ADR-567).
+    /// Step count, walking distance and floors from Motion & Fitness (ADR-568).
     case steps
-    /// Counting the photos in the user's library for a day or a span (ADR-568).
+    /// Counting the photos in the user's library for a day or a span (ADR-569).
     case photos
-    /// Doddy's own camera, for a photo note (ADR-568).
+    /// Doddy's own camera, for a photo note (ADR-569).
     case camera
 
     /// The name shown in Settings and in the agent's replies.
@@ -216,13 +216,13 @@ public enum VoiceToolRequest: Equatable, Sendable {
     /// A BLIK phone transfer on a card for the user to send in their bank app (ADR-510). Doddy
     /// never sends money.
     case draftBlikTransfer(BlikTransferDraft)
-    /// A presentation shown slide by slide on a card; the file is made only on a tap (ADR-566).
+    /// A presentation shown slide by slide on a card; the file is made only on a tap (ADR-567).
     case makePresentation(PresentationDraft)
-    /// One day's steps from Motion & Fitness, read only (ADR-567).
+    /// One day's steps from Motion & Fitness, read only (ADR-568).
     case readSteps(StepDay)
-    /// Counts of the photos in the library for a span of days; pictures on screen only (ADR-568).
+    /// Counts of the photos in the library for a span of days; pictures on screen only (ADR-569).
     case findPhotos(PhotoSearchRequest)
-    /// Doddy's camera, after a card (ADR-568). A kept photo goes into a new note the user saves.
+    /// Doddy's camera, after a card (ADR-569). A kept photo goes into a new note the user saves.
     case openCamera
     /// Gmail, Google Drive, Notion or Todoist through the Doddy server (see OnlineAccounts).
     case cloudTool(CloudToolCall)

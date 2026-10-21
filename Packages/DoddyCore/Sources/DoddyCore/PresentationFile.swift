@@ -1,7 +1,7 @@
 import Foundation
 
 /// Writes a `PresentationDraft` as a PowerPoint file (.pptx, Office Open XML), which Keynote,
-/// PowerPoint and Google Slides open (ADR-566). Plain Foundation, so it is tested on Linux and the
+/// PowerPoint and Google Slides open (ADR-567). Plain Foundation, so it is tested on Linux and the
 /// result can be checked with other tools. 16:9 slides in Brand Guidelines V2.2's paper, ink and
 /// orange; text in the theme's fonts (Helvetica Neue, which Keynote has; other apps substitute).
 /// No font is embedded and no image is added.

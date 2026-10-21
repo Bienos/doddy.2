@@ -1,7 +1,7 @@
 import Foundation
 
 /// A ZIP archive with every file stored as is (no compression), the format Office files use
-/// (ADR-566). Deterministic: the same files in the same order always give the same bytes, with
+/// (ADR-567). Deterministic: the same files in the same order always give the same bytes, with
 /// every timestamp at 1 January 1980. Foundation has no ZIP writer on iOS, and the files Doddy
 /// makes are small, so storing beats bringing in a compression library.
 public enum StoredZip {

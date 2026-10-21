@@ -5,7 +5,7 @@ import FoundationXML
 import XCTest
 @testable import DoddyCore
 
-/// make_presentation (ADR-566): the arguments, the limits (refused, never cut), the file name and
+/// make_presentation (ADR-567): the arguments, the limits (refused, never cut), the file name and
 /// the .pptx package itself, read back with a small ZIP reader below.
 final class PresentationTests: XCTestCase {
     private func parse(_ json: String) -> VoiceToolRequest {

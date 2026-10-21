@@ -1,13 +1,13 @@
 # Apple apps Doddy can connect to
 
-Owner, 20 Oct 2026: "Connect to all of the Apple tools … every time you want to have access to it, have the pop-up that asks for permission, sliding from the bottom." This page lists every Apple app and system service a third-party iPhone app could use, what Doddy does with each today, and what blocks the rest. ADR-565 to ADR-568 are the decisions behind this round.
+Owner, 20 Oct 2026: "Connect to all of the Apple tools … every time you want to have access to it, have the pop-up that asks for permission, sliding from the bottom." This page lists every Apple app and system service a third-party iPhone app could use, what Doddy does with each today, and what blocks the rest. ADR-566 to ADR-569 are the decisions behind this round.
 
 **State of this round:** tested on Linux (DoddyCore) and built and tested in the hosted Mac job ([run 39519425630](https://github.com/Bienos/doddy.2/actions/runs/39519425630), Xcode 26.6, simulator), **never seen on a device**. Rows marked "new" are in that state.
 
 ## How Doddy asks (all of them)
 
 - Every connection starts **off** in Settings, Connections.
-- **New (ADR-565): when Doddy needs one that is off, a sheet slides up over the conversation** ("Let Doddy use Calendar?"). It says what Doddy was asked to do and what leaves the phone. **Allow** turns it on; iOS shows its own permission prompt the first time; then Doddy carries on with the same request. **Not now** (or a swipe down) tells Doddy no, and it doesn't ask again in that conversation.
+- **New (ADR-566): when Doddy needs one that is off, a sheet slides up over the conversation** ("Let Doddy use Calendar?"). It says what Doddy was asked to do and what leaves the phone. **Allow** turns it on; iOS shows its own permission prompt the first time; then Doddy carries on with the same request. **Not now** (or a swipe down) tells Doddy no, and it doesn't ask again in that conversation.
 - If iOS has refused it before, only iPhone Settings can change that, so the sheet offers **Open iPhone Settings** instead.
 - For a read ("What's on today?"), Allow also counts as the yes for that one look-up, so there's one tap, not two. A change ("Add dentist on Monday") still shows its own card to tap after Allow.
 
@@ -41,11 +41,11 @@ Owner, 20 Oct 2026: "Connect to all of the Apple tools … every time you want t
 
 | Apple app or service | What Doddy does | Asks | Code |
 |---|---|---|---|
-| **Keynote** (via a .pptx file) | "Make me five slides about our trip": every slide on a card, then a PowerPoint file Keynote opens, and the share sheet to open it in Keynote, save it to Files or send it | Connections switch (Presentations); a card tap | `PresentationFile`, `StoredZip` (DoddyCore), `Features/Presentations/` (ADR-566) |
-| **Motion & Fitness** (steps) | "How many steps today?": steps, walking distance and floors for one of the last 7 days | Connections switch (Steps) + iOS prompt; a yes or tap | `StepCount` (DoddyCore), `DeviceConnections.steps` (ADR-567) |
-| **The permission sheet** | Slides up for any connection above that is off | Allow / Not now | `PermissionAsk` (DoddyCore), `PermissionAskSheet` (ADR-565) |
-| **Photos** (library, read only) | "How many photos did I take on Saturday?": counts photos and videos for a day or up to 31 days; the newest show on screen; Doddy's voice hears only counts and times | Connections switch (Photos) + iOS prompt; a yes or tap | `PhotosAndCamera` (DoddyCore), `PhotoLibrarySearch`, `PhotoResultsCard` (ADR-568) |
-| **Camera** | "Take a photo": a card, then iOS's camera screen; the kept photo opens a new note to check and save. Also **Take a photo** when writing a note | Connections switch (Camera) + iOS prompt; a card tap | `CameraCapture`, `CameraAccess`, `CaptureView` (ADR-568) |
+| **Keynote** (via a .pptx file) | "Make me five slides about our trip": every slide on a card, then a PowerPoint file Keynote opens, and the share sheet to open it in Keynote, save it to Files or send it | Connections switch (Presentations); a card tap | `PresentationFile`, `StoredZip` (DoddyCore), `Features/Presentations/` (ADR-567) |
+| **Motion & Fitness** (steps) | "How many steps today?": steps, walking distance and floors for one of the last 7 days | Connections switch (Steps) + iOS prompt; a yes or tap | `StepCount` (DoddyCore), `DeviceConnections.steps` (ADR-568) |
+| **The permission sheet** | Slides up for any connection above that is off | Allow / Not now | `PermissionAsk` (DoddyCore), `PermissionAskSheet` (ADR-566) |
+| **Photos** (library, read only) | "How many photos did I take on Saturday?": counts photos and videos for a day or up to 31 days; the newest show on screen; Doddy's voice hears only counts and times | Connections switch (Photos) + iOS prompt; a yes or tap | `PhotosAndCamera` (DoddyCore), `PhotoLibrarySearch`, `PhotoResultsCard` (ADR-569) |
+| **Camera** | "Take a photo": a card, then iOS's camera screen; the kept photo opens a new note to check and save. Also **Take a photo** when writing a note | Connections switch (Camera) + iOS prompt; a card tap | `CameraCapture`, `CameraAccess`, `CaptureView` (ADR-569) |
 
 ## 3. Possible next, with your OK (no paid team needed)
 

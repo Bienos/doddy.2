@@ -13,11 +13,11 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
     case exchangeRates
     /// A BLIK phone transfer shown for the user to send in their bank app (ADR-510).
     case blik
-    /// A presentation file made on the iPhone (ADR-566).
+    /// A presentation file made on the iPhone (ADR-567).
     case presentations
-    /// Motion & Fitness step counts (ADR-567).
+    /// Motion & Fitness step counts (ADR-568).
     case steps
-    /// The photo library and Doddy's camera (ADR-568).
+    /// The photo library and Doddy's camera (ADR-569).
     case photos, camera
 
     public var title: String {

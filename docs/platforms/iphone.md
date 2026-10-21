@@ -42,15 +42,15 @@ Code lives under `DoddyApp/Features/<Folder>/`. Status docs are in `docs/impleme
 | Birthdays | Birthday reminders from contacts | 288 | BIRTHDAYS_STATUS |
 | Calls | Calling Doddy on the phone, PIN | - | S2_CALLS_STATUS |
 | CallCases | Calls Doddy makes for you: brief, card, live call with take over, answer card, rehearsal, Live Activity | 500–507 | CALL_CASES_STATUS |
-| Connections, ConnectedApps, OnlineAccounts | Calendar, Reminders, Contacts, Steps (Motion & Fitness), Presentations; online apps. The permission sheet that slides up in a conversation is `Voice/PermissionAskSheet.swift` | 291, 309, 565, 567 | APPLE_CONNECTIONS |
-| Presentations | Slides by voice: the card, the .pptx file Keynote opens (`PresentationFile` in DoddyCore), the share sheet | 566 | APPLE_CONNECTIONS |
+| Connections, ConnectedApps, OnlineAccounts | Calendar, Reminders, Contacts, Steps (Motion & Fitness), Presentations; online apps. The permission sheet that slides up in a conversation is `Voice/PermissionAskSheet.swift` | 291, 309, 566, 568 | APPLE_CONNECTIONS |
+| Presentations | Slides by voice: the card, the .pptx file Keynote opens (`PresentationFile` in DoddyCore), the share sheet | 567 | APPLE_CONNECTIONS |
 | Focus, Tools | Focus timer and its Live Activity (the breathing exercise was removed, ADR-550) | 241, 242, 550 | - |
 | Import | Google Keep and text import | 231 | NOTE_IMPORT_STATUS |
 | LeaveBy, Parking, Today | Time to leave, parking spot, Today card | 335, 301 | TODAY_STATUS |
 | Meaning | Find by meaning (on-device) | 227 | MEANING_SEARCH_STATUS |
 | MorningCheckIn, EveningWrapUp, WeeklyLookBack, TidyUp | Daily and weekly routines | 220, 261, 306, 228 | MORNING_CHECKIN_STATUS, EVENING_WRAPUP_STATUS, TIDY_UP_STATUS |
 | News, Updates | Daily news, server notifications and texts | 174, 175 | N1_NEWS_STATUS, S1_SERVER_STATUS |
-| Photos, VoiceMemos | Photo notes (picker and, since ADR-568, Doddy's camera), the photo search card, voice memos | 218, 230, 568 | PHOTO_NOTES_STATUS, VOICE_MEMOS_STATUS, APPLE_CONNECTIONS |
+| Photos, VoiceMemos | Photo notes (picker and, since ADR-569, Doddy's camera), the photo search card, voice memos | 218, 230, 569 | PHOTO_NOTES_STATUS, VOICE_MEMOS_STATUS, APPLE_CONNECTIONS |
 | Privacy | Face ID lock, "What leaves this iPhone" | 310 | - |
 | QuickActions, Spotlight | Icon menu, iPhone search | 339, 330 | - |
 | Setup | Ways to open Doddy: Back Tap guide, Action Button, control, Siri | 380, 558 | V2_SHORTCUT_SETUP_STATUS |

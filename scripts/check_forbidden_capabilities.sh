@@ -20,13 +20,13 @@
 #  - speech recognition (Speech) only inside DoddyApp/Features/VoiceMemos, and every recognition
 #    request there sets requiresOnDeviceRecognition = true (nothing is sent to Apple's servers),
 #  - calendar (EventKit), contacts and Motion & Fitness step counts (CoreMotion's pedometer,
-#    ADR-567) code only inside DoddyApp/Infrastructure/Connections,
+#    ADR-568) code only inside DoddyApp/Infrastructure/Connections,
 #  - location and Apple Maps search code (place reminders, ADR-196) only there too, and never
 #    "Always" location, background location or significant-change tracking,
 #  - on-device meaning search (NaturalLanguage embeddings) only inside DoddyApp/Features/Meaning (ADR-227);
 #    the NaturalLanguage import also in ReadAloudController, for its language recognizer only (ADR-243),
 #  - photo text reading (Vision) and the photo picker only inside DoddyApp/Features/Photos; since
-#    ADR-568 (owner, 21 Oct) the photo library is read only in Connections/PhotoLibrarySearch.swift
+#    ADR-569 (owner, 21 Oct) the photo library is read only in Connections/PhotoLibrarySearch.swift
 #    (counts and on-screen pictures, never a write), the camera is iOS's own screen only in
 #    Features/Photos/CameraCapture.swift, its permission only in Connections/CameraAccess.swift,
 #    and there is no capture session and no write to the photo library anywhere,
@@ -41,7 +41,7 @@
 #    countdown widget (ADR-260, ADR-283),
 #  - CloudKit (shared lists through the user's iCloud) only inside DoddyApp/Features/Sharing (ADR-263),
 #  - permission keys only for alarms (AlarmKit, iOS 26), the microphone, speech recognition (on-device, voice memos), calendar,
-#    reminders, contacts, Motion & Fitness (steps, ADR-567), the camera and reading the photo library (ADR-568)
+#    reminders, contacts, Motion & Fitness (steps, ADR-568), the camera and reading the photo library (ADR-569)
 #    and "While Using" location,
 #  - backend: Composio tool slugs only in the adapters and the tool catalog (and the mock that mimics
 #    their answers), no write tools beyond the reviewed ones (Gmail draft and reply draft; Todoist add, complete and move,
@@ -93,7 +93,7 @@ meaning_only='NLContextualEmbedding|NLEmbedding'
 natural_language_files='^(DoddyApp/Features/Meaning/|DoddyApp/Features/Voice/ReadAloudController.swift:)'
 photos_dir=DoddyApp/Features/Photos
 photos_only='import Vision|VNRecognizeText|VNImageRequestHandler|import PhotosUI|PhotosPicker'
-# ADR-568: each of these in its one file only.
+# ADR-569: each of these in its one file only.
 photo_library_file=DoddyApp/Infrastructure/Connections/PhotoLibrarySearch.swift
 photo_library='import Photos($|[^A-Za-z])|PHPhotoLibrary|PHAsset|PHImageManager|PHFetchOptions'
 camera_ui_file=DoddyApp/Features/Photos/CameraCapture.swift
@@ -216,16 +216,16 @@ if grep -RInE --include='*.swift' "$photos_only" "${dirs[@]}" | grep -v "^$photo
   echo "FAIL: photo reading or the photo picker outside $photos_dir." >&2; status=1
 fi
 if grep -RInE --include='*.swift' "$photo_library" "${dirs[@]}" | code_only | grep -v "^$photo_library_file:"; then
-  echo "FAIL: photo library code outside $photo_library_file (ADR-568)." >&2; status=1
+  echo "FAIL: photo library code outside $photo_library_file (ADR-569)." >&2; status=1
 fi
 if grep -RInE --include='*.swift' "$camera_ui" "${dirs[@]}" | code_only | grep -v "^$camera_ui_file:"; then
-  echo "FAIL: the camera screen outside $camera_ui_file (ADR-568)." >&2; status=1
+  echo "FAIL: the camera screen outside $camera_ui_file (ADR-569)." >&2; status=1
 fi
 if grep -RInE --include='*.swift' 'AVCaptureDevice' "${dirs[@]}" | code_only | grep -v "^$camera_access_file:"; then
-  echo "FAIL: camera permission code outside $camera_access_file (ADR-568)." >&2; status=1
+  echo "FAIL: camera permission code outside $camera_access_file (ADR-569)." >&2; status=1
 fi
 if grep -RInE "$camera_and_library_never" "${dirs[@]}" project.yml Config | code_only; then
-  echo "FAIL: a capture session or a write to the photo library; Doddy only reads the library and uses iOS's camera screen (ADR-568)." >&2; status=1
+  echo "FAIL: a capture session or a write to the photo library; Doddy only reads the library and uses iOS's camera screen (ADR-569)." >&2; status=1
 fi
 if grep -RInE "$location_tracking" "${dirs[@]}" project.yml | code_only; then
   echo "FAIL: \"Always\" or background location is not allowed; place reminders use \"While Using\" only." >&2; status=1
