@@ -19,7 +19,7 @@
 
 `agtvrsn_4101m5f1gzv0edfat0kvfmmn1sd1` was saved over `agtvrsn_3101m5f03ak6e3wtdjfqbb2qs95e` at 10:53 UTC, not from this branch (another session, after #118 merged). It attached `ask_claude` (`tool_1601m5f15swpeetbygr32gwr4h5a`) and `make_document` (`tool_2101m5f15tckfy0v74g5gyaqm3td`), 92 tools, and added a "## Claude" section and the "started" result to the prompt. Read back at about 11:00 UTC: the two tools' descriptions match `voice-agent/tools.json` word for word, and the translator, lookup and weather changes above are still in the prompt. The owner asked for exactly this ("add the two Claude tools to the live agent") and it was already done, so nothing was sent from here.
 
-Both tools run through Doddy's server. On 21 Oct about 11:00 UTC the Render service answered `POST /v1/session/device` (400 for an empty body, not 404), so #118's device sign-in is deployed there. Whether `ANTHROPIC_API_KEY` is set was not checked: that needs a device session, and with `first-device` sign-up the first device to sign in owns the server. The app on the owner's phone predates #118 and can't sign in; a build of this branch can.
+Both tools run through Doddy's server. On 21 Oct about 11:00 UTC the Render service answered `POST /v1/session/device` (400 for an empty body, not 404), so #118's device sign-in is deployed there. Whether `ANTHROPIC_API_KEY` is set was not checked: that needs a device session, and with `first-device` sign-up the first device to sign in owns the server. The owner said at about 11:25 UTC that the key is set on Render (their word; not checked from here). The app on the owner's phone predates #118 and can't sign in; a build of this branch can.
 
 ## Then: decks go to Claude, 11:21 UTC
 
