@@ -147,6 +147,18 @@ export class UsageLimiter {
     if (!ok) throw new AppError("quota_exceeded");
   }
 
+  /** One Claude run (ADR-564, Doddy's Anthropic key): per-user and service-wide daily caps. */
+  async reserveClaude(userId: string, now: number): Promise<void> {
+    const ok = await this.store.reserveUsage(
+      [
+        { counter: `user:${userId}:claude`, period: `day:${day(now)}`, limit: this.limits.userDailyClaude },
+        { counter: "service:claude", period: `day:${day(now)}`, limit: this.limits.serviceDailyClaude },
+      ],
+      1,
+    );
+    if (!ok) throw new AppError("quota_exceeded");
+  }
+
   /** One user-visible read request (counted separately from the provider calls it causes). */
   async reserveRead(userId: string, now: number): Promise<void> {
     const ok = await this.store.reserveUsage(

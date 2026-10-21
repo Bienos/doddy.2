@@ -31,6 +31,22 @@ import {
   type ToolkitResult,
   type ToolkitView,
 } from "./contracts.js";
+import {
+  ASK_CLAUDE_TIMEOUT_MS,
+  ASK_CLAUDE_TOOL,
+  AskClaudeInput,
+  CLAUDE_SECTION_ID,
+  type ClaudeProvider,
+  type ClaudeToolName,
+  claudeCard,
+  DOCUMENT_TIMEOUT_MS,
+  fileName,
+  isClaudeTool,
+  KIND_INFO,
+  MakeDocumentInput,
+  type MakeDocumentArgs,
+} from "./claude.js";
+import type { DocumentLinks } from "../documents.js";
 import { MockToolsProvider, type ToolsMockScenario } from "./mock.js";
 import type { ToolsProvider } from "./provider.js";
 import {
@@ -54,9 +70,17 @@ import {
 /** Web search and the other fixed Monid tools (ADR-489): no account, a switch each, Doddy pays. */
 type WebTool = typeof WEB_SEARCH_TOOL | MonidToolName;
 const isWebTool = (name: string): name is WebTool => name === WEB_SEARCH_TOOL || isMonidTool(name);
+/**
+ * Web lookups are on until the user switches them off (ADR-563). Before, every one started off and
+ * the only switch was in a Settings screen the app could not reach without a hand-made server
+ * token, so "what's the weather?" could never be answered. ASK-01 still asks before every search.
+ */
+const WEB_TOOLS_ON_BY_DEFAULT: ReadonlySet<WebTool> = new Set<WebTool>([WEB_SEARCH_TOOL, ...MONID_TOOL_NAMES]);
 const webTitle = (tool: WebTool) => (tool === WEB_SEARCH_TOOL ? WEB_SEARCH_COPY.title : MONID_TOOLS[tool].title);
 
-type SectionId = ToolkitId | typeof WEB_SECTION_ID;
+type SectionId = ToolkitId | typeof WEB_SECTION_ID | typeof CLAUDE_SECTION_ID;
+/** Claude runs have no account either; the approval is bound to this fixed account name. */
+const CLAUDE_ACCOUNT = "claude";
 
 /** How far back prepare looks for the same write (ADR-322). Approvals are kept a day past expiry. */
 const EARLIER_WINDOW_MS = 86_400_000;
@@ -66,6 +90,10 @@ export interface ToolsServiceDeps {
   provider: ToolsProvider;
   /** Web search through Monid. Null or absent: the section shows "not set up" and never runs. */
   webSearch?: WebSearchProvider | null;
+  /** Claude (ADR-564). Null or absent: ask_claude and make_document say "not set up". */
+  claude?: ClaudeProvider | null;
+  /** Signed links for documents (ADR-564). Null: make_document says "not set up". */
+  documentLinks?: DocumentLinks | null;
   limits: Limits;
   publicBaseUrl: string;
   appReturnUrl: string;
@@ -94,6 +122,8 @@ export class CloudToolsService {
   private readonly ask: AskGate;
   private readonly now: () => number;
   private readonly sleep: (ms: number) => Promise<void>;
+  /** Document jobs still running after their reply (ADR-564); tests wait on them. */
+  private readonly background = new Set<Promise<void>>();
 
   constructor(private readonly deps: ToolsServiceDeps) {
     this.mode = deps.provider.mode;
@@ -162,7 +192,9 @@ export class CloudToolsService {
   /** Web search has no account: it is "connected" whenever this server has Monid set up. */
   private async webView(userId: string): Promise<ToolkitView> {
     const configured = this.webSearch?.isConfigured() === true;
-    const enabled = await this.store.enabledTools(userId);
+    const on = new Map<WebTool, boolean>();
+    for (const name of [WEB_SEARCH_TOOL, ...MONID_TOOL_NAMES] as WebTool[]) on.set(name, await this.webToolOn(userId, name));
+    const enabled = { has: (name: WebTool) => on.get(name) === true };
     return {
       id: WEB_SECTION_ID,
       title: WEB_SECTION.title,
@@ -353,9 +385,12 @@ export class CloudToolsService {
       markRecorded();
       // A fresh connection never inherits switches from an earlier one.
       await this.store.disableTools(userId, toolNames(id), this.now());
-      return verdict === "ok"
-        ? await done("succeeded", `${title} connected. Its tools are off until you switch them on.`)
-        : await done("blocked", blockedSummary(title, verdict), reason);
+      if (verdict !== "ok") return await done("blocked", blockedSummary(title, verdict), reason);
+      // ADR-563: connecting is the user saying "use this", usually from the Connect card in the
+      // middle of a request, so the account's tools come on with it. ASK-01 is unchanged: every
+      // read still asks, and every send, change or delete still needs a tap on its exact card.
+      for (const name of toolNames(id)) await this.store.setToolEnabled(userId, name, true, this.now());
+      return await done("succeeded", `${title} connected. Doddy can use it now; he still asks before every look and every change.`);
     } catch (error) {
       if (error instanceof AppError) throw error;
       const appError = toAppError(error, title);
@@ -494,6 +529,7 @@ export class CloudToolsService {
   async prepare(userId: string, body: unknown): Promise<PrepareResult> {
     const request = parse(PrepareRequestSchema, body);
     if (isWebTool(request.tool)) return this.prepareWebSearch(userId, request.tool, request.arguments);
+    if (isClaudeTool(request.tool)) return this.prepareClaude(userId, request.tool, request.arguments);
     const tool = this.requireTool(request.tool);
     const args = parse(tool.input, request.arguments);
     if (request.timeZone !== undefined && !isSupportedTimeZone(request.timeZone)) {
@@ -671,6 +707,7 @@ export class CloudToolsService {
   async run(userId: string, body: unknown): Promise<RunResult> {
     const request = parse(RunRequestSchema, body);
     if (isWebTool(request.tool)) return this.runWebSearch(userId, request.tool, request);
+    if (isClaudeTool(request.tool)) return this.runClaude(userId, request.tool, request);
     const tool = this.requireTool(request.tool);
     const args = parse(tool.input, request.arguments);
     if (!isSupportedTimeZone(request.timeZone)) {
@@ -773,7 +810,7 @@ export class CloudToolsService {
       throw new AppError(code, { message, receipt: await this.receipt(userId, WEB_SECTION_ID, "read", tool, "blocked", `Not done: ${message}`, code, null) });
     };
     if (!this.webSearch || !this.webSearch.isConfigured()) return await blocked("live_not_configured", "Web search isn't set up on this server.");
-    if (!(await this.store.toolEnabled(userId, tool))) return await blocked("capability_disabled", `${webTitle(tool)} is turned off in Settings.`);
+    if (!(await this.webToolOn(userId, tool))) return await blocked("capability_disabled", `${webTitle(tool)} is turned off in Settings.`);
     const { approvalId, expiresAt } = await this.ask.issue({ userId, tool, accountId: WEB_ACCOUNT, argsDigest: argumentDigest(args) });
     const preview =
       tool === WEB_SEARCH_TOOL
@@ -803,7 +840,7 @@ export class CloudToolsService {
     };
     const provider = this.webSearch;
     if (!provider || !provider.isConfigured()) return await blocked("live_not_configured", "Web search isn't set up on this server.");
-    if (!(await this.store.toolEnabled(userId, tool))) return await blocked("capability_disabled", `${webTitle(tool)} is turned off in Settings.`);
+    if (!(await this.webToolOn(userId, tool))) return await blocked("capability_disabled", `${webTitle(tool)} is turned off in Settings.`);
     // ASK-01: the user's yes for exactly these words, checked before the search is counted.
     const binding: AskBinding = { userId, tool, accountId: WEB_ACCOUNT, argsDigest: argumentDigest(args) };
     const unasked = async () => askFirstRefusal(await this.receipt(userId, WEB_SECTION_ID, "read", tool, "blocked", "Not done: Doddy didn't have a yes for this.", "ask_first_required", null));
@@ -836,7 +873,116 @@ export class CloudToolsService {
     }
   }
 
+  // ---------------------------------------------------------------- Claude (ADR-564)
+
+  /** Waits for document jobs still running in the background (tests, shutdown). */
+  async settle(): Promise<void> {
+    while (this.background.size > 0) await Promise.allSettled([...this.background]);
+  }
+
+  private claudeArgs(tool: ClaudeToolName, raw: Record<string, unknown>): Record<string, unknown> {
+    return tool === ASK_CLAUDE_TOOL ? parse(AskClaudeInput, raw) : parse(MakeDocumentInput, raw);
+  }
+
+  private claudeReady(tool: ClaudeToolName): string | null {
+    if (!this.deps.claude || !this.deps.claude.isConfigured()) return "Claude isn't set up on this server.";
+    if (tool !== ASK_CLAUDE_TOOL && !this.deps.documentLinks) return "Making files isn't set up on this server.";
+    return null;
+  }
+
+  /** ASK-01: a card from the arguments alone and a single-use approval. Nothing goes to Anthropic yet. */
+  private async prepareClaude(userId: string, tool: ClaudeToolName, raw: Record<string, unknown>): Promise<PrepareResult> {
+    const args = this.claudeArgs(tool, raw);
+    await this.limiter.reserveRequest(userId, this.now());
+    const missing = this.claudeReady(tool);
+    if (missing) {
+      throw new AppError("live_not_configured", { message: missing, receipt: await this.receipt(userId, CLAUDE_SECTION_ID, "read", tool, "blocked", `Not done: ${missing}`, "live_not_configured", null) });
+    }
+    const { approvalId, expiresAt } = await this.ask.issue({ userId, tool, accountId: CLAUDE_ACCOUNT, argsDigest: argumentDigest(args) });
+    return { mode: this.mode, tool, preview: claudeCard(tool, args), approvalId, expiresAt: new Date(expiresAt).toISOString() };
+  }
+
+  /**
+   * known tool -> valid arguments -> set up -> the user's yes (ASK-01) -> daily caps -> Claude.
+   * ask_claude answers now (under 18 s). make_document starts a background job and answers at once
+   * with a link that says "still making" until the file is ready. Requests aren't stored; the
+   * document is, for a week, so its link works.
+   */
+  private async runClaude(userId: string, tool: ClaudeToolName, request: { arguments: Record<string, unknown>; approvalId?: string | undefined }): Promise<RunResult> {
+    const args = this.claudeArgs(tool, request.arguments);
+    const now = this.now();
+    await this.limiter.reserveRequest(userId, now);
+    const blocked = async (code: "live_not_configured" | "quota_exceeded", message: string, errorCode: string = code): Promise<never> => {
+      throw new AppError(code, { message, receipt: await this.receipt(userId, CLAUDE_SECTION_ID, "read", tool, "blocked", `Not done: ${message}`, errorCode, null) });
+    };
+    const missing = this.claudeReady(tool);
+    if (missing) return await blocked("live_not_configured", missing);
+    const claude = this.deps.claude!;
+    const binding: AskBinding = { userId, tool, accountId: CLAUDE_ACCOUNT, argsDigest: argumentDigest(args) };
+    const unasked = async () => askFirstRefusal(await this.receipt(userId, CLAUDE_SECTION_ID, "read", tool, "blocked", "Not done: Doddy didn't have a yes for this.", "ask_first_required", null));
+    if (!(await this.ask.allows(binding, request.approvalId, "check"))) throw await unasked();
+    try {
+      await this.limiter.reserveClaude(userId, now);
+    } catch (error) {
+      if (error instanceof AppError) return await blocked("quota_exceeded", "Today's Claude limit was reached.", error.code);
+      throw error;
+    }
+    if (!(await this.ask.allows(binding, request.approvalId, "use"))) throw await unasked();
+
+    if (tool === ASK_CLAUDE_TOOL) {
+      try {
+        const answer = await claude.ask(args as never, AbortSignal.timeout(ASK_CLAUDE_TIMEOUT_MS));
+        const text = `Claude's answer (written for this user; read it out or sum it up, in your own words if it's long):\n${answer.text}`;
+        const receipt = await this.receipt(userId, CLAUDE_SECTION_ID, "read", tool, "succeeded", "Asked Claude.", null, null);
+        return { mode: this.mode, tool, text, count: 1, truncated: false, receipt };
+      } catch (error) {
+        const appError = toAppError(error, "Claude");
+        const message = appError.code === "provider_timeout" ? "Claude took too long. For something long, ask Doddy to make it as a document." : appError.code === "rate_limited" ? "Claude is busy right now. Try again shortly." : "Claude couldn't be reached. Nothing is shown instead.";
+        const receipt = await this.receipt(userId, CLAUDE_SECTION_ID, "read", tool, "failed", message, appError.code, null);
+        throw new AppError(appError.code, { ...appError.options, message, receipt });
+      }
+    }
+
+    const doc = args as MakeDocumentArgs;
+    const info = KIND_INFO[doc.kind];
+    const name = fileName(doc.title, info.ext);
+    const id = await this.store.startDocument(userId, name, info.mime, now);
+    const url = this.deps.documentLinks!.link(id, new Date(now));
+    const job = this.makeDocumentInBackground(id, doc, claude).finally(() => this.background.delete(job));
+    this.background.add(job);
+    const receipt = await this.receipt(userId, CLAUDE_SECTION_ID, "read", tool, "succeeded", `Started a ${info.label}: ${doc.title}`.slice(0, 200), null, null);
+    return {
+      mode: this.mode,
+      tool,
+      text:
+        `started: Claude is making the ${info.label} "${doc.title}". It takes one to three minutes. ` +
+        "A button to open it is on the user's screen now; it shows the file as soon as it's ready. Tell the user that in one sentence. Don't read out any link.",
+      count: 1,
+      truncated: false,
+      document: { url, name, kind: doc.kind, status: "working" },
+      receipt,
+    };
+  }
+
+  private async makeDocumentInBackground(id: string, args: MakeDocumentArgs, claude: ClaudeProvider): Promise<void> {
+    try {
+      const file = await claude.makeDocument(args, AbortSignal.timeout(DOCUMENT_TIMEOUT_MS));
+      await this.store.finishDocument(id, file.name, file.mime, file.bytes);
+      this.deps.log?.({ level: "info", event: "document_ready", kind: args.kind, bytes: file.bytes.length });
+    } catch (error) {
+      await this.store.failDocument(id).catch(() => {});
+      // Content-free: the kind and the error class only.
+      this.deps.log?.({ level: "error", event: "document_failed", kind: args.kind, code: error instanceof ProviderError ? error.code : "internal" });
+    }
+  }
+
   // ---------------------------------------------------------------- helpers
+
+  /** A web tool's switch: what the user chose, else the default (ADR-563). */
+  private async webToolOn(userId: string, tool: WebTool): Promise<boolean> {
+    const stored = await this.store.toolSwitch(userId, tool);
+    return stored ?? WEB_TOOLS_ON_BY_DEFAULT.has(tool);
+  }
 
   private requireTool(name: string): CloudToolDefinition {
     const tool = cloudTool(name);
@@ -876,12 +1022,14 @@ export class CloudToolsService {
       throw new AppError(code, { message, receipt: await this.receipt(userId, tool.toolkit, op, tool.name, "blocked", `Not done: ${message}`.slice(0, 200), code, null) });
     };
     if (!this.provider.isConfigured(tool.toolkit)) return await blocked("not_connected", `${def.title} isn't set up on this server.`);
-    if (!(await this.store.toolEnabled(userId, tool.name))) {
-      return await blocked("capability_disabled", `${TOOL_COPY[tool.name]?.title ?? tool.name} is turned off in Settings.`);
-    }
+    // ADR-563: the account first, then the switch, so a request for an account that isn't
+    // connected answers `not_connected` and the app can offer Connect right there.
     const row = await this.store.getConnection(userId, tool.toolkit);
     const reason = this.blockReason(row, def, tool);
     if (reason || !row) return await blocked(reason?.code ?? "not_connected", (reason?.message ?? ((t: string) => `${t} isn't connected.`))(def.title));
+    if (!(await this.store.toolEnabled(userId, tool.name))) {
+      return await blocked("capability_disabled", `${TOOL_COPY[tool.name]?.title ?? tool.name} is turned off in Settings.`);
+    }
     return row;
   }
 

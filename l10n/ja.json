@@ -320,7 +320,6 @@
   "Every day": "毎日",
   "Every month works for days 1 to 28, so every month has the day.": "「毎月」は1日から28日までに対応しています。どの月にもその日があるためです。",
   "Everyone on the list can be reminded at “%@”.": "リストの全員に「%@」でリマインドできます。",
-  "Everything here starts off. Doddy uses a tool only while its switch is on and, for an account, while it's connected. Anything that adds or creates something shows you a card first and waits for your tap.": "ここにあるものは最初はすべてオフです。Doddyがツールを使うのは、そのスイッチがオンの間だけで、アカウントの場合は接続されている間だけです。何かを追加したり作成したりするものは、まずカードを表示して、あなたのタップを待ちます。",
   "Everything in this backup is already on this iPhone. Nothing to add.": "このバックアップの内容はすべて、すでにこのiPhoneにあります。追加するものはありません。",
   "Expired": "期限切れ",
   "Export as JSON": "JSONとして書き出す",
@@ -1277,5 +1276,6 @@
   "There they are.": "ありました。",
   "What I can do": "できること",
   "You ask Doddy where they are.": "あなたがDoddyに、どこにあるか聞きます。",
-  "You'd saved “keys under the sofa cushion”.": "「鍵はソファのクッションの下」と保存していました。"
+  "You'd saved “keys under the sofa cushion”.": "「鍵はソファのクッションの下」と保存していました。",
+  "Web search is on, and an account's tools come on when you connect it. Doddy still asks before every look, and anything that sends, adds or changes something shows you a card first and waits for your tap. Switch any tool off here.": "ウェブ検索はオンです。アカウントのツールは、接続するとオンになります。それでもDoddyは確認のたびに尋ね、何かを送信・追加・変更するものは、まずカードを表示してあなたのタップを待ちます。ここでどのツールもオフにできます。"
 }

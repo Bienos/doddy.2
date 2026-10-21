@@ -76,14 +76,14 @@ export const MONID_TOOLS = {
     endpoint: "/news",
     price: "about $0.001 per search (none when nothing is found)",
     title: "Search the news",
-    blurb: "Looks up recent news articles when you ask and says where each came from. Doddy pays per search. Off until you switch it on.",
+    blurb: "Looks up recent news articles when you ask and says where each came from. Doddy pays per search. On until you switch it off.",
   },
   find_places: {
     provider: "litescrape",
     endpoint: "/google/local",
     price: "about $0.0002 per search",
     title: "Find places",
-    blurb: "Finds places (cafés, shops, opening hours, ratings) near a town you name. Doddy pays per search. Off until you switch it on.",
+    blurb: "Finds places (cafés, shops, opening hours, ratings) near a town you name. Doddy pays per search. On until you switch it off.",
   },
 } as const;
 export type MonidToolName = keyof typeof MONID_TOOLS;

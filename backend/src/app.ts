@@ -2,6 +2,9 @@ import { createServer, type Server } from "node:http";
 import { AnyOfSessionVerifier, DevSessionVerifier, type SessionVerifier, SignedSessionVerifier, SupabaseSessionVerifier } from "./auth.js";
 import { defaultRegistry } from "./capabilities.js";
 import type { Config } from "./config.js";
+import { DeviceSessionIssuer } from "./deviceSession.js";
+import { DocumentLinks } from "./documents.js";
+import { AnthropicClaudeProvider, type ClaudeProvider, MockClaudeProvider } from "./tools/claude.js";
 import { createHandler } from "./http.js";
 import { ComposioCalendarProvider } from "./providers/composio.js";
 import { MockCalendarProvider } from "./providers/mock.js";
@@ -18,7 +21,14 @@ import { MockWebSearchProvider, MonidWebSearchProvider, type WebSearchProvider }
 /** Composition root: picks adapters strictly from validated config (mock never silently replaces live). */
 export async function buildApp(
   config: Config,
-  overrides: { provider?: CalendarProvider; toolsProvider?: ToolsProvider; webSearch?: WebSearchProvider | null; store?: Store; verifier?: SessionVerifier } = {},
+  overrides: {
+    provider?: CalendarProvider;
+    toolsProvider?: ToolsProvider;
+    webSearch?: WebSearchProvider | null;
+    claude?: ClaudeProvider | null;
+    store?: Store;
+    verifier?: SessionVerifier;
+  } = {},
 ) {
   const store =
     overrides.store ?? (await Store.open({ url: config.databaseUrl ?? undefined, caCert: config.databaseCaCert ?? undefined, dataDir: config.dbPath }));
@@ -56,9 +66,16 @@ export async function buildApp(
           ? new MonidWebSearchProvider(config.monid)
           : null
         : new MockWebSearchProvider();
+  // Claude (ADR-564): live only with an Anthropic key; mock mode uses offline demo text.
+  const claude =
+    overrides.claude !== undefined ? overrides.claude : config.mode === "live" ? (config.claude ? new AnthropicClaudeProvider(config.claude) : null) : new MockClaudeProvider();
+  // Document links are signed with the session key; without one, make_document says "not set up".
+  const documentLinks = config.sessionSigningKey ? new DocumentLinks(config.sessionSigningKey, config.publicBaseUrl) : null;
   const tools = new CloudToolsService({
     store,
     provider: toolsProvider,
+    claude,
+    documentLinks,
     webSearch,
     limits: config.limits,
     publicBaseUrl: config.publicBaseUrl,
@@ -66,7 +83,20 @@ export async function buildApp(
     completionMode: toolsProvider.mode === "mock" ? "mock" : (config.composio?.completionMode ?? "verifier"),
     log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`),
   });
-  const handler = createHandler({ service, tools, verifier, appReturnUrl: config.appReturnUrl, maxBodyBytes: config.limits.maxBodyBytes });
+  // Beta device sign-in (ADR-563): first-device or invite codes, and a signing key (config checks both).
+  const deviceSessions =
+    (config.deviceSignup !== "off" || config.deviceInviteCodes.length > 0) && config.sessionSigningKey
+      ? new DeviceSessionIssuer(config.sessionSigningKey, { signup: config.deviceSignup, inviteCodes: config.deviceInviteCodes, store })
+      : null;
+  const handler = createHandler({
+    service,
+    tools,
+    verifier,
+    deviceSessions,
+    documents: documentLinks ? { links: documentLinks, store } : null,
+    appReturnUrl: config.appReturnUrl,
+    maxBodyBytes: config.limits.maxBodyBytes,
+  });
   // Last line of defence: a handler failure closes that one connection, never the process.
   const server: Server = createServer((req, res) => {
     handler(req, res).catch(() => res.destroy());
@@ -78,6 +108,7 @@ export async function buildApp(
   const housekeeping = () => {
     void Promise.allSettled([service.sweepAbandoned(), tools.sweepAbandoned()])
       .then(() => store.prune(Date.now()))
+      .then(() => store.pruneDocuments(Date.now()))
       .catch(() => {}); // the store closed with the server; the next start sweeps again
   };
   housekeeping();
