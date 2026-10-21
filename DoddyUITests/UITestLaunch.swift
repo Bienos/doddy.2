@@ -48,6 +48,23 @@ enum UITestLaunch {
     }
 }
 
+extension XCUIElement {
+    /// Taps a text field or text view and types once it really has the keyboard focus. A tap while
+    /// its sheet is still sliding in can land before the view accepts focus, and `typeText` then
+    /// fails with "Neither element nor any descendant has keyboard focus" (PR #119's second Mac
+    /// run, in MotionRideTests' note saves). Taps again, up to `tries` times, before typing.
+    @MainActor
+    func tapAndType(_ text: String, tries: Int = 3) {
+        let focused = NSPredicate(format: "hasKeyboardFocus == true")
+        for _ in 0..<tries {
+            tap()
+            let wait = XCTNSPredicateExpectation(predicate: focused, object: self)
+            if XCTWaiter.wait(for: [wait], timeout: 2) == .completed { break }
+        }
+        typeText(text)
+    }
+}
+
 extension XCUIApplication {
     /// Scrolls, about half a screen at a time, until `element` is on screen, tappable and clear
     /// of Doddy's tab bar. Settings, Home and the notes list have grown past the fixed swipe

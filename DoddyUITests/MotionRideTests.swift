@@ -59,7 +59,7 @@ final class MotionRideTests: XCTestCase {
         app.buttons["home.save"].tap()
         let editor = app.textViews.firstMatch
         XCTAssertTrue(editor.waitForExistence(timeout: 5))
-        editor.tap(); editor.typeText(text)
+        editor.tapAndType(text)
         if app.buttons["capture.keyboardDone"].exists { app.buttons["capture.keyboardDone"].tap() }
         tapInSheet(app.buttons["capture.save"], app: app)
         XCTAssertTrue(app.staticTexts["capture.saved"].waitForExistence(timeout: 6))
