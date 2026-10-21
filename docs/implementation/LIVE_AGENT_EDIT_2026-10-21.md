@@ -21,6 +21,14 @@
 
 Both tools run through Doddy's server. On 21 Oct about 11:00 UTC the Render service answered `POST /v1/session/device` (400 for an empty body, not 404), so #118's device sign-in is deployed there. Whether `ANTHROPIC_API_KEY` is set was not checked: that needs a device session, and with `first-device` sign-up the first device to sign in owns the server. The app on the owner's phone predates #118 and can't sign in; a build of this branch can.
 
+## Then: decks go to Claude, 11:21 UTC
+
+Owner's choice, 21 Oct: "Claude makes decks". Read just before saving: still `agtvrsn_4101m5f1gzv0edfat0kvfmmn1sd1`. Its prompt was rebuilt here from the 10:28 text plus the other session's recorded changes and matched their record exactly (38,745 characters, SHA-256 `9a9f70db…`), so only these edits went on top:
+- **Prompt, "## Presentations":** slides, a deck, a presentation or a PowerPoint use `make_document` with kind "deck"; `make_presentation` only when the user asks for Keynote by name or wants to write the slides themselves; if `make_presentation` isn't in the app, offer `make_document`. **"## Claude":** "a deck or presentation (for any deck, unless the user asks for Keynote)". 39,098 characters, SHA-256 `e8bce0cc…` as sent.
+- **Tools:** `make_document` (`tool_2101m5f15tckfy0v74g5gyaqm3td`) starts "Use this for any deck, slides or presentation unless the user asks for Keynote by name (then make_presentation), and for Word, Excel, PDF or long text." (as `voice-agent/tools.json` renders it). `make_presentation` (`tool_9601m5em00c3f66tbpag9f27kf4h`) starts "Make a Keynote presentation on the iPhone, only when the user asks for Keynote by name or wants to write the slides themselves; for any other deck, slides or presentation use make_document (Claude makes it)."; the rest of its text is unchanged. Its spec lives on #121's branch (`claude/wonderful-newton-9mor30`), whose `tools.json` still has the old first sentence: change it there when #121 merges, or `compare` reports it.
+- **Saved:** `agtvrsn_1401m5f33kgffnrb4fq9dp4p3ket` (rollback `agtvrsn_4101m5f1gzv0edfat0kvfmmn1sd1`), 92 tools, same ids in the same order. The save echoed the prompt and the settings it covers (model, temperature, timezone, backup models) as before; the two changed passages read as intended. The full text wasn't byte-compared after saving this time.
+- **Why:** `make_presentation`'s app code is only on #121 (not merged), so on every build so far a deck request went to a tool the app doesn't have. `make_document` is in #118 and this branch, and needs `ANTHROPIC_API_KEY` on Render.
+
 ## The draft as first made (history)
 
 Made against `agtvrsn_5201m5dtmpvne48vt1hxc6h53hh0` (the owner's 23:34 UTC save of 20 Oct), before the other save above. Kept as the record of what changed; it doesn't apply to the live prompt as it is now.
