@@ -1,4 +1,4 @@
-// Errands without a database (ADR-566): the request and card schemas and their bounds, the digest,
+// Errands without a database (ADR-570): the request and card schemas and their bounds, the digest,
 // the code rules on links and prices, the research loop against a fake model API, and the exact
 // requests the Anthropic SDK sends (against a local stand-in for the API, never the real one).
 import assert from "node:assert/strict";

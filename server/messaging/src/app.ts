@@ -54,7 +54,7 @@ export interface Deps {
   taskCalls?: TaskCallDeps;
   /** Where task-call log lines go (tests capture them); default: the request logger. */
   taskCallLog?: (msg: string, extra?: object) => void;
-  /** Errands (ADR-566): settings and the researcher (needs an Anthropic key). Needs `cipher` too. */
+  /** Errands (ADR-570): settings and the researcher (needs an Anthropic key). Needs `cipher` too. */
   errands?: ErrandDeps;
   /** Where errand log lines go (tests capture them); default: the request logger. */
   errandLog?: (msg: string, extra?: object) => void;

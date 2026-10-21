@@ -72,7 +72,7 @@ const schema = z.object({
   // Twilio's own voice for the short fixed lines (apology, goodbye, "przekazuję rozmowę").
   TASK_CALL_SAY_VOICE: z.string().regex(/^[A-Za-z0-9.\-]{1,40}$/).default("Polly.Ewa"),
 
-  // Errands (ADR-566, docs/implementation/ERRANDS.md): Doddy researches a task in the background.
+  // Errands (ADR-570, docs/implementation/ERRANDS.md): Doddy researches a task in the background.
   // On by default, but only runs when ANTHROPIC_API_KEY and MEMORY_ENCRYPTION_KEY are set too;
   // "0" refuses new errands and starts no queued one.
   ERRANDS_ENABLED: z.enum(["0", "1"]).default("0"),

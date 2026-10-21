@@ -62,7 +62,7 @@ final class DataFlowTests: XCTestCase {
         XCTAssertEqual(row("askDoddy", state).what, "Typed questions.")
     }
 
-    /// ADR-566: handed-over tasks go to the messaging server and Anthropic, only with a server set.
+    /// ADR-570: handed-over tasks go to the messaging server and Anthropic, only with a server set.
     func testErrandsRowNamesAnthropicAndNeverTheNotes() {
         XCTAssertFalse(row("errands", base).isActive)
         XCTAssertTrue(row("errands", base).note?.contains("can't be handed over") ?? false)

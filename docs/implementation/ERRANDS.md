@@ -1,4 +1,4 @@
-# Errands: Doddy works on a task in the background (ADR-566)
+# Errands: Doddy works on a task in the background (ADR-570)
 
 **Status, 21 Oct 2026:** built on `claude/doddy-sidekick-character-ofgjf5` (server, shared core, iPhone screens, voice spec); **switched off by default** (`ERRANDS_ENABLED=0`) until the owner turns it on. Owner: "2. Ok and no cap 3. Ok" (one yes per task, no limit on look-ups; a background task runner). **Nothing here has run against the real Anthropic API, a real database, APNs or a device.** The sections marked *Built* say what exists in code and which tests ran.
 

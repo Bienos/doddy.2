@@ -16,10 +16,10 @@ public enum ConnectionPause {
              .addToList, .readList, .checkOff, .removeFromList, .createList, .noteCapabilityGap:
             false
         case .checkErrands:
-            // Reads the tasks Doddy keeps for the user (ADR-566); no other app or account.
+            // Reads the tasks Doddy keeps for the user (ADR-570); no other app or account.
             false
         case .handOverErrand:
-            // Doddy's server searches and reads the web for it (ADR-566).
+            // Doddy's server searches and reads the web for it (ADR-570).
             true
         case .readCalendar, .findFreeTime, .leaveBy, .createCalendarEvent, .createReminder, .lookupContact, .upcomingBirthdays, .setTimer,
              .openMap, .runShortcut, .draftMessage, .draftBlikTransfer, .cloudTool, .changeCalendarEvent, .changeReminder,

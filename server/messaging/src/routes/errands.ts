@@ -1,4 +1,4 @@
-// Errands, the app's routes (ADR-566, docs/implementation/ERRANDS.md "Server API"). Every body is
+// Errands, the app's routes (ADR-570, docs/implementation/ERRANDS.md "Server API"). Every body is
 // strict: approve and ack carry only a digest, cancel and delete nothing.
 import type { FastifyPluginAsync, FastifyReply } from "fastify";
 import { z } from "zod";

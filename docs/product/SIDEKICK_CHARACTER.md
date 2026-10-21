@@ -1,8 +1,8 @@
-# Doddy the sidekick: Talk or Task (ADR-567)
+# Doddy the sidekick: Talk or Task (ADR-571)
 
 **Status, 21 Oct 2026:** the owner's prompt (below, word for word) is the new character brief. The owner answered decisions 1 to 3 the same day ("1. Yes 2. Ok and no cap 3. Ok"):
 - **Live:** the Talk/Task sections are on the live ElevenLabs agent since version `agtvrsn_6201m5ewm90bezjvesacr57ma1gv` (`voice-agent/README.md`). That text still asks before each search and says Doddy can't work after the conversation, because no app build can hand work over yet.
-- **Being built (ADR-566, `docs/implementation/ERRANDS.md`):** handing a task to a background worker on Doddy's server, with one yes covering every look-up of that task and no cap, a notification when it's done, and a result card in the app. `instructions.md` gets the hand-over wording in the same change as the code.
+- **Being built (ADR-570, `docs/implementation/ERRANDS.md`):** handing a task to a background worker on Doddy's server, with one yes covering every look-up of that task and no cap, a notification when it's done, and a result card in the app. `instructions.md` gets the hand-over wording in the same change as the code.
 
 Nothing here has run in a conversation or on a device.
 
@@ -79,8 +79,8 @@ Checked in the code and the voice spec on 21 Oct, on main at `1c94dcb`.
 
 ## Decisions for the owner
 
-1. **ASK-01 vs "search freely". Decided 21 Oct: one yes per task, no cap** (as `hand_over_errand`, ADR-566); searches inside a conversation still ask one by one. Options were: Today a three-search task means three yeses. Options: (a) keep ASK-01 as it is; (b) one yes for a task covers its read-only look-ups (search, news, places), with a cap on how many, shown on one card. (b) changes `AskFirst.swift`, `backend/src/tools/askFirst.ts`, the card, and the constitution's `ask_first` block (`docs/trust/config/doddy_rules.yaml`). **Recommendation: (b), capped at five look-ups.** Without it Task mode stays slow.
-2. **Work after the app closes, and coming back. Decided 21 Oct: build it** (ADR-566). A new milestone (`CLAUDE.md` rule 6: cloud AI needs approval): a server-side task runner that runs the model and the searches, a task store, a push when done (the messaging server already has an APNs provider, `server/messaging/src/providers/apns.ts`), and a cost limit per user and per day. Privacy: the task's words and results are kept on the server.
+1. **ASK-01 vs "search freely". Decided 21 Oct: one yes per task, no cap** (as `hand_over_errand`, ADR-570); searches inside a conversation still ask one by one. Options were: Today a three-search task means three yeses. Options: (a) keep ASK-01 as it is; (b) one yes for a task covers its read-only look-ups (search, news, places), with a cap on how many, shown on one card. (b) changes `AskFirst.swift`, `backend/src/tools/askFirst.ts`, the card, and the constitution's `ask_first` block (`docs/trust/config/doddy_rules.yaml`). **Recommendation: (b), capped at five look-ups.** Without it Task mode stays slow.
+2. **Work after the app closes, and coming back. Decided 21 Oct: build it** (ADR-570). A new milestone (`CLAUDE.md` rule 6: cloud AI needs approval): a server-side task runner that runs the model and the searches, a task store, a push when done (the messaging server already has an APNs provider, `server/messaging/src/providers/apns.ts`), and a cost limit per user and per day. Privacy: the task's words and results are kept on the server.
 3. **A result card in the app** (comparison table, brief, checklist, places list), kept in Doddy and openable later. An app feature; it fits the sprawa card in PR #96.
 4. **Opening pages and real travel prices.** A tool that reads one page, or a flight and hotel API. Each brings cost, provider terms and new privacy text.
 5. **Apply to the live ElevenLabs agent? Done 21 Oct** (owner: "Yes", then "Yes, save it" on the exact text). Its prompt is the owner's own rewrite, not `instructions.md`. As with ADR-556, the Talk/Task sections would be added in its own style, the version read right before saving, and read back after. Needs the owner's "yes" on the exact text.

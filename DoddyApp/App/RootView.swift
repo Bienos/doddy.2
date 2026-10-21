@@ -183,7 +183,7 @@ struct RootView: View {
             .onChange(of: scenePhase) { _, phase in
                 if phase == .active {
                     Task { await noteReminders.refreshOnForeground() }
-                    // Tasks Doddy works on in the background (ADR-566): a finished one is saved here and acknowledged.
+                    // Tasks Doddy works on in the background (ADR-570): a finished one is saved here and acknowledged.
                     Task { await ErrandsModel.shared.refresh() }
                     FocusController.shared.refresh()
                     // Shared lists (ADR-263): changes others made arrive when Doddy comes to the front.

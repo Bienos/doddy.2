@@ -1,7 +1,7 @@
 import DoddyCore
 import SwiftUI
 
-// Tasks handed to Doddy (ADR-566): the list, and one task's result card. Everything shown comes
+// Tasks handed to Doddy (ADR-570): the list, and one task's result card. Everything shown comes
 // from the store on this iPhone or from the server's answer; a task still working is never shown
 // as done, and a link on the card is one the server's run actually saw.
 

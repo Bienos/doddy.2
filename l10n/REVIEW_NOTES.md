@@ -22,7 +22,7 @@ Written by the agent that applied the guide, not by the translation agents; the 
 - "Development build. Doddy is an AI assistant…" is the same string with "Doddy" instead of "DODDY".
 - Spoken, not in the tables (DoddyCore `WakeGreeting`): the Polish opening lines "Cześć, tu Doddy. Co ci chodzi po głowie?" (first conversation) and "Jestem. Co słychać?" (after that). A Polish speaker should say them aloud; "Co ci chodzi po głowie?" is meant as the informal "What's on your mind?".
 
-## Added 21 October 2026 (ADR-566, tasks handed to Doddy)
+## Added 21 October 2026 (ADR-570, tasks handed to Doddy)
 
 Polish only, written by the agent that built the Tasks screens; the other eight languages show these in English until they are translated. The same native review applies:
 

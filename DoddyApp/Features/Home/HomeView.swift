@@ -32,7 +32,7 @@ struct HomeView: View {
     @State private var showDataFlow = false
     @State private var showCapabilities = false
     @State private var showToday = false
-    /// Tasks handed to Doddy (ADR-566): the list and each result card.
+    /// Tasks handed to Doddy (ADR-570): the list and each result card.
     @State private var showErrands = false
     @State private var showVoicePicker = false
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
@@ -156,7 +156,7 @@ struct HomeView: View {
                     .accessibilityIdentifier("home.translate")
                 Button { selectedTab = .memories; showFind = true } label: { Label("Find something", systemImage: "magnifyingglass") }
                     .accessibilityIdentifier("home.find")
-                // Tasks handed to Doddy's background worker (ADR-566).
+                // Tasks handed to Doddy's background worker (ADR-570).
                 Button { showErrands = true } label: { Label("Tasks", systemImage: "checklist") }
                     .accessibilityIdentifier("home.tasks")
                 Button { tool = .focus } label: {
@@ -213,7 +213,7 @@ struct HomeView: View {
             if let draft = UnfinishedNoteStore.shared.book.newest {
                 UnfinishedNoteCard(note: draft, more: UnfinishedNoteStore.shared.book.notes.count - 1) { modal = .capture }
             }
-            // A task Doddy finished in the background since the user last looked (ADR-566).
+            // A task Doddy finished in the background since the user last looked (ADR-570).
             if let finished = ErrandsModel.shared.newestUnseen {
                 errandFinishedCard(finished)
             }

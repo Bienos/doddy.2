@@ -113,7 +113,7 @@ public enum ToolCatalog {
         .init(VoiceToolName.draftMessage, .handoff, .card),
         // A BLIK transfer on a card; the user sends it in their bank app, never Doddy (ADR-510).
         .init(VoiceToolName.draftBlikTransfer, .handoff, .card),
-        // A task handed over (ADR-566): web research on Doddy's server that changes nothing, so a
+        // A task handed over (ADR-570): web research on Doddy's server that changes nothing, so a
         // spoken yes or a tap starts it; one yes covers every look-up of that task.
         .init(VoiceToolName.handOverErrand, .lookup, .askFirst),
         .init(VoiceToolName.checkErrands, .lookup, .askFirst),

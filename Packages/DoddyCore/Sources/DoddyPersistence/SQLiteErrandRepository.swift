@@ -2,7 +2,7 @@ import DoddyCore
 import Foundation
 import GRDB
 
-/// Tasks handed to Doddy, on the iPhone (ADR-566, `v15_errands`): the user's words, Doddy's brief,
+/// Tasks handed to Doddy, on the iPhone (ADR-570, `v15_errands`): the user's words, Doddy's brief,
 /// the result card and the server's deletion report. A save reads the row back and fails unless it
 /// matches, so the app acknowledges a result (and the server deletes its copy) only after this
 /// returned.

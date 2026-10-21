@@ -558,7 +558,7 @@ final class VoiceSessionController {
         sharedOwnerContext = preset == nil
         // What Doddy learned and the user confirmed (ADR-440), only when they switched it on.
         var learnedText = await store.learning?.voiceContext() ?? LearningPrompt.notShared
-        // Tasks handed to Doddy's background worker (ADR-566): titles, states, the start of a result.
+        // Tasks handed to Doddy's background worker (ADR-570): titles, states, the start of a result.
         var errandsText = await ErrandsModel.shared.promptText()
         // Opened from Home's Translate: the agent gets no notes, conversations or profile at all,
         // so it has nothing of the owner's to repeat to the other person.
@@ -2465,7 +2465,7 @@ final class VoiceSessionController {
             endTranslator()
             await reply(call.toolCallId, VoiceToolReply.translatorStopped)
         case .handOverErrand(let draft):
-            // ADR-566: after the user's yes for exactly these words (the ask card above), the app
+            // ADR-570: after the user's yes for exactly these words (the ask card above), the app
             // creates the task on Doddy's server and approves it with the digest of those words.
             // That one yes covers every look-up of this task; it is never approved twice.
             if let issue = draft.validationIssues().first {

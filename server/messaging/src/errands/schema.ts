@@ -1,4 +1,4 @@
-// Errands (ADR-566, docs/implementation/ERRANDS.md): the request the app sends, the result card the
+// Errands (ADR-570, docs/implementation/ERRANDS.md): the request the app sends, the result card the
 // app receives, and the digest the user approves. The card schema here is the contract; what the
 // model writes is checked against it after the code rules in card.ts have run.
 import { createHash } from "node:crypto";

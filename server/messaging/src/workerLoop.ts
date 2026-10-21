@@ -39,7 +39,7 @@ export async function runWorkerLoop(
 }
 
 /**
- * Errands (ADR-566): starts queued research runs (up to 3 at once in this process, each up to the
+ * Errands (ADR-570): starts queued research runs (up to 3 at once in this process, each up to the
  * time limit) and tidies expired drafts and unacknowledged results. Its own loop, so a long run never
  * holds back pushes. On shutdown, running errands stop and are stored as `interrupted`.
  */
