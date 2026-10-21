@@ -1,7 +1,7 @@
 import DoddyCore
 import Foundation
 
-/// Where the presentations Doddy makes are written (ADR-563): Doddy's own temporary folder, one
+/// Where the presentations Doddy makes are written (ADR-566): Doddy's own temporary folder, one
 /// folder per file so two decks with the same title never overwrite each other. iOS clears it in
 /// time, and Doddy removes folders older than a day; the user keeps a deck by saving it in Keynote
 /// or Files from the share sheet. Nothing here leaves the iPhone.

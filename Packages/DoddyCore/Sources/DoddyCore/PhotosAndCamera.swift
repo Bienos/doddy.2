@@ -1,6 +1,6 @@
 import Foundation
 
-// Photos and Camera (ADR-565, owner 21 Oct: "both", after Doddy offered Photos or Camera next).
+// Photos and Camera (ADR-568, owner 21 Oct: "both", after Doddy offered Photos or Camera next).
 // This replaces ADR-218's "never the camera or the whole photo library" and ADR-224's "no camera
 // capture" for these two features only:
 //

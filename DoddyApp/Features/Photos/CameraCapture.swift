@@ -1,7 +1,7 @@
 import SwiftUI
 import UIKit
 
-/// Doddy's camera (ADR-565): iOS's own camera screen, so iOS draws the shutter, Retake and Use
+/// Doddy's camera (ADR-568): iOS's own camera screen, so iOS draws the shutter, Retake and Use
 /// Photo. Doddy gets the one photo the user keeps, as JPEG data, and prepares it like a picked
 /// photo (`PhotoTextReader`): scaled down, text read on this iPhone, saved only with the note the
 /// user saves. Nothing is saved to the photo library. iOS asks for camera permission the first

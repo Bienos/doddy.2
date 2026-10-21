@@ -95,9 +95,9 @@ public enum ToolCatalog {
         // Contacts, timers and alarms, places.
         .init(VoiceToolName.lookupContact, .lookup, .askFirst),
         .init(VoiceToolName.upcomingBirthdays, .lookup, .askFirst),
-        // Motion & Fitness, read only (ADR-564).
+        // Motion & Fitness, read only (ADR-567).
         .init(VoiceToolName.readSteps, .lookup, .askFirst),
-        // Counts and times from the photo library; the pictures stay on screen (ADR-565).
+        // Counts and times from the photo library; the pictures stay on screen (ADR-568).
         .init(VoiceToolName.findPhotos, .lookup, .askFirst),
         .init(VoiceToolName.setTimer, .localChange, .card),
         .init(VoiceToolName.setAlarm, .localChange, .card),
@@ -117,9 +117,9 @@ public enum ToolCatalog {
         .init(VoiceToolName.draftMessage, .handoff, .card),
         // A BLIK transfer on a card; the user sends it in their bank app, never Doddy (ADR-510).
         .init(VoiceToolName.draftBlikTransfer, .handoff, .card),
-        // A file made on the iPhone on a tap, then the share sheet to Keynote or Files (ADR-563).
+        // A file made on the iPhone on a tap, then the share sheet to Keynote or Files (ADR-566).
         .init(VoiceToolName.makePresentation, .handoff, .card),
-        // Doddy's camera opens on the tap; a kept photo becomes a note the user saves (ADR-565).
+        // Doddy's camera opens on the tap; a kept photo becomes a note the user saves (ADR-568).
         .init(VoiceToolName.openCamera, .handoff, .card),
         // The conversation itself.
         .init(VoiceToolName.startTranslator, .session, .askFirst),

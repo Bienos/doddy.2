@@ -371,7 +371,7 @@ final class VoiceToolsTests: XCTestCase {
         XCTAssertNil(VoiceConnection.serving("save_memory"))
         XCTAssertEqual(VoiceConnection.calendar.preferenceKey, "voiceConnection.calendar")
         XCTAssertEqual(VoiceConnection.blik.preferenceKey, "voiceConnection.blik")
-        // ADR-563 and ADR-564 added Presentations and Steps; ADR-565 Photos and Camera.
+        // ADR-566 and ADR-567 added Presentations and Steps; ADR-568 Photos and Camera.
         XCTAssertEqual(VoiceConnection.allCases.count, 12)
     }
 

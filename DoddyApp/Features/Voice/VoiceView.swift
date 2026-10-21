@@ -22,9 +22,9 @@ struct VoiceView: View {
     @State private var editingPlanStep: PlanStep?
     /// What was last copied from a BLIK card (ADR-510), to show "Copied" next to it.
     @State private var copiedForBlik: String?
-    /// The presentation whose share sheet is open (ADR-563).
+    /// The presentation whose share sheet is open (ADR-566).
     @State private var sharingPresentation: VoiceSessionController.PresentationReady?
-    /// A photo just taken with Doddy's camera (ADR-565), waiting for the camera screen to go.
+    /// A photo just taken with Doddy's camera (ADR-568), waiting for the camera screen to go.
     @State private var takenPhoto: Data?
     /// The new note opened with that photo.
     @State private var photoNote: TakenPhoto?
@@ -326,7 +326,7 @@ struct VoiceView: View {
                     if !isNil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("saveSuggestions", anchor: .bottom) } }
                 }
             }
-            // ADR-565: Doddy's camera after the user tapped Open camera; a kept photo opens a new note.
+            // ADR-568: Doddy's camera after the user tapped Open camera; a kept photo opens a new note.
             .fullScreenCover(isPresented: cameraBinding(controller), onDismiss: {
                 guard let data = takenPhoto else { return }
                 takenPhoto = nil
@@ -344,13 +344,13 @@ struct VoiceView: View {
                 CaptureView(takenPhoto: taken.data)
             }
             controls(controller)
-                // ADR-563: the share sheet opens by itself once the file is made, and again from its card.
+                // ADR-566: the share sheet opens by itself once the file is made, and again from its card.
                 .sheet(item: $sharingPresentation) { ready in
                     FileShareSheet(url: ready.url)
                         .presentationDetents([.medium, .large])
                 }
         }
-        // ADR-562: slides up when Doddy needs an Apple app that is off; a swipe down is Not now.
+        // ADR-565: slides up when Doddy needs an Apple app that is off; a swipe down is Not now.
         .sheet(item: permissionBinding(controller)) { request in
             PermissionAskSheet(
                 request: request,
@@ -1795,7 +1795,7 @@ struct LongTurnPanel: View {
     }
 }
 
-/// A photo from Doddy's camera, for the new-note sheet (ADR-565).
+/// A photo from Doddy's camera, for the new-note sheet (ADR-568).
 struct TakenPhoto: Identifiable {
     let id = UUID()
     let data: Data

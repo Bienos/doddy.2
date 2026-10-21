@@ -1,7 +1,7 @@
 import DoddyCore
 import SwiftUI
 
-/// "Let Doddy use Calendar?" (ADR-562). Slides up over the conversation when Doddy needs an Apple
+/// "Let Doddy use Calendar?" (ADR-565). Slides up over the conversation when Doddy needs an Apple
 /// app that is off, so the user can allow it right there instead of finding Settings. It shows why
 /// now (what Doddy was asked to do) and what leaves the phone. Allow turns the connection on, and
 /// iOS shows its own prompt the first time; Not now (or a swipe down) answers the agent and isn't

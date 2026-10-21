@@ -1,6 +1,6 @@
 import Foundation
 
-// "How many steps today?" (ADR-564). The iPhone counts steps, walking distance and floors climbed
+// "How many steps today?" (ADR-567). The iPhone counts steps, walking distance and floors climbed
 // in Motion & Fitness and keeps the last seven days. Doddy reads one day's totals when asked,
 // after the user's yes (ASK-01), and keeps nothing: the numbers go to the voice agent in that
 // conversation only. No Health data is read (HealthKit needs a paid Apple team and Apple's review).

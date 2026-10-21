@@ -1,6 +1,6 @@
 import Foundation
 
-// Presentations by voice (ADR-563, owner 2026-10-20: "You should be able to do presentations").
+// Presentations by voice (ADR-566, owner 2026-10-20: "You should be able to do presentations").
 // Apple gives apps no way to drive Keynote, so Doddy makes the file itself: "Make me a five-slide
 // deck about our trip" becomes a card with every slide's title and points. Nothing is made until
 // the user taps Make presentation. Then the app writes a PowerPoint file (.pptx, which Keynote,

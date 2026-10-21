@@ -19,7 +19,7 @@ reaches OpenAI with the next app build, and ElevenLabs only after the sync below
 
 ## Source of truth and syncing
 
-**Applied to the live agent 2026-10-21 (ADR-562 to 565; owner: "Ok", then "yes, create the tools and update the live agent").**
+**Applied to the live agent 2026-10-21 (ADR-565 to 568; owner: "Ok", then "yes, create the tools and update the live agent").**
 - **First attempt (about 01:30 UTC):** `make_presentation` was created (`tool_9601m5em00c3f66tbpag9f27kf4h`); creating the next tool was refused by Claude Code's permission check, so nothing on the agent changed then.
 - **Created after the owner's go-ahead:** `read_steps` `tool_4601m5ewmkptekprzmx9vy9114eb`, `find_photos` `tool_0401m5ewmm8xems98kv871105z43`, `open_camera` `tool_3501m5ewmn09fmw9n8j15kx7x8n7`, each exactly as `voice_agent_spec.py elevenlabs` renders it.
 - **Read first, just before saving:** `agtvrsn_6201m5ewm90bezjvesacr57ma1gv` (82 tools). Its prompt was **not** the 20 Oct text: shortly before, someone else had added a "sidekick" opening, "Polish is your default", a "# Talk or task: pick one every time" section and two "Unsupported capabilities" lines. Who saved it isn't recorded here; all of it was kept. **Rollback to exactly that:** `agtvrsn_6201m5ewm90bezjvesacr57ma1gv`.

@@ -35,7 +35,7 @@ struct CaptureView: View {
     @State private var resumed: UnfinishedNote?
     /// Another unfinished note, kept, when this screen opened with shortcut text.
     @State private var otherWaiting: UnfinishedNote?
-    /// A photo taken with Doddy's camera in a conversation (ADR-565), read when the screen opens.
+    /// A photo taken with Doddy's camera in a conversation (ADR-568), read when the screen opens.
     private let takenPhoto: Data?
     @State private var takenPhotoProblem: String?
     @State private var takenPhotoRead = false
@@ -197,7 +197,7 @@ struct CaptureView: View {
         }
     }
 
-    /// The camera's photo (ADR-565), prepared and read like a picked one. Linked to the note only
+    /// The camera's photo (ADR-568), prepared and read like a picked one. Linked to the note only
     /// when the user saves it, as for any photo.
     private func readTakenPhoto() async {
         guard let takenPhoto, !takenPhotoRead else { return }

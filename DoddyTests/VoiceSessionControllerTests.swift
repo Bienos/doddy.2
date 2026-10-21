@@ -387,7 +387,7 @@ final class StaleToolCallTests: XCTestCase {
 
 private struct FakeWriteError: Error {}
 
-/// "Let Doddy use Calendar?" (ADR-562): a call for a connection that is off waits for the sheet,
+/// "Let Doddy use Calendar?" (ADR-565): a call for a connection that is off waits for the sheet,
 /// Not now answers it once and isn't asked again, Allow runs the same call with no second card,
 /// and iOS's refusal offers iPhone Settings. App-target tests: run in the hosted Mac job only.
 final class PermissionSheetTests: XCTestCase {
@@ -475,7 +475,7 @@ final class PermissionSheetTests: XCTestCase {
     }
 }
 
-/// find_photos and open_camera (ADR-565) with the fake device: a read asks first and the agent
+/// find_photos and open_camera (ADR-568) with the fake device: a read asks first and the agent
 /// hears counts only; a device without a camera says so instead of asking for a permission.
 final class PhotosAndCameraControllerTests: XCTestCase {
     private typealias Harness = VoiceSessionControllerTests.Harness

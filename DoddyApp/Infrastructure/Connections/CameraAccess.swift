@@ -1,7 +1,7 @@
 import AVFoundation
 import Foundation
 
-/// Camera permission for Doddy's camera (ADR-565): whether there is a camera, iOS's answer, and
+/// Camera permission for Doddy's camera (ADR-568): whether there is a camera, iOS's answer, and
 /// iOS's prompt. Nothing else: the photo itself is taken on iOS's own camera screen
 /// (`CameraCapture`, Features/Photos), and there is no capture session anywhere in the app. The
 /// guard script allows AVFoundation here only for these calls.

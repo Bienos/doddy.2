@@ -2,7 +2,7 @@ import Foundation
 import XCTest
 @testable import DoddyCore
 
-/// find_photos and open_camera (ADR-565): which days, the 31-day bound, what the agent hears
+/// find_photos and open_camera (ADR-568): which days, the 31-day bound, what the agent hears
 /// (counts and times, never what the pictures show) and how each asks first.
 final class PhotosAndCameraTests: XCTestCase {
     private let calendar: Calendar = {

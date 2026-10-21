@@ -13,7 +13,7 @@ struct PhotoSearchFound: Equatable, Sendable {
     static let empty = PhotoSearchFound(summary: PhotoSearchSummary(photos: 0, videos: 0, first: nil, last: nil, limited: false), identifiers: [])
 }
 
-/// The only code that reads the photo library (ADR-565). It counts photos and videos by when they
+/// The only code that reads the photo library (ADR-568). It counts photos and videos by when they
 /// were taken and draws small pictures for the user's screen. It never writes to the library, never
 /// reads where a photo was taken, and nothing it reads leaves the iPhone except the counts and
 /// times in `VoiceToolReply.photosFound`. The guard script keeps PhotoKit in this folder.

@@ -2,7 +2,7 @@ import DoddyCore
 import SwiftUI
 import UIKit
 
-/// The photos a voice search found (ADR-565): the counts, and the newest pictures as small squares.
+/// The photos a voice search found (ADR-568): the counts, and the newest pictures as small squares.
 /// Shown on this screen only; Doddy's voice hears the counts and times, never the pictures.
 struct PhotoResultsCard: View {
     let results: VoiceSessionController.PhotoResults

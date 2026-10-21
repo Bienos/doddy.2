@@ -86,10 +86,10 @@ final class VoiceSessionController {
         /// ASK-01: an online-account read or web search. `preview` and `approvalID` come from
         /// Doddy's server, which read nothing to make them and runs nothing without the approval.
         case cloudRead(toolCallID: String, call: CloudToolCall, preview: ToolPreview, approvalID: UUID, mode: ConnectedAppsMode)
-        /// "Make this presentation?" (ADR-563): every slide as it will be in the file. Nothing is
+        /// "Make this presentation?" (ADR-566): every slide as it will be in the file. Nothing is
         /// made until the user taps Make presentation.
         case presentation(toolCallID: String, draft: PresentationDraft)
-        /// "Open the camera?" (ADR-565). The camera opens only on the tap.
+        /// "Open the camera?" (ADR-568). The camera opens only on the tap.
         case camera(toolCallID: String)
 
         var toolCallID: String {
@@ -130,7 +130,7 @@ final class VoiceSessionController {
         case done(ConfirmedNoteReminder, NoteReminderReceipt)
     }
 
-    /// The permission sheet (ADR-562): which connection, what Doddy was asked to do, and the call
+    /// The permission sheet (ADR-565): which connection, what Doddy was asked to do, and the call
     /// kept exactly as it came. `askCard` is set for a read, whose Allow also answers its ask.
     struct PermissionRequest: Identifiable, Equatable {
         let toolCallID: String
@@ -144,14 +144,14 @@ final class VoiceSessionController {
         var id: String { toolCallID }
     }
 
-    /// What a photo search found (ADR-565), shown on screen only.
+    /// What a photo search found (ADR-568), shown on screen only.
     struct PhotoResults: Equatable {
         let request: PhotoSearchRequest
         let summary: PhotoSearchSummary
         let identifiers: [String]
     }
 
-    /// A presentation file written and read back on this iPhone (ADR-563).
+    /// A presentation file written and read back on this iPhone (ADR-566).
     struct PresentationReady: Identifiable, Equatable {
         let id = UUID()
         let url: URL
@@ -271,18 +271,18 @@ final class VoiceSessionController {
     private(set) var selectedPlaceIndex = 0
     /// A function the agent asked for that is off or blocked. The screen offers to turn it on.
     private(set) var connectionNeeded: VoiceConnection?
-    /// "Let Doddy use Calendar?" (ADR-562): a call held while the sheet asks the user.
+    /// "Let Doddy use Calendar?" (ADR-565): a call held while the sheet asks the user.
     private(set) var permissionRequest: PermissionRequest?
     /// Connections the user said Not now to in this conversation: not asked for again.
     private var declinedPermissions: Set<VoiceConnection> = []
     /// Each call as it came, until it is answered, so one held for the permission sheet can be
     /// handled again from the start once the user allows it.
     private var callsAsReceived: [String: (toolName: String, parameters: Data)] = [:]
-    /// The presentation made in this conversation (ADR-563), for the share sheet and its card.
+    /// The presentation made in this conversation (ADR-566), for the share sheet and its card.
     private(set) var presentationReady: PresentationReady?
-    /// The last photo search's results (ADR-565): counts and pictures, on this screen only.
+    /// The last photo search's results (ADR-568): counts and pictures, on this screen only.
     private(set) var photoResults: PhotoResults?
-    /// Set when the user tapped Open camera (ADR-565); the screen shows the camera while it is set.
+    /// Set when the user tapped Open camera (ADR-568); the screen shows the camera while it is set.
     private(set) var cameraRequest: UUID?
     private(set) var isMuted = false {
         didSet {
@@ -965,7 +965,7 @@ final class VoiceSessionController {
         contactCard = nil
         parkingCard = nil
         connectionNeeded = nil
-        // A call held for the permission sheet goes with its conversation (ADR-562).
+        // A call held for the permission sheet goes with its conversation (ADR-565).
         permissionRequest = nil
         callsAsReceived = [:]
         if isLive { phase = .ended }
@@ -1264,7 +1264,7 @@ final class VoiceSessionController {
             if onScreen(attempt) { blikCard = BlikCard(draft: draft, contactName: contactName, numbers: numbers) }
             await reply(id, VoiceToolReply.blikShown(draft, contactName: contactName))
         case .presentation(let id, let draft):
-            // ADR-563: written on this iPhone and read back; the share sheet hands it to Keynote.
+            // ADR-566: written on this iPhone and read back; the share sheet hands it to Keynote.
             do {
                 let url = try PresentationFiles.write(draft, created: Date())
                 if onScreen(attempt) {
@@ -1275,7 +1275,7 @@ final class VoiceSessionController {
                 await reply(id, VoiceToolReply.presentationFailed(UserFacingError.message(for: error)), isError: true)
             }
         case .camera(let id):
-            // ADR-565: the camera opens on this screen; a kept photo goes into a new note.
+            // ADR-568: the camera opens on this screen; a kept photo goes into a new note.
             if onScreen(attempt) { cameraRequest = UUID() }
             await reply(id, VoiceToolReply.cameraOpened)
         case .ask(let id, _, _, let toolName, _):
@@ -2472,10 +2472,10 @@ final class VoiceSessionController {
                 propose(.blik(toolCallID: call.toolCallId, draft: draft, contactName: name, numbers: numbers), toolCallID: call.toolCallId)
             }
         case .makePresentation(let draft):
-            // ADR-563: every slide on a card; the file is made only on the tap.
+            // ADR-566: every slide on a card; the file is made only on the tap.
             propose(.presentation(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
         case .readSteps(let day):
-            // ADR-564: one day's totals from Motion & Fitness, read only.
+            // ADR-567: one day's totals from Motion & Fitness, read only.
             guard devices.stepCountingAvailable else {
                 await reply(call.toolCallId, VoiceToolReply.stepsUnavailable)
                 return
@@ -2492,7 +2492,7 @@ final class VoiceSessionController {
                 await reply(call.toolCallId, VoiceToolReply.stepsFailed(UserFacingError.message(for: error)), isError: true)
             }
         case .findPhotos(let request):
-            // ADR-565: counts and times to the agent; the pictures stay on this screen.
+            // ADR-568: counts and times to the agent; the pictures stay on this screen.
             guard devices.access(for: .photos) == .granted else {
                 await notConnected(call.toolCallId, .photos)
                 return
@@ -3572,7 +3572,7 @@ final class VoiceSessionController {
             await reply(toolCallID, VoiceToolReply.cameraUnavailable)
             return
         }
-        // ADR-562: hold the call and slide the permission sheet up, instead of answering "not
+        // ADR-565: hold the call and slide the permission sheet up, instead of answering "not
         // connected" and leaving the user to find Settings. One sheet at a time; a connection the
         // user said Not now to isn't asked for again in this conversation.
         if isLive, let call = callsAsReceived[toolCallID],
@@ -3600,7 +3600,7 @@ final class VoiceSessionController {
             : VoiceToolReply.notConnected(connection))
     }
 
-    /// Allow on the permission sheet (ADR-562). The switch goes on, iOS shows its own prompt if it
+    /// Allow on the permission sheet (ADR-565). The switch goes on, iOS shows its own prompt if it
     /// has never been asked, and the call is handled again from the start: Pause all, its own card
     /// and every check run as if the switch had been on. For a read, the sheet showed exactly what
     /// will be read, so this tap is also its ASK-01 yes; a change still shows its own card.
@@ -3638,7 +3638,7 @@ final class VoiceSessionController {
         }
     }
 
-    /// Not now, or the sheet swiped away (ADR-562): nothing was read or changed, and this
+    /// Not now, or the sheet swiped away (ADR-565): nothing was read or changed, and this
     /// connection isn't asked for again in this conversation.
     func declinePermission() async {
         guard let ask = permissionRequest else { return }

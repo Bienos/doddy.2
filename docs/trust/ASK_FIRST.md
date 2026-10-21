@@ -47,10 +47,10 @@ Before = `voice-agent/tools.json` at `2278430`. "Card, tap" tools already asked;
 | `calculate` | **Doesn't ask**: runs on the agent's call | Card; **spoken yes or tap** |
 | `convert_units` | **Doesn't ask**: runs on the agent's call | Card; **spoken yes or tap** |
 | `convert_currency` | **Doesn't ask**: runs on the agent's call | Card; **spoken yes or tap** |
-| `read_steps` (ADR-564, live 21 Oct) | (new tool) | Card; **spoken yes or tap**. If Steps is off, the permission sheet (ADR-562) shows the same question and its Allow is the tap |
-| `make_presentation` (ADR-563, live 21 Oct) | (new tool) | Card with every slide; **tap only**. The file is made on the tap; the share sheet hands it on |
-| `find_photos` (ADR-565, live 21 Oct) | (new tool) | Card; **spoken yes or tap**. Counts and times to the agent; the pictures on screen only |
-| `open_camera` (ADR-565, live 21 Oct) | (new tool) | Card; **tap only**. The camera opens on the tap; a kept photo becomes a note the user saves |
+| `read_steps` (ADR-567, live 21 Oct) | (new tool) | Card; **spoken yes or tap**. If Steps is off, the permission sheet (ADR-565) shows the same question and its Allow is the tap |
+| `make_presentation` (ADR-566, live 21 Oct) | (new tool) | Card with every slide; **tap only**. The file is made on the tap; the share sheet hands it on |
+| `find_photos` (ADR-568, live 21 Oct) | (new tool) | Card; **spoken yes or tap**. Counts and times to the agent; the pictures on screen only |
+| `open_camera` (ADR-568, live 21 Oct) | (new tool) | Card; **tap only**. The camera opens on the tap; a kept photo becomes a note the user saves |
 | `geocode_place` | Doesn't ask: ElevenLabs runs it, the app never sees it | Removed from the agent (the app can't ask before it); weather and facts go through `web_search`, which asks |
 | `get_weather` | Doesn't ask: ElevenLabs runs it, the app never sees it | Removed from the agent (the app can't ask before it); weather and facts go through `web_search`, which asks |
 | `wikipedia_search` | Doesn't ask: ElevenLabs runs it, the app never sees it | Removed from the agent (the app can't ask before it); weather and facts go through `web_search`, which asks |
@@ -141,7 +141,7 @@ Checked 2026-10-18 in code and pinned by `AskFirstTests.testPhoneActionsWaitForA
 - **The live agent is not updated.** ElevenLabs agent `agent_0501m4et27vyeawrwqfdxxfszfa6` still has the old prompt, the four web tools and `speak_before: auto` on reads. Syncing it is an external write that needs the owner's yes on the exact diff. Until then the old app build and the old agent behave as before, and a new app build with the old agent asks on screen while the agent may not say so first.
 - **Weather and Wikipedia are gone from the agent** until they run on the phone behind the gate; `web_search` (which asks) covers them meanwhile.
 - **The phone-call agent** (`voice-agent/phone/`: `verify_pin`, `search_memories`, `save_note`) runs as webhooks on the messaging server with no screen; it doesn't ask yet. Needs its own design (a spoken read-back with a keypad "press 1"?) and the owner's decision.
-- **The permission sheet's Allow is a read's yes (ADR-562).** When a read needs a connection that is off, the sheet shows the same question as the read's card ("Read your calendar? Today") and says "Allow also says yes to this one look-up", so one tap allows the connection and answers the ask for that call only. A change still shows its own card after Allow. The owner may prefer two taps (decision).
+- **The permission sheet's Allow is a read's yes (ADR-565).** When a read needs a connection that is off, the sheet shows the same question as the read's card ("Read your calendar? Today") and says "Allow also says yes to this one look-up", so one tap allows the connection and answers the ask for that call only. A change still shows its own card after Allow. The owner may prefer two taps (decision).
 - **Spoken yes is the provider's transcript** of the user's side; a mis-transcription could turn a mumble into "yes". Reads only; changes always need a tap.
 - **Card text is English** (AskFirst cards and the server's previews); the app's string catalog has no translations for them yet.
 - **Old app builds** that run reads without `prepare` are now refused by the server (they show "turned off"-style errors). Intended: fail closed.

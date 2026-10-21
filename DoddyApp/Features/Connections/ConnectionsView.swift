@@ -65,9 +65,9 @@ struct ConnectionGroup: Identifiable {
     static let all: [ConnectionGroup] = [
         ConnectionGroup(title: "Your day", items: [.calendar, .reminders, .timers, .steps]),
         ConnectionGroup(title: "People", items: [.contacts, .messages]),
-        // ADR-563: a presentation is a file made here, opened in Keynote by the user.
+        // ADR-566: a presentation is a file made here, opened in Keynote by the user.
         ConnectionGroup(title: "Places and apps", items: [.maps, .shortcuts, .presentations]),
-        // ADR-565: the photo library (counts, pictures on screen only) and Doddy's camera.
+        // ADR-568: the photo library (counts, pictures on screen only) and Doddy's camera.
         ConnectionGroup(title: "Photos and camera", items: [.photos, .camera]),
         // ADR-510: shown, never sent; the user sends it in their bank app.
         ConnectionGroup(title: "Money", items: [.blik]),
@@ -372,7 +372,7 @@ struct ConnectionInfo {
                 leavesPhone: "The shortcut's name, when you ask Doddy to run it.",
                 staysHere: "Doddy can't see what a shortcut does or whether it finished.")
         case .presentations:
-            // ADR-563: Apple lets no app control Keynote, so Doddy makes the file and the user opens it.
+            // ADR-566: Apple lets no app control Keynote, so Doddy makes the file and the user opens it.
             ConnectionInfo(
                 symbol: "rectangle.on.rectangle.angled",
                 examples: ["Make me five slides about our trip", "Turn my notes on the launch into a presentation"],
@@ -384,7 +384,7 @@ struct ConnectionInfo {
                 leavesPhone: "What you ask for and the slides Doddy writes are part of the conversation, which runs on ElevenLabs, or OpenAI if you chose it.",
                 staysHere: "The file is made on this iPhone and kept in Doddy's temporary files until iOS clears them; save it in Keynote or Files to keep it. Doddy can't see what you do with it and never sends it.")
         case .steps:
-            // ADR-564: Motion & Fitness, read only. Not Health.
+            // ADR-567: Motion & Fitness, read only. Not Health.
             ConnectionInfo(
                 symbol: "figure.walk",
                 examples: ["How many steps today?", "How far did I walk yesterday?"],
@@ -395,7 +395,7 @@ struct ConnectionInfo {
                 leavesPhone: "That day's numbers, when Doddy uses them in a conversation.",
                 staysHere: "Doddy keeps none of it and reads nothing from the Health app. iPhone asks once for Motion & Fitness.")
         case .photos:
-            // ADR-565: counts and times to the voice, pictures on this screen only.
+            // ADR-568: counts and times to the voice, pictures on this screen only.
             ConnectionInfo(
                 symbol: "photo.on.rectangle",
                 examples: ["How many photos did I take on Saturday?", "Show me my photos from last week"],
@@ -406,7 +406,7 @@ struct ConnectionInfo {
                 leavesPhone: "Only how many there are and when the first and last were taken, when Doddy uses them in a conversation. Never the pictures or where they were taken.",
                 staysHere: "The pictures are shown on this screen only. Doddy never changes, deletes or adds anything in your photo library. If you let Doddy see only some photos, it says so.")
         case .camera:
-            // ADR-565: iOS's own camera screen; a kept photo becomes a note the user saves.
+            // ADR-568: iOS's own camera screen; a kept photo becomes a note the user saves.
             ConnectionInfo(
                 symbol: "camera",
                 examples: ["Take a photo", "Open the camera"],

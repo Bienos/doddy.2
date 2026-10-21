@@ -42,10 +42,10 @@ final class ActivityTextTests: XCTestCase {
             .leaveBy(LeaveByRequest(place: "Dentist", arriveBy: now)),
             // ADR-510.
             .draftBlikTransfer(BlikTransferDraft(recipientName: "Ania", amount: BlikAmount(grosze: 5_000)!, title: "Pizza")),
-            // ADR-563, ADR-564.
+            // ADR-566, ADR-567.
             .makePresentation(PresentationDraft(title: "Trip", subtitle: nil, slides: [PresentationSlide(title: "Day 1", points: ["Old Town"])])),
             .readSteps(StepDay(daysAgo: 0)!),
-            // ADR-565.
+            // ADR-568.
             .findPhotos(PhotoSearchRequest(firstDay: now, days: 1)!), .openCamera,
         ]
         requests += CloudToolName.all.sorted().map { .cloudTool(CloudToolCall(name: $0, arguments: [:])) }

@@ -1,6 +1,6 @@
 import Foundation
 
-// "Let Doddy use Calendar?" (ADR-562, owner 2026-10-20: "every time you want to have access to it,
+// "Let Doddy use Calendar?" (ADR-565, owner 2026-10-20: "every time you want to have access to it,
 // you have to have a pop-up that asks for permission ... sliding from the bottom"). When a voice
 // tool needs a connection that is switched off in Doddy, or that iOS has refused, the app holds the
 // call and slides a sheet up over the conversation instead of answering "not connected" at once.
