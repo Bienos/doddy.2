@@ -13,6 +13,8 @@ import { MockToolsProvider, type ToolsMockScenario } from "../src/tools/mock.js"
 import { cloudTool } from "../src/tools/catalog.js";
 import { CloudToolsService } from "../src/tools/service.js";
 import { MockWebSearchProvider, type WebSearchProvider } from "../src/tools/websearch.js";
+import { type ClaudeProvider, isClaudeTool, MockClaudeProvider } from "../src/tools/claude.js";
+import { DocumentLinks } from "../src/documents.js";
 import { Clock, USER_A } from "./helpers.js";
 
 /** A running server with the mock tools provider, for tests and for fixture generation. */
@@ -28,19 +30,28 @@ export interface Rig {
   close(): Promise<void>;
 }
 
-export async function start(limits: Parameters<typeof testLimits>[0] = {}, o: { webSearch?: WebSearchProvider | null } = {}): Promise<Rig> {
+/** Signing key for the test document links (ADR-563). Never a real key. */
+export const TEST_LINK_KEY = Buffer.alloc(32, 7);
+
+export async function start(
+  limits: Parameters<typeof testLimits>[0] = {},
+  o: { webSearch?: WebSearchProvider | null; claude?: ClaudeProvider | null; documentLinks?: boolean } = {},
+): Promise<Rig> {
   const store = await Store.memory();
   const clock = new Clock(Date.parse("2026-10-10T10:00:00Z"));
   const provider = new MockToolsProvider();
   const logs: string[] = [];
   const common = { store, limits: testLimits(limits), publicBaseUrl: "https://api.doddy.test", appReturnUrl: "doddy-dev://connected-apps/return", now: clock.now, sleep: async () => {} };
   const webSearch = o.webSearch === undefined ? new MockWebSearchProvider() : o.webSearch;
-  const tools = new CloudToolsService({ ...common, provider, webSearch, completionMode: "mock", log: (line) => logs.push(JSON.stringify(line)) });
+  const claude = o.claude === undefined ? new MockClaudeProvider() : o.claude;
+  const documentLinks = o.documentLinks === false ? null : new DocumentLinks(TEST_LINK_KEY, common.publicBaseUrl);
+  const tools = new CloudToolsService({ ...common, provider, webSearch, claude, documentLinks, completionMode: "mock", log: (line) => logs.push(JSON.stringify(line)) });
   const service = new ConnectedAppsService({ ...common, provider: new MockCalendarProvider(), registry: defaultRegistry(), completionMode: "mock" });
   const handler = createHandler({
     service,
     tools,
     verifier: new DevSessionVerifier(),
+    documents: documentLinks ? { links: documentLinks, store } : null,
     appReturnUrl: common.appReturnUrl,
     maxBodyBytes: 8 * 1024,
     now: () => new Date(clock.ms),
@@ -97,11 +108,13 @@ export async function connect(r: Rig, toolkit: string, token = USER_A, scenario?
 }
 
 export const on = (r: Rig, tool: string, token = USER_A) => r.call("PUT", "/v1/tools/switch", { token, body: { tool, enabled: true } });
+/** The user's own off (ADR-562: tools come on with the connection or by default; off always wins). */
+export const off = (r: Rig, tool: string, token = USER_A) => r.call("PUT", "/v1/tools/switch", { token, body: { tool, enabled: false } });
 /** A run exactly as sent: no approval unless `extra` has one. ASK-01 tests use this. */
 export const runRaw = (r: Rig, tool: string, args: Record<string, unknown>, extra: Record<string, unknown> = {}, token = USER_A) =>
   r.call("POST", "/v1/tools/run", { token, body: { tool, arguments: args, timeZone: "Europe/Warsaw", ...extra } });
 
-const isRead = (tool: string) => tool === "web_search" || cloudTool(tool)?.risk === "read";
+const isRead = (tool: string) => tool === "web_search" || isClaudeTool(tool) || cloudTool(tool)?.risk === "read";
 
 /**
  * The app's flow for a read (ASK-01): ask (prepare: the card), the user says yes, then run with

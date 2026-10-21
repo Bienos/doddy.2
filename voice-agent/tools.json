@@ -1189,6 +1189,37 @@
         "required": ["category"]
       },
       "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 60, "elevenlabs_tool_id": "tool_3801m4rntsxbf9yr0vf8r8jnf6n9"}
+    },
+    {
+      "type": "function",
+      "name": "ask_claude",
+      "description": "Ask Claude, a strong writing and thinking model on Doddy's server, for something you'd do worse yourself: sum up a long email or note, write or rewrite a short text (a message, a caption, a short email), explain something carefully, plan, brainstorm or translate. Pass the request in the user's language and, when the user means something already in this conversation (an email you read, web results, a note), copy that text into material. You get Claude's answer; say the useful part in one to three sentences, or offer to read it all. For anything long (a blog post, an article, a deck, a document, a spreadsheet, a PDF) use make_document instead. For anything current (prices, news, opening hours) use web_search first and pass its results as material. ASK-01: before this tool runs, say in one short line what you will ask Claude to do, for example 'Shall I ask Claude to sum that up?'; the app shows the same question and runs it only after the user says yes or taps Yes; if the result starts with 'declined', nothing was sent.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "task": {"type": "string", "enum": ["summarize", "write", "explain", "plan", "brainstorm", "answer", "translate", "rewrite"], "description": "What kind of help."},
+          "request": {"type": "string", "description": "What the user wants, in their words and language. At most 1,500 characters."},
+          "material": {"type": "string", "description": "Optional text to work on, copied from this conversation (an email, web results, a note). At most 6,000 characters."}
+        },
+        "required": ["task", "request"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 60, "elevenlabs_tool_id": "not_synced"}
+    },
+    {
+      "type": "function",
+      "name": "make_document",
+      "description": "Have Claude make a finished file for the user with Claude's own skills: a deck (PowerPoint), a doc (Word), a spreadsheet (Excel), a PDF, or text (a blog post, article, speech or long email, as Markdown). Ask for the title and what it should cover if the user didn't say; one short question is enough. Pass material copied from this conversation when the user refers to it. It takes one to three minutes in the background; the result starts with 'started:' and a button to open the file is on the user's screen at once. Say so in one sentence, for example 'On it, the deck's on your screen in a minute or two.' Never read out a link. ASK-01: before this tool runs, say in one short line what you will ask Claude to do, for example 'Shall I ask Claude to sum that up?'; the app shows the same question and runs it only after the user says yes or taps Yes; if the result starts with 'declined', nothing was sent.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "kind": {"type": "string", "enum": ["deck", "doc", "spreadsheet", "pdf", "text"], "description": "deck = slides; doc = Word document; spreadsheet = Excel; pdf = PDF; text = a blog post or article as plain text."},
+          "title": {"type": "string", "description": "The file's title, e.g. 'Doddy beta plan'. At most 120 characters."},
+          "request": {"type": "string", "description": "What it should contain, for whom, how long, in the user's language. At most 1,500 characters."},
+          "material": {"type": "string", "description": "Optional text to use, copied from this conversation. At most 6,000 characters."}
+        },
+        "required": ["kind", "title", "request"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 60, "elevenlabs_tool_id": "not_synced"}
     }
   ]
 }

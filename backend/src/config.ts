@@ -20,6 +20,9 @@ export interface Limits {
   /** Web searches (Monid, paid by Doddy) per user, and for the whole service, per UTC day. */
   userDailyWebSearches: number;
   serviceDailyWebSearches: number;
+  /** Claude runs (writing, summaries, documents; Doddy pays) per user, and for the service, per UTC day. */
+  userDailyClaude: number;
+  serviceDailyClaude: number;
   serviceDailyCalls: number;
   serviceMonthlyCalls: number;
   userConcurrency: number;
@@ -51,6 +54,12 @@ export interface MonidSettings {
   baseUrl: string;
 }
 
+/** Claude through the Anthropic API (ADR-563). Doddy's own key; users never sign in. */
+export interface ClaudeSettings {
+  apiKey: string;
+  model: string;
+}
+
 export interface Config {
   mode: Mode;
   env: Env;
@@ -67,6 +76,12 @@ export interface Config {
   authMode: AuthMode;
   /** Owner-minted tokens (`signed`; also accepted next to Supabase in development when set). */
   sessionSigningKey: Buffer | null;
+  /** Who may sign in with `POST /v1/session/device` (ADR-562). */
+  deviceSignup: "off" | "first-device";
+  /** Extra invite codes for device sign-in (ADR-562). */
+  deviceInviteCodes: string[];
+  /** Claude for writing, summaries and documents (ADR-563). Null: not set up. */
+  claude: ClaudeSettings | null;
   /** Supabase Auth project origin for `supabase` mode (ADR-526): Apple and Google sign-in. */
   supabaseUrl: string | null;
   composio: ComposioSettings | null;
@@ -113,6 +128,15 @@ const EnvSchema = z.object({
   DODDY_AUTH_MODE: z.enum(["dev", "signed", "supabase"]).default("dev"),
   SUPABASE_URL: z.string().optional(),
   DODDY_SESSION_SIGNING_KEY: z.string().optional(),
+  /** Device sign-in for the beta (ADR-562): `first-device` = the first iPhone owns the server. */
+  DODDY_DEVICE_SIGNUP: z.enum(["off", "first-device"]).default("off"),
+  /** Extra invite codes for more devices (ADR-562), comma-separated. */
+  DODDY_DEVICE_INVITE_CODES: z.string().optional(),
+  /** Claude for writing, summaries and documents (ADR-563). Empty: those tools say "not set up". */
+  ANTHROPIC_API_KEY: z.string().optional(),
+  DODDY_CLAUDE_MODEL: z.string().default("claude-sonnet-5-5"),
+  DODDY_LIMIT_USER_DAILY_CLAUDE: intSetting(40, 1, 10_000),
+  DODDY_LIMIT_SERVICE_DAILY_CLAUDE: intSetting(100, 1, 100_000),
   COMPOSIO_API_KEY: z.string().optional(),
   COMPOSIO_GOOGLECALENDAR_AUTH_CONFIG_ID: z.string().optional(),
   COMPOSIO_GOOGLECALENDAR_TOOLKIT_VERSION: z.string().optional(),
@@ -205,6 +229,20 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     }
   }
 
+  // Device sessions (ADR-562): the app signs itself in with a device ID and the beta invite code,
+  // and gets an owner-format token signed with DODDY_SESSION_SIGNING_KEY. Development only.
+  const deviceInviteCodes = (e.DODDY_DEVICE_INVITE_CODES ?? "")
+    .split(",")
+    .map((code) => code.trim())
+    .filter((code) => code !== "");
+  if (deviceInviteCodes.length > 0 || e.DODDY_DEVICE_SIGNUP !== "off") {
+    if (e.DODDY_ENV === "production") problems.push("Device sign-in is for the beta in development only; production uses Supabase sign-in");
+    if (!ownerTokens) problems.push("Device sign-in needs DODDY_SESSION_SIGNING_KEY (auth mode signed, or supabase in development)");
+    if (deviceInviteCodes.some((code) => !/^[A-Za-z0-9_-]{8,64}$/.test(code))) {
+      problems.push("DODDY_DEVICE_INVITE_CODES must be 8 to 64 letters, digits, - or _ each");
+    }
+  }
+
   let supabaseUrl: string | null = null;
   if (e.DODDY_AUTH_MODE === "supabase") {
     const raw = (e.SUPABASE_URL ?? "").trim();
@@ -287,6 +325,11 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     if (base) monid = { apiKey: monidKey, baseUrl: base.origin };
   }
 
+  // Claude (ADR-563). Live mode only; mock mode answers with offline demo text.
+  const claudeKey = e.DODDY_MODE === "live" ? (e.ANTHROPIC_API_KEY ?? "").trim() : "";
+  if (claudeKey !== "" && !/^sk-ant-[A-Za-z0-9_-]{8,}$/.test(claudeKey)) problems.push("ANTHROPIC_API_KEY must look like sk-ant-…");
+  if (!/^claude-[a-z0-9-]{3,60}$/.test(e.DODDY_CLAUDE_MODEL)) problems.push("DODDY_CLAUDE_MODEL must be a Claude model ID such as claude-sonnet-5-5");
+
   const databaseUrl = e.DATABASE_URL?.trim() ? e.DATABASE_URL.trim() : null;
   if (databaseUrl !== null && !/^postgres(ql)?:\/\/\S+$/.test(databaseUrl)) {
     problems.push("DATABASE_URL must be a postgres:// connection string");
@@ -308,6 +351,9 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     databaseCaCert: e.DATABASE_CA_CERT?.trim() ? e.DATABASE_CA_CERT.trim().replace(/\\n/g, "\n") : null,
     authMode: e.DODDY_AUTH_MODE,
     sessionSigningKey,
+    deviceSignup: e.DODDY_DEVICE_SIGNUP,
+    deviceInviteCodes,
+    claude: claudeKey !== "" ? { apiKey: claudeKey, model: e.DODDY_CLAUDE_MODEL } : null,
     supabaseUrl,
     composio,
     toolkits,
@@ -317,6 +363,8 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
       userDailyToolRuns: e.DODDY_LIMIT_USER_DAILY_TOOL_RUNS,
       userDailyWebSearches: e.DODDY_LIMIT_USER_DAILY_WEB_SEARCHES,
       serviceDailyWebSearches: e.DODDY_LIMIT_SERVICE_DAILY_WEB_SEARCHES,
+      userDailyClaude: e.DODDY_LIMIT_USER_DAILY_CLAUDE,
+      serviceDailyClaude: e.DODDY_LIMIT_SERVICE_DAILY_CLAUDE,
       serviceDailyCalls: e.DODDY_LIMIT_SERVICE_DAILY_CALLS,
       serviceMonthlyCalls: e.DODDY_LIMIT_SERVICE_MONTHLY_CALLS,
       userConcurrency: e.DODDY_LIMIT_USER_CONCURRENCY,
@@ -326,7 +374,9 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
       pageSize: e.DODDY_PAGE_SIZE,
       maxEvents: e.DODDY_MAX_EVENTS,
       attemptTtlSeconds: e.DODDY_ATTEMPT_TTL_SECONDS,
-      maxBodyBytes: 8 * 1024,
+      // 24 KB (was 8): Claude's request plus up to 6,000 characters of material (ADR-563), which in
+      // Polish can take two bytes a character.
+      maxBodyBytes: 24 * 1024,
     },
   };
 }
@@ -338,6 +388,8 @@ export function testLimits(overrides: Partial<Limits> = {}): Limits {
     userDailyToolRuns: 100,
     userDailyWebSearches: 30,
     serviceDailyWebSearches: 200,
+    userDailyClaude: 40,
+    serviceDailyClaude: 100,
     serviceDailyCalls: 300,
     serviceMonthlyCalls: 3_000,
     userConcurrency: 1,

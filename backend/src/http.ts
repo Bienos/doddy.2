@@ -2,6 +2,9 @@ import { randomUUID } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { SessionVerifier } from "./auth.js";
 import { type ErrorResponse, MockScenario } from "./contracts.js";
+import type { DeviceSessionIssuer } from "./deviceSession.js";
+import { type DocumentLinks, serveDocument } from "./documents.js";
+import type { Store } from "./store.js";
 import { AppError } from "./errors.js";
 import type { ConnectedAppsService } from "./service.js";
 import type { ToolsMockScenario } from "./tools/mock.js";
@@ -18,6 +21,10 @@ export interface HttpDeps {
   /** Online-account tools (Gmail, Drive, Notion, Todoist). Routes exist only when provided. */
   tools?: CloudToolsService;
   verifier: SessionVerifier;
+  /** Beta device sign-in (ADR-562). Absent: `POST /v1/session/device` is not found. */
+  deviceSessions?: DeviceSessionIssuer | null;
+  /** Files Claude made (ADR-563), opened by signed link. Absent: `GET /v1/documents/…` is not found. */
+  documents?: { links: DocumentLinks; store: Store } | null;
   appReturnUrl: string;
   maxBodyBytes: number;
   now?: () => Date;
@@ -94,6 +101,20 @@ export function createHandler(deps: HttpDeps) {
         route = key;
         status = 302;
         return redirectToApp(res, url, deps.appReturnUrl, key.endsWith("verify"));
+      }
+      // The one route that needs no session: it is how the app gets one (ADR-562).
+      if (key === "POST /v1/session/device" && deps.deviceSessions) {
+        route = key;
+        const body = await readJson(req, deps.maxBodyBytes);
+        const issued = await deps.deviceSessions.issue(body, now());
+        status = 200;
+        return send(res, 200, issued);
+      }
+      // A signed link is its own permission (documents.ts); Safari opens it without the app's token.
+      if (req.method === "GET" && url.pathname.startsWith("/v1/documents/") && deps.documents) {
+        route = "GET /v1/documents/:id";
+        status = await serveDocument(req, res, url, deps.documents.links, deps.documents.store, now());
+        return;
       }
 
       const toolkitRoute = tools ? TOOLKIT_ROUTE.exec(key) : null;

@@ -122,7 +122,7 @@ test("a yes for A doesn't run B: another tool, other arguments, another user", a
   assert.equal((await runRaw(rig, "check_email", { query: "from:bob" }, { approvalId })).status, 403, "other words");
   assert.equal((await runRaw(rig, "check_email", { query: "from:anna", max: 10 }, { approvalId })).status, 403, "more emails");
   assert.equal((await runRaw(rig, "draft_email", ARGS.draft_email!, { approvalId })).status, 403, "a read's yes is never a write's");
-  assert.equal((await runRaw(rig, "check_email", { query: "from:anna" }, { approvalId }, USER_B)).status, 403, "another user");
+  assert.equal((await runRaw(rig, "check_email", { query: "from:anna" }, { approvalId }, USER_B)).status, 409, "another user (who has no Gmail connected)");
   assert.equal(executed(rig), 0);
   // The approval is still unused: the yes for A still runs A.
   assert.equal((await runRaw(rig, "check_email", { query: "from:anna" }, { approvalId })).status, 200);

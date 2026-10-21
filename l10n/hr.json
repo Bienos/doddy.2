@@ -320,7 +320,6 @@
   "Every day": "Svaki dan",
   "Every month works for days 1 to 28, so every month has the day.": "Svaki mjesec radi za dane od 1. do 28., tako da svaki mjesec ima taj dan.",
   "Everyone on the list can be reminded at “%@”.": "Svi na popisu mogu dobiti podsjetnik na mjestu „%@“.",
-  "Everything here starts off. Doddy uses a tool only while its switch is on and, for an account, while it's connected. Anything that adds or creates something shows you a card first and waits for your tap.": "Sve je ovdje na početku isključeno. Doddy koristi alat samo dok je njegov prekidač uključen, a za račun dok je povezan. Sve što nešto dodaje ili stvara prvo ti pokaže karticu i čeka tvoj dodir.",
   "Everything in this backup is already on this iPhone. Nothing to add.": "Sve iz ove sigurnosne kopije već je na ovom iPhoneu. Nema što dodati.",
   "Expired": "Isteklo",
   "Export as JSON": "Izvezi kao JSON",
@@ -1277,5 +1276,6 @@
   "There they are.": "Eno ih.",
   "What I can do": "Što znam",
   "You ask Doddy where they are.": "Pitaš Doddyja gdje su.",
-  "You'd saved “keys under the sofa cushion”.": "Imaš spremljeno: „ključevi ispod jastuka na kauču“."
+  "You'd saved “keys under the sofa cushion”.": "Imaš spremljeno: „ključevi ispod jastuka na kauču“.",
+  "Web search is on, and an account's tools come on when you connect it. Doddy still asks before every look, and anything that sends, adds or changes something shows you a card first and waits for your tap. Switch any tool off here.": "Pretraživanje weba je uključeno, a alati računa uključuju se kad ga povežeš. Doddy ipak pita prije svakog pregleda, a sve što nešto šalje, dodaje ili mijenja najprije ti pokaže karticu i čeka tvoj dodir. Ovdje možeš isključiti bilo koji alat."
 }

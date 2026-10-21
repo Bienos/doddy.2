@@ -68,7 +68,8 @@ final class OnlineAccountsContractTests: XCTestCase {
         let accounts = catalog.toolkits.filter(\.hasAccount)
         XCTAssertEqual(accounts.count, 6)
         XCTAssertTrue(accounts.allSatisfy { $0.status == .disconnected }, "nothing is connected by default")
-        XCTAssertTrue(catalog.toolkits.flatMap(\.tools).allSatisfy { !$0.enabled }, "every switch starts off")
+        XCTAssertTrue(accounts.flatMap(\.tools).allSatisfy { !$0.enabled }, "nothing of an account that isn't connected is usable")
+        XCTAssertTrue(catalog.toolkits.filter { !$0.hasAccount }.flatMap(\.tools).allSatisfy(\.enabled), "web lookups start on (ADR-562)")
         let writes = catalog.toolkits.flatMap(\.tools).filter { $0.risk == .write }.map(\.name).sorted()
         XCTAssertTrue(writes.contains("send_email") && writes.contains("answer_google_invite") && writes.contains("move_outlook_email"))
         XCTAssertEqual(Set(writes), CloudToolName.writes, "the app and the server agree on which tools write")
@@ -85,7 +86,7 @@ final class OnlineAccountsContractTests: XCTestCase {
         let connected = try decode(ToolkitResult.self, "toolkit-result-connected")
         XCTAssertEqual(connected.toolkit.status, .connected)
         XCTAssertEqual(connected.receipt.operation, .connect)
-        XCTAssertTrue(connected.toolkit.tools.allSatisfy { !$0.enabled }, "connecting never switches tools on")
+        XCTAssertTrue(connected.toolkit.tools.allSatisfy(\.enabled), "connecting turns the account's tools on (ADR-562)")
 
         let broad = try decode(ToolkitResult.self, "toolkit-result-too-broad")
         XCTAssertEqual(broad.toolkit.status, .permissionInsufficient)
@@ -407,7 +408,7 @@ final class OnlineAccountsModelTests: XCTestCase {
         XCTAssertNil(model.demoAttempt)
         XCTAssertEqual(model.toolkit("gmail")?.status, .connected)
         XCTAssertEqual(model.lastReceipt?.operation, .connect)
-        XCTAssertFalse(model.isEnabled("check_email"), "connecting does not switch anything on")
+        XCTAssertTrue(model.isEnabled("check_email"), "connecting turns the account's tools on (ADR-562)")
     }
 
     func testASwitchMovesOnlyWhenTheServerSaysSo() async throws {
@@ -440,7 +441,7 @@ final class WebSearchToolTests: XCTestCase {
         XCTAssertEqual(web.status, .connected, "nothing to connect: ready whenever the server has it set up")
         XCTAssertEqual(web.tools.map(\.name), [CloudToolName.webSearch, "news_search", "find_places"])
         XCTAssertFalse(CloudToolName.needsAccount("find_places"))
-        XCTAssertFalse(web.tools[0].enabled, "starts off like every other tool")
+        XCTAssertTrue(web.tools[0].enabled, "web lookups start on (ADR-562)")
 
         XCTAssertFalse(CloudToolName.isWrite(CloudToolName.webSearch))
         XCTAssertFalse(CloudToolName.needsAccount(CloudToolName.webSearch))
@@ -474,5 +475,84 @@ final class WebSearchToolTests: XCTestCase {
         XCTAssertNil(request.detail)
         XCTAssertTrue(request.isLookup)
         XCTAssertEqual(ActivityApp.web.title, "Web search")
+    }
+}
+
+// MARK: - ADR-562 device sign-in, ADR-563 Claude
+
+final class DeviceSessionAndClaudeTests: XCTestCase {
+    private let server = URL(string: "https://doddy.example.com")!
+    private let device = "1b4e28ba-2fa1-41d2-883f-0016d3cca427"
+
+    func testDeviceSignInPostsOnlyTheDeviceIdAndReadsTheToken() async throws {
+        let transport = RecordingTransport(body: Data(#"{"token":"ds1.abc.def","expiresAt":"2026-11-20T00:00:00.000Z"}"#.utf8))
+        let token = await DeviceSessionClient.signIn(server: server, deviceID: device.uppercased(), inviteCode: "  ", transport: transport)
+        XCTAssertEqual(token?.token, "ds1.abc.def")
+        XCTAssertEqual(token?.expiresAt, ISO8601DateFormatter().date(from: "2026-11-20T00:00:00Z"))
+        let request = try XCTUnwrap(transport.requests.first)
+        XCTAssertEqual(request.method, "POST")
+        XCTAssertEqual(request.url.absoluteString, "https://doddy.example.com/v1/session/device")
+        XCTAssertNil(request.headers["authorization"], "signing in needs no token")
+        let body = try JSONSerialization.jsonObject(with: XCTUnwrap(request.body)) as! [String: Any]
+        XCTAssertEqual(body as NSDictionary, ["deviceId": device] as NSDictionary, "lowercased, and a blank code isn't sent")
+    }
+
+    func testDeviceSignInSendsAnInviteCodeWhenTheBuildHasOne() async throws {
+        let transport = RecordingTransport(body: Data(#"{"token":"ds1.a.b","expiresAt":"2026-11-20T00:00:00Z"}"#.utf8))
+        _ = await DeviceSessionClient.signIn(server: server, deviceID: device, inviteCode: "second-phone", transport: transport)
+        let body = try JSONSerialization.jsonObject(with: XCTUnwrap(transport.requests.first?.body)) as! [String: Any]
+        XCTAssertEqual(body["inviteCode"] as? String, "second-phone")
+    }
+
+    func testDeviceSignInIsNilWhenRefusedOrOdd() async {
+        let refused = RecordingTransport(status: 401, body: Data(#"{"error":{"code":"unauthenticated"}}"#.utf8))
+        let none = await DeviceSessionClient.signIn(server: server, deviceID: device, inviteCode: nil, transport: refused)
+        XCTAssertNil(none)
+        let notOurs = RecordingTransport(body: Data(#"{"token":"eyJhbGciOi.x.y","expiresAt":"2026-11-20T00:00:00Z"}"#.utf8))
+        let foreign = await DeviceSessionClient.signIn(server: server, deviceID: device, inviteCode: nil, transport: notOurs)
+        XCTAssertNil(foreign, "only Doddy's own ds1 tokens")
+        let ok = RecordingTransport(body: Data(#"{"token":"ds1.a.b","expiresAt":"2026-11-20T00:00:00Z"}"#.utf8))
+        let bad = await DeviceSessionClient.signIn(server: server, deviceID: "not-a-uuid", inviteCode: nil, transport: ok)
+        XCTAssertNil(bad)
+        XCTAssertTrue(ok.requests.isEmpty, "nothing is sent for a bad device ID")
+    }
+
+    func testNotConnectedPointsAtTheConnectButtonNotSettings() {
+        let receipt = #"{"operationId":"7a1c6a52-6f0e-4b4a-9d4c-1f0d2b2c3d4e","operation":"read","toolkit":"gmail","tool":"check_email","timestamp":"t","mode":"live","status":"blocked","summary":"s","errorCode":"not_connected","providerReference":null}"#
+        let decoded = try? JSONDecoder().decode(OnlineToolReceipt.self, from: Data(receipt.utf8))
+        let error = OnlineAccountsError.server(code: "not_connected", message: "Gmail isn't connected.", retryAfterSeconds: nil, receipt: decoded)
+        let reply = VoiceToolReply.cloudFailed(error, tool: CloudToolName.checkEmail)
+        XCTAssertTrue(reply.hasPrefix("not_connected: Gmail isn't connected yet"))
+        XCTAssertTrue(reply.contains("\"Connect Gmail\" button is on the user's screen"))
+        XCTAssertFalse(reply.contains("Settings"))
+        XCTAssertEqual(decoded?.toolkit, "gmail", "the app reads which account from the receipt")
+    }
+
+    func testClaudeToolsAreRoutedReadsWithoutAnAccount() throws {
+        for name in [CloudToolName.askClaude, CloudToolName.makeDocument] {
+            XCTAssertTrue(CloudToolName.all.contains(name))
+            XCTAssertFalse(CloudToolName.isWrite(name))
+            XCTAssertFalse(CloudToolName.needsAccount(name))
+            XCTAssertEqual(CloudToolName.account(name), "Claude")
+        }
+        let parsed = VoiceToolRequest.parse(
+            name: "make_document", parametersJSON: Data(#"{"kind":"deck","title":"Beta plan","request":"Ten slides"}"#.utf8))
+        guard case .cloudTool(let call) = parsed else { return XCTFail("expected a cloud tool call, got \(parsed)") }
+        XCTAssertEqual(call.name, "make_document")
+        let limit = OnlineAccountsError.server(code: "quota_exceeded", message: "m", retryAfterSeconds: nil, receipt: nil)
+        XCTAssertTrue(VoiceToolReply.cloudFailed(limit, tool: "ask_claude").contains("Claude limit"))
+    }
+
+    func testARunWithADocumentDecodesAndAnOlderRunWithoutOneStillDoes() throws {
+        let receipt = #"{"operationId":"7a1c6a52-6f0e-4b4a-9d4c-1f0d2b2c3d4e","operation":"read","toolkit":"claude","tool":"make_document","timestamp":"t","mode":"live","status":"succeeded","summary":"s","errorCode":null,"providerReference":null}"#
+        let withDoc = #"{"mode":"live","tool":"make_document","text":"started: Claude is making the deck","count":1,"truncated":false,"document":{"url":"https://doddy.example.com/v1/documents/abc?exp=1&sig=x","name":"Beta plan.pptx","kind":"deck","status":"working"},"receipt":"# + receipt + #"}"#
+        let run = try JSONDecoder().decode(RunResult.self, from: Data(withDoc.utf8))
+        XCTAssertEqual(run.document?.name, "Beta plan.pptx")
+        XCTAssertEqual(run.document?.label, "Deck")
+        XCTAssertEqual(run.document?.status, .working)
+        XCTAssertTrue(VoiceToolReply.cloudResult(run).hasPrefix("started: "), "the result word is kept for the agent")
+        XCTAssertFalse(VoiceToolReply.cloudResult(run).contains("https://"), "the agent never gets the link")
+        let without = #"{"mode":"live","tool":"web_search","text":"x","count":0,"truncated":false,"receipt":"# + receipt + #"}"#
+        XCTAssertNil(try JSONDecoder().decode(RunResult.self, from: Data(without.utf8)).document)
     }
 }

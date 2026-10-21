@@ -62,6 +62,11 @@
 	     INFOPLIST_KEY_ build setting, which older Xcode versions don't know. -->
 	<key>NSAlarmKitUsageDescription</key>
 	<string>Doddy sets an alarm only when you ask and tap Set alarm. Its alarms ring even in Silent mode or a Focus. Turn them off in Doddy's Settings, Alarms.</string>
+	<!-- ADR-562: Doddy's own server (web search, Claude, Gmail and the other online accounts).
+	     Built in, so the app works without typing an address in Settings; Settings' development
+	     field still overrides it. The phone signs itself in there with a device ID. -->
+	<key>DoddyServerURL</key>
+	<string>https://doddy-yaci.onrender.com</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
