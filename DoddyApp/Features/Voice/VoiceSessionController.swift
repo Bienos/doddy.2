@@ -236,7 +236,7 @@ final class VoiceSessionController {
     private(set) var selectedPlaceIndex = 0
     /// A function the agent asked for that is off or blocked. The screen offers to turn it on.
     private(set) var connectionNeeded: VoiceConnection?
-    /// ADR-562: an online account (Gmail, Notion, …) the agent needed that isn't connected. The
+    /// ADR-563: an online account (Gmail, Notion, …) the agent needed that isn't connected. The
     /// screen offers Connect right here; the sign-in sheet opens over the conversation.
     struct AccountNeeded: Equatable {
         /// The server's toolkit ID, e.g. "gmail".
@@ -248,7 +248,7 @@ final class VoiceSessionController {
     private(set) var isConnectingAccount = false
     /// What went wrong the last time Connect was tapped, for the card.
     private(set) var accountMessage: String?
-    /// ADR-563: files Claude is making in this conversation, newest first. Each opens by its link.
+    /// ADR-564: files Claude is making in this conversation, newest first. Each opens by its link.
     private(set) var documents: [RunDocument] = []
     private(set) var isMuted = false {
         didSet {
@@ -2784,7 +2784,7 @@ final class VoiceSessionController {
         }
         do {
             let result = try await client.run(cloud, timeZone: TimeZone.current.identifier, approvalId: approvalID)
-            // ADR-563: a file Claude is making gets a button on screen; the agent never gets its link.
+            // ADR-564: a file Claude is making gets a button on screen; the agent never gets its link.
             if let document = result.document { documents.insert(document, at: 0) }
             await reply(toolCallID, VoiceToolReply.cloudResult(result))
         } catch {
@@ -2792,7 +2792,7 @@ final class VoiceSessionController {
         }
     }
 
-    /// ADR-562: what the agent hears when a server tool fails. An account that isn't connected gets
+    /// ADR-563: what the agent hears when a server tool fails. An account that isn't connected gets
     /// a Connect button on screen; a refused session is renewed so the next try works.
     private func cloudFailureReply(_ error: OnlineAccountsError, tool: String) async -> String {
         if case .unauthenticated = error { _ = await OnlineAccountsClientFactory.renewed() }

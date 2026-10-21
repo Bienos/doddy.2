@@ -69,11 +69,11 @@ final class OnlineAccountsContractTests: XCTestCase {
         XCTAssertEqual(accounts.count, 6)
         XCTAssertTrue(accounts.allSatisfy { $0.status == .disconnected }, "nothing is connected by default")
         XCTAssertTrue(accounts.flatMap(\.tools).allSatisfy { !$0.enabled }, "nothing of an account that isn't connected is usable")
-        XCTAssertTrue(catalog.toolkits.filter { !$0.hasAccount }.flatMap(\.tools).allSatisfy(\.enabled), "web lookups start on (ADR-562)")
+        XCTAssertTrue(catalog.toolkits.filter { !$0.hasAccount }.flatMap(\.tools).allSatisfy(\.enabled), "web lookups start on (ADR-563)")
         let writes = catalog.toolkits.flatMap(\.tools).filter { $0.risk == .write }.map(\.name).sorted()
         XCTAssertTrue(writes.contains("send_email") && writes.contains("answer_google_invite") && writes.contains("move_outlook_email"))
         XCTAssertEqual(Set(writes), CloudToolName.writes, "the app and the server agree on which tools write")
-        // Claude (ADR-563) has no Settings section: its tools run but aren't listed in the catalog.
+        // Claude (ADR-564) has no Settings section: its tools run but aren't listed in the catalog.
         XCTAssertEqual(Set(catalog.toolkits.flatMap(\.tools).map(\.name)), CloudToolName.all.subtracting([CloudToolName.askClaude, CloudToolName.makeDocument]))
 
         let on = try decode(ToolsCatalog.self, "catalog-gmail-on")
@@ -87,7 +87,7 @@ final class OnlineAccountsContractTests: XCTestCase {
         let connected = try decode(ToolkitResult.self, "toolkit-result-connected")
         XCTAssertEqual(connected.toolkit.status, .connected)
         XCTAssertEqual(connected.receipt.operation, .connect)
-        XCTAssertTrue(connected.toolkit.tools.allSatisfy(\.enabled), "connecting turns the account's tools on (ADR-562)")
+        XCTAssertTrue(connected.toolkit.tools.allSatisfy(\.enabled), "connecting turns the account's tools on (ADR-563)")
 
         let broad = try decode(ToolkitResult.self, "toolkit-result-too-broad")
         XCTAssertEqual(broad.toolkit.status, .permissionInsufficient)
@@ -409,7 +409,7 @@ final class OnlineAccountsModelTests: XCTestCase {
         XCTAssertNil(model.demoAttempt)
         XCTAssertEqual(model.toolkit("gmail")?.status, .connected)
         XCTAssertEqual(model.lastReceipt?.operation, .connect)
-        XCTAssertTrue(model.isEnabled("check_email"), "connecting turns the account's tools on (ADR-562)")
+        XCTAssertTrue(model.isEnabled("check_email"), "connecting turns the account's tools on (ADR-563)")
     }
 
     func testASwitchMovesOnlyWhenTheServerSaysSo() async throws {
@@ -442,7 +442,7 @@ final class WebSearchToolTests: XCTestCase {
         XCTAssertEqual(web.status, .connected, "nothing to connect: ready whenever the server has it set up")
         XCTAssertEqual(web.tools.map(\.name), [CloudToolName.webSearch, "news_search", "find_places"])
         XCTAssertFalse(CloudToolName.needsAccount("find_places"))
-        XCTAssertTrue(web.tools[0].enabled, "web lookups start on (ADR-562)")
+        XCTAssertTrue(web.tools[0].enabled, "web lookups start on (ADR-563)")
 
         XCTAssertFalse(CloudToolName.isWrite(CloudToolName.webSearch))
         XCTAssertFalse(CloudToolName.needsAccount(CloudToolName.webSearch))
@@ -479,7 +479,7 @@ final class WebSearchToolTests: XCTestCase {
     }
 }
 
-// MARK: - ADR-562 device sign-in, ADR-563 Claude
+// MARK: - ADR-563 device sign-in, ADR-564 Claude
 
 final class DeviceSessionAndClaudeTests: XCTestCase {
     private let server = URL(string: "https://doddy.example.com")!

@@ -48,7 +48,7 @@ mkdirSync(outTools, { recursive: true });
 const writeTool = (name: string, body: unknown) => writeFileSync(join(outTools, `${name}.json`), `${JSON.stringify(body, null, 2)}\n`);
 const t = await startRig();
 writeTool("catalog-disconnected", (await t.call("GET", "/v1/tools")).body);
-// ADR-562: an account that isn't connected answers not_connected first (the app offers Connect).
+// ADR-563: an account that isn't connected answers not_connected first (the app offers Connect).
 writeTool("error-not-connected", (await runTool(t, "check_email", {})).body);
 const begin = await t.call("POST", "/v1/tools/gmail/connect", { body: {} });
 writeTool("connect-response-mock", begin.body);
@@ -56,7 +56,7 @@ const connected = await t.call("POST", "/v1/tools/gmail/complete", {
   body: { attemptId: begin.body.attemptId, nonce: begin.body.nonce, result: { kind: "mock", outcome: "approve" } },
 });
 writeTool("toolkit-result-connected", connected.body);
-// Connecting turns the tools on (ADR-562); the user's own off is what "tool disabled" is now.
+// Connecting turns the tools on (ADR-563); the user's own off is what "tool disabled" is now.
 await switchOff(t, "check_email");
 writeTool("error-tool-disabled", (await runTool(t, "check_email", {})).body);
 writeTool("switch-result-on", (await on(t, "check_email")).body);

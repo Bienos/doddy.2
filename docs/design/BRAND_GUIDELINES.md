@@ -360,7 +360,7 @@ Full construction rules are in `docs/design/BRAND_AND_CHARACTER.md`, the interfa
 
 ### 6.2 Wordmark and face mark
 
-- The wordmark is **"Doddy"** in Caveat bold, V2.2's option C (p.18), as the website already sets it; the Lobster Two SVG from the v1.3 archives is superseded (ADR-556). It is font-based, not outlined and not trademark-cleared (V2.2 p.19, p.46). Treat it as a placeholder.
+- The wordmark is **"Doddy"** in Caveat bold, V2.2's option C (p.18), as the website already sets it; the Lobster Two SVG from the v1.3 archives is superseded (ADR-556). It is font-based, not outlined and not trademark-cleared (V2.2 p.19, p.46). Treat it as a placeholder. The app's header shows it as the guide's own glyph outlines from p.18, a vector template in the ink colour, with no font bundled (`DoddyWordmark`, `tools/brand/extract_wordmark.py`, ADR-562).
 - In the app header, "Doddy" is set in the display accent face at the Pocket Notebook scale. This is not the logo.
 - The face mark (round ivory head, three tufts, two vertical oval pupils, off-centre smile, ink stroke) is the small-size mark for icons and avatars from 24 to 64 px.
 - Clear space (proposed): at least the height of the lowercase "o" in the wordmark, or the pupil height for the face mark. Proposed minimum wordmark width 96 px on screen.

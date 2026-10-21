@@ -59,7 +59,7 @@ test("strict bodies: user, connection and slug fields are rejected, not ignored"
 
 // ------------------------------------------------------------------ switches
 
-test("accounts start disconnected; connecting turns an account's tools on (ADR-562); the user's off blocks at once", async () => {
+test("accounts start disconnected; connecting turns an account's tools on (ADR-563); the user's off blocks at once", async () => {
   rig = await start();
   const catalog = await rig.call("GET", "/v1/tools");
   assert.equal(catalog.status, 200);
@@ -130,7 +130,7 @@ test("disconnect switches the account's tools off and blocks them at once", asyn
   const res = await run(rig, "list_todoist_tasks", {});
   assert.equal(res.status, 409);
   assert.equal(res.body.error.code, "not_connected");
-  // A fresh connection never inherits old switches: it starts with every tool on (ADR-562), not the old set.
+  // A fresh connection never inherits old switches: it starts with every tool on (ADR-563), not the old set.
   await off(rig, "add_todoist_task");
   await connect(rig, "todoist");
   const view = (await rig.call("GET", "/v1/tools")).body.toolkits.find((t: any) => t.id === "todoist");

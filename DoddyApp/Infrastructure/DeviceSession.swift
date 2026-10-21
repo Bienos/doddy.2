@@ -2,7 +2,7 @@ import DoddyCore
 import Foundation
 import Security
 
-/// ADR-562: the phone signs itself in to Doddy's server, so web search, Claude and online accounts
+/// ADR-563: the phone signs itself in to Doddy's server, so web search, Claude and online accounts
 /// work without a token pasted into Settings.
 ///
 /// One random device ID lives in this iPhone's Keychain (this device only, not in backups). The

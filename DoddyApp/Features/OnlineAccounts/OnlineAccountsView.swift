@@ -2,7 +2,7 @@ import DoddyCore
 import SwiftUI
 
 /// Builds the model for Doddy's server (built in, or Settings' development address). The phone signs
-/// itself in first (ADR-562). Without a server or a session the screen says online accounts aren't
+/// itself in first (ADR-563). Without a server or a session the screen says online accounts aren't
 /// set up; it never shows invented connections.
 struct OnlineAccountsScreen: View {
     @AppStorage(PreferenceKey.connectedAppsServerURL) private var serverURL = ""
@@ -19,7 +19,7 @@ struct OnlineAccountsScreen: View {
 }
 
 /// Settings → Online accounts. One section per account, one switch per tool. Web search starts on and
-/// an account's tools come on with it (ADR-562); a switch moves only after Doddy's server accepts it.
+/// an account's tools come on with it (ADR-563); a switch moves only after Doddy's server accepts it.
 struct OnlineAccountsView: View {
     @State private var model: OnlineAccountsModel
     @State private var confirmConnect: ToolkitView?

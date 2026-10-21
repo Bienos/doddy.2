@@ -3,7 +3,7 @@ import type { ClaudeSettings } from "../config.js";
 import { ProviderError } from "../errors.js";
 
 /**
- * Claude for Doddy (ADR-563): quick writing and summaries, and documents made with Claude's own
+ * Claude for Doddy (ADR-564): quick writing and summaries, and documents made with Claude's own
  * skills (PowerPoint, Word, Excel, PDF) or long text such as a blog post.
  *
  * Owner, 21 Oct 2026: "add Claude API for summaries, finding stuff or making stuff, and Doddy should

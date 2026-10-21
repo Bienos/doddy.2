@@ -95,7 +95,7 @@ services:
       # Web search through Monid (optional; empty = "not set up"). Paid from Doddy's Monid wallet.
       - key: MONID_API_KEY
         sync: false
-      # ADR-562: the phone signs itself in with a device ID. first-device = the first iPhone that
+      # ADR-563: the phone signs itself in with a device ID. first-device = the first iPhone that
       # signs in owns this server (owner, 21 Oct: "free for now, only me"); others are refused.
       # Development only; needs DODDY_SESSION_SIGNING_KEY.
       - key: DODDY_DEVICE_SIGNUP
@@ -103,7 +103,7 @@ services:
       # Optional, comma-separated: codes that let a further device in (8-64 letters, digits, - or _).
       - key: DODDY_DEVICE_INVITE_CODES
         sync: false
-      # ADR-563: Claude for summaries, writing and documents (decks, Word, Excel, PDF, blog posts).
+      # ADR-564: Claude for summaries, writing and documents (decks, Word, Excel, PDF, blog posts).
       # Empty = those tools say "not set up". Doddy's own key; paid per use, with daily caps.
       - key: ANTHROPIC_API_KEY
         sync: false

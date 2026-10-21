@@ -147,7 +147,7 @@ export class UsageLimiter {
     if (!ok) throw new AppError("quota_exceeded");
   }
 
-  /** One Claude run (ADR-563, Doddy's Anthropic key): per-user and service-wide daily caps. */
+  /** One Claude run (ADR-564, Doddy's Anthropic key): per-user and service-wide daily caps. */
   async reserveClaude(userId: string, now: number): Promise<void> {
     const ok = await this.store.reserveUsage(
       [

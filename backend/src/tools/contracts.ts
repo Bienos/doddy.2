@@ -11,7 +11,7 @@ import { WEB_SECTION_ID } from "./websearch.js";
 
 export const ToolkitIdSchema = z.enum(TOOLKIT_IDS as [string, ...string[]]);
 
-/** A Settings section: a Composio account, web search (Monid) or Claude (ADR-563); the last two need no account. */
+/** A Settings section: a Composio account, web search (Monid) or Claude (ADR-564); the last two need no account. */
 export const SectionIdSchema = z.enum([WEB_SECTION_ID, CLAUDE_SECTION_ID, ...TOOLKIT_IDS] as [string, ...string[]]);
 export const ToolStatus = z.enum(["unavailable", "disconnected", "connecting", "connected", "permission_insufficient", "expired", "error"]);
 
@@ -135,7 +135,7 @@ export const RunResultSchema = z
     /** True when this answers a repeated run of an approval that already succeeded: nothing ran again. */
     replayed: z.boolean().optional(),
     /**
-     * make_document (ADR-563): the file Claude is making. `url` is a private link for the app to
+     * make_document (ADR-564): the file Claude is making. `url` is a private link for the app to
      * show as a button, never for the voice agent; it shows "still making" until the file is ready.
      */
     document: z

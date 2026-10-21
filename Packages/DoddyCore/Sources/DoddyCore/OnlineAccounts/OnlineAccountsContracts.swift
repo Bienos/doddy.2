@@ -118,12 +118,12 @@ public struct RunResult: Codable, Equatable, Sendable {
     /// True when the server answered a repeated run of an approval that already succeeded:
     /// nothing ran again.
     public let replayed: Bool?
-    /// make_document (ADR-563): the file Claude is making. Its link is for the screen only.
+    /// make_document (ADR-564): the file Claude is making. Its link is for the screen only.
     public let document: RunDocument?
     public let receipt: OnlineToolReceipt
 }
 
-/// A file Claude is making for the user (ADR-563). The link opens it in Safari (Quick Look and
+/// A file Claude is making for the user (ADR-564). The link opens it in Safari (Quick Look and
 /// Share); until the file is ready the page says so and checks again by itself.
 public struct RunDocument: Codable, Equatable, Sendable {
     public enum Status: String, Codable, Sendable { case working, ready, failed }
@@ -226,12 +226,12 @@ public enum CloudToolName {
         // ADR-489: fixed Monid endpoints, no account (like web search); Doddy pays, the card says how much.
         "news_search": ("Search the news", "Web search", false),
         "find_places": ("Find places", "Web search", false),
-        // ADR-563: Claude on Doddy's server, no account; Doddy pays. Nothing outside Doddy changes,
+        // ADR-564: Claude on Doddy's server, no account; Doddy pays. Nothing outside Doddy changes,
         // so like web search these ask with a card and run on a spoken yes or a tap.
         askClaude: ("Ask Claude", claudeAccount, false),
         makeDocument: ("Make a document with Claude", claudeAccount, false),
     ]
-    /// Claude (ADR-563): quick writing and summaries, and documents made with Claude's skills.
+    /// Claude (ADR-564): quick writing and summaries, and documents made with Claude's skills.
     public static let askClaude = "ask_claude"
     public static let makeDocument = "make_document"
     static let claudeAccount = "Claude"

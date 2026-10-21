@@ -1,6 +1,6 @@
 import Foundation
 
-/// ADR-562: the phone signs itself in to Doddy's server with its device ID, instead of a token
+/// ADR-563: the phone signs itself in to Doddy's server with its device ID, instead of a token
 /// pasted into Settings. The app keeps the device ID and the token in the Keychain; this is only the
 /// one HTTP call, kept here so it is tested on Linux.
 public enum DeviceSessionClient {

@@ -14,7 +14,7 @@ const search = (r: Rig, query: unknown, token = USER_A, extra: Record<string, un
 
 // ------------------------------------------------------------------ Settings section and switch
 
-test("web search is its own section: no account, starts on (ADR-562), demo provider in mock mode", async () => {
+test("web search is its own section: no account, starts on (ADR-563), demo provider in mock mode", async () => {
   rig = await start();
   const catalog = (await rig.call("GET", "/v1/tools")).body;
   const web = section(catalog);

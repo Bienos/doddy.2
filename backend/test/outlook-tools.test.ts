@@ -66,7 +66,7 @@ test("Outlook's tools, each named once; every write behind a tap; nothing delete
   for (const name of OUTLOOK_TOOLS) assert.match(TOOL_COPY[name]!.blurb, /On when you connect the account; switch it off any time\.$/, name);
 });
 
-test("connecting Outlook turns every switch on (ADR-562); each tool switched off refuses, and nothing reaches the provider", async () => {
+test("connecting Outlook turns every switch on (ADR-563); each tool switched off refuses, and nothing reaches the provider", async () => {
   rig = await start();
   const connected = await connect(rig, "outlook");
   assert.equal(connected.status, 200, connected.text);

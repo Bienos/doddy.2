@@ -122,7 +122,7 @@ final class ToolCatalogTests: XCTestCase {
         let source = try String(contentsOf: repoRoot.appendingPathComponent("backend/src/tools/catalog.ts"), encoding: .utf8)
         let server = Self.serverRisks(source)
         XCTAssertFalse(server.isEmpty, "couldn't read CLOUD_TOOLS from catalog.ts")
-        // websearch.ts also holds the fixed Monid tools (ADR-489); claude.ts the Claude tools (ADR-563).
+        // websearch.ts also holds the fixed Monid tools (ADR-489); claude.ts the Claude tools (ADR-564).
         XCTAssertEqual(
             Set(server.keys).union([CloudToolName.webSearch, "news_search", "find_places", CloudToolName.askClaude, CloudToolName.makeDocument]),
             CloudToolName.all)

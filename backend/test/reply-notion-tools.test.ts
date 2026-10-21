@@ -39,7 +39,7 @@ const REPLY = { query: "from:anna", body: "Yes, 1pm works." };
 
 // ------------------------------------------------------------------ switches start off
 
-test("both new switches come on with the connection (ADR-562); each switched off refuses, and nothing reaches the provider", async () => {
+test("both new switches come on with the connection (ADR-563); each switched off refuses, and nothing reaches the provider", async () => {
   rig = await start();
   await connect(rig, "gmail");
   await connect(rig, "notion");

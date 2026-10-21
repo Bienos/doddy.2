@@ -4,7 +4,7 @@ import { SignedSessionVerifier } from "./auth.js";
 import { AppError } from "./errors.js";
 
 /**
- * Device sessions for the beta (ADR-562).
+ * Device sessions for the beta (ADR-563).
  *
  * Why this exists: until 21 Oct 2026 the app could reach this server only with a session token the
  * owner minted by hand and pasted into Settings, because the app has no Supabase sign-in yet and

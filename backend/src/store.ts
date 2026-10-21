@@ -164,7 +164,7 @@ export const SCHEMA_SQL = `
   CREATE INDEX IF NOT EXISTS documents_user ON documents(user_id, created_at);
 `;
 
-/** A file Claude makes for the user (ADR-563). Kept a week, then pruned. */
+/** A file Claude makes for the user (ADR-564). Kept a week, then pruned. */
 export interface DocumentRow {
   id: string;
   user_id: string;
@@ -454,13 +454,13 @@ export class Store {
 
   // ------------------------------------------------------------ online-account tools
 
-  /** A missing row means off for an account tool; connecting writes every row on (ADR-562). Web tools read `toolSwitch` and default to on. */
+  /** A missing row means off for an account tool; connecting writes every row on (ADR-563). Web tools read `toolSwitch` and default to on. */
   async toolEnabled(userId: string, tool: string): Promise<boolean> {
     const row = await this.one<{ enabled: number }>(this.db, "SELECT enabled FROM tool_switches WHERE user_id = $1 AND tool = $2", [userId, tool]);
     return row?.enabled === 1;
   }
 
-  /** The switch as stored: true, false, or null when the user never touched it (ADR-562 defaults). */
+  /** The switch as stored: true, false, or null when the user never touched it (ADR-563 defaults). */
   async toolSwitch(userId: string, tool: string): Promise<boolean | null> {
     const row = await this.one<{ enabled: number }>(this.db, "SELECT enabled FROM tool_switches WHERE user_id = $1 AND tool = $2", [userId, tool]);
     return row ? row.enabled === 1 : null;
@@ -556,7 +556,7 @@ export class Store {
     });
   }
 
-  // ------------------------------------------------------------ device owner (ADR-562)
+  // ------------------------------------------------------------ device owner (ADR-563)
 
   /**
    * "Only me" for the beta: the first device user to sign in claims the server; the answer is the
@@ -568,7 +568,7 @@ export class Store {
     return row?.user_id ?? userId;
   }
 
-  // ------------------------------------------------------------ documents (ADR-563)
+  // ------------------------------------------------------------ documents (ADR-564)
 
   /** A new document while Claude works on it. Returns its unguessable ID (144 random bits). */
   async startDocument(userId: string, name: string, mime: string, now: number): Promise<string> {

@@ -30,7 +30,7 @@ export interface Rig {
   close(): Promise<void>;
 }
 
-/** Signing key for the test document links (ADR-563). Never a real key. */
+/** Signing key for the test document links (ADR-564). Never a real key. */
 export const TEST_LINK_KEY = Buffer.alloc(32, 7);
 
 export async function start(
@@ -108,7 +108,7 @@ export async function connect(r: Rig, toolkit: string, token = USER_A, scenario?
 }
 
 export const on = (r: Rig, tool: string, token = USER_A) => r.call("PUT", "/v1/tools/switch", { token, body: { tool, enabled: true } });
-/** The user's own off (ADR-562: tools come on with the connection or by default; off always wins). */
+/** The user's own off (ADR-563: tools come on with the connection or by default; off always wins). */
 export const off = (r: Rig, tool: string, token = USER_A) => r.call("PUT", "/v1/tools/switch", { token, body: { tool, enabled: false } });
 /** A run exactly as sent: no approval unless `extra` has one. ASK-01 tests use this. */
 export const runRaw = (r: Rig, tool: string, args: Record<string, unknown>, extra: Record<string, unknown> = {}, token = USER_A) =>

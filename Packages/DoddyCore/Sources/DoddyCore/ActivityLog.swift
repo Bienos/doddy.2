@@ -298,7 +298,7 @@ public struct ActivityRequest: Equatable, Sendable {
             case "Todoist": .todoist
             case "Notion": .notion
             case "Google Drive": .drive
-            // ADR-563: Claude is listed with the web lookups (no account, Doddy's server).
+            // ADR-564: Claude is listed with the web lookups (no account, Doddy's server).
             case "Web search", "Claude": .web
             default: .calendar
             }

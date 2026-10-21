@@ -207,5 +207,6 @@ Owner's answer: "all of it, 2A, 3a, 7 later".
 | 9 | Yes | `project.yml`; the nine `<code>_infoplist.json` tables; `InfoPlist.xcstrings` regenerated |
 | 10 | Owner's default kept | Home's hop stays (ADR-545) |
 | 11, 12 | No change | |
+| Wordmark (missed by this review) | Option C, "Doddy" in Caveat Bold, p.18 (owner, 20 Oct: "i gave you pdf with logo and you give me other logo") | The app's header still drew the old "doddy." in the system font. `DoddyWordmark` now shows the guide's own glyphs as a vector template, cut from the PDF by `tools/brand/extract_wordmark.py`; no font is bundled. ADR-562 |
 
 Checks run here, on Linux: `python3 -I scripts/voice_agent_spec.py check` PASS; `python3 -I tools/gen_site_tokens.py --check` PASS; `python3 -I tools/build_strings_catalog.py --check` PASS; `bash scripts/check_forbidden_capabilities.sh` PASS; `npm test` in `site/` 19 of 19 PASS. **NOT RUN:** the DoddyCore tests and `swiftc -parse` (no Swift toolchain in this session), so `WakeWordTests` and `OpenAIRealtimeTests` are updated by hand and CI's macOS job is the first compile; the app on a device; the icon on a device or the watch; a conversation with the new prompt (OpenAI reads it from the app build; ElevenLabs reads the live prompt updated on 20 Oct).

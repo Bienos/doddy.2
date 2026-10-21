@@ -3,7 +3,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import type { Store } from "./store.js";
 
 /**
- * Links to files Claude made (ADR-563). The phone opens them in Safari, which shows a deck, a Word
+ * Links to files Claude made (ADR-564). The phone opens them in Safari, which shows a deck, a Word
  * file, a spreadsheet or a PDF with Quick Look and a Share button, so the link can't carry the app's
  * session token. Instead it is a capability: the document's random ID (144 bits) plus an HMAC
  * signature over the ID and an expiry, made with the server's signing key. Anyone with the link can

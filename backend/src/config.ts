@@ -54,7 +54,7 @@ export interface MonidSettings {
   baseUrl: string;
 }
 
-/** Claude through the Anthropic API (ADR-563). Doddy's own key; users never sign in. */
+/** Claude through the Anthropic API (ADR-564). Doddy's own key; users never sign in. */
 export interface ClaudeSettings {
   apiKey: string;
   model: string;
@@ -76,11 +76,11 @@ export interface Config {
   authMode: AuthMode;
   /** Owner-minted tokens (`signed`; also accepted next to Supabase in development when set). */
   sessionSigningKey: Buffer | null;
-  /** Who may sign in with `POST /v1/session/device` (ADR-562). */
+  /** Who may sign in with `POST /v1/session/device` (ADR-563). */
   deviceSignup: "off" | "first-device";
-  /** Extra invite codes for device sign-in (ADR-562). */
+  /** Extra invite codes for device sign-in (ADR-563). */
   deviceInviteCodes: string[];
-  /** Claude for writing, summaries and documents (ADR-563). Null: not set up. */
+  /** Claude for writing, summaries and documents (ADR-564). Null: not set up. */
   claude: ClaudeSettings | null;
   /** Supabase Auth project origin for `supabase` mode (ADR-526): Apple and Google sign-in. */
   supabaseUrl: string | null;
@@ -128,11 +128,11 @@ const EnvSchema = z.object({
   DODDY_AUTH_MODE: z.enum(["dev", "signed", "supabase"]).default("dev"),
   SUPABASE_URL: z.string().optional(),
   DODDY_SESSION_SIGNING_KEY: z.string().optional(),
-  /** Device sign-in for the beta (ADR-562): `first-device` = the first iPhone owns the server. */
+  /** Device sign-in for the beta (ADR-563): `first-device` = the first iPhone owns the server. */
   DODDY_DEVICE_SIGNUP: z.enum(["off", "first-device"]).default("off"),
-  /** Extra invite codes for more devices (ADR-562), comma-separated. */
+  /** Extra invite codes for more devices (ADR-563), comma-separated. */
   DODDY_DEVICE_INVITE_CODES: z.string().optional(),
-  /** Claude for writing, summaries and documents (ADR-563). Empty: those tools say "not set up". */
+  /** Claude for writing, summaries and documents (ADR-564). Empty: those tools say "not set up". */
   ANTHROPIC_API_KEY: z.string().optional(),
   DODDY_CLAUDE_MODEL: z.string().default("claude-sonnet-5-5"),
   DODDY_LIMIT_USER_DAILY_CLAUDE: intSetting(40, 1, 10_000),
@@ -229,7 +229,7 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     }
   }
 
-  // Device sessions (ADR-562): the app signs itself in with a device ID and the beta invite code,
+  // Device sessions (ADR-563): the app signs itself in with a device ID and the beta invite code,
   // and gets an owner-format token signed with DODDY_SESSION_SIGNING_KEY. Development only.
   const deviceInviteCodes = (e.DODDY_DEVICE_INVITE_CODES ?? "")
     .split(",")
@@ -325,7 +325,7 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     if (base) monid = { apiKey: monidKey, baseUrl: base.origin };
   }
 
-  // Claude (ADR-563). Live mode only; mock mode answers with offline demo text.
+  // Claude (ADR-564). Live mode only; mock mode answers with offline demo text.
   const claudeKey = e.DODDY_MODE === "live" ? (e.ANTHROPIC_API_KEY ?? "").trim() : "";
   if (claudeKey !== "" && !/^sk-ant-[A-Za-z0-9_-]{8,}$/.test(claudeKey)) problems.push("ANTHROPIC_API_KEY must look like sk-ant-…");
   if (!/^claude-[a-z0-9-]{3,60}$/.test(e.DODDY_CLAUDE_MODEL)) problems.push("DODDY_CLAUDE_MODEL must be a Claude model ID such as claude-sonnet-5-5");
@@ -374,7 +374,7 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
       pageSize: e.DODDY_PAGE_SIZE,
       maxEvents: e.DODDY_MAX_EVENTS,
       attemptTtlSeconds: e.DODDY_ATTEMPT_TTL_SECONDS,
-      // 24 KB (was 8): Claude's request plus up to 6,000 characters of material (ADR-563), which in
+      // 24 KB (was 8): Claude's request plus up to 6,000 characters of material (ADR-564), which in
       // Polish can take two bytes a character.
       maxBodyBytes: 24 * 1024,
     },

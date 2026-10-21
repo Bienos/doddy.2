@@ -1192,7 +1192,7 @@ struct VoiceView: View {
         .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
     }
 
-    /// ADR-562: an online account Doddy needs for what was asked. Connect opens the provider's own
+    /// ADR-563: an online account Doddy needs for what was asked. Connect opens the provider's own
     /// sign-in sheet right here (passwords and passkeys fill in as usual, 1Password included).
     private func accountCard(_ needed: VoiceSessionController.AccountNeeded, controller: VoiceSessionController) -> some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -1226,7 +1226,7 @@ struct VoiceView: View {
         .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
     }
 
-    /// ADR-563: a file Claude is making. The link opens in Safari: Quick Look shows the deck,
+    /// ADR-564: a file Claude is making. The link opens in Safari: Quick Look shows the deck,
     /// document or PDF, with Share to save or send it; until it's ready the page says so.
     private func documentCard(_ document: RunDocument) -> some View {
         VStack(alignment: .leading, spacing: 12) {

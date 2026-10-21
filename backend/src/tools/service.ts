@@ -71,7 +71,7 @@ import {
 type WebTool = typeof WEB_SEARCH_TOOL | MonidToolName;
 const isWebTool = (name: string): name is WebTool => name === WEB_SEARCH_TOOL || isMonidTool(name);
 /**
- * Web lookups are on until the user switches them off (ADR-562). Before, every one started off and
+ * Web lookups are on until the user switches them off (ADR-563). Before, every one started off and
  * the only switch was in a Settings screen the app could not reach without a hand-made server
  * token, so "what's the weather?" could never be answered. ASK-01 still asks before every search.
  */
@@ -90,9 +90,9 @@ export interface ToolsServiceDeps {
   provider: ToolsProvider;
   /** Web search through Monid. Null or absent: the section shows "not set up" and never runs. */
   webSearch?: WebSearchProvider | null;
-  /** Claude (ADR-563). Null or absent: ask_claude and make_document say "not set up". */
+  /** Claude (ADR-564). Null or absent: ask_claude and make_document say "not set up". */
   claude?: ClaudeProvider | null;
-  /** Signed links for documents (ADR-563). Null: make_document says "not set up". */
+  /** Signed links for documents (ADR-564). Null: make_document says "not set up". */
   documentLinks?: DocumentLinks | null;
   limits: Limits;
   publicBaseUrl: string;
@@ -122,7 +122,7 @@ export class CloudToolsService {
   private readonly ask: AskGate;
   private readonly now: () => number;
   private readonly sleep: (ms: number) => Promise<void>;
-  /** Document jobs still running after their reply (ADR-563); tests wait on them. */
+  /** Document jobs still running after their reply (ADR-564); tests wait on them. */
   private readonly background = new Set<Promise<void>>();
 
   constructor(private readonly deps: ToolsServiceDeps) {
@@ -386,7 +386,7 @@ export class CloudToolsService {
       // A fresh connection never inherits switches from an earlier one.
       await this.store.disableTools(userId, toolNames(id), this.now());
       if (verdict !== "ok") return await done("blocked", blockedSummary(title, verdict), reason);
-      // ADR-562: connecting is the user saying "use this", usually from the Connect card in the
+      // ADR-563: connecting is the user saying "use this", usually from the Connect card in the
       // middle of a request, so the account's tools come on with it. ASK-01 is unchanged: every
       // read still asks, and every send, change or delete still needs a tap on its exact card.
       for (const name of toolNames(id)) await this.store.setToolEnabled(userId, name, true, this.now());
@@ -873,7 +873,7 @@ export class CloudToolsService {
     }
   }
 
-  // ---------------------------------------------------------------- Claude (ADR-563)
+  // ---------------------------------------------------------------- Claude (ADR-564)
 
   /** Waits for document jobs still running in the background (tests, shutdown). */
   async settle(): Promise<void> {
@@ -978,7 +978,7 @@ export class CloudToolsService {
 
   // ---------------------------------------------------------------- helpers
 
-  /** A web tool's switch: what the user chose, else the default (ADR-562). */
+  /** A web tool's switch: what the user chose, else the default (ADR-563). */
   private async webToolOn(userId: string, tool: WebTool): Promise<boolean> {
     const stored = await this.store.toolSwitch(userId, tool);
     return stored ?? WEB_TOOLS_ON_BY_DEFAULT.has(tool);
@@ -1022,7 +1022,7 @@ export class CloudToolsService {
       throw new AppError(code, { message, receipt: await this.receipt(userId, tool.toolkit, op, tool.name, "blocked", `Not done: ${message}`.slice(0, 200), code, null) });
     };
     if (!this.provider.isConfigured(tool.toolkit)) return await blocked("not_connected", `${def.title} isn't set up on this server.`);
-    // ADR-562: the account first, then the switch, so a request for an account that isn't
+    // ADR-563: the account first, then the switch, so a request for an account that isn't
     // connected answers `not_connected` and the app can offer Connect right there.
     const row = await this.store.getConnection(userId, tool.toolkit);
     const reason = this.blockReason(row, def, tool);

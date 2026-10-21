@@ -21,9 +21,9 @@ export interface HttpDeps {
   /** Online-account tools (Gmail, Drive, Notion, Todoist). Routes exist only when provided. */
   tools?: CloudToolsService;
   verifier: SessionVerifier;
-  /** Beta device sign-in (ADR-562). Absent: `POST /v1/session/device` is not found. */
+  /** Beta device sign-in (ADR-563). Absent: `POST /v1/session/device` is not found. */
   deviceSessions?: DeviceSessionIssuer | null;
-  /** Files Claude made (ADR-563), opened by signed link. Absent: `GET /v1/documents/…` is not found. */
+  /** Files Claude made (ADR-564), opened by signed link. Absent: `GET /v1/documents/…` is not found. */
   documents?: { links: DocumentLinks; store: Store } | null;
   appReturnUrl: string;
   maxBodyBytes: number;
@@ -102,7 +102,7 @@ export function createHandler(deps: HttpDeps) {
         status = 302;
         return redirectToApp(res, url, deps.appReturnUrl, key.endsWith("verify"));
       }
-      // The one route that needs no session: it is how the app gets one (ADR-562).
+      // The one route that needs no session: it is how the app gets one (ADR-563).
       if (key === "POST /v1/session/device" && deps.deviceSessions) {
         route = key;
         const body = await readJson(req, deps.maxBodyBytes);

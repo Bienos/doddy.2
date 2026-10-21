@@ -14,7 +14,7 @@ import { USER_A } from "./helpers.js";
 import { connect, on, type Rig, run, runRaw, start, TEST_LINK_KEY } from "./toolsRig.js";
 
 /**
- * ADR-562 and ADR-563 (21 Oct 2026): the phone can sign itself in, web lookups start on,
+ * ADR-563 and ADR-564 (21 Oct 2026): the phone can sign itself in, web lookups start on,
  * connecting an account turns its tools on, and Claude writes, sums up and makes documents.
  */
 
@@ -29,7 +29,7 @@ const KEY = Buffer.alloc(32, 3);
 const DEVICE_A = "1b4e28ba-2fa1-41d2-883f-0016d3cca427";
 const DEVICE_B = "6f9619ff-8b86-4011-b42d-00c04fc964ff";
 
-// ------------------------------------------------------------------ device sign-in (ADR-562)
+// ------------------------------------------------------------------ device sign-in (ADR-563)
 
 test("first device: the first iPhone gets a token the server accepts, and keeps getting one", async () => {
   const store = await Store.memory();
@@ -137,7 +137,7 @@ test("POST /v1/session/device is the one route without a session, and its token 
   }
 });
 
-// ------------------------------------------------------------------ web search on by default (ADR-562)
+// ------------------------------------------------------------------ web search on by default (ADR-563)
 
 test("web lookups start on; the user's own off still wins; every search still asks first", async () => {
   rig = await start();
@@ -159,7 +159,7 @@ test("web lookups start on; the user's own off still wins; every search still as
   assert.equal((await run(rig, "web_search", { query: "again" })).body.error.code, "capability_disabled");
 });
 
-// ------------------------------------------------------------------ connect turns tools on (ADR-562)
+// ------------------------------------------------------------------ connect turns tools on (ADR-563)
 
 test("an account that isn't connected answers not_connected (so the app can offer Connect), even with its switch off", async () => {
   rig = await start();
@@ -190,7 +190,7 @@ test("connecting Gmail turns its tools on; reads still ask, sends still need the
   assert.equal(after.tools.find((t: any) => t.name === "send_email").enabled, false);
 });
 
-// ------------------------------------------------------------------ Claude (ADR-563)
+// ------------------------------------------------------------------ Claude (ADR-564)
 
 test("ask_claude: card first, nothing sent before the yes, then the answer", async () => {
   rig = await start();

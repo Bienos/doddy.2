@@ -35,7 +35,7 @@ test("list_todoist_tasks text gives each task's id, says ids are for the two Tod
 
 // ------------------------------------------------------------------ switches start off
 
-test("the three new switches come on with the connection (ADR-562); switched off, the writes and read_email refuse", async () => {
+test("the three new switches come on with the connection (ADR-563); switched off, the writes and read_email refuse", async () => {
   rig = await start();
   await connect(rig, "todoist");
   await connect(rig, "gmail");

@@ -125,7 +125,7 @@ public enum ActivityText {
         "Create a Google Doc": "Utwórz Dokument Google",
         "Search the news": "Wyszukano wiadomości",
         "Find places": "Wyszukano miejsca",
-        // ADR-563
+        // ADR-564
         "Ask Claude": "Zapytano Claude’a",
         "Make a document with Claude": "Zlecono Claude’owi dokument",
         "Read a Notion page": "Odczytano stronę Notion",

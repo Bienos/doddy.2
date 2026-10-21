@@ -66,7 +66,7 @@ export async function buildApp(
           ? new MonidWebSearchProvider(config.monid)
           : null
         : new MockWebSearchProvider();
-  // Claude (ADR-563): live only with an Anthropic key; mock mode uses offline demo text.
+  // Claude (ADR-564): live only with an Anthropic key; mock mode uses offline demo text.
   const claude =
     overrides.claude !== undefined ? overrides.claude : config.mode === "live" ? (config.claude ? new AnthropicClaudeProvider(config.claude) : null) : new MockClaudeProvider();
   // Document links are signed with the session key; without one, make_document says "not set up".
@@ -83,7 +83,7 @@ export async function buildApp(
     completionMode: toolsProvider.mode === "mock" ? "mock" : (config.composio?.completionMode ?? "verifier"),
     log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`),
   });
-  // Beta device sign-in (ADR-562): first-device or invite codes, and a signing key (config checks both).
+  // Beta device sign-in (ADR-563): first-device or invite codes, and a signing key (config checks both).
   const deviceSessions =
     (config.deviceSignup !== "off" || config.deviceInviteCodes.length > 0) && config.sessionSigningKey
       ? new DeviceSessionIssuer(config.sessionSigningKey, { signup: config.deviceSignup, inviteCodes: config.deviceInviteCodes, store })
