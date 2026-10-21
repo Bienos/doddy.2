@@ -1,4 +1,4 @@
-# Doddy the sidekick: Talk or Task (ADR-565)
+# Doddy the sidekick: Talk or Task (ADR-567)
 
 **Status, 21 Oct 2026:** the owner's prompt (below, word for word) is the new character brief. The owner answered decisions 1 to 3 the same day ("1. Yes 2. Ok and no cap 3. Ok"):
 - **Live:** the Talk/Task sections are on the live ElevenLabs agent since version `agtvrsn_6201m5ewm90bezjvesacr57ma1gv` (`voice-agent/README.md`). That text still asks before each search and says Doddy can't work after the conversation, because no app build can hand work over yet.

@@ -19,7 +19,7 @@ reaches OpenAI with the next app build, and ElevenLabs only after the sync below
 
 ## Source of truth and syncing
 
-**Applied to the live agent 2026-10-21, about 07:30 UTC (ADR-565, the sidekick's Talk and Task modes; owner: "1. Yes", then "Yes, save it" on the exact changes):** the live prompt is still the owner's own rewrite, so `instructions.md` wasn't copied in. 37 lines were added in its style and 2 reworded, nothing else changed:
+**Applied to the live agent 2026-10-21, about 07:30 UTC (ADR-567, the sidekick's Talk and Task modes; owner: "1. Yes", then "Yes, save it" on the exact changes):** the live prompt is still the owner's own rewrite, so `instructions.md` wasn't copied in. 37 lines were added in its style and 2 reworded, nothing else changed:
 - **Identity:** "You are their sidekick: sharp, always online, living in their phone", sprawy, "you can find the restaurant, you can't walk there".
 - **Tone:** "Sharp, warm and direct. No filler. No apologising for being an AI." and "Honest always…".
 - **Language:** "Polish is your default…"; "If language recognition is uncertain, ask briefly." became "If you can't tell which language the user is using, use Polish."
