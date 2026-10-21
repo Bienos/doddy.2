@@ -13,6 +13,12 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
     case exchangeRates
     /// A BLIK phone transfer shown for the user to send in their bank app (ADR-510).
     case blik
+    /// A presentation file made on the iPhone (ADR-567).
+    case presentations
+    /// Motion & Fitness step counts (ADR-568).
+    case steps
+    /// The photo library and Doddy's camera (ADR-569).
+    case photos, camera
 
     public var title: String {
         switch self {
@@ -32,6 +38,10 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
         case .web: "Web search"
         case .exchangeRates: "Exchange rates"
         case .blik: "BLIK transfers"
+        case .presentations: "Presentations"
+        case .steps: "Steps"
+        case .photos: "Photos"
+        case .camera: "Camera"
         }
     }
 }
@@ -201,6 +211,16 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(
                 app: .blik, title: "Prepare a BLIK transfer", detail: "\(draft.amount.agentText) to \(draft.recipientName)",
                 logDetail: "to \(draft.recipientName)", isLookup: false)
+        case .makePresentation(let draft):
+            return ActivityRequest(
+                app: .presentations, title: "Make a presentation", detail: "“\(draft.title)” · \(draft.slideCount) slides",
+                logDetail: "\(draft.slideCount) slides", isLookup: false)
+        case .readSteps(let day):
+            return ActivityRequest(app: .steps, title: "Read steps", detail: day.text, isLookup: true)
+        case .findPhotos(let request):
+            return ActivityRequest(app: .photos, title: "Looked through photos", detail: request.text(calendar: calendar), isLookup: true)
+        case .openCamera:
+            return ActivityRequest(app: .camera, title: "Open the camera", detail: nil, isLookup: false)
         case .cloudTool(let call):
             // Writes carry a key (ADR-322): a hash of the tool and its arguments, never the words.
             guard let request = describe(cloud: call.name), let key = CloudIdempotency.key(call) else { return describe(cloud: call.name) }
@@ -281,6 +301,11 @@ public struct ActivityRequest: Equatable, Sendable {
         case .noteCapabilityGap:
             // A category Doddy notes for itself (ADR-440); no app is used and nothing changes.
             return nil
+        case .handOverErrand(let draft):
+            // ADR-570: the 30-day log keeps that a task was handed over, not its title or words.
+            return ActivityRequest(app: .web, title: "Hand over a task", detail: "“\(draft.title)”", logDetail: nil, isLookup: false)
+        case .checkErrands:
+            return ActivityRequest(app: .web, title: "Checked your tasks", detail: nil, isLookup: true)
         case .unsupported, .invalid, .needsClarification, .startTranslator, .stopTranslator, .calculate, .convertUnits:
             // A clarification goes straight back to the agent; no app is used. Translator mode
             // uses no app either, and leaves no trace of the conversation (ADR-215). Sums and

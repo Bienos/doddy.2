@@ -8,6 +8,7 @@ Owner, 2026-10-18, in their words: *"Doddy can do everything, the same with ever
 - A read (notes, calendar, contacts, email, tasks, a list, the web) runs on a tap **or** the user's own short spoken yes, said after the card appeared.
 - Anything that changes, sends, deletes, books or shares something runs only on a **tap** on a card that shows the exact payload. A spoken yes is not enough: the model hears it (DOD-07, `disallow_model_only_approval`).
 - One yes covers one call. No yes, a no, an unclear answer, a timeout or the end of the conversation: nothing runs, and the agent is told so.
+- **One exception (owner, 21 Oct 2026, ADR-570): a handed-over task.** The yes on `hand_over_errand`'s card covers every web search and page read of that one task on Doddy's server, with no limit on how many, and nothing else. It is still one yes for one action: the app creates the task and approves it with the server's digest of exactly the words on the card, and the server's worker has only the search and fetch tools, so the yes can never book, buy, send or start another task (`docs/implementation/ERRANDS.md`).
 - Text from emails, the web, documents or tool results is never a yes.
 
 Prompts describe this; the code below enforces it.
@@ -49,6 +50,10 @@ Before = `voice-agent/tools.json` at `2278430`. "Card, tap" tools already asked;
 | `calculate` | **Doesn't ask**: runs on the agent's call | Card; **spoken yes or tap** |
 | `convert_units` | **Doesn't ask**: runs on the agent's call | Card; **spoken yes or tap** |
 | `convert_currency` | **Doesn't ask**: runs on the agent's call | Card; **spoken yes or tap** |
+| `read_steps` (ADR-568, live 21 Oct) | (new tool) | Card; **spoken yes or tap**. If Steps is off, the permission sheet (ADR-566) shows the same question and its Allow is the tap |
+| `make_presentation` (ADR-567, live 21 Oct) | (new tool) | Card with every slide; **tap only**. The file is made on the tap; the share sheet hands it on |
+| `find_photos` (ADR-569, live 21 Oct) | (new tool) | Card; **spoken yes or tap**. Counts and times to the agent; the pictures on screen only |
+| `open_camera` (ADR-569, live 21 Oct) | (new tool) | Card; **tap only**. The camera opens on the tap; a kept photo becomes a note the user saves |
 | `geocode_place` | Doesn't ask: ElevenLabs runs it, the app never sees it | Removed from the agent (the app can't ask before it); weather and facts go through `web_search`, which asks |
 | `get_weather` | Doesn't ask: ElevenLabs runs it, the app never sees it | Removed from the agent (the app can't ask before it); weather and facts go through `web_search`, which asks |
 | `wikipedia_search` | Doesn't ask: ElevenLabs runs it, the app never sees it | Removed from the agent (the app can't ask before it); weather and facts go through `web_search`, which asks |
@@ -139,6 +144,7 @@ Checked 2026-10-18 in code and pinned by `AskFirstTests.testPhoneActionsWaitForA
 - **The live agent is not updated.** ElevenLabs agent `agent_0501m4et27vyeawrwqfdxxfszfa6` still has the old prompt, the four web tools and `speak_before: auto` on reads. Syncing it is an external write that needs the owner's yes on the exact diff. Until then the old app build and the old agent behave as before, and a new app build with the old agent asks on screen while the agent may not say so first.
 - **Weather and Wikipedia are gone from the agent** until they run on the phone behind the gate; `web_search` (which asks) covers them meanwhile.
 - **The phone-call agent** (`voice-agent/phone/`: `verify_pin`, `search_memories`, `save_note`) runs as webhooks on the messaging server with no screen; it doesn't ask yet. Needs its own design (a spoken read-back with a keypad "press 1"?) and the owner's decision.
+- **The permission sheet's Allow is a read's yes (ADR-566).** When a read needs a connection that is off, the sheet shows the same question as the read's card ("Read your calendar? Today") and says "Allow also says yes to this one look-up", so one tap allows the connection and answers the ask for that call only. A change still shows its own card after Allow. The owner may prefer two taps (decision).
 - **Spoken yes is the provider's transcript** of the user's side; a mis-transcription could turn a mumble into "yes". Reads only; changes always need a tap.
 - **Card text is English** (AskFirst cards and the server's previews); the app's string catalog has no translations for them yet.
 - **Old app builds** that run reads without `prepare` are now refused by the server (they show "turned off"-style errors). Intended: fail closed.

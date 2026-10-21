@@ -30,5 +30,17 @@
   "NSSpeechRecognitionUsageDescription": {
     "en": "Doddy writes out a voice memo on this iPhone when you record one, so you can check its words before saving. The recording and its words are not sent anywhere.",
     "zh-Hans": "当你录制语音备忘录时，Doddy 会在这台 iPhone 上将其转写成文字，以便你在保存前检查内容。录音及其文字不会发送到任何地方。"
+  },
+  "NSMotionUsageDescription": {
+    "en": "Doddy reads your steps, walking distance and floors climbed from Motion & Fitness only when you ask, for one day of the last seven. In a voice conversation those numbers go to ElevenLabs, which runs Doddy's voice, or to OpenAI if you switch Home's voice to it. Doddy keeps none of them and reads nothing from Health. Turn this off in Settings, Connections.",
+    "zh-Hans": "只有在你提出请求时，Doddy 才会从“运动与健身”读取最近七天中某一天的步数、步行距离和爬楼层数。在语音对话中，这些数字会发送给运行 Doddy 语音的 ElevenLabs；如果你在主屏幕把语音切换为 OpenAI，则发送给 OpenAI。Doddy 不保存这些数据，也不读取“健康”中的任何内容。可在设置的“连接”中关闭。"
+  },
+  "NSCameraUsageDescription": {
+    "en": "Doddy opens the camera only when you tap Take a photo or Open camera. The photo you keep goes into a note on this iPhone and its text is read here; it is never sent anywhere or saved to your photo library.",
+    "zh-Hans": "只有在你轻点“拍照”或“打开相机”时，Doddy 才会打开相机。你保留的照片会放进这台 iPhone 上的一条笔记，其中的文字在这里读取；照片绝不会发送到任何地方，也不会存入你的照片图库。"
+  },
+  "NSPhotoLibraryUsageDescription": {
+    "en": "Doddy counts the photos and videos you took on the days you ask about and shows them on your screen. Only how many there are and when they were taken go to Doddy's voice in that conversation (ElevenLabs, or OpenAI if you switch Home's voice to it); the pictures never leave this iPhone. Doddy never changes your library. Turn this off in Settings, Connections.",
+    "zh-Hans": "Doddy 会统计你在所问日期拍摄的照片和视频，并在你的屏幕上显示。在那次对话中，只有数量和拍摄时间会发送给 Doddy 的语音（ElevenLabs；如果你在主屏幕把语音切换为 OpenAI，则为 OpenAI）；图片本身绝不会离开这台 iPhone。Doddy 绝不会更改你的图库。可在设置的“连接”中关闭。"
   }
 }

@@ -30,5 +30,17 @@
   "NSSpeechRecognitionUsageDescription": {
     "en": "Doddy writes out a voice memo on this iPhone when you record one, so you can check its words before saving. The recording and its words are not sent anywhere.",
     "ja": "ボイスメモを録音すると、Doddyは保存前に言葉を確認できるよう、このiPhone上で文字に書き起こします。録音とその文字はどこにも送られません。"
+  },
+  "NSMotionUsageDescription": {
+    "en": "Doddy reads your steps, walking distance and floors climbed from Motion & Fitness only when you ask, for one day of the last seven. In a voice conversation those numbers go to ElevenLabs, which runs Doddy's voice, or to OpenAI if you switch Home's voice to it. Doddy keeps none of them and reads nothing from Health. Turn this off in Settings, Connections.",
+    "ja": "Doddyは、あなたが頼んだときだけ、過去7日間のうち1日分の歩数、歩行距離、上った階数を「モーションとフィットネス」から読み取ります。音声会話では、その数値がDoddyの声を動かすElevenLabsに送られます。ホームの音声をOpenAIに切り替えた場合はOpenAIに送られます。Doddyはこれらを保存せず、ヘルスケアからは何も読み取りません。オフにするには、設定の「連携」を使ってください。"
+  },
+  "NSCameraUsageDescription": {
+    "en": "Doddy opens the camera only when you tap Take a photo or Open camera. The photo you keep goes into a note on this iPhone and its text is read here; it is never sent anywhere or saved to your photo library.",
+    "ja": "Doddyがカメラを開くのは、「写真を撮る」または「カメラを開く」をタップしたときだけです。残した写真はこのiPhone上のメモに入り、その文字はここで読み取られます。どこにも送信されず、写真ライブラリにも保存されません。"
+  },
+  "NSPhotoLibraryUsageDescription": {
+    "en": "Doddy counts the photos and videos you took on the days you ask about and shows them on your screen. Only how many there are and when they were taken go to Doddy's voice in that conversation (ElevenLabs, or OpenAI if you switch Home's voice to it); the pictures never leave this iPhone. Doddy never changes your library. Turn this off in Settings, Connections.",
+    "ja": "Doddyは、あなたが尋ねた日に撮った写真とビデオの数を数え、画面に表示します。その会話でDoddyの声（ElevenLabs、またはホームの音声をOpenAIに切り替えた場合はOpenAI）に送られるのは、枚数と撮影日時だけです。写真そのものがこのiPhoneから出ることはありません。Doddyがライブラリを変更することはありません。オフにするには、設定の「連携」を使ってください。"
   }
 }

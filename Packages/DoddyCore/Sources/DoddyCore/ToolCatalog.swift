@@ -107,6 +107,10 @@ public enum ToolCatalog {
         // Contacts, timers and alarms, places.
         .init(VoiceToolName.lookupContact, .lookup, .askFirst),
         .init(VoiceToolName.upcomingBirthdays, .lookup, .askFirst),
+        // Motion & Fitness, read only (ADR-568).
+        .init(VoiceToolName.readSteps, .lookup, .askFirst),
+        // Counts and times from the photo library; the pictures stay on screen (ADR-569).
+        .init(VoiceToolName.findPhotos, .lookup, .askFirst),
         .init(VoiceToolName.setTimer, .localChange, .card),
         .init(VoiceToolName.setAlarm, .localChange, .card),
         .init(VoiceToolName.listAlarms, .lookup, .askFirst),
@@ -125,6 +129,14 @@ public enum ToolCatalog {
         .init(VoiceToolName.draftMessage, .handoff, .card),
         // A BLIK transfer on a card; the user sends it in their bank app, never Doddy (ADR-510).
         .init(VoiceToolName.draftBlikTransfer, .handoff, .card),
+        // A file made on the iPhone on a tap, then the share sheet to Keynote or Files (ADR-567).
+        .init(VoiceToolName.makePresentation, .handoff, .card),
+        // Doddy's camera opens on the tap; a kept photo becomes a note the user saves (ADR-569).
+        .init(VoiceToolName.openCamera, .handoff, .card),
+        // A task handed over (ADR-570): web research on Doddy's server that changes nothing, so a
+        // spoken yes or a tap starts it; one yes covers every look-up of that task.
+        .init(VoiceToolName.handOverErrand, .lookup, .askFirst),
+        .init(VoiceToolName.checkErrands, .lookup, .askFirst),
         // The conversation itself.
         .init(VoiceToolName.startTranslator, .session, .askFirst),
         .init(VoiceToolName.stopTranslator, .session, .askFirst),

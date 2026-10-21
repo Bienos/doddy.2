@@ -385,29 +385,38 @@ final class StaleToolCallTests: XCTestCase {
     }
 }
 
-/// The access card (ADR-577): a tool whose switch is off answers at once with "allow it on
-/// screen", nothing is asked or turned on before the tap, and after the tap the agent is told to
-/// carry on (yes) or quietly not to ask again (no). Contacts is used because the harness leaves
-/// its switch alone; each test puts it back. NOT RUN in the authoring environment (no Xcode).
+/// The access card (ADR-577), after #121's permission sheet (ADR-566): a call for a switch that is
+/// off first waits on the sheet; Not now there answers the call and leaves this card in the
+/// conversation, where one tap still allows it and tells the agent to carry on (yes) or quietly not
+/// to ask again (no). Nothing is asked or turned on before a tap. Contacts is used because the
+/// harness leaves its switch alone; each test puts it back. App-target tests: hosted Mac job only.
 final class ConnectionApprovalCardTests: XCTestCase {
     private typealias Harness = VoiceSessionControllerTests.Harness
 
+    /// A contacts look-up while Contacts is off: the sheet comes up and the user says Not now.
     @MainActor
-    func testAnOffSwitchAsksOnScreenAndOneTapAllowsItAndTellsDoddyToCarryOn() async {
+    private func sheetThenNotNow(_ t: Harness, id: String) async {
+        t.controller.beginForTesting(link: t.link)
+        await t.controller.receiveToolCallForTesting(name: VoiceToolName.lookupContact, id: id, parameters: #"{"name":"Ana"}"#).value
+        XCTAssertEqual(t.controller.permissionRequest?.connection, .contacts, "the sheet asks first")
+        XCTAssertNil(t.controller.accessRequest, "no card while the sheet is up")
+        await t.controller.declinePermission()
+        XCTAssertEqual(t.link.results.map(\.id), [id], "Not now answers the call once")
+    }
+
+    @MainActor
+    func testAfterNotNowTheCardStaysAndOneTapAllowsItAndTellsDoddyToCarryOn() async {
         let t = Harness()
         let saved = Self.contactsOff()
         defer { t.restore(); Self.restoreContacts(saved) }
         t.devices.accessResult = .notDetermined
         t.devices.promptAnswer = .granted
-        t.controller.beginForTesting(link: t.link)
+        await sheetThenNotNow(t, id: "who-1")
 
-        await t.controller.receiveToolCallForTesting(name: VoiceToolName.lookupContact, id: "who-1", parameters: #"{"name":"Ana"}"#).value
-
-        XCTAssertEqual(t.link.results.map(\.id), ["who-1"], "answered at once, so Doddy can say the one line")
-        XCTAssertEqual(t.link.results.first?.text, VoiceToolReply.notConnected(.contacts, card: .allow))
+        XCTAssertEqual(t.link.results.first?.text, PermissionAsk.declined(.contacts))
         XCTAssertEqual(t.controller.accessRequest?.connection, .contacts)
         XCTAssertEqual(t.controller.accessRequest?.card, .allow)
-        XCTAssertEqual(t.devices.requested, [], "iOS isn't asked before the tap")
+        XCTAssertEqual(t.devices.requested, [], "iOS isn't asked before a tap")
         XCTAssertFalse(UserDefaults.standard.bool(forKey: VoiceConnection.contacts.preferenceKey), "nothing turns on by itself")
         XCTAssertNil(t.controller.contactCard, "nothing was looked up")
 
@@ -417,7 +426,6 @@ final class ConnectionApprovalCardTests: XCTestCase {
         XCTAssertTrue(UserDefaults.standard.bool(forKey: VoiceConnection.contacts.preferenceKey))
         XCTAssertNil(t.controller.accessRequest)
         XCTAssertEqual(t.link.messages, ["(app) " + ConnectionApproval.allowedMessage(.contacts)])
-        XCTAssertEqual(t.link.contexts, [])
     }
 
     @MainActor
@@ -427,8 +435,7 @@ final class ConnectionApprovalCardTests: XCTestCase {
         defer { t.restore(); Self.restoreContacts(saved) }
         t.devices.accessResult = .notDetermined
         t.devices.promptAnswer = .denied
-        t.controller.beginForTesting(link: t.link)
-        await t.controller.receiveToolCallForTesting(name: VoiceToolName.lookupContact, id: "who-2", parameters: #"{"name":"Ana"}"#).value
+        await sheetThenNotNow(t, id: "who-2")
 
         await t.controller.allowConnection()
 
@@ -446,9 +453,11 @@ final class ConnectionApprovalCardTests: XCTestCase {
         t.devices.accessResult = .denied
         t.controller.beginForTesting(link: t.link)
         await t.controller.receiveToolCallForTesting(name: VoiceToolName.lookupContact, id: "who-3", parameters: #"{"name":"Ana"}"#).value
+        XCTAssertEqual(t.controller.permissionRequest?.kind, .openSettings)
+        await t.controller.declinePermission()
 
+        XCTAssertEqual(t.link.results.first?.text, PermissionAsk.blocked(.contacts))
         XCTAssertEqual(t.controller.accessRequest?.card, .openSystemSettings)
-        XCTAssertEqual(t.link.results.first?.text, VoiceToolReply.notConnected(.contacts, card: .openSystemSettings))
         await t.controller.allowConnection()  // not offered on this card
         XCTAssertEqual(t.devices.requested, [])
         await t.controller.recheckConnectionAccess()  // Doddy in front again, but the card never sent the user away
@@ -458,13 +467,12 @@ final class ConnectionApprovalCardTests: XCTestCase {
     }
 
     @MainActor
-    func testNotNowChangesNothing() async {
+    func testNotNowOnTheCardChangesNothing() async {
         let t = Harness()
         let saved = Self.contactsOff()
         defer { t.restore(); Self.restoreContacts(saved) }
         t.devices.accessResult = .granted
-        t.controller.beginForTesting(link: t.link)
-        await t.controller.receiveToolCallForTesting(name: VoiceToolName.lookupContact, id: "who-4", parameters: #"{"name":"Ana"}"#).value
+        await sheetThenNotNow(t, id: "who-4")
 
         await t.controller.declineConnection()
 
@@ -482,8 +490,7 @@ final class ConnectionApprovalCardTests: XCTestCase {
         defer { t.restore(); Self.restoreContacts(saved) }
         t.devices.accessResult = .notDetermined
         t.devices.promptAnswer = .granted
-        t.controller.beginForTesting(link: t.link)
-        await t.controller.receiveToolCallForTesting(name: VoiceToolName.lookupContact, id: "who-5", parameters: #"{"name":"Ana"}"#).value
+        await sheetThenNotNow(t, id: "who-5")
 
         await t.controller.stop()
         await t.controller.allowConnection()
@@ -508,6 +515,141 @@ final class ConnectionApprovalCardTests: XCTestCase {
 }
 
 private struct FakeWriteError: Error {}
+
+/// "Let Doddy use Calendar?" (ADR-566): a call for a connection that is off waits for the sheet,
+/// Not now answers it once and isn't asked again, Allow runs the same call with no second card,
+/// and iOS's refusal offers iPhone Settings. App-target tests: run in the hosted Mac job only.
+final class PermissionSheetTests: XCTestCase {
+    private typealias Harness = VoiceSessionControllerTests.Harness
+    private static let today = #"{"range":"today"}"#
+
+    @MainActor
+    func testASwitchedOffConnectionAsksOnScreenAndWaits() async {
+        let t = Harness()
+        defer { t.restore() }
+        UserDefaults.standard.set(false, forKey: VoiceConnection.calendar.preferenceKey)
+        t.controller.beginForTesting(link: t.link)
+
+        await t.controller.receiveToolCallForTesting(name: VoiceToolName.readCalendar, id: "read-1", parameters: Self.today).value
+
+        XCTAssertEqual(t.controller.permissionRequest?.connection, .calendar)
+        XCTAssertEqual(t.controller.permissionRequest?.kind, .turnOn)
+        XCTAssertNotNil(t.controller.permissionRequest?.askCard, "a read: the sheet shows exactly what will be read")
+        XCTAssertTrue(t.link.results.isEmpty, "the call waits for the answer")
+
+        await t.controller.declinePermission()
+
+        XCTAssertNil(t.controller.permissionRequest)
+        XCTAssertEqual(t.link.results.map(\.id), ["read-1"])
+        XCTAssertEqual(t.link.results.first?.text, PermissionAsk.declined(.calendar))
+        XCTAssertEqual(t.controller.connectionNeeded, .calendar, "the card to turn it on stays")
+        XCTAssertFalse(UserDefaults.standard.bool(forKey: VoiceConnection.calendar.preferenceKey))
+
+        // Not asked again in this conversation.
+        await t.controller.receiveToolCallForTesting(name: VoiceToolName.readCalendar, id: "read-2", parameters: Self.today).value
+        XCTAssertNil(t.controller.permissionRequest)
+        XCTAssertEqual(t.link.results.map(\.id), ["read-1", "read-2"])
+        XCTAssertEqual(t.link.results.last?.text, PermissionAsk.declinedEarlier(.calendar))
+    }
+
+    @MainActor
+    func testAllowTurnsItOnAndRunsTheSameCallWithoutASecondCard() async {
+        let t = Harness()
+        defer { t.restore() }
+        UserDefaults.standard.set(false, forKey: VoiceConnection.calendar.preferenceKey)
+        t.controller.beginForTesting(link: t.link)
+        await t.controller.receiveToolCallForTesting(name: VoiceToolName.readCalendar, id: "read-3", parameters: Self.today).value
+        XCTAssertNotNil(t.controller.permissionRequest)
+
+        await t.controller.allowPermission()
+
+        XCTAssertNil(t.controller.permissionRequest)
+        XCTAssertTrue(UserDefaults.standard.bool(forKey: VoiceConnection.calendar.preferenceKey))
+        XCTAssertNil(t.controller.pendingAction, "Allow was the yes for this one read")
+        XCTAssertEqual(t.link.results.map(\.id), ["read-3"])
+        XCTAssertTrue(t.link.results.first?.text.hasPrefix("No calendar events") == true, t.link.results.first?.text ?? "")
+    }
+
+    @MainActor
+    func testRefusedByIOSOffersIPhoneSettings() async {
+        let t = Harness()
+        defer { t.restore() }
+        t.devices.accessResult = .denied
+        t.controller.beginForTesting(link: t.link)
+        await t.controller.receiveToolCallForTesting(name: VoiceToolName.readCalendar, id: "read-4", parameters: Self.today).value
+        // The switch is on, so ASK-01's question comes first; the yes finds iOS's no.
+        await t.controller.confirmPendingAction()
+
+        XCTAssertEqual(t.controller.permissionRequest?.kind, .openSettings)
+        await t.controller.declinePermission()
+        XCTAssertEqual(t.link.results.map(\.id), ["read-4"])
+        XCTAssertEqual(t.link.results.first?.text, PermissionAsk.blocked(.calendar))
+    }
+
+    @MainActor
+    func testEndDropsAHeldCall() async {
+        let t = Harness()
+        defer { t.restore() }
+        UserDefaults.standard.set(false, forKey: VoiceConnection.calendar.preferenceKey)
+        t.controller.beginForTesting(link: t.link)
+        await t.controller.receiveToolCallForTesting(name: VoiceToolName.readCalendar, id: "read-5", parameters: Self.today).value
+        XCTAssertNotNil(t.controller.permissionRequest)
+
+        await t.controller.stop()
+
+        XCTAssertNil(t.controller.permissionRequest, "the sheet goes with its conversation")
+        await t.controller.allowPermission()
+        XCTAssertTrue(t.link.results.isEmpty, "nothing runs or answers after End")
+        XCTAssertFalse(UserDefaults.standard.bool(forKey: VoiceConnection.calendar.preferenceKey))
+    }
+}
+
+/// find_photos and open_camera (ADR-569) with the fake device: a read asks first and the agent
+/// hears counts only; a device without a camera says so instead of asking for a permission.
+final class PhotosAndCameraControllerTests: XCTestCase {
+    private typealias Harness = VoiceSessionControllerTests.Harness
+
+    @MainActor
+    func testFindPhotosAsksThenShowsCountsOnly() async {
+        let t = Harness()
+        defer { t.restore() }
+        let key = VoiceConnection.photos.preferenceKey
+        let saved = UserDefaults.standard.object(forKey: key)
+        defer { UserDefaults.standard.set(saved, forKey: key) }
+        UserDefaults.standard.set(true, forKey: key)
+        t.controller.beginForTesting(link: t.link)
+
+        await t.controller.receiveToolCallForTesting(name: VoiceToolName.findPhotos, id: "photos-1", parameters: #"{"day":"today"}"#).value
+        guard case .ask? = t.controller.pendingAction else {
+            return XCTFail("ASK-01: a read asks first, got \(String(describing: t.controller.pendingAction))")
+        }
+        XCTAssertTrue(t.link.results.isEmpty)
+
+        await t.controller.confirmPendingAction()
+
+        XCTAssertEqual(t.link.results.map(\.id), ["photos-1"])
+        XCTAssertTrue(t.link.results.first?.text.hasPrefix("No photos or videos") == true, t.link.results.first?.text ?? "")
+        XCTAssertEqual(t.controller.photoResults?.summary.photos, 0)
+    }
+
+    @MainActor
+    func testADeviceWithoutACameraSaysSoInsteadOfAsking() async {
+        let t = Harness()
+        defer { t.restore() }
+        let key = VoiceConnection.camera.preferenceKey
+        let saved = UserDefaults.standard.object(forKey: key)
+        defer { UserDefaults.standard.set(saved, forKey: key) }
+        UserDefaults.standard.set(false, forKey: key)
+        t.controller.beginForTesting(link: t.link)
+
+        await t.controller.receiveToolCallForTesting(name: VoiceToolName.openCamera, id: "camera-1", parameters: "{}").value
+
+        XCTAssertNil(t.controller.permissionRequest, "no sheet for a camera that isn't there")
+        XCTAssertNil(t.controller.cameraRequest)
+        XCTAssertEqual(t.link.results.map(\.id), ["camera-1"])
+        XCTAssertEqual(t.link.results.first?.text, VoiceToolReply.cameraUnavailable)
+    }
+}
 
 /// Calendar and Reminders that record every write and return what the test set.
 @MainActor

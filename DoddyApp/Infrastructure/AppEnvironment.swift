@@ -51,6 +51,9 @@ struct AppEnvironment: Sendable {
     /// Calls Doddy places for the user (ADR-500): brief, card, answer with transcript, cost and
     /// the server's deletion receipts, in the same file.
     var callCaseRepository: any CallCaseRepository = UnavailableCallCaseRepository()
+    /// Tasks handed to Doddy's background worker (ADR-570): the user's words, the state, and the
+    /// result once it is saved here (then the server deletes its copy), in the same file.
+    var errandRepository: any ErrandRepository = UnavailableErrandRepository()
 
     static let unavailable = AppEnvironment(
         memoryRepository: UnavailableMemoryRepository(),
@@ -102,7 +105,8 @@ struct AppEnvironment: Sendable {
                     facts: SQLiteLearnedFactRepository(database: database),
                     procedures: SQLiteProcedureRepository(database: database),
                     outcomes: SQLiteOutcomeEventRepository(database: database)),
-                callCaseRepository: SQLiteCallCaseRepository(database: database))
+                callCaseRepository: SQLiteCallCaseRepository(database: database),
+                errandRepository: SQLiteErrandRepository(database: database))
         } catch {
             return AppEnvironment(
                 memoryRepository: UnavailableMemoryRepository(),

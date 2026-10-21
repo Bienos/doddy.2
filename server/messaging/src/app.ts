@@ -17,11 +17,15 @@ import { twilioWebhookRoutes } from "./routes/twilioWebhooks.js";
 import { callCaseRoutes } from "./routes/callCases.js";
 import { taskCallWebhookRoutes } from "./routes/taskCallWebhooks.js";
 import { taskCallContext, type TaskCallContext, type TaskCallDeps } from "./taskCalls/context.js";
+import { errandRoutes } from "./routes/errands.js";
+import { errandContext, type ErrandContext, type ErrandDeps } from "./errands/context.js";
 
 declare module "fastify" {
   interface FastifyInstance {
     /** The call-case context the routes use (null when the feature is off); tests run worker passes on it. */
     taskCallContext: TaskCallContext | null;
+    /** The errand context the routes use (null without MEMORY_ENCRYPTION_KEY); tests run worker passes on it. */
+    errandContext: ErrandContext | null;
   }
 }
 
@@ -50,6 +54,10 @@ export interface Deps {
   taskCalls?: TaskCallDeps;
   /** Where task-call log lines go (tests capture them); default: the request logger. */
   taskCallLog?: (msg: string, extra?: object) => void;
+  /** Errands (ADR-570): settings and the researcher (needs an Anthropic key). Needs `cipher` too. */
+  errands?: ErrandDeps;
+  /** Where errand log lines go (tests capture them); default: the request logger. */
+  errandLog?: (msg: string, extra?: object) => void;
 }
 
 export async function buildApp(deps: Deps): Promise<FastifyInstance> {
@@ -98,6 +106,9 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   const taskCtx = taskCallContext(deps.db, deps.taskCalls, deps.cipher, deps.publicBaseUrl, deps.push,
     deps.taskCallLog ?? ((msg, extra = {}) => app.log.info(extra, msg)));
   app.decorate("taskCallContext", taskCtx ?? null);
+  const errandCtx = errandContext(deps.db, deps.errands, deps.cipher, deps.push,
+    deps.errandLog ?? ((msg, extra = {}) => app.log.info(extra, msg)));
+  app.decorate("errandContext", errandCtx ?? null);
 
   await app.register(accountRoutes(deps, taskCtx));
   await app.register(phoneRoutes(deps));
@@ -108,6 +119,7 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   await app.register(newsRoutes(deps));
   await app.register(callCaseRoutes(deps, taskCtx));
   await app.register(taskCallWebhookRoutes(deps, taskCtx));
+  await app.register(errandRoutes(deps, errandCtx));
   return app;
 }
 

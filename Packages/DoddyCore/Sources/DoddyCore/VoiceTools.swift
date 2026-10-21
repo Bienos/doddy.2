@@ -19,6 +19,10 @@ public enum VoiceToolName {
     public static let proposePlan = "propose_plan"
     /// The user asked for something no tool covers: a category, kept on the iPhone (ADR-440).
     public static let noteCapabilityGap = "note_capability_gap"
+    /// Hand a task over: Doddy's server researches it in the background (ADR-570, Errand.swift).
+    public static let handOverErrand = "hand_over_errand"
+    /// What Doddy found for the tasks handed over, as saved on this iPhone.
+    public static let checkErrands = "check_errands"
 }
 
 /// The functions a user turns on in Settings, Connections. All start off, and each one may also
@@ -27,6 +31,14 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
     case calendar, reminders, contacts, timers, maps, shortcuts, messages
     /// BLIK phone transfers shown on a card for the user to send in their bank app (ADR-510).
     case blik
+    /// Presentations made on the iPhone as a file Keynote opens (ADR-567). No iOS permission.
+    case presentations
+    /// Step count, walking distance and floors from Motion & Fitness (ADR-568).
+    case steps
+    /// Counting the photos in the user's library for a day or a span (ADR-569).
+    case photos
+    /// Doddy's own camera, for a photo note (ADR-569).
+    case camera
 
     /// The name shown in Settings and in the agent's replies.
     public var title: String {
@@ -39,6 +51,10 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
         case .shortcuts: "Shortcuts"
         case .messages: "Messages and email"
         case .blik: "BLIK transfers"
+        case .presentations: "Presentations"
+        case .steps: "Steps"
+        case .photos: "Photos"
+        case .camera: "Camera"
         }
     }
 
@@ -58,6 +74,10 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
         case VoiceToolName.runShortcut: .shortcuts
         case VoiceToolName.draftMessage: .messages
         case VoiceToolName.draftBlikTransfer: .blik
+        case VoiceToolName.makePresentation: .presentations
+        case VoiceToolName.readSteps: .steps
+        case VoiceToolName.findPhotos: .photos
+        case VoiceToolName.openCamera: .camera
         default: nil
         }
     }
@@ -200,6 +220,14 @@ public enum VoiceToolRequest: Equatable, Sendable {
     /// A BLIK phone transfer on a card for the user to send in their bank app (ADR-510). Doddy
     /// never sends money.
     case draftBlikTransfer(BlikTransferDraft)
+    /// A presentation shown slide by slide on a card; the file is made only on a tap (ADR-567).
+    case makePresentation(PresentationDraft)
+    /// One day's steps from Motion & Fitness, read only (ADR-568).
+    case readSteps(StepDay)
+    /// Counts of the photos in the library for a span of days; pictures on screen only (ADR-569).
+    case findPhotos(PhotoSearchRequest)
+    /// Doddy's camera, after a card (ADR-569). A kept photo goes into a new note the user saves.
+    case openCamera
     /// Gmail, Google Drive, Notion or Todoist through the Doddy server (see OnlineAccounts).
     case cloudTool(CloudToolCall)
     /// Translator mode (ADR-215): proposed on a card; the conversation switches on Start.
@@ -230,6 +258,11 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case findFreeTime(FreeTimeRequest)
     /// "Remind me when to leave" (ADR-335): travel time from Apple Maps, then a card.
     case leaveBy(LeaveByRequest)
+    /// A task Doddy's server researches in the background (ADR-570). One yes covers every look-up
+    /// of this task and nothing else; nothing is booked, bought or sent.
+    case handOverErrand(ErrandDraft)
+    /// The tasks handed over, as saved on this iPhone; `about` is which one, in the agent's words.
+    case checkErrands(about: String?)
     case unsupported(name: String)
     case invalid(name: String, reason: String)
 
@@ -306,6 +339,14 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return parseMessage(args, name: name)
         case VoiceToolName.draftBlikTransfer:
             return parseBlikTransfer(args, name: name)
+        case VoiceToolName.makePresentation:
+            return parsePresentation(args, name: name)
+        case VoiceToolName.readSteps:
+            return parseSteps(args, name: name, now: now, calendar: calendar)
+        case VoiceToolName.findPhotos:
+            return parsePhotoSearch(args, name: name, now: now, calendar: calendar)
+        case VoiceToolName.openCamera:
+            return .openCamera
         case VoiceToolName.startTranslator:
             return parseStartTranslator(args, name: name)
         case VoiceToolName.stopTranslator:
@@ -316,6 +357,10 @@ public enum VoiceToolRequest: Equatable, Sendable {
         case VoiceToolName.addToList, VoiceToolName.readList, VoiceToolName.checkOff,
              VoiceToolName.removeFromList, VoiceToolName.createList:
             return parseList(args, name: name)
+        case VoiceToolName.handOverErrand:
+            return parseHandOverErrand(args, name: name)
+        case VoiceToolName.checkErrands:
+            return parseCheckErrands(args)
         default:
             return parseCloud(name: name, parametersJSON: parametersJSON) ?? .unsupported(name: name)
         }
@@ -509,6 +554,11 @@ struct Arguments {
     func has(_ key: String) -> Bool {
         values[key] != nil
     }
+
+    /// The value as JSON gave it, for arguments with a shape of their own (presentation slides).
+    func raw(_ key: String) -> Any? {
+        values[key]
+    }
 }
 
 /// Bounds on text the model sends to a phone tool (review C11). A note, or a note quoted back,
@@ -523,7 +573,11 @@ public enum VoiceTextLimits {
         switch key {
         case "text", "note": MemoryLimits.maxTextLength
         case "notes", "body": paragraph
+        // A task handed over (ADR-570): the user's words and Doddy's brief, as the server allows.
+        case "words": ErrandDraft.maxWords
+        case "brief": ErrandDraft.maxBrief
         case "query", "place": search
+        case "slides": PresentationLimits.slidesJSON
         default: line
         }
     }
@@ -614,6 +668,8 @@ public enum VoiceToolReply {
         // Round 3 (ADR-280, ADR-283): reminders moved, an alarm turned off. Round 4 (ADR-301,
         // ADR-303): a parking spot cleared, a Todoist task moved. Each read back first.
         "moved:", "turned off:", "cleared:",
+        // ADR-570: Doddy's server said it has the task handed over (`errandStarted`).
+        "started:",
     ]
     /// List results: `added to the list: 1 item.`, then the list's name and the items as data
     /// (listAdded, listChanged).

@@ -24,6 +24,12 @@ struct VoiceView: View {
     @State private var editingPlanStep: PlanStep?
     /// What was last copied from a BLIK card (ADR-510), to show "Copied" next to it.
     @State private var copiedForBlik: String?
+    /// The presentation whose share sheet is open (ADR-567).
+    @State private var sharingPresentation: VoiceSessionController.PresentationReady?
+    /// A photo just taken with Doddy's camera (ADR-569), waiting for the camera screen to go.
+    @State private var takenPhoto: Data?
+    /// The new note opened with that photo.
+    @State private var photoNote: TakenPhoto?
 
     private var provider: VoiceProvider { VoiceProvider.effective(stored: voiceProvider, tokenServerSet: true) }
 
@@ -233,6 +239,16 @@ struct VoiceView: View {
                                 .id("blikCard")
                         }
 
+                        if let ready = controller.presentationReady {
+                            PresentationReadyCard(ready: ready, onShare: { sharingPresentation = ready }, onClose: { controller.dismissPresentationReady() })
+                                .id("presentationReady")
+                        }
+
+                        if let results = controller.photoResults {
+                            PhotoResultsCard(results: results, onClose: { controller.dismissPhotoResults() })
+                                .id("photoResults")
+                        }
+
                         if let status = controller.noteReminderStatus {
                             noteReminderStatusCard(status, controller: controller)
                                 .id("noteReminderStatus")
@@ -327,8 +343,57 @@ struct VoiceView: View {
                     if connection != nil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("connectionNeeded", anchor: .bottom) } }
                 }
             }
+            // ADR-569: Doddy's camera after the user tapped Open camera; a kept photo opens a new note.
+            .fullScreenCover(isPresented: cameraBinding(controller), onDismiss: {
+                guard let data = takenPhoto else { return }
+                takenPhoto = nil
+                photoNote = TakenPhoto(data: data)
+            }) {
+                CameraCapture(
+                    onPhoto: { data in
+                        takenPhoto = data
+                        controller.cameraClosed()
+                    },
+                    onCancel: { controller.cameraClosed() })
+                    .ignoresSafeArea()
+            }
+            .sheet(item: $photoNote) { taken in
+                CaptureView(takenPhoto: taken.data)
+            }
             controls(controller)
+                // ADR-567: the share sheet opens by itself once the file is made, and again from its card.
+                .sheet(item: $sharingPresentation) { ready in
+                    FileShareSheet(url: ready.url)
+                        .presentationDetents([.medium, .large])
+                }
         }
+        // ADR-566: slides up when Doddy needs an Apple app that is off; a swipe down is Not now.
+        .sheet(item: permissionBinding(controller)) { request in
+            PermissionAskSheet(
+                request: request,
+                onAllow: { Task { await controller.allowPermission() } },
+                onDecline: { Task { await controller.declinePermission() } })
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
+        .onChange(of: controller.presentationReady) { _, ready in
+            if let ready { sharingPresentation = ready }
+        }
+    }
+
+    private func cameraBinding(_ controller: VoiceSessionController) -> Binding<Bool> {
+        Binding(
+            get: { controller.cameraRequest != nil },
+            set: { open in if !open { controller.cameraClosed() } })
+    }
+
+    /// The permission sheet's item. iOS sets it to nil only when the user swipes the sheet away.
+    private func permissionBinding(_ controller: VoiceSessionController) -> Binding<VoiceSessionController.PermissionRequest?> {
+        Binding(
+            get: { controller.permissionRequest },
+            set: { value in
+                if value == nil, controller.permissionRequest != nil { Task { await controller.declinePermission() } }
+            })
     }
 
     @ViewBuilder
@@ -538,6 +603,14 @@ struct VoiceView: View {
             Text("A BLIK transfer for you to send")
                 .font(.headline)
             blikDetails(draft, contactName: contactName, numbers: numbers, controller: controller)
+        case .presentation(_, let draft):
+            PresentationCardContent(draft: draft)
+        case .camera:
+            Text("Open the camera?")
+                .font(.headline)
+            Text("A photo you keep goes into a new note that you check and save. Its text is read on this iPhone. Nothing is saved to your photo library, and the photo is never sent anywhere.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
         case .changeEvent(_, let plan):
             Text("Change this event?")
                 .font(.headline)
@@ -952,6 +1025,8 @@ struct VoiceView: View {
         case .shortcut: (NSLocalizedString("Run", comment: ""), NSLocalizedString("Don't run", comment: ""))
         case .message(_, let draft, _): (draft.channel == .text ? NSLocalizedString("Open in Messages", comment: "") : NSLocalizedString("Open in Mail", comment: ""), NSLocalizedString("Don't open", comment: ""))
         case .blik: (NSLocalizedString("I'll send it myself", comment: "BLIK card: the user sends it in their bank app"), NSLocalizedString("Not now", comment: ""))
+        case .presentation: (NSLocalizedString("Make presentation", comment: ""), NSLocalizedString("Not now", comment: ""))
+        case .camera: (NSLocalizedString("Open camera", comment: ""), NSLocalizedString("Not now", comment: ""))
         case .cloud(_, _, let preview, _, _): (preview.confirmLabel, NSLocalizedString("Don't do this", comment: ""))
         case .ask(_, let card, _, _, _): (card.confirmLabel, NSLocalizedString("No", comment: ""))
         case .cloudRead(_, _, let preview, _, _): (preview.confirmLabel, NSLocalizedString("No", comment: ""))
@@ -1833,4 +1908,10 @@ struct LongTurnPanel: View {
             .accessibilityIdentifier("voice.longTurn.draft")
         }
     }
+}
+
+/// A photo from Doddy's camera, for the new-note sheet (ADR-569).
+struct TakenPhoto: Identifiable {
+    let id = UUID()
+    let data: Data
 }

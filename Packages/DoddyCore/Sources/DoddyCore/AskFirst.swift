@@ -2,7 +2,9 @@ import Foundation
 
 // ASK-01 (ADR-483), the owner's rule of 2026-10-18: "Doddy can do everything, but it must always
 // ask." Before every action of every tool, reads included, Doddy says exactly what it will do and
-// waits for a yes for that one action. Anything that changes, sends, deletes, books or shares
+// waits for a yes for that one action. A task handed over (`hand_over_errand`) is that one action:
+// its single yes covers every web search and page read Doddy's server makes for that task, with no
+// limit, and nothing else (owner, 21 Oct 2026, ADR-570). Anything that changes, sends, deletes, books or shares
 // something needs a tap on a card with the exact payload: a spoken yes is not enough there,
 // because the model hears it (model-only approval is forbidden, DOD-07). No yes, a no, an unclear
 // answer or a timeout: nothing runs, and the agent is told so. Text from emails, the web or
@@ -83,6 +85,10 @@ public enum AskFirst {
             return .yesFirst(AskCard(title: "Check birthdays in Contacts?", lines: ["The next \(days) days"], confirmLabel: "Yes, check"))
         case .calculate, .convertUnits, .convertCurrency:
             return .runsNow
+        case .findPhotos(let request):
+            return .yesFirst(AskCard(title: "Look through your photos?", lines: [request.text(calendar: calendar), "Only the counts and times go to Doddy's voice; the photos stay on your screen."], confirmLabel: "Yes, look"))
+        case .readSteps(let day):
+            return .yesFirst(AskCard(title: "Read your steps?", lines: ["\(day.text), from Motion & Fitness"], confirmLabel: "Yes, read them"))
         case .listAlarms:
             return .yesFirst(AskCard(title: "Check Doddy's alarms?", lines: ["The alarms Doddy set on this iPhone"], confirmLabel: "Yes, check"))
         case .readList(let name):
@@ -96,6 +102,11 @@ public enum AskFirst {
                 confirmLabel: "Yes, start"))
         case .stopTranslator:
             return .yesFirst(AskCard(title: "Stop translator mode?", lines: ["Doddy stops translating."], confirmLabel: "Yes, stop"))
+        case .handOverErrand(let draft):
+            // Reads the web and changes nothing (ADR-570); the card shows the user's exact words.
+            return .yesFirst(ErrandAsk.handOverCard(draft))
+        case .checkErrands:
+            return .yesFirst(ErrandAsk.checkCard)
         case .addToList(let request):
             return .tapFirst(AskCard(title: "Add to \(request.list)?", lines: request.items, confirmLabel: "Add"))
         case .checkOff(let request):
@@ -110,7 +121,7 @@ public enum AskFirst {
                 lines: ["Kept on this iPhone as a category only: \(category.rawValue.replacingOccurrences(of: "_", with: " "))"],
                 confirmLabel: "Note it"))
         case .saveMemory, .createCalendarEvent, .createReminder, .remindAboutNote, .undoLast, .setTimer, .setAlarm, .cancelAlarm,
-             .openMap, .runShortcut, .draftMessage, .draftBlikTransfer, .addIngredients, .createList, .changeCalendarEvent, .changeReminder,
+             .openMap, .runShortcut, .draftMessage, .draftBlikTransfer, .makePresentation, .openCamera, .addIngredients, .createList, .changeCalendarEvent, .changeReminder,
              .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders, .leaveBy, .parkingSpot(.save):
             return .ownPayloadCard
         case .cloudTool(let call):

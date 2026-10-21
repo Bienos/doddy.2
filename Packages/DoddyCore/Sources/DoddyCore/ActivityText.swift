@@ -22,6 +22,10 @@ extension ActivityApp {
         case .web: return "Wyszukiwanie w sieci"
         case .exchangeRates: return "Kursy walut"
         case .blik: return "Przelewy BLIK"
+        case .presentations: return "Prezentacje"
+        case .steps: return "Kroki"
+        case .photos: return "Zdjęcia"
+        case .camera: return "Aparat"
         }
     }
 }
@@ -61,6 +65,10 @@ public enum ActivityText {
         "Run shortcut": "Uruchom skrót",
         "Draft a text": "Szkic SMS-a",
         "Prepare a BLIK transfer": "Przygotuj przelew BLIK",
+        "Make a presentation": "Przygotuj prezentację",
+        "Read steps": "Odczytano kroki",
+        "Looked through photos": "Przejrzano zdjęcia",
+        "Open the camera": "Otwórz aparat",
         "Draft an email": "Szkic e-maila",
         // Written before ADR-275 fixed the article; old rows still say it.
         "Draft a email": "Szkic e-maila",
@@ -71,6 +79,9 @@ public enum ActivityText {
         "Read your tasks": "Odczytano zadania",
         "Add a task": "Dodaj zadanie",
         "Searched the web": "Wyszukano w sieci",
+        // Errands (ADR-570): "sprawa" is the user's word for a task handed over.
+        "Hand over a task": "Przekaż sprawę",
+        "Checked your tasks": "Sprawdzono sprawy",
         "Add to a list": "Dodaj do listy",
         "Read a list": "Odczytano listę",
         "Tick on a list": "Odhacz na liście",
@@ -189,6 +200,10 @@ public enum ActivityText {
         case .shortcuts: "Skróty"
         case .messages: "Wiadomości i e-mail"
         case .blik: "Przelewy BLIK"
+        case .presentations: "Prezentacje"
+        case .steps: "Kroki"
+        case .photos: "Zdjęcia"
+        case .camera: "Aparat"
         }
     }
 

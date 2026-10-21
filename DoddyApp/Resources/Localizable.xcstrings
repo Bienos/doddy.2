@@ -1504,6 +1504,47 @@
         }
       }
     },
+    "A photo you keep goes into a new note that you check and save. Its text is read on this iPhone. Nothing is saved to your photo library, and the photo is never sent anywhere.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "A photo you keep goes into a new note that you check and save. Its text is read on this iPad. Nothing is saved to your photo library, and the photo is never sent anywhere."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "A photo you keep goes into a new note that you check and save. Its text is read on this iPhone. Nothing is saved to your photo library, and the photo is never sent anywhere."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zdjęcie, które zachowasz, trafia do nowej notatki, którą sprawdzasz i zapisujesz. Jego tekst jest odczytywany na tym iPadzie. Nic nie trafia do Twojej biblioteki zdjęć, a zdjęcie nigdy nie jest nigdzie wysyłane."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zdjęcie, które zachowasz, trafia do nowej notatki, którą sprawdzasz i zapisujesz. Jego tekst jest odczytywany na tym iPhonie. Nic nie trafia do Twojej biblioteki zdjęć, a zdjęcie nigdy nie jest nigdzie wysyłane."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "A private note stays on this iPhone and isn't given to Doddy's voice, Siri, Ask Doddy, widgets, the watch or the call copy. Its words show after Face ID.": {
       "extractionState": "manual",
       "localizations": {
@@ -4647,6 +4688,17 @@
         }
       }
     },
+    "Allow also says yes to this one look-up.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zezwól oznacza też „tak” dla tego jednego sprawdzenia."
+          }
+        }
+      }
+    },
     "Allow notifications": {
       "extractionState": "manual",
       "localizations": {
@@ -6723,6 +6775,17 @@
         }
       }
     },
+    "Ask Doddy in a conversation to do any of these.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Każdą z tych rzeczy możesz zlecić Doddy’emu w rozmowie."
+          }
+        }
+      }
+    },
     "Ask Doddy what I saved": {
       "extractionState": "manual",
       "localizations": {
@@ -8220,6 +8283,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "恢复"
+          }
+        }
+      }
+    },
+    "Budget: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Budżet: %@"
           }
         }
       }
@@ -10044,6 +10118,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sprawdź, co powiedział Doddy"
+          }
+        }
+      }
+    },
+    "Checked %@. Prices and availability can change.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdzono %@. Ceny i dostępność mogą się zmienić."
           }
         }
       }
@@ -12776,6 +12861,28 @@
         }
       }
     },
+    "Couldn't finish": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się dokończyć"
+          }
+        }
+      }
+    },
+    "Couldn't finish: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się dokończyć: %@"
+          }
+        }
+      }
+    },
     "Couldn't load this feed last time": {
       "extractionState": "manual",
       "localizations": {
@@ -14804,6 +14911,17 @@
         }
       }
     },
+    "Delete this task?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usunąć tę sprawę?"
+          }
+        }
+      }
+    },
     "Delete this?": {
       "extractionState": "manual",
       "localizations": {
@@ -16571,6 +16689,17 @@
         }
       }
     },
+    "Doddy can't work on tasks in the background yet: it's switched off or not set up on Doddy's server.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie może jeszcze zajmować się sprawami w tle: ta funkcja jest wyłączona albo nieskonfigurowana na serwerze Doddy’ego."
+          }
+        }
+      }
+    },
     "Doddy checks your open reminders on this iPhone first, so it isn't added twice.": {
       "extractionState": "manual",
       "localizations": {
@@ -16752,6 +16881,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Doddy couldn't confirm this task started. Pull down to check again; it isn't sent again by itself.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie mógł potwierdzić, że ta sprawa ruszyła. Przeciągnij w dół, aby sprawdzić ponownie; sama nie zostanie wysłana drugi raz."
           }
         }
       }
@@ -18130,6 +18270,58 @@
         }
       }
     },
+    "Doddy is working on it": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nad tym pracuje"
+          }
+        }
+      }
+    },
+    "Doddy is working on the task, but this iPhone couldn't keep a copy yet. It will show up in Tasks once Doddy checks again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy is working on the task, but this iPad couldn't keep a copy yet. It will show up in Tasks once Doddy checks again."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy is working on the task, but this iPhone couldn't keep a copy yet. It will show up in Tasks once Doddy checks again."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy zajmuje się sprawą, ale ten iPad nie mógł jeszcze zapisać jej kopii. Pojawi się w Sprawach, gdy Doddy sprawdzi ponownie."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy zajmuje się sprawą, ale ten iPhone nie mógł jeszcze zapisać jej kopii. Pojawi się w Sprawach, gdy Doddy sprawdzi ponownie."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Doddy keeps your voice session on this iPhone. When you start a conversation, it requests a short-lived connection credential from Doddy’s server. Your voice and conversation go to the selected provider only after you agree on first use. You never need a provider key or access code.": {
       "extractionState": "manual",
       "localizations": {
@@ -18267,6 +18459,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy 会翻看你告诉过他的内容。"
+          }
+        }
+      }
+    },
+    "Doddy makes a PowerPoint file on this iPhone, which Keynote opens. Then you pick Keynote, Files or someone to send it to. Doddy never sends it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy makes a PowerPoint file on this iPad, which Keynote opens. Then you pick Keynote, Files or someone to send it to. Doddy never sends it."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy makes a PowerPoint file on this iPhone, which Keynote opens. Then you pick Keynote, Files or someone to send it to. Doddy never sends it."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy tworzy na tym iPadzie plik PowerPoint, który otwiera Keynote. Potem wybierasz Keynote, Pliki albo osobę, do której go wysłać. Doddy nigdy go nie wysyła."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy tworzy na tym iPhonie plik PowerPoint, który otwiera Keynote. Potem wybierasz Keynote, Pliki albo osobę, do której go wysłać. Doddy nigdy go nie wysyła."
+                }
+              }
+            }
           }
         }
       }
@@ -19281,6 +19514,17 @@
         }
       }
     },
+    "Doddy was asked to": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy ma"
+          }
+        }
+      }
+    },
     "Doddy was asking to save this": {
       "extractionState": "manual",
       "localizations": {
@@ -19594,6 +19838,17 @@
         }
       }
     },
+    "Doddy's note": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notatka Doddy’ego"
+          }
+        }
+      }
+    },
     "Doddy's number": {
       "extractionState": "manual",
       "localizations": {
@@ -19885,6 +20140,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy 的界面跟随你 iPhone 的语言。这里设置的是 Doddy 回复所用的语言。"
+          }
+        }
+      }
+    },
+    "Doddy's server isn't set up in this build, so its copy of this task can't be deleted from here.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego nie jest skonfigurowany w tej wersji, więc nie można stąd usunąć jego kopii tej sprawy."
+          }
+        }
+      }
+    },
+    "Doddy's server isn't set up in this build, so tasks can't run yet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego nie jest skonfigurowany w tej wersji, więc sprawy nie mogą jeszcze działać."
           }
         }
       }
@@ -21154,6 +21431,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "已由 Doddy 完成，并已核对"
+          }
+        }
+      }
+    },
+    "Done: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gotowe: %@"
           }
         }
       }
@@ -25882,6 +26170,17 @@
         }
       }
     },
+    "Hand Doddy a task in a conversation, like \"compare flights to Rome next month under 2000 zł\". One yes lets Doddy search the web and read pages as often as the task needs, in the background. You get a notification when it's done. Nothing is booked, bought or sent.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przekaż Doddy’emu sprawę w rozmowie, np. „porównaj loty do Rzymu w przyszłym miesiącu do 2000 zł”. Jedno „tak” pozwala Doddy’emu szukać w sieci i czytać strony w tle tyle razy, ile sprawa wymaga. Gdy skończy, dostaniesz powiadomienie. Nic nie jest rezerwowane, kupowane ani wysyłane."
+          }
+        }
+      }
+    },
     "Here is your unfinished note from %@. It isn't saved until you tap Save.": {
       "extractionState": "manual",
       "localizations": {
@@ -28726,6 +29025,58 @@
           "stringUnit": {
             "state": "translated",
             "value": "它从未被保存，所以无法恢复。"
+          }
+        }
+      }
+    },
+    "It's deleted from this iPhone and, if it's still there, from Doddy's server.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It's deleted from this iPad and, if it's still there, from Doddy's server."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It's deleted from this iPhone and, if it's still there, from Doddy's server."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zostanie usunięta z tego iPada i, jeśli tam jeszcze jest, z serwera Doddy’ego."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zostanie usunięta z tego iPhone’a i, jeśli tam jeszcze jest, z serwera Doddy’ego."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "It's in Doddy's temporary files until iOS clears them. Save it in Keynote or Files to keep it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jest w plikach tymczasowych Doddy’ego, dopóki iOS ich nie wyczyści. Zapisz ją w Keynote albo w Plikach, żeby ją zachować."
           }
         }
       }
@@ -34038,6 +34389,17 @@
         }
       }
     },
+    "Make presentation": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przygotuj prezentację"
+          }
+        }
+      }
+    },
     "Make the Action Button start a conversation with Doddy.": {
       "extractionState": "manual",
       "localizations": {
@@ -34045,6 +34407,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Niech przycisk czynności zaczyna rozmowę z Doddym."
+          }
+        }
+      }
+    },
+    "Make this presentation?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przygotować tę prezentację?"
           }
         }
       }
@@ -38279,6 +38652,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "没有即将到来的提醒。"
+          }
+        }
+      }
+    },
+    "No tasks yet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jeszcze nie ma spraw."
           }
         }
       }
@@ -45628,6 +46012,17 @@
         }
       }
     },
+    "Open Photos": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz Zdjęcia"
+          }
+        }
+      }
+    },
     "Open Settings": {
       "extractionState": "manual",
       "localizations": {
@@ -45768,6 +46163,17 @@
         }
       }
     },
+    "Open camera": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz aparat"
+          }
+        }
+      }
+    },
     "Open iPhone Settings": {
       "extractionState": "manual",
       "localizations": {
@@ -45823,6 +46229,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "打开 iPhone 设置"
+          }
+        }
+      }
+    },
+    "Open in Keynote or share": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz w Keynote albo udostępnij"
           }
         }
       }
@@ -46011,6 +46428,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Otwórz aplikację Skróty, stuknij plus, wyszukaj Doddy i dodaj „Porozmawiaj z Doddym”. Jeśli go nie ma, dodaj „Otwórz aplikację” i wybierz Doddy."
+          }
+        }
+      }
+    },
+    "Open the camera?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otworzyć aparat?"
           }
         }
       }
@@ -48113,6 +48541,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "手机号码，例如 +86 138 0000 0000"
+          }
+        }
+      }
+    },
+    "Photos and camera": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zdjęcia i aparat"
           }
         }
       }
@@ -57055,6 +57494,47 @@
         }
       }
     },
+    "Saved on this iPhone. Doddy's server deleted its copy of the words and the result.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Saved on this iPad. Doddy's server deleted its copy of the words and the result."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Saved on this iPhone. Doddy's server deleted its copy of the words and the result."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zapisano na tym iPadzie. Serwer Doddy’ego usunął swoją kopię słów i wyniku."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zapisano na tym iPhonie. Serwer Doddy’ego usunął swoją kopię słów i wyniku."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Saved on this iPhone. Open Memories › Lists to see the whole list.": {
       "extractionState": "manual",
       "localizations": {
@@ -59056,6 +59536,28 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "See what Doddy found.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zobacz, co znalazł Doddy."
+          }
+        }
+      }
+    },
+    "See why.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zobacz dlaczego."
           }
         }
       }
@@ -62804,6 +63306,17 @@
         }
       }
     },
+    "Sources": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Źródła"
+          }
+        }
+      }
+    },
     "Speaking": {
       "extractionState": "manual",
       "localizations": {
@@ -64711,6 +65224,17 @@
         }
       }
     },
+    "Stop this task": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zatrzymaj tę sprawę"
+          }
+        }
+      }
+    },
     "Stopped": {
       "extractionState": "manual",
       "localizations": {
@@ -65327,6 +65851,17 @@
         }
       }
     },
+    "Take a photo": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zrób zdjęcie"
+          }
+        }
+      }
+    },
     "Take over": {
       "extractionState": "manual",
       "localizations": {
@@ -65909,6 +66444,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "轻点跳过"
+          }
+        }
+      }
+    },
+    "Tasks": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawy"
           }
         }
       }
@@ -66687,6 +67233,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "验证码不正确。请检查短信后重试。"
+          }
+        }
+      }
+    },
+    "That couldn't be done: the task has already finished or changed. Pull down to check again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się: sprawa już się zakończyła albo zmieniła. Przeciągnij w dół, aby sprawdzić ponownie."
           }
         }
       }
@@ -69059,6 +69616,17 @@
         }
       }
     },
+    "The camera is off for Doddy. You can allow it in iPhone Settings, Doddy, Camera.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aparat jest wyłączony dla Doddy’ego. Możesz go włączyć w Ustawieniach iPhone’a, Doddy, Aparat."
+          }
+        }
+      }
+    },
     "The card couldn't be saved on this iPhone, so it was withdrawn. Nothing was dialled. %@": {
       "extractionState": "manual",
       "localizations": {
@@ -70544,6 +71112,17 @@
         }
       }
     },
+    "The photo couldn't be read, so it wasn't added. Try taking it again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się odczytać zdjęcia, więc nie zostało dodane. Spróbuj zrobić je jeszcze raz."
+          }
+        }
+      }
+    },
     "The photo is deleted from this iPhone. The note's words stay.": {
       "extractionState": "manual",
       "localizations": {
@@ -71341,6 +71920,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "Proponowanego cytatu nie było dosłownie w zapisie, więc został pominięty."
+          }
+        }
+      }
+    },
+    "The tasks kept on this iPhone couldn't be read.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The tasks kept on this iPad couldn't be read."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The tasks kept on this iPhone couldn't be read."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Nie udało się odczytać spraw zapisanych na tym iPadzie."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Nie udało się odczytać spraw zapisanych na tym iPhonie."
+                }
+              }
+            }
           }
         }
       }
@@ -72256,6 +72876,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "这里没有 Doddy 可以保留的文字或网页链接。没有保存任何内容。"
+          }
+        }
+      }
+    },
+    "These stay on this iPhone. Doddy's voice hears only how many there are and when they were taken.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "These stay on this iPad. Doddy's voice hears only how many there are and when they were taken."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "These stay on this iPhone. Doddy's voice hears only how many there are and when they were taken."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zostają na tym iPadzie. Głos Doddy’ego słyszy tylko, ile ich jest i kiedy zostały zrobione."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zostają na tym iPhonie. Głos Doddy’ego słyszy tylko, ile ich jest i kiedy zostały zrobione."
+                }
+              }
+            }
           }
         }
       }
@@ -75324,6 +75985,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "应用中缺少这段试听样音。"
+          }
+        }
+      }
+    },
+    "This task isn't on this iPhone any more.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "This task isn't on this iPad any more."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "This task isn't on this iPhone any more."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tej sprawy nie ma już na tym iPadzie."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Tej sprawy nie ma już na tym iPhonie."
+                }
+              }
+            }
           }
         }
       }
@@ -80857,6 +81559,17 @@
         }
       }
     },
+    "Waiting to start": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czeka na start"
+          }
+        }
+      }
+    },
     "Warm and engaging": {
       "extractionState": "manual",
       "localizations": {
@@ -81956,6 +82669,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "What next": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co dalej"
           }
         }
       }
@@ -85473,6 +86197,17 @@
         }
       }
     },
+    "You let Doddy see only some of your photos, so there may be more.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pozwoliłeś Doddy’emu widzieć tylko część zdjęć, więc może ich być więcej."
+          }
+        }
+      }
+    },
     "You replied STOP, so texts are blocked by the carrier. Text START to Doddy's number to allow them again.": {
       "extractionState": "manual",
       "localizations": {
@@ -85528,6 +86263,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "你回复了 STOP，所以运营商已屏蔽短信。向 Doddy 的号码发送 START 可重新允许。"
+          }
+        }
+      }
+    },
+    "You said": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoje słowa"
           }
         }
       }
@@ -87771,6 +88517,17 @@
         }
       }
     },
+    "Your photos": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoje zdjęcia"
+          }
+        }
+      }
+    },
     "Your preferences changed somewhere else while you were editing. Nothing was saved; your edits are still here. Check them and save again.": {
       "extractionState": "manual",
       "localizations": {
@@ -87826,6 +88583,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "你编辑期间，偏好在别处被更改了。没有保存任何内容；你的编辑还在这里。请检查后再次保存。"
+          }
+        }
+      }
+    },
+    "Your presentation is ready": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoja prezentacja jest gotowa"
           }
         }
       }
@@ -87955,6 +88723,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "你的快捷指令已到达 Doddy"
+          }
+        }
+      }
+    },
+    "Your tasks": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoje sprawy"
           }
         }
       }
@@ -88416,6 +89195,17 @@
         }
       }
     },
+    "fits": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "mieści się"
+          }
+        }
+      }
+    },
     "from a conversation on %@": {
       "extractionState": "manual",
       "localizations": {
@@ -88471,6 +89261,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "来自 %@ 的对话"
+          }
+        }
+      }
+    },
+    "goes over": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "przekracza"
           }
         }
       }
@@ -88778,6 +89579,17 @@
         }
       }
     },
+    "iPhone may ask you once too. You can turn it off any time in Settings, Connections.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iPhone może też raz zapytać. Możesz to wyłączyć w każdej chwili w Ustawieniach, w sekcji Połączenia."
+          }
+        }
+      }
+    },
     "none": {
       "extractionState": "manual",
       "localizations": {
@@ -88844,6 +89656,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "nieznane"
+          }
+        }
+      }
+    },
+    "not sure": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "nie wiadomo"
           }
         }
       }

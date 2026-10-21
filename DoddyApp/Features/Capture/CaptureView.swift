@@ -35,9 +35,14 @@ struct CaptureView: View {
     @State private var resumed: UnfinishedNote?
     /// Another unfinished note, kept, when this screen opened with shortcut text.
     @State private var otherWaiting: UnfinishedNote?
+    /// A photo taken with Doddy's camera in a conversation (ADR-569), read when the screen opens.
+    private let takenPhoto: Data?
+    @State private var takenPhotoProblem: String?
+    @State private var takenPhotoRead = false
 
-    init(sharedText: String? = nil) {
+    init(sharedText: String? = nil, takenPhoto: Data? = nil) {
         self.sharedText = sharedText
+        self.takenPhoto = takenPhoto
         _text = State(initialValue: sharedText ?? "")
         _isShared = State(initialValue: sharedText != nil)
     }
@@ -101,6 +106,9 @@ struct CaptureView: View {
                         .frame(minHeight: 44)
                         .disabled(isSaving)
                         .accessibilityIdentifier("capture.paste")
+                        if let takenPhotoProblem {
+                            ProblemView(message: takenPhotoProblem).accessibilityIdentifier("capture.takenPhotoProblem")
+                        }
                         CapturePhotoPicker(text: $text, prepared: $photo, isDisabled: isSaving)
                         CaptureVoiceMemo(text: $text, draft: $memo, isDisabled: isSaving)
                         Text("No folders. Your words, exactly.").font(.caption).foregroundStyle(Theme.secondaryText)
@@ -182,9 +190,25 @@ struct CaptureView: View {
             ShortcutRouter.shared.captureScreenAppeared()
             startDraft()
         }
+        .task { await readTakenPhoto() }
         .onDisappear {
             drafts.flush()
             ShortcutRouter.shared.captureScreenDisappeared()
+        }
+    }
+
+    /// The camera's photo (ADR-569), prepared and read like a picked one. Linked to the note only
+    /// when the user saves it, as for any photo.
+    private func readTakenPhoto() async {
+        guard let takenPhoto, !takenPhotoRead else { return }
+        takenPhotoRead = true
+        do {
+            let result = try await PhotoTextReader.prepare(takenPhoto)
+            photo = result
+            text = RecognizedText.adding(result.text.text, to: text)
+            UIAccessibility.post(notification: .announcement, argument: PickedPhotoView.notice(for: result))
+        } catch {
+            takenPhotoProblem = NSLocalizedString("The photo couldn't be read, so it wasn't added. Try taking it again.", comment: "")
         }
     }
 
@@ -192,6 +216,11 @@ struct CaptureView: View {
     private func startDraft() {
         guard !started else { return }
         started = true
+        // A photo from the camera starts a new note; an unfinished one stays for later.
+        if takenPhoto != nil {
+            keepDraft()
+            return
+        }
         switch UnfinishedNoteResume.start(sharedText: sharedText, book: drafts.book) {
         case .fresh:
             keepDraft()
