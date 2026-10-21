@@ -197,7 +197,7 @@ Merge one at a time, then rebuild and talk to Doddy before the next. Rows other 
 - The kitchen timer Live Activity.
 - A Pencil drawing canvas.
 - The Mac minimum macOS version.
-- The final icons: since 21 Oct the app icon is Doddy's face (the open head of the pack's blink sheet 007) on orange `#FF6A00` (ADR-565, `tools/whole_doddy/make_app_icon.py`), replacing the wave frame of 20 Oct (ADR-557); the head is a 2.1x upscale, so an artist's larger or vector head would replace it. Not seen on a device or the watch.
+- The final icons: since 21 Oct the app icon is Doddy's face (the open head of the pack's blink sheet 007) on orange `#FF6A00` (ADR-565, `tools/whole_doddy/make_app_icon.py`), replacing the wave frame of 20 Oct (ADR-557), and the website's favicon and touch icon are the same picture (`site/assets/doddy-favicon.png`, `doddy-touch-icon.png`); the head is a 2.1x upscale, so an artist's larger or vector head would replace it. Not seen on a device or the watch.
 
 ## How agents should read this repo
 1. This page, then **only** the page for the platform you are working on, under `docs/platforms/`.

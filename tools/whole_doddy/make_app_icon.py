@@ -1,4 +1,4 @@
-"""The app icon: Doddy's face on the brand orange (ADR-563, Brand Guidelines V2.2).
+"""The app icon: Doddy's face on the brand orange (ADR-565, Brand Guidelines V2.2).
 
 The owner chose "just his face", on orange (option B of four shown). The face is the first head of the
 pack's blink sheet, 007_doddy_blink_v02.png (2172 x 724, transparent, four heads: open, half closed,
@@ -6,7 +6,9 @@ closed, half closed; SHA-256 1de78fb2…), the same sheet the eyes come from (AD
 is cut to its ink (alpha above 8), 369 x 363 px: the head, both open eyes, the one brow and the smile.
 It is Lanczos-resized to 780 px wide and centred on brand orange #FF6A00 at 1024 px, RGB with no alpha.
 The same bytes go to the iPhone and the Watch icon sets. There is no dark appearance: the orange and
-the cream face read on a dark Home Screen as they are. Nothing is redrawn or recoloured.
+the cream face read on a dark Home Screen as they are. The website's favicon (64 px) and touch icon
+(180 px) are that icon Lanczos-resized, so the site and the app show the same picture. Nothing is
+redrawn or recoloured.
 
     python3 -I tools/whole_doddy/make_app_icon.py <007_doddy_blink_v02.png> <repo root>
 """
@@ -23,6 +25,10 @@ SIZE = 1024
 TARGETS = [
     "DoddyApp/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png",
     "DoddyWatch/Assets.xcassets/AppIcon.appiconset/AppIcon.png",
+]
+SITE_TARGETS = [
+    ("site/assets/doddy-favicon.png", 64),
+    ("site/assets/doddy-touch-icon.png", 180),
 ]
 
 
@@ -49,6 +55,9 @@ def main(sheet_path, repo):
     for target in TARGETS:
         path = os.path.join(repo, target)
         image.save(path, optimize=True)
+        print("wrote", target)
+    for target, size in SITE_TARGETS:
+        image.resize((size, size), Image.LANCZOS).save(os.path.join(repo, target), optimize=True)
         print("wrote", target)
 
 

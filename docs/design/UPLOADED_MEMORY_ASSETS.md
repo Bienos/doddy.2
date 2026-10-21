@@ -194,6 +194,8 @@ Owner: "I would like just his face", then option B (face on orange) of four show
 | --- | --- | --- |
 | `DoddyApp/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png` | as above | c4917bad157d8855486f5f9322abe855b2bf21797e98c771b719a9f5d8414f13 |
 | `DoddyWatch/Assets.xcassets/AppIcon.appiconset/AppIcon.png` | byte-identical copy | the same |
+| `site/assets/doddy-favicon.png` (64 × 64) | the app icon, Lanczos-resized (the website's tab icon) | aa54376238f133cdab299539b9d7daeb5f5bfbc6fbbe0f5dbcde44819e1ad788 |
+| `site/assets/doddy-touch-icon.png` (180 × 180) | the app icon, Lanczos-resized (the website's iPhone home-screen icon) | f3f443eb7a16fc70b73ea128830a3a36fe6c45a21d25f8c0d088b89d74f276af |
 
 No dark appearance: the orange and the cream face read on a dark Home Screen as they are, and iOS derives the tinted icon. The head is a 2.1× upscale; the Home Screen draws the icon at 180 px at most. A larger or vector head from the artist replaces it by rerunning the script.
 
