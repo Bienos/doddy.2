@@ -186,7 +186,18 @@ number is cropped away); nothing is redrawn, recoloured or generated.
 Not used: the five `*_fg_v01.png` foreground layers (024, 027, 030, 033, 035). They are not imported
 (ADR-380 explains why), and the umbrella pose still waits on the owner's weather decision.
 
-## The app icon (ADR-557, 20 October 2026)
+## The app icon: his face on orange (ADR-565, 21 October 2026)
+
+Owner: "I would like just his face", then option B (face on orange) of four shown. Source: `007_doddy_blink_v02.png` from the Drive folder, downloaded in the session and verified against the SHA-256 recorded below for the eyes (`1de78fb2…`). `tools/whole_doddy/make_app_icon.py` cuts tile 1 (x 0–543, the open head) to its ink (alpha above 8): 369 × 363 px, the head with both open eyes, the one brow and the smile. It is Lanczos-resized to 780 px wide and centred on brand orange `#FF6A00` (Brand Guidelines V2.2 p.20, ADR-556) at 1024 px, RGB, no alpha. Nothing is redrawn or recoloured.
+
+| File | Made how | SHA-256 of the file written |
+| --- | --- | --- |
+| `DoddyApp/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon.png` | as above | c4917bad157d8855486f5f9322abe855b2bf21797e98c771b719a9f5d8414f13 |
+| `DoddyWatch/Assets.xcassets/AppIcon.appiconset/AppIcon.png` | byte-identical copy | the same |
+
+No dark appearance: the orange and the cream face read on a dark Home Screen as they are, and iOS derives the tinted icon. The head is a 2.1× upscale; the Home Screen draws the icon at 180 px at most. A larger or vector head from the artist replaces it by rerunning the script.
+
+## The app icon before 21 October: the wave frame (ADR-557, 20 October 2026, replaced by ADR-565)
 
 Owner: "use the wave frame from the pack for the icon", then candidate A (on paper) of the three shown.
 Source: `016_doddy_wave_v01.png` from the Drive folder, downloaded in the session and verified against the
