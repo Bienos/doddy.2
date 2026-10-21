@@ -62,6 +62,19 @@ final class DataFlowTests: XCTestCase {
         XCTAssertEqual(row("askDoddy", state).what, "Typed questions.")
     }
 
+    /// ADR-570: handed-over tasks go to the messaging server and Anthropic, only with a server set.
+    func testErrandsRowNamesAnthropicAndNeverTheNotes() {
+        XCTAssertFalse(row("errands", base).isActive)
+        XCTAssertTrue(row("errands", base).note?.contains("can't be handed over") ?? false)
+        var state = base
+        state.messagingServerSet = true
+        let errands = row("errands", state)
+        XCTAssertTrue(errands.isActive)
+        XCTAssertTrue(errands.destination.contains("Anthropic"))
+        XCTAssertTrue(errands.what.contains("Never your saved notes"))
+        XCTAssertTrue(errands.note?.contains("no words from the task") ?? false)
+    }
+
     func testMessagingServerRowListsNotesOnlyWhenTheCopyIsOn() {
         XCTAssertFalse(row("messagingServer", base).isActive)
         var state = base
@@ -165,7 +178,7 @@ final class DataFlowSummaryTests: XCTestCase {
         // OpenAI runs the voice where the token server is set (ADR-442): ElevenLabs gets no voice then.
         XCTAssertEqual(
             DataFlow.cloudAISummary(everything),
-            "OpenAI (voice); OpenAI (Ask Doddy); ElevenLabs (phone calls) and Anthropic or OpenAI (daily news) on your messaging server")
+            "OpenAI (voice); OpenAI (Ask Doddy); ElevenLabs (phone calls) and Anthropic or OpenAI (daily news) on your messaging server; Anthropic (tasks you hand over)")
         XCTAssertFalse(DataFlow.networkSummary(everything).contains("ElevenLabs (while talking)"))
         var elevenLabs = everything
         elevenLabs.voiceProvider = .elevenLabs

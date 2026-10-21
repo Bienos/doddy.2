@@ -612,6 +612,8 @@ final class VoiceSessionController {
         sharedOwnerContext = preset == nil
         // What Doddy learned and the user confirmed (ADR-440), only when they switched it on.
         var learnedText = await store.learning?.voiceContext() ?? LearningPrompt.notShared
+        // Tasks handed to Doddy's background worker (ADR-570): titles, states, the start of a result.
+        var errandsText = await ErrandsModel.shared.promptText()
         // Opened from Home's Translate: the agent gets no notes, conversations or profile at all,
         // so it has nothing of the owner's to repeat to the other person.
         if let preset {
@@ -621,6 +623,7 @@ final class VoiceSessionController {
             profileText = none
             listsText = none
             learnedText = none
+            errandsText = none
             isPrivate = true
             privacyLocked = true
             translator = TranslatorSession(setup: preset, startedAt: Date())
@@ -640,6 +643,7 @@ final class VoiceSessionController {
             LearningPrompt.variableName: learnedText,
             TranslatorPrompt.variableName: TranslatorPrompt.render(preset),
             ListsPrompt.variableName: listsText,
+            ErrandsPrompt.variableName: errandsText,
             MorningCheckInPrompt.variableName: MorningCheckInPrompt.render(checkIn),
             FirstConversationPrompt.variableName: FirstConversationPrompt.render(isFirst: isFirstConversation),
             // What Doddy says first (ADR-254): the shortcut greeting ("Hey Pat, what's up?"), otherwise his
@@ -2576,6 +2580,17 @@ final class VoiceSessionController {
             }
             endTranslator()
             await reply(call.toolCallId, VoiceToolReply.translatorStopped)
+        case .handOverErrand(let draft):
+            // ADR-570: after the user's yes for exactly these words (the ask card above), the app
+            // creates the task on Doddy's server and approves it with the digest of those words.
+            // That one yes covers every look-up of this task; it is never approved twice.
+            if let issue = draft.validationIssues().first {
+                await reply(call.toolCallId, VoiceToolReply.failed(issue.reason), isError: true)
+                return
+            }
+            await reply(call.toolCallId, await ErrandsModel.shared.handOver(draft))
+        case .checkErrands(let about):
+            await reply(call.toolCallId, await ErrandsModel.shared.agentReply(about: about))
         case .noteCapabilityGap(let category):
             // Nothing changes and no app is used: one row on this iPhone, as a category (ADR-440).
             await store.learning?.recordGap(category, requestID: call.toolCallId, sessionID: conversationID)

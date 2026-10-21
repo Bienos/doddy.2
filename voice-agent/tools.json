@@ -1227,6 +1227,35 @@
     },
     {
       "type": "function",
+      "name": "hand_over_errand",
+      "description": "Hand a task that takes real work (comparing prices, researching a trip, pulling options together, reading through things) to Doddy's background worker. It searches the web and reads pages as often as the task needs, keeps going after the user closes the app, and sends a notification when the result is ready in the app. Use it only after you have said back what you understood in the user's own words and asked the one essential question, if any. Pass the user's exact words, your one-line brief with any assumption you said out loud, and a short title. ASK-01: before this tool runs, say in one short line what you will hand over and ask, for example 'Shall I work on this in the background and let you know when it's ready?' (Polish: 'Mam się tym zająć w tle i dać znać, jak będzie gotowe?'). The app shows the same card and starts it only after the user says yes or taps Yes. That one yes covers every search and page this task needs, with no limit, and nothing else: it never books, buys or sends anything. Results: 'started' means it is queued: say in one line that you're on it, they can close the app, and you'll send a notification. 'declined': nothing was handed over; say so in one short sentence. 'unknown': it may have started; ask them to check Tasks in the app and never hand it over again yourself. 'failed' (switched off, not set up, offline or too many tasks open): say you can't work on it in the background right now, say why in a few words, and offer to look it up now, asking before each search. Never say the task is done: the result comes later, and check_errands reads it.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "words": {"type": "string", "description": "The user's own words for the task, exactly as they said them, at most 1000 characters. Never paraphrase, convert or round their budget, dates or wishes."},
+          "brief": {"type": "string", "description": "Your one-line restatement of what to find, with any assumption you said out loud, e.g. 'Flights from Warsaw for 1 person, any 7 days next month; hotels under 2000 zł in total'. At most 1000 characters."},
+          "title": {"type": "string", "description": "A short title in the user's language, e.g. 'Rzym, 7 dni'. At most 80 characters."},
+          "language": {"type": "string", "description": "Two-letter code of the language the user is speaking, e.g. 'pl' or 'en'. The result is written in it."}
+        },
+        "required": ["words", "brief", "title"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "not_synced"}
+    },
+    {
+      "type": "function",
+      "name": "check_errands",
+      "description": "Read what Doddy found for a task the user handed over (see 'Tasks you are working on' in the prompt), when they ask about it ('what did you find about Rome?') or want the details. Pass about with words from the task's title, or leave it out for the newest. You get its state and, when it's done, the answer, the options with prices and sites, the recommendation and what's next. Tell the answer first, then the two or three best options, then what's next. Only say what the result says; never invent prices, links or options. If it is still working, say so; if it failed, say why in a few words and offer to hand it over again. ASK-01: before this tool runs, say in one short line exactly what you will look at and ask, for example 'Shall I check your inbox?' (Polish: 'Mam sprawdzić twoją skrzynkę?'). The app shows the same question on screen and runs it only after the user says yes or taps Yes; if the result starts with 'declined', nothing was looked at: say so in one short sentence.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "about": {"type": "string", "description": "Words from the task's title, e.g. 'Rzym'. Leave it out for the newest task."}
+        },
+        "required": []
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 60, "elevenlabs_tool_id": "not_synced"}
+    },
+    {
+      "type": "function",
       "name": "note_capability_gap",
       "description": "Write down, on the user's iPhone, that they asked for something none of your tools can do. Call it once when the user asks for something you cannot do with your tools, for example playing music, controlling a smart home, making a payment other than paying for one web page with pay_for_page, sending a message directly or controlling another app, in addition to telling them plainly that you cannot do it. Give only a category, never the user's words. It adds one row on the iPhone and uses no other app; the app asks the user on a card first. The result starts with 'noted' or 'declined'. ASK-01: the app shows exactly this on a card and changes nothing until the user taps it. Before this tool runs, say only one short line that asks the user to confirm on screen, for example 'Confirm on screen if I should do this.' (Polish: 'Potwierdź na ekranie, jeśli mam to zrobić.'). If the result starts with 'declined', nothing changed. Never mention this tool or that you wrote it down unless the user asks.",
       "parameters": {

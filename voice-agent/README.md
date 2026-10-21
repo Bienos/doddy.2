@@ -38,6 +38,16 @@ reaches OpenAI with the next app build, and ElevenLabs only after the sync below
 - **Older app builds:** a build without these tools answers "The app does not support the tool below", and Doddy says it isn't available yet.
 - **Not checked:** a real conversation with the new prompt.
 
+**Applied to the live agent 2026-10-21, about 07:30 UTC (ADR-571, the sidekick's Talk and Task modes; owner: "1. Yes", then "Yes, save it" on the exact changes):** the live prompt is still the owner's own rewrite, so `instructions.md` wasn't copied in. 37 lines were added in its style and 2 reworded, nothing else changed:
+- **Identity:** "You are their sidekick: sharp, always online, living in their phone", sprawy, "you can find the restaurant, you can't walk there".
+- **Tone:** "Sharp, warm and direct. No filler. No apologising for being an AI." and "Honest always…".
+- **Language:** "Polish is your default…"; "If language recognition is uncertain, ask briefly." became "If you can't tell which language the user is using, use Polish."
+- **New "# Talk or task: pick one every time"** (Talk, Task, How you work a task, the Rome example) before "# Knowledge and research". It keeps ASK-01 for each look-up and says Doddy can't keep working after the conversation, because no app build has `hand_over_errand` yet (ADR-570).
+- **Unsupported capabilities:** two lines (working after the conversation ends; booking).
+- **Read first:** `agtvrsn_5201m5dtmpvne48vt1hxc6h53hh0` ("Configure localized language presets and terms for agent interface", saved 20 Oct 23:34 UTC by the owner's account; its prompt is the ADR-556 text, SHA-256 `b3030a46…`). Read again right before saving, after a worker restart: unchanged. **Rollback:** that version.
+- **Saved:** `agtvrsn_6201m5ewm90bezjvesacr57ma1gv`. Only the prompt was sent.
+- **Checked after saving:** the stored prompt equals the approved text byte for byte (SHA-256 `13521dd9…`); the 82 tool ids came back unchanged and match `tools.json`'s ids exactly; the LLM (`gpt-6-luna`) is unchanged. Not checked: a real conversation.
+- **Next (ADR-570, `docs/implementation/ERRANDS.md`):** `hand_over_errand`, `check_errands` and `{{errands}}`. They go live only with an app build that answers those tools: then the two tools are created and attached, the placeholder `errands` = `none` is added, and the live Task lines change to hand work over.
 
 **Applied to the live agent 2026-10-20, about 14:08 UTC (ADR-556, Brand Guidelines V2.2; owner: "do it"):** the guide's verbal identity (pp.49–66). The live prompt is the owner's own rewrite, so this folder's new "# Who you are" and "# How you speak" were not copied in. Eleven short lines were added in the live prompt's own style, and nothing else in the prompt changed:
 - **Identity:** what he says when asked what he is, and that he explains tools, permissions and data plainly when asked.

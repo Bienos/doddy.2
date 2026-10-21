@@ -32,6 +32,8 @@ struct HomeView: View {
     @State private var showDataFlow = false
     @State private var showCapabilities = false
     @State private var showToday = false
+    /// Tasks handed to Doddy (ADR-570): the list and each result card.
+    @State private var showErrands = false
     @State private var showVoicePicker = false
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
     /// First visit (ADR-326): until a conversation has really connected, Home keeps to talking and
@@ -83,6 +85,7 @@ struct HomeView: View {
             .navigationDestination(for: UUID.self) { MemoryOrListView(id: $0) }
             .sheet(item: $modal) { _ in CaptureView() }
             .sheet(isPresented: $showDataFlow) { DataFlowSheet() }
+            .sheet(isPresented: $showErrands) { ErrandsView() }
             .sheet(isPresented: $showCapabilities) { CapabilitiesSheet() }
             .sheet(isPresented: $showMemories) {
                 HomeMemoriesSheet(
@@ -153,6 +156,9 @@ struct HomeView: View {
                     .accessibilityIdentifier("home.translate")
                 Button { selectedTab = .memories; showFind = true } label: { Label("Find something", systemImage: "magnifyingglass") }
                     .accessibilityIdentifier("home.find")
+                // Tasks handed to Doddy's background worker (ADR-570).
+                Button { showErrands = true } label: { Label("Tasks", systemImage: "checklist") }
+                    .accessibilityIdentifier("home.tasks")
                 Button { tool = .focus } label: {
                     if FocusController.shared.session.map({ !$0.isOver }) ?? false {
                         Label("Focus · on", systemImage: "timer")
@@ -206,6 +212,10 @@ struct HomeView: View {
             // "Continue what I was saving" (ADR-362): opens the capture screen with it.
             if let draft = UnfinishedNoteStore.shared.book.newest {
                 UnfinishedNoteCard(note: draft, more: UnfinishedNoteStore.shared.book.notes.count - 1) { modal = .capture }
+            }
+            // A task Doddy finished in the background since the user last looked (ADR-570).
+            if let finished = ErrandsModel.shared.newestUnseen {
+                errandFinishedCard(finished)
             }
             if profiles.shouldOfferIntroduction {
                 getToKnowCard
@@ -409,6 +419,43 @@ struct HomeView: View {
     private var greeting: String {
         if let name = profiles.profile.value(.name) { return "Hi, \(name)." }
         return NSLocalizedString("I'm here.", comment: "")
+    }
+
+    /// "Done: Rzym, 7 dni": opens Tasks. Its words come from this iPhone's store, never from the push.
+    private func errandFinishedCard(_ errand: StoredErrand) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Button { showErrands = true } label: {
+                VStack(alignment: .leading, spacing: 6) {
+                    Label(errand.state == .done
+                          ? String(format: NSLocalizedString("Done: %@", comment: ""), errand.title)
+                          : String(format: NSLocalizedString("Couldn't finish: %@", comment: ""), errand.title),
+                          systemImage: errand.state == .done ? "checkmark.circle" : "exclamationmark.circle")
+                        .font(.headline)
+                        .multilineTextAlignment(.leading)
+                    Group {
+                        if errand.state == .done { Text("See what Doddy found.") } else { Text("See why.") }
+                    }
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.secondaryText)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("home.errandFinished")
+
+            Button { ErrandsModel.shared.markSeen(errand.id) } label: {
+                Image(systemName: "xmark")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Theme.secondaryText)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Not now")
+        }
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
     }
 
     // MARK: One-time offers (unchanged from the old Home)

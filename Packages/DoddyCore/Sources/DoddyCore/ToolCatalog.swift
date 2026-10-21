@@ -121,6 +121,10 @@ public enum ToolCatalog {
         .init(VoiceToolName.makePresentation, .handoff, .card),
         // Doddy's camera opens on the tap; a kept photo becomes a note the user saves (ADR-569).
         .init(VoiceToolName.openCamera, .handoff, .card),
+        // A task handed over (ADR-570): web research on Doddy's server that changes nothing, so a
+        // spoken yes or a tap starts it; one yes covers every look-up of that task.
+        .init(VoiceToolName.handOverErrand, .lookup, .askFirst),
+        .init(VoiceToolName.checkErrands, .lookup, .askFirst),
         // The conversation itself.
         .init(VoiceToolName.startTranslator, .session, .askFirst),
         .init(VoiceToolName.stopTranslator, .session, .askFirst),

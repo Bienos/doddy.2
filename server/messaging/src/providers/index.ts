@@ -8,6 +8,8 @@ import { GNewsSearch, HttpFeedSource } from "../news/sources.js";
 import { ClaudeDigestWriter, OpenAIDigestWriter } from "../news/writer.js";
 import type { TaskCallDeps } from "../taskCalls/context.js";
 import { ClaudeResultWriter } from "../taskCalls/writer.js";
+import type { ErrandDeps } from "../errands/context.js";
+import { ClaudeErrandResearcher } from "../errands/researcher.js";
 
 /** Real provider adapters for whatever is configured; anything missing stays undefined. */
 export function providersFrom(config: Config) {
@@ -28,6 +30,15 @@ export function providersFrom(config: Config) {
       update: async (token, env, state, end) => { await push.sendLiveActivity({ deviceToken: token, environment: env }, state, end); },
     } : undefined,
   } : undefined;
+  // Errands (ADR-570): a researcher only with an Anthropic key and the switch on. Without
+  // MEMORY_ENCRYPTION_KEY the routes answer 503 errands_disabled whatever is set here.
+  const es = config.errandSettings;
+  const errands: ErrandDeps = {
+    settings: es,
+    researcher: es.enabled && config.anthropicApiKey
+      ? new ClaudeErrandResearcher(config.anthropicApiKey, { model: es.model, effort: es.effort })
+      : undefined,
+  };
   return {
     push,
     sms: twilio,
@@ -35,6 +46,7 @@ export function providersFrom(config: Config) {
     outbound: config.phoneAgent ? new ElevenLabsOutboundCaller(config.phoneAgent) : undefined,
     cipher,
     taskCalls,
+    errands,
     news: {
       cipher,
       feeds: new HttpFeedSource(),

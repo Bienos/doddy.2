@@ -183,9 +183,12 @@ services:
         sync: false
       - key: PRICE_ELEVENLABS_USD_PER_CREDIT
         sync: false
-      # Daily news (N1); ANTHROPIC_API_KEY also writes the call answer card's summary
+      # Daily news (N1); ANTHROPIC_API_KEY also writes the call answer card's summary and runs
+      # errands (ADR-570)
       - key: ANTHROPIC_API_KEY
         sync: false
+      - key: ERRANDS_ENABLED # "0" (the default) refuses new errands and starts no queued one; "1" turns them on
+        value: "0"
       - key: OPENAI_API_KEY # used only when ANTHROPIC_API_KEY is empty (ADR-197)
         sync: false
       - key: GNEWS_API_KEY
@@ -263,9 +266,12 @@ services:
         sync: false
       - key: PRICE_ELEVENLABS_USD_PER_CREDIT
         sync: false
-      # Daily news (N1); ANTHROPIC_API_KEY also writes the call answer card's summary
+      # Daily news (N1); ANTHROPIC_API_KEY also writes the call answer card's summary and runs
+      # errands (ADR-570)
       - key: ANTHROPIC_API_KEY
         sync: false
+      - key: ERRANDS_ENABLED # "0" (the default) refuses new errands and starts no queued one; "1" turns them on
+        value: "0"
       - key: OPENAI_API_KEY # used only when ANTHROPIC_API_KEY is empty (ADR-197)
         sync: false
       - key: GNEWS_API_KEY
