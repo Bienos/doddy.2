@@ -73,7 +73,8 @@ final class OnlineAccountsContractTests: XCTestCase {
         let writes = catalog.toolkits.flatMap(\.tools).filter { $0.risk == .write }.map(\.name).sorted()
         XCTAssertTrue(writes.contains("send_email") && writes.contains("answer_google_invite") && writes.contains("move_outlook_email"))
         XCTAssertEqual(Set(writes), CloudToolName.writes, "the app and the server agree on which tools write")
-        XCTAssertEqual(Set(catalog.toolkits.flatMap(\.tools).map(\.name)), CloudToolName.all)
+        // Claude (ADR-563) has no Settings section: its tools run but aren't listed in the catalog.
+        XCTAssertEqual(Set(catalog.toolkits.flatMap(\.tools).map(\.name)), CloudToolName.all.subtracting([CloudToolName.askClaude, CloudToolName.makeDocument]))
 
         let on = try decode(ToolsCatalog.self, "catalog-gmail-on")
         XCTAssertEqual(on.toolkits[0].status, .connected)

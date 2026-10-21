@@ -74,7 +74,7 @@ extension VoiceToolReply {
                 return "failed: \"\(CloudToolName.title(tool))\" is switched off. Tell the user they can switch it on in Settings, Online accounts. Nothing was done."
             case "not_connected", "connection_expired", "permission_insufficient":
                 // ADR-562: the app puts a Connect button on screen for this account.
-                return "not_connected: \(account) isn't connected yet, or needs connecting again. A \"Connect \(account)\" button is on the user's screen now. Ask in one short sentence whether they'd like to connect it; it takes a few seconds. When it's connected the app tells you, and then you do what they asked. Nothing was done yet."
+                return "not_connected: \(account) isn't connected yet, or needs reconnecting. A \"Connect \(account)\" button is on the user's screen now. Ask in one short sentence whether they'd like to connect it; it takes a few seconds. When it's connected the app tells you, and then you do what they asked. Nothing was done yet."
             case "live_not_configured":
                 return "failed: \(account) isn't set up on Doddy's server. Nothing was done."
             case "quota_exceeded" where account == CloudToolName.claudeAccount:
