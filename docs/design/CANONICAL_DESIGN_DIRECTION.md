@@ -6,7 +6,7 @@ The owner approved Brand Guidelines V2.2 (`design/brand-v2.2/`) as the brand ref
 character, colour, type, motion and verbal identity: the "owner-approved future brand guidelines"
 case in the priority list below, now in force. Colour: ink `#171715`, paper `#FFF7E9`, orange
 `#FF6A00` (changed from `#F58A24`), night `#16171C` (the app's dark canvas stays `#171F29` until
-step 3b in `docs/design/BRAND_V2_2_REVIEW.md`). The app icon is the pack's wave frame (ADR-557).
+step 3b in `docs/design/BRAND_V2_2_REVIEW.md`). The app icon is Doddy's face on orange (ADR-565; before 21 Oct the pack's wave frame, ADR-557).
 Character art is unchanged: only the owner's pack. The selection below still describes the screens.
 
 ## Owner-selected local memory interface — 10 October 2026
