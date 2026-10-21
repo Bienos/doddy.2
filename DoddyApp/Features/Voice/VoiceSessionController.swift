@@ -170,7 +170,7 @@ final class VoiceSessionController {
             default: break
             }
             syncIsland()
-            // Doddy started speaking: the island may open up for a moment (ADR-569).
+            // Doddy started speaking: the island may open up for a moment (ADR-570).
             if phase == .speaking, oldValue != .speaking { expandIslandIfDue() }
             // Listening comes only from the provider's own event: this conversation really
             // connected. Counted once per conversation, for when the "Open Doddy faster" card
@@ -236,7 +236,7 @@ final class VoiceSessionController {
     private(set) var planStatus: PlanStatus? { didSet { syncIsland() } }
     /// Which Apple Maps result the user picked on a place card (the first until they tap another).
     private(set) var selectedPlaceIndex = 0
-    /// The access card (ADR-570): a function the agent asked for is off, or iOS hasn't allowed it.
+    /// The access card (ADR-571): a function the agent asked for is off, or iOS hasn't allowed it.
     /// The screen asks "Allow Doddy to use …?"; nothing turns on without the user's tap there.
     private(set) var accessRequest: ConnectionApprovalCard?
     /// The function the access card is about. The paths that find one off or blocked set it; a
@@ -376,7 +376,7 @@ final class VoiceSessionController {
         didSet { syncIsland() }
     }
     @ObservationIgnored private var islandFlashClear: Task<Void, Never>?
-    /// When the island opens up into the big island while Doddy talks (ADR-569). Set at each start.
+    /// When the island opens up into the big island while Doddy talks (ADR-570). Set at each start.
     @ObservationIgnored private var islandExpansion = IslandExpansion(isOn: true)
     /// How long "Note saved" and "Reminder set" stay on the island.
     static let islandFlashSeconds: TimeInterval = 8
@@ -442,7 +442,7 @@ final class VoiceSessionController {
     /// `profile` is the user's approved introduction answers; it reaches the agent only when
     /// Settings → About you → "Use in voice conversations" is on. `wakeGreeting` is set for
     /// "Talk to Doddy" (Back Tap and the other shortcuts): Doddy says it first and the island shows it.
-    /// `withoutOpeningApp`: "Talk in the Island" started it with Doddy in the background (ADR-569).
+    /// `withoutOpeningApp`: "Talk in the Island" started it with Doddy in the background (ADR-570).
     func start(
         _ mode: VoiceConnectionMode, profile: ApprovedProfile, translator preset: TranslatorSetup? = nil,
         checkIn: MorningBriefing? = nil, wakeGreeting: String? = nil, aboutNote: UUID? = nil,
@@ -548,7 +548,7 @@ final class VoiceSessionController {
         let inBackground = UIApplication.shared.applicationState == .background
         let startNote = "starting a conversation: attempt \(attempt), in background \(inBackground), without opening \(withoutOpeningApp)"
         Self.audioLog.notice("\(startNote, privacy: .public)")
-        // "Talk in the Island" (ADR-569), from the Action Button or a control without opening Doddy.
+        // "Talk in the Island" (ADR-570), from the Action Button or a control without opening Doddy.
         // iOS keeps a recording started that way only while its Live Activity is up (requested by
         // `phase = .connecting` above), and the microphone can start only if the app can take the
         // audio session now. Both are checked before anything is fetched or connected, so a refusal
@@ -913,7 +913,7 @@ final class VoiceSessionController {
         return routes.union([.defaultToSpeaker, .mixWithOthers])
     }
 
-    /// "Talk in the Island" (ADR-569): takes the audio session with the conversation's own settings
+    /// "Talk in the Island" (ADR-570): takes the audio session with the conversation's own settings
     /// before connecting, because a start without the app on screen gets the microphone only if
     /// iOS lets the app take the session now. Returns what to tell the user, or nil when iOS
     /// agreed. The SDK then uses the session as it is.
@@ -1975,7 +1975,7 @@ final class VoiceSessionController {
     }
 
     /// Opens the island up for a moment when Doddy starts speaking, when `IslandExpansion` says
-    /// it's due (ADR-569): his first words, then the start of each answer, while Doddy isn't the
+    /// it's due (ADR-570): his first words, then the start of each answer, while Doddy isn't the
     /// app on screen. Not while translating: he speaks after every phrase there.
     private func expandIslandIfDue() {
         guard ownsIsland, translator == nil else { return }
@@ -2028,7 +2028,7 @@ final class VoiceSessionController {
             return
         }
         lines.append(Line(fromUser: fromUser, text: text))
-        // The island opens up again when Doddy starts answering this (ADR-569).
+        // The island opens up again when Doddy starts answering this (ADR-570).
         if fromUser { islandExpansion.userSpoke() }
         if !fromUser, checkInNeedsBriefing {
             checkInNeedsBriefing = false
@@ -2291,7 +2291,7 @@ final class VoiceSessionController {
                 return
             }
         case .nothingRuns, .ownPayloadCard, .serverCard, .runsNow:
-            // .runsNow (ADR-567): a public lookup (a sum, a conversion, the web) runs at once.
+            // .runsNow (ADR-568): a public lookup (a sum, a conversion, the web) runs at once.
             break
         }
         switch request {
@@ -2830,7 +2830,7 @@ final class VoiceSessionController {
                     .cloud(toolCallID: toolCallID, call: cloud, preview: prepared.preview, approvalID: prepared.approvalId, mode: prepared.mode),
                     toolCallID: toolCallID)
             } else if AskFirst.need(for: .cloudTool(cloud)) == .runsNow {
-                // ADR-567: web search, news and places read nothing of the user's, so they run at
+                // ADR-568: web search, news and places read nothing of the user's, so they run at
                 // once. The server's single-use approval is still made for exactly these words and
                 // used straight away.
                 let prepared = try await client.prepare(cloud)
@@ -3582,7 +3582,7 @@ final class VoiceSessionController {
     }
 
     /// Nothing ran yet. The access card goes up and the agent says one line ("Allow it on screen and
-    /// I'll carry on"); after the tap it is told, and tries once more (ADR-570).
+    /// I'll carry on"); after the tap it is told, and tries once more (ADR-571).
     private func notConnected(_ toolCallID: String, _ connection: VoiceConnection) async {
         // Some callers waited first (notification access): no prompt in a later conversation.
         guard isCurrent(toolCallID) else { return dropStale(toolCallID) }
@@ -3594,7 +3594,7 @@ final class VoiceSessionController {
         await reply(toolCallID, VoiceToolReply.notConnected(connection, card: accessRequest?.card ?? .allow))
     }
 
-    // MARK: Access card (ADR-570)
+    // MARK: Access card (ADR-571)
 
     /// "Allow": the switch turns on, after iOS's own prompt when iOS has never asked (a refusal
     /// from before is returned as it is, with no prompt). On a yes the card goes and the agent

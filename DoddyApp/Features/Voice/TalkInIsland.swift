@@ -5,7 +5,7 @@ import Foundation
 import UIKit
 import os
 
-/// "Talk in the Island" (ADR-569): one press of the Action Button (set to Doddy's control) or a
+/// "Talk in the Island" (ADR-570): one press of the Action Button (set to Doddy's control) or a
 /// tap on the control starts a conversation without bringing Doddy to the front. Doddy greets
 /// ("Hey Pat, what's up?"), the island opens up while he talks, and the conversation stays in the
 /// Dynamic Island and on the Lock Screen with Mute and Stop. Tapping the island opens the voice

@@ -21,7 +21,7 @@ final class AskFirstTests: XCTestCase {
         let spec = try RealtimeToolCatalog.decode(Data(contentsOf: root.appendingPathComponent("voice-agent/tools.json")))
         XCTAssertFalse(spec.isEmpty)
         for tool in spec {
-            // ElevenLabs runs the web lookups itself; they never reach the app (ADR-567).
+            // ElevenLabs runs the web lookups itself; they never reach the app (ADR-568).
             if tool.runsOn == .web {
                 XCTAssertEqual(tool.ask, .runsNow, tool.name)
                 XCTAssertTrue(AskFirst.publicLookups.contains(tool.name), tool.name)
@@ -70,7 +70,7 @@ final class AskFirstTests: XCTestCase {
     }
 
     func testPublicLookupsRunAtOnceAndPrivateReadsStillAsk() {
-        // ADR-567 (owner, 21 Oct 2026: "just be on it"): the weather, the web, the news, places,
+        // ADR-568 (owner, 21 Oct 2026: "just be on it"): the weather, the web, the news, places,
         // sums and conversions read nothing of the user's and change nothing, so they run at once.
         let now: [VoiceToolRequest] = [
             .calculate(expression: "2+2"),

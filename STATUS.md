@@ -6,13 +6,13 @@ Last updated 2026-10-21, 01:00 UTC (the manual Mac run on main that settled #114
 
 **On main since 21 Oct (#118, `claude/doddy-just-works`, ADR-563, ADR-564).** Why web search and Gmail never worked on the phone: the app had no server address and no way to get a session, so every server tool said "not set up" before leaving the iPhone (Render logs: no `/v1/tools/run` since 19 Oct). The branch adds device sign-in (the first iPhone owns the server), web lookups on by default, an account's tools on when it's connected, a "Connect Gmail?" card in the conversation, and Claude on the server (`ask_claude`, `make_document`: decks, Word, Excel, PDF, blog posts). Backend tests run on Linux; **the app has not been compiled** (no Xcode here; the PR's CI is the first compile). To use it: deploy this branch to Render `doddy`, set `DODDY_DEVICE_SIGNUP=first-device` and `ANTHROPIC_API_KEY` there, and add the two Claude tools to the live ElevenLabs agent.
 
-**Branch `claude/vigilant-gates-uxg63p`, 21 Oct (Warsaw), not merged:** the owner's report (ADR-565 to ADR-570).
+**Branch `claude/vigilant-gates-uxg63p`, 21 Oct (Warsaw), not merged:** the owner's report (ADR-566 to ADR-571).
 - Polish by default for screens and voice.
 - Translator mode translates every line (the "Doddy, …" quiet word is off; its rules come first in the prompt).
 - Public lookups (weather, Wikipedia, web, news, places, sums, conversions) run without asking; the four weather and Wikipedia tools are back.
-- Doddy stays centred after a return from the background or a rotation (ADR-568).
-- "Talk in the Island": an Action Button control that talks without opening Doddy, and the island opens up when he speaks (ADR-569; whether iOS allows the microphone from a cold background start is unknown).
-- A tool that is off is allowed from a card in the conversation, not from Settings, for the on-phone tools (ADR-570; online accounts not yet).
+- Doddy stays centred after a return from the background or a rotation (ADR-569).
+- "Talk in the Island": an Action Button control that talks without opening Doddy, and the island opens up when he speaks (ADR-570; whether iOS allows the microphone from a cold background start is unknown).
+- A tool that is off is allowed from a card in the conversation, not from Settings, for the on-phone tools (ADR-571; online accounts not yet).
 
 `scripts/ci.sh --core-only` passes (DoddyCore 1,289 tests); the iOS app is not compiled. **Live agent updated 21 Oct 10:28 UTC** on the owner's go-ahead: translator first, public lookups and weather without asking, 90 tools; `agtvrsn_3101m5f03ak6e3wtdjfqbb2qs95e`, rollback `agtvrsn_8301m5ey4kc9e9cat0w22asdgctc` (`docs/implementation/LIVE_AGENT_EDIT_2026-10-21.md`). No conversation has run on it yet. The owner set the live agent's default language to Polish themselves at 23:25 UTC.
 
@@ -99,7 +99,7 @@ None of these has been seen on a device. The live ElevenLabs agent was updated f
 - **Voice agent:** ElevenLabs agent `agent_0501m4et27vyeawrwqfdxxfszfa6`. Its spec is `voice-agent/`.
   - **Live version since 21 Oct 11:21 UTC:** `agtvrsn_1401m5f33kgffnrb4fq9dp4p3ket`, 92 tools: decks and presentations go to Claude (`make_document`), `make_presentation` only for Keynote (owner's choice).
   - **Before that, from 21 Oct 10:53 UTC:** `agtvrsn_4101m5f1gzv0edfat0kvfmmn1sd1`, 92 tools: #118's `ask_claude` and `make_document` and a Claude prompt section, saved by another session over this branch's 10:28 version.
-  - **Before that, from 21 Oct 10:28 UTC (ADR-566, ADR-567):** `agtvrsn_3101m5f03ak6e3wtdjfqbb2qs95e`, 90 tools, saved over `agtvrsn_8301m5ey4kc9e9cat0w22asdgctc` (09:54 UTC, not from this repository: it added presentations, steps, photos and the camera tool). Details: `docs/implementation/LIVE_AGENT_EDIT_2026-10-21.md`.
+  - **Before that, from 21 Oct 10:28 UTC (ADR-567, ADR-568):** `agtvrsn_3101m5f03ak6e3wtdjfqbb2qs95e`, 90 tools, saved over `agtvrsn_8301m5ey4kc9e9cat0w22asdgctc` (09:54 UTC, not from this repository: it added presentations, steps, photos and the camera tool). Details: `docs/implementation/LIVE_AGENT_EDIT_2026-10-21.md`.
   - **Before that, from 20 Oct 14:08 UTC (ADR-556):** `agtvrsn_8701m5ct8dxsf8htebwpdykppqbv`, saved over `agtvrsn_9601m5cg7h2jf0ctpbggw15zzq4n` (read just before saving; not the 19 Oct version below, and who saved it isn't recorded). Eleven prompt lines and the `opening_line` placeholder changed; the 82 tools did not.
   - **Earlier, read 19 Oct 09:21 UTC:** `agtvrsn_8901m59m3bdqe6takgkfbcmfh2yh`, 82 tools. It was saved at 08:22:55 UTC on 19 Oct over `agtvrsn_0601m57kxxh3eaprt27bk83ta8vx` (87 tools; saved 18 Oct 13:41 UTC from `claude/awesome-cray-2lb9ia`, commit `6672259f`). Which session saved it isn't recorded here.
   - **What that save removed:**

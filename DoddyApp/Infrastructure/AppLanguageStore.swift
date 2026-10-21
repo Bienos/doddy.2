@@ -22,12 +22,12 @@ enum AppLanguageStore {
         AppLanguage.chosen(stored: defaults.string(forKey: PreferenceKey.appLanguage), appLanguages: appLanguages(defaults))
     }
 
-    /// Set once the English that builds before ADR-565 wrote has been replaced by Polish.
+    /// Set once the English that builds before ADR-566 wrote has been replaced by Polish.
     private static let polishDefaultAppliedKey = "appLanguage.polishDefaultApplied"
 
     /// Before the first screen. Test runs leave the simulator's setting alone: UI tests (an
     /// in-memory or per-test store) and the unit tests' host app. Writing the Polish default there
-    /// (ADR-565) made every later test run in Polish. iOS has already picked this launch's
+    /// (ADR-566) made every later test run in Polish. iOS has already picked this launch's
     /// language, so a language written here shows from the next launch.
     static func applyAtLaunch(defaults: UserDefaults = .standard) {
         let process = ProcessInfo.processInfo

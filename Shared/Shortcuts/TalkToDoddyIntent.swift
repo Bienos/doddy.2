@@ -3,7 +3,7 @@ import AppIntents
 /// "Talk to Doddy": opens the app in the foreground and starts (or focuses) the voice
 /// conversation. Used by the App Shortcut (Siri, Shortcuts, Action Button, a personal shortcut
 /// for Back Tap) and by the Control Center / Lock Screen control. During an active Back Tap test
-/// the invocation is the test's receipt instead. `TalkInIslandIntent` (ADR-569) is the one that
+/// the invocation is the test's receipt instead. `TalkInIslandIntent` (ADR-570) is the one that
 /// starts a conversation without opening the app.
 ///
 /// Compiled into the app and the widget extension, because the control needs the type. It

@@ -1,7 +1,7 @@
 import Foundation
 
 /// When a voice conversation asks iOS to open its Dynamic Island up into the big, expanded island
-/// for a few seconds (ADR-569). The app does that with an alert update of the Live Activity; iOS
+/// for a few seconds (ADR-570). The app does that with an alert update of the Live Activity; iOS
 /// shows it only while Doddy is not the app on screen, plays its alert sound with it and decides
 /// the final size, so every "yes" here is a request, not a promise.
 ///

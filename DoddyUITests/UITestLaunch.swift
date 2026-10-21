@@ -15,7 +15,7 @@ enum UITestLaunch {
     /// How much slower than real time the opening plays when a test turns it on.
     static let openingTimeScale = 6
 
-    /// The screens' language for a test. The app's default is Polish (ADR-565), so every test
+    /// The screens' language for a test. The app's default is Polish (ADR-566), so every test
     /// says which language it reads; the argument wins over anything a launch stored before.
     enum Language: String {
         case english = "en", polish = "pl"

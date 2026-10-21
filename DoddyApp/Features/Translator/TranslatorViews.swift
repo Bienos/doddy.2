@@ -386,7 +386,7 @@ struct TranslatorStartView: View {
     @State private var owner: TranslatorLanguage
     @State private var other: TranslatorLanguage?
 
-    /// The two languages picked last time (ADR-566), so a second go is one tap.
+    /// The two languages picked last time (ADR-567), so a second go is one tap.
     private static let lastOwnerKey = "translator.lastOwner"
     private static let lastOtherKey = "translator.lastOther"
 

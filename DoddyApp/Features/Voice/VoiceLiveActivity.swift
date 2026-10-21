@@ -34,7 +34,7 @@ final class VoiceLiveActivity {
 
     /// Shows `state`, starting the activity on first use. iOS allows starting one while the app is
     /// in the foreground, or from a `LiveActivityIntent` running without it ("Talk in the Island",
-    /// ADR-569).
+    /// ADR-570).
     func show(_ state: DoddyVoiceAttributes.ContentState, startedAt: Date) {
         if let activity {
             guard state != shown else { return }
@@ -60,7 +60,7 @@ final class VoiceLiveActivity {
     }
 
     /// Asks iOS to open the island up for a few seconds with what it shows now (the big island:
-    /// it unfolds and plays the alert sound). `IslandExpansion` (ADR-569) decides when. iOS does
+    /// it unfolds and plays the alert sound). `IslandExpansion` (ADR-570) decides when. iOS does
     /// this only while Doddy is not the app on screen, and decides the final size, so this is a
     /// request. The alert's words are only shown on a paired Apple Watch: the status, never
     /// anything said. A no-op when there is no activity. Only for a conversation the app is

@@ -267,7 +267,7 @@ schemes:
       targets:
         Doddy: all
     test:
-      # The tests read the English screens; the app's default is Polish (ADR-565).
+      # The tests read the English screens; the app's default is Polish (ADR-566).
       language: en
       region: US
       targets:

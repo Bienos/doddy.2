@@ -156,7 +156,7 @@ struct RootView: View {
             .onAppear { lockCovered = AppLock.shared.isLocked }
             .onChange(of: AppLock.shared.isLocked) { _, locked in
                 guard !locked else { lockCovered = true; return }
-                // Unlocked with a conversation from Talk in the Island running (ADR-569): its screen
+                // Unlocked with a conversation from Talk in the Island running (ADR-570): its screen
                 // waited for Face ID, because a full-screen cover would sit above the lock.
                 if VoiceSessionController.runningConversation != nil { router.showConversationStartedElsewhere() }
                 guard lockCovered, !reduceMotion, !hideArt else { lockCovered = false; return }
@@ -182,7 +182,7 @@ struct RootView: View {
             .onChange(of: scenePhase, initial: true) { _, phase in
                 // MV5: today's welcome (once a day; a hop in place first after three days away).
                 if phase == .active { DoddyDirector.shared.appBecameActive() }
-                // A conversation started without opening Doddy (Talk in the Island, ADR-569): tapping
+                // A conversation started without opening Doddy (Talk in the Island, ADR-570): tapping
                 // its island brings him forward, and the conversation's screen comes with him. Also
                 // on the first screen, when iOS started Doddy in the background for that conversation.
                 // Not over the Face ID lock: then it comes after the unlock (the lock's onChange above).
