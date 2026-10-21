@@ -181,6 +181,15 @@ public enum DataFlow {
                 note: state.messagingServerSet
                     ? "It sends notifications through Apple and texts and calls through Twilio; calls run on ElevenLabs. Daily news sends your topics and public headlines to \(writer), and your own keywords to GNews."
                     : "No messaging server is set, so nothing goes there."),
+            // ADR-563: a task handed to Doddy's background worker.
+            DataFlowRow(
+                id: "errands", destination: "Your Doddy messaging server and Anthropic (tasks you hand over)",
+                what: "The words of a task you hand to Doddy, Doddy's one-line note on it and its language. Anthropic's Claude searches the web and reads pages for it, so search words made from your task go to Anthropic's search provider. Never your saved notes, lists, profile or earlier conversations.",
+                when: "Only when you say yes to handing a task over, until its result is saved on this iPhone.",
+                isActive: state.messagingServerSet,
+                note: state.messagingServerSet
+                    ? "The server keeps the words and the result, encrypted, until the result is saved on this iPhone, then deletes them; a result never fetched is deleted after 30 days. The notification has no words from the task."
+                    : "No messaging server is set, so tasks can't be handed over."),
             DataFlowRow(
                 id: "siri", destination: "Apple (Siri)",
                 what: "What you ask Siri to look for, and the note Siri reads back with when you saved it.",
@@ -215,6 +224,8 @@ public enum DataFlow {
         if active.contains("messagingServer") {
             parts.append("ElevenLabs (phone calls) and \(newsWriter(state)) (daily news) on your messaging server")
         }
+        // ADR-563: Claude researches the tasks you hand over.
+        if active.contains("errands") { parts.append("Anthropic (tasks you hand over)") }
         return parts.isEmpty ? "None" : parts.joined(separator: "; ")
     }
 
@@ -230,6 +241,7 @@ public enum DataFlow {
         "tokenServer": "your voice token server",
         "doddyServer": "your Doddy server (Connected Apps)",
         "messagingServer": "your Doddy messaging server",
+        "errands": "Anthropic (tasks you hand over, through your messaging server)",
         "siri": "Siri (when you ask it)",
         "askDoddy": "the Ask Doddy gateway",
     ]

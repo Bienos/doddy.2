@@ -312,6 +312,28 @@ public final class DoddyDatabase: Sendable {
                 CREATE INDEX call_cases_created ON call_cases(created_at_ms);
                 """)
         }
+        // Tasks handed to Doddy (ADR-563): the user's words and Doddy's brief, the result card and
+        // the server's deletion report. The result lives only here once the server deleted its copy
+        // (`ack`), so a row can't say acknowledged without a result, nor hold a result without its digest.
+        migrator.registerMigration("v15_errands") { db in
+            try db.execute(sql: """
+                CREATE TABLE errands (
+                    id TEXT PRIMARY KEY NOT NULL,
+                    state TEXT NOT NULL CHECK (length(state) BETWEEN 1 AND 40),
+                    failure TEXT CHECK (failure IS NULL OR length(failure) BETWEEN 1 AND 40),
+                    created_at_ms INTEGER NOT NULL,
+                    updated_at_ms INTEGER NOT NULL CHECK (updated_at_ms >= created_at_ms),
+                    draft_json TEXT NOT NULL,
+                    result_json TEXT,
+                    result_digest TEXT,
+                    deletions_json TEXT NOT NULL DEFAULT '[]',
+                    acknowledged_at_ms INTEGER,
+                    CHECK ((result_json IS NULL) = (result_digest IS NULL)),
+                    CHECK (acknowledged_at_ms IS NULL OR result_json IS NOT NULL)
+                );
+                CREATE INDEX errands_created ON errands(created_at_ms);
+                """)
+        }
         return migrator
     }
 

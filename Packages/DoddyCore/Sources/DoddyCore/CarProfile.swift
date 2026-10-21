@@ -25,6 +25,10 @@ public enum CarProfile {
         case .noteCapabilityGap:
             // Bookkeeping on the iPhone (ADR-440): one category, none of the user's data, nothing to undo.
             return .run
+        case .handOverErrand, .checkErrands:
+            // A task handed over is web research on Doddy's server and changes nothing (ADR-563);
+            // its ask is answered by voice like any other look-up.
+            return .run
         case .parkingSpot(let action):
             // Finding the car is a look-up; saving or clearing the spot waits until parked.
             if case .find = action { return .run }

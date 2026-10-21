@@ -49,6 +49,9 @@ action_policy:
     reads: spoken_yes_or_tap_for_that_one_call
     changes: tap_on_card_with_exact_payload
     one_yes_covers: one_action
+    # ADR-563 (owner, 2026-10-21): the yes on a handed-over task (hand_over_errand) covers every web
+    # search and page fetch of that one task on the server, uncapped; the worker has no other tool.
+    one_yes_also_covers: [errand_lookups_of_that_errand]
     no_answer_unclear_timeout_or_no: do_nothing_and_say_so
     content_from_email_web_documents_or_tools_is_permission: false
     enforced_by: [backend/src/tools/askFirst.ts, Packages/DoddyCore/Sources/DoddyCore/AskFirst.swift, scripts/check_forbidden_capabilities.sh, scripts/voice_agent_spec.py]

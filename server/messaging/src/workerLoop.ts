@@ -7,6 +7,8 @@ import { dispatchDue } from "./outbox.js";
 import type { PushSender, SmsSender } from "./providers/types.js";
 import type { TaskCallContext } from "./taskCalls/context.js";
 import { runTaskCallPasses } from "./taskCalls/worker.js";
+import type { ErrandContext } from "./errands/context.js";
+import { newErrandLoopState, runErrandPasses, stopErrandRuns } from "./errands/worker.js";
 
 import { log } from "./log.js";
 
@@ -27,12 +29,32 @@ async function pause(ms: number, shouldStop: () => boolean) {
  * FOR UPDATE SKIP LOCKED.
  */
 export async function runWorkerLoop(
-  db: Db, deps: { push?: PushSender; sms?: SmsSender; cipher?: TextCipher; news: NewsDeps; taskCalls?: TaskCallContext },
+  db: Db, deps: { push?: PushSender; sms?: SmsSender; cipher?: TextCipher; news: NewsDeps; taskCalls?: TaskCallContext; errands?: ErrandContext },
   shouldStop: () => boolean,
 ): Promise<void> {
   const loops = [dispatchLoop(db, deps, shouldStop), digestLoop(db, deps.news, shouldStop)];
   if (deps.taskCalls) loops.push(taskCallLoop(deps.taskCalls, shouldStop));
+  if (deps.errands) loops.push(errandLoop(deps.errands, shouldStop));
   await Promise.all(loops);
+}
+
+/**
+ * Errands (ADR-563): starts queued research runs (up to 3 at once in this process, each up to the
+ * time limit) and tidies expired drafts and unacknowledged results. Its own loop, so a long run never
+ * holds back pushes. On shutdown, running errands stop and are stored as `interrupted`.
+ */
+async function errandLoop(ctx: ErrandContext, shouldStop: () => boolean) {
+  const state = newErrandLoopState();
+  while (!shouldStop()) {
+    try {
+      const counts = await runErrandPasses(ctx, state);
+      if (Object.keys(counts).length) log("errand passes", counts);
+    } catch (err) {
+      log("errand passes failed", { error: (err as Error).message });
+    }
+    await pause(2000, shouldStop);
+  }
+  await stopErrandRuns(state);
 }
 
 /**

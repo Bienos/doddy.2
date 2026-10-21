@@ -22,6 +22,16 @@ Written by the agent that applied the guide, not by the translation agents; the 
 - "Development build. Doddy is an AI assistant…" is the same string with "Doddy" instead of "DODDY".
 - Spoken, not in the tables (DoddyCore `WakeGreeting`): the Polish opening lines "Cześć, tu Doddy. Co ci chodzi po głowie?" (first conversation) and "Jestem. Co słychać?" (after that). A Polish speaker should say them aloud; "Co ci chodzi po głowie?" is meant as the informal "What's on your mind?".
 
+## Added 21 October 2026 (ADR-563, tasks handed to Doddy)
+
+Polish only, written by the agent that built the Tasks screens; the other eight languages show these in English until they are translated. The same native review applies:
+
+- "Tasks" is "Sprawy" (the owner's word for what you hand Doddy), "Your tasks" "Twoje sprawy", "No tasks yet." "Jeszcze nie ma spraw."
+- "You said" became the gender-neutral "Twoje słowa".
+- The budget line is "Budżet: „…”" with "mieści się", "przekracza" or "nie wiadomo".
+- The task list's intro, the result card, Home's "Gotowe: %@" / "Nie udało się dokończyć: %@" card and the error lines in `ErrandsModel`.
+- Not in the tables: the failure explanations come from DoddyCore (`ErrandFailureCode.explanation`) in English.
+
 ## Per language
 
 **French (fr).** Uses non-breaking spaces before `? ! : ;` and inside « ». Unsure: "Receipts" → "Confirmations" (#782); "is now due" (#1357); "Item" → "Objet" (#449); "Way" → "Moyen" (#1233); "Focusing" (#384); "Grounded" → "Posé" (#405). Terms: memories = souvenirs; Morning check-in = Point du matin; Evening wrap-up = Bilan du soir; Weekly look-back = Retour sur la semaine; Shopping mode = Mode courses; Focus = Concentration (also Doddy's own focus timer); "Hey Siri" = « Dis Siri ».

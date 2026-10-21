@@ -71,6 +71,17 @@ const schema = z.object({
   PRICE_ELEVENLABS_USD_PER_CREDIT: z.coerce.number().positive().max(1).optional(),
   // Twilio's own voice for the short fixed lines (apology, goodbye, "przekazuję rozmowę").
   TASK_CALL_SAY_VOICE: z.string().regex(/^[A-Za-z0-9.\-]{1,40}$/).default("Polly.Ewa"),
+
+  // Errands (ADR-563, docs/implementation/ERRANDS.md): Doddy researches a task in the background.
+  // On by default, but only runs when ANTHROPIC_API_KEY and MEMORY_ENCRYPTION_KEY are set too;
+  // "0" refuses new errands and starts no queued one.
+  ERRANDS_ENABLED: z.enum(["0", "1"]).default("0"),
+  ERRANDS_MODEL: z.string().regex(/^[a-z0-9][a-z0-9.\-]{1,63}$/).default("claude-opus-5-5"),
+  ERRANDS_EFFORT: z.enum(["low", "medium", "high", "xhigh", "max"]).default("high"),
+  // A stuck run ends as failed: time_limit instead of running forever. Not a cap on look-ups.
+  ERRAND_TIME_LIMIT_MINUTES: z.coerce.number().int().min(1).max(120).default(30),
+  // Queued or running errands per account.
+  ERRANDS_MAX_OPEN: z.coerce.number().int().min(1).max(20).default(5),
 });
 
 export interface ApnsConfig { teamId: string; keyId: string; privateKey: string; bundleId: string }
@@ -100,6 +111,13 @@ export interface TaskCallSettings {
   killSwitch: boolean; notice: RecordingNotice; limits: TaskCallLimits; prices: TaskCallPrices; sayVoice: string;
 }
 
+export type ErrandEffort = "low" | "medium" | "high" | "xhigh" | "max";
+
+/** Errand switches and limits. `enabled` is the env switch only; the key and cipher are checked where wired. */
+export interface ErrandSettings {
+  enabled: boolean; model: string; effort: ErrandEffort; timeLimitMinutes: number; maxOpen: number;
+}
+
 export interface Config {
   databaseUrl: string;
   port: number;
@@ -119,6 +137,7 @@ export interface Config {
   gnewsApiKey?: string;
   taskCalls?: TaskCallConfig;
   taskCallSettings: TaskCallSettings;
+  errandSettings: ErrandSettings;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -179,6 +198,13 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       },
       sayVoice: e.TASK_CALL_SAY_VOICE,
     },
+    errandSettings: {
+      enabled: e.ERRANDS_ENABLED === "1",
+      model: e.ERRANDS_MODEL,
+      effort: e.ERRANDS_EFFORT,
+      timeLimitMinutes: e.ERRAND_TIME_LIMIT_MINUTES,
+      maxOpen: e.ERRANDS_MAX_OPEN,
+    },
   };
 }
 
@@ -192,4 +218,10 @@ export const DEFAULT_TASK_CALL_SETTINGS: TaskCallSettings = {
   },
   prices: {},
   sayVoice: "Polly.Ewa",
+};
+
+/** Settings for an injected ErrandDeps without its own (tests): on, Opus 5.5 at high effort, 30 min, 5 open.
+ * The environment's ERRANDS_ENABLED defaults to "0": errands start only when the owner turns them on. */
+export const DEFAULT_ERRAND_SETTINGS: ErrandSettings = {
+  enabled: true, model: "claude-opus-5-5", effort: "high", timeLimitMinutes: 30, maxOpen: 5,
 };
