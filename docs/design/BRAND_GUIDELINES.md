@@ -365,7 +365,7 @@ Full construction rules are in `docs/design/BRAND_AND_CHARACTER.md`, the interfa
 - The face mark (round ivory head, three tufts, two vertical oval pupils, off-centre smile, ink stroke) is the small-size mark for icons and avatars from 24 to 64 px.
 - Clear space (proposed): at least the height of the lowercase "o" in the wordmark, or the pupil height for the face mark. Proposed minimum wordmark width 96 px on screen.
 - Do not recolour the marks beyond ink, paper reverse, and the single orange underline. No gradients, shadows, outlines or 3D.
-- The app icon is the pack's wave frame on paper (ADR-557, 20 October 2026); provenance in `docs/design/UPLOADED_MEMORY_ASSETS.md`.
+- The app icon is Doddy's face (the open head of the pack's blink sheet 007) on orange `#FF6A00` (ADR-565, 21 October 2026; it replaced ADR-557's wave frame on paper); provenance in `docs/design/UPLOADED_MEMORY_ASSETS.md`.
 
 ---
 

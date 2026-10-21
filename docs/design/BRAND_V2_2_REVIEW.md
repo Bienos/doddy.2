@@ -197,6 +197,7 @@ Owner's answer: "all of it, 2A, 3a, 7 later".
 |---|---|---|
 | 1 | Yes, with the PDF | `design/brand-v2.2/` (PDF and provenance README), ADR-556; `CLAUDE.md`, `CANONICAL_DESIGN_DIRECTION.md`, `BRAND_GUIDELINES.md` (superseded notes), `STATUS.md` |
 | 2 | Candidate A, no dark variant | `tools/whole_doddy/make_app_icon.py`; both `AppIcon.png` files (SHA-256 `ba28b129…`); `AppIcon-dark.png` removed; ADR-557; `UPLOADED_MEMORY_ASSETS.md`; go-live C3 |
+| 2, again (21 Oct) | Replaced: "just his face", option B, on orange (owner) | The icon is the open head from the pack's blink sheet 007 on `#FF6A00` (SHA-256 `c4917bad…`); `make_app_icon.py` rewritten; ADR-565 |
 | 3a | Yes | `CandidateTokens.swift` orange `#FF6A00`; `site/tokens.css` regenerated; `site/court.js` |
 | 3b | Not yet | After the owner sees 3a on a device |
 | 4 | Yes, in the spec | `voice-agent/instructions.md` "# Who you are" and "# How you speak" (the approved text, plus the sentence "This is a spoken conversation." kept from before). **The live agent too, on the owner's "do it" (20 Oct):** eleven short lines added to the owner's own prompt in its style, plus the `opening_line` placeholder, version `agtvrsn_8701m5ct8dxsf8htebwpdykppqbv`; `voice-agent/README.md` |
