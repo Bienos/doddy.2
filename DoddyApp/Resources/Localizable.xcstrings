@@ -4636,6 +4636,17 @@
         }
       }
     },
+    "Allow also says yes to this one look-up.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zezwól oznacza też „tak” dla tego jednego sprawdzenia."
+          }
+        }
+      }
+    },
     "Allow notifications": {
       "extractionState": "manual",
       "localizations": {
@@ -18260,6 +18271,47 @@
         }
       }
     },
+    "Doddy makes a PowerPoint file on this iPhone, which Keynote opens. Then you pick Keynote, Files or someone to send it to. Doddy never sends it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy makes a PowerPoint file on this iPad, which Keynote opens. Then you pick Keynote, Files or someone to send it to. Doddy never sends it."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy makes a PowerPoint file on this iPhone, which Keynote opens. Then you pick Keynote, Files or someone to send it to. Doddy never sends it."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy tworzy na tym iPadzie plik PowerPoint, który otwiera Keynote. Potem wybierasz Keynote, Pliki albo osobę, do której go wysłać. Doddy nigdy go nie wysyła."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy tworzy na tym iPhonie plik PowerPoint, który otwiera Keynote. Potem wybierasz Keynote, Pliki albo osobę, do której go wysłać. Doddy nigdy go nie wysyła."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Doddy may call me": {
       "extractionState": "manual",
       "localizations": {
@@ -19266,6 +19318,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy 在你和说另一种语言的人之间做翻译。"
+          }
+        }
+      }
+    },
+    "Doddy was asked to": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy ma"
           }
         }
       }
@@ -28767,6 +28830,17 @@
         }
       }
     },
+    "It's in Doddy's temporary files until iOS clears them. Save it in Keynote or Files to keep it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jest w plikach tymczasowych Doddy’ego, dopóki iOS ich nie wyczyści. Zapisz ją w Keynote albo w Plikach, żeby ją zachować."
+          }
+        }
+      }
+    },
     "It's too late to undo here. Change it in Calendar or Reminders.": {
       "extractionState": "manual",
       "localizations": {
@@ -34075,6 +34149,17 @@
         }
       }
     },
+    "Make presentation": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przygotuj prezentację"
+          }
+        }
+      }
+    },
     "Make the Action Button start a conversation with Doddy.": {
       "extractionState": "manual",
       "localizations": {
@@ -34082,6 +34167,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Niech przycisk czynności zaczyna rozmowę z Doddym."
+          }
+        }
+      }
+    },
+    "Make this presentation?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przygotować tę prezentację?"
           }
         }
       }
@@ -45860,6 +45956,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "打开 iPhone 设置"
+          }
+        }
+      }
+    },
+    "Open in Keynote or share": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz w Keynote albo udostępnij"
           }
         }
       }
@@ -87808,6 +87915,17 @@
         }
       }
     },
+    "Your presentation is ready": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoja prezentacja jest gotowa"
+          }
+        }
+      }
+    },
     "Your question": {
       "extractionState": "manual",
       "localizations": {
@@ -88752,6 +88870,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "iPhone may ask you once too. You can turn it off any time in Settings, Connections.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iPhone może też raz zapytać. Możesz to wyłączyć w każdej chwili w Ustawieniach, w sekcji Połączenia."
           }
         }
       }

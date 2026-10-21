@@ -22,6 +22,8 @@ extension ActivityApp {
         case .web: return "Wyszukiwanie w sieci"
         case .exchangeRates: return "Kursy walut"
         case .blik: return "Przelewy BLIK"
+        case .presentations: return "Prezentacje"
+        case .steps: return "Kroki"
         }
     }
 }
@@ -61,6 +63,8 @@ public enum ActivityText {
         "Run shortcut": "Uruchom skrót",
         "Draft a text": "Szkic SMS-a",
         "Prepare a BLIK transfer": "Przygotuj przelew BLIK",
+        "Make a presentation": "Przygotuj prezentację",
+        "Read steps": "Odczytano kroki",
         "Draft an email": "Szkic e-maila",
         // Written before ADR-275 fixed the article; old rows still say it.
         "Draft a email": "Szkic e-maila",
@@ -186,6 +190,8 @@ public enum ActivityText {
         case .shortcuts: "Skróty"
         case .messages: "Wiadomości i e-mail"
         case .blik: "Przelewy BLIK"
+        case .presentations: "Prezentacje"
+        case .steps: "Kroki"
         }
     }
 

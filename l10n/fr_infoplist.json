@@ -30,5 +30,9 @@
   "NSSpeechRecognitionUsageDescription": {
     "en": "Doddy writes out a voice memo on this iPhone when you record one, so you can check its words before saving. The recording and its words are not sent anywhere.",
     "fr": "Doddy transcrit un mémo vocal sur cet iPhone quand tu en enregistres un, pour que tu puisses vérifier ses mots avant d’enregistrer. L’enregistrement et ses mots ne sont envoyés nulle part."
+  },
+  "NSMotionUsageDescription": {
+    "en": "Doddy reads your steps, walking distance and floors climbed from Motion & Fitness only when you ask, for one day of the last seven. In a voice conversation those numbers go to ElevenLabs, which runs Doddy's voice, or to OpenAI if you switch Home's voice to it. Doddy keeps none of them and reads nothing from Health. Turn this off in Settings, Connections.",
+    "fr": "Doddy lit tes pas, la distance parcourue à pied et les étages montés dans Mouvements et forme uniquement quand tu le demandes, pour un jour parmi les sept derniers. Dans une conversation vocale, ces chiffres vont à ElevenLabs, qui fait tourner la voix de Doddy, ou à OpenAI si tu choisis cette voix sur l’écran d’accueil. Doddy n’en garde rien et ne lit rien dans Santé. Désactive ceci dans Réglages, Connexions."
   }
 }

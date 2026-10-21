@@ -19,7 +19,8 @@
 #    DoddyApp/Features/VoiceMemos (recording and playing voice memos, ADR-230),
 #  - speech recognition (Speech) only inside DoddyApp/Features/VoiceMemos, and every recognition
 #    request there sets requiresOnDeviceRecognition = true (nothing is sent to Apple's servers),
-#  - calendar (EventKit) and contacts code only inside DoddyApp/Infrastructure/Connections,
+#  - calendar (EventKit), contacts and Motion & Fitness step counts (CoreMotion's pedometer,
+#    ADR-564) code only inside DoddyApp/Infrastructure/Connections,
 #  - location and Apple Maps search code (place reminders, ADR-196) only there too, and never
 #    "Always" location, background location or significant-change tracking,
 #  - on-device meaning search (NaturalLanguage embeddings) only inside DoddyApp/Features/Meaning (ADR-227);
@@ -37,7 +38,7 @@
 #    countdown widget (ADR-260, ADR-283),
 #  - CloudKit (shared lists through the user's iCloud) only inside DoddyApp/Features/Sharing (ADR-263),
 #  - permission keys only for alarms (AlarmKit, iOS 26), the microphone, speech recognition (on-device, voice memos), calendar,
-#    reminders, contacts and "While Using" location,
+#    reminders, contacts, Motion & Fitness (steps, ADR-564) and "While Using" location,
 #  - backend: Composio tool slugs only in the adapters and the tool catalog (and the mock that mimics
 #    their answers), no write tools beyond the reviewed ones (Gmail draft and reply draft; Todoist add, complete and move,
 #    ADR-303), no proxy execution,
@@ -81,7 +82,7 @@ watch_app_dir=DoddyWatch
 watch_only='import WatchConnectivity|WCSession'
 alarms_dir=DoddyApp/Features/Alarms
 alarms_only='import AlarmKit|AlarmManager'
-connections_only='import EventKit|EKEventStore|EKEvent|EKReminder|import Contacts|CNContact|import CoreLocation|CLLocationManager|CLLocationUpdate|import MapKit|MKLocalSearch|UNLocationNotificationTrigger'
+connections_only='import EventKit|EKEventStore|EKEvent|EKReminder|import Contacts|CNContact|import CoreLocation|CLLocationManager|CLLocationUpdate|import MapKit|MKLocalSearch|UNLocationNotificationTrigger|import CoreMotion|CMPedometer|CMMotionActivityManager'
 meaning_dir=DoddyApp/Features/Meaning
 meaning_only='NLContextualEmbedding|NLEmbedding'
 # Read aloud picks a voice by the note's language (NLLanguageRecognizer, on the iPhone, ADR-243).
@@ -92,7 +93,7 @@ photo_library='PHPhotoLibrary\.(requestAuthorization|authorizationStatus)|PHAsse
 location_tracking='requestAlwaysAuthorization|NSLocationAlways|allowsBackgroundLocationUpdates|startMonitoringSignificantLocationChanges|startMonitoringVisits|CLBackgroundActivitySession|UIBackgroundModes.*location'
 messaging_secrets='(sk-[A-Za-z0-9]{20,}|sk_[A-Za-z0-9]{20,}|AC[0-9a-f]{32}|SK[0-9a-f]{32}|BEGIN (RSA |EC )?PRIVATE KEY|(KEY|TOKEN|SECRET)=[^[:space:]]{8,})'
 secrets='(sk-[A-Za-z0-9]{20,}|sk_[A-Za-z0-9]{20,}|ak_[A-Za-z0-9_-]{20,}|monid_(live|test)_[A-Za-z0-9_-]{16,}|xi-api-key|api[_-]?key[[:space:]]*[:=][[:space:]]*"[^"]+"|BEGIN (RSA |EC )?PRIVATE KEY)'
-allowed_permissions='NSAlarmKitUsageDescription|NSMicrophoneUsageDescription|NSSpeechRecognitionUsageDescription|NSCalendarsFullAccessUsageDescription|NSRemindersFullAccessUsageDescription|NSContactsUsageDescription|NSLocationWhenInUseUsageDescription|NSFaceIDUsageDescription'
+allowed_permissions='NSAlarmKitUsageDescription|NSMicrophoneUsageDescription|NSSpeechRecognitionUsageDescription|NSCalendarsFullAccessUsageDescription|NSRemindersFullAccessUsageDescription|NSContactsUsageDescription|NSMotionUsageDescription|NSLocationWhenInUseUsageDescription|NSFaceIDUsageDescription'
 backend_src=backend/src
 # Drops comment-only lines from `grep -n` output (file:line:   // …, /// …, * …).
 code_only() { grep -vE '^[^:]+:[0-9]+:[[:space:]]*(//|\*|/\*)'; }
@@ -192,7 +193,7 @@ if [ -d "$memos_dir" ]; then
   fi
 fi
 if grep -RInE --include='*.swift' "$connections_only" "${dirs[@]}" | grep -v "^$connections_dir/"; then
-  echo "FAIL: calendar, contacts or location code outside $connections_dir." >&2; status=1
+  echo "FAIL: calendar, contacts, location or Motion & Fitness code outside $connections_dir." >&2; status=1
 fi
 if grep -RInE --include='*.swift' "$meaning_only" "${dirs[@]}" | grep -v "^$meaning_dir/"; then
   echo "FAIL: on-device language models outside $meaning_dir (ADR-227)." >&2; status=1
@@ -311,7 +312,7 @@ if grep -RInE --include='*.swift' "$alarms_only" "${dirs[@]}" | code_only | grep
   echo "FAIL: AlarmKit outside $alarms_dir." >&2; status=1
 fi
 if grep -RnoE 'NS[A-Za-z]+UsageDescription' project.yml DoddyApp DoddyWidgets DoddyShare Config | grep -vE "$allowed_permissions"; then
-  echo "FAIL: only the alarms, microphone, speech recognition, calendar, reminders, contacts, While Using location and Face ID permissions are allowed." >&2; status=1
+  echo "FAIL: only the alarms, microphone, speech recognition, calendar, reminders, contacts, Motion & Fitness, While Using location and Face ID permissions are allowed." >&2; status=1
 fi
-[ "$status" -eq 0 ] && echo "PASS: ASK-01: every voice tool and every server tool asks first through one gate; networking only in the token client, the voice account sign-in, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice and the ECB rates client, web auth only in Connected Apps, Sign in with Apple only in the voice account sign-in and no password or passkey APIs, ElevenLabs only in Voice, audio only in Voice and Voice memos, on-device speech recognition only in Voice memos, calendar, contacts and location only in Connections, photo reading and the photo picker only in Photos (no camera or photo library access), no Always/background location, no analytics, no secrets, no 1Password code in the app or SDK in the servers, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts, While Using location and Face ID (LocalAuthentication only in the app lock); backend has no write tools beyond the reviewed Gmail draft and reply draft, the Outlook draft and Todoist add, complete and move, and no proxy execution."
+[ "$status" -eq 0 ] && echo "PASS: ASK-01: every voice tool and every server tool asks first through one gate; networking only in the token client, the voice account sign-in, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice and the ECB rates client, web auth only in Connected Apps, Sign in with Apple only in the voice account sign-in and no password or passkey APIs, ElevenLabs only in Voice, audio only in Voice and Voice memos, on-device speech recognition only in Voice memos, calendar, contacts, location and Motion & Fitness only in Connections, photo reading and the photo picker only in Photos (no camera or photo library access), no Always/background location, no analytics, no secrets, no 1Password code in the app or SDK in the servers, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts, Motion & Fitness, While Using location and Face ID (LocalAuthentication only in the app lock); backend has no write tools beyond the reviewed Gmail draft and reply draft, the Outlook draft and Todoist add, complete and move, and no proxy execution."
 exit "$status"

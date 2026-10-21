@@ -95,6 +95,8 @@ public enum ToolCatalog {
         // Contacts, timers and alarms, places.
         .init(VoiceToolName.lookupContact, .lookup, .askFirst),
         .init(VoiceToolName.upcomingBirthdays, .lookup, .askFirst),
+        // Motion & Fitness, read only (ADR-564).
+        .init(VoiceToolName.readSteps, .lookup, .askFirst),
         .init(VoiceToolName.setTimer, .localChange, .card),
         .init(VoiceToolName.setAlarm, .localChange, .card),
         .init(VoiceToolName.listAlarms, .lookup, .askFirst),
@@ -113,6 +115,8 @@ public enum ToolCatalog {
         .init(VoiceToolName.draftMessage, .handoff, .card),
         // A BLIK transfer on a card; the user sends it in their bank app, never Doddy (ADR-510).
         .init(VoiceToolName.draftBlikTransfer, .handoff, .card),
+        // A file made on the iPhone on a tap, then the share sheet to Keynote or Files (ADR-563).
+        .init(VoiceToolName.makePresentation, .handoff, .card),
         // The conversation itself.
         .init(VoiceToolName.startTranslator, .session, .askFirst),
         .init(VoiceToolName.stopTranslator, .session, .askFirst),

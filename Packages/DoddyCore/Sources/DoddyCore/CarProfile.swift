@@ -19,7 +19,7 @@ public enum CarDecision: Equatable, Sendable {
 public enum CarProfile {
     public static func decision(for request: VoiceToolRequest) -> CarDecision {
         switch request {
-        case .searchMemories, .readCalendar, .findFreeTime, .upcomingBirthdays, .calculate, .convertUnits,
+        case .searchMemories, .readCalendar, .findFreeTime, .upcomingBirthdays, .readSteps, .calculate, .convertUnits,
              .convertCurrency, .readList, .listAlarms, .needsClarification, .unsupported, .invalid:
             return .run
         case .noteCapabilityGap:
@@ -41,7 +41,7 @@ public enum CarProfile {
         case .addToList(let request):
             return .askAloud(readBack: CarConfirmation.readBack(adding: request.items, to: request.list))
         case .leaveBy, .createCalendarEvent, .createReminder, .remindAboutNote, .lookupContact, .addIngredients, .undoLast,
-             .setTimer, .setAlarm, .cancelAlarm, .openMap, .runShortcut, .draftMessage, .startTranslator,
+             .setTimer, .setAlarm, .cancelAlarm, .openMap, .runShortcut, .draftMessage, .makePresentation, .startTranslator,
              .stopTranslator, .checkOff, .removeFromList, .createList, .changeCalendarEvent, .changeReminder,
              .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders:
             return .refuse(reason: "This needs a tap on a card on the iPhone, so it waits until the user isn't driving.")

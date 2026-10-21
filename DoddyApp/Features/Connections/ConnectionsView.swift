@@ -63,9 +63,10 @@ struct ConnectionGroup: Identifiable {
     var id: String { title }
 
     static let all: [ConnectionGroup] = [
-        ConnectionGroup(title: "Your day", items: [.calendar, .reminders, .timers]),
+        ConnectionGroup(title: "Your day", items: [.calendar, .reminders, .timers, .steps]),
         ConnectionGroup(title: "People", items: [.contacts, .messages]),
-        ConnectionGroup(title: "Places and apps", items: [.maps, .shortcuts]),
+        // ADR-563: a presentation is a file made here, opened in Keynote by the user.
+        ConnectionGroup(title: "Places and apps", items: [.maps, .shortcuts, .presentations]),
         // ADR-510: shown, never sent; the user sends it in their bank app.
         ConnectionGroup(title: "Money", items: [.blik]),
     ]
@@ -368,6 +369,29 @@ struct ConnectionInfo {
                 ],
                 leavesPhone: "The shortcut's name, when you ask Doddy to run it.",
                 staysHere: "Doddy can't see what a shortcut does or whether it finished.")
+        case .presentations:
+            // ADR-563: Apple lets no app control Keynote, so Doddy makes the file and the user opens it.
+            ConnectionInfo(
+                symbol: "rectangle.on.rectangle.angled",
+                examples: ["Make me five slides about our trip", "Turn my notes on the launch into a presentation"],
+                canDo: [
+                    "Show every slide on a card first: the title, then each slide's title and points",
+                    "Make the presentation after you tap Make presentation, as a PowerPoint file that Keynote opens",
+                    "Open the share sheet, so you pick Keynote, Files or someone to send it to",
+                ],
+                leavesPhone: "What you ask for and the slides Doddy writes are part of the conversation, which runs on ElevenLabs, or OpenAI if you chose it.",
+                staysHere: "The file is made on this iPhone and kept in Doddy's temporary files until iOS clears them; save it in Keynote or Files to keep it. Doddy can't see what you do with it and never sends it.")
+        case .steps:
+            // ADR-564: Motion & Fitness, read only. Not Health.
+            ConnectionInfo(
+                symbol: "figure.walk",
+                examples: ["How many steps today?", "How far did I walk yesterday?"],
+                canDo: [
+                    "Read one day's steps, walking distance and floors climbed, after you say yes or tap",
+                    "Today and the six days before it, which is what your iPhone keeps",
+                ],
+                leavesPhone: "That day's numbers, when Doddy uses them in a conversation.",
+                staysHere: "Doddy keeps none of it and reads nothing from the Health app. iPhone asks once for Motion & Fitness.")
         case .blik:
             // ADR-510: BLIK has no way for an app to send money, so Doddy only shows the details.
             ConnectionInfo(

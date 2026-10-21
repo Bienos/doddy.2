@@ -364,10 +364,13 @@ final class VoiceToolsTests: XCTestCase {
         XCTAssertEqual(VoiceConnection.serving("run_shortcut"), .shortcuts)
         XCTAssertEqual(VoiceConnection.serving("draft_message"), .messages)
         XCTAssertEqual(VoiceConnection.serving("draft_blik_transfer"), .blik)
+        XCTAssertEqual(VoiceConnection.serving("make_presentation"), .presentations)
+        XCTAssertEqual(VoiceConnection.serving("read_steps"), .steps)
         XCTAssertNil(VoiceConnection.serving("save_memory"))
         XCTAssertEqual(VoiceConnection.calendar.preferenceKey, "voiceConnection.calendar")
         XCTAssertEqual(VoiceConnection.blik.preferenceKey, "voiceConnection.blik")
-        XCTAssertEqual(VoiceConnection.allCases.count, 8)
+        // ADR-563 and ADR-564 added Presentations and Steps.
+        XCTAssertEqual(VoiceConnection.allCases.count, 10)
     }
 
     // MARK: Replies

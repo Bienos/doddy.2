@@ -30,5 +30,9 @@
   "NSSpeechRecognitionUsageDescription": {
     "en": "Doddy writes out a voice memo on this iPhone when you record one, so you can check its words before saving. The recording and its words are not sent anywhere.",
     "ja": "ボイスメモを録音すると、Doddyは保存前に言葉を確認できるよう、このiPhone上で文字に書き起こします。録音とその文字はどこにも送られません。"
+  },
+  "NSMotionUsageDescription": {
+    "en": "Doddy reads your steps, walking distance and floors climbed from Motion & Fitness only when you ask, for one day of the last seven. In a voice conversation those numbers go to ElevenLabs, which runs Doddy's voice, or to OpenAI if you switch Home's voice to it. Doddy keeps none of them and reads nothing from Health. Turn this off in Settings, Connections.",
+    "ja": "Doddyは、あなたが頼んだときだけ、過去7日間のうち1日分の歩数、歩行距離、上った階数を「モーションとフィットネス」から読み取ります。音声会話では、その数値がDoddyの声を動かすElevenLabsに送られます。ホームの音声をOpenAIに切り替えた場合はOpenAIに送られます。Doddyはこれらを保存せず、ヘルスケアからは何も読み取りません。オフにするには、設定の「連携」を使ってください。"
   }
 }

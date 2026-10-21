@@ -86,6 +86,9 @@ final class VoiceSessionController {
         /// ASK-01: an online-account read or web search. `preview` and `approvalID` come from
         /// Doddy's server, which read nothing to make them and runs nothing without the approval.
         case cloudRead(toolCallID: String, call: CloudToolCall, preview: ToolPreview, approvalID: UUID, mode: ConnectedAppsMode)
+        /// "Make this presentation?" (ADR-563): every slide as it will be in the file. Nothing is
+        /// made until the user taps Make presentation.
+        case presentation(toolCallID: String, draft: PresentationDraft)
 
         var toolCallID: String {
             switch self {
@@ -94,7 +97,8 @@ final class VoiceSessionController {
                  .noteReminder(let id, _, _, _, _), .createList(let id, _, _), .plan(let id, _, _),
                  .changeEvent(let id, _), .changeReminder(let id, _, _), .deleteEvent(let id, _), .deleteReminder(let id, _),
                  .undo(let id, _), .bulk(let id, _, _, _), .parking(let id, _), .leaveBy(let id, _),
-                 .ingredients(let id, _, _, _, _, _), .ask(let id, _, _, _, _), .cloudRead(let id, _, _, _, _):
+                 .ingredients(let id, _, _, _, _, _), .ask(let id, _, _, _, _), .cloudRead(let id, _, _, _, _),
+                 .presentation(let id, _):
                 id
             }
         }
@@ -122,6 +126,28 @@ final class VoiceSessionController {
     enum NoteReminderStatus: Equatable {
         case setting(ConfirmedNoteReminder)
         case done(ConfirmedNoteReminder, NoteReminderReceipt)
+    }
+
+    /// The permission sheet (ADR-562): which connection, what Doddy was asked to do, and the call
+    /// kept exactly as it came. `askCard` is set for a read, whose Allow also answers its ask.
+    struct PermissionRequest: Identifiable, Equatable {
+        let toolCallID: String
+        let connection: VoiceConnection
+        let kind: PermissionAsk.Kind
+        let reason: String?
+        let askCard: AskCard?
+        let toolName: String
+        let parameters: Data
+
+        var id: String { toolCallID }
+    }
+
+    /// A presentation file written and read back on this iPhone (ADR-563).
+    struct PresentationReady: Identifiable, Equatable {
+        let id = UUID()
+        let url: URL
+        let title: String
+        let slideCount: Int
     }
 
     /// A BLIK transfer to send in the bank app (ADR-510), as shown on its card.
@@ -236,6 +262,15 @@ final class VoiceSessionController {
     private(set) var selectedPlaceIndex = 0
     /// A function the agent asked for that is off or blocked. The screen offers to turn it on.
     private(set) var connectionNeeded: VoiceConnection?
+    /// "Let Doddy use Calendar?" (ADR-562): a call held while the sheet asks the user.
+    private(set) var permissionRequest: PermissionRequest?
+    /// Connections the user said Not now to in this conversation: not asked for again.
+    private var declinedPermissions: Set<VoiceConnection> = []
+    /// Each call as it came, until it is answered, so one held for the permission sheet can be
+    /// handled again from the start once the user allows it.
+    private var callsAsReceived: [String: (toolName: String, parameters: Data)] = [:]
+    /// The presentation made in this conversation (ADR-563), for the share sheet and its card.
+    private(set) var presentationReady: PresentationReady?
     private(set) var isMuted = false {
         didSet {
             syncIsland()
@@ -479,6 +514,10 @@ final class VoiceSessionController {
         noteReminderStatus = nil
         planStatus = nil
         connectionNeeded = nil
+        permissionRequest = nil
+        declinedPermissions = []
+        callsAsReceived = [:]
+        presentationReady = nil
         isMuted = false
         savedThisConversation = 0
         islandFlash = nil
@@ -911,6 +950,9 @@ final class VoiceSessionController {
         contactCard = nil
         parkingCard = nil
         connectionNeeded = nil
+        // A call held for the permission sheet goes with its conversation (ADR-562).
+        permissionRequest = nil
+        callsAsReceived = [:]
         if isLive { phase = .ended }
         keepLog()
         offerSaveSuggestions()
@@ -1206,6 +1248,17 @@ final class VoiceSessionController {
             // Nothing runs (ADR-510): the details stay on screen and the user sends it in their bank app.
             if onScreen(attempt) { blikCard = BlikCard(draft: draft, contactName: contactName, numbers: numbers) }
             await reply(id, VoiceToolReply.blikShown(draft, contactName: contactName))
+        case .presentation(let id, let draft):
+            // ADR-563: written on this iPhone and read back; the share sheet hands it to Keynote.
+            do {
+                let url = try PresentationFiles.write(draft, created: Date())
+                if onScreen(attempt) {
+                    presentationReady = PresentationReady(url: url, title: draft.title, slideCount: draft.slideCount)
+                }
+                await reply(id, VoiceToolReply.presentationMade(draft))
+            } catch {
+                await reply(id, VoiceToolReply.presentationFailed(UserFacingError.message(for: error)), isError: true)
+            }
         case .ask(let id, _, _, let toolName, _):
             guard askLedger.answer(.tapped, for: id, at: Date()) == .granted else {
                 await reply(id, AskFirst.notAsked(toolName))
@@ -1417,6 +1470,7 @@ final class VoiceSessionController {
         case .shortcut(let id, _): await reply(id, VoiceToolReply.declinedShortcut)
         case .message(let id, _, _): await reply(id, VoiceToolReply.declinedMessage)
         case .blik(let id, _, _, _): await reply(id, VoiceToolReply.blikDeclined)
+        case .presentation(let id, _): await reply(id, VoiceToolReply.presentationDeclined)
         case .cloud(let id, let call, _, _, _): await reply(id, VoiceToolReply.cloudDeclined(call.name))
         case .ask(let id, _, _, let toolName, _):
             _ = askLedger.answer(.declined, for: id, at: Date())
@@ -2163,6 +2217,7 @@ final class VoiceSessionController {
         // A call still queued when the user tapped End runs nothing (review H9).
         guard isLive, attempt == startAttempt else { return }
         callOwners.record(call.toolCallId, attempt: attempt)
+        callsAsReceived[call.toolCallId] = (call.toolName, call.parametersData)
         let request = VoiceToolRequest.parse(name: call.toolName, parametersJSON: call.parametersData)
         // Translator (ADR-215), plan, Pause all, then the tool's switch, in that order (ToolGate).
         let gate = ToolGate.decide(
@@ -2395,6 +2450,26 @@ final class VoiceSessionController {
                 propose(.blik(toolCallID: call.toolCallId, draft: draft, contactName: nil, numbers: []), toolCallID: call.toolCallId)
             case .contact(let name, let numbers):
                 propose(.blik(toolCallID: call.toolCallId, draft: draft, contactName: name, numbers: numbers), toolCallID: call.toolCallId)
+            }
+        case .makePresentation(let draft):
+            // ADR-563: every slide on a card; the file is made only on the tap.
+            propose(.presentation(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
+        case .readSteps(let day):
+            // ADR-564: one day's totals from Motion & Fitness, read only.
+            guard devices.stepCountingAvailable else {
+                await reply(call.toolCallId, VoiceToolReply.stepsUnavailable)
+                return
+            }
+            guard devices.access(for: .steps) == .granted else {
+                await notConnected(call.toolCallId, .steps)
+                return
+            }
+            do {
+                let now = Date()
+                let totals = try await devices.steps(on: day, now: now)
+                await reply(call.toolCallId, VoiceToolReply.steps(totals, day: day, until: day.daysAgo == 0 ? now : nil, calendar: .current))
+            } catch {
+                await reply(call.toolCallId, VoiceToolReply.stepsFailed(UserFacingError.message(for: error)), isError: true)
             }
         case .cloudTool(let cloud):
             await handleCloud(cloud, toolCallID: call.toolCallId)
@@ -3448,8 +3523,88 @@ final class VoiceSessionController {
     private func notConnected(_ toolCallID: String, _ connection: VoiceConnection) async {
         // Some callers waited first (notification access): no prompt in a later conversation.
         guard isCurrent(toolCallID) else { return dropStale(toolCallID) }
+        if connection == .steps, !devices.stepCountingAvailable {
+            await reply(toolCallID, VoiceToolReply.stepsUnavailable)
+            return
+        }
+        // ADR-562: hold the call and slide the permission sheet up, instead of answering "not
+        // connected" and leaving the user to find Settings. One sheet at a time; a connection the
+        // user said Not now to isn't asked for again in this conversation.
+        if isLive, let call = callsAsReceived[toolCallID],
+           PermissionAsk.mayAsk(connection, declined: declinedPermissions, sheetShowing: permissionRequest != nil) {
+            let refused: Bool
+            if connection == .timers {
+                refused = await devices.notificationAccess() == .denied
+            } else {
+                refused = devices.access(for: connection) == .denied
+            }
+            if isCurrent(toolCallID), permissionRequest == nil {
+                let request = VoiceToolRequest.parse(name: call.toolName, parametersJSON: call.parameters)
+                var askCard: AskCard?
+                if case .yesFirst(let card) = AskFirst.need(for: request) { askCard = card }
+                permissionRequest = PermissionRequest(
+                    toolCallID: toolCallID, connection: connection, kind: PermissionAsk.kind(iosRefused: refused),
+                    reason: PermissionAsk.reason(request), askCard: askCard, toolName: call.toolName, parameters: call.parameters)
+                return
+            }
+            guard isCurrent(toolCallID) else { return dropStale(toolCallID) }
+        }
         connectionNeeded = connection
-        await reply(toolCallID, VoiceToolReply.notConnected(connection))
+        await reply(toolCallID, declinedPermissions.contains(connection)
+            ? PermissionAsk.declinedEarlier(connection)
+            : VoiceToolReply.notConnected(connection))
+    }
+
+    /// Allow on the permission sheet (ADR-562). The switch goes on, iOS shows its own prompt if it
+    /// has never been asked, and the call is handled again from the start: Pause all, its own card
+    /// and every check run as if the switch had been on. For a read, the sheet showed exactly what
+    /// will be read, so this tap is also its ASK-01 yes; a change still shows its own card.
+    func allowPermission() async {
+        guard let ask = permissionRequest else { return }
+        permissionRequest = nil
+        let attempt = startAttempt
+        switch ask.kind {
+        case .openSettings:
+            // Only iPhone Settings can undo iOS's no. Doddy can't see what the user does there.
+            connectionNeeded = ask.connection
+            if let url = URL(string: UIApplication.openSettingsURLString) { _ = await open(url) }
+            await reply(ask.toolCallID, PermissionAsk.blocked(ask.connection))
+        case .turnOn:
+            let access = await devices.request(ask.connection)
+            if access == .granted { UserDefaults.standard.set(true, forKey: ask.connection.preferenceKey) }
+            // The conversation ended while iOS was asking: the switch stays as the user chose, and
+            // the call goes with its conversation.
+            guard isLive, onScreen(attempt) else { return }
+            guard access == .granted else {
+                declinedPermissions.insert(ask.connection)
+                connectionNeeded = ask.connection
+                await reply(ask.toolCallID, PermissionAsk.declined(ask.connection))
+                return
+            }
+            connectionNeeded = nil
+            if ask.askCard != nil {
+                let request = VoiceToolRequest.parse(name: ask.toolName, parametersJSON: ask.parameters)
+                askLedger.asked(ask.toolCallID, request: request, needsTap: false, at: Date())
+                _ = askLedger.answer(.tapped, for: ask.toolCallID, at: Date())
+            }
+            await handle(ClientToolCallEvent(toolName: ask.toolName, toolCallId: ask.toolCallID, parametersData: ask.parameters,
+                                             eventId: 0, expectsResponse: true),
+                         attempt: attempt)
+        }
+    }
+
+    /// Not now, or the sheet swiped away (ADR-562): nothing was read or changed, and this
+    /// connection isn't asked for again in this conversation.
+    func declinePermission() async {
+        guard let ask = permissionRequest else { return }
+        permissionRequest = nil
+        declinedPermissions.insert(ask.connection)
+        connectionNeeded = ask.connection
+        await reply(ask.toolCallID, ask.kind == .openSettings ? PermissionAsk.blocked(ask.connection) : PermissionAsk.declined(ask.connection))
+    }
+
+    func dismissPresentationReady() {
+        presentationReady = nil
     }
 
     /// Called after the Connections sheet closes: the prompt goes away once the switch is on.
@@ -3470,6 +3625,7 @@ final class VoiceSessionController {
     /// `text` says the change was made and checked (ADR-268). A reminder or event add passes its
     /// receipt, attempt and undo through `writeResults` instead (ADR-319).
     private func reply(_ toolCallID: String, _ text: String, isError: Bool = false, undo: ActivityUndo? = nil) async {
+        callsAsReceived[toolCallID] = nil
         let write = writeResults.removeValue(forKey: toolCallID)
         retryChecks[toolCallID] = nil
         let undo = undo ?? write?.undo
@@ -3629,7 +3785,7 @@ private extension VoiceSessionController.PendingAction {
     var changesSomething: Bool {
         switch self {
         case .memory, .event, .reminder, .timer, .alarm, .cancelAlarm, .cloud, .noteReminder, .createList, .changeEvent, .changeReminder,
-             .deleteEvent, .deleteReminder, .bulk, .parking, .ingredients, .leaveBy: true
+             .deleteEvent, .deleteReminder, .bulk, .parking, .ingredients, .leaveBy, .presentation: true
         // Each step of a plan is logged on its own (runPlan), not the plan as a whole. An undo
         // is recorded on the row it undoes (ADR-271).
         // ASK-01 asks: the change itself (a list item) is logged by the flow it runs. A BLIK card only

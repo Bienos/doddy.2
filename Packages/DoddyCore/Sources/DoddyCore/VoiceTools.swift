@@ -27,6 +27,10 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
     case calendar, reminders, contacts, timers, maps, shortcuts, messages
     /// BLIK phone transfers shown on a card for the user to send in their bank app (ADR-510).
     case blik
+    /// Presentations made on the iPhone as a file Keynote opens (ADR-563). No iOS permission.
+    case presentations
+    /// Step count, walking distance and floors from Motion & Fitness (ADR-564).
+    case steps
 
     /// The name shown in Settings and in the agent's replies.
     public var title: String {
@@ -39,6 +43,8 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
         case .shortcuts: "Shortcuts"
         case .messages: "Messages and email"
         case .blik: "BLIK transfers"
+        case .presentations: "Presentations"
+        case .steps: "Steps"
         }
     }
 
@@ -58,6 +64,8 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
         case VoiceToolName.runShortcut: .shortcuts
         case VoiceToolName.draftMessage: .messages
         case VoiceToolName.draftBlikTransfer: .blik
+        case VoiceToolName.makePresentation: .presentations
+        case VoiceToolName.readSteps: .steps
         default: nil
         }
     }
@@ -200,6 +208,10 @@ public enum VoiceToolRequest: Equatable, Sendable {
     /// A BLIK phone transfer on a card for the user to send in their bank app (ADR-510). Doddy
     /// never sends money.
     case draftBlikTransfer(BlikTransferDraft)
+    /// A presentation shown slide by slide on a card; the file is made only on a tap (ADR-563).
+    case makePresentation(PresentationDraft)
+    /// One day's steps from Motion & Fitness, read only (ADR-564).
+    case readSteps(StepDay)
     /// Gmail, Google Drive, Notion or Todoist through the Doddy server (see OnlineAccounts).
     case cloudTool(CloudToolCall)
     /// Translator mode (ADR-215): proposed on a card; the conversation switches on Start.
@@ -306,6 +318,10 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return parseMessage(args, name: name)
         case VoiceToolName.draftBlikTransfer:
             return parseBlikTransfer(args, name: name)
+        case VoiceToolName.makePresentation:
+            return parsePresentation(args, name: name)
+        case VoiceToolName.readSteps:
+            return parseSteps(args, name: name, now: now, calendar: calendar)
         case VoiceToolName.startTranslator:
             return parseStartTranslator(args, name: name)
         case VoiceToolName.stopTranslator:
@@ -509,6 +525,11 @@ struct Arguments {
     func has(_ key: String) -> Bool {
         values[key] != nil
     }
+
+    /// The value as JSON gave it, for arguments with a shape of their own (presentation slides).
+    func raw(_ key: String) -> Any? {
+        values[key]
+    }
 }
 
 /// Bounds on text the model sends to a phone tool (review C11). A note, or a note quoted back,
@@ -524,6 +545,7 @@ public enum VoiceTextLimits {
         case "text", "note": MemoryLimits.maxTextLength
         case "notes", "body": paragraph
         case "query", "place": search
+        case "slides": PresentationLimits.slidesJSON
         default: line
         }
     }

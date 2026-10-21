@@ -30,5 +30,9 @@
  "NSFaceIDUsageDescription": {
   "en": "Doddy uses Face ID to open the app or a private note when you turn the lock on. iOS checks your face; Doddy only learns whether it matched.",
   "pl": "Doddy używa Face ID, żeby otworzyć aplikację albo prywatną notatkę, gdy włączysz blokadę. iOS sprawdza Twoją twarz; Doddy dowiaduje się tylko, czy się zgadza."
+ },
+ "NSMotionUsageDescription": {
+  "en": "Doddy reads your steps, walking distance and floors climbed from Motion & Fitness only when you ask, for one day of the last seven. In a voice conversation those numbers go to ElevenLabs, which runs Doddy's voice, or to OpenAI if you switch Home's voice to it. Doddy keeps none of them and reads nothing from Health. Turn this off in Settings, Connections.",
+  "pl": "Doddy odczytuje Twoje kroki, przebyty dystans i pokonane piętra z danych Ruch i fitness tylko wtedy, gdy o to poprosisz, dla jednego dnia z ostatnich siedmiu. W rozmowie głosowej te liczby trafiają do ElevenLabs, które obsługuje głos Doddy'ego, albo do OpenAI, jeśli przełączysz na nie głos na ekranie głównym. Doddy niczego z tego nie zachowuje i nie czyta nic z aplikacji Zdrowie. Wyłączysz to w Ustawieniach, w sekcji Połączenia."
  }
 }

@@ -42,7 +42,8 @@ Code lives under `DoddyApp/Features/<Folder>/`. Status docs are in `docs/impleme
 | Birthdays | Birthday reminders from contacts | 288 | BIRTHDAYS_STATUS |
 | Calls | Calling Doddy on the phone, PIN | - | S2_CALLS_STATUS |
 | CallCases | Calls Doddy makes for you: brief, card, live call with take over, answer card, rehearsal, Live Activity | 500–507 | CALL_CASES_STATUS |
-| Connections, ConnectedApps, OnlineAccounts | Calendar, Reminders, Contacts; online apps | 291, 309 | - |
+| Connections, ConnectedApps, OnlineAccounts | Calendar, Reminders, Contacts, Steps (Motion & Fitness), Presentations; online apps. The permission sheet that slides up in a conversation is `Voice/PermissionAskSheet.swift` | 291, 309, 562, 564 | APPLE_CONNECTIONS |
+| Presentations | Slides by voice: the card, the .pptx file Keynote opens (`PresentationFile` in DoddyCore), the share sheet | 563 | APPLE_CONNECTIONS |
 | Focus, Tools | Focus timer and its Live Activity (the breathing exercise was removed, ADR-550) | 241, 242, 550 | - |
 | Import | Google Keep and text import | 231 | NOTE_IMPORT_STATUS |
 | LeaveBy, Parking, Today | Time to leave, parking spot, Today card | 335, 301 | TODAY_STATUS |
