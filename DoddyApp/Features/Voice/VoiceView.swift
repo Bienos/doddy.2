@@ -26,11 +26,8 @@ struct VoiceView: View {
     private var provider: VoiceProvider { VoiceProvider.effective(stored: voiceProvider, tokenServerSet: true) }
 
     /// The app endpoint is fixed in the build; users never enter server URLs or access codes.
-    private var mode: VoiceConnectionMode {
-        // Debug builds only (ADR-551): no DODDY voice account, straight to the agent.
-        if VoiceConfig.directVoiceEnabled { return .directAgent(agentID: VoiceConfig.directAgentID) }
-        return VoiceConnectionMode.resolve(serverAddress: VoiceConfig.tokenEndpointAddress)
-    }
+    /// Debug builds may go straight to the agent without a DODDY voice account (ADR-551).
+    private var mode: VoiceConnectionMode { VoiceConfig.connectionMode }
 
     var body: some View {
         NavigationStack {
@@ -116,14 +113,13 @@ struct VoiceView: View {
         // account and provider-consent gate used by a tap in the app.
         let openedByShortcut = ShortcutRouter.shared.takeTalkToDoddyOpening()
         let action = BackTapAction.stored(UserDefaults.standard.string(forKey: PreferenceKey.backTapAction))
-        let greeting = openedByShortcut && action.startsConversation ? WakeGreeting.line(
-            name: WakeGreeting.name(nickname: Nickname.stored(), profileName: profiles.profile.value(.name)),
-            polish: ConversationLanguage.stored() == .polish) : nil
+        let greeting = openedByShortcut && action.startsConversation ? TalkInIsland.greeting(for: profiles.profile) : nil
+        // The island opens up when Doddy starts speaking, not here (ADR-566): this screen is on top,
+        // and iOS doesn't show Doddy's own island over Doddy, so a request now was always lost.
         await controller.start(
             mode, profile: profiles.profile, translator: ShortcutRouter.shared.takeTranslatorPreset(),
             checkIn: ShortcutRouter.shared.takeCheckInBriefing(),
             wakeGreeting: greeting, aboutNote: ShortcutRouter.shared.takeNoteToAsk())
-        if let greeting, action.opensIsland { VoiceLiveActivity.shared.openForGreeting(greeting) }
     }
 
     @ViewBuilder

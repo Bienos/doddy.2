@@ -49,6 +49,8 @@ struct DoddyApp: App {
         _noteReminders = State(initialValue: noteReminders)
         let profiles = ProfileStore(environment: environment)
         _profiles = State(initialValue: profiles)
+        // Talk in the Island (ADR-566) greets by name with the app in the background.
+        IntentStores.profiles = profiles
         // A conversation never survives a relaunch, so neither may its island.
         VoiceLiveActivity.endStale()
         // A focus timer does survive one (it is saved); this also lets its island's buttons work

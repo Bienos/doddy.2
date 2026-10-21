@@ -56,8 +56,17 @@ enum IslandSceneChecks {
         var greeted = State(status: .connecting, isMuted: false, greeting: "Hey Pat, what's up?")
         expect(greeted.islandScene(isStale: false).title == "Hey Pat, what's up?", "greeting while connecting")
         expect(greeted.islandScene(isStale: false).label == "VOICE", "greeting is a conversation")
+        // ADR-566: Doddy's first message is the greeting, so the island shows it while he says it
+        // (the moment the island opens up), not "Speaking".
+        greeted.status = .speaking
+        expect(greeted.islandScene(isStale: false).title == "Hey Pat, what's up?", "greeting while he says it")
+        expect(greeted.islandScene(isStale: false).live, "greeting while speaking is live")
         greeted.status = .thinking
         expect(greeted.islandScene(isStale: false).title == "Working on it…", "greeting gone once thinking")
+        var answered = State(status: .speaking, isMuted: false)
+        expect(answered.islandScene(isStale: false).title == "Speaking", "no greeting: Speaking")
+        answered.isMuted = true
+        expect(answered.islandScene(isStale: false).title == "Muted", "muted while speaking")
         let greetedMuted = State(status: .listening, isMuted: true, greeting: "Hey Pat, what's up?")
         expect(greetedMuted.islandScene(isStale: false).title == "Muted", "muted beats greeting")
         let wakeConversation = State(
@@ -218,7 +227,9 @@ enum IslandSceneChecks {
         expect(pose(State.wakePaused) == .leaning, "hey doddy paused")
         expect(pose(State(status: .connecting, isMuted: false, greeting: "Hey Pat, what's up?")) == .wave, "greeting waves")
         expect(pose(State(status: .listening, isMuted: false, greeting: "Hey Pat, what's up?")) == .wave, "greeting waves until you speak")
-        expect(pose(State(status: .speaking, isMuted: false, greeting: "Hey Pat, what's up?")) == .shrug, "greeting gone once speaking")
+        // ADR-566: the greeting is his first message, so he waves while he says it too.
+        expect(pose(State(status: .speaking, isMuted: false, greeting: "Hey Pat, what's up?")) == .wave, "waves while saying the greeting")
+        expect(pose(State(status: .thinking, isMuted: false, greeting: "Hey Pat, what's up?")) == .kneelingInspect, "greeting gone once thinking")
         expect(pose(State(status: .listening, isMuted: true, greeting: "Hey Pat, what's up?")) == .shush, "muted beats greeting")
         var ended = State(status: .ended, isMuted: false)
         ended.savedCount = 1

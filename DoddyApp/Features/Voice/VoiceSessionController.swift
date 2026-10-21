@@ -170,6 +170,8 @@ final class VoiceSessionController {
             default: break
             }
             syncIsland()
+            // Doddy started speaking: the island may open up for a moment (ADR-566).
+            if phase == .speaking, oldValue != .speaking { expandIslandIfDue() }
             // Listening comes only from the provider's own event: this conversation really
             // connected. Counted once per conversation, for when the "Open Doddy faster" card
             // returns after "Later" (ADR-559; it was the Hey Doddy card's, ADR-328).
@@ -350,6 +352,8 @@ final class VoiceSessionController {
         didSet { syncIsland() }
     }
     @ObservationIgnored private var islandFlashClear: Task<Void, Never>?
+    /// When the island opens up into the big island while Doddy talks (ADR-566). Set at each start.
+    @ObservationIgnored private var islandExpansion = IslandExpansion(isOn: true)
     /// How long "Note saved" and "Reminder set" stay on the island.
     static let islandFlashSeconds: TimeInterval = 8
     /// Every note text Doddy put on a save card or plan in this conversation, saved or declined,
@@ -414,9 +418,11 @@ final class VoiceSessionController {
     /// `profile` is the user's approved introduction answers; it reaches the agent only when
     /// Settings → About you → "Use in voice conversations" is on. `wakeGreeting` is set for
     /// "Talk to Doddy" (Back Tap and the other shortcuts): Doddy says it first and the island shows it.
+    /// `withoutOpeningApp`: "Talk in the Island" started it with Doddy in the background (ADR-566).
     func start(
         _ mode: VoiceConnectionMode, profile: ApprovedProfile, translator preset: TranslatorSetup? = nil,
-        checkIn: MorningBriefing? = nil, wakeGreeting: String? = nil, aboutNote: UUID? = nil
+        checkIn: MorningBriefing? = nil, wakeGreeting: String? = nil, aboutNote: UUID? = nil,
+        withoutOpeningApp: Bool = false
     ) async {
         guard !isLive else { return }
         // Another controller's conversation is starting or live: don't open a second microphone.
@@ -482,6 +488,7 @@ final class VoiceSessionController {
         isMuted = false
         savedThisConversation = 0
         islandFlash = nil
+        islandExpansion = IslandExpansion(BackTapAction.stored(UserDefaults.standard.string(forKey: PreferenceKey.backTapAction)))
         proposedNoteTexts = []
         saveSuggestions = nil
         suggestionsOffered = false
@@ -513,8 +520,25 @@ final class VoiceSessionController {
         // For a phone log of a start that never got going (STATUS "Known problems"): which start,
         // what started it, and whether Doddy was in the background. No notes or speech in it.
         let inBackground = UIApplication.shared.applicationState == .background
-        let startNote = "starting a conversation: attempt \(attempt), in background \(inBackground)"
+        let startNote = "starting a conversation: attempt \(attempt), in background \(inBackground), without opening \(withoutOpeningApp)"
         Self.audioLog.notice("\(startNote, privacy: .public)")
+        // "Talk in the Island" (ADR-566), from the Action Button or a control without opening Doddy.
+        // iOS keeps a recording started that way only while its Live Activity is up (requested by
+        // `phase = .connecting` above), and the microphone can start only if the app can take the
+        // audio session now. Both are checked before anything is fetched or connected, so a refusal
+        // is said plainly instead of a conversation that can't hear the user.
+        if withoutOpeningApp {
+            guard island.isShowing else {
+                let noIsland = "no island for a start without opening: attempt \(attempt)"
+                Self.audioLog.notice("\(noIsland, privacy: .public)")
+                fail(NSLocalizedString("Doddy couldn't show himself in the Dynamic Island, so he can't listen without opening. Open Doddy to talk.", comment: ""))
+                return
+            }
+            if let problem = Self.takeAudioSessionWithoutOpening() {
+                fail(problem)
+                return
+            }
+        }
 
         // The Dynamic Island / Lock Screen buttons reach this conversation through these.
         let actions = VoiceActivityActions.shared
@@ -846,15 +870,40 @@ final class VoiceSessionController {
     /// can hear it (headphones avoid that). Same options as the SDK's own speaker preset plus
     /// `.mixWithOthers`. Not verified on a device.
     private static func allowOtherAppsAudio() {
+        AudioManager.shared.sessionConfiguration = AudioSessionConfiguration(
+            category: .playAndRecord,
+            categoryOptions: conversationAudioOptions,
+            mode: .videoChat)
+    }
+
+    /// The conversation's audio options: headsets, AirPlay, the speaker, and other apps' sound
+    /// mixed in rather than stopped.
+    private static var conversationAudioOptions: AVAudioSession.CategoryOptions {
         #if swift(>=6.2)
         let routes: AVAudioSession.CategoryOptions = [.allowBluetoothHFP, .allowBluetoothA2DP, .allowAirPlay]
         #else
         let routes: AVAudioSession.CategoryOptions = [.allowBluetooth, .allowBluetoothA2DP, .allowAirPlay]
         #endif
-        AudioManager.shared.sessionConfiguration = AudioSessionConfiguration(
-            category: .playAndRecord,
-            categoryOptions: routes.union([.defaultToSpeaker, .mixWithOthers]),
-            mode: .videoChat)
+        return routes.union([.defaultToSpeaker, .mixWithOthers])
+    }
+
+    /// "Talk in the Island" (ADR-566): takes the audio session with the conversation's own settings
+    /// before connecting, because a start without the app on screen gets the microphone only if
+    /// iOS lets the app take the session now. Returns what to tell the user, or nil when iOS
+    /// agreed. The SDK then uses the session as it is.
+    private static func takeAudioSessionWithoutOpening() -> String? {
+        let session = AVAudioSession.sharedInstance()
+        do {
+            try session.setCategory(.playAndRecord, mode: .videoChat, options: conversationAudioOptions)
+            try session.setActive(true)
+            audioLog.notice("audio session taken without opening. \(describeAudioSession(), privacy: .public)")
+            return nil
+        } catch {
+            // The code is AVAudioSession's number for the refusal (no text, nothing said).
+            let refused = "audio session refused without opening: \(LogSafeError.kind(of: error)), code \((error as NSError).code)"
+            audioLog.notice("\(refused, privacy: .public)")
+            return NSLocalizedString("iOS didn't let Doddy start the microphone without opening him. Use Talk to Doddy, which opens the app.", comment: "")
+        }
     }
 
     /// Reports iOS audio interruptions (for example another app opening its own audio) as they
@@ -1897,6 +1946,15 @@ final class VoiceSessionController {
         }
     }
 
+    /// Opens the island up for a moment when Doddy starts speaking, when `IslandExpansion` says
+    /// it's due (ADR-566): his first words, then the start of each answer, while Doddy isn't the
+    /// app on screen. Not while translating: he speaks after every phrase there.
+    private func expandIslandIfDue() {
+        guard ownsIsland, translator == nil else { return }
+        let onScreen = UIApplication.shared.applicationState == .active
+        if islandExpansion.doddyStartedSpeaking(at: Date(), appOnScreen: onScreen) { island.expand() }
+    }
+
     private func syncIsland() {
         if let state = islandState {
             ownsIsland = true
@@ -1942,6 +2000,8 @@ final class VoiceSessionController {
             return
         }
         lines.append(Line(fromUser: fromUser, text: text))
+        // The island opens up again when Doddy starts answering this (ADR-566).
+        if fromUser { islandExpansion.userSpoke() }
         if !fromUser, checkInNeedsBriefing {
             checkInNeedsBriefing = false
             Task { await sendToAgent("Morning check-in: give the briefing now, as the morning check-in section says.") }
