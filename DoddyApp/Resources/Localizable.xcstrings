@@ -1504,6 +1504,47 @@
         }
       }
     },
+    "A photo you keep goes into a new note that you check and save. Its text is read on this iPhone. Nothing is saved to your photo library, and the photo is never sent anywhere.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "A photo you keep goes into a new note that you check and save. Its text is read on this iPad. Nothing is saved to your photo library, and the photo is never sent anywhere."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "A photo you keep goes into a new note that you check and save. Its text is read on this iPhone. Nothing is saved to your photo library, and the photo is never sent anywhere."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zdjęcie, które zachowasz, trafia do nowej notatki, którą sprawdzasz i zapisujesz. Jego tekst jest odczytywany na tym iPadzie. Nic nie trafia do Twojej biblioteki zdjęć, a zdjęcie nigdy nie jest nigdzie wysyłane."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zdjęcie, które zachowasz, trafia do nowej notatki, którą sprawdzasz i zapisujesz. Jego tekst jest odczytywany na tym iPhonie. Nic nie trafia do Twojej biblioteki zdjęć, a zdjęcie nigdy nie jest nigdzie wysyłane."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "A private note stays on this iPhone and isn't given to Doddy's voice, Siri, Ask Doddy, widgets, the watch or the call copy. Its words show after Face ID.": {
       "extractionState": "manual",
       "localizations": {
@@ -4632,6 +4673,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wszystkie sposoby"
+          }
+        }
+      }
+    },
+    "Allow also says yes to this one look-up.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zezwól oznacza też „tak” dla tego jednego sprawdzenia."
           }
         }
       }
@@ -18260,6 +18312,47 @@
         }
       }
     },
+    "Doddy makes a PowerPoint file on this iPhone, which Keynote opens. Then you pick Keynote, Files or someone to send it to. Doddy never sends it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy makes a PowerPoint file on this iPad, which Keynote opens. Then you pick Keynote, Files or someone to send it to. Doddy never sends it."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy makes a PowerPoint file on this iPhone, which Keynote opens. Then you pick Keynote, Files or someone to send it to. Doddy never sends it."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy tworzy na tym iPadzie plik PowerPoint, który otwiera Keynote. Potem wybierasz Keynote, Pliki albo osobę, do której go wysłać. Doddy nigdy go nie wysyła."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy tworzy na tym iPhonie plik PowerPoint, który otwiera Keynote. Potem wybierasz Keynote, Pliki albo osobę, do której go wysłać. Doddy nigdy go nie wysyła."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Doddy may call me": {
       "extractionState": "manual",
       "localizations": {
@@ -19266,6 +19359,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy 在你和说另一种语言的人之间做翻译。"
+          }
+        }
+      }
+    },
+    "Doddy was asked to": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy ma"
           }
         }
       }
@@ -28719,6 +28823,17 @@
         }
       }
     },
+    "It's in Doddy's temporary files until iOS clears them. Save it in Keynote or Files to keep it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jest w plikach tymczasowych Doddy’ego, dopóki iOS ich nie wyczyści. Zapisz ją w Keynote albo w Plikach, żeby ją zachować."
+          }
+        }
+      }
+    },
     "It's too late to undo here. Change it in Calendar or Reminders.": {
       "extractionState": "manual",
       "localizations": {
@@ -34027,6 +34142,17 @@
         }
       }
     },
+    "Make presentation": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przygotuj prezentację"
+          }
+        }
+      }
+    },
     "Make the Action Button start a conversation with Doddy.": {
       "extractionState": "manual",
       "localizations": {
@@ -34034,6 +34160,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Niech przycisk czynności zaczyna rozmowę z Doddym."
+          }
+        }
+      }
+    },
+    "Make this presentation?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przygotować tę prezentację?"
           }
         }
       }
@@ -45617,6 +45754,17 @@
         }
       }
     },
+    "Open Photos": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz Zdjęcia"
+          }
+        }
+      }
+    },
     "Open Settings": {
       "extractionState": "manual",
       "localizations": {
@@ -45757,6 +45905,17 @@
         }
       }
     },
+    "Open camera": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz aparat"
+          }
+        }
+      }
+    },
     "Open iPhone Settings": {
       "extractionState": "manual",
       "localizations": {
@@ -45812,6 +45971,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "打开 iPhone 设置"
+          }
+        }
+      }
+    },
+    "Open in Keynote or share": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz w Keynote albo udostępnij"
           }
         }
       }
@@ -46000,6 +46170,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Otwórz aplikację Skróty, stuknij plus, wyszukaj Doddy i dodaj „Porozmawiaj z Doddym”. Jeśli go nie ma, dodaj „Otwórz aplikację” i wybierz Doddy."
+          }
+        }
+      }
+    },
+    "Open the camera?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otworzyć aparat?"
           }
         }
       }
@@ -48102,6 +48283,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "手机号码，例如 +86 138 0000 0000"
+          }
+        }
+      }
+    },
+    "Photos and camera": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zdjęcia i aparat"
           }
         }
       }
@@ -65316,6 +65508,17 @@
         }
       }
     },
+    "Take a photo": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zrób zdjęcie"
+          }
+        }
+      }
+    },
     "Take over": {
       "extractionState": "manual",
       "localizations": {
@@ -69048,6 +69251,17 @@
         }
       }
     },
+    "The camera is off for Doddy. You can allow it in iPhone Settings, Doddy, Camera.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aparat jest wyłączony dla Doddy’ego. Możesz go włączyć w Ustawieniach iPhone’a, Doddy, Aparat."
+          }
+        }
+      }
+    },
     "The card couldn't be saved on this iPhone, so it was withdrawn. Nothing was dialled. %@": {
       "extractionState": "manual",
       "localizations": {
@@ -70529,6 +70743,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Operator odrzucił połączenie, więc nic nie zostało wybrane. Spróbuj za kilka minut."
+          }
+        }
+      }
+    },
+    "The photo couldn't be read, so it wasn't added. Try taking it again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się odczytać zdjęcia, więc nie zostało dodane. Spróbuj zrobić je jeszcze raz."
           }
         }
       }
@@ -72245,6 +72470,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "这里没有 Doddy 可以保留的文字或网页链接。没有保存任何内容。"
+          }
+        }
+      }
+    },
+    "These stay on this iPhone. Doddy's voice hears only how many there are and when they were taken.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "These stay on this iPad. Doddy's voice hears only how many there are and when they were taken."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "These stay on this iPhone. Doddy's voice hears only how many there are and when they were taken."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zostają na tym iPadzie. Głos Doddy’ego słyszy tylko, ile ich jest i kiedy zostały zrobione."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zostają na tym iPhonie. Głos Doddy’ego słyszy tylko, ile ich jest i kiedy zostały zrobione."
+                }
+              }
+            }
           }
         }
       }
@@ -85462,6 +85728,17 @@
         }
       }
     },
+    "You let Doddy see only some of your photos, so there may be more.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pozwoliłeś Doddy’emu widzieć tylko część zdjęć, więc może ich być więcej."
+          }
+        }
+      }
+    },
     "You replied STOP, so texts are blocked by the carrier. Text START to Doddy's number to allow them again.": {
       "extractionState": "manual",
       "localizations": {
@@ -87760,6 +88037,17 @@
         }
       }
     },
+    "Your photos": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoje zdjęcia"
+          }
+        }
+      }
+    },
     "Your preferences changed somewhere else while you were editing. Nothing was saved; your edits are still here. Check them and save again.": {
       "extractionState": "manual",
       "localizations": {
@@ -87815,6 +88103,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "你编辑期间，偏好在别处被更改了。没有保存任何内容；你的编辑还在这里。请检查后再次保存。"
+          }
+        }
+      }
+    },
+    "Your presentation is ready": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoja prezentacja jest gotowa"
           }
         }
       }
@@ -88763,6 +89062,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "iPhone may ask you once too. You can turn it off any time in Settings, Connections.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iPhone może też raz zapytać. Możesz to wyłączyć w każdej chwili w Ustawieniach, w sekcji Połączenia."
           }
         }
       }

@@ -19,6 +19,26 @@ reaches OpenAI with the next app build, and ElevenLabs only after the sync below
 
 ## Source of truth and syncing
 
+**Applied to the live agent 2026-10-21, later (the Claude tools, ADR-564; owner: "yes, sync the Claude tools to the live agent too").**
+- **Read first, just before saving:** `agtvrsn_3101m5f03ak6e3wtdjfqbb2qs95e` (90 tools). It is not the version recorded below: someone saved after it. Its prompt has the owner's public-lookups rule ("Exception, the owner's rule of 21 October 2026 …") and four older tools attached again (`geocode_place`, `get_weather`, `wikipedia_search`, `wikipedia_summary`). All of it was kept. Who saved it isn't recorded here. **Rollback to exactly that:** `agtvrsn_3101m5f03ak6e3wtdjfqbb2qs95e`.
+- **Created:** `ask_claude` `tool_1601m5f15swpeetbygr32gwr4h5a` and `make_document` `tool_2101m5f15tckfy0v74g5gyaqm3td`, as `voice_agent_spec.py elevenlabs` renders them (client tools, 60 s, speak first).
+- **Saved:** `agtvrsn_4101m5f1gzv0edfat0kvfmmn1sd1`, prompt and `tool_ids` in one save: the 90 ids unchanged and in order, plus the 2 new (92).
+- **Prompt changes, in the live prompt's own style:** a "## Claude" section after "## Photos" (ask first, copy material in, keep the answer short, never read out a link), and "started" in the success prefixes with a line on what it means.
+- **Not applied:** the `not_connected` / "a Connect button is on the user's screen" lines and "connecting turns its tools on" from `instructions.md` (ADR-563). They are a different change and need their own go-ahead.
+- **Checked after saving:** the prompt the save returned equals the intended text character for character (SHA-256 `9a9f70db…`, 38,745 characters), and the tool list is the 90 plus the 2, in order. Model (`gpt-6-luna`), temperature, backup LLM, timezone and every other setting were not sent and came back as they were. The full agent document was not re-read and diffed leaf by leaf this time.
+- **Not checked:** a real conversation with these tools. They also need `ANTHROPIC_API_KEY` on Render `doddy` and an app build from main (#118) or later; an older app build answers that it doesn't support the tool.
+
+**Applied to the live agent 2026-10-21 (ADR-566 to 569; owner: "Ok", then "yes, create the tools and update the live agent").**
+- **First attempt (about 01:30 UTC):** `make_presentation` was created (`tool_9601m5em00c3f66tbpag9f27kf4h`); creating the next tool was refused by Claude Code's permission check, so nothing on the agent changed then.
+- **Created after the owner's go-ahead:** `read_steps` `tool_4601m5ewmkptekprzmx9vy9114eb`, `find_photos` `tool_0401m5ewmm8xems98kv871105z43`, `open_camera` `tool_3501m5ewmn09fmw9n8j15kx7x8n7`, each exactly as `voice_agent_spec.py elevenlabs` renders it.
+- **Read first, just before saving:** `agtvrsn_6201m5ewm90bezjvesacr57ma1gv` (82 tools). Its prompt was **not** the 20 Oct text: shortly before, someone else had added a "sidekick" opening, "Polish is your default", a "# Talk or task: pick one every time" section and two "Unsupported capabilities" lines. Who saved it isn't recorded here; all of it was kept. **Rollback to exactly that:** `agtvrsn_6201m5ewm90bezjvesacr57ma1gv`.
+- **Saved:** `agtvrsn_8301m5ey4kc9e9cat0w22asdgctc`, prompt and `tool_ids` in one save: the 82 ids unchanged and in order, plus the 4 new ones (86).
+- **Prompt changes, in the live prompt's own style:** "## Presentations", "## Steps" and "## Photos" after "## BLIK transfers"; "## Camera" now calls `open_camera`, with the "Doddy Camera" Shortcut kept for older app builds (which answer that they don't support `open_camera`); "made" in the success prefixes; the "made", "not allowed" and "unavailable" result lines after "shown"; two "# Unsupported capabilities" lines (Keynote, Pages or Numbers; what is in the photos). The "## Access" section was left as it was: it already says "Allow it on screen and I'll carry on", which fits the permission sheet.
+- **Checked after saving:** the full agent was read back. The prompt equals the intended text byte for byte (SHA-256 `c85c7a59…`). The tool list is the 82 plus the 4, and each new tool matches this folder's spec field by field. No existing tool and no other setting changed (compared leaf by leaf; tools by name).
+- **Older app builds:** a build without these tools answers "The app does not support the tool below", and Doddy says it isn't available yet.
+- **Not checked:** a real conversation with the new prompt.
+
+
 **Applied to the live agent 2026-10-20, about 14:08 UTC (ADR-556, Brand Guidelines V2.2; owner: "do it"):** the guide's verbal identity (pp.49–66). The live prompt is the owner's own rewrite, so this folder's new "# Who you are" and "# How you speak" were not copied in. Eleven short lines were added in the live prompt's own style, and nothing else in the prompt changed:
 - **Identity:** what he says when asked what he is, and that he explains tools, permissions and data plainly when asked.
 - **Personality:** no loyalty speeches, no manufactured closeness.

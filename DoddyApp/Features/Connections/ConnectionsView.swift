@@ -63,9 +63,12 @@ struct ConnectionGroup: Identifiable {
     var id: String { title }
 
     static let all: [ConnectionGroup] = [
-        ConnectionGroup(title: "Your day", items: [.calendar, .reminders, .timers]),
+        ConnectionGroup(title: "Your day", items: [.calendar, .reminders, .timers, .steps]),
         ConnectionGroup(title: "People", items: [.contacts, .messages]),
-        ConnectionGroup(title: "Places and apps", items: [.maps, .shortcuts]),
+        // ADR-567: a presentation is a file made here, opened in Keynote by the user.
+        ConnectionGroup(title: "Places and apps", items: [.maps, .shortcuts, .presentations]),
+        // ADR-569: the photo library (counts, pictures on screen only) and Doddy's camera.
+        ConnectionGroup(title: "Photos and camera", items: [.photos, .camera]),
         // ADR-510: shown, never sent; the user sends it in their bank app.
         ConnectionGroup(title: "Money", items: [.blik]),
     ]
@@ -368,6 +371,51 @@ struct ConnectionInfo {
                 ],
                 leavesPhone: "The shortcut's name, when you ask Doddy to run it.",
                 staysHere: "Doddy can't see what a shortcut does or whether it finished.")
+        case .presentations:
+            // ADR-567: Apple lets no app control Keynote, so Doddy makes the file and the user opens it.
+            ConnectionInfo(
+                symbol: "rectangle.on.rectangle.angled",
+                examples: ["Make me five slides about our trip", "Turn my notes on the launch into a presentation"],
+                canDo: [
+                    "Show every slide on a card first: the title, then each slide's title and points",
+                    "Make the presentation after you tap Make presentation, as a PowerPoint file that Keynote opens",
+                    "Open the share sheet, so you pick Keynote, Files or someone to send it to",
+                ],
+                leavesPhone: "What you ask for and the slides Doddy writes are part of the conversation, which runs on ElevenLabs, or OpenAI if you chose it.",
+                staysHere: "The file is made on this iPhone and kept in Doddy's temporary files until iOS clears them; save it in Keynote or Files to keep it. Doddy can't see what you do with it and never sends it.")
+        case .steps:
+            // ADR-568: Motion & Fitness, read only. Not Health.
+            ConnectionInfo(
+                symbol: "figure.walk",
+                examples: ["How many steps today?", "How far did I walk yesterday?"],
+                canDo: [
+                    "Read one day's steps, walking distance and floors climbed, after you say yes or tap",
+                    "Today and the six days before it, which is what your iPhone keeps",
+                ],
+                leavesPhone: "That day's numbers, when Doddy uses them in a conversation.",
+                staysHere: "Doddy keeps none of it and reads nothing from the Health app. iPhone asks once for Motion & Fitness.")
+        case .photos:
+            // ADR-569: counts and times to the voice, pictures on this screen only.
+            ConnectionInfo(
+                symbol: "photo.on.rectangle",
+                examples: ["How many photos did I take on Saturday?", "Show me my photos from last week"],
+                canDo: [
+                    "Count the photos and videos you took on a day or over up to a month, after you say yes or tap",
+                    "Show the newest of them on your screen, with a button to open Photos",
+                ],
+                leavesPhone: "Only how many there are and when the first and last were taken, when Doddy uses them in a conversation. Never the pictures or where they were taken.",
+                staysHere: "The pictures are shown on this screen only. Doddy never changes, deletes or adds anything in your photo library. If you let Doddy see only some photos, it says so.")
+        case .camera:
+            // ADR-569: iOS's own camera screen; a kept photo becomes a note the user saves.
+            ConnectionInfo(
+                symbol: "camera",
+                examples: ["Take a photo", "Open the camera"],
+                canDo: [
+                    "Open Doddy's camera, after you tap Open camera",
+                    "Put the photo you keep into a new note, with its text read on this iPhone, for you to check and save",
+                ],
+                leavesPhone: "Nothing from the camera. Only the words you save in the note can reach Doddy's voice, like any note.",
+                staysHere: "The photo is kept with the note on this iPhone, never sent anywhere and never saved to your photo library. You can also tap Take a photo when writing a note.")
         case .blik:
             // ADR-510: BLIK has no way for an app to send money, so Doddy only shows the details.
             ConnectionInfo(
