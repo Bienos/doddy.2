@@ -377,6 +377,17 @@
         }
       }
     },
+    "Carries on a paused or interrupted recording.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wznawia wstrzymane lub przerwane nagranie."
+          }
+        }
+      }
+    },
     "Choose a list": {
       "extractionState": "manual",
       "localizations": {
@@ -2162,6 +2173,17 @@
         }
       }
     },
+    "Open Latest Recording": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz ostatnie nagranie"
+          }
+        }
+      }
+    },
     "Opens Doddy and starts a voice conversation. Doddy listens only while the conversation is open.": {
       "extractionState": "manual",
       "localizations": {
@@ -2217,6 +2239,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "打开 Doddy 并开始语音对话。Doddy 只在对话进行期间聆听。"
+          }
+        }
+      }
+    },
+    "Opens Doddy and starts recording. The recording carries on in the Dynamic Island. The audio stays on this iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Opens Doddy and starts recording. The recording carries on in the Dynamic Island. The audio stays on this iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Opens Doddy and starts recording. The recording carries on in the Dynamic Island. The audio stays on this iPhone."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Otwiera Doddy’ego i zaczyna nagrywać. Nagrywanie trwa dalej w Dynamic Island. Dźwięk zostaje na tym iPadzie."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Otwiera Doddy’ego i zaczyna nagrywać. Nagrywanie trwa dalej w Dynamic Island. Dźwięk zostaje na tym iPhonie."
+                }
+              }
+            }
           }
         }
       }
@@ -2280,6 +2343,17 @@
         }
       }
     },
+    "Opens the newest recording in Doddy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwiera najnowsze nagranie w Doddym."
+          }
+        }
+      }
+    },
     "Parked": {
       "extractionState": "manual",
       "localizations": {
@@ -2335,6 +2409,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "已停车"
+          }
+        }
+      }
+    },
+    "Pause DODDY Recording": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wstrzymaj nagrywanie DODDY"
           }
         }
       }
@@ -2453,6 +2538,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "已暂停"
+          }
+        }
+      }
+    },
+    "Pauses the recording. The microphone is off until you resume.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wstrzymuje nagrywanie. Mikrofon jest wyłączony, dopóki nie wznowisz."
           }
         }
       }
@@ -2693,6 +2789,17 @@
         }
       }
     },
+    "Record with DODDY": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nagrywaj z DODDY"
+          }
+        }
+      }
+    },
     "Reminder set": {
       "extractionState": "manual",
       "localizations": {
@@ -2807,6 +2914,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "提醒事项已确认"
+          }
+        }
+      }
+    },
+    "Resume DODDY Recording": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wznów nagrywanie DODDY"
           }
         }
       }
@@ -3058,6 +3176,58 @@
         }
       }
     },
+    "Start DODDY Recording": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zacznij nagrywanie DODDY"
+          }
+        }
+      }
+    },
+    "Starts recording a meeting or conversation. Doddy opens first; the recording then carries on in the Dynamic Island and with the screen locked. The audio stays on this iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Starts recording a meeting or conversation. Doddy opens first; the recording then carries on in the Dynamic Island and with the screen locked. The audio stays on this iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Starts recording a meeting or conversation. Doddy opens first; the recording then carries on in the Dynamic Island and with the screen locked. The audio stays on this iPhone."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zaczyna nagrywać spotkanie lub rozmowę. Najpierw otwiera się Doddy; potem nagrywanie trwa w Dynamic Island i przy zablokowanym ekranie. Dźwięk zostaje na tym iPadzie."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zaczyna nagrywać spotkanie lub rozmowę. Najpierw otwiera się Doddy; potem nagrywanie trwa w Dynamic Island i przy zablokowanym ekranie. Dźwięk zostaje na tym iPhonie."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Stop": {
       "extractionState": "manual",
       "localizations": {
@@ -3117,6 +3287,17 @@
         }
       }
     },
+    "Stop DODDY Recording": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zatrzymaj nagrywanie DODDY"
+          }
+        }
+      }
+    },
     "Stopped": {
       "extractionState": "manual",
       "localizations": {
@@ -3172,6 +3353,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "已停止"
+          }
+        }
+      }
+    },
+    "Stops the recording and saves it in Recordings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zatrzymuje nagrywanie i zapisuje je w Nagraniach."
           }
         }
       }

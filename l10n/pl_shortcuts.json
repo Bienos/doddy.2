@@ -24,5 +24,8 @@
  "Check my notes in ${applicationName}": "Sprawdź moje notatki w aplikacji ${applicationName}",
  "Stop listening in ${applicationName}": "Przestań słuchać w aplikacji ${applicationName}",
  "Tell ${applicationName} to stop listening": "Powiedz aplikacji ${applicationName}, żeby przestała słuchać",
- "${applicationName} stop listening": "${applicationName}, przestań słuchać"
+ "${applicationName} stop listening": "${applicationName}, przestań słuchać",
+ "Record this meeting in ${applicationName}": "Nagraj to spotkanie w ${applicationName}",
+ "Record with ${applicationName}": "Nagrywaj w ${applicationName}",
+ "Start recording in ${applicationName}": "Zacznij nagrywać w ${applicationName}"
 }

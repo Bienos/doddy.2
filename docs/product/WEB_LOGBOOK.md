@@ -1,6 +1,6 @@
 # Logbook: how you use Doddy, on the web
 
-**Status: design proposal, 22 Oct 2026 (ADR-579, proposed).** Nothing is built. The working mockup, with example numbers only, is `design/web-logbook-v0.1/` (open `index.html`; renders in `png/`). This page is the plan behind it: what the page shows, where each number comes from, how people sign in, what stays private, how it becomes paid later, and what the owner needs to decide.
+**Status: design proposal, 22 Oct 2026 (ADR-593, proposed).** Nothing is built. The working mockup, with example numbers only, is `design/web-logbook-v0.1/` (open `index.html`; renders in `png/`). This page is the plan behind it: what the page shows, where each number comes from, how people sign in, what stays private, how it becomes paid later, and what the owner needs to decide.
 
 ## What the owner asked for
 

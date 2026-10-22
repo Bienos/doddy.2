@@ -340,6 +340,101 @@ final class SQLiteLearningRepositoryTests: XCTestCase {
         XCTAssertEqual(try count(database, "procedures_fts"), 0)
     }
 
+    // MARK: Gone from the file, not only from the queries (ADR-584)
+
+    func testDeletedFactsAreNotLeftInTheDatabaseFile() async throws {
+        let path = tempPath()
+        defer { DatabaseFileBytes.remove(path) }
+        let clock = Clock(t0)
+        let deleted = "qzxvfactonewolf", pruned = "qzxvfacttwowolf", wiped = "qzxvfactallwolf"
+        do {
+            let repo = SQLiteLearnedFactRepository(database: try DoddyDatabase(path: path), now: { clock.date })
+            let one = try await confirmed(repo, "Coffee is kept in the \(deleted) jar")
+            _ = try await repo.propose(try factProposal("Tea is kept in the \(pruned) tin"))
+            _ = try await repo.propose(try factProposal("Milk is kept in the \(pruned) bottle"))
+            _ = try await confirmed(repo, "Sugar is kept in the \(wiped) pot")
+            let found = try await repo.query(deleted, limit: 5)
+            XCTAssertEqual(found.map(\.id), [one.id])
+            for word in [deleted, pruned, wiped] {
+                XCTAssertTrue(try DatabaseFileBytes.indexFinds(word, in: "learned_facts_fts", at: path), "\(word) was really indexed")
+                XCTAssertGreaterThan(DatabaseFileBytes.occurrences(of: word, at: path), 0, "\(word) is in the file before the delete")
+            }
+
+            try await repo.delete(id: one.id)
+            XCTAssertEqual(DatabaseFileBytes.occurrences(of: deleted, at: path), 0, "a deleted fact's words are gone from the file")
+
+            let dropped = try await repo.pruneProposals(olderThan: t0.addingTimeInterval(day))
+            XCTAssertEqual(dropped, 2, "the count of dropped proposals is not the index merge's")
+            XCTAssertEqual(DatabaseFileBytes.occurrences(of: pruned, at: path), 0, "an unanswered proposal that was dropped leaves nothing")
+            XCTAssertTrue(try DatabaseFileBytes.indexFinds(wiped, in: "learned_facts_fts", at: path), "a fact that stays is still indexed")
+            XCTAssertGreaterThan(DatabaseFileBytes.occurrences(of: wiped, at: path), 0)
+
+            try await repo.deleteAll()
+        }
+        XCTAssertEqual(DatabaseFileBytes.occurrences(of: wiped, at: path), 0, "Delete everything leaves no words in the file")
+        XCTAssertFalse(DatabaseFileBytes.contents(at: path).isEmpty)
+    }
+
+    /// Every confirmed wording is kept as a revision on purpose; the old wording must be nowhere else.
+    func testRevisedFactWordsStayOnlyInTheirRevisionHistory() async throws {
+        let path = tempPath()
+        defer { DatabaseFileBytes.remove(path) }
+        let marker = "qzxvoldfactwolf"
+        let repo = SQLiteLearnedFactRepository(database: try DoddyDatabase(path: path), now: { Self.t0 })
+        let fact = try await confirmed(repo, "Coffee is kept in the \(marker) jar")
+        XCTAssertTrue(try DatabaseFileBytes.indexFinds(marker, in: "learned_facts_fts", at: path), "the marker was really indexed")
+
+        _ = try await repo.revise(id: fact.id, value: "Coffee is kept in the red tin")
+        XCTAssertFalse(try DatabaseFileBytes.indexFinds(marker, in: "learned_facts_fts", at: path))
+        XCTAssertEqual(DatabaseFileBytes.occurrences(of: marker, at: path), 1, "only the first revision keeps the old wording")
+
+        try await repo.delete(id: fact.id)
+        XCTAssertEqual(DatabaseFileBytes.occurrences(of: marker, at: path), 0, "deleting the fact takes its revisions too")
+    }
+
+    func testDeletedProceduresAreNotLeftInTheDatabaseFile() async throws {
+        let path = tempPath()
+        defer { DatabaseFileBytes.remove(path) }
+        let clock = Clock(t0)
+        let deleted = "qzxvproconewolf", pruned = "qzxvproctwowolf", edited = "qzxvprocoldwolf", wiped = "qzxvprocallwolf"
+        do {
+            let repo = SQLiteProcedureRepository(database: try DoddyDatabase(path: path), now: { clock.date })
+            func confirmedProcedure(_ trigger: String) async throws -> Procedure {
+                let proposed = try await repo.propose(try procedureProposal(trigger))
+                return try await repo.confirm(id: proposed.id, exactTrigger: trigger)
+            }
+            let one = try await confirmedProcedure("Evening \(deleted) wrap-up")
+            _ = try await repo.propose(try procedureProposal("Morning \(pruned) round"))
+            _ = try await repo.propose(try procedureProposal("Noon \(pruned) round"))
+            let old = try await confirmedProcedure("Weekly \(edited) review")
+            _ = try await confirmedProcedure("Monthly \(wiped) check")
+            let found = try await repo.query(deleted, limit: 5)
+            XCTAssertEqual(found.map(\.id), [one.id])
+            for word in [deleted, pruned, edited, wiped] {
+                XCTAssertTrue(try DatabaseFileBytes.indexFinds(word, in: "procedures_fts", at: path), "\(word) was really indexed")
+                XCTAssertGreaterThan(DatabaseFileBytes.occurrences(of: word, at: path), 0, "\(word) is in the file before the delete")
+            }
+
+            try await repo.delete(id: one.id)
+            XCTAssertEqual(DatabaseFileBytes.occurrences(of: deleted, at: path), 0, "a deleted routine's words are gone from the file")
+
+            let newSteps = [try ProcedureStep(number: 1, toolName: VoiceToolName.createReminder, fixed: [:], asked: ["title", "due"])]
+            _ = try await repo.update(id: old.id, triggerText: "Weekly planning", steps: newSteps)
+            XCTAssertFalse(try DatabaseFileBytes.indexFinds(edited, in: "procedures_fts", at: path))
+            XCTAssertEqual(DatabaseFileBytes.occurrences(of: edited, at: path), 0, "a trigger that was edited away leaves nothing")
+
+            let dropped = try await repo.pruneProposals(olderThan: t0.addingTimeInterval(day))
+            XCTAssertEqual(dropped, 2, "the count of dropped proposals is not the index merge's")
+            XCTAssertEqual(DatabaseFileBytes.occurrences(of: pruned, at: path), 0, "an unanswered proposal that was dropped leaves nothing")
+            XCTAssertTrue(try DatabaseFileBytes.indexFinds(wiped, in: "procedures_fts", at: path), "a routine that stays is still indexed")
+            XCTAssertGreaterThan(DatabaseFileBytes.occurrences(of: wiped, at: path), 0)
+
+            try await repo.deleteAll()
+        }
+        XCTAssertEqual(DatabaseFileBytes.occurrences(of: wiped, at: path), 0, "Delete everything leaves no words in the file")
+        XCTAssertFalse(DatabaseFileBytes.contents(at: path).isEmpty)
+    }
+
     // MARK: Outcome events
 
     func testOutcomeEventsRecordCountPruneAndExport() async throws {

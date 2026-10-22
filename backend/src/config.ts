@@ -23,6 +23,9 @@ export interface Limits {
   /** Claude runs (writing, summaries, documents; Doddy pays) per user, and for the service, per UTC day. */
   userDailyClaude: number;
   serviceDailyClaude: number;
+  /** Ask Doddy questions (typed, ADR-587; Doddy pays Anthropic) per user, and for the service, per UTC day. */
+  userDailyAsk: number;
+  serviceDailyAsk: number;
   serviceDailyCalls: number;
   serviceMonthlyCalls: number;
   userConcurrency: number;
@@ -77,7 +80,7 @@ export interface Config {
   /** Owner-minted tokens (`signed`; also accepted next to Supabase in development when set). */
   sessionSigningKey: Buffer | null;
   /** Who may sign in with `POST /v1/session/device` (ADR-563). */
-  deviceSignup: "off" | "first-device";
+  deviceSignup: "off" | "first-device" | "open";
   /** Extra invite codes for device sign-in (ADR-563). */
   deviceInviteCodes: string[];
   /** Claude for writing, summaries and documents (ADR-564). Null: not set up. */
@@ -89,7 +92,26 @@ export interface Config {
   toolkits: Partial<Record<ToolkitId, ToolkitSettings>>;
   /** Live mode only; mock mode uses the offline demo search. */
   monid: MonidSettings | null;
+  /** Doddy Web (ADR-585). Null: no web routes and no web pages on this server. */
+  web: WebSettings | null;
+  /** `DODDY_TRUST_PROXY=1`: behind one proxy that appends the client to X-Forwarded-For (Render). */
+  trustProxy: boolean;
   limits: Limits;
+}
+
+/**
+ * Doddy Web (ADR-585): the browser app is served by this server, on its own origin, so its session
+ * is a first-party cookie the page's scripts can't read.
+ */
+export interface WebSettings {
+  /** The exact origin the web app is opened at (scheme, host, port). Unsafe requests must come from it. */
+  origin: string;
+  /** Folder with the built web app (`web/dist`). A missing folder serves a plain "not built" page. */
+  distDir: string;
+  /** Behind one proxy that appends the client to X-Forwarded-For (Render): use its last entry. */
+  trustProxy: boolean;
+  /** Sign-in tries per client address (an IPv6 /64) per quarter hour. */
+  signInTriesPerClient: number;
 }
 
 export class ConfigError extends Error {
@@ -129,7 +151,7 @@ const EnvSchema = z.object({
   SUPABASE_URL: z.string().optional(),
   DODDY_SESSION_SIGNING_KEY: z.string().optional(),
   /** Device sign-in for the beta (ADR-563): `first-device` = the first iPhone owns the server. */
-  DODDY_DEVICE_SIGNUP: z.enum(["off", "first-device"]).default("off"),
+  DODDY_DEVICE_SIGNUP: z.enum(["off", "first-device", "open"]).default("off"),
   /** Extra invite codes for more devices (ADR-563), comma-separated. */
   DODDY_DEVICE_INVITE_CODES: z.string().optional(),
   /** Claude for writing, summaries and documents (ADR-564). Empty: those tools say "not set up". */
@@ -137,6 +159,9 @@ const EnvSchema = z.object({
   DODDY_CLAUDE_MODEL: z.string().default("claude-sonnet-5-5"),
   DODDY_LIMIT_USER_DAILY_CLAUDE: intSetting(40, 1, 10_000),
   DODDY_LIMIT_SERVICE_DAILY_CLAUDE: intSetting(100, 1, 100_000),
+  /** Ask Doddy (ADR-587): typed questions answered by Claude. */
+  DODDY_LIMIT_USER_DAILY_ASK: intSetting(50, 1, 10_000),
+  DODDY_LIMIT_SERVICE_DAILY_ASK: intSetting(500, 1, 1_000_000),
   COMPOSIO_API_KEY: z.string().optional(),
   COMPOSIO_GOOGLECALENDAR_AUTH_CONFIG_ID: z.string().optional(),
   COMPOSIO_GOOGLECALENDAR_TOOLKIT_VERSION: z.string().optional(),
@@ -166,6 +191,12 @@ const EnvSchema = z.object({
   DODDY_PAGE_SIZE: intSetting(50, 1, 250),
   DODDY_MAX_EVENTS: intSetting(100, 1, 500),
   DODDY_ATTEMPT_TTL_SECONDS: intSetting(600, 60, 3_600),
+  /** Doddy Web (ADR-585): the origin the browser app is opened at. Empty: the web app is off. */
+  DODDY_WEB_ORIGIN: z.string().optional(),
+  DODDY_WEB_DIST: z.string().default("../web/dist"),
+  DODDY_TRUST_PROXY: z.enum(["0", "1"]).default("0"),
+  /** Sign-in tries per client per quarter hour (raise it for an office behind one address). */
+  DODDY_WEB_SIGNIN_TRIES_PER_CLIENT: intSetting(10, 1, 1_000),
 });
 
 /** Custom scheme (`doddy-dev://…`) or https. No query, no fragment: the server adds its own parameters. */
@@ -330,6 +361,25 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
   if (claudeKey !== "" && !/^sk-ant-[A-Za-z0-9_-]{8,}$/.test(claudeKey)) problems.push("ANTHROPIC_API_KEY must look like sk-ant-…");
   if (!/^claude-[a-z0-9-]{3,60}$/.test(e.DODDY_CLAUDE_MODEL)) problems.push("DODDY_CLAUDE_MODEL must be a Claude model ID such as claude-sonnet-5-5");
 
+  // Doddy Web (ADR-585). Off unless an origin is given; https outside loopback development.
+  let web: WebSettings | null = null;
+  const webOrigin = (e.DODDY_WEB_ORIGIN ?? "").trim();
+  if (webOrigin !== "") {
+    let parsed: URL | null = null;
+    try {
+      parsed = new URL(webOrigin);
+    } catch {
+      parsed = null;
+    }
+    if (!parsed || parsed.username || parsed.password || parsed.search || parsed.hash || (parsed.pathname !== "/" && parsed.pathname !== "")) {
+      problems.push("DODDY_WEB_ORIGIN must be an origin without a path, e.g. https://app.doddy.lol");
+    } else if (parsed.protocol !== "https:" && !(parsed.protocol === "http:" && isLoopbackUrl(parsed))) {
+      problems.push("DODDY_WEB_ORIGIN must be https outside loopback development");
+    } else {
+      web = { origin: parsed.origin, distDir: e.DODDY_WEB_DIST, trustProxy: e.DODDY_TRUST_PROXY === "1", signInTriesPerClient: e.DODDY_WEB_SIGNIN_TRIES_PER_CLIENT };
+    }
+  }
+
   const databaseUrl = e.DATABASE_URL?.trim() ? e.DATABASE_URL.trim() : null;
   if (databaseUrl !== null && !/^postgres(ql)?:\/\/\S+$/.test(databaseUrl)) {
     problems.push("DATABASE_URL must be a postgres:// connection string");
@@ -358,6 +408,8 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     composio,
     toolkits,
     monid,
+    web,
+    trustProxy: e.DODDY_TRUST_PROXY === "1",
     limits: {
       userDailyReads: e.DODDY_LIMIT_USER_DAILY_READS,
       userDailyToolRuns: e.DODDY_LIMIT_USER_DAILY_TOOL_RUNS,
@@ -365,6 +417,8 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
       serviceDailyWebSearches: e.DODDY_LIMIT_SERVICE_DAILY_WEB_SEARCHES,
       userDailyClaude: e.DODDY_LIMIT_USER_DAILY_CLAUDE,
       serviceDailyClaude: e.DODDY_LIMIT_SERVICE_DAILY_CLAUDE,
+      userDailyAsk: e.DODDY_LIMIT_USER_DAILY_ASK,
+      serviceDailyAsk: e.DODDY_LIMIT_SERVICE_DAILY_ASK,
       serviceDailyCalls: e.DODDY_LIMIT_SERVICE_DAILY_CALLS,
       serviceMonthlyCalls: e.DODDY_LIMIT_SERVICE_MONTHLY_CALLS,
       userConcurrency: e.DODDY_LIMIT_USER_CONCURRENCY,
@@ -390,6 +444,8 @@ export function testLimits(overrides: Partial<Limits> = {}): Limits {
     serviceDailyWebSearches: 200,
     userDailyClaude: 40,
     serviceDailyClaude: 100,
+    userDailyAsk: 50,
+    serviceDailyAsk: 500,
     serviceDailyCalls: 300,
     serviceMonthlyCalls: 3_000,
     userConcurrency: 1,

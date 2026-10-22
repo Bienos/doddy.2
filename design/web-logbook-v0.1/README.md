@@ -1,6 +1,6 @@
 # Logbook on the web: design v0.1
 
-**Status: design proposal, 22 Oct 2026. Nothing here is live and nothing is built.** Every number on the page is example data from `example-data.js`, labelled as such on screen. The plan, the data rules and the owner's decisions are in `docs/product/WEB_LOGBOOK.md` (ADR-579, proposed).
+**Status: design proposal, 22 Oct 2026. Nothing here is live and nothing is built.** Every number on the page is example data from `example-data.js`, labelled as such on screen. The plan, the data rules and the owner's decisions are in `docs/product/WEB_LOGBOOK.md` (ADR-593, proposed).
 
 The owner asked (22 Oct) for a signed-in page on the website where each person sees how they use Doddy: a basic tab and an advanced tab, both open for now, the advanced one paid later, designed to be engaging and easy to read. This folder is that page as a working mockup.
 

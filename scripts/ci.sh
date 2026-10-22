@@ -37,6 +37,7 @@ run_step "Blog pages up to date" python3 -I tools/build_blog.py --check
 run_step "Site pages in every language up to date" python3 -I tools/build_site_i18n.py --check
 run_step "String catalogs up to date" python3 -I tools/build_strings_catalog.py --check
 run_step "What-can-doddy-do page up to date" python3 -I tools/build_day.py --check
+run_step "Web app tokens and brand files match the app (ADR-585)" python3 -I tools/gen_web_assets.py --check
 run_step "Which pull requests need the macOS build (ADR-497)" scripts/test_ci_needs_mac.sh
 if python3 -I -c "import yaml" 2>/dev/null; then
   run_step "Per-platform Xcode specs in step" python3 -I scripts/check_platform_specs.py
@@ -86,6 +87,24 @@ if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
   run_step "Gateway tests (node)" npm test --prefix gateway
 else
   not_run "Gateway tests (node)" "node/npm not found on PATH"
+fi
+
+# Doddy Web (web/, ADR-585): type-check, unit tests against the server's own fixtures, and the
+# production build. The end-to-end run (real backend + Chromium) needs a Playwright Chromium; where
+# there is none it is listed as SKIPPED, never PASS.
+if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
+  if [ ! -d web/node_modules ]; then run_step "Web app install (npm ci)" npm ci --prefix web --no-audit --no-fund; fi
+  run_step "Web app type-check" npm run typecheck --prefix web
+  run_step "Web app unit tests" npm test --prefix web
+  run_step "Web app build" npm run build --prefix web
+  if [ -n "${PLAYWRIGHT_BROWSERS_PATH:-}" ] && ls "${PLAYWRIGHT_BROWSERS_PATH}"/chromium-* >/dev/null 2>&1; then
+    run_step "Backend build for the web end-to-end run" npm run build --prefix backend
+    run_step "Web end-to-end (backend + Chromium)" npm run e2e --prefix web
+  else
+    record "Web end-to-end (backend + Chromium)" "SKIPPED" "no Playwright Chromium (PLAYWRIGHT_BROWSERS_PATH)"
+  fi
+else
+  not_run "Web app tests" "node/npm not found on PATH"
 fi
 
 # Messaging server (server/messaging, Node 22 + Postgres). Its database tests need a disposable

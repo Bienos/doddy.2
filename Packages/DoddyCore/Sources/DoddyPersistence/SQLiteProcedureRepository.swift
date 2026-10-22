@@ -77,7 +77,7 @@ public final class SQLiteProcedureRepository: ProcedureRepository {
     }
 
     public func update(id: UUID, triggerText: String, steps: [ProcedureStep]) async throws -> Procedure {
-        try await transition(id) { existing, date in
+        try await transition(id, rewritesText: true) { existing, date in
             guard existing.status == .confirmed else { throw LearningStoreError.wrongStatus(id, existing.status) }
             return try existing.changing(triggerText: triggerText, steps: steps, version: existing.version + 1, at: date)
         }
@@ -154,7 +154,9 @@ public final class SQLiteProcedureRepository: ProcedureRepository {
             try db.execute(
                 sql: "DELETE FROM procedures WHERE status = ? AND created_at_ms < ?",
                 arguments: [LearningStatus.proposed.rawValue, DoddyDatabase.milliseconds(date)])
-            return db.changesCount
+            let removed = db.changesCount  // before the index statement below replaces it
+            try DoddyDatabase.compactSearchIndex("procedures_fts", in: db)
+            return removed
         }
     }
 
@@ -162,6 +164,7 @@ public final class SQLiteProcedureRepository: ProcedureRepository {
         try await dbQueue.write { db in
             try db.execute(sql: "DELETE FROM procedures WHERE id = ?", arguments: [id.uuidString])
             guard db.changesCount > 0 else { throw LearningStoreError.notFound(id) }
+            try DoddyDatabase.compactSearchIndex("procedures_fts", in: db)
         }
     }
 
@@ -169,6 +172,7 @@ public final class SQLiteProcedureRepository: ProcedureRepository {
         try await dbQueue.write { db in
             try db.execute(sql: "DELETE FROM procedures")
             try db.execute(sql: "INSERT INTO procedures_fts(procedures_fts) VALUES('rebuild')")
+            try DoddyDatabase.compactSearchIndex("procedures_fts", in: db)
         }
     }
 
@@ -183,15 +187,18 @@ public final class SQLiteProcedureRepository: ProcedureRepository {
 
     // MARK: Helpers
 
-    private func transition(_ id: UUID, _ change: @escaping @Sendable (Procedure, Date) throws -> Procedure) async throws -> Procedure {
+    /// `rewritesText`: the change replaces the trigger text, so the index is merged (ADR-584).
+    private func transition(
+        _ id: UUID, rewritesText: Bool = false, _ change: @escaping @Sendable (Procedure, Date) throws -> Procedure
+    ) async throws -> Procedure {
         let date = DoddyDatabase.truncatedToMilliseconds(now())
         return try await dbQueue.write { db in
-            try Self.store(change(try Self.require(id, db), date), db)
+            try Self.store(change(try Self.require(id, db), date), rewritesText: rewritesText, db)
         }
     }
 
     /// Writes every changeable column, then reads the row back; returns what was read.
-    private static func store(_ procedure: Procedure, _ db: Database) throws -> Procedure {
+    private static func store(_ procedure: Procedure, rewritesText: Bool = false, _ db: Database) throws -> Procedure {
         try db.execute(
             sql: """
                 UPDATE procedures SET trigger_text = ?, search_text = ?, steps_json = ?, version = ?, status = ?,
@@ -204,6 +211,7 @@ public final class SQLiteProcedureRepository: ProcedureRepository {
                 procedure.confirmedAt.map(DoddyDatabase.milliseconds), procedure.lastUsedAt.map(DoddyDatabase.milliseconds),
                 procedure.useCount, procedure.id.uuidString,
             ])
+        if rewritesText { try DoddyDatabase.compactSearchIndex("procedures_fts", in: db) }
         guard try fetch(procedure.id, db) == procedure else { throw LearningStoreError.verificationFailed }
         return procedure
     }

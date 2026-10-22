@@ -1,4 +1,5 @@
 import { createServer, type Server } from "node:http";
+import { AssistService } from "./assist.js";
 import { AnyOfSessionVerifier, DevSessionVerifier, type SessionVerifier, SignedSessionVerifier, SupabaseSessionVerifier } from "./auth.js";
 import { defaultRegistry } from "./capabilities.js";
 import type { Config } from "./config.js";
@@ -17,6 +18,9 @@ import { MockToolsProvider } from "./tools/mock.js";
 import type { ToolsProvider } from "./tools/provider.js";
 import { CloudToolsService } from "./tools/service.js";
 import { MockWebSearchProvider, MonidWebSearchProvider, type WebSearchProvider } from "./tools/websearch.js";
+import { WebRoutes } from "./web/routes.js";
+import { REDEEM_LIMITS, SESSION_IDLE_MS, WebAuth } from "./web/sessions.js";
+import { WebStatic } from "./web/static.js";
 
 /** Composition root: picks adapters strictly from validated config (mock never silently replaces live). */
 export async function buildApp(
@@ -83,19 +87,33 @@ export async function buildApp(
     completionMode: toolsProvider.mode === "mock" ? "mock" : (config.composio?.completionMode ?? "verifier"),
     log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`),
   });
-  // Beta device sign-in (ADR-563): first-device or invite codes, and a signing key (config checks both).
+  // Beta device sign-in (ADR-563): first-device, open (ADR-587: other iPhones get Ask Doddy only) or
+  // invite codes, and a signing key (config checks both).
   const deviceSessions =
     (config.deviceSignup !== "off" || config.deviceInviteCodes.length > 0) && config.sessionSigningKey
       ? new DeviceSessionIssuer(config.sessionSigningKey, { signup: config.deviceSignup, inviteCodes: config.deviceInviteCodes, store })
       : null;
+  // Doddy Web (ADR-585): only when DODDY_WEB_ORIGIN is set.
+  const webAuth = config.web
+    ? new WebAuth(store, config.web.origin, config.web.trustProxy, { ...REDEEM_LIMITS, perClientPerQuarter: config.web.signInTriesPerClient })
+    : null;
+  const web =
+    config.web && webAuth
+      ? { auth: webAuth, routes: new WebRoutes(webAuth, store, verifier, config.limits.maxBodyBytes), pages: new WebStatic(config.web.distDir, config.web.origin) }
+      : null;
+  // Ask Doddy (ADR-587): always routed; without an Anthropic key it says "not set up" (503).
+  const assist = new AssistService({ store, claude, limits: config.limits, log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`) });
   const handler = createHandler({
     service,
     tools,
     verifier,
     deviceSessions,
+    web,
+    assist,
     documents: documentLinks ? { links: documentLinks, store } : null,
     appReturnUrl: config.appReturnUrl,
     maxBodyBytes: config.limits.maxBodyBytes,
+    trustProxy: config.trustProxy,
   });
   // Last line of defence: a handler failure closes that one connection, never the process.
   const server: Server = createServer((req, res) => {
@@ -109,13 +127,14 @@ export async function buildApp(
     void Promise.allSettled([service.sweepAbandoned(), tools.sweepAbandoned()])
       .then(() => store.prune(Date.now()))
       .then(() => store.pruneDocuments(Date.now()))
+      .then(() => (web ? store.pruneWeb(Date.now(), SESSION_IDLE_MS) : 0))
       .catch(() => {}); // the store closed with the server; the next start sweeps again
   };
   housekeeping();
   const pruning = setInterval(housekeeping, 3_600_000);
   pruning.unref();
   server.on("close", () => clearInterval(pruning));
-  return { server, store, service, tools, provider };
+  return { server, store, service, tools, provider, assist };
 }
 
 /** Which sign-ins this server accepts (ADR-526). */

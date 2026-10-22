@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
-import type { SessionVerifier } from "./auth.js";
+import { ASSIST_MAX_BODY_BYTES, type AssistService } from "./assist.js";
+import { requireFullAccess, type SessionVerifier } from "./auth.js";
+import { clientAddress } from "./clientAddress.js";
 import { type ErrorResponse, MockScenario } from "./contracts.js";
 import type { DeviceSessionIssuer } from "./deviceSession.js";
 import { type DocumentLinks, serveDocument } from "./documents.js";
@@ -9,6 +11,9 @@ import { AppError } from "./errors.js";
 import type { ConnectedAppsService } from "./service.js";
 import type { ToolsMockScenario } from "./tools/mock.js";
 import type { CloudToolsService } from "./tools/service.js";
+import type { WebRoutes } from "./web/routes.js";
+import { COOKIE_READABLE, type WebAuth } from "./web/sessions.js";
+import type { WebStatic } from "./web/static.js";
 
 /**
  * HTTP routing for the Doddy-owned v1 API. Every route under /v1/connected-apps is
@@ -25,8 +30,14 @@ export interface HttpDeps {
   deviceSessions?: DeviceSessionIssuer | null;
   /** Files Claude made (ADR-564), opened by signed link. Absent: `GET /v1/documents/…` is not found. */
   documents?: { links: DocumentLinks; store: Store } | null;
+  /** Doddy Web (ADR-585): its routes, its cookie sessions and its pages. Absent: none of them exist. */
+  web?: { auth: WebAuth; routes: WebRoutes; pages: WebStatic } | null;
+  /** Ask Doddy (ADR-587): typed questions answered by Claude. Absent: `POST /v1/assist` is not found. */
+  assist?: AssistService | null;
   appReturnUrl: string;
   maxBodyBytes: number;
+  /** Behind one proxy that appends the client to X-Forwarded-For (Render). For per-client limits. */
+  trustProxy?: boolean;
   now?: () => Date;
   log?: (line: Record<string, unknown>) => void;
 }
@@ -106,7 +117,7 @@ export function createHandler(deps: HttpDeps) {
       if (key === "POST /v1/session/device" && deps.deviceSessions) {
         route = key;
         const body = await readJson(req, deps.maxBodyBytes);
-        const issued = await deps.deviceSessions.issue(body, now());
+        const issued = await deps.deviceSessions.issue(body, now(), clientAddress(req, deps.trustProxy ?? false));
         status = 200;
         return send(res, 200, issued);
       }
@@ -117,6 +128,34 @@ export function createHandler(deps: HttpDeps) {
         return;
       }
 
+      // Ask Doddy (ADR-587): the iPhone's own session only (never a browser cookie), a guest's
+      // included, and its own body limit, sized for a question plus up to eight matching notes.
+      if (key === "POST /v1/assist" && deps.assist) {
+        route = key;
+        const user = await deps.verifier.verify(header(req, "authorization"), now());
+        if (!user) throw new AppError("unauthenticated");
+        const body = await readJson(req, ASSIST_MAX_BODY_BYTES);
+        const reply = await deps.assist.answer(user.userId, body);
+        status = 200;
+        return send(res, 200, reply);
+      }
+
+      // Doddy Web (ADR-585): its own routes, then its pages for anything that isn't the API.
+      const web = deps.web;
+      if (web) {
+        const match = web.routes.match(req.method ?? "GET", url.pathname);
+        if (match) {
+          route = match.route.template;
+          status = await web.routes.serve(match, req, res, now());
+          return;
+        }
+        if ((req.method === "GET" || req.method === "HEAD") && !url.pathname.startsWith("/v1/")) {
+          route = "GET /*page";
+          status = await web.pages.serve(req, res, url.pathname);
+          return;
+        }
+      }
+
       const toolkitRoute = tools ? TOOLKIT_ROUTE.exec(key) : null;
       const toolsHandler = toolsRoutes[key];
       const handler = routes[key];
@@ -124,8 +163,17 @@ export function createHandler(deps: HttpDeps) {
       // Route templates only in logs, so the set of values stays small.
       route = toolkitRoute ? `POST /v1/tools/:toolkit/${toolkitRoute[2]}` : key;
 
-      const user = await deps.verifier.verify(header(req, "authorization"), now());
+      const authorization = header(req, "authorization");
+      let user = await deps.verifier.verify(authorization, now());
+      // A browser session may read a few lists (COOKIE_READABLE); every other route needs the
+      // iPhone's own session in the Authorization header.
+      if (!user && authorization === undefined && web && COOKIE_READABLE.has(key)) {
+        const session = await web.auth.fromCookie(req, now());
+        if (session) user = { userId: session.userId };
+      }
       if (!user) throw new AppError("unauthenticated");
+      // A guest iPhone (ADR-587) has Ask Doddy only.
+      requireFullAccess(user);
 
       const rawScenario = header(req, "x-doddy-demo-scenario");
       const scenario = rawScenario === undefined ? undefined : MockScenario.safeParse(rawScenario);

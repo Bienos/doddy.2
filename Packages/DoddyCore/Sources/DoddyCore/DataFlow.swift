@@ -173,6 +173,13 @@ public enum DataFlow {
                 note: !state.doddyServerSet
                     ? "No Doddy server is set, so nothing goes there."
                     : state.pauseAll ? "Connections are paused, so Doddy doesn't use it in conversations. The Connected Apps screen still works when you open it." : nil),
+            // ADR-585: the phone vouches for a browser; the browser sees what the server already keeps.
+            DataFlowRow(
+                id: "webSignIn", destination: "A browser you sign in to Doddy on the web",
+                what: "From this iPhone only a request for a sign-in code, to your Doddy server. The browser you type the code into then sees what that server already keeps for you: files Doddy made, your online accounts and their tools, and Doddy's receipts. Never your saved notes, lists, profile or conversations.",
+                when: "When you tap Get a sign-in code, and while that browser stays signed in (30 days at most; sign it out in Settings › Doddy on the web).",
+                isActive: state.doddyServerSet,
+                note: state.doddyServerSet ? nil : "No Doddy server is set, so no browser can sign in."),
             DataFlowRow(
                 id: "messagingServer", destination: "Your Doddy messaging server (Apple, Twilio, ElevenLabs, \(writer), GNews)",
                 what: sentence(messaging),
@@ -199,9 +206,11 @@ public enum DataFlow {
                     ? "Doddy searches on this iPhone; Siri hears the request and speaks the answer as your Siri settings allow, which can include Apple's servers."
                     : "Reading notes aloud with Siri is off, so Siri gets no notes from Doddy."),
             DataFlowRow(
-                id: "askDoddy", destination: "Ask Doddy gateway (OpenAI)",
+                id: "askDoddy", destination: "Your Doddy server and Anthropic (Ask Doddy)",
                 what: ask + ".", when: "Only when you send a typed question.", isActive: state.askDoddyOn,
-                note: state.askDoddyOn ? "A separate server from your Doddy server." : "Ask Doddy is off, so nothing goes there."),
+                note: state.askDoddyOn
+                    ? "Doddy's server passes them to Anthropic's Claude to write the answer. It stores nothing and logs no text. How long Anthropic keeps them isn't something Doddy can verify."
+                    : "Ask Doddy is off, so nothing goes there."),
         ]
     }
 
@@ -220,7 +229,7 @@ public enum DataFlow {
         var parts: [String] = []
         if active.contains("elevenlabs") { parts.append("ElevenLabs (voice)") }
         if active.contains("openaiVoice") { parts.append("OpenAI (voice)") }
-        if active.contains("askDoddy") { parts.append("OpenAI (Ask Doddy)") }
+        if active.contains("askDoddy") { parts.append("Anthropic (Ask Doddy)") }
         if active.contains("messagingServer") {
             parts.append("ElevenLabs (phone calls) and \(newsWriter(state)) (daily news) on your messaging server")
         }
@@ -243,12 +252,13 @@ public enum DataFlow {
         "messagingServer": "your Doddy messaging server",
         "errands": "Anthropic (tasks you hand over, through your messaging server)",
         "siri": "Siri (when you ask it)",
-        "askDoddy": "the Ask Doddy gateway",
+        "askDoddy": "your Doddy server and Anthropic (Ask Doddy)",
     ]
 
     /// Covered by another name (translator mode goes to whichever service runs the voice, which is
     /// named), or not sent by the app (a backup file goes where you save it).
-    static let notInNetworkSummary: Set<String> = ["translator", "backup"]
+    // webSignIn: the same Doddy server the doddyServer row already names.
+    static let notInNetworkSummary: Set<String> = ["translator", "backup", "webSignIn"]
 
     private static func newsWriter(_ state: DataFlowState) -> String {
         switch state.newsWriterProvider {

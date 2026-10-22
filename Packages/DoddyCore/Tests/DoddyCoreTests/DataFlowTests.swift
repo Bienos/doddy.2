@@ -156,7 +156,7 @@ final class DataFlowSummaryTests: XCTestCase {
             }
         }
         // The audit's missing ones are there when they're on.
-        for name in ["your Doddy messaging server", "Apple Maps", "European Central Bank", "iCloud", "Siri", "the Ask Doddy gateway"] {
+        for name in ["your Doddy messaging server", "Apple Maps", "European Central Bank", "iCloud", "Siri", "your Doddy server and Anthropic (Ask Doddy)"] {
             XCTAssertTrue(summary.contains(name), name)
         }
     }
@@ -178,13 +178,27 @@ final class DataFlowSummaryTests: XCTestCase {
         // OpenAI runs the voice where the token server is set (ADR-442): ElevenLabs gets no voice then.
         XCTAssertEqual(
             DataFlow.cloudAISummary(everything),
-            "OpenAI (voice); OpenAI (Ask Doddy); ElevenLabs (phone calls) and Anthropic or OpenAI (daily news) on your messaging server; Anthropic (tasks you hand over)")
+            "OpenAI (voice); Anthropic (Ask Doddy); ElevenLabs (phone calls) and Anthropic or OpenAI (daily news) on your messaging server; Anthropic (tasks you hand over)")
         XCTAssertFalse(DataFlow.networkSummary(everything).contains("ElevenLabs (while talking)"))
         var elevenLabs = everything
         elevenLabs.voiceProvider = .elevenLabs
-        XCTAssertTrue(DataFlow.cloudAISummary(elevenLabs).hasPrefix("ElevenLabs (voice); OpenAI (Ask Doddy)"))
+        XCTAssertTrue(DataFlow.cloudAISummary(elevenLabs).hasPrefix("ElevenLabs (voice); Anthropic (Ask Doddy)"))
         var state = everything
         state.newsWriterProvider = "anthropic"
         XCTAssertTrue(DataFlow.cloudAISummary(state).contains("Anthropic (daily news)"))
+    }
+
+    func testWebSignInSaysWhatTheBrowserSeesAndThatNotesStayHere() throws {
+        // ADR-585.
+        var state = base
+        state.doddyServerSet = true
+        let row = try XCTUnwrap(DataFlow.rows(state).first { $0.id == "webSignIn" })
+        XCTAssertTrue(row.isActive)
+        XCTAssertTrue(row.what.contains("Never your saved notes"))
+        XCTAssertTrue(row.what.contains("files Doddy made"))
+        state.doddyServerSet = false
+        let off = try XCTUnwrap(DataFlow.rows(state).first { $0.id == "webSignIn" })
+        XCTAssertFalse(off.isActive)
+        XCTAssertNotNil(off.note)
     }
 }
