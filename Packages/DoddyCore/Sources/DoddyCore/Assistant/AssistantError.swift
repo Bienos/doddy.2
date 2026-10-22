@@ -72,7 +72,7 @@ public enum AssistantError: Error, Equatable, Sendable {
         }
     }
 
-    /// Maps Doddy's server error code (`backend/src/errors.ts`, ADR-581). Unknown codes become `providerUnavailable`.
+    /// Maps Doddy's server error code (`backend/src/errors.ts`, ADR-587). Unknown codes become `providerUnavailable`.
     init(backendCode: String, retryAfterSeconds: Int?) {
         switch backendCode {
         case "unauthenticated": self = .notAuthorized

@@ -137,11 +137,11 @@ Common points:
 
 | Item | Detail |
 |---|---|
-| Who | Doddy's own server (`backend/`, the Render service `doddy`, region Frankfurt), which passes the question to Anthropic's Messages API (Claude) with Doddy's key (ADR-581). It replaced a separate OpenAI gateway (`gateway/`) that was never deployed. **[CONFIRM: Anthropic entity, terms, region; Render's processor terms]** |
+| Who | Doddy's own server (`backend/`, the Render service `doddy`, region Frankfurt), which passes the question to Anthropic's Messages API (Claude) with Doddy's key (ADR-587). It replaced a separate OpenAI gateway (`gateway/`) that was never deployed. **[CONFIRM: Anthropic entity, terms, region; Render's processor terms]** |
 | What is sent | Your typed question and up to 6 earlier messages from that screen. If "Use relevant saved notes" is on: up to 5 notes that match your question (never Private notes). Every call carries a session token the iPhone made for itself; there is no account, invite code or address to enter. Notes are given to Claude under short aliases (n1, n2), not their IDs. |
 | When | Only when you send a typed question. |
 | Opt-in? | Yes. Off until you confirm a dialog that names Anthropic. |
-| Limits | 50 questions per iPhone and 500 for everyone per UTC day (ADR-581). Any iPhone beyond the first gets a guest session that can ask questions and nothing else. |
+| Limits | 50 questions per iPhone and 500 for everyone per UTC day (ADR-587). Any iPhone beyond the first gets a guest session that can ask questions and nothing else. |
 | Retention | Doddy's server does not store the question, notes or answer, and its logs keep only counts, token numbers and timings (`backend/test/assist.test.ts` checks that no text is logged). The server keeps a per-day question count per iPhone for the limit. How long Anthropic keeps requests is not verified. The host's own request logs (IP, path, status) are kept by Render. Chat history is in memory only and never saved as notes. **[CONFIRM: Anthropic retention terms for the API key's organisation; host log retention]** |
 
 ### 5.5 Doddy messaging server: anonymous account and notifications
@@ -373,7 +373,7 @@ Paths are relative to the repository root. "ADR" means a row in `DECISIONS.md`.
 | A9 | Translator mode data | `DataFlow.swift` row `translator`; ADR-215 |
 | A10 | Token server behaviour and logs | `server/voice-token/README.md`; `docs/implementation/VOICE_TOKEN_SERVER_STATUS.md` |
 | A11 | OpenAI voice (default), direct from the phone | `server/voice-token/README.md`; ADR-265; `DataFlow.swift` row `openaiVoice` |
-| A12 | Ask Doddy data, limits, no storage, not yet run against Anthropic | `backend/src/assist.ts`; `backend/test/assist.test.ts`; ADR-581 (the old OpenAI gateway: `docs/architecture/ASSISTANT_GATEWAY.md`, ADR-113) |
+| A12 | Ask Doddy data, limits, no storage, not yet run against Anthropic | `backend/src/assist.ts`; `backend/test/assist.test.ts`; ADR-587 (the old OpenAI gateway: `docs/architecture/ASSISTANT_GATEWAY.md`, ADR-113) |
 | A13 | Messaging server tables, anonymous account, phone number plain, hash-only token | `server/messaging/migrations/001_init.sql` to `007`; `server/messaging/src/routes/account.ts` |
 | A14 | Built-in messaging address empty | `DoddyApp/Infrastructure/Server/ServerConfig.swift` |
 | A15 | Render Frankfurt, Postgres, not deployed | `render.yaml`; ADR-139 |
@@ -440,7 +440,7 @@ Paths are relative to the repository root. "ADR" means a row in `DECISIONS.md`.
 
 **Processors and agreements (data processing agreement, sub-processors, region)**
 - [ ] ElevenLabs: agreement, sub-processors (including Google Gemini), region, EU residency, retention, zero-retention mode, recording on or off, deletion by conversation or user ID, training use.
-- [ ] OpenAI: voice test and news writer; retention; region; agreement. Anthropic: Ask Doddy (ADR-581), Claude tools (ADR-564) and errands; retention; region; agreement.
+- [ ] OpenAI: voice test and news writer; retention; region; agreement. Anthropic: Ask Doddy (ADR-587), Claude tools (ADR-564) and errands; retention; region; agreement.
 - [ ] Google (Gemini via ElevenLabs; Google Analytics; Google Fonts; Calendar, Gmail and Drive APIs). Google OAuth verification and the wider Gmail compose scope (ADR-099).
 - [ ] Anthropic (news writer). GNews. Twilio (Verify, SMS, calls). Apple (APNs, Maps, Siri, CloudKit).
 - [ ] Composio and Monid: terms, regions, sub-processors, retention, agreement.

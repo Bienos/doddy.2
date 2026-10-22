@@ -1,4 +1,4 @@
-"""Generate Doddy Web's design tokens and copy its brand files from the iPhone app (ADR-579).
+"""Generate Doddy Web's design tokens and copy its brand files from the iPhone app (ADR-585).
 
 The web app shows what the iPhone app shows, so nothing here is drawn or picked by hand:
   - web/src/styles/tokens.css   colours from UploadedTokens.swift (the palette `Theme` uses), light

@@ -19,7 +19,7 @@ import { AnthropicClaudeProvider, type ClaudeProvider, ClaudeRefusal, MockClaude
 import { USER_A, USER_B } from "./helpers.js";
 
 /**
- * ADR-581: Ask Doddy on Doddy's own server. The phone's typed question (and only the saved notes
+ * ADR-587: Ask Doddy on Doddy's own server. The phone's typed question (and only the saved notes
  * that matched it) is answered by Claude; the reply may cite only notes it was given.
  */
 

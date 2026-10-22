@@ -6,7 +6,7 @@ import { CHROME_MAC, startWeb } from "./webRig.js";
 
 /**
  * Writes contracts/web/*.json from the real server (mock tools, fixed clock), so the iPhone's
- * decoder tests (DoddyCore) and the web app's schema tests read actual output (ADR-579).
+ * decoder tests (DoddyCore) and the web app's schema tests read actual output (ADR-585).
  * Run: npm run fixtures:web
  */
 const out = join(process.cwd(), "..", "contracts", "web");

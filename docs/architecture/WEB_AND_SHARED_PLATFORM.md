@@ -1,6 +1,6 @@
 # Doddy Web and the shared platform: audit, target and plan (22 Oct 2026)
 
-Branch `claude/exciting-carson-08x2pk`, from main at `8aa42c5`. The owner's brief ("DODDY — Master implementation prompt", 22 Oct) asks for one personal AI platform with two interfaces, iPhone and web. This page is Phase 0 of that brief (sections A to G), plus what the first slice on this branch built. ADR-579 and ADR-580 record the two decisions. How to run, test and deploy the web app: `docs/platforms/web.md`.
+Branch `claude/exciting-carson-08x2pk`, from main at `8aa42c5`. The owner's brief ("DODDY — Master implementation prompt", 22 Oct) asks for one personal AI platform with two interfaces, iPhone and web. This page is Phase 0 of that brief (sections A to G), plus what the first slice on this branch built. ADR-585 and ADR-586 record the two decisions. How to run, test and deploy the web app: `docs/platforms/web.md`.
 
 Words used here: **IMPLEMENTED** = code and tests exist and pass; **PARTIAL** = part of it exists; **MOCK** = demo data only; **MISSING** = not built; **DEPRECATED** = built, but superseded or switched off; **LIVE?** = built, but never confirmed on the live service or a device.
 
@@ -51,11 +51,11 @@ Words used here: **IMPLEMENTED** = code and tests exist and pass; **PARTIAL** = 
 | Documents | PARTIAL: Postgres rows kept 7 days. Signed 7-day links. Made by an in-memory job that is lost on restart | `backend/src/documents.ts`, `store.ts` (`documents`), `tools/service.ts` `makeDocumentInBackground` |
 | Background tasks ("errands") | IMPLEMENTED, off by default (`ERRANDS_ENABLED=0`). Durable worker. The server copy is deleted once the phone saves the result | `server/messaging/src/errands/`, migration `009_errands` |
 | Phone calls, call cases, news digests, push, SMS | IMPLEMENTED; LIVE? (calls never tried live) | `server/messaging/src/`, `docs/implementation/CALL_CASES_STATUS.md` |
-| Typed "Ask Doddy" | The OpenAI gateway was never configured on any host, so it did not work. **Moved to `backend/` (Claude) on 22 Oct, ADR-581:** `POST /v1/assist`, open to every iPhone through a guest session; not run against the real Anthropic API | `backend/src/assist.ts`, `gateway/` (unused) |
+| Typed "Ask Doddy" | The OpenAI gateway was never configured on any host, so it did not work. **Moved to `backend/` (Claude) on 22 Oct, ADR-587:** `POST /v1/assist`, open to every iPhone through a guest session; not run against the real Anthropic API | `backend/src/assist.ts`, `gateway/` (unused) |
 | Marketing site, waitlist, admin | IMPLEMENTED, live | `site/`, `site/api/` |
 | Authenticated web UI | MISSING before this branch (the only web login was the single-password waitlist admin) | `site/admin/` |
 | Shared identity | PARTIAL: four separate identities (below) | — |
-| Supabase sign-in (Apple/Google) | PARTIAL: verifier built on the server; the app side was never built. **Deferred by the owner on 22 Oct** ("leave google sign in for now"), so the web keeps its code from the phone (ADR-579) | `backend/src/auth.ts`, ADR-526 |
+| Supabase sign-in (Apple/Google) | PARTIAL: verifier built on the server; the app side was never built. **Deferred by the owner on 22 Oct** ("leave google sign in for now"), so the web keeps its code from the phone (ADR-585) | `backend/src/auth.ts`, ADR-526 |
 | Projects | MISSING | — |
 | Conversation sync, memory sync | MISSING. Only an opt-in, whole-snapshot memory copy that phone calls read | `server/messaging` `PUT /v1/memory-copy/snapshot` |
 | Usage metering | PARTIAL: per-user and per-service daily counters for tools and Claude. Errand tokens counted, not priced | `backend/src/store.ts` `usage`; `server/messaging` errands |
@@ -69,7 +69,7 @@ Words used here: **IMPLEMENTED** = code and tests exist and pass; **PARTIAL** = 
 | Area | What overlaps | Recommendation |
 |---|---|---|
 | **Identity** (highest risk) | `server/voice-token`: Apple sign-in, HS256 tokens, Redis sessions. `backend/`: Supabase JWTs and `ds1` device sessions. `server/messaging`: anonymous device tokens. `gateway/`: invite tokens. One phone has up to four unrelated user IDs. | Converge on one account (ADR-526's Supabase user) with `backend/` as the place that checks it. Then voice-token and messaging accept that session. Phased, section F. Don't merge the stores first: link identities, then move data. |
-| AI gateways | `gateway/` (OpenAI), `backend/` (Claude), `server/messaging` (Anthropic for news, calls and errands) | Typed Ask now goes through `backend/` (ADR-581); `gateway/` is unused and can be deleted when the owner decides (decision 11). Web chat will go through `backend/` too. |
+| AI gateways | `gateway/` (OpenAI), `backend/` (Claude), `server/messaging` (Anthropic for news, calls and errands) | Typed Ask now goes through `backend/` (ADR-587); `gateway/` is unused and can be deleted when the owner decides (decision 11). Web chat will go through `backend/` too. |
 | Background jobs | messaging's durable worker (leases, SKIP LOCKED, timeouts) vs backend's in-memory document jobs | Move document making onto a durable job when documents become durable (Phase 4). Don't build a third job system. |
 | Databases | backend's Postgres (schema `doddy_backend`, `DATABASE_URL`) and messaging's `doddy-db` | One Postgres with a schema per module is the stated plan (`render.yaml` header). Do it when identity is shared, not before. |
 | Rate limits and budgets | gateway `budget.js`, backend `usage` table, messaging per-route limits | Keep backend's `usage` table as the one meter (it is transactional and survives restarts); messaging can call into it once they share a database. |
@@ -98,7 +98,7 @@ Nothing here was refactored on this branch: the audit's rule is consolidation on
 - **One server for both clients.** `backend/` already holds tools, approvals, Claude, documents, caps and receipts, and checks Apple/Google sessions. It is the shared API.
   - Its modules stay folders (`src/tools`, `src/web`, later `src/conversations`, `src/memory`), not services.
   - `server/messaging` stays the worker and telephony service until the shared account lands.
-- **Web is served by `backend/` (ADR-580),** so the browser session is a first-party HttpOnly cookie. There is no new host, no CORS, and no token in browser storage.
+- **Web is served by `backend/` (ADR-586),** so the browser session is a first-party HttpOnly cookie. There is no new host, no CORS, and no token in browser storage.
 - **One agent, two interfaces, eventually.** Today the "agent" is the ElevenLabs voice agent, and its memory tools run on the phone. A web chat that is the *same* Doddy needs the same tools on the server. So web chat waits on two decisions: memory sync (E) and a server-side text runtime. Building a separate web chatbot with its own prompt and no memory would break the brief's "do not create a second agent".
 
 ## C. Reuse vs build vs refactor
@@ -124,9 +124,9 @@ Nothing that works was moved.
 
 ```
 backend/            the Doddy server (Render "doddy")
-  src/web/          ADR-579: contracts.ts, sessions.ts (codes, cookies, CSRF), routes.ts, static.ts
+  src/web/          ADR-585: contracts.ts, sessions.ts (codes, cookies, CSRF), routes.ts, static.ts
   test/web.test.ts, test/webRig.ts, test/fixtures.web.generate.ts
-web/                Doddy Web: Vite 7 + React 19 + TypeScript 5.9 + zod 3 (ADR-580)
+web/                Doddy Web: Vite 7 + React 19 + TypeScript 5.9 + zod 3 (ADR-586)
   src/api           typed client, schemas mirrored from the server
   src/auth          session state (asks the server; holds no token)
   src/i18n          Polish (default) and English messages
@@ -199,7 +199,7 @@ Later modules go under `backend/src/<module>/`. A separate package for shared Ty
 
 | Option | Fixed monthly | Notes |
 |---|---|---|
-| **A. Web served by the existing `backend/` on Render (chosen, ADR-580)** | $0 extra on the current free plan; Render Starter is about $7 a month for an instance that doesn't sleep (assumption, verify on render.com) | One deploy, one origin, first-party cookie, no CORS. The free plan sleeps when idle, so the first request after a sleep waits for the server to start; the page says so. |
+| **A. Web served by the existing `backend/` on Render (chosen, ADR-586)** | $0 extra on the current free plan; Render Starter is about $7 a month for an instance that doesn't sleep (assumption, verify on render.com) | One deploy, one origin, first-party cookie, no CORS. The free plan sleeps when idle, so the first request after a sleep waits for the server to start; the page says so. |
 | B. Next.js on Vercel as a BFF in front of `backend/` | Vercel Pro per seat; the Hobby plan is for non-commercial use (assumption, verify) | A second deployable and a second session store. Server functions far from the Frankfurt backend add latency. The team already hit the free plan's 100 deploys a day (`STATUS.md`). |
 | C. Static SPA on Vercel calling `backend/` with Bearer tokens | $0 | Tokens in browser storage (readable by any XSS) and CORS on every route. Rejected on security. |
 

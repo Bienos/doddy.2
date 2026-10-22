@@ -1,6 +1,6 @@
 # Doddy gateway (M2)
 
-> **Not used by the app since ADR-581 (22 Oct 2026).** Typed questions go to Doddy's own server (`backend/`, `POST /v1/assist`, Claude). This gateway stays as written until the owner decides to delete it.
+> **Not used by the app since ADR-587 (22 Oct 2026).** Typed questions go to Doddy's own server (`backend/`, `POST /v1/assist`, Claude). This gateway stays as written until the owner decides to delete it.
 
 A small server the iPhone app talks to for typed questions. It exists so that **no AI key is ever on the phone**.
 It is written, tested and **not deployed**. Nothing here has been run against the real OpenAI API.

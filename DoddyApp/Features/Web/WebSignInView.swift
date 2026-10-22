@@ -1,7 +1,7 @@
 import DoddyCore
 import SwiftUI
 
-/// Settings → Doddy on the web (ADR-579). The iPhone vouches for a browser: it shows a one-time code
+/// Settings → Doddy on the web (ADR-585). The iPhone vouches for a browser: it shows a one-time code
 /// and the web address to type it at, and lists the browsers signed in to this account, each with
 /// Sign out. The rules are `WebSignInModel` in DoddyCore, tested on Linux; this file only draws them.
 struct WebSignInScreen: View {

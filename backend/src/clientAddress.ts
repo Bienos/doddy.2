@@ -1,7 +1,7 @@
 import type { IncomingMessage } from "node:http";
 
 /**
- * Who a per-client limit counts against (web sign-in, ADR-579; guest iPhones, ADR-581).
+ * Who a per-client limit counts against (web sign-in, ADR-585; guest iPhones, ADR-587).
  * `trustProxy`: behind exactly one proxy that appends the client to X-Forwarded-For (Render), so
  * its last entry is the one address nobody but the proxy wrote. Otherwise the socket's address.
  */

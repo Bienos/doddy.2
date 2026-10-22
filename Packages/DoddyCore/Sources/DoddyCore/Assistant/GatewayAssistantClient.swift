@@ -1,7 +1,7 @@
 import Foundation
 
 /// The first `AssistantClient`: talks to the separate Doddy gateway (OpenAI), which holds the
-/// provider key. Since ADR-581 the app uses `BackendAssistantClient` (Doddy's own server, Claude)
+/// provider key. Since ADR-587 the app uses `BackendAssistantClient` (Doddy's own server, Claude)
 /// instead, and nothing in the app builds this one; it stays, tested, with `gateway/`, until the
 /// owner decides to delete both. Nothing here logs text. Errors are the `AssistantError` taxonomy.
 public struct GatewayAssistantClient: AssistantClient {

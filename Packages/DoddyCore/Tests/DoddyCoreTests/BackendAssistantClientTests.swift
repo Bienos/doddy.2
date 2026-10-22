@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// ADR-581: typed questions go to Doddy's own server (`POST /v1/assist`), signed in with the
+/// ADR-587: typed questions go to Doddy's own server (`POST /v1/assist`), signed in with the
 /// device session. Uses the shared contract fixtures (also read by the server's tests).
 final class BackendAssistantClientTests: XCTestCase {
     private let server = URL(string: "https://doddy.example.com")!

@@ -6,7 +6,7 @@ import type { DocumentView } from "./contracts.js";
 import type { WebAuth, WebSessionContext } from "./sessions.js";
 
 /**
- * The `/v1/web/…` routes (ADR-579). Each route says who may call it:
+ * The `/v1/web/…` routes (ADR-585). Each route says who may call it:
  *  - `public`: no session (signing in).
  *  - `phone`: the iPhone's own session (Authorization header) only.
  *  - `either`: the iPhone's session, or a browser session cookie.
@@ -174,7 +174,7 @@ export class WebRoutes {
       if (access === "browser") throw new AppError("unauthenticated");
       const user: AuthenticatedUser | null = await this.verifier.verify(authorization, now);
       if (!user) throw new AppError("unauthenticated");
-      // A guest iPhone (ADR-581) can't open the web workspace: it has Ask Doddy only.
+      // A guest iPhone (ADR-587) can't open the web workspace: it has Ask Doddy only.
       requireFullAccess(user);
       return { userId: user.userId, session: null };
     }

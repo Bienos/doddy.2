@@ -87,7 +87,7 @@ test("config: device sign-in needs the signing key and is refused in production"
   const key = Buffer.alloc(32, 1).toString("base64");
   const base = { DODDY_MODE: "mock", DODDY_AUTH_MODE: "signed", DODDY_SESSION_SIGNING_KEY: key };
   assert.equal(loadConfig({ ...base, DODDY_DEVICE_SIGNUP: "first-device" }).deviceSignup, "first-device");
-  // ADR-581: open = the first iPhone owns the server, others get Ask Doddy only. Same rules.
+  // ADR-587: open = the first iPhone owns the server, others get Ask Doddy only. Same rules.
   assert.equal(loadConfig({ ...base, DODDY_DEVICE_SIGNUP: "open" }).deviceSignup, "open");
   assert.throws(() => loadConfig({ ...base, DODDY_DEVICE_SIGNUP: "everyone" }));
   assert.throws(

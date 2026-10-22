@@ -1,6 +1,6 @@
 import Foundation
 
-/// How Ask Doddy gets a session on Doddy's server (ADR-563, ADR-581). The app implements it with the
+/// How Ask Doddy gets a session on Doddy's server (ADR-563, ADR-587). The app implements it with the
 /// device session in the Keychain; the tests with a script.
 public struct AssistantSession: Sendable {
     /// The session token for the server, after signing this iPhone in if it has none. Nil: it
@@ -15,7 +15,7 @@ public struct AssistantSession: Sendable {
     }
 }
 
-/// The real `AssistantClient` (ADR-581): typed questions go to Doddy's own server, `POST /v1/assist`,
+/// The real `AssistantClient` (ADR-587): typed questions go to Doddy's own server, `POST /v1/assist`,
 /// which answers with Claude using the server's key. Same request and reply as the old gateway
 /// (`AssistantWire.swift`), so the checks around it (consent, grounding, citation check) are
 /// unchanged. There is no gateway address and no invite code: this iPhone signs itself in

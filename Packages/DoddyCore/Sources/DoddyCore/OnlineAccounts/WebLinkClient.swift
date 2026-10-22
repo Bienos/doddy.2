@@ -1,6 +1,6 @@
 import Foundation
 
-/// ADR-579: Doddy on the web. The browser has no sign-in of its own yet, so the iPhone vouches for
+/// ADR-585: Doddy on the web. The browser has no sign-in of its own yet, so the iPhone vouches for
 /// it: the phone asks Doddy's server for a short code, the person types it at the web address the
 /// phone shows, and that browser is signed in to the same account. The phone also lists the signed-in
 /// browsers and signs any of them out. This is the HTTP side, kept here so it is tested on Linux;

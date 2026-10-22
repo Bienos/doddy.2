@@ -184,7 +184,7 @@ export const SCHEMA_SQL = `
   CREATE INDEX IF NOT EXISTS web_sessions_user ON web_sessions(user_id, created_at);
 `;
 
-/** A browser signed in to Doddy Web (ADR-579). The cookie's token is stored only as a hash. */
+/** A browser signed in to Doddy Web (ADR-585). The cookie's token is stored only as a hash. */
 export interface WebSessionRow {
   session_id: string;
   user_id: string;
@@ -195,7 +195,7 @@ export interface WebSessionRow {
   expires_at: number;
 }
 
-/** A document without its file, for lists (ADR-579). */
+/** A document without its file, for lists (ADR-585). */
 export interface DocumentSummaryRow {
   id: string;
   status: DocumentRow["status"];
@@ -635,7 +635,7 @@ export class Store {
     return { ...row, body: row.body === null ? null : Buffer.from(row.body as unknown as Uint8Array) };
   }
 
-  /** The user's own documents, newest first, without their files (ADR-579). */
+  /** The user's own documents, newest first, without their files (ADR-585). */
   async listDocuments(userId: string, limit: number): Promise<DocumentSummaryRow[]> {
     return (
       await this.db.query<DocumentSummaryRow>(
@@ -662,7 +662,7 @@ export class Store {
     return (await this.db.query("DELETE FROM documents WHERE created_at < $1", [now - 7 * 86_400_000])).rowCount;
   }
 
-  // ------------------------------------------------------------ Doddy Web (ADR-579)
+  // ------------------------------------------------------------ Doddy Web (ADR-585)
 
   /** A new sign-in code for `userId`. Any earlier code of theirs stops working. */
   async createWebLinkCode(userId: string, codeHash: string, now: number, ttlMs: number): Promise<void> {

@@ -1,5 +1,5 @@
 /*
- * Doddy Web (ADR-579). Colours and metrics come only from tokens.css, which is generated from the
+ * Doddy Web (ADR-585). Colours and metrics come only from tokens.css, which is generated from the
  * iPhone app's own tokens. System text, like the app (no font files are bundled or fetched).
  * Orange is decoration, never text.
  */

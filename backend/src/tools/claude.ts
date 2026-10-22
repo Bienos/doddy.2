@@ -113,7 +113,7 @@ export interface ClaudeProvider {
   /** One finished file. Slow (often one to three minutes); run in the background. */
   makeDocument(args: MakeDocumentArgs, signal: AbortSignal): Promise<ClaudeFile>;
   /**
-   * One JSON answer constrained to `schema` (structured output), for Ask Doddy (ADR-581). Throws
+   * One JSON answer constrained to `schema` (structured output), for Ask Doddy (ADR-587). Throws
    * `ClaudeRefusal` when the model declines and `ProviderError` for everything else that fails.
    */
   structured(input: StructuredInput, signal: AbortSignal): Promise<StructuredResult>;

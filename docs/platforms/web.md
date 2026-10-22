@@ -1,6 +1,6 @@
 # Doddy Web (browser)
 
-**State (22 Oct 2026):** built and tested on branch `claude/exciting-carson-08x2pk`. Not merged, not deployed, never opened against the live server. Decisions: ADR-579 (sign-in and sessions) and ADR-580 (stack and hosting). Why and what's next: `docs/architecture/WEB_AND_SHARED_PLATFORM.md`.
+**State (22 Oct 2026):** built and tested on branch `claude/exciting-carson-08x2pk`. Not merged, not deployed, never opened against the live server. Decisions: ADR-585 (sign-in and sessions) and ADR-586 (stack and hosting). Why and what's next: `docs/architecture/WEB_AND_SHARED_PLATFORM.md`.
 
 ## What it is
 A signed-in workspace in the browser for the same account the iPhone uses on Doddy's server (`backend/`). Today it shows:
@@ -12,7 +12,7 @@ A signed-in workspace in the browser for the same account the iPhone uses on Dod
 
 It does not have chat, memory, tasks or projects. Home says so instead of showing empty versions of them.
 
-## How signing in works (ADR-579)
+## How signing in works (ADR-585)
 1. On the iPhone: Settings › Doddy on the web › Get a sign-in code. The phone shows eight letters and digits and the web address to type them at.
 2. In the browser, at that address: type the code. It works once, for five minutes.
 3. The browser gets an HttpOnly, SameSite=Strict cookie for the same server account. It lasts 30 days, or until 14 days unused.

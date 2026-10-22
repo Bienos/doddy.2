@@ -22,7 +22,7 @@ import { AppError } from "./errors.js";
  *  - `first-device`: the first device to sign in owns the server; every other device is refused.
  *    Nothing secret has to be built into the app, which matters because the repository is public.
  *  - an invite code from `DODDY_DEVICE_INVITE_CODES`, for a second device later.
- *  - `open` (ADR-581, owner 22 Oct: Ask Doddy "available for everyone using anthropic key"): the
+ *  - `open` (ADR-587, owner 22 Oct: Ask Doddy "available for everyone using anthropic key"): the
  *    first device still owns the server, and every other iPhone gets a guest session that is good
  *    for Ask Doddy only (`scp: "ask"`). Guests never reach the owner's online accounts, web search
  *    or documents. New guest sessions are limited per network and per day, so nobody can mint
@@ -35,7 +35,7 @@ export const DEVICE_SESSION_TTL_SECONDS = 30 * 24 * 60 * 60;
 
 export type DeviceSignup = "off" | "first-device" | "open";
 
-/** New guest sessions (ADR-581): per client network per hour, and for the whole server per UTC day. */
+/** New guest sessions (ADR-587): per client network per hour, and for the whole server per UTC day. */
 export const GUEST_LIMITS = Object.freeze({ perClientPerHour: 20, servicePerDay: 1_000 });
 export type GuestLimits = { perClientPerHour: number; servicePerDay: number };
 
@@ -49,7 +49,7 @@ export const DeviceSessionRequest = z
 export interface DeviceSessionResponse {
   token: string;
   expiresAt: string;
-  /** `full`: the owner or an invited device. `ask`: a guest, Ask Doddy only (ADR-581). */
+  /** `full`: the owner or an invited device. `ask`: a guest, Ask Doddy only (ADR-587). */
   access: "full" | "ask";
 }
 

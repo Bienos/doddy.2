@@ -9,7 +9,7 @@ import type { z } from "zod";
 export { clientKey };
 
 /**
- * Doddy Web sign-in (ADR-579).
+ * Doddy Web sign-in (ADR-585).
  *
  * The browser has no Apple or Google sign-in of its own yet, and the iPhone's account is a device
  * session (ADR-563). So the iPhone vouches for the browser:

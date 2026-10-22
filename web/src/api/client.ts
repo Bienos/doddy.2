@@ -2,7 +2,7 @@ import type { z } from "zod";
 import { CurrentSession, DocumentList, ErrorBody, ReceiptList, SessionList, SignedOut, ToolsCatalog } from "./schemas.js";
 
 /**
- * Talks to Doddy's server on this page's own origin (ADR-579). The session is a cookie the page
+ * Talks to Doddy's server on this page's own origin (ADR-585). The session is a cookie the page
  * can't read; this code never sees or stores it. Every reply is checked against its schema, and a
  * reply that doesn't fit is an error, never half-shown data.
  */

@@ -1,7 +1,7 @@
 import DoddyCore
 import Foundation
 
-/// Builds the client for Settings → Doddy on the web (ADR-579), on the same server and session as
+/// Builds the client for Settings → Doddy on the web (ADR-585), on the same server and session as
 /// online accounts (`OnlineAccountsClientFactory`, ADR-563). Nil when the build has no server.
 enum WebLinkClientFactory {
     static func make() -> (any WebLinkClient)? {

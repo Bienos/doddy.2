@@ -23,7 +23,7 @@ export interface Limits {
   /** Claude runs (writing, summaries, documents; Doddy pays) per user, and for the service, per UTC day. */
   userDailyClaude: number;
   serviceDailyClaude: number;
-  /** Ask Doddy questions (typed, ADR-581; Doddy pays Anthropic) per user, and for the service, per UTC day. */
+  /** Ask Doddy questions (typed, ADR-587; Doddy pays Anthropic) per user, and for the service, per UTC day. */
   userDailyAsk: number;
   serviceDailyAsk: number;
   serviceDailyCalls: number;
@@ -92,7 +92,7 @@ export interface Config {
   toolkits: Partial<Record<ToolkitId, ToolkitSettings>>;
   /** Live mode only; mock mode uses the offline demo search. */
   monid: MonidSettings | null;
-  /** Doddy Web (ADR-579). Null: no web routes and no web pages on this server. */
+  /** Doddy Web (ADR-585). Null: no web routes and no web pages on this server. */
   web: WebSettings | null;
   /** `DODDY_TRUST_PROXY=1`: behind one proxy that appends the client to X-Forwarded-For (Render). */
   trustProxy: boolean;
@@ -100,7 +100,7 @@ export interface Config {
 }
 
 /**
- * Doddy Web (ADR-579): the browser app is served by this server, on its own origin, so its session
+ * Doddy Web (ADR-585): the browser app is served by this server, on its own origin, so its session
  * is a first-party cookie the page's scripts can't read.
  */
 export interface WebSettings {
@@ -159,7 +159,7 @@ const EnvSchema = z.object({
   DODDY_CLAUDE_MODEL: z.string().default("claude-sonnet-5-5"),
   DODDY_LIMIT_USER_DAILY_CLAUDE: intSetting(40, 1, 10_000),
   DODDY_LIMIT_SERVICE_DAILY_CLAUDE: intSetting(100, 1, 100_000),
-  /** Ask Doddy (ADR-581): typed questions answered by Claude. */
+  /** Ask Doddy (ADR-587): typed questions answered by Claude. */
   DODDY_LIMIT_USER_DAILY_ASK: intSetting(50, 1, 10_000),
   DODDY_LIMIT_SERVICE_DAILY_ASK: intSetting(500, 1, 1_000_000),
   COMPOSIO_API_KEY: z.string().optional(),
@@ -191,7 +191,7 @@ const EnvSchema = z.object({
   DODDY_PAGE_SIZE: intSetting(50, 1, 250),
   DODDY_MAX_EVENTS: intSetting(100, 1, 500),
   DODDY_ATTEMPT_TTL_SECONDS: intSetting(600, 60, 3_600),
-  /** Doddy Web (ADR-579): the origin the browser app is opened at. Empty: the web app is off. */
+  /** Doddy Web (ADR-585): the origin the browser app is opened at. Empty: the web app is off. */
   DODDY_WEB_ORIGIN: z.string().optional(),
   DODDY_WEB_DIST: z.string().default("../web/dist"),
   DODDY_TRUST_PROXY: z.enum(["0", "1"]).default("0"),
@@ -361,7 +361,7 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
   if (claudeKey !== "" && !/^sk-ant-[A-Za-z0-9_-]{8,}$/.test(claudeKey)) problems.push("ANTHROPIC_API_KEY must look like sk-ant-…");
   if (!/^claude-[a-z0-9-]{3,60}$/.test(e.DODDY_CLAUDE_MODEL)) problems.push("DODDY_CLAUDE_MODEL must be a Claude model ID such as claude-sonnet-5-5");
 
-  // Doddy Web (ADR-579). Off unless an origin is given; https outside loopback development.
+  // Doddy Web (ADR-585). Off unless an origin is given; https outside loopback development.
   let web: WebSettings | null = null;
   const webOrigin = (e.DODDY_WEB_ORIGIN ?? "").trim();
   if (webOrigin !== "") {

@@ -1,7 +1,7 @@
 import Foundation
 import Observation
 
-/// State behind Settings → Doddy on the web (ADR-579): one sign-in code at a time, and the list of
+/// State behind Settings → Doddy on the web (ADR-585): one sign-in code at a time, and the list of
 /// browsers signed in to this account. Everything shown is the server's answer; a browser leaves
 /// the list only after the server signed it out (or says it already was).
 @MainActor

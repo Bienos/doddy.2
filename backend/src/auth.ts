@@ -16,7 +16,7 @@ export interface AuthenticatedUser {
   /** Immutable internal ID (UUID). Never an email address. */
   userId: string;
   /**
-   * `ask`: a guest iPhone's device session (ADR-581), good for Ask Doddy (`POST /v1/assist`) and
+   * `ask`: a guest iPhone's device session (ADR-587), good for Ask Doddy (`POST /v1/assist`) and
    * nothing else. Absent: the full API.
    */
   scope?: "ask";
@@ -64,7 +64,7 @@ interface SessionClaims {
   sub: string;
   iat: number;
   exp: number;
-  /** Only on a guest's token (ADR-581). Signed with the rest, so it can't be removed. */
+  /** Only on a guest's token (ADR-587). Signed with the rest, so it can't be removed. */
   scp?: "ask";
 }
 

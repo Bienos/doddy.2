@@ -5,7 +5,7 @@ import { useI18n } from "../i18n/i18n.js";
 import type { MessageKey } from "../i18n/messages.js";
 import { Wordmark } from "./Brand.js";
 
-/** Only sections that work today are in the menu (ADR-579). Chat, memory and tasks come later. */
+/** Only sections that work today are in the menu (ADR-585). Chat, memory and tasks come later. */
 export const SECTIONS: { path: string; label: MessageKey }[] = [
   { path: "/", label: "nav.home" },
   { path: "/documents", label: "nav.documents" },

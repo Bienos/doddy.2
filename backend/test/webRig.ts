@@ -22,7 +22,7 @@ import { WebStatic } from "../src/web/static.js";
 import { Clock, USER_A } from "./helpers.js";
 
 /**
- * A running server with Doddy Web on (ADR-579), the mock tools and a tiny built web app in a
+ * A running server with Doddy Web on (ADR-585), the mock tools and a tiny built web app in a
  * temporary folder. "Phone" calls carry a dev Bearer token (dev-user-a / dev-user-b); "browser"
  * calls carry the session cookie, the web app's Origin and its header.
  */

@@ -4,7 +4,7 @@ import type { Store } from "./store.js";
 import { type ClaudeProvider, ClaudeRefusal } from "./tools/claude.js";
 
 /**
- * Ask Doddy on Doddy's own server (ADR-581): the iPhone's typed questions, answered by Claude with
+ * Ask Doddy on Doddy's own server (ADR-587): the iPhone's typed questions, answered by Claude with
  * Doddy's Anthropic key. It replaces the separate OpenAI gateway (`gateway/`, never configured on
  * any host), and keeps its contract so the app's checks stay as they were: the same request (a
  * question, up to six earlier turns, and only the saved notes that matched it on the phone, never

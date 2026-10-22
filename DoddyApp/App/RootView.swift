@@ -63,7 +63,7 @@ enum PreferenceKey {
     static let voiceTokenServer = "voiceTokenServer"
     /// Development setting: base URL of the Doddy Connected Apps server (not a secret).
     static let connectedAppsServerURL = "connectedAppsServerURL"
-    /// Ask Doddy: the user agreed that questions go to Doddy's server and Anthropic (ADR-581). Off by default.
+    /// Ask Doddy: the user agreed that questions go to Doddy's server and Anthropic (ADR-587). Off by default.
     static let assistantConsent = "assistantConsent"
     static let assistantUseNotes = "assistantUseNotes"
     /// Development setting: https origin of the Doddy messaging server (`server/messaging`).

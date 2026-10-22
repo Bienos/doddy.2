@@ -3,7 +3,7 @@ import { api, ApiError } from "../api/client.js";
 import type { WebSessionView } from "../api/schemas.js";
 
 /**
- * Whether this browser is signed in (ADR-579). The page learns it only by asking the server:
+ * Whether this browser is signed in (ADR-585). The page learns it only by asking the server:
  * the session cookie is HttpOnly, so scripts can't read it, and nothing about it is stored here.
  */
 

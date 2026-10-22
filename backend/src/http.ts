@@ -30,9 +30,9 @@ export interface HttpDeps {
   deviceSessions?: DeviceSessionIssuer | null;
   /** Files Claude made (ADR-564), opened by signed link. Absent: `GET /v1/documents/…` is not found. */
   documents?: { links: DocumentLinks; store: Store } | null;
-  /** Doddy Web (ADR-579): its routes, its cookie sessions and its pages. Absent: none of them exist. */
+  /** Doddy Web (ADR-585): its routes, its cookie sessions and its pages. Absent: none of them exist. */
   web?: { auth: WebAuth; routes: WebRoutes; pages: WebStatic } | null;
-  /** Ask Doddy (ADR-581): typed questions answered by Claude. Absent: `POST /v1/assist` is not found. */
+  /** Ask Doddy (ADR-587): typed questions answered by Claude. Absent: `POST /v1/assist` is not found. */
   assist?: AssistService | null;
   appReturnUrl: string;
   maxBodyBytes: number;
@@ -128,7 +128,7 @@ export function createHandler(deps: HttpDeps) {
         return;
       }
 
-      // Ask Doddy (ADR-581): the iPhone's own session only (never a browser cookie), a guest's
+      // Ask Doddy (ADR-587): the iPhone's own session only (never a browser cookie), a guest's
       // included, and its own body limit, sized for a question plus up to eight matching notes.
       if (key === "POST /v1/assist" && deps.assist) {
         route = key;
@@ -140,7 +140,7 @@ export function createHandler(deps: HttpDeps) {
         return send(res, 200, reply);
       }
 
-      // Doddy Web (ADR-579): its own routes, then its pages for anything that isn't the API.
+      // Doddy Web (ADR-585): its own routes, then its pages for anything that isn't the API.
       const web = deps.web;
       if (web) {
         const match = web.routes.match(req.method ?? "GET", url.pathname);
@@ -172,7 +172,7 @@ export function createHandler(deps: HttpDeps) {
         if (session) user = { userId: session.userId };
       }
       if (!user) throw new AppError("unauthenticated");
-      // A guest iPhone (ADR-581) has Ask Doddy only.
+      // A guest iPhone (ADR-587) has Ask Doddy only.
       requireFullAccess(user);
 
       const rawScenario = header(req, "x-doddy-demo-scenario");

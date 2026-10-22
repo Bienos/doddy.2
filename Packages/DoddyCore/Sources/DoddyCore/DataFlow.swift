@@ -173,7 +173,7 @@ public enum DataFlow {
                 note: !state.doddyServerSet
                     ? "No Doddy server is set, so nothing goes there."
                     : state.pauseAll ? "Connections are paused, so Doddy doesn't use it in conversations. The Connected Apps screen still works when you open it." : nil),
-            // ADR-579: the phone vouches for a browser; the browser sees what the server already keeps.
+            // ADR-585: the phone vouches for a browser; the browser sees what the server already keeps.
             DataFlowRow(
                 id: "webSignIn", destination: "A browser you sign in to Doddy on the web",
                 what: "From this iPhone only a request for a sign-in code, to your Doddy server. The browser you type the code into then sees what that server already keeps for you: files Doddy made, your online accounts and their tools, and Doddy's receipts. Never your saved notes, lists, profile or conversations.",

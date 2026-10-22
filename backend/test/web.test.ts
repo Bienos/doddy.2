@@ -8,7 +8,7 @@ import { USER_A, USER_B } from "./helpers.js";
 import { CHROME_MAC, COOKIE, cookieValue, startWeb, WEB_ORIGIN, type WebRig } from "./webRig.js";
 
 /**
- * Doddy Web (ADR-579): the iPhone vouches for a browser with a one-time code; the browser gets a
+ * Doddy Web (ADR-585): the iPhone vouches for a browser with a one-time code; the browser gets a
  * cookie session for the same user that can read the workspace and nothing more.
  */
 
@@ -52,7 +52,7 @@ test("only the iPhone's own session makes codes: no session, or a browser's cook
   assert.equal(fromBrowser.status, 401, "a browser session can't make more sessions");
 });
 
-test("a guest iPhone (Ask Doddy only, ADR-581) can't make codes or see browsers", async () => {
+test("a guest iPhone (Ask Doddy only, ADR-587) can't make codes or see browsers", async () => {
   const guest = { verify: (h: string | undefined) => (h === "Bearer guest-token-1" ? { userId: "00000000-0000-4000-8000-0000000000aa", scope: "ask" as const } : null) };
   rig = await startWeb({ verifier: guest });
   for (const [method, path] of [["POST", "/v1/web/link-codes"], ["GET", "/v1/web/sessions"]] as const) {

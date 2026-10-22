@@ -91,8 +91,8 @@ ElevenLabs became the default voice (ADR-546), so seven privacy texts that named
 - `Talking sends these reminders and list names to ElevenLabs, or OpenAI if you switch Home's…`
 - `While you talk, your voice, this conversation, your saved notes, your list names (and a li…`
 
-## Doddy on the web (ADR-579, 22 Oct 2026)
+## Doddy on the web (ADR-585, 22 Oct 2026)
 - **App:** 22 new strings for Settings › Doddy on the web have Polish written by the agent (`l10n/pl.json`, the last lines). The other eight languages show them in English until `tools/l10n_batch.py` is run for them.
 - **Web app:** `web/src/i18n/messages.ts` holds the whole page in Polish (default) and English, Polish written by the agent. A native speaker should read the sign-in steps and the safety line first ("Wpisuj kod tylko tutaj…"), since they are what stops someone being talked into reading their code out. Receipt summaries and connected-app descriptions come from the server in English on both.
 
-- **Ask Doddy now names Anthropic (ADR-581, 22 Oct):** the consent dialog, the Ask screen's footer, the Settings footer and two new status lines ("Needs Doddy's server", "On, through Doddy's server") were rewritten in all nine languages by the agent, and the Polish privacy summary now says Anthropic instead of OpenAI. Read the consent first: its last sentence ("How long Anthropic keeps them isn't something Doddy can verify") is the retention claim the owner has not checked. The long privacy paragraph in Settings is still English-only in every language.
+- **Ask Doddy now names Anthropic (ADR-587, 22 Oct):** the consent dialog, the Ask screen's footer, the Settings footer and two new status lines ("Needs Doddy's server", "On, through Doddy's server") were rewritten in all nine languages by the agent, and the Polish privacy summary now says Anthropic instead of OpenAI. Read the consent first: its last sentence ("How long Anthropic keeps them isn't something Doddy can verify") is the retention claim the owner has not checked. The long privacy paragraph in Settings is still English-only in every language.

@@ -4,7 +4,7 @@ import Foundation
 import SwiftUI
 
 /// What the typed assistant needs from the app: how HTTP is sent. Typed questions go to Doddy's own
-/// server (ADR-581), signed in with the same device session as online accounts (ADR-563): there is
+/// server (ADR-587), signed in with the same device session as online accounts (ADR-563): there is
 /// no gateway address and no invite code. The server address is read at question time, so changing
 /// it in Settings needs no restart.
 struct AssistantWiring: Sendable {

@@ -333,7 +333,7 @@ struct SettingsView: View {
                     Text("Gmail, Google Drive, Notion and Todoist through Composio, with a switch for every tool. All off until you turn them on; anything that adds or creates asks you first.")
                 }
 
-                // ADR-579: sign in to Doddy on the web with a code from this iPhone.
+                // ADR-585: sign in to Doddy on the web with a code from this iPhone.
                 Section {
                     NavigationLink {
                         WebSignInScreen()

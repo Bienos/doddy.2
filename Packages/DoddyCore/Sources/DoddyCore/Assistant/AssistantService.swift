@@ -26,7 +26,7 @@ public enum AssistantLimits {
     public static let maxTurns = 6
 }
 
-/// recall -> selected notes -> Doddy's server (ADR-581) -> citation check. Stateless: the chat lives in the UI, in memory.
+/// recall -> selected notes -> Doddy's server (ADR-587) -> citation check. Stateless: the chat lives in the UI, in memory.
 public struct AssistantService: Sendable {
     private let recall: any RecallService
     private let client: any AssistantClient

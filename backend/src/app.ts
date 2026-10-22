@@ -87,13 +87,13 @@ export async function buildApp(
     completionMode: toolsProvider.mode === "mock" ? "mock" : (config.composio?.completionMode ?? "verifier"),
     log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`),
   });
-  // Beta device sign-in (ADR-563): first-device, open (ADR-581: other iPhones get Ask Doddy only) or
+  // Beta device sign-in (ADR-563): first-device, open (ADR-587: other iPhones get Ask Doddy only) or
   // invite codes, and a signing key (config checks both).
   const deviceSessions =
     (config.deviceSignup !== "off" || config.deviceInviteCodes.length > 0) && config.sessionSigningKey
       ? new DeviceSessionIssuer(config.sessionSigningKey, { signup: config.deviceSignup, inviteCodes: config.deviceInviteCodes, store })
       : null;
-  // Doddy Web (ADR-579): only when DODDY_WEB_ORIGIN is set.
+  // Doddy Web (ADR-585): only when DODDY_WEB_ORIGIN is set.
   const webAuth = config.web
     ? new WebAuth(store, config.web.origin, config.web.trustProxy, { ...REDEEM_LIMITS, perClientPerQuarter: config.web.signInTriesPerClient })
     : null;
@@ -101,7 +101,7 @@ export async function buildApp(
     config.web && webAuth
       ? { auth: webAuth, routes: new WebRoutes(webAuth, store, verifier, config.limits.maxBodyBytes), pages: new WebStatic(config.web.distDir, config.web.origin) }
       : null;
-  // Ask Doddy (ADR-581): always routed; without an Anthropic key it says "not set up" (503).
+  // Ask Doddy (ADR-587): always routed; without an Anthropic key it says "not set up" (503).
   const assist = new AssistService({ store, claude, limits: config.limits, log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`) });
   const handler = createHandler({
     service,

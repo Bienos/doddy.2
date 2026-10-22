@@ -1,6 +1,6 @@
 # Doddy Web
 
-The browser workspace for the same Doddy account the iPhone uses (ADR-579, ADR-580). Built to `web/dist` and served by `backend/` on the same origin, so the session is an HttpOnly cookie and there is no CORS.
+The browser workspace for the same Doddy account the iPhone uses (ADR-585, ADR-586). Built to `web/dist` and served by `backend/` on the same origin, so the session is an HttpOnly cookie and there is no CORS.
 
 - How it works, how to run, test, deploy and roll back: `docs/platforms/web.md`.
 - Why it is built this way and what comes next: `docs/architecture/WEB_AND_SHARED_PLATFORM.md`.
