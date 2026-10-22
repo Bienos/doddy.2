@@ -21,6 +21,7 @@ export const DEFAULT_STEP_MODELS: StepModels = { plan: HAIKU, research: SONNET, 
 /** Named mixes for comparison runs (scripts/studio-live-run.mjs --mix). */
 export const MODEL_MIXES: Record<string, StepModels> = {
   cheap: DEFAULT_STEP_MODELS,
+  haiku: { plan: HAIKU, research: HAIKU, pack: HAIKU, write: HAIKU, make: HAIKU },
   sonnet: { plan: SONNET, research: SONNET, pack: SONNET, write: SONNET, make: SONNET },
   opus: { plan: OPUS, research: OPUS, pack: OPUS, write: OPUS, make: OPUS },
 };

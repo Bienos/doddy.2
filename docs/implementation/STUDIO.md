@@ -216,6 +216,20 @@ The owner then asked for a real report and deck and the cost by model. Three mor
 
 **Run 4 by step:** plan Haiku $0.0004; research Sonnet $0.37 (+ $0.08 for 8 searches); pack Haiku $0.0067 (32 claims); write Sonnet $0.044; make Haiku $0.010. So Haiku cost about $0.02 in all, Sonnet about $0.41, searches $0.08; the code's cost and the cost implied by the per-call usage agree ($0.5076). Tokens: 27,700 fresh in, 46,352 out, 237,755 cache read, 82,896 cache write; container 43 s (not billed here). The same job with every step on Opus 5.5 (run 1, before the make step could run) was $1.42 up to write alone, so the cheap mix is about a third of the Opus price for a finished job.
 
+### Runs 5 and 6: Haiku alone and Sonnet alone (same job, `--mix haiku` and `--mix sonnet`)
+
+The owner asked to see each model by itself. Both made a brief and an infographic, `ready`, all 14 checks passed, Anthropic's files deleted and read back as gone (0 left). Task total after these: about **US$3.79**.
+
+| | Haiku 5.5 only | Sonnet 5.5 only | (cheap mix, run 4) |
+|---|---|---|---|
+| Cost | **$0.26** | **$0.88** | $0.51 |
+| By step (plan / research / pack / write / make) | 0.0004 / 0.112 / 0.008 / 0.011 / 0.061, + searches $0.07 | 0.007 / 0.432 / 0.099 / 0.100 / 0.167, + searches $0.08 | 0.0004 / 0.367 / 0.007 / 0.044 / 0.010, + $0.08 |
+| Time | 265 s | 353 s | 280 s |
+| Searches / fetches | 7 / **0** | 8 / 8 | 8 / 8 |
+| Claims in the pack | 39 | 35 | 32 |
+
+What the outputs look like (looked at both infographics and first pages): Haiku never opened a page (0 fetches), so its claims rest on search snippets; its headline gives one specific case ("pompa powietrze-woda 10 kW z montażem: 26–42 tys. zł") that is clear, but its ground-source price (80 to 120 thousand zł) is above every other run's (60 to 100), and its chart has only two bars (pump 3,210 against gas 4,310 zł a year), from one source. Sonnet read 8 pages, gave a headline with both pump types, a five-bar chart of yearly heating cost, and hedged ("dane o zwrocie pochodzą od sprzedawcy") where the source is a seller. The same Haiku make step rendered fine in all runs it was used. I did not check either run's figures against the live pages.
+
 **What the real API confirmed in run 4:** custom skills as `container.skills` with `{type: "custom", skill_id, version}` plus `code_execution_20250825`, no beta header (accepted; Haiku 5.5 ran the skills' scripts first time, one request, no `pause_turn`); the four files saved at the top of `$OUTPUT_DIR` came back as `file_id`s in `bash_code_execution_tool_result`; `retrieveMetadata` gave the right names, `download` the bytes, `delete` worked and a deleted file then 404s (`fileGone` true for all 4); a Files API listing afterwards showed **0 files at Anthropic** (nothing left over from any run). The server's 14 file checks passed on the real files. `blocked_domains` together with `max_uses` is **still not tried** (no domains blocked in any run).
 
 **What the output looked like** (brief 4 pages, infographic 1080×1350, I looked at both): readable, brand colours, orange only on bars and rules, footnoted points, a "where sources disagree" part and a confidence line. Mistakes and weak points: (1) the infographic headline says "25–40 tys. zł" for an air-source pump, the lowest figure (one pump seller, TS Energy); the brief's own answer says "according to one source" but the headline doesn't, and another run found 35 to 55 thousand; (2) "zwrot ok. 6–10 lat" leaves out that the source says "z dofinansowaniem" (with a grant); (3) the chart is about grants ("Maks. dotacja"), not about what the headline is about, and mixes the Moje Ciepło ceiling with Czyste Powietrze percentages; (4) one fact ("Poniżej −15 °C pompa powietrzna włącza grzałkę") I did not check against its source; (5) I did not open the cited pages, so figures and quotes are not checked against them; (6) the code checks that claims exist and that the pack's source was seen, not that a headline is as careful as its sources.
