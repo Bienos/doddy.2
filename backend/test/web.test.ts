@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
 import { loadConfig } from "../src/config.js";
-import { describeAgent, newLinkCode, normalizeCode, REDEEM_LIMITS } from "../src/web/sessions.js";
+import { clientKey, describeAgent, newLinkCode, normalizeCode, REDEEM_LIMITS } from "../src/web/sessions.js";
 import { CurrentSessionSchema, DocumentListSchema, LinkCodeSchema, SessionListSchema } from "../src/web/contracts.js";
 import { MockClaudeProvider } from "../src/tools/claude.js";
 import { USER_A, USER_B } from "./helpers.js";
@@ -130,8 +130,9 @@ test("signing in must come from the web app itself (no Origin, another origin, o
   assert.equal((await rig.call("POST", "/v1/web/session", { browser: true, body: { code } })).status, 200);
 });
 
-test("wrong codes are limited per client and for the whole server, before the code is checked", async () => {
-  rig = await startWeb({ trustProxy: true });
+test("sign-in tries are limited per client and for the whole server, before the code is checked", async () => {
+  const SERVICE = 30;
+  rig = await startWeb({ trustProxy: true, limits: { perClientPerQuarter: REDEEM_LIMITS.perClientPerQuarter, servicePerHour: SERVICE } });
   const wrong = (ip: string) => rig!.call("POST", "/v1/web/session", { browser: true, body: { code: "AAAA-AAAA" }, headers: { "x-forwarded-for": `9.9.9.9, ${ip}` } });
   for (let i = 0; i < REDEEM_LIMITS.perClientPerQuarter; i++) assert.equal((await wrong("1.1.1.1")).status, 401);
   const code = await rig.code();
@@ -144,11 +145,38 @@ test("wrong codes are limited per client and for the whole server, before the co
   rig.clock.advance(15 * MINUTE);
   assert.equal((await wrong("1.1.1.1")).status, 401);
 
-  // Server-wide: enough wrong codes from many clients close sign-in for the hour, for everyone.
+  // Server-wide: once the hour's tries are used up, sign-in waits for the next hour, for everyone.
   rig.clock.advance(60 * MINUTE);
-  for (let i = 0; i < REDEEM_LIMITS.servicePerHour; i++) assert.equal((await wrong(`10.0.${Math.floor(i / 200)}.${i % 200}`)).status, 401);
+  for (let i = 0; i < SERVICE; i++) assert.equal((await wrong(`10.0.0.${i}`)).status, 401);
   const late = await rig.code();
   assert.equal((await rig.call("POST", "/v1/web/session", { browser: true, body: { code: late }, headers: { "x-forwarded-for": "3.3.3.3" } })).status, 429);
+  assert.equal(REDEEM_LIMITS.servicePerHour, 2_000, "production: high enough that one person can't easily lock everyone out");
+});
+
+test("parallel tries can't get past the limit: each one is reserved before the code is read", async () => {
+  rig = await startWeb({ trustProxy: true });
+  const burst = await Promise.all(
+    Array.from({ length: 25 }, () => rig!.call("POST", "/v1/web/session", { browser: true, body: { code: "AAAA-AAAA" }, headers: { "x-forwarded-for": "4.4.4.4" } })),
+  );
+  const statuses = burst.map((r) => r.status);
+  assert.equal(statuses.filter((s) => s === 401).length, REDEEM_LIMITS.perClientPerQuarter);
+  assert.equal(statuses.filter((s) => s === 429).length, 25 - REDEEM_LIMITS.perClientPerQuarter);
+});
+
+test("IPv6 clients count by their /64, so one device can't rotate addresses", async () => {
+  assert.equal(clientKey("2001:db8:1:2:aaaa:bbbb:cccc:dddd"), "2001:db8:1:2::/64");
+  assert.equal(clientKey("2001:0db8:0001:0002::1"), "2001:db8:1:2::/64");
+  assert.equal(clientKey("2001:db8::1"), "2001:db8:0:0::/64");
+  assert.equal(clientKey("fe80::1%eth0"), "fe80:0:0:0::/64");
+  assert.equal(clientKey("::ffff:203.0.113.7"), "203.0.113.7");
+  assert.equal(clientKey("203.0.113.7"), "203.0.113.7");
+  rig = await startWeb({ trustProxy: true });
+  for (let i = 0; i < REDEEM_LIMITS.perClientPerQuarter; i++) {
+    const res = await rig.call("POST", "/v1/web/session", { browser: true, body: { code: "AAAA-AAAA" }, headers: { "x-forwarded-for": `2001:db8:1:2::${i + 1}` } });
+    assert.equal(res.status, 401);
+  }
+  const next = await rig.call("POST", "/v1/web/session", { browser: true, body: { code: "AAAA-AAAA" }, headers: { "x-forwarded-for": "2001:db8:1:2:ffff::9" } });
+  assert.equal(next.status, 429, "same /64, same allowance");
 });
 
 test("the iPhone may ask for at most 20 codes an hour", async () => {
@@ -188,6 +216,27 @@ test("a browser session reads the workspace lists and nothing that runs tools or
   ] as const) {
     const res = await rig.call(method, path, { cookie, browser: true, ...(body ? { body } : {}) });
     assert.equal(res.status, 401, `${method} ${path}`);
+  }
+});
+
+test("the cookie's read-only routes can't be reached with HEAD, a trailing slash or an encoded path", async () => {
+  rig = await startWeb();
+  const cookie = await rig.signIn(await rig.code());
+  assert.equal((await rig.call("GET", "/v1/tools", { cookie })).status, 200);
+  for (const [method, path] of [
+    ["HEAD", "/v1/tools"],
+    ["GET", "/v1/tools/"],
+    ["GET", "//v1/tools"],
+    ["GET", "/v1/%74ools"],
+    ["GET", "/v1/tools/receipts/"],
+    ["HEAD", "/v1/web/documents"],
+    ["GET", "/v1/web/documents/"],
+  ] as const) {
+    const res = await rig.call(method, path, { cookie });
+    // "//v1/tools" parses as host "v1", path "/tools": that is a page of the web app (HTML), never the API.
+    const page = res.status === 200 && /^text\/html/.test(res.headers.get("content-type") ?? "");
+    assert.ok(res.status === 401 || res.status === 404 || page, `${method} ${path}: ${res.status}`);
+    assert.ok(!res.text.includes('"toolkits"'), `${method} ${path} returned the catalog`);
   }
 });
 
@@ -358,7 +407,8 @@ test("sessions end after 14 idle days, and after 30 days however much they're us
 });
 
 test("at most ten browsers per user: the eleventh signs the oldest out", async () => {
-  rig = await startWeb();
+  // Eleven sign-ins from one test client: above the per-client allowance on purpose.
+  rig = await startWeb({ limits: { perClientPerQuarter: 50, servicePerHour: 2_000 } });
   const cookies: string[] = [];
   for (let i = 0; i < 11; i++) {
     cookies.push(await rig.signIn(await rig.code()));
@@ -446,12 +496,17 @@ test("on http loopback (local development) the cookie has no __Host- prefix and 
 
 test("config: the web app is off unless DODDY_WEB_ORIGIN is a valid origin", () => {
   assert.equal(loadConfig({}).web, null);
-  assert.deepEqual(loadConfig({ DODDY_WEB_ORIGIN: "http://127.0.0.1:8787" }).web, { origin: "http://127.0.0.1:8787", distDir: "../web/dist", trustProxy: false });
-  assert.deepEqual(loadConfig({ DODDY_WEB_ORIGIN: "https://app.doddy.lol/", DODDY_WEB_DIST: "/srv/web", DODDY_TRUST_PROXY: "1" }).web, {
-    origin: "https://app.doddy.lol",
-    distDir: "/srv/web",
-    trustProxy: true,
+  assert.deepEqual(loadConfig({ DODDY_WEB_ORIGIN: "http://127.0.0.1:8787" }).web, {
+    origin: "http://127.0.0.1:8787",
+    distDir: "../web/dist",
+    trustProxy: false,
+    signInTriesPerClient: 10,
   });
+  assert.deepEqual(
+    loadConfig({ DODDY_WEB_ORIGIN: "https://app.doddy.lol/", DODDY_WEB_DIST: "/srv/web", DODDY_TRUST_PROXY: "1", DODDY_WEB_SIGNIN_TRIES_PER_CLIENT: "40" }).web,
+    { origin: "https://app.doddy.lol", distDir: "/srv/web", trustProxy: true, signInTriesPerClient: 40 },
+  );
+  assert.throws(() => loadConfig({ DODDY_WEB_ORIGIN: "https://app.doddy.lol", DODDY_WEB_SIGNIN_TRIES_PER_CLIENT: "0" }), /DODDY_WEB_SIGNIN_TRIES_PER_CLIENT/);
   for (const bad of ["http://app.doddy.lol", "https://app.doddy.lol/app", "https://app.doddy.lol?x=1", "not a url", "https://user:pw@app.doddy.lol"]) {
     assert.throws(() => loadConfig({ DODDY_WEB_ORIGIN: bad }), /DODDY_WEB_ORIGIN/, bad);
   }

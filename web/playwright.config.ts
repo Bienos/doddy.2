@@ -42,6 +42,8 @@ export default defineConfig({
       DODDY_DB_PATH: ":memory:",
       DODDY_WEB_ORIGIN: ORIGIN,
       DODDY_WEB_DIST: "../web/dist",
+      // Every test signs in from 127.0.0.1; the real default is 10 per quarter hour.
+      DODDY_WEB_SIGNIN_TRIES_PER_CLIENT: "200",
     },
   },
 });

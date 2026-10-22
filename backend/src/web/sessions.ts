@@ -28,8 +28,14 @@ export const SESSION_IDLE_MS = 14 * 24 * 60 * 60_000;
 const TOUCH_EVERY_MS = 60 * 60_000;
 export const MAX_SESSIONS_PER_USER = 10;
 
-/** Wrong codes: per client address per quarter hour, and for the whole server per hour. */
-export const REDEEM_LIMITS = { perClientPerQuarter: 10, servicePerHour: 120 } as const;
+/**
+ * Sign-in tries (right or wrong): per client per quarter hour, and for the whole server per hour.
+ * Each try is reserved before the code is read, so parallel requests can't slip past. With 30^8
+ * codes, 2,000 tries an hour against even a thousand live codes find one with odds of about 3 in a
+ * million; a lower server cap would mostly let one person lock everyone else out.
+ */
+export const REDEEM_LIMITS = { perClientPerQuarter: 10, servicePerHour: 2_000 } as const;
+export type RedeemLimits = { perClientPerQuarter: number; servicePerHour: number };
 /** Codes the iPhone may ask for per user per hour. */
 export const CODES_PER_USER_PER_HOUR = 20;
 
@@ -112,6 +118,7 @@ export class WebAuth {
     private readonly store: Store,
     readonly origin: string,
     private readonly trustProxy: boolean,
+    private readonly limits: RedeemLimits = REDEEM_LIMITS,
   ) {
     this.secure = origin.startsWith("https:");
     // `__Host-` makes the browser refuse the cookie unless it is Secure, host-only and Path=/.
@@ -141,9 +148,18 @@ export class WebAuth {
     if (!parsed.success) throw new AppError("invalid_request");
     const quarter = `day:${now.toISOString().slice(0, 14)}${String(Math.floor(now.getUTCMinutes() / 15) * 15).padStart(2, "0")}`;
     const hour = `day:${now.toISOString().slice(0, 13)}`;
-    const client = `web_redeem_fail:${sha256(`client:${this.clientAddress(req)}`)}`;
-    const service = "web_redeem_fail:service";
-    if ((await this.store.usage(client, quarter)) >= REDEEM_LIMITS.perClientPerQuarter || (await this.store.usage(service, hour)) >= REDEEM_LIMITS.servicePerHour) {
+    const client = `web_redeem:${sha256(`client:${clientKey(this.clientAddress(req))}`)}`;
+    const service = "web_redeem:service";
+    // Reserved before the code is looked at, atomically, so a burst of parallel tries can't get
+    // past either limit; successful sign-ins count too.
+    const allowed = await this.store.reserveUsage(
+      [
+        { counter: client, period: quarter, limit: this.limits.perClientPerQuarter },
+        { counter: service, period: hour, limit: this.limits.servicePerHour },
+      ],
+      1,
+    );
+    if (!allowed) {
       throw new AppError("rate_limited", { message: "Too many tries. Wait a few minutes, then get a new code on your iPhone.", retryAfterSeconds: 15 * 60 });
     }
     const code = normalizeCode(parsed.data.code);
@@ -161,7 +177,6 @@ export class WebAuth {
         })
       : null;
     if (!userId) {
-      await this.store.reserveUsage([{ counter: client, period: quarter, limit: Number.MAX_SAFE_INTEGER }, { counter: service, period: hour, limit: Number.MAX_SAFE_INTEGER }], 1);
       throw new AppError("unauthenticated", { message: "That code didn't work. Codes last five minutes and work once: get a new one on your iPhone." });
     }
     const row: WebSessionRow = { session_id: sessionId, user_id: userId, browser: agent.browser, os: agent.os, created_at: now.getTime(), last_seen_at: now.getTime(), expires_at: expiresAt };
@@ -229,6 +244,22 @@ export class WebAuth {
     }
     return req.socket.remoteAddress ?? "unknown";
   }
+}
+
+/**
+ * The address a limit counts against: an IPv4 address as it is, an IPv6 address by its /64 (one
+ * home or phone network usually has a whole /64, so counting single addresses would let one device
+ * rotate through them). An IPv4-mapped IPv6 address counts as its IPv4 address.
+ */
+export function clientKey(address: string): string {
+  const mapped = /^::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/i.exec(address);
+  if (mapped) return mapped[1]!;
+  if (!address.includes(":")) return address;
+  const [head = "", tail = ""] = address.split("%")[0]!.toLowerCase().split("::");
+  const left = head === "" ? [] : head.split(":");
+  const right = address.includes("::") ? (tail === "" ? [] : tail.split(":")) : [];
+  const groups = address.includes("::") ? [...left, ...Array(Math.max(0, 8 - left.length - right.length)).fill("0"), ...right] : left;
+  return `${groups.slice(0, 4).map((g) => g.replace(/^0+(?=.)/, "")).join(":")}::/64`;
 }
 
 function view(row: WebSessionRow, currentSessionId: string | null): WebSessionView {

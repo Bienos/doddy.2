@@ -18,7 +18,7 @@ import type { ToolsProvider } from "./tools/provider.js";
 import { CloudToolsService } from "./tools/service.js";
 import { MockWebSearchProvider, MonidWebSearchProvider, type WebSearchProvider } from "./tools/websearch.js";
 import { WebRoutes } from "./web/routes.js";
-import { SESSION_IDLE_MS, WebAuth } from "./web/sessions.js";
+import { REDEEM_LIMITS, SESSION_IDLE_MS, WebAuth } from "./web/sessions.js";
 import { WebStatic } from "./web/static.js";
 
 /** Composition root: picks adapters strictly from validated config (mock never silently replaces live). */
@@ -92,7 +92,9 @@ export async function buildApp(
       ? new DeviceSessionIssuer(config.sessionSigningKey, { signup: config.deviceSignup, inviteCodes: config.deviceInviteCodes, store })
       : null;
   // Doddy Web (ADR-579): only when DODDY_WEB_ORIGIN is set.
-  const webAuth = config.web ? new WebAuth(store, config.web.origin, config.web.trustProxy) : null;
+  const webAuth = config.web
+    ? new WebAuth(store, config.web.origin, config.web.trustProxy, { ...REDEEM_LIMITS, perClientPerQuarter: config.web.signInTriesPerClient })
+    : null;
   const web =
     config.web && webAuth
       ? { auth: webAuth, routes: new WebRoutes(webAuth, store, verifier, config.limits.maxBodyBytes), pages: new WebStatic(config.web.distDir, config.web.origin) }

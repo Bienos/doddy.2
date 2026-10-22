@@ -58,8 +58,9 @@ curl -s -X POST localhost:8787/v1/web/link-codes -H "authorization: Bearer $TOKE
 The web app is served by the existing Render service `doddy`, so there's no new host and no new monthly cost.
 1. **Build command** of the hand-made Render service `doddy` (Settings › Build & Deploy): `npm ci && npm run build && npm ci --prefix ../web && npm run build --prefix ../web`. The same line is in `render.yaml`. Render runs it in `backend/` (the root directory). That the rest of the repository is checked out next to it is expected, but unverified; if not, set the root directory to the repository and prefix the backend commands with `--prefix backend`.
 2. **Environment** of `doddy`:
-   - `DODDY_WEB_ORIGIN=https://doddy-yaci.onrender.com` (the service's own address), or `https://app.doddy.lol` once that name points at the service (owner decision 8);
+   - `DODDY_WEB_ORIGIN=https://app.doddy.lol`, once that name points at the service as a Render custom domain (owner decision 8). This is recommended: the phone's signed document links stay on `DODDY_PUBLIC_BASE_URL` (the Render address), a different origin from the web session. `https://doddy-yaci.onrender.com` also works for a first try; then those links share the web app's origin (see the audit's security section).
    - `DODDY_TRUST_PROXY=1`.
+   - Optional: `DODDY_WEB_SIGNIN_TRIES_PER_CLIENT` (default 10 per quarter hour; raise it for an office behind one address).
    - Nothing secret is added. `DODDY_SESSION_SIGNING_KEY` and the database are already there.
 3. **Deploy** the branch or main (autoDeploy is off). Check:
    - `GET /v1/health` answers;
@@ -75,6 +76,6 @@ UPDATE doddy_backend.web_sessions SET revoked_at = (extract(epoch from now()) * 
 ## Not verified
 - Never deployed, never run against the live server, never opened on a real phone.
 - The SwiftUI screen is uncompiled here; the PR's hosted Mac job compiles it.
-- Whether Render's proxy appends exactly one `X-Forwarded-For` hop (the per-client code limit depends on it; the server-wide limit doesn't).
+- Whether Render's proxy appends exactly one `X-Forwarded-For` hop (the per-client sign-in limit depends on it; the server-wide one doesn't).
 - The Polish was written by the agent, not a native speaker. The other eight app languages show the new phone strings in English (`l10n/REVIEW_NOTES.md`).
 - Screen readers were not tried. The structure (landmarks, one `h1` per page, labels, focus moving to the heading after navigation, a skip link) is tested in the e2e run; contrast follows the app's tokens.

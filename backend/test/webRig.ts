@@ -17,7 +17,7 @@ import { MockToolsProvider } from "../src/tools/mock.js";
 import { CloudToolsService } from "../src/tools/service.js";
 import { MockWebSearchProvider } from "../src/tools/websearch.js";
 import { WebRoutes } from "../src/web/routes.js";
-import { WebAuth } from "../src/web/sessions.js";
+import { type RedeemLimits, WebAuth } from "../src/web/sessions.js";
 import { WebStatic } from "../src/web/static.js";
 import { Clock, USER_A } from "./helpers.js";
 
@@ -50,7 +50,7 @@ export interface WebRig {
   close(): Promise<void>;
 }
 
-export async function startWeb(o: { claude?: ClaudeProvider; origin?: string; withDist?: boolean; trustProxy?: boolean } = {}): Promise<WebRig> {
+export async function startWeb(o: { claude?: ClaudeProvider; origin?: string; withDist?: boolean; trustProxy?: boolean; limits?: RedeemLimits } = {}): Promise<WebRig> {
   const store = await Store.memory();
   const clock = new Clock(Date.parse("2026-10-22T10:00:00Z"));
   const logs: string[] = [];
@@ -76,7 +76,7 @@ export async function startWeb(o: { claude?: ClaudeProvider; origin?: string; wi
     writeFileSync(join(distDir, "assets", "app-abc123.js"), "console.log('doddy')");
     writeFileSync(join(distDir, ".env"), "SECRET=never-served");
   }
-  const auth = new WebAuth(store, origin, o.trustProxy ?? false);
+  const auth = new WebAuth(store, origin, o.trustProxy ?? false, o.limits);
   const handler = createHandler({
     service,
     tools,

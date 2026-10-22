@@ -8,7 +8,7 @@ Words used here: **IMPLEMENTED** = code and tests exist and pass; **PARTIAL** = 
 
 - **What's true today.** Doddy is a local-first iPhone app. Its memory, transcripts and profile live on the phone. Four small servers sit around it, each with its own idea of who the user is.
 - **What this branch adds.** A real web app at `web/`. The existing `backend/` serves it on its own origin. The person signs in by typing a code their iPhone shows. They then see the same server account's documents (decks, Word, Excel, PDF and text Doddy made on the phone), connected accounts, receipts and signed-in browsers.
-  - Built and tested: 30 backend tests, 25 web unit tests and 10 end-to-end runs in Chromium (desktop and phone width), plus 17 Swift tests compiled and run here on Linux with Swift 6.1.2.
+  - Built and tested: 33 backend tests, 25 web unit tests and 10 end-to-end runs in Chromium (desktop and phone width), plus 17 Swift tests compiled and run here on Linux with Swift 6.1.2.
   - Not deployed. The SwiftUI screen hasn't been compiled (no Xcode here).
 - **What waits on the owner.**
   - Turning it on: one Render variable and one build-command change (`docs/platforms/web.md`).
@@ -174,7 +174,7 @@ Later modules go under `backend/src/<module>/`. A separate package for shared Ty
 
 | Phase | Deliverables | Main files | Tests | Done when | Size | Risks / owner decisions |
 |---|---|---|---|---|---|---|
-| **1 Web foundation** (this branch) | Web app, iPhone-vouched sign-in, cookie sessions, workspace (documents, apps, activity, browsers), PL/EN, brand tokens | `backend/src/web/`, `web/`, `DoddyApp/Features/Web/`, DoddyCore `WebLinkClient` | backend 30, web 25 + 10 e2e, Swift 17 | Signed in on a real browser against the live server with a real phone code | M | Hosted Mac compile of the SwiftUI screen; Render build change; `DODDY_WEB_ORIGIN` |
+| **1 Web foundation** (this branch) | Web app, iPhone-vouched sign-in, cookie sessions, workspace (documents, apps, activity, browsers), PL/EN, brand tokens | `backend/src/web/`, `web/`, `DoddyApp/Features/Web/`, DoddyCore `WebLinkClient` | backend 33, web 25 + 10 e2e, Swift 17 | Signed in on a real browser against the live server with a real phone code | M | Hosted Mac compile of the SwiftUI screen; Render build change; `DODDY_WEB_ORIGIN` |
 | 2 Shared account + conversations | Supabase sign-in in the app, account linking, conversation store, server text runtime (SSE), web chat | `backend/src/conversations/`, `src/identity/`, `web/src/pages/Chat*` | linking transaction, isolation, SSE | Start on phone, continue on web | L | Decisions 1, 4, 5, 6 |
 | 3 Shared memory | Tombstones on the phone, consented sync, server memory API, web Memory page with provenance | DoddyPersistence migration, `backend/src/memory/` | conflict cases, crypto AAD, cross-user | A saved memory managed on both, no cross-user leak | L | Decisions 1, 2, 3 |
 | 4 Documents | Durable storage and jobs, versions, text editing, conversational revision bound to a version | `backend/src/documents/`, worker job | restart mid-job, version conflicts | Made on phone, edited on web, opened on phone | M | Decision 7 (storage) |
@@ -223,17 +223,18 @@ Later modules go under `backend/src/<module>/`. A separate package for shared Ty
 
 | Risk | Protection | Test |
 |---|---|---|
-| Stolen or guessed code | 8 characters from 30 (≈ 39 bits). 5-minute life, one use, only the newest. Wrong codes limited per client (10 per quarter hour) and per server (120 per hour), checked before the code is looked at. | `web.test.ts` "wrong codes are limited…", "a code works once…" |
+| Stolen or guessed code | 8 characters from 30 (≈ 39 bits). 5-minute life, one use, only the newest. Every sign-in try is reserved atomically before the code is read: per client 10 per quarter hour (`DODDY_WEB_SIGNIN_TRIES_PER_CLIENT`; an IPv6 client counts by its /64), per server 2,000 per hour. | `web.test.ts` "sign-in tries are limited…", "parallel tries can't get past the limit", "IPv6 clients count by their /64", "a code works once…" |
 | Code phishing (someone talks a person into reading their code out) | The phone shows the exact web address. Both screens say Doddy never asks for the code. The phone lists every browser and signs any out at once. | e2e "the iPhone signs the browser out" |
 | Session theft via script | HttpOnly cookie, `__Host-` prefix, Secure, SameSite=Strict. Strict CSP: scripts from the origin only, no inline. The token is stored only as a hash. | "HttpOnly, SameSite=Strict, __Host- cookie"; e2e reads `document.cookie` |
 | Cross-site requests | Unsafe cookie requests need the exact Origin plus `x-doddy-web: 1`. No CORS is ever answered. Signing in itself is checked, against login CSRF. | "signing in must come from the web app itself", "signing out … needs the web app's origin" |
 | Web session doing too much | Allow-list: the cookie works only on `/v1/web/*` reads, sign-out, and `GET /v1/tools` and `/v1/tools/receipts`. It can't run tools, switch them, connect accounts or make codes. | "a browser session reads the workspace lists and nothing that runs tools" |
 | Cross-account access (IDOR) | Every query is keyed by the session's user. Another user's document or session ID answers 404. | "one user's browser never sees or touches another user's documents or sessions" |
-| A file running as a page on the app's origin | Downloads only: `attachment`, `nosniff`, `CSP: sandbox`. The page saves a blob; it never opens the file. | documents test checks the headers |
+| A file running as a page on the app's origin | Downloads only: `attachment`, `nosniff`, `CSP: sandbox`. The page saves a blob; it never opens the file. The phone's older signed links (`/v1/documents/:id`, ADR-564) still serve files inline for Safari's Quick Look, so the web app should run on its own name (`app.doddy.lol`, a custom domain on the same Render service) while signed links keep `DODDY_PUBLIC_BASE_URL`; then the two are different origins. | documents test checks the headers |
 | Logs | Route templates, statuses and timings only. No codes, tokens, cookies, User-Agent or document names. | "logs name routes and statuses only" |
 | Lost session state | 30 days at most, 14 idle, ten browsers per user (oldest signed out). Pruned a day after ending. | expiry, ten-browser and prune tests |
 
-**Limits that remain:**
-- The per-client limit trusts the last `X-Forwarded-For` entry behind Render. That is LIVE?: whether Render appends exactly one hop wasn't checked.
-- A determined attacker can use up the server-wide limit and block sign-ins for an hour.
+**Limits that remain** (an independent security review of `backend/src/web/` on 22 Oct found nothing blocking; its two rate-limit findings are fixed: tries are reserved atomically, the server cap is 2,000 an hour and IPv6 counts by /64):
+- The per-client limit trusts the last `X-Forwarded-For` entry behind Render. That is LIVE?: whether Render appends exactly one hop wasn't checked. If the last hop were a shared edge address, many people would share one allowance.
+- Someone with many addresses can still use up the server-wide 2,000 tries and block sign-ins for the rest of the hour.
+- If `DODDY_WEB_ORIGIN` and `DODDY_PUBLIC_BASE_URL` are the same host, a signed document link is served inline on the web app's origin. The type is fixed by the server, so no way to run script was found, but separate hosts remove the question.
 - Receipt summaries and connected-app descriptions come from the server in English.

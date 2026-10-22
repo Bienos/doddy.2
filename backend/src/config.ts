@@ -105,6 +105,8 @@ export interface WebSettings {
   distDir: string;
   /** Behind one proxy that appends the client to X-Forwarded-For (Render): use its last entry. */
   trustProxy: boolean;
+  /** Sign-in tries per client address (an IPv6 /64) per quarter hour. */
+  signInTriesPerClient: number;
 }
 
 export class ConfigError extends Error {
@@ -185,6 +187,8 @@ const EnvSchema = z.object({
   DODDY_WEB_ORIGIN: z.string().optional(),
   DODDY_WEB_DIST: z.string().default("../web/dist"),
   DODDY_TRUST_PROXY: z.enum(["0", "1"]).default("0"),
+  /** Sign-in tries per client per quarter hour (raise it for an office behind one address). */
+  DODDY_WEB_SIGNIN_TRIES_PER_CLIENT: intSetting(10, 1, 1_000),
 });
 
 /** Custom scheme (`doddy-dev://…`) or https. No query, no fragment: the server adds its own parameters. */
@@ -364,7 +368,7 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     } else if (parsed.protocol !== "https:" && !(parsed.protocol === "http:" && isLoopbackUrl(parsed))) {
       problems.push("DODDY_WEB_ORIGIN must be https outside loopback development");
     } else {
-      web = { origin: parsed.origin, distDir: e.DODDY_WEB_DIST, trustProxy: e.DODDY_TRUST_PROXY === "1" };
+      web = { origin: parsed.origin, distDir: e.DODDY_WEB_DIST, trustProxy: e.DODDY_TRUST_PROXY === "1", signInTriesPerClient: e.DODDY_WEB_SIGNIN_TRIES_PER_CLIENT };
     }
   }
 
