@@ -15,15 +15,23 @@ enum UITestLaunch {
     /// How much slower than real time the opening plays when a test turns it on.
     static let openingTimeScale = 6
 
+    /// The screens' language for a test. The app's default is Polish (ADR-573), so every test
+    /// says which language it reads; the argument wins over anything a launch stored before.
+    enum Language: String {
+        case english = "en", polish = "pl"
+        var locale: String { self == .english ? "en_US" : "pl_PL" }
+    }
+
     static func arguments(
         store: Store, onboardingDone: Bool = true, appearance: String = "system", backTapSetup: String = "deferred",
-        opening: Bool = false, listen: Bool = false
+        opening: Bool = false, listen: Bool = false, language: Language = .english
     ) -> [String] {
         var arguments: [String]
         switch store {
         case .inMemory: arguments = ["-inMemoryStore", "YES"]
         case .persistent(let id): arguments = ["-memoryTestID", id.uuidString]
         }
+        arguments += ["-AppleLanguages", "(\(language.rawValue))", "-AppleLocale", language.locale]
         if onboardingDone { arguments += ["-onboardingDone", "YES"] }
         arguments += ["-appearance", appearance, "-backTapSetupStatus", backTapSetup]
         // No agent ID: a conversation stops at "Couldn't connect" before the microphone or ElevenLabs.
@@ -37,6 +45,23 @@ enum UITestLaunch {
         // test that opened Lists would leave every later test looking at Lists, not the notes.
         arguments += ["-memoriesShowsLists", "NO"]
         return arguments
+    }
+}
+
+extension XCUIElement {
+    /// Taps a text field or text view and types once it really has the keyboard focus. A tap while
+    /// its sheet is still sliding in can land before the view accepts focus, and `typeText` then
+    /// fails with "Neither element nor any descendant has keyboard focus" (PR #119's second Mac
+    /// run, in MotionRideTests' note saves). Taps again, up to `tries` times, before typing.
+    @MainActor
+    func tapAndType(_ text: String, tries: Int = 3) {
+        let focused = NSPredicate(format: "hasKeyboardFocus == true")
+        for _ in 0..<tries {
+            tap()
+            let wait = XCTNSPredicateExpectation(predicate: focused, object: self)
+            if XCTWaiter.wait(for: [wait], timeout: 2) == .completed { break }
+        }
+        typeText(text)
     }
 }
 

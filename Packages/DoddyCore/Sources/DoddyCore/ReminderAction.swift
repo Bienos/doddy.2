@@ -525,7 +525,8 @@ extension ReminderOutcome {
         case .notAdded(.notAllowed):
             return ReminderScreenText(
                 headline: "Not added",
-                lines: asked + ["Doddy isn't allowed to use Reminders. Turn it on in Settings, Connections."], isProblem: true)
+                // ADR-578: the access card below asks for it; Doddy tries again after the tap.
+                lines: asked + ["Doddy isn't allowed to use Reminders yet. Allow it on the card below and Doddy will try again."], isProblem: true)
         case .notAdded(.couldNotCheck):
             return ReminderScreenText(
                 headline: "Not added",

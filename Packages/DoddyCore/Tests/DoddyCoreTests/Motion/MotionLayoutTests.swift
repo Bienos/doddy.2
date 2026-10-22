@@ -88,6 +88,27 @@ final class MotionLayoutTests: XCTestCase {
         XCTAssertEqual(MotionLayout.blocked(zone: zone, by: [text], clearance: 25), [text])
     }
 
+    /// A spot on a surface that moves keeps its place along the edge (the stage's centre stays
+    /// its centre), and a report that comes back to the old frame brings it back exactly.
+    func testACarriedSpotKeepsItsPlaceAlongTheEdge() {
+        let portrait = MotionRect(x: 126.5, y: 430, width: 140, height: 1)
+        let landscape = MotionRect(x: 356, y: 250, width: 140, height: 1)
+        XCTAssertEqual(MotionLayout.carriedX(196.5, from: portrait, to: landscape), landscape.midX)
+        XCTAssertEqual(MotionLayout.carriedX(426, from: landscape, to: portrait), portrait.midX)
+        // A slide carries any spot by exactly the slide.
+        XCTAssertEqual(MotionLayout.carriedX(150, from: portrait, to: landscape), 150 + 229.5, accuracy: 1e-9)
+        // A card that grows keeps his fraction of its width.
+        let card = MotionRect(x: 24, y: 300, width: 345, height: 110)
+        let wide = MotionRect(x: 59, y: 200, width: 690, height: 110)
+        XCTAssertEqual(MotionLayout.carriedX(24 + 300, from: card, to: wide), 59 + 600, accuracy: 1e-9)
+        XCTAssertEqual(MotionLayout.carriedX(659, from: wide, to: card), 324, accuracy: 1e-9)
+        // A frame with no width (mid-layout) keeps his offset from the centre, both ways.
+        let none = MotionRect(x: 0, y: 0, width: 0, height: 0)
+        let away = MotionLayout.carriedX(196.5, from: portrait, to: none)
+        XCTAssertEqual(away, 0)
+        XCTAssertEqual(MotionLayout.carriedX(away, from: none, to: portrait), 196.5)
+    }
+
     func testLedgeIdIsNamed() {
         XCTAssertEqual(MotionSurfaceID.ledge("settings").description, "ledge:settings")
         XCTAssertNotEqual(MotionSurfaceID.ledge("settings"), .ledge("emptyMemories"))

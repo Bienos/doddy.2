@@ -119,3 +119,86 @@ is unknown until step 3.
 | DOD-07 scoped_action_approval | Mute and End are the only island actions; both run the conversation's own handlers; nothing is saved or sent from the island; "Confirm in Doddy" sends the user to the on-screen card | — | — |
 | DOD-11 observable_privacy | No conversation text in the activity; the new log holds a bundle identifier and a yes/no only (`privacy: .public` on those two values, nothing else) | Guard PASS | Logs are readable in Console on a connected Mac; that is the point, and they contain nothing personal |
 | Honest capability claims (T35/T42) | This document and the ADR rows keep "unbuilt / not run"; the user-facing text in `VoiceView` already says iOS may stop Doddy in the background | — | Do not describe the island as working until step 3 above is recorded |
+
+## Talk in the Island, and an island that opens up (ADR-577, 2026-10-20)
+Owner: "The live island stuff is just so bad. It's not expanding, it's not doing anything really",
+and "The Action Button should open the Doddy Dynamic Island, the big expanded one, when he starts
+talking, not open the app. I don't want to hold it."
+
+**Why it did nothing.**
+- Every way in opened the app: `TalkToDoddyIntent` has `openAppWhenRun = true`, and the voice
+  screen is a full-screen cover. iOS shows an app's Live Activity in the Dynamic Island only while
+  that app isn't the one on screen, so for the whole time you talked in Doddy there was no island.
+- The only request to open the island up (`VoiceLiveActivity.openForGreeting`, an alert update) was
+  sent from `VoiceView` right after the conversation connected, with the voice screen in front, so
+  iOS never showed it; and only for shortcut starts. No other update carried an alert, so after you
+  left the app the island stayed the small strip unless you touched and held it.
+- While Doddy said "Hey Pat, what's up?" the island said "Speaking": the greeting was shown only
+  while connecting and listening.
+- There was no way to start without the app: every conversation started on the voice screen.
+
+**What changed.**
+- **"Talk in the Island"** (`Shared/Shortcuts/TalkInIslandIntent.swift`, iOS 18+): an
+  `AudioRecordingIntent` and `LiveActivityIntent` with `openAppWhenRun = false`, run in the app's
+  process. The new control `DoddyWidgets/TalkInIslandControl.swift` runs it, so the Action Button can
+  (Settings › Action Button › Controls). `TalkInIsland.start()` (`DoddyApp/Features/Voice/`) starts
+  the conversation with the greeting and `withoutOpeningApp`, after the checks that need no screen:
+  voice available, the Face ID lock off, Live Activities on, the microphone already allowed, voice
+  signed in (or the Debug connection) with the voice data notice accepted. A refusal is one sentence
+  saying what to open; nothing starts. It requires the iPhone unlocked (the conversation has your
+  notes). It is not an App Shortcut: the App Shortcuts list can't hold an iOS 18 intent in an app
+  that still runs on iOS 17 (reported crash on iOS 17 with `if #available` in the builder).
+- **Before connecting,** a start without opening checks that the island is really up (iOS stops a
+  recording started this way without one) and takes the audio session with the conversation's own
+  settings. If iOS refuses, the conversation fails with "iOS didn't let Doddy start the microphone
+  without opening him…" instead of connecting deaf. Console, `com.bienos.doddy2.dev` / `voice-audio`:
+  "audio session taken without opening" or "…refused…, code N".
+- **The island opens up when Doddy starts speaking** (`IslandExpansion`, DoddyCore): his first
+  words, then the start of each answer to something you said, never twice in one answer, not within
+  20 s of the last (each plays the alert sound), never while Doddy is on screen, not while
+  translating, and never with Settings › Back Tap and Siri › "Small island". This applies to every
+  conversation, so one started in the app opens up too once you leave it.
+- **The greeting stays while he says it:** "Hey Pat, what's up?" and the wave, instead of
+  "Speaking" and the shrug, until you first speak.
+- **Tapping the island** (or the Open pill) brings Doddy forward with the conversation's screen,
+  which takes the running conversation (`ShortcutRouter.showConversationStartedElsewhere`); with the
+  Face ID lock, after the unlock.
+
+**On the iPhone (owner).**
+1. Open Doddy once and start a conversation from Home, so voice is set up and the microphone allowed.
+2. iPhone Settings › Doddy › Live Activities: on.
+3. Settings › Action Button › swipe to **Controls** › tap the control under it › search "Doddy" ›
+   **Talk in the Island**. (iOS fires the Action Button on its own short press-and-hold; that is
+   iOS's, not Doddy's. Let go and talk: there is nothing to hold while you speak.)
+4. Press it from the Home Screen or another app: Doddy should say "Hey Pat, what's up?" with the
+   big island open, then you ask and he answers, with the island opening again as he answers.
+
+**Device checks, not run.** On an iPhone 15 Pro or later, iOS 18 or later:
+- A. Doddy not running (swiped away): press the Action Button. Pass: island appears, opens up with
+  "Hey Pat, what's up?" and the wave, Doddy speaks it, hears a question and answers. If the
+  microphone is refused, the Console line above says "refused" with its code: that is iOS's rule,
+  and "Talk to Doddy" (which opens the app) is the fallback.
+- B. Doddy in the background after an earlier conversation: the same.
+- C. Two minutes in another app: the island stays; it opens up at each answer, at most every 20 s.
+- D. Tap the island: Doddy opens on the conversation; Close ends it.
+- E. "Small island" in Settings: the island never opens up by itself.
+- F. Live Activities off, or Face ID lock on: the press says why and nothing starts (no microphone dot).
+- G. Locked iPhone: iOS asks to unlock before Doddy starts.
+- H. The alert sound while Doddy listens: check it doesn't cut into his answer (the provider hears
+  it as speech). If it does, keep only the greeting's opening (one line in `IslandExpansion`).
+- I. The free (Personal) team build, `make project-iphone`: Live Activities need no entitlement, so
+  the island and the control should work there too; check it.
+
+**Verified on Linux (20 Oct).** Swift 6.1.2: DoddyCore `swift test` 1273 tests, 0 failures (6 new
+`IslandExpansionTests`); `scripts/check_island_art.sh` PASS (new checks: greeting while speaking,
+wave while saying it); `scripts/typecheck_app_logic.sh` PASS (25 files, incl. `ShortcutRouter` and
+`VoiceConfig`); capability guard, platform specs and string catalogs PASS; `swiftc -parse` on every
+edited Swift file. **App, widget extension, intent and control not compiled (no Xcode); nothing run
+on a simulator or device.** The new `IslandBaselineTests` case needs a simulator.
+
+| Rule | What enforces it here | Tests run | Gaps / claims to limit |
+|---|---|---|---|
+| DOD-08 verified_status_and_receipts | A start without opening proceeds only if `Activity.request` returned an activity and iOS gave the audio session; otherwise it fails with what to do | Linux checks above | Whether iOS allows the background microphone is unknown until check A |
+| DOD-11 observable_privacy | `.requiresAuthentication`; refused while the Face ID lock is on; island and alert carry the status and greeting only; logs name the check and an error code only | Guard PASS | The greeting's name shows on the Lock Screen, as before |
+| DOD-07 scoped_action_approval | The control starts a conversation only; cards still wait for a tap in the app | — | — |
+| Honest capability claims | This section says "not run" for every device behaviour | — | Don't call the Action Button path working until check A passes |

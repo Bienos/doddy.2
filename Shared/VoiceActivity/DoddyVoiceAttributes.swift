@@ -59,8 +59,9 @@ struct DoddyVoiceAttributes: ActivityAttributes {
             /// listen only translates one way, `from` the room `to` the owner.
             case translating(from: String, to: String, bothWays: Bool)
         }
-        /// "Hey Pat, what's up?" after the wake word (ADR-254), shown instead of "Connecting…" /
-        /// "Listening" until the user first speaks. Only the greeting, never anything said.
+        /// "Hey Pat, what's up?" from a Talk to Doddy shortcut or Talk in the Island (ADR-254,
+        /// ADR-577), shown instead of "Connecting…" / "Listening" / "Speaking" until the user first
+        /// speaks. Only the greeting Doddy opens with, never anything the user said.
         var greeting: String?
         /// When this conversation started, if the activity began earlier as "Hey Doddy"
         /// listening (one activity carries both, because iOS can't start one in the background).
@@ -102,11 +103,13 @@ extension DoddyVoiceAttributes.ContentState {
     /// Muted only means something while the conversation runs and nothing waits in the app.
     var showsMuted: Bool { isMuted && status != .needsConfirmation && status != .ended && !isWakeMode }
 
-    /// The greeting replaces only the first two statuses, so it never hides Thinking, Speaking,
-    /// Muted or a card waiting in the app.
+    /// The greeting replaces Connecting, Listening and Speaking until the user first answers: it
+    /// is Doddy's first message (`opening_line`), so while he speaks it the island shows his words
+    /// (ADR-577; the island opens up then). It never hides Thinking, Muted or a card waiting in
+    /// the app.
     private var showsGreeting: Bool {
         guard let greeting, !greeting.isEmpty, !showsMuted else { return false }
-        return status == .connecting || status == .listening
+        return status == .connecting || status == .listening || status == .speaking
     }
 
     /// For the elapsed time: the conversation's own start when it began after "Hey Doddy".

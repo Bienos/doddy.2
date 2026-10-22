@@ -1101,6 +1101,42 @@ public final class MotionEngine {
         if let m = memory["memories"], let i = m.surface.ruleIndex, i >= index { memory["memories"] = MotionSpot(.rule(i + n), x: 330) }
     }
 
+    /// A surface moved sideways or changed width (`carry` maps an x on its old edge to the same
+    /// place on its new one): everything of his on it goes with it, at once. A spot's x is a window
+    /// x and `anchorPoint` adds only the surface's `dx()`, so without this a surface that slides
+    /// leaves his spot behind; the clear-zone shuffle then hops him to the near end of its stand
+    /// range, not back to his spot. That is how he came back 36 pt off-centre on Home after the
+    /// app had been in the background (the owner, 20 Oct): a layout at another width while it was
+    /// away (an iPhone app that supports landscape can be laid out in landscape for the App
+    /// Switcher's snapshot) moved the stage's centre and back, and a step in between saw his spot
+    /// off the stage. Vertical moves need nothing: `anchorPoint` reads the edge's y every step. In
+    /// the air his flight follows its landing spot by itself (it re-aims when the spot moves).
+    public func surfaceShifted(_ id: MotionSurfaceID, carry: (Double) -> Double) {
+        func moved(_ s: MotionSpot?) -> MotionSpot? {
+            guard let s, s.surface == id else { return s }
+            return MotionSpot(id, x: carry(s.x))
+        }
+        if let a = anchor, a.surface == id {
+            anchor = moved(a)
+            // He stands on it (or crouches, shuffles or fades there): his position goes with it,
+            // so the next step sees no sideways speed and the drawing doesn't lag a frame.
+            if mode != .flight { pos.x = carry(pos.x) }
+            if var sh = shuf {
+                sh.x0 = carry(sh.x0)
+                sh.x1 = carry(sh.x1)
+                sh.fL = carry(sh.fL)
+                sh.fR = carry(sh.fR)
+                sh.dlt = sh.x1 - sh.x0
+                shuf = sh
+            }
+        }
+        target = moved(target)
+        pendingTransfer = moved(pendingTransfer)
+        if let p = pendingStepOff, p.target.surface == id { pendingStepOff = (moved(p.target)!, p.reason) }
+        for (key, spot) in memory where spot.surface == id { memory[key] = moved(spot) }
+        if let g = gaze.anchor, g.surface == id { gaze.anchor = moved(g) }
+    }
+
     /// A page is pushed over the screen. If he stands on a list rule he stays and is covered in
     /// place (returns true); otherwise he goes to the page's spot.
     @discardableResult

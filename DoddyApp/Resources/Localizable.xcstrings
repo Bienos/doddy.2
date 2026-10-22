@@ -4677,6 +4677,17 @@
         }
       }
     },
+    "Allow": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zezwól"
+          }
+        }
+      }
+    },
     "Allow also says yes to this one look-up.": {
       "extractionState": "manual",
       "localizations": {

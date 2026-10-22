@@ -11,6 +11,8 @@ import Foundation
 @MainActor
 enum IntentStores {
     static weak var store: MemoryStore?
+    /// The reviewed profile, for Talk in the Island's "Hey <name>" (ADR-577).
+    static weak var profiles: ProfileStore?
 
     static func loaded() async -> MemoryStore? {
         guard let store else { return nil }

@@ -10,6 +10,8 @@ struct VoiceView: View {
     @Environment(ProfileStore.self) private var profiles
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Back from iPhone Settings, the access card looks at iOS's answer again (ADR-578).
+    @Environment(\.scenePhase) private var scenePhase
     @AppStorage(VoiceProvider.preferenceKey) private var voiceProvider = ""
     @AppStorage(ConnectionPause.preferenceKey) private var pauseAllConnections = false
     @State private var controller: VoiceSessionController?
@@ -32,11 +34,8 @@ struct VoiceView: View {
     private var provider: VoiceProvider { VoiceProvider.effective(stored: voiceProvider, tokenServerSet: true) }
 
     /// The app endpoint is fixed in the build; users never enter server URLs or access codes.
-    private var mode: VoiceConnectionMode {
-        // Debug builds only (ADR-551): no DODDY voice account, straight to the agent.
-        if VoiceConfig.directVoiceEnabled { return .directAgent(agentID: VoiceConfig.directAgentID) }
-        return VoiceConnectionMode.resolve(serverAddress: VoiceConfig.tokenEndpointAddress)
-    }
+    /// Debug builds may go straight to the agent without a DODDY voice account (ADR-551).
+    private var mode: VoiceConnectionMode { VoiceConfig.connectionMode }
 
     var body: some View {
         NavigationStack {
@@ -92,12 +91,17 @@ struct VoiceView: View {
             Task { await controller?.stop() }
         }
         .sheet(item: $openConnection, onDismiss: {
-            Task { await connections.refresh() }
-            controller?.refreshConnectionNeeded()
+            Task {
+                await connections.refresh()
+                await controller?.refreshConnectionNeeded()
+            }
         }) { connection in
             ConnectionSheet(connection: connection, controller: connections)
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { Task { await controller?.recheckConnectionAccess() } }
         }
     }
 
@@ -122,14 +126,13 @@ struct VoiceView: View {
         // account and provider-consent gate used by a tap in the app.
         let openedByShortcut = ShortcutRouter.shared.takeTalkToDoddyOpening()
         let action = BackTapAction.stored(UserDefaults.standard.string(forKey: PreferenceKey.backTapAction))
-        let greeting = openedByShortcut && action.startsConversation ? WakeGreeting.line(
-            name: WakeGreeting.name(nickname: Nickname.stored(), profileName: profiles.profile.value(.name)),
-            polish: ConversationLanguage.stored() == .polish) : nil
+        let greeting = openedByShortcut && action.startsConversation ? TalkInIsland.greeting(for: profiles.profile) : nil
+        // The island opens up when Doddy starts speaking, not here (ADR-577): this screen is on top,
+        // and iOS doesn't show Doddy's own island over Doddy, so a request now was always lost.
         await controller.start(
             mode, profile: profiles.profile, translator: ShortcutRouter.shared.takeTranslatorPreset(),
             checkIn: ShortcutRouter.shared.takeCheckInBriefing(),
             wakeGreeting: greeting, aboutNote: ShortcutRouter.shared.takeNoteToAsk())
-        if let greeting, action.opensIsland { VoiceLiveActivity.shared.openForGreeting(greeting) }
     }
 
     @ViewBuilder
@@ -271,8 +274,8 @@ struct VoiceView: View {
                                 .id("connectionsPaused")
                         }
 
-                        if let needed = controller.connectionNeeded {
-                            connectionCard(needed)
+                        if let request = controller.accessRequest {
+                            accessCard(request, controller: controller)
                                 .id("connectionNeeded")
                         }
 
@@ -334,6 +337,10 @@ struct VoiceView: View {
                 }
                 .onChange(of: controller.saveSuggestions == nil) { _, isNil in
                     if !isNil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("saveSuggestions", anchor: .bottom) } }
+                }
+                // The access card is what Doddy just asked the user to tap (ADR-578).
+                .onChange(of: controller.accessRequest?.connection) { _, connection in
+                    if connection != nil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("connectionNeeded", anchor: .bottom) } }
                 }
             }
             // ADR-569: Doddy's camera after the user tapped Open camera; a kept photo opens a new note.
@@ -1227,8 +1234,6 @@ struct VoiceView: View {
         .accessibilityIdentifier("voice.reminderReceipt")
     }
 
-    /// Shown when the agent asked for something that is switched off. One tap opens the same
-    /// Connections sheet as Settings, so the terms are visible before anything turns on.
     /// Settings → Pause all is on. One tap brings back the connections that were on before.
     private var pausedCard: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -1249,22 +1254,65 @@ struct VoiceView: View {
         .accessibilityElement(children: .contain)
     }
 
-    private func connectionCard(_ connection: VoiceConnection) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Label("\(connection.title) is off", systemImage: ConnectionInfo.of(connection).symbol)
+    /// The access card (ADR-578): the agent asked for a function that is off, or that iOS hasn't
+    /// allowed. Allow turns it on in one tap (iOS's own prompt first if it has never asked) and
+    /// Doddy carries on by itself; nothing turns on without the tap, and the action still asks for
+    /// its own yes. What leaves the phone is on the card; Details opens the full terms. Only when
+    /// iOS has said no before does the button open iPhone Settings, the one place iOS lets that change.
+    private func accessCard(_ request: ConnectionApprovalCard, controller: VoiceSessionController) -> some View {
+        let connection = request.connection
+        let info = ConnectionInfo.of(connection)
+        return VStack(alignment: .leading, spacing: 12) {
+            Label("Allow Doddy to use \(connection.title)?", systemImage: info.symbol)
                 .font(.headline)
-            Text("Turn it on to let Doddy use \(connection.title.lowercased()). Then ask again.")
-                .foregroundStyle(Theme.secondaryText)
-            Button {
-                openConnection = connection
-            } label: {
-                Label("Turn on \(connection.title)", systemImage: "checkmark")
+            switch request.card {
+            case .allow:
+                Text(info.leavesPhone)
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+                Button {
+                    Task { await controller.allowConnection() }
+                } label: {
+                    Label("Allow", systemImage: "checkmark")
+                }
+                .buttonStyle(PrimaryButtonStyle())
+                .disabled(request.isWorking)
+                .accessibilityIdentifier("voice.allowConnection")
+            case .openSystemSettings:
+                if request.sentToSettings {
+                    Text("Allow \(connection.title) for Doddy there, then come back. Doddy carries on by itself.")
+                        .foregroundStyle(Theme.secondaryText)
+                } else {
+                    Text("iPhone has \(connection.title) turned off for Doddy, so only iPhone Settings can allow it. Doddy carries on when you're back.")
+                        .foregroundStyle(Theme.secondaryText)
+                }
+                Button {
+                    Task { await controller.openSettingsForConnection() }
+                } label: {
+                    Label("Open iPhone Settings", systemImage: "gear")
+                }
+                .buttonStyle(PrimaryButtonStyle())
+                .accessibilityIdentifier("voice.openConnectionSettings")
             }
-            .buttonStyle(PrimaryButtonStyle())
-            .accessibilityIdentifier("voice.turnOnConnection")
+            HStack(spacing: 12) {
+                Button("Not now") {
+                    Task { await controller.declineConnection() }
+                }
+                .buttonStyle(SecondaryButtonStyle())
+                .disabled(!request.canDecline)
+                .accessibilityIdentifier("voice.declineConnection")
+                Button("Details") {
+                    openConnection = connection
+                }
+                .buttonStyle(SecondaryButtonStyle())
+                .disabled(request.isWorking)
+                .accessibilityIdentifier("voice.connectionDetails")
+            }
         }
         .padding(16)
         .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("voice.accessCard")
     }
 
     /// ADR-563: an online account Doddy needs for what was asked. Connect opens the provider's own

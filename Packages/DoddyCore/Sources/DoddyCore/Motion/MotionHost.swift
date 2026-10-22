@@ -246,6 +246,24 @@ public final class MotionHost: MotionWorld {
     /// The surface frames as they were at the engine's last step.
     public private(set) var lastStepFrames: [MotionSurfaceID: MotionRect] = [:]
 
+    /// A surface reported its window frame (the app calls this for every report). If it moved
+    /// sideways or changed width (the app laid out at another size: a rotation, or a layout while
+    /// it is in the background), he and every spot of his on it go with it at once, before any
+    /// step can see his spot off its edge (`MotionEngine.surfaceShifted`). Up and down needs
+    /// nothing: the engine reads the edge's y every step.
+    public func surfaceMoved(_ id: MotionSurfaceID, to frame: MotionRect) {
+        let old = scene.frames[id]
+        scene.frames[id] = frame
+        guard let old, abs(frame.minX - old.minX) > 1e-9 || abs(frame.width - old.width) > 1e-9 else { return }
+        engine.surfaceShifted(id) { MotionLayout.carriedX($0, from: old, to: frame) }
+        // His position was carried now, not at the next step: the frame his drawing is placed
+        // against (`lastStepFrames`, the slot's offset) moves sideways with it, so the slot keeps
+        // drawing him on his spot. Its y stays the last step's, as his own y does.
+        if let drawn = lastStepFrames[id] {
+            lastStepFrames[id] = MotionRect(x: frame.minX, y: drawn.minY, width: frame.width, height: drawn.height)
+        }
+    }
+
     /// After a frame's steps: answer a pending tab tap, and move him off a surface that went away.
     public func settle() {
         settleScroll()

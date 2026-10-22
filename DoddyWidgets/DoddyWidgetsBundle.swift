@@ -33,6 +33,8 @@ struct DoddyWidgetsBundle: WidgetBundle {
         // One entry for all Home Screen widgets: the bundle builder has taken at most ten (ADR-331).
         DoddyHomeWidgets().body
         TalkToDoddyControl()
+        // The Action Button's one-press conversation without opening Doddy (ADR-577).
+        TalkInIslandControl()
         NewNoteControl()
         #if canImport(AlarmKit)
         // A Doddy alarm's snooze countdown (ADR-283), iOS 26 and later.

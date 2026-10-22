@@ -378,8 +378,10 @@ final class VoiceToolsTests: XCTestCase {
     // MARK: Replies
 
     func testReplyPrefixesMatchTheAgentPrompt() {
-        XCTAssertTrue(VoiceToolReply.notConnected(.calendar).hasPrefix("Calendar isn't connected."))
-        XCTAssertTrue(VoiceToolReply.notConnected(.calendar).contains("Settings, Connections"))
+        // ADR-578: the card on screen asks; the agent says one line and doesn't send the user to Settings.
+        XCTAssertTrue(VoiceToolReply.notConnected(.calendar).hasPrefix("Calendar isn't connected yet."))
+        XCTAssertTrue(VoiceToolReply.notConnected(.calendar).contains("Allow it on screen and I'll carry on."))
+        XCTAssertFalse(VoiceToolReply.notConnected(.calendar).contains("Settings, Connections"))
 
         let event = CalendarEventDraft(title: "Dentist", start: date(2026, 10, 12, 15, 0), end: date(2026, 10, 12, 16, 0), allDay: false, location: nil, notes: nil)
         let added = VoiceToolReply.eventAdded(event, calendar: calendar)

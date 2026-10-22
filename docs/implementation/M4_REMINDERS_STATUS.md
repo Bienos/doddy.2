@@ -25,7 +25,7 @@ physical iPhone and the results are written into this file.
 | Timezone / date clarification | `VoiceLocalDate` accepted past times, and silently turned a zone suffix like `18:30+02:00` into 18:00. Clock-change gaps were rejected as "not a date". | `ReminderDueRules` (DoddyCore): only `YYYY-MM-DD` or `YYYY-MM-DDTHH:MM` (optional `:SS`), local time, no zone. A bare time, a word, a zone suffix, Feb 31, a past time or day, a time the clocks skip (DST starts) or a time that happens twice (DST ends) is **not shown as a card**: the agent gets `failed: not added yet: <problem>. Ask the user <question>, then call create_reminder again…`. The time is checked again at the tap (it may have passed while the card waited). |
 | Explicit time zone | Components built from `Calendar.current`, no zone on the reminder. | The draft carries the phone's zone id; a timed reminder is saved with that zone on its due components. A day-only reminder stays floating (as the Reminders app does for whole days). The card and receipt show the zone, e.g. `Mon 12 Oct 2026, 18:00 (Europe/Warsaw)`. |
 | Receipt visible | Card disappeared on tap; only the agent's spoken reply. | A receipt card under the transcript: **Adding to Reminders…**, then **Added to Reminders** / **Already in Reminders** / **Not added** / **Couldn't confirm**, with title, day/time/zone and list name. It stays after the conversation ends (the agent may never hear the result if its wait timed out) until the user taps OK or starts a new conversation. |
-| Denied permission | Card shown, tap → `failed`. | Checked when the agent proposes (no card; the "Reminders is off" card offers to turn it on) and again at the tap (switch and iOS). A denial at the tap shows **Not added** with the draft's title and time still visible, the turn-on card, and `failed: Reminders isn't connected. Nothing was added.` |
+| Denied permission | Card shown, tap → `failed`. | Checked when the agent proposes (no card; the access card "Allow Doddy to use Reminders?" asks for it in one tap, or offers iPhone Settings when iOS said no before, ADR-578) and again at the tap (switch and iOS). A denial at the tap shows **Not added** with the draft's title and time still visible, the access card, and `failed: Reminders isn't connected. Nothing was added.` |
 | Timeouts | EventKit reads had no time limit. | Reading the open reminders gives up after 10 s. Before the write that means **Not added** (`failed`, nothing written); after the write it means **Couldn't confirm** (`unknown`). |
 | Double tap | Already safe: the card is cleared before the first await. | Unchanged, plus the dedupe above covers a second card for the same reminder. |
 
@@ -90,10 +90,13 @@ Record device, iOS version, account type (iCloud or local Reminders) and the res
    it does not, the owner decides whether to add an alarm at the due time (not built).
 3. **Day-only.** "Remind me to pay rent on the 31st" → day-only reminder, no time, receipt without zone.
 4. **Denied permission.** iOS Settings → Doddy → Reminders off (or Don't Allow at first prompt) →
-   asking for a reminder shows no card; the "Reminders is off" card appears; nothing in Reminders.
-   Then revoke while a card is waiting → Add → **Not added**, title/time still on screen, agent says it
-   wasn't added.
-5. **Switch off.** Connections switch off → agent says it isn't connected; nothing written.
+   asking for a reminder shows no card; the access card appears with **Open iPhone Settings**;
+   nothing in Reminders. Then revoke while a card is waiting → Add → **Not added**, title/time still
+   on screen, agent says it wasn't added.
+5. **Switch off.** Connections switch off → no reminder card; the access card "Allow Doddy to use
+   Reminders?" appears and the agent says "Allow it on screen and I'll carry on"; nothing written.
+   Tap Allow (iOS asks first if it never has) → the agent asks for the reminder again on its own,
+   and its card appears (ADR-578).
 6. **Double tap.** Tap Add twice quickly → one reminder.
 7. **Asked again.** After a successful add, ask for the same reminder again (same title and time,
    different wording/case) → card → Add → **Already in Reminders**; still one reminder. Same title
