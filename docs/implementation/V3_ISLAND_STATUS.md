@@ -121,6 +121,14 @@ is unknown until step 3.
 | Honest capability claims (T35/T42) | This document and the ADR rows keep "unbuilt / not run"; the user-facing text in `VoiceView` already says iOS may stop Doddy in the background | — | Do not describe the island as working until step 3 above is recorded |
 
 ## Talk in the Island, and an island that opens up (ADR-577, 2026-10-20)
+
+> **Changed 22 Oct (ADR-593):** the Action Button opens Doddy again. Owner: "make it so when I press
+> the Action Button the Doddy app opens, not the Dynamic Island alone with Doddy." The control below
+> (`TalkInIslandControl`, kind `com.bienos.doddy2.talk-island`) now runs `TalkToDoddyIntent` and is
+> named "Talk to Doddy", so an Action Button already set to it opens Doddy after the update with
+> nothing to change. `TalkInIslandIntent` and everything it starts are unchanged and stay in the
+> Shortcuts app as "Talk in the Island"; no control runs it. The island still opens up when Doddy
+> speaks once you leave the app. The steps and checks below describe ADR-577 as it was.
 Owner: "The live island stuff is just so bad. It's not expanding, it's not doing anything really",
 and "The Action Button should open the Doddy Dynamic Island, the big expanded one, when he starts
 talking, not open the app. I don't want to hold it."

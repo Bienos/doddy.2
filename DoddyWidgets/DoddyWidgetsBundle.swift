@@ -33,7 +33,8 @@ struct DoddyWidgetsBundle: WidgetBundle {
         // One entry for all Home Screen widgets: the bundle builder has taken at most ten (ADR-331).
         DoddyHomeWidgets().body
         TalkToDoddyControl()
-        // The Action Button's one-press conversation without opening Doddy (ADR-577).
+        // Was "Talk in the Island" (ADR-577); opens Doddy since ADR-593. Kept so an Action Button
+        // or control already set to it keeps working.
         TalkInIslandControl()
         NewNoteControl()
         #if canImport(AlarmKit)

@@ -2,9 +2,10 @@ import AppIntents
 
 /// "Talk in the Island" (ADR-577): starts a voice conversation without opening Doddy. Doddy says
 /// "Hey Pat, what's up?", the Dynamic Island opens up while he talks, and Mute and Stop are on the
-/// island and the Lock Screen. Used by the "Talk in the Island" control, which the Action Button
-/// can run (Settings › Action Button › Controls), and listed in the Shortcuts app.
-/// `TalkToDoddyIntent` stays the one that opens the app (Siri, Back Tap, the other control).
+/// island and the Lock Screen. Listed in the Shortcuts app only: since ADR-593 no control runs it,
+/// and the control that did (`TalkInIslandControl`, which the Action Button can run) opens Doddy
+/// with `TalkToDoddyIntent` instead. `TalkToDoddyIntent` is the one that opens the app (Siri,
+/// Back Tap, both controls).
 ///
 /// An `AudioRecordingIntent`, so iOS lets the recording run with Doddy in the background while
 /// its Live Activity is up, and a `LiveActivityIntent`, so iOS runs it in the app's process
@@ -12,8 +13,8 @@ import AppIntents
 /// (`AudioRecordingIntent`); it is not an App Shortcut because the App Shortcuts list can't hold
 /// an iOS 18 intent in an app that still runs on iOS 17.
 ///
-/// Compiled into the app and the widget extension, because the control needs the type. Only the
-/// app's copy does anything; iOS 27 would otherwise pick "any available target", so it is pinned
+/// Compiled into the app and the widget extension (the control needed the type before ADR-593).
+/// Only the app's copy does anything; iOS 27 would otherwise pick "any available target", so it is pinned
 /// to the app (ADR-131).
 @available(iOS 18.0, *)
 struct TalkInIslandIntent: AudioRecordingIntent, LiveActivityIntent {
