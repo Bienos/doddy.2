@@ -209,7 +209,7 @@
 
           <h3 id="ask-doddy">Ask Doddy (pytania pisane) i Siri</h3>
           <ul>
-            <li><strong>Ask Doddy</strong> wysyła pisane pytania (oraz, jeśli na to pozwolisz, pasujące do nich zapisane notatki) do osobnej bramki Doddy’ego, która przekazuje je OpenAI. Jest wyłączone, dopóki go nie włączysz, a bramka nie jest jeszcze uruchomiona.</li>
+            <li><strong>Ask Doddy</strong> wysyła pisane pytania (oraz, jeśli na to pozwolisz, pasujące do nich zapisane notatki) na serwer Doddy’ego, który przekazuje je Anthropic (Claude), żeby napisał odpowiedź. Serwer Doddy’ego ich nie przechowuje i nie zapisuje tekstu w logach, tylko liczby. Nie sprawdzono, jak długo Anthropic je przechowuje. Jest wyłączone, dopóki go nie włączysz, a liczba pytań dziennie jest ograniczona.</li>
             <li><strong>Siri:</strong> gdy poprosisz Siri „Zapytaj aplikację Doddy, co mam zapisane”, Doddy szuka na Twoim iPhonie i przekazuje pasującą notatkę Siri do odczytania. Siri obsługuje Twoją prośbę i odpowiedź zgodnie z Twoimi ustawieniami Siri, co może obejmować serwery Apple. Ta funkcja jest domyślnie włączona; możesz ją wyłączyć w Ustawieniach.</li>
           </ul>
 
@@ -283,8 +283,8 @@
             <tbody>
               <tr><td>ElevenLabs</td><td>Głos Doddy’ego (domyślny); zapytania o pogodę i do Wikipedii</td><td>Twój głos, rozmowę i to, co wymienia <a class="text-link" href="#voice-sent">punkt 4</a></td></tr>
               <tr><td>Google (Gemini, przez ElevenLabs)</td><td>Model językowy za głosem</td><td>Rozmowę, tak jak przekazuje ją ElevenLabs</td></tr>
-              <tr><td>OpenAI</td><td>Głos Doddy’ego, jeśli go wybierzesz; Ask Doddy, jeśli go włączysz</td><td>Przy głosie to samo co ElevenLabs; przy Ask Doddy pisane pytania</td></tr>
-              <tr><td>Anthropic</td><td>Claude na serwerze Doddy’ego; przekazane sprawy</td><td>Prośbę i materiał do niej, po Twoim „tak”</td></tr>
+              <tr><td>OpenAI</td><td>Głos Doddy’ego, jeśli go wybierzesz</td><td>To samo co ElevenLabs</td></tr>
+              <tr><td>Anthropic</td><td>Claude na serwerze Doddy’ego; Ask Doddy, jeśli go włączysz; przekazane sprawy</td><td>Prośbę i materiał do niej, po Twoim „tak”; pisane pytania (i pasujące notatki, jeśli pozwolisz) przy Ask Doddy</td></tr>
               <tr><td>Composio</td><td>Łączenie kont online</td><td>Tokeny logowania do kont, które połączysz; zatwierdzone przez Ciebie zapytania</td></tr>
               <tr><td>Google, Microsoft, Notion, Todoist</td><td>Twoje własne konta</td><td>Zatwierdzone przez Ciebie zapytania (masz z nimi własną umowę)</td></tr>
               <tr><td>Monid, Search1API, LiteScrape</td><td>Wyszukiwanie w internecie, wiadomości i miejsc</td><td>Szukane słowa</td></tr>

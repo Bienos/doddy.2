@@ -208,7 +208,7 @@
 
           <h3 id="ask-doddy">Ask Doddy (typed questions) and Siri</h3>
           <ul>
-            <li><strong>Ask Doddy</strong> sends typed questions (and, if you allow it, the saved notes that match them) to a separate Doddy gateway, which passes them to OpenAI. It is off until you turn it on, and the gateway isn't set up yet.</li>
+            <li><strong>Ask Doddy</strong> sends typed questions (and, if you allow it, the saved notes that match them) to Doddy's server, which passes them to Anthropic (Claude) to write the answer. Doddy's server does not store them and logs no text, only counts. How long Anthropic keeps them has not been verified. It is off until you turn it on, and there is a daily limit on questions.</li>
             <li><strong>Siri:</strong> if you ask Siri "Ask Doddy what I saved", Doddy searches on your iPhone and hands the matching note to Siri to read aloud. Siri handles what you say and the answer under your Siri settings, which can include Apple's servers. This is on by default; you can turn it off in Settings.</li>
           </ul>
 
@@ -282,8 +282,8 @@
             <tbody>
               <tr><td>ElevenLabs</td><td>Doddy's voice (default); weather and Wikipedia requests</td><td>Your voice, the conversation and what is listed in <a class="text-link" href="#voice-sent">section 4</a></td></tr>
               <tr><td>Google (Gemini, through ElevenLabs)</td><td>The language model behind the voice</td><td>The conversation, as ElevenLabs passes it on</td></tr>
-              <tr><td>OpenAI</td><td>Doddy's voice, if you choose it; Ask Doddy, if you turn it on</td><td>The same as ElevenLabs for voice; typed questions for Ask Doddy</td></tr>
-              <tr><td>Anthropic</td><td>Claude on Doddy's server; tasks handed over</td><td>The request and its material, after your yes</td></tr>
+              <tr><td>OpenAI</td><td>Doddy's voice, if you choose it</td><td>The same as ElevenLabs for voice</td></tr>
+              <tr><td>Anthropic</td><td>Claude on Doddy's server; Ask Doddy, if you turn it on; tasks handed over</td><td>The request and its material, after your yes; typed questions (and matching notes you allow) for Ask Doddy</td></tr>
               <tr><td>Composio</td><td>Connecting online accounts</td><td>Sign-in tokens for the accounts you connect; the requests you approve</td></tr>
               <tr><td>Google, Microsoft, Notion, Todoist</td><td>Your own accounts</td><td>The requests you approve (you have your own agreement with them)</td></tr>
               <tr><td>Monid, Search1API, LiteScrape</td><td>Web, news and place searches</td><td>Search words</td></tr>
