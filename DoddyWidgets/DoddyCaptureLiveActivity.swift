@@ -12,7 +12,7 @@ import WidgetKit
 /// Nothing from the recording appears here: the content is `CaptureActivitySnapshot`, phases and
 /// numbers only, because the Lock Screen is visible to anyone.
 ///
-/// NOT COMPILED OR RUN: written without Xcode (docs/implementation/CAPTURE_STATUS.md).
+/// Compiled by the hosted Mac build (PR #124); never run on a device (docs/implementation/CAPTURE_STATUS.md).
 struct DoddyCaptureLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: DoddyCaptureAttributes.self) { context in

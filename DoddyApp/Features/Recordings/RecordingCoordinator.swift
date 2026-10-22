@@ -16,8 +16,8 @@ import os
 /// only after the recorder has delivered audio and, for a start from a shortcut or control, the Live
 /// Activity is up.
 ///
-/// NOT COMPILED OR RUN: written without Xcode. The first compile is the pull request's hosted run;
-/// the first real behaviour needs an iPhone (docs/implementation/CAPTURE_STATUS.md).
+/// Compiled by the hosted Mac build (PR #124); never run on a device, and no test records. The first
+/// real behaviour needs an iPhone (docs/implementation/CAPTURE_STATUS.md).
 @MainActor
 @Observable
 final class RecordingCoordinator {

@@ -3,7 +3,7 @@
 Branch `claude/gifted-pascal-3e117c`. Audit and platform limits: `CAPTURE_AUDIT.md`. Owner brief: "DODDY Capture — Native iPhone Recording, AI Transcription, Conversation Intelligence & Personal Memory" (the pasted brief stopped in the middle of Part 10; what is below follows what was there).
 
 ## In one paragraph
-The recording logic, the database and the transcript checks are built and **tested on Linux (1,511 tests, 0 failures)**. The iPhone layer (AVAudioRecorder, the Live Activity, the intents and control, Speech, the screens) is **written but has never been compiled or run: no Xcode here, so the native build is BLOCKED / NOT RUN**. It has a syntax parse and an independent read-through, nothing more. Nothing in the second group may be called "works", "tested" or "implemented" until a hosted Mac build compiles it and an iPhone has run the list in "Device test plan". The **written summary and the written answers are not built**: that needs an owner decision (ADR-582).
+The recording logic, the database and the transcript checks are built and **tested on Linux (1,513 tests, 0 failures)**. The iPhone layer (AVAudioRecorder, the Live Activity, the intents and control, Speech, the screens) **compiles on the hosted Mac build, and the repo's existing unit and UI tests pass with it** (third run, [run 39799952629](https://github.com/Bienos/doddy.2/actions/runs/39799952629), commit `8971f0e`: 54 UI tests, 1 skipped, 0 failures). It has **never been run on a device, and no automated test exercises it**: the hosted runner has no microphone, and no test records, plays or opens the Recordings screen. Nothing in this group may be called "works" or "tested" until an iPhone has run the list in "Device test plan". The **written summary and the written answers are not built**: that needs an owner decision (ADR-582).
 
 ## What exists
 
@@ -17,11 +17,11 @@ The recording logic, the database and the transcript checks are built and **test
 | Checks on a model's rundown and answers; prompts that fence the transcript; provider contract | **Tested on Linux with invented model output.** **No provider is wired.** | `RecordingIntelligence.swift` |
 | Live Activity content (phases and numbers, never words), button words, the notice | **Tested on Linux** | `CapturePresentation.swift`, `CaptureNotice.swift` |
 | Microphone pill and Stop listening cover a recording | **Tested on Linux** (the model); the pill itself is app code | `ListeningPrivacy.swift` |
-| Recorder (`AVAudioRecorder`, parts, interruptions, recovery, permission, storage) | **Written, not compiled, not run** | `DoddyApp/Features/Recordings/RecordingCoordinator.swift`, `RecordingFiles.swift` |
-| Live Activity: compact, minimal, expanded, Lock Screen; Stop, Pause, Resume | **Written, not compiled, not run** | `DoddyWidgets/DoddyCaptureLiveActivity.swift`, `Shared/CaptureActivity/` |
-| Start intent (Siri, Shortcuts), `AudioRecordingIntent` and control (Action Button), Open Latest Recording | **Written, not compiled, not run** | `Shared/Shortcuts/StartRecordingIntent.swift`, `DoddyWidgets/StartRecordingControl.swift` |
-| On-device transcription (`SFSpeechRecognizer`), one at a time, resumes at launch | **Written, not compiled, not run** | `RecordingTranscriber.swift` |
-| Library, detail page (player, transcript, search, "find the parts", corrections, Remember this, export, delete) | **Written, not compiled, not run** | `RecordingsView.swift`, `RecordingDetailView.swift`, `RecordingPlayer.swift` |
+| Recorder (`AVAudioRecorder`, parts, interruptions, recovery, permission, storage) | **Compiles on the hosted Mac build; never run on a device** | `DoddyApp/Features/Recordings/RecordingCoordinator.swift`, `RecordingFiles.swift` |
+| Live Activity: compact, minimal, expanded, Lock Screen; Stop, Pause, Resume | **Compiles on the hosted Mac build; never run on a device** | `DoddyWidgets/DoddyCaptureLiveActivity.swift`, `Shared/CaptureActivity/` |
+| Start intent (Siri, Shortcuts), `AudioRecordingIntent` and control (Action Button), Open Latest Recording | **Compiles on the hosted Mac build; never run on a device** | `Shared/Shortcuts/StartRecordingIntent.swift`, `DoddyWidgets/StartRecordingControl.swift` |
+| On-device transcription (`SFSpeechRecognizer`), one at a time, resumes at launch | **Compiles on the hosted Mac build; never run on a device** | `RecordingTranscriber.swift` |
+| Library, detail page (player, transcript, search, "find the parts", corrections, Remember this, export, delete) | **Compiles on the hosted Mac build; never run on a device** | `RecordingsView.swift`, `RecordingDetailView.swift`, `RecordingPlayer.swift` |
 | Capability guard (audio and speech in one more folder; nothing may be sent from it) | **Run, passes** | `scripts/check_forbidden_capabilities.sh` |
 
 ## Where a recording can start from
@@ -37,12 +37,12 @@ Environment: Linux x86_64 (Ubuntu 24.04), Swift 6.1.2 (the version CI uses), no 
 | `python3 -I tools/build_strings_catalog.py --check` | PASS (catalogs regenerated; Polish 1,731 of 1,810 UI strings; the rest of the languages show new screens in English) |
 | `scripts/typecheck_app_logic.sh` | PASS, 25 app files (it failed first: my edit to `ShortcutRouter` needed a field in its stand-in; fixed) |
 | `swiftc -parse -swift-version 6` on the 24 app, shared and widget Swift files I touched | all parse. **Syntax only** |
-| **Hosted macOS build (first real compile)** | **First run failed on 3 errors, all `RecordingActivity.swift`** ("sending 'activity' risks causing data races", Swift 6); everything else in the app, the widget extension and the shared files compiled. Fixed with `@preconcurrency import ActivityKit`, as the other Live Activity files do. **Second run: the app, widget and tests built; one UI test failed**, `MemoryJourneyTests.testDarkLargestTextKeepsTextRoutesUsable`, because my two new Home menu items pushed Memories out of the menu's first screen at the largest text size. Fixed by one "Recordings" item below Settings (the Record button is on that screen). The third run is the next result |
+| **Hosted macOS build (first real compile)** | **First run failed on 3 errors, all `RecordingActivity.swift`** ("sending 'activity' risks causing data races", Swift 6); everything else in the app, the widget extension and the shared files compiled. Fixed with `@preconcurrency import ActivityKit`, as the other Live Activity files do. **Second run: the app, widget and tests built; one UI test failed**, `MemoryJourneyTests.testDarkLargestTextKeepsTextRoutesUsable`, because my two new Home menu items pushed Memories out of the menu's first screen at the largest text size. Fixed by one "Recordings" item below Settings (the Record button is on that screen). **Third run (`8971f0e`, [run 39799952629](https://github.com/Bienos/doddy.2/actions/runs/39799952629)): green.** Build, unit tests and 54 UI tests (1 skipped, 0 failures), `RESULT: PASS`. The three Vercel statuses stay red ("Account is blocked.": the account, not this PR) |
 | Independent read-through of the app layer (a reviewing agent read every app, widget and shared file I added or touched) | **Done: no definite compile error found, 15 other findings** (table below). A read-through, not a compile |
 | `scripts/ci.sh --core-only` (everything that runs without a Mac) | **PASS for core-only scope, run on the final tree** (exit 0). It prints `NOT RUN  iOS app build + tests`: the app is not verified by it |
 
 ### What the read-through found, and what was done
-Fixes are **not compiled or run** either. Each was re-read and the files re-parsed.
+The fixes compile (the hosted builds ran with them); none has been run on a device.
 
 | # | Finding | Result |
 |---|---|---|
@@ -62,7 +62,7 @@ Fixes are **not compiled or run** either. Each was re-read and the files re-pars
 | 14 | The island's three buttons would appear as Shortcuts actions | **Fixed:** not discoverable, like the other Live Activity buttons |
 | 15 | "Open Latest Recording" did nothing with Recordings already open | **Fixed:** the screen watches for it |
 
-**Not run, and why:** `xcodegen`, `xcodebuild` (no Xcode), any simulator or device test, UI tests, the hosted macOS CI. **The app, the widget extension and the UI tests have not been built with these changes.**
+**Not run, and why:** anything that needs a microphone, a Lock Screen or an iPhone: recording, the Live Activity, the intents, Siri and the Action Button, playback, speech recognition. The hosted runner builds the app and the widget extension and runs the repo's existing tests, which do not touch Recordings. **No simulator or device run of the recording path has been done**; no UI test of it exists.
 
 ## Device test plan (nothing here has been done)
 Run on an iPhone with Doddy installed from this branch, a free-team build is enough for items 1 to 9. Read the Console for `capture`.

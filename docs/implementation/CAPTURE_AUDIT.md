@@ -3,7 +3,7 @@
 **Written before the build, as the first deliverable. What was then built, and what it still lacks, is in `CAPTURE_STATUS.md`.**
 
 Scope: iPhone first. The web app is not in this slice (see "Not built"). Apple Watch and Mac stay paused (ADR-572).
-Method: read `STATUS.md`, `docs/platforms/iphone.md`, `CLAUDE.md` rules, the capability guard, the Voice, VoiceMemos, widget and persistence code. **No Xcode and no SDK headers on this machine**, so every Apple API statement below is marked with where it comes from. Nothing native was compiled or run.
+Method: read `STATUS.md`, `docs/platforms/iphone.md`, `CLAUDE.md` rules, the capability guard, the Voice, VoiceMemos, widget and persistence code. **No Xcode and no SDK headers on this machine**, so every Apple API statement below is marked with where it comes from. Nothing native was compiled or run when this was written (the hosted Mac build has since compiled it and passed; see `CAPTURE_STATUS.md`).
 
 ## 1. What exists and what Capture reuses
 
@@ -77,7 +77,7 @@ Choices and why:
 - **`AVAudioRecorder` over `AVAudioEngine`.** One extra moving part (an engine restart on every route change) buys gap-free rotation and a live tap Capture does not need. The cost of the recorder is a gap of milliseconds at each 10-minute rotation, recorded in the gap ledger. Next recorder is prepared before the old one stops.
 - **Durable row first.** The recording row is written before audio starts, so a kill leaves something to recover from. Nothing is inferred from files alone.
 - **One shared state machine** so a repeated Action Button press cannot start a second session, and the Live Activity, the indicator and the library read the same state.
-- **Logic in `DoddyCore`.** Anything that is a rule (state transitions, interruption policy, recovery, chunking, grounding) is plain Swift, tested on Linux. The app layer is thin and is the part that is **not compiled** here.
+- **Logic in `DoddyCore`.** Anything that is a rule (state transitions, interruption policy, recovery, chunking, grounding) is plain Swift, tested on Linux. The app layer is thin and is the part that cannot be compiled here (the hosted Mac build compiles it).
 
 ## 5. The rundown and "Ask Doddy": what is real and what is not
 
@@ -90,7 +90,7 @@ Choices and why:
 
 ## 6. Risks
 
-1. **Nothing native is compiled or run** (no Xcode). First compile is the PR's hosted run; first real behaviour needs a device.
+1. **Nothing native could be compiled or run here** (no Xcode). The PR's hosted run did the first compile (it passed after two fixes); first real behaviour still needs a device.
 2. **Cold start from the Action Button is unproven** (section 3).
 3. **Kill recovery of audio files is unproven** (section 2). Segmenting bounds the loss; it does not remove it.
 4. **Shared audio session:** the voice controller's `.playAndRecord`/`.videoChat` would silently break a recording. Mitigation: a guard in `VoiceSessionController.start` and in the coordinator. A voice file change can stop calls, so this is small and needs a conversation test after install.
