@@ -8,6 +8,7 @@ import { I18nProvider } from "./i18n/i18n.js";
 import "./styles/tokens.css";
 import "./styles/app.css";
 import "./styles/logbook.css";
+import "./styles/memory.css";
 
 const root = document.getElementById("root");
 if (root) {

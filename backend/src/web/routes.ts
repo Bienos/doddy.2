@@ -14,6 +14,9 @@ import {
   oldestKeptDay,
   parseDaySummary,
 } from "./logbook.js";
+import type { MemoryChat } from "../memory/chat.js";
+import { memoryRoutes } from "../memory/routes.js";
+import type { MemoryService } from "../memory/service.js";
 import type { WebAuth, WebSessionContext } from "./sessions.js";
 
 /**
@@ -25,7 +28,7 @@ import type { WebAuth, WebSessionContext } from "./sessions.js";
  * A cookie request that changes something must pass the same-origin check (`assertSameOrigin`).
  */
 
-type Access = "public" | "phone" | "either" | "browser";
+export type Access = "public" | "phone" | "either" | "browser";
 
 export interface WebCaller {
   userId: string;
@@ -33,7 +36,7 @@ export interface WebCaller {
   session: WebSessionContext | null;
 }
 
-interface Reply {
+export interface Reply {
   status: number;
   body?: unknown;
   setCookie?: string;
@@ -41,7 +44,7 @@ interface Reply {
   file?: { name: string; mime: string; bytes: Buffer };
 }
 
-interface Route {
+export interface Route {
   method: string;
   pattern: RegExp;
   template: string;
@@ -68,6 +71,8 @@ export class WebRoutes {
     private readonly store: Store,
     private readonly verifier: SessionVerifier,
     private readonly maxBodyBytes: number,
+    /** Notes and conversations kept on request, and chat over them (ADR-595). Without it those routes don't exist. */
+    memory?: { service: MemoryService; chat: MemoryChat },
   ) {
     this.routes = [
       {
@@ -198,6 +203,7 @@ export class WebRoutes {
           return { status: 200, body: { stored: true, day: day.day } };
         },
       },
+      ...(memory ? memoryRoutes(memory) : []),
     ];
   }
 
@@ -245,7 +251,8 @@ export class WebRoutes {
       return 200;
     }
     const json = JSON.stringify(reply.body);
-    res.writeHead(reply.status, { "content-type": "application/json; charset=utf-8", "content-length": Buffer.byteLength(json) });
+    // What a signed-in person reads is never cached by the browser or anything between.
+    res.writeHead(reply.status, { "content-type": "application/json; charset=utf-8", "content-length": Buffer.byteLength(json), "cache-control": "private, no-store" });
     res.end(json);
     return reply.status;
   }

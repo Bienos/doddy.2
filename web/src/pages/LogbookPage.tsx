@@ -32,7 +32,7 @@ import type { DaySummary } from "../logbook/schema.js";
 
 /**
  * Logbook (ADR-593, docs/product/WEB_LOGBOOK.md): how a person uses Doddy, counted on the iPhone.
- * Two tabs: At a glance (the week, free) and Closer look (7, 30 or 90 days, a paid plan later).
+ * Two tabs: At a glance (the week, free) and Closer look (7, 30, 90 days or a year, a paid plan later).
  *
  * The numbers are what the iPhone sent to Doddy's server, read through GET /v1/web/logbook. Four
  * honest states come before them: loading, the server can't be reached (the last numbers stay,
@@ -438,7 +438,7 @@ function CloserPanel({
 }) {
   const { t } = useI18n();
   const names = useNames(f);
-  const [range, setRange] = useState<7 | 30 | 90>(30);
+  const [range, setRange] = useState<7 | 30 | 90 | 365>(30);
   const [sort, setSort] = useState<{ key: SortKey; dir: "ascending" | "descending" }>({ key: "times", dir: "descending" });
   const shown = useMemo(() => days.slice(-range), [days, range]);
   const totals = useMemo(() => sumDays(shown), [shown]);
@@ -549,9 +549,9 @@ function CloserPanel({
     <>
       <div className="lb-filters" role="group" aria-label={t("logbook.period")}>
         <div className="lb-seg" role="group" aria-label={t("logbook.range.label")}>
-          {([7, 30, 90] as const).map((n) => (
+          {([7, 30, 90, 365] as const).map((n) => (
             <button key={n} type="button" className="lb-seg-btn" aria-pressed={range === n} onClick={() => setRange(n)}>
-              {t("logbook.range.days", { n })}
+              {n === 365 ? t("logbook.range.year") : t("logbook.range.days", { n })}
             </button>
           ))}
         </div>
@@ -858,7 +858,7 @@ function PrivacyPanel({ example, say, onChanged }: { example: boolean; say: (mes
           </div>
           <div>
             <h3 className="lb-privacy-h">{t("logbook.privacy.yours")}</h3>
-            {list(["logbook.privacy.yours1", "logbook.privacy.yours2", "logbook.privacy.yours3"], "lb-plain")}
+            {list(["logbook.privacy.yours1", "logbook.privacy.yours2", "logbook.privacy.yours3", "logbook.privacy.yours4"], "lb-plain")}
             <div className="lb-privacy-actions">
               <button type="button" className="button button-quiet button-small" onClick={() => void onDownload()} disabled={busy !== null}>
                 {t("logbook.download")}

@@ -71,7 +71,7 @@ test("Logbook starts off: the page reads an empty, switched-off view, and a day 
 
   const view = await rig.call("GET", "/v1/web/logbook", { cookie });
   assert.equal(view.status, 200, view.text);
-  assert.deepEqual(LogbookViewSchema.parse(view.body), { enabled: false, keptDays: 90, updatedAt: null, days: [] });
+  assert.deepEqual(LogbookViewSchema.parse(view.body), { enabled: false, keptDays: 365, updatedAt: null, days: [] });
 
   const refused = await put(rig, TODAY, day(TODAY));
   assert.equal(refused.status, 403, refused.text);
@@ -240,10 +240,10 @@ test("days older than the kept window, or further ahead than tomorrow, are refus
   rig = await startWeb();
   await turnOn(rig);
   const oldest = oldestKeptDay(rig.clock.ms);
-  assert.equal(oldest, iso(-90));
-  assert.equal((await put(rig, iso(-91), day(iso(-91)))).status, 400, "91 days back");
+  assert.equal(oldest, iso(-365));
+  assert.equal((await put(rig, iso(-366), day(iso(-366)))).status, 400, "366 days back");
   assert.equal((await put(rig, iso(2), day(iso(2)))).status, 400, "the day after tomorrow");
-  assert.equal((await put(rig, oldest, day(oldest))).status, 200, "90 days back");
+  assert.equal((await put(rig, oldest, day(oldest))).status, 200, "365 days back");
   assert.equal((await put(rig, iso(1), day(iso(1)))).status, 200, "tomorrow, for a phone east of UTC");
 });
 
@@ -323,9 +323,9 @@ test("download everything: a JSON file with the state and every kept day, named 
 test("days older than the window are not shown even before the sweep runs, and the sweep deletes them", async () => {
   rig = await startWeb();
   await turnOn(rig);
-  await put(rig, iso(-90), day(iso(-90)));
+  await put(rig, iso(-365), day(iso(-365)));
   await put(rig, iso(0), day(iso(0)));
-  rig.clock.advance(DAY); // the oldest day is now 91 days back
+  rig.clock.advance(DAY); // the oldest day is now 366 days back
   const view = LogbookViewSchema.parse((await rig.call("GET", "/v1/web/logbook", { token: USER_A })).body);
   assert.deepEqual(view.days.map((d) => d.day), [iso(0)]);
   assert.equal((await rig.store.logbookDays(ID_A, SINCE_ALWAYS)).length, 2, "still stored");

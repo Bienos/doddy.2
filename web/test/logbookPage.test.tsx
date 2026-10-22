@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
@@ -45,7 +45,7 @@ describe("Logbook, At a glance", () => {
     expect(within(nav).getByRole("link", { name: "Logbook Example" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("tab", { name: /At a glance/ })).toHaveAttribute("aria-selected", "true");
     // The session check, the health check and the Logbook read: no writes.
-    expect(seen.map((s) => `${s.method} ${s.path}`).sort()).toEqual(["GET /v1/health", "GET /v1/web/logbook", "GET /v1/web/session"]);
+    await waitFor(() => expect(seen.map((s) => `${s.method} ${s.path}`).sort()).toEqual(["GET /v1/health", "GET /v1/web/logbook", "GET /v1/web/session"]));
   });
 
   test("the week is printed as a receipt, from the example's numbers", async () => {
@@ -131,6 +131,11 @@ describe("Logbook, Closer look", () => {
     await userEvent.click(screen.getByRole("button", { name: "90 days" }));
     expect(screen.getByRole("group", { name: "Conversations each week" })).toBeInTheDocument();
     expect(Number(conversations())).toBeGreaterThan(Number(thirty));
+    // A year is as far as Logbook keeps; the example only has 13 weeks, so it shows all of them.
+    const ninety = conversations();
+    await userEvent.click(screen.getByRole("button", { name: "1 year" }));
+    expect(screen.getByRole("button", { name: "1 year" })).toHaveAttribute("aria-pressed", "true");
+    expect(Number(conversations())).toBeGreaterThanOrEqual(Number(ninety));
   });
 
   test("the tool table sorts by any column, and a tool that never asks has no 'no'", async () => {
@@ -203,7 +208,7 @@ describe("Logbook, controls and words", () => {
   test("the privacy panel says what is never on the page", async () => {
     renderLogbook();
     const panel = (await screen.findByRole("heading", { level: 2, name: "What Logbook will know" })).closest("section") as HTMLElement;
-    expect(within(panel).getByText("Your notes, lists or tags")).toBeInTheDocument();
+    expect(within(panel).getByText("The text of your notes, lists or tags")).toBeInTheDocument();
     expect(within(panel).getByText("Private notes, not even a count")).toBeInTheDocument();
     expect(within(panel).getByText("Off until you turn it on in the app")).toBeInTheDocument();
   });

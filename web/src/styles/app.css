@@ -801,7 +801,28 @@ a {
   }
 }
 
-@media (max-width: 54rem) {
+/*
+ * The header has eight links in Polish. Below this width they and Sign out move into a sheet under
+ * the header; above it they fit in one row, with the Example and Soon markers as small dots (their
+ * words stay in the accessible name and the tooltip, and show in full inside the sheet).
+ */
+@media (min-width: 78.0625rem) {
+  .nav-links { gap: var(--space-4); }
+  .nav-link { font-size: 0.875rem; }
+  .nav-link .pill {
+    font-size: 0;
+    width: 8px;
+    height: 8px;
+    min-width: 0;
+    padding: 0;
+    margin-left: 6px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--orange-cue);
+  }
+}
+
+@media (max-width: 78rem) {
   .nav-inner {
     gap: var(--space-3);
   }
@@ -853,7 +874,9 @@ a {
   .nav-actions {
     justify-content: flex-start;
   }
+}
 
+@media (max-width: 54rem) {
   .content {
     padding: var(--space-5) 16px 56px;
   }

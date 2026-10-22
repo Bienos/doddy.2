@@ -57,7 +57,7 @@ Words used here: **IMPLEMENTED** = code and tests exist and pass; **PARTIAL** = 
 | Shared identity | PARTIAL: four separate identities (below) | — |
 | Supabase sign-in (Apple/Google) | PARTIAL: verifier built on the server; the app side was never built. **Deferred by the owner on 22 Oct** ("leave google sign in for now"), so the web keeps its code from the phone (ADR-585) | `backend/src/auth.ts`, ADR-526 |
 | Projects | MISSING | — |
-| Conversation sync, memory sync | MISSING. Only an opt-in, whole-snapshot memory copy that phone calls read | `server/messaging` `PUT /v1/memory-copy/snapshot` |
+| Conversation sync, memory sync | **PARTIAL (22 Oct evening, ADR-595):** `backend/` keeps notes and conversations as text for a year, opt-in, encrypted with a server-held key, with web pages and a chat over them; **the iPhone doesn't send them yet** (not built). The older opt-in copy that phone calls read is unchanged | `backend/src/memory/`, `docs/product/CLOUD_MEMORY.md`; `server/messaging` `PUT /v1/memory-copy/snapshot` |
 | Usage metering | PARTIAL: per-user and per-service daily counters for tools and Claude. Errand tokens counted, not priced | `backend/src/store.ts` `usage`; `server/messaging` errands |
 | Billing and entitlements | MISSING (#89's Apple Pay/BLIK purchase is an unmerged draft) | `STATUS.md` "Not merged yet" |
 | Versioned migrations | PARTIAL: messaging has numbered SQL migrations; backend has an idempotent `CREATE … IF NOT EXISTS` schema | `server/messaging/migrations/`, `backend/src/store.ts` `SCHEMA_SQL` |
@@ -182,6 +182,8 @@ Later modules go under `backend/src/<module>/`. A separate package for shared Ty
 | 6 Projects | Projects and links, scoped retrieval | `backend/src/projects/` | scope, retrieval | Project context in answers | S–M | — |
 | 7 Integrations | Connect from the web (web return URL), unified approvals, daily summary | `backend/src/tools/`, `web/` | approval parity phone/web | One approval system | M | Composio web return URL |
 | 8 Commercial hardening | Security review, priced metering, entitlements, monitoring, runbooks | all | load, accessibility audit | — | M | Prices and plans |
+
+**Answered 22 Oct evening (ADR-595):** decisions 1 to 5 below. Memory leaves the phone only as an opt-in copy (1); the key is server-held, so the server can search it (2); it lives in `backend/`'s Postgres (3); web chat is text-only Claude through `backend/`, `DODDY_CHAT_MODEL` default `claude-haiku-5-5` (4); conversations are kept 1 year and voice transcripts sync only if the person turns conversations on (5). Built: the server and the web pages. Not built: the iPhone's switches and uploads, tombstones on the phone (the server mirrors a full note list instead), account linking, iMessage. See `docs/product/CLOUD_MEMORY.md`.
 
 **Owner decisions** (none is needed to merge this branch):
 1. **Memory off the phone:** keep "your notes stay on this iPhone", or offer opt-in sync? This decides Phases 2 and 3.

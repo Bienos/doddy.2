@@ -74,6 +74,49 @@ write("logbook-view", (await rig.call("GET", "/v1/web/logbook", { cookie })).bod
 write("logbook-export", JSON.parse((await rig.call("GET", "/v1/web/logbook/export", { cookie })).text));
 write("logbook-deleted", (await rig.call("DELETE", "/v1/web/logbook", { cookie, browser: true })).body);
 
+// Kept notes and conversations, and chat over them (ADR-595): content, text only, fixed clock.
+const keptNote = (n: number, text: string, kind?: string) => ({
+  id: `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`,
+  text,
+  source: "explicit_voice",
+  ...(kind ? { kind } : {}),
+  capturedAt: new Date(Date.parse("2026-10-22T10:00:00Z") - n * 86_400_000).toISOString(),
+});
+write("memory-off", (await rig.call("GET", "/v1/web/memory", { cookie })).body);
+write("error-memory-off", (await rig.call("PUT", "/v1/web/memory/notes", { token: USER_A, body: { items: [keptNote(1, "Anna's birthday is 14 March")] } })).body);
+write("memory-state-on", (await rig.call("PUT", "/v1/web/memory/state", { token: USER_A, body: { notes: true, conversations: true } })).body);
+write("memory-empty", (await rig.call("GET", "/v1/web/memory", { cookie })).body);
+write("memory-notes-stored", (await rig.call("PUT", "/v1/web/memory/notes", { token: USER_A, body: { items: [keptNote(1, "Anna's birthday is 14 March", "fact"), keptNote(2, "Dentist on Friday at 9", "commitment"), keptNote(3, "Zaproszenie od Łukasza na sobotę")] } })).body);
+const talk = "00000000-0000-4000-8000-0000000000c1";
+write(
+  "memory-conversation-stored",
+  (await rig.call("PUT", `/v1/web/memory/conversations/${talk}`, {
+    token: USER_A,
+    body: {
+      startedAt: "2026-10-20T08:00:00.000Z",
+      endedAt: "2026-10-20T08:03:00.000Z",
+      language: "pl",
+      endedBy: "you",
+      turns: [
+        { role: "user", text: "Kiedy są urodziny Anny?" },
+        { role: "doddy", text: "Urodziny Anny są 14 marca." },
+        { role: "user", text: "Dzięki, dodaj prezent do listy." },
+      ],
+    },
+  })).body,
+);
+write("memory-overview", (await rig.call("GET", "/v1/web/memory", { cookie })).body);
+write("memory-notes", (await rig.call("GET", "/v1/web/memory/notes", { cookie })).body);
+write("memory-notes-search", (await rig.call("POST", "/v1/web/memory/notes/search", { cookie, browser: true, body: { q: "Anna" } })).body);
+write("memory-conversations", (await rig.call("GET", "/v1/web/memory/conversations", { cookie })).body);
+write("memory-conversation", (await rig.call("GET", `/v1/web/memory/conversations/${talk}`, { cookie })).body);
+write("memory-export", JSON.parse((await rig.call("GET", "/v1/web/memory/export", { cookie })).text));
+write("chat-reply", (await rig.call("POST", "/v1/web/chat", { cookie, browser: true, body: { message: "When is Anna's birthday?", locale: "en" } })).body);
+write("error-chat-invalid", (await rig.call("POST", "/v1/web/chat", { cookie, browser: true, body: { message: "  " } })).body);
+write("memory-conversation-deleted", (await rig.call("DELETE", `/v1/web/memory/conversations/${talk}`, { cookie, browser: true })).body);
+write("memory-deleted", (await rig.call("DELETE", "/v1/web/memory", { cookie, browser: true })).body);
+write("error-chat-off", (await rig.call("POST", "/v1/web/chat", { cookie, browser: true, body: { message: "When is Anna's birthday?" } })).body);
+
 write("documents-empty", (await rig.call("GET", "/v1/web/documents", { cookie })).body);
 await make("deck", "Laptops for university");
 rig.clock.advance(60_000);

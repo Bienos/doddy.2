@@ -1,6 +1,6 @@
 {
   "enabled": false,
-  "keptDays": 90,
+  "keptDays": 365,
   "updatedAt": null,
   "days": []
 }

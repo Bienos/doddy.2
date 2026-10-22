@@ -21,7 +21,7 @@ describe("the API client", () => {
   });
 
   test("an unknown error code or a non-JSON error is a generic server error", async () => {
-    fakeServer({ "GET /v1/tools": { status: 503, body: { error: { code: "live_not_configured", message: "Not set up." } } }, "GET /v1/tools/receipts": { status: 500, raw: "<html>" } });
+    fakeServer({ "GET /v1/tools": { status: 503, body: { error: { code: "something_new", message: "A code this page has never heard of." } } }, "GET /v1/tools/receipts": { status: 500, raw: "<html>" } });
     expect(await api.catalog().catch((e: ApiError) => e.code)).toBe("server");
     expect(await api.receipts().catch((e: ApiError) => e.code)).toBe("server");
   });

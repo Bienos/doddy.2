@@ -1,0 +1,7 @@
+{
+  "error": {
+    "code": "capability_disabled",
+    "message": "Doddy's server isn't keeping your notes or conversations. Turn that on in the Doddy app first.",
+    "correlationId": "9060893f-a8ee-4a74-a0b0-55ad45453729"
+  }
+}

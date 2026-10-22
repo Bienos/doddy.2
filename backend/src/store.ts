@@ -194,6 +194,35 @@ export const SCHEMA_SQL = `
     received_at BIGINT NOT NULL,
     PRIMARY KEY (user_id, day)
   );
+  CREATE TABLE IF NOT EXISTS memory_state (
+    user_id TEXT PRIMARY KEY,
+    notes BOOLEAN NOT NULL,
+    conversations BOOLEAN NOT NULL,
+    changed_at BIGINT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS memory_notes (
+    user_id TEXT NOT NULL,
+    note_id TEXT NOT NULL CHECK (note_id ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'),
+    key_version SMALLINT NOT NULL,
+    ciphertext BYTEA NOT NULL,
+    captured_at BIGINT,
+    received_at BIGINT NOT NULL,
+    PRIMARY KEY (user_id, note_id)
+  );
+  CREATE TABLE IF NOT EXISTS memory_conversations (
+    user_id TEXT NOT NULL,
+    conversation_id TEXT NOT NULL CHECK (conversation_id ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'),
+    started_at BIGINT NOT NULL,
+    ended_at BIGINT NOT NULL,
+    turn_count INTEGER NOT NULL,
+    key_version SMALLINT NOT NULL,
+    ciphertext BYTEA NOT NULL,
+    received_at BIGINT NOT NULL,
+    PRIMARY KEY (user_id, conversation_id)
+  );
+  CREATE INDEX IF NOT EXISTS memory_conversations_started ON memory_conversations(user_id, started_at);
+  CREATE INDEX IF NOT EXISTS memory_conversations_age ON memory_conversations(started_at);
+  CREATE INDEX IF NOT EXISTS memory_notes_age ON memory_notes(received_at);
 `;
 
 /** A browser signed in to Doddy Web (ADR-585). The cookie's token is stored only as a hash. */
@@ -215,6 +244,26 @@ export interface DocumentSummaryRow {
   mime: string;
   size: number | null;
   created_at: number;
+}
+
+/** A note kept on request (ADR-595): its text and provenance are one encrypted blob; the rest is what the server needs to list and sweep. */
+export interface MemoryNoteRow {
+  note_id: string;
+  key_version: number;
+  ciphertext: Buffer;
+  captured_at: number | null;
+  received_at: number;
+}
+
+/** A conversation kept on request (ADR-595). `ciphertext` holds the language, how it ended and every turn. */
+export interface MemoryConversationRow {
+  conversation_id: string;
+  started_at: number;
+  ended_at: number;
+  turn_count: number;
+  key_version: number;
+  ciphertext: Buffer;
+  received_at: number;
 }
 
 /** One stored day of Logbook (ADR-593): the day, its summary as JSON text, and when the iPhone sent it. */
@@ -737,6 +786,147 @@ export class Store {
   /** Days older than `oldest` (a "YYYY-MM-DD") go, for every user. Separate from `prune` so its counts stay as they were. */
   async pruneLogbook(oldest: string): Promise<number> {
     return (await this.db.query("DELETE FROM logbook_days WHERE day < $1", [oldest])).rowCount;
+  }
+
+  // ------------------------------------------------------------ Kept memory (ADR-595)
+
+  /** Both switches are off until the iPhone turns them on. A user with no row has both off. */
+  async memoryState(userId: string): Promise<{ notes: boolean; conversations: boolean }> {
+    const row = await this.one<{ notes: boolean; conversations: boolean }>(this.db, "SELECT notes, conversations FROM memory_state WHERE user_id = $1", [userId]);
+    return { notes: row?.notes === true, conversations: row?.conversations === true };
+  }
+
+  /** Sets both switches. A switch that is off deletes that kind of data in the same transaction. */
+  async setMemoryState(userId: string, next: { notes: boolean; conversations: boolean }, now: number): Promise<{ deletedNotes: number; deletedConversations: number }> {
+    return this.db.transaction(async (tx) => {
+      await tx.query(
+        `INSERT INTO memory_state (user_id, notes, conversations, changed_at) VALUES ($1, $2, $3, $4)
+         ON CONFLICT (user_id) DO UPDATE SET notes = EXCLUDED.notes, conversations = EXCLUDED.conversations, changed_at = EXCLUDED.changed_at`,
+        [userId, next.notes, next.conversations, now],
+      );
+      const deletedNotes = next.notes ? 0 : (await tx.query("DELETE FROM memory_notes WHERE user_id = $1", [userId])).rowCount;
+      const deletedConversations = next.conversations ? 0 : (await tx.query("DELETE FROM memory_conversations WHERE user_id = $1", [userId])).rowCount;
+      return { deletedNotes, deletedConversations };
+    });
+  }
+
+  /**
+   * Replaces every kept note with this list (a note gone from the phone is gone here too).
+   * Returns false, and changes nothing, when the user's notes switch is off.
+   */
+  async replaceMemoryNotes(userId: string, rows: MemoryNoteRow[], now: number): Promise<boolean> {
+    return this.db.transaction(async (tx) => {
+      const state = await this.one<{ notes: boolean }>(tx, "SELECT notes FROM memory_state WHERE user_id = $1", [userId]);
+      if (state?.notes !== true) return false;
+      await tx.query("DELETE FROM memory_notes WHERE user_id = $1", [userId]);
+      for (let i = 0; i < rows.length; i += 200) {
+        const chunk = rows.slice(i, i + 200);
+        const values: unknown[] = [];
+        const marks = chunk.map((row, j) => {
+          values.push(userId, row.note_id, row.key_version, row.ciphertext, row.captured_at, now);
+          const k = j * 6;
+          return `($${k + 1}, $${k + 2}, $${k + 3}, $${k + 4}, $${k + 5}, $${k + 6})`;
+        });
+        await tx.query(`INSERT INTO memory_notes (user_id, note_id, key_version, ciphertext, captured_at, received_at) VALUES ${marks.join(", ")}`, values);
+      }
+      return true;
+    });
+  }
+
+  /** Every kept note of one user, newest first. The user filter is in the query. */
+  async memoryNoteRows(userId: string): Promise<MemoryNoteRow[]> {
+    const rows = (
+      await this.db.query<MemoryNoteRow>(
+        "SELECT note_id, key_version, ciphertext, captured_at, received_at FROM memory_notes WHERE user_id = $1 ORDER BY captured_at DESC NULLS LAST, note_id",
+        [userId],
+      )
+    ).rows;
+    return rows.map((r) => ({ ...r, ciphertext: Buffer.from(r.ciphertext as unknown as Uint8Array) }));
+  }
+
+  /**
+   * Keeps one conversation, replacing the one with that id. "off" (nothing stored) when the
+   * conversations switch is off; "full" (nothing stored) when keeping it would pass `limits`.
+   */
+  async putMemoryConversation(
+    userId: string,
+    row: MemoryConversationRow,
+    limits: { conversations: number; bytes: number } = { conversations: Number.MAX_SAFE_INTEGER, bytes: Number.MAX_SAFE_INTEGER },
+  ): Promise<"ok" | "off" | "full"> {
+    return this.db.transaction(async (tx) => {
+      const state = await this.one<{ conversations: boolean }>(tx, "SELECT conversations FROM memory_state WHERE user_id = $1", [userId]);
+      if (state?.conversations !== true) return "off";
+      const others = await this.one<{ n: string; bytes: string }>(
+        tx,
+        "SELECT count(*) AS n, coalesce(sum(length(ciphertext)), 0) AS bytes FROM memory_conversations WHERE user_id = $1 AND conversation_id <> $2",
+        [userId, row.conversation_id],
+      );
+      if (Number(others?.n ?? 0) + 1 > limits.conversations || Number(others?.bytes ?? 0) + row.ciphertext.length > limits.bytes) return "full";
+      await tx.query(
+        `INSERT INTO memory_conversations (user_id, conversation_id, started_at, ended_at, turn_count, key_version, ciphertext, received_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         ON CONFLICT (user_id, conversation_id) DO UPDATE SET started_at = EXCLUDED.started_at, ended_at = EXCLUDED.ended_at,
+           turn_count = EXCLUDED.turn_count, key_version = EXCLUDED.key_version, ciphertext = EXCLUDED.ciphertext, received_at = EXCLUDED.received_at`,
+        [userId, row.conversation_id, row.started_at, row.ended_at, row.turn_count, row.key_version, row.ciphertext, row.received_at],
+      );
+      return "ok";
+    });
+  }
+
+  /** One user's conversations that started at or after `since`, newest first. Pass `limit` and `offset` to page. */
+  async memoryConversationRows(userId: string, since: number, limit: number, offset = 0): Promise<MemoryConversationRow[]> {
+    const rows = (
+      await this.db.query<MemoryConversationRow>(
+        `SELECT conversation_id, started_at, ended_at, turn_count, key_version, ciphertext, received_at FROM memory_conversations
+         WHERE user_id = $1 AND started_at >= $2 ORDER BY started_at DESC, conversation_id LIMIT $3 OFFSET $4`,
+        [userId, since, limit, offset],
+      )
+    ).rows;
+    return rows.map((r) => ({ ...r, ciphertext: Buffer.from(r.ciphertext as unknown as Uint8Array) }));
+  }
+
+  async memoryConversationRow(userId: string, id: string): Promise<MemoryConversationRow | null> {
+    const row = await this.one<MemoryConversationRow>(
+      this.db,
+      "SELECT conversation_id, started_at, ended_at, turn_count, key_version, ciphertext, received_at FROM memory_conversations WHERE user_id = $1 AND conversation_id = $2",
+      [userId, id],
+    );
+    return row ? { ...row, ciphertext: Buffer.from(row.ciphertext as unknown as Uint8Array) } : null;
+  }
+
+  async deleteMemoryConversation(userId: string, id: string): Promise<number> {
+    return (await this.db.query("DELETE FROM memory_conversations WHERE user_id = $1 AND conversation_id = $2", [userId, id])).rowCount;
+  }
+
+  /** What is kept for one user: how many notes and conversations (inside the window), and when the iPhone last sent either. */
+  async memoryCounts(userId: string, since: number): Promise<{ notes: number; conversations: number; lastReceivedAt: number | null }> {
+    const notes = await this.one<{ n: string; last: string | null }>(this.db, "SELECT count(*) AS n, max(received_at) AS last FROM memory_notes WHERE user_id = $1", [userId]);
+    const conversations = await this.one<{ n: string; last: string | null }>(
+      this.db,
+      "SELECT count(*) AS n, max(received_at) AS last FROM memory_conversations WHERE user_id = $1 AND started_at >= $2",
+      [userId, since],
+    );
+    const last = Math.max(Number(notes?.last ?? 0), Number(conversations?.last ?? 0));
+    return { notes: Number(notes?.n ?? 0), conversations: Number(conversations?.n ?? 0), lastReceivedAt: last > 0 ? last : null };
+  }
+
+  /** Deletes everything kept for one user and switches both off, so the iPhone's next send is refused and it stops. */
+  async deleteAllMemory(userId: string, now: number): Promise<{ deletedNotes: number; deletedConversations: number }> {
+    return this.setMemoryState(userId, { notes: false, conversations: false }, now);
+  }
+
+  /** Conversations that started before `oldest` (epoch ms) go, for every user. */
+  async pruneMemoryConversations(oldest: number): Promise<number> {
+    return (await this.db.query("DELETE FROM memory_conversations WHERE started_at < $1", [oldest])).rowCount;
+  }
+
+  /**
+   * Notes the iPhone last sent before `oldest` (epoch ms) go, for every user. Every note list the
+   * iPhone sends rewrites that time for all of its notes, so only an iPhone that stopped sending
+   * (an abandoned account) loses notes here.
+   */
+  async pruneMemoryNotes(oldest: number): Promise<number> {
+    return (await this.db.query("DELETE FROM memory_notes WHERE received_at < $1", [oldest])).rowCount;
   }
 
   // ------------------------------------------------------------ Doddy Web (ADR-585)

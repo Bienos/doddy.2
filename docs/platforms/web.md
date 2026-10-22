@@ -9,9 +9,11 @@ A signed-in workspace in the browser for the same account the iPhone uses on Dod
 - **Activity:** the server's receipts.
 - **Signed-in browsers**, each with Sign out.
 - A **language** switch: Polish by default, or English.
-- **Logbook** (ADR-593, `docs/product/WEB_LOGBOOK.md`): how a person uses Doddy, in two tabs, At a glance (the week as a receipt) and Closer look (7, 30 or 90 days). The server keeps and serves the days the iPhone sends (`backend/src/web/logbook.ts`, `/v1/web/logbook*`, off until the iPhone turns it on), but **the iPhone can't send any yet** (not built), so the page opens on "Logbook is off" and shows made-up example numbers only when asked, marked Example; the menu keeps its Example marker until `IPHONE_SENDS_LOGBOOK` is flipped. `LOGBOOK_ENABLED` in `web/src/logbook/config.ts` hides the page.
+- **Logbook** (ADR-593, `docs/product/WEB_LOGBOOK.md`): how a person uses Doddy, in two tabs, At a glance (the week as a receipt) and Closer look (7, 30, 90 days or a year; kept 1 year). The server keeps and serves the days the iPhone sends (`backend/src/web/logbook.ts`, `/v1/web/logbook*`, off until the iPhone turns it on), but **the iPhone can't send any yet** (not built), so the page opens on "Logbook is off" and shows made-up example numbers only when asked, marked Example; the menu keeps its Example marker until `IPHONE_SENDS_LOGBOOK` is flipped. `LOGBOOK_ENABLED` in `web/src/logbook/config.ts` hides the page.
 
-It does not have chat, memory, tasks or projects. Home says so instead of showing empty versions of them.
+- **Memory** and **Ask Doddy** (ADR-595, `docs/product/CLOUD_MEMORY.md`): the notes and conversations a person chose to keep on Doddy's server, as text, kept for a year, encrypted with a server-held key; read, searched, downloaded and deleted from the browser, and a chat where Claude (`DODDY_CHAT_MODEL`, default `claude-haiku-5-5`) answers from them and cites its sources. **The iPhone can't send anything yet** (not built), so the pages open on "nothing is kept" and are marked Soon in the menu (`IPHONE_SYNCS_MEMORY` in `web/src/memory/config.ts`). The server needs `DODDY_MEMORY_KEY`, or it says "not set up".
+
+It does not have tasks or projects. Home says so instead of showing empty versions of them.
 
 ## Design (ADR-594)
 Doddy Web follows the website's design (owner, 22 Oct): the cream canvas, a sticky header with the wordmark, the sections in one row and Sign out (a Menu sheet on small screens), paper cards with a soft lift, ink buttons with the orange underline, ruled notebook panels for Home and sign-in, Doddy's handwritten line. Dark mode stays (the website is light-only), using the same palette file's dark values.
@@ -35,6 +37,8 @@ The phone can list and sign out every browser. A browser can sign itself or othe
 | `Packages/DoddyCore/.../WebLinkClient.swift`, `WebSignInModel.swift` | The iPhone's client and screen state (tested on Linux) |
 | `DoddyApp/Features/Web/WebSignInView.swift` | The iPhone screen (compiled only by the hosted Mac build) |
 | `web/src/logbook/`, `web/src/pages/LogbookPage.tsx` | Logbook: the summary contract (`schema.ts`, zod), the catalog of tools and categories, seeded example days, adding days up and filling gaps, CSV, formats, and the hand-built SVG charts |
+| `web/src/memory/`, `web/src/pages/MemoryPage.tsx`, `AskPage.tsx` | Memory and Ask Doddy: the schemas of what the server answers, the flags, the two pages |
+| `backend/src/memory/` | Kept notes and conversations: the cipher, the contract, search, the service, chat and its routes |
 | `tools/gen_web_assets.py` | Copies the website's colours (`CandidateTokens.swift`, light and dark), the app's metrics, wordmark, five `WholeDoddy_*` poses and the favicon into `web/`; `--check` runs in CI |
 
 ## Run it locally

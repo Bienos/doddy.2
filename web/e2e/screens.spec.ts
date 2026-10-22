@@ -57,6 +57,46 @@ for (const scheme of ["light", "dark"] as const) {
     await page.waitForLoadState("networkidle");
     await page.screenshot({ path: `${out}/${project}-${scheme}-7-logbook-real.png`, fullPage: true });
     await request.put("/v1/web/logbook/state", { headers, data: { enabled: false } });
+    // Memory and Ask Doddy (ADR-595): off, then with notes and a conversation, then a chat answer.
+    await page.goto("/memory");
+    await expect(page.getByRole("heading", { level: 2, name: "Na serwerze Doddy’ego nic nie jest przechowywane" })).toBeVisible();
+    await page.waitForLoadState("networkidle");
+    await page.screenshot({ path: `${out}/${project}-${scheme}-7-memory-off.png`, fullPage: true });
+    await request.put("/v1/web/memory/state", { headers, data: { notes: true, conversations: true } });
+    const keptNote = (n: number, text: string) => ({ id: `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`, text, source: n % 2 ? "explicit_voice" : "explicit_text", kind: n === 1 ? "fact" : undefined, capturedAt: new Date(Date.now() - n * 86_400_000).toISOString() });
+    await request.put("/v1/web/memory/notes", {
+      headers,
+      data: { items: [keptNote(1, "Anna's birthday is 14 March"), keptNote(2, "Dentist on Friday at 9"), keptNote(3, "Zaproszenie od Łukasza na sobotę, trzeba przynieść wino"), keptNote(4, "Passport expires in June: renew it before the trip")] },
+    });
+    await request.put("/v1/web/memory/conversations/00000000-0000-4000-8000-0000000000c1", {
+      headers,
+      data: {
+        startedAt: new Date(Date.now() - 7_200_000).toISOString(),
+        endedAt: new Date(Date.now() - 7_000_000).toISOString(),
+        language: "pl",
+        endedBy: "you",
+        turns: [
+          { role: "user", text: "Kiedy są urodziny Anny?" },
+          { role: "doddy", text: "Urodziny Anny są 14 marca." },
+          { role: "user", text: "Dzięki, dodaj prezent do listy." },
+        ],
+      },
+    });
+    await page.goto("/memory");
+    await expect(page.getByText("Anna's birthday is 14 March")).toBeVisible();
+    await page.waitForLoadState("networkidle");
+    await page.screenshot({ path: `${out}/${project}-${scheme}-8-memory-notes.png`, fullPage: true });
+    await page.getByRole("tab", { name: "Rozmowy" }).click();
+    await page.getByRole("button", { name: "Czytaj" }).click();
+    await expect(page.getByText("Urodziny Anny są 14 marca.")).toBeVisible();
+    await page.screenshot({ path: `${out}/${project}-${scheme}-8-memory-conversation.png`, fullPage: true });
+    await page.goto("/ask");
+    await page.getByRole("textbox", { name: "Twoje pytanie" }).fill("Kiedy są urodziny Anny?");
+    await page.getByRole("button", { name: "Zapytaj", exact: true }).click();
+    await expect(page.getByText(/^DEMO:/)).toBeVisible();
+    await page.getByText(/Z Twoich notatek i rozmów \(/).click();
+    await page.screenshot({ path: `${out}/${project}-${scheme}-8-ask.png`, fullPage: true });
+    await request.put("/v1/web/memory/state", { headers, data: { notes: false, conversations: false } });
     // On a small screen the links are in a sheet under the header.
     if ((page.viewportSize()?.width ?? 1280) < 800) {
       await page.evaluate(() => window.scrollTo(0, 0));

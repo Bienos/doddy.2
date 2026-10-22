@@ -169,21 +169,9 @@ export class AssistService {
     try {
       result = await claude.structured({ system: ASSIST_SYSTEM, user, schema: buildSchema([...aliasToId.keys()]), maxTokens: MAX_OUTPUT_TOKENS }, AbortSignal.timeout(ASSIST_TIMEOUT_MS));
     } catch (error) {
-      const code = error instanceof ClaudeRefusal ? "refused" : error instanceof ProviderError ? error.code : "provider_unavailable";
-      this.deps.log?.({ level: "info", event: "assist", outcome: code, notes: req.memories.length, turns: req.turns.length, ms: Date.now() - started });
-      if (error instanceof ClaudeRefusal) throw new AppError("refused");
-      if (error instanceof ProviderError) {
-        const message =
-          error.code === "provider_timeout"
-            ? "That took too long. Try again."
-            : error.code === "rate_limited"
-              ? "Doddy is getting a lot of questions. Try again shortly."
-              : error.code === "malformed_provider_result"
-                ? "Doddy got an answer it couldn't read, so it was discarded."
-                : "The assistant is unavailable right now. Try again in a moment.";
-        throw new AppError(error.code, { message, ...(error.retryAfterSeconds ? { retryAfterSeconds: error.retryAfterSeconds } : {}) });
-      }
-      throw new AppError("provider_unavailable", { message: "The assistant is unavailable right now. Try again in a moment." });
+      const failure = claudeFailure(error);
+      this.deps.log?.({ level: "info", event: "assist", outcome: failure.outcome, notes: req.memories.length, turns: req.turns.length, ms: Date.now() - started });
+      throw failure.error;
     }
 
     const parsed = readAnswer(result.value, aliasToId);
@@ -207,15 +195,40 @@ export class AssistService {
   }
 }
 
+/**
+ * What a failed Claude call becomes for the client: a safe code and message, never the provider's
+ * own text. `outcome` is the content-free word for the log. Shared with the memory chat (ADR-595).
+ */
+export function claudeFailure(error: unknown): { error: AppError; outcome: string } {
+  if (error instanceof ClaudeRefusal) return { error: new AppError("refused"), outcome: "refused" };
+  if (error instanceof ProviderError) {
+    const message =
+      error.code === "provider_timeout"
+        ? "That took too long. Try again."
+        : error.code === "rate_limited"
+          ? "Doddy is getting a lot of questions. Try again shortly."
+          : error.code === "malformed_provider_result"
+            ? "Doddy got an answer it couldn't read, so it was discarded."
+            : "The assistant is unavailable right now. Try again in a moment.";
+    return { error: new AppError(error.code, { message, ...(error.retryAfterSeconds ? { retryAfterSeconds: error.retryAfterSeconds } : {}) }), outcome: error.code };
+  }
+  return { error: new AppError("provider_unavailable", { message: "The assistant is unavailable right now. Try again in a moment." }), outcome: "provider_unavailable" };
+}
+
 /** The answer and its cited note IDs, or null when it isn't the shape asked for. */
-function readAnswer(value: unknown, aliasToId: Map<string, string>): { text: string; cited: string[] } | null {
+export function readAnswer(value: unknown, aliasToId: Map<string, string>, o: { repeats?: "refuse" | "merge" } = {}): { text: string; cited: string[] } | null {
   if (!isObject(value) || typeof value.answer !== "string" || /^\s*$/.test(value.answer)) return null;
   const sources = value.sources ?? [];
   if (!Array.isArray(sources)) return null;
   const cited: string[] = [];
   for (const alias of sources) {
     const id = typeof alias === "string" ? aliasToId.get(alias) : undefined;
-    if (!id || cited.includes(id)) return null;
+    if (!id) return null;
+    if (cited.includes(id)) {
+      // Ask Doddy refuses an answer that cites one note twice; chat keeps it once.
+      if (o.repeats === "merge") continue;
+      return null;
+    }
     cited.push(id);
   }
   return { text: value.answer.trim(), cited };

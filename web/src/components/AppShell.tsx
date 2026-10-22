@@ -3,19 +3,27 @@ import { NavLink, useLocation } from "react-router";
 import { useSession } from "../auth/session.js";
 import { useI18n } from "../i18n/i18n.js";
 import { IPHONE_SENDS_LOGBOOK, LOGBOOK_ENABLED } from "../logbook/config.js";
+import { IPHONE_SYNCS_MEMORY, MEMORY_ENABLED } from "../memory/config.js";
 import type { MessageKey } from "../i18n/messages.js";
 import { Wordmark } from "./Brand.js";
 
 /**
  * Only sections that work today are in the menu (ADR-585). Chat, memory and tasks come later.
- * Logbook is there too (ADR-593). Until the iPhone can send it, it is marked Example in the menu.
+ * Logbook is there too (ADR-593), marked Example until the iPhone can send it; Memory and Ask Doddy (ADR-595)
+ * are marked Soon until the iPhone can send notes and conversations.
  */
-export const SECTIONS: { path: string; label: MessageKey; example?: boolean }[] = [
+export const SECTIONS: { path: string; label: MessageKey; example?: boolean; soon?: boolean }[] = [
   { path: "/", label: "nav.home" },
   { path: "/documents", label: "nav.documents" },
   { path: "/apps", label: "nav.apps" },
   { path: "/activity", label: "nav.activity" },
   ...(LOGBOOK_ENABLED ? [{ path: "/logbook", label: "nav.logbook" as MessageKey, example: !IPHONE_SENDS_LOGBOOK }] : []),
+  ...(MEMORY_ENABLED
+    ? [
+        { path: "/memory", label: "nav.memory" as MessageKey, soon: !IPHONE_SYNCS_MEMORY },
+        { path: "/ask", label: "nav.ask" as MessageKey, soon: !IPHONE_SYNCS_MEMORY },
+      ]
+    : []),
   { path: "/settings", label: "nav.settings" },
 ];
 
@@ -92,10 +100,12 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <li key={section.path}>
                   <NavLink to={section.path} end={section.path === "/"} className={({ isActive }) => `nav-link ${isActive ? "is-active" : ""}`}>
                     {t(section.label)}
-                    {section.example ? (
+                    {section.example || section.soon ? (
                       <>
                         {" "}
-                        <span className="pill">{t("common.example")}</span>
+                        <span className="pill" title={t(section.example ? "common.example" : "common.soon")}>
+                          {t(section.example ? "common.example" : "common.soon")}
+                        </span>
                       </>
                     ) : null}
                   </NavLink>

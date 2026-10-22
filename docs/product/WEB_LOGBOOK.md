@@ -13,9 +13,9 @@ Then, after a first version on the marketing site (doddy.lol): "not this web app
 **Logbook** is a signed-in page in Doddy Web (`/logbook`, "Dziennik" in Polish, in the menu marked Example until the iPhone can send it). It has two tabs:
 
 - **At a glance** (free, always): one week at a time, printed as a till receipt, plus what you used Doddy for, when you talked, the notes you saved and each day.
-- **Closer look** (free while Doddy is in testing, part of a paid plan later): 7, 30 or 90 days of detail: every tool counted, when you talk by weekday and hour, how long conversations last and how they end, every yes and no, notes, lists, handed-over tasks, languages and the ways you open Doddy, with tables and a CSV download.
+- **Closer look** (free while Doddy is in testing, part of a paid plan later): 7, 30, 90 days or a year of detail: every tool counted, when you talk by weekday and hour, how long conversations last and how they end, every yes and no, notes, lists, handed-over tasks, languages and the ways you open Doddy, with tables and a CSV download.
 
-The numbers are **counts only**. Each iPhone adds up its own day, sends the totals once the person has turned Logbook on in the app, and the page reads them back. No note, word, name, place, email, event or audio ever leaves the phone for this page.
+The numbers are **counts only**. (What the owner then asked for on top of this, the words themselves kept for a year and a chat with them, is a separate, opt-in page: `docs/product/CLOUD_MEMORY.md`, ADR-595. Logbook stays counts.) Each iPhone adds up its own day, sends the totals once the person has turned Logbook on in the app, and the page reads them back. No note, word, name, place, email, event or audio ever leaves the phone for this page.
 
 ## The rules it keeps
 
@@ -46,9 +46,9 @@ The mockup has every element below; the review strip's "Where each number comes 
 
 ### Closer look
 
-- **Period:** 7, 30 or 90 days. **Show as tables** switches every chart to its table. **Download CSV.**
+- **Period:** 7, 30, 90 days or 1 year. **Show as tables** switches every chart to its table. **Download CSV.**
 - **Totals:** conversations, time talking, average conversation, notes saved, things Doddy did. No arrows, no comparison with the period before.
-- **Conversations** each day (each week at 90 days).
+- **Conversations** each day (each week from 90 days up).
 - **By weekday and hour:** a heatmap on graph paper.
 - **How long they last** (under 1, 1 to 3, 3 to 5, 5 to 10 minutes; a conversation stops at 10) and **how they ended** (you ended it, Doddy wrapped up, went quiet, connection dropped).
 - **Every tool, counted:** tool, app, times, done, you said no, couldn't confirm, didn't work, undone. Sortable.
@@ -99,7 +99,7 @@ What the iPhone sends for one local day. Integers only; tool names from the fixe
 ```
 
 - **When it's sent (planned, not built):** the first time the app opens after midnight (for yesterday) and when it goes to the background (today so far, at most once an hour). The same day sent again replaces the earlier copy, so a retry never counts twice.
-- **Server checks (built, `backend/src/web/logbook.ts`, tested):** at most 16 KiB (a day with all 94 tools in use is about 7 KB); `schema` is `doddy.logbook.day.v1`; `day` is a real calendar day, the one in the address, inside the kept 90 days and no later than tomorrow (a phone east of UTC is already on the next date); every object strict; tool ids only from the voice agent's 94 (a test compares the list with `voice-agent/tools.json`); note types only the nine; languages only short codes, at most 12; every value a whole number from 0 to 10,000 (seconds up to 86,400); `by_hour` exactly 24 numbers; and the sums must agree (hours, lengths and endings add up to the conversations; languages and ways in don't exceed them; errands finished plus stopped don't exceed handed over). Anything else: 400, naming only the section and never a value, and nothing stored. Off for that person: 403 and nothing stored.
+- **Server checks (built, `backend/src/web/logbook.ts`, tested):** at most 16 KiB (a day with all 94 tools in use is about 7 KB); `schema` is `doddy.logbook.day.v1`; `day` is a real calendar day, the one in the address, inside the kept year and no later than tomorrow (a phone east of UTC is already on the next date); every object strict; tool ids only from the voice agent's 94 (a test compares the list with `voice-agent/tools.json`); note types only the nine; languages only short codes, at most 12; every value a whole number from 0 to 10,000 (seconds up to 86,400); `by_hour` exactly 24 numbers; and the sums must agree (hours, lengths and endings add up to the conversations; languages and ways in don't exceed them; errands finished plus stopped don't exceed handed over). Anything else: 400, naming only the section and never a value, and nothing stored. Off for that person: 403 and nothing stored.
 - **Example data:** `web/src/logbook/exampleData.ts` generates 91 days in exactly this shape (seeded, so the same every time; a test pins the example week of 12 to 18 October).
 
 ## How it gets to the web
@@ -157,7 +157,7 @@ Limits to keep in mind: the device sign-in is "first device owns the server" whi
 
 ## Privacy
 
-- **Stored:** one row of counts per day, for 90 days (recommended; decision 3), in the backend's Postgres. Confirm the Supabase project's region before launch, and only then let the page say where it is kept.
+- **Stored:** one row of counts per day, for 1 year (owner, 22 Oct evening; decision 3), in the backend's Postgres. Confirm the Supabase project's region before launch, and only then let the page say where it is kept.
 - **Personal even without words:** the hour-by-hour pattern shows when someone is awake and busy. Only that person can see it, and the page says what it holds.
 - **Before launch:** `docs/legal/PRIVACY_POLICY_DRAFT.md` currently says the app has no analytics; it must describe Logbook (what, where, how long, how to delete) and get the legal review `doddy_rules.yaml` requires (`legal_review_required_before_launch`).
 - **Not part of this:** any owner dashboard across all users. That would be a separate, aggregated and anonymous design with its own decision.
@@ -168,7 +168,7 @@ Each step is its own pull request, in this order.
 
 1. **Design.** *Done:* this plan and the clickable mockup `design/web-logbook-v0.1/`.
 2. **The page in Doddy Web.** *Done 22 Oct:* Doddy Web in the website's design (ADR-594) and Logbook with example numbers: both tabs, the receipt, every chart with a table twin and a tooltip on keyboard focus, Polish and English, light and dark; 56 unit tests and a Chromium end-to-end test under the backend's real security headers.
-3. **Server** (`backend/`). *Done 22 Oct:* `logbook_state` and `logbook_days`, the upload route (device bearer) with the allow-list checks, the state, read, delete and export routes, the 90-day sweep, `contracts/web/logbook-*.json` fixtures, 37 tests (see the evidence log). Deployed 22 Oct 21:39 UTC: the live address answers 401 to signed-out reads, downloads and writes, the logs show a clean start on Postgres; a signed-in Logbook page was not opened on the live site.
+3. **Server** (`backend/`). *Done 22 Oct:* `logbook_state` and `logbook_days`, the upload route (device bearer) with the allow-list checks, the state, read, delete and export routes, the 1-year sweep, `contracts/web/logbook-*.json` fixtures, 37 tests (see the evidence log). Deployed 22 Oct 21:39 UTC: the live address answers 401 to signed-out reads, downloads and writes, the logs show a clean start on Postgres; a signed-in Logbook page was not opened on the live site.
 4. **Web, real data.** *Done 22 Oct:* the page reads the server; off, empty, error, unreadable-reply and "nothing for two days" states; the example only on request, with its banner; real Download everything, Delete everything here and CSV; calendar-true weeks. The menu's Example marker stays until the iPhone half ships (`IPHONE_SENDS_LOGBOOK`); `LOGBOOK_ENABLED` stays true.
 5. **App** (DoddyCore and Settings). **NOT BUILT, and not buildable in the sessions so far (no Swift toolchain, so nothing here could be compiled or tested):** the conversation day counter, the summary builder (from What Doddy did, notes, lists, errands; private notes skipped; the language and way-in counters decided on 22 Oct), the upload to the routes above, and the Logbook switch and delete in Settings › Doddy on the web. DoddyCore tests on Linux; the app needs the hosted Mac build. Until it exists, no person has Logbook numbers.
 6. **Paid gate**, after the pricing decision.
@@ -181,7 +181,7 @@ The owner accepted every recommendation:
 
 1. **Name.** Logbook ("Dziennik"), tabs "At a glance" and "Closer look" ("W skrócie", "Z bliska").
 2. **Fonts.** Keep the system-font fallbacks. No Google Fonts in the security policy, no font files in the repository. (Matching the website's Bricolage Grotesque and Caveat exactly would need a licence review and self-hosting, or an outside request on a signed-in page.)
-3. **How long counts are kept.** 90 days (Closer look's longest period). Enforced in code: the sweep, and reads that ignore older days.
+3. **How long counts are kept.** Decided as 90 days, then **changed the same evening to 1 year** (owner: "it should be longer, for a year as well, not like 90 days"). Enforced in code (`LOGBOOK_KEPT_DAYS = 365`): the sweep, reads that ignore older days, and a "1 year" period in Closer look.
 4. **Translator.** Count sessions and minutes, never the text. (The counter is part of the iPhone half, not built.)
 5. **New counts in the app.** OK to record each conversation's language and the way Doddy was opened, counts only. (Also the iPhone half.)
 6. **Paid.** Closer look stays "free while in testing". Which plan includes it is decided at 1.0 (the beta is free, `V1_SCOPE.md` §7).

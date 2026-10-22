@@ -1,5 +1,6 @@
 import type { z } from "zod";
 import { LogbookDeleted, LogbookView } from "../logbook/schema.js";
+import { ChatReply, ConversationDeleted, ConversationDetail, ConversationList, MemoryDeleted, MemoryOverview, NotesList } from "../memory/schema.js";
 import { CurrentSession, DocumentList, ErrorBody, ReceiptList, SessionList, SignedOut, ToolsCatalog } from "./schemas.js";
 
 /**
@@ -14,6 +15,13 @@ export type ApiErrorCode =
   | "not_found"
   | "invalid_request"
   | "payload_too_large"
+  | "capability_disabled"
+  | "quota_exceeded"
+  | "live_not_configured"
+  | "refused"
+  | "provider_unavailable"
+  | "provider_timeout"
+  | "malformed_provider_result"
   | "network"
   | "unreadable"
   | "server";
@@ -31,7 +39,20 @@ export class ApiError extends Error {
   }
 }
 
-const KNOWN: ReadonlySet<string> = new Set(["unauthenticated", "rate_limited", "not_found", "invalid_request", "payload_too_large"]);
+const KNOWN: ReadonlySet<string> = new Set([
+  "unauthenticated",
+  "rate_limited",
+  "not_found",
+  "invalid_request",
+  "payload_too_large",
+  "capability_disabled",
+  "quota_exceeded",
+  "live_not_configured",
+  "refused",
+  "provider_unavailable",
+  "provider_timeout",
+  "malformed_provider_result",
+]);
 
 interface Options {
   method?: "GET" | "POST" | "DELETE";
@@ -104,6 +125,26 @@ export const api = {
     const response = await send("/v1/web/logbook/export");
     return response.blob();
   },
+  /** What Doddy's server keeps of your notes and conversations, and whether each kind is on (ADR-595). */
+  memory: (signal?: AbortSignal) => json(MemoryOverview, "/v1/web/memory", { signal }),
+  memoryNotes: (o: { limit: number; offset: number }, signal?: AbortSignal) => json(NotesList, `/v1/web/memory/notes?limit=${o.limit}&offset=${o.offset}`, { signal }),
+  /** What you search for goes in the body, never in the address. */
+  searchMemoryNotes: (o: { q: string; limit: number; offset: number }, signal?: AbortSignal) =>
+    json(NotesList, "/v1/web/memory/notes/search", { method: "POST", body: o, signal }),
+  memoryConversations: (o: { limit: number; offset: number }, signal?: AbortSignal) =>
+    json(ConversationList, `/v1/web/memory/conversations?limit=${o.limit}&offset=${o.offset}`, { signal }),
+  memoryConversation: (id: string, signal?: AbortSignal) => json(ConversationDetail, `/v1/web/memory/conversations/${encodeURIComponent(id)}`, { signal }),
+  deleteMemoryConversation: (id: string) => json(ConversationDeleted, `/v1/web/memory/conversations/${encodeURIComponent(id)}`, { method: "DELETE" }),
+  /** Deletes every kept note and conversation and switches both kinds off. */
+  deleteMemory: () => json(MemoryDeleted, "/v1/web/memory", { method: "DELETE" }),
+  /** Everything kept, as the server's JSON file. Saved through a download. */
+  async memoryFile(): Promise<Blob> {
+    const response = await send("/v1/web/memory/export");
+    return response.blob();
+  },
+  /** A question about your own notes and conversations, answered by Claude. Nothing is stored. */
+  chat: (body: { message: string; history: { role: "user" | "assistant"; text: string }[]; locale: string }, signal?: AbortSignal) =>
+    json(ChatReply, "/v1/web/chat", { method: "POST", body, signal }),
   /** The document's file as a blob. Not shown in the page: it is saved through a download. */
   async documentFile(id: string): Promise<Blob> {
     const response = await send(`/v1/web/documents/${encodeURIComponent(id)}/file`);

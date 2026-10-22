@@ -1,0 +1,16 @@
+{
+  "conversations": [
+    {
+      "id": "00000000-0000-4000-8000-0000000000c1",
+      "startedAt": "2026-10-20T08:00:00.000Z",
+      "endedAt": "2026-10-20T08:03:00.000Z",
+      "turnCount": 3,
+      "language": "pl",
+      "endedBy": "you",
+      "preview": "Kiedy są urodziny Anny?"
+    }
+  ],
+  "total": 1,
+  "nextOffset": null,
+  "unreadable": 0
+}

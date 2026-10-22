@@ -259,3 +259,84 @@ test("Logbook shows what the iPhone sent, downloads it, and deletes it when aske
   expect(problems).toEqual([]);
   await logbookSwitch(request, token, false);
 });
+
+test("Memory and Ask Doddy: what the iPhone keeps on the server is read, searched, asked about, downloaded and deleted", async ({ page, request }) => {
+  const problems = watchConsole(page);
+  const token = await phone(request);
+  const headers = { authorization: `Bearer ${token}` };
+  const put = (path: string, data: unknown) => request.put(path, { headers, data });
+  const note = (n: number, text: string) => ({ id: `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`, text, source: "explicit_voice", capturedAt: new Date(Date.now() - n * 86_400_000).toISOString() });
+
+  // Off first: the page says nothing is kept, and the server refuses anything the iPhone sends.
+  expect((await put("/v1/web/memory/state", { notes: false, conversations: false })).status()).toBe(200);
+  expect((await put("/v1/web/memory/notes", { items: [note(1, "Anna's birthday is 14 March")] })).status()).toBe(403);
+  await signIn(page, await code(request, token));
+  await page.goto("/memory");
+  await expect(page.getByRole("heading", { level: 2, name: "Na serwerze Doddy’ego nic nie jest przechowywane" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: "Na serwerze Doddy’ego nic nie jest przechowywane" })).toBeVisible();
+
+  // The iPhone turns both on and sends two notes and a conversation.
+  expect((await put("/v1/web/memory/state", { notes: true, conversations: true })).status()).toBe(200);
+  expect((await put("/v1/web/memory/notes", { items: [note(1, "Anna's birthday is 14 March"), note(2, "Dentist on Friday at 9")] })).status()).toBe(200);
+  const talk = "00000000-0000-4000-8000-0000000000c1";
+  const started = new Date(Date.now() - 3_600_000).toISOString();
+  expect(
+    (await put(`/v1/web/memory/conversations/${talk}`, {
+      startedAt: started,
+      endedAt: new Date().toISOString(),
+      language: "pl",
+      endedBy: "you",
+      turns: [
+        { role: "user", text: "Kiedy są urodziny Anny?" },
+        { role: "doddy", text: "Urodziny Anny są 14 marca." },
+      ],
+    })).status(),
+  ).toBe(200);
+
+  await page.goto("/memory");
+  await expect(page.getByText("Anna's birthday is 14 March")).toBeVisible();
+  await expect(page.getByText("Dentist on Friday at 9")).toBeVisible();
+  await page.getByRole("searchbox", { name: "Szukaj w notatkach" }).fill("dentist");
+  await expect(page.getByText("Anna's birthday is 14 March")).toHaveCount(0);
+  await expect(page.getByText("Dentist on Friday at 9")).toBeVisible();
+
+  // Conversations: read in full.
+  await page.getByRole("tab", { name: "Rozmowy" }).click();
+  await page.getByRole("button", { name: "Czytaj" }).click();
+  await expect(page.getByText("Urodziny Anny są 14 marca.")).toBeVisible();
+
+  // A browser's own cookie can read but never write: it can't send a note or switch keeping on.
+  const refused = await page.evaluate(async () => {
+    const res = await fetch("/v1/web/memory/notes", { method: "PUT", headers: { "content-type": "application/json", "x-doddy-web": "1" }, body: JSON.stringify({ items: [] }) });
+    return res.status;
+  });
+  expect(refused).toBe(401);
+
+  // Ask Doddy (the demo model answers and cites the first note it was given).
+  await page.goto("/ask");
+  await page.getByRole("textbox", { name: "Twoje pytanie" }).fill("Kiedy są urodziny Anny?");
+  await page.getByRole("button", { name: "Zapytaj", exact: true }).click();
+  await expect(page.getByText(/^DEMO:/)).toBeVisible();
+  await page.getByText(/Z Twoich notatek i rozmów \(/).click();
+  await expect(page.locator(".ask-sources li").first()).toBeVisible();
+
+  // Download everything: the server's own file, with the switches, notes and conversations.
+  await page.goto("/memory");
+  const [file] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Pobierz wszystko" }).click()]);
+  expect(file.suggestedFilename()).toMatch(/^doddy-memory-\d{4}-\d{2}-\d{2}\.json$/);
+  const saved = JSON.parse(await (await import("node:fs/promises")).readFile((await file.path()) as string, "utf8"));
+  expect(saved.switches).toEqual({ notes: true, conversations: true });
+  expect(saved.notes).toHaveLength(2);
+  expect(saved.conversations[0].turns).toHaveLength(2);
+
+  // Delete everything: two taps, then both are off and the iPhone's next send is refused.
+  await page.getByRole("button", { name: "Usuń wszystko stąd" }).click();
+  await page.getByRole("button", { name: "Dotknij ponownie, by usunąć wszystko" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Usunięto." })).toContainText("Notatki: 2");
+  await expect(page.getByRole("heading", { level: 2, name: "Na serwerze Doddy’ego nic nie jest przechowywane" })).toBeVisible();
+  expect((await put("/v1/web/memory/notes", { items: [note(1, "Anna's birthday is 14 March")] })).status()).toBe(403);
+
+  const sideways = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  expect(sideways).toBeLessThanOrEqual(0);
+  expect(problems).toEqual([]);
+});

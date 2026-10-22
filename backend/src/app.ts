@@ -7,6 +7,10 @@ import { DeviceSessionIssuer } from "./deviceSession.js";
 import { DocumentLinks } from "./documents.js";
 import { AnthropicClaudeProvider, type ClaudeProvider, MockClaudeProvider } from "./tools/claude.js";
 import { createHandler } from "./http.js";
+import { MemoryChat } from "./memory/chat.js";
+import { MemoryCipher } from "./memory/crypto.js";
+import { MEMORY_KEPT_DAYS } from "./memory/contract.js";
+import { MemoryService } from "./memory/service.js";
 import { ComposioCalendarProvider } from "./providers/composio.js";
 import { MockCalendarProvider } from "./providers/mock.js";
 import { UnconfiguredCalendarProvider, UnconfiguredToolsProvider } from "./providers/unconfigured.js";
@@ -31,6 +35,8 @@ export async function buildApp(
     toolsProvider?: ToolsProvider;
     webSearch?: WebSearchProvider | null;
     claude?: ClaudeProvider | null;
+    /** The model that chats with a person's kept notes and conversations (ADR-595). */
+    chatClaude?: ClaudeProvider | null;
     store?: Store;
     verifier?: SessionVerifier;
   } = {},
@@ -98,9 +104,20 @@ export async function buildApp(
   const webAuth = config.web
     ? new WebAuth(store, config.web.origin, config.web.trustProxy, { ...REDEEM_LIMITS, perClientPerQuarter: config.web.signInTriesPerClient })
     : null;
+  // Notes and conversations kept on request, and chat over them (ADR-595). Without DODDY_MEMORY_KEY the
+  // routes answer "not set up"; chat uses its own (smaller) model, live only with an Anthropic key.
+  const log = (line: Record<string, unknown>) => process.stdout.write(`${JSON.stringify(line)}\n`);
+  const memory = new MemoryService({ store, cipher: config.memoryKey ? new MemoryCipher(config.memoryKey) : null, log });
+  const chatClaude =
+    overrides.chatClaude !== undefined ? overrides.chatClaude : config.mode === "live" ? (config.chatClaude ? new AnthropicClaudeProvider(config.chatClaude) : null) : claude;
+  const memoryChat = new MemoryChat({ memory, store, claude: chatClaude, limits: config.limits, log });
   const web =
     config.web && webAuth
-      ? { auth: webAuth, routes: new WebRoutes(webAuth, store, verifier, config.limits.maxBodyBytes), pages: new WebStatic(config.web.distDir, config.web.origin) }
+      ? {
+          auth: webAuth,
+          routes: new WebRoutes(webAuth, store, verifier, config.limits.maxBodyBytes, { service: memory, chat: memoryChat }),
+          pages: new WebStatic(config.web.distDir, config.web.origin),
+        }
       : null;
   // Ask Doddy (ADR-587): always routed; without an Anthropic key it says "not set up" (503).
   const assist = new AssistService({ store, claude, limits: config.limits, log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`) });
@@ -131,6 +148,15 @@ export async function buildApp(
       .then(() => store.pruneLogbook(oldestKeptDay(Date.now())))
       .then(() => (web ? store.pruneWeb(Date.now(), SESSION_IDLE_MS) : 0))
       .catch(() => {}); // the store closed with the server; the next start sweeps again
+    // Kept memory (ADR-595) is swept on its own, so a failure in the steps above can't skip it, and its
+    // own failure is logged (the step's name only, never a row) instead of going unseen.
+    const cutoff = Date.now() - MEMORY_KEPT_DAYS * 86_400_000;
+    for (const [step, sweep] of [
+      ["conversations", () => store.pruneMemoryConversations(cutoff)],
+      ["notes", () => store.pruneMemoryNotes(cutoff)],
+    ] as const) {
+      sweep().catch(() => log({ level: "warn", event: "memory_sweep_failed", step }));
+    }
   };
   housekeeping();
   const pruning = setInterval(housekeeping, 3_600_000);

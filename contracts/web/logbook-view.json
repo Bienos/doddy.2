@@ -1,6 +1,6 @@
 {
   "enabled": true,
-  "keptDays": 90,
+  "keptDays": 365,
   "updatedAt": "2026-10-22T10:00:00.000Z",
   "days": [
     {

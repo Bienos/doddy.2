@@ -16,6 +16,9 @@ import { type ClaudeProvider, MockClaudeProvider } from "../src/tools/claude.js"
 import { MockToolsProvider } from "../src/tools/mock.js";
 import { CloudToolsService } from "../src/tools/service.js";
 import { MockWebSearchProvider } from "../src/tools/websearch.js";
+import { MemoryChat } from "../src/memory/chat.js";
+import { MemoryCipher } from "../src/memory/crypto.js";
+import { MemoryService } from "../src/memory/service.js";
 import { WebRoutes } from "../src/web/routes.js";
 import { type RedeemLimits, WebAuth } from "../src/web/sessions.js";
 import { WebStatic } from "../src/web/static.js";
@@ -34,6 +37,8 @@ export interface WebRig {
   base: string;
   store: Store;
   tools: CloudToolsService;
+  /** Kept notes and conversations (ADR-595), keyed with a throwaway test key unless the rig was started with `memoryKey: null`. */
+  memory: MemoryService;
   clock: Clock;
   logs: string[];
   distDir: string;
@@ -51,7 +56,22 @@ export interface WebRig {
 }
 
 export async function startWeb(
-  o: { claude?: ClaudeProvider; origin?: string; withDist?: boolean; trustProxy?: boolean; limits?: RedeemLimits; verifier?: SessionVerifier } = {},
+  o: {
+    claude?: ClaudeProvider;
+    /** What answers chat. Default: the demo provider. `null`: chat says "not set up". */
+    chatClaude?: ClaudeProvider | null;
+    /** `null`: no key, so keeping notes says "not set up". */
+    memoryKey?: Buffer | null;
+    /** What one person can keep (default: the real caps). */
+    memoryLimits?: { conversations: number; bytes: number };
+    /** Chat's daily caps (the same counters as Ask Doddy). Default: the test limits. */
+    askLimits?: { userDailyAsk: number; serviceDailyAsk: number };
+    origin?: string;
+    withDist?: boolean;
+    trustProxy?: boolean;
+    limits?: RedeemLimits;
+    verifier?: SessionVerifier;
+  } = {},
 ): Promise<WebRig> {
   const store = await Store.memory();
   const clock = new Clock(Date.parse("2026-10-22T10:00:00Z"));
@@ -78,12 +98,27 @@ export async function startWeb(
     writeFileSync(join(distDir, "assets", "app-abc123.js"), "console.log('doddy')");
     writeFileSync(join(distDir, ".env"), "SECRET=never-served");
   }
+  const memory = new MemoryService({
+    store,
+    cipher: o.memoryKey === null ? null : new MemoryCipher(o.memoryKey ?? Buffer.alloc(32, 5)),
+    ...(o.memoryLimits ? { limits: o.memoryLimits } : {}),
+    now: clock.now,
+    log: (line) => logs.push(JSON.stringify(line)),
+  });
+  const chat = new MemoryChat({
+    memory,
+    store,
+    claude: o.chatClaude === undefined ? new MockClaudeProvider() : o.chatClaude,
+    limits: o.askLimits ?? testLimits(),
+    now: clock.now,
+    log: (line) => logs.push(JSON.stringify(line)),
+  });
   const auth = new WebAuth(store, origin, o.trustProxy ?? false, o.limits);
   const handler = createHandler({
     service,
     tools,
     verifier,
-    web: { auth, routes: new WebRoutes(auth, store, verifier, 8 * 1024), pages: new WebStatic(o.withDist === false ? join(distDir, "missing") : distDir, origin) },
+    web: { auth, routes: new WebRoutes(auth, store, verifier, 8 * 1024, { service: memory, chat }), pages: new WebStatic(o.withDist === false ? join(distDir, "missing") : distDir, origin) },
     documents: { links: documentLinks, store },
     appReturnUrl: common.appReturnUrl,
     maxBodyBytes: 8 * 1024,
@@ -100,6 +135,7 @@ export async function startWeb(
     base,
     store,
     tools,
+    memory,
     clock,
     logs,
     distDir,

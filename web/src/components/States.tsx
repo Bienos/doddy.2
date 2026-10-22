@@ -13,6 +13,19 @@ export function errorKey(error: ApiError): MessageKey {
       return "common.error.rateLimited";
     case "not_found":
       return "common.error.notFound";
+    case "quota_exceeded":
+      return "common.error.quota";
+    case "provider_timeout":
+      return "common.error.slow";
+    case "provider_unavailable":
+    case "malformed_provider_result":
+      return "common.error.assistant";
+    case "live_not_configured":
+      return "common.error.notSetUp";
+    case "capability_disabled":
+      return "common.error.off";
+    case "refused":
+      return "common.error.refused";
     default:
       return "common.error.server";
   }

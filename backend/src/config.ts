@@ -79,6 +79,10 @@ export interface Config {
   authMode: AuthMode;
   /** Owner-minted tokens (`signed`; also accepted next to Supabase in development when set). */
   sessionSigningKey: Buffer | null;
+  /** AES-256 key for the notes and conversations kept on request (ADR-595). Null: that feature says "not set up". */
+  memoryKey: Buffer | null;
+  /** Claude for chatting with your memory (ADR-595); defaults to a small, quick model. Null without an Anthropic key. */
+  chatClaude: { apiKey: string; model: string } | null;
   /** Who may sign in with `POST /v1/session/device` (ADR-563). */
   deviceSignup: "off" | "first-device" | "open";
   /** Extra invite codes for device sign-in (ADR-563). */
@@ -150,6 +154,10 @@ const EnvSchema = z.object({
   DODDY_AUTH_MODE: z.enum(["dev", "signed", "supabase"]).default("dev"),
   SUPABASE_URL: z.string().optional(),
   DODDY_SESSION_SIGNING_KEY: z.string().optional(),
+  /** Encrypts the notes and conversations a person chooses to keep on the server (ADR-595): base64 of exactly 32 random bytes. */
+  DODDY_MEMORY_KEY: z.string().optional(),
+  /** The model that answers questions about your own notes and conversations (ADR-595). */
+  DODDY_CHAT_MODEL: z.string().default("claude-haiku-5-5"),
   /** Device sign-in for the beta (ADR-563): `first-device` = the first iPhone owns the server. */
   DODDY_DEVICE_SIGNUP: z.enum(["off", "first-device", "open"]).default("off"),
   /** Extra invite codes for more devices (ADR-563), comma-separated. */
@@ -360,6 +368,16 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
   const claudeKey = e.DODDY_MODE === "live" ? (e.ANTHROPIC_API_KEY ?? "").trim() : "";
   if (claudeKey !== "" && !/^sk-ant-[A-Za-z0-9_-]{8,}$/.test(claudeKey)) problems.push("ANTHROPIC_API_KEY must look like sk-ant-…");
   if (!/^claude-[a-z0-9-]{3,60}$/.test(e.DODDY_CLAUDE_MODEL)) problems.push("DODDY_CLAUDE_MODEL must be a Claude model ID such as claude-sonnet-5-5");
+  if (!/^claude-[a-z0-9-]{3,60}$/.test(e.DODDY_CHAT_MODEL)) problems.push("DODDY_CHAT_MODEL must be a Claude model ID such as claude-haiku-5-5");
+  // The key for kept notes and conversations. A fixed throwaway demo key (published in this repository,
+  // so never a secret) is used only for a mock-mode demo with no hosted database and outside production;
+  // anywhere else there is no key until the owner sets one, and the feature then says "not set up".
+  let memoryKey: Buffer | null = e.DODDY_MODE === "mock" && e.DODDY_ENV !== "production" && !(e.DATABASE_URL ?? "").trim() ? Buffer.alloc(32, 9) : null;
+  if ((e.DODDY_MEMORY_KEY ?? "").trim() !== "") {
+    const key = Buffer.from(e.DODDY_MEMORY_KEY!.trim(), "base64");
+    if (key.length !== 32) problems.push("DODDY_MEMORY_KEY must be base64 of exactly 32 random bytes");
+    else memoryKey = key;
+  }
 
   // Doddy Web (ADR-585). Off unless an origin is given; https outside loopback development.
   let web: WebSettings | null = null;
@@ -401,9 +419,11 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     databaseCaCert: e.DATABASE_CA_CERT?.trim() ? e.DATABASE_CA_CERT.trim().replace(/\\n/g, "\n") : null,
     authMode: e.DODDY_AUTH_MODE,
     sessionSigningKey,
+    memoryKey,
     deviceSignup: e.DODDY_DEVICE_SIGNUP,
     deviceInviteCodes,
     claude: claudeKey !== "" ? { apiKey: claudeKey, model: e.DODDY_CLAUDE_MODEL } : null,
+    chatClaude: claudeKey !== "" ? { apiKey: claudeKey, model: e.DODDY_CHAT_MODEL } : null,
     supabaseUrl,
     composio,
     toolkits,

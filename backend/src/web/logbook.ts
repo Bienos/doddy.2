@@ -13,7 +13,7 @@ import { AppError } from "../errors.js";
  */
 
 /** How long days are kept, counted back from today. The sweep deletes older ones. */
-export const LOGBOOK_KEPT_DAYS = 90;
+export const LOGBOOK_KEPT_DAYS = 365;
 /** A day with every tool in use is about 7 KB; a body above this is not a summary. */
 export const LOGBOOK_MAX_BODY_BYTES = 16 * 1024;
 export const LOGBOOK_SCHEMA = "doddy.logbook.day.v1";

@@ -5,6 +5,7 @@
  */
 
 import { logbookEn, logbookPl } from "./logbookMessages.js";
+import { memoryEn, memoryPl } from "./memoryMessages.js";
 
 const en = {
   "app.name": "Doddy",
@@ -146,6 +147,7 @@ const en = {
   "crash.body": "Nothing was changed. Reload the page to try again.",
   "crash.reload": "Reload",
   ...logbookEn,
+  ...memoryEn,
 } as const;
 
 export type MessageKey = keyof typeof en;
@@ -291,6 +293,7 @@ const pl: Messages = {
   "crash.body": "Nic nie zostało zmienione. Odśwież stronę, żeby spróbować ponownie.",
   "crash.reload": "Odśwież",
   ...logbookPl,
+  ...memoryPl,
 };
 
 export const LANGUAGES = ["pl", "en"] as const;

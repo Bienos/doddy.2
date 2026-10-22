@@ -237,7 +237,7 @@ export function fillGaps(days: readonly DaySummary[]): DaySummary[] {
   const first = sorted[0];
   const last = sorted[sorted.length - 1];
   if (!first || !last) return [];
-  // The server keeps 90 days. A span far beyond that isn't a Logbook; show the days as they came.
+  // The server keeps a year. A span far beyond that isn't a Logbook; show the days as they came.
   if (Date.parse(last.day) - Date.parse(first.day) > 400 * DAY_MS) return sorted;
   const byDay = new Map(sorted.map((d) => [d.day, d]));
   const filled: DaySummary[] = [];
