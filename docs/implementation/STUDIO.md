@@ -1,6 +1,6 @@
 # Studio: research it, make it, keep it (S0, ADR-584)
 
-**Status, 22 Oct 2026: S0 is built on `claude/new-session-ayk8tq` (ADR-584). Off by default (`STUDIO_ENABLED=0`).** Nothing here has run against the real Anthropic API, APNs, Render or a device; the server ran against a local Postgres 16 with a fake model API. The SwiftUI views and the voice controller change are not compiled (no Xcode here). The audit that came first is `STUDIO_AUDIT.md`. The owner chose S0 on 22 Oct ("S0: Studio") after the audit; the open decisions are listed at the end, and where S0 had to pick, the pick is marked **default**.
+**Status, 22 Oct 2026: S0 is built on `claude/new-session-ayk8tq` (ADR-584). Off by default (`STUDIO_ENABLED=0`).** On 22 Oct one real job ran against the Anthropic API as far as the write step (see "First real run"); nothing here has run against APNs, Render or a device, and the make step has never run for real; the server ran against a local Postgres 16 with a fake model API. The SwiftUI views and the voice controller change are not compiled (no Xcode here). The audit that came first is `STUDIO_AUDIT.md`. The owner chose S0 on 22 Oct ("S0: Studio") after the audit; the open decisions are listed at the end, and where S0 had to pick, the pick is marked **default**.
 
 S0 is one kind: **a research brief and an infographic.** The owner says "research X" (or "make me an infographic about X"); Doddy shows one card; on Allow, the messaging server's worker plans, researches the web, writes the content, has Claude render it with Doddy's own scripts in Anthropic's container, checks the files in code, stores them, and sends a push with no words. The item appears in Home ••• → Studio, where it opens, shares and deletes.
 
@@ -180,7 +180,30 @@ Run on 22 Oct 2026 in a Linux container (Node 22.22.0, Swift 6.1.2, Postgres 16,
 | doddy-docs | `skill_01KoVjXFPWSeVWM2pFisSj8R` | `skver_01W3vcsJXorqj85MTNKJSBbX` |
 | doddy-infographic | `skill_01TQ6rfczzvXqeCrCTkv2Uak` | `skver_01MjEQ7nMjSEvLU8s7CUjmap` |
 
-`server/messaging/scripts/studio-live-run.mjs <pl|en|short>` is the driver for the first real runs (key and `STUDIO_SKILLS` from the environment only). **The first real job has not run yet** (22 Oct: the key could not be used from the session's shell).
+`server/messaging/scripts/studio-live-run.mjs <pl|en|short>` is the driver for the first real runs (key and `STUDIO_SKILLS` from the environment only). The first real job is described in "First real run" below.
+
+## First real run (22 Oct 2026, one job, partly)
+
+The owner lowered the limits for this run: US$5 for the whole task, US$2 per job, one job only, 8 searches and 8 fetches. One job ran: Polish, "Pompy ciepła w Polsce: ile kosztują i czy się opłacają?", length `short`, driver `server/messaging/scripts/studio-live-run.mjs`, `baseURL` set to `https://api.anthropic.com`. Topics (b) and (c) and any rerun were **not run**. Spent: **US$1.42** (computed by the code and, independently, from the per-call usage: both 1.4153).
+
+**Result: the job failed as `unreadable_result` at the write step. No file was made, so the make step (code execution with the custom skills, `pause_turn` with a container, `file_id`s, file download and delete) has still never run against the real API.**
+
+| Step | Time | Tokens (fresh in / out / cache read / cache write) | Searches, fetches | Cost |
+|---|---|---|---|---|
+| Plan | 7 s | 782 / 530 / 0 / 0 | | $0.014 |
+| Research (one request, `end_turn`, no `pause_turn`) | 188 s | 576 / 13,443 / 789,797 / 82,791 | 8, 8 | $0.92 |
+| Pack | 63 s | 14,025 / 9,172 | | $0.24 |
+| Write, attempt 1 | 34 s | 11,578 / 3,590 | | $0.12 |
+| Write, retry | 29 s | 11,601 / 3,721 | | $0.12 |
+| Total | 321 s wall clock | 38,562 / 30,456 / 789,797 / 82,791 | 8, 8 | **$1.42** |
+
+**What the real API confirmed:** `beta.messages.parse` with `fallbacks: "default"` and `server-side-fallback-2026-07-01` was accepted (plan, pack, write); `beta.messages.stream` with top-level `cache_control` next to the web tools, `output_config.task_budget` with `task-budgets-2026-03-13`, `web_search_20260209` and `web_fetch_20260209` with `max_uses` 8 each was accepted (no `blocked_domains` in this run, so that combination is **not** confirmed); the usage fields are as the code reads them (`cache_creation_input_tokens`, `cache_read_input_tokens`, `server_tool_use.web_search_requests` and `web_fetch_requests`: 8 and 8, matching the `max_uses`). The research result also contained `code_execution_tool_result` blocks (the `_20260209` tools run code to filter results); the code counted nothing for them and the request had no code-execution tool of its own, so the code-execution rule in ASK-01 still holds, but the Studio guard text scan doesn't describe this. Skills upload: worked (above).
+
+**What the output looked like:** the plan was sensible (title, 5 sub-questions, outline, audience). The research found 71 URLs; the pack kept all 38 offered claims from 27 sources, with figures such as air-source 35 to 55 thousand zł and ground-source 60 to 100 thousand zł for a 150 m² house. I did not open the pages myself, so neither the figures nor the quotes are checked against the live pages. The written content was good in substance: the answer, six facts, a bar chart whose five values (4,256, 5,426, 6,279, 7,375, 12,841 zł a year) match claim c10 from GLOBENERGIA. Mistakes: (1) **both write attempts broke a length limit**: attempt 1 had a chart title of 77 characters (limit 70), the retry fixed that but had a chart label of 26 characters (limit 24), so the job ended with nothing rendered; the retry got only the list of problems, not the previous text. (2) `short` ("about 1 page") gave 5 sub-questions and 6 facts, which would probably run past one page; not yet seen rendered. (3) One chart label ("Węgiel (kocioł Ekoprojekt)") is a brand-like name next to a generic one; fine.
+
+**Fix made (tested with the fake, not with a paid run):** the write step now has up to 3 attempts and each retry carries the previous attempt as well as the problems; the write prompt states the main length limits and says to count characters (`PROMPT_VERSION` `studio-s0-2`). Test: `studioUnits.test.ts` "content that breaks the rules is sent back with its last attempt and the problems; three times is unreadable_result". **Whether this makes real write steps pass is unproven.**
+
+**Still unproven** (needs one more paid run, owner's call): the make step and everything in it (`container.skills` with `{type: "custom", skill_id, version}`, `pause_turn` with the same container, files at the top of `$OUTPUT_DIR` as `file_id`s, `retrieveMetadata`, `download`, `delete` and the 404 after delete), `blocked_domains` together with `max_uses`, a real rendered brief and infographic, and the checks on real files. No Anthropic-side file was made by this run, so there was nothing to delete (the Files API list was not queried).
 
 ## Constitution evidence log (S0)
 

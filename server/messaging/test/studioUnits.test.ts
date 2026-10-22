@@ -218,7 +218,7 @@ describe("the pipeline against a fake Claude", () => {
     assert.equal(ok.kind === "made" && ok.state, "ready", "the second make's files replace the first's");
   });
 
-  test("content that breaks the rules is sent back once with the problems; twice is unreadable_result", async () => {
+  test("content that breaks the rules is sent back with its last attempt and the problems; three times is unreadable_result", async () => {
     const api = new FakeStudioApi();
     const broken = content();
     broken.infographic.facts = [];
@@ -227,7 +227,8 @@ describe("the pipeline against a fake Claude", () => {
     assert.ok(JSON.parse(api.writeInputs[1]!).fixThese.some((p: string) => p.startsWith("facts: 0")));
 
     const twice = new FakeStudioApi();
-    twice.writes.push({ kind: "ok", value: broken, usage: {} }, { kind: "ok", value: broken, usage: {} });
+    assert.deepEqual(JSON.parse(api.writeInputs[1]!).previousAttempt.infographic.facts, [], "the retry carries the attempt it fixes");
+    twice.writes.push({ kind: "ok", value: broken, usage: {} }, { kind: "ok", value: broken, usage: {} }, { kind: "ok", value: broken, usage: {} });
     const out = await runStudio(twice, job, control().c);
     assert.equal(out.kind === "failed" && out.code, "unreadable_result");
     assert.equal(twice.calls.includes("make"), false, "nothing is rendered from content that failed");

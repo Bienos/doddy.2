@@ -127,7 +127,7 @@ Read again in the Claude docs on 22 Oct (platform.claude.com: code execution too
 
 ## Costs
 
-**Not measured.** These are estimates from list prices and typical sizes; the first three real runs per kind replace them. Prices: Opus 5.5 at $4 / $20 per million tokens in and out, cache reads $0.20; web search $10 per 1,000 searches; code execution free in a request that also has web search or fetch, otherwise within 1,550 free container hours a month.
+**First real measurement, 22 Oct 2026 (one run, partial): plan + research + pack + write came to $1.42 for a short Polish brief with 8 searches and 8 fetches (research $0.92, pack $0.24, two write attempts $0.24, plan $0.01), 321 s; the make step has not run, so the make rows below remain estimates. See `STUDIO.md` "First real run".** The rest are estimates from list prices and typical sizes; the first three real runs per kind replace them. Prices: Opus 5.5 at $4 / $20 per million tokens in and out, cache reads $0.20; web search $10 per 1,000 searches; code execution free in a request that also has web search or fetch, otherwise within 1,550 free container hours a month.
 
 | Step | Model and effort | Assumed size | Estimate |
 |---|---|---|---|

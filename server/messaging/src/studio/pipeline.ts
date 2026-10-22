@@ -12,6 +12,8 @@ import {
 
 export const MAX_PAUSE_TURNS = 12;
 export const MAX_NOTES_CHARS = 200_000;
+/** The first real run (22 Oct 2026) went over a length limit in each of two attempts, a different one each time. */
+export const MAX_WRITE_ATTEMPTS = 3;
 
 /** Opus 5.5 list prices (USD per million tokens) and web search ($10 per 1,000). Container time inside the free hours counts $0. */
 export const PRICES = { input: 4, output: 20, cacheRead: 0.2, cacheWrite: 5, perSearch: 0.01 } as const;
@@ -180,16 +182,18 @@ export async function runStudio(api: StudioModelApi, job: StudioJob, control: St
     if (pack.claims.length < LIMITS.claimsMin) throw fail("too_little_found");
     withinLimit();
 
-    // ---------- 3. write, checked by code (one retry with the problems listed) ----------
+    // ---------- 3. write, checked by code (two retries; each gets the last attempt and its problems) ----------
     await control.setStage("write");
     const writeInput = { today, language, job, plan, pack };
     let content: ContentOutput | undefined;
     let problems: string[] = [];
-    for (let attempt = 0; attempt < 2 && !content; attempt++) {
-      const input = attempt === 0 ? writeInput : { ...writeInput, fixThese: problems };
+    let previous: ContentOutput | undefined;
+    for (let attempt = 0; attempt < MAX_WRITE_ATTEMPTS && !content; attempt++) {
+      const input = attempt === 0 ? writeInput : { ...writeInput, previousAttempt: previous, fixThese: problems };
       const written = await structured((s) => api.write(JSON.stringify(input), s));
       withinLimit();
       if (written.kind !== "ok") { problems = ["the reply didn't match the schema"]; continue; }
+      previous = written.value;
       problems = contentProblems(written.value, pack);
       if (problems.length === 0) content = written.value;
     }
