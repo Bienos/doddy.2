@@ -647,6 +647,12 @@ final class VoiceSessionController {
         var recent = logs.isEnabled
             ? SessionRecovery.withResumeNote(VoiceContext.recentConversations(logs.logs), logs: logs.logs, now: Date())
             : VoiceContext.Rendered(text: "(remembering recent conversations is switched off in Settings)", includedCount: 0, truncated: false)
+        // After a call cut the last conversation off, Doddy opens by saying where it stopped (ADR-584).
+        // Only for a plain conversation (a translator or a check-in has its own opening and sends no
+        // earlier conversations), and only when remembering conversations is on.
+        let interruptedOpening = logs.isEnabled && preset == nil && checkIn == nil
+            ? SessionRecovery.interruptedOpening(logs: logs.logs, now: Date(), polish: ConversationLanguage.stored() == .polish)
+            : nil
         var listsText = ListsPrompt.render(store.lists)
         if let templates = ListTemplateStore.current().promptLine { listsText += "\n" + templates }
         var profileText = ProfilePrompt.render(profile, shared: UserDefaults.standard.bool(forKey: PreferenceKey.shareProfileWithVoice))
@@ -692,7 +698,7 @@ final class VoiceSessionController {
             // usual opening ("Hi, I'm Doddy. What's on your mind?" the first time, then "I'm here.
             // What's up?", ADR-556). Used once the agent's first message is {{opening_line}}
             // (voice-agent/session.json); an agent without it ignores the variable.
-            WakeGreeting.variableName: wakeGreeting ?? WakeGreeting.openingLine(
+            WakeGreeting.variableName: interruptedOpening ?? wakeGreeting ?? WakeGreeting.openingLine(
                 afterWakeWord: false, name: nil, polish: ConversationLanguage.stored() == .polish,
                 firstConversation: isFirstConversation),
         ]

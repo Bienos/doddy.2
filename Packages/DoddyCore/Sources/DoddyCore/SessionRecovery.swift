@@ -149,6 +149,59 @@ public enum SessionRecovery {
         return "Note: the newest conversation below was cut off at \(VoiceContext.format(log.endedAt, timeZone: timeZone)): \(cause); neither you nor the user ended it. Say briefly that it was cut off and offer to carry on from its last lines. Do not assume you heard anything after them or that anything after them was done."
     }
 
+    /// What Doddy says first when the newest conversation was cut off by a phone call or another
+    /// interruption a short while ago (ADR-584): that it was cut off, and where it stopped, in the
+    /// user's own last words. Nil otherwise (any other end, too long ago, nothing said yet).
+    ///
+    /// Only for a conversation the agent is also being told about (`withResumeNote`'s own test), so
+    /// it follows the same "Remember recent conversations" switch and never applies to a private
+    /// conversation. It names only what the kept lines show: the last thing the user said that was
+    /// more than a word or two, cut to `maxQuoteCharacters`. With nothing like that it says only that
+    /// the call cut the conversation off, and claims no memory of what was said.
+    /// The first message of both voice providers is fixed by the app, not written by the model, so
+    /// the resume note alone could only help from the second sentence on.
+    /// Polish and English; any other language gets English.
+    public static func interruptedOpening(
+        logs: [ConversationLog], now: Date, polish: Bool, timeZone: TimeZone = .current,
+        maxCharacters: Int = VoiceContext.defaultConversationsBudget
+    ) -> String? {
+        guard let newest = logs.max(by: { $0.endedAt < $1.endedAt }),
+              newest.ended == VoiceSessionEnd.dropped(.audioInterrupted).code,
+              now >= newest.endedAt, now.timeIntervalSince(newest.endedAt) <= resumeWindow,
+              VoiceContext.conversationsSentNextTime(logs, maxCharacters: maxCharacters, timeZone: timeZone).contains(newest.id)
+        else { return nil }
+        guard let quote = lastWords(of: newest) else {
+            return polish ? "Przepraszam, rozmowę przerwał telefon. Chcesz zacząć od nowa?"
+                          : "Sorry, the call cut us off. Want to start again?"
+        }
+        return polish ? "Przepraszam, rozmowę przerwał telefon. Skończyliśmy na „\(quote)”. Chcesz kontynuować?"
+                      : "Sorry, the call cut us off. We were on “\(quote)”. Want to carry on from there?"
+    }
+
+    /// The longest a quoted line may be: it is spoken aloud.
+    public static let maxQuoteCharacters = 80
+
+    /// The user's last line of at least three words, cleaned for being spoken back (no quotes,
+    /// brackets or line breaks) and cut at a word. Nil when the user said nothing like that.
+    static func lastWords(of log: ConversationLog) -> String? {
+        for line in log.lines.reversed() where line.fromUser {
+            let cleaned = String(line.text.unicodeScalars.map { scalar -> Character in
+                switch scalar {
+                case "\"", "“", "”", "„", "<", ">", "{", "}", "\\": return " "
+                default: return CharacterSet.controlCharacters.contains(scalar) || CharacterSet.newlines.contains(scalar) ? " " : Character(scalar)
+                }
+            })
+            let words = cleaned.split(whereSeparator: { $0.isWhitespace })
+            guard words.count >= 3 else { continue }
+            let joined = words.joined(separator: " ")
+            guard joined.count > maxQuoteCharacters else { return joined }
+            let cut = joined.prefix(maxQuoteCharacters)
+            let atWord = cut.lastIndex(of: " ").map { String(cut[..<$0]) } ?? String(cut)
+            return atWord + "…"
+        }
+        return nil
+    }
+
     /// The conversations text for the agent (`VoiceContext.recentConversations` of `logs`), with the
     /// resume note first when it applies and the cut-off conversation is among those sent.
     public static func withResumeNote(
