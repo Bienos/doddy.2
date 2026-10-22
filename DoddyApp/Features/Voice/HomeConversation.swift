@@ -26,17 +26,16 @@ final class HomeConversation {
 
     /// Something in the conversation waits for the user, and only the transcript can show it:
     /// a card to say yes or no to, the access or sign-in card, the permission sheet, or a failure
-    /// with its way out. A result card (`.done`) doesn't count.
+    /// with its way out.
     var needsYou: Bool {
         guard let controller else { return false }
         switch controller.phase {
         case .failed, .microphoneDenied: return true
         default: break
         }
-        if let pending = controller.pendingAction {
-            if case .done = pending {} else { return true }
-        }
-        return controller.accessRequest != nil || controller.accountNeeded != nil
+        // Every pending action is a card waiting for the user's tap; results are `reminderStatus`
+        // and the like, not pending actions.
+        return controller.pendingAction != nil || controller.accessRequest != nil || controller.accountNeeded != nil
             || controller.permissionRequest != nil
     }
 
