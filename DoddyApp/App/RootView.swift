@@ -407,6 +407,10 @@ struct RootView: View {
         .onChange(of: router.isVoicePresented) { _, presented in
             if presented { opening.conversationOpened() }
         }
+        // Recordings (ADR-579) is a sheet on Home, so a link or intent from any tab comes back to it.
+        .onChange(of: router.isRecordingsPresented) { _, presented in
+            if presented { selectedTab = .home }
+        }
         // A Spotlight result (ADR-330) opens that note or list, as a widget's link does.
         .onContinueUserActivity(CSSearchableItemActionType) { activity in
             guard let memoryID = SpotlightSync.memoryID(from: activity) else { return }
@@ -429,6 +433,9 @@ struct RootView: View {
             // The parking widget (ADR-315): the saved spot in Maps. No spot, nothing opens.
             case .parking:
                 if let spot = ParkingStore.current(), let maps = Parking.mapsURL(spot) { openURL(maps) }
+            // DODDY Capture (ADR-579): the island's Open button. Navigation only.
+            case .recordings:
+                router.openRecordings()
             }
         }
     }

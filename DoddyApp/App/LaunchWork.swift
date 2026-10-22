@@ -73,6 +73,8 @@ enum LaunchWork {
             ("Evening wrap-up", { if EveningWrapUpSettings.stored().isOn { _ = await EveningWrapUpScheduler.apply(.stored()) } }),
             ("Weekly look back", { if WeeklyLookBackSettings.stored().isOn { _ = await WeeklyLookBackScheduler.apply(.stored()) } }),
             ("Birthdays", { await BirthdayScheduler.refresh() }),
+            // A recording Doddy was closed in the middle of is finished, or reported lost (ADR-579).
+            ("Recordings recovery", { await RecordingCoordinator.shared.recoverUnfinished() }),
         ]
         for (name, job) in jobs {
             if Task.isCancelled { return }

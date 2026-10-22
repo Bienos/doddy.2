@@ -86,6 +86,7 @@ struct HomeView: View {
             .sheet(item: $modal) { _ in CaptureView() }
             .sheet(isPresented: $showDataFlow) { DataFlowSheet() }
             .sheet(isPresented: $showErrands) { ErrandsView() }
+            .sheet(isPresented: Binding(get: { router.isRecordingsPresented }, set: { router.isRecordingsPresented = $0 })) { RecordingsView() }
             .sheet(isPresented: $showCapabilities) { CapabilitiesSheet() }
             .sheet(isPresented: $showMemories) {
                 HomeMemoriesSheet(
@@ -131,6 +132,19 @@ struct HomeView: View {
         }
     }
 
+    /// Starts a recording from the menu. The one-time notice comes first, and a start that cannot go
+    /// ahead opens Recordings, which says why. Once it records, Doddy shows it everywhere.
+    private func startRecording() async {
+        guard RecordingCoordinator.noticeAccepted else {
+            router.openRecordings()
+            return
+        }
+        switch await RecordingCoordinator.shared.start(origin: .app) {
+        case .started, .rejected: break
+        case .failed: router.openRecordings()
+        }
+    }
+
     // MARK: Top
 
     private var header: some View {
@@ -159,6 +173,11 @@ struct HomeView: View {
                 // Tasks handed to Doddy's background worker (ADR-570).
                 Button { showErrands = true } label: { Label("Tasks", systemImage: "checklist") }
                     .accessibilityIdentifier("home.tasks")
+                // DODDY Capture (ADR-579): record a meeting or a conversation, and find it again.
+                Button { Task { await startRecording() } } label: { Label("Record", systemImage: "record.circle") }
+                    .accessibilityIdentifier("home.record")
+                Button { router.openRecordings() } label: { Label("Recordings", systemImage: "waveform.circle") }
+                    .accessibilityIdentifier("home.recordings")
                 Button { tool = .focus } label: {
                     if FocusController.shared.session.map({ !$0.isOver }) ?? false {
                         Label("Focus · on", systemImage: "timer")

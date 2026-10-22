@@ -7,7 +7,7 @@ import DoddyCore
 struct StopListeningIntent: AppIntent {
     static let title: LocalizedStringResource = "Stop Doddy listening"
     static var description: IntentDescription {
-        IntentDescription("Ends a conversation with Doddy and stops a voice memo recording. Nothing is saved.")
+        IntentDescription("Ends a conversation with Doddy and stops a voice memo. A DODDY recording is stopped and saved.")
     }
     static let openAppWhenRun = false
     static let authenticationPolicy: IntentAuthenticationPolicy = .alwaysAllowed
