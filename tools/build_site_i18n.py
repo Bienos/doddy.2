@@ -76,6 +76,10 @@ SRCSET_ATTR = "srcset"
 NOT_RELATIVE = ("/", "#", "//", "http:", "https:", "mailto:", "tel:", "doddy:", "data:", "javascript:")
 URL_IN_HTML = re.compile(r"""(?<![\w:-])(href|src|poster|srcset)(\s*=\s*)(["'])(.*?)\3""", re.S)
 GENERATED_KEYS = ("Language", "English")
+# Hand-written pages that exist in only some languages (the legal drafts, site/README.md "Legal
+# pages"): a link to one goes to that language's copy when there is one, otherwise to the English
+# page. Legal text is never machine-translated, so the other languages link to English.
+LOCALIZED_ONLY = {"terms/": {"pl"}, "privacy/": {"pl"}}
 
 PLACEHOLDER = re.compile(r"\{[A-Za-z_][A-Za-z0-9_]*\}")
 TOKEN = re.compile(r"\[\[(svg|img|cmt)(\d+)\]\]")
@@ -128,6 +132,8 @@ def localize(value: str, page_dir: str, slug: str) -> str:
     if path.endswith("/") and not norm.endswith("/"):
         norm += "/"
     suffix = ("?" + query if query is not None else "") + ("#" + hashpart if hashpart is not None else "")
+    if norm.endswith("/") and norm[1:] in LOCALIZED_ONLY:
+        return (page_path(slug, norm[1:]) if slug in LOCALIZED_ONLY[norm[1:]] else norm) + suffix
     if norm == "/" or (norm.endswith("/") and norm[1:] in page_dirs()):
         return page_path(slug, "" if norm == "/" else norm[1:]) + suffix
     return norm + suffix

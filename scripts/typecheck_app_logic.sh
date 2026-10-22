@@ -30,7 +30,8 @@ modules="$(swift build --package-path "$package" ${flags[@]+"${flags[@]}"} --sho
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 
-awk '/^enum PreferenceKey/{f=1} f{print} f&&/^}/{exit}' DoddyApp/App/RootView.swift > "$work/PreferenceKey.swift"
+# Some keys are DoddyCore's own (ADR-579, ADR-581), so the copy imports it as RootView does.
+{ echo "import DoddyCore"; awk '/^enum PreferenceKey/{f=1} f{print} f&&/^}/{exit}' DoddyApp/App/RootView.swift; } > "$work/PreferenceKey.swift"
 [ -s "$work/PreferenceKey.swift" ] || { echo "FAIL: could not extract PreferenceKey from RootView.swift"; exit 1; }
 cat > "$work/AppEnvironmentStub.swift" <<'SWIFT'
 import DoddyCore
@@ -91,6 +92,7 @@ files=(
   DoddyApp/Infrastructure/MemoryStore+Lists.swift
   DoddyApp/Infrastructure/ProfileStore.swift
   DoddyApp/Infrastructure/ShortcutRouter.swift
+  DoddyApp/Infrastructure/LegalAcceptanceStore.swift
   DoddyApp/Infrastructure/UnfinishedNoteStore.swift
   DoddyApp/Infrastructure/SiriNoteLookup.swift
   DoddyApp/Features/Ask/AskController.swift

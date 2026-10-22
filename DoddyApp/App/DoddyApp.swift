@@ -18,6 +18,15 @@ struct DoddyApp: App {
         defer { LaunchWork.appInitEnded() }
         // The screens' language is read when the app starts: English unless the person picked another (ADR-459).
         AppLanguageStore.applyAtLaunch()
+        // Back Tap's old "Small island" becomes Settings › "Expand when Doddy speaks" (ADR-579),
+        // before anything reads either preference.
+        Self.migrateLaunchPreferences()
+        #if DEBUG
+        // UI tests of "Before we start" (ADR-581) start without an acceptance from an earlier test.
+        if ProcessInfo.processInfo.arguments.contains("-resetLegalAcceptanceForUITests") {
+            UserDefaults.standard.removeObject(forKey: LegalAcceptance.preferenceKey)
+        }
+        #endif
         VoiceSessionKeychain.removeLegacySetup()
         // Before anything reads them: a fresh install doesn't pick up an earlier install's server tokens.
         ServerKeychainStore.clearLeftoversOnFreshInstall()
@@ -60,6 +69,18 @@ struct DoddyApp: App {
         // A call Doddy makes for the user runs on the server, so its island may outlive a
         // relaunch; its Take over and End buttons reach the server from here (ADR-504).
         CallLiveActivity.shared.registerActions()
+    }
+
+    private static func migrateLaunchPreferences(_ defaults: UserDefaults = .standard) {
+        let stored = LaunchPreferencesMigration.Values(
+            backTapAction: defaults.string(forKey: PreferenceKey.backTapAction),
+            islandExpands: defaults.object(forKey: LaunchPreferencesMigration.islandExpandsKey) as? Bool)
+        let moved = LaunchPreferencesMigration.migrate(stored)
+        guard moved != stored else { return }
+        defaults.set(moved.backTapAction, forKey: PreferenceKey.backTapAction)
+        if let expands = moved.islandExpands {
+            defaults.set(expands, forKey: LaunchPreferencesMigration.islandExpandsKey)
+        }
     }
 
     var body: some Scene {

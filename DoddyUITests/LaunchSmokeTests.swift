@@ -70,6 +70,8 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertTrue(app.waitForTab("home", timeout: 5))
         XCTAssertEqual(app.staticTexts["home.greeting"].label, "Hi, Ola.")
         app.goToTab("settings")
+        // Settings › My profile (ADR-580).
+        app.openSettingsPage("settings.profile")
         let share = app.switches["settings.shareProfileWithVoice"]
         XCTAssertTrue(app.reveal(share))
         XCTAssertEqual(share.value as? String, "0", "saving preferences does not enable voice sharing")
@@ -90,9 +92,11 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertTrue(app.text("No memories yet").waitForExistence(timeout: 5))
 
         app.goToTab("settings")
-        // Settings is a lazy Form under a header section; scroll until the row has been created.
+        // Settings' groups open their own pages (ADR-580): My profile, then Privacy.
+        app.openSettingsPage("settings.profile")
         XCTAssertTrue(app.reveal(app.text("Nothing saved. Doddy only keeps what you review and save.")))
-        // Privacy sits below About you and Your memories.
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        app.openSettingsPage("settings.privacyScreen")
         XCTAssertTrue(app.reveal(app.text("Microphone")))
         XCTAssertTrue(app.text("Only while talking").exists)
     }
@@ -120,6 +124,7 @@ final class LaunchSmokeTests: XCTestCase {
 
         // Settings › Voice has the picker from the start.
         app.goToTab("settings")
+        app.openSettingsPage("settings.voice")
         XCTAssertTrue(app.reveal(app.segmentedControls["settings.voiceProvider"]))
     }
 
@@ -163,6 +168,7 @@ final class LaunchSmokeTests: XCTestCase {
         let app = launch(onboardingDone: true)
         XCTAssertTrue(app.waitForTab("settings", timeout: 5))
         app.goToTab("settings")
+        app.openSettingsPage("settings.askDoddy")
         let consent = app.switches["settings.assistantConsent"]
         // The long Settings form creates rows lazily; scroll until the section is on screen.
         XCTAssertTrue(app.reveal(consent))
@@ -190,6 +196,7 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertTrue(app.buttons["home.backTap.later"].waitForNonExistence(timeout: 5), app.debugDescription)
 
         app.goToTab("settings")
+        app.openSettingsPage("settings.ways")
         let status = app.descendants(matching: .any)["settings.backTap.status"].firstMatch
         // The long Settings form lazily creates rows; scroll to the status rather than
         // treating an off-screen label as a product failure.
@@ -205,6 +212,7 @@ final class LaunchSmokeTests: XCTestCase {
         try XCTSkipIf(UIDevice.current.userInterfaceIdiom == .pad, "the Settings entry is iPhone-only")
         let app = launch(onboardingDone: true, backTapSetup: "notStarted")
         app.goToTab("settings")
+        app.openSettingsPage("settings.ways")
         let entry = app.buttons["settings.backTap"]
         XCTAssertTrue(app.reveal(entry))
         // The weekly reminder is on until the user turns it off; it only sends with notifications already allowed.
@@ -237,7 +245,9 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertFalse(app.buttons["home.backTap.later"].exists)
 
         app.descendants(matching: .any)["tab.settings"].firstMatch.tap()
-        // The Back Tap row would sit in the same section as this switch, so look once it is on screen.
+        // Settings › Siri (ADR-580); on iPhone the same page also has Back Tap.
+        app.openSettingsPage("settings.ways")
+        // The Back Tap row would sit on the same page as this switch, so look once it is on screen.
         let siri = app.switches["settings.siriReadsNotes"]
         for _ in 0..<8 {
             if siri.exists && siri.isHittable { break }
@@ -262,6 +272,7 @@ final class LaunchSmokeTests: XCTestCase {
         let app = launch(onboardingDone: true)
         XCTAssertTrue(app.waitForTab("settings", timeout: 5))
         app.goToTab("settings")
+        app.openSettingsPage("settings.privacyScreen")
         let link = app.button(labelled: "What leaves this iPhone")
         XCTAssertTrue(app.reveal(link))
         link.tap()
@@ -355,6 +366,7 @@ final class LaunchSmokeTests: XCTestCase {
 
         XCTAssertTrue(app.waitForTab("settings", timeout: 5))
         app.goToTab("settings")
+        app.openSettingsPage("settings.voice")
         let toggle = app.switches["settings.listenOnOpen"]
         XCTAssertTrue(app.reveal(toggle))
         XCTAssertEqual(toggle.value as? String, "0")

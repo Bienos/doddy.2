@@ -72,6 +72,18 @@ final class ShortcutRouter {
         }
     }
 
+    /// The "Talk to Doddy" control brought Doddy forward (Settings › Action Button › Open App,
+    /// Automatic's fallback, or pressed with Doddy on screen; ADR-579). Opens the conversation
+    /// with the shortcut greeting. Unlike `talkToDoddyInvoked` it isn't a Back Tap test receipt
+    /// and ignores Back Tap's "Only open Doddy": the user chose to talk. Never over a shared
+    /// draft's sheet; the "Before we start" step (ADR-581) covers the app until it is done.
+    func talkButtonOpenedApp() {
+        if drafts.shown != nil { return }
+        isSetupPresented = false
+        if !isVoicePresented { talkToDoddyOpened = true }
+        isVoicePresented = true
+    }
+
     /// Called by the opening when Settings → "Start listening when I open Doddy" is on (ADR-225).
     /// Opens the conversation unless one is already open or something else is on screen; it
     /// never starts a second conversation and never pushes a sheet aside.

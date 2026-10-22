@@ -29,8 +29,15 @@ enum PreferenceKey {
     /// Settings → Voice: open the conversation by itself when the app is opened (ADR-225). On unless turned off.
     static let listenOnOpen = "listenOnOpen"
     static let voiceAgentID = "voiceAgentID"
-    /// Settings → Back Tap and Siri: "Talk to Doddy" starts a conversation (default) or only opens the app (`BackTapAction`).
+    /// Settings → Siri and Back Tap: "Talk to Doddy" starts a conversation (default) or only opens the app (`BackTapAction`).
+    /// Its old "Small island" moved to `islandExpands` at launch (ADR-579).
     static let backTapAction = "backTapAction"
+    /// Settings → Action Button: what the "Talk to Doddy" control does (`TalkLaunchMode`, ADR-579).
+    static let talkLaunchMode = TalkLaunchMode.preferenceKey
+    /// Settings → Expand when Doddy speaks (`IslandExpansion`, ADR-577, ADR-579). On unless turned off.
+    static let islandExpands = LaunchPreferencesMigration.islandExpandsKey
+    /// JSON `LegalAcceptanceRecord`: the Terms and Privacy Policy versions accepted, when, where (ADR-581).
+    static let legalAcceptance = LegalAcceptance.preferenceKey
     /// JSON `BackTapSetupSummary` (outcome and any active test window), never transcripts.
     static let backTapSetup = "backTapSetup"
     /// JSON `OpenWaysOfferState`: counts and flags for the Home card's return and the weekly reminder (ADR-559).
@@ -124,6 +131,8 @@ struct RootView: View {
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideArt = false
     /// The Face ID cover is up (ADR-310); it stays briefly after an unlock for the door (ADR-380).
     @State private var lockCovered = false
+    /// The Terms acceptance (ADR-581); the "Before we start" step shows until it is stored.
+    @AppStorage(PreferenceKey.legalAcceptance) private var legalRecordData: Data?
 
     private var colorScheme: ColorScheme? {
         switch AppearancePreference(rawValue: appearanceRaw) ?? .system {
@@ -275,9 +284,21 @@ struct RootView: View {
                 guard store.hasLoaded, store.loadError == nil else { return }
                 MemoryCopySync.shared.schedule(PrivateNotesStore.current().shareable(store.memories))
             }
+            // First use: "Before we start" (ADR-581), then the introduction, in one cover.
             .fullScreenCover(isPresented: introductionPresentation) {
-                OnboardingFlowView()
-                    .preferredColorScheme(colorScheme)
+                Group {
+                    if legalGateUp {
+                        LegalAcceptanceView(source: LegalAcceptance.source(
+                            hasUsedDoddyBefore: !profiles.isFirstInstallation, previous: LegalAcceptanceStore.record))
+                    } else {
+                        OnboardingFlowView()
+                    }
+                }
+                .preferredColorScheme(colorScheme)
+            }
+            // Drafts and listen-on-open wait while the terms step is up, as during first use.
+            .onChange(of: legalGateUp, initial: true) { _, up in
+                router.isOnboardingShown = up || profiles.route != .home
             }
         } else {
             // A moment while the store opens, so Home doesn't flash before first-use onboarding.
@@ -328,11 +349,17 @@ struct RootView: View {
                 && !OpeningPreferences.firstLaunchIntroSeen())
     }
 
+    /// "Before we start" is due (ADR-581). Not over the Face ID lock: it comes after the unlock.
+    private var legalGateUp: Bool {
+        LegalAcceptanceStore.isNeeded(legalRecordData) && !AppLock.shared.isLocked
+    }
+
     private var introductionPresentation: Binding<Bool> {
         Binding(
-            get: { profiles.isIntroductionPresented },
+            get: { legalGateUp || profiles.isIntroductionPresented },
             set: { presented in
-                guard !presented, profiles.isIntroductionPresented else { return }
+                // The terms step can't be closed without its Continue.
+                guard !presented, !legalGateUp, profiles.isIntroductionPresented else { return }
                 Task { await profiles.finishIntroduction(saved: false) }
             })
     }
@@ -398,7 +425,7 @@ struct RootView: View {
             showFind = true
         }
         .onChange(of: profiles.route == .home, initial: true) { _, atHome in
-            router.isOnboardingShown = !atHome
+            router.isOnboardingShown = !atHome || legalGateUp
             // The first time Home is ready and on screen is the launch (OpeningModel decides).
             opening.homeReady(openingConditions, isActive: scenePhase == .active)
         }

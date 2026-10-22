@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <!-- Wersja robocza: noindex, dopóki właściciel i prawnik nie zatwierdzą tekstu (site/README.md, "Legal pages"). -->
+  <meta name="robots" content="noindex">
+  <title>Polityka prywatności · Doddy</title>
+  <meta name="description" content="Co Doddy, towarzysz AI na iPhone’a, trzyma na Twoim telefonie, co i dokąd wysyła oraz jak to wyeksportować lub usunąć. Wersja robocza 2026-10-22.">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#FFF7E9">
+  <meta name="doddy-legal-document" content="privacy">
+  <meta name="doddy-legal-version" content="2026-10-22">
+  <link rel="canonical" href="https://www.doddy.lol/pl/privacy/">
+  <link rel="alternate" hreflang="en" href="https://www.doddy.lol/privacy/">
+  <link rel="alternate" hreflang="pl" href="https://www.doddy.lol/pl/privacy/">
+  <link rel="alternate" hreflang="x-default" href="https://www.doddy.lol/privacy/">
+  <link rel="icon" href="/assets/doddy-favicon.png" type="image/png" sizes="64x64">
+  <link rel="apple-touch-icon" href="/assets/doddy-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Caveat:wght@600;700&display=swap">
+  <link rel="stylesheet" href="/tokens.css">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/blog.css">
+  <link rel="stylesheet" href="/legal.css">
+  <script>document.documentElement.classList.add('js')</script>
+  <script src="/i18n/pl.js" defer></script>
+  <script src="/i18n.js" defer></script>
+  <script src="/nav.js" defer></script>
+  <script src="/analytics.js" defer></script>
+  <script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments)}</script>
+  <script src="/_vercel/insights/script.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#main">Przejdź do treści</a>
+
+  <header class="nav">
+    <div class="wrap nav-inner">
+      <a class="wordmark" href="/pl/" aria-label="Strona główna Doddy">Doddy</a>
+      <nav aria-label="Sekcje">
+        <ul class="nav-links">
+          <li><a href="/pl/#how">Jak to działa</a></li>
+          <li><a href="/pl/what-can-doddy-do/">Co potrafi Doddy?</a></li>
+          <li><a href="/pl/#meet">Poznaj Doddy’ego</a></li>
+          <li><a href="/pl/#play">Oddaj rzut</a></li>
+          <li><a href="/pl/blog/">Blog</a></li>
+          <li><a href="/pl/#privacy">Prywatność</a></li>
+        </ul>
+      </nav>
+      <button class="menu-button" type="button" aria-label="Menu" aria-expanded="false" aria-controls="menu-sheet">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+      </button>
+      <a class="button small" href="/pl/#join">Dołącz do wczesnego dostępu</a>
+      <details class="lang-menu" translate="no"><summary title="Język">PL</summary><ul class="lang-list"><li><a href="/privacy/" hreflang="en" lang="en" title="English" aria-label="English (EN)">EN</a></li><li><a href="/pl/privacy/" hreflang="pl" lang="pl" title="Polski" aria-label="Polski (PL)" aria-current="page">PL</a></li></ul></details>
+      <div class="menu-sheet" id="menu-sheet" aria-label="Menu">
+        <ul>
+          <li><a href="/pl/#how">Jak to działa</a></li>
+          <li><a href="/pl/what-can-doddy-do/" class="menu-new">Co potrafi Doddy? <img src="/assets/day/smile.webp" width="36" height="36" alt=""></a></li>
+          <li><a href="/pl/#meet">Poznaj Doddy’ego</a></li>
+          <li><a href="/pl/#play">Oddaj rzut</a></li>
+          <li><a href="/pl/blog/">Blog</a></li>
+          <li><a href="/pl/#privacy">Prywatność</a></li>
+        </ul>
+        <a class="button" href="/pl/#join">Dołącz do wczesnego dostępu</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <article class="post legal">
+      <div class="wrap post-wrap">
+        <aside class="legal-draft" aria-label="Informacja o wersji roboczej">
+          <p class="legal-draft-title">Wersja robocza, nie ostateczna</p>
+          <p>Ta polityka prywatności jest wersją roboczą. Nie sprawdził jej jeszcze prawnik i może się zmienić przed publicznym udostępnieniem Doddy’ego. Fragmenty w nawiasach <span class="ph">[WŁAŚCICIEL: …]</span> uzupełni jeszcze właściciel Doddy’ego.</p>
+          <p>Opisuje to, co robi kod aplikacji w dniu podanym jako data wersji. Doddy jest wczesną wersją testową i części opisanych tu funkcji nie wypróbowano jeszcze na prawdziwym iPhonie ani z działającymi usługami. Polski tekst nie został jeszcze przeczytany przez prawnika ani przez korektora.</p>
+        </aside>
+
+        <header class="post-header">
+          <h1 class="display-m">Polityka prywatności</h1>
+          <ul class="legal-meta">
+            <li><strong>Wersja 2026-10-22</strong></li>
+            <li>Data wejścia w życie: <span class="ph" data-ph="V1">[ustali właściciel przy publikacji]</span></li>
+            <li><a class="text-link" href="/privacy/" hreflang="en" lang="en">English version</a></li>
+          </ul>
+        </header>
+
+        <section class="legal-summary" aria-labelledby="short">
+          <h2 id="short">W skrócie</h2>
+          <ul>
+            <li><strong>Twoje notatki zostają na iPhonie.</strong> Wychodzą poza niego tylko przy funkcjach opisanych niżej, z których większość włączasz sam.</li>
+            <li><strong>Rozmowa głosowa wysyła sporo.</strong> Twój głos, rozmowa i zapisane notatki (poza oznaczonymi jako prywatne) trafiają do usługi głosowej: domyślnie ElevenLabs albo OpenAI, jeśli je wybierzesz. ElevenLabs przechowuje nagranie i zapis rozmowy.</li>
+            <li><strong>Doddy najpierw pyta</strong>, zanim zajrzy do kalendarza, kontaktów, zdjęć, poczty itp., a zanim coś zmieni lub wyśle, stukasz w kartę. Publiczne wyszukiwania (pogoda, internet, wiadomości, miejsca) działają bez pytania i wysyłają tylko szukane słowa.</li>
+            <li><strong>Bez reklam, bez sprzedaży danych, bez śledzenia.</strong> Aplikacja nie ma kodu analitycznego, raportowania awarii ani reklam. Strona internetowa liczy wizyty (zob. <a class="text-link" href="#website">Strona internetowa</a>).</li>
+            <li><strong>Możesz sprawdzić, wyeksportować i usunąć.</strong> Ekran Ustawienia › Prywatność › „What leaves this iPhone” (Co opuszcza ten iPhone) pokazuje, dokąd trafiają dane przy Twoich obecnych ustawieniach. W Ustawieniach możesz wyeksportować i usunąć notatki.</li>
+          </ul>
+        </section>
+
+        <nav class="legal-toc" aria-labelledby="toc">
+          <h2 id="toc">Spis treści</h2>
+          <ol>
+            <li><a href="#who">Kto odpowiada za dane</a></li>
+            <li><a href="#collect">Jakie dane, w skrócie</a></li>
+            <li><a href="#on-iphone">Co zostaje na iPhonie</a></li>
+            <li><a href="#voice-and-ai">Głos i przetwarzanie przez AI</a></li>
+            <li><a href="#servers">Serwery Doddy’ego</a></li>
+            <li><a href="#memory">Pamięć i personalizacja</a></li>
+            <li><a href="#connected">Połączone usługi i funkcje Apple</a></li>
+            <li><a href="#processors">Która usługa dostaje co</a></li>
+            <li><a href="#website">Strona internetowa</a></li>
+            <li><a href="#retention">Jak długo przechowujemy dane</a></li>
+            <li><a href="#deleting">Usuwanie danych</a></li>
+            <li><a href="#export">Eksport danych</a></li>
+            <li><a href="#rights">Twoje prawa</a></li>
+            <li><a href="#legal-bases">Podstawy prawne</a></li>
+            <li><a href="#security">Jak chronimy dane</a></li>
+            <li><a href="#transfers">Przekazywanie danych za granicę</a></li>
+            <li><a href="#children">Dzieci</a></li>
+            <li><a href="#changes">Zmiany polityki</a></li>
+            <li><a href="#contact">Kontakt</a></li>
+          </ol>
+        </nav>
+
+        <div class="post-body">
+          <h2 id="who">1. Kto odpowiada za dane</h2>
+          <p>Administratorem Twoich danych osobowych jest <span class="ph" data-ph="ID1">[WŁAŚCICIEL: nazwa prawna firmy]</span>, <span class="ph" data-ph="ID2">[WŁAŚCICIEL: adres pocztowy]</span> („my”).</p>
+          <ul>
+            <li>Kontakt w sprawach prywatności: <span class="ph" data-ph="C2">[WŁAŚCICIEL: adres e-mail w sprawach prywatności]</span></li>
+            <li>Inspektor ochrony danych: <span class="ph" data-ph="C3">[WŁAŚCICIEL: imię, nazwisko i kontakt albo „nie wyznaczono”]</span></li>
+            <li>Przedstawiciel w UE lub Wielkiej Brytanii: <span class="ph" data-ph="C4">[WŁAŚCICIEL: nazwa i adres albo „niepotrzebny”]</span></li>
+          </ul>
+          <p>Ta polityka dotyczy aplikacji Doddy na iPhone’a (z widżetami i opcją udostępniania „Save to Doddy”), serwerów, które Doddy dla niej prowadzi, oraz tej strony, www.doddy.lol, razem z listą oczekujących. Nie dotyczy usług, które łączysz sam (takich jak Google, Microsoft, Notion, Todoist czy Apple), ani stron, do których linkujemy (Telegram, TikTok, Instagram). Mają one własne polityki.</p>
+          <p>Doddy to postać AI. To oprogramowanie, a nie człowiek.</p>
+
+          <h2 id="collect">2. Jakie dane, w skrócie</h2>
+          <div class="table-wrap"><table>
+            <thead><tr><th scope="col">Co</th><th scope="col">Gdzie jest</th><th scope="col">Kiedy wychodzi poza iPhone’a</th></tr></thead>
+            <tbody>
+              <tr><td>Zapisane notatki, listy, zdjęcia i notatki głosowe</td><td>Twój iPhone</td><td>W rozmowie głosowej (notatki i nazwy list), w kopii zapasowej, którą robisz, i jeśli włączysz kopię na potrzeby rozmów telefonicznych</td></tr>
+              <tr><td>Twój głos i rozmowy</td><td>Usługa głosowa w trakcie rozmowy; kilka ostatnich na iPhonie, jeśli to włączysz</td><td>Za każdym razem, gdy rozmawiasz z Doddym</td></tr>
+              <tr><td>Odpowiedzi z sekcji O Tobie, to, czego Doddy się nauczył, ustawienia osobowości</td><td>Twój iPhone</td><td>Ustawienia osobowości w każdej rozmowie; reszta tylko wtedy, gdy włączysz ich udostępnianie głosowi</td></tr>
+              <tr><td>Kalendarz, przypomnienia, kontakty, zdjęcia, kroki, lokalizacja</td><td>Aplikacje Apple na Twoim iPhonie</td><td>Tylko pozycje, których Doddy używa po Twoim „tak”, w tej rozmowie</td></tr>
+              <tr><td>Poczta, pliki, strony i zadania z połączonych kont</td><td>Google, Microsoft, Notion, Todoist</td><td>Wyniki, o które prosisz, przechodzą przez serwer Doddy’ego do aplikacji i głosu</td></tr>
+              <tr><td>Dane logowania</td><td>Pęk kluczy iPhone’a i serwery Doddy’ego</td><td>Gdy logujesz się do głosu i gdy aplikacja loguje się do serwera Doddy’ego</td></tr>
+              <tr><td>E-mail z listy oczekujących (strona)</td><td>Magazyn Doddy’ego w Vercel</td><td>Gdy zapisujesz się na listę</td></tr>
+            </tbody>
+          </table></div>
+
+          <h2 id="on-iphone">3. Co zostaje na iPhonie</h2>
+          <p>Aplikacja nie ma kodu analitycznego, raportowania awarii ani reklam i nie śledzi Cię w innych aplikacjach ani na stronach. Poniższe dane są przechowywane na Twoim iPhonie, w chronionym miejscu aplikacji (ochrona plików iOS), i jak inne dane aplikacji trafiają do kopii zapasowych iPhone’a w iCloud lub na komputerze:</p>
+          <ul>
+            <li><strong>Notatki i listy</strong>, z wcześniejszymi wersjami, jeśli je poprawiałeś. Niedokończone notatki (wpisane, ale niezapisane) są trzymane najwyżej 30 dni i nigdy nie są wysyłane.</li>
+            <li><strong>Zdjęcia</strong> dodane do notatek, także zrobione aparatem w Doddym. Tekst ze zdjęcia jest odczytywany na iPhonie. Zrobione zdjęcie nie trafia do biblioteki zdjęć i nigdy nie jest wysyłane.</li>
+            <li><strong>Notatki głosowe.</strong> Ich słowa są spisywane na iPhonie; nagranie i jego treść nigdzie nie są wysyłane.</li>
+            <li>Odpowiedzi z sekcji <strong>O Tobie</strong> (imię, preferencje), zapisywane dopiero po Twoim przejrzeniu, oraz <strong>Czego się nauczyłem</strong>: fakty i nawyki, które Doddy proponuje na iPhonie na podstawie Twoich słów, zachowywane tylko wtedy, gdy je potwierdzisz.</li>
+            <li><strong>Zapamiętane rozmowy</strong> (ostatnie 10, jako tekst), tylko gdy włączone jest „Pamiętaj ostatnie rozmowy”, i nigdy dla rozmowy oznaczonej jako prywatna.</li>
+            <li><strong>Co zrobił Doddy</strong>, czyli lista działań z ostatnich 30 dni (najwyżej 300 pozycji).</li>
+            <li><strong>Ustawienia</strong>, lista prywatnych notatek i zapisane <strong>miejsce parkowania</strong> (do czasu, aż je zastąpisz lub usuniesz).</li>
+            <li><strong>Widżety</strong> dostają małą kopię przypiętych notatek, najbliższych przypomnień i list. Treść przypomnień jest domyślnie ukryta.</li>
+            <li><strong>Wyszukiwanie iPhone’a</strong> (Spotlight) indeksuje notatki tylko wtedy, gdy włączysz „Pokazuj notatki w wyszukiwaniu iPhone’a”; prywatnych nigdy.</li>
+            <li><strong>Dane logowania</strong> do głosu i do serwera Doddy’ego, w pęku kluczy iPhone’a.</li>
+          </ul>
+          <p>Prywatne notatki (chronione Face ID) nie trafiają do rozmów głosowych, Siri, widżetów ani do kopii na potrzeby rozmów telefonicznych. W aplikacji nie są dodatkowo szyfrowane.</p>
+
+          <h2 id="voice-and-ai">4. Głos i przetwarzanie przez AI</h2>
+          <p>Głos Doddy’ego i część tego, co Doddy pisze, tworzą usługi AI innych firm. Ta część mówi, które to usługi, co dostają i kiedy.</p>
+
+          <h3 id="voice-provider">Kto obsługuje głos</h3>
+          <p>Domyślnie głos Doddy’ego obsługuje <strong>ElevenLabs</strong>: zamienia Twoją mowę na tekst, układa odpowiedź za pomocą dużego modelu językowego i ją wypowiada. W Ustawieniach › Głos możesz zamiast tego wybrać <strong>OpenAI</strong> (jego głos Realtime). Rozmowę dostaje tylko wybrana usługa. Aplikacja pyta Cię, zanim pierwszy raz przekaże Twój głos każdej z nich; w Ustawieniach › Głos można to pytanie przywrócić (w aplikacji: „Ask again before sharing voice”).</p>
+          <p>Model językowy za ElevenLabs: zapisana konfiguracja Doddy’ego wskazuje model Gemini od Google, więc Twoją rozmowę może też przetwarzać Google za pośrednictwem ElevenLabs. <span class="ph" data-ph="D2">[WŁAŚCICIEL: potwierdzić, jakiego modelu używa działający agent głosowy w dniu premiery, i rolę tego dostawcy]</span></p>
+
+          <h3 id="voice-sent">Co jest wysyłane w rozmowie</h3>
+          <ul>
+            <li>Twój głos i rozmowa;</li>
+            <li>zapisane notatki, od najnowszych, do około 6000 znaków (nigdy notatki oznaczone jako prywatne);</li>
+            <li>nazwy list (pozycje listy tylko wtedy, gdy Doddy ją czyta lub zmienia);</li>
+            <li>Twoje ustawienia osobowości Doddy’ego;</li>
+            <li>jeśli je włączysz: kilka ostatnich rozmów (do około 4000 znaków), odpowiedzi z sekcji O Tobie (mogą zawierać Twoje imię) oraz fakty i nawyki potwierdzone w Czego się nauczyłem;</li>
+            <li>w porannym podsumowaniu: dzisiejsze przypomnienia Doddy’ego i listy z niezałatwionymi pozycjami;</li>
+            <li>pozycje, których Doddy używa po Twoim „tak”: wydarzenia z kalendarza, przypomnienia, imiona i nazwiska z kontaktów z dniem i miesiącem urodzin (nigdy rokiem, numerami ani adresami e-mail), szkice wiadomości, liczba kroków, ile zdjęć zrobiłeś i kiedy (nigdy same zdjęcia) oraz wyniki z połączonych kont online;</li>
+            <li>tytuły i stan spraw przekazanych Doddy’emu;</li>
+            <li>losowy identyfikator utworzony dla tej instalacji aplikacji.</li>
+          </ul>
+          <p>Te dane są wysyłane tylko wtedy, gdy rozmowa jest otwarta, najdłużej 10 minut na rozmowę. Mikrofon działa tylko wtedy, gdy rozmawiasz z Doddym, albo od chwili otwarcia Doddy’ego, jeśli włączyłeś to w Ustawieniach.</p>
+
+          <h3 id="voice-kept">Co przechowują usługi głosowe</h3>
+          <ul>
+            <li><strong>ElevenLabs</strong> przechowuje nagranie i zapis każdej prowadzonej przez siebie rozmowy. Obecne ustawienia Doddy’ego w ElevenLabs przechowują je bez limitu czasu. <span class="ph" data-ph="R1">[WŁAŚCICIEL: okres przechowywania nagrań i zapisów w dniu premiery]</span></li>
+            <li><strong>OpenAI:</strong> nie sprawdziliśmy, jak długo OpenAI przechowuje dźwięk i zapis rozmowy. <span class="ph" data-ph="R2">[WŁAŚCICIEL: okres przechowywania w OpenAI dla głosu Realtime]</span></li>
+            <li>Rozmowa <strong>prywatna</strong> oznacza, że nic z niej nie zostaje na Twoim iPhonie. Usługa głosowa i tak ją prowadzi i przechowuje własną kopię, jak wyżej.</li>
+            <li>Usuwanie danych w aplikacji nie usuwa tego, co usługa głosowa już ma. <span class="ph" data-ph="R3">[WŁAŚCICIEL: jak poprosić o usunięcie nagrań i zapisów rozmów]</span></li>
+          </ul>
+
+          <h3 id="translator">Tryb tłumacza</h3>
+          <p>Do usługi głosowej trafia też głos drugiej osoby i wszystko, co zostało powiedziane podczas tłumaczenia. Gdy tryb otwierasz przyciskiem Tłumacz na ekranie głównym, Twoje notatki, rozmowy i profil nie są wysyłane. Gdy zaczynasz go w trakcie rozmowy, to, co Doddy już w niej miał, zostaje w niej, a Doddy ma polecenie, by nigdy tego drugiej osobie nie powtarzać. Nic z tego nie zostaje na Twoim iPhonie, chyba że w ciągu 5 minut od końca stukniesz Kopiuj albo Zapisz. Powiedz drugiej osobie, że jej głos jest przetwarzany.</p>
+
+          <h3 id="lookups">Wyszukiwania, które działają bez pytania</h3>
+          <ul>
+            <li><strong>Pogoda i Wikipedia</strong> (gdy głosem jest ElevenLabs): zapytanie w imieniu Doddy’ego wysyła ElevenLabs. Nazwa miejsca i jego współrzędne trafiają do Open-Meteo, szukane słowa do Wikipedii. Sama aplikacja się z nimi nie łączy. Z głosem OpenAI te funkcje nie działają.</li>
+            <li><strong>Wyszukiwanie w internecie, wiadomości i miejsc:</strong> szukane słowa trafiają na serwer Doddy’ego, który wyszukuje je przez Monid, płatną usługę wyszukiwania, i dostawców, z których ona korzysta (Search1API dla internetu i wiadomości, LiteScrape dla miejsc). Nie logujesz się do żadnej z nich, a serwer Doddy’ego nie przechowuje szukanych słów.</li>
+            <li><strong>Obliczenia oraz przeliczanie jednostek i walut</strong> odbywają się na iPhonie. Przy walutach aplikacja pobiera publiczny dzienny plik kursów Europejskiego Banku Centralnego (najczęściej co sześć godzin); nie są przy tym wysyłane żadne dane o Tobie.</li>
+          </ul>
+
+          <h3 id="claude">Claude (Anthropic) na serwerze Doddy’ego</h3>
+          <p>Gdy prosisz Doddy’ego, żeby coś obszerniej napisał, streścił, wyjaśnił lub zaplanował albo przygotował dokument (prezentację, plik Word, Excel lub PDF albo dłuższy tekst, na przykład wpis na bloga), Doddy najpierw pyta. Po Twoim „tak” serwer Doddy’ego wysyła prośbę i materiał do niej (do około 6000 znaków) do Claude’a firmy Anthropic. Serwer Doddy’ego nie przechowuje prośby; przygotowany dokument trzyma 7 dni, żeby można go było otworzyć z linku, a kopia robocza w Anthropic jest usuwana po pobraniu, o ile Anthropic na to pozwala.</p>
+
+          <h3 id="errands">Sprawy przekazane Doddy’emu</h3>
+          <p>Ta funkcja potrzebuje serwera wiadomości Doddy’ego i jest na nim obecnie wyłączona. Gdy zostanie włączona, a Ty zgodzisz się przekazać sprawę: jej treść, jednozdaniowa notatka Doddy’ego i język trafiają na serwer wiadomości Doddy’ego, gdzie Claude firmy Anthropic szuka w internecie i czyta dla niej strony (więc słowa wyszukiwania utworzone z Twojej sprawy trafiają do dostawcy wyszukiwania Anthropic). Nigdy Twoje zapisane notatki, listy, profil ani wcześniejsze rozmowy. Serwer przechowuje sprawę i jej wynik w postaci zaszyfrowanej, dopóki wynik nie zostanie zapisany na Twoim iPhonie, a potem je usuwa; nieodebrany wynik jest usuwany po 30 dniach. Powiadomienie nie zawiera słów ze sprawy.</p>
+
+          <h3 id="ask-doddy">Ask Doddy (pytania pisane) i Siri</h3>
+          <ul>
+            <li><strong>Ask Doddy</strong> wysyła pisane pytania (oraz, jeśli na to pozwolisz, pasujące do nich zapisane notatki) do osobnej bramki Doddy’ego, która przekazuje je OpenAI. Jest wyłączone, dopóki go nie włączysz, a bramka nie jest jeszcze uruchomiona.</li>
+            <li><strong>Siri:</strong> gdy poprosisz Siri „Zapytaj aplikację Doddy, co mam zapisane”, Doddy szuka na Twoim iPhonie i przekazuje pasującą notatkę Siri do odczytania. Siri obsługuje Twoją prośbę i odpowiedź zgodnie z Twoimi ustawieniami Siri, co może obejmować serwery Apple. Ta funkcja jest domyślnie włączona; możesz ją wyłączyć w Ustawieniach.</li>
+          </ul>
+
+          <h3 id="ai-training">Trenowanie modeli, profilowanie i decyzje</h3>
+          <ul>
+            <li>Nie używamy Twoich notatek ani rozmów do trenowania modeli AI. To, czy może to robić dostawca, zależy od jego warunków. <span class="ph" data-ph="D3">[WŁAŚCICIEL: potwierdzić warunki trenowania i przechowywania u każdego dostawcy: ElevenLabs, Google, OpenAI, Anthropic]</span></li>
+            <li>Doddy nie podejmuje wobec Ciebie decyzji wywołujących skutki prawne lub w podobny sposób istotnie na Ciebie wpływających. Doddy proponuje, Ty potwierdzasz.</li>
+            <li>Nie ma profilowania pod reklamy ani oceniania (scoringu).</li>
+          </ul>
+
+          <h2 id="servers">5. Serwery Doddy’ego</h2>
+          <h3>Logowanie do głosu</h3>
+          <p>Żeby korzystać z głosu w wydanej wersji aplikacji, logujesz się raz przez Apple. Mały serwer logowania Doddy’ego (w Vercel, z danymi w Upstash) sprawdza token logowania Apple, a potem daje aplikacji krótkotrwały dostęp do usługi głosowej, dzięki czemu klucze usług zostają na serwerze. Przechowuje pseudonim Twojego identyfikatora konta Apple utworzony kluczem (nie sam identyfikator), zapisy Twoich sesji i tylko skróty (hashe) tokenów logowania. Nigdy nie dostaje Twojego głosu, zapisów rozmów, notatek ani profilu. Jego logi zawierają rodzaj zapytania, wynik i czas trwania, bez treści i identyfikatorów. W Ustawieniach › Głos jest wylogowanie z głosu i usunięcie konta głosowego Doddy’ego (w aplikacji: „Sign out of voice” i „Delete Doddy voice account”).</p>
+
+          <h3>Serwer Doddy’ego do wyszukiwania, Claude’a i kont online</h3>
+          <p>Aplikacja loguje się do tego serwera sama (hosting w Render, skonfigurowany na Frankfurt; baza danych to na czas testów hostowana baza Postgres w Supabase) za pomocą losowego identyfikatora urządzenia trzymanego w pęku kluczy iPhone’a. Serwer zamienia ten identyfikator na identyfikator konta za pomocą skrótu z kluczem i nie przechowuje identyfikatora urządzenia. Przechowuje:</p>
+          <ul>
+            <li>dla kont online: powiązanie z Twoim użytkownikiem w Composio oraz dla każdego połączenia dostawcę, stan, przyznane uprawnienia i zamaskowaną nazwę konta;</li>
+            <li>krótkotrwałe zgody na każde działanie, na które powiedziałeś „tak”;</li>
+            <li>potwierdzenia tego, co zostało wykonane (narzędzie, czas, stan, liczby; bez tytułów, tematów, szukanych słów i treści);</li>
+            <li>liczniki użycia dla dziennych limitów;</li>
+            <li>dokumenty, które przygotował dla Ciebie Claude, przez 7 dni.</li>
+          </ul>
+          <p>Twoje zapisane notatki nigdy nie są wysyłane na ten serwer.</p>
+
+          <h3>Serwer wiadomości Doddy’ego (jeszcze niewłączony)</h3>
+          <p>Powiadomienia z serwera Doddy’ego, SMS-y, rozmowy telefoniczne z Doddym, codzienne wiadomości i sprawy przekazane Doddy’emu wymagają osobnego serwera wiadomości. Obecne wersje aplikacji nie mają jego adresu, więc nic tam nie trafia. Gdy zostanie włączony, będzie przechowywać anonimowe konto (bez imienia i e-maila), token powiadomień Twojego iPhone’a, jeśli włączysz powiadomienia, Twój numer telefonu, jeśli potwierdzisz go do SMS-ów lub rozmów, wybrane tematy wiadomości i kopię Twoich notatek tylko wtedy, gdy włączysz „Pozwól Doddy’emu korzystać ze wspomnień podczas rozmów telefonicznych” (zaszyfrowaną na serwerze, ale nie end-to-end: serwer może ją odczytać, żeby odpowiedzieć w rozmowie). Wysyłałby przez Apple (powiadomienia), Twilio (SMS-y i rozmowy), ElevenLabs (rozmowy), Anthropic lub OpenAI oraz GNews (wiadomości). Zanim zostanie włączony, zaktualizujemy tę politykę.</p>
+
+          <h2 id="memory">6. Pamięć i personalizacja</h2>
+          <ul>
+            <li>Doddy pamięta tylko to, co zostało zapisane: notatki, które zapisujesz, odpowiedzi z sekcji O Tobie, które przeglądasz, oraz fakty i nawyki potwierdzone w Czego się nauczyłem. Notatki proponowane po rozmowie są wybierane na Twoim iPhonie z Twoich własnych słów i zapisywane tylko wtedy, gdy się zgodzisz.</li>
+            <li>Usługa głosowa dostaje Twoje notatki na początku każdej rozmowy (zob. <a class="text-link" href="#voice-sent">Co jest wysyłane</a>). Reszta trafia tam tylko wtedy, gdy ją włączysz.</li>
+            <li>Ustawienia osobowości zmieniają to, jak Doddy mówi, a nie to, co jest zbierane.</li>
+            <li>Gdy usuwasz wszystkie wspomnienia, aplikacja sprawdza swoje dane i mówi Ci, jeśli czegoś nie udało się usunąć.</li>
+          </ul>
+
+          <h2 id="connected">7. Połączone usługi i funkcje Apple</h2>
+          <h3>Konta online</h3>
+          <p>Możesz połączyć Google (Gmail, Kalendarz, Dysk), Microsoft Outlook, Notion i Todoist. Połączenie działa przez <strong>Composio</strong>: logujesz się w danej usłudze, Composio przechowuje tokeny logowania, a Doddy nigdy nie widzi Twojego hasła. Po połączeniu konta jego narzędzia są włączone; każde możesz wyłączyć.</p>
+          <ul>
+            <li>Co tam trafia: tylko to, o co prosisz, po Twoim „tak”, na przykład data, szukane słowo albo treść e-maila, odpowiedzi czy zadania, które potwierdzasz stuknięciem. Wysłany lub przekazany e-mail trafia do adresatów.</li>
+            <li>Co wraca: wyniki (wydarzenia, podglądy e-maili, nazwy plików, tytuły stron, zadania; cały jeden e-mail albo stronę, jeśli włączysz odczyt e-maila lub strony Notion). Trafiają do aplikacji, a w trakcie rozmowy do usługi głosowej.</li>
+            <li>O jakie uprawnienia prosimy: w Gmailu o czytanie, tworzenie szkiców, wysyłanie i porządkowanie poczty (etykiety, archiwum, kosz), ale nigdy o trwałe usuwanie; w Kalendarzu Google o wydarzenia; w Outlooku o czytanie i zapisywanie poczty i kalendarzy. Zmiana wydarzenia w Outlooku powiadamia jego gości, o czym mówi karta.</li>
+            <li>Rozłącz (Ustawienia › Konta online) usuwa zapis połączenia i prosi Composio o cofnięcie i usunięcie dostępu. Dostęp możesz też usunąć w swoim koncie Google, Microsoft, Notion lub Todoist.</li>
+          </ul>
+          <p>Ustawienia › Połączenia › Wstrzymaj wszystkie połączenia sprawia, że Doddy przestaje używać kalendarza, przypomnień, kontaktów i kont online w rozmowach.</p>
+
+          <h3 id="permissions">Do czego służą uprawnienia iPhone’a</h3>
+          <div class="table-wrap"><table>
+            <thead><tr><th scope="col">Uprawnienie</th><th scope="col">Do czego</th><th scope="col">Co wychodzi poza iPhone’a</th></tr></thead>
+            <tbody>
+              <tr><td>Mikrofon</td><td>Rozmowa z Doddym; notatki głosowe</td><td>Twój głos w rozmowie, do usługi głosowej. Notatki głosowe zostają na iPhonie.</td></tr>
+              <tr><td>Rozpoznawanie mowy</td><td>Spisywanie notatek głosowych</td><td>Nic</td></tr>
+              <tr><td>Kalendarz, Przypomnienia</td><td>Odczyt dni, o które pytasz; dodawanie i zmiany tylko po stuknięciu</td><td>Pozycje, których Doddy używa w rozmowie</td></tr>
+              <tr><td>Kontakty</td><td>Wyszukanie kontaktu, najbliższe urodziny</td><td>Imiona i nazwiska oraz dzień i miesiąc urodzin, w rozmowie</td></tr>
+              <tr><td>Lokalizacja (podczas używania)</td><td>Przypomnienia w miejscu, gdzie zaparkowałeś, kiedy wyjść</td><td>Wyszukiwania miejsc i czasy dojazdu trafiają do Map Apple. Miejsce parkowania zostaje na iPhonie.</td></tr>
+              <tr><td>Aparat</td><td>Zdjęcie do notatki</td><td>Nic</td></tr>
+              <tr><td>Biblioteka zdjęć</td><td>Liczenie zdjęć zrobionych danego dnia</td><td>Tylko liczby i godziny, w rozmowie; nigdy same zdjęcia</td></tr>
+              <tr><td>Ruch i sprawność</td><td>Kroki, dystans i piętra z jednego dnia</td><td>Te liczby, w rozmowie; nic nie jest zachowywane</td></tr>
+              <tr><td>Face ID</td><td>Blokada Doddy’ego lub prywatnej notatki</td><td>Nic; iOS mówi Doddy’emu tylko, czy twarz pasuje</td></tr>
+              <tr><td>Powiadomienia, alarmy</td><td>Minutniki, przypomnienia i alarmy, które ustawiasz</td><td>Nic (chyba że korzystasz z serwera wiadomości, wyżej)</td></tr>
+            </tbody>
+          </table></div>
+          <p>Każde uprawnienie jest wyłączone, dopóki na nie nie pozwolisz, i możesz je wyłączyć w Ustawieniach iOS albo w Ustawieniach Doddy’ego › Połączenia. Doddy nie używa lokalizacji „Zawsze” i nie śledzi, dokąd chodzisz; przypomnienia w miejscu obserwuje iOS na iPhonie.</p>
+          <p>Udostępnienie listy przez iCloud (tam, gdzie dana wersja aplikacji to obsługuje) wysyła nazwę i pozycje listy do Twojego iCloud i do osób, które zaprosisz. Plik kopii zapasowej, który robisz, jest zabezpieczony Twoim hasłem i trafia tam, gdzie go zapiszesz.</p>
+
+          <h2 id="processors">8. Która usługa dostaje co</h2>
+          <p>Te firmy przetwarzają dane dla Doddy’ego albo dostają je, gdy korzystasz z danej funkcji. <span class="ph" data-ph="D1">[WŁAŚCICIEL: jakie umowy powierzenia przetwarzania danych zawarto z każdą z nich i jaka jest rola każdej]</span></p>
+          <div class="table-wrap"><table>
+            <thead><tr><th scope="col">Usługa</th><th scope="col">Do czego</th><th scope="col">Co dostaje</th></tr></thead>
+            <tbody>
+              <tr><td>ElevenLabs</td><td>Głos Doddy’ego (domyślny); zapytania o pogodę i do Wikipedii</td><td>Twój głos, rozmowę i to, co wymienia <a class="text-link" href="#voice-sent">punkt 4</a></td></tr>
+              <tr><td>Google (Gemini, przez ElevenLabs)</td><td>Model językowy za głosem</td><td>Rozmowę, tak jak przekazuje ją ElevenLabs</td></tr>
+              <tr><td>OpenAI</td><td>Głos Doddy’ego, jeśli go wybierzesz; Ask Doddy, jeśli go włączysz</td><td>Przy głosie to samo co ElevenLabs; przy Ask Doddy pisane pytania</td></tr>
+              <tr><td>Anthropic</td><td>Claude na serwerze Doddy’ego; przekazane sprawy</td><td>Prośbę i materiał do niej, po Twoim „tak”</td></tr>
+              <tr><td>Composio</td><td>Łączenie kont online</td><td>Tokeny logowania do kont, które połączysz; zatwierdzone przez Ciebie zapytania</td></tr>
+              <tr><td>Google, Microsoft, Notion, Todoist</td><td>Twoje własne konta</td><td>Zatwierdzone przez Ciebie zapytania (masz z nimi własną umowę)</td></tr>
+              <tr><td>Monid, Search1API, LiteScrape</td><td>Wyszukiwanie w internecie, wiadomości i miejsc</td><td>Szukane słowa</td></tr>
+              <tr><td>Open-Meteo, Wikipedia</td><td>Pogoda i fakty</td><td>Nazwę miejsca i współrzędne; szukane słowa</td></tr>
+              <tr><td>Apple</td><td>Zaloguj się przez Apple, Siri, Mapy Apple, iCloud, powiadomienia</td><td>To, czego potrzebuje dana funkcja, zgodnie z Twoimi ustawieniami Apple</td></tr>
+              <tr><td>Europejski Bank Centralny</td><td>Kursy walut</td><td>Nic o Tobie (plik kursów jest publiczny)</td></tr>
+              <tr><td>Vercel</td><td>Hosting strony, przechowywanie listy oczekujących, serwer logowania do głosu, liczenie wizyt na stronie</td><td>Zapytania do strony; e-maile z listy oczekujących; zapisy logowania</td></tr>
+              <tr><td>Upstash</td><td>Dane serwera logowania do głosu</td><td>Pseudonimowe zapisy logowania</td></tr>
+              <tr><td>Render, Supabase</td><td>Hosting serwera Doddy’ego i jego bazy danych</td><td>Zapisy wymienione w <a class="text-link" href="#servers">punkcie 5</a></td></tr>
+              <tr><td>Google (Analytics, Fonts)</td><td>Pomiar wizyt na stronie i czcionki</td><td>Zob. <a class="text-link" href="#website">punkt 9</a></td></tr>
+            </tbody>
+          </table></div>
+          <p>Nie sprzedajemy Twoich danych osobowych i nie udostępniamy ich do celów reklamowych.</p>
+
+          <h2 id="website">9. Strona internetowa</h2>
+          <ul>
+            <li><strong>Hosting:</strong> strona działa w Vercel, który prowadzi własne logi serwera. <span class="ph" data-ph="R5">[WŁAŚCICIEL: jak długo Vercel przechowuje logi]</span></li>
+            <li><strong>Lista oczekujących:</strong> jeśli się zapiszesz, przechowujemy Twój e-mail, stronę, z której się zapisałeś, wersję tekstu zgody, który widziałeś, czas zapisu i Twoje odpowiedzi na pytania dodatkowe (jaki masz telefon, skąd wiesz o Doddym, co Doddy miałby dla Ciebie robić). Dane są w prywatnym magazynie Vercel we Frankfurcie, jeden plik na e-mail, nazwany skrótem (hashem). Odczytać je może tylko właściciel. Używamy ich tylko po to, żeby dać Ci znać, gdy ruszy wczesny dostęp, i usuwamy je na Twoją prośbę. <span class="ph" data-ph="R4">[WŁAŚCICIEL: jak długo przechowujemy e-maile z listy oczekujących]</span></li>
+            <li><strong>Vercel Web Analytics</strong> liczy odsłony bez plików cookie. Vercel rozpoznaje wizytę po skrócie zapytania, który usuwa po 24 godzinach, i zachowuje stronę, źródło odesłania, kraj, rodzaj urządzenia i przeglądarki.</li>
+            <li><strong>Google Analytics</strong> mierzy wizyty na każdej stronie, także na tej, i ustawia pliki cookie (<code>_ga</code>, <code>_ga_*</code>). Działa bez wcześniejszego pytania. <span class="ph" data-ph="B2">[WŁAŚCICIEL/PRAWNIK: zgoda na analityczne pliki cookie dla odwiedzających z UE]</span></li>
+            <li><strong>Google Fonts:</strong> dwie czcionki strony ładują się z Google, co przy otwarciu strony przekazuje Google Twój adres IP.</li>
+            <li><strong>Linki</strong> do Telegrama, TikToka i Instagrama otwierają te serwisy; niczego im nie wysyłamy.</li>
+          </ul>
+
+          <h2 id="retention">10. Jak długo przechowujemy dane</h2>
+          <div class="table-wrap"><table>
+            <thead><tr><th scope="col">Dane</th><th scope="col">Okres przechowywania</th></tr></thead>
+            <tbody>
+              <tr><td>Notatki, listy, zdjęcia, notatki głosowe, O Tobie, Czego się nauczyłem</td><td>Na Twoim iPhonie, dopóki ich nie usuniesz</td></tr>
+              <tr><td>Niedokończone notatki</td><td>Do zapisania lub odrzucenia, najwyżej 30 dni</td></tr>
+              <tr><td>Zapamiętane rozmowy</td><td>Ostatnie 10, dopóki ich nie zapomnisz</td></tr>
+              <tr><td>Co zrobił Doddy</td><td>30 dni lub 300 pozycji</td></tr>
+              <tr><td>Nagrania i zapisy rozmów w ElevenLabs</td><td>Bez limitu czasu w obecnych ustawieniach <span class="ph" data-ph="R1">[WŁAŚCICIEL: okres przechowywania w dniu premiery]</span></td></tr>
+              <tr><td>Dźwięk i zapisy rozmów w OpenAI</td><td><span class="ph" data-ph="R2">[WŁAŚCICIEL: okres przechowywania w OpenAI]</span></td></tr>
+              <tr><td>Sesje logowania do głosu</td><td>Tokeny logowania ważne 30 dni, odnawiane przy użyciu; zapisy konta do czasu usunięcia konta głosowego</td></tr>
+              <tr><td>Serwer Doddy’ego: zgody na działania</td><td>Usuwane dzień po wygaśnięciu</td></tr>
+              <tr><td>Serwer Doddy’ego: potwierdzenia wykonania</td><td>90 dni, najwyżej 200 najnowszych na konto</td></tr>
+              <tr><td>Serwer Doddy’ego: liczniki użycia</td><td>Około 2 miesięcy (dzienne) i około 13 miesięcy (miesięczne)</td></tr>
+              <tr><td>Serwer Doddy’ego: dokumenty od Claude’a</td><td>7 dni</td></tr>
+              <tr><td>Serwer Doddy’ego: zapisy konta i połączeń</td><td><span class="ph" data-ph="R6">[WŁAŚCICIEL: okres przechowywania i sposób usunięcia]</span> Rozłączenie konta usuwa zapis jego połączenia.</td></tr>
+              <tr><td>Przekazane sprawy (gdy funkcja zostanie włączona)</td><td>Do zapisania wyniku na Twoim iPhonie; najwyżej 30 dni</td></tr>
+              <tr><td>Lista oczekujących</td><td><span class="ph" data-ph="R4">[WŁAŚCICIEL: jak długo przechowujemy e-maile z listy oczekujących]</span></td></tr>
+              <tr><td>Logi serwerów (Vercel, Render)</td><td><span class="ph" data-ph="R5">[WŁAŚCICIEL: okres przechowywania logów]</span></td></tr>
+            </tbody>
+          </table></div>
+
+          <h2 id="deleting">11. Usuwanie danych</h2>
+          <div class="table-wrap"><table>
+            <thead><tr><th scope="col">W aplikacji</th><th scope="col">Co robi</th></tr></thead>
+            <tbody>
+              <tr><td>Usuń przy notatce</td><td>Usuwa tę notatkę (z kilkoma sekundami na cofnięcie)</td></tr>
+              <tr><td>Ustawienia › Usuń wszystkie wspomnienia</td><td>Usuwa wszystkie notatki, listy i pozycje, ich wcześniejsze wersje, pliki zdjęć i notatek głosowych, wpisy w wyszukiwaniu i przypomnienia do notatek. Zatrzymuje udostępniane listy, próbuje opróżnić kopię na serwerze na potrzeby rozmów telefonicznych i mówi Ci, jeśli któraś z tych rzeczy się nie udała.</td></tr>
+              <tr><td>Ustawienia › O Tobie › Zapomnij to wszystko</td><td>Usuwa odpowiedzi z sekcji O Tobie (nie notatki)</td></tr>
+              <tr><td>Ustawienia › Zapomnij zapamiętane rozmowy</td><td>Usuwa zapamiętane rozmowy</td></tr>
+              <tr><td>Co zrobił Doddy › Wyczyść</td><td>Czyści listę działań</td></tr>
+              <tr><td>Ustawienia › Głos › usunięcie konta głosowego (w aplikacji: „Delete Doddy voice account”)</td><td>Kończy wszystkie Twoje sesje głosowe Doddy’ego na serwerze Doddy’ego. Żeby usunąć Doddy’ego z funkcji Zaloguj się przez Apple, zrób to też w ustawieniach Apple ID.</td></tr>
+              <tr><td>Ustawienia › Powiadomienia i SMS-y › Usuń moje dane wiadomości Doddy’ego</td><td>Usuwa Twoje konto na serwerze wiadomości i wszystko, co jest z nim związane, jeśli z niego korzystałeś</td></tr>
+              <tr><td>Ustawienia › Konta online › Rozłącz</td><td>Usuwa zapis połączenia i prosi Composio o cofnięcie i usunięcie dostępu</td></tr>
+            </tbody>
+          </table></div>
+          <p>Czego aplikacja nie usunie:</p>
+          <ul>
+            <li>nagrań i zapisów rozmów, które już są w ElevenLabs lub OpenAI, ani tego, co przechowują ich dostawcy modeli <span class="ph" data-ph="R3">[WŁAŚCICIEL: jak poprosić o ich usunięcie]</span>;</li>
+            <li>zapisów serwera Doddy’ego związanych z wyszukiwaniem, Claude’em i kontami online: nie ma jeszcze przycisku do ich usunięcia. Napisz na <span class="ph" data-ph="C2">[WŁAŚCICIEL: adres e-mail w sprawach prywatności]</span>;</li>
+            <li>kopii zapasowych iPhone’a lub iCloud ani plików, które sam wyeksportowałeś lub zapisałeś jako kopię;</li>
+            <li>tego, co inne firmy przechowują na Twoich kontach u nich (Google, Microsoft, Notion, Todoist, Apple).</li>
+          </ul>
+          <p>Usunięcie aplikacji usuwa to, co trzymała na Twoim iPhonie, ale nie kopie zapasowe urządzenia ani kopie wymienione wyżej.</p>
+
+          <h2 id="export">12. Eksport danych</h2>
+          <ul>
+            <li>Notatki i listy: Eksportuj jako JSON, tekst lub Markdown (plik JSON można przywrócić).</li>
+            <li>O Tobie razem z ustawieniami: JSON lub tekst. Czego się nauczyłem: JSON. Zapamiętane rozmowy: tekst.</li>
+            <li><strong>Zaszyfrowana kopia zapasowa</strong>: plik z notatkami, listami, zdjęciami, notatkami głosowymi, przypomnieniami na godzinę i odpowiedziami z sekcji O Tobie, zabezpieczony wybranym przez Ciebie hasłem (co najmniej 10 znaków). Doddy nie zachowuje kopii pliku ani hasła, więc jeśli zgubisz hasło, nikt pliku nie otworzy. Przywracanie tylko dodaje dane; niczego nie nadpisuje.</li>
+          </ul>
+
+          <h2 id="rights">13. Twoje prawa</h2>
+          <p>Na podstawie przepisów o ochronie danych (takich jak unijne RODO) możesz żądać od nas dostępu do swoich danych osobowych, ich sprostowania, usunięcia, ograniczenia przetwarzania, możesz wnieść sprzeciw oraz otrzymać dane w formie, którą można przenieść. Jeśli przetwarzamy dane na podstawie Twojej zgody, możesz ją w każdej chwili wycofać; nie wpływa to na to, co zrobiono wcześniej. Możesz też złożyć skargę do organu ochrony danych, na przykład w kraju, w którym mieszkasz: <span class="ph" data-ph="C5">[WŁAŚCICIEL: wiodący organ nadzorczy, do potwierdzenia z prawnikiem]</span>.</p>
+          <p>Większość Twoich danych jest na Twoim iPhonie, gdzie możesz je sam przejrzeć, wyeksportować i usunąć (punkty 11 i 12). W pozostałych sprawach napisz na <span class="ph" data-ph="C2">[WŁAŚCICIEL: adres e-mail w sprawach prywatności]</span>. Odpowiadamy w terminie, który wyznacza prawo (według RODO zwykle w ciągu miesiąca). Konta na serwerach Doddy’ego są anonimowe, więc możemy poprosić, żebyś wysłał żądanie z aplikacji albo w inny sposób wykazał, że dane należą do Ciebie.</p>
+
+          <h2 id="legal-bases">14. Podstawy prawne</h2>
+          <p><span class="ph" data-ph="B1">[WŁAŚCICIEL/PRAWNIK: te podstawy prawne są propozycją i wymagają sprawdzenia]</span></p>
+          <div class="table-wrap"><table>
+            <thead><tr><th scope="col">Cel</th><th scope="col">Proponowana podstawa prawna</th></tr></thead>
+            <tbody>
+              <tr><td>Działanie funkcji, z których korzystasz (głos, wyszukiwanie, połączone konta, dokumenty)</td><td>Wykonanie umowy z Tobą (art. 6 ust. 1 lit. b RODO)</td></tr>
+              <tr><td>Mikrofon, kontakty, zdjęcia i inne dodatkowe dostępy; udostępnianie głosowi sekcji O Tobie lub Czego się nauczyłem; kopia notatek na potrzeby rozmów telefonicznych</td><td>Twoja zgoda (art. 6 ust. 1 lit. a), którą możesz wycofać w Ustawieniach</td></tr>
+              <tr><td>Informacje szczególnej kategorii, które sam wpiszesz do notatki lub powiesz Doddy’emu</td><td>Twoja wyraźna zgoda (art. 9 ust. 2 lit. a) <span class="ph" data-ph="B3">[WŁAŚCICIEL/PRAWNIK: potwierdzić]</span></td></tr>
+              <tr><td>Bezpieczeństwo, zapobieganie nadużyciom, dzienne limity, logi bez treści</td><td>Nasz prawnie uzasadniony interes w tym, by Doddy był bezpieczny i finansowo możliwy do utrzymania (art. 6 ust. 1 lit. f)</td></tr>
+              <tr><td>E-maile z listy oczekujących</td><td>Twoja zgoda (art. 6 ust. 1 lit. a)</td></tr>
+              <tr><td>Analityka strony i pliki cookie</td><td><span class="ph" data-ph="B2">[WŁAŚCICIEL/PRAWNIK: zgoda na analityczne pliki cookie dla odwiedzających z UE]</span></td></tr>
+              <tr><td>Głosy innych osób w trybie tłumacza</td><td><span class="ph" data-ph="B4">[WŁAŚCICIEL/PRAWNIK: podstawa i informacja dla osób trzecich]</span></td></tr>
+            </tbody>
+          </table></div>
+
+          <h2 id="security">15. Jak chronimy dane</h2>
+          <p>Co dziś robi kod:</p>
+          <ul>
+            <li>Dane na iPhonie korzystają z ochrony plików iOS; dane logowania są w pęku kluczy. Możesz dodać blokadę Face ID i prywatne notatki.</li>
+            <li>Pliki kopii zapasowej są szyfrowane AES-256-GCM kluczem utworzonym z Twojego hasła.</li>
+            <li>Aplikacja łączy się z serwerami Doddy’ego tylko przez HTTPS. Klucze usług zostają na serwerach, a nie w aplikacji.</li>
+            <li>Serwery Doddy’ego przechowują tokeny logowania tylko jako skróty (hashe), sprawdzają każde działanie względem Twojej zgody, stosują dzienne limity i prowadzą logi bez treści.</li>
+            <li>Strona wysyła nagłówki bezpieczeństwa (politykę bezpieczeństwa treści i wyłączony dostęp do aparatu, mikrofonu i lokalizacji).</li>
+          </ul>
+          <p>Żaden system nie jest całkowicie bezpieczny, a Doddy nie przeszedł jeszcze niezależnego audytu bezpieczeństwa. Nie możemy obiecać, że dane nigdy nie zostaną utracone ani ujawnione. Jeśli naruszenie dotknie Ciebie, powiadomimy Cię zgodnie z wymogami prawa.</p>
+
+          <h2 id="transfers">16. Przekazywanie danych za granicę</h2>
+          <p>Serwer Doddy’ego i serwer wiadomości są skonfigurowane na Frankfurt (UE), a lista oczekujących jest przechowywana we Frankfurcie. Baza danych serwera Doddy’ego (Supabase) i serwer logowania do głosu (Vercel, Upstash) mogą być gdzie indziej. Inne usługi mogą przetwarzać dane w innych krajach, także w Stanach Zjednoczonych. <span class="ph" data-ph="T1">[WŁAŚCICIEL: gdzie każda usługa przetwarza dane i jakie zabezpieczenie przekazania stosuje (decyzja stwierdzająca odpowiedni stopień ochrony, EU-US Data Privacy Framework lub standardowe klauzule umowne)]</span></p>
+
+          <h2 id="children">17. Dzieci</h2>
+          <p>Doddy nie jest przeznaczony dla dzieci, a aplikacja nie ma trybu dla dzieci ani sprawdzania wieku. Żeby z niej korzystać, musisz mieć co najmniej <span class="ph" data-ph="A1">[WŁAŚCICIEL: minimalny wiek, do ustalenia z prawnikiem]</span> lat. Jeśli sądzisz, że dziecko przekazało nam dane osobowe, napisz do nas, a je usuniemy.</p>
+
+          <h2 id="changes">18. Zmiany polityki</h2>
+          <p>Każda wersja ma datę wersji, podaną na górze. Gdy zmienimy tę politykę w sposób, który ma znaczenie, pokażemy nową wersję w aplikacji, zanim zmiana zacznie Cię dotyczyć. Jeśli zmiana wymaga Twojej zgody, poprosimy o nią.</p>
+
+          <h2 id="contact">19. Kontakt</h2>
+          <p><span class="ph" data-ph="ID1">[WŁAŚCICIEL: nazwa prawna firmy]</span>, <span class="ph" data-ph="ID2">[WŁAŚCICIEL: adres pocztowy]</span>, <span class="ph" data-ph="C2">[WŁAŚCICIEL: adres e-mail w sprawach prywatności]</span>.</p>
+
+          <p class="legal-other">Ten dokument jest dostępny także <a class="text-link" href="/privacy/" hreflang="en" lang="en">po angielsku (English)</a>. Zasady korzystania z Doddy’ego opisuje <a class="text-link" href="/pl/terms/">Regulamin</a>.</p>
+        </div>
+      </div>
+    </article>
+  </main>
+
+  <footer class="foot">
+    <div class="wrap foot-inner">
+      <div class="foot-top">
+        <p class="wordmark">Doddy</p>
+        <ul class="foot-links">
+          <li><a href="/pl/">Strona główna</a></li>
+          <li><a href="/pl/what-can-doddy-do/">Co potrafi Doddy?</a></li>
+          <li><a href="/pl/blog/">Blog</a></li>
+          <li><a href="/pl/terms/">Regulamin</a></li>
+          <li><a href="/pl/privacy/" aria-current="page">Polityka prywatności</a></li>
+          <li><a href="/pl/#join">Dołącz do wczesnego dostępu</a></li>
+        </ul>
+      </div>
+      <p>Doddy to asystent AI, nie osoba. Twoje notatki są zapisane na iPhonie; głos, rozmowy telefoniczne, wspólne listy i połączone konta wysyłają dane poza telefon tylko wtedy, gdy je włączysz.</p>
+      <p>Ta strona liczy wizyty za pomocą Vercel Web Analytics, która nie ustawia plików cookie. Jej czcionki ładowane są z Google Fonts.</p>
+      <p>Google Analytics również mierzy wizyty i ustawia pliki cookie.</p>
+      <p>© 2026 Doddy</p>
+    </div>
+  </footer>
+</body>
+</html>

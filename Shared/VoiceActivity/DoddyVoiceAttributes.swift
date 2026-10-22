@@ -21,6 +21,9 @@ struct DoddyVoiceAttributes: ActivityAttributes {
             /// The final state after End or a lost connection: shown briefly on the Lock Screen
             /// (the Dynamic Island drops ended activities at once). Doddy is not listening.
             case ended
+            /// The final state after a start that failed or a connection that dropped (ADR-579):
+            /// shown briefly on the Lock Screen with Open Doddy. Doddy is not listening.
+            case failed
             #if DEBUG
             /// Native lifecycle fixture only; never represents microphone or provider state.
             case testFixture
@@ -96,12 +99,14 @@ extension DoddyVoiceAttributes.ContentState {
     static let wakeListening = Self(status: .wakeListening, isMuted: false)
     static let wakePaused = Self(status: .wakePaused, isMuted: false)
 
-    var isEnded: Bool { status == .ended }
+    /// A final state: ended normally, or stopped by a failure. Neither claims anything live.
+    var isEnded: Bool { status == .ended || status == .failed }
+    var isFailed: Bool { status == .failed }
     /// "Hey Doddy" waiting or paused: not a conversation, so no timer, no Mute, Stop listening.
     var isWakeMode: Bool { status == .wakeListening || status == .wakePaused }
 
     /// Muted only means something while the conversation runs and nothing waits in the app.
-    var showsMuted: Bool { isMuted && status != .needsConfirmation && status != .ended && !isWakeMode }
+    var showsMuted: Bool { isMuted && status != .needsConfirmation && !isEnded && !isWakeMode }
 
     /// The greeting replaces Connecting, Listening and Speaking until the user first answers: it
     /// is Doddy's first message (`opening_line`), so while he speaks it the island shows his words
@@ -133,6 +138,7 @@ extension DoddyVoiceAttributes.ContentState {
         case .speaking: return "Speaking"
         case .needsConfirmation: return "Confirm in Doddy"
         case .ended: return "Conversation ended"
+        case .failed: return "Conversation stopped"
         #if DEBUG
         case .testFixture: return "Test activity"
         #endif
@@ -146,6 +152,12 @@ extension DoddyVoiceAttributes.ContentState {
         case .ended:
             switch savedCount {
             case 0: return "Doddy isn't listening · nothing saved"
+            case 1: return "Doddy isn't listening · 1 note saved"
+            default: return "Doddy isn't listening · \(savedCount) notes saved"
+            }
+        case .failed:
+            switch savedCount {
+            case 0: return "Doddy isn't listening · open Doddy to try again"
             case 1: return "Doddy isn't listening · 1 note saved"
             default: return "Doddy isn't listening · \(savedCount) notes saved"
             }
@@ -165,6 +177,7 @@ extension DoddyVoiceAttributes.ContentState {
         case .speaking: return "speaker.wave.2.fill"
         case .needsConfirmation: return "hand.tap.fill"
         case .ended: return "checkmark.circle"
+        case .failed: return "exclamationmark.circle"
         case .wakeListening: return "ear"
         case .wakePaused: return "pause.circle"
         #if DEBUG
