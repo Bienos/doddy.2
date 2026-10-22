@@ -16,7 +16,7 @@ import AppIntents
 /// copy does anything, so it is pinned to the app (ADR-131). Not listed in Shortcuts: there it is
 /// the App Shortcut "Talk to Doddy".
 @available(iOS 18.0, *)
-struct TalkButtonIntent: AudioRecordingIntent, LiveActivityIntent, ForegroundContinuableIntent {
+struct TalkButtonIntent: AudioRecordingIntent, LiveActivityIntent {
     static let title: LocalizedStringResource = "Talk to Doddy"
     static var description: IntentDescription {
         IntentDescription("Talks to Doddy the way you chose in Doddy's Settings, Action Button: in the Dynamic Island without opening him, or in the app. Press again to end.")
@@ -78,3 +78,10 @@ struct TalkButtonIntent: AudioRecordingIntent, LiveActivityIntent, ForegroundCon
     }
     #endif
 }
+
+#if !DODDY_WIDGET_EXTENSION
+/// Only the app's copy can bring Doddy to the front, and `ForegroundContinuableIntent` is
+/// unavailable in app extensions, so the widget's copy of the type doesn't conform.
+@available(iOS 18.0, *)
+extension TalkButtonIntent: ForegroundContinuableIntent {}
+#endif
