@@ -57,9 +57,9 @@ Kept as they were: the Ask Doddy switch and consent dialog (provider name aside)
 
 ## To turn it on (only the owner can do these)
 
-1. **Deploy the messaging server** (`render.yaml`, service `doddy-messaging`) on a plan that doesn't sleep. The free plan sleeps after about 15 minutes, and the free database is deleted on 10 Nov (STATUS.md). Nothing server-backed works until this exists.
-2. **Set on `doddy-messaging`:** `ANTHROPIC_API_KEY` (a secret) and `ASSISTANT_ENABLED=1`. Optional: `ASSISTANT_MODEL` (default `claude-haiku-5-5`), `ASSISTANT_EFFORT`, `ASSISTANT_DAILY_PER_ACCOUNT` (default 100) and `ASSISTANT_DAILY_PER_SERVER` (default 1000). Also set a spend limit on the key in Anthropic's console: the caps here count requests, not money.
-3. **Tell me the server's https address** and I put it in `ServerConfig.defaultBaseURL`. It is empty today, so every server feature in the app says "needs setup". Release builds ignore an address typed in Settings (ADR-175), on purpose.
+1. **Deploy the messaging server** (`render.yaml`, service `doddy-messaging`) on a plan that doesn't sleep. The free plan sleeps after about 15 minutes, and the free database is deleted on 10 Nov (STATUS.md). The server exists on Render's free plan (it sleeps and takes about 20 s to wake, longer than the app waits to create its account), so the first question after a quiet period often fails until it is on a paid instance.
+2. **Set on `doddy-messaging`:** `ANTHROPIC_API_KEY` (a secret; the owner added it on 22 Oct, not seen by me) and `ASSISTANT_ENABLED=1` (not yet; changing it restarts the server). Optional: `ASSISTANT_MODEL` (default `claude-haiku-5-5`), `ASSISTANT_EFFORT`, `ASSISTANT_DAILY_PER_ACCOUNT` (default 100) and `ASSISTANT_DAILY_PER_SERVER` (default 1000). Also set a spend limit on the key in Anthropic's console: the caps here count requests, not money.
+3. **Done (owner: "2 yes", 22 Oct): the app has the server's address**, `https://doddy-messaging-zw1n.onrender.com` (`ServerConfig.defaultBaseURL`). That switches every server feature on in a build, not only Messages. UI-test launches (`-inMemoryStore`) still have no server. Release builds ignore an address typed in Settings (ADR-175), on purpose.
 4. Turn on Ask Doddy in Settings and ask something. Settings → Ask Doddy → Status then reads "Ready (not yet tested with a real server)". That wording is fixed text: it does not change when a real answer arrives, so the answer itself is the test.
 
 ## Constitution evidence log
