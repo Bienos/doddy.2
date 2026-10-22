@@ -44,6 +44,8 @@ expect false "docs only" docs/implementation/VOICE_SESSION_STARTS.md
 expect false "top-level notes" STATUS.md DECISIONS.md README.md BUILD_AND_TEST.md
 expect false "agent notes in app folders" DoddyApp/CLAUDE.md Packages/DoddyCore/CLAUDE.md
 expect false "servers and site" server/messaging/src/index.ts backend/src/a.ts gateway/api/b.js site/index.html
+expect false "the web app (ADR-579)" web/src/App.tsx web/package.json web/e2e/workspace.spec.ts contracts/web/link-code.json
+expect true "the web app's asset generator, which the Mac's ci.sh runs" tools/gen_web_assets.py
 expect false "secrets manifest and env templates" secrets/manifest.json backend/.env.op
 expect false "voice agent notes that aren't bundled" voice-agent/README.md voice-agent/phone/instructions.md
 expect false "paused Watch and Mac apps (ADR-572)" DoddyWatch/A.swift DoddyWatchWidgets/B.swift DoddyMac/C.swift DoddyMacWidgets/D.swift Config/DoddyWatch.entitlements Config/DoddyMac-Info.plist project-watch.yml project-mac.yml

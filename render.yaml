@@ -21,7 +21,9 @@ services:
     plan: free            # sleeps when idle and has no disk: data lives in Postgres (DATABASE_URL, ADR-525)
     region: frankfurt     # closest to Warsaw
     rootDir: backend
-    buildCommand: npm ci && npm run build
+    # Also builds Doddy Web (web/, ADR-579), which this service serves on its own origin. The live
+    # service was made by hand: its build command has to be changed the same way in the dashboard.
+    buildCommand: npm ci && npm run build && npm ci --prefix ../web && npm run build --prefix ../web
     startCommand: node dist/src/server.js
     healthCheckPath: /v1/health
     autoDeploy: false
@@ -109,6 +111,15 @@ services:
         sync: false
       - key: DODDY_CLAUDE_MODEL
         value: claude-sonnet-5-5
+      # Doddy Web (ADR-579): the https origin people open it at, e.g. this service's own
+      # https://doddy-yaci.onrender.com, or https://app.doddy.lol once the owner points that name
+      # here. Empty: the web app and its routes are off.
+      - key: DODDY_WEB_ORIGIN
+        sync: false
+      # Render's proxy appends the client's address to X-Forwarded-For; used only to limit wrong
+      # sign-in codes per client.
+      - key: DODDY_TRUST_PROXY
+        value: "1"
 
   - type: web
     name: doddy-messaging
