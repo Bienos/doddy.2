@@ -19,7 +19,7 @@ struct AssistantWiring: Sendable {
 }
 
 /// Composition root. Local memory and the reviewed profile use one SQLite file; voice uses the
-/// ElevenLabs agent (VoiceView); typed questions go through the Doddy gateway (AskView); the Talk to
+/// ElevenLabs agent (VoiceView); typed questions go through the Doddy gateway (MessagesView); the Talk to
 /// Doddy shortcut and Back Tap guide live in `ShortcutRouter`; Connected Apps talks to a Doddy server
 /// (ConnectedAppsScreen); other actions stay explicit `Unavailable*` adapters.
 struct AppEnvironment: Sendable {
@@ -54,6 +54,8 @@ struct AppEnvironment: Sendable {
     /// Tasks handed to Doddy's background worker (ADR-570): the user's words, the state, and the
     /// result once it is saved here (then the server deletes its copy), in the same file.
     var errandRepository: any ErrandRepository = UnavailableErrandRepository()
+    /// The typed conversation with Doddy (ADR-585): messages kept on this iPhone until deleted, in the same file.
+    var messageThreadRepository: any MessageThreadRepository = UnavailableMessageThreadRepository()
 
     static let unavailable = AppEnvironment(
         memoryRepository: UnavailableMemoryRepository(),
@@ -106,7 +108,8 @@ struct AppEnvironment: Sendable {
                     procedures: SQLiteProcedureRepository(database: database),
                     outcomes: SQLiteOutcomeEventRepository(database: database)),
                 callCaseRepository: SQLiteCallCaseRepository(database: database),
-                errandRepository: SQLiteErrandRepository(database: database))
+                errandRepository: SQLiteErrandRepository(database: database),
+                messageThreadRepository: SQLiteMessageThreadRepository(database: database))
         } catch {
             return AppEnvironment(
                 memoryRepository: UnavailableMemoryRepository(),

@@ -87,7 +87,6 @@
   "Applies from your next voice conversation. Mood changes how Doddy sounds, not what he feels: he's an AI and doesn't have moods.": "Vrijedi od tvojeg sljedećeg glasovnog razgovora. Raspoloženje mijenja kako Doddy zvuči, a ne što osjeća: on je AI i nema raspoloženja.",
   "Applies from your next voice conversation. \\\"Starts in\\\" sets the language Doddy greets you in; on Automatic he starts in English. Either way he follows whichever European language you speak, and switches when you do. The sample is Doddy's hello in English and Polish at your speed; expressiveness is only heard in a conversation. All voices speak every language Doddy does, each with its own accent; Wiktor is a native Polish speaker. Voices are candidates while Doddy's final voice is chosen.": "Vrijedi od tvojeg sljedećeg glasovnog razgovora. „Počinje na“ postavlja jezik na kojem te Doddy pozdravlja; na Automatski počinje na engleskom. U svakom slučaju prati europski jezik kojim govoriš i prebacuje se kad se ti prebaciš. Uzorak je Doddyjev pozdrav na engleskom i poljskom pri tvojoj brzini; izražajnost se čuje samo u razgovoru. Svi glasovi govore sve jezike koje govori Doddy, svaki sa svojim naglaskom; Wiktor je izvorni govornik poljskog. Glasovi su kandidati dok se ne odabere Doddyjev konačni glas.",
   "Arrive by %@": "Stići do %@",
-  "Ask Doddy": "Pitaj Doddyja",
   "Ask Doddy (typed questions)": "Pitaj Doddyja (pisana pitanja)",
   "Ask Doddy what I saved": "Pitaj Doddyja što imam spremljeno",
   "Ask a question": "Postavi pitanje",
@@ -252,7 +251,6 @@
   "Doddy has no place on this iPhone to keep unfinished notes. Save this one before you leave.": "Doddy nema mjesta na ovom iPhoneu za čuvanje nedovršenih bilješki. Spremi ovu prije nego što odeš.",
   "Doddy is a practical, curious mate who spots small hassles, answers first and admits when he got something wrong. Pick how he comes across.": "Doddy je praktičan, znatiželjan tip koji uočava male gnjavaže, prvo odgovara i priznaje kad je nešto pogriješio. Odaberi kako će djelovati.",
   "Doddy is an AI, not a person.": "Doddy je AI, ne osoba.",
-  "Doddy is an AI, not a person. Your question, the last few messages and any notes shown under an answer are sent to Doddy's server and on to OpenAI to write the reply. Nothing is saved unless you save it.": "Doddy je AI, ne osoba. Tvoje pitanje, nekoliko zadnjih poruka i sve bilješke prikazane ispod odgovora šalju se na Doddyjev poslužitelj i dalje u OpenAI radi pisanja odgovora. Ništa se ne sprema osim ako to ne spremiš.",
   "Doddy is locked": "Doddy je zaključan",
   "Doddy is speaking": "Doddy govori",
   "Doddy is thinking…": "Doddy razmišlja…",
@@ -1277,5 +1275,16 @@
   "What I can do": "Što znam",
   "You ask Doddy where they are.": "Pitaš Doddyja gdje su.",
   "You'd saved “keys under the sofa cushion”.": "Imaš spremljeno: „ključevi ispod jastuka na kauču“.",
-  "Web search is on, and an account's tools come on when you connect it. Doddy still asks before every look, and anything that sends, adds or changes something shows you a card first and waits for your tap. Switch any tool off here.": "Pretraživanje weba je uključeno, a alati računa uključuju se kad ga povežeš. Doddy ipak pita prije svakog pregleda, a sve što nešto šalje, dodaje ili mijenja najprije ti pokaže karticu i čeka tvoj dodir. Ovdje možeš isključiti bilo koji alat."
+  "Web search is on, and an account's tools come on when you connect it. Doddy still asks before every look, and anything that sends, adds or changes something shows you a card first and waits for your tap. Switch any tool off here.": "Pretraživanje weba je uključeno, a alati računa uključuju se kad ga povežeš. Doddy ipak pita prije svakog pregleda, a sve što nešto šalje, dodaje ili mijenja najprije ti pokaže karticu i čeka tvoj dodir. Ovdje možeš isključiti bilo koji alat.",
+  "Messages": "Poruke",
+  "Delete conversation": "Izbriši razgovor",
+  "It is removed from this iPhone. Your saved notes are not affected.": "Uklanja se s ovog iPhonea. Tvoje spremljene bilješke nisu zahvaćene.",
+  "Couldn't delete the conversation": "Razgovor nije moguće izbrisati",
+  "Doddy couldn't confirm it was removed from this iPhone. Try again.": "Doddy nije mogao potvrditi da je razgovor uklonjen s ovog iPhonea. Pokušaj ponovno.",
+  "Sending…": "Šalje se…",
+  "No answer yet. Tap to try again.": "Još nema odgovora. Dodirni za ponovni pokušaj.",
+  "Your message is in the conversation. Tap it to send it again. Your saved notes are not affected.": "Tvoja je poruka u razgovoru. Dodirni je da je ponovno pošalješ. Tvoje spremljene bilješke nisu zahvaćene.",
+  "Doddy can't read or save this conversation on this iPhone right now. What you write here is gone when you close this screen.": "Doddy trenutačno ne može čitati ni spremiti ovaj razgovor na ovaj iPhone. Što ovdje napišeš nestaje kad zatvoriš ovaj zaslon.",
+  "Some of these notes have since been deleted.": "Neke od ovih bilješki u međuvremenu su izbrisane.",
+  "Doddy is an AI, not a person. This conversation is saved on this iPhone until you delete it. Your question, the last few messages and any notes shown under an answer are sent to Doddy's server and on to OpenAI to write the reply.": "Doddy je AI, ne osoba. Ovaj se razgovor sprema na ovaj iPhone dok ga ne izbrišeš. Tvoje pitanje, nekoliko zadnjih poruka i sve bilješke prikazane ispod odgovora šalju se na Doddyjev poslužitelj i dalje u OpenAI radi pisanja odgovora."
 }

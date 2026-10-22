@@ -87,7 +87,6 @@
   "Applies from your next voice conversation. Mood changes how Doddy sounds, not what he feels: he's an AI and doesn't have moods.": "Vale dalla tua prossima conversazione vocale. L'umore cambia come suona Doddy, non ciò che prova: è un'IA e non ha umori.",
   "Applies from your next voice conversation. \\\"Starts in\\\" sets the language Doddy greets you in; on Automatic he starts in English. Either way he follows whichever European language you speak, and switches when you do. The sample is Doddy's hello in English and Polish at your speed; expressiveness is only heard in a conversation. All voices speak every language Doddy does, each with its own accent; Wiktor is a native Polish speaker. Voices are candidates while Doddy's final voice is chosen.": "Vale dalla tua prossima conversazione vocale. “Inizia in” imposta la lingua in cui Doddy ti saluta; su Automatico inizia in inglese. In ogni caso segue la lingua europea in cui parli e cambia quando cambi tu. L'anteprima è il saluto di Doddy in inglese e in polacco alla tua velocità; l'espressività si sente solo in una conversazione. Tutte le voci parlano ogni lingua di Doddy, ciascuna con il proprio accento; Wiktor è madrelingua polacco. Le voci sono candidate finché non viene scelta la voce definitiva di Doddy.",
   "Arrive by %@": "Arrivo entro le %@",
-  "Ask Doddy": "Chiedi a Doddy",
   "Ask Doddy (typed questions)": "Chiedi a Doddy (domande scritte)",
   "Ask Doddy what I saved": "Chiedi a Doddy cosa ho salvato",
   "Ask a question": "Fai una domanda",
@@ -252,7 +251,6 @@
   "Doddy has no place on this iPhone to keep unfinished notes. Save this one before you leave.": "Doddy non ha spazio su questo iPhone per conservare le note non finite. Salva questa prima di uscire.",
   "Doddy is a practical, curious mate who spots small hassles, answers first and admits when he got something wrong. Pick how he comes across.": "Doddy è un tipo pratico e curioso che nota le piccole seccature, risponde subito e ammette quando ha sbagliato. Scegli come si presenta.",
   "Doddy is an AI, not a person.": "Doddy è un'IA, non una persona.",
-  "Doddy is an AI, not a person. Your question, the last few messages and any notes shown under an answer are sent to Doddy's server and on to OpenAI to write the reply. Nothing is saved unless you save it.": "Doddy è un'IA, non una persona. La tua domanda, gli ultimi messaggi e le note mostrate sotto una risposta vengono inviati al server di Doddy e poi a OpenAI per scrivere la risposta. Niente viene salvato a meno che non lo salvi tu.",
   "Doddy is locked": "Doddy è bloccato",
   "Doddy is speaking": "Doddy sta parlando",
   "Doddy is thinking…": "Doddy sta pensando…",
@@ -1277,5 +1275,16 @@
   "What I can do": "Cosa so fare",
   "You ask Doddy where they are.": "Chiedi a Doddy dove sono.",
   "You'd saved “keys under the sofa cushion”.": "Avevi salvato “chiavi sotto il cuscino del divano”.",
-  "Web search is on, and an account's tools come on when you connect it. Doddy still asks before every look, and anything that sends, adds or changes something shows you a card first and waits for your tap. Switch any tool off here.": "La ricerca web è attiva, e gli strumenti di un account si attivano quando lo colleghi. Doddy chiede comunque prima di ogni controllo, e tutto ciò che invia, aggiunge o modifica qualcosa ti mostra prima una scheda e aspetta il tuo tocco. Qui puoi disattivare qualsiasi strumento."
+  "Web search is on, and an account's tools come on when you connect it. Doddy still asks before every look, and anything that sends, adds or changes something shows you a card first and waits for your tap. Switch any tool off here.": "La ricerca web è attiva, e gli strumenti di un account si attivano quando lo colleghi. Doddy chiede comunque prima di ogni controllo, e tutto ciò che invia, aggiunge o modifica qualcosa ti mostra prima una scheda e aspetta il tuo tocco. Qui puoi disattivare qualsiasi strumento.",
+  "Messages": "Messaggi",
+  "Delete conversation": "Elimina conversazione",
+  "It is removed from this iPhone. Your saved notes are not affected.": "Viene rimossa da questo iPhone. Le tue note salvate non vengono toccate.",
+  "Couldn't delete the conversation": "Impossibile eliminare la conversazione",
+  "Doddy couldn't confirm it was removed from this iPhone. Try again.": "Doddy non è riuscito a confermare che è stata rimossa da questo iPhone. Riprova.",
+  "Sending…": "Invio…",
+  "No answer yet. Tap to try again.": "Ancora nessuna risposta. Tocca per riprovare.",
+  "Your message is in the conversation. Tap it to send it again. Your saved notes are not affected.": "Il tuo messaggio è nella conversazione. Toccalo per inviarlo di nuovo. Le tue note salvate non vengono toccate.",
+  "Doddy can't read or save this conversation on this iPhone right now. What you write here is gone when you close this screen.": "Doddy non riesce a leggere né a salvare questa conversazione su questo iPhone in questo momento. Quello che scrivi qui sparisce quando chiudi questa schermata.",
+  "Some of these notes have since been deleted.": "Alcune di queste note sono state eliminate nel frattempo.",
+  "Doddy is an AI, not a person. This conversation is saved on this iPhone until you delete it. Your question, the last few messages and any notes shown under an answer are sent to Doddy's server and on to OpenAI to write the reply.": "Doddy è un'IA, non una persona. Questa conversazione è salvata su questo iPhone finché non la elimini. La tua domanda, gli ultimi messaggi e le note mostrate sotto una risposta vengono inviati al server di Doddy e poi a OpenAI per scrivere la risposta."
 }

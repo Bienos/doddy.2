@@ -117,7 +117,6 @@
   "Approving sends exactly this card. It can be approved until %@; after that, make a new one.": "Zatwierdzenie wysyła dokładnie tę kartę. Można ją zatwierdzić do %@; potem przygotuj nową.",
   "Arrive by %@": "Na miejscu do %@",
   "As Doddy says it: \\\"w imieniu …\\\"": "Tak, jak powie Doddy: „w imieniu …”",
-  "Ask Doddy": "Zapytaj Doddy’ego",
   "Ask Doddy (typed questions)": "Zapytaj Doddy’ego (pytania pisane)",
   "Ask Doddy what I saved": "Zapytaj Doddy’ego, co mam zapisane",
   "Ask Siri": "Zapytaj Siri",
@@ -340,7 +339,6 @@
   "Doddy is an AI, not a person.": "Doddy to AI, nie człowiek.",
   "Doddy is an AI, not a person. Notes are kept on this iPhone, and because Memory on calls is on, a copy is on your Doddy messaging server so Doddy can answer on calls. While a conversation is open, notes and your last few conversations go to ElevenLabs, or OpenAI if you switch Home's voice to it so Doddy knows them. Typed questions go to Doddy's server and OpenAI only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connected Apps.": "Doddy to SI, nie człowiek. Notatki są na tym iPhonie, a ponieważ Pamięć w rozmowach telefonicznych jest włączona, ich kopia jest na serwerze wiadomości Doddy’ego, żeby Doddy mógł z nich korzystać podczas rozmów telefonicznych. Gdy rozmowa jest otwarta, notatki i kilka ostatnich rozmów trafiają do ElevenLabs albo OpenAI, jeśli przełączysz na niego głos na ekranie głównym, żeby Doddy je znał. Pisane pytania trafiają do serwera Doddy’ego i OpenAI tylko wtedy, gdy włączysz Zapytaj Doddy’ego w Ustawieniach. Kalendarz, przypomnienia i kontakty są wyłączone, dopóki nie włączysz ich w Ustawieniach, a Dziś czyta je tylko na tym iPhonie; czytanie Kalendarza Google jest w Ustawieniach › Połączone aplikacje.",
   "Doddy is an AI, not a person. Notes stay on this iPhone; while a conversation is open they and your last few conversations go to ElevenLabs, or OpenAI if you switch Home's voice to it so Doddy knows them. Typed questions go to Doddy's server and OpenAI only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connected Apps.": "Doddy to SI, nie człowiek. Notatki zostają na tym iPhonie; gdy rozmowa jest otwarta, one i kilka ostatnich rozmów trafiają do ElevenLabs albo OpenAI, jeśli przełączysz na niego głos na ekranie głównym, żeby Doddy je znał. Pisane pytania trafiają do serwera Doddy’ego i OpenAI tylko wtedy, gdy włączysz Zapytaj Doddy’ego w Ustawieniach. Kalendarz, przypomnienia i kontakty są wyłączone, dopóki nie włączysz ich w Ustawieniach, a Dziś czyta je tylko na tym iPhonie; czytanie Kalendarza Google jest w Ustawieniach › Połączone aplikacje.",
-  "Doddy is an AI, not a person. Your question, the last few messages and any notes shown under an answer are sent to Doddy's server and on to OpenAI to write the reply. Nothing is saved unless you save it.": "Doddy to SI, nie człowiek. Twoje pytanie, kilka ostatnich wiadomości i notatki pokazane pod odpowiedzią trafiają na serwer Doddy’ego i dalej do OpenAI, aby napisać odpowiedź. Nic nie jest zapisywane, dopóki sam tego nie zapiszesz.",
   "Doddy is calling…": "Doddy dzwoni…",
   "Doddy is locked": "Doddy jest zablokowany",
   "Doddy is on a call": "Doddy prowadzi rozmowę",
@@ -1669,5 +1667,16 @@
   "Your tasks": "Twoje sprawy",
   "fits": "mieści się",
   "goes over": "przekracza",
-  "not sure": "nie wiadomo"
+  "not sure": "nie wiadomo",
+  "Messages": "Wiadomości",
+  "Delete conversation": "Usuń rozmowę",
+  "It is removed from this iPhone. Your saved notes are not affected.": "Zostanie usunięta z tego iPhone’a. Zapisane notatki pozostają bez zmian.",
+  "Couldn't delete the conversation": "Nie udało się usunąć rozmowy",
+  "Doddy couldn't confirm it was removed from this iPhone. Try again.": "Doddy nie mógł potwierdzić, że rozmowa została usunięta z tego iPhone’a. Spróbuj ponownie.",
+  "Sending…": "Wysyłanie…",
+  "No answer yet. Tap to try again.": "Jeszcze bez odpowiedzi. Dotknij, aby spróbować ponownie.",
+  "Your message is in the conversation. Tap it to send it again. Your saved notes are not affected.": "Twoja wiadomość jest w rozmowie. Dotknij jej, aby wysłać ją ponownie. Zapisane notatki pozostają bez zmian.",
+  "Doddy can't read or save this conversation on this iPhone right now. What you write here is gone when you close this screen.": "Doddy nie może teraz odczytać ani zapisać tej rozmowy na tym iPhonie. To, co tu napiszesz, zniknie po zamknięciu tego ekranu.",
+  "Some of these notes have since been deleted.": "Niektóre z tych notatek zostały od tego czasu usunięte.",
+  "Doddy is an AI, not a person. This conversation is saved on this iPhone until you delete it. Your question, the last few messages and any notes shown under an answer are sent to Doddy's server and on to OpenAI to write the reply.": "Doddy to SI, nie człowiek. Ta rozmowa jest zapisana na tym iPhonie, dopóki jej nie usuniesz. Twoje pytanie, kilka ostatnich wiadomości i notatki pokazane pod odpowiedzią trafiają na serwer Doddy’ego i dalej do OpenAI, aby napisać odpowiedź."
 }

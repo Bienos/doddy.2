@@ -87,7 +87,6 @@
   "Applies from your next voice conversation. Mood changes how Doddy sounds, not what he feels: he's an AI and doesn't have moods.": "从你的下一次语音对话开始生效。心情只改变 Doddy 的语气，不改变他的感受：他是 AI，没有心情。",
   "Applies from your next voice conversation. \\\"Starts in\\\" sets the language Doddy greets you in; on Automatic he starts in English. Either way he follows whichever European language you speak, and switches when you do. The sample is Doddy's hello in English and Polish at your speed; expressiveness is only heard in a conversation. All voices speak every language Doddy does, each with its own accent; Wiktor is a native Polish speaker. Voices are candidates while Doddy's final voice is chosen.": "从你的下一次语音对话开始生效。“起始语言”设置 Doddy 向你打招呼时使用的语言；选择“自动”时，他会用英语开始。无论哪种方式，他都会跟随你所说的任何一种欧洲语言，并在你切换时一起切换。试听内容是 Doddy 按你设定的语速用英语和波兰语打招呼；表现力只有在对话中才能听到。所有语音都能说 Doddy 会的每一种语言，各有自己的口音；Wiktor 的母语是波兰语。在 Doddy 的最终语音确定之前，这些语音都是候选。",
   "Arrive by %@": "%@ 前到达",
-  "Ask Doddy": "问 Doddy",
   "Ask Doddy (typed questions)": "问 Doddy（文字提问）",
   "Ask Doddy what I saved": "问 Doddy 我存了什么",
   "Ask a question": "提个问题",
@@ -252,7 +251,6 @@
   "Doddy has no place on this iPhone to keep unfinished notes. Save this one before you leave.": "Doddy 在这台 iPhone 上没有地方存放未完成的笔记。离开前请先保存这一条。",
   "Doddy is a practical, curious mate who spots small hassles, answers first and admits when he got something wrong. Pick how he comes across.": "Doddy 是个务实、好奇的伙伴，能发现小麻烦，先回答问题，出错时会承认。选一选他给人的感觉。",
   "Doddy is an AI, not a person.": "Doddy 是 AI，不是真人。",
-  "Doddy is an AI, not a person. Your question, the last few messages and any notes shown under an answer are sent to Doddy's server and on to OpenAI to write the reply. Nothing is saved unless you save it.": "Doddy 是 AI，不是真人。你的问题、最近几条消息以及回答下方显示的笔记，会发送到 Doddy 的服务器，再转给 OpenAI 来撰写回复。除非你保存，否则不会保存任何内容。",
   "Doddy is locked": "Doddy 已锁定",
   "Doddy is speaking": "Doddy 正在说话",
   "Doddy is thinking…": "Doddy 正在思考…",
@@ -1277,5 +1275,16 @@
   "What I can do": "我能做什么",
   "You ask Doddy where they are.": "你问 Doddy 它们在哪里。",
   "You'd saved “keys under the sofa cushion”.": "你之前记下了“钥匙在沙发垫下面”。",
-  "Web search is on, and an account's tools come on when you connect it. Doddy still asks before every look, and anything that sends, adds or changes something shows you a card first and waits for your tap. Switch any tool off here.": "网页搜索已开启，账户的工具会在你连接账户后开启。Doddy 每次查看前仍会询问，任何会发送、添加或更改内容的操作都会先显示一张卡片，等你轻点确认。你可以在这里关闭任何工具。"
+  "Web search is on, and an account's tools come on when you connect it. Doddy still asks before every look, and anything that sends, adds or changes something shows you a card first and waits for your tap. Switch any tool off here.": "网页搜索已开启，账户的工具会在你连接账户后开启。Doddy 每次查看前仍会询问，任何会发送、添加或更改内容的操作都会先显示一张卡片，等你轻点确认。你可以在这里关闭任何工具。",
+  "Messages": "信息",
+  "Delete conversation": "删除对话",
+  "It is removed from this iPhone. Your saved notes are not affected.": "将从这部 iPhone 中删除。你保存的笔记不受影响。",
+  "Couldn't delete the conversation": "无法删除对话",
+  "Doddy couldn't confirm it was removed from this iPhone. Try again.": "Doddy 无法确认对话已从这部 iPhone 中删除。请重试。",
+  "Sending…": "正在发送…",
+  "No answer yet. Tap to try again.": "还没有回复。点按重试。",
+  "Your message is in the conversation. Tap it to send it again. Your saved notes are not affected.": "你的消息仍在对话中。点按即可再次发送。你保存的笔记不受影响。",
+  "Doddy can't read or save this conversation on this iPhone right now. What you write here is gone when you close this screen.": "Doddy 现在无法在这部 iPhone 上读取或保存这段对话。你在这里写的内容会在关闭此屏幕后消失。",
+  "Some of these notes have since been deleted.": "其中一些笔记之后已被删除。",
+  "Doddy is an AI, not a person. This conversation is saved on this iPhone until you delete it. Your question, the last few messages and any notes shown under an answer are sent to Doddy's server and on to OpenAI to write the reply.": "Doddy 是 AI，不是真人。这段对话会保存在这部 iPhone 上，直到你删除它。你的问题、最近几条消息以及回答下方显示的笔记，会发送到 Doddy 的服务器，再转给 OpenAI 来撰写回复。"
 }

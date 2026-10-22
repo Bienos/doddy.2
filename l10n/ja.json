@@ -87,7 +87,6 @@
   "Applies from your next voice conversation. Mood changes how Doddy sounds, not what he feels: he's an AI and doesn't have moods.": "次の音声会話から適用されます。「気分」はDoddyの話し方を変えるだけで、感じ方を変えるものではありません。DoddyはAIなので、気分はありません。",
   "Applies from your next voice conversation. \\\"Starts in\\\" sets the language Doddy greets you in; on Automatic he starts in English. Either way he follows whichever European language you speak, and switches when you do. The sample is Doddy's hello in English and Polish at your speed; expressiveness is only heard in a conversation. All voices speak every language Doddy does, each with its own accent; Wiktor is a native Polish speaker. Voices are candidates while Doddy's final voice is chosen.": "次の音声会話から適用されます。「開始言語」は、Doddyが最初にあいさつする言語です。「自動」の場合は英語で始めます。どちらでも、あなたが話すヨーロッパの言語に合わせ、あなたが切り替えればDoddyも切り替えます。サンプルは、英語とポーランド語でのDoddyのあいさつをあなたの速さで再生したものです。表現の豊かさは会話の中でしか聞けません。すべての声がDoddyの話せる全言語を話し、それぞれに独自のなまりがあります。Wiktorはポーランド語のネイティブです。Doddyの最終的な声が決まるまで、これらの声は候補です。",
   "Arrive by %@": "%@までに到着",
-  "Ask Doddy": "Doddyに聞く",
   "Ask Doddy (typed questions)": "Doddyに聞く（文字入力の質問）",
   "Ask Doddy what I saved": "保存した内容をDoddyに聞く",
   "Ask a question": "質問する",
@@ -252,7 +251,6 @@
   "Doddy has no place on this iPhone to keep unfinished notes. Save this one before you leave.": "このiPhoneには、Doddyが未完成のメモを保存できる場所がありません。離れる前にこのメモを保存してください。",
   "Doddy is a practical, curious mate who spots small hassles, answers first and admits when he got something wrong. Pick how he comes across.": "Doddyは実用的で好奇心旺盛な相棒です。小さな面倒に気づき、まず答えを言い、間違えたときは認めます。どんな話し方にするか選んでください。",
   "Doddy is an AI, not a person.": "DoddyはAIであり、人ではありません。",
-  "Doddy is an AI, not a person. Your question, the last few messages and any notes shown under an answer are sent to Doddy's server and on to OpenAI to write the reply. Nothing is saved unless you save it.": "DoddyはAIであり、人ではありません。あなたの質問、直近の数件のメッセージ、回答の下に表示されるメモは、Doddyのサーバーに送られ、さらに返答を書くためにOpenAIに送られます。あなたが保存しない限り、何も保存されません。",
   "Doddy is locked": "Doddyはロックされています",
   "Doddy is speaking": "Doddyが話しています",
   "Doddy is thinking…": "Doddyが考えています…",
@@ -1277,5 +1275,16 @@
   "What I can do": "できること",
   "You ask Doddy where they are.": "あなたがDoddyに、どこにあるか聞きます。",
   "You'd saved “keys under the sofa cushion”.": "「鍵はソファのクッションの下」と保存していました。",
-  "Web search is on, and an account's tools come on when you connect it. Doddy still asks before every look, and anything that sends, adds or changes something shows you a card first and waits for your tap. Switch any tool off here.": "ウェブ検索はオンです。アカウントのツールは、接続するとオンになります。それでもDoddyは確認のたびに尋ね、何かを送信・追加・変更するものは、まずカードを表示してあなたのタップを待ちます。ここでどのツールもオフにできます。"
+  "Web search is on, and an account's tools come on when you connect it. Doddy still asks before every look, and anything that sends, adds or changes something shows you a card first and waits for your tap. Switch any tool off here.": "ウェブ検索はオンです。アカウントのツールは、接続するとオンになります。それでもDoddyは確認のたびに尋ね、何かを送信・追加・変更するものは、まずカードを表示してあなたのタップを待ちます。ここでどのツールもオフにできます。",
+  "Messages": "メッセージ",
+  "Delete conversation": "会話を削除",
+  "It is removed from this iPhone. Your saved notes are not affected.": "この iPhone から削除されます。保存したメモには影響ありません。",
+  "Couldn't delete the conversation": "会話を削除できませんでした",
+  "Doddy couldn't confirm it was removed from this iPhone. Try again.": "この iPhone から削除されたことを確認できませんでした。もう一度お試しください。",
+  "Sending…": "送信中…",
+  "No answer yet. Tap to try again.": "まだ返事がありません。タップしてもう一度試します。",
+  "Your message is in the conversation. Tap it to send it again. Your saved notes are not affected.": "メッセージは会話に残っています。タップするともう一度送信します。保存したメモには影響ありません。",
+  "Doddy can't read or save this conversation on this iPhone right now. What you write here is gone when you close this screen.": "いまはこの iPhone でこの会話を読み込めず、保存もできません。ここに書いた内容は、この画面を閉じると消えます。",
+  "Some of these notes have since been deleted.": "これらのメモの一部は、その後削除されています。",
+  "Doddy is an AI, not a person. This conversation is saved on this iPhone until you delete it. Your question, the last few messages and any notes shown under an answer are sent to Doddy's server and on to OpenAI to write the reply.": "DoddyはAIであり、人ではありません。この会話は、あなたが削除するまでこの iPhone に保存されます。あなたの質問、直近の数件のメッセージ、回答の下に表示されるメモは、Doddyのサーバーに送られ、さらに返答を書くためにOpenAIに送られます。"
 }

@@ -764,6 +764,8 @@ struct SettingsView: View {
             try await environment.callCaseRepository.deleteAll()
             // Tasks handed to Doddy (ADR-570): words and results kept on this iPhone.
             try await environment.errandRepository.deleteAll()
+            // The typed conversation with Doddy (ADR-585): messages kept on this iPhone.
+            try await environment.messageThreadRepository.deleteAll()
             UserDefaults.standard.removeObject(forKey: PreferenceKey.pinnedNotes)
         } catch {
             deleteError = UserFacingError.message(for: error)
