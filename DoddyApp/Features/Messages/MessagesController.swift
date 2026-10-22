@@ -97,12 +97,67 @@ final class MessagesController {
         guard let log else { return }
         do {
             try log.deleteAll()
-            try? FileManager.default.removeItem(at: Self.filesDirectory)
+            try fileStore?.deleteAll()
             messages = []
             storageProblem = nil
         } catch {
             storageProblem = NSLocalizedString("The messages couldn't be deleted. Try again.", comment: "")
         }
+    }
+
+    // MARK: Files and links (ADR-594)
+
+    func reportStorageProblem(_ text: String) { storageProblem = text }
+
+    /// The folder that holds kept files, next to the thread.
+    var fileStore: ChatFileStore? { Self.directory.map { ChatFileStore(directory: $0) } }
+
+    /// Copies a file into the thread and adds its message. The message appears only when the copy
+    /// was read back (right size, inside the thread's folder); otherwise the thread says so and
+    /// nothing is added. False when it couldn't be kept.
+    @discardableResult
+    func keep(fileAt source: URL, named name: String? = nil, from sender: ChatMessage.Sender) -> Bool {
+        guard let fileStore else {
+            storageProblem = NSLocalizedString("This file couldn't be kept on this iPhone.", comment: "")
+            return false
+        }
+        do {
+            let file = try fileStore.keep(copyOf: source, named: name)
+            return finishKeeping(file, from: sender, store: fileStore)
+        } catch {
+            storageProblem = Self.problem(for: error)
+            return false
+        }
+    }
+
+    /// The same for bytes that arrived in memory (a photo from the camera).
+    @discardableResult
+    func keep(data: Data, named name: String, from sender: ChatMessage.Sender) -> Bool {
+        guard let fileStore else {
+            storageProblem = NSLocalizedString("This file couldn't be kept on this iPhone.", comment: "")
+            return false
+        }
+        do {
+            let file = try fileStore.keep(data: data, named: name)
+            return finishKeeping(file, from: sender, store: fileStore)
+        } catch {
+            storageProblem = Self.problem(for: error)
+            return false
+        }
+    }
+
+    private static func problem(for error: Error) -> String {
+        if (error as? ChatFileStore.Failure) == .tooBig {
+            return NSLocalizedString("That file is bigger than 25 MB, so it wasn't added.", comment: "")
+        }
+        return NSLocalizedString("This file couldn't be kept on this iPhone.", comment: "")
+    }
+
+    private func finishKeeping(_ file: ChatFile, from sender: ChatMessage.Sender, store: ChatFileStore) -> Bool {
+        if receive(ChatMessage(sender: sender, content: .file(file))) { return true }
+        // The thread couldn't take the message: don't leave an orphan file behind.
+        try? FileManager.default.removeItem(at: store.url(for: file).deletingLastPathComponent())
+        return false
     }
 
     private func finish(question: String, result: Result<AssistantAnswer, AssistantError>) {
@@ -129,9 +184,6 @@ final class MessagesController {
             .appendingPathComponent("Messages", isDirectory: true)
     }()
 
-    static var filesDirectory: URL {
-        (directory ?? FileManager.default.temporaryDirectory).appendingPathComponent("Files", isDirectory: true)
-    }
 
     static func defaultLog() -> ChatLogFile? {
         directory.map { ChatLogFile(url: $0.appendingPathComponent("messages.json")) }

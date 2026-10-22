@@ -248,6 +248,17 @@
         }
       }
     },
+    "%lld days ago": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld dni temu"
+          }
+        }
+      }
+    },
     "%lld items": {
       "extractionState": "manual",
       "localizations": {
@@ -23423,6 +23434,17 @@
         }
       }
     },
+    "File": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plik"
+          }
+        }
+      }
+    },
     "File is no longer on this iPhone": {
       "extractionState": "manual",
       "localizations": {
@@ -24179,6 +24201,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "如果 Doddy 听错了，请改一下名称。在你轻点“创建清单”之前，不会创建任何内容。"
+          }
+        }
+      }
+    },
+    "Floors climbed": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Piętra"
           }
         }
       }
@@ -25271,6 +25304,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "从 Google Keep 导入：在 Google Takeout 中导出 Keep。在“文件”应用中轻点 .zip 文件解压，打开 Keep 文件夹并选择 .json 文件。也可以选择 .txt 和 .md 文件。"
+          }
+        }
+      }
+    },
+    "From Motion & Fitness on this iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "From Motion & Fitness on this iPad"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "From Motion & Fitness on this iPhone"
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Z Ruchu i kondycji na tym iPadzie"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Z Ruchu i kondycji na tym iPhonie"
+                }
+              }
+            }
           }
         }
       }
@@ -45043,6 +45117,17 @@
         }
       }
     },
+    "Open": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz"
+          }
+        }
+      }
+    },
     "Open Doddy": {
       "extractionState": "manual",
       "localizations": {
@@ -46979,6 +47064,17 @@
         }
       }
     },
+    "Opens in your browser. It can take a minute to be ready.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwiera się w przeglądarce. Przygotowanie może potrwać minutę."
+          }
+        }
+      }
+    },
     "Opens the list": {
       "extractionState": "manual",
       "localizations": {
@@ -48302,6 +48398,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "手机号码，例如 +86 138 0000 0000"
+          }
+        }
+      }
+    },
+    "Photos": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zdjęcia"
           }
         }
       }
@@ -53005,6 +53112,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "提醒已设置"
+          }
+        }
+      }
+    },
+    "Reminder set: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnienie ustawione: %@"
+          }
+        }
+      }
+    },
+    "Reminder set: %@ · %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnienie ustawione: %@ · %@"
           }
         }
       }
@@ -67522,6 +67651,17 @@
         }
       }
     },
+    "That file is bigger than 25 MB, so it wasn't added.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten plik jest większy niż 25 MB, więc go nie dodano."
+          }
+        }
+      }
+    },
     "That file is too large to be a Doddy export. Nothing was added.": {
       "extractionState": "manual",
       "localizations": {
@@ -73634,6 +73774,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "今晚"
+          }
+        }
+      }
+    },
+    "This file couldn't be kept on this iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "This file couldn't be kept on this iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "This file couldn't be kept on this iPhone."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Ten plik nie mógł zostać zapisany na tym iPadzie."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Ten plik nie mógł zostać zapisany na tym iPhonie."
+                }
+              }
+            }
           }
         }
       }
@@ -81383,6 +81564,17 @@
         }
       }
     },
+    "Walking distance": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dystans"
+          }
+        }
+      }
+    },
     "Warm and engaging": {
       "extractionState": "manual",
       "localizations": {
@@ -82917,6 +83109,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "你想保留什么？"
+          }
+        }
+      }
+    },
+    "What you add stays on this iPhone, in this thread. It isn't sent anywhere and Doddy's AI doesn't see it. Up to 25 MB.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "What you add stays on this iPad, in this thread. It isn't sent anywhere and Doddy's AI doesn't see it. Up to 25 MB."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "What you add stays on this iPhone, in this thread. It isn't sent anywhere and Doddy's AI doesn't see it. Up to 25 MB."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "To, co dodasz, zostaje na tym iPadzie, w tym wątku. Nie jest nigdzie wysyłane, a SI Doddy’ego tego nie widzi. Do 25 MB."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "To, co dodasz, zostaje na tym iPhonie, w tym wątku. Nie jest nigdzie wysyłane, a SI Doddy’ego tego nie widzi. Do 25 MB."
+                }
+              }
+            }
           }
         }
       }
@@ -89524,6 +89757,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "其他人"
+          }
+        }
+      }
+    },
+    "steps": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "kroków"
           }
         }
       }

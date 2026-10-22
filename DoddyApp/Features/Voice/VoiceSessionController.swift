@@ -1295,6 +1295,8 @@ final class VoiceSessionController {
             reminderStatus = .adding(draft)
             let outcome = await addReminder(draft, attempt: attempt)
             if onScreen(attempt) { reminderStatus = .done(draft, outcome) }
+            // Only a reminder Reminders confirmed is shown in Messages as set (ADR-594).
+            if case .added(let receipt) = outcome { MessagesFeed.reminderSet(receipt, isPrivate: isPrivate) }
             // Undo removes only a reminder Doddy wrote, found by its marker (ADR-268).
             let result = reminderResult(outcome, draft: draft, retry: retryChecks.removeValue(forKey: id))
             writeResults[id] = result
@@ -1348,6 +1350,8 @@ final class VoiceSessionController {
             // ADR-567: written on this iPhone and read back; the share sheet hands it to Keynote.
             do {
                 let url = try PresentationFiles.write(draft, created: Date())
+                // A copy stays in Messages (ADR-594), also if the voice screen is gone.
+                MessagesFeed.presentationMade(at: url, title: draft.title, isPrivate: isPrivate)
                 if onScreen(attempt) {
                     presentationReady = PresentationReady(url: url, title: draft.title, slideCount: draft.slideCount)
                 }
@@ -2580,6 +2584,7 @@ final class VoiceSessionController {
             do {
                 let now = Date()
                 let totals = try await devices.steps(on: day, now: now)
+                MessagesFeed.steps(totals, day: day, isPrivate: isPrivate)
                 await reply(call.toolCallId, VoiceToolReply.steps(totals, day: day, until: day.daysAgo == 0 ? now : nil, calendar: .current))
             } catch {
                 await reply(call.toolCallId, VoiceToolReply.stepsFailed(UserFacingError.message(for: error)), isError: true)
@@ -2994,7 +2999,10 @@ final class VoiceSessionController {
         do {
             let result = try await client.run(cloud, timeZone: TimeZone.current.identifier, approvalId: approvalID)
             // ADR-564: a file Claude is making gets a button on screen; the agent never gets its link.
-            if let document = result.document { documents.insert(document, at: 0) }
+            if let document = result.document {
+                documents.insert(document, at: 0)
+                MessagesFeed.document(document, isPrivate: isPrivate)
+            }
             await reply(toolCallID, VoiceToolReply.cloudResult(result))
         } catch {
             await reply(toolCallID, await cloudFailureReply(error, tool: cloud.name), isError: true)

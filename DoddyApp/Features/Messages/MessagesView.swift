@@ -1,5 +1,6 @@
 import DoddyCore
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// Doddy's Messages (owner, 22 Oct 2026, ADR-582; Figma "Wyspa i wiadomości", screens 15 to 18):
 /// a chat inside the app, kept on this iPhone, where Doddy also sends files and infographics.
@@ -16,6 +17,10 @@ struct MessagesView: View {
     @AppStorage(PreferenceKey.gatewayAddress) private var gatewayAddress = ""
     @State private var chat = MessagesController.shared
     @State private var confirmingDelete = false
+    /// The attach sheet (ADR-594): Photos and Files. Camera waits for its permission text.
+    @State private var showAttach = false
+    @State private var pickingFile = false
+    @State private var wantsFile = false
     @FocusState private var inputFocused: Bool
 
     private var policy: AssistantPolicy { AssistantPolicy(consentGranted: consent, includeNotes: useNotes) }
@@ -43,6 +48,14 @@ struct MessagesView: View {
                     }
                     .accessibilityLabel("More")
                 }
+            }
+            // The Files picker opens once the attach sheet has gone: iOS drops a second
+            // presentation started while the first is still leaving.
+            .sheet(isPresented: $showAttach, onDismiss: {
+                if wantsFile { wantsFile = false; pickingFile = true }
+            }) { attachSheet }
+            .fileImporter(isPresented: $pickingFile, allowedContentTypes: [.item]) { result in
+                if case .success(let url) = result { keepPicked(url) }
             }
             .confirmationDialog("Delete all messages?", isPresented: $confirmingDelete, titleVisibility: .visible) {
                 Button("Delete all messages", role: .destructive) { chat.deleteAll() }
@@ -166,6 +179,14 @@ struct MessagesView: View {
 
     private var composer: some View {
         HStack(alignment: .bottom, spacing: 10) {
+            Button { showAttach = true } label: {
+                Image(systemName: "plus")
+                    .font(.body.weight(.semibold))
+                    .frame(width: 36, height: 36)
+                    .background(Theme.quietSurface, in: Circle())
+            }
+            .accessibilityLabel("Add")
+            .accessibilityIdentifier("messages.attach")
             TextField("Write to Doddy", text: $chat.draft, axis: .vertical)
                 .lineLimit(1...5)
                 .padding(.horizontal, 14)
@@ -197,6 +218,45 @@ struct MessagesView: View {
         .background(Theme.canvas)
         // Motion v2 (Q2): the composer he stands on, left of Send, riding with the keyboard.
         .motionSurface(.composer)
+    }
+
+    // MARK: Attach
+
+    /// Photos and Files: what you add is kept in this thread on this iPhone as your own message.
+    /// Nothing you add here is sent anywhere, Doddy's AI does not see it, and it is deleted with
+    /// the thread.
+    private var attachSheet: some View {
+        NavigationStack {
+            List {
+                Section {
+                    MessagesPhotoPicker(
+                        onPicked: { data, ext in
+                            chat.keep(data: data, named: "photo-\(Int(Date().timeIntervalSince1970)).\(ext)", from: .user)
+                            showAttach = false
+                        },
+                        onFailed: {
+                            chat.reportStorageProblem(NSLocalizedString("This file couldn't be kept on this iPhone.", comment: ""))
+                        })
+                    Button { wantsFile = true; showAttach = false } label: {
+                        Label("File", systemImage: "doc")
+                    }
+                } footer: {
+                    Text("What you add stays on this iPhone, in this thread. It isn't sent anywhere and Doddy's AI doesn't see it. Up to 25 MB.")
+                }
+            }
+            .navigationTitle("Add")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Close") { showAttach = false } } }
+        }
+        .presentationDetents([.medium])
+        .presentationDragIndicator(.visible)
+    }
+
+    /// A file from Files: iOS hands over a security-scoped address, valid only while it is open.
+    private func keepPicked(_ url: URL) {
+        let scoped = url.startAccessingSecurityScopedResource()
+        defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+        chat.keep(fileAt: url, from: .user)
     }
 
     private func send() {
@@ -236,6 +296,8 @@ private struct MessageRow: View {
             FileCard(file: file)
         case .infographic(let chart):
             InfographicCard(chart: chart)
+        case .link(let link):
+            LinkCard(link: link)
         }
     }
 
@@ -248,7 +310,8 @@ private struct FileCard: View {
     let file: ChatFile
 
     private var url: URL {
-        MessagesController.directory!.appendingPathComponent(file.relativePath)
+        // Inside the thread's own folder (ChatFileStore); a missing folder has no file.
+        MessagesController.shared.fileStore?.url(for: file) ?? URL(fileURLWithPath: "/dev/null")
     }
 
     var body: some View {
@@ -309,16 +372,18 @@ private struct InfographicCard: View {
                         Text(row.display).fontWeight(.semibold)
                     }
                     .font(.footnote)
-                    GeometryReader { proxy in
-                        ZStack(alignment: .leading) {
-                            Capsule().fill(Theme.canvas)
-                            Capsule()
-                                .fill(index == 0 ? Theme.orangeCue : Theme.ink.opacity(0.75))
-                                .frame(width: proxy.size.width * chart.barFractions[index])
+                    if chart.barFractions.contains(where: { $0 > 0 }) {
+                        GeometryReader { proxy in
+                            ZStack(alignment: .leading) {
+                                Capsule().fill(Theme.canvas)
+                                Capsule()
+                                    .fill(index == 0 ? Theme.orangeCue : Theme.ink.opacity(0.75))
+                                    .frame(width: proxy.size.width * chart.barFractions[index])
+                            }
                         }
+                        .frame(height: 8)
+                        .accessibilityHidden(true)
                     }
-                    .frame(height: 8)
-                    .accessibilityHidden(true)
                 }
             }
             if let footnote = chart.footnote {
@@ -331,5 +396,35 @@ private struct InfographicCard: View {
         .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(Theme.separator, lineWidth: 1))
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("messages.infographic")
+    }
+}
+
+/// A document Claude made (ADR-564, ADR-594): its name and an Open button for its link. Only the
+/// address is kept on this iPhone; the file itself is on Claude's side, so it opens in the browser.
+private struct LinkCard: View {
+    let link: ChatLink
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "doc.richtext")
+                .font(.title2)
+                .foregroundStyle(Theme.accentText)
+                .frame(width: 44, height: 44)
+                .background(Theme.canvas, in: RoundedRectangle(cornerRadius: 10))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(link.title).font(.body.weight(.semibold)).lineLimit(2)
+                Text("Opens in your browser. It can take a minute to be ready.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+            }
+            Spacer(minLength: 8)
+            Link(destination: link.url) { Image(systemName: "arrow.up.forward.app") }
+                .accessibilityLabel("Open")
+        }
+        .padding(12)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 20))
+        .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(Theme.separator, lineWidth: 1))
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("messages.link")
     }
 }

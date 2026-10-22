@@ -1738,6 +1738,17 @@
         }
       }
     },
+    "Open": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz"
+          }
+        }
+      }
+    },
     "Open Doddy": {
       "extractionState": "manual",
       "localizations": {

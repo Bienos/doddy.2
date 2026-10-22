@@ -12,6 +12,9 @@ public struct ChatMessage: Codable, Identifiable, Equatable, Sendable {
         case text(String)
         case file(ChatFile)
         case infographic(ChatInfographic)
+        /// A document made somewhere else (Claude's files, ADR-564): only its address is kept;
+        /// nothing is downloaded to this iPhone.
+        case link(ChatLink)
     }
 
     public let id: UUID
@@ -67,6 +70,20 @@ public struct ChatFile: Codable, Equatable, Sendable {
     }
 }
 
+/// A link to a document Claude is making or made (ADR-564, ADR-594). It opens in the browser.
+public struct ChatLink: Codable, Equatable, Sendable {
+    public let title: String
+    /// "deck", "doc", "spreadsheet", "pdf" or "text", as the server named it.
+    public let kind: String
+    public let url: URL
+
+    public init(title: String, kind: String, url: URL) {
+        self.title = title
+        self.kind = kind
+        self.url = url
+    }
+}
+
 /// An infographic Doddy drew from numbers he was given: a title, a headline figure and bars.
 /// Every value shown is a figure the sender supplied; the app only lays them out.
 public struct ChatInfographic: Codable, Equatable, Sendable {
@@ -94,6 +111,32 @@ public struct ChatInfographic: Codable, Equatable, Sendable {
         self.headline = headline
         self.rows = rows
         self.footnote = footnote
+    }
+
+    /// One day of steps from Motion & Fitness (ADR-568), as a card (ADR-594). Every figure is the
+    /// number the iPhone reported; only its layout and thousands spacing are the app's. No bars:
+    /// steps, distance and floors are different units, so none is drawn against another.
+    public static func steps(
+        _ totals: StepTotals, dayName: String, stepsWord: String, distanceLabel: String, floorsLabel: String, source: String
+    ) -> ChatInfographic {
+        var rows: [Row] = []
+        if let meters = totals.distanceMeters {
+            let tens = (meters / 10).rounded() * 10
+            rows.append(Row(label: distanceLabel, value: 0, display: tens >= 1000 ? String(format: "%.1f km", tens / 1000) : "\(Int(tens)) m"))
+        }
+        if let floors = totals.floorsUp { rows.append(Row(label: floorsLabel, value: 0, display: "\(floors)")) }
+        return ChatInfographic(title: dayName, headline: "\(spaced(totals.steps)) \(stepsWord)", rows: rows, footnote: source)
+    }
+
+    /// 6240 becomes "6 240" (a no-break space), as the Polish card reads it.
+    static func spaced(_ n: Int) -> String {
+        let digits = String(abs(n))
+        var out = ""
+        for (i, ch) in digits.reversed().enumerated() {
+            if i > 0, i % 3 == 0 { out.append("\u{00A0}") }
+            out.append(ch)
+        }
+        return (n < 0 ? "-" : "") + String(out.reversed())
     }
 
     /// Each bar's share of the longest, 0 to 1, in order. Negative or empty data gives zeros.

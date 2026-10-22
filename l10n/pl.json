@@ -1684,5 +1684,19 @@
   "This message couldn't be kept on this iPhone.": "Ta wiadomość nie mogła zostać zapisana na tym iPhonie.",
   "The messages couldn't be deleted. Try again.": "Nie udało się usunąć wiadomości. Spróbuj jeszcze raz.",
   "File is no longer on this iPhone": "Pliku nie ma już na tym iPhonie",
-  "Pick Talk to Doddy.": "Wybierz „Porozmawiaj z Doddym”."
+  "Pick Talk to Doddy.": "Wybierz „Porozmawiaj z Doddym”.",
+  "This file couldn't be kept on this iPhone.": "Ten plik nie mógł zostać zapisany na tym iPhonie.",
+  "That file is bigger than 25 MB, so it wasn't added.": "Ten plik jest większy niż 25 MB, więc go nie dodano.",
+  "steps": "kroków",
+  "Walking distance": "Dystans",
+  "Floors climbed": "Piętra",
+  "From Motion & Fitness on this iPhone": "Z Ruchu i kondycji na tym iPhonie",
+  "%lld days ago": "%lld dni temu",
+  "Reminder set: %@": "Przypomnienie ustawione: %@",
+  "Reminder set: %@ · %@": "Przypomnienie ustawione: %@ · %@",
+  "Opens in your browser. It can take a minute to be ready.": "Otwiera się w przeglądarce. Przygotowanie może potrwać minutę.",
+  "Photos": "Zdjęcia",
+  "File": "Plik",
+  "Open": "Otwórz",
+  "What you add stays on this iPhone, in this thread. It isn't sent anywhere and Doddy's AI doesn't see it. Up to 25 MB.": "To, co dodasz, zostaje na tym iPhonie, w tym wątku. Nie jest nigdzie wysyłane, a SI Doddy’ego tego nie widzi. Do 25 MB."
 }
