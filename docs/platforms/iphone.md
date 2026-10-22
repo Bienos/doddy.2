@@ -59,6 +59,7 @@ Code lives under `DoddyApp/Features/<Folder>/`. Status docs are in `docs/impleme
 | Translator | Translator mode | 215 | TRANSLATOR_STATUS |
 | Watch | iPhone side of the Watch app | 232 | APPLE_WATCH_STATUS |
 | Widgets | Keeps the widget snapshot current | 219, 331 | WIDGETS_STATUS |
+| Recordings (DODDY Capture) | Record a meeting or conversation (button, Siri, the Action Button's control, the island), on-device words, search, "Remember this". Logic in `DoddyCore/Capture/`, rows in `v16_recordings`. **App layer not compiled yet** | 579–583 | CAPTURE_STATUS, CAPTURE_AUDIT |
 
 **Other app folders:**
 - `DoddyApp/App`: entry, `RootView`, iPad sidebar.
