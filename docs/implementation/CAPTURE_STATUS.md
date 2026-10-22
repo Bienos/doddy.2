@@ -38,7 +38,7 @@ Environment: Linux x86_64 (Ubuntu 24.04), Swift 6.1.2 (the version CI uses), no 
 | `scripts/typecheck_app_logic.sh` | PASS, 25 app files (it failed first: my edit to `ShortcutRouter` needed a field in its stand-in; fixed) |
 | `swiftc -parse -swift-version 6` on the 24 app, shared and widget Swift files I touched | all parse. **Syntax only** |
 | Independent read-through of the app layer for compile errors | CI_REVIEW_PENDING |
-| `scripts/ci.sh --core-only` (everything that runs without a Mac) | CI_CORE_PENDING |
+| `scripts/ci.sh --core-only` (everything that runs without a Mac) | **PASS for core-only scope, run on the final tree** (exit 0). It prints `NOT RUN  iOS app build + tests`: the app is not verified by it |
 
 **Not run, and why:** `xcodegen`, `xcodebuild` (no Xcode), any simulator or device test, UI tests, the hosted macOS CI. **The app, the widget extension and the UI tests have not been built with these changes.**
 
