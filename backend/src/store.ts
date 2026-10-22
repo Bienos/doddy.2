@@ -162,7 +162,48 @@ export const SCHEMA_SQL = `
     created_at BIGINT NOT NULL
   );
   CREATE INDEX IF NOT EXISTS documents_user ON documents(user_id, created_at);
+  CREATE TABLE IF NOT EXISTS web_link_codes (
+    code_hash TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    created_at BIGINT NOT NULL,
+    expires_at BIGINT NOT NULL,
+    consumed_at BIGINT
+  );
+  CREATE INDEX IF NOT EXISTS web_link_codes_user ON web_link_codes(user_id);
+  CREATE TABLE IF NOT EXISTS web_sessions (
+    session_id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    token_hash TEXT NOT NULL UNIQUE,
+    browser TEXT NOT NULL,
+    os TEXT NOT NULL,
+    created_at BIGINT NOT NULL,
+    last_seen_at BIGINT NOT NULL,
+    expires_at BIGINT NOT NULL,
+    revoked_at BIGINT
+  );
+  CREATE INDEX IF NOT EXISTS web_sessions_user ON web_sessions(user_id, created_at);
 `;
+
+/** A browser signed in to Doddy Web (ADR-579). The cookie's token is stored only as a hash. */
+export interface WebSessionRow {
+  session_id: string;
+  user_id: string;
+  browser: string;
+  os: string;
+  created_at: number;
+  last_seen_at: number;
+  expires_at: number;
+}
+
+/** A document without its file, for lists (ADR-579). */
+export interface DocumentSummaryRow {
+  id: string;
+  status: DocumentRow["status"];
+  name: string;
+  mime: string;
+  size: number | null;
+  created_at: number;
+}
 
 /** A file Claude makes for the user (ADR-564). Kept a week, then pruned. */
 export interface DocumentRow {
@@ -594,9 +635,121 @@ export class Store {
     return { ...row, body: row.body === null ? null : Buffer.from(row.body as unknown as Uint8Array) };
   }
 
+  /** The user's own documents, newest first, without their files (ADR-579). */
+  async listDocuments(userId: string, limit: number): Promise<DocumentSummaryRow[]> {
+    return (
+      await this.db.query<DocumentSummaryRow>(
+        `SELECT id, status, name, mime, octet_length(body) AS size, created_at FROM documents
+         WHERE user_id = $1 ORDER BY created_at DESC, id LIMIT $2`,
+        [userId, limit],
+      )
+    ).rows;
+  }
+
+  /** One document, only when it belongs to `userId`; another user's ID reads as missing (the filter is in the query). */
+  async getOwnDocument(userId: string, id: string): Promise<DocumentRow | null> {
+    const row = await this.one<DocumentRow>(
+      this.db,
+      "SELECT id, user_id, status, name, mime, body, created_at FROM documents WHERE id = $1 AND user_id = $2",
+      [id, userId],
+    );
+    if (!row) return null;
+    return { ...row, body: row.body === null ? null : Buffer.from(row.body as unknown as Uint8Array) };
+  }
+
   /** Documents older than a week go. Separate from `prune` so its counts stay as they were. */
   async pruneDocuments(now: number): Promise<number> {
     return (await this.db.query("DELETE FROM documents WHERE created_at < $1", [now - 7 * 86_400_000])).rowCount;
+  }
+
+  // ------------------------------------------------------------ Doddy Web (ADR-579)
+
+  /** A new sign-in code for `userId`. Any earlier code of theirs stops working. */
+  async createWebLinkCode(userId: string, codeHash: string, now: number, ttlMs: number): Promise<void> {
+    await this.db.transaction(async (tx) => {
+      await tx.query("DELETE FROM web_link_codes WHERE user_id = $1", [userId]);
+      await tx.query("INSERT INTO web_link_codes (code_hash, user_id, created_at, expires_at) VALUES ($1, $2, $3, $4)", [codeHash, userId, now, now + ttlMs]);
+    });
+  }
+
+  /**
+   * Uses a sign-in code once and opens a browser session for its user, in one transaction: a code
+   * that is unknown, used or expired opens nothing. Beyond `maxSessions`, the user's oldest live
+   * sessions are signed out. Returns the user ID, or null.
+   */
+  async redeemWebLinkCode(input: {
+    codeHash: string;
+    session: { sessionId: string; tokenHash: string; browser: string; os: string; expiresAt: number };
+    now: number;
+    idleMs: number;
+    maxSessions: number;
+  }): Promise<string | null> {
+    return this.db.transaction(async (tx) => {
+      const used = await this.one<{ user_id: string }>(
+        tx,
+        "UPDATE web_link_codes SET consumed_at = $2 WHERE code_hash = $1 AND consumed_at IS NULL AND expires_at > $2 RETURNING user_id",
+        [input.codeHash, input.now],
+      );
+      if (!used) return null;
+      const s = input.session;
+      await tx.query(
+        `INSERT INTO web_sessions (session_id, user_id, token_hash, browser, os, created_at, last_seen_at, expires_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $6, $7)`,
+        [s.sessionId, used.user_id, s.tokenHash, s.browser, s.os, input.now, s.expiresAt],
+      );
+      await tx.query(
+        `UPDATE web_sessions SET revoked_at = $2 WHERE session_id IN (
+           SELECT session_id FROM web_sessions
+           WHERE user_id = $1 AND revoked_at IS NULL AND expires_at > $2 AND last_seen_at > $3
+           ORDER BY created_at DESC, session_id OFFSET $4)`,
+        [used.user_id, input.now, input.now - input.idleMs, input.maxSessions],
+      );
+      return used.user_id;
+    });
+  }
+
+  /** The live session behind a cookie's token hash: not revoked, not expired, not idle too long. */
+  async webSessionByToken(tokenHash: string, now: number, idleMs: number): Promise<WebSessionRow | null> {
+    return this.one<WebSessionRow>(
+      this.db,
+      `SELECT session_id, user_id, browser, os, created_at, last_seen_at, expires_at FROM web_sessions
+       WHERE token_hash = $1 AND revoked_at IS NULL AND expires_at > $2 AND last_seen_at > $3`,
+      [tokenHash, now, now - idleMs],
+    );
+  }
+
+  async touchWebSession(sessionId: string, now: number): Promise<void> {
+    await this.db.query("UPDATE web_sessions SET last_seen_at = $2 WHERE session_id = $1 AND revoked_at IS NULL", [sessionId, now]);
+  }
+
+  /** The user's live browser sessions, newest first. */
+  async webSessions(userId: string, now: number, idleMs: number, limit: number): Promise<WebSessionRow[]> {
+    return (
+      await this.db.query<WebSessionRow>(
+        `SELECT session_id, user_id, browser, os, created_at, last_seen_at, expires_at FROM web_sessions
+         WHERE user_id = $1 AND revoked_at IS NULL AND expires_at > $2 AND last_seen_at > $3
+         ORDER BY created_at DESC, session_id LIMIT $4`,
+        [userId, now, now - idleMs, limit],
+      )
+    ).rows;
+  }
+
+  /** Signs one browser out. False when it isn't one of `userId`'s live sessions. */
+  async revokeWebSession(userId: string, sessionId: string, now: number): Promise<boolean> {
+    const changed = await this.db.query("UPDATE web_sessions SET revoked_at = $3 WHERE session_id = $1 AND user_id = $2 AND revoked_at IS NULL", [sessionId, userId, now]);
+    return changed.rowCount === 1;
+  }
+
+  /** Codes a day past their expiry, and sessions a day past being revoked, expiring or going idle. */
+  async pruneWeb(now: number, idleMs: number): Promise<number> {
+    const DAY = 86_400_000;
+    return this.db.transaction(async (tx) => {
+      const codes = (await tx.query("DELETE FROM web_link_codes WHERE expires_at < $1", [now - DAY])).rowCount;
+      const sessions = (
+        await tx.query("DELETE FROM web_sessions WHERE revoked_at < $1 OR expires_at < $1 OR last_seen_at < $2", [now - DAY, now - idleMs - DAY])
+      ).rowCount;
+      return codes + sessions;
+    });
   }
 
   async usage(counter: string, period: string): Promise<number> {

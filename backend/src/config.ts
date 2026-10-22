@@ -89,7 +89,22 @@ export interface Config {
   toolkits: Partial<Record<ToolkitId, ToolkitSettings>>;
   /** Live mode only; mock mode uses the offline demo search. */
   monid: MonidSettings | null;
+  /** Doddy Web (ADR-579). Null: no web routes and no web pages on this server. */
+  web: WebSettings | null;
   limits: Limits;
+}
+
+/**
+ * Doddy Web (ADR-579): the browser app is served by this server, on its own origin, so its session
+ * is a first-party cookie the page's scripts can't read.
+ */
+export interface WebSettings {
+  /** The exact origin the web app is opened at (scheme, host, port). Unsafe requests must come from it. */
+  origin: string;
+  /** Folder with the built web app (`web/dist`). A missing folder serves a plain "not built" page. */
+  distDir: string;
+  /** Behind one proxy that appends the client to X-Forwarded-For (Render): use its last entry. */
+  trustProxy: boolean;
 }
 
 export class ConfigError extends Error {
@@ -166,6 +181,10 @@ const EnvSchema = z.object({
   DODDY_PAGE_SIZE: intSetting(50, 1, 250),
   DODDY_MAX_EVENTS: intSetting(100, 1, 500),
   DODDY_ATTEMPT_TTL_SECONDS: intSetting(600, 60, 3_600),
+  /** Doddy Web (ADR-579): the origin the browser app is opened at. Empty: the web app is off. */
+  DODDY_WEB_ORIGIN: z.string().optional(),
+  DODDY_WEB_DIST: z.string().default("../web/dist"),
+  DODDY_TRUST_PROXY: z.enum(["0", "1"]).default("0"),
 });
 
 /** Custom scheme (`doddy-dev://…`) or https. No query, no fragment: the server adds its own parameters. */
@@ -330,6 +349,25 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
   if (claudeKey !== "" && !/^sk-ant-[A-Za-z0-9_-]{8,}$/.test(claudeKey)) problems.push("ANTHROPIC_API_KEY must look like sk-ant-…");
   if (!/^claude-[a-z0-9-]{3,60}$/.test(e.DODDY_CLAUDE_MODEL)) problems.push("DODDY_CLAUDE_MODEL must be a Claude model ID such as claude-sonnet-5-5");
 
+  // Doddy Web (ADR-579). Off unless an origin is given; https outside loopback development.
+  let web: WebSettings | null = null;
+  const webOrigin = (e.DODDY_WEB_ORIGIN ?? "").trim();
+  if (webOrigin !== "") {
+    let parsed: URL | null = null;
+    try {
+      parsed = new URL(webOrigin);
+    } catch {
+      parsed = null;
+    }
+    if (!parsed || parsed.username || parsed.password || parsed.search || parsed.hash || (parsed.pathname !== "/" && parsed.pathname !== "")) {
+      problems.push("DODDY_WEB_ORIGIN must be an origin without a path, e.g. https://app.doddy.lol");
+    } else if (parsed.protocol !== "https:" && !(parsed.protocol === "http:" && isLoopbackUrl(parsed))) {
+      problems.push("DODDY_WEB_ORIGIN must be https outside loopback development");
+    } else {
+      web = { origin: parsed.origin, distDir: e.DODDY_WEB_DIST, trustProxy: e.DODDY_TRUST_PROXY === "1" };
+    }
+  }
+
   const databaseUrl = e.DATABASE_URL?.trim() ? e.DATABASE_URL.trim() : null;
   if (databaseUrl !== null && !/^postgres(ql)?:\/\/\S+$/.test(databaseUrl)) {
     problems.push("DATABASE_URL must be a postgres:// connection string");
@@ -358,6 +396,7 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     composio,
     toolkits,
     monid,
+    web,
     limits: {
       userDailyReads: e.DODDY_LIMIT_USER_DAILY_READS,
       userDailyToolRuns: e.DODDY_LIMIT_USER_DAILY_TOOL_RUNS,

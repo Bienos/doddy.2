@@ -9,6 +9,9 @@ import { AppError } from "./errors.js";
 import type { ConnectedAppsService } from "./service.js";
 import type { ToolsMockScenario } from "./tools/mock.js";
 import type { CloudToolsService } from "./tools/service.js";
+import type { WebRoutes } from "./web/routes.js";
+import { COOKIE_READABLE, type WebAuth } from "./web/sessions.js";
+import type { WebStatic } from "./web/static.js";
 
 /**
  * HTTP routing for the Doddy-owned v1 API. Every route under /v1/connected-apps is
@@ -25,6 +28,8 @@ export interface HttpDeps {
   deviceSessions?: DeviceSessionIssuer | null;
   /** Files Claude made (ADR-564), opened by signed link. Absent: `GET /v1/documents/…` is not found. */
   documents?: { links: DocumentLinks; store: Store } | null;
+  /** Doddy Web (ADR-579): its routes, its cookie sessions and its pages. Absent: none of them exist. */
+  web?: { auth: WebAuth; routes: WebRoutes; pages: WebStatic } | null;
   appReturnUrl: string;
   maxBodyBytes: number;
   now?: () => Date;
@@ -117,6 +122,22 @@ export function createHandler(deps: HttpDeps) {
         return;
       }
 
+      // Doddy Web (ADR-579): its own routes, then its pages for anything that isn't the API.
+      const web = deps.web;
+      if (web) {
+        const match = web.routes.match(req.method ?? "GET", url.pathname);
+        if (match) {
+          route = match.route.template;
+          status = await web.routes.serve(match, req, res, now());
+          return;
+        }
+        if ((req.method === "GET" || req.method === "HEAD") && !url.pathname.startsWith("/v1/")) {
+          route = "GET /*page";
+          status = await web.pages.serve(req, res, url.pathname);
+          return;
+        }
+      }
+
       const toolkitRoute = tools ? TOOLKIT_ROUTE.exec(key) : null;
       const toolsHandler = toolsRoutes[key];
       const handler = routes[key];
@@ -124,7 +145,14 @@ export function createHandler(deps: HttpDeps) {
       // Route templates only in logs, so the set of values stays small.
       route = toolkitRoute ? `POST /v1/tools/:toolkit/${toolkitRoute[2]}` : key;
 
-      const user = await deps.verifier.verify(header(req, "authorization"), now());
+      const authorization = header(req, "authorization");
+      let user = await deps.verifier.verify(authorization, now());
+      // A browser session may read a few lists (COOKIE_READABLE); every other route needs the
+      // iPhone's own session in the Authorization header.
+      if (!user && authorization === undefined && web && COOKIE_READABLE.has(key)) {
+        const session = await web.auth.fromCookie(req, now());
+        if (session) user = { userId: session.userId };
+      }
       if (!user) throw new AppError("unauthenticated");
 
       const rawScenario = header(req, "x-doddy-demo-scenario");
