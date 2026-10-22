@@ -1,6 +1,6 @@
 # Doddy Web (browser)
 
-**State (22 Oct 2026):** built and tested on branch `claude/exciting-carson-08x2pk`, which is also what the Render service `doddy` serves at https://doddy-yaci.onrender.com (its page and asset file names match that branch's build; checked 22 Oct). Not merged to the default branch. On `claude/friendly-faraday-8juosh` it is restyled in the website's design (ADR-594) and has Logbook (ADR-593) with its server routes; that branch is not deployed. Decisions: ADR-585 (sign-in and sessions), ADR-586 (stack and hosting). Why and what's next: `docs/architecture/WEB_AND_SHARED_PLATFORM.md`.
+**State (22 Oct 2026):** built and tested on branch `claude/exciting-carson-08x2pk`, which is also what the Render service `doddy` serves at https://doddy-yaci.onrender.com (its page and asset file names match that branch's build; checked 22 Oct). Not merged to the default branch. Since 22 Oct 21:39 UTC the service runs commit `d03562ae` from `claude/friendly-faraday-8juosh` (the live branch was fast-forwarded to it with the owner's say-so), so it is restyled in the website's design (ADR-594) and has Logbook (ADR-593) with its server routes. Decisions: ADR-585 (sign-in and sessions), ADR-586 (stack and hosting). Why and what's next: `docs/architecture/WEB_AND_SHARED_PLATFORM.md`.
 
 ## What it is
 A signed-in workspace in the browser for the same account the iPhone uses on Doddy's server (`backend/`). Today it shows:
