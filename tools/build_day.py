@@ -568,6 +568,7 @@ TAIL = '''
           <li><a href="/#meet">Meet Doddy</a></li>
           <li><a href="/#privacy">Privacy</a></li>
           <li><a href="/blog/">Blog</a></li>
+          <li><a href="/logbook/">Logbook</a></li>
           <li><a href="/#join">Join early access</a></li>
           <li><a href="{TELEGRAM}" target="_blank" rel="noopener">Telegram group</a></li>
           <li><a href="https://www.tiktok.com/@doddy_mate" target="_blank" rel="noopener">TikTok</a></li>
@@ -589,7 +590,7 @@ TAIL = '''
 
 def render() -> dict:
     CSS.clear()
-    nav = NAV.replace("{{wcd}}", ' aria-current="page"').replace("{{blog}}", "")
+    nav = NAV.replace("{{wcd}}", ' aria-current="page"').replace("{{blog}}", "").replace("{{logbook}}", "")
     body = hero().replace("{NAV}", nav.rstrip("\n"))
     for i, m in enumerate(M):
         body += moment(m)

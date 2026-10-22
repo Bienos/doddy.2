@@ -219,7 +219,8 @@ def _page(title: str, description: str, path: str, main: str, og_type: str = "we
           og_image: str = "/assets/og-image.png") -> str:
     t, d, url = html.escape(title), html.escape(description), SITE_URL + path
     nav_html = NAV.replace("{{wcd}}", ' aria-current="page"' if path == "/what-can-doddy-do/" else "") \
-                  .replace("{{blog}}", ' aria-current="page"' if path == "/blog/" else "")
+                  .replace("{{blog}}", ' aria-current="page"' if path == "/blog/" else "") \
+                  .replace("{{logbook}}", "")
     return f"""<!doctype html>
 <html lang="en">
 <head>
@@ -269,6 +270,7 @@ def _page(title: str, description: str, path: str, main: str, og_type: str = "we
           <li><a href="/what-can-doddy-do/">What can Doddy do?</a></li>
           <li><a href="/blog/">Blog</a></li>
           <li><a href="/blog/feed.xml">RSS</a></li>
+          <li><a href="/logbook/">Logbook</a></li>
           <li><a href="/#join">Join early access</a></li>
           <li><a href="{TELEGRAM}" target="_blank" rel="noopener">Telegram group</a></li>
           <li><a href="https://www.tiktok.com/@doddy_mate" target="_blank" rel="noopener">TikTok</a></li>
