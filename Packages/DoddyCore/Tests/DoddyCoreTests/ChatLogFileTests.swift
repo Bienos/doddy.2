@@ -30,6 +30,16 @@ final class ChatLogFileTests: XCTestCase {
         XCTAssertEqual(try log.load(), [hello, file, chart])
     }
 
+    func testAMessageSentNowIsKeptAndReadBackEqual() throws {
+        // The time of "now" has fractions of a second; the file doesn't, and the read-back that
+        // proves the message was kept must still match.
+        let log = ChatLogFile(url: tempURL())
+        let now = ChatMessage(sender: .user, content: .text("teraz"))
+        XCTAssertEqual(try log.append(now), [now])
+        XCTAssertEqual(try log.load(), [now])
+        XCTAssertEqual(now.sentAt.timeIntervalSince1970.rounded(.down), now.sentAt.timeIntervalSince1970)
+    }
+
     func testTheSameMessageIsNotKeptTwice() throws {
         let log = ChatLogFile(url: tempURL())
         let m = text("raz")

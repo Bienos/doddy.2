@@ -21,7 +21,9 @@ public struct ChatMessage: Codable, Identifiable, Equatable, Sendable {
 
     public init(id: UUID = UUID(), sentAt: Date = Date(), sender: Sender, content: Content) {
         self.id = id
-        self.sentAt = sentAt
+        // Kept to whole seconds: the file stores the time as ISO 8601 without fractions, and the
+        // read-back that proves a message was kept compares the whole message (ChatLogFile).
+        self.sentAt = Date(timeIntervalSince1970: sentAt.timeIntervalSince1970.rounded(.down))
         self.sender = sender
         self.content = content
     }
