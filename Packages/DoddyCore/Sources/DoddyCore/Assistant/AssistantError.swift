@@ -41,9 +41,9 @@ public enum AssistantError: Error, Equatable, Sendable {
     public var userMessage: String {
         switch self {
         case .notConfigured:
-            "Ask Doddy isn't set up yet. Add the gateway address and your invite code in Settings."
+            "Messages isn't set up yet. Add the gateway address and your invite code in Settings."
         case .consentRequired:
-            "Turn on Ask Doddy in Settings first. It sends your question to a server."
+            "Turn on Messages in Settings first. It sends your message to a server."
         case .notAuthorized:
             "This iPhone isn't authorised. Check your invite code in Settings."
         case .offline:

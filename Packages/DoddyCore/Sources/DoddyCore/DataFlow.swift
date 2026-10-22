@@ -199,9 +199,9 @@ public enum DataFlow {
                     ? "Doddy searches on this iPhone; Siri hears the request and speaks the answer as your Siri settings allow, which can include Apple's servers."
                     : "Reading notes aloud with Siri is off, so Siri gets no notes from Doddy."),
             DataFlowRow(
-                id: "askDoddy", destination: "Ask Doddy gateway (OpenAI)",
+                id: "askDoddy", destination: "Messages gateway (OpenAI)",
                 what: ask + ".", when: "Only when you send a typed question.", isActive: state.askDoddyOn,
-                note: state.askDoddyOn ? "A separate server from your Doddy server." : "Ask Doddy is off, so nothing goes there."),
+                note: state.askDoddyOn ? "A separate server from your Doddy server." : "Messages is off, so nothing goes there."),
         ]
     }
 
@@ -220,7 +220,7 @@ public enum DataFlow {
         var parts: [String] = []
         if active.contains("elevenlabs") { parts.append("ElevenLabs (voice)") }
         if active.contains("openaiVoice") { parts.append("OpenAI (voice)") }
-        if active.contains("askDoddy") { parts.append("OpenAI (Ask Doddy)") }
+        if active.contains("askDoddy") { parts.append("OpenAI (Messages)") }
         if active.contains("messagingServer") {
             parts.append("ElevenLabs (phone calls) and \(newsWriter(state)) (daily news) on your messaging server")
         }
@@ -243,7 +243,7 @@ public enum DataFlow {
         "messagingServer": "your Doddy messaging server",
         "errands": "Anthropic (tasks you hand over, through your messaging server)",
         "siri": "Siri (when you ask it)",
-        "askDoddy": "the Ask Doddy gateway",
+        "askDoddy": "the Messages gateway",
     ]
 
     /// Covered by another name (translator mode goes to whichever service runs the voice, which is

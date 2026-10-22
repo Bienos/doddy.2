@@ -153,7 +153,7 @@ final class LaunchSmokeTests: XCTestCase {
 
         XCTAssertTrue(app.textFields["ask.input"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["ask.disclosure"].exists)
-        XCTAssertTrue(app.staticTexts["Turn on Ask Doddy in Settings first. It sends your question to a server."].exists)
+        XCTAssertTrue(app.staticTexts["Turn on Messages in Settings first. It sends your message to a server."].exists)
         // Nothing to send yet, so Send stays disabled.
         XCTAssertFalse(app.buttons["ask.send"].isEnabled)
     }
@@ -266,11 +266,11 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertTrue(app.reveal(link))
         link.tap()
         XCTAssertTrue(app.navigationBars["What leaves this iPhone"].waitForExistence(timeout: 5))
-        // Ask Doddy starts off, so it is listed under "Not sent right now". Each row reads as one
+        // Messages starts off, so it is listed under "Not sent right now". Each row reads as one
         // element (destination and note combined), so the note is checked in the row's label.
         let askRow = app.descendants(matching: .any)["dataFlow.askDoddy"].firstMatch
         XCTAssertTrue(app.reveal(askRow))
-        XCTAssertTrue(askRow.label.contains("Ask Doddy is off, so nothing goes there."), askRow.label)
+        XCTAssertTrue(askRow.label.contains("Messages is off, so nothing goes there."), askRow.label)
     }
 
     @MainActor
