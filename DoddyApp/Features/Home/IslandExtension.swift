@@ -1,7 +1,7 @@
 import SwiftUI
 import UIKit
 
-/// While Doddy talks on Home (owner, 22 Oct 2026, ADR-580): iOS doesn't show Doddy's own island
+/// While Doddy talks on Home (owner, 22 Oct 2026, ADR-596): iOS doesn't show Doddy's own island
 /// while Doddy is on screen, so Home draws a black shape that grows down from the top of the
 /// screen, under the camera, with his orange waves moving in it. A line of waves while he hears
 /// you, the whole shape in waves and a little wider while he talks, a still grey line while he

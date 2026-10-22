@@ -1,7 +1,7 @@
 import DoddyCore
 import SwiftUI
 
-/// The email card (owner, 22 Oct 2026, ADR-581): To, Subject and the text as an email reads,
+/// The email card (owner, 22 Oct 2026, ADR-597): To, Subject and the text as an email reads,
 /// from the server's preview for exactly these arguments. Every value is the server's own line;
 /// only the labels are the app's. Notes (a send can't be taken back) stay under it.
 struct EmailPreviewCard: View {

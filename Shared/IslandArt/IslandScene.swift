@@ -59,7 +59,7 @@ enum IslandStyle: String, Codable, CaseIterable, Hashable, Sendable {
     }
 }
 
-/// Doddy's orange waves on the Whole Doddy island (ADR-580): a line beside his status while he
+/// Doddy's orange waves on the Whole Doddy island (ADR-596): a line beside his status while he
 /// can hear you, the whole island in lines while he talks. Never while muted, stale, ended, or
 /// during a moment (a card waiting, a reminder set), which keeps its own sign.
 enum IslandWaveState: Equatable, Sendable {
@@ -137,7 +137,7 @@ struct IslandScene: Equatable, Sendable {
     var artLabels: [IslandArtLabel] = []
     /// Whole Doddy (ADR-264): drawn instead of the board's art when set.
     var pose: IslandPose?
-    /// Whole Doddy's waves (ADR-580).
+    /// Whole Doddy's waves (ADR-596).
     var waves: IslandWaveState = .none
 
     func art(_ presentation: IslandPresentation) -> IslandArt {
@@ -163,7 +163,7 @@ extension DoddyVoiceAttributes.ContentState {
         return scene
     }
 
-    /// Whole Doddy's waves for this state (ADR-580): only from real provider states, only while
+    /// Whole Doddy's waves for this state (ADR-596): only from real provider states, only while
     /// he can hear you, and not while a moment is on the island.
     func wholeDoddyWaves(stale: Bool) -> IslandWaveState {
         guard !stale, !isEnded, moment == nil, !showsMuted, isLiveCue else { return .none }

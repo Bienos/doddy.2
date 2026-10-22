@@ -1,6 +1,6 @@
 import Foundation
 
-/// The email card (owner, 22 Oct 2026, ADR-581): a server preview for an email (Gmail or Outlook
+/// The email card (owner, 22 Oct 2026, ADR-597): a server preview for an email (Gmail or Outlook
 /// draft, send, reply) laid out as To, Subject and the text, instead of a list of lines. The
 /// server writes these previews as `To: …`, then `Subject: …` or a reply's `Re: …`, then the body,
 /// then any notes ("It is sent at once from your Gmail and can't be taken back."). Every line is

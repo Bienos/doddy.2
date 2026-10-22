@@ -23,7 +23,7 @@ final class MotionBehaviourUITests: XCTestCase {
     }
 
     /// A tap on him on Home talks, as Home's Talk button does (Q2). With no voice account in the
-    /// simulator the conversation can't start on Home (ADR-579), so the transcript sheet opens on
+    /// simulator the conversation can't start on Home (ADR-595), so the transcript sheet opens on
     /// its sign-in gate, full height, and hides him (it keeps its own Doddy).
     @MainActor
     func testATapOnHimOpensTheVoiceScreen() {

@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// ADR-581: the email card takes the server's preview lines apart without changing any of them.
+/// ADR-597: the email card takes the server's preview lines apart without changing any of them.
 final class EmailPreviewLayoutTests: XCTestCase {
     func testDraftPreviewBecomesToSubjectAndText() {
         let layout = EmailPreviewLayout.parse(["To: ania@example.com", "Subject: Spóźnię się 10 minut", "Cześć Aniu,\nbędę o 9:10."])

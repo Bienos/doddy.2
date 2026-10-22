@@ -7,7 +7,7 @@ import SwiftUI
 /// used to list lives in the ••• menu. Cards appear only while something needs the user (a due
 /// reminder, a storage problem, an unfinished note, a one-time offer they can dismiss).
 ///
-/// Talking happens here (ADR-579): a tap on Doddy starts the conversation on Home. While it runs,
+/// Talking happens here (ADR-595): a tap on Doddy starts the conversation on Home. While it runs,
 /// the words under him say what he is doing and show the last two lines, the bottom bar becomes
 /// Mute and End, and Transcript opens the whole conversation as a sheet.
 struct HomeView: View {
@@ -49,7 +49,7 @@ struct HomeView: View {
     @AppStorage(VoiceConnection.reminders.preferenceKey) private var remindersOn = false
     @AppStorage(PreferenceKey.memoriesShowsLists) private var memoriesShowsLists = false
     private var router: ShortcutRouter { .shared }
-    /// The conversation started on Home (ADR-579).
+    /// The conversation started on Home (ADR-595).
     private var conversation: HomeConversation { .shared }
 
     var body: some View {
@@ -86,7 +86,7 @@ struct HomeView: View {
                     .modifier(SlideIn(shown: buttonsShown, delay: 0))
             }
             .background(Theme.canvas.ignoresSafeArea())
-            // ADR-580: the island grows down with his waves while he talks on Home.
+            // ADR-596: the island grows down with his waves while he talks on Home.
             .overlay(alignment: .top) {
                 if let live = conversation.live {
                     IslandExtension(look: islandLook(live))
@@ -159,7 +159,7 @@ struct HomeView: View {
             }
         }
         .frame(minHeight: 44)
-        // Below the island's extension while he talks (ADR-580).
+        // Below the island's extension while he talks (ADR-596).
         .padding(.top, conversation.live == nil ? 8 : 48)
     }
 
@@ -172,7 +172,7 @@ struct HomeView: View {
         }
     }
 
-    /// Opens the whole conversation as a sheet (ADR-579); closing it doesn't end the conversation.
+    /// Opens the whole conversation as a sheet (ADR-595); closing it doesn't end the conversation.
     private var transcriptButton: some View {
         Button { router.isVoicePresented = true } label: {
             Label("Transcript", systemImage: "text.bubble")
@@ -336,7 +336,7 @@ struct HomeView: View {
         }
     }
 
-    /// While he talks (ADR-579): what he is doing, then the last thing the user said and the last
+    /// While he talks (ADR-595): what he is doing, then the last thing the user said and the last
     /// thing he said. Only lines the provider sent; nothing here is made up on the phone.
     private func liveStatus(_ live: VoiceSessionController) -> some View {
         let you = live.lines.last(where: { $0.fromUser })
@@ -422,7 +422,7 @@ struct HomeView: View {
         }
     }
 
-    /// While he talks (ADR-579): Mute and End, where Type and Memories were.
+    /// While he talks (ADR-595): Mute and End, where Type and Memories were.
     private func talkBar(_ live: VoiceSessionController) -> some View {
         HStack(spacing: 12) {
             Button {
@@ -511,7 +511,7 @@ struct HomeView: View {
 
     private var canTalk: Bool { store.environment.capabilities.isAvailable(.voiceInput) }
 
-    /// He hops and perks up, then the conversation starts here on Home (ADR-579). At once under
+    /// He hops and perks up, then the conversation starts here on Home (ADR-595). At once under
     /// Reduce Motion, with his pictures hidden, or when the tap ends the conversation.
     private func talk() {
         guard canTalk else { return }

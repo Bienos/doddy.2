@@ -3,7 +3,7 @@ import SwiftUI
 import UIKit
 
 /// Voice conversation, shown as the transcript: a sheet over Home since the conversation moved
-/// onto Home (ADR-579). It keeps running if the user closes the sheet or leaves the app (Home, the
+/// onto Home (ADR-595). It keeps running if the user closes the sheet or leaves the app (Home, the
 /// Dynamic Island and the Lock Screen show it with Mute and End); it ends when the user taps End,
 /// from the island, or when the connection drops.
 struct VoiceView: View {
@@ -57,7 +57,7 @@ struct VoiceView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    // Closes the transcript only; the conversation goes on on Home (ADR-579).
+                    // Closes the transcript only; the conversation goes on on Home (ADR-595).
                     Button("Close") { dismiss() }
                 }
                 ToolbarItem(placement: .primaryAction) {
@@ -116,14 +116,14 @@ struct VoiceView: View {
             return
         }
         // A conversation Home holds that waits for the user (a card, a failure): show it here,
-        // never start a second one over it (ADR-579).
+        // never start a second one over it (ADR-595).
         if let held = HomeConversation.shared.forTranscript {
             self.controller = held
             return
         }
         let controller = VoiceSessionController(store: store)
         self.controller = controller
-        // Home shows it and keeps it going after the sheet closes (ADR-579).
+        // Home shows it and keeps it going after the sheet closes (ADR-595).
         HomeConversation.shared.hold(controller)
         // Back Tap or another Talk to Doddy shortcut greets with "Hey <name>, what's up?", after the same
         // account and provider-consent gate used by a tap in the app.
@@ -828,7 +828,7 @@ struct VoiceView: View {
             }
             Text(preview.title)
                 .font(.headline)
-            // An email reads as an email (ADR-581); anything else as its lines.
+            // An email reads as an email (ADR-597); anything else as its lines.
             if let email = EmailPreviewLayout.parse(preview.lines) {
                 EmailPreviewCard(email: email)
             } else {

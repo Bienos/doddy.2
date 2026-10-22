@@ -2,7 +2,7 @@ import DoddyCore
 import Foundation
 import Observation
 
-/// Talking on Home (owner, 22 Oct 2026, ADR-579): a tap on Doddy starts the conversation right on
+/// Talking on Home (owner, 22 Oct 2026, ADR-595): a tap on Doddy starts the conversation right on
 /// Home instead of opening the voice screen over it. Home shows what he is doing and his last
 /// line; the voice screen is now the transcript, a sheet the user opens with Transcript, and it
 /// comes up by itself when a card needs the user (a yes, an access question, a sign-in) or the

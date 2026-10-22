@@ -26,7 +26,7 @@ enum IslandSceneChecks {
         expect(!muted.live && muted.face == .calm && !muted.showsHands, "muted")
         expect(muted.compactSign == .symbol("mic.slash.fill", .secondary), "muted symbol")
 
-        // ADR-580: Whole Doddy's waves come only from live listening and speaking.
+        // ADR-596: Whole Doddy's waves come only from live listening and speaking.
         func waves(_ status: State.Status, muted: Bool = false, stale: Bool = false,
                    style: IslandStyle = .wholeDoddy) -> IslandWaveState {
             var s = State(status: status, isMuted: muted)

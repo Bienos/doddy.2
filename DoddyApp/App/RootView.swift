@@ -109,7 +109,7 @@ struct RootView: View {
     @State private var selectedTab: AppTab = .home
     @State private var showFind = false
     @State private var homePath: [UUID] = []
-    /// How tall the transcript sheet opens (ADR-579): full for Transcript, half for a card.
+    /// How tall the transcript sheet opens (ADR-595): full for Transcript, half for a card.
     @State private var voiceDetent: PresentationDetent = .large
     @Environment(NoteReminderStore.self) private var noteReminders
     @Environment(\.scenePhase) private var scenePhase
@@ -243,7 +243,7 @@ struct RootView: View {
             }
             .onAppear {
                 DoddyClock.install()
-                // MV5: a tap or hold on him talks, as Home's Talk button does: on Home (ADR-579).
+                // MV5: a tap or hold on him talks, as Home's Talk button does: on Home (ADR-595).
                 let store = store
                 let profiles = profiles
                 DoddyDirector.shared.onTalk = {
@@ -371,7 +371,7 @@ struct RootView: View {
         // One presentation point for the conversation, so a shortcut invocation while it is
         // open focuses it instead of starting a second one.
         // Waiting drafts appear only once a cover or sheet has finished going away.
-        // The conversation itself is on Home (ADR-579); this sheet is its transcript, and it comes
+        // The conversation itself is on Home (ADR-595); this sheet is its transcript, and it comes
         // up from the bottom, half height, when a card needs the user.
         .sheet(isPresented: $router.isVoicePresented, onDismiss: {
             voiceDetent = .large
@@ -426,7 +426,7 @@ struct RootView: View {
         .onChange(of: router.isVoicePresented) { _, presented in
             if presented { opening.conversationOpened() }
         }
-        // So does one started on Home (ADR-579).
+        // So does one started on Home (ADR-595).
         .onChange(of: HomeConversation.shared.live != nil) { _, live in
             if live { opening.conversationOpened() }
         }

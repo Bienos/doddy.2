@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Doddy's orange waves (owner, 22 Oct 2026, ADR-580; Figma file `yqoQlkN6BpevFGW3ySnNJU`, page
+/// Doddy's orange waves (owner, 22 Oct 2026, ADR-596; Figma file `yqoQlkN6BpevFGW3ySnNJU`, page
 /// "Wyspa i wiadomości"): sine lines that say he hears you (`.line`, beside his status) or that he
 /// is talking (`.full`, across the whole expanded island). `phase` moves them along. The island
 /// draws them still, because a Live Activity can't run an animation of its own between updates;
