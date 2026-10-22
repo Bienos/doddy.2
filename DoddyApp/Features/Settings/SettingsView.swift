@@ -476,6 +476,11 @@ struct SettingsView: View {
                             .font(.footnote)
                             .foregroundStyle(Theme.secondaryText)
                     }
+                    // The first-launch welcome again (ADR-579): for a look, or to show someone.
+                    Button("Show the welcome again") {
+                        WelcomePreferences.requestReplay()
+                    }
+                    .accessibilityIdentifier("settings.welcomeAgain")
                     // What "Talk to Doddy" does, for Back Tap, the Action Button, Siri and the control.
                     Picker("When I use Talk to Doddy", selection: $backTapActionRaw) {
                         Text("Big island: start a conversation").tag(BackTapAction.conversation.rawValue)

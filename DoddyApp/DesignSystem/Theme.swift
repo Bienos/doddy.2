@@ -15,6 +15,14 @@ enum Theme {
     static var error: Color { .uploaded(.error) }
     /// Decoration only (underlines, dots, props). Never body text.
     static var orangeCue: Color { .uploaded(.orangeCue) }
+
+    /// Doddy's own hand-written lines (the welcome, ADR-579). The design used Caveat, which the app
+    /// does not bundle (no font files ship without the owner's approval), so this is a system
+    /// stand-in: bold, rounded, italic, and it scales with Dynamic Type. The one place to change
+    /// when a licensed hand font is approved.
+    static func hand(_ style: Font.TextStyle = .title2) -> Font {
+        Font.system(style, design: .rounded, weight: .bold).italic()
+    }
 }
 
 extension Color {

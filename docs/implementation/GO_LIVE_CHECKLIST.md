@@ -80,6 +80,7 @@ Starts when `V1_SCOPE.md` is marked up.
 | C13 | Languages | **Open** | All nine translations are unread machine drafts (`l10n/REVIEW_NOTES.md`). Hide eight in v1 (V1 decision 2) or get a native read of each | Both |
 | C14 | A one-page outage plan | **Open** | Nothing exists. It should say what to do when the token server or the voice provider is down, how to rotate a key, and how to switch voice off for everyone | Agent |
 | C15 | TestFlight test information | **Open** | What to test, a feedback email, and sign-in notes for Apple's beta review | Both |
+| C16 | Sign-in options and App Review | **Open** (ADR-579) | The welcome shows Face ID, Google and email but none is connected (`UnconnectedSignIn`). Before any of them is: guideline 4.8 needs Sign in with Apple (or an equally private option) next to Google unless Doddy's own accounts are the only sign-in; a passkey needs a paid team, an Associated Domains entry and server verification; the account must be deletable in the app (5.1.1(v)); and the screens must offer use without an account | Both |
 
 ## D. App Store 1.0
 
