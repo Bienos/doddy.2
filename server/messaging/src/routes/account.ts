@@ -6,6 +6,7 @@ import { newDeviceToken, principal, requireDevice } from "../auth.js";
 import { inTransaction } from "../db.js";
 import type { TaskCallContext } from "../taskCalls/context.js";
 import { beforeAccountDeleted } from "../taskCalls/worker.js";
+import { beforeAccountDeleted as studioBeforeAccountDeleted } from "../studio/service.js";
 
 const pushToken = z.object({
   token: z.string().regex(/^[0-9a-f]{64,200}$/),
@@ -36,6 +37,8 @@ export const accountRoutes = (deps: Deps, taskCtx?: TaskCallContext): FastifyPlu
     // Calls Doddy is making for this account end first; their ElevenLabs copies are deleted
     // promptly by jobs that outlive the account (call cases, ADR-506).
     if (taskCtx) await beforeAccountDeleted(taskCtx, principal(req).accountId);
+    // Studio's copies at Anthropic not yet confirmed deleted outlive the account until they are (ADR-584).
+    await studioBeforeAccountDeleted(db, principal(req).accountId, new Date());
     await db.query("DELETE FROM accounts WHERE id = $1", [principal(req).accountId]);
     return reply.code(204).send();
   });

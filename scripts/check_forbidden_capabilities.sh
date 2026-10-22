@@ -47,7 +47,9 @@
 #    their answers), no write tools beyond the reviewed ones (Gmail draft and reply draft; Todoist add, complete and move,
 #    ADR-303), no proxy execution,
 #    and Monid only in the web search module, with fixed endpoints (web search, news, places; ADR-489; no discover/inspect: the model
-#    can never pick another paid endpoint).
+#    can never pick another paid endpoint),
+#  - the messaging server's background workers declare only their pinned tools: errands Anthropic's web
+#    search and web fetch (ADR-570), Studio those two and code execution (ADR-584).
 # Exit 0 = clean, 1 = violation.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -342,5 +344,25 @@ fi
 if grep -RnoE 'NS[A-Za-z]+UsageDescription' project.yml DoddyApp DoddyWidgets DoddyShare Config | grep -vE "$allowed_permissions"; then
   echo "FAIL: only the alarms, microphone, speech recognition, calendar, reminders, contacts, Motion & Fitness, camera, photo library (read), While Using location and Face ID permissions are allowed." >&2; status=1
 fi
-[ "$status" -eq 0 ] && echo "PASS: ASK-01: every voice tool and every server tool asks first through one gate; networking only in the token client, the voice account sign-in, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice and the ECB rates client, web auth only in Connected Apps, Sign in with Apple only in the voice account sign-in and no password or passkey APIs, ElevenLabs only in Voice, audio only in Voice and Voice memos, on-device speech recognition only in Voice memos, calendar, contacts, location and Motion & Fitness only in Connections, photo reading and the photo picker only in Photos, the photo library read only in PhotoLibrarySearch and the camera only through iOS's camera screen (no capture session, no library writes), no Always/background location, no analytics, no secrets, no 1Password code in the app or SDK in the servers, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts, Motion & Fitness, camera, photo library (read), While Using location and Face ID (LocalAuthentication only in the app lock); backend has no write tools beyond the reviewed Gmail draft and reply draft, the Outlook draft and Todoist add, complete and move, and no proxy execution."
+# Background workers' tools (ADR-570, ADR-584). ASK-01's two exceptions rest on these lists: one
+# yes on a handed-over task covers only Anthropic's web search and web fetch; one yes on a Studio job
+# covers those two and code execution with Doddy's skills (its files), nothing else. A tool type is
+# a quoted literal such as "web_search_20260209"; beta header names use hyphens and don't match.
+worker_tools() { grep -RhoE "['\"][a-z_]+_20[0-9]{6}['\"]" "$1" --include='*.ts' 2>/dev/null | tr -d "'\"" | sort -u; }
+if [ -d server/messaging/src/errands ]; then
+  extra=$(worker_tools server/messaging/src/errands | grep -vxE 'web_search_20260209|web_fetch_20260209' || true)
+  if [ -n "$extra" ]; then
+    echo "FAIL: the errands worker declares a tool beyond web search and web fetch (ADR-570): $extra" >&2; status=1
+  fi
+  if grep -RInE 'code_execution|container' server/messaging/src/errands --include='*.ts'; then
+    echo "FAIL: code execution or a container in the errands worker; its one yes covers only web search and web fetch (ADR-570)." >&2; status=1
+  fi
+fi
+if [ -d server/messaging/src/studio ]; then
+  extra=$(worker_tools server/messaging/src/studio | grep -vxE 'web_search_20260209|web_fetch_20260209|code_execution_20250825' || true)
+  if [ -n "$extra" ]; then
+    echo "FAIL: the Studio worker declares a tool beyond web search, web fetch and code execution (ADR-584): $extra" >&2; status=1
+  fi
+fi
+[ "$status" -eq 0 ] && echo "PASS: ASK-01: every voice tool and every server tool asks first through one gate; networking only in the token client, the voice account sign-in, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice and the ECB rates client, web auth only in Connected Apps, Sign in with Apple only in the voice account sign-in and no password or passkey APIs, ElevenLabs only in Voice, audio only in Voice and Voice memos, on-device speech recognition only in Voice memos, calendar, contacts, location and Motion & Fitness only in Connections, photo reading and the photo picker only in Photos, the photo library read only in PhotoLibrarySearch and the camera only through iOS's camera screen (no capture session, no library writes), no Always/background location, no analytics, no secrets, no 1Password code in the app or SDK in the servers, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts, Motion & Fitness, camera, photo library (read), While Using location and Face ID (LocalAuthentication only in the app lock); backend has no write tools beyond the reviewed Gmail draft and reply draft, the Outlook draft and Todoist add, complete and move, and no proxy execution; the errands worker declares only web search and web fetch and the Studio worker only those and code execution."
 exit "$status"

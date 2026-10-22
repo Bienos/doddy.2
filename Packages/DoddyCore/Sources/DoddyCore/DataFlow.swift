@@ -190,6 +190,15 @@ public enum DataFlow {
                 note: state.messagingServerSet
                     ? "The server keeps the words and the result, encrypted, until the result is saved on this iPhone, then deletes them; a result never fetched is deleted after 30 days. The notification has no words from the task."
                     : "No messaging server is set, so tasks can't be handed over."),
+            // ADR-584: Studio, a research brief and an infographic made in the background.
+            DataFlowRow(
+                id: "studio", destination: "Your Doddy messaging server and Anthropic (Studio)",
+                what: "The topic you ask Doddy to research, your own words about it, who it's for, its length, style and language, and any pages you picked. Anthropic's Claude searches the web and reads pages for it, so search words made from your topic go to Anthropic's search provider, then makes the files in Anthropic's container. Never your saved notes, lists, profile or earlier conversations.",
+                when: "Only when you allow a Studio job on its card.",
+                isActive: state.messagingServerSet,
+                note: state.messagingServerSet
+                    ? "Web research and code execution at Anthropic aren't zero-retention, so Anthropic keeps that work under its normal retention. The server keeps the job and the files, encrypted, until you delete them in Studio. The notification has no words from the job."
+                    : "No messaging server is set, so Studio can't make anything."),
             DataFlowRow(
                 id: "siri", destination: "Apple (Siri)",
                 what: "What you ask Siri to look for, and the note Siri reads back with when you saved it.",
@@ -226,6 +235,8 @@ public enum DataFlow {
         }
         // ADR-570: Claude researches the tasks you hand over.
         if active.contains("errands") { parts.append("Anthropic (tasks you hand over)") }
+        // ADR-584: Claude researches and makes what you ask Studio for.
+        if active.contains("studio") { parts.append("Anthropic (Studio)") }
         return parts.isEmpty ? "None" : parts.joined(separator: "; ")
     }
 
@@ -242,6 +253,7 @@ public enum DataFlow {
         "doddyServer": "your Doddy server (Connected Apps)",
         "messagingServer": "your Doddy messaging server",
         "errands": "Anthropic (tasks you hand over, through your messaging server)",
+        "studio": "Anthropic (Studio, through your messaging server)",
         "siri": "Siri (when you ask it)",
         "askDoddy": "the Ask Doddy gateway",
     ]

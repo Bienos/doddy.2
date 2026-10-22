@@ -189,6 +189,12 @@ services:
         sync: false
       - key: ERRANDS_ENABLED # "0" (the default) refuses new errands and starts no queued one; "1" turns them on
         value: "0"
+      # Studio (ADR-584): "1" also needs STUDIO_SKILLS (ids from scripts/studio_skills.sh upload). Limits
+      # and caps have defaults (server/messaging/.env.example).
+      - key: STUDIO_ENABLED
+        value: "0"
+      - key: STUDIO_SKILLS
+        sync: false
       - key: OPENAI_API_KEY # used only when ANTHROPIC_API_KEY is empty (ADR-197)
         sync: false
       - key: GNEWS_API_KEY
@@ -272,6 +278,12 @@ services:
         sync: false
       - key: ERRANDS_ENABLED # "0" (the default) refuses new errands and starts no queued one; "1" turns them on
         value: "0"
+      # Studio (ADR-584): "1" also needs STUDIO_SKILLS (ids from scripts/studio_skills.sh upload). Limits
+      # and caps have defaults (server/messaging/.env.example).
+      - key: STUDIO_ENABLED
+        value: "0"
+      - key: STUDIO_SKILLS
+        sync: false
       - key: OPENAI_API_KEY # used only when ANTHROPIC_API_KEY is empty (ADR-197)
         sync: false
       - key: GNEWS_API_KEY

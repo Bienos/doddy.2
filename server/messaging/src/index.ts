@@ -4,6 +4,7 @@ import { createPool, migrateOrExit } from "./db.js";
 import { providersFrom } from "./providers/index.js";
 import { taskCallContext } from "./taskCalls/context.js";
 import { errandContext } from "./errands/context.js";
+import { studioContext } from "./studio/context.js";
 import { log, runWorkerLoop } from "./workerLoop.js";
 
 const config = loadConfig();
@@ -21,6 +22,7 @@ app.log.info({
   newsWriter: !!providers.news.writer, newsSearch: !!providers.news.search,
   taskCalls: !!(providers.taskCalls && providers.cipher && config.publicBaseUrl), taskCallsKillSwitch: config.taskCallSettings.killSwitch,
   errands: !!(providers.errands.researcher && providers.cipher), errandsModel: config.errandSettings.model,
+  studio: !!(providers.studio.api && providers.cipher), studioModel: config.studioSettings.model,
 }, "configured features");
 
 // One service instead of web + worker (a small or free deploy): RUN_WORKER_IN_WEB=1 runs the
@@ -32,7 +34,8 @@ if (config.runWorkerInWeb) {
   log("worker started in the web process", { push: !!providers.push, sms: !!providers.sms });
   const taskCtx = taskCallContext(db, providers.taskCalls, providers.cipher, config.publicBaseUrl, providers.push, log);
   const errandCtx = errandContext(db, providers.errands, providers.cipher, providers.push, log);
-  workerDone = runWorkerLoop(db, { ...providers, taskCalls: taskCtx, errands: errandCtx }, () => stopping);
+  const studioCtx = studioContext(db, providers.studio, providers.cipher, providers.push, log);
+  workerDone = runWorkerLoop(db, { ...providers, taskCalls: taskCtx, errands: errandCtx, studio: studioCtx }, () => stopping);
 }
 
 const shutdown = async () => {

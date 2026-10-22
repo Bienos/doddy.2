@@ -54,6 +54,7 @@ expect false "translations sources and blog" l10n/pl.json blog/post.md
 expect false "deploy and pack files" render.yaml MANIFEST.json PACKAGE_MANIFEST.json skills-lock.json .gitignore
 expect false "agent tooling" .claude/settings.json .agents/skills/x.md
 expect false "blank lines are ignored" "" docs/a.md ""
+expect false "Studio skills (Anthropic's container, not the app)" studio-skills/doddy-docs/render_brief.py studio-skills/doddy-brand/SKILL.md
 
 if [ "$failures" -ne 0 ]; then echo "$failures case(s) failed"; exit 1; fi
 echo "all cases pass"

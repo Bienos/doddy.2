@@ -75,6 +75,22 @@ final class DataFlowTests: XCTestCase {
         XCTAssertTrue(errands.note?.contains("no words from the task") ?? false)
     }
 
+    /// ADR-584: Studio jobs go to the messaging server and Anthropic, and the row says what isn't
+    /// zero-retention and how long the server keeps the files.
+    func testStudioRowNamesAnthropicRetentionAndNeverTheNotes() {
+        XCTAssertFalse(row("studio", base).isActive)
+        XCTAssertTrue(row("studio", base).note?.contains("can't make anything") ?? false)
+        var state = base
+        state.messagingServerSet = true
+        let studio = row("studio", state)
+        XCTAssertTrue(studio.isActive)
+        XCTAssertTrue(studio.destination.contains("Anthropic"))
+        XCTAssertTrue(studio.what.contains("Never your saved notes"))
+        XCTAssertTrue(studio.note?.contains("aren't zero-retention") ?? false)
+        XCTAssertTrue(studio.note?.contains("until you delete them") ?? false)
+        XCTAssertTrue(DataFlow.cloudAISummary(state).contains("Anthropic (Studio)"))
+    }
+
     func testMessagingServerRowListsNotesOnlyWhenTheCopyIsOn() {
         XCTAssertFalse(row("messagingServer", base).isActive)
         var state = base
@@ -178,7 +194,7 @@ final class DataFlowSummaryTests: XCTestCase {
         // OpenAI runs the voice where the token server is set (ADR-442): ElevenLabs gets no voice then.
         XCTAssertEqual(
             DataFlow.cloudAISummary(everything),
-            "OpenAI (voice); OpenAI (Ask Doddy); ElevenLabs (phone calls) and Anthropic or OpenAI (daily news) on your messaging server; Anthropic (tasks you hand over)")
+            "OpenAI (voice); OpenAI (Ask Doddy); ElevenLabs (phone calls) and Anthropic or OpenAI (daily news) on your messaging server; Anthropic (tasks you hand over); Anthropic (Studio)")
         XCTAssertFalse(DataFlow.networkSummary(everything).contains("ElevenLabs (while talking)"))
         var elevenLabs = everything
         elevenLabs.voiceProvider = .elevenLabs

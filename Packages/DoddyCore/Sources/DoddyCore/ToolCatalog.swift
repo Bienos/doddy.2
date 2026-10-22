@@ -137,6 +137,9 @@ public enum ToolCatalog {
         // spoken yes or a tap starts it; one yes covers every look-up of that task.
         .init(VoiceToolName.handOverErrand, .lookup, .askFirst),
         .init(VoiceToolName.checkErrands, .lookup, .askFirst),
+        // A Studio job (ADR-584): web research and files made on Doddy's server, nothing else
+        // changes; a spoken yes or a tap starts it.
+        .init(VoiceToolName.makeSomething, .lookup, .askFirst),
         // The conversation itself.
         .init(VoiceToolName.startTranslator, .session, .askFirst),
         .init(VoiceToolName.stopTranslator, .session, .askFirst),

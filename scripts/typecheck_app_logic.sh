@@ -112,6 +112,8 @@ files=(
   DoddyApp/DesignSystem/Motion/DoddyDirector.swift
   # Calls Doddy places for the user (ADR-500): the screens' state, without the views.
   DoddyApp/Features/CallCases/CallCasesModel.swift
+  # Studio (ADR-584): the list, files and delete-with-read-back, without the views.
+  DoddyApp/Features/Studio/StudioModel.swift
 )
 for f in "${files[@]}"; do [ -f "$f" ] || { echo "FAIL: $f is missing; update scripts/typecheck_app_logic.sh"; exit 1; }; done
 

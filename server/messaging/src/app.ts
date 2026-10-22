@@ -19,6 +19,8 @@ import { taskCallWebhookRoutes } from "./routes/taskCallWebhooks.js";
 import { taskCallContext, type TaskCallContext, type TaskCallDeps } from "./taskCalls/context.js";
 import { errandRoutes } from "./routes/errands.js";
 import { errandContext, type ErrandContext, type ErrandDeps } from "./errands/context.js";
+import { studioRoutes } from "./routes/studio.js";
+import { studioContext, type StudioContext, type StudioDeps } from "./studio/context.js";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -26,6 +28,8 @@ declare module "fastify" {
     taskCallContext: TaskCallContext | null;
     /** The errand context the routes use (null without MEMORY_ENCRYPTION_KEY); tests run worker passes on it. */
     errandContext: ErrandContext | null;
+    /** The Studio context the routes use (null without MEMORY_ENCRYPTION_KEY); tests run worker passes on it. */
+    studioContext: StudioContext | null;
   }
 }
 
@@ -58,6 +62,10 @@ export interface Deps {
   errands?: ErrandDeps;
   /** Where errand log lines go (tests capture them); default: the request logger. */
   errandLog?: (msg: string, extra?: object) => void;
+  /** Studio (ADR-584): settings and the model API (needs an Anthropic key and Doddy's skills). Needs `cipher` too. */
+  studio?: StudioDeps;
+  /** Where Studio log lines go (tests capture them); default: the request logger. */
+  studioLog?: (msg: string, extra?: object) => void;
 }
 
 export async function buildApp(deps: Deps): Promise<FastifyInstance> {
@@ -109,6 +117,9 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   const errandCtx = errandContext(deps.db, deps.errands, deps.cipher, deps.push,
     deps.errandLog ?? ((msg, extra = {}) => app.log.info(extra, msg)));
   app.decorate("errandContext", errandCtx ?? null);
+  const studioCtx = studioContext(deps.db, deps.studio, deps.cipher, deps.push,
+    deps.studioLog ?? ((msg, extra = {}) => app.log.info(extra, msg)));
+  app.decorate("studioContext", studioCtx ?? null);
 
   await app.register(accountRoutes(deps, taskCtx));
   await app.register(phoneRoutes(deps));
@@ -120,6 +131,7 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   await app.register(callCaseRoutes(deps, taskCtx));
   await app.register(taskCallWebhookRoutes(deps, taskCtx));
   await app.register(errandRoutes(deps, errandCtx));
+  await app.register(studioRoutes(deps, studioCtx));
   return app;
 }
 

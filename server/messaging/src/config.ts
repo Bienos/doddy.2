@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { StudioSettings } from "./studio/context.js";
 
 // Every provider block is optional: a missing block switches that feature off and the API
 // answers 503 "not_configured". Nothing is faked.
@@ -73,8 +74,8 @@ const schema = z.object({
   TASK_CALL_SAY_VOICE: z.string().regex(/^[A-Za-z0-9.\-]{1,40}$/).default("Polly.Ewa"),
 
   // Errands (ADR-570, docs/implementation/ERRANDS.md): Doddy researches a task in the background.
-  // On by default, but only runs when ANTHROPIC_API_KEY and MEMORY_ENCRYPTION_KEY are set too;
-  // "0" refuses new errands and starts no queued one.
+  // Off by default ("0" refuses new errands and starts no queued one); "1" runs them when
+  // ANTHROPIC_API_KEY and MEMORY_ENCRYPTION_KEY are set too.
   ERRANDS_ENABLED: z.enum(["0", "1"]).default("0"),
   ERRANDS_MODEL: z.string().regex(/^[a-z0-9][a-z0-9.\-]{1,63}$/).default("claude-opus-5-5"),
   ERRANDS_EFFORT: z.enum(["low", "medium", "high", "xhigh", "max"]).default("high"),
@@ -82,6 +83,22 @@ const schema = z.object({
   ERRAND_TIME_LIMIT_MINUTES: z.coerce.number().int().min(1).max(120).default(30),
   // Queued or running errands per account.
   ERRANDS_MAX_OPEN: z.coerce.number().int().min(1).max(20).default(5),
+
+  // Studio (ADR-584, docs/implementation/STUDIO.md): research a topic, then make files from it. Off by
+  // default; "1" also needs ANTHROPIC_API_KEY, MEMORY_ENCRYPTION_KEY and STUDIO_SKILLS.
+  STUDIO_ENABLED: z.enum(["0", "1"]).default("0"),
+  STUDIO_MODEL: z.string().regex(/^[a-z0-9][a-z0-9.\-]{1,63}$/).default("claude-opus-5-5"),
+  // Doddy's custom skills: comma-separated skill ids, each optionally @version (scripts/studio_skills.sh upload).
+  STUDIO_SKILLS: z.string().regex(/^[A-Za-z0-9_]+(@[A-Za-z0-9_.-]+)?(,[A-Za-z0-9_]+(@[A-Za-z0-9_.-]+)?)*$/).optional(),
+  STUDIO_MAX_SEARCHES: z.coerce.number().int().min(1).max(50).default(15),
+  STUDIO_MAX_FETCHES: z.coerce.number().int().min(1).max(50).default(15),
+  // Comma-separated hostnames for web search and fetch to skip (content farms; owner decision).
+  STUDIO_BLOCKED_DOMAINS: z.string().regex(/^[a-z0-9.-]+(,[a-z0-9.-]+)*$/).optional(),
+  STUDIO_TASK_BUDGET_TOKENS: z.coerce.number().int().min(20_000).max(1_000_000).default(150_000),
+  STUDIO_JOB_LIMIT_USD: z.coerce.number().positive().max(50).default(4),
+  STUDIO_DAILY_CAP_USD: z.coerce.number().positive().max(500).default(5),
+  STUDIO_TIME_LIMIT_MINUTES: z.coerce.number().int().min(5).max(60).default(20),
+  STUDIO_MAX_OPEN: z.coerce.number().int().min(1).max(10).default(3),
 });
 
 export interface ApnsConfig { teamId: string; keyId: string; privateKey: string; bundleId: string }
@@ -138,6 +155,7 @@ export interface Config {
   taskCalls?: TaskCallConfig;
   taskCallSettings: TaskCallSettings;
   errandSettings: ErrandSettings;
+  studioSettings: StudioSettings;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -204,6 +222,19 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       effort: e.ERRANDS_EFFORT,
       timeLimitMinutes: e.ERRAND_TIME_LIMIT_MINUTES,
       maxOpen: e.ERRANDS_MAX_OPEN,
+    },
+    studioSettings: {
+      enabled: e.STUDIO_ENABLED === "1",
+      model: e.STUDIO_MODEL,
+      skills: e.STUDIO_SKILLS ?? "",
+      maxSearches: e.STUDIO_MAX_SEARCHES,
+      maxFetches: e.STUDIO_MAX_FETCHES,
+      blockedDomains: e.STUDIO_BLOCKED_DOMAINS ? e.STUDIO_BLOCKED_DOMAINS.split(",") : [],
+      taskBudgetTokens: e.STUDIO_TASK_BUDGET_TOKENS,
+      jobLimitUsd: e.STUDIO_JOB_LIMIT_USD,
+      dailyCapUsd: e.STUDIO_DAILY_CAP_USD,
+      timeLimitMinutes: e.STUDIO_TIME_LIMIT_MINUTES,
+      maxOpen: e.STUDIO_MAX_OPEN,
     },
   };
 }

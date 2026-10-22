@@ -764,6 +764,9 @@ struct SettingsView: View {
             try await environment.callCaseRepository.deleteAll()
             // Tasks handed to Doddy (ADR-570): words and results kept on this iPhone.
             try await environment.errandRepository.deleteAll()
+            // Studio (ADR-584): the topics and the opened copies kept here. The items stay on
+            // Doddy's server until they are deleted in Studio (said below).
+            StudioModel.shared.forgetLocal()
             UserDefaults.standard.removeObject(forKey: PreferenceKey.pinnedNotes)
         } catch {
             deleteError = UserFacingError.message(for: error)
@@ -781,6 +784,10 @@ struct SettingsView: View {
             problems.append(String(
                 format: NSLocalizedString("The copy on your Doddy messaging server (Memory on calls) couldn't be emptied yet: %@ Doddy tries again the next time you open it.", comment: ""),
                 UpdatesModel.text(for: error)))
+        }
+        // Studio (ADR-584): its items are kept on Doddy's server, not on this iPhone; said, never covered by "deleted".
+        if !StudioModel.shared.items.isEmpty {
+            problems.append(NSLocalizedString("What Doddy made in Studio stays on Doddy's server until you delete it in Studio.", comment: ""))
         }
         deleteError = problems.isEmpty ? nil : problems.joined(separator: " ")
     }

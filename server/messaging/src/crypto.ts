@@ -32,10 +32,23 @@ export class TextCipher {
   }
 
   decrypt(blob: Buffer, aad: string): string {
+    return this.decryptBytes(blob, aad).toString("utf8");
+  }
+
+  /** As `encrypt`, for bytes (Studio's files, ADR-584). Same layout and key. */
+  encryptBytes(plaintext: Buffer, aad: string): Buffer {
+    const iv = randomBytes(12);
+    const cipher = createCipheriv("aes-256-gcm", this.key, iv);
+    cipher.setAAD(Buffer.from(aad));
+    const body = Buffer.concat([cipher.update(plaintext), cipher.final()]);
+    return Buffer.concat([iv, cipher.getAuthTag(), body]);
+  }
+
+  decryptBytes(blob: Buffer, aad: string): Buffer {
     const decipher = createDecipheriv("aes-256-gcm", this.key, blob.subarray(0, 12));
     decipher.setAAD(Buffer.from(aad));
     decipher.setAuthTag(blob.subarray(12, 28));
-    return Buffer.concat([decipher.update(blob.subarray(28)), decipher.final()]).toString("utf8");
+    return Buffer.concat([decipher.update(blob.subarray(28)), decipher.final()]);
   }
 
   /** A separate 32-byte key for one purpose (HKDF-SHA256), so no key is used for two jobs. */

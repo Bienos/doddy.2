@@ -306,6 +306,9 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(app: .web, title: "Hand over a task", detail: "“\(draft.title)”", logDetail: nil, isLookup: false)
         case .checkErrands:
             return ActivityRequest(app: .web, title: "Checked your tasks", detail: nil, isLookup: true)
+        case .makeSomething(let job):
+            // ADR-584: the 30-day log keeps that a Studio job was asked for, not its topic.
+            return ActivityRequest(app: .web, title: "Make a research brief", detail: "\u{201C}\(job.topic)\u{201D}", logDetail: nil, isLookup: false)
         case .unsupported, .invalid, .needsClarification, .startTranslator, .stopTranslator, .calculate, .convertUnits:
             // A clarification goes straight back to the agent; no app is used. Translator mode
             // uses no app either, and leaves no trace of the conversation (ADR-215). Sums and

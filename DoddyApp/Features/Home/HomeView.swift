@@ -34,6 +34,7 @@ struct HomeView: View {
     @State private var showToday = false
     /// Tasks handed to Doddy (ADR-570): the list and each result card.
     @State private var showErrands = false
+    @State private var showStudio = false
     @State private var showVoicePicker = false
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
     /// First visit (ADR-326): until a conversation has really connected, Home keeps to talking and
@@ -86,6 +87,7 @@ struct HomeView: View {
             .sheet(item: $modal) { _ in CaptureView() }
             .sheet(isPresented: $showDataFlow) { DataFlowSheet() }
             .sheet(isPresented: $showErrands) { ErrandsView() }
+            .sheet(isPresented: $showStudio) { StudioView() }
             .sheet(isPresented: $showCapabilities) { CapabilitiesSheet() }
             .sheet(isPresented: $showMemories) {
                 HomeMemoriesSheet(
@@ -159,6 +161,9 @@ struct HomeView: View {
                 // Tasks handed to Doddy's background worker (ADR-570).
                 Button { showErrands = true } label: { Label("Tasks", systemImage: "checklist") }
                     .accessibilityIdentifier("home.tasks")
+                // Research briefs and infographics Doddy made (ADR-584).
+                Button { showStudio = true } label: { Label("Studio", systemImage: "doc.richtext") }
+                    .accessibilityIdentifier("home.studio")
                 Button { tool = .focus } label: {
                     if FocusController.shared.session.map({ !$0.isOver }) ?? false {
                         Label("Focus · on", systemImage: "timer")

@@ -1,0 +1,76 @@
+{
+  "title": "Pompy ciepła w domach jednorodzinnych: co mówią źródła",
+  "answer": "Przykładowe dane testowe: pompa ciepła najbardziej się opłaca w domu dobrze ocieplonym, z ogrzewaniem podłogowym. W starszym, słabo izolowanym budynku rachunki mogą wzrosnąć, jeśli najpierw nie poprawi się izolacji.",
+  "sections": [
+    {
+      "heading": "Ile kosztuje ogrzewanie pompą ciepła?",
+      "points": [
+        { "text": "W dobrze ocieplonym domu o powierzchni 120 m² roczny koszt prądu dla pompy ciepła wynosi w przykładzie około 3 600 zł.", "claims": ["c1"] },
+        { "text": "Ten sam dom ogrzewany gazem kosztuje w przykładzie około 5 200 zł rocznie, ale różnica zależy od taryfy i cen energii.", "claims": ["c2", "c3"] }
+      ]
+    },
+    {
+      "heading": "Kiedy pompa ciepła się nie sprawdza?",
+      "points": [
+        { "text": "W budynkach z wysokim zapotrzebowaniem na ciepło pompa pracuje z niższą sprawnością, szczególnie przy mrozie poniżej −15 °C.", "claims": ["c4"] },
+        { "text": "Grzejniki zaprojektowane na wysoką temperaturę wody ograniczają zysk; ogrzewanie podłogowe pozwala pracować przy 35 °C.", "claims": ["c5"] }
+      ]
+    },
+    {
+      "heading": "Jakie są dopłaty?",
+      "points": [
+        { "text": "Przykładowy program dopłat pokrywa do 40% kosztów urządzenia i montażu, zależnie od dochodu.", "claims": ["c6"] }
+      ]
+    }
+  ],
+  "disagreements": [
+    { "text": "Źródła różnią się co do kosztu serwisu: jedno podaje 300 zł rocznie, inne 600 zł.", "claims": ["c7", "c8"] }
+  ],
+  "confidence": "medium",
+  "gaps": [
+    "Brak danych o kosztach dla domów z lat 70. bez ocieplenia.",
+    "Ceny energii na 2027 rok nie są jeszcze znane."
+  ],
+  "infographic": {
+    "headline": { "text": "W ociepleniu domu pompa ciepła może obniżyć koszt ogrzewania o około 30%", "claims": ["c1", "c2"] },
+    "facts": [
+      { "text": "Dobrze ocieplony dom 120 m²: około 3 600 zł rocznie za prąd do pompy.", "claims": ["c1"] },
+      { "text": "Ten sam dom na gazie: około 5 200 zł rocznie.", "claims": ["c2"] },
+      { "text": "Przy mrozie poniżej −15 °C sprawność pompy wyraźnie spada.", "claims": ["c4"] },
+      { "text": "Ogrzewanie podłogowe pozwala pracować przy wodzie o temperaturze 35 °C.", "claims": ["c5"] },
+      { "text": "Dopłata może pokryć do 40% kosztów urządzenia i montażu.", "claims": ["c6"] }
+    ],
+    "numbered": false,
+    "chart": {
+      "kind": "bar",
+      "title": "Roczny koszt ogrzewania domu 120 m²",
+      "unit": "zł",
+      "data": [
+        { "label": "Pompa ciepła", "value": 3600 },
+        { "label": "Gaz ziemny", "value": 5200 },
+        { "label": "Pellet", "value": 4700 },
+        { "label": "Prąd (grzejniki)", "value": 8900 }
+      ],
+      "claims": ["c1", "c2", "c3"]
+    },
+    "sourceLine": "Źródła: przykładowe dane testowe (example.org), pobrane 22.10.2026. Szczegóły i wszystkie źródła w raporcie PDF.",
+    "altText": "Infografika: pompa ciepła w ociepleniu domu może obniżyć koszt ogrzewania o około 30%. Wykres słupkowy porównuje roczny koszt ogrzewania domu 120 m²: pompa ciepła 3 600 zł, gaz 5 200 zł, pellet 4 700 zł, prąd 8 900 zł."
+  },
+  "language": "pl",
+  "sources": [
+    { "id": "s1", "title": "Przykładowe źródło A: koszty ogrzewania (dane testowe)", "url": "https://example.org/koszty-ogrzewania", "fetchedAt": "2026-10-22T09:12:00Z" },
+    { "id": "s2", "title": "Przykładowe źródło B: porównanie paliw (dane testowe)", "url": "https://example.org/porownanie-paliw", "fetchedAt": "2026-10-22T09:13:30Z" },
+    { "id": "s3", "title": "Przykładowe źródło C: pompy ciepła zimą (dane testowe)", "url": "https://example.org/pompy-zima", "fetchedAt": "2026-10-22T09:15:10Z" },
+    { "id": "s4", "title": "Przykładowe źródło D: program dopłat (dane testowe)", "url": "https://example.org/doplaty", "fetchedAt": "2026-10-22T09:17:45Z" }
+  ],
+  "claims": [
+    { "id": "c1", "text": "Pompa ciepła w ocieplonym domu 120 m² to ok. 3 600 zł rocznie.", "quote": "około 3 600 zł rocznie", "source": "s1" },
+    { "id": "c2", "text": "Gaz w tym samym domu to ok. 5 200 zł rocznie.", "quote": "ok. 5 200 zł", "source": "s2" },
+    { "id": "c3", "text": "Koszt zależy od taryfy i cen energii.", "quote": "zależy od taryfy", "source": "s2" },
+    { "id": "c4", "text": "Sprawność spada poniżej −15 °C.", "quote": "poniżej −15 °C", "source": "s3" },
+    { "id": "c5", "text": "Podłogówka pozwala pracować przy 35 °C.", "quote": "35 °C", "source": "s3" },
+    { "id": "c6", "text": "Dopłata do 40% kosztów.", "quote": "do 40%", "source": "s4" },
+    { "id": "c7", "text": "Serwis 300 zł rocznie.", "quote": "300 zł", "source": "s1" },
+    { "id": "c8", "text": "Serwis 600 zł rocznie.", "quote": "600 zł", "source": "s3" }
+  ]
+}

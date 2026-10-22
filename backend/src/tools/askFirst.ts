@@ -11,6 +11,12 @@ import type { Store } from "../store.js";
  * without an approval it issued for this user, this tool, this account and these exact
  * arguments, used once, within two minutes. That the app only sends the approval after the
  * user's yes (a tap on the card for anything that changes something) is the app's half.
+ *
+ * ASK-01's two exceptions don't pass through this gate: they run on the messaging server, where
+ * the approval is the digest of exactly the job on the card. Errands (ADR-570): one yes covers
+ * that task's web searches and page reads. Studio (ADR-584): one yes covers that job's capped web
+ * look-ups and the making of its files in Anthropic's container. Their tool lists are pinned by
+ * scripts/check_forbidden_capabilities.sh; nothing in this backend can widen them.
  */
 
 export const ASK_TTL_SECONDS = 120;

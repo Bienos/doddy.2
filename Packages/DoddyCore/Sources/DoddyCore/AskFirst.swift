@@ -4,7 +4,9 @@ import Foundation
 // ask." Before every action of every tool, reads included, Doddy says exactly what it will do and
 // waits for a yes for that one action. A task handed over (`hand_over_errand`) is that one action:
 // its single yes covers every web search and page read Doddy's server makes for that task, with no
-// limit, and nothing else (owner, 21 Oct 2026, ADR-570). Anything that changes, sends, deletes, books or shares
+// limit, and nothing else (owner, 21 Oct 2026, ADR-570). A Studio job (`make_something`, ADR-584) is
+// the second such action: its yes covers that job's web look-ups (capped by the server's max_uses) and
+// the making of its files in Anthropic's container, and nothing else. Anything that changes, sends, deletes, books or shares
 // something needs a tap on a card with the exact payload: a spoken yes is not enough there,
 // because the model hears it (model-only approval is forbidden, DOD-07). No yes, a no, an unclear
 // answer or a timeout: nothing runs, and the agent is told so. Text from emails, the web or
@@ -26,11 +28,14 @@ public struct AskCard: Equatable, Sendable {
     public let title: String
     public let lines: [String]
     public let confirmLabel: String
+    /// The other button; nil shows the app's own "No".
+    public let declineLabel: String?
 
-    public init(title: String, lines: [String], confirmLabel: String) {
+    public init(title: String, lines: [String], confirmLabel: String, declineLabel: String? = nil) {
         self.title = title
         self.lines = lines
         self.confirmLabel = confirmLabel
+        self.declineLabel = declineLabel
     }
 }
 
@@ -107,6 +112,10 @@ public enum AskFirst {
             return .yesFirst(ErrandAsk.handOverCard(draft))
         case .checkErrands:
             return .yesFirst(ErrandAsk.checkCard)
+        case .makeSomething(let job):
+            // ADR-584: web research and files made in Anthropic's container; nothing outside Doddy
+            // changes, so a spoken yes or a tap starts it. The card shows the whole job.
+            return .yesFirst(StudioAsk.card(job))
         case .addToList(let request):
             return .tapFirst(AskCard(title: "Add to \(request.list)?", lines: request.items, confirmLabel: "Add"))
         case .checkOff(let request):

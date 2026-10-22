@@ -10,6 +10,8 @@ import type { TaskCallDeps } from "../taskCalls/context.js";
 import { ClaudeResultWriter } from "../taskCalls/writer.js";
 import type { ErrandDeps } from "../errands/context.js";
 import { ClaudeErrandResearcher } from "../errands/researcher.js";
+import type { StudioDeps } from "../studio/context.js";
+import { AnthropicStudioApi, parseSkills } from "../studio/model.js";
 
 /** Real provider adapters for whatever is configured; anything missing stays undefined. */
 export function providersFrom(config: Config) {
@@ -39,6 +41,18 @@ export function providersFrom(config: Config) {
       ? new ClaudeErrandResearcher(config.anthropicApiKey, { model: es.model, effort: es.effort })
       : undefined,
   };
+  // Studio (ADR-584): the model API only with an Anthropic key, the switch on and Doddy's skills.
+  const ss = config.studioSettings;
+  const skills = parseSkills(ss.skills);
+  const studio: StudioDeps = {
+    settings: ss,
+    api: ss.enabled && config.anthropicApiKey && skills.length
+      ? new AnthropicStudioApi(config.anthropicApiKey, {
+        model: ss.model, skills, maxSearches: ss.maxSearches, maxFetches: ss.maxFetches,
+        blockedDomains: ss.blockedDomains, taskBudgetTokens: ss.taskBudgetTokens,
+      })
+      : undefined,
+  };
   return {
     push,
     sms: twilio,
@@ -47,6 +61,7 @@ export function providersFrom(config: Config) {
     cipher,
     taskCalls,
     errands,
+    studio,
     news: {
       cipher,
       feeds: new HttpFeedSource(),

@@ -37,6 +37,14 @@ run_step "Blog pages up to date" python3 -I tools/build_blog.py --check
 run_step "Site pages in every language up to date" python3 -I tools/build_site_i18n.py --check
 run_step "String catalogs up to date" python3 -I tools/build_strings_catalog.py --check
 run_step "What-can-doddy-do page up to date" python3 -I tools/build_day.py --check
+# Doddy Studio's skills (STUDIO.md): frontmatter limits and no unlisted font or image files (plain
+# Python), then both renderers on the samples with every output checked the way the server checks it.
+run_step "Studio skills: frontmatter and files" scripts/studio_skills.sh check-files
+if python3 -I -c "import reportlab, matplotlib" 2>/dev/null; then
+  run_step "Studio skills: renderers on samples" scripts/studio_skills.sh check
+else
+  not_run "Studio skills: renderers on samples" "python3 needs reportlab and matplotlib (apt python3-reportlab python3-matplotlib, or pip)"
+fi
 run_step "Which pull requests need the macOS build (ADR-497)" scripts/test_ci_needs_mac.sh
 if python3 -I -c "import yaml" 2>/dev/null; then
   run_step "Per-platform Xcode specs in step" python3 -I scripts/check_platform_specs.py
@@ -93,6 +101,12 @@ fi
 if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
   if [ ! -d server/messaging/node_modules ]; then run_step "Messaging server install (npm ci)" npm ci --prefix server/messaging --no-audit --no-fund; fi
   run_step "Messaging server typecheck + tests" npm test --prefix server/messaging
+  # Studio (ADR-584): the server's checks on files the real renderers make (needs the build above).
+  if python3 -I -c "import reportlab, matplotlib" 2>/dev/null; then
+    run_step "Studio: server checks on rendered samples" scripts/check_studio_crosscheck.sh
+  else
+    not_run "Studio: server checks on rendered samples" "python3 needs reportlab and matplotlib"
+  fi
   [ -z "${TEST_DATABASE_URL:-}" ] && record "Messaging server database tests" "SKIPPED" "TEST_DATABASE_URL not set"
 else
   not_run "Messaging server tests" "node/npm not found on PATH"

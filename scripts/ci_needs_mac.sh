@@ -21,6 +21,8 @@ no_mac() {  # 0 when the path can't affect the macOS job
     docs/* | prompts/* | reference/* | blog/* | site/* | design/* | assets/* | VISUAL_REVIEW/* \
       | l10n/* | contracts/* | schemas/* | server/* | backend/* | gateway/* | secrets/* \
       | .agents/* | .claude/*) return 0 ;;
+    # Doddy Studio's skills run in Anthropic's container, never in an Xcode target (ADR-584).
+    studio-skills/*) return 0 ;;
     # Agent notes, excluded from every target's sources.
     */CLAUDE.md | */AGENTS.md) return 0 ;;
     # Apple Watch and Mac apps (ADR-572): paused, in no target of project.yml or project-iphone.yml.

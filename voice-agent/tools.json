@@ -1311,6 +1311,25 @@
     },
     {
       "type": "function",
+      "name": "make_something",
+      "description": "Studio: research a topic on the web and make a research brief (a PDF) and an infographic, in the background on Doddy's server, kept in Studio in the app (Home, the ••• menu). Use it when the user says 'research X', 'look into X properly and write it up', or 'make an infographic about X'. Pass the topic in the user's words; audience, length and style only if they said them or you asked; details for anything else they said about what they want, in their own words. Never invent sources or facts, and never write the brief yourself. ASK-01: before this tool runs, say in one short line what you will make and ask, for example 'Shall I research heat pumps and make you a brief and an infographic?' (Polish: 'Mam poszukać informacji o pompach ciepła i zrobić raport z infografiką?'). The app shows the whole job on a card and starts it only after the user says yes or taps Allow; that yes covers this job's web searches and making its files, and nothing else: nothing is published or sent. Results: 'started' means it is queued: say 'On it, I'll tell you when it's ready' in one line; they can close the app and get a notification. 'declined': nothing was started; say so in one short sentence. 'unknown': it may have started; ask them to check Studio in the app and never ask for it again yourself. 'failed' (switched off, not set up, today's spending limit, offline or too many jobs running): say you can't make it right now and why in a few words. Never say it is done or ready: the files come later, in Studio.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "kind": {"type": "string", "enum": ["brief"], "description": "What to make. Only 'brief' for now: a research brief (PDF) and an infographic."},
+          "topic": {"type": "string", "description": "What to research, in the user's own words and language. At most 300 characters."},
+          "audience": {"type": "string", "description": "Who it's for, only if the user said, e.g. 'my parents'. At most 120 characters."},
+          "length": {"type": "string", "enum": ["short", "standard", "long"], "description": "short: about a page; standard: two to three pages (the default); long: four to six pages."},
+          "style": {"type": "string", "enum": ["plain", "lively"], "description": "plain (the default) or lively."},
+          "details": {"type": "string", "description": "Anything else the user said about what they want, in their own words. At most 1,000 characters."},
+          "language": {"type": "string", "description": "Two-letter code of the language the user is speaking, e.g. 'pl' or 'en'. The files are written in it."}
+        },
+        "required": ["topic"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "not_synced"}
+    },
+    {
+      "type": "function",
       "name": "note_capability_gap",
       "description": "Write down, on the user's iPhone, that they asked for something none of your tools can do. Call it once when the user asks for something you cannot do with your tools, for example playing music, controlling a smart home, making a payment other than paying for one web page with pay_for_page, sending a message directly or controlling another app, in addition to telling them plainly that you cannot do it. Give only a category, never the user's words. It adds one row on the iPhone and uses no other app; the app asks the user on a card first. The result starts with 'noted' or 'declined'. ASK-01: the app shows exactly this on a card and changes nothing until the user taps it. Before this tool runs, say only one short line that asks the user to confirm on screen, for example 'Confirm on screen if I should do this.' (Polish: 'Potwierdź na ekranie, jeśli mam to zrobić.'). If the result starts with 'declined', nothing changed. Never mention this tool or that you wrote it down unless the user asks.",
       "parameters": {

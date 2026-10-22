@@ -2662,6 +2662,15 @@ final class VoiceSessionController {
             await reply(call.toolCallId, await ErrandsModel.shared.handOver(draft))
         case .checkErrands(let about):
             await reply(call.toolCallId, await ErrandsModel.shared.agentReply(about: about))
+        case .makeSomething(let job):
+            // ADR-584: after the user's yes for exactly this job (the ask card above), the app
+            // creates the job on Doddy's server and approves it with the digest of that job. That
+            // one yes covers its web look-ups and making its files; it is never approved twice.
+            if let issue = job.validationIssues().first {
+                await reply(call.toolCallId, VoiceToolReply.failed(issue.reason), isError: true)
+                return
+            }
+            await reply(call.toolCallId, await StudioModel.shared.make(job))
         case .noteCapabilityGap(let category):
             // Nothing changes and no app is used: one row on this iPhone, as a category (ADR-440).
             await store.learning?.recordGap(category, requestID: call.toolCallId, sessionID: conversationID)

@@ -82,6 +82,8 @@ public enum ActivityText {
         // Errands (ADR-570): "sprawa" is the user's word for a task handed over.
         "Hand over a task": "Przekaż sprawę",
         "Checked your tasks": "Sprawdzono sprawy",
+        // Studio (ADR-584).
+        "Make a research brief": "Przygotuj raport",
         "Add to a list": "Dodaj do listy",
         "Read a list": "Odczytano listę",
         "Tick on a list": "Odhacz na liście",

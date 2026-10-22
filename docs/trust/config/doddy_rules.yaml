@@ -54,7 +54,10 @@ action_policy:
     one_yes_covers: one_action
     # ADR-570 (owner, 2026-10-21): the yes on a handed-over task (hand_over_errand) covers every web
     # search and page fetch of that one task on the server, uncapped; the worker has no other tool.
-    one_yes_also_covers: [errand_lookups_of_that_errand]
+    # ADR-584 (Studio S0, 22 Oct 2026): the yes on a make_something card covers that one job's web
+    # searches and page fetches (capped by max_uses on the server) and making its files in Anthropic's
+    # container with Doddy's skills; the worker has no other tool (pinned by check_forbidden_capabilities.sh).
+    one_yes_also_covers: [errand_lookups_of_that_errand, studio_job_lookups_and_files_of_that_job]
     no_answer_unclear_timeout_or_no: do_nothing_and_say_so
     content_from_email_web_documents_or_tools_is_permission: false
     enforced_by: [backend/src/tools/askFirst.ts, Packages/DoddyCore/Sources/DoddyCore/AskFirst.swift, scripts/check_forbidden_capabilities.sh, scripts/voice_agent_spec.py]
