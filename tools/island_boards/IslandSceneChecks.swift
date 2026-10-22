@@ -56,7 +56,7 @@ enum IslandSceneChecks {
         var greeted = State(status: .connecting, isMuted: false, greeting: "Hey Pat, what's up?")
         expect(greeted.islandScene(isStale: false).title == "Hey Pat, what's up?", "greeting while connecting")
         expect(greeted.islandScene(isStale: false).label == "VOICE", "greeting is a conversation")
-        // ADR-576: Doddy's first message is the greeting, so the island shows it while he says it
+        // ADR-577: Doddy's first message is the greeting, so the island shows it while he says it
         // (the moment the island opens up), not "Speaking".
         greeted.status = .speaking
         expect(greeted.islandScene(isStale: false).title == "Hey Pat, what's up?", "greeting while he says it")
@@ -227,7 +227,7 @@ enum IslandSceneChecks {
         expect(pose(State.wakePaused) == .leaning, "hey doddy paused")
         expect(pose(State(status: .connecting, isMuted: false, greeting: "Hey Pat, what's up?")) == .wave, "greeting waves")
         expect(pose(State(status: .listening, isMuted: false, greeting: "Hey Pat, what's up?")) == .wave, "greeting waves until you speak")
-        // ADR-576: the greeting is his first message, so he waves while he says it too.
+        // ADR-577: the greeting is his first message, so he waves while he says it too.
         expect(pose(State(status: .speaking, isMuted: false, greeting: "Hey Pat, what's up?")) == .wave, "waves while saying the greeting")
         expect(pose(State(status: .thinking, isMuted: false, greeting: "Hey Pat, what's up?")) == .kneelingInspect, "greeting gone once thinking")
         expect(pose(State(status: .listening, isMuted: true, greeting: "Hey Pat, what's up?")) == .shush, "muted beats greeting")

@@ -82,7 +82,7 @@ final class ShortcutRouter {
 
     /// Call only while a conversation is running (`VoiceSessionController.runningConversation`).
     /// Doddy came to the front, or Talk in the Island was pressed with him on screen, and no screen
-    /// shows that conversation: it was started without opening the app (ADR-576), and the user
+    /// shows that conversation: it was started without opening the app (ADR-577), and the user
     /// just tapped its island. Shows it; the voice screen takes the running conversation instead
     /// of starting another. Never over another sheet or the introduction.
     func showConversationStartedElsewhere() {

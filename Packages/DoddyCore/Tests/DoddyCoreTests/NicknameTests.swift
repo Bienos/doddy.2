@@ -30,7 +30,7 @@ final class NicknameTests: XCTestCase {
     func testConversationLanguage() {
         XCTAssertNil(ConversationLanguage.auto.overrideCode)
         XCTAssertEqual(ConversationLanguage.polish.overrideCode, "pl")
-        // Polish unless the person picked (ADR-572); a picked "Automatic" stays automatic.
+        // Polish unless the person picked (ADR-573); a picked "Automatic" stays automatic.
         XCTAssertEqual(ConversationLanguage.default, .polish)
         XCTAssertEqual(ConversationLanguage(stored: nil), .polish)
         XCTAssertEqual(ConversationLanguage(stored: "klingon"), .polish)

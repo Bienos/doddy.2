@@ -10,7 +10,7 @@ struct VoiceView: View {
     @Environment(ProfileStore.self) private var profiles
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    /// Back from iPhone Settings, the access card looks at iOS's answer again (ADR-577).
+    /// Back from iPhone Settings, the access card looks at iOS's answer again (ADR-578).
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage(VoiceProvider.preferenceKey) private var voiceProvider = ""
     @AppStorage(ConnectionPause.preferenceKey) private var pauseAllConnections = false
@@ -127,7 +127,7 @@ struct VoiceView: View {
         let openedByShortcut = ShortcutRouter.shared.takeTalkToDoddyOpening()
         let action = BackTapAction.stored(UserDefaults.standard.string(forKey: PreferenceKey.backTapAction))
         let greeting = openedByShortcut && action.startsConversation ? TalkInIsland.greeting(for: profiles.profile) : nil
-        // The island opens up when Doddy starts speaking, not here (ADR-576): this screen is on top,
+        // The island opens up when Doddy starts speaking, not here (ADR-577): this screen is on top,
         // and iOS doesn't show Doddy's own island over Doddy, so a request now was always lost.
         await controller.start(
             mode, profile: profiles.profile, translator: ShortcutRouter.shared.takeTranslatorPreset(),
@@ -338,7 +338,7 @@ struct VoiceView: View {
                 .onChange(of: controller.saveSuggestions == nil) { _, isNil in
                     if !isNil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("saveSuggestions", anchor: .bottom) } }
                 }
-                // The access card is what Doddy just asked the user to tap (ADR-577).
+                // The access card is what Doddy just asked the user to tap (ADR-578).
                 .onChange(of: controller.accessRequest?.connection) { _, connection in
                     if connection != nil { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("connectionNeeded", anchor: .bottom) } }
                 }
@@ -1254,7 +1254,7 @@ struct VoiceView: View {
         .accessibilityElement(children: .contain)
     }
 
-    /// The access card (ADR-577): the agent asked for a function that is off, or that iOS hasn't
+    /// The access card (ADR-578): the agent asked for a function that is off, or that iOS hasn't
     /// allowed. Allow turns it on in one tap (iOS's own prompt first if it has never asked) and
     /// Doddy carries on by itself; nothing turns on without the tap, and the action still asks for
     /// its own yes. What leaves the phone is on the card; Details opens the full terms. Only when

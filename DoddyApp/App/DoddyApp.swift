@@ -49,7 +49,7 @@ struct DoddyApp: App {
         _noteReminders = State(initialValue: noteReminders)
         let profiles = ProfileStore(environment: environment)
         _profiles = State(initialValue: profiles)
-        // Talk in the Island (ADR-576) greets by name with the app in the background.
+        // Talk in the Island (ADR-577) greets by name with the app in the background.
         IntentStores.profiles = profiles
         // A conversation never survives a relaunch, so neither may its island.
         VoiceLiveActivity.endStale()

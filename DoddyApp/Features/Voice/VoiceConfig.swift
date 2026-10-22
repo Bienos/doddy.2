@@ -28,7 +28,7 @@ enum VoiceConfig {
     #endif
 
     /// How a conversation reaches the voice service: the Debug developer connection when it is on
-    /// (ADR-551), otherwise the token server. The voice screen and Talk in the Island (ADR-576) both
+    /// (ADR-551), otherwise the token server. The voice screen and Talk in the Island (ADR-577) both
     /// start with it.
     static var connectionMode: VoiceConnectionMode {
         if directVoiceEnabled { return .directAgent(agentID: directAgentID) }

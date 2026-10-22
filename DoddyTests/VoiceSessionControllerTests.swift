@@ -385,7 +385,7 @@ final class StaleToolCallTests: XCTestCase {
     }
 }
 
-/// The access card (ADR-577), after #121's permission sheet (ADR-566): a call for a switch that is
+/// The access card (ADR-578), after #121's permission sheet (ADR-566): a call for a switch that is
 /// off first waits on the sheet; Not now there answers the call and leaves this card in the
 /// conversation, where one tap still allows it and tells the agent to carry on (yes) or quietly not
 /// to ask again (no). Nothing is asked or turned on before a tap. Contacts is used because the
@@ -691,7 +691,7 @@ private final class FakeDevices: DeviceConnecting {
         return accessResult
     }
 
-    /// What iOS's own prompt answers on the access card's Allow (ADR-577). As on a real iPhone,
+    /// What iOS's own prompt answers on the access card's Allow (ADR-578). As on a real iPhone,
     /// the prompt shows only while `accessResult` is `.notDetermined`; otherwise it is returned.
     var promptAnswer: DeviceConnections.Access = .denied
     /// Every `request` call: the access card asks iOS only after the user's tap.
