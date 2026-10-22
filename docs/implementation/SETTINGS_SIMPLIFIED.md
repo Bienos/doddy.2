@@ -69,6 +69,6 @@ Code: `DoddyApp/Features/Settings/SettingsView.swift` (the groups), `SettingsScr
 
 ## Checks
 
-- UI tests moved with the rows: `LaunchSmokeTests` open the right page first (`openSettingsPage`), and `DoddyArtTests`' Pause-all footer is unchanged. **They run only in hosted CI** (no Xcode where this was written).
+- UI tests moved with the rows: `LaunchSmokeTests` open the right page first (`openSettingsPage`), and `DoddyArtTests`' Pause-all footer is unchanged. **Hosted CI passes them ([run 39786285579](https://github.com/Bienos/doddy.2/actions/runs/39786285579): 56 UI tests, 1 skipped).
 - Strings: `tools/build_strings_catalog.py --check` PASS; 31 Polish and 23 lines in each other language for removed sentences were deleted; 73 new Polish lines (machine-written, `l10n/REVIEW_NOTES.md`). The other eight languages show the new rows in English.
 - Not checked on a device: Dynamic Type at AX sizes, VoiceOver order, iPad sidebar layout.

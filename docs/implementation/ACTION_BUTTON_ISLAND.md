@@ -53,7 +53,7 @@ Doddy can't assign the button or see what it is set to; the Settings footer and 
 
 ## Test matrix
 
-Automated coverage: `TalkLaunchTests` (12, DoddyCore, Linux: modes, repeat presses, fallbacks, migration), `LegalAcceptanceTests` (8), the island scene checks (`scripts/check_island_art.sh`: the failed card), `TalkButtonAndLegalTests` (app target, hosted CI only). **Everything below needs an iPhone with an Action Button and is NOT VERIFIED**: no device was available, and compiling (hosted CI) doesn't exercise hardware.
+Automated coverage: `TalkLaunchTests` (12, DoddyCore, Linux: modes, repeat presses, fallbacks, migration), `LegalAcceptanceTests` (8), the island scene checks (`scripts/check_island_art.sh`: the failed card), `TalkButtonAndLegalTests` (5, app target). **Hosted Mac CI, [run 39786285579](https://github.com/Bienos/doddy.2/actions/runs/39786285579) on `4ac171d`, 22 Oct: the app, widget extension and tests build on Xcode 26.6; 65 app unit tests pass; 56 UI tests pass (1 skipped, 0 failures)**, including `LegalAcceptanceUITests` (2) and the Settings tests that open the new pages. Two earlier runs failed first: 39772272300 (`ForegroundContinuableIntent` is unavailable in app extensions; now app-only) and 39775389182 (one UI test still looked for a Settings row that moved; fixed; a reduce-motion test failed once on a frame-hitch check and passed on the next run with no related change). **Everything below needs an iPhone with an Action Button and is NOT VERIFIED**: no device was available, and a green simulator run doesn't exercise the hardware button, a cold background start or the microphone rules.
 
 | # | Scenario | Expected | Observed |
 |---|---|---|---|
