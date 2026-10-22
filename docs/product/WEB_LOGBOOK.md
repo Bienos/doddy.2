@@ -1,6 +1,6 @@
 # Logbook: how you use Doddy, on the web
 
-**Status: proposal, 22 Oct 2026 (ADR-579, proposed).** The page is in the site at `/logbook/` (in the nav and every footer, `noindex`), built with the site's own nav, type, buttons and footer, but **Logbook isn't open**: sign-in, the server side and the app's counts aren't built, so the page says so and shows the whole Logbook with example numbers under an "Example" banner (`site/README.md`, "Logbook"). The clickable design mockup is `design/web-logbook-v0.1/` (renders in `png/`). This page is the plan behind both: what the page shows, where each number comes from, how people sign in, what stays private, how it becomes paid later, and what the owner needs to decide.
+**Status: design proposal, 22 Oct 2026 (ADR-579, proposed).** Nothing is built. The working mockup, with example numbers only, is `design/web-logbook-v0.1/` (open `index.html`; renders in `png/`). This page is the plan behind it: what the page shows, where each number comes from, how people sign in, what stays private, how it becomes paid later, and what the owner needs to decide.
 
 ## What the owner asked for
 
@@ -155,7 +155,7 @@ Each step is its own pull request, in this order.
 
 1. **This design.** The owner picks the direction and answers the decisions below.
 2. **Server** (`backend/`): the three tables, `POST /v1/logbook/days` with the allow-list checks, read routes for each tab, delete and export, web sign-in codes and sessions. Tests: refused content and unknown keys, replace-not-add, A can't read B, delete leaves nothing, codes expire and work once. Runs on Linux.
-3. **Site.** *Started 22 Oct:* `/logbook/` exists in the site's design (`tools/build_logbook.py`, `site/logbook/`), linked from the nav and footers in every language, with both tabs drawn from example days and an honest "not open yet" sign-in panel. *Still to do:* `site/api/logbook/*`, the live sign-in code, `loadDays()` reading the person's days instead of the examples, the empty and error states, tests with fakes like the waitlist's, and the page in the ten languages (`tools/build_site_i18n.py`; the nav label is already translated).
+3. **Site** (`site/logbook/` from this mockup, `site/api/logbook/*`): sign-in screen, both tabs from the API, the empty and error states, CSP unchanged, tests with fakes like the waitlist's. English first; the ten languages through `tools/build_site_i18n.py`.
 4. **App** (DoddyCore and Settings): the conversation day counter, the summary builder (from What Doddy did, notes, lists, errands; private notes skipped), the upload, and Settings › Logbook on the web (the switch, Sign in on a computer, signed-in browsers, delete). DoddyCore tests on Linux; the app needs the hosted Mac build.
 5. **Paid gate**, after the pricing decision.
 
@@ -181,6 +181,6 @@ Steps 2 and 3 can run against example days for a private preview; step 4 makes t
 | ASK-01 | The page reads and deletes counts only; it starts nothing. | None for this page. |
 | Cross-user isolation | Every read keyed by the session's user id (planned). | Not built; tests planned in step 2. |
 
-**Tests run for this proposal:** the mockup rendered in headless Chromium (`design/web-logbook-v0.1/render.mjs`: nine renders, no sideways scroll, console errors or failed requests). The site page: `design/web-logbook-v0.1/check-site.mjs`, 109 checks under the production CSP, all pass; `build_logbook.py`, `build_day.py`, `build_blog.py` and `build_site_i18n.py --check` PASS; `npm test` in `site/` 19 pass; `scripts/verify_imported_pack.py` and `scripts/check_forbidden_capabilities.sh` PASS. The site page shows examples only; no sign-in, server or app code exists, so none of that is tested.
+**Tests run for this proposal:** the mockup rendered in headless Chromium (`design/web-logbook-v0.1/render.mjs`: nine renders, no sideways scroll, console errors or failed requests); `scripts/verify_imported_pack.py` and `scripts/check_forbidden_capabilities.sh` PASS. No product code exists, so no product tests ran.
 
 **Claims to limit:** don't call Logbook built, tested or private by guarantee. Every number in the mockup is an example. The QR picture on the sign-in screen is not a real code.

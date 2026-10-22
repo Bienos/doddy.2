@@ -25,8 +25,7 @@ There's no build step: plain HTML, CSS and a small vanilla script. Visits are co
 | App Store | Commented-out Smart App Banner in `index.html`; enable when there's an App Store ID. |
 | Blog | `blog/` pages are **generated** by `tools/build_blog.py` from `../blog/posts/*.md` (published posts only); don't edit them by hand. Styles in `blog.css`. Linked from the nav and footer. See `../blog/README.md`. |
 | What can Doddy do? | `what-can-doddy-do/index.html` and `day-scenes.css` are **generated** by `tools/build_day.py` (`--check` runs in `scripts/ci.sh`); hand-written are `day.css` and `day.js`. See [What can Doddy do?](#what-can-doddy-do). |
-| Nav | One nav, seven links and a phone menu (`nav.js`), on the homepage, the new page, every blog page and Logbook. The blog, the new page and Logbook share `tools/partials/site-nav.html` (placeholders `{{wcd}}`, `{{blog}}`, `{{logbook}}` mark the current page); the homepage nav is hand-kept with hash links, so change both together. |
-| Logbook | `/logbook/`, the seventh nav link and in every footer (ADR-579, proposed). **Generated** by `tools/build_logbook.py` (`--check` runs in `scripts/ci.sh`); hand-written are `logbook/logbook.css`, `logbook/logbook.js` and `logbook/example-data.js`. See [Logbook](#logbook). |
+| Nav | One nav, six links and a phone menu (`nav.js`), on the homepage, the new page and every blog page. The blog and the new page share `tools/partials/site-nav.html`; the homepage nav is hand-kept with hash links, so change both together. |
 
 ## What's real on the page
 
@@ -147,17 +146,6 @@ A memory card game after "Take a shot" (`#remember`, `memory.js`). Twelve cards,
 - Remember it (2026-10-09, headless Chromium 1194 via Playwright, `vercel.json` headers): full game at 1440, 390 and 320 px; a mismatch flips back, a pair played by keyboard (focus + Enter) matches, the win message and fist-bump pose show, New game resets; no horizontal scroll, console errors or CSP violations; hidden with JavaScript off. Screenshots: `VISUAL_REVIEW/landing/v3-remember-1440.png`, `v3-remember-390.png`. Not checked: VoiceOver, real touch.
 
 Not checked: real Safari on iPhone (deep-link fallback timing, Dynamic Type zoom, touch throwing), VoiceOver, Lighthouse.
-
-## Logbook
-
-`/logbook/`: where each person will see how they use Doddy (ADR-579, proposed; plan in `docs/product/WEB_LOGBOOK.md`, design in `design/web-logbook-v0.1/`). **Not open yet:** sign-in, the server side and the app's daily counts aren't built. Until they are, the page says so, shows how signing in will work (no code), and shows the whole Logbook filled with example numbers under an "Example" banner.
-
-- **Files:** `tools/build_logbook.py` writes `logbook/index.html` from the shared nav and its own head, body and footer. `logbook/logbook.css` (every class starts `lb-`, loaded after `styles.css`), `logbook/logbook.js` (At a glance and Closer look, drawn from a list of daily summaries; `loadDays()` is the one place that will switch from the examples to `/api/logbook/days`), `logbook/example-data.js` (91 seeded example days in the summary's shape).
-- **Two tabs:** At a glance (the week as a till receipt, what Doddy was used for, when, notes as slips, each day; ‹ › through 13 weeks) and Closer look ("Free while in testing": 7/30/90 days, totals with no comparisons, conversations, weekday-by-hour, lengths and endings, every tool sortable, asked first, notes, tasks handed over, languages, ways in, lists; Show as tables). Download, Delete and Download CSV only say what they will do (a toast); Delete takes two taps.
-- **Rules kept:** no inline styles or scripts beyond the two the CSP already hashes; every label set with `textContent`; no streaks, scores or comparisons (ADR-306); Doddy's handwriting carries no numbers; pack poses only (wave, belly_reading, shush).
-- **Privacy:** `noindex, nofollow` (meta and an `X-Robots-Tag` header in `vercel.json`), not in `sitemap.xml`, and no analytics scripts (no Vercel Web Analytics, no Google Analytics): it will hold personal numbers.
-- **Languages:** the page is English only for now (not in `build_site_i18n.py`'s page list). The nav label is translated in all nine tables (Dziennik, Logbuch, Bitácora, Journal, Dnevnik, Diario, ログブック, Diário, 使用日志; drafts like the rest).
-- **Checks:** `design/web-logbook-v0.1/check-site.mjs` serves `site/` with the `vercel.json` headers (CSP included) and runs 109 checks in headless Chromium: `/logbook/` at 1440, 1024, 390 and 320 px (no sideways scroll, CSP violations, console errors, failed requests or broken images; receipt, bars and dots drawn; noindex and no analytics; Closer look, the period buttons, sorting, the table view, the week arrows and the two-tap delete), and the nav on `/`, `/de/`, `/fr/`, `/pl/`, `/what-can-doddy-do/`, `/de/what-can-doddy-do/` and `/blog/` at 820, 900, 1024, 1280 and 390 px (Logbook in the nav and the phone menu; the desktop links stay on one line). All pass (22 Oct 2026). Not checked: real Safari on iPhone, VoiceOver, the live deploy.
 
 ## What can Doddy do?
 
