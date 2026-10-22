@@ -187,4 +187,18 @@ final class DataFlowSummaryTests: XCTestCase {
         state.newsWriterProvider = "anthropic"
         XCTAssertTrue(DataFlow.cloudAISummary(state).contains("Anthropic (daily news)"))
     }
+
+    func testWebSignInSaysWhatTheBrowserSeesAndThatNotesStayHere() throws {
+        // ADR-579.
+        var state = base
+        state.doddyServerSet = true
+        let row = try XCTUnwrap(DataFlow.rows(state).first { $0.id == "webSignIn" })
+        XCTAssertTrue(row.isActive)
+        XCTAssertTrue(row.what.contains("Never your saved notes"))
+        XCTAssertTrue(row.what.contains("files Doddy made"))
+        state.doddyServerSet = false
+        let off = try XCTUnwrap(DataFlow.rows(state).first { $0.id == "webSignIn" })
+        XCTAssertFalse(off.isActive)
+        XCTAssertNotNil(off.note)
+    }
 }

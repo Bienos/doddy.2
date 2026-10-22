@@ -551,6 +551,28 @@
         }
       }
     },
+    "A browser": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przeglądarka"
+          }
+        }
+      }
+    },
+    "A browser stays signed in for 30 days, or until it goes unused for 14. It sees the files Doddy made, your online accounts and Doddy's receipts, never your saved notes.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przeglądarka zostaje zalogowana przez 30 dni albo do 14 dni bez użycia. Widzi pliki zrobione przez Doddy’ego, Twoje konta online i potwierdzenia Doddy’ego, nigdy Twoich zapisanych notatek."
+          }
+        }
+      }
+    },
     "A button\nfor Doddy.": {
       "extractionState": "manual",
       "localizations": {
@@ -18991,6 +19013,28 @@
         }
       }
     },
+    "Doddy on the web": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy w przeglądarce"
+          }
+        }
+      }
+    },
+    "Doddy on the web needs Doddy's server, which isn't set up in this build.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy w przeglądarce potrzebuje serwera Doddy’ego, którego nie ma w tej wersji."
+          }
+        }
+      }
+    },
     "Doddy only calls Polish numbers for now.": {
       "extractionState": "manual",
       "localizations": {
@@ -20144,6 +20188,58 @@
         }
       }
     },
+    "Doddy's server couldn't be reached. Check your connection and try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się połączyć z serwerem Doddy’ego. Sprawdź połączenie i spróbuj ponownie."
+          }
+        }
+      }
+    },
+    "Doddy's server didn't accept this iPhone. Try again in a moment.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy's server didn't accept this iPad. Try again in a moment."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy's server didn't accept this iPhone. Try again in a moment."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Serwer Doddy’ego nie przyjął tego iPada. Spróbuj ponownie za chwilę."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Serwer Doddy’ego nie przyjął tego iPhone’a. Spróbuj ponownie za chwilę."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Doddy's server isn't set up in this build, so its copy of this task can't be deleted from here.": {
       "extractionState": "manual",
       "localizations": {
@@ -20162,6 +20258,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Serwer Doddy’ego nie jest skonfigurowany w tej wersji, więc sprawy nie mogą jeszcze działać."
+          }
+        }
+      }
+    },
+    "Doddy's server sent something the app couldn't read, so nothing is shown.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego przysłał coś, czego aplikacja nie potrafi odczytać, więc niczego nie pokazuje."
           }
         }
       }
@@ -25650,6 +25757,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ogólne"
+          }
+        }
+      }
+    },
+    "Get a new code": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pobierz nowy kod"
+          }
+        }
+      }
+    },
+    "Get a sign-in code": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pobierz kod logowania"
+          }
+        }
+      }
+    },
+    "Getting a code…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pobieram kod…"
           }
         }
       }
@@ -31570,6 +31710,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "最后更新于 %@。其他人的更改会在 Doddy 打开时显示。"
+          }
+        }
+      }
+    },
+    "Last used": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ostatnio użyta"
           }
         }
       }
@@ -38040,6 +38191,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "No browser is signed in.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Żadna przeglądarka nie jest zalogowana."
           }
         }
       }
@@ -46008,6 +46170,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "打开 Doddy 窗口"
+          }
+        }
+      }
+    },
+    "Open Doddy's web address in a browser and type the code there. It works once, for five minutes. Doddy will never ask you to read it out or send it to anyone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz adres Doddy’ego w przeglądarce i wpisz tam kod. Działa raz, przez pięć minut. Doddy nigdy nie poprosi, żeby go komuś przeczytać ani wysłać."
           }
         }
       }
@@ -62686,6 +62859,58 @@
         }
       }
     },
+    "Sign in on a computer": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaloguj się na komputerze"
+          }
+        }
+      }
+    },
+    "Sign in on a computer with a code from this iPhone, to see and download the files Doddy made for you.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Sign in on a computer with a code from this iPad, to see and download the files Doddy made for you."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Sign in on a computer with a code from this iPhone, to see and download the files Doddy made for you."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zaloguj się na komputerze kodem z tego iPada, żeby zobaczyć i pobrać pliki, które Doddy dla Ciebie zrobił."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zaloguj się na komputerze kodem z tego iPhone’a, żeby zobaczyć i pobrać pliki, które Doddy dla Ciebie zrobił."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Sign in once with Apple to set up your Doddy voice account. Apple sends a signed identity token to Doddy only to verify your account and create the session. The protected session stays on this iPhone, so you won’t need to sign in every time. Sign-in doesn’t share your voice or notes.": {
       "extractionState": "manual",
       "localizations": {
@@ -62823,6 +63048,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "请在 iOS 设置中登录 iCloud 以共享清单。"
+          }
+        }
+      }
+    },
+    "Sign out": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyloguj"
+          }
+        }
+      }
+    },
+    "Signed-in browsers": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zalogowane przeglądarki"
           }
         }
       }
@@ -63302,6 +63549,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Coś jest za długie: cel do 160 znaków, pytanie do 200, każda informacja do 160."
+          }
+        }
+      }
+    },
+    "Something went wrong on Doddy's server. Nothing was changed.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coś poszło nie tak na serwerze Doddy’ego. Nic nie zostało zmienione."
           }
         }
       }
@@ -77447,6 +77705,17 @@
         }
       }
     },
+    "Too many codes this hour. Try again later.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Za dużo kodów w tej godzinie. Spróbuj ponownie później."
+          }
+        }
+      }
+    },
     "Too many tries. Wait a while and try again.": {
       "extractionState": "manual",
       "localizations": {
@@ -79110,6 +79379,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "类型"
+          }
+        }
+      }
+    },
+    "Type it at": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wpisz go pod adresem"
           }
         }
       }
@@ -85038,6 +85318,17 @@
         }
       }
     },
+    "Works for": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Działa jeszcze"
+          }
+        }
+      }
+    },
     "Write it out in another language": {
       "extractionState": "manual",
       "localizations": {
@@ -89099,6 +89390,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "już nie istniało"
+          }
+        }
+      }
+    },
+    "another system": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "inny system"
           }
         }
       }

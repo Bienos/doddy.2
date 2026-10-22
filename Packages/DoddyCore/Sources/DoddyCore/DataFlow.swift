@@ -173,6 +173,13 @@ public enum DataFlow {
                 note: !state.doddyServerSet
                     ? "No Doddy server is set, so nothing goes there."
                     : state.pauseAll ? "Connections are paused, so Doddy doesn't use it in conversations. The Connected Apps screen still works when you open it." : nil),
+            // ADR-579: the phone vouches for a browser; the browser sees what the server already keeps.
+            DataFlowRow(
+                id: "webSignIn", destination: "A browser you sign in to Doddy on the web",
+                what: "From this iPhone only a request for a sign-in code, to your Doddy server. The browser you type the code into then sees what that server already keeps for you: files Doddy made, your online accounts and their tools, and Doddy's receipts. Never your saved notes, lists, profile or conversations.",
+                when: "When you tap Get a sign-in code, and while that browser stays signed in (30 days at most; sign it out in Settings › Doddy on the web).",
+                isActive: state.doddyServerSet,
+                note: state.doddyServerSet ? nil : "No Doddy server is set, so no browser can sign in."),
             DataFlowRow(
                 id: "messagingServer", destination: "Your Doddy messaging server (Apple, Twilio, ElevenLabs, \(writer), GNews)",
                 what: sentence(messaging),
@@ -248,7 +255,8 @@ public enum DataFlow {
 
     /// Covered by another name (translator mode goes to whichever service runs the voice, which is
     /// named), or not sent by the app (a backup file goes where you save it).
-    static let notInNetworkSummary: Set<String> = ["translator", "backup"]
+    // webSignIn: the same Doddy server the doddyServer row already names.
+    static let notInNetworkSummary: Set<String> = ["translator", "backup", "webSignIn"]
 
     private static func newsWriter(_ state: DataFlowState) -> String {
         switch state.newsWriterProvider {

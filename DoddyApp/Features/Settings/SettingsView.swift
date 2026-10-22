@@ -337,6 +337,20 @@ struct SettingsView: View {
                     Text("Gmail, Google Drive, Notion and Todoist through Composio, with a switch for every tool. All off until you turn them on; anything that adds or creates asks you first.")
                 }
 
+                // ADR-579: sign in to Doddy on the web with a code from this iPhone.
+                Section {
+                    NavigationLink {
+                        WebSignInScreen()
+                    } label: {
+                        Label("Doddy on the web", systemImage: "laptopcomputer")
+                    }
+                    .accessibilityIdentifier("settings.web")
+                } header: {
+                    Text("Doddy on the web")
+                } footer: {
+                    Text("Sign in on a computer with a code from this iPhone, to see and download the files Doddy made for you.")
+                }
+
                 Section {
                     TextField("Server address (https://…)", text: $connectedAppsServerURL)
                         .font(.body.monospaced())
