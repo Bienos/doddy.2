@@ -327,7 +327,7 @@ fi
 # environment variables (no 1Password SDK at boot). op:// references live only in the .env.op
 # templates and secrets/, which `node tools/secrets/sync.mjs check` keeps to references only.
 onepassword='op://|@1password/|onepassword-sdk|OnePasswordSDK|OP_SERVICE_ACCOUNT_TOKEN|OP_CONNECT_(HOST|TOKEN)'
-if grep -RInE "$onepassword" "${dirs[@]}" Config project.yml project-iphone.yml project-mac.yml; then
+if grep -RInE "$onepassword" "${dirs[@]}" Config project.yml project-iphone.yml project-watch.yml project-mac.yml; then
   echo "FAIL: 1Password references or code in an app target (ADR-493)." >&2; status=1
 fi
 if grep -nE '"@1password/' backend/package.json server/*/package.json gateway/package.json site/package.json 2>/dev/null; then

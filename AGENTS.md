@@ -59,7 +59,7 @@ State repository reality (implemented / mock / missing / unsupported); name the 
 ---
 
 # Where to start (2026-10-11, ADR-457)
-**Start here:** `STATUS.md`, then `docs/platforms/<platform>.md`. The platforms build from separate specs (`project.yml`, `project-iphone.yml`, `project-mac.yml`).
+**Start here:** `STATUS.md`, then `docs/platforms/<platform>.md`. The platforms build from separate specs (`project.yml`, `project-iphone.yml`; `project-watch.yml` and `project-mac.yml` are paused, ADR-572: do not build or change Watch or Mac code unless the owner re-enables them).
 
 ---
 

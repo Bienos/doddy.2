@@ -23,6 +23,10 @@ no_mac() {  # 0 when the path can't affect the macOS job
       | .agents/* | .claude/*) return 0 ;;
     # Agent notes, excluded from every target's sources.
     */CLAUDE.md | */AGENTS.md) return 0 ;;
+    # Apple Watch and Mac apps (ADR-572): paused, in no target of project.yml or project-iphone.yml.
+    # Their own checks (string catalogs, island art, capability guard) run in the Linux `core` job.
+    DoddyWatch/* | DoddyWatchWidgets/* | DoddyMac/* | DoddyMacWidgets/* \
+      | Config/DoddyWatch* | Config/DoddyMac* | project-watch.yml | project-mac.yml) return 0 ;;
     render.yaml | skills-lock.json | MANIFEST.json | PACKAGE_MANIFEST.json | .gitignore) return 0 ;;
     */*) return 1 ;;
     # Top-level Markdown: README, STATUS, DECISIONS and the like.

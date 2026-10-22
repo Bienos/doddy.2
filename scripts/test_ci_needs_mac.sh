@@ -21,7 +21,7 @@ expect() {  # expected (true|false), description, changed paths...
 expect true "app source" DoddyApp/Features/Voice/VoiceView.swift
 expect true "shared source" Shared/IslandArt/IslandPose.swift
 expect true "shared package" Packages/DoddyCore/Sources/DoddyCore/VoiceConversationGate.swift
-expect true "widget, share, watch and Mac targets" DoddyWidgets/A.swift DoddyShare/B.swift DoddyWatch/C.swift DoddyMac/D.swift
+expect true "widget and share targets" DoddyWidgets/A.swift DoddyShare/B.swift
 expect true "unit and UI tests" DoddyTests/X.swift DoddyUITests/Y.swift
 expect true "Info.plist and entitlements" Config/Doddy-Info.plist
 expect true "an Xcode spec" project-iphone.yml
@@ -46,6 +46,9 @@ expect false "agent notes in app folders" DoddyApp/CLAUDE.md Packages/DoddyCore/
 expect false "servers and site" server/messaging/src/index.ts backend/src/a.ts gateway/api/b.js site/index.html
 expect false "secrets manifest and env templates" secrets/manifest.json backend/.env.op
 expect false "voice agent notes that aren't bundled" voice-agent/README.md voice-agent/phone/instructions.md
+expect false "paused Watch and Mac apps (ADR-572)" DoddyWatch/A.swift DoddyWatchWidgets/B.swift DoddyMac/C.swift DoddyMacWidgets/D.swift Config/DoddyWatch.entitlements Config/DoddyMac-Info.plist project-watch.yml project-mac.yml
+expect true "the Watch app's neighbours still run it" DoddyWatch/A.swift DoddyApp/Features/Watch/PhoneWatchLink.swift
+expect true "the shared widget file the Watch also reads" Shared/Widgets/WidgetSnapshotFile.swift
 expect false "design sources and archives" design/dynamic-island-v4/a.svg assets/brand_candidate/x.png reference/old.md
 expect false "translations sources and blog" l10n/pl.json blog/post.md
 expect false "deploy and pack files" render.yaml MANIFEST.json PACKAGE_MANIFEST.json skills-lock.json .gitignore
