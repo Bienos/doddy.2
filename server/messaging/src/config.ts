@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { StudioSettings } from "./studio/context.js";
-import { stepModelsFrom } from "./studio/models.js";
+import { PLAN_TIER_NAMES, stepModelsFrom, type PlanTier } from "./studio/models.js";
 
 const MODEL_ID = /^[a-z0-9][a-z0-9.\-]{1,63}$/;
 
@@ -93,6 +93,7 @@ const schema = z.object({
   // Models per step (owner, 22 Oct: the all-Opus plan cost too much). Defaults: Haiku 5.5 plans, extracts
   // claims and renders; Sonnet 5.5 researches and writes. STUDIO_MODEL, when set, is the starting point for
   // every step; a STUDIO_MODEL_<STEP> then overrides that step.
+  STUDIO_TIER: z.enum(PLAN_TIER_NAMES as [PlanTier, ...PlanTier[]]).optional(),
   STUDIO_MODEL: z.string().regex(MODEL_ID).optional(),
   STUDIO_MODEL_PLAN: z.string().regex(MODEL_ID).optional(),
   STUDIO_MODEL_RESEARCH: z.string().regex(MODEL_ID).optional(),
@@ -239,7 +240,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       models: stepModelsFrom({
         plan: e.STUDIO_MODEL_PLAN, research: e.STUDIO_MODEL_RESEARCH, pack: e.STUDIO_MODEL_PACK,
         write: e.STUDIO_MODEL_WRITE, make: e.STUDIO_MODEL_MAKE,
-      }, e.STUDIO_MODEL),
+      }, e.STUDIO_MODEL, e.STUDIO_TIER),
       skills: e.STUDIO_SKILLS ?? "",
       maxSearches: e.STUDIO_MAX_SEARCHES,
       maxFetches: e.STUDIO_MAX_FETCHES,

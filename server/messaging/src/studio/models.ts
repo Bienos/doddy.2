@@ -11,17 +11,29 @@ export const SONNET = "claude-sonnet-5-5";
 export const HAIKU = "claude-haiku-5-5";
 export const FABLE = "claude-fable-5-1";
 
+/** The mix measured on 22 Oct 2026 as run 4 (STUDIO.md "First real run"): Haiku plans, extracts claims and renders; Sonnet researches and writes. */
+export const CHEAP_STEP_MODELS: StepModels = { plan: HAIKU, research: SONNET, pack: HAIKU, write: SONNET, make: HAIKU };
+
 /**
- * Default mix: Haiku 5.5 (built for "classification, extraction and routing") plans, extracts claims
- * and runs the fixed render recipe; Sonnet 5.5 researches on the web and writes. Research stays off
- * Haiku because dynamic-filtering web search isn't confirmed for it (the docs say "Claude 4.6 and
- * later"; the skill's own list leaves Haiku 5.5 out) until a real run shows it.
+ * The plans the product will sell (owner, 22 Oct 2026): free is Haiku, mid is Sonnet, pro is Opus, and an opt-in `max` is Fable 5.1; one model for
+ * every step. Doddy has no accounts or plans yet, so a deployment picks its tier with STUDIO_TIER; the owner's
+ * own account runs on the mid tier for now, so the default is `plus` (Sonnet).
  */
-export const DEFAULT_STEP_MODELS: StepModels = { plan: HAIKU, research: SONNET, pack: HAIKU, write: SONNET, make: HAIKU };
+export const PLAN_TIERS = {
+  free: { plan: HAIKU, research: HAIKU, pack: HAIKU, write: HAIKU, make: HAIKU },
+  plus: { plan: SONNET, research: SONNET, pack: SONNET, write: SONNET, make: SONNET },
+  pro: { plan: OPUS, research: OPUS, pack: OPUS, write: OPUS, make: OPUS },
+  /** Fable 5.1: about 2.2 times Opus for the same job in the 22 Oct run (STUDIO.md), so it is the top, opt-in tier. */
+  max: { plan: FABLE, research: FABLE, pack: FABLE, write: FABLE, make: FABLE },
+} as const satisfies Record<string, StepModels>;
+export type PlanTier = keyof typeof PLAN_TIERS;
+export const PLAN_TIER_NAMES = Object.keys(PLAN_TIERS) as PlanTier[];
+export const DEFAULT_TIER: PlanTier = "plus";
+export const DEFAULT_STEP_MODELS: StepModels = { ...PLAN_TIERS[DEFAULT_TIER] };
 
 /** Named mixes for comparison runs (scripts/studio-live-run.mjs --mix). */
 export const MODEL_MIXES: Record<string, StepModels> = {
-  cheap: DEFAULT_STEP_MODELS,
+  cheap: CHEAP_STEP_MODELS,
   haiku: { plan: HAIKU, research: HAIKU, pack: HAIKU, write: HAIKU, make: HAIKU },
   sonnet: { plan: SONNET, research: SONNET, pack: SONNET, write: SONNET, make: SONNET },
   fable: { plan: FABLE, research: FABLE, pack: FABLE, write: FABLE, make: FABLE },
@@ -69,9 +81,9 @@ export function modelLabel(models: StepModels): string {
   return unique.map((m) => m.replace(/^claude-/, "")).join("+").slice(0, 64);
 }
 
-/** Parses STUDIO_MODEL_<STEP> overrides over the defaults; STUDIO_MODEL (the old single setting) sets all steps first. */
-export function stepModelsFrom(overrides: Partial<Record<StudioStep, string>>, all?: string): StepModels {
-  const base: StepModels = all ? { plan: all, research: all, pack: all, write: all, make: all } : { ...DEFAULT_STEP_MODELS };
+/** Parses STUDIO_MODEL_<STEP> overrides over the tier's models (STUDIO_TIER, default mid/Sonnet); STUDIO_MODEL (the old single setting) sets all steps first. */
+export function stepModelsFrom(overrides: Partial<Record<StudioStep, string>>, all?: string, tier: PlanTier = DEFAULT_TIER): StepModels {
+  const base: StepModels = all ? { plan: all, research: all, pack: all, write: all, make: all } : { ...PLAN_TIERS[tier] };
   for (const s of STEPS) if (overrides[s]) base[s] = overrides[s]!;
   return base;
 }

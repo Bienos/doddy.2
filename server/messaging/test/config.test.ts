@@ -53,13 +53,24 @@ test("errands get a researcher only with an Anthropic key and the switch on", as
   assert.equal(providersFrom(loadConfig({ ...base, ANTHROPIC_API_KEY: "test-key", ERRANDS_ENABLED: "0" })).errands.researcher, undefined);
 });
 
-test("studio: off by default; the cheap model mix, $2 a job and $3 a day, 15 searches; empty values count as unset", () => {
+test("studio: off by default; the mid tier (Sonnet) for every step, $2 a job and $3 a day, 15 searches; empty values count as unset", () => {
   const c = loadConfig({ DATABASE_URL: "postgres://x/y", STUDIO_ENABLED: "", STUDIO_MODEL: "", STUDIO_SKILLS: "" });
   assert.deepEqual(c.studioSettings, {
-    enabled: false, models: { plan: "claude-haiku-5-5", research: "claude-sonnet-5-5", pack: "claude-haiku-5-5", write: "claude-sonnet-5-5", make: "claude-haiku-5-5" },
+    enabled: false, models: { plan: "claude-sonnet-5-5", research: "claude-sonnet-5-5", pack: "claude-sonnet-5-5", write: "claude-sonnet-5-5", make: "claude-sonnet-5-5" },
     skills: "", maxSearches: 15, maxFetches: 15, blockedDomains: [], taskBudgetTokens: 150_000, jobLimitUsd: 2, dailyCapUsd: 3, timeLimitMinutes: 20, maxOpen: 3,
   });
   assert.equal(loadConfig({ DATABASE_URL: "postgres://x/y", STUDIO_ENABLED: "1" }).studioSettings.enabled, true);
+});
+
+test("studio: STUDIO_TIER picks free (Haiku), plus (Sonnet, the default), pro (Opus) or max (Fable); STUDIO_MODEL and step variables still win; a bad tier is refused", () => {
+  const model = (env: Record<string, string>) => loadConfig({ DATABASE_URL: "postgres://x/y", ...env }).studioSettings.models;
+  assert.equal(model({ STUDIO_TIER: "free" }).research, "claude-haiku-5-5");
+  assert.equal(model({ STUDIO_TIER: "plus" }).make, "claude-sonnet-5-5");
+  assert.equal(model({ STUDIO_TIER: "pro" }).write, "claude-opus-5-5");
+  assert.equal(model({ STUDIO_TIER: "max" }).research, "claude-fable-5-1");
+  assert.equal(model({ STUDIO_TIER: "pro", STUDIO_MODEL_PLAN: "claude-haiku-5-5" }).plan, "claude-haiku-5-5");
+  assert.equal(model({ STUDIO_TIER: "free", STUDIO_MODEL: "claude-opus-5-5" }).plan, "claude-opus-5-5");
+  assert.throws(() => model({ STUDIO_TIER: "gold" }));
 });
 
 test("studio: STUDIO_MODEL sets every step first, a step variable overrides it, bad ids and values are refused", () => {

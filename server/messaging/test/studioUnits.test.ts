@@ -6,7 +6,7 @@ import { SeenSources } from "../src/errands/researcher.js";
 import { checkFiles, contrast, failed, pngSize, scanSvg, TEXT_COLOURS } from "../src/studio/checks.js";
 import { fileIdsOf, parseSkills, STUDIO_MAKE_TOOL_TYPE, STUDIO_RESEARCH_TOOL_TYPES, AnthropicStudioApi } from "../src/studio/model.js";
 import { buildPack, resumable, runStudio, stepCostUsd, type StudioControl } from "../src/studio/pipeline.js";
-import { DEFAULT_STEP_MODELS, HAIKU, MODEL_MIXES, modelLabel, OPUS, SONNET, stepModelsFrom, tokenCostUsd } from "../src/studio/models.js";
+import { DEFAULT_STEP_MODELS, HAIKU, MODEL_MIXES, modelLabel, OPUS, PLAN_TIERS, SONNET, stepModelsFrom, tokenCostUsd } from "../src/studio/models.js";
 import { appState, contentProblems, jobBody, jobDigest, jobJson, type RenderContent, type Stage } from "../src/studio/schema.js";
 import { content, FakeStudioApi, goodFiles, goodSvg, job, packOutput, pdf, png, researchMessage, URLS } from "./studioFakes.js";
 
@@ -131,7 +131,7 @@ describe("the file checks", () => {
 describe("the model calls", () => {
   test("research has only web search and fetch, capped, with blocked domains; make has only code execution", () => {
     const api = new AnthropicStudioApi("sk-ant-test", {
-      models: DEFAULT_STEP_MODELS, modelLabel: modelLabel(DEFAULT_STEP_MODELS),
+      models: MODEL_MIXES.cheap!, modelLabel: modelLabel(MODEL_MIXES.cheap!),
       skills: [{ id: "skill_a", version: "latest" }], maxSearches: 15, maxFetches: 12, blockedDomains: ["spam.example"], taskBudgetTokens: 150_000,
     });
     const tools = api.researchTools();
@@ -139,7 +139,7 @@ describe("the model calls", () => {
     assert.deepEqual(tools.map((t) => t.max_uses), [15, 12]);
     for (const t of tools) assert.deepEqual((t as { blocked_domains?: string[] }).blocked_domains, ["spam.example"]);
     assert.equal("allowed_domains" in tools[0]!, false, "allowed and blocked domains can't be combined");
-    const open = new AnthropicStudioApi("sk-ant-test", { models: DEFAULT_STEP_MODELS, modelLabel: "x", skills: [], maxSearches: 1, maxFetches: 1, blockedDomains: [], taskBudgetTokens: 20_000 });
+    const open = new AnthropicStudioApi("sk-ant-test", { models: MODEL_MIXES.cheap!, modelLabel: "x", skills: [], maxSearches: 1, maxFetches: 1, blockedDomains: [], taskBudgetTokens: 20_000 });
     assert.equal("blocked_domains" in open.researchTools()[0]!, false);
     assert.equal(STUDIO_MAKE_TOOL_TYPE, "code_execution_20250825");
     assert.deepEqual(parseSkills("skill_a, skill_b@3"), [{ id: "skill_a", version: "latest" }, { id: "skill_b", version: "3" }]);
@@ -157,14 +157,19 @@ describe("the model calls", () => {
     assert.ok(tokenCostUsd(HAIKU, u) < tokenCostUsd(SONNET, u) && tokenCostUsd(SONNET, u) < tokenCostUsd(OPUS, u));
   });
 
-  test("models per step: the cheap mix by default; one STUDIO_MODEL for all; a step override wins; labels", () => {
-    assert.deepEqual(DEFAULT_STEP_MODELS, { plan: HAIKU, research: SONNET, pack: HAIKU, write: SONNET, make: HAIKU });
-    assert.deepEqual(MODEL_MIXES.cheap!, DEFAULT_STEP_MODELS);
+  test("models per step: the mid tier (Sonnet everywhere) by default, the tiers and the cheap mix by name; one STUDIO_MODEL for all; a step override wins; labels", () => {
+    assert.deepEqual(DEFAULT_STEP_MODELS, PLAN_TIERS.plus);
+    assert.deepEqual(DEFAULT_STEP_MODELS, MODEL_MIXES.sonnet!);
+    assert.deepEqual(MODEL_MIXES.cheap!, { plan: HAIKU, research: SONNET, pack: HAIKU, write: SONNET, make: HAIKU });
+    assert.deepEqual(stepModelsFrom({}, undefined, "free"), PLAN_TIERS.free);
+    assert.deepEqual(stepModelsFrom({}, undefined, "pro"), MODEL_MIXES.opus!);
+    assert.deepEqual(stepModelsFrom({}, undefined, "max"), MODEL_MIXES.fable!);
     assert.deepEqual(stepModelsFrom({}), DEFAULT_STEP_MODELS);
     assert.deepEqual(stepModelsFrom({}, OPUS), MODEL_MIXES.opus!);
     assert.equal(stepModelsFrom({ research: OPUS }, SONNET).research, OPUS);
     assert.equal(stepModelsFrom({ research: OPUS }, SONNET).plan, SONNET);
-    assert.equal(modelLabel(DEFAULT_STEP_MODELS), "haiku-5-5+sonnet-5-5");
+    assert.equal(modelLabel(DEFAULT_STEP_MODELS), "claude-sonnet-5-5");
+    assert.equal(modelLabel(MODEL_MIXES.cheap!), "haiku-5-5+sonnet-5-5");
     assert.equal(modelLabel(MODEL_MIXES.opus!), "claude-opus-5-5");
   });
 
@@ -185,7 +190,7 @@ describe("the model calls", () => {
     };
     void parsed;
     const api = new AnthropicStudioApi("sk-ant-test", {
-      models: DEFAULT_STEP_MODELS, modelLabel: modelLabel(DEFAULT_STEP_MODELS), skills: [{ id: "skill_a", version: "1" }],
+      models: MODEL_MIXES.cheap!, modelLabel: modelLabel(MODEL_MIXES.cheap!), skills: [{ id: "skill_a", version: "1" }],
       maxSearches: 8, maxFetches: 8, blockedDomains: [], taskBudgetTokens: 100_000, client: client as never,
     });
     const signal = new AbortController().signal;
@@ -340,7 +345,7 @@ describe("the pipeline against a fake Claude", () => {
 
   test("a run's cost is each call priced with its own step's model", async () => {
     const api = new FakeStudioApi();
-    api.models = { ...DEFAULT_STEP_MODELS };
+    api.models = { ...MODEL_MIXES.cheap! };
     const out = await runStudio(api, job, control().c);
     assert.equal(out.kind, "made");
     // plan 1000/500 Haiku; research 20000/4000 Sonnet + 3 searches; pack Haiku; write Sonnet; make 5000/2000 Haiku
@@ -375,7 +380,7 @@ describe("the live-run recorder (tested here so a bug can't waste a paid run)", 
     const { join } = await import("node:path");
     const { liveRun } = await import("../src/studio/liveRun.js");
     const api = new FakeStudioApi();
-    api.models = { ...DEFAULT_STEP_MODELS };
+    api.models = { ...MODEL_MIXES.cheap! };
     const outDir = mkdtempSync(join(tmpdir(), "studio-live-"));
     const lines: string[] = [];
     const { summary, outcome } = await liveRun(api, job, { name: "pl", mix: "cheap", outDir, jobLimitUsd: 2, print: (l) => lines.push(l) });

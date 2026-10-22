@@ -1,5 +1,7 @@
 # Studio: research it, make it, keep it (S0, ADR-584)
 
+> All measured results (runs, costs, showcase files, tests) are collected in `STUDIO_TEST_RESULTS.md`.
+
 **Status, 22 Oct 2026: S0 is built on `claude/new-session-ayk8tq` (ADR-584). Off by default (`STUDIO_ENABLED=0`).** On 22 Oct one real job ran against the Anthropic API as far as the write step (see "First real run"); nothing here has run against APNs, Render or a device, and the make step has never run for real; the server ran against a local Postgres 16 with a fake model API. The SwiftUI views and the voice controller change are not compiled (no Xcode here). The audit that came first is `STUDIO_AUDIT.md`. The owner chose S0 on 22 Oct ("S0: Studio") after the audit; the open decisions are listed at the end, and where S0 had to pick, the pick is marked **default**.
 
 S0 is one kind: **a research brief and an infographic.** The owner says "research X" (or "make me an infographic about X"); Doddy shows one card; on Allow, the messaging server's worker plans, researches the web, writes the content, has Claude render it with Doddy's own scripts in Anthropic's container, checks the files in code, stores them, and sends a push with no words. The item appears in Home ••• → Studio, where it opens, shares and deletes.
