@@ -288,7 +288,7 @@ What the app lets you do today:
 | Export About you and settings | JSON or text | ADR-176 |
 | Export remembered conversations | Plain text | ADR-177 |
 | Make a full backup | Encrypted backup file (`.doddybackup`): notes, lists, photos, voice memos, time reminders, About you answers. AES-256-GCM, key from your passphrase (at least 10 characters) with PBKDF2-HMAC-SHA256, 600,000 rounds. Opened again and compared before the save sheet. Restore only adds. | ADR-222, ADR-234 |
-| Delete one note, or one remembered conversation | Delete (notes: a 10-second Undo; the delete itself is immediate with secure delete on) | ADR-177, ADR-183 |
+| Delete one note, or one remembered conversation | Delete (notes: a 10-second Undo; the delete itself is immediate). A deleted or corrected-away word of a note, list, learned fact or routine is overwritten in Doddy's database file, its full-text search entries included: tests read the file and its `-wal` and `-journal` files. That check does not cover remembered conversations, backups, exports, iCloud copies or iPhone search | ADR-177, ADR-183, ADR-584 |
 | Delete all notes and lists | "Delete all memories" (`deleteAll`): removes every note, list and item, corrections, photo and voice memo files, the search index entries, and note reminders. It stops your shared lists, tries to empty the "Memory on calls" server copy, and says plainly if either failed. It is read back before it says done. | `SettingsView.swift` `deleteAll()`, `SQLiteMemoryRepository.deleteAll`, `MemoryStore.deleteAll`, ADR-026, ADR-028 |
 | Forget About you | "Forget all of this" (`forgetProfile`). It does not delete notes. | ADR-085, `SQLiteProfileRepository` |
 | Forget conversations | "Forget remembered conversations" | `SettingsView.swift` |
