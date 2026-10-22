@@ -166,7 +166,7 @@ Run on 22 Oct 2026 in a Linux container (Node 22.22.0, Swift 6.1.2, Postgres 16,
 | `python3 -I scripts/voice_agent_spec.py check` | PASS: 95 tools, `make_something` included (its generic rules cover it; no change was needed) |
 | `scripts/check_forbidden_capabilities.sh` | PASS; mutation-checked (see the evidence log) |
 | `python3 -I tools/build_strings_catalog.py --check` | PASS: Polish 1,700 of 1,778 |
-| `scripts/ci.sh --core-only` | Run in full on this tree; see the milestone report for its final line |
+| `TEST_DATABASE_URL=… scripts/ci.sh --core-only` | **RESULT: PASS for core-only scope**: all 31 steps PASS, including both new Studio steps; the messaging server's database suites ran (not skipped). iOS app NOT verified (`--core-only`) |
 
 **Not run:** the real Anthropic API (no key in this container; the skills were never uploaded), so no real job, no measured cost and no check of the request shapes against the live API; the SwiftUI views and the controller, `VoiceView`, `HomeView`, `RootView` and `SettingsView` changes (no Xcode; the hosted Mac build is their first compile); APNs; Render; a device; the live ElevenLabs agent.
 
