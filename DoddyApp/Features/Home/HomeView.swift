@@ -86,6 +86,14 @@ struct HomeView: View {
                     .modifier(SlideIn(shown: buttonsShown, delay: 0))
             }
             .background(Theme.canvas.ignoresSafeArea())
+            // ADR-580: the island grows down with his waves while he talks on Home.
+            .overlay(alignment: .top) {
+                if let live = conversation.live {
+                    IslandExtension(look: islandLook(live))
+                        .transition(.opacity)
+                }
+            }
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: conversation.live == nil)
             .animation(reduceMotion ? nil : .spring(duration: 0.5, bounce: 0.2), value: showMemories)
             .toolbar(.hidden, for: .navigationBar, .tabBar)
             .navigationDestination(for: UUID.self) { MemoryOrListView(id: $0) }
@@ -151,7 +159,17 @@ struct HomeView: View {
             }
         }
         .frame(minHeight: 44)
-        .padding(.top, 8)
+        // Below the island's extension while he talks (ADR-580).
+        .padding(.top, conversation.live == nil ? 8 : 48)
+    }
+
+    private func islandLook(_ live: VoiceSessionController) -> IslandExtension.Look {
+        if live.isMuted { return .quiet }
+        switch live.phase {
+        case .speaking: return .speaking
+        case .listening: return .listening
+        default: return .quiet
+        }
     }
 
     /// Opens the whole conversation as a sheet (ADR-579); closing it doesn't end the conversation.

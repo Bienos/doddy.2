@@ -26,6 +26,21 @@ enum IslandSceneChecks {
         expect(!muted.live && muted.face == .calm && !muted.showsHands, "muted")
         expect(muted.compactSign == .symbol("mic.slash.fill", .secondary), "muted symbol")
 
+        // ADR-580: Whole Doddy's waves come only from live listening and speaking.
+        func waves(_ status: State.Status, muted: Bool = false, stale: Bool = false,
+                   style: IslandStyle = .wholeDoddy) -> IslandWaveState {
+            var s = State(status: status, isMuted: muted)
+            s.islandStyle = style
+            return s.islandScene(isStale: stale).waves
+        }
+        expect(waves(.listening) == .listening, "waves while listening")
+        expect(waves(.speaking) == .speaking, "whole island in waves while speaking")
+        expect(waves(.listening, muted: true) == .none, "no waves while muted")
+        expect(waves(.speaking, stale: true) == .none, "no waves when stale")
+        expect(waves(.thinking) == .none && waves(.connecting) == .none, "no waves thinking or connecting")
+        expect(waves(.ended) == .none, "no waves once ended")
+        expect(waves(.speaking, style: .orbit) == .none, "waves are Whole Doddy's only")
+
         // Connecting is not live (no orange before the conversation is up).
         expect(!State(status: .connecting, isMuted: false).islandScene(isStale: false).live, "connecting not live")
 

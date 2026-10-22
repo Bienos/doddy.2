@@ -59,6 +59,13 @@ enum IslandStyle: String, Codable, CaseIterable, Hashable, Sendable {
     }
 }
 
+/// Doddy's orange waves on the Whole Doddy island (ADR-580): a line beside his status while he
+/// can hear you, the whole island in lines while he talks. Never while muted, stale, ended, or
+/// during a moment (a card waiting, a reminder set), which keeps its own sign.
+enum IslandWaveState: Equatable, Sendable {
+    case none, listening, speaking
+}
+
 /// What the right-hand sign shows.
 enum IslandSign: Equatable, Sendable {
     case none
@@ -130,6 +137,8 @@ struct IslandScene: Equatable, Sendable {
     var artLabels: [IslandArtLabel] = []
     /// Whole Doddy (ADR-264): drawn instead of the board's art when set.
     var pose: IslandPose?
+    /// Whole Doddy's waves (ADR-580).
+    var waves: IslandWaveState = .none
 
     func art(_ presentation: IslandPresentation) -> IslandArt {
         IslandBoardArt.art(board, scenario: scenario, presentation)
@@ -147,8 +156,22 @@ extension DoddyVoiceAttributes.ContentState {
         } else {
             scene = voiceScene(stale: stale, live: live)
         }
-        if islandStyle == .wholeDoddy { scene.pose = wholeDoddyPose(stale: stale) }
+        if islandStyle == .wholeDoddy {
+            scene.pose = wholeDoddyPose(stale: stale)
+            scene.waves = wholeDoddyWaves(stale: stale)
+        }
         return scene
+    }
+
+    /// Whole Doddy's waves for this state (ADR-580): only from real provider states, only while
+    /// he can hear you, and not while a moment is on the island.
+    func wholeDoddyWaves(stale: Bool) -> IslandWaveState {
+        guard !stale, !isEnded, moment == nil, !showsMuted, isLiveCue else { return .none }
+        switch status {
+        case .listening: return .listening
+        case .speaking: return .speaking
+        default: return .none
+        }
     }
 
     /// Whole Doddy's pose for this state (ADR-264). One pose means one thing everywhere. Nil
