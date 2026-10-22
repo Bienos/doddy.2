@@ -187,12 +187,62 @@ export function groupWeeks(days: readonly DaySummary[]): DaySummary[][] {
   return weeks;
 }
 
-/** The weeks At a glance steps through: whole weeks, then this week so far. A leading partial week is dropped. */
+/** The weeks At a glance steps through: the first (it may start mid-week), whole weeks, then this week so far. */
 export function glanceWeeks(days: readonly DaySummary[]): DaySummary[][] {
-  const weeks = groupWeeks(days);
-  const first = weeks[0];
-  if (first && first.length < 7) weeks.shift();
-  return weeks;
+  return groupWeeks(days);
+}
+
+/**
+ * The week At a glance opens on: the latest whole week, or, until there is one, the latest week
+ * so far. (A person's first week usually starts mid-week and isn't whole.)
+ */
+export function defaultWeekIndex(weeks: readonly (readonly DaySummary[])[]): number {
+  for (let i = weeks.length - 1; i >= 0; i -= 1) if (weeks[i]?.length === 7) return i;
+  return Math.max(0, weeks.length - 1);
+}
+
+const DAY_MS = 86_400_000;
+const nextDay = (day: string) => new Date(Date.parse(`${day}T00:00:00Z`) + DAY_MS).toISOString().slice(0, 10);
+
+/** A day with nothing counted in it. */
+export function emptyDay(day: string): DaySummary {
+  return {
+    schema: "doddy.logbook.day.v1",
+    day,
+    conversations: {
+      count: 0,
+      seconds: 0,
+      by_hour: new Array<number>(24).fill(0),
+      lengths: zeroed(LENGTHS),
+      ended: zeroed(ENDINGS),
+      languages: {},
+      ways_in: zeroed(WAYS),
+    },
+    tools: {},
+    notes: { by_source: zeroed(SOURCES), by_kind: {}, edited: 0 },
+    lists: { added_voice: 0, added_typed: 0, ticked: 0 },
+    errands: { handed_over: 0, finished: 0, stopped: 0, minutes: 0, searches: 0, pages: 0 },
+    translator: { sessions: 0, minutes: 0 },
+  };
+}
+
+/**
+ * Every calendar day from the first day sent to the last, oldest first. The iPhone sends the days
+ * it counted, so a day with no summary is a day with nothing counted: it is shown as nothing
+ * counted, which keeps weeks, periods and charts calendar-true. Nothing is added before the first
+ * day or after the last, and the input is not changed.
+ */
+export function fillGaps(days: readonly DaySummary[]): DaySummary[] {
+  const sorted = [...days].sort((a, b) => (a.day < b.day ? -1 : a.day > b.day ? 1 : 0));
+  const first = sorted[0];
+  const last = sorted[sorted.length - 1];
+  if (!first || !last) return [];
+  // The server keeps 90 days. A span far beyond that isn't a Logbook; show the days as they came.
+  if (Date.parse(last.day) - Date.parse(first.day) > 400 * DAY_MS) return sorted;
+  const byDay = new Map(sorted.map((d) => [d.day, d]));
+  const filled: DaySummary[] = [];
+  for (let day = first.day; day <= last.day; day = nextDay(day)) filled.push(byDay.get(day) ?? emptyDay(day));
+  return filled;
 }
 
 /** Counts for a weekday-by-hour heatmap: 7 rows (Monday first) of 24 hours. */

@@ -1,10 +1,15 @@
-import { type KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
+import { type KeyboardEvent, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router";
+import { api, ApiError } from "../api/client.js";
+import { useResource } from "../api/useResource.js";
+import { useSession } from "../auth/session.js";
 import { DoddyFigure } from "../components/Brand.js";
+import { saveFile } from "../components/DocumentItem.js";
 import { PageHeader } from "../components/PageHeader.js";
+import { ErrorState, errorText, Loading } from "../components/States.js";
 import { useI18n } from "../i18n/i18n.js";
 import type { MessageKey } from "../i18n/messages.js";
-import { glanceWeeks, isoWeek, ran, sumDays, weekdayHourGrid, type Totals } from "../logbook/aggregate.js";
+import { defaultWeekIndex, fillGaps, glanceWeeks, isoWeek, ran, sumDays, weekdayHourGrid, type Totals } from "../logbook/aggregate.js";
 import { ENDINGS, JOBS, KINDS, LENGTHS, SOURCES, WAYS, isKnownTool, toolInfo } from "../logbook/catalog.js";
 import {
   ChartRoot,
@@ -19,6 +24,8 @@ import {
   type BarRow,
   type TipRow,
 } from "../logbook/charts.js";
+import { IPHONE_SENDS_LOGBOOK } from "../logbook/config.js";
+import { logbookCsv } from "../logbook/csv.js";
 import { exampleLogbook } from "../logbook/exampleData.js";
 import { type Formats, makeFormats } from "../logbook/format.js";
 import type { DaySummary } from "../logbook/schema.js";
@@ -27,35 +34,123 @@ import type { DaySummary } from "../logbook/schema.js";
  * Logbook (ADR-593, docs/product/WEB_LOGBOOK.md): how a person uses Doddy, counted on the iPhone.
  * Two tabs: At a glance (the week, free) and Closer look (7, 30 or 90 days, a paid plan later).
  *
- * It shows example numbers only, and says so on the page and in the menu: the iPhone doesn't send
- * daily summaries yet and the server has nowhere to keep them. `useLogbookDays` is the one place
- * that will change when it does. Counts only, no trend arrows, streaks or scores (ADR-306, DOD-10).
+ * The numbers are what the iPhone sent to Doddy's server, read through GET /v1/web/logbook. Four
+ * honest states come before them: loading, the server can't be reached (the last numbers stay,
+ * dimmed, with the error), Logbook off, and on with nothing sent yet. An example with made-up
+ * numbers is there to look at, only when the person asks for it, and says so in a banner. The
+ * iPhone can't send days yet (IPHONE_SENDS_LOGBOOK), so the copy never tells anyone to switch on
+ * something that isn't built. Counts only, no trend arrows, streaks or scores (ADR-306, DOD-10).
  */
 
-function useLogbookDays() {
-  return useMemo(() => exampleLogbook(), []);
-}
+/** After this long without a day from the iPhone, the page says when it last sent one. */
+export const STALE_AFTER_MS = 2 * 86_400_000;
 
 type Tab = "glance" | "closer";
 type SortKey = "name" | "app" | "times" | "done" | "declined" | "unsure" | "failed" | "undone";
 
 export function LogbookPage() {
-  const { t, language, dateTime } = useI18n();
+  const { t } = useI18n();
   const location = useLocation();
-  const data = useLogbookDays();
-  const formats = useMemo(() => makeFormats(language, t), [language, t]);
-  const [tab, setTab] = useState<Tab>(location.hash === "#closer" ? "closer" : "glance");
-  const [tables, setTables] = useState(location.hash === "#tables");
+  const { resource, reload } = useResource(api.logbook);
+  const [preview, setPreview] = useState(location.hash.includes("example"));
+  const example = useMemo(() => (preview ? exampleLogbook() : null), [preview]);
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  const tabRefs = { glance: useRef<HTMLButtonElement>(null), closer: useRef<HTMLButtonElement>(null) };
-
   useEffect(() => () => clearTimeout(toastTimer.current), []);
   const say = (message: string) => {
     setToast(message);
     clearTimeout(toastTimer.current);
     toastTimer.current = setTimeout(() => setToast(null), 4500);
   };
+
+  const live = resource.data;
+  let content: ReactNode;
+  if (example) {
+    content = (
+      <>
+        <p className="lb-banner" role="note">
+          <strong>{t("logbook.exampleTitle")}</strong>{" "}
+          <span>{IPHONE_SENDS_LOGBOOK ? t("logbook.exampleBody") : `${t("logbook.exampleBody")} ${t("logbook.exampleSoon")}`}</span>
+          <span className="lb-gap" />
+          <button type="button" className="button button-small" onClick={() => setPreview(false)}>
+            {t("logbook.exampleHide")}
+          </button>
+        </p>
+        <LogbookBody days={example.days} updatedAt={example.updatedAt} example say={say} onChanged={reload} />
+      </>
+    );
+  } else if (live) {
+    const failed = resource.status === "error";
+    content = (
+      <>
+        {failed ? <ErrorState error={resource.error} onRetry={reload} /> : null}
+        {!live.enabled || live.days.length === 0 ? (
+          <LogbookEmpty off={!live.enabled} onExample={() => setPreview(true)} />
+        ) : (
+          <div className={failed ? "lb-dimmed" : undefined}>
+            <LogbookBody days={live.days} updatedAt={live.updatedAt} example={false} say={say} onChanged={reload} />
+          </div>
+        )}
+      </>
+    );
+  } else if (resource.status === "error") {
+    content = <ErrorState error={resource.error} onRetry={reload} />;
+  } else {
+    content = <Loading />;
+  }
+
+  return (
+    <>
+      <PageHeader title={t("logbook.title")} lead={t("logbook.lead")} />
+      {content}
+      <div className="lb-toast" role="status" aria-live="polite" hidden={!toast}>
+        {toast}
+      </div>
+    </>
+  );
+}
+
+/** Logbook off, or on with nothing sent yet: one calm card, and the way to look at an example. */
+function LogbookEmpty({ off, onExample }: { off: boolean; onExample: () => void }) {
+  const { t } = useI18n();
+  const body = off ? (IPHONE_SENDS_LOGBOOK ? t("logbook.off.body") : t("logbook.off.soon")) : t("logbook.empty.body");
+  return (
+    <section className="lb-empty" aria-labelledby="lb-h-empty">
+      <DoddyFigure pose={off ? "shush" : "kneeling-inspect"} size={120} className="lb-empty-pose" />
+      <div className="lb-empty-body">
+        <h2 id="lb-h-empty">{off ? t("logbook.off.title") : t("logbook.empty.title")}</h2>
+        <p>{body}</p>
+        <button type="button" className="button button-quiet" onClick={onExample}>
+          {t("logbook.exampleShow")}
+        </button>
+      </div>
+    </section>
+  );
+}
+
+/** The two tabs and the privacy panel, for real days or for the example. */
+function LogbookBody({
+  days: sent,
+  updatedAt,
+  example,
+  say,
+  onChanged,
+}: {
+  days: DaySummary[];
+  updatedAt: string | null;
+  example: boolean;
+  say: (message: string) => void;
+  onChanged: () => void;
+}) {
+  const { t, language, dateTime, date } = useI18n();
+  const location = useLocation();
+  const formats = useMemo(() => makeFormats(language, t), [language, t]);
+  // A day the iPhone sent nothing for is a day with nothing counted: weeks and periods stay calendar-true.
+  const days = useMemo(() => fillGaps(sent), [sent]);
+  const [tab, setTab] = useState<Tab>(location.hash.includes("closer") ? "closer" : "glance");
+  const [tables, setTables] = useState(location.hash.includes("tables"));
+  const tabRefs = { glance: useRef<HTMLButtonElement>(null), closer: useRef<HTMLButtonElement>(null) };
+  const stale = !example && updatedAt !== null && Date.now() - Date.parse(updatedAt) > STALE_AFTER_MS;
 
   const choose = (next: Tab, focus = false) => {
     setTab(next);
@@ -70,10 +165,11 @@ export function LogbookPage() {
 
   return (
     <ChartRoot tables={tables}>
-      <PageHeader title={t("logbook.title")} lead={t("logbook.lead")} />
-      <p className="lb-banner" role="note">
-        <strong>{t("logbook.exampleTitle")}</strong> <span>{t("logbook.exampleBody")}</span>
-      </p>
+      {stale && updatedAt ? (
+        <p className="lb-stale" role="note">
+          {t("logbook.stale", { time: date(updatedAt) })}
+        </p>
+      ) : null}
 
       <div className="lb-tabs" role="tablist" aria-label={t("logbook.tabs")}>
         <button
@@ -108,16 +204,13 @@ export function LogbookPage() {
 
       <div className={`lb-panel ${tab === "closer" ? "lb-panel-closer" : ""}`} role="tabpanel" id="lb-panel" aria-labelledby={`lb-tab-${tab}`}>
         {tab === "glance" ? (
-          <GlancePanel days={data.days} updatedAt={data.updatedAt} f={formats} dateTime={dateTime} />
+          <GlancePanel days={days} updatedAt={updatedAt} example={example} f={formats} dateTime={dateTime} />
         ) : (
-          <CloserPanel days={data.days} f={formats} tables={tables} setTables={setTables} say={say} />
+          <CloserPanel days={days} example={example} f={formats} tables={tables} setTables={setTables} say={say} />
         )}
       </div>
 
-      <PrivacyPanel say={say} />
-      <div className="lb-toast" role="status" aria-live="polite" hidden={!toast}>
-        {toast}
-      </div>
+      <PrivacyPanel example={example} say={say} onChanged={onChanged} />
     </ChartRoot>
   );
 }
@@ -155,16 +248,17 @@ function jobRows(totals: Totals, names: ReturnType<typeof useNames>, nothing: st
 
 // ---------------------------------------------------------------- AT A GLANCE
 
-function GlancePanel({ days, updatedAt, f, dateTime }: { days: DaySummary[]; updatedAt: string | null; f: Formats; dateTime: (iso: string) => string }) {
+function GlancePanel({ days, updatedAt, example, f, dateTime }: { days: DaySummary[]; updatedAt: string | null; example: boolean; f: Formats; dateTime: (iso: string) => string }) {
   const { t } = useI18n();
   const names = useNames(f);
   const weeks = useMemo(() => glanceWeeks(days), [days]);
-  const [index, setIndex] = useState(Math.max(0, weeks.length - 2));
+  const [index, setIndex] = useState(() => defaultWeekIndex(weeks));
   const week = weeks[index] ?? [];
   const totals = useMemo(() => sumDays(week), [week]);
   const first = week[0]?.day ?? "";
   const last = week[week.length - 1]?.day ?? "";
-  const partial = week.length < 7;
+  // Only the newest week is "so far"; a first week that started mid-week is a short week, not an unfinished one.
+  const partial = week.length < 7 && index === weeks.length - 1;
   const weekNumber = t("logbook.week.number", { n: first ? isoWeek(first) : 0 });
   const range = first ? f.range(first, last, true) : "";
 
@@ -222,7 +316,7 @@ function GlancePanel({ days, updatedAt, f, dateTime }: { days: DaySummary[]; upd
             <Icon name="right" />
           </button>
         </div>
-        {updatedAt ? <p className="lb-fresh">{t("logbook.fresh", { time: dateTime(updatedAt) })}</p> : null}
+        {updatedAt ? <p className="lb-fresh">{t(example ? "logbook.fresh.example" : "logbook.fresh", { time: dateTime(updatedAt) })}</p> : null}
       </div>
 
       <section className="lb-week" aria-labelledby="lb-week-title">
@@ -329,12 +423,14 @@ const STATUS_PARTS = [
 
 function CloserPanel({
   days,
+  example,
   f,
   tables,
   setTables,
   say,
 }: {
   days: DaySummary[];
+  example: boolean;
   f: Formats;
   tables: boolean;
   setTables: (on: boolean) => void;
@@ -439,6 +535,16 @@ function CloserPanel({
   const languages = Object.entries(totals.languages).sort((a, b) => b[1] - a[1]);
   const e = totals.errands;
 
+  // The numbers shown for this period, as a file. The example only says what the button will do.
+  const onCsv = async () => {
+    if (example) {
+      say(t("logbook.demo.csv"));
+      return;
+    }
+    await saveFile(new Blob([logbookCsv(shown)], { type: "text/csv;charset=utf-8" }), `doddy-logbook-${first}-to-${last}.csv`);
+    say(t("logbook.csvSaved"));
+  };
+
   return (
     <>
       <div className="lb-filters" role="group" aria-label={t("logbook.period")}>
@@ -457,7 +563,7 @@ function CloserPanel({
           <input type="checkbox" checked={tables} onChange={(event) => setTables(event.target.checked)} />
           <span>{t("logbook.tables")}</span>
         </label>
-        <button type="button" className="button button-quiet button-small" onClick={() => say(t("logbook.demo.csv"))}>
+        <button type="button" className="button button-quiet button-small" onClick={() => void onCsv()}>
           {t("logbook.csv")}
         </button>
       </div>
@@ -667,21 +773,63 @@ function CloserPanel({
 
 // ---------------------------------------------------------------- what Logbook will know
 
-function PrivacyPanel({ say }: { say: (message: string) => void }) {
+function PrivacyPanel({ example, say, onChanged }: { example: boolean; say: (message: string) => void; onChanged: () => void }) {
   const { t } = useI18n();
+  const { expired } = useSession();
   const [armed, setArmed] = useState(false);
+  const [busy, setBusy] = useState<"download" | "delete" | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => () => clearTimeout(timer.current), []);
 
-  const onDelete = () => {
+  /** A signed-out answer signs the page out; anything else is said once, in words. */
+  const fail = (caught: unknown) => {
+    if (caught instanceof ApiError && caught.code === "unauthenticated") {
+      expired();
+      return;
+    }
+    say(errorText(caught instanceof ApiError ? caught : new ApiError("network", String(caught), 0), t));
+  };
+
+  // Download and delete are never paywalled. The example only says what they will do.
+  const onDownload = async () => {
+    if (example) {
+      say(t("logbook.demo.download"));
+      return;
+    }
+    setBusy("download");
+    try {
+      await saveFile(await api.logbookFile(), `doddy-logbook-${new Date().toISOString().slice(0, 10)}.json`);
+      say(t("logbook.downloaded"));
+    } catch (caught) {
+      fail(caught);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const onDelete = async () => {
     clearTimeout(timer.current);
-    if (armed) {
-      setArmed(false);
+    if (!armed) {
+      setArmed(true);
+      timer.current = setTimeout(() => setArmed(false), 5000);
+      return;
+    }
+    setArmed(false);
+    if (example) {
       say(t("logbook.demo.delete"));
       return;
     }
-    setArmed(true);
-    timer.current = setTimeout(() => setArmed(false), 5000);
+    setBusy("delete");
+    try {
+      // "Deleted" is said only after the server has answered with how many days it removed.
+      const { deletedDays } = await api.deleteLogbook();
+      say(deletedDays > 0 ? t("logbook.deleted", { n: deletedDays }) : t("logbook.deletedNone"));
+      onChanged();
+    } catch (caught) {
+      fail(caught);
+    } finally {
+      setBusy(null);
+    }
   };
 
   const list = (keys: MessageKey[], cls: string) => (
@@ -712,10 +860,10 @@ function PrivacyPanel({ say }: { say: (message: string) => void }) {
             <h3 className="lb-privacy-h">{t("logbook.privacy.yours")}</h3>
             {list(["logbook.privacy.yours1", "logbook.privacy.yours2", "logbook.privacy.yours3"], "lb-plain")}
             <div className="lb-privacy-actions">
-              <button type="button" className="button button-quiet button-small" onClick={() => say(t("logbook.demo.download"))}>
+              <button type="button" className="button button-quiet button-small" onClick={() => void onDownload()} disabled={busy !== null}>
                 {t("logbook.download")}
               </button>
-              <button type="button" className={`button button-quiet button-small lb-danger ${armed ? "is-armed" : ""}`} onClick={onDelete}>
+              <button type="button" className={`button button-quiet button-small lb-danger ${armed ? "is-armed" : ""}`} onClick={() => void onDelete()} disabled={busy !== null}>
                 {armed ? t("logbook.deleteAgain") : t("logbook.delete")}
               </button>
             </div>

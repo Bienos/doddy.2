@@ -1,6 +1,6 @@
 # Logbook: how you use Doddy, on the web
 
-**Status: proposal, 22 Oct 2026 (ADR-593, proposed; ADR-594 for the design).** Logbook is a page in **Doddy Web**, the signed-in web app for the iPhone's account (`docs/platforms/web.md`; live at https://doddy-yaci.onrender.com once this branch is deployed there). **It shows example numbers only, and says so** in the menu and on the page: the page, its charts, its two languages and its tests are built (`web/src/pages/LogbookPage.tsx`, `web/src/logbook/`); the server tables and routes, the iPhone's daily counts and the paid gate are not. The first clickable mockup, kept as the design reference, is `design/web-logbook-v0.1/`. This page is the plan: what the page shows, where each number comes from, how the data gets there, what stays private, how it becomes paid later, and what the owner needs to decide.
+**Status: accepted by the owner 22 Oct 2026 ("go with recommendations", ADR-593; ADR-594 for the design). The web page and the server half are built; the iPhone half is not.** Logbook is a page in **Doddy Web**, the signed-in web app for the iPhone's account (`docs/platforms/web.md`; live at https://doddy-yaci.onrender.com once this branch is deployed there). Built: the page, its charts, its two languages (`web/src/pages/LogbookPage.tsx`, `web/src/logbook/`), and the server's tables and routes that keep, serve, export and delete a person's days (`backend/src/web/logbook.ts`, `routes.ts`, `store.ts`), with tests and fixtures. **Not built: the Doddy app on the iPhone** (the day counter, the summary builder, the upload and the switch in Settings), so **no iPhone sends anything today**, the page opens on "Logbook is off" and the only numbers anyone can look at are the example, shown on request and marked as made up. The paid gate is not built either. The first clickable mockup, kept as the design reference, is `design/web-logbook-v0.1/`. This page is the plan: what the page shows, where each number comes from, how the data gets there, what stays private, how it becomes paid later, and what was decided.
 
 ## What the owner asked for
 
@@ -10,7 +10,7 @@ Then, after a first version on the marketing site (doddy.lol): "not this web app
 
 ## In short
 
-**Logbook** is a signed-in page in Doddy Web (`/logbook`, "Dziennik" in Polish, in the menu with an Example marker). It has two tabs:
+**Logbook** is a signed-in page in Doddy Web (`/logbook`, "Dziennik" in Polish, in the menu marked Example until the iPhone can send it). It has two tabs:
 
 - **At a glance** (free, always): one week at a time, printed as a till receipt, plus what you used Doddy for, when you talked, the notes you saved and each day.
 - **Closer look** (free while Doddy is in testing, part of a paid plan later): 7, 30 or 90 days of detail: every tool counted, when you talk by weekday and hour, how long conversations last and how they end, every yes and no, notes, lists, handed-over tasks, languages and the ways you open Doddy, with tables and a CSV download.
@@ -36,7 +36,7 @@ The mockup has every element below; the review strip's "Where each number comes 
 
 ### At a glance
 
-- **Week selector** (‹ ›) over the last 13 weeks, and "This week so far". A line says when the iPhone last sent its counts.
+- **Week selector** (‹ ›) over the weeks the iPhone has sent (the first may start mid-week), ending with "This week so far". It opens on the latest whole week, or on the week so far until there is one. A day the iPhone sent nothing for counts as nothing counted. A line says when the iPhone last sent its counts.
 - **The receipt.** Conversations, time talking, notes saved, list items added, things Doddy did (right away / after your yes), asked you first (you said yes / you said no), couldn't confirm, didn't work, tasks handed over. Footer: "Counts only. Your notes and words stay on your iPhone." Stamp: Counted.
 - **What you used Doddy for.** Seven jobs, each a group of tools: Remember things, Plan the day, Lists, Find things out, Mail and messages, Hand things over, Translate. Hover or tap a row for the tools inside it.
 - **When you talked.** One dot per conversation, by hour, then mornings, afternoons and evenings (and nights, if any).
@@ -98,8 +98,8 @@ What the iPhone sends for one local day. Integers only; tool names from the fixe
 }
 ```
 
-- **When it's sent:** the first time the app opens after midnight (for yesterday) and when it goes to the background (today so far, at most once an hour). The same day sent again replaces the earlier copy, so a retry never counts twice.
-- **Server checks:** at most 4 KB; `schema` known; `day` within the last 2 days and not in the future (in the phone's own time zone); every key on the allow-list; every value a whole number from 0 to 10,000 (seconds up to 86,400, a day); `by_hour` exactly 24 numbers. Anything else: 400 and nothing stored.
+- **When it's sent (planned, not built):** the first time the app opens after midnight (for yesterday) and when it goes to the background (today so far, at most once an hour). The same day sent again replaces the earlier copy, so a retry never counts twice.
+- **Server checks (built, `backend/src/web/logbook.ts`, tested):** at most 16 KiB (a day with all 94 tools in use is about 7 KB); `schema` is `doddy.logbook.day.v1`; `day` is a real calendar day, the one in the address, inside the kept 90 days and no later than tomorrow (a phone east of UTC is already on the next date); every object strict; tool ids only from the voice agent's 94 (a test compares the list with `voice-agent/tools.json`); note types only the nine; languages only short codes, at most 12; every value a whole number from 0 to 10,000 (seconds up to 86,400); `by_hour` exactly 24 numbers; and the sums must agree (hours, lengths and endings add up to the conversations; languages and ways in don't exceed them; errands finished plus stopped don't exceed handed over). Anything else: 400, naming only the section and never a value, and nothing stored. Off for that person: 403 and nothing stored.
 - **Example data:** `web/src/logbook/exampleData.ts` generates 91 days in exactly this shape (seeded, so the same every time; a test pins the example week of 12 to 18 October).
 
 ## How it gets to the web
@@ -110,11 +110,22 @@ flowchart LR
   C[Browser: Doddy Web /logbook] -- "same origin, cookie session<br/>GET /v1/web/logbook/days" --> B
 ```
 
-- **Store:** `backend/` (Render, Supabase Postgres schema `doddy_backend`), which already has the per-user rows and both sign-ins: the iPhone's device session (ADR-563) and the browser's cookie session (ADR-585). New table: `logbook_days` (user id, day, summary, received at; one row per user and day). Nothing new for sign-in: `web_links` and `web_sessions` exist.
-- **Upload:** the iPhone sends one day at a time to a new route on the same server, with its own bearer token, through its existing server transport. The server validates against the allow-list (`web/src/logbook/schema.ts` is the same contract, written in zod, and a test checks every example day against it) and replaces that day's row.
-- **Read:** new routes in `backend/src/web/routes.ts`, behind the same cookie session and CSRF checks as the other web routes: list days, delete all, export. The browser asks its own origin, so the page's security policy (`connect-src 'self'`) doesn't change. Replies get fixtures in `contracts/web/` like the others, read by the web and Swift tests.
+- **Store (built):** `backend/` (Render, Supabase Postgres schema `doddy_backend`), which already has the per-user rows and both sign-ins: the iPhone's device session (ADR-563) and the browser's cookie session (ADR-585). Two new tables, created by the same idempotent schema: `logbook_state` (one row per person: on or off) and `logbook_days` (user id, day, the summary as JSON text, received at; one row per user and day). Nothing new for sign-in: `web_links` and `web_sessions` exist. An hourly sweep deletes days older than 90; reads also ignore them before the sweep runs.
+- **The routes (built, `backend/src/web/routes.ts`; the iPhone's use of them is not):**
+
+  | Route | Who | What |
+  |---|---|---|
+  | `PUT /v1/web/logbook/state` `{enabled}` | the iPhone only (device bearer) | Turns Logbook on or off for that person. Off deletes every stored day in the same transaction and says how many. |
+  | `PUT /v1/web/logbook/days/:day` | the iPhone only; own body limit of 16 KiB | Validates the day against the allow-list and replaces that day's row. 403 `capability_disabled` ("Logbook is off for this iPhone… Nothing was stored.") while it's off. |
+  | `GET /v1/web/logbook` | the browser's cookie or the iPhone | `{enabled, keptDays, updatedAt, days}`, oldest first. A stored row that no longer reads is left out, never shown half-read. |
+  | `GET /v1/web/logbook/export` | the browser or the iPhone | The same as a JSON file download (`doddy-logbook-YYYY-MM-DD.json`) with the time it was made. |
+  | `DELETE /v1/web/logbook` | the browser (the web app's own request header and origin) or the iPhone | Deletes every stored day, says how many. Logbook stays on or off as it was. |
+
+  A browser can read, download and delete but never write: its cookie is refused on the two `PUT`s, so a page can't switch Logbook on or invent days. A guest iPhone (Ask Doddy only, ADR-587) has no Logbook. Every query is keyed by the caller's user id; tests sign in as A and read, delete and export B's.
+- **Contract copies:** `backend/src/web/logbook.ts` (the allow-list, in zod) and `web/src/logbook/schema.ts` (the page's reading of it) are two copies. `contracts/web/logbook-*.json` and `error-logbook-*.json` are written from the real server (`npm run fixtures:web`) and the web tests read them through the page's schema.
 - **The app** adds no analytics SDK, so the forbidden-capability guard's "no analytics SDKs" rule still holds; the guard should also gain a rule that the summary is built in one DoddyCore file and sent from one place.
-- **In the web app today:** `useLogbookDays()` in `LogbookPage.tsx` returns the seeded example (`web/src/logbook/exampleData.ts`). It is the one function that changes when the server has real days, and `LogbookDays` in `schema.ts` is the shape its reply is checked against.
+- **In the web app today:** `LogbookPage` reads `GET /v1/web/logbook` (`api.logbook`, checked against `LogbookView` in `schema.ts`). Download everything and Delete everything here call the export and delete routes and say "Saved" or "Deleted" only after the server answers. Download CSV is built in the browser from the numbers shown (`web/src/logbook/csv.ts`: one row per day, English column names, numbers and dates only). The seeded example (`web/src/logbook/exampleData.ts`) is shown only when the person asks for it and is marked "Example".
+- **One flag for the iPhone half:** `IPHONE_SENDS_LOGBOOK` in `web/src/logbook/config.ts` is `false` until the iPhone can send days. While it is false the page never tells anyone to switch Logbook on in the app (that switch doesn't exist yet), says the iPhone can't send it yet, and the menu keeps its Example marker. Flip it in the same change that ships the iPhone half; a test covers the true case.
 
 ## Signing in
 
@@ -132,10 +143,13 @@ Limits to keep in mind: the device sign-in is "first device owns the server" whi
 
 | Situation | What the page does |
 |---|---|
-| Logbook is off in the app | "Logbook is off. Turn it on in Doddy › Settings › Doddy on the web." Nothing is stored. |
-| The iPhone hasn't sent anything for 2 days | "Your iPhone last sent counts on 18 Oct. Open Doddy to update." No guilt wording, no reminder pushes. |
-| Today | Shown as "so far", with the time it was sent. |
-| The server can't be reached | The last numbers stay on screen, dimmed, with "Couldn't load. Try again." Never a blank page or zeros. |
+| Logbook is off | One calm card, "Logbook is off", and "Show an example". Once the iPhone half ships: "Turn it on in Doddy on your iPhone: Settings › Doddy on the web." Until then: "Your iPhone can't send Logbook yet: that part of the Doddy app isn't built." Nothing is stored. *(Built.)* |
+| On, nothing sent yet | "Nothing counted yet. Logbook is on. The first days appear here after your iPhone sends them." No zeros, no empty charts. *(Built.)* |
+| The iPhone hasn't sent anything for 2 days | "Your iPhone last sent counts on 18 Oct. Open Doddy to update." No guilt wording, no reminder pushes. *(Built; the "Open Doddy to update" wording is true only once the iPhone half exists.)* |
+| Today | Shown as "so far", with the time the iPhone last sent. *(Built.)* |
+| The server can't be reached | With nothing loaded: the error and "Try again", never zeros. With numbers already on screen (after a delete, say): they stay, dimmed, under the error. *(Built.)* |
+| A reply the page can't read (a field the contract doesn't have) | An error, "The server sent something this page can't read", and nothing shown. *(Built.)* |
+| A day the iPhone sent nothing for | Counts as nothing counted: weeks, periods and charts stay calendar-true. *(Built.)* |
 | An upload fails on the phone | Retried later with the same day key; a day is replaced, never added twice. |
 | The person deletes everything | Two taps, then the server deletes and returns how many days it removed; the page says "Deleted" only after that. |
 | Signed out in the app, or the account is deleted | Every web session for that account ends and its days are deleted. |
@@ -154,34 +168,42 @@ Each step is its own pull request, in this order.
 
 1. **Design.** *Done:* this plan and the clickable mockup `design/web-logbook-v0.1/`.
 2. **The page in Doddy Web.** *Done 22 Oct:* Doddy Web in the website's design (ADR-594) and Logbook with example numbers: both tabs, the receipt, every chart with a table twin and a tooltip on keyboard focus, Polish and English, light and dark; 56 unit tests and a Chromium end-to-end test under the backend's real security headers.
-3. **Server** (`backend/`): `logbook_days`, the upload route (device bearer) with the allow-list checks, the cookie-session read, delete and export routes, `contracts/web/` fixtures. Tests: refused content and unknown keys, replace-not-add, A can't read B, delete leaves nothing. Runs on Linux.
-4. **Web, real data:** `useLogbookDays()` reads the server; the empty state ("Logbook is off in the app"), "the iPhone hasn't sent anything for two days" and the error line; the Example banner and menu marker go; `LOGBOOK_ENABLED` stays true.
-5. **App** (DoddyCore and Settings): the conversation day counter, the summary builder (from What Doddy did, notes, lists, errands; private notes skipped), the upload, and the Logbook switch and delete in Settings › Doddy on the web. DoddyCore tests on Linux; the app needs the hosted Mac build.
+3. **Server** (`backend/`). *Done 22 Oct:* `logbook_state` and `logbook_days`, the upload route (device bearer) with the allow-list checks, the state, read, delete and export routes, the 90-day sweep, `contracts/web/logbook-*.json` fixtures, 37 tests (see the evidence log). Not deployed.
+4. **Web, real data.** *Done 22 Oct:* the page reads the server; off, empty, error, unreadable-reply and "nothing for two days" states; the example only on request, with its banner; real Download everything, Delete everything here and CSV; calendar-true weeks. The menu's Example marker stays until the iPhone half ships (`IPHONE_SENDS_LOGBOOK`); `LOGBOOK_ENABLED` stays true.
+5. **App** (DoddyCore and Settings). **NOT BUILT, and not buildable in the sessions so far (no Swift toolchain, so nothing here could be compiled or tested):** the conversation day counter, the summary builder (from What Doddy did, notes, lists, errands; private notes skipped; the language and way-in counters decided on 22 Oct), the upload to the routes above, and the Logbook switch and delete in Settings › Doddy on the web. DoddyCore tests on Linux; the app needs the hosted Mac build. Until it exists, no person has Logbook numbers.
 6. **Paid gate**, after the pricing decision.
 
-Until step 4, set `LOGBOOK_ENABLED = false` in `web/src/logbook/config.ts` before anyone but the owner gets Doddy Web: the menu entry and the route go with that one line.
+Until step 5 ships, set `LOGBOOK_ENABLED = false` in `web/src/logbook/config.ts` before anyone but the owner gets Doddy Web, unless the owner wants others to see the off card and the example: the menu entry and the route go with that one line. The server's routes are live whenever Doddy Web is (they refuse writes from anything but a signed-in iPhone).
 
-## Decisions for the owner
+## Decisions (owner, 22 Oct 2026: "go with recommendations")
 
-1. **Name.** "Logbook" ("Dziennik"), with tabs "At a glance" and "Closer look" ("W skrócie", "Z bliska")? (Alternatives: "Your Doddy", "My week".)
-2. **Fonts.** The website sets headings in Bricolage Grotesque and Doddy's lines in Caveat, from Google Fonts. Doddy Web's security policy allows no outside fonts and `CLAUDE.md` keeps font files out of the repository, so Doddy Web uses the same stacks with system fallbacks (Avenir Next or Segoe UI for headings, Bradley Hand or Segoe Print for Doddy's lines). To match the website exactly: allow Google Fonts in the policy (this sends visitors' IP addresses to Google, on a signed-in page), or self-host the two families after a licence review.
-3. **How long counts are kept.** 90 days (recommended: Closer look's longest period) or 12 months (a year view, a stronger paid feature, more to hold).
-4. **Translator.** Count sessions and minutes (never text), or keep it logging nothing, as today.
-5. **New counts in the app.** OK to record each conversation's language and the way Doddy was opened (counts only)?
-6. **Paid.** Which plan includes Closer look, and from when (the beta is free).
-7. **Deleted notes.** Keep them in past days' counts (recommended: counts aren't content and can't be traced to a note) or not count notes until they're a day old.
-8. **The menu entry.** Logbook shows in Doddy Web's menu, marked Example, while the web app is only the owner's (recommended). Hide it (`LOGBOOK_ENABLED`) before anyone else gets Doddy Web, or leave it as a preview?
+The owner accepted every recommendation:
+
+1. **Name.** Logbook ("Dziennik"), tabs "At a glance" and "Closer look" ("W skrócie", "Z bliska").
+2. **Fonts.** Keep the system-font fallbacks. No Google Fonts in the security policy, no font files in the repository. (Matching the website's Bricolage Grotesque and Caveat exactly would need a licence review and self-hosting, or an outside request on a signed-in page.)
+3. **How long counts are kept.** 90 days (Closer look's longest period). Enforced in code: the sweep, and reads that ignore older days.
+4. **Translator.** Count sessions and minutes, never the text. (The counter is part of the iPhone half, not built.)
+5. **New counts in the app.** OK to record each conversation's language and the way Doddy was opened, counts only. (Also the iPhone half.)
+6. **Paid.** Closer look stays "free while in testing". Which plan includes it is decided at 1.0 (the beta is free, `V1_SCOPE.md` §7).
+7. **Deleted notes.** Stay in past days' counts: a count isn't content and can't be traced to a note.
+8. **The menu entry.** Logbook stays in Doddy Web's menu, marked Example, while the web app is only the owner's. `LOGBOOK_ENABLED` hides it before anyone else gets Doddy Web. (Now the marker follows `IPHONE_SENDS_LOGBOOK`: it stays until the iPhone can send days.)
+
+Still the owner's: which plan Closer look belongs to, and when the paid gate starts (step 6); the Supabase region for the privacy policy; legal review of the privacy policy before launch.
 
 ## Constitution evidence log
 
 | Rule | Evidence today | Gap |
 |---|---|---|
-| DOD-11 observable privacy, ADR-011 content-free telemetry | The contract is code: `schema.ts` refuses unknown fields, words where numbers belong and out-of-range values (tested); the page says what it will and won't know. Off by default in the design. | The server's allow-list, the app's switch and deletion are not built or tested. Privacy policy not updated. |
-| DOD-10 non-manipulative companionship | No streaks, scores, comparisons or nudges on the page (a test searches its text for them and for trend arrows); the locked state in the mockup shows no blurred personal numbers and an equal "Not now". | The locked state isn't in Doddy Web yet; review again when real copy and pricing exist. |
-| DOD-08 verified status and receipts | Couldn't confirm and Didn't work are separate counts and lines on the receipt (tested: done + couldn't confirm + didn't work = your yes). | The mapping from `ActionStatus` to the summary isn't written or tested. |
-| ASK-01 | The page reads and deletes counts only; it starts nothing. | None for this page. |
-| Cross-user isolation | Every read keyed by the session's user id (planned). | Not built; tests planned in step 3. |
+| DOD-11 observable privacy, ADR-011 content-free telemetry | The contract is code in two places: `backend/src/web/logbook.ts` refuses unknown fields, unknown tool ids, words where numbers belong, out-of-range values and sums that don't add up; `web/src/logbook/schema.ts` refuses the same on the way back. Tests send a transcript field, a made-up tool name, words as a language, text and negative and fractional numbers, hours that don't add up, a wrong schema name and a day that isn't a calendar day, and expect 400 with nothing stored; a planted string never appears in the reply or the logs. The page says what it will and won't know. Off by default: the server refuses days until the iPhone turns Logbook on and deletes them when it turns it off (tested). | The iPhone's switch, its summary builder and its deletion are not built or tested. Privacy policy not updated. Region of the database not confirmed. |
+| DOD-10 non-manipulative companionship | No streaks, scores, comparisons or nudges on the page (a test searches its text for them and for trend arrows); the off and empty states have no guilt wording and no reminders; the locked state in the mockup shows no blurred personal numbers and an equal "Not now". | The locked state isn't in Doddy Web yet; review again when real copy and pricing exist. |
+| DOD-08 verified status and receipts | Couldn't confirm and Didn't work are separate counts and lines on the receipt (tested: done + couldn't confirm + didn't work = your yes). "Saved" and "Deleted" are said only after the server's answer (tested, including a refused delete that leaves the numbers). | The mapping from `ActionStatus` to the summary isn't written or tested (iPhone half). |
+| ASK-01 | The page reads, downloads and deletes counts only; it starts nothing. The server's write routes accept the iPhone's own session only. | None for this page. |
+| Cross-user isolation | Every query is keyed by the caller's user id; tests read, delete and export as B while A has days (and off for A leaves B's days). | Run again before a second account can exist (`DODDY_DEVICE_SIGNUP=first-device` means one account today). |
 
-**Tests run:** in `web/` (22 Oct 2026, Node 22, jsdom and headless Chromium 1194): `npm run typecheck`; `npm test` 56 pass (31 new: the summary contract and its refusals, adding days up checked by hand and for internal agreement over every week and period, ISO weeks and weekdays, Polish and English formats, the page's receipt, week arrows, period buttons, sorting, table twins, tooltip on focus, two-tap delete); `npm run build`; `npm run e2e` 12 pass (the new Logbook test runs under the real backend's content security policy and fails on any console error). In `backend/`: `npm test` 327 pass (unchanged code). `tools/gen_web_assets.py --check` PASS. The Swift app was not touched. **Not run:** real Safari or an iPhone, VoiceOver, the deployed server.
+**Tests run** (22 Oct 2026, Node 22, jsdom and headless Chromium 1194 via Playwright 1.56.1):
 
-**Claims to limit:** don't call Logbook finished, private by guarantee or "analytics for every user". Every number on the page is an example from a seeded generator; no iPhone sends anything and the server keeps nothing for it yet. The Polish is a first draft.
+- `backend/`: `npm test` **364 pass, 0 fail** (37 are new, `test/logbook.test.ts`: off by default; browser can't write; state takes one boolean; send, read, replace-not-add; the phone and the browser read the same view; canonical stored form; a full 94-tool day above the usual 8 KiB limit and below Logbook's 16 KiB; larger refused 413 and the state route keeps 8 KiB; 17 refused summaries; refusal names the section never the value; day in the address; kept-window edges; off deletes in the same step; browser delete needs the web app's own request; export; retention before and after the sweep; corrupt rows skipped; guests refused; the tool ids equal `voice-agent/tools.json`). `npm run fixtures:web` wrote `contracts/web/logbook-*.json` and `error-logbook-*.json`.
+- `web/`: `npm run typecheck`; `npm test` **76 pass** (the page's states and real numbers; CSV; download; delete with two taps and a refusal; Polish; gap filling; the default week; the flag-on case; fixtures read through the page's schema); `npm run build`; `npm run e2e` **14 pass, 4 skipped** (the screenshot specs, which were then run on request and looked at, light and dark, desktop and phone size). The Logbook end-to-end tests run against the real backend under its content security policy and fail on any console error: off card, example on request, three days sent by the iPhone's own calls, a refused day, real receipt, JSON and CSV downloads, a cookie write refused with 401, two-tap delete.
+- The Swift app was not touched. **Not run:** the iPhone half (nothing exists), real Safari or an iPhone, VoiceOver, the deployed server, Postgres itself (tests use PGlite, the same dialect).
+
+**Claims to limit:** don't call Logbook finished, private by guarantee or "analytics for every user". No iPhone sends anything yet, so no real person has numbers on this page; the only numbers anyone can see are the seeded example, on request. The server half is tested against the contract here, not against a real phone's output or the production database. The Polish is a first draft.

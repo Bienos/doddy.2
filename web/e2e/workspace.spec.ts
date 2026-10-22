@@ -1,4 +1,5 @@
 import { type APIRequestContext, expect, type Page, test } from "@playwright/test";
+import { daysAgo, logbookDay } from "./logbookDay.js";
 
 /**
  * The continuity promise, end to end (ADR-585): something made on the iPhone opens on the web,
@@ -31,6 +32,11 @@ async function code(request: APIRequestContext, token: string): Promise<string> 
   const res = await request.post("/v1/web/link-codes", { headers: { authorization: `Bearer ${token}` }, data: {} });
   expect(res.status()).toBe(200);
   return (await res.json()).code as string;
+}
+
+async function logbookSwitch(request: APIRequestContext, token: string, enabled: boolean): Promise<void> {
+  const res = await request.put("/v1/web/logbook/state", { headers: { authorization: `Bearer ${token}` }, data: { enabled } });
+  expect(res.status()).toBe(200);
 }
 
 async function signIn(page: Page, signInCode: string): Promise<void> {
@@ -148,9 +154,10 @@ test("the page's own security headers are in place", async ({ request }) => {
   expect(res.headers()["x-frame-options"]).toBe("DENY");
 });
 
-test("Logbook opens from the menu with example numbers, under the page's own security rules", async ({ page, request }) => {
+test("Logbook opens from the menu: off at first, an example on request, under the page's own security rules", async ({ page, request }) => {
   const problems = watchConsole(page);
   const token = await phone(request);
+  await logbookSwitch(request, token, false);
   await signIn(page, await code(request, token));
 
   // The menu on a small screen is a sheet; on a wide one the links are in the header.
@@ -159,7 +166,11 @@ test("Logbook opens from the menu with example numbers, under the page's own sec
   await page.getByRole("link", { name: /Dziennik/ }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Dziennik" })).toBeFocused();
   await expect(page).toHaveURL(/\/logbook$/);
-  // It says its numbers are examples, in the menu and on the page, and the week's receipt is drawn.
+  // Nothing has been sent: the page says Logbook is off, and offers an example instead of zeros.
+  await expect(page.getByRole("heading", { level: 2, name: "Dziennik jest wyłączony" })).toBeVisible();
+  await expect(page.locator(".lb-rc-line")).toHaveCount(0);
+  await page.getByRole("button", { name: "Pokaż przykład" }).click();
+  // The example says its numbers are made up, and the week's receipt is drawn.
   await expect(page.getByRole("note").filter({ hasText: "Przykład." })).toContainText("Wymyślone liczby");
   await expect(page.getByRole("heading", { level: 2, name: "Twój tydzień z Doddym" })).toBeVisible();
   await expect(page.locator(".lb-rc-line").first()).toContainText("Rozmowy");
@@ -192,4 +203,59 @@ test("Logbook opens from the menu with example numbers, under the page's own sec
   expect(sideways).toBeLessThanOrEqual(0);
   // No CSP violation, no failed request, no error in the console.
   expect(problems).toEqual([]);
+});
+
+test("Logbook shows what the iPhone sent, downloads it, and deletes it when asked", async ({ page, request }) => {
+  const problems = watchConsole(page);
+  const token = await phone(request);
+  const headers = { authorization: `Bearer ${token}` };
+  await logbookSwitch(request, token, true);
+
+  // The iPhone sends three days; one with a word where a number belongs is refused whole.
+  for (const [ago, n] of [[2, 4], [1, 1], [0, 3]] as const) {
+    const sent = await request.put(`/v1/web/logbook/days/${daysAgo(ago)}`, { headers, data: logbookDay(daysAgo(ago), n) });
+    expect(sent.status()).toBe(200);
+  }
+  const refused = await request.put(`/v1/web/logbook/days/${daysAgo(0)}`, { headers, data: { ...logbookDay(daysAgo(0), 3), transcript: "buy milk" } });
+  expect(refused.status()).toBe(400);
+  expect(await refused.text()).not.toContain("buy milk");
+
+  await signIn(page, await code(request, token));
+  await page.goto("/logbook");
+  await expect(page.getByRole("heading", { level: 1, name: "Dziennik" })).toBeVisible();
+  // Real numbers: no example banner, the receipt adds up what was sent (4 + 1 + 3), and the week can start mid-week.
+  await expect(page.locator(".lb-rc-line").first()).toContainText("Rozmowy");
+  await expect(page.locator(".lb-rc-line").first().locator("dd")).toHaveText("8");
+  await expect(page.getByRole("note").filter({ hasText: "Przykład." })).toHaveCount(0);
+
+  // Download everything: the server's own file.
+  const [file] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Pobierz wszystko" }).click()]);
+  expect(file.suggestedFilename()).toMatch(/^doddy-logbook-\d{4}-\d{2}-\d{2}\.json$/);
+  const saved = JSON.parse(await (await import("node:fs/promises")).readFile((await file.path()) as string, "utf8"));
+  expect(saved.enabled).toBe(true);
+  expect(saved.days).toHaveLength(3);
+  expect(JSON.stringify(saved)).not.toContain("buy milk");
+
+  // The numbers shown, as CSV, from Closer look.
+  await page.getByRole("tab", { name: /Z bliska/ }).click();
+  const [csv] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Pobierz CSV" }).click()]);
+  expect(csv.suggestedFilename()).toBe(`doddy-logbook-${daysAgo(2)}-to-${daysAgo(0)}.csv`);
+
+  // A browser can read and delete but not write: its own cookie can't send a day or switch Logbook.
+  const cookieWrite = await page.evaluate(async (day) => {
+    const res = await fetch(`/v1/web/logbook/state`, { method: "PUT", headers: { "content-type": "application/json", "x-doddy-web": "1" }, body: JSON.stringify({ enabled: false }) });
+    return { status: res.status, day };
+  }, daysAgo(0));
+  expect(cookieWrite.status).toBe(401);
+
+  // Delete takes two taps, then the server answers and the page says how many days went.
+  await page.getByRole("button", { name: "Usuń wszystko stąd" }).click();
+  await page.getByRole("button", { name: "Dotknij ponownie, by usunąć wszystko" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Usunięto." })).toContainText("3");
+  await expect(page.getByRole("heading", { level: 2, name: "Nic jeszcze nie policzono" })).toBeVisible();
+
+  const sideways = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  expect(sideways).toBeLessThanOrEqual(0);
+  expect(problems).toEqual([]);
+  await logbookSwitch(request, token, false);
 });

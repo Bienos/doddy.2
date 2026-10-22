@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { CurrentSession, DocumentList, ErrorBody, ReceiptList, SessionList, ToolsCatalog } from "../src/api/schemas.js";
+import { LogbookDeleted, LogbookView } from "../src/logbook/schema.js";
 import { fixture } from "./fakeServer.js";
 
 /** The server writes these files from its own replies (backend: npm run fixtures:web / fixtures). */
@@ -24,5 +25,20 @@ describe("the page reads what the server actually sends", () => {
     expect(catalog.toolkits.find((k) => k.id === "gmail")?.status).toBe("connected");
     ToolsCatalog.parse(fixture("online-accounts/catalog-disconnected"));
     expect(ReceiptList.parse(fixture("online-accounts/receipts")).receipts.length).toBeGreaterThan(0);
+  });
+
+  test("Logbook: off, on and empty, with days, the file, the delete and the refusals", () => {
+    expect(LogbookView.parse(fixture("web/logbook-off"))).toEqual({ enabled: false, keptDays: 90, updatedAt: null, days: [] });
+    expect(LogbookView.parse(fixture("web/logbook-empty"))).toMatchObject({ enabled: true, days: [] });
+    const view = LogbookView.parse(fixture("web/logbook-view"));
+    expect(view.days.map((d) => d.day)).toEqual(["2026-10-20", "2026-10-21", "2026-10-22"]);
+    expect(view.updatedAt).toBe("2026-10-22T10:00:00.000Z");
+    // The downloaded file is the same view with the time it was made.
+    const file = fixture("web/logbook-export") as { exportedAt: string };
+    expect(LogbookView.parse(file).days).toHaveLength(3);
+    expect(file.exportedAt).toBe("2026-10-22T10:00:00.000Z");
+    expect(LogbookDeleted.parse(fixture("web/logbook-deleted"))).toEqual({ deletedDays: 3 });
+    expect(ErrorBody.parse(fixture("web/error-logbook-off")).error.code).toBe("capability_disabled");
+    expect(ErrorBody.parse(fixture("web/error-logbook-invalid")).error.code).toBe("invalid_request");
   });
 });

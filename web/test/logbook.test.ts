@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { MESSAGES } from "../src/i18n/messages.js";
-import { glanceWeeks, groupWeeks, isoWeek, ran, sumDays, weekdayHourGrid, weekdayIndex } from "../src/logbook/aggregate.js";
+import { CSV_COLUMNS, logbookCsv } from "../src/logbook/csv.js";
+import { defaultWeekIndex, emptyDay, fillGaps, glanceWeeks, groupWeeks, isoWeek, ran, sumDays, weekdayHourGrid, weekdayIndex } from "../src/logbook/aggregate.js";
 import { ENDINGS, JOBS, KINDS, LENGTHS, SOURCES, TOOLS, TOOL_IDS, WAYS, isKnownTool, toolInfo } from "../src/logbook/catalog.js";
 import { exampleLogbook, makeExampleDays } from "../src/logbook/exampleData.js";
 import { makeFormats } from "../src/logbook/format.js";
@@ -192,15 +193,70 @@ describe("weeks and weekdays", () => {
     expect(weekdayIndex("2026-10-25")).toBe(6);
   });
 
-  test("grouping: weeks start on Monday; At a glance drops a leading partial week and keeps this week so far", () => {
+  test("grouping: weeks start on Monday; At a glance keeps the short first week and this week so far", () => {
     const days = makeExampleDays(); // Thu 23 Jul to Wed 21 Oct
     const all = groupWeeks(days);
     expect(all[0]?.map((d) => d.day)).toEqual(["2026-07-23", "2026-07-24", "2026-07-25", "2026-07-26"]);
     expect(all[all.length - 1]?.map((d) => d.day)).toEqual(["2026-10-19", "2026-10-20", "2026-10-21"]);
     const weeks = glanceWeeks(days);
-    expect(weeks[0]?.[0]?.day).toBe("2026-07-27");
-    expect(weeks.slice(0, -1).every((w) => w.length === 7)).toBe(true);
-    expect(weeks).toHaveLength(13); // 12 whole weeks and this week so far
+    expect(weeks[0]?.map((d) => d.day)).toEqual(["2026-07-23", "2026-07-24", "2026-07-25", "2026-07-26"]);
+    expect(weeks.slice(1, -1).every((w) => w.length === 7)).toBe(true);
+    expect(weeks).toHaveLength(14); // the short first week, 12 whole weeks and this week so far
+    // It opens on the latest whole week.
+    expect(defaultWeekIndex(weeks)).toBe(12);
+    expect(weeks[12]?.[0]?.day).toBe("2026-10-12");
+  });
+
+  test("the week it opens on: the latest whole week, else the week so far", () => {
+    const run = (from: string, n: number) => Array.from({ length: n }, (_, i) => day(new Date(Date.parse(`${from}T00:00:00Z`) + i * 86_400_000).toISOString().slice(0, 10)));
+    // Thu 15 Oct to Sat 17 Oct: one short week.
+    expect(defaultWeekIndex(glanceWeeks(run("2026-10-15", 3)))).toBe(0);
+    // Thu 8 Oct to Wed 14 Oct: a short first week, then two days of this one: no whole week yet.
+    expect(defaultWeekIndex(glanceWeeks(run("2026-10-08", 7)))).toBe(1);
+    // Mon 5 Oct to Tue 20 Oct: a whole week, a whole week, two days.
+    expect(defaultWeekIndex(glanceWeeks(run("2026-10-05", 16)))).toBe(1);
+    expect(defaultWeekIndex([])).toBe(0);
+  });
+
+  test("days the iPhone sent nothing for are days with nothing counted: gaps are filled, nothing before or after", () => {
+    const sent = [
+      day("2026-10-14", { conversations: { ...blank().conversations, count: 2, seconds: 120, by_hour: [...new Array(9).fill(0), 2, ...new Array(14).fill(0)], lengths: { ...blank().conversations.lengths, "1_3": 2 }, ended: { ...blank().conversations.ended, you: 2 } } }),
+      day("2026-10-19"),
+    ];
+    const filled = fillGaps([sent[1] as DaySummary, sent[0] as DaySummary]);
+    expect(filled.map((d) => d.day)).toEqual(["2026-10-14", "2026-10-15", "2026-10-16", "2026-10-17", "2026-10-18", "2026-10-19"]);
+    expect(filled[0]).toBe(sent[0]);
+    expect(filled[1]).toEqual(emptyDay("2026-10-15"));
+    expect(DaySummary.safeParse(emptyDay("2026-10-15")).success).toBe(true);
+    expect(sumDays(filled).conversations).toBe(2);
+    // The Monday-less week still groups by the calendar: 14 to 18 Oct are Wed to Sun, 19 Oct starts a week.
+    expect(groupWeeks(filled).map((w) => w.length)).toEqual([5, 1]);
+    expect(fillGaps([])).toEqual([]);
+    expect(fillGaps([sent[0] as DaySummary])).toEqual([sent[0]]);
+  });
+
+  test("a span far beyond what the server keeps is not stretched out", () => {
+    const filled = fillGaps([day("2020-01-01"), day("2026-01-01")]);
+    expect(filled.map((d) => d.day)).toEqual(["2020-01-01", "2026-01-01"]);
+  });
+
+  test("the CSV has one row per day, English column names, numbers only", () => {
+    const rows = logbookCsv(makeExampleDays().slice(-7)).trim().split("\r\n");
+    expect(rows[0]).toBe(CSV_COLUMNS.join(","));
+    expect(rows).toHaveLength(8);
+    for (const row of rows.slice(1)) {
+      const cells = row.split(",");
+      expect(cells).toHaveLength(CSV_COLUMNS.length);
+      expect(cells[0]).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      for (const cell of cells.slice(1)) expect(cell).toMatch(/^\d+$/);
+    }
+    // The pinned example week 12 to 18 Oct adds up to the receipt's 28 conversations and 38 things done.
+    const week = makeExampleDays().filter((d) => d.day >= "2026-10-12" && d.day <= "2026-10-18");
+    const csv = logbookCsv(week).trim().split("\r\n").slice(1).map((r) => r.split(",").map(Number));
+    const column = (name: (typeof CSV_COLUMNS)[number]) => CSV_COLUMNS.indexOf(name);
+    expect(csv.reduce((s, r) => s + (r[column("conversations")] ?? 0), 0)).toBe(28);
+    expect(csv.reduce((s, r) => s + (r[column("things_done")] ?? 0), 0)).toBe(38);
+    expect(logbookCsv([])).toBe(`${CSV_COLUMNS.join(",")}\r\n`);
   });
 
   test("the weekday-by-hour grid holds exactly the conversations", () => {

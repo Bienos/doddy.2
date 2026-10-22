@@ -26,7 +26,7 @@ const Outcomes = z
   .strict();
 
 const ToolId = z.string().regex(/^[a-z][a-z0-9_]{2,47}$/);
-const LanguageCode = z.string().regex(/^[a-z]{2}(-[A-Za-z]{2,4})?$/);
+const LanguageCode = z.string().regex(/^[a-z]{2,3}(-[A-Za-z]{2,4})?$/);
 
 export const DaySummary = z
   .object({
@@ -63,3 +63,19 @@ export type ToolOutcomes = z.output<typeof Outcomes>;
 /** What a Logbook reply holds: the days, oldest first, and when the iPhone last sent them. */
 export const LogbookDays = z.object({ days: z.array(DaySummary).max(400), updatedAt: z.string().nullable() }).strict();
 export type LogbookDays = z.output<typeof LogbookDays>;
+
+/**
+ * What GET /v1/web/logbook answers (backend/src/web/logbook.ts, LogbookViewSchema): whether the
+ * iPhone has Logbook on, how long days are kept, when it last sent one, and the days. Days stay
+ * strict; the envelope drops fields a newer server may add.
+ */
+export const LogbookView = z.object({
+  enabled: z.boolean(),
+  keptDays: z.number().int().positive(),
+  updatedAt: z.string().nullable(),
+  days: z.array(DaySummary).max(400),
+});
+export type LogbookView = z.output<typeof LogbookView>;
+
+/** What DELETE /v1/web/logbook answers: how many stored days it removed. */
+export const LogbookDeleted = z.object({ deletedDays: z.number().int().nonnegative() });

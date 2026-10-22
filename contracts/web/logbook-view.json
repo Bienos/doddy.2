@@ -1,0 +1,334 @@
+{
+  "enabled": true,
+  "keptDays": 90,
+  "updatedAt": "2026-10-22T10:00:00.000Z",
+  "days": [
+    {
+      "schema": "doddy.logbook.day.v1",
+      "day": "2026-10-20",
+      "conversations": {
+        "count": 4,
+        "seconds": 720,
+        "by_hour": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          2,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          2,
+          0,
+          0,
+          0,
+          0
+        ],
+        "lengths": {
+          "under_1": 0,
+          "1_3": 4,
+          "3_5": 0,
+          "5_10": 0
+        },
+        "ended": {
+          "you": 4,
+          "doddy": 0,
+          "quiet": 0,
+          "dropped": 0
+        },
+        "languages": {
+          "en": 4
+        },
+        "ways_in": {
+          "app": 0,
+          "back_tap": 4,
+          "action_button": 0,
+          "widget": 0,
+          "siri": 0,
+          "island": 0
+        }
+      },
+      "tools": {
+        "save_memory": {
+          "done": 4,
+          "declined": 0,
+          "unsure": 0,
+          "failed": 0,
+          "undone": 0
+        },
+        "read_calendar": {
+          "done": 4,
+          "declined": 0,
+          "unsure": 0,
+          "failed": 1,
+          "undone": 0
+        },
+        "send_email": {
+          "done": 0,
+          "declined": 1,
+          "unsure": 1,
+          "failed": 0,
+          "undone": 0
+        }
+      },
+      "notes": {
+        "by_source": {
+          "voice": 4,
+          "typed": 0,
+          "shared": 0,
+          "imported": 0
+        },
+        "by_kind": {
+          "fact": 4
+        },
+        "edited": 0
+      },
+      "lists": {
+        "added_voice": 4,
+        "added_typed": 0,
+        "ticked": 1
+      },
+      "errands": {
+        "handed_over": 1,
+        "finished": 1,
+        "stopped": 0,
+        "minutes": 4,
+        "searches": 6,
+        "pages": 3
+      },
+      "translator": {
+        "sessions": 0,
+        "minutes": 0
+      }
+    },
+    {
+      "schema": "doddy.logbook.day.v1",
+      "day": "2026-10-21",
+      "conversations": {
+        "count": 1,
+        "seconds": 180,
+        "by_hour": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "lengths": {
+          "under_1": 0,
+          "1_3": 1,
+          "3_5": 0,
+          "5_10": 0
+        },
+        "ended": {
+          "you": 1,
+          "doddy": 0,
+          "quiet": 0,
+          "dropped": 0
+        },
+        "languages": {
+          "en": 1
+        },
+        "ways_in": {
+          "app": 0,
+          "back_tap": 1,
+          "action_button": 0,
+          "widget": 0,
+          "siri": 0,
+          "island": 0
+        }
+      },
+      "tools": {
+        "save_memory": {
+          "done": 1,
+          "declined": 0,
+          "unsure": 0,
+          "failed": 0,
+          "undone": 0
+        },
+        "read_calendar": {
+          "done": 1,
+          "declined": 0,
+          "unsure": 0,
+          "failed": 0,
+          "undone": 0
+        },
+        "send_email": {
+          "done": 0,
+          "declined": 1,
+          "unsure": 0,
+          "failed": 0,
+          "undone": 0
+        }
+      },
+      "notes": {
+        "by_source": {
+          "voice": 1,
+          "typed": 0,
+          "shared": 0,
+          "imported": 0
+        },
+        "by_kind": {
+          "fact": 1
+        },
+        "edited": 0
+      },
+      "lists": {
+        "added_voice": 1,
+        "added_typed": 0,
+        "ticked": 1
+      },
+      "errands": {
+        "handed_over": 1,
+        "finished": 1,
+        "stopped": 0,
+        "minutes": 4,
+        "searches": 6,
+        "pages": 3
+      },
+      "translator": {
+        "sessions": 0,
+        "minutes": 0
+      }
+    },
+    {
+      "schema": "doddy.logbook.day.v1",
+      "day": "2026-10-22",
+      "conversations": {
+        "count": 3,
+        "seconds": 540,
+        "by_hour": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          2,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0
+        ],
+        "lengths": {
+          "under_1": 0,
+          "1_3": 3,
+          "3_5": 0,
+          "5_10": 0
+        },
+        "ended": {
+          "you": 3,
+          "doddy": 0,
+          "quiet": 0,
+          "dropped": 0
+        },
+        "languages": {
+          "en": 3
+        },
+        "ways_in": {
+          "app": 0,
+          "back_tap": 3,
+          "action_button": 0,
+          "widget": 0,
+          "siri": 0,
+          "island": 0
+        }
+      },
+      "tools": {
+        "save_memory": {
+          "done": 3,
+          "declined": 0,
+          "unsure": 0,
+          "failed": 0,
+          "undone": 0
+        },
+        "read_calendar": {
+          "done": 3,
+          "declined": 0,
+          "unsure": 0,
+          "failed": 1,
+          "undone": 0
+        },
+        "send_email": {
+          "done": 0,
+          "declined": 1,
+          "unsure": 1,
+          "failed": 0,
+          "undone": 0
+        }
+      },
+      "notes": {
+        "by_source": {
+          "voice": 3,
+          "typed": 0,
+          "shared": 0,
+          "imported": 0
+        },
+        "by_kind": {
+          "fact": 3
+        },
+        "edited": 0
+      },
+      "lists": {
+        "added_voice": 3,
+        "added_typed": 0,
+        "ticked": 1
+      },
+      "errands": {
+        "handed_over": 1,
+        "finished": 1,
+        "stopped": 0,
+        "minutes": 4,
+        "searches": 6,
+        "pages": 3
+      },
+      "translator": {
+        "sessions": 0,
+        "minutes": 0
+      }
+    }
+  ]
+}

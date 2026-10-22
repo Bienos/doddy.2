@@ -2,20 +2,20 @@ import { type ReactNode, useEffect, useId, useState } from "react";
 import { NavLink, useLocation } from "react-router";
 import { useSession } from "../auth/session.js";
 import { useI18n } from "../i18n/i18n.js";
-import { LOGBOOK_ENABLED } from "../logbook/config.js";
+import { IPHONE_SENDS_LOGBOOK, LOGBOOK_ENABLED } from "../logbook/config.js";
 import type { MessageKey } from "../i18n/messages.js";
 import { Wordmark } from "./Brand.js";
 
 /**
  * Only sections that work today are in the menu (ADR-585). Chat, memory and tasks come later.
- * Logbook is there with example numbers only (ADR-593) and says so in the menu and on its page.
+ * Logbook is there too (ADR-593). Until the iPhone can send it, it is marked Example in the menu.
  */
 export const SECTIONS: { path: string; label: MessageKey; example?: boolean }[] = [
   { path: "/", label: "nav.home" },
   { path: "/documents", label: "nav.documents" },
   { path: "/apps", label: "nav.apps" },
   { path: "/activity", label: "nav.activity" },
-  ...(LOGBOOK_ENABLED ? [{ path: "/logbook", label: "nav.logbook" as MessageKey, example: true }] : []),
+  ...(LOGBOOK_ENABLED ? [{ path: "/logbook", label: "nav.logbook" as MessageKey, example: !IPHONE_SENDS_LOGBOOK }] : []),
   { path: "/settings", label: "nav.settings" },
 ];
 

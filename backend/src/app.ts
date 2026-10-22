@@ -19,6 +19,7 @@ import type { ToolsProvider } from "./tools/provider.js";
 import { CloudToolsService } from "./tools/service.js";
 import { MockWebSearchProvider, MonidWebSearchProvider, type WebSearchProvider } from "./tools/websearch.js";
 import { WebRoutes } from "./web/routes.js";
+import { oldestKeptDay } from "./web/logbook.js";
 import { REDEEM_LIMITS, SESSION_IDLE_MS, WebAuth } from "./web/sessions.js";
 import { WebStatic } from "./web/static.js";
 
@@ -127,6 +128,7 @@ export async function buildApp(
     void Promise.allSettled([service.sweepAbandoned(), tools.sweepAbandoned()])
       .then(() => store.prune(Date.now()))
       .then(() => store.pruneDocuments(Date.now()))
+      .then(() => store.pruneLogbook(oldestKeptDay(Date.now())))
       .then(() => (web ? store.pruneWeb(Date.now(), SESSION_IDLE_MS) : 0))
       .catch(() => {}); // the store closed with the server; the next start sweeps again
   };

@@ -1,6 +1,6 @@
 # Doddy Web (browser)
 
-**State (22 Oct 2026):** built and tested on branch `claude/exciting-carson-08x2pk`, which is also what the Render service `doddy` serves at https://doddy-yaci.onrender.com (its page and asset file names match that branch's build; checked 22 Oct). Not merged to the default branch. On `claude/friendly-faraday-8juosh` it is restyled in the website's design (ADR-594) and has Logbook (ADR-593); that branch is not deployed. Decisions: ADR-585 (sign-in and sessions), ADR-586 (stack and hosting). Why and what's next: `docs/architecture/WEB_AND_SHARED_PLATFORM.md`.
+**State (22 Oct 2026):** built and tested on branch `claude/exciting-carson-08x2pk`, which is also what the Render service `doddy` serves at https://doddy-yaci.onrender.com (its page and asset file names match that branch's build; checked 22 Oct). Not merged to the default branch. On `claude/friendly-faraday-8juosh` it is restyled in the website's design (ADR-594) and has Logbook (ADR-593) with its server routes; that branch is not deployed. Decisions: ADR-585 (sign-in and sessions), ADR-586 (stack and hosting). Why and what's next: `docs/architecture/WEB_AND_SHARED_PLATFORM.md`.
 
 ## What it is
 A signed-in workspace in the browser for the same account the iPhone uses on Doddy's server (`backend/`). Today it shows:
@@ -9,7 +9,7 @@ A signed-in workspace in the browser for the same account the iPhone uses on Dod
 - **Activity:** the server's receipts.
 - **Signed-in browsers**, each with Sign out.
 - A **language** switch: Polish by default, or English.
-- **Logbook** (ADR-593, `docs/product/WEB_LOGBOOK.md`): how a person uses Doddy, in two tabs, At a glance (the week as a receipt) and Closer look (7, 30 or 90 days). **Example numbers only**, marked Example in the menu and on the page; the server keeps no daily summaries yet. `LOGBOOK_ENABLED` in `web/src/logbook/config.ts` hides it.
+- **Logbook** (ADR-593, `docs/product/WEB_LOGBOOK.md`): how a person uses Doddy, in two tabs, At a glance (the week as a receipt) and Closer look (7, 30 or 90 days). The server keeps and serves the days the iPhone sends (`backend/src/web/logbook.ts`, `/v1/web/logbook*`, off until the iPhone turns it on), but **the iPhone can't send any yet** (not built), so the page opens on "Logbook is off" and shows made-up example numbers only when asked, marked Example; the menu keeps its Example marker until `IPHONE_SENDS_LOGBOOK` is flipped. `LOGBOOK_ENABLED` in `web/src/logbook/config.ts` hides the page.
 
 It does not have chat, memory, tasks or projects. Home says so instead of showing empty versions of them.
 
@@ -34,7 +34,7 @@ The phone can list and sign out every browser. A browser can sign itself or othe
 | `contracts/web/` | Real server replies, written by `npm run fixtures:web` in `backend/`; read by the web and Swift tests |
 | `Packages/DoddyCore/.../WebLinkClient.swift`, `WebSignInModel.swift` | The iPhone's client and screen state (tested on Linux) |
 | `DoddyApp/Features/Web/WebSignInView.swift` | The iPhone screen (compiled only by the hosted Mac build) |
-| `web/src/logbook/`, `web/src/pages/LogbookPage.tsx` | Logbook: the summary contract (`schema.ts`, zod), the catalog of tools and categories, seeded example days, adding days up, formats, and the hand-built SVG charts |
+| `web/src/logbook/`, `web/src/pages/LogbookPage.tsx` | Logbook: the summary contract (`schema.ts`, zod), the catalog of tools and categories, seeded example days, adding days up and filling gaps, CSV, formats, and the hand-built SVG charts |
 | `tools/gen_web_assets.py` | Copies the website's colours (`CandidateTokens.swift`, light and dark), the app's metrics, wordmark, five `WholeDoddy_*` poses and the favicon into `web/`; `--check` runs in CI |
 
 ## Run it locally
@@ -57,7 +57,7 @@ curl -s -X POST localhost:8787/v1/web/link-codes -H "authorization: Bearer $TOKE
 | Command | What |
 |---|---|
 | `npm test` in `backend/` | All backend tests; `test/web.test.ts` is the web part (sign-in, isolation, CSRF, expiry, revocation, documents, pages, logs) |
-| `npm run typecheck && npm test` in `web/` | Type-check and unit tests (Vitest, jsdom) against the server's fixtures; 56 tests, 31 of them for Logbook |
+| `npm run typecheck && npm test` in `web/` | Type-check and unit tests (Vitest, jsdom) against the server's fixtures; 76 tests, about 50 of them for Logbook |
 | `npm run build` in `backend/` and `web/`, then `npm run e2e` in `web/` | Playwright: the real backend (mock providers, in-memory database) serving the built app, Chromium at desktop and phone width |
 | `DODDY_SCREENS=<folder> npx playwright test e2e/screens.spec.ts` in `web/` | Screenshots in light and dark, for a person to look at |
 | `scripts/ci.sh --core-only` | All of the above. The end-to-end run is SKIPPED (not PASS) where there's no Playwright Chromium, as in the hosted Linux job |

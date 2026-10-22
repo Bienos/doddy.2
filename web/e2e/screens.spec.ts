@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { daysAgo, logbookDay } from "./logbookDay.js";
 
 /**
  * Screenshots for a person to look at (not a pixel comparison). Run on request:
@@ -35,14 +36,27 @@ for (const scheme of ["light", "dark"] as const) {
       await page.waitForLoadState("networkidle");
       await page.screenshot({ path: `${out}/${project}-${scheme}-${name}.png`, fullPage: true });
     }
-    // Logbook (ADR-593): both tabs, with example numbers.
+    // Logbook (ADR-593): off at first, then both tabs with the example's numbers.
     await page.goto("/logbook");
-    await expect(page.getByRole("heading", { level: 1, name: "Dziennik" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 2, name: "Dziennik jest wyłączony" })).toBeVisible();
     await page.waitForLoadState("networkidle");
+    await page.screenshot({ path: `${out}/${project}-${scheme}-7-logbook-off.png`, fullPage: true });
+    await page.getByRole("button", { name: "Pokaż przykład" }).click();
+    await expect(page.getByRole("heading", { level: 2, name: "Twój tydzień z Doddym" })).toBeVisible();
     await page.screenshot({ path: `${out}/${project}-${scheme}-7-logbook-glance.png`, fullPage: true });
     await page.getByRole("tab", { name: /Z bliska/ }).click();
     await expect(page.getByRole("heading", { name: "Każde narzędzie z liczbą użyć" })).toBeVisible();
     await page.screenshot({ path: `${out}/${project}-${scheme}-8-logbook-closer.png`, fullPage: true });
+    // Real numbers: nine days the iPhone "sent" (one day missing), then Logbook off again.
+    await request.put("/v1/web/logbook/state", { headers, data: { enabled: true } });
+    for (const ago of [9, 8, 7, 6, 5, 4, 2, 1, 0]) {
+      await request.put(`/v1/web/logbook/days/${daysAgo(ago)}`, { headers, data: logbookDay(daysAgo(ago), 1 + (ago % 4)) });
+    }
+    await page.goto("/logbook");
+    await expect(page.locator(".lb-rc-line").first()).toBeVisible();
+    await page.waitForLoadState("networkidle");
+    await page.screenshot({ path: `${out}/${project}-${scheme}-7-logbook-real.png`, fullPage: true });
+    await request.put("/v1/web/logbook/state", { headers, data: { enabled: false } });
     // On a small screen the links are in a sheet under the header.
     if ((page.viewportSize()?.width ?? 1280) < 800) {
       await page.evaluate(() => window.scrollTo(0, 0));

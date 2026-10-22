@@ -1,4 +1,5 @@
 import type { z } from "zod";
+import { LogbookDeleted, LogbookView } from "../logbook/schema.js";
 import { CurrentSession, DocumentList, ErrorBody, ReceiptList, SessionList, SignedOut, ToolsCatalog } from "./schemas.js";
 
 /**
@@ -94,6 +95,15 @@ export const api = {
   documents: (signal?: AbortSignal) => json(DocumentList, "/v1/web/documents", { signal }),
   catalog: (signal?: AbortSignal) => json(ToolsCatalog, "/v1/tools", { signal }),
   receipts: (signal?: AbortSignal) => json(ReceiptList, "/v1/tools/receipts", { signal }).then((r) => r.receipts),
+  /** The days the iPhone has sent for Logbook (ADR-593), and whether it is on. */
+  logbook: (signal?: AbortSignal) => json(LogbookView, "/v1/web/logbook", { signal }),
+  /** Deletes every stored Logbook day. Logbook stays as it was (on or off). */
+  deleteLogbook: () => json(LogbookDeleted, "/v1/web/logbook", { method: "DELETE" }),
+  /** Everything stored for Logbook, as the server's JSON file. Saved through a download. */
+  async logbookFile(): Promise<Blob> {
+    const response = await send("/v1/web/logbook/export");
+    return response.blob();
+  },
   /** The document's file as a blob. Not shown in the page: it is saved through a download. */
   async documentFile(id: string): Promise<Blob> {
     const response = await send(`/v1/web/documents/${encodeURIComponent(id)}/file`);

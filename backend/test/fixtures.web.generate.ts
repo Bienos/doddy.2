@@ -43,6 +43,37 @@ write("session-current", (await rig.call("GET", "/v1/web/session", { cookie })).
 write("sessions-phone", (await rig.call("GET", "/v1/web/sessions", { token: USER_A })).body);
 write("error-signed-out", (await rig.call("GET", "/v1/web/session", { cookie: "x".repeat(43) })).body);
 
+// Logbook (ADR-593): the iPhone's calls and what the page reads. Counts only, fixed clock.
+const logbookDay = (date: string, n: number) => ({
+  schema: "doddy.logbook.day.v1",
+  day: date,
+  conversations: {
+    count: n,
+    seconds: n * 180,
+    by_hour: Array.from({ length: 24 }, (_, h) => (h === 8 ? n - Math.floor(n / 2) : h === 19 ? Math.floor(n / 2) : 0)),
+    lengths: { under_1: 0, "1_3": n, "3_5": 0, "5_10": 0 },
+    ended: { you: n, doddy: 0, quiet: 0, dropped: 0 },
+    languages: { en: n },
+    ways_in: { app: 0, back_tap: n, action_button: 0, widget: 0, siri: 0, island: 0 },
+  },
+  tools: { save_memory: { done: n }, read_calendar: { done: n, failed: n > 2 ? 1 : 0 }, send_email: { done: 0, declined: 1, unsure: n > 2 ? 1 : 0 } },
+  notes: { by_source: { voice: n, typed: 0, shared: 0, imported: 0 }, by_kind: { fact: n }, edited: 0 },
+  lists: { added_voice: n, added_typed: 0, ticked: 1 },
+  errands: { handed_over: 1, finished: 1, stopped: 0, minutes: 4, searches: 6, pages: 3 },
+  translator: { sessions: 0, minutes: 0 },
+});
+write("logbook-off", (await rig.call("GET", "/v1/web/logbook", { cookie })).body);
+write("error-logbook-off", (await rig.call("PUT", "/v1/web/logbook/days/2026-10-22", { token: USER_A, body: logbookDay("2026-10-22", 3) })).body);
+write("logbook-state-on", (await rig.call("PUT", "/v1/web/logbook/state", { token: USER_A, body: { enabled: true } })).body);
+write("logbook-empty", (await rig.call("GET", "/v1/web/logbook", { cookie })).body);
+write("error-logbook-invalid", (await rig.call("PUT", "/v1/web/logbook/days/2026-10-22", { token: USER_A, body: { ...logbookDay("2026-10-22", 3), transcript: "x" } })).body);
+write("logbook-stored", (await rig.call("PUT", "/v1/web/logbook/days/2026-10-20", { token: USER_A, body: logbookDay("2026-10-20", 4) })).body);
+await rig.call("PUT", "/v1/web/logbook/days/2026-10-21", { token: USER_A, body: logbookDay("2026-10-21", 1) });
+await rig.call("PUT", "/v1/web/logbook/days/2026-10-22", { token: USER_A, body: logbookDay("2026-10-22", 3) });
+write("logbook-view", (await rig.call("GET", "/v1/web/logbook", { cookie })).body);
+write("logbook-export", JSON.parse((await rig.call("GET", "/v1/web/logbook/export", { cookie })).text));
+write("logbook-deleted", (await rig.call("DELETE", "/v1/web/logbook", { cookie, browser: true })).body);
+
 write("documents-empty", (await rig.call("GET", "/v1/web/documents", { cookie })).body);
 await make("deck", "Laptops for university");
 rig.clock.advance(60_000);

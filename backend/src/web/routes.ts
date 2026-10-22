@@ -3,6 +3,17 @@ import { type AuthenticatedUser, requireFullAccess, type SessionVerifier } from 
 import { AppError } from "../errors.js";
 import type { DocumentRow, DocumentSummaryRow, Store } from "../store.js";
 import type { DocumentView } from "./contracts.js";
+import {
+  type DaySummary,
+  DaySummarySchema,
+  isoDay,
+  LOGBOOK_KEPT_DAYS,
+  LOGBOOK_MAX_BODY_BYTES,
+  type LogbookView,
+  LogbookStateSchema,
+  oldestKeptDay,
+  parseDaySummary,
+} from "./logbook.js";
 import type { WebAuth, WebSessionContext } from "./sessions.js";
 
 /**
@@ -35,6 +46,8 @@ interface Route {
   pattern: RegExp;
   template: string;
   access: Access;
+  /** A larger body than the default, for the one route that takes a summary. */
+  maxBodyBytes?: number;
   run(input: { caller: WebCaller | null; params: string[]; body: unknown; req: IncomingMessage; now: Date }): Promise<Reply>;
 }
 
@@ -132,7 +145,77 @@ export class WebRoutes {
           return { status: 200, file: { name: row.name, mime: row.mime, bytes: row.body } };
         },
       },
+      // ---------------------------------------------------------------- Logbook (ADR-593)
+      {
+        method: "GET",
+        pattern: /^\/v1\/web\/logbook$/,
+        template: "GET /v1/web/logbook",
+        access: "either",
+        run: async ({ caller, now }) => ({ status: 200, body: await this.logbookView(caller!.userId, now) }),
+      },
+      {
+        method: "DELETE",
+        pattern: /^\/v1\/web\/logbook$/,
+        template: "DELETE /v1/web/logbook",
+        access: "either",
+        // Deletes every stored day and says how many went. Logbook stays on or off as it was.
+        run: async ({ caller }) => ({ status: 200, body: { deletedDays: await this.store.deleteLogbookDays(caller!.userId) } }),
+      },
+      {
+        method: "GET",
+        pattern: /^\/v1\/web\/logbook\/export$/,
+        template: "GET /v1/web/logbook/export",
+        access: "either",
+        run: async ({ caller, now }) => {
+          const view = await this.logbookView(caller!.userId, now);
+          const bytes = Buffer.from(`${JSON.stringify({ exportedAt: now.toISOString(), ...view }, null, 2)}\n`, "utf8");
+          return { status: 200, file: { name: `doddy-logbook-${isoDay(now.getTime())}.json`, mime: "application/json", bytes } };
+        },
+      },
+      {
+        method: "PUT",
+        pattern: /^\/v1\/web\/logbook\/state$/,
+        template: "PUT /v1/web/logbook/state",
+        access: "phone",
+        run: async ({ caller, body, now }) => {
+          const parsed = LogbookStateSchema.safeParse(body);
+          if (!parsed.success) throw new AppError("invalid_request");
+          const { deletedDays } = await this.store.setLogbookEnabled(caller!.userId, parsed.data.enabled, now.getTime());
+          return { status: 200, body: { enabled: parsed.data.enabled, deletedDays } };
+        },
+      },
+      {
+        method: "PUT",
+        pattern: /^\/v1\/web\/logbook\/days\/(\d{4}-\d{2}-\d{2})$/,
+        template: "PUT /v1/web/logbook/days/:day",
+        access: "phone",
+        maxBodyBytes: LOGBOOK_MAX_BODY_BYTES,
+        run: async ({ caller, params, body, now }) => {
+          // Validated whole, then stored in its canonical form (defaults filled, nothing extra).
+          const day = parseDaySummary(body, params[0]!, now.getTime());
+          const stored = await this.store.putLogbookDay(caller!.userId, day.day, JSON.stringify(day), now.getTime());
+          if (!stored) throw new AppError("capability_disabled", { message: "Logbook is off for this iPhone. Turn it on in Doddy first. Nothing was stored." });
+          return { status: 200, body: { stored: true, day: day.day } };
+        },
+      },
     ];
+  }
+
+  /** What the page reads. A row that no longer parses is left out, never shown half-read. */
+  private async logbookView(userId: string, now: Date): Promise<LogbookView> {
+    const enabled = await this.store.logbookEnabled(userId);
+    const rows = enabled ? await this.store.logbookDays(userId, oldestKeptDay(now.getTime())) : [];
+    const days: DaySummary[] = [];
+    for (const row of rows) {
+      try {
+        const parsed = DaySummarySchema.safeParse(JSON.parse(row.summary));
+        if (parsed.success) days.push(parsed.data);
+      } catch {
+        // Not JSON: skipped like any unreadable row.
+      }
+    }
+    const latest = rows.reduce((max, row) => Math.max(max, row.received_at), 0);
+    return { enabled, keptDays: LOGBOOK_KEPT_DAYS, updatedAt: latest > 0 ? new Date(latest).toISOString() : null, days };
   }
 
   /** The route for this request, or null when the path isn't a web route. */
@@ -154,7 +237,7 @@ export class WebRoutes {
     const unsafe = route.method !== "GET" && route.method !== "HEAD";
     // A browser request that changes something (signing in included) must come from the web app.
     if (unsafe && (route.access === "public" || caller?.session)) this.auth.assertSameOrigin(req);
-    const body = route.method === "POST" ? await readJson(req, this.maxBodyBytes) : undefined;
+    const body = route.method === "POST" || route.method === "PUT" ? await readJson(req, route.maxBodyBytes ?? this.maxBodyBytes) : undefined;
     const reply = await route.run({ caller, params: match.params, body, req, now });
     if (reply.setCookie) res.setHeader("set-cookie", reply.setCookie);
     if (reply.file) {

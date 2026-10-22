@@ -1,0 +1,7 @@
+{
+  "error": {
+    "code": "capability_disabled",
+    "message": "Logbook is off for this iPhone. Turn it on in Doddy first. Nothing was stored.",
+    "correlationId": "a7345d71-0196-49ca-a612-ed50d338c2db"
+  }
+}

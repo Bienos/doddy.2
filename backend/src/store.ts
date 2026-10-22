@@ -182,6 +182,18 @@ export const SCHEMA_SQL = `
     revoked_at BIGINT
   );
   CREATE INDEX IF NOT EXISTS web_sessions_user ON web_sessions(user_id, created_at);
+  CREATE TABLE IF NOT EXISTS logbook_state (
+    user_id TEXT PRIMARY KEY,
+    enabled BOOLEAN NOT NULL,
+    changed_at BIGINT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS logbook_days (
+    user_id TEXT NOT NULL,
+    day TEXT NOT NULL CHECK (day ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'),
+    summary TEXT NOT NULL,
+    received_at BIGINT NOT NULL,
+    PRIMARY KEY (user_id, day)
+  );
 `;
 
 /** A browser signed in to Doddy Web (ADR-585). The cookie's token is stored only as a hash. */
@@ -203,6 +215,13 @@ export interface DocumentSummaryRow {
   mime: string;
   size: number | null;
   created_at: number;
+}
+
+/** One stored day of Logbook (ADR-593): the day, its summary as JSON text, and when the iPhone sent it. */
+export interface LogbookDayRow {
+  day: string;
+  summary: string;
+  received_at: number;
 }
 
 /** A file Claude makes for the user (ADR-564). Kept a week, then pruned. */
@@ -660,6 +679,64 @@ export class Store {
   /** Documents older than a week go. Separate from `prune` so its counts stay as they were. */
   async pruneDocuments(now: number): Promise<number> {
     return (await this.db.query("DELETE FROM documents WHERE created_at < $1", [now - 7 * 86_400_000])).rowCount;
+  }
+
+  // ------------------------------------------------------------ Logbook (ADR-593)
+
+  /** Off until the iPhone turns it on. A user with no row is off. */
+  async logbookEnabled(userId: string): Promise<boolean> {
+    const row = await this.one<{ enabled: boolean }>(this.db, "SELECT enabled FROM logbook_state WHERE user_id = $1", [userId]);
+    return row?.enabled === true;
+  }
+
+  /** Turns Logbook on or off for one user. Off deletes every stored day in the same transaction. */
+  async setLogbookEnabled(userId: string, enabled: boolean, now: number): Promise<{ deletedDays: number }> {
+    return this.db.transaction(async (tx) => {
+      await tx.query(
+        `INSERT INTO logbook_state (user_id, enabled, changed_at) VALUES ($1, $2, $3)
+         ON CONFLICT (user_id) DO UPDATE SET enabled = EXCLUDED.enabled, changed_at = EXCLUDED.changed_at`,
+        [userId, enabled, now],
+      );
+      const deleted = enabled ? 0 : (await tx.query("DELETE FROM logbook_days WHERE user_id = $1", [userId])).rowCount;
+      return { deletedDays: deleted };
+    });
+  }
+
+  /**
+   * Keeps one day, replacing the one already there for that day (a day is never added twice).
+   * Returns false, and stores nothing, when the user's Logbook is off.
+   */
+  async putLogbookDay(userId: string, day: string, summary: string, now: number): Promise<boolean> {
+    return this.db.transaction(async (tx) => {
+      const state = await this.one<{ enabled: boolean }>(tx, "SELECT enabled FROM logbook_state WHERE user_id = $1", [userId]);
+      if (state?.enabled !== true) return false;
+      await tx.query(
+        `INSERT INTO logbook_days (user_id, day, summary, received_at) VALUES ($1, $2, $3, $4)
+         ON CONFLICT (user_id, day) DO UPDATE SET summary = EXCLUDED.summary, received_at = EXCLUDED.received_at`,
+        [userId, day, summary, now],
+      );
+      return true;
+    });
+  }
+
+  /** The user's own days from `since` on (a "YYYY-MM-DD"), oldest first. The user filter is in the query. */
+  async logbookDays(userId: string, since: string): Promise<LogbookDayRow[]> {
+    return (
+      await this.db.query<LogbookDayRow>(
+        "SELECT day, summary, received_at FROM logbook_days WHERE user_id = $1 AND day >= $2 ORDER BY day",
+        [userId, since],
+      )
+    ).rows;
+  }
+
+  /** Deletes every stored day of one user, and returns how many went. The on/off state stays. */
+  async deleteLogbookDays(userId: string): Promise<number> {
+    return (await this.db.query("DELETE FROM logbook_days WHERE user_id = $1", [userId])).rowCount;
+  }
+
+  /** Days older than `oldest` (a "YYYY-MM-DD") go, for every user. Separate from `prune` so its counts stay as they were. */
+  async pruneLogbook(oldest: string): Promise<number> {
+    return (await this.db.query("DELETE FROM logbook_days WHERE day < $1", [oldest])).rowCount;
   }
 
   // ------------------------------------------------------------ Doddy Web (ADR-585)
