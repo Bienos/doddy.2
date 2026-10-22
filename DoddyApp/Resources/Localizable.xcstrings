@@ -65438,6 +65438,17 @@
         }
       }
     },
+    "Subject": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temat"
+          }
+        }
+      }
+    },
     "Subtle": {
       "extractionState": "manual",
       "localizations": {
@@ -77029,6 +77040,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "标题"
+          }
+        }
+      }
+    },
+    "To": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do"
           }
         }
       }

@@ -828,9 +828,14 @@ struct VoiceView: View {
             }
             Text(preview.title)
                 .font(.headline)
-            ForEach(Array(preview.lines.enumerated()), id: \.offset) { _, line in
-                Text(line)
-                    .font(.body)
+            // An email reads as an email (ADR-581); anything else as its lines.
+            if let email = EmailPreviewLayout.parse(preview.lines) {
+                EmailPreviewCard(email: email)
+            } else {
+                ForEach(Array(preview.lines.enumerated()), id: \.offset) { _, line in
+                    Text(line)
+                        .font(.body)
+                }
             }
         case .plan(_, let steps, let blocked):
             planContent(steps: steps, blocked: blocked, controller: controller)

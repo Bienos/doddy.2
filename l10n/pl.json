@@ -1676,5 +1676,7 @@
   "Unmute": "Włącz mikrofon",
   "End the conversation": "Zakończ rozmowę",
   "Pick Talk in the Island. Talk to Doddy opens the app instead.": "Wybierz „Talk in the Island”. „Porozmawiaj z Doddym” otwiera aplikację.",
-  "Talk in the Island needs iOS 18 or later. If the button still opens Doddy, it is set to Talk to Doddy: choose again in Settings.": "„Talk in the Island” działa od iOS 18. Jeśli przycisk dalej otwiera Doddy’ego, jest ustawiony na „Porozmawiaj z Doddym”: wybierz jeszcze raz w Ustawieniach."
+  "Talk in the Island needs iOS 18 or later. If the button still opens Doddy, it is set to Talk to Doddy: choose again in Settings.": "„Talk in the Island” działa od iOS 18. Jeśli przycisk dalej otwiera Doddy’ego, jest ustawiony na „Porozmawiaj z Doddym”: wybierz jeszcze raz w Ustawieniach.",
+  "To": "Do",
+  "Subject": "Temat"
 }
