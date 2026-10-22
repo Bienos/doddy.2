@@ -9,6 +9,7 @@ export type StepModels = Record<StudioStep, string>;
 export const OPUS = "claude-opus-5-5";
 export const SONNET = "claude-sonnet-5-5";
 export const HAIKU = "claude-haiku-5-5";
+export const FABLE = "claude-fable-5-1";
 
 /**
  * Default mix: Haiku 5.5 (built for "classification, extraction and routing") plans, extracts claims
@@ -23,6 +24,7 @@ export const MODEL_MIXES: Record<string, StepModels> = {
   cheap: DEFAULT_STEP_MODELS,
   haiku: { plan: HAIKU, research: HAIKU, pack: HAIKU, write: HAIKU, make: HAIKU },
   sonnet: { plan: SONNET, research: SONNET, pack: SONNET, write: SONNET, make: SONNET },
+  fable: { plan: FABLE, research: FABLE, pack: FABLE, write: FABLE, make: FABLE },
   opus: { plan: OPUS, research: OPUS, pack: OPUS, write: OPUS, make: OPUS },
 };
 

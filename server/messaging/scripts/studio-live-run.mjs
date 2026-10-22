@@ -1,5 +1,5 @@
 // First real run of Doddy Studio S0 against the live Anthropic API (STUDIO.md "First real run").
-//   ANTHROPIC_API_KEY=… STUDIO_SKILLS=skill_…@skver_…,… node scripts/studio-live-run.mjs <pl|en|short> [--mix cheap|haiku|sonnet|opus] [outDir]
+//   ANTHROPIC_API_KEY=… STUDIO_SKILLS=skill_…@skver_…,… node scripts/studio-live-run.mjs <pl|en|short> [--mix cheap|haiku|sonnet|opus|fable] [outDir]
 //   cheap (default): Haiku 5.5 plans, extracts claims and renders; Sonnet 5.5 researches and writes.
 //   sonnet: Sonnet 5.5 for every step. opus: Opus 5.5 for every step (the dearest, for comparison only).
 // Reads the key only from the environment and never prints or writes it. Needs the compiled server
@@ -23,7 +23,7 @@ const models = MODEL_MIXES[mix];
 const name = args[0];
 const job = TOPICS[name];
 const key = process.env.ANTHROPIC_API_KEY;
-if (!job || !models) { console.error("usage: studio-live-run.mjs <pl|en|short> [--mix cheap|haiku|sonnet|opus] [outDir]"); process.exit(64); }
+if (!job || !models) { console.error("usage: studio-live-run.mjs <pl|en|short> [--mix cheap|haiku|sonnet|opus|fable] [outDir]"); process.exit(64); }
 if (!key) { console.error("ANTHROPIC_API_KEY is not set"); process.exit(2); }
 const skills = parseSkills(process.env.STUDIO_SKILLS);
 if (skills.length === 0) { console.error("STUDIO_SKILLS is not set"); process.exit(2); }
@@ -34,7 +34,7 @@ const api = new AnthropicStudioApi(key, {
   models, modelLabel: modelLabel(models), skills, maxSearches: 8, maxFetches: 8, blockedDomains: [],
   taskBudgetTokens: 150000, baseURL: "https://api.anthropic.com",
 });
-const { summary } = await liveRun(api, job, { name, mix, outDir, jobLimitUsd: 2, print: (l) => console.log(l) });
+const { summary } = await liveRun(api, job, { name, mix, outDir, jobLimitUsd: Number(process.env.STUDIO_LIVE_JOB_LIMIT_USD ?? 2), print: (l) => console.log(l) });
 console.log(JSON.stringify({ ...summary, calls: undefined }, null, 2));
 console.log("calls:");
 for (const c of summary.calls) console.log(" ", JSON.stringify(c).slice(0, 700));
