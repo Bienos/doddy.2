@@ -71,8 +71,9 @@ struct TalkButtonIntent: AudioRecordingIntent, LiveActivityIntent, ForegroundCon
             return
         }
         #endif
+        // The continuation runs once the app is in front; it isn't main-actor isolated itself.
         throw needsToContinueInForegroundError(dialog) {
-            ShortcutRouter.shared.talkButtonOpenedApp()
+            await ShortcutRouter.shared.talkButtonOpenedApp()
         }
     }
     #endif
