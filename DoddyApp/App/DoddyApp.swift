@@ -69,6 +69,9 @@ struct DoddyApp: App {
         // A call Doddy makes for the user runs on the server, so its island may outlive a
         // relaunch; its Take over and End buttons reach the server from here (ADR-504).
         CallLiveActivity.shared.registerActions()
+        // DODDY Capture (ADR-588): the island's Stop, Pause and Resume reach the recorder from here, and
+        // iOS starting the app just to run one of them finds it ready.
+        RecordingCoordinator.shared.install()
     }
 
     private static func migrateLaunchPreferences(_ defaults: UserDefaults = .standard) {

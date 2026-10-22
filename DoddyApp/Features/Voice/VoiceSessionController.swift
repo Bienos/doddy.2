@@ -501,6 +501,13 @@ final class VoiceSessionController {
         withoutOpeningApp: Bool = false
     ) async {
         guard !isLive else { return }
+        // A DODDY Capture recording owns the one audio session (ADR-588): a conversation started now
+        // would reconfigure it under the recording and break it without a word.
+        guard !RecordingCoordinator.shared.isActive else {
+            Self.audioLog.notice("a conversation was not started: a recording is going")
+            phase = .failed(NSLocalizedString("Doddy is recording. Stop the recording to talk to him.", comment: ""))
+            return
+        }
         // Another controller's conversation is starting or live: don't open a second microphone.
         guard Self.gate.request(self, isBusy: { $0.isBusy }) == .go else {
             Self.audioLog.notice("a second conversation was not started: another one is starting or live")

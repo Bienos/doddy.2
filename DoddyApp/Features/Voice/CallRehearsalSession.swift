@@ -41,6 +41,10 @@ final class CallRehearsalSession {
             state = .failed(NSLocalizedString("End the conversation with Doddy first: a rehearsal needs the microphone.", comment: ""))
             return
         }
+        guard !RecordingCoordinator.shared.isActive else {
+            state = .failed(NSLocalizedString("Doddy is recording. Stop the recording to talk to him.", comment: ""))
+            return
+        }
         guard let endpoint = VoiceConfig.tokenEndpoint else {
             state = .failed(NSLocalizedString("Voice isn't set up yet. Try again later.", comment: ""))
             return

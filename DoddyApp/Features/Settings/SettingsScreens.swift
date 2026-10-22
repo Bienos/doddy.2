@@ -305,6 +305,8 @@ struct MemoriesSettingsView: View {
                     } message: {
                         // The full consequences stay at the point of decision (ADR-580 rule 5).
                         Text("This removes every note, every list with its items, the search index and any unfinished notes from this iPhone and can't be undone. Lists you shared stop being shared, so the people you invited lose them too. With Memory on calls on, the copy on your Doddy messaging server is emptied. Exported files and older backups aren't affected. Everything Doddy learned from what you said, and the counts of what you corrected, are removed too. So are the notes and lists rows in What Doddy did.")
+                            + Text(verbatim: " ")
+                            + Text("Every recording, with its audio and its words, is removed too.")
                     }
                 if let deleteError {
                     Label(deleteError, systemImage: "exclamationmark.triangle")
@@ -365,6 +367,11 @@ struct MemoriesSettingsView: View {
             try await environment.callCaseRepository.deleteAll()
             // Tasks handed to Doddy (ADR-570): words and results kept on this iPhone.
             try await environment.errandRepository.deleteAll()
+            // Recordings (ADR-588): their audio and words, on this iPhone only. One being made is
+            // stopped and saved first, then goes with the rest.
+            await RecordingCoordinator.shared.stop()
+            try await environment.recordingRepository?.deleteAll()
+            environment.recordingFiles.removeAll()
             UserDefaults.standard.removeObject(forKey: PreferenceKey.pinnedNotes)
         } catch {
             deleteError = UserFacingError.message(for: error)

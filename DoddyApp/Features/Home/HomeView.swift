@@ -86,6 +86,7 @@ struct HomeView: View {
             .sheet(item: $modal) { _ in CaptureView() }
             .sheet(isPresented: $showDataFlow) { DataFlowSheet() }
             .sheet(isPresented: $showErrands) { ErrandsView() }
+            .sheet(isPresented: Binding(get: { router.isRecordingsPresented }, set: { router.isRecordingsPresented = $0 })) { RecordingsView() }
             .sheet(isPresented: $showCapabilities) { CapabilitiesSheet() }
             .sheet(isPresented: $showMemories) {
                 HomeMemoriesSheet(
@@ -185,6 +186,11 @@ struct HomeView: View {
                     .accessibilityIdentifier("home.menu.memories")
                 Button { selectedTab = .settings } label: { Label("Settings", systemImage: "slider.horizontal.3") }
                     .accessibilityIdentifier("home.menu.settings")
+                // DODDY Capture (ADR-588): record a meeting or a conversation, and find it again. Below
+                // Memories and Settings, so at the largest text size they stay inside the menu's first
+                // screen (the dark, largest-text UI test goes through Memories).
+                Button { router.openRecordings() } label: { Label("Recordings", systemImage: "waveform.circle") }
+                    .accessibilityIdentifier("home.recordings")
                 // What is built and what isn't, from the capability catalog (T35/T42, ADR-195, ADR-548).
                 Button { showCapabilities = true } label: { Label("What I can do", systemImage: "sparkles") }
                     .accessibilityIdentifier("home.capabilities")

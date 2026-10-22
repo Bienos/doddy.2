@@ -160,6 +160,35 @@ final class ShortcutRouter {
         if checkInBriefing != nil, !isVoicePresented { isVoicePresented = true } else { showWaitingDraft() }
     }
 
+    /// DODDY Capture (ADR-588): Recordings is a sheet on Home. A link, the island's Open button and
+    /// "Open Latest Recording" all come here. Navigation only: it never starts or stops anything.
+    var isRecordingsPresented = false
+    private var recordingToOpen: UUID?
+
+    func openRecordings() {
+        guard !isVoicePresented, drafts.shown == nil else { return }
+        isSetupPresented = false
+        isRecordingsPresented = true
+    }
+
+    /// The newest recording's page, or the list if there is none.
+    func openLatestRecording() async {
+        if let repository = AppEnvironment.shared.recordingRepository,
+           let latest = try? await repository.recordings(category: .all, limit: 1, offset: 0).first {
+            recordingToOpen = latest.recording.id
+        }
+        openRecordings()
+    }
+
+    /// True from "Open Latest Recording" until the Recordings screen has taken it.
+    var hasRecordingToOpen: Bool { recordingToOpen != nil }
+
+    /// The recording to open once, when Recordings appears.
+    func takeRecordingToOpen() -> UUID? {
+        defer { recordingToOpen = nil }
+        return recordingToOpen
+    }
+
     /// "Ask me about it" on Home (ADR-403): a conversation about that note. Never over another sheet.
     func askAboutNote(_ id: UUID) {
         guard !isVoicePresented, !isSetupPresented, drafts.shown == nil else { return }

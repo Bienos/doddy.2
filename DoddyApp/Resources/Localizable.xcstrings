@@ -6852,6 +6852,17 @@
         }
       }
     },
+    "Ask about this recording": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapytaj o to nagranie"
+          }
+        }
+      }
+    },
     "Ask me about it": {
       "extractionState": "manual",
       "localizations": {
@@ -7272,6 +7283,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Najwyżej %lld min"
+          }
+        }
+      }
+    },
+    "Audio export isn't available yet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eksport dźwięku nie jest jeszcze dostępny."
           }
         }
       }
@@ -9030,6 +9052,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "你轻点过“暂不”的卡片。7 天后会自动消失。"
+          }
+        }
+      }
+    },
+    "Carries on a paused or interrupted recording.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wznawia wstrzymane lub przerwane nagranie."
           }
         }
       }
@@ -12444,6 +12477,17 @@
         }
       }
     },
+    "Correct the words": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Popraw słowa"
+          }
+        }
+      }
+    },
     "Correct this detail": {
       "extractionState": "manual",
       "localizations": {
@@ -14066,6 +14110,28 @@
         }
       }
     },
+    "Delete all recordings": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuń wszystkie nagrania"
+          }
+        }
+      }
+    },
+    "Delete all recordings?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usunąć wszystkie nagrania?"
+          }
+        }
+      }
+    },
     "Delete everything": {
       "extractionState": "manual",
       "localizations": {
@@ -14711,6 +14777,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "删除这条记忆？"
+          }
+        }
+      }
+    },
+    "Delete this recording": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuń to nagranie"
+          }
+        }
+      }
+    },
+    "Delete this recording?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usunąć to nagranie?"
           }
         }
       }
@@ -16407,6 +16495,17 @@
         }
       }
     },
+    "Doddy can't write answers about recordings yet. These are the parts that mention it:": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie umie jeszcze pisać odpowiedzi o nagraniach. Oto fragmenty, które o tym wspominają:"
+          }
+        }
+      }
+    },
     "Doddy checks your open reminders on this iPhone first, so it isn't added twice.": {
       "extractionState": "manual",
       "localizations": {
@@ -16603,6 +16702,58 @@
         }
       }
     },
+    "Doddy couldn't delete that recording. Nothing was changed.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie mógł usunąć tego nagrania. Nic nie zostało zmienione."
+          }
+        }
+      }
+    },
+    "Doddy couldn't delete your recordings. They are still on this iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy couldn't delete your recordings. They are still on this iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy couldn't delete your recordings. They are still on this iPhone."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy nie mógł usunąć Twoich nagrań. Nadal są na tym iPadzie."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy nie mógł usunąć Twoich nagrań. Nadal są na tym iPhonie."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Doddy couldn't keep a copy of this unfinished note on this iPhone (%@). Save it before you leave.": {
       "extractionState": "manual",
       "localizations": {
@@ -16784,6 +16935,50 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Doddy couldn't prepare the transcript to share.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie mógł przygotować zapisu słów do udostępnienia."
+          }
+        }
+      }
+    },
+    "Doddy couldn't read this recording. Nothing was changed.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie mógł odczytać tego nagrania. Nic nie zostało zmienione."
+          }
+        }
+      }
+    },
+    "Doddy couldn't read your recordings. Nothing was changed.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie mógł odczytać Twoich nagrań. Nic nie zostało zmienione."
+          }
+        }
+      }
+    },
+    "Doddy couldn't save that note. Nothing was saved.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie mógł zapisać tej notatki. Nic nie zostało zapisane."
           }
         }
       }
@@ -17807,6 +18002,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy prowadzi rozmowę"
+          }
+        }
+      }
+    },
+    "Doddy is recording. Stop the recording to record a voice memo.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nagrywa. Zatrzymaj nagrywanie, aby nagrać notatkę głosową."
+          }
+        }
+      }
+    },
+    "Doddy is recording. Stop the recording to talk to him.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nagrywa. Zatrzymaj nagrywanie, aby z nim porozmawiać."
           }
         }
       }
@@ -18862,6 +19079,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy zaczyna od: „Dzień dobry, mówi Doddy, asystent AI, dzwonię w imieniu …”. Sprawdź formę swojego imienia po „w imieniu”."
+          }
+        }
+      }
+    },
+    "Doddy records only when you start it. The audio and its words stay on this iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy records only when you start it. The audio and its words stay on this iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy records only when you start it. The audio and its words stay on this iPhone."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy nagrywa tylko wtedy, gdy to uruchomisz. Dźwięk i jego słowa zostają na tym iPadzie."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy nagrywa tylko wtedy, gdy to uruchomisz. Dźwięk i jego słowa zostają na tym iPhonie."
+                }
+              }
+            }
           }
         }
       }
@@ -22361,13 +22619,13 @@
         }
       }
     },
-    "Ends a conversation with Doddy and stops a voice memo recording. Nothing is saved.": {
+    "Ends a conversation with Doddy and stops a voice memo. A DODDY recording is stopped and saved.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Kończy rozmowę z Doddym i zatrzymuje nagrywanie notatki głosowej. Nic nie jest zapisywane."
+            "value": "Kończy rozmowę z Doddym i zatrzymuje notatkę głosową. Nagranie DODDY jest zatrzymywane i zapisywane."
           }
         }
       }
@@ -22663,6 +22921,58 @@
           "stringUnit": {
             "state": "translated",
             "value": "“每月”适用于 1 到 28 日，这样每个月都有这一天。"
+          }
+        }
+      }
+    },
+    "Every recording on this iPhone is removed, with its audio and its words. A recording in progress is stopped first. Notes you saved from them stay. This can't be undone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Every recording on this iPad is removed, with its audio and its words. A recording in progress is stopped first. Notes you saved from them stay. This can't be undone."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Every recording on this iPhone is removed, with its audio and its words. A recording in progress is stopped first. Notes you saved from them stay. This can't be undone."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Wszystkie nagrania na tym iPadzie zostaną usunięte razem z dźwiękiem i zapisem słów. Nagranie w toku zostanie najpierw zatrzymane. Notatki zapisane z nagrań zostają. Nie da się tego cofnąć."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Wszystkie nagrania na tym iPhonie zostaną usunięte razem z dźwiękiem i zapisem słów. Nagranie w toku zostanie najpierw zatrzymane. Notatki zapisane z nagrań zostają. Nie da się tego cofnąć."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Every recording, with its audio and its words, is removed too.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuwane są też wszystkie nagrania, razem z dźwiękiem i zapisem słów."
           }
         }
       }
@@ -23191,6 +23501,17 @@
         }
       }
     },
+    "Export the transcript": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyeksportuj zapis słów"
+          }
+        }
+      }
+    },
     "Export with your settings as JSON": {
       "extractionState": "manual",
       "localizations": {
@@ -23659,6 +23980,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "更快"
+          }
+        }
+      }
+    },
+    "Find": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Znajdź"
           }
         }
       }
@@ -36211,6 +36543,17 @@
         }
       }
     },
+    "Name this recording": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nazwij to nagranie"
+          }
+        }
+      }
+    },
     "Name, e.g. Coffee": {
       "extractionState": "manual",
       "localizations": {
@@ -37896,6 +38239,17 @@
         }
       }
     },
+    "No match.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brak dopasowań."
+          }
+        }
+      }
+    },
     "No memories yet": {
       "extractionState": "manual",
       "localizations": {
@@ -37966,6 +38320,47 @@
         }
       }
     },
+    "No recordings yet. Tap Record to capture a meeting or a conversation. Doddy writes out the words on this iPhone, and you can search them.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "No recordings yet. Tap Record to capture a meeting or a conversation. Doddy writes out the words on this iPad, and you can search them."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "No recordings yet. Tap Record to capture a meeting or a conversation. Doddy writes out the words on this iPhone, and you can search them."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Nie ma jeszcze nagrań. Stuknij Nagrywaj, aby nagrać spotkanie lub rozmowę. Doddy zapisuje słowa na tym iPadzie, a Ty możesz je przeszukiwać."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Nie ma jeszcze nagrań. Stuknij Nagrywaj, aby nagrać spotkanie lub rozmowę. Doddy zapisuje słowa na tym iPhonie, a Ty możesz je przeszukiwać."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "No reminders coming up.": {
       "extractionState": "manual",
       "localizations": {
@@ -38021,6 +38416,58 @@
           "stringUnit": {
             "state": "translated",
             "value": "没有即将到来的提醒。"
+          }
+        }
+      }
+    },
+    "No speech was found in this recording.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W tym nagraniu nie znaleziono mowy."
+          }
+        }
+      }
+    },
+    "No summary yet. Doddy can't write summaries of recordings yet. The words below were written out on this iPhone, and you can search them.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "No summary yet. Doddy can't write summaries of recordings yet. The words below were written out on this iPad, and you can search them."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "No summary yet. Doddy can't write summaries of recordings yet. The words below were written out on this iPhone, and you can search them."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Na razie brak streszczenia. Doddy nie umie jeszcze pisać streszczeń nagrań. Słowa poniżej zapisano na tym iPadzie i możesz je przeszukiwać."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Na razie brak streszczenia. Doddy nie umie jeszcze pisać streszczeń nagrań. Słowa poniżej zapisano na tym iPhonie i możesz je przeszukiwać."
+                }
+              }
+            }
           }
         }
       }
@@ -45543,6 +45990,17 @@
         }
       }
     },
+    "Open Latest Recording": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz ostatnie nagranie"
+          }
+        }
+      }
+    },
     "Open Photos": {
       "extractionState": "manual",
       "localizations": {
@@ -46572,6 +47030,47 @@
         }
       }
     },
+    "Opens Doddy and starts recording. The recording carries on in the Dynamic Island. The audio stays on this iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Opens Doddy and starts recording. The recording carries on in the Dynamic Island. The audio stays on this iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Opens Doddy and starts recording. The recording carries on in the Dynamic Island. The audio stays on this iPhone."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Otwiera Doddy’ego i zaczyna nagrywać. Nagrywanie trwa dalej w Dynamic Island. Dźwięk zostaje na tym iPadzie."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Otwiera Doddy’ego i zaczyna nagrywać. Nagrywanie trwa dalej w Dynamic Island. Dźwięk zostaje na tym iPhonie."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Opens Doddy and starts talking.": {
       "extractionState": "manual",
       "localizations": {
@@ -46756,6 +47255,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "打开清单"
+          }
+        }
+      }
+    },
+    "Opens the newest recording in Doddy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwiera najnowsze nagranie w Doddym."
           }
         }
       }
@@ -47442,6 +47952,17 @@
         }
       }
     },
+    "Pause DODDY Recording": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wstrzymaj nagrywanie DODDY"
+          }
+        }
+      }
+    },
     "Pause all connections": {
       "extractionState": "manual",
       "localizations": {
@@ -47615,6 +48136,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "已暂停"
+          }
+        }
+      }
+    },
+    "Pauses the recording. The microphone is off until you resume.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wstrzymuje nagrywanie. Mikrofon jest wyłączony, dopóki nie wznowisz."
           }
         }
       }
@@ -51440,6 +51972,17 @@
         }
       }
     },
+    "Record": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nagrywaj"
+          }
+        }
+      }
+    },
     "Record a voice memo": {
       "extractionState": "manual",
       "localizations": {
@@ -51499,6 +52042,17 @@
         }
       }
     },
+    "Record with DODDY": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nagrywaj z DODDY"
+          }
+        }
+      }
+    },
     "Recording couldn't start. If you're talking to Doddy or on a call, finish that first.": {
       "extractionState": "manual",
       "localizations": {
@@ -51554,6 +52108,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "无法开始录音。如果你正在和 Doddy 聊天或正在通话，请先结束。"
+          }
+        }
+      }
+    },
+    "Recordings": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nagrania"
           }
         }
       }
@@ -53863,6 +54428,17 @@
         }
       }
     },
+    "Renames the recording": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zmienia nazwę nagrania"
+          }
+        }
+      }
+    },
     "Repeat": {
       "extractionState": "manual",
       "localizations": {
@@ -54512,6 +55088,17 @@
         }
       }
     },
+    "Resume DODDY Recording": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wznów nagrywanie DODDY"
+          }
+        }
+      }
+    },
     "Review and finish": {
       "extractionState": "manual",
       "localizations": {
@@ -55150,6 +55737,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "试听"
+          }
+        }
+      }
+    },
+    "Samples don't play while Doddy is recording.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Próbki nie odtwarzają się, gdy Doddy nagrywa."
           }
         }
       }
@@ -57520,6 +58118,17 @@
         }
       }
     },
+    "Saving…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisywanie…"
+          }
+        }
+      }
+    },
     "Say \"Ask Doddy what I saved\". Siri reads the matching note aloud, with your iPhone unlocked. Siri is Apple's and works under your Siri settings.": {
       "extractionState": "manual",
       "localizations": {
@@ -58017,6 +58626,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "搜索已保存的笔记"
+          }
+        }
+      }
+    },
+    "Search the words": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przeszukaj słowa"
           }
         }
       }
@@ -61017,6 +61637,17 @@
         }
       }
     },
+    "Show more": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pokaż więcej"
+          }
+        }
+      }
+    },
     "Show note text in notifications": {
       "extractionState": "manual",
       "localizations": {
@@ -62518,6 +63149,17 @@
         }
       }
     },
+    "Speech recognition is off for Doddy. Turn it on in the iPhone Settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rozpoznawanie mowy jest wyłączone dla Doddy’ego. Włącz je w Ustawieniach iPhone’a."
+          }
+        }
+      }
+    },
     "Speed": {
       "extractionState": "manual",
       "localizations": {
@@ -62632,6 +63274,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "开始"
+          }
+        }
+      }
+    },
+    "Start DODDY Recording": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zacznij nagrywanie DODDY"
           }
         }
       }
@@ -63318,6 +63971,17 @@
         }
       }
     },
+    "Starting…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uruchamianie…"
+          }
+        }
+      }
+    },
     "Starts": {
       "extractionState": "manual",
       "localizations": {
@@ -63432,6 +64096,58 @@
           "stringUnit": {
             "state": "translated",
             "value": "起始语言"
+          }
+        }
+      }
+    },
+    "Starts recording a meeting or conversation. Doddy opens first; the recording then carries on in the Dynamic Island and with the screen locked. The audio stays on this iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Starts recording a meeting or conversation. Doddy opens first; the recording then carries on in the Dynamic Island and with the screen locked. The audio stays on this iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Starts recording a meeting or conversation. Doddy opens first; the recording then carries on in the Dynamic Island and with the screen locked. The audio stays on this iPhone."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zaczyna nagrywać spotkanie lub rozmowę. Najpierw otwiera się Doddy; potem nagrywanie trwa w Dynamic Island i przy zablokowanym ekranie. Dźwięk zostaje na tym iPadzie."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zaczyna nagrywać spotkanie lub rozmowę. Najpierw otwiera się Doddy; potem nagrywanie trwa w Dynamic Island i przy zablokowanym ekranie. Dźwięk zostaje na tym iPhonie."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Starts recording. Doddy shows it all the time it records.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaczyna nagrywać. Doddy pokazuje to przez cały czas nagrywania."
           }
         }
       }
@@ -63916,6 +64632,17 @@
         }
       }
     },
+    "Stop DODDY Recording": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zatrzymaj nagrywanie DODDY"
+          }
+        }
+      }
+    },
     "Stop Doddy listening": {
       "extractionState": "manual",
       "localizations": {
@@ -64030,6 +64757,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "停止聆听"
+          }
+        }
+      }
+    },
+    "Stop recording to play this.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zatrzymaj nagrywanie, aby to odtworzyć."
           }
         }
       }
@@ -64281,6 +65019,17 @@
         }
       }
     },
+    "Stops the recording and saves it in Recordings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zatrzymuje nagrywanie i zapisuje je w Nagraniach."
+          }
+        }
+      }
+    },
     "Straight from your note": {
       "extractionState": "manual",
       "localizations": {
@@ -64513,6 +65262,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "仅为建议。在你轻点之前，什么都不会改变。"
+          }
+        }
+      }
+    },
+    "Summary": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Streszczenie"
           }
         }
       }
@@ -68108,6 +68868,47 @@
         }
       }
     },
+    "The audio and its words are removed from this iPhone. Notes you saved from it stay.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The audio and its words are removed from this iPad. Notes you saved from it stay."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The audio and its words are removed from this iPhone. Notes you saved from it stay."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Dźwięk i jego słowa zostaną usunięte z tego iPada. Notatki zapisane z niego zostają."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Dźwięk i jego słowa zostaną usunięte z tego iPhone’a. Notatki zapisane z niego zostają."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "The backup wasn't saved. Nothing was changed on this iPhone.": {
       "extractionState": "manual",
       "localizations": {
@@ -71213,6 +72014,58 @@
         }
       }
     },
+    "The words are being written out on this iPhone. This can take a while for a long recording.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The words are being written out on this iPad. This can take a while for a long recording."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The words are being written out on this iPhone. This can take a while for a long recording."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Słowa są zapisywane na tym iPadzie. W przypadku długiego nagrania może to chwilę potrwać."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Słowa są zapisywane na tym iPhonie. W przypadku długiego nagrania może to chwilę potrwać."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "The words couldn't be written out. The audio is kept. Try again below.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się zapisać słów. Dźwięk został zachowany. Spróbuj ponownie poniżej."
+          }
+        }
+      }
+    },
     "The wrap-up couldn't be set. Try again.": {
       "extractionState": "manual",
       "localizations": {
@@ -71582,6 +72435,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "里面没有文字。"
+          }
+        }
+      }
+    },
+    "There are no words to show.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie ma słów do pokazania."
           }
         }
       }
@@ -72255,6 +73119,17 @@
         }
       }
     },
+    "This becomes a note Doddy can remember in later conversations. Its last line says which recording it came from. You can edit or delete it like any note.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To stanie się notatką, którą Doddy może pamiętać w kolejnych rozmowach. Jej ostatni wiersz podaje, z którego nagrania pochodzi. Możesz ją edytować lub usunąć jak każdą notatkę."
+          }
+        }
+      }
+    },
     "This build of Doddy can't receive notifications (it needs an Apple developer team with Push Notifications). Daily news still works in the app.": {
       "extractionState": "manual",
       "localizations": {
@@ -72859,6 +73734,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "这台 iPhone 无法在不发送语音的情况下将其转写成文字，所以 Doddy 没有转写。输入几个词，方便你以后找到这条笔记。"
+          }
+        }
+      }
+    },
+    "This iPhone can't write this language out on the device, so nothing was written out and nothing was sent. Try another language below.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten iPhone nie potrafi zapisać tego języka na urządzeniu, więc nic nie zapisano i nic nie wysłano. Spróbuj innego języka poniżej."
           }
         }
       }
@@ -74920,6 +75806,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "无法打开这些文件。"
+          }
+        }
+      }
+    },
+    "Those words aren't in this recording.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tych słów nie ma w tym nagraniu."
           }
         }
       }
@@ -81069,6 +81966,17 @@
         }
       }
     },
+    "What Doddy first wrote stays kept. This only changes what you see and search.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To, co Doddy zapisał najpierw, zostaje zachowane. To zmienia tylko to, co widzisz i przeszukujesz."
+          }
+        }
+      }
+    },
     "What Doddy knows": {
       "extractionState": "manual",
       "localizations": {
@@ -81323,6 +82231,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "To, co robi naciśnięcie, wybierasz w Ustawieniach Doddy’ego, Przycisk czynności: Dynamic Island albo aplikacja. Wybierz Przełączniki, nie Skrót: skrót zawsze otwiera Doddy’ego."
+          }
+        }
+      }
+    },
+    "What do you want to find?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czego szukasz?"
           }
         }
       }
@@ -83382,6 +84301,17 @@
         }
       }
     },
+    "Words": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Słowa"
+          }
+        }
+      }
+    },
     "Words already added stay in the note until you change them.": {
       "extractionState": "manual",
       "localizations": {
@@ -83688,6 +84618,17 @@
         }
       }
     },
+    "Write out again in": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisz ponownie, język:"
+          }
+        }
+      }
+    },
     "Write something first. Empty notes aren't saved.": {
       "extractionState": "manual",
       "localizations": {
@@ -83765,6 +84706,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wpisz jedno pytanie, które zada Doddy."
+          }
+        }
+      }
+    },
+    "Write the words out again": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisz słowa ponownie"
           }
         }
       }

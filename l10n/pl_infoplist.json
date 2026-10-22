@@ -1,11 +1,11 @@
 {
  "NSMicrophoneUsageDescription": {
-  "en": "To hear you, Doddy needs the microphone. Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. Your voice in a conversation is sent to ElevenLabs to run it, or to OpenAI if you switch Home's voice to OpenAI. A voice memo you record on a note stays on this iPhone.",
-  "pl": "Żeby Cię słyszeć, Doddy potrzebuje mikrofonu. Doddy słucha, gdy z nim rozmawiasz: po stuknięciu Porozmawiaj z Doddym albo od razu po otwarciu aplikacji, jeśli włączysz to w Ustawieniach. Twój głos w rozmowie jest wysyłany do ElevenLabs, żeby ją prowadzić, albo do OpenAI, jeśli przełączysz głos na ekranie głównym na OpenAI. Notatka głosowa, którą nagrasz przy notatce, zostaje na tym iPhonie."
+  "en": "To hear you, Doddy needs the microphone. Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. Your voice in a conversation is sent to ElevenLabs to run it, or to OpenAI if you switch Home's voice to OpenAI. A voice memo you record on a note stays on this iPhone. A recording you start with Record stays on this iPhone too, and Doddy shows it the whole time it records.",
+  "pl": "Żeby Cię słyszeć, Doddy potrzebuje mikrofonu. Doddy słucha, gdy z nim rozmawiasz: po stuknięciu Porozmawiaj z Doddym albo od razu po otwarciu aplikacji, jeśli włączysz to w Ustawieniach. Twój głos w rozmowie jest wysyłany do ElevenLabs, żeby ją prowadzić, albo do OpenAI, jeśli przełączysz głos na ekranie głównym na OpenAI. Notatka głosowa, którą nagrasz przy notatce, zostaje na tym iPhonie. Nagranie, które zaczniesz przyciskiem Nagrywaj, też zostaje na tym iPhonie, a Doddy pokazuje to przez cały czas nagrywania."
  },
  "NSSpeechRecognitionUsageDescription": {
-  "en": "Doddy writes out a voice memo on this iPhone when you record one, so you can check its words before saving. The recording and its words are not sent anywhere.",
-  "pl": "Doddy zapisuje notatkę głosową jako tekst na tym iPhonie, gdy ją nagrywasz, żeby można było sprawdzić słowa przed zapisaniem. Nagranie i jego słowa nie są nigdzie wysyłane."
+  "en": "Doddy writes out voice memos and recordings on this iPhone, so you can check and search their words. The audio and its words are not sent anywhere.",
+  "pl": "Doddy zapisuje notatki głosowe i nagrania jako tekst na tym iPhonie, żeby można było sprawdzać i przeszukiwać ich słowa. Dźwięk i jego słowa nie są nigdzie wysyłane."
  },
  "NSCalendarsFullAccessUsageDescription": {
   "en": "Doddy reads your events for the days you ask about, and adds, changes or deletes an event only after you tap Add, Change or Delete. Turn this off in Settings, Connections.",

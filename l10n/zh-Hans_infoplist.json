@@ -20,16 +20,16 @@
     "zh-Hans": "Doddy 只在你提出请求时使用你的位置：用于你在某个地点设置的提醒（在你轻点“使用我现在的位置”时确定你的位置，并让 iOS 在你到达或离开时提醒你），用于保存你的停车位置，以及通过 Apple 地图计算何时该出发去某个地方。Doddy 不会保留你的位置，也不会追踪你去了哪里。"
   },
   "NSMicrophoneUsageDescription": {
-    "en": "To hear you, Doddy needs the microphone. Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. Your voice in a conversation is sent to ElevenLabs to run it, or to OpenAI if you switch Home's voice to OpenAI. A voice memo you record on a note stays on this iPhone.",
-    "zh-Hans": "为了听到你，Doddy 需要使用麦克风。Doddy 会在你和他聊天时聆听：在你轻点“和 Doddy 聊聊”之后，或者如果你在设置中开启了相应选项，则在你打开 Doddy 时立即开始。你在对话中的语音会发送给 ElevenLabs 来运行对话，如果你在首页把语音切换为 OpenAI，则发送给 OpenAI。你在笔记上录制的语音备忘录只保留在这台 iPhone 上。"
+    "en": "To hear you, Doddy needs the microphone. Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. Your voice in a conversation is sent to ElevenLabs to run it, or to OpenAI if you switch Home's voice to OpenAI. A voice memo you record on a note stays on this iPhone. A recording you start with Record stays on this iPhone too, and Doddy shows it the whole time it records.",
+    "zh-Hans": "为了听到你，Doddy 需要使用麦克风。Doddy 会在你和他聊天时聆听：在你轻点“和 Doddy 聊聊”之后，或者如果你在设置中开启了相应选项，则在你打开 Doddy 时立即开始。你在对话中的语音会发送给 ElevenLabs 来运行对话，如果你在首页把语音切换为 OpenAI，则发送给 OpenAI。你在笔记上录制的语音备忘录只保留在这台 iPhone 上。 你用“录制”开始的录音同样只保留在这台 iPhone 上，Doddy 会在录音期间一直显示这一点。"
   },
   "NSRemindersFullAccessUsageDescription": {
     "en": "Doddy adds, changes, completes or deletes a reminder only after you tap Add, Change, Mark done or Delete. Turn this off in Settings, Connections.",
     "zh-Hans": "只有在你轻点“添加”、“更改”、“标记为完成”或“删除”后，Doddy 才会添加、更改、完成或删除提醒。可在设置的“连接”中关闭。"
   },
   "NSSpeechRecognitionUsageDescription": {
-    "en": "Doddy writes out a voice memo on this iPhone when you record one, so you can check its words before saving. The recording and its words are not sent anywhere.",
-    "zh-Hans": "当你录制语音备忘录时，Doddy 会在这台 iPhone 上将其转写成文字，以便你在保存前检查内容。录音及其文字不会发送到任何地方。"
+    "en": "Doddy writes out voice memos and recordings on this iPhone, so you can check and search their words. The audio and its words are not sent anywhere.",
+    "zh-Hans": "Doddy 会在这台 iPhone 上将语音备忘录和录音转写成文字，以便你检查和搜索其中的内容。音频及其文字不会发送到任何地方。"
   },
   "NSMotionUsageDescription": {
     "en": "Doddy reads your steps, walking distance and floors climbed from Motion & Fitness only when you ask, for one day of the last seven. In a voice conversation those numbers go to ElevenLabs, which runs Doddy's voice, or to OpenAI if you switch Home's voice to it. Doddy keeps none of them and reads nothing from Health. Turn this off in Settings, Connections.",
