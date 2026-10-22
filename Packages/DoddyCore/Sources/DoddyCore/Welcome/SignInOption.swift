@@ -1,6 +1,6 @@
 import Foundation
 
-// Sign-in for the welcome (ADR-579). The screens exist; the sign-in does not. Every option goes
+// Sign-in for the welcome (ADR-595). The screens exist; the sign-in does not. Every option goes
 // through this protocol, and the only implementation today says "not connected yet". The real
 // sign-in (passkey and Face ID, Google, email) is a later milestone with its own approvals and
 // App Review check. Doddy's real identity today is still the device session (ADR-563).

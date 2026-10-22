@@ -1,7 +1,7 @@
 import DoddyCore
 import SwiftUI
 
-/// The sign-in sheet pinned to the bottom of the welcome (ADR-579). UI only: no option is
+/// The sign-in sheet pinned to the bottom of the welcome (ADR-595). UI only: no option is
 /// connected, so each says so and none looks like a success. "Try Doddy without an account" is the
 /// only button that moves on.
 ///

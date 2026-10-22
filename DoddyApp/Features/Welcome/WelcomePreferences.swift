@@ -1,7 +1,7 @@
 import DoddyCore
 import Foundation
 
-/// What the first-launch welcome (ADR-579) remembers, read straight from UserDefaults so a UI
+/// What the first-launch welcome (ADR-595) remembers, read straight from UserDefaults so a UI
 /// test's launch argument works like the real switch. The rule itself is `WelcomeRule` (DoddyCore, tested).
 enum WelcomePreferences {
     static func seen(_ defaults: UserDefaults = .standard) -> Bool {

@@ -37,7 +37,7 @@ enum UITestLaunch {
         // No agent ID: a conversation stops at "Couldn't connect" before the microphone or ElevenLabs.
         arguments += ["-voiceAgentID", ""]
         arguments += ["-openingScene", opening ? "YES" : "NO", "-listenOnOpen", listen ? "YES" : "NO"]
-        // The first-launch welcome (ADR-579) would cover every fresh-install test; a test that is
+        // The first-launch welcome (ADR-595) would cover every fresh-install test; a test that is
         // about it asks for it (`welcome: true`).
         arguments += ["-welcome", welcome ? "YES" : "NO"]
         // The opening's whole timeline is 2.4 s, and on CI the launch and the first idle wait can

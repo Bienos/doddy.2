@@ -87,7 +87,7 @@ enum PreferenceKey {
     /// counted once each; for when the "Open Doddy faster" card returns (ADR-559). It was the
     /// Hey Doddy card's (ADR-328); PR #108 removed it with that card, and this PR keeps it.
     static let connectedConversations = "connectedConversations"
-    /// The first-launch welcome (ADR-579) has been finished or skipped on this installation.
+    /// The first-launch welcome (ADR-595) has been finished or skipped on this installation.
     static let welcomeSeen = "welcomeSeen"
     /// Settings › "Show the welcome again": the welcome shows once more, then clears this.
     static let welcomeReplay = "welcomeReplay"
@@ -129,12 +129,12 @@ struct RootView: View {
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideArt = false
     /// The Face ID cover is up (ADR-310); it stays briefly after an unlock for the door (ADR-380).
     @State private var lockCovered = false
-    /// Settings › "Show the welcome again" (ADR-579).
+    /// Settings › "Show the welcome again" (ADR-595).
     @AppStorage(PreferenceKey.welcomeReplay) private var welcomeReplay = false
     /// The welcome was finished in this run, so it doesn't show again until a replay is asked for.
     @State private var welcomeDone = false
 
-    /// The first-launch welcome (ADR-579) is on screen. It covers Home and the opening, and the first-use
+    /// The first-launch welcome (ADR-595) is on screen. It covers Home and the opening, and the first-use
     /// introduction waits until it is over. Only read once the store has loaded (`isFirstInstallation`).
     private var welcomeVisible: Bool {
         !welcomeDone && WelcomeRule.shouldShow(
@@ -241,7 +241,7 @@ struct RootView: View {
                 // On later returns, only the separately opted-in listen-on-open preference applies.
                 switch phase {
                 case .background: opening.appWentToBackground()
-                // While the first-launch welcome is up the opening waits for it (ADR-579).
+                // While the first-launch welcome is up the opening waits for it (ADR-595).
                 case .active: if !welcomeVisible { opening.appBecameActive(openingConditions) }
                 default: break
                 }
@@ -285,7 +285,7 @@ struct RootView: View {
             }
             // The first-use introduction and the Face ID cover are over the app: he is hidden.
             .coversDoddy(profiles.isIntroductionPresented || AppLock.shared.isLocked || lockCovered || welcomeVisible)
-            // Settings › "Show the welcome again": it shows even though it was seen (ADR-579).
+            // Settings › "Show the welcome again": it shows even though it was seen (ADR-595).
             .onChange(of: welcomeReplay) { _, on in if on { welcomeDone = false } }
             // A tapped note reminder opens its exact memory on Home.
             .task(id: noteReminders.pendingOpenMemoryID) {
@@ -357,7 +357,7 @@ struct RootView: View {
 
     private var introductionPresentation: Binding<Bool> {
         Binding(
-            // The introduction waits until the first-launch welcome is over (ADR-579).
+            // The introduction waits until the first-launch welcome is over (ADR-595).
             get: { profiles.isIntroductionPresented && !welcomeVisible },
             set: { presented in
                 guard !presented, profiles.isIntroductionPresented else { return }
@@ -380,7 +380,7 @@ struct RootView: View {
                     onFinished: { opening.finish() })
                 .zIndex(1)
             }
-            // The first-launch welcome (ADR-579) sits over everything here; the Face ID cover is
+            // The first-launch welcome (ADR-595) sits over everything here; the Face ID cover is
             // drawn above all of it by the view that owns this one.
             if welcomeVisible {
                 WelcomeView(finish: finishWelcome)
@@ -435,7 +435,7 @@ struct RootView: View {
         .onChange(of: profiles.route == .home, initial: true) { _, atHome in
             router.isOnboardingShown = !atHome
             // The first time Home is ready and on screen is the launch (OpeningModel decides).
-            // Not while the first-launch welcome is up: it gets its turn when the welcome ends (ADR-579).
+            // Not while the first-launch welcome is up: it gets its turn when the welcome ends (ADR-595).
             if !welcomeVisible { opening.homeReady(openingConditions, isActive: scenePhase == .active) }
         }
         .onChange(of: welcomeVisible) { was, now in

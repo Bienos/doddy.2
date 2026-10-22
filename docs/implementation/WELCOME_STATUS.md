@@ -1,4 +1,4 @@
-# The first-launch welcome: status (ADR-579)
+# The first-launch welcome: status (ADR-595)
 
 Date: 2026-10-22. Branch `claude/gifted-einstein-61p6hq`. Design: Figma file `kR2N76fNeMmptR53RnMgSj` (frames `13:62`, `13:106`, `13:159`, `13:217`, `13:286`, `13:340`) and the clickable prototype it was drawn from. The build prompt is `prompts/WELCOME_FLOW_2026-10-22.md`.
 

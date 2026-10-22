@@ -1,6 +1,6 @@
 import Foundation
 
-// The first-launch welcome, "One morning in Warsaw" (ADR-579): five swipeable chapters that show
+// The first-launch welcome, "One morning in Warsaw" (ADR-595): five swipeable chapters that show
 // what Doddy does, and a sign-in sheet at the bottom. Everything here is pure maths and rules
 // (no UI, no strings), so it is tested on Linux. The drawing is `DoddyApp/Features/Welcome`.
 //

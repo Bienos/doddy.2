@@ -476,7 +476,7 @@ struct SettingsView: View {
                             .font(.footnote)
                             .foregroundStyle(Theme.secondaryText)
                     }
-                    // The first-launch welcome again (ADR-579): for a look, or to show someone.
+                    // The first-launch welcome again (ADR-595): for a look, or to show someone.
                     Button("Show the welcome again") {
                         WelcomePreferences.requestReplay()
                     }

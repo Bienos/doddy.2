@@ -1,7 +1,7 @@
 import DoddyCore
 import SwiftUI
 
-// PLACEHOLDER SCENERY (ADR-579): the Warsaw line and the pigeon are simple vector stand-ins drawn
+// PLACEHOLDER SCENERY (ADR-595): the Warsaw line and the pigeon are simple vector stand-ins drawn
 // for the design review. The owner's pack has the real scenery and the pigeon from the brand
 // film; replace these two views with it. The Palace of Culture outline is simplified and has not
 // been checked against the building.

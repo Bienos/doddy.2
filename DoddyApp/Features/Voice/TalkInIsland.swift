@@ -5,8 +5,9 @@ import Foundation
 import UIKit
 import os
 
-/// "Talk in the Island" (ADR-577): one press of the Action Button (set to Doddy's control) or a
-/// tap on the control starts a conversation without bringing Doddy to the front. Doddy greets
+/// "Talk in the Island" (ADR-577): `TalkInIslandIntent`, run from the Shortcuts app, starts a
+/// conversation without bringing Doddy to the front. (Until ADR-593 a control ran it, so the
+/// Action Button could; that control now opens Doddy with `TalkToDoddyIntent`.) Doddy greets
 /// ("Hey Pat, what's up?"), the island opens up while he talks, and the conversation stays in the
 /// Dynamic Island and on the Lock Screen with Mute and Stop. Tapping the island opens the voice
 /// screen on the same conversation (`ShortcutRouter.showConversationStartedElsewhere`).

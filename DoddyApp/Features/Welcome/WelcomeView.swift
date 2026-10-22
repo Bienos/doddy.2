@@ -1,7 +1,7 @@
 import DoddyCore
 import SwiftUI
 
-/// The first-launch welcome, "One morning in Warsaw" (ADR-579): five chapters you swipe right to
+/// The first-launch welcome, "One morning in Warsaw" (ADR-595): five chapters you swipe right to
 /// left, one persistent Doddy who hops between them, and the sign-in sheet pinned at the bottom.
 ///
 /// Everything that moves is a function of the live scroll position (`WelcomeFlow`, tested in
