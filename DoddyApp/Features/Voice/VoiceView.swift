@@ -2,9 +2,10 @@ import DoddyCore
 import SwiftUI
 import UIKit
 
-/// Voice conversation. It starts in the foreground and keeps running if the user leaves the app
-/// (shown in the Dynamic Island / on the Lock Screen with Mute and End); it ends when the user
-/// taps End or Close, from the island, or when the connection drops.
+/// Voice conversation, shown as the transcript: a sheet over Home since the conversation moved
+/// onto Home (ADR-579). It keeps running if the user closes the sheet or leaves the app (Home, the
+/// Dynamic Island and the Lock Screen show it with Mute and End); it ends when the user taps End,
+/// from the island, or when the connection drops.
 struct VoiceView: View {
     @Environment(MemoryStore.self) private var store
     @Environment(ProfileStore.self) private var profiles
@@ -56,12 +57,8 @@ struct VoiceView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") {
-                        Task {
-                            await controller?.stop()
-                            dismiss()
-                        }
-                    }
+                    // Closes the transcript only; the conversation goes on on Home (ADR-579).
+                    Button("Close") { dismiss() }
                 }
                 ToolbarItem(placement: .primaryAction) {
                     if let controller {
@@ -86,9 +83,6 @@ struct VoiceView: View {
             if (authSession.isSignedIn || VoiceConfig.directVoiceEnabled) && VoiceProviderConsent.isGranted(for: provider) {
                 await beginConversation()
             }
-        }
-        .onDisappear {
-            Task { await controller?.stop() }
         }
         .sheet(item: $openConnection, onDismiss: {
             Task {
@@ -118,10 +112,19 @@ struct VoiceView: View {
             _ = ShortcutRouter.shared.takeCheckInBriefing()
             _ = ShortcutRouter.shared.takeNoteToAsk()
             self.controller = running
+            HomeConversation.shared.hold(running)
+            return
+        }
+        // A conversation Home holds that waits for the user (a card, a failure): show it here,
+        // never start a second one over it (ADR-579).
+        if let held = HomeConversation.shared.forTranscript {
+            self.controller = held
             return
         }
         let controller = VoiceSessionController(store: store)
         self.controller = controller
+        // Home shows it and keeps it going after the sheet closes (ADR-579).
+        HomeConversation.shared.hold(controller)
         // Back Tap or another Talk to Doddy shortcut greets with "Hey <name>, what's up?", after the same
         // account and provider-consent gate used by a tap in the app.
         let openedByShortcut = ShortcutRouter.shared.takeTalkToDoddyOpening()

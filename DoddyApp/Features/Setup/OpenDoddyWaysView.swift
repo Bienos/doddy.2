@@ -264,13 +264,15 @@ struct OpenDoddyWaysView: View {
             VStack(alignment: .leading, spacing: 14) {
                 numbered(1) { Text("Open Settings and choose Action Button.") }
                 numbered(2) { Text("Swipe to Controls (Shortcut on iOS 17) and tap the button under it.") }
-                numbered(3) { Text("Pick Talk to Doddy.") }
+                // ADR-579: Talk in the Island first; Talk to Doddy brings the app forward.
+                numbered(3) { Text("Pick Talk in the Island. Talk to Doddy opens the app instead.") }
             }
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 16))
-            // ADR-577: the control that starts the conversation without bringing Doddy forward.
-            Text("To talk without Doddy opening, pick Talk in the Island instead (iOS 18 or later). He greets you and stays in the Dynamic Island; tap it to see the conversation.")
+            // ADR-577: the control that starts the conversation without bringing Doddy forward. An
+            // Action Button set up before it existed keeps Talk to Doddy until the user picks again.
+            Text("Talk in the Island needs iOS 18 or later. If the button still opens Doddy, it is set to Talk to Doddy: choose again in Settings.")
             openSettingsButton
             Text("The names can differ a little between iOS versions. Doddy can't see this setting.")
                 .hintStyle()

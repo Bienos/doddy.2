@@ -22305,6 +22305,17 @@
         }
       }
     },
+    "End the conversation": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zakończ rozmowę"
+          }
+        }
+      }
+    },
     "End the conversation with Doddy first: a rehearsal needs the microphone.": {
       "extractionState": "manual",
       "localizations": {
@@ -32706,6 +32717,17 @@
         }
       }
     },
+    "Listening…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Słucham…"
+          }
+        }
+      }
+    },
     "Lists": {
       "extractionState": "manual",
       "localizations": {
@@ -36418,6 +36440,17 @@
         }
       }
     },
+    "Mute": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wycisz"
+          }
+        }
+      }
+    },
     "Mute or unmute Doddy": {
       "extractionState": "manual",
       "localizations": {
@@ -36473,6 +36506,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "将 Doddy 静音或取消静音"
+          }
+        }
+      }
+    },
+    "Muted": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyciszone"
           }
         }
       }
@@ -48556,13 +48600,13 @@
         }
       }
     },
-    "Pick Talk to Doddy.": {
+    "Pick Talk in the Island. Talk to Doddy opens the app instead.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Wybierz „Porozmawiaj z Doddym”."
+            "value": "Wybierz „Talk in the Island”. „Porozmawiaj z Doddym” otwiera aplikację."
           }
         }
       }
@@ -66013,6 +66057,17 @@
         }
       }
     },
+    "Talk in the Island needs iOS 18 or later. If the button still opens Doddy, it is set to Talk to Doddy: choose again in Settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„Talk in the Island” działa od iOS 18. Jeśli przycisk dalej otwiera Doddy’ego, jest ustawiony na „Porozmawiaj z Doddym”: wybierz jeszcze raz w Ustawieniach."
+          }
+        }
+      }
+    },
     "Talk in their language": {
       "extractionState": "manual",
       "localizations": {
@@ -66256,6 +66311,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Rozmowa wysyła te przypomnienia i nazwy list do ElevenLabs albo OpenAI, jeśli przełączysz na niego głos na ekranie głównym, żeby ją prowadzić, jak każda rozmowa. Wydarzenia z kalendarza są czytane tylko, gdy Kalendarz jest włączony w Ustawieniach, Połączenia."
+          }
+        }
+      }
+    },
+    "Tap Doddy to finish": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stuknij Doddy’ego, żeby skończyć"
           }
         }
       }
@@ -79545,6 +79611,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "解锁"
+          }
+        }
+      }
+    },
+    "Unmute": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Włącz mikrofon"
           }
         }
       }

@@ -886,7 +886,6 @@
   "Phone line and transcript from Twilio, Doddy's voice from ElevenLabs, the answer card from Claude. Twilio's price arrives after the call; the rest is estimated from documented prices.": "Linia i zapis od Twilio, głos Doddy’ego od ElevenLabs, karta odpowiedzi od Claude. Cena Twilio przychodzi po rozmowie; resztę szacujemy z opublikowanych cen.",
   "Phone number": "Numer telefonu",
   "Phone number, e.g. +48 500 100 200": "Numer telefonu, np. +48 500 100 200",
-  "Pick Talk to Doddy.": "Wybierz „Porozmawiaj z Doddym”.",
   "Pick a date and time": "Wybierz datę i godzinę",
   "Pick a starting point, or say it in your own words.": "Wybierz punkt wyjścia albo powiedz to własnymi słowami.",
   "Pick a starting vibe. You can change it whenever you want.": "Wybierz początkowy styl. Możesz go zmienić w dowolnym momencie.",
@@ -1669,5 +1668,13 @@
   "Your tasks": "Twoje sprawy",
   "fits": "mieści się",
   "goes over": "przekracza",
-  "not sure": "nie wiadomo"
+  "not sure": "nie wiadomo",
+  "Listening…": "Słucham…",
+  "Muted": "Wyciszone",
+  "Tap Doddy to finish": "Stuknij Doddy’ego, żeby skończyć",
+  "Mute": "Wycisz",
+  "Unmute": "Włącz mikrofon",
+  "End the conversation": "Zakończ rozmowę",
+  "Pick Talk in the Island. Talk to Doddy opens the app instead.": "Wybierz „Talk in the Island”. „Porozmawiaj z Doddym” otwiera aplikację.",
+  "Talk in the Island needs iOS 18 or later. If the button still opens Doddy, it is set to Talk to Doddy: choose again in Settings.": "„Talk in the Island” działa od iOS 18. Jeśli przycisk dalej otwiera Doddy’ego, jest ustawiony na „Porozmawiaj z Doddym”: wybierz jeszcze raz w Ustawieniach."
 }
