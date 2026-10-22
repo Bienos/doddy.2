@@ -39,6 +39,15 @@ public final class DoddyDatabase: Sendable {
         return config
     }
 
+    /// `secure_delete` overwrites a deleted row's pages but not the words an FTS5 index keeps of it:
+    /// FTS5 records a delete as new index entries and leaves the old ones until its segments merge
+    /// (measured: a deleted note's words were still in the file). Merging them in the same write
+    /// transaction as the delete or rewrite is what makes the words leave the file (ADR-584).
+    /// `index` is the name of one of the FTS5 tables below, never user input.
+    static func compactSearchIndex(_ index: String, in db: Database) throws {
+        try db.execute(sql: "INSERT INTO \(index)(\(index)) VALUES('optimize')")
+    }
+
     /// Shipped migrations are never edited; add a new one instead.
     static var migrator: DatabaseMigrator {
         var migrator = DatabaseMigrator()

@@ -3,7 +3,9 @@ import Foundation
 import GRDB
 
 /// Learned facts (ADR-440) in the one local SQLite file. Every write is one transaction and is
-/// read back before success; the FTS5 index follows the table by triggers in that transaction.
+/// read back before success; the FTS5 index follows the table by triggers in that transaction,
+/// and is merged in it after every delete and every changed wording, because `secure_delete`
+/// does not reach the index (ADR-584).
 public final class SQLiteLearnedFactRepository: LearnedFactRepository {
     private let dbQueue: DatabaseQueue
     private let now: @Sendable () -> Date
@@ -81,6 +83,8 @@ public final class SQLiteLearnedFactRepository: LearnedFactRepository {
             let revised = try existing.changing(value: value, at: date).confirmed(at: date)
             let number = try Self.revisions(id, db).count + 1
             try Self.update(revised, db)
+            // The only change of wording: the old one stays as a revision, not in the index.
+            try DoddyDatabase.compactSearchIndex("learned_facts_fts", in: db)
             try Self.insertRevision(LearnedFactRevision(factID: id, number: number, value: revised.value, confirmedAt: date), db)
             guard try Self.fetch(id, db) == revised, try Self.revisions(id, db).count == number else {
                 throw LearningStoreError.verificationFailed
@@ -141,7 +145,9 @@ public final class SQLiteLearnedFactRepository: LearnedFactRepository {
             try db.execute(
                 sql: "DELETE FROM learned_facts WHERE status = ? AND created_at_ms < ?",
                 arguments: [LearningStatus.proposed.rawValue, DoddyDatabase.milliseconds(date)])
-            return db.changesCount
+            let removed = db.changesCount  // before the index statement below replaces it
+            try DoddyDatabase.compactSearchIndex("learned_facts_fts", in: db)
+            return removed
         }
     }
 
@@ -149,6 +155,7 @@ public final class SQLiteLearnedFactRepository: LearnedFactRepository {
         try await dbQueue.write { db in
             try db.execute(sql: "DELETE FROM learned_facts WHERE id = ?", arguments: [id.uuidString])
             guard db.changesCount > 0 else { throw LearningStoreError.notFound(id) }
+            try DoddyDatabase.compactSearchIndex("learned_facts_fts", in: db)
         }
     }
 
@@ -156,6 +163,7 @@ public final class SQLiteLearnedFactRepository: LearnedFactRepository {
         try await dbQueue.write { db in
             try db.execute(sql: "DELETE FROM learned_facts")
             try db.execute(sql: "INSERT INTO learned_facts_fts(learned_facts_fts) VALUES('rebuild')")
+            try DoddyDatabase.compactSearchIndex("learned_facts_fts", in: db)
         }
     }
 
