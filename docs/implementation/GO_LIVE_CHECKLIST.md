@@ -65,7 +65,7 @@ Starts when `V1_SCOPE.md` is marked up.
 
 | # | Item | Today | Evidence | Who |
 |---|---|---|---|---|
-| C1 | Production identity | **Open** | The bundle ID is the dev placeholder `com.bienos.doddy2.dev` (`project.yml:42`; the URL scheme name `com.bienos.doddy2.dev.links` in `Doddy-Info.plist:64` follows it). Version 0.0.1, build 1. Decide before the first App Store Connect record: changing it later means a new app record | Owner, then Agent |
+| C1 | Production identity | **Open** | The bundle ID is the dev placeholder `com.bienos.doddy2.dev` (`project.yml:42`; the URL scheme name `com.bienos.doddy2.dev.links` in `Doddy-Info.plist:64` follows it). Version 0.1.0, build 1 (ADR-584). Decide before the first App Store Connect record: changing it later means a new app record | Owner, then Agent |
 | C2 | Signed archive uploads | **Open** | No signed build is recorded. The App Group has never been provisioned | Owner |
 | C3 | App icon from the owner's pack | **Done (ADR-565, 21 Oct; replaced ADR-557's wave frame of 20 Oct)** | Doddy's face, the open head of the pack's blink sheet 007, on orange `#FF6A00`, iPhone and Watch byte-identical, no dark variant; `tools/whole_doddy/make_app_icon.py`, provenance in `docs/design/UPLOADED_MEMORY_ASSETS.md`. Not yet seen on a device | Agent |
 | C4 | Lock down the voice provider | **Partly** | Live ElevenLabs agent today: `enable_auth: false` (anyone with its ID can use it); `daily_limit: 10` for the whole agent across everyone; `record_voice: true`; `retention_days: -1` (kept forever). OpenAI: no spend limit recorded, and retention unverified (`VOICE_PROVIDER_TEST_STATUS.md:10,79`). Turning authentication on cuts off older builds that still use the public agent | Owner |
