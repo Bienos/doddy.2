@@ -7,6 +7,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary.js";
 import { I18nProvider } from "./i18n/i18n.js";
 import "./styles/tokens.css";
 import "./styles/app.css";
+import "./styles/logbook.css";
 
 const root = document.getElementById("root");
 if (root) {

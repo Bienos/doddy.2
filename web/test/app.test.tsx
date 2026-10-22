@@ -62,7 +62,8 @@ describe("signing in", () => {
     expect(await screen.findByRole("heading", { name: "I'm here." })).toBeInTheDocument();
     expect(seen.find((s) => s.method === "POST")?.body).toEqual({ code: "K7QM-4XPA" });
     const nav = screen.getByRole("navigation", { name: "Workspace" });
-    expect(within(nav).getAllByRole("link").map((a) => a.textContent)).toEqual(["Home", "Documents", "Connected apps", "Activity", "Settings"]);
+    // Logbook is there with example numbers only, and the menu says so (ADR-593).
+    expect(within(nav).getAllByRole("link").map((a) => a.textContent)).toEqual(["Home", "Documents", "Connected apps", "Activity", "Logbook Example", "Settings"]);
     // Nothing pretends: no chat box, no memories, no tasks.
     expect(screen.queryByRole("textbox")).toBeNull();
     expect(screen.getByRole("heading", { name: "Not on the web yet" })).toBeInTheDocument();

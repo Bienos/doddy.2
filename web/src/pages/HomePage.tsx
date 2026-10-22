@@ -27,7 +27,7 @@ export function HomePage() {
   return (
     <>
       <div className="home-hero">
-        <DoddyFigure size={88} />
+        <DoddyFigure size={120} />
         <PageHeader title={t("home.greeting")} lead={t("home.lead")} />
       </div>
 

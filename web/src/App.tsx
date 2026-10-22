@@ -8,6 +8,8 @@ import { ActivityPage } from "./pages/ActivityPage.js";
 import { AppsPage } from "./pages/AppsPage.js";
 import { DocumentsPage } from "./pages/DocumentsPage.js";
 import { HomePage } from "./pages/HomePage.js";
+import { LOGBOOK_ENABLED } from "./logbook/config.js";
+import { LogbookPage } from "./pages/LogbookPage.js";
 import { NotFoundPage } from "./pages/NotFoundPage.js";
 import { SettingsPage } from "./pages/SettingsPage.js";
 import { SignInPage } from "./pages/SignInPage.js";
@@ -43,6 +45,7 @@ export function App() {
         <Route path="/documents" element={<DocumentsPage />} />
         <Route path="/apps" element={<AppsPage />} />
         <Route path="/activity" element={<ActivityPage />} />
+        {LOGBOOK_ENABLED ? <Route path="/logbook" element={<LogbookPage />} /> : null}
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

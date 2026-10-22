@@ -60,7 +60,6 @@ export function SignInPage() {
             </select>
           </label>
         </div>
-        <DoddyFigure size={96} />
         <h1 tabIndex={-1} ref={heading}>
           {t("signIn.title")}
         </h1>
@@ -109,6 +108,10 @@ export function SignInPage() {
           </button>
         </form>
         <p className="fine-print">{t("signIn.safety", { origin: window.location.origin })}</p>
+        <div className="sign-in-foot">
+          <p className="says">{t("signIn.hand")}</p>
+          <DoddyFigure size={88} />
+        </div>
       </div>
     </main>
   );

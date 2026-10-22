@@ -2,15 +2,20 @@ import { type ReactNode, useEffect, useId, useState } from "react";
 import { NavLink, useLocation } from "react-router";
 import { useSession } from "../auth/session.js";
 import { useI18n } from "../i18n/i18n.js";
+import { LOGBOOK_ENABLED } from "../logbook/config.js";
 import type { MessageKey } from "../i18n/messages.js";
 import { Wordmark } from "./Brand.js";
 
-/** Only sections that work today are in the menu (ADR-585). Chat, memory and tasks come later. */
-export const SECTIONS: { path: string; label: MessageKey }[] = [
+/**
+ * Only sections that work today are in the menu (ADR-585). Chat, memory and tasks come later.
+ * Logbook is there with example numbers only (ADR-593) and says so in the menu and on its page.
+ */
+export const SECTIONS: { path: string; label: MessageKey; example?: boolean }[] = [
   { path: "/", label: "nav.home" },
   { path: "/documents", label: "nav.documents" },
   { path: "/apps", label: "nav.apps" },
   { path: "/activity", label: "nav.activity" },
+  ...(LOGBOOK_ENABLED ? [{ path: "/logbook", label: "nav.logbook" as MessageKey, example: true }] : []),
   { path: "/settings", label: "nav.settings" },
 ];
 
@@ -30,6 +35,7 @@ function useDemoMode(): boolean {
   return demo;
 }
 
+/** The website's header: the wordmark, the sections in one row, Sign out; a Menu sheet on small screens. */
 export function AppShell({ children }: { children: ReactNode }) {
   const { t } = useI18n();
   const { signOut } = useSession();
@@ -42,6 +48,15 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   // A link closes the small-screen menu.
   useEffect(() => setOpen(false), [location.pathname]);
+  // Escape closes it too.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open]);
 
   const onSignOut = async () => {
     setSigningOut(true);
@@ -54,6 +69,8 @@ export function AppShell({ children }: { children: ReactNode }) {
     }
   };
 
+  const wide = location.pathname.startsWith("/logbook");
+
   return (
     <div className="shell">
       <a className="skip-link" href="#main">
@@ -64,49 +81,46 @@ export function AppShell({ children }: { children: ReactNode }) {
           {t("app.demoBanner")}
         </p>
       ) : null}
-      <header className="topbar">
-        <NavLink to="/" className="brand-link" aria-label={t("nav.home")}>
-          <Wordmark />
-        </NavLink>
-        <button
-          type="button"
-          className="menu-button"
-          aria-expanded={open}
-          aria-controls={navId}
-          onClick={() => setOpen((v) => !v)}
-        >
-          {open ? t("app.closeMenu") : t("app.menu")}
-        </button>
-      </header>
-      <div className="shell-body">
-        <nav id={navId} className={`sidebar ${open ? "is-open" : ""}`} aria-label={t("nav.label")}>
-          <div className="sidebar-brand" aria-hidden="true">
+      <header className="nav">
+        <div className="nav-inner">
+          <NavLink to="/" className="brand-link" aria-label={t("nav.home")}>
             <Wordmark />
-          </div>
-          <ul>
-            {SECTIONS.map((section) => (
-              <li key={section.path}>
-                <NavLink to={section.path} end={section.path === "/"} className={({ isActive }) => `nav-link ${isActive ? "is-active" : ""}`}>
-                  {t(section.label)}
-                </NavLink>
-              </li>
-            ))}
-          </ul>
-          <div className="sidebar-footer">
-            <button type="button" className="button button-quiet" onClick={onSignOut} disabled={signingOut}>
-              {signingOut ? t("app.signingOut") : t("app.signOut")}
-            </button>
-            {signOutFailed ? (
-              <p className="field-error" role="alert">
-                {t("common.error.network")}
-              </p>
-            ) : null}
-          </div>
-        </nav>
-        <main id="main" className="content">
-          {children}
-        </main>
-      </div>
+          </NavLink>
+          <nav id={navId} className={`nav-menu ${open ? "is-open" : ""}`} aria-label={t("nav.label")}>
+            <ul className="nav-links">
+              {SECTIONS.map((section) => (
+                <li key={section.path}>
+                  <NavLink to={section.path} end={section.path === "/"} className={({ isActive }) => `nav-link ${isActive ? "is-active" : ""}`}>
+                    {t(section.label)}
+                    {section.example ? (
+                      <>
+                        {" "}
+                        <span className="pill">{t("common.example")}</span>
+                      </>
+                    ) : null}
+                  </NavLink>
+                </li>
+              ))}
+            </ul>
+            <div className="nav-actions">
+              <button type="button" className="button button-quiet button-small" onClick={onSignOut} disabled={signingOut}>
+                {signingOut ? t("app.signingOut") : t("app.signOut")}
+              </button>
+              {signOutFailed ? (
+                <p className="field-error" role="alert">
+                  {t("common.error.network")}
+                </p>
+              ) : null}
+            </div>
+          </nav>
+          <button type="button" className="menu-button" aria-expanded={open} aria-controls={navId} onClick={() => setOpen((v) => !v)}>
+            {open ? t("app.closeMenu") : t("app.menu")}
+          </button>
+        </div>
+      </header>
+      <main id="main" className={`content ${wide ? "is-wide" : ""}`}>
+        {children}
+      </main>
     </div>
   );
 }

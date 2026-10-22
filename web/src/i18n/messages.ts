@@ -4,6 +4,8 @@
  * The Polish is a first draft by the agent and needs a native speaker's read (l10n/REVIEW_NOTES.md).
  */
 
+import { logbookEn, logbookPl } from "./logbookMessages.js";
+
 const en = {
   "app.name": "Doddy",
   "app.skip": "Skip to content",
@@ -143,6 +145,7 @@ const en = {
   "crash.title": "This page stopped working",
   "crash.body": "Nothing was changed. Reload the page to try again.",
   "crash.reload": "Reload",
+  ...logbookEn,
 } as const;
 
 export type MessageKey = keyof typeof en;
@@ -287,6 +290,7 @@ const pl: Messages = {
   "crash.title": "Ta strona przestała działać",
   "crash.body": "Nic nie zostało zmienione. Odśwież stronę, żeby spróbować ponownie.",
   "crash.reload": "Odśwież",
+  ...logbookPl,
 };
 
 export const LANGUAGES = ["pl", "en"] as const;

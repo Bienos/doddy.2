@@ -35,5 +35,19 @@ for (const scheme of ["light", "dark"] as const) {
       await page.waitForLoadState("networkidle");
       await page.screenshot({ path: `${out}/${project}-${scheme}-${name}.png`, fullPage: true });
     }
+    // Logbook (ADR-593): both tabs, with example numbers.
+    await page.goto("/logbook");
+    await expect(page.getByRole("heading", { level: 1, name: "Dziennik" })).toBeVisible();
+    await page.waitForLoadState("networkidle");
+    await page.screenshot({ path: `${out}/${project}-${scheme}-7-logbook-glance.png`, fullPage: true });
+    await page.getByRole("tab", { name: /Z bliska/ }).click();
+    await expect(page.getByRole("heading", { name: "Każde narzędzie z liczbą użyć" })).toBeVisible();
+    await page.screenshot({ path: `${out}/${project}-${scheme}-8-logbook-closer.png`, fullPage: true });
+    // On a small screen the links are in a sheet under the header.
+    if ((page.viewportSize()?.width ?? 1280) < 800) {
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await page.getByRole("button", { name: "Menu" }).click();
+      await page.screenshot({ path: `${out}/${project}-${scheme}-9-menu-open.png` });
+    }
   });
 }

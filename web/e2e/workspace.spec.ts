@@ -147,3 +147,49 @@ test("the page's own security headers are in place", async ({ request }) => {
   expect(csp).toContain("frame-ancestors 'none'");
   expect(res.headers()["x-frame-options"]).toBe("DENY");
 });
+
+test("Logbook opens from the menu with example numbers, under the page's own security rules", async ({ page, request }) => {
+  const problems = watchConsole(page);
+  const token = await phone(request);
+  await signIn(page, await code(request, token));
+
+  // The menu on a small screen is a sheet; on a wide one the links are in the header.
+  const narrow = (page.viewportSize()?.width ?? 1280) < 800;
+  if (narrow) await page.getByRole("button", { name: "Menu" }).click();
+  await page.getByRole("link", { name: /Dziennik/ }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Dziennik" })).toBeFocused();
+  await expect(page).toHaveURL(/\/logbook$/);
+  // It says its numbers are examples, in the menu and on the page, and the week's receipt is drawn.
+  await expect(page.getByRole("note").filter({ hasText: "Przykład." })).toContainText("Wymyślone liczby");
+  await expect(page.getByRole("heading", { level: 2, name: "Twój tydzień z Doddym" })).toBeVisible();
+  await expect(page.locator(".lb-rc-line").first()).toContainText("Rozmowy");
+  await expect(page.locator("svg[aria-label='Rozmowy w poszczególne dni tygodnia'] rect.lb-hit")).toHaveCount(7);
+
+  // The charts really are drawn with the sizes the CSP allows: no inline style attribute is in the markup.
+  expect(await page.evaluate(() => [...document.querySelectorAll("[style]")].filter((el) => !(el instanceof SVGElement) && el.getAttribute("style")?.includes("{")).length)).toBe(0);
+
+  // Closer look: every chart, the sortable table, the heatmap with its 168 cells.
+  await page.getByRole("tab", { name: /Z bliska/ }).click();
+  await expect(page.getByRole("heading", { name: "Każde narzędzie z liczbą użyć" })).toBeVisible();
+  await expect(page.locator("svg[aria-label='Rozmowy według dnia tygodnia i godziny'] rect.lb-cell")).toHaveCount(168);
+  await page.getByRole("button", { name: "90 dni" }).click();
+  await expect(page.getByRole("img", { name: "Rozmowy tydzień po tygodniu" }).or(page.locator("svg[aria-label='Rozmowy tydzień po tygodniu']"))).toBeVisible();
+  await page.getByRole("checkbox", { name: "Pokaż jako tabele" }).check();
+  await expect(page.getByRole("table", { name: "Rozmowy tydzień po tygodniu" })).toBeVisible();
+
+  // A tooltip follows the pointer over a column and goes away.
+  await page.getByRole("checkbox", { name: "Pokaż jako tabele" }).uncheck();
+  const column = page.locator("svg[aria-label='Rozmowy tydzień po tygodniu'] rect.lb-hit").nth(3);
+  // The tooltip drops on scroll (it is fixed to the window); scroll the column into view first.
+  await column.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(150);
+  await column.hover();
+  await expect(page.getByRole("tooltip")).toContainText("Rozmowy");
+  await page.mouse.move(2, 2);
+  await expect(page.getByRole("tooltip")).toHaveCount(0);
+
+  const sideways = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  expect(sideways).toBeLessThanOrEqual(0);
+  // No CSP violation, no failed request, no error in the console.
+  expect(problems).toEqual([]);
+});
