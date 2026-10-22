@@ -54,6 +54,22 @@ final class DataFlowTests: XCTestCase {
         XCTAssertTrue(row("doddyServer", state).note?.contains("paused") ?? false)
     }
 
+    /// ADR-586: typed questions go through the messaging server to Anthropic, so they can only leave with a server set.
+    func testAskDoddyNamesAnthropicAndNeedsTheMessagingServer() {
+        var state = base
+        XCTAssertEqual(row("askDoddy", state).note, "Ask Doddy is off, so nothing goes there.")
+        state.askDoddyOn = true
+        XCTAssertFalse(row("askDoddy", state).isActive, "on, but no server: nothing can be sent")
+        XCTAssertEqual(row("askDoddy", state).note, "No messaging server is set, so typed questions can't be sent.")
+        state.messagingServerSet = true
+        let ask = row("askDoddy", state)
+        XCTAssertTrue(ask.isActive)
+        XCTAssertTrue(ask.destination.contains("Anthropic"))
+        XCTAssertFalse(ask.destination.contains("OpenAI"))
+        XCTAssertTrue(DataFlow.cloudAISummary(state).contains("Anthropic (Ask Doddy)"))
+        XCTAssertFalse(DataFlow.cloudAISummary(state).contains("OpenAI (Ask Doddy)"))
+    }
+
     func testAskDoddyMentionsNotesOnlyWhenAllowed() {
         var state = base
         state.askDoddyOn = true
@@ -156,7 +172,7 @@ final class DataFlowSummaryTests: XCTestCase {
             }
         }
         // The audit's missing ones are there when they're on.
-        for name in ["your Doddy messaging server", "Apple Maps", "European Central Bank", "iCloud", "Siri", "the Ask Doddy gateway"] {
+        for name in ["your Doddy messaging server", "Apple Maps", "European Central Bank", "iCloud", "Siri", "Anthropic (Ask Doddy, through your messaging server)"] {
             XCTAssertTrue(summary.contains(name), name)
         }
     }
@@ -178,11 +194,11 @@ final class DataFlowSummaryTests: XCTestCase {
         // OpenAI runs the voice where the token server is set (ADR-442): ElevenLabs gets no voice then.
         XCTAssertEqual(
             DataFlow.cloudAISummary(everything),
-            "OpenAI (voice); OpenAI (Ask Doddy); ElevenLabs (phone calls) and Anthropic or OpenAI (daily news) on your messaging server; Anthropic (tasks you hand over)")
+            "OpenAI (voice); Anthropic (Ask Doddy); ElevenLabs (phone calls) and Anthropic or OpenAI (daily news) on your messaging server; Anthropic (tasks you hand over)")
         XCTAssertFalse(DataFlow.networkSummary(everything).contains("ElevenLabs (while talking)"))
         var elevenLabs = everything
         elevenLabs.voiceProvider = .elevenLabs
-        XCTAssertTrue(DataFlow.cloudAISummary(elevenLabs).hasPrefix("ElevenLabs (voice); OpenAI (Ask Doddy)"))
+        XCTAssertTrue(DataFlow.cloudAISummary(elevenLabs).hasPrefix("ElevenLabs (voice); Anthropic (Ask Doddy)"))
         var state = everything
         state.newsWriterProvider = "anthropic"
         XCTAssertTrue(DataFlow.cloudAISummary(state).contains("Anthropic (daily news)"))

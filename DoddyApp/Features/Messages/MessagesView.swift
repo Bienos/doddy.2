@@ -13,7 +13,6 @@ struct MessagesView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage(PreferenceKey.assistantConsent) private var consent = false
     @AppStorage(PreferenceKey.assistantUseNotes) private var useNotes = true
-    @AppStorage(PreferenceKey.gatewayAddress) private var gatewayAddress = ""
     @State private var model: MessagesModel
     @State private var confirmingDelete = false
     @FocusState private var inputFocused: Bool
@@ -145,7 +144,7 @@ struct MessagesView: View {
                             .foregroundStyle(Theme.error)
                             .accessibilityIdentifier("messages.notSaved")
                     }
-                    Text("Doddy is an AI, not a person. This conversation is saved on this iPhone until you delete it. Your question, the last few messages and any notes shown under an answer are sent to Doddy's server and on to OpenAI to write the reply.")
+                    Text("Doddy is an AI, not a person. This conversation is saved on this iPhone until you delete it. Your question, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                         .accessibilityIdentifier("ask.disclosure")
@@ -321,11 +320,9 @@ struct MessagesView: View {
         return last
     }
 
+    /// Only the switch is the person's to change; a server that isn't set up, or doesn't accept this iPhone, is not.
     private func needsSettings(_ error: AssistantError) -> Bool {
-        switch error {
-        case .notConfigured, .consentRequired, .notAuthorized: true
-        default: false
-        }
+        error == .consentRequired
     }
 
     // MARK: Composer
@@ -376,11 +373,11 @@ struct MessagesView: View {
 
     private var locale: String { Locale.current.language.languageCode?.identifier ?? "en" }
 
-    /// nil when Ask Doddy isn't set up.
+    /// nil when this build has no messaging server address, or the storage is not open.
     private func service() -> AssistantService? {
         guard let wiring = store.environment.assistant else { return nil }
-        // Private notes (ADR-310) are never sent to the Ask Doddy gateway.
+        // Private notes (ADR-310) are never sent with a question.
         let recall = ShareableRecallService(base: store.environment.recallService) { PrivateNotesStore.current().ids }
-        return wiring.service(gatewayAddress: gatewayAddress, recall: recall)
+        return wiring.service(recall: recall)
     }
 }

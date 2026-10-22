@@ -66,7 +66,6 @@ enum PreferenceKey {
     /// Ask Doddy: the user agreed that questions go to the gateway and OpenAI. Off by default.
     static let assistantConsent = "assistantConsent"
     static let assistantUseNotes = "assistantUseNotes"
-    static let gatewayAddress = "gatewayAddress"
     /// Development setting: https origin of the Doddy messaging server (`server/messaging`).
     static let messagingServerURL = "messagingServerURL"
     /// The user turned Doddy's notifications on (re-registers the APNs token at launch).
