@@ -9,6 +9,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import type { z } from "zod";
 import { FALLBACK_BETA, type ResearchMessage, type ResearchTurn } from "../errands/researcher.js";
+import { supportsServerFallback, type StepModels, type StudioStep } from "./models.js";
 import { ContentOutput, PackOutput, PlanOutput } from "./schema.js";
 
 type Block = { type: string; [key: string]: unknown };
@@ -30,7 +31,10 @@ export interface MakeMessage { content: Block[]; stop_reason: string | null; usa
 export interface SkillRef { id: string; version: string }
 
 export interface StudioModelApi {
+  /** What is stored and logged as the model: the model when every step uses one, else the short names (`modelLabel`). */
   readonly model: string;
+  /** The model each step uses; its tokens are priced with that model's prices. */
+  readonly models: StepModels;
   readonly skills: readonly SkillRef[];
   plan(input: string, signal: AbortSignal): Promise<Structured<PlanOutput>>;
   research(messages: ResearchTurn[], signal: AbortSignal): Promise<ResearchMessage>;
@@ -93,24 +97,39 @@ export const STUDIO_RESEARCH_TOOL_TYPES = ["web_search_20260209", "web_fetch_202
 export const STUDIO_MAKE_TOOL_TYPE = "code_execution_20250825";
 
 export interface StudioApiOptions {
-  model?: string;
+  /** The model for each step (`DEFAULT_STEP_MODELS` is the cheap mix). */
+  models: StepModels;
+  /** The label stored with the item (`modelLabel(models)`). */
+  modelLabel: string;
   skills: SkillRef[];
   maxSearches: number;
   maxFetches: number;
   blockedDomains: string[];
   taskBudgetTokens: number;
   baseURL?: string;
+  /** For tests: a stand-in for the SDK client that records each request. */
+  client?: Anthropic;
 }
+
+/** Effort per step: thinking costs tokens, so only the research (reading and judging pages) runs high. */
+export const STEP_EFFORT: Record<StudioStep, "high" | "medium"> = { plan: "medium", research: "high", pack: "medium", write: "medium", make: "medium" };
 
 export class AnthropicStudioApi implements StudioModelApi {
   readonly model: string;
+  readonly models: StepModels;
   readonly skills: readonly SkillRef[];
   private readonly client: Anthropic;
 
   constructor(apiKey: string, private readonly options: StudioApiOptions) {
-    this.model = options.model ?? "claude-opus-5-5";
+    this.models = options.models;
+    this.model = options.modelLabel;
     this.skills = options.skills;
-    this.client = new Anthropic({ apiKey, baseURL: options.baseURL, maxRetries: 2, timeout: 15 * 60_000 });
+    this.client = options.client ?? new Anthropic({ apiKey, baseURL: options.baseURL, maxRetries: 2, timeout: 15 * 60_000 });
+  }
+
+  /** A safety decline is retried on Anthropic's recommended fallback, in the same call, where Anthropic offers it. */
+  private fallback(model: string) {
+    return supportsServerFallback(model) ? { betas: [FALLBACK_BETA], fallbacks: "default" as const } : {};
   }
 
   /** Research tools: only these two, capped; blocked domains when the owner set some. */
@@ -122,16 +141,16 @@ export class AnthropicStudioApi implements StudioModelApi {
     ];
   }
 
-  private async structured<S extends z.ZodType>(system: string, input: string, schema: S, effort: "high" | "medium", signal: AbortSignal): Promise<Structured<z.infer<S>>> {
+  private async structured<S extends z.ZodType>(step: StudioStep, system: string, input: string, schema: S, signal: AbortSignal): Promise<Structured<z.infer<S>>> {
+    const model = this.models[step];
     let response;
     try {
       response = await this.client.beta.messages.parse({
-        model: this.model,
+        model,
         max_tokens: 32000,
         thinking: { type: "adaptive" },
-        output_config: { effort, format: zodOutputFormat(schema) },
-        betas: [FALLBACK_BETA],
-        fallbacks: "default",
+        output_config: { effort: STEP_EFFORT[step], format: zodOutputFormat(schema) },
+        ...this.fallback(model),
         system,
         messages: [{ role: "user", content: input }],
       }, { signal });
@@ -145,19 +164,21 @@ export class AnthropicStudioApi implements StudioModelApi {
     return { kind: "ok", value: response.parsed_output as z.infer<S>, usage };
   }
 
-  plan(input: string, signal: AbortSignal) { return this.structured(PLAN_SYSTEM, input, PlanOutput, "high", signal); }
-  pack(input: string, signal: AbortSignal) { return this.structured(PACK_SYSTEM, input, PackOutput, "medium", signal); }
-  write(input: string, signal: AbortSignal) { return this.structured(WRITE_SYSTEM, input, ContentOutput, "medium", signal); }
+  plan(input: string, signal: AbortSignal) { return this.structured("plan", PLAN_SYSTEM, input, PlanOutput, signal); }
+  pack(input: string, signal: AbortSignal) { return this.structured("pack", PACK_SYSTEM, input, PackOutput, signal); }
+  write(input: string, signal: AbortSignal) { return this.structured("write", WRITE_SYSTEM, input, ContentOutput, signal); }
 
   async research(messages: ResearchTurn[], signal: AbortSignal): Promise<ResearchMessage> {
+    const model = this.models.research;
+    const fb = this.fallback(model);
     const stream = this.client.beta.messages.stream({
-      model: this.model,
+      model,
       max_tokens: 64000,
       thinking: { type: "adaptive" },
       // The task budget is advisory to the model; Doddy's own dollar limits are the real cap.
-      output_config: { effort: "high", task_budget: { type: "tokens", total: this.options.taskBudgetTokens } },
-      betas: [FALLBACK_BETA, TASK_BUDGET_BETA],
-      fallbacks: "default",
+      output_config: { effort: STEP_EFFORT.research, task_budget: { type: "tokens", total: this.options.taskBudgetTokens } },
+      betas: [...(fb.betas ?? []), TASK_BUDGET_BETA],
+      ...(fb.fallbacks ? { fallbacks: fb.fallbacks } : {}),
       cache_control: { type: "ephemeral" },
       system: RESEARCH_SYSTEM,
       tools: this.researchTools(),
@@ -169,10 +190,10 @@ export class AnthropicStudioApi implements StudioModelApi {
   async make(messages: MakeTurn[], containerId: string | undefined, signal: AbortSignal): Promise<MakeMessage> {
     const skills = this.skills.map((s) => ({ type: "custom" as const, skill_id: s.id, version: s.version }));
     const stream = this.client.beta.messages.stream({
-      model: this.model,
+      model: this.models.make,
       max_tokens: 32000,
       thinking: { type: "adaptive" },
-      output_config: { effort: "medium" },
+      output_config: { effort: STEP_EFFORT.make },
       cache_control: { type: "ephemeral" },
       container: containerId ? { id: containerId, skills } : { skills },
       system: MAKE_SYSTEM,

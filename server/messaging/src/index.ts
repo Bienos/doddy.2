@@ -5,6 +5,7 @@ import { providersFrom } from "./providers/index.js";
 import { taskCallContext } from "./taskCalls/context.js";
 import { errandContext } from "./errands/context.js";
 import { studioContext } from "./studio/context.js";
+import { modelLabel } from "./studio/models.js";
 import { log, runWorkerLoop } from "./workerLoop.js";
 
 const config = loadConfig();
@@ -22,7 +23,7 @@ app.log.info({
   newsWriter: !!providers.news.writer, newsSearch: !!providers.news.search,
   taskCalls: !!(providers.taskCalls && providers.cipher && config.publicBaseUrl), taskCallsKillSwitch: config.taskCallSettings.killSwitch,
   errands: !!(providers.errands.researcher && providers.cipher), errandsModel: config.errandSettings.model,
-  studio: !!(providers.studio.api && providers.cipher), studioModel: config.studioSettings.model,
+  studio: !!(providers.studio.api && providers.cipher), studioModels: modelLabel(config.studioSettings.models),
 }, "configured features");
 
 // One service instead of web + worker (a small or free deploy): RUN_WORKER_IN_WEB=1 runs the

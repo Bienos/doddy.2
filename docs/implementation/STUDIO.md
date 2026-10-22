@@ -53,7 +53,7 @@ The item (`GET /v1/studio/:id`):
   "files": [ { "name": "brief.pdf", "role": "brief", "mime": "application/pdf", "bytes": 81234, "sha256": "…" } ],
   "checks": [ { "name": "claims_map_to_pack", "passed": true, "detail": "" } ],
   "cost": { "usd": 1.84, "inputTokens": 0, "outputTokens": 0, "cacheReadTokens": 0, "cacheWriteTokens": 0, "searches": 12, "fetches": 9, "containerSeconds": 140 },
-  "model": "claude-opus-5-5", "skills": [ { "id": "skill_…", "version": "…" } ],
+  "model": "haiku-5-5+sonnet-5-5", "skills": [ { "id": "skill_…", "version": "…" } ],
   "failure": "…"
 }
 ```
@@ -107,23 +107,23 @@ Paper `#FFF7E9` background; ink `#171715` text; orange `#FF6A00` for decoration 
 
 ## The pipeline (worker, `server/messaging/src/studio/`)
 
-1. **Plan** (Opus 5.5, effort high, structured output, no tools): title, 3 to 5 sub-questions, the outline, the audience.
-2. **Research** (Opus 5.5, effort high, `web_search_20260209` and `web_fetch_20260209` with `max_uses` and `blocked_domains`, task budget, streamed, `pause_turn` resumed, server-side fallbacks): notes with the URL behind each fact. Then a **pack** call (structured output, effort medium, no tools): claims with a quote and the source URL. Code drops claims whose URL the run never saw; fewer than 3 left is `too_little_found`.
-3. **Write** (structured output, effort medium, no tools): `content.json` as above; code validates every rule.
-4. **Make** (code execution `code_execution_20250825` with the custom skills `doddy-brand`, `doddy-docs`, `doddy-infographic`; effort medium; `pause_turn` resumed with the same container): Claude writes `content.json` and runs the skills' scripts, which save the four files at the top of `$OUTPUT_DIR`. Files are downloaded with the Files API, then deleted there; each delete is read back.
+1. **Plan** (Haiku 5.5, effort medium, structured output, no tools): title, 3 to 5 sub-questions, the outline, the audience.
+2. **Research** (Sonnet 5.5, effort high, `web_search_20260209` and `web_fetch_20260209` with `max_uses` and `blocked_domains`, task budget, streamed, `pause_turn` resumed, server-side fallbacks): notes with the URL behind each fact. Then a **pack** call (Haiku 5.5, structured output, effort medium, no tools): claims with a quote and the source URL. Code drops claims whose URL the run never saw; fewer than 3 left is `too_little_found`.
+3. **Write** (Sonnet 5.5, structured output, effort medium, no tools): `content.json` as above; code validates every rule.
+4. **Make** (code execution `code_execution_20250825` with the custom skills `doddy-brand`, `doddy-docs`, `doddy-infographic`; Haiku 5.5, effort medium; `pause_turn` resumed with the same container): Claude writes `content.json` and runs the skills' scripts, which save the four files at the top of `$OUTPUT_DIR`. Files are downloaded with the Files API, then deleted there; each delete is read back.
 5. **Check** (code only): the table above. A failure goes back to Make once, with the failed checks listed. A second failure stores the item as `needs_look` with its checks, never as ready.
 6. **Store and tell**: files encrypted and stored, read back and compared by SHA-256; then the push ("Gotowe. Twój materiał czeka w Studiu." / "Ready. Your Studio item is waiting in the app."), no words from the item.
 
 **Data, not instructions:** the job's `topic`, `details` and `sources`, everything the web returns, and the pack are passed as JSON data in every prompt, and every system prompt says so.
 
-**Money:** each job has a token budget on the research call (advisory to the model), a dollar limit per job (`STUDIO_JOB_LIMIT_USD`, **default** $4, checked between steps), and a daily cap per account (`STUDIO_DAILY_CAP_USD`, **default** $5, checked at approve against today's spend plus a $2 reserve per open job). Each item records its cost from the API's usage (tokens at Opus 5.5's list price, searches at $10 per 1,000; container time is recorded but counted as $0, inside the free hours).
+**Money:** each job has a token budget on the research call (advisory to the model), a dollar limit per job (`STUDIO_JOB_LIMIT_USD`, **default** $2, checked after every request), and a daily cap per account (`STUDIO_DAILY_CAP_USD`, **default** $3, checked at approve against today's spend plus a $1 reserve per open job). Each item records its cost from the API's usage, **each call priced with its own step's model** (`src/studio/models.ts`: Opus 5.5 $4 / $20, Sonnet 5.5 $2 / $10, Haiku 5.5 $0.10 / $0.50 per million tokens, Haiku $0.50 / $2.50 beyond 100K prompt tokens; cache reads at the model's own fraction; searches at $10 per 1,000; container time is recorded but counted as $0, inside the free hours). An unknown model is counted at the dearest price.
 
 ## Settings (`server/messaging`)
 
 | Env | Default | What |
 |---|---|---|
 | `STUDIO_ENABLED` | `0` | `1` turns Studio on (also needs `ANTHROPIC_API_KEY`, `MEMORY_ENCRYPTION_KEY` and `STUDIO_SKILLS`) |
-| `STUDIO_MODEL` | `claude-opus-5-5` | |
+| `STUDIO_MODEL_PLAN`, `_RESEARCH`, `_PACK`, `_WRITE`, `_MAKE` | Haiku 5.5, Sonnet 5.5, Haiku 5.5, Sonnet 5.5, Haiku 5.5 | The model of each step (owner, 22 Oct: the all-Opus plan cost too much). `STUDIO_MODEL`, when set, is the starting point for every step; a step variable then overrides it. `claude-opus-5-5` everywhere is the old, dearest mix |
 | `STUDIO_SKILLS` | empty | Comma-separated custom skill IDs, each optionally `@version` (from `scripts/studio_skills.sh upload`). Empty: not set up |
 | `STUDIO_MAX_SEARCHES`, `STUDIO_MAX_FETCHES` | 15, 15 | `max_uses` per job |
 | `STUDIO_BLOCKED_DOMAINS` | empty | Comma-separated hostnames for `blocked_domains` (owner decision 10) |
@@ -147,7 +147,7 @@ A second exception next to Errands: the yes on a `make_something` card covers th
 ## What S0 does differently from the brief, and why
 
 - **No `doddy-research` skill.** Research requests carry only web search and fetch, no container, so a skill can't load there; the research rules are the server's versioned prompt (`PROMPT_VERSION` in `src/studio/model.ts`) and the pack schema is code.
-- **No Haiku for titles.** The plan step already returns the title; one model keeps one cache namespace.
+- **Cheaper models per step** (owner, 22 Oct: "a lot of money for that"): Haiku 5.5 (built for classification, extraction and routing) plans, extracts claims and runs the fixed render recipe; Sonnet 5.5 researches and writes. Research stays off Haiku because dynamic-filtering web search isn't confirmed for it. Whether the cheap mix is good enough is what the comparison runs decide (`studio-live-run.mjs --mix cheap|sonnet|opus`); the estimate is about $0.5 to $1 per brief against about $1.5 to $3 on Opus, but it is an estimate until a real run. A safety refusal can fall back on another model only where Anthropic offers it (Opus 5.5, Sonnet 5.5, Fable 5.1), so a Haiku step that is refused ends the job as `refused`.
 - **No server-side fallbacks on the make step.** Whether a fallback model runs Doddy's custom skills isn't documented; a refusal there ends the job as `refused`.
 - **Files in the messaging database, not object storage** (decision 4 is open); **no website, no publishing** (S2).
 - **The item screen speaks the infographic's alt text** (`summary.altText`), which the brief didn't list.
@@ -158,7 +158,7 @@ Run on 22 Oct 2026 in a Linux container (Node 22.22.0, Swift 6.1.2, Postgres 16,
 
 | Command | Result |
 |---|---|
-| `TEST_DATABASE_URL=… npm test --prefix server/messaging` | **181 pass, 0 fail, 0 skipped** (28 new: 18 offline in `studioUnits.test.ts`, 10 through the HTTP API against Postgres in `studio.test.ts`). Mutation checks: removing the daily cap, making every item ready, keeping unseen URLs, allowing `<script>` or allowing orange text each fail tests; removing the owner check on file downloads is still caught, because the file's encryption is bound to its owner's account |
+| `TEST_DATABASE_URL=… npm test --prefix server/messaging` | **188 pass, 0 fail, 0 skipped** (35 new: 23 offline in `studioUnits.test.ts` including the per-step models, per-call pricing and the live-run recorder, 10 through the HTTP API against Postgres in `studio.test.ts`, 2 in `config.test.ts`). Re-run on 22 Oct after the cheaper-models change. Mutation checks: removing the daily cap, making every item ready, keeping unseen URLs, allowing `<script>` or allowing orange text each fail tests; removing the owner check on file downloads is still caught, because the file's encryption is bound to its owner's account |
 | `scripts/check_studio_crosscheck.sh` | PASS: the server's 14 checks accept the files the real renderers made from both samples |
 | `scripts/studio_skills.sh check` | PASS: 3 skills (frontmatter, sizes, no font or image files), 4 render variants (Polish bar, English column, line with numbered facts, donut), a broken SVG caught |
 | `swift test --package-path Packages/DoddyCore` (Linux flags) | **1,395 tests, 0 failures** (24 new in `StudioTests`, plus updated `ActivityTextTests` and `DataFlowTests`); the shared digest vectors match the server's |
@@ -184,7 +184,7 @@ Run on 22 Oct 2026 in a Linux container (Node 22.22.0, Swift 6.1.2, Postgres 16,
 
 ## First real run (22 Oct 2026, one job, partly)
 
-The owner lowered the limits for this run: US$5 for the whole task, US$2 per job, one job only, 8 searches and 8 fetches. One job ran: Polish, "Pompy ciepła w Polsce: ile kosztują i czy się opłacają?", length `short`, driver `server/messaging/scripts/studio-live-run.mjs`, `baseURL` set to `https://api.anthropic.com`. Topics (b) and (c) and any rerun were **not run**. Spent: **US$1.42** (computed by the code and, independently, from the per-call usage: both 1.4153).
+The owner lowered the limits for this run: US$5 for the whole task, US$2 per job, one job only, 8 searches and 8 fetches. One job ran: Polish, "Pompy ciepła w Polsce: ile kosztują i czy się opłacają?", length `short`, driver `server/messaging/scripts/studio-live-run.mjs`, `baseURL` set to `https://api.anthropic.com`. Topics (b) and (c) and any rerun were **not run**. This run used Opus 5.5 for every step (before the per-step model mix existed), so the mix is not measured. Spent: **US$1.42** (computed by the code and, independently, from the per-call usage: both 1.4153).
 
 **Result: the job failed as `unreadable_result` at the write step. No file was made, so the make step (code execution with the custom skills, `pause_turn` with a container, `file_id`s, file download and delete) has still never run against the real API.**
 
@@ -223,4 +223,4 @@ The owner lowered the limits for this run: US$5 for the whole task, US$2 per job
 
 ## Open owner decisions (from the audit)
 
-Cloud AI and the card wording (1), Render paid plan (2), brand fonts (3), storage and the website (4), the daily cap (5; default $5), the blocklist and `max_uses` (10; defaults empty and 15/15).
+Cloud AI and the card wording (1), Render paid plan (2), brand fonts (3), storage and the website (4), the daily cap (5; default $3, $2 a job), the blocklist and `max_uses` (10; defaults empty and 15/15).

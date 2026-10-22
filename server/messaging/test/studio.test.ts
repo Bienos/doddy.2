@@ -150,17 +150,17 @@ describe("studio against real Postgres", { skip: dbSkip }, () => {
   });
 
   test("the daily cap and the open-job limit are checked at approve, with a reserve per open job", async () => {
-    const w = await world({ settings: { dailyCapUsd: 5, maxOpen: 3 } });
+    const w = await world({ settings: { dailyCapUsd: 2.5, maxOpen: 3 } });
     await approveJob(w);
     await approveJob(w);
     const third = (await w.call("POST", "/v1/studio", job)).json();
     const refused = await w.call("POST", `/v1/studio/${third.id}/approve`, { digest: third.digest });
     assert.equal(refused.statusCode, 409);
-    assert.deepEqual(refused.json(), { error: "daily_cap_reached", capUsd: 5, spentUsd: 0 });
-    await db.query("UPDATE studio_items SET state = 'ready', stage = NULL, started_at = approved_at, finished_at = approved_at, cost_usd = 2.5, result_key_version = 1, result_ciphertext = '\\x00' WHERE state = 'queued'");
-    // Spent 5.00 today on two finished jobs: no room for another reserve.
+    assert.deepEqual(refused.json(), { error: "daily_cap_reached", capUsd: 2.5, spentUsd: 0 });
+    await db.query("UPDATE studio_items SET state = 'ready', stage = NULL, started_at = approved_at, finished_at = approved_at, cost_usd = 1.25, result_key_version = 1, result_ciphertext = '\\x00' WHERE state = 'queued'");
+    // Spent 2.50 today on two finished jobs: no room for another reserve.
     const again = await w.call("POST", `/v1/studio/${third.id}/approve`, { digest: third.digest });
-    assert.deepEqual(again.json(), { error: "daily_cap_reached", capUsd: 5, spentUsd: 5 });
+    assert.deepEqual(again.json(), { error: "daily_cap_reached", capUsd: 2.5, spentUsd: 2.5 });
 
     const roomy = await world({ settings: { dailyCapUsd: 100, maxOpen: 1 } });
     await approveJob(roomy);

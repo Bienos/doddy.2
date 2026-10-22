@@ -1,6 +1,7 @@
 // Test doubles for Studio (ADR-584): a fake Claude that answers each step, and the files a correct
 // render would produce. Nothing here calls Anthropic.
 import type { ResearchMessage, ResearchTurn } from "../src/errands/researcher.js";
+import type { StepModels } from "../src/studio/models.js";
 import type { MakeMessage, MakeTurn, SkillRef, StudioModelApi, Structured } from "../src/studio/model.js";
 import type { ContentOutput, PackOutput, PlanOutput, RenderContent, StudioJob } from "../src/studio/schema.js";
 
@@ -105,6 +106,7 @@ export const goodFiles = (c: Pick<RenderContent, "infographic">): MakeFiles => (
 /** A scripted Claude. Each step's queue is used first; otherwise the happy path. */
 export class FakeStudioApi implements StudioModelApi {
   readonly model = "claude-opus-5-5";
+  models: StepModels = { plan: "claude-opus-5-5", research: "claude-opus-5-5", pack: "claude-opus-5-5", write: "claude-opus-5-5", make: "claude-opus-5-5" };
   readonly skills: SkillRef[] = [{ id: "skill_brand", version: "1" }, { id: "skill_docs", version: "1" }, { id: "skill_info", version: "1" }];
   plans: Structured<PlanOutput>[] = [];
   researches: ResearchMessage[] = [];
