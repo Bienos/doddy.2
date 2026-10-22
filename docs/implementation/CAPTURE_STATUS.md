@@ -37,6 +37,7 @@ Environment: Linux x86_64 (Ubuntu 24.04), Swift 6.1.2 (the version CI uses), no 
 | `python3 -I tools/build_strings_catalog.py --check` | PASS (catalogs regenerated; Polish 1,731 of 1,810 UI strings; the rest of the languages show new screens in English) |
 | `scripts/typecheck_app_logic.sh` | PASS, 25 app files (it failed first: my edit to `ShortcutRouter` needed a field in its stand-in; fixed) |
 | `swiftc -parse -swift-version 6` on the 24 app, shared and widget Swift files I touched | all parse. **Syntax only** |
+| **Hosted macOS build (first real compile)** | **FAILED on 3 errors, all `RecordingActivity.swift`** ("sending 'activity' risks causing data races", Swift 6). Everything else in the app, the widget extension and the shared files compiled. Fixed with `@preconcurrency import ActivityKit`, as the other Live Activity files do; the rebuild is the next result |
 | Independent read-through of the app layer (a reviewing agent read every app, widget and shared file I added or touched) | **Done: no definite compile error found, 15 other findings** (table below). A read-through, not a compile |
 | `scripts/ci.sh --core-only` (everything that runs without a Mac) | **PASS for core-only scope, run on the final tree** (exit 0). It prints `NOT RUN  iOS app build + tests`: the app is not verified by it |
 
