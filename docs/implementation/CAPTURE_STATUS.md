@@ -37,7 +37,7 @@ Environment: Linux x86_64 (Ubuntu 24.04), Swift 6.1.2 (the version CI uses), no 
 | `python3 -I tools/build_strings_catalog.py --check` | PASS (catalogs regenerated; Polish 1,731 of 1,810 UI strings; the rest of the languages show new screens in English) |
 | `scripts/typecheck_app_logic.sh` | PASS, 25 app files (it failed first: my edit to `ShortcutRouter` needed a field in its stand-in; fixed) |
 | `swiftc -parse -swift-version 6` on the 24 app, shared and widget Swift files I touched | all parse. **Syntax only** |
-| **Hosted macOS build (first real compile)** | **FAILED on 3 errors, all `RecordingActivity.swift`** ("sending 'activity' risks causing data races", Swift 6). Everything else in the app, the widget extension and the shared files compiled. Fixed with `@preconcurrency import ActivityKit`, as the other Live Activity files do; the rebuild is the next result |
+| **Hosted macOS build (first real compile)** | **First run failed on 3 errors, all `RecordingActivity.swift`** ("sending 'activity' risks causing data races", Swift 6); everything else in the app, the widget extension and the shared files compiled. Fixed with `@preconcurrency import ActivityKit`, as the other Live Activity files do. **Second run: the app, widget and tests built; one UI test failed**, `MemoryJourneyTests.testDarkLargestTextKeepsTextRoutesUsable`, because my two new Home menu items pushed Memories out of the menu's first screen at the largest text size. Fixed by one "Recordings" item below Settings (the Record button is on that screen). The third run is the next result |
 | Independent read-through of the app layer (a reviewing agent read every app, widget and shared file I added or touched) | **Done: no definite compile error found, 15 other findings** (table below). A read-through, not a compile |
 | `scripts/ci.sh --core-only` (everything that runs without a Mac) | **PASS for core-only scope, run on the final tree** (exit 0). It prints `NOT RUN  iOS app build + tests`: the app is not verified by it |
 
@@ -69,7 +69,7 @@ Run on an iPhone with Doddy installed from this branch, a free-team build is eno
 
 | # | Do | Expected | What it settles |
 |---|---|---|---|
-| 1 | Home › ••• › Record, accept the notice | Pill "Doddy is recording", orange dot, Live Activity with a running time; Stop saves; the recording is in Recordings | The whole slice compiles and starts |
+| 1 | Home › ••• › Recordings › Record, accept the notice | Pill "Doddy is recording", orange dot, Live Activity with a running time; Stop saves; the recording is in Recordings | The whole slice compiles and starts |
 | 2 | Lock the screen for 2 minutes, unlock, Stop | Recording carried on while locked; length about right | Background audio with `.record` category |
 | 3 | Lock Screen card: Pause, Resume, Stop | Each works; "Paused" shows the microphone is off | The island's intents run in the app |
 | 4 | Action Button › Controls › Record with DODDY (also unlocked and locked) | Doddy opens, records; locked asks to unlock first | The control; the start rule (ADR-580) |

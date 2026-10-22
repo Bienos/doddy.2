@@ -132,19 +132,6 @@ struct HomeView: View {
         }
     }
 
-    /// Starts a recording from the menu. The one-time notice comes first, and a start that cannot go
-    /// ahead opens Recordings, which says why. Once it records, Doddy shows it everywhere.
-    private func startRecording() async {
-        guard RecordingCoordinator.noticeAccepted else {
-            router.openRecordings()
-            return
-        }
-        switch await RecordingCoordinator.shared.start(origin: .app) {
-        case .started, .rejected: break
-        case .failed: router.openRecordings()
-        }
-    }
-
     // MARK: Top
 
     private var header: some View {
@@ -173,11 +160,6 @@ struct HomeView: View {
                 // Tasks handed to Doddy's background worker (ADR-570).
                 Button { showErrands = true } label: { Label("Tasks", systemImage: "checklist") }
                     .accessibilityIdentifier("home.tasks")
-                // DODDY Capture (ADR-579): record a meeting or a conversation, and find it again.
-                Button { Task { await startRecording() } } label: { Label("Record", systemImage: "record.circle") }
-                    .accessibilityIdentifier("home.record")
-                Button { router.openRecordings() } label: { Label("Recordings", systemImage: "waveform.circle") }
-                    .accessibilityIdentifier("home.recordings")
                 Button { tool = .focus } label: {
                     if FocusController.shared.session.map({ !$0.isOver }) ?? false {
                         Label("Focus · on", systemImage: "timer")
@@ -204,6 +186,11 @@ struct HomeView: View {
                     .accessibilityIdentifier("home.menu.memories")
                 Button { selectedTab = .settings } label: { Label("Settings", systemImage: "slider.horizontal.3") }
                     .accessibilityIdentifier("home.menu.settings")
+                // DODDY Capture (ADR-579): record a meeting or a conversation, and find it again. Below
+                // Memories and Settings, so at the largest text size they stay inside the menu's first
+                // screen (the dark, largest-text UI test goes through Memories).
+                Button { router.openRecordings() } label: { Label("Recordings", systemImage: "waveform.circle") }
+                    .accessibilityIdentifier("home.recordings")
                 // What is built and what isn't, from the capability catalog (T35/T42, ADR-195, ADR-548).
                 Button { showCapabilities = true } label: { Label("What I can do", systemImage: "sparkles") }
                     .accessibilityIdentifier("home.capabilities")
