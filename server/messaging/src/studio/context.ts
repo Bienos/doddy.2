@@ -5,10 +5,12 @@ import type { TextCipher } from "../crypto.js";
 import type { Db } from "../db.js";
 import type { PushSender } from "../providers/types.js";
 import type { StudioModelApi } from "./model.js";
+import { DEFAULT_STEP_MODELS, type StepModels } from "./models.js";
 
 export interface StudioSettings {
   enabled: boolean;
-  model: string;
+  /** The model for each step; `DEFAULT_STEP_MODELS` is the cheap mix (Haiku 5.5 and Sonnet 5.5). */
+  models: StepModels;
   skills: string;
   maxSearches: number;
   maxFetches: number;
@@ -22,12 +24,12 @@ export interface StudioSettings {
 
 /** For tests and a server without the variables: the code's defaults, switch on (the env's default is off). */
 export const DEFAULT_STUDIO_SETTINGS: StudioSettings = {
-  enabled: true, model: "claude-opus-5-5", skills: "", maxSearches: 15, maxFetches: 15, blockedDomains: [],
-  taskBudgetTokens: 150_000, jobLimitUsd: 4, dailyCapUsd: 5, timeLimitMinutes: 20, maxOpen: 3,
+  enabled: true, models: { ...DEFAULT_STEP_MODELS }, skills: "", maxSearches: 15, maxFetches: 15, blockedDomains: [],
+  taskBudgetTokens: 150_000, jobLimitUsd: 2, dailyCapUsd: 3, timeLimitMinutes: 20, maxOpen: 3,
 };
 
 /** Set aside per open job when checking the daily cap, before its real cost is known. */
-export const RESERVE_PER_OPEN_JOB_USD = 2;
+export const RESERVE_PER_OPEN_JOB_USD = 1;
 
 export interface StudioDeps {
   settings: StudioSettings;

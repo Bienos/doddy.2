@@ -5,6 +5,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { collectSources, countToolUses, echoable, languageName, SeenSources, type ResearchTurn } from "../errands/researcher.js";
 import { checkFiles, failed, isKeptFile, type MadeFile } from "./checks.js";
 import { fileIdsOf, type MakeTurn, type StudioModelApi, type Structured, type UsageLike } from "./model.js";
+import { PER_SEARCH_USD, tokenCostUsd, type StudioStep } from "./models.js";
 import {
   contentProblems, LIMITS, type Check, type ContentOutput, type FailureCode, type PackSource, type PlanOutput,
   type RenderContent, type ResearchPack, type Stage, type StudioJob, type StudioResult,
@@ -12,9 +13,6 @@ import {
 
 export const MAX_PAUSE_TURNS = 12;
 export const MAX_NOTES_CHARS = 200_000;
-
-/** Opus 5.5 list prices (USD per million tokens) and web search ($10 per 1,000). Container time inside the free hours counts $0. */
-export const PRICES = { input: 4, output: 20, cacheRead: 0.2, cacheWrite: 5, perSearch: 0.01 } as const;
 
 export interface Usage { inputTokens: number; cacheWriteTokens: number; cacheReadTokens: number; outputTokens: number }
 export interface RunStats { usage: Usage; searches: number; fetches: number; containerSeconds: number; costUsd: number; model: string }
@@ -39,11 +37,12 @@ export interface StudioControl {
   log?: (msg: string, extra?: object) => void;
 }
 
-export function costOf(usage: Usage, searches: number): number {
-  const usd = (usage.inputTokens * PRICES.input + usage.outputTokens * PRICES.output
-    + usage.cacheReadTokens * PRICES.cacheRead + usage.cacheWriteTokens * PRICES.cacheWrite) / 1_000_000
-    + searches * PRICES.perSearch;
-  return Math.round(usd * 10_000) / 10_000;
+/** USD with four decimals. Tokens are priced per call with that step's model (models.ts); web search at $10 per 1,000; container time inside the free hours counts $0. */
+export const roundUsd = (usd: number) => Math.round(usd * 10_000) / 10_000;
+
+/** Cost of one step's tokens and the web searches it made. */
+export function stepCostUsd(model: string, usage: Usage, searches = 0): number {
+  return roundUsd(tokenCostUsd(model, usage) + searches * PER_SEARCH_USD);
 }
 
 type StopReason = "time_limit" | "cancelled" | "interrupted";
@@ -59,6 +58,8 @@ export async function runStudio(api: StudioModelApi, job: StudioJob, control: St
   const now = control.now ?? (() => new Date());
   const log = control.log ?? (() => {});
   const usage: Usage = { inputTokens: 0, cacheWriteTokens: 0, cacheReadTokens: 0, outputTokens: 0 };
+  /** Token cost so far, each call priced with its own step's model. */
+  let tokenUsd = 0;
   let searches = 0, fetches = 0, reportedSearches = 0, reportedFetches = 0, containerMs = 0;
   /** Files made at Anthropic in this job, until each delete is read back. */
   const atAnthropic = new Set<string>();
@@ -67,15 +68,20 @@ export async function runStudio(api: StudioModelApi, job: StudioJob, control: St
     const s = Math.max(searches, reportedSearches);
     return {
       usage: { ...usage }, searches: s, fetches: Math.max(fetches, reportedFetches),
-      containerSeconds: Math.round(containerMs / 1000), costUsd: costOf(usage, s), model: api.model,
+      containerSeconds: Math.round(containerMs / 1000), costUsd: roundUsd(tokenUsd + s * PER_SEARCH_USD), model: api.model,
     };
   };
-  const add = (u: UsageLike | undefined) => {
+  const add = (step: StudioStep, u: UsageLike | undefined) => {
     if (!u) return;
-    usage.inputTokens += u.input_tokens ?? 0;
-    usage.cacheWriteTokens += u.cache_creation_input_tokens ?? 0;
-    usage.cacheReadTokens += u.cache_read_input_tokens ?? 0;
-    usage.outputTokens += u.output_tokens ?? 0;
+    const call: Usage = {
+      inputTokens: u.input_tokens ?? 0, cacheWriteTokens: u.cache_creation_input_tokens ?? 0,
+      cacheReadTokens: u.cache_read_input_tokens ?? 0, outputTokens: u.output_tokens ?? 0,
+    };
+    usage.inputTokens += call.inputTokens;
+    usage.cacheWriteTokens += call.cacheWriteTokens;
+    usage.cacheReadTokens += call.cacheReadTokens;
+    usage.outputTokens += call.outputTokens;
+    tokenUsd += tokenCostUsd(api.models[step], call);
     reportedSearches += u.server_tool_use?.web_search_requests ?? 0;
     reportedFetches += u.server_tool_use?.web_fetch_requests ?? 0;
   };
@@ -107,9 +113,9 @@ export async function runStudio(api: StudioModelApi, job: StudioJob, control: St
     }
   }
 
-  const structured = async <T>(call: (signal: AbortSignal) => Promise<Structured<T>>): Promise<Structured<T>> => {
+  const structured = async <T>(step: StudioStep, call: (signal: AbortSignal) => Promise<Structured<T>>): Promise<Structured<T>> => {
     const r = await guarded(call);
-    add(r.usage);
+    add(step, r.usage);
     if (r.kind === "refused") throw fail("refused");
     return r;
   };
@@ -136,7 +142,7 @@ export async function runStudio(api: StudioModelApi, job: StudioJob, control: St
 
     // ---------- 1. plan ----------
     await control.setStage("plan");
-    const planned = await structured((s) => api.plan(JSON.stringify({ today, language, job }), s));
+    const planned = await structured("plan", (s) => api.plan(JSON.stringify({ today, language, job }), s));
     if (planned.kind !== "ok") throw fail("unreadable_result");
     const plan: PlanOutput = {
       title: clip(planned.value.title.trim(), LIMITS.title),
@@ -155,7 +161,7 @@ export async function runStudio(api: StudioModelApi, job: StudioJob, control: St
     const notes: string[] = [];
     for (let turn = 0; ; turn++) {
       const m = await guarded((s) => api.research(messages, s));
-      add(m.usage);
+      add("research", m.usage);
       const counted = countToolUses(m.content);
       searches += counted.searches;
       fetches += counted.fetches;
@@ -173,7 +179,7 @@ export async function runStudio(api: StudioModelApi, job: StudioJob, control: St
     const allNotes = notes.join("\n\n").slice(0, MAX_NOTES_CHARS);
     if (!allNotes) throw fail("unreadable_result");
 
-    const packed = await structured((s) => api.pack(JSON.stringify({ today, language, job, notes: allNotes, sources: seen.list(200) }), s));
+    const packed = await structured("pack", (s) => api.pack(JSON.stringify({ today, language, job, notes: allNotes, sources: seen.list(200) }), s));
     if (packed.kind !== "ok") throw fail("unreadable_result");
     const pack = buildPack(packed.value.claims, seen, seenAt);
     log("studio pack", { claims: pack.claims.length, sources: pack.sources.length, seen: seen.size, offered: packed.value.claims.length });
@@ -187,7 +193,7 @@ export async function runStudio(api: StudioModelApi, job: StudioJob, control: St
     let problems: string[] = [];
     for (let attempt = 0; attempt < 2 && !content; attempt++) {
       const input = attempt === 0 ? writeInput : { ...writeInput, fixThese: problems };
-      const written = await structured((s) => api.write(JSON.stringify(input), s));
+      const written = await structured("write", (s) => api.write(JSON.stringify(input), s));
       withinLimit();
       if (written.kind !== "ok") { problems = ["the reply didn't match the schema"]; continue; }
       problems = contentProblems(written.value, pack);
@@ -248,7 +254,7 @@ export async function runStudio(api: StudioModelApi, job: StudioJob, control: St
       const started = Date.now();
       const m = await guarded((s) => api.make(turns, containerId, s));
       containerMs += Date.now() - started;
-      add(m.usage);
+      add("make", m.usage);
       containerId = m.containerId ?? containerId;
       for (const id of fileIdsOf(m.content)) { ids.push(id); atAnthropic.add(id); }
       turns.push({ role: "assistant", content: m.content });

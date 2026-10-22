@@ -1,5 +1,8 @@
 import { z } from "zod";
 import type { StudioSettings } from "./studio/context.js";
+import { stepModelsFrom } from "./studio/models.js";
+
+const MODEL_ID = /^[a-z0-9][a-z0-9.\-]{1,63}$/;
 
 // Every provider block is optional: a missing block switches that feature off and the API
 // answers 503 "not_configured". Nothing is faked.
@@ -87,7 +90,15 @@ const schema = z.object({
   // Studio (ADR-584, docs/implementation/STUDIO.md): research a topic, then make files from it. Off by
   // default; "1" also needs ANTHROPIC_API_KEY, MEMORY_ENCRYPTION_KEY and STUDIO_SKILLS.
   STUDIO_ENABLED: z.enum(["0", "1"]).default("0"),
-  STUDIO_MODEL: z.string().regex(/^[a-z0-9][a-z0-9.\-]{1,63}$/).default("claude-opus-5-5"),
+  // Models per step (owner, 22 Oct: the all-Opus plan cost too much). Defaults: Haiku 5.5 plans, extracts
+  // claims and renders; Sonnet 5.5 researches and writes. STUDIO_MODEL, when set, is the starting point for
+  // every step; a STUDIO_MODEL_<STEP> then overrides that step.
+  STUDIO_MODEL: z.string().regex(MODEL_ID).optional(),
+  STUDIO_MODEL_PLAN: z.string().regex(MODEL_ID).optional(),
+  STUDIO_MODEL_RESEARCH: z.string().regex(MODEL_ID).optional(),
+  STUDIO_MODEL_PACK: z.string().regex(MODEL_ID).optional(),
+  STUDIO_MODEL_WRITE: z.string().regex(MODEL_ID).optional(),
+  STUDIO_MODEL_MAKE: z.string().regex(MODEL_ID).optional(),
   // Doddy's custom skills: comma-separated skill ids, each optionally @version (scripts/studio_skills.sh upload).
   STUDIO_SKILLS: z.string().regex(/^[A-Za-z0-9_]+(@[A-Za-z0-9_.-]+)?(,[A-Za-z0-9_]+(@[A-Za-z0-9_.-]+)?)*$/).optional(),
   STUDIO_MAX_SEARCHES: z.coerce.number().int().min(1).max(50).default(15),
@@ -95,8 +106,8 @@ const schema = z.object({
   // Comma-separated hostnames for web search and fetch to skip (content farms; owner decision).
   STUDIO_BLOCKED_DOMAINS: z.string().regex(/^[a-z0-9.-]+(,[a-z0-9.-]+)*$/).optional(),
   STUDIO_TASK_BUDGET_TOKENS: z.coerce.number().int().min(20_000).max(1_000_000).default(150_000),
-  STUDIO_JOB_LIMIT_USD: z.coerce.number().positive().max(50).default(4),
-  STUDIO_DAILY_CAP_USD: z.coerce.number().positive().max(500).default(5),
+  STUDIO_JOB_LIMIT_USD: z.coerce.number().positive().max(50).default(2),
+  STUDIO_DAILY_CAP_USD: z.coerce.number().positive().max(500).default(3),
   STUDIO_TIME_LIMIT_MINUTES: z.coerce.number().int().min(5).max(60).default(20),
   STUDIO_MAX_OPEN: z.coerce.number().int().min(1).max(10).default(3),
 });
@@ -225,7 +236,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     },
     studioSettings: {
       enabled: e.STUDIO_ENABLED === "1",
-      model: e.STUDIO_MODEL,
+      models: stepModelsFrom({
+        plan: e.STUDIO_MODEL_PLAN, research: e.STUDIO_MODEL_RESEARCH, pack: e.STUDIO_MODEL_PACK,
+        write: e.STUDIO_MODEL_WRITE, make: e.STUDIO_MODEL_MAKE,
+      }, e.STUDIO_MODEL),
       skills: e.STUDIO_SKILLS ?? "",
       maxSearches: e.STUDIO_MAX_SEARCHES,
       maxFetches: e.STUDIO_MAX_FETCHES,

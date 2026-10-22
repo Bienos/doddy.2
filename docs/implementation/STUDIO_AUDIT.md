@@ -127,6 +127,8 @@ Read again in the Claude docs on 22 Oct (platform.claude.com: code execution too
 
 ## Costs
 
+> **Update, 22 Oct (after the owner said the first plan was "a lot of money").** The table below prices every step on Opus 5.5. S0 now uses one model per step: Haiku 5.5 for the plan, the claim extraction and the render recipe, Sonnet 5.5 for the research and the writing (Opus 5.5 stays selectable). Prices per million tokens, read in Anthropic's models overview and pricing on 22 Oct: Opus 5.5 $4 / $20, Sonnet 5.5 $2 / $10, Haiku 5.5 $0.10 / $0.50 (beyond 100K prompt tokens $0.50 / $2.50). Estimate for one brief with the cheap mix and the owner's lower caps (8 searches, a short brief): about **$0.5 to $1.2**, of which the searches are $0.08 and the research reading is most of the rest; with every step on Sonnet 5.5 about $0.7 to $1.5; every step on Opus 5.5 about $1.5 to $3. **All three are estimates**; one real run per mix measures them (`server/messaging/scripts/studio-live-run.mjs --mix cheap|sonnet|opus`, which prices every call at its own model). Open question the runs answer: whether Haiku 5.5 renders the files and extracts claims well enough, and whether it accepts the dynamic-filtering web search (the docs say "Claude 4.6 and later"; Studio keeps research on Sonnet until a run shows it).
+
 **Not measured.** These are estimates from list prices and typical sizes; the first three real runs per kind replace them. Prices: Opus 5.5 at $4 / $20 per million tokens in and out, cache reads $0.20; web search $10 per 1,000 searches; code execution free in a request that also has web search or fetch, otherwise within 1,550 free container hours a month.
 
 | Step | Model and effort | Assumed size | Estimate |

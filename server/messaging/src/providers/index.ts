@@ -12,6 +12,7 @@ import type { ErrandDeps } from "../errands/context.js";
 import { ClaudeErrandResearcher } from "../errands/researcher.js";
 import type { StudioDeps } from "../studio/context.js";
 import { AnthropicStudioApi, parseSkills } from "../studio/model.js";
+import { modelLabel } from "../studio/models.js";
 
 /** Real provider adapters for whatever is configured; anything missing stays undefined. */
 export function providersFrom(config: Config) {
@@ -48,7 +49,7 @@ export function providersFrom(config: Config) {
     settings: ss,
     api: ss.enabled && config.anthropicApiKey && skills.length
       ? new AnthropicStudioApi(config.anthropicApiKey, {
-        model: ss.model, skills, maxSearches: ss.maxSearches, maxFetches: ss.maxFetches,
+        models: ss.models, modelLabel: modelLabel(ss.models), skills, maxSearches: ss.maxSearches, maxFetches: ss.maxFetches,
         blockedDomains: ss.blockedDomains, taskBudgetTokens: ss.taskBudgetTokens,
       })
       : undefined,

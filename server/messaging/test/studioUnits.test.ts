@@ -5,7 +5,8 @@ import { describe, test } from "node:test";
 import { SeenSources } from "../src/errands/researcher.js";
 import { checkFiles, contrast, failed, pngSize, scanSvg, TEXT_COLOURS } from "../src/studio/checks.js";
 import { fileIdsOf, parseSkills, STUDIO_MAKE_TOOL_TYPE, STUDIO_RESEARCH_TOOL_TYPES, AnthropicStudioApi } from "../src/studio/model.js";
-import { buildPack, costOf, runStudio, type StudioControl } from "../src/studio/pipeline.js";
+import { buildPack, runStudio, stepCostUsd, type StudioControl } from "../src/studio/pipeline.js";
+import { DEFAULT_STEP_MODELS, HAIKU, MODEL_MIXES, modelLabel, OPUS, SONNET, stepModelsFrom, tokenCostUsd } from "../src/studio/models.js";
 import { appState, contentProblems, jobBody, jobDigest, jobJson, type RenderContent, type Stage } from "../src/studio/schema.js";
 import { content, FakeStudioApi, goodFiles, goodSvg, job, packOutput, pdf, png, researchMessage, URLS } from "./studioFakes.js";
 
@@ -130,6 +131,7 @@ describe("the file checks", () => {
 describe("the model calls", () => {
   test("research has only web search and fetch, capped, with blocked domains; make has only code execution", () => {
     const api = new AnthropicStudioApi("sk-ant-test", {
+      models: DEFAULT_STEP_MODELS, modelLabel: modelLabel(DEFAULT_STEP_MODELS),
       skills: [{ id: "skill_a", version: "latest" }], maxSearches: 15, maxFetches: 12, blockedDomains: ["spam.example"], taskBudgetTokens: 150_000,
     });
     const tools = api.researchTools();
@@ -137,7 +139,7 @@ describe("the model calls", () => {
     assert.deepEqual(tools.map((t) => t.max_uses), [15, 12]);
     for (const t of tools) assert.deepEqual((t as { blocked_domains?: string[] }).blocked_domains, ["spam.example"]);
     assert.equal("allowed_domains" in tools[0]!, false, "allowed and blocked domains can't be combined");
-    const open = new AnthropicStudioApi("sk-ant-test", { skills: [], maxSearches: 1, maxFetches: 1, blockedDomains: [], taskBudgetTokens: 20_000 });
+    const open = new AnthropicStudioApi("sk-ant-test", { models: DEFAULT_STEP_MODELS, modelLabel: "x", skills: [], maxSearches: 1, maxFetches: 1, blockedDomains: [], taskBudgetTokens: 20_000 });
     assert.equal("blocked_domains" in open.researchTools()[0]!, false);
     assert.equal(STUDIO_MAKE_TOOL_TYPE, "code_execution_20250825");
     assert.deepEqual(parseSkills("skill_a, skill_b@3"), [{ id: "skill_a", version: "latest" }, { id: "skill_b", version: "3" }]);
@@ -145,8 +147,68 @@ describe("the model calls", () => {
     assert.deepEqual(fileIdsOf([{ type: "bash_code_execution_tool_result", content: { type: "bash_code_execution_result", content: [{ file_id: "f1" }, { x: 1 }] } }, { type: "text" }]), ["f1"]);
   });
 
-  test("cost: Opus 5.5 list prices and $10 per 1,000 searches", () => {
-    assert.equal(costOf({ inputTokens: 1_000_000, outputTokens: 100_000, cacheReadTokens: 1_000_000, cacheWriteTokens: 0 }, 10), 4 + 2 + 0.2 + 0.1);
+  test("cost: each model's own list prices; Haiku's higher tier beyond 100K prompt tokens; searches $10 per 1,000; unknown models at the dearest price", () => {
+    const u = { inputTokens: 1_000_000, outputTokens: 100_000, cacheReadTokens: 1_000_000, cacheWriteTokens: 0 };
+    assert.equal(stepCostUsd(OPUS, u, 10), 4 + 2 + 0.2 + 0.1);
+    assert.equal(stepCostUsd(SONNET, u, 0), 2 + 1 + 0.1);
+    assert.equal(stepCostUsd(HAIKU, { inputTokens: 50_000, outputTokens: 10_000, cacheReadTokens: 0, cacheWriteTokens: 0 }), 0.01);
+    assert.equal(stepCostUsd(HAIKU, { inputTokens: 200_000, outputTokens: 10_000, cacheReadTokens: 0, cacheWriteTokens: 0 }), 0.125, "a prompt over 100K tokens is priced at $0.50 / $2.50");
+    assert.equal(tokenCostUsd("claude-future-9", { inputTokens: 1_000_000, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0 }), 10);
+    assert.ok(tokenCostUsd(HAIKU, u) < tokenCostUsd(SONNET, u) && tokenCostUsd(SONNET, u) < tokenCostUsd(OPUS, u));
+  });
+
+  test("models per step: the cheap mix by default; one STUDIO_MODEL for all; a step override wins; labels", () => {
+    assert.deepEqual(DEFAULT_STEP_MODELS, { plan: HAIKU, research: SONNET, pack: HAIKU, write: SONNET, make: HAIKU });
+    assert.deepEqual(MODEL_MIXES.cheap!, DEFAULT_STEP_MODELS);
+    assert.deepEqual(stepModelsFrom({}), DEFAULT_STEP_MODELS);
+    assert.deepEqual(stepModelsFrom({}, OPUS), MODEL_MIXES.opus!);
+    assert.equal(stepModelsFrom({ research: OPUS }, SONNET).research, OPUS);
+    assert.equal(stepModelsFrom({ research: OPUS }, SONNET).plan, SONNET);
+    assert.equal(modelLabel(DEFAULT_STEP_MODELS), "haiku-5-5+sonnet-5-5");
+    assert.equal(modelLabel(MODEL_MIXES.opus!), "claude-opus-5-5");
+  });
+
+  test("each step's request carries its own model; fallbacks only where Anthropic offers them (not Haiku 5.5)", async () => {
+    const sent: { step: string; body: Record<string, unknown> }[] = [];
+    const parsed = (v: unknown) => async (body: Record<string, unknown>) => {
+      sent.push({ step: String(body.system).slice(0, 12), body });
+      return { usage: {}, stop_reason: "end_turn", parsed_output: v };
+    };
+    const message = async () => ({ content: [], stop_reason: "end_turn", usage: {}, container: { id: "c1" } });
+    const client = {
+      beta: {
+        messages: {
+          parse: async (body: Record<string, unknown>) => (sent.push({ step: String(body.system).slice(0, 12), body }), { usage: {}, stop_reason: "end_turn", parsed_output: { ok: true } }),
+          stream: (body: Record<string, unknown>) => (sent.push({ step: String(body.system).slice(0, 12), body }), { finalMessage: message }),
+        },
+      },
+    };
+    void parsed;
+    const api = new AnthropicStudioApi("sk-ant-test", {
+      models: DEFAULT_STEP_MODELS, modelLabel: modelLabel(DEFAULT_STEP_MODELS), skills: [{ id: "skill_a", version: "1" }],
+      maxSearches: 8, maxFetches: 8, blockedDomains: [], taskBudgetTokens: 100_000, client: client as never,
+    });
+    const signal = new AbortController().signal;
+    await api.plan("{}", signal);
+    await api.research([{ role: "user", content: "{}" }], signal);
+    await api.pack("{}", signal);
+    await api.write("{}", signal);
+    await api.make([{ role: "user", content: "x" }], undefined, signal);
+    const by = Object.fromEntries(sent.map((s) => [s.step.startsWith("You plan") ? "plan" : s.step.startsWith("You research") ? "research" : s.step.startsWith("You turn") ? "pack" : s.step.startsWith("You write") ? "write" : "make", s.body]));
+    assert.deepEqual(Object.fromEntries(Object.entries(by).map(([k, v]) => [k, v.model])), { plan: HAIKU, research: SONNET, pack: HAIKU, write: SONNET, make: HAIKU });
+    for (const step of ["plan", "pack", "make"]) {
+      assert.equal("fallbacks" in by[step]!, false, `${step}: Haiku 5.5 has no server-side fallback`);
+      assert.equal("betas" in by[step]!, false, step);
+    }
+    for (const step of ["research", "write"]) assert.equal(by[step]!.fallbacks, "default", step);
+    assert.deepEqual(by.research!.betas, ["server-side-fallback-2026-07-01", "task-budgets-2026-03-13"]);
+    assert.deepEqual(by.write!.betas, ["server-side-fallback-2026-07-01"]);
+    assert.deepEqual((by.research!.tools as { type: string }[]).map((t) => t.type), [...STUDIO_RESEARCH_TOOL_TYPES]);
+    assert.deepEqual((by.make!.tools as { type: string }[]).map((t) => t.type), [STUDIO_MAKE_TOOL_TYPE]);
+    assert.deepEqual(by.make!.container, { skills: [{ type: "custom", skill_id: "skill_a", version: "1" }] });
+    assert.equal((by.plan!.output_config as { effort: string }).effort, "medium");
+    assert.equal((by.research!.output_config as { effort: string }).effort, "high");
+    assert.equal(sent.some((s) => "temperature" in s.body || "top_p" in s.body || "top_k" in s.body), false, "rejected from API version 2026-10-21");
   });
 });
 
@@ -263,6 +325,20 @@ describe("the pipeline against a fake Claude", () => {
     assert.equal(((o) => o.kind === "failed" && o.code)(await runStudio(late, job, control({ deadline: new Date(Date.now() - 1) }).c)), "time_limit");
   });
 
+  test("a run's cost is each call priced with its own step's model", async () => {
+    const api = new FakeStudioApi();
+    api.models = { ...DEFAULT_STEP_MODELS };
+    const out = await runStudio(api, job, control().c);
+    assert.equal(out.kind, "made");
+    // plan 1000/500 Haiku; research 20000/4000 Sonnet + 3 searches; pack Haiku; write Sonnet; make 5000/2000 Haiku
+    assert.equal(out.costUsd, 0.1192);
+    const dear = new FakeStudioApi();
+    dear.models = { ...MODEL_MIXES.opus! };
+    const same = await runStudio(dear, job, control().c);
+    assert.equal(same.costUsd, 0.292, "all-Opus: the same calls at Opus prices");
+    assert.ok(same.costUsd > out.costUsd * 2, `all-Opus ${same.costUsd} against the cheap mix ${out.costUsd}`);
+  });
+
   test("a file Anthropic won't confirm deleted comes back as pending, even when the job fails afterwards", async () => {
     const api = new FakeStudioApi();
     api.stubborn.add("file_1");
@@ -276,5 +352,44 @@ describe("the pipeline against a fake Claude", () => {
     assert.equal(f.kind === "failed" && f.code, "refused");
     assert.deepEqual(f.pending, ["file_2"]);
     assert.equal(failing.deleted.size, 3);
+  });
+});
+
+describe("the live-run recorder (tested here so a bug can't waste a paid run)", () => {
+  test("records every call with its model, writes the files and a summary, and prices each call at its own model", async () => {
+    const { mkdtempSync, readFileSync, readdirSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const { join } = await import("node:path");
+    const { liveRun } = await import("../src/studio/liveRun.js");
+    const api = new FakeStudioApi();
+    api.models = { ...DEFAULT_STEP_MODELS };
+    const outDir = mkdtempSync(join(tmpdir(), "studio-live-"));
+    const lines: string[] = [];
+    const { summary, outcome } = await liveRun(api, job, { name: "pl", mix: "cheap", outDir, jobLimitUsd: 2, print: (l) => lines.push(l) });
+    assert.equal(outcome.kind, "made");
+    assert.equal(summary.state, "ready");
+    assert.deepEqual(readdirSync(outDir).sort(), ["brief.pdf", "infographic-a4.png", "infographic.png", "infographic.svg", "pack.json", "plan.json", "research.json", "summary.json", "writes.json"]);
+    assert.deepEqual(summary.calls.filter((c) => !c.step.startsWith("file.")).map((c) => [c.step, c.model]),
+      [["plan", HAIKU], ["research", SONNET], ["pack", HAIKU], ["write", SONNET], ["make", HAIKU]]);
+    assert.ok(summary.calls.some((c) => c.step === "file.gone?"), "file clean-up is recorded");
+    assert.equal(summary.pipelineCostUsd, 0.1192);
+    assert.equal(summary.impliedCostFromCallsUsd, 0.1192, "the recorder's own sum agrees with the pipeline's");
+    assert.deepEqual(Object.keys(summary.tokenUsdByStep).sort(), ["make", "pack", "plan", "research", "write"]);
+    assert.equal(summary.tokenUsdByStep.research!.model, SONNET);
+    assert.equal(JSON.parse(readFileSync(join(outDir, "summary.json"), "utf8")).mix, "cheap");
+    assert.ok(lines.some((l) => l.includes("stage make")));
+  });
+
+  test("a failing call is recorded with its error, redacted of anything key-shaped", async () => {
+    const { mkdtempSync } = await import("node:fs");
+    const { tmpdir } = await import("node:os");
+    const { join } = await import("node:path");
+    const { liveRun } = await import("../src/studio/liveRun.js");
+    const api = new FakeStudioApi();
+    api.onCall = (step) => { if (step === "research") throw Object.assign(new Error("401 invalid x-api-key sk-ant-api03-SECRETSECRET"), { status: 401 }); };
+    const { summary } = await liveRun(api, job, { name: "pl", mix: "opus", outDir: mkdtempSync(join(tmpdir(), "studio-live-")), jobLimitUsd: 2 });
+    assert.equal(summary.outcome, "failed");
+    const failed = summary.calls.find((c) => c.error);
+    assert.ok(failed && failed.step === "research" && failed.error!.includes("[redacted]") && !failed.error!.includes("SECRETSECRET"));
   });
 });
