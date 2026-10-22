@@ -602,7 +602,7 @@ final class VoiceSessionController {
         let inBackground = UIApplication.shared.applicationState == .background
         let startNote = "starting a conversation: attempt \(attempt), in background \(inBackground), without opening \(withoutOpeningApp)"
         Self.audioLog.notice("\(startNote, privacy: .public)")
-        // "Talk in the Island" (ADR-577), from the Action Button or a control without opening Doddy.
+        // "Talk in the Island" (ADR-577), from the Shortcuts app without opening Doddy (ADR-593).
         // iOS keeps a recording started that way only while its Live Activity is up (requested by
         // `phase = .connecting` above), and the microphone can start only if the app can take the
         // audio session now. Both are checked before anything is fetched or connected, so a refusal

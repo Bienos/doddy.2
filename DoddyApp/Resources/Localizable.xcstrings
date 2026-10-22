@@ -48317,13 +48317,13 @@
         }
       }
     },
-    "Pick Talk in the Island. Talk to Doddy opens the app instead.": {
+    "Pick Talk to Doddy.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Wybierz „Talk in the Island”. „Porozmawiaj z Doddym” otwiera aplikację."
+            "value": "Wybierz „Porozmawiaj z Doddym”."
           }
         }
       }
@@ -65781,17 +65781,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "再聊聊"
-          }
-        }
-      }
-    },
-    "Talk in the Island needs iOS 18 or later. If the button still opens Doddy, it is set to Talk to Doddy: choose again in Settings.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "„Talk in the Island” działa od iOS 18. Jeśli przycisk dalej otwiera Doddy’ego, jest ustawiony na „Porozmawiaj z Doddym”: wybierz jeszcze raz w Ustawieniach."
           }
         }
       }

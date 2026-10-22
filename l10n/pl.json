@@ -1667,8 +1667,6 @@
   "Mute": "Wycisz",
   "Unmute": "Włącz mikrofon",
   "End the conversation": "Zakończ rozmowę",
-  "Pick Talk in the Island. Talk to Doddy opens the app instead.": "Wybierz „Talk in the Island”. „Porozmawiaj z Doddym” otwiera aplikację.",
-  "Talk in the Island needs iOS 18 or later. If the button still opens Doddy, it is set to Talk to Doddy: choose again in Settings.": "„Talk in the Island” działa od iOS 18. Jeśli przycisk dalej otwiera Doddy’ego, jest ustawiony na „Porozmawiaj z Doddym”: wybierz jeszcze raz w Ustawieniach.",
   "To": "Do",
   "Subject": "Temat",
   "Messages": "Wiadomości",
@@ -1685,5 +1683,6 @@
   "The saved messages couldn't be read. They were left as they are.": "Nie udało się odczytać zapisanych wiadomości. Zostały bez zmian.",
   "This message couldn't be kept on this iPhone.": "Ta wiadomość nie mogła zostać zapisana na tym iPhonie.",
   "The messages couldn't be deleted. Try again.": "Nie udało się usunąć wiadomości. Spróbuj jeszcze raz.",
-  "File is no longer on this iPhone": "Pliku nie ma już na tym iPhonie"
+  "File is no longer on this iPhone": "Pliku nie ma już na tym iPhonie",
+  "Pick Talk to Doddy.": "Wybierz „Porozmawiaj z Doddym”."
 }
