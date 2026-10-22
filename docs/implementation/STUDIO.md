@@ -170,6 +170,18 @@ Run on 22 Oct 2026 in a Linux container (Node 22.22.0, Swift 6.1.2, Postgres 16,
 
 **Not run:** the real Anthropic API (no key in this container; the skills were never uploaded), so no real job, no measured cost and no check of the request shapes against the live API; the SwiftUI views and the controller, `VoiceView`, `HomeView`, `RootView` and `SettingsView` changes (no Xcode; the hosted Mac build is their first compile); APNs; Render; a device; the live ElevenLabs agent.
 
+## Skills uploaded (22 Oct 2026, real API)
+
+`scripts/studio_skills.sh upload` worked first time against `POST /v1/skills` (the script's request format matches the current skills guide: `files[]` parts with the folder as the path, `anthropic-version: 2023-06-01`, no beta header). IDs and versions are not secrets:
+
+| Skill | `skill_id` | Version |
+|---|---|---|
+| doddy-brand | `skill_01A75ob2c7ffXrWtzZUCnRVt` | `skver_01KH2yf9VsgJ5JBym9Y4xMDo` |
+| doddy-docs | `skill_01KoVjXFPWSeVWM2pFisSj8R` | `skver_01W3vcsJXorqj85MTNKJSBbX` |
+| doddy-infographic | `skill_01TQ6rfczzvXqeCrCTkv2Uak` | `skver_01MjEQ7nMjSEvLU8s7CUjmap` |
+
+`server/messaging/scripts/studio-live-run.mjs <pl|en|short>` is the driver for the first real runs (key and `STUDIO_SKILLS` from the environment only). **The first real job has not run yet** (22 Oct: the key could not be used from the session's shell).
+
 ## Constitution evidence log (S0)
 
 | Rule | Enforcing code | Tests | Gaps and claims to keep limited |
