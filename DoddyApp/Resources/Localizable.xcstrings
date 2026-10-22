@@ -2479,6 +2479,17 @@
         }
       }
     },
+    "A taste of Doddy's research, included.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Próbka sprawdzania tematów przez Doddy’ego, w cenie."
+          }
+        }
+      }
+    },
     "A thought, a recommendation, where you put the spare keys.": {
       "extractionState": "manual",
       "localizations": {
@@ -9152,6 +9163,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "你轻点过“暂不”的卡片。7 天后会自动消失。"
+          }
+        }
+      }
+    },
+    "Careful": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dokładny"
           }
         }
       }
@@ -20033,6 +20055,17 @@
         }
       }
     },
+    "Doddy's paid plans are bought on Doddy's website, not in the app. Nothing is bought here.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Płatne plany Doddy’ego kupuje się na jego stronie, a nie w aplikacji. Niczego się tu nie kupuje."
+          }
+        }
+      }
+    },
     "Doddy's phone line isn't set up on the server yet.": {
       "extractionState": "manual",
       "localizations": {
@@ -22046,6 +22079,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "灵动岛样式"
+          }
+        }
+      }
+    },
+    "Each brief comes with an infographic and the sources it used.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Każdy raport ma infografikę i listę źródeł, z których korzystał."
           }
         }
       }
@@ -25506,6 +25550,17 @@
         }
       }
     },
+    "Free": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Darmowy"
+          }
+        }
+      }
+    },
     "From Contacts": {
       "extractionState": "manual",
       "localizations": {
@@ -25771,6 +25826,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ogólne"
+          }
+        }
+      }
+    },
+    "Get Plus on Doddy's website": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kup Plus na stronie Doddy’ego"
+          }
+        }
+      }
+    },
+    "Get Pro on Doddy's website": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kup Pro na stronie Doddy’ego"
           }
         }
       }
@@ -36207,6 +36284,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "更多内容在你的 iPhone 上。"
+          }
+        }
+      }
+    },
+    "More research briefs a month": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Więcej raportów w miesiącu"
+          }
+        }
+      }
+    },
+    "More research briefs, with better research.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Więcej raportów i lepsze sprawdzanie tematów."
           }
         }
       }
@@ -47387,6 +47486,17 @@
         }
       }
     },
+    "Opens Doddy's website in your browser. You pay there, not in the app. Nothing from the app is sent except which plan you looked at and the app's language.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwiera stronę Doddy’ego w przeglądarce. Płacisz tam, nie w aplikacji. Z aplikacji nie wysyłamy nic poza tym, który plan oglądasz, i językiem aplikacji."
+          }
+        }
+      }
+    },
     "Opens TikTok or Instagram outside Doddy. Nothing from the app is shared.": {
       "extractionState": "manual",
       "localizations": {
@@ -49673,6 +49783,17 @@
         }
       }
     },
+    "Plan": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plan"
+          }
+        }
+      }
+    },
     "Plan ready": {
       "extractionState": "manual",
       "localizations": {
@@ -49791,6 +49912,17 @@
         }
       }
     },
+    "Plans": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plany"
+          }
+        }
+      }
+    },
     "Playful": {
       "extractionState": "manual",
       "localizations": {
@@ -49846,6 +49978,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "俏皮"
+          }
+        }
+      }
+    },
+    "Plus": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus"
           }
         }
       }
@@ -50976,6 +51119,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Pro": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pro"
           }
         }
       }
@@ -55379,6 +55533,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "回复长度"
+          }
+        }
+      }
+    },
+    "Research": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdzanie tematów"
+          }
+        }
+      }
+    },
+    "Research briefs a month": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raportów w miesiącu"
           }
         }
       }
@@ -63066,6 +63242,17 @@
         }
       }
     },
+    "Simple": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prosty"
+          }
+        }
+      }
+    },
     "Siri": {
       "extractionState": "manual",
       "localizations": {
@@ -70638,6 +70825,17 @@
         }
       }
     },
+    "The most briefs and the most careful research.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najwięcej raportów i najdokładniejsze sprawdzanie tematów."
+          }
+        }
+      }
+    },
     "The names can differ a little between iOS versions. Doddy can't see this setting.": {
       "extractionState": "manual",
       "localizations": {
@@ -72679,6 +72877,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "手表会显示你置顶的笔记、接下来的笔记提醒和清单，并且可以勾选项目和保存新笔记。这些都通过你的 iPhone 完成，iPhone 必须在附近；手表上不保存任何内容。"
+          }
+        }
+      }
+    },
+    "The website address isn't set in this build, so the plans can't be opened yet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W tej wersji aplikacji nie ustawiono adresu strony, więc planów nie da się jeszcze otworzyć."
+          }
+        }
+      }
+    },
+    "The website address isn't set in this build.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W tej wersji aplikacji nie ustawiono adresu strony."
           }
         }
       }
@@ -75499,6 +75719,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Otwiera to stronę Doddy’ego w Ustawieniach. Stuknij Ustawienia w lewym górnym rogu, żeby dojść do głównej listy."
+          }
+        }
+      }
+    },
+    "This plan is included. There is nothing to buy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten plan jest w cenie. Nie ma nic do kupienia."
           }
         }
       }
@@ -82756,6 +82987,17 @@
         }
       }
     },
+    "What each version of Doddy includes. Plans are bought on Doddy's website.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co zawiera każda wersja Doddy’ego. Plany kupuje się na stronie Doddy’ego."
+          }
+        }
+      }
+    },
     "What happens when you use one, a conversation or only opening Doddy, is set under Settings › Back Tap and Siri.": {
       "extractionState": "manual",
       "localizations": {
@@ -83678,6 +83920,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "已构建的功能"
+          }
+        }
+      }
+    },
+    "What's included": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co zawiera"
           }
         }
       }
@@ -88792,6 +89045,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "你的号码"
+          }
+        }
+      }
+    },
+    "Your own notes and memories are never behind a plan. You can always export, back up and delete them.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoje notatki i wspomnienia nigdy nie są za planem. Zawsze możesz je wyeksportować, zapisać w kopii i usunąć."
           }
         }
       }

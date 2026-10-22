@@ -73,6 +73,15 @@ struct StudioView: View {
                 if let message = model.message {
                     Section { Label(message, systemImage: "info.circle").accessibilityIdentifier("studio.message") }
                 }
+                // Plans (owner, 22 Oct 2026): bought on the website; this only shows what each includes.
+                Section {
+                    NavigationLink {
+                        PlansView()
+                    } label: {
+                        Label("More research briefs a month", systemImage: "sparkles")
+                    }
+                    .accessibilityIdentifier("studio.plans")
+                }
             }
             .navigationTitle("Studio")
             .navigationBarTitleDisplayMode(.inline)

@@ -118,6 +118,18 @@ struct SettingsView: View {
                     Text("Opens TikTok or Instagram outside Doddy. Nothing from the app is shared.")
                 }
 
+                // Plans (owner, 22 Oct 2026): bought on the website, so this only describes and links.
+                Section {
+                    NavigationLink {
+                        PlansView()
+                    } label: {
+                        Label("Plans", systemImage: "sparkles")
+                    }
+                    .accessibilityIdentifier("settings.plans")
+                } footer: {
+                    Text("What each version of Doddy includes. Plans are bought on Doddy's website.")
+                }
+
                 Section("About you") {
                     if profiles.profile.isEmpty {
                         Text("Nothing saved. Doddy only keeps what you review and save.")

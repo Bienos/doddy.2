@@ -65,6 +65,11 @@
 	<!-- ADR-563: Doddy's own server (web search, Claude, Gmail and the other online accounts).
 	     Built in, so the app works without typing an address in Settings; Settings' development
 	     field still overrides it. The phone signs itself in there with a device ID. -->
+	<!-- Plans (owner, 22 Oct 2026): the page on Doddy's website where paid plans are bought (https, no
+	     login in it). Empty until the website's address is decided: the Plans screens then say so and
+	     show no buy button. -->
+	<key>DoddyPlansURL</key>
+	<string></string>
 	<key>DoddyServerURL</key>
 	<string>https://doddy-yaci.onrender.com</string>
 	<key>CFBundleURLTypes</key>
