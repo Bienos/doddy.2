@@ -1,6 +1,6 @@
 import Foundation
 
-// DODDY Capture (ADR-579): the words and numbers every part of recording agrees on. Plain Swift
+// DODDY Capture (ADR-588): the words and numbers every part of recording agrees on. Plain Swift
 // for the Linux tests; the recorder, the Live Activity and the screens in the app use them.
 //
 // A recording is source material, not memory. It becomes a note only when the user taps

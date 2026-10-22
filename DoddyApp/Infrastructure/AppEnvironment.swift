@@ -54,7 +54,7 @@ struct AppEnvironment: Sendable {
     /// Tasks handed to Doddy's background worker (ADR-570): the user's words, the state, and the
     /// result once it is saved here (then the server deletes its copy), in the same file.
     var errandRepository: any ErrandRepository = UnavailableErrandRepository()
-    /// DODDY Capture (ADR-579): recordings, their parts and words, in the same file, and the folder of
+    /// DODDY Capture (ADR-588): recordings, their parts and words, in the same file, and the folder of
     /// audio next to it. `nil` when the memory store is not open: nothing can be recorded then.
     var recordingRepository: (any RecordingRepository)?
     var recordingFiles: RecordingFiles = .unavailable

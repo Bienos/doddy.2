@@ -2,7 +2,7 @@ import AVFoundation
 import DoddyCore
 import Foundation
 
-/// The folder of DODDY Capture audio, next to the database (ADR-579):
+/// The folder of DODDY Capture audio, next to the database (ADR-588):
 /// `Recordings/<recording id>/part-0001.caf`, `part-0002.caf`, and so on. Each part is closed on its
 /// own, so Doddy being closed in the middle of a recording costs at most the part in progress.
 ///

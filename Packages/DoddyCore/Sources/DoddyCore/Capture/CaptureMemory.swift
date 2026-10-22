@@ -1,6 +1,6 @@
 import Foundation
 
-// A recording is not memory (ADR-579). Its audio, words and summary are source material that stays
+// A recording is not memory (ADR-588). Its audio, words and summary are source material that stays
 // in Recordings. What Doddy remembers across conversations is only what the user picks, one thing
 // at a time, with a tap on "Remember this". That makes an ordinary note (the same store, the same
 // edit and delete) whose last line says where it came from, and a link row that keeps the exact

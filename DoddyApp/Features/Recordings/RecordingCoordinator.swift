@@ -6,7 +6,7 @@ import Observation
 import UIKit
 import os
 
-/// DODDY Capture's recorder (ADR-579): the one owner of a recording session. Every way in (the
+/// DODDY Capture's recorder (ADR-588): the one owner of a recording session. Every way in (the
 /// button, Siri, the control, the Action Button, the island's buttons) calls this, so there is one
 /// recorder, one state and one source of truth for "are we recording?".
 ///

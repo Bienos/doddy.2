@@ -24,7 +24,7 @@ struct DoddyShortcuts: AppShortcutsProvider {
             ],
             shortTitle: "Stop listening",
             systemImageName: "mic.slash")
-        // DODDY Capture (ADR-579). The tenth and last App Shortcut iOS allows. It opens Doddy first, and
+        // DODDY Capture (ADR-588). The tenth and last App Shortcut iOS allows. It opens Doddy first, and
         // answers "Recording." only once the recorder delivers audio. Stop is "Stop listening" above.
         AppShortcut(
             intent: StartDoddyRecordingIntent(),

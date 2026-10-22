@@ -17,7 +17,7 @@
 #    before any tool runs,
 #  - ElevenLabs code only inside DoddyApp/Features/Voice; audio (AVFoundation) only there, in
 #    DoddyApp/Features/VoiceMemos (recording and playing voice memos, ADR-230) and in
-#    DoddyApp/Features/Recordings (DODDY Capture: long recordings, ADR-579),
+#    DoddyApp/Features/Recordings (DODDY Capture: long recordings, ADR-588),
 #  - speech recognition (Speech) only inside DoddyApp/Features/VoiceMemos and DoddyApp/Features/Recordings,
 #    and every recognition request in either sets requiresOnDeviceRecognition = true (nothing is
 #    sent to Apple's servers),
@@ -186,7 +186,7 @@ if grep -RInE --include='*.swift' "$audio_only" "${dirs[@]}" | grep -v -e "^$voi
   echo "FAIL: audio code outside $voice_dir, $memos_dir and $recordings_dir (the camera permission file may only import AVFoundation)." >&2; status=1
 fi
 if grep -RInE --include='*.swift' "$speech_only" "${dirs[@]}" | grep -v -e "^$memos_dir/" -e "^$recordings_dir/"; then
-  echo "FAIL: speech recognition outside $memos_dir and $recordings_dir (ADR-230, ADR-579)." >&2; status=1
+  echo "FAIL: speech recognition outside $memos_dir and $recordings_dir (ADR-230, ADR-588)." >&2; status=1
 fi
 if grep -RInE --include='*.swift' "$watch_only" "${dirs[@]}" | grep -v -e "^$watch_link_dir/" -e "^$watch_app_dir/"; then
   echo "FAIL: WatchConnectivity outside $watch_link_dir and $watch_app_dir (ADR-232)." >&2; status=1
@@ -212,14 +212,14 @@ for speech_dir in "$memos_dir" "$recordings_dir"; do
       fi
     done
     if grep -RInE --include='*.swift' 'requiresOnDeviceRecognition = false' "$speech_dir"; then
-      echo "FAIL: speech recognition may not leave the iPhone (ADR-230, ADR-579)." >&2; status=1
+      echo "FAIL: speech recognition may not leave the iPhone (ADR-230, ADR-588)." >&2; status=1
     fi
   fi
 done
-# DODDY Capture's audio and words never leave the iPhone (ADR-579): no networking of any kind in its
+# DODDY Capture's audio and words never leave the iPhone (ADR-588): no networking of any kind in its
 # folder, and no upload API, whatever the general networking rule above allows elsewhere.
 if [ -d "$recordings_dir" ] && grep -RInE --include='*.swift' 'URLSession|URLRequest|import Network|uploadTask|\.upload\(|WCSession|import CloudKit' "$recordings_dir" | code_only; then
-  echo "FAIL: $recordings_dir may not send anything anywhere (ADR-579)." >&2; status=1
+  echo "FAIL: $recordings_dir may not send anything anywhere (ADR-588)." >&2; status=1
 fi
 if grep -RInE --include='*.swift' "$connections_only" "${dirs[@]}" | grep -v "^$connections_dir/"; then
   echo "FAIL: calendar, contacts, location or Motion & Fitness code outside $connections_dir." >&2; status=1

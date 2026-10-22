@@ -29,7 +29,7 @@ enum ListeningStop {
             keptNoteDraft = await conversation.stopListening()
         }
         let keptMemoDraft = MicrophoneHolders.shared.stopAll()
-        // A DODDY Capture recording is stopped and saved (ADR-579); the report says "saved" only if it was read back.
+        // A DODDY Capture recording is stopped and saved (ADR-588); the report says "saved" only if it was read back.
         var captureSaved = false
         if before.open.contains(.capture) { captureSaved = await RecordingCoordinator.shared.stop() }
         var after = snapshot()

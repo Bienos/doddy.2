@@ -2,7 +2,7 @@ import DoddyCore
 import Foundation
 import XCTest
 
-/// DODDY Capture (ADR-579): words from a recording, finding the part a question is about, and the
+/// DODDY Capture (ADR-588): words from a recording, finding the part a question is about, and the
 /// "Remember this" note.
 final class CaptureTranscriptTests: XCTestCase {
     private func word(_ text: String, _ start: Int, _ duration: Int = 300, confidence: Double? = nil) -> TranscriptWord {

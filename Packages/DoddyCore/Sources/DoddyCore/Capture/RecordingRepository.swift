@@ -1,6 +1,6 @@
 import Foundation
 
-// Where recordings live (ADR-579). The recording's row is written BEFORE the audio starts, so a
+// Where recordings live (ADR-588). The recording's row is written BEFORE the audio starts, so a
 // kill leaves something to recover from; nothing is inferred from files alone. Every write is read
 // back before it is reported as done, like the notes.
 

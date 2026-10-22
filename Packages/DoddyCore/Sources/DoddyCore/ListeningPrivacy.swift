@@ -2,7 +2,7 @@ import Foundation
 
 // Audio privacy signal and stop (OP-024, ADR-361). Doddy has two things that can have the
 // microphone open: a voice conversation, a voice memo being recorded, and a DODDY Capture
-// recording (ADR-579; "Hey Doddy", another, was removed in ADR-549). While any has it, Doddy shows one indicator that says which, above
+// recording (ADR-588; "Hey Doddy", another, was removed in ADR-549). While any has it, Doddy shows one indicator that says which, above
 // every screen, with Stop listening. "Stop listening" (the indicator, or Siri) ends the
 // conversation and stops the memo, then reads each one's own state again:
 // "Stopped" only when every one says it is closed and iOS let go of Doddy's audio. Nothing is

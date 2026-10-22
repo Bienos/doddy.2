@@ -3,7 +3,7 @@ import Foundation
 import GRDB
 
 /// DODDY Capture's recordings, their parts and words, and the notes the user kept from them
-/// (ADR-579, `v16_recordings`). The row is written before the audio exists. Every write is read
+/// (ADR-588, `v16_recordings`). The row is written before the audio exists. Every write is read
 /// back inside the same transaction and fails, rolling back, unless it shows; the app deletes a
 /// part file or tells the user "saved" only after this returned.
 public final class SQLiteRecordingRepository: RecordingRepository {

@@ -3,7 +3,7 @@ import AppIntents
 import Foundation
 import os
 
-/// Lets the Live Activity's buttons reach the running recording (ADR-579). These intents run in
+/// Lets the Live Activity's buttons reach the running recording (ADR-588). These intents run in
 /// the app's process, where `RecordingCoordinator` registers these handlers. The widget extension
 /// has its own, separate copy of this object whose handlers stay nil, so an intent performed there
 /// does nothing; every intent therefore pins `allowedExecutionTargets` to `.main` (ADR-131).

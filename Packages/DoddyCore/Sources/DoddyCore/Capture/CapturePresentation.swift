@@ -1,6 +1,6 @@
 import Foundation
 
-// What the Dynamic Island, the Lock Screen and the pill show about a recording (ADR-579). The
+// What the Dynamic Island, the Lock Screen and the pill show about a recording (ADR-588). The
 // snapshot is the whole content of the Live Activity: enums and numbers, never a word that was
 // said, because the Lock Screen is visible to anyone. The widget extension has no database.
 

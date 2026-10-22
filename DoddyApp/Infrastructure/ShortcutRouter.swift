@@ -148,7 +148,7 @@ final class ShortcutRouter {
         if checkInBriefing != nil, !isVoicePresented { isVoicePresented = true } else { showWaitingDraft() }
     }
 
-    /// DODDY Capture (ADR-579): Recordings is a sheet on Home. A link, the island's Open button and
+    /// DODDY Capture (ADR-588): Recordings is a sheet on Home. A link, the island's Open button and
     /// "Open Latest Recording" all come here. Navigation only: it never starts or stops anything.
     var isRecordingsPresented = false
     private var recordingToOpen: UUID?

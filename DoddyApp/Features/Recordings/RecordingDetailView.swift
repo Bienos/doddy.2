@@ -1,7 +1,7 @@
 import DoddyCore
 import SwiftUI
 
-// One recording (ADR-579): its audio, its words, a search over them, and the parts that answer a
+// One recording (ADR-588): its audio, its words, a search over them, and the parts that answer a
 // question. There is NO written summary and no written answer here, because no provider has been
 // approved (docs/implementation/CAPTURE_AUDIT.md section 5); the page says so. What it does show is
 // real: the words that were recognised on this iPhone, with their times, and where in them a

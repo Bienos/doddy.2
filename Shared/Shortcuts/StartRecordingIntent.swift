@@ -9,7 +9,7 @@ struct CaptureIntentProblem: Error, CustomLocalizedStringResourceConvertible {
     var localizedStringResource: LocalizedStringResource { LocalizedStringResource(stringLiteral: message) }
 }
 
-/// "Start DODDY Recording" (ADR-579): Siri, Shortcuts, and the Action Button through a shortcut.
+/// "Start DODDY Recording" (ADR-588): Siri, Shortcuts, and the Action Button through a shortcut.
 /// Works on iOS 17 too, which is why it is a plain App Intent.
 ///
 /// It OPENS Doddy. iOS does not let a recording begin from a cold background: developers report

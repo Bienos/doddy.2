@@ -6,7 +6,7 @@ public enum DeepLink: String, CaseIterable, Sendable {
     case home, memories, settings
     /// The parking widget (ADR-315): opens the saved spot in Maps, if there is one.
     case parking
-    /// DODDY Capture (ADR-579): the list of recordings. The Live Activity's Open button uses it.
+    /// DODDY Capture (ADR-588): the list of recordings. The Live Activity's Open button uses it.
     case recordings
 
     public static let scheme = "doddy"

@@ -4,7 +4,7 @@ import DoddyCore
 import SwiftUI
 import WidgetKit
 
-/// Dynamic Island and Lock Screen for a DODDY Capture recording (ADR-579). Restrained on purpose:
+/// Dynamic Island and Lock Screen for a DODDY Capture recording (ADR-588). Restrained on purpose:
 /// a small orange dot and the running time, no waveform, no banner. The dot is orange only while
 /// audio is being captured; paused, interrupted and saving are grey. Stop, and Pause or Resume,
 /// are always one tap away, and the island opens Doddy.

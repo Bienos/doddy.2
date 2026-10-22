@@ -1,7 +1,7 @@
 import DoddyCore
 import SwiftUI
 
-// Recordings (ADR-579): the list, the Record button, and the one-time notice. Everything shown is
+// Recordings (ADR-588): the list, the Record button, and the one-time notice. Everything shown is
 // read from the store on this iPhone. A recording still being written out is never shown as ready,
 // and the preview under a title is the start of the transcript, not a summary.
 

@@ -5,7 +5,7 @@ import Speech
 import UIKit
 import os
 
-/// Writes a recording's words out on this iPhone (ADR-579), part by part, with the time of each word.
+/// Writes a recording's words out on this iPhone (ADR-588), part by part, with the time of each word.
 /// On-device recognition is required: if this iPhone cannot do it for the language, nothing is
 /// written out and nothing is sent to Apple or anyone else. There is no cloud fallback in this
 /// slice (CLAUDE.md rule 6: cloud AI needs its own approval). Same API and same invariant as voice

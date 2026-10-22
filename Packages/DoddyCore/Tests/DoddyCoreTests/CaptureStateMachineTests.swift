@@ -2,7 +2,7 @@ import DoddyCore
 import Foundation
 import XCTest
 
-/// DODDY Capture (ADR-579): the state machine that is the one source of truth for a recording.
+/// DODDY Capture (ADR-588): the state machine that is the one source of truth for a recording.
 final class CaptureStateMachineTests: XCTestCase {
     private let t0 = Date(timeIntervalSince1970: 1_800_000_000)
     private func at(_ seconds: TimeInterval) -> Date { t0.addingTimeInterval(seconds) }

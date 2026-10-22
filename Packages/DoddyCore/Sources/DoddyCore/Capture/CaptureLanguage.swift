@@ -1,6 +1,6 @@
 import Foundation
 
-/// Which language a recording is written out in (ADR-579). One per recording: the on-device
+/// Which language a recording is written out in (ADR-588). One per recording: the on-device
 /// recognizer takes one locale at a time and does not detect the language, so a mixed-language
 /// recording is written out once per language the user asks for, never guessed.
 public enum CaptureLanguage {

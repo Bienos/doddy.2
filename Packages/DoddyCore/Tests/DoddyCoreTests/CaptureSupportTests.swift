@@ -2,7 +2,7 @@ import DoddyCore
 import Foundation
 import XCTest
 
-/// DODDY Capture (ADR-579): models, recovery after a kill, the Live Activity's content, and the
+/// DODDY Capture (ADR-588): models, recovery after a kill, the Live Activity's content, and the
 /// microphone indicator.
 final class CaptureSupportTests: XCTestCase {
     private let t0 = Date(timeIntervalSince1970: 1_800_000_000)

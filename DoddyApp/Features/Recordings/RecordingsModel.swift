@@ -2,7 +2,7 @@ import DoddyCore
 import Foundation
 import Observation
 
-/// The list of recordings (ADR-579), a page at a time. Everything shown is read from the store on
+/// The list of recordings (ADR-588), a page at a time. Everything shown is read from the store on
 /// this iPhone; a recording still being written out is never shown as ready.
 @MainActor
 @Observable

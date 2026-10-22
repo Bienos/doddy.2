@@ -334,7 +334,7 @@ public final class DoddyDatabase: Sendable {
                 CREATE INDEX errands_created ON errands(created_at_ms);
                 """)
         }
-        // DODDY Capture (ADR-579): recordings, their audio parts, their words (searchable) and the
+        // DODDY Capture (ADR-588): recordings, their audio parts, their words (searchable) and the
         // notes the user chose to remember from them. A row exists before the audio does, so a kill
         // leaves something to recover. Values are checked by length rather than by list, so a later
         // build can add a kind or a phase without a new migration. A note's link to its recording

@@ -1,9 +1,9 @@
-# DODDY Capture: status (22 Oct 2026, ADR-579 to ADR-583)
+# DODDY Capture: status (22 Oct 2026, ADR-588 to ADR-592)
 
 Branch `claude/gifted-pascal-3e117c`. Audit and platform limits: `CAPTURE_AUDIT.md`. Owner brief: "DODDY Capture — Native iPhone Recording, AI Transcription, Conversation Intelligence & Personal Memory" (the pasted brief stopped in the middle of Part 10; what is below follows what was there).
 
 ## In one paragraph
-The recording logic, the database and the transcript checks are built and **tested on Linux (1,511 tests, 0 failures)**. The iPhone layer (AVAudioRecorder, the Live Activity, the intents and control, Speech, the screens) is **written but has never been compiled or run: no Xcode here, so the native build is BLOCKED / NOT RUN**. It has a syntax parse and an independent read-through, nothing more. Nothing in the second group may be called "works", "tested" or "implemented" until a hosted Mac build compiles it and an iPhone has run the list in "Device test plan". The **written summary and the written answers are not built**: that needs an owner decision (ADR-582).
+The recording logic, the database and the transcript checks are built and **tested on Linux (1,511 tests, 0 failures)**. The iPhone layer (AVAudioRecorder, the Live Activity, the intents and control, Speech, the screens) is **written but has never been compiled or run: no Xcode here, so the native build is BLOCKED / NOT RUN**. It has a syntax parse and an independent read-through, nothing more. Nothing in the second group may be called "works", "tested" or "implemented" until a hosted Mac build compiles it and an iPhone has run the list in "Device test plan". The **written summary and the written answers are not built**: that needs an owner decision (ADR-591).
 
 ## What exists
 
@@ -25,7 +25,7 @@ The recording logic, the database and the transcript checks are built and **test
 | Capability guard (audio and speech in one more folder; nothing may be sent from it) | **Run, passes** | `scripts/check_forbidden_capabilities.sh` |
 
 ## Where a recording can start from
-iOS is reported not to allow a recording to begin from a cold background (ADR-580), so every start **opens Doddy**; the recording then carries on in the background and with the screen locked. Open: supported. Background alive, suspended, locked (needs unlock), terminated (cold launch): handled only by opening Doddy first; **none of it seen on a device.** There is no start with no screen at all. The experiment is to set `openAppWhenRun = false` on `RecordWithDoddyIntent` and read the Console (subsystem `com.bienos.doddy2.dev`, category `capture`); if the first audio fails with "Target is not foreground" the finding stands.
+iOS is reported not to allow a recording to begin from a cold background (ADR-589), so every start **opens Doddy**; the recording then carries on in the background and with the screen locked. Open: supported. Background alive, suspended, locked (needs unlock), terminated (cold launch): handled only by opening Doddy first; **none of it seen on a device.** There is no start with no screen at all. The experiment is to set `openAppWhenRun = false` on `RecordWithDoddyIntent` and read the Console (subsystem `com.bienos.doddy2.dev`, category `capture`); if the first audio fails with "Target is not foreground" the finding stands.
 
 ## Tests actually run
 Environment: Linux x86_64 (Ubuntu 24.04), Swift 6.1.2 (the version CI uses), no Xcode, no Apple SDK.
@@ -72,7 +72,7 @@ Run on an iPhone with Doddy installed from this branch, a free-team build is eno
 | 1 | Home › ••• › Recordings › Record, accept the notice | Pill "Doddy is recording", orange dot, Live Activity with a running time; Stop saves; the recording is in Recordings | The whole slice compiles and starts |
 | 2 | Lock the screen for 2 minutes, unlock, Stop | Recording carried on while locked; length about right | Background audio with `.record` category |
 | 3 | Lock Screen card: Pause, Resume, Stop | Each works; "Paused" shows the microphone is off | The island's intents run in the app |
-| 4 | Action Button › Controls › Record with DODDY (also unlocked and locked) | Doddy opens, records; locked asks to unlock first | The control; the start rule (ADR-580) |
+| 4 | Action Button › Controls › Record with DODDY (also unlocked and locked) | Doddy opens, records; locked asks to unlock first | The control; the start rule (ADR-589) |
 | 5 | "Hey Siri, record this meeting in Doddy" | Says "Recording." only after audio | Siri phrase; honest answer |
 | 6 | Press the Action Button three times fast | One recording, the others say already recording | One session |
 | 7 | A call, FaceTime, an alarm, Siri during a recording | Island says interrupted; after it ends, resumes if iOS allows, otherwise "Resume"; the transcript shows the gap; the audio before it is kept | Interruptions (`AVAudioSession` notifications) |
@@ -96,15 +96,15 @@ Run on an iPhone with Doddy installed from this branch, a free-team build is eno
 
 ## Security and privacy
 - **Nothing leaves the iPhone** (audio, words, search, the notes made from them). The capability guard bans any networking in `Features/Recordings`. Not yet checked with a network proxy on a device.
-- **Recording other people** is regulated differently by country and situation. Doddy shows the recording the whole time and makes the user read a notice once; it does not decide the law. **The notice wording needs the owner and a lawyer** (ADR-581). Apple's App Review reads the permission texts; they were changed (nine languages, machine drafts).
-- **Deletion removes words from the search index and the file** (ADR-583). **Notes have the same gap** and it is not fixed here.
+- **Recording other people** is regulated differently by country and situation. Doddy shows the recording the whole time and makes the user read a notice once; it does not decide the law. **The notice wording needs the owner and a lawyer** (ADR-590). Apple's App Review reads the permission texts; they were changed (nine languages, machine drafts).
+- **Deletion removes words from the search index and the file** (ADR-592). **Notes have the same gap** and it is not fixed here.
 - Audio files are readable after the first unlock, so a stolen unlocked-once phone has them. They are marked out of device backups (set, not verified) and are not in the encrypted Doddy backup.
 - A transcript or summary on the Lock Screen: never; the Live Activity carries only phases and numbers (a test checks the encoded keys).
 - **Settings › Privacy and "What leaves this iPhone" were not updated** for recordings. Their claims stay true (nothing is sent), but they say nothing about recordings.
 - Export writes the transcript to the temporary folder for the share sheet; iOS clears it later.
 
 ## Decisions needed (owner)
-1. **The rundown and answers (ADR-582):** a server endpoint, Apple's on-device models, or neither; and whether summaries run on a tap or after a standing yes. Without this the page says "No summary yet".
+1. **The rundown and answers (ADR-591):** a server endpoint, Apple's on-device models, or neither; and whether summaries run on a tap or after a standing yes. Without this the page says "No summary yet".
 2. **Notice wording** (legal), and whether Poland and the UK need more.
 3. **Permission text translations** (nine languages) and the new Polish strings: native review (`l10n/REVIEW_NOTES.md`).
 4. **The 4-hour cap** (Live Activity limit is 8 hours) and the 10-minute part length.
@@ -131,7 +131,7 @@ Run on an iPhone with Doddy installed from this branch, a free-team build is eno
 | DOD-09 correction and recovery | Corrections keep the recognised text; `CaptureRecovery`; a failed save keeps the files | Recovery and repository tests, including close and reopen of a file database | Kill recovery on real audio untested (item 9) |
 | DOD-11 observable privacy; `privacy_policy` | Notice before any start; pill; Live Activity; permission texts; guard bans networking in the folder | Notice, presentation and indicator tests; guard PASS | Legal review pending; Settings Privacy text and DataFlow rows not updated; nine translations are drafts |
 | DOD-07 scoped approval; content is data | Prompts fence the transcript and strip angle brackets; no external action is built | `testTheTranscriptCannotCloseItsOwnFence` | Future actions from a recording must reuse ASK-01 |
-| ASK-01 | Nothing leaves the phone in this slice; any future send needs a card and a tap | Guard | The provider decision (ADR-582) |
+| ASK-01 | Nothing leaves the phone in this slice; any future send needs a card and a tap | Guard | The provider decision (ADR-591) |
 | `memory_policy.deletion_claim_requires_storage_confirmation` | Delete is read back; the index is compacted | `testDeletedWordsAreNotLeftInTheDatabaseFile` and one for corrected words (raw file bytes) | Same gap in notes, learned facts and procedures (not fixed) |
 
 ## Next

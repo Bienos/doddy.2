@@ -1,6 +1,6 @@
 import Foundation
 
-// A recording's words (ADR-579). The recognizer hands back timed words for each audio part; this
+// A recording's words (ADR-588). The recognizer hands back timed words for each audio part; this
 // groups them into lines, lays the parts end to end on the recording's own time, and says
 // whether there is enough speech to trust. Nothing here invents a speaker or a word: a line has
 // no speaker unless a recognizer can say who spoke reliably, and none can on the device today.

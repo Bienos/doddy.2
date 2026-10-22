@@ -30,7 +30,7 @@ struct DoddyWidgetsBundle: WidgetBundle {
         // Doddy on a call for the user (ADR-504).
         DoddyCallLiveActivity()
         DoddyToolLiveActivityWithWatch()
-        // A DODDY Capture recording (ADR-579).
+        // A DODDY Capture recording (ADR-588).
         DoddyCaptureLiveActivity()
         // One entry for all Home Screen widgets: the bundle builder has taken at most ten (ADR-331).
         DoddyHomeWidgets().body
@@ -56,7 +56,7 @@ struct DoddyWidgetsBundle: WidgetBundle {
 }
 
 /// The controls (iOS 18+), grouped so the main bundle stays within the builder's ten entries
-/// (ADR-331, ADR-579).
+/// (ADR-331, ADR-588).
 @available(iOS 18.0, *)
 struct DoddyControls: WidgetBundle {
     var body: some Widget {
@@ -64,7 +64,7 @@ struct DoddyControls: WidgetBundle {
         // The Action Button's one-press conversation without opening Doddy (ADR-577).
         TalkInIslandControl()
         NewNoteControl()
-        // Opens Doddy and starts a recording (ADR-579).
+        // Opens Doddy and starts a recording (ADR-588).
         StartRecordingControl()
     }
 }

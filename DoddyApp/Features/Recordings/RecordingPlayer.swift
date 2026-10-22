@@ -3,7 +3,7 @@ import DoddyCore
 import Foundation
 import Observation
 
-/// Plays one recording, its parts back to back (ADR-579). Its position is on the recording's own
+/// Plays one recording, its parts back to back (ADR-588). Its position is on the recording's own
 /// time, the one transcript lines are stamped with, so tapping a line plays from that line.
 /// It never plays while a recording is being made: playing reconfigures the one audio session,
 /// and that would break the recording.

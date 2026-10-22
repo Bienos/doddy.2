@@ -766,7 +766,7 @@ struct SettingsView: View {
             try await environment.callCaseRepository.deleteAll()
             // Tasks handed to Doddy (ADR-570): words and results kept on this iPhone.
             try await environment.errandRepository.deleteAll()
-            // Recordings (ADR-579): their audio and words, on this iPhone only. One being made is
+            // Recordings (ADR-588): their audio and words, on this iPhone only. One being made is
             // stopped and saved first, then goes with the rest.
             await RecordingCoordinator.shared.stop()
             try await environment.recordingRepository?.deleteAll()

@@ -497,7 +497,7 @@ final class VoiceSessionController {
         withoutOpeningApp: Bool = false
     ) async {
         guard !isLive else { return }
-        // A DODDY Capture recording owns the one audio session (ADR-579): a conversation started now
+        // A DODDY Capture recording owns the one audio session (ADR-588): a conversation started now
         // would reconfigure it under the recording and break it without a word.
         guard !RecordingCoordinator.shared.isActive else {
             Self.audioLog.notice("a conversation was not started: a recording is going")

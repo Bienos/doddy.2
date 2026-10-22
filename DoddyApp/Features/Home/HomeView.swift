@@ -186,7 +186,7 @@ struct HomeView: View {
                     .accessibilityIdentifier("home.menu.memories")
                 Button { selectedTab = .settings } label: { Label("Settings", systemImage: "slider.horizontal.3") }
                     .accessibilityIdentifier("home.menu.settings")
-                // DODDY Capture (ADR-579): record a meeting or a conversation, and find it again. Below
+                // DODDY Capture (ADR-588): record a meeting or a conversation, and find it again. Below
                 // Memories and Settings, so at the largest text size they stay inside the menu's first
                 // screen (the dark, largest-text UI test goes through Memories).
                 Button { router.openRecordings() } label: { Label("Recordings", systemImage: "waveform.circle") }

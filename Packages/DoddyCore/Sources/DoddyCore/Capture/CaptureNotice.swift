@@ -1,6 +1,6 @@
 import Foundation
 
-/// The notice shown once before Doddy records anything (ADR-579), and required before ANY start, so a
+/// The notice shown once before Doddy records anything (ADR-588), and required before ANY start, so a
 /// start from Siri, the Action Button or a control cannot be the first a person hears of it.
 ///
 /// The wording is a draft for the owner and a lawyer to settle. It states facts about what Doddy does

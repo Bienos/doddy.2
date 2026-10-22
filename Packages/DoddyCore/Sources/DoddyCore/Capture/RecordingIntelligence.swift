@@ -1,6 +1,6 @@
 import Foundation
 
-// The written rundown of a recording and the answers to questions about it (ADR-579).
+// The written rundown of a recording and the answers to questions about it (ADR-588).
 //
 // Model output is a proposal; this file is the code that says what survives. A prompt can ask a
 // model not to invent things, but only code can check: every item has to carry a quote that is

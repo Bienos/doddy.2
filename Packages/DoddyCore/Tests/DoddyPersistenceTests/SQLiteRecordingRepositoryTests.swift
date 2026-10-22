@@ -3,7 +3,7 @@ import DoddyPersistence
 import Foundation
 import XCTest
 
-/// DODDY Capture (ADR-579): recordings on real SQLite. The row is written before the audio, every
+/// DODDY Capture (ADR-588): recordings on real SQLite. The row is written before the audio, every
 /// write is read back, a kill leaves something to recover, and deleting means deleting.
 final class SQLiteRecordingRepositoryTests: XCTestCase {
     private let t0 = Date(timeIntervalSince1970: 1_800_000_000)

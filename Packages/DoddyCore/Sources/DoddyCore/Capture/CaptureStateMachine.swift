@@ -1,6 +1,6 @@
 import Foundation
 
-// The one source of truth for a recording session (ADR-579). The app's coordinator owns an
+// The one source of truth for a recording session (ADR-588). The app's coordinator owns an
 // instance, feeds it what really happened (the recorder started, iOS interrupted, the user
 // tapped Stop) and does what it answers with. It decides nothing about audio itself, so every
 // rule here runs on Linux.

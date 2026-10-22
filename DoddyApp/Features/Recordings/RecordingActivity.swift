@@ -3,7 +3,7 @@ import DoddyCore
 import Foundation
 import os
 
-/// The Live Activity of the recording being made (ADR-579): one at a time, started only after the
+/// The Live Activity of the recording being made (ADR-588): one at a time, started only after the
 /// recorder has delivered audio, so the island never says "recording" on a hope. Updated when the
 /// state changes: the running time is drawn by the system from a start date, not by updates.
 ///

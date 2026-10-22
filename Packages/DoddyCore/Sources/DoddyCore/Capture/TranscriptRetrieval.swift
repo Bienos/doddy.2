@@ -1,6 +1,6 @@
 import Foundation
 
-// Finding the part of a recording a question is about (ADR-579). On the device, with the same
+// Finding the part of a recording a question is about (ADR-588). On the device, with the same
 // SQLite full-text search the notes use: no embeddings, no model. Only when a measurement shows
 // this is not enough is anything heavier worth adding.
 

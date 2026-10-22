@@ -2,7 +2,7 @@ import DoddyCore
 import Foundation
 import XCTest
 
-/// DODDY Capture (ADR-579): whatever a model says about a recording, only what the transcript backs up
+/// DODDY Capture (ADR-588): whatever a model says about a recording, only what the transcript backs up
 /// gets through. Every test here uses invented model output, because no provider is wired.
 final class CaptureIntelligenceTests: XCTestCase {
     private let id = UUID()

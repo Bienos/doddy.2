@@ -46,7 +46,7 @@ struct AppEnvironment {
     let photoFiles: PhotoFiles
     let audioRepository: any AudioRepository
     let audioFiles: AudioFiles
-    // DODDY Capture (ADR-579): ShortcutRouter opens the newest recording through it.
+    // DODDY Capture (ADR-588): ShortcutRouter opens the newest recording through it.
     let recordingRepository: (any RecordingRepository)?
     static var shared: AppEnvironment { fatalError("a type-check stand-in is never run") }
 }
