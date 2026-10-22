@@ -125,7 +125,8 @@ Paper `#FFF7E9` background; ink `#171715` text; orange `#FF6A00` for decoration 
 | Env | Default | What |
 |---|---|---|
 | `STUDIO_ENABLED` | `0` | `1` turns Studio on (also needs `ANTHROPIC_API_KEY`, `MEMORY_ENCRYPTION_KEY` and `STUDIO_SKILLS`) |
-| `STUDIO_MODEL_PLAN`, `_RESEARCH`, `_PACK`, `_WRITE`, `_MAKE` | Haiku 5.5, Sonnet 5.5, Haiku 5.5, Sonnet 5.5, Haiku 5.5 | The model of each step (owner, 22 Oct: the all-Opus plan cost too much). `STUDIO_MODEL`, when set, is the starting point for every step; a step variable then overrides it. `claude-opus-5-5` everywhere is the old, dearest mix |
+| `STUDIO_TIER` | `plus` | `free` (Haiku 5.5), `plus` (Sonnet 5.5, the default: the owner's account), `pro` (Opus 5.5) or `max` (Fable 5.1): one model for every step. Costs in `STUDIO_TEST_RESULTS.md` |
+| `STUDIO_MODEL_PLAN`, `_RESEARCH`, `_PACK`, `_WRITE`, `_MAKE` | the tier's model | The model of each step. `STUDIO_MODEL`, when set, is the starting point for every step; a step variable then overrides it |
 | `STUDIO_SKILLS` | empty | Comma-separated custom skill IDs, each optionally `@version` (from `scripts/studio_skills.sh upload`). Empty: not set up |
 | `STUDIO_MAX_SEARCHES`, `STUDIO_MAX_FETCHES` | 15, 15 | `max_uses` per job |
 | `STUDIO_BLOCKED_DOMAINS` | empty | Comma-separated hostnames for `blocked_domains` (owner decision 10) |
