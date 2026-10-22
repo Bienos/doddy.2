@@ -24,7 +24,8 @@ Code: `DoddyApp/Features/Settings/SettingsView.swift` (the groups), `SettingsScr
 | | Privacy | Face ID lock, iPhone search, What leaves this iPhone, Everything Doddy sends (the old paragraph, word for word), Privacy Policy, "Right now" status rows, widgets, Apple Watch |
 | **Connected apps** | Pause all connections | switch (footer art and text unchanged, ADR-323) |
 | | Calendar, reminders, contacts / Connected Apps / Online accounts / What Doddy did | unchanged pages |
-| | Ask Doddy (typed questions) | consent, notes, status, gateway, invite code |
+| | Doddy on the web | a code from this iPhone to sign in on a computer (ADR-585; added after this inventory) |
+| | Ask Doddy (typed questions) | consent, notes, status. The gateway address and invite code were removed: it uses Doddy's server (ADR-587) |
 | **Notifications** | Notifications and texts / Daily news / Phone calls | unchanged pages |
 | | Check-ins and reminders | morning check-in, evening wrap-up, weekly look-back, tidy-up, note reminders |
 | | Alarms / Birthdays | unchanged pages |
@@ -65,7 +66,7 @@ Code: `DoddyApp/Features/Settings/SettingsView.swift` (the groups), `SettingsScr
 1. A short name; a subtitle only when it helps a choice ("Auto-start voice · Start talking when Doddy opens").
 2. No infrastructure words (App Intents, tokens, Composio internals) in the groups. The development server is in Advanced.
 3. Progressive disclosure: the long texts live on the page a row opens, "Everything Doddy sends", Help and the Privacy Policy.
-4. Where a switch sends something off the iPhone, one plain line says what and where, at the switch: profile to the voice service, Ask Doddy to Doddy's server and OpenAI, Delete all's confirmation.
+4. Where a switch sends something off the iPhone, one plain line says what and where, at the switch: profile to the voice service, Ask Doddy to Doddy's server and Anthropic, Delete all's confirmation.
 
 ## Checks
 
