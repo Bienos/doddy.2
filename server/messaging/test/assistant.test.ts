@@ -1,6 +1,7 @@
 // Messages (ADR-585, ADR-586): POST /v1/assistant/ask against real Postgres with a fake responder, plus the
 // real Claude responder against a local stand-in for the API. Nothing here calls Anthropic.
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import http from "node:http";
 import { after, before, beforeEach, describe, test } from "node:test";
 import { answerSchema, buildInput, buildInstructions } from "../src/assistant/prompt.js";
@@ -65,6 +66,7 @@ describe("Messages route against real Postgres", { skip: dbSkip }, () => {
       schemaVersion: 1, requestId: REQ, text: "W piątek o 9:00.", citedMemoryIDs: [ID1],
       usage: { inputTokens: 120, outputTokens: 18 },
     });
+    assert.deepEqual(Object.keys(res.json()).sort(), Object.keys(fixture("assist_response_v1.json")).sort(), "the gateway's response keys");
     assert.equal(w.responder!.seen.length, 1);
     assert.equal(w.responder!.seen[0]!.userText, "Kiedy mam dentystę?");
     const { rows } = await db.query("SELECT requests, input_tokens, output_tokens FROM assistant_usage WHERE account_id = $1", [a.accountId]);
@@ -197,6 +199,22 @@ describe("Messages route against real Postgres", { skip: dbSkip }, () => {
     assert.equal((await db.query("SELECT 1 FROM assistant_usage")).rowCount, 1);
     assert.equal((await w.app.inject({ method: "DELETE", url: "/v1/account", headers: a.h })).statusCode, 204);
     assert.equal((await db.query("SELECT 1 FROM assistant_usage")).rowCount, 0);
+  });
+});
+
+// The wire is shared with the Ask gateway and the app (schemas/fixtures, GatewayAssistantClientTests).
+const fixture = (name: string) => JSON.parse(readFileSync(new URL(`../../../../schemas/fixtures/${name}`, import.meta.url), "utf8"));
+
+describe("the shared wire fixtures", () => {
+  test("the request the app sends is accepted as it is", () => {
+    const request = fixture("assist_request_v1.json");
+    assert.ok(AssistRequest.safeParse(request).success, JSON.stringify(AssistRequest.safeParse(request).error?.issues));
+  });
+
+  test("a gateway wire error has the shape the route sends", () => {
+    const e = fixture("assist_error_v1.json");
+    assert.deepEqual(Object.keys(e).sort(), ["error", "requestId", "schemaVersion"]);
+    assert.deepEqual(Object.keys(e.error).filter((k) => k !== "retryAfterSeconds").sort(), ["code", "message"]);
   });
 });
 
