@@ -206,9 +206,11 @@ public enum DataFlow {
                     ? "Doddy searches on this iPhone; Siri hears the request and speaks the answer as your Siri settings allow, which can include Apple's servers."
                     : "Reading notes aloud with Siri is off, so Siri gets no notes from Doddy."),
             DataFlowRow(
-                id: "askDoddy", destination: "Ask Doddy gateway (OpenAI)",
+                id: "askDoddy", destination: "Your Doddy server and Anthropic (Ask Doddy)",
                 what: ask + ".", when: "Only when you send a typed question.", isActive: state.askDoddyOn,
-                note: state.askDoddyOn ? "A separate server from your Doddy server." : "Ask Doddy is off, so nothing goes there."),
+                note: state.askDoddyOn
+                    ? "Doddy's server passes them to Anthropic's Claude to write the answer. It stores nothing and logs no text. How long Anthropic keeps them isn't something Doddy can verify."
+                    : "Ask Doddy is off, so nothing goes there."),
         ]
     }
 
@@ -227,7 +229,7 @@ public enum DataFlow {
         var parts: [String] = []
         if active.contains("elevenlabs") { parts.append("ElevenLabs (voice)") }
         if active.contains("openaiVoice") { parts.append("OpenAI (voice)") }
-        if active.contains("askDoddy") { parts.append("OpenAI (Ask Doddy)") }
+        if active.contains("askDoddy") { parts.append("Anthropic (Ask Doddy)") }
         if active.contains("messagingServer") {
             parts.append("ElevenLabs (phone calls) and \(newsWriter(state)) (daily news) on your messaging server")
         }
@@ -250,7 +252,7 @@ public enum DataFlow {
         "messagingServer": "your Doddy messaging server",
         "errands": "Anthropic (tasks you hand over, through your messaging server)",
         "siri": "Siri (when you ask it)",
-        "askDoddy": "the Ask Doddy gateway",
+        "askDoddy": "your Doddy server and Anthropic (Ask Doddy)",
     ]
 
     /// Covered by another name (translator mode goes to whichever service runs the voice, which is

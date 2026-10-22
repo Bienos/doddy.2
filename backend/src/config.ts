@@ -23,6 +23,9 @@ export interface Limits {
   /** Claude runs (writing, summaries, documents; Doddy pays) per user, and for the service, per UTC day. */
   userDailyClaude: number;
   serviceDailyClaude: number;
+  /** Ask Doddy questions (typed, ADR-581; Doddy pays Anthropic) per user, and for the service, per UTC day. */
+  userDailyAsk: number;
+  serviceDailyAsk: number;
   serviceDailyCalls: number;
   serviceMonthlyCalls: number;
   userConcurrency: number;
@@ -77,7 +80,7 @@ export interface Config {
   /** Owner-minted tokens (`signed`; also accepted next to Supabase in development when set). */
   sessionSigningKey: Buffer | null;
   /** Who may sign in with `POST /v1/session/device` (ADR-563). */
-  deviceSignup: "off" | "first-device";
+  deviceSignup: "off" | "first-device" | "open";
   /** Extra invite codes for device sign-in (ADR-563). */
   deviceInviteCodes: string[];
   /** Claude for writing, summaries and documents (ADR-564). Null: not set up. */
@@ -91,6 +94,8 @@ export interface Config {
   monid: MonidSettings | null;
   /** Doddy Web (ADR-579). Null: no web routes and no web pages on this server. */
   web: WebSettings | null;
+  /** `DODDY_TRUST_PROXY=1`: behind one proxy that appends the client to X-Forwarded-For (Render). */
+  trustProxy: boolean;
   limits: Limits;
 }
 
@@ -146,7 +151,7 @@ const EnvSchema = z.object({
   SUPABASE_URL: z.string().optional(),
   DODDY_SESSION_SIGNING_KEY: z.string().optional(),
   /** Device sign-in for the beta (ADR-563): `first-device` = the first iPhone owns the server. */
-  DODDY_DEVICE_SIGNUP: z.enum(["off", "first-device"]).default("off"),
+  DODDY_DEVICE_SIGNUP: z.enum(["off", "first-device", "open"]).default("off"),
   /** Extra invite codes for more devices (ADR-563), comma-separated. */
   DODDY_DEVICE_INVITE_CODES: z.string().optional(),
   /** Claude for writing, summaries and documents (ADR-564). Empty: those tools say "not set up". */
@@ -154,6 +159,9 @@ const EnvSchema = z.object({
   DODDY_CLAUDE_MODEL: z.string().default("claude-sonnet-5-5"),
   DODDY_LIMIT_USER_DAILY_CLAUDE: intSetting(40, 1, 10_000),
   DODDY_LIMIT_SERVICE_DAILY_CLAUDE: intSetting(100, 1, 100_000),
+  /** Ask Doddy (ADR-581): typed questions answered by Claude. */
+  DODDY_LIMIT_USER_DAILY_ASK: intSetting(50, 1, 10_000),
+  DODDY_LIMIT_SERVICE_DAILY_ASK: intSetting(500, 1, 1_000_000),
   COMPOSIO_API_KEY: z.string().optional(),
   COMPOSIO_GOOGLECALENDAR_AUTH_CONFIG_ID: z.string().optional(),
   COMPOSIO_GOOGLECALENDAR_TOOLKIT_VERSION: z.string().optional(),
@@ -401,6 +409,7 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     toolkits,
     monid,
     web,
+    trustProxy: e.DODDY_TRUST_PROXY === "1",
     limits: {
       userDailyReads: e.DODDY_LIMIT_USER_DAILY_READS,
       userDailyToolRuns: e.DODDY_LIMIT_USER_DAILY_TOOL_RUNS,
@@ -408,6 +417,8 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
       serviceDailyWebSearches: e.DODDY_LIMIT_SERVICE_DAILY_WEB_SEARCHES,
       userDailyClaude: e.DODDY_LIMIT_USER_DAILY_CLAUDE,
       serviceDailyClaude: e.DODDY_LIMIT_SERVICE_DAILY_CLAUDE,
+      userDailyAsk: e.DODDY_LIMIT_USER_DAILY_ASK,
+      serviceDailyAsk: e.DODDY_LIMIT_SERVICE_DAILY_ASK,
       serviceDailyCalls: e.DODDY_LIMIT_SERVICE_DAILY_CALLS,
       serviceMonthlyCalls: e.DODDY_LIMIT_SERVICE_MONTHLY_CALLS,
       userConcurrency: e.DODDY_LIMIT_USER_CONCURRENCY,
@@ -433,6 +444,8 @@ export function testLimits(overrides: Partial<Limits> = {}): Limits {
     serviceDailyWebSearches: 200,
     userDailyClaude: 40,
     serviceDailyClaude: 100,
+    userDailyAsk: 50,
+    serviceDailyAsk: 500,
     serviceDailyCalls: 300,
     serviceMonthlyCalls: 3_000,
     userConcurrency: 1,

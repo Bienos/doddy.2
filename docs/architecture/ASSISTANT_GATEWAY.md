@@ -1,4 +1,6 @@
 # Assistant gateway and typed questions (M2)
+> **Superseded for the app by ADR-581 (22 Oct 2026):** typed questions now go to Doddy's own server (`POST /v1/assist` in `backend/`, Claude, no gateway address or invite code). The wire contract below is unchanged and both sides test against the same fixtures. This page and `gateway/` describe the first, never-deployed OpenAI gateway and are kept until the owner decides to delete them.
+
 Status: **built and unit-tested; never run against a real provider or deployed.** Date: 2026-10-10.
 Implements the plan in `AI_RUNTIME.md` (request flow, error taxonomy, citation verifier). Provider: OpenAI (owner choice, 2026-10-10). Host: Vercel Functions (owner choice).
 

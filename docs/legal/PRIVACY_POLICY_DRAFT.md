@@ -133,15 +133,16 @@ Common points:
 | Retention | The app says: how long OpenAI keeps the audio and transcript "isn't verified in this build" (`DataFlow`). **[CONFIRM]** |
 | Opt-in? | Yes: nothing goes to OpenAI for voice unless you pick OpenAI in Settings › Voice (or on Home after your first conversation); the picker also picks the model (`gpt-realtime-2.1` or `gpt-realtime-2.1-mini`). **[CONFIRM: the consent wording for people who chose OpenAI while it was the default]** |
 
-### 5.4 Ask Doddy (typed questions): Doddy's gateway and OpenAI
+### 5.4 Ask Doddy (typed questions): Doddy's server and Anthropic
 
 | Item | Detail |
 |---|---|
-| Who | A separate small server (`gateway/`, written for Vercel Functions) that passes questions to OpenAI's Responses API. It uses an Upstash Redis store for rate limits and spend counters. **The gateway is "written, tested and not deployed" (`gateway/README.md`).** **[CONFIRM: host, region, and whether Upstash is used]** |
-| What is sent | Your typed question and up to 6 earlier messages from that screen. If "Use relevant saved notes" is on: up to 5 notes that match your question (never Private notes). At sign-up: an invite code and a random device ID. Every call: a 24-hour token. (`docs/architecture/ASSISTANT_GATEWAY.md`.) Notes are given to OpenAI under short aliases (n1, n2), not their IDs. |
+| Who | Doddy's own server (`backend/`, the Render service `doddy`, region Frankfurt), which passes the question to Anthropic's Messages API (Claude) with Doddy's key (ADR-581). It replaced a separate OpenAI gateway (`gateway/`) that was never deployed. **[CONFIRM: Anthropic entity, terms, region; Render's processor terms]** |
+| What is sent | Your typed question and up to 6 earlier messages from that screen. If "Use relevant saved notes" is on: up to 5 notes that match your question (never Private notes). Every call carries a session token the iPhone made for itself; there is no account, invite code or address to enter. Notes are given to Claude under short aliases (n1, n2), not their IDs. |
 | When | Only when you send a typed question. |
-| Opt-in? | Yes. Off until you confirm a dialog. |
-| Retention | The gateway asks OpenAI not to store (`store: false`). Whether that is honoured is not verified (ADR-113). The gateway's logs keep short hashed tags, status codes, timings and counts. No question, note or answer text. The host's own request logs (IP, path, status) are kept by the host. Chat history is in memory only and never saved as notes. **[CONFIRM: OpenAI terms and retention; host log retention]** |
+| Opt-in? | Yes. Off until you confirm a dialog that names Anthropic. |
+| Limits | 50 questions per iPhone and 500 for everyone per UTC day (ADR-581). Any iPhone beyond the first gets a guest session that can ask questions and nothing else. |
+| Retention | Doddy's server does not store the question, notes or answer, and its logs keep only counts, token numbers and timings (`backend/test/assist.test.ts` checks that no text is logged). The server keeps a per-day question count per iPhone for the limit. How long Anthropic keeps requests is not verified. The host's own request logs (IP, path, status) are kept by Render. Chat history is in memory only and never saved as notes. **[CONFIRM: Anthropic retention terms for the API key's organisation; host log retention]** |
 
 ### 5.5 Doddy messaging server: anonymous account and notifications
 
@@ -372,7 +373,7 @@ Paths are relative to the repository root. "ADR" means a row in `DECISIONS.md`.
 | A9 | Translator mode data | `DataFlow.swift` row `translator`; ADR-215 |
 | A10 | Token server behaviour and logs | `server/voice-token/README.md`; `docs/implementation/VOICE_TOKEN_SERVER_STATUS.md` |
 | A11 | OpenAI voice (default), direct from the phone | `server/voice-token/README.md`; ADR-265; `DataFlow.swift` row `openaiVoice` |
-| A12 | Ask Doddy gateway data, limits, `store:false`, not deployed | `docs/architecture/ASSISTANT_GATEWAY.md`; `gateway/README.md`; ADR-113 |
+| A12 | Ask Doddy data, limits, no storage, not yet run against Anthropic | `backend/src/assist.ts`; `backend/test/assist.test.ts`; ADR-581 (the old OpenAI gateway: `docs/architecture/ASSISTANT_GATEWAY.md`, ADR-113) |
 | A13 | Messaging server tables, anonymous account, phone number plain, hash-only token | `server/messaging/migrations/001_init.sql` to `007`; `server/messaging/src/routes/account.ts` |
 | A14 | Built-in messaging address empty | `DoddyApp/Infrastructure/Server/ServerConfig.swift` |
 | A15 | Render Frankfurt, Postgres, not deployed | `render.yaml`; ADR-139 |
@@ -439,7 +440,7 @@ Paths are relative to the repository root. "ADR" means a row in `DECISIONS.md`.
 
 **Processors and agreements (data processing agreement, sub-processors, region)**
 - [ ] ElevenLabs: agreement, sub-processors (including Google Gemini), region, EU residency, retention, zero-retention mode, recording on or off, deletion by conversation or user ID, training use.
-- [ ] OpenAI: voice test, Ask Doddy gateway and news writer; retention and `store:false`; region; agreement.
+- [ ] OpenAI: voice test and news writer; retention; region; agreement. Anthropic: Ask Doddy (ADR-581), Claude tools (ADR-564) and errands; retention; region; agreement.
 - [ ] Google (Gemini via ElevenLabs; Google Analytics; Google Fonts; Calendar, Gmail and Drive APIs). Google OAuth verification and the wider Gmail compose scope (ADR-099).
 - [ ] Anthropic (news writer). GNews. Twilio (Verify, SMS, calls). Apple (APNs, Maps, Siri, CloudKit).
 - [ ] Composio and Monid: terms, regions, sub-processors, retention, agreement.
@@ -486,15 +487,15 @@ Based on the code and `PrivacyInfo.xcprivacy`. Apple counts data that leaves the
 | Apple data type | Collected? | Linked to user? | Used for tracking? | Purpose | What and why | Status |
 |---|---|---|---|---|---|---|
 | Audio data (Voice or sound recordings) | Yes | Declared "not linked" in `PrivacyInfo.xcprivacy`. A random install ID is sent as the conversation user ID. | No | App functionality | Your voice goes to ElevenLabs (or OpenAI). | **[CONFIRM: linked or not; ElevenLabs keeps it]** |
-| Other user content | Yes | Declared "linked" | No | App functionality | Notes, list names and items, conversations, drafts, calendar and reminder text, email previews and other results sent to ElevenLabs, the gateway or the server. | **[CONFIRM]** |
+| Other user content | Yes | Declared "linked" | No | App functionality | Notes, list names and items, conversations, drafts, calendar and reminder text, email previews and other results sent to ElevenLabs or the server (which passes Ask Doddy questions to Anthropic). | **[CONFIRM]** |
 | Name | Yes | Declared "not linked" | No | App functionality | Your first name or nickname when About you is shared with voice. | **[CONFIRM]** |
 | Phone number | Yes, only if you use texts or calls | Declared "linked" | No | App functionality | Sent to the messaging server and Twilio. | **[CONFIRM]** |
-| User ID | Yes | Declared "linked" | No | App functionality | Anonymous account ID and device token (messaging), session token (backend), gateway device ID. | **[CONFIRM]** |
+| User ID | Yes | Declared "linked" | No | App functionality | Anonymous account ID and device token (messaging), session token (backend; also what Ask Doddy uses). | **[CONFIRM]** |
 | Device ID | Yes | Declared "not linked" | No | App functionality | Random install ID (not the advertising ID). Notification token. | **[CONFIRM: a notification token may be a device ID]** |
 | Contacts | Yes, when asked in a voice conversation | Not declared. Probably linked to the voice conversation. | No | App functionality | Contact names and birthday day and month go to ElevenLabs. | **[CONFIRM: missing from the manifest]** |
 | Precise or coarse location | Mostly no. Where you are is sent to Apple Maps, which is Apple. A parking spot stays on the iPhone. | Not declared | No | App functionality | Place reminders, leave-by, parking. | **[CONFIRM: does Apple Maps use count as collection by the app?]** |
 | Emails or text messages | Possibly: email previews and one whole email reach ElevenLabs through your connected account. | Not declared | No | App functionality | Only when you switch the matching tool on. | **[CONFIRM: "Emails or text messages", "Other user content"]** |
-| Search history | Possibly: web search words go to the backend and Monid; Ask Doddy questions go to the gateway. | Not declared | No | App functionality | | **[CONFIRM]** |
+| Search history | Possibly: web search words go to the backend and Monid; Ask Doddy questions go to Doddy's server and Anthropic. | Not declared | No | App functionality | | **[CONFIRM]** |
 | Photos or videos | No. Photos stay on the iPhone and are chosen with the picker. | | | | | **[CONFIRM]** |
 | Health, fitness, financial info, browsing history, purchases | No | | | | | |
 | Usage data, diagnostics, advertising data | No for the app. The server has request logs. **[CONFIRM: whether server logs count as "diagnostics" or "performance data"]** | | | | | **[CONFIRM]** |

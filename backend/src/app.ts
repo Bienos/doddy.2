@@ -1,4 +1,5 @@
 import { createServer, type Server } from "node:http";
+import { AssistService } from "./assist.js";
 import { AnyOfSessionVerifier, DevSessionVerifier, type SessionVerifier, SignedSessionVerifier, SupabaseSessionVerifier } from "./auth.js";
 import { defaultRegistry } from "./capabilities.js";
 import type { Config } from "./config.js";
@@ -86,7 +87,8 @@ export async function buildApp(
     completionMode: toolsProvider.mode === "mock" ? "mock" : (config.composio?.completionMode ?? "verifier"),
     log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`),
   });
-  // Beta device sign-in (ADR-563): first-device or invite codes, and a signing key (config checks both).
+  // Beta device sign-in (ADR-563): first-device, open (ADR-581: other iPhones get Ask Doddy only) or
+  // invite codes, and a signing key (config checks both).
   const deviceSessions =
     (config.deviceSignup !== "off" || config.deviceInviteCodes.length > 0) && config.sessionSigningKey
       ? new DeviceSessionIssuer(config.sessionSigningKey, { signup: config.deviceSignup, inviteCodes: config.deviceInviteCodes, store })
@@ -99,15 +101,19 @@ export async function buildApp(
     config.web && webAuth
       ? { auth: webAuth, routes: new WebRoutes(webAuth, store, verifier, config.limits.maxBodyBytes), pages: new WebStatic(config.web.distDir, config.web.origin) }
       : null;
+  // Ask Doddy (ADR-581): always routed; without an Anthropic key it says "not set up" (503).
+  const assist = new AssistService({ store, claude, limits: config.limits, log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`) });
   const handler = createHandler({
     service,
     tools,
     verifier,
     deviceSessions,
     web,
+    assist,
     documents: documentLinks ? { links: documentLinks, store } : null,
     appReturnUrl: config.appReturnUrl,
     maxBodyBytes: config.limits.maxBodyBytes,
+    trustProxy: config.trustProxy,
   });
   // Last line of defence: a handler failure closes that one connection, never the process.
   const server: Server = createServer((req, res) => {
@@ -128,7 +134,7 @@ export async function buildApp(
   const pruning = setInterval(housekeeping, 3_600_000);
   pruning.unref();
   server.on("close", () => clearInterval(pruning));
-  return { server, store, service, tools, provider };
+  return { server, store, service, tools, provider, assist };
 }
 
 /** Which sign-ins this server accepts (ADR-526). */

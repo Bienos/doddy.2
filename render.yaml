@@ -97,11 +97,13 @@ services:
       # Web search through Monid (optional; empty = "not set up"). Paid from Doddy's Monid wallet.
       - key: MONID_API_KEY
         sync: false
-      # ADR-563: the phone signs itself in with a device ID. first-device = the first iPhone that
-      # signs in owns this server (owner, 21 Oct: "free for now, only me"); others are refused.
-      # Development only; needs DODDY_SESSION_SIGNING_KEY.
+      # ADR-563: the phone signs itself in with a device ID. open (ADR-581, owner 22 Oct: Ask Doddy
+      # for everyone) = the first iPhone that signs in owns this server; every other iPhone gets a
+      # guest session good for Ask Doddy only (never the owner's accounts, search or documents).
+      # first-device = others are refused. Development only; needs DODDY_SESSION_SIGNING_KEY.
+      # The live service is hand-made: set the same value there (Environment).
       - key: DODDY_DEVICE_SIGNUP
-        value: first-device
+        value: open
       # Optional, comma-separated: codes that let a further device in (8-64 letters, digits, - or _).
       - key: DODDY_DEVICE_INVITE_CODES
         sync: false
@@ -111,13 +113,18 @@ services:
         sync: false
       - key: DODDY_CLAUDE_MODEL
         value: claude-sonnet-5-5
+      # ADR-581: Ask Doddy questions per user and for the whole server per UTC day (Doddy pays).
+      - key: DODDY_LIMIT_USER_DAILY_ASK
+        value: "50"
+      - key: DODDY_LIMIT_SERVICE_DAILY_ASK
+        value: "500"
       # Doddy Web (ADR-579): the https origin people open it at, e.g. this service's own
       # https://doddy-yaci.onrender.com, or https://app.doddy.lol once the owner points that name
       # here. Empty: the web app and its routes are off.
       - key: DODDY_WEB_ORIGIN
         sync: false
-      # Render's proxy appends the client's address to X-Forwarded-For; used only to limit wrong
-      # sign-in codes per client.
+      # Render's proxy appends the client's address to X-Forwarded-For; used only for per-client
+      # limits (wrong web sign-in codes, new guest iPhones).
       - key: DODDY_TRUST_PROXY
         value: "1"
 

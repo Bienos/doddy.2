@@ -52,6 +52,16 @@ test("only the iPhone's own session makes codes: no session, or a browser's cook
   assert.equal(fromBrowser.status, 401, "a browser session can't make more sessions");
 });
 
+test("a guest iPhone (Ask Doddy only, ADR-581) can't make codes or see browsers", async () => {
+  const guest = { verify: (h: string | undefined) => (h === "Bearer guest-token-1" ? { userId: "00000000-0000-4000-8000-0000000000aa", scope: "ask" as const } : null) };
+  rig = await startWeb({ verifier: guest });
+  for (const [method, path] of [["POST", "/v1/web/link-codes"], ["GET", "/v1/web/sessions"]] as const) {
+    const res = await rig.call(method, path, { token: "guest-token-1", ...(method === "POST" ? { body: {} } : {}) });
+    assert.equal(res.status, 503, `${path}: ${res.text}`);
+    assert.equal(res.body.error.code, "live_not_configured");
+  }
+});
+
 test("codes are uniform over 30 characters without look-alikes, and typing is forgiving", () => {
   const seen = new Set<string>();
   for (let i = 0; i < 2000; i++) for (const ch of newLinkCode()) seen.add(ch);

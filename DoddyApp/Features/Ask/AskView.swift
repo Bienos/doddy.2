@@ -11,7 +11,6 @@ struct AskView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage(PreferenceKey.assistantConsent) private var consent = false
     @AppStorage(PreferenceKey.assistantUseNotes) private var useNotes = true
-    @AppStorage(PreferenceKey.gatewayAddress) private var gatewayAddress = ""
     @State private var controller = AskController()
     @FocusState private var inputFocused: Bool
 
@@ -82,7 +81,7 @@ struct AskView: View {
                     if let error = controller.error {
                         errorCard(error)
                     }
-                    Text("Doddy is an AI, not a person. Your question, the last few messages and any notes shown under an answer are sent to Doddy's server and on to OpenAI to write the reply. Nothing is saved unless you save it.")
+                    Text("Doddy is an AI, not a person. Your question, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic (Claude) to write the reply. Nothing is saved unless you save it.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                         .accessibilityIdentifier("ask.disclosure")
@@ -245,9 +244,9 @@ struct AskView: View {
 
     private func send() {
         guard let wiring = store.environment.assistant else { return }
-        // Private notes (ADR-310) are never sent to the Ask Doddy gateway.
+        // Private notes (ADR-310) are never sent to Ask Doddy.
         let recall = ShareableRecallService(base: store.environment.recallService) { PrivateNotesStore.current().ids }
-        let service = wiring.service(gatewayAddress: gatewayAddress, recall: recall)
+        let service = wiring.service(recall: recall)
         let locale = Locale.current.language.languageCode?.identifier ?? "en"
         controller.send(using: service, policy: policy, locale: locale)
     }

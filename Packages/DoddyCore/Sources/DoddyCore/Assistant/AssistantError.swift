@@ -9,7 +9,7 @@ public enum AssistantError: Error, Equatable, Sendable {
     case offline
     case timeout
     case rateLimited(retryAfterSeconds: Int?)
-    /// The gateway's daily spend cap (everyone, or this install) is used up until the next UTC day.
+    /// Doddy's daily Ask Doddy cap (this iPhone, or everyone) is used up until the next UTC day.
     case dailyLimitReached
     case providerUnavailable
     case refused
@@ -41,11 +41,11 @@ public enum AssistantError: Error, Equatable, Sendable {
     public var userMessage: String {
         switch self {
         case .notConfigured:
-            "Ask Doddy isn't set up yet. Add the gateway address and your invite code in Settings."
+            "Ask Doddy isn't set up on Doddy's server yet."
         case .consentRequired:
             "Turn on Ask Doddy in Settings first. It sends your question to a server."
         case .notAuthorized:
-            "This iPhone isn't authorised. Check your invite code in Settings."
+            "Doddy couldn't sign this iPhone in to his server. Check your connection and try again."
         case .offline:
             "You're offline. Your notes still work. Try again when you're connected."
         case .timeout:
@@ -72,7 +72,22 @@ public enum AssistantError: Error, Equatable, Sendable {
         }
     }
 
-    /// Maps a gateway wire code (`gateway/src/errors.js`). Unknown codes become `providerUnavailable`.
+    /// Maps Doddy's server error code (`backend/src/errors.ts`, ADR-581). Unknown codes become `providerUnavailable`.
+    init(backendCode: String, retryAfterSeconds: Int?) {
+        switch backendCode {
+        case "unauthenticated": self = .notAuthorized
+        case "rate_limited": self = .rateLimited(retryAfterSeconds: retryAfterSeconds)
+        case "quota_exceeded": self = .dailyLimitReached
+        case "provider_timeout": self = .timeout
+        case "invalid_request", "payload_too_large": self = .invalidRequest
+        case "refused": self = .refused
+        case "malformed_provider_result": self = .malformedResponse
+        case "live_not_configured": self = .notConfigured
+        default: self = .providerUnavailable
+        }
+    }
+
+    /// Maps the old gateway's wire code (`gateway/src/errors.js`). Unknown codes become `providerUnavailable`.
     init(wireCode: String, retryAfterSeconds: Int?) {
         switch wireCode {
         case "notAuthorized": self = .notAuthorized

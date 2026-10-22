@@ -4,7 +4,7 @@ import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { DevSessionVerifier } from "../src/auth.js";
+import { DevSessionVerifier, type SessionVerifier } from "../src/auth.js";
 import { defaultRegistry } from "../src/capabilities.js";
 import { testLimits } from "../src/config.js";
 import { DocumentLinks } from "../src/documents.js";
@@ -50,7 +50,9 @@ export interface WebRig {
   close(): Promise<void>;
 }
 
-export async function startWeb(o: { claude?: ClaudeProvider; origin?: string; withDist?: boolean; trustProxy?: boolean; limits?: RedeemLimits } = {}): Promise<WebRig> {
+export async function startWeb(
+  o: { claude?: ClaudeProvider; origin?: string; withDist?: boolean; trustProxy?: boolean; limits?: RedeemLimits; verifier?: SessionVerifier } = {},
+): Promise<WebRig> {
   const store = await Store.memory();
   const clock = new Clock(Date.parse("2026-10-22T10:00:00Z"));
   const logs: string[] = [];
@@ -67,7 +69,7 @@ export async function startWeb(o: { claude?: ClaudeProvider; origin?: string; wi
     log: (line) => logs.push(JSON.stringify(line)),
   });
   const service = new ConnectedAppsService({ ...common, provider: new MockCalendarProvider(), registry: defaultRegistry(), completionMode: "mock" });
-  const verifier = new DevSessionVerifier();
+  const verifier = o.verifier ?? new DevSessionVerifier();
 
   const distDir = mkdtempSync(join(tmpdir(), "doddy-web-dist-"));
   if (o.withDist !== false) {

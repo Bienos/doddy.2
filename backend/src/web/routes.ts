@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
-import type { AuthenticatedUser, SessionVerifier } from "../auth.js";
+import { type AuthenticatedUser, requireFullAccess, type SessionVerifier } from "../auth.js";
 import { AppError } from "../errors.js";
 import type { DocumentRow, DocumentSummaryRow, Store } from "../store.js";
 import type { DocumentView } from "./contracts.js";
@@ -174,6 +174,8 @@ export class WebRoutes {
       if (access === "browser") throw new AppError("unauthenticated");
       const user: AuthenticatedUser | null = await this.verifier.verify(authorization, now);
       if (!user) throw new AppError("unauthenticated");
+      // A guest iPhone (ADR-581) can't open the web workspace: it has Ask Doddy only.
+      requireFullAccess(user);
       return { userId: user.userId, session: null };
     }
     if (access === "phone") throw new AppError("unauthenticated");

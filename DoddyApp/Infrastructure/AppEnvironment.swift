@@ -3,23 +3,31 @@ import DoddyPersistence
 import Foundation
 import SwiftUI
 
-/// What the typed assistant (M2) needs from the app: where credentials live and how HTTP is sent.
-/// The gateway address comes from Settings at question time, so changing it needs no restart.
+/// What the typed assistant needs from the app: how HTTP is sent. Typed questions go to Doddy's own
+/// server (ADR-581), signed in with the same device session as online accounts (ADR-563): there is
+/// no gateway address and no invite code. The server address is read at question time, so changing
+/// it in Settings needs no restart.
 struct AssistantWiring: Sendable {
-    let credentials: any DeviceCredentialStore
     let transport: any GatewayTransport
 
-    func service(gatewayAddress: String, recall: any RecallService) -> AssistantService {
-        let client = GatewayAssistantClient(
-            configuration: GatewayConfiguration(string: gatewayAddress),
-            transport: transport,
-            credentials: credentials)
+    func service(recall: any RecallService) -> AssistantService {
+        let server = DeviceSession.serverURL()
+        let session = AssistantSession(
+            token: {
+                guard let server, await DeviceSession.ensure(server: server) else { return nil }
+                return KeychainSessionStore.read()?.token(for: server)
+            },
+            renewed: {
+                guard let server, await DeviceSession.renew(server: server) else { return nil }
+                return KeychainSessionStore.read()?.token(for: server)
+            })
+        let client = BackendAssistantClient(baseURL: server, session: session, transport: transport)
         return AssistantService(recall: recall, client: client)
     }
 }
 
 /// Composition root. Local memory and the reviewed profile use one SQLite file; voice uses the
-/// ElevenLabs agent (VoiceView); typed questions go through the Doddy gateway (AskView); the Talk to
+/// ElevenLabs agent (VoiceView); typed questions go to your Doddy server (AskView); the Talk to
 /// Doddy shortcut and Back Tap guide live in `ShortcutRouter`; Connected Apps talks to a Doddy server
 /// (ConnectedAppsScreen); other actions stay explicit `Unavailable*` adapters.
 struct AppEnvironment: Sendable {
@@ -77,7 +85,6 @@ struct AppEnvironment: Sendable {
             let databaseFile = isUITest ? nil : try databaseURL(arguments: arguments)
             let database = try databaseFile.map { try DoddyDatabase(path: $0.path) } ?? DoddyDatabase.inMemory()
             let repository = SQLiteMemoryRepository(database: database)
-            let credentials: any DeviceCredentialStore = isUITest ? InMemoryCredentialStore() : KeychainCredentialStore()
             // UI-test launches never touch iOS notifications: reminders stay inside Doddy.
             let notifications: any NoteNotificationScheduling = isUITest ? DisabledNoteNotifications() : SystemNoteNotifications()
             let noteReminders = NoteReminderCoordinator(
@@ -88,7 +95,7 @@ struct AppEnvironment: Sendable {
                 memoryRepository: repository,
                 profileRepository: SQLiteProfileRepository(database: database),
                 recallService: RepositoryRecallService(repository: repository),
-                assistant: AssistantWiring(credentials: credentials, transport: AppHTTPTransport()),
+                assistant: AssistantWiring(transport: AppHTTPTransport()),
                 toolExecutor: UnavailableToolExecutor(),
                 noteReminders: noteReminders,
                 // Notifications, texts, calls and news say "needs setup" until a messaging server is set.

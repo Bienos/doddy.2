@@ -51,11 +51,11 @@ Words used here: **IMPLEMENTED** = code and tests exist and pass; **PARTIAL** = 
 | Documents | PARTIAL: Postgres rows kept 7 days. Signed 7-day links. Made by an in-memory job that is lost on restart | `backend/src/documents.ts`, `store.ts` (`documents`), `tools/service.ts` `makeDocumentInBackground` |
 | Background tasks ("errands") | IMPLEMENTED, off by default (`ERRANDS_ENABLED=0`). Durable worker. The server copy is deleted once the phone saves the result | `server/messaging/src/errands/`, migration `009_errands` |
 | Phone calls, call cases, news digests, push, SMS | IMPLEMENTED; LIVE? (calls never tried live) | `server/messaging/src/`, `docs/implementation/CALL_CASES_STATUS.md` |
-| Typed "Ask Doddy" | DEPRECATED in practice: built (OpenAI), with no environment variables on any host | `gateway/`, `STATUS.md` "Known problems" |
+| Typed "Ask Doddy" | The OpenAI gateway was never configured on any host, so it did not work. **Moved to `backend/` (Claude) on 22 Oct, ADR-581:** `POST /v1/assist`, open to every iPhone through a guest session; not run against the real Anthropic API | `backend/src/assist.ts`, `gateway/` (unused) |
 | Marketing site, waitlist, admin | IMPLEMENTED, live | `site/`, `site/api/` |
 | Authenticated web UI | MISSING before this branch (the only web login was the single-password waitlist admin) | `site/admin/` |
 | Shared identity | PARTIAL: four separate identities (below) | — |
-| Supabase sign-in (Apple/Google) | PARTIAL: verifier built on the server; the app side was never built | `backend/src/auth.ts`, ADR-526 |
+| Supabase sign-in (Apple/Google) | PARTIAL: verifier built on the server; the app side was never built. **Deferred by the owner on 22 Oct** ("leave google sign in for now"), so the web keeps its code from the phone (ADR-579) | `backend/src/auth.ts`, ADR-526 |
 | Projects | MISSING | — |
 | Conversation sync, memory sync | MISSING. Only an opt-in, whole-snapshot memory copy that phone calls read | `server/messaging` `PUT /v1/memory-copy/snapshot` |
 | Usage metering | PARTIAL: per-user and per-service daily counters for tools and Claude. Errand tokens counted, not priced | `backend/src/store.ts` `usage`; `server/messaging` errands |
@@ -69,7 +69,7 @@ Words used here: **IMPLEMENTED** = code and tests exist and pass; **PARTIAL** = 
 | Area | What overlaps | Recommendation |
 |---|---|---|
 | **Identity** (highest risk) | `server/voice-token`: Apple sign-in, HS256 tokens, Redis sessions. `backend/`: Supabase JWTs and `ds1` device sessions. `server/messaging`: anonymous device tokens. `gateway/`: invite tokens. One phone has up to four unrelated user IDs. | Converge on one account (ADR-526's Supabase user) with `backend/` as the place that checks it. Then voice-token and messaging accept that session. Phased, section F. Don't merge the stores first: link identities, then move data. |
-| AI gateways | `gateway/` (OpenAI), `backend/` (Claude), `server/messaging` (Anthropic for news, calls and errands) | Retire `gateway/` (owner decision 11 is still open). Typed Ask and web chat go through `backend/`. |
+| AI gateways | `gateway/` (OpenAI), `backend/` (Claude), `server/messaging` (Anthropic for news, calls and errands) | Typed Ask now goes through `backend/` (ADR-581); `gateway/` is unused and can be deleted when the owner decides (decision 11). Web chat will go through `backend/` too. |
 | Background jobs | messaging's durable worker (leases, SKIP LOCKED, timeouts) vs backend's in-memory document jobs | Move document making onto a durable job when documents become durable (Phase 4). Don't build a third job system. |
 | Databases | backend's Postgres (schema `doddy_backend`, `DATABASE_URL`) and messaging's `doddy-db` | One Postgres with a schema per module is the stated plan (`render.yaml` header). Do it when identity is shared, not before. |
 | Rate limits and budgets | gateway `budget.js`, backend `usage` table, messaging per-route limits | Keep backend's `usage` table as the one meter (it is transactional and survives restarts); messaging can call into it once they share a database. |

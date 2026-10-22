@@ -15,6 +15,20 @@ import { AppError } from "./errors.js";
 export interface AuthenticatedUser {
   /** Immutable internal ID (UUID). Never an email address. */
   userId: string;
+  /**
+   * `ask`: a guest iPhone's device session (ADR-581), good for Ask Doddy (`POST /v1/assist`) and
+   * nothing else. Absent: the full API.
+   */
+  scope?: "ask";
+}
+
+/**
+ * Every route but Ask Doddy calls this. A guest is told the feature isn't set up for it, which is
+ * what such an iPhone heard before guests existed; never 401, which would make the app sign in
+ * again in a loop.
+ */
+export function requireFullAccess(user: AuthenticatedUser): void {
+  if (user.scope === "ask") throw new AppError("live_not_configured", { message: "On this iPhone, Doddy's server answers Ask Doddy only." });
 }
 
 export interface SessionVerifier {
@@ -50,6 +64,8 @@ interface SessionClaims {
   sub: string;
   iat: number;
   exp: number;
+  /** Only on a guest's token (ADR-581). Signed with the rest, so it can't be removed. */
+  scp?: "ask";
 }
 
 const b64url = (data: Buffer | string) => Buffer.from(data).toString("base64url");
@@ -59,10 +75,10 @@ export class SignedSessionVerifier implements SessionVerifier {
     if (key.length < 32) throw new Error("session signing key too short");
   }
 
-  mint(userId: string, now: Date, ttlSeconds: number): string {
+  mint(userId: string, now: Date, ttlSeconds: number, scope?: "ask"): string {
     if (!UUID.test(userId)) throw new Error("userId must be a UUID");
     const iat = Math.floor(now.getTime() / 1000);
-    const claims: SessionClaims = { v: 1, sub: userId, iat, exp: iat + ttlSeconds };
+    const claims: SessionClaims = { v: 1, sub: userId, iat, exp: iat + ttlSeconds, ...(scope ? { scp: scope } : {}) };
     const payload = b64url(JSON.stringify(claims));
     return `ds1.${payload}.${this.sign(payload)}`;
   }
@@ -85,7 +101,7 @@ export class SignedSessionVerifier implements SessionVerifier {
     if (!isClaims(claims)) return null;
     const nowSeconds = Math.floor(now.getTime() / 1000);
     if (claims.exp <= nowSeconds || claims.iat > nowSeconds + 60) return null;
-    return { userId: claims.sub };
+    return claims.scp ? { userId: claims.sub, scope: claims.scp } : { userId: claims.sub };
   }
 
   private sign(payload: string): string {
@@ -101,7 +117,8 @@ function isClaims(value: unknown): value is SessionClaims {
     typeof c.sub === "string" &&
     UUID.test(c.sub) &&
     Number.isInteger(c.iat) &&
-    Number.isInteger(c.exp)
+    Number.isInteger(c.exp) &&
+    (c.scp === undefined || c.scp === "ask")
   );
 }
 

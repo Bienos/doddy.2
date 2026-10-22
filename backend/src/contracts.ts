@@ -189,6 +189,8 @@ export const ErrorCode = z.enum([
   "provider_timeout",
   "malformed_provider_result",
   "live_not_configured",
+  /** The model declined to answer (Ask Doddy, ADR-581). Not retried. */
+  "refused",
   "internal",
 ]);
 export type ErrorCode = z.infer<typeof ErrorCode>;

@@ -1,7 +1,9 @@
 import Foundation
 
-/// The one real `AssistantClient`: talks to the Doddy gateway, which holds the provider key.
-/// Nothing here logs text. Errors are the `AssistantError` taxonomy.
+/// The first `AssistantClient`: talks to the separate Doddy gateway (OpenAI), which holds the
+/// provider key. Since ADR-581 the app uses `BackendAssistantClient` (Doddy's own server, Claude)
+/// instead, and nothing in the app builds this one; it stays, tested, with `gateway/`, until the
+/// owner decides to delete both. Nothing here logs text. Errors are the `AssistantError` taxonomy.
 public struct GatewayAssistantClient: AssistantClient {
     private let configuration: GatewayConfiguration?
     private let transport: any GatewayTransport
@@ -95,8 +97,11 @@ public struct GatewayAssistantClient: AssistantClient {
 
     // MARK: - Decoding
 
-    static func interpret(_ response: GatewayHTTPResponse, for request: AssistantRequest) throws -> AssistantReply {
-        guard response.status == 200 else { throw error(from: response) }
+    static func interpret(
+        _ response: GatewayHTTPResponse, for request: AssistantRequest,
+        errorMapper: (GatewayHTTPResponse) -> AssistantError = GatewayAssistantClient.error(from:)
+    ) throws -> AssistantReply {
+        guard response.status == 200 else { throw errorMapper(response) }
         guard let wire = try? JSONDecoder().decode(AssistWireResponse.self, from: response.body),
               wire.schemaVersion == 1,
               wire.requestId.lowercased() == WireCoding.uuid(request.requestID)

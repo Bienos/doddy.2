@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
-import type { SessionVerifier } from "./auth.js";
+import { ASSIST_MAX_BODY_BYTES, type AssistService } from "./assist.js";
+import { requireFullAccess, type SessionVerifier } from "./auth.js";
+import { clientAddress } from "./clientAddress.js";
 import { type ErrorResponse, MockScenario } from "./contracts.js";
 import type { DeviceSessionIssuer } from "./deviceSession.js";
 import { type DocumentLinks, serveDocument } from "./documents.js";
@@ -30,8 +32,12 @@ export interface HttpDeps {
   documents?: { links: DocumentLinks; store: Store } | null;
   /** Doddy Web (ADR-579): its routes, its cookie sessions and its pages. Absent: none of them exist. */
   web?: { auth: WebAuth; routes: WebRoutes; pages: WebStatic } | null;
+  /** Ask Doddy (ADR-581): typed questions answered by Claude. Absent: `POST /v1/assist` is not found. */
+  assist?: AssistService | null;
   appReturnUrl: string;
   maxBodyBytes: number;
+  /** Behind one proxy that appends the client to X-Forwarded-For (Render). For per-client limits. */
+  trustProxy?: boolean;
   now?: () => Date;
   log?: (line: Record<string, unknown>) => void;
 }
@@ -111,7 +117,7 @@ export function createHandler(deps: HttpDeps) {
       if (key === "POST /v1/session/device" && deps.deviceSessions) {
         route = key;
         const body = await readJson(req, deps.maxBodyBytes);
-        const issued = await deps.deviceSessions.issue(body, now());
+        const issued = await deps.deviceSessions.issue(body, now(), clientAddress(req, deps.trustProxy ?? false));
         status = 200;
         return send(res, 200, issued);
       }
@@ -120,6 +126,18 @@ export function createHandler(deps: HttpDeps) {
         route = "GET /v1/documents/:id";
         status = await serveDocument(req, res, url, deps.documents.links, deps.documents.store, now());
         return;
+      }
+
+      // Ask Doddy (ADR-581): the iPhone's own session only (never a browser cookie), a guest's
+      // included, and its own body limit, sized for a question plus up to eight matching notes.
+      if (key === "POST /v1/assist" && deps.assist) {
+        route = key;
+        const user = await deps.verifier.verify(header(req, "authorization"), now());
+        if (!user) throw new AppError("unauthenticated");
+        const body = await readJson(req, ASSIST_MAX_BODY_BYTES);
+        const reply = await deps.assist.answer(user.userId, body);
+        status = 200;
+        return send(res, 200, reply);
       }
 
       // Doddy Web (ADR-579): its own routes, then its pages for anything that isn't the API.
@@ -154,6 +172,8 @@ export function createHandler(deps: HttpDeps) {
         if (session) user = { userId: session.userId };
       }
       if (!user) throw new AppError("unauthenticated");
+      // A guest iPhone (ADR-581) has Ask Doddy only.
+      requireFullAccess(user);
 
       const rawScenario = header(req, "x-doddy-demo-scenario");
       const scenario = rawScenario === undefined ? undefined : MockScenario.safeParse(rawScenario);
