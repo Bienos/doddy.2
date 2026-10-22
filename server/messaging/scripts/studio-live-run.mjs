@@ -9,7 +9,7 @@ import { AnthropicStudioApi, parseSkills } from "../dist/src/studio/model.js";
 import { runStudio, costOf } from "../dist/src/studio/pipeline.js";
 
 const TOPICS = {
-  pl: { kind: "brief", topic: "Pompy ciepła w Polsce: ile kosztują i czy się opłacają?", length: "standard", style: "plain", language: "pl" },
+  pl: { kind: "brief", topic: "Pompy ciepła w Polsce: ile kosztują i czy się opłacają?", length: "short", style: "plain", language: "pl" },
   en: { kind: "brief", topic: "How do heat pumps compare with gas boilers in cold climates?", length: "standard", style: "plain", language: "en" },
   short: { kind: "brief", topic: "Is intermittent fasting better than normal dieting for weight loss?", length: "short", style: "plain", language: "en" },
 };
@@ -25,7 +25,7 @@ const outDir = process.argv[3] ?? join(process.env.TMPDIR ?? "/tmp", `studio-liv
 mkdirSync(outDir, { recursive: true });
 
 const api = new AnthropicStudioApi(key, {
-  skills, maxSearches: 15, maxFetches: 15, blockedDomains: [], taskBudgetTokens: 150000, baseURL: "https://api.anthropic.com",
+  skills, maxSearches: 8, maxFetches: 8, blockedDomains: [], taskBudgetTokens: 150000, baseURL: "https://api.anthropic.com",
 });
 
 const calls = [];
@@ -69,7 +69,7 @@ const outcome = await runStudio(wrapped, job, {
   deadline: new Date(Date.now() + 20 * 60_000),
   isCancelled: async () => false,
   setStage: async (stage) => { console.log(`[${((Date.now() - started) / 1000).toFixed(0)}s] stage ${stage}`); },
-  jobLimitUsd: 4,
+  jobLimitUsd: 2,
   log: (msg, extra) => console.log("log:", msg, JSON.stringify(extra ?? {})),
 });
 const wallSeconds = Math.round((Date.now() - started) / 1000);
