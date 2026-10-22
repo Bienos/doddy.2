@@ -171,7 +171,7 @@ export async function runStudio(api: StudioModelApi, job: StudioJob, control: St
       for (const url of seen.urls) if (!seenAt.has(url)) seenAt.set(url, now().toISOString());
       for (const b of m.content) if (b.type === "text" && typeof b.text === "string" && b.text.trim()) notes.push(b.text.trim());
       withinLimit();
-      if (m.stop_reason === "pause_turn" && turn < MAX_PAUSE_TURNS) {
+      if (resumable(m.stop_reason, m.content) && turn < MAX_PAUSE_TURNS) {
         messages.push({ role: "assistant", content: echoable(m.content) });
         continue;
       }
@@ -263,7 +263,7 @@ export async function runStudio(api: StudioModelApi, job: StudioJob, control: St
       for (const id of fileIdsOf(m.content)) { ids.push(id); atAnthropic.add(id); }
       turns.push({ role: "assistant", content: m.content });
       withinLimit();
-      if (m.stop_reason === "pause_turn" && turn < MAX_PAUSE_TURNS) continue;
+      if (resumable(m.stop_reason, m.content) && turn < MAX_PAUSE_TURNS) continue;
       if (m.stop_reason === "refusal") throw fail("refused");
       break;
     }
@@ -276,6 +276,14 @@ export async function runStudio(api: StudioModelApi, job: StudioJob, control: St
     }
     return { containerId, files };
   }
+}
+
+/**
+ * `pause_turn`, or (seen in the first real runs, Sonnet 5.5 with the 20260209 web tools) `tool_use` with no
+ * tool call of ours in it: the server-side loop stopped early, and the turn is resumed as it stands.
+ */
+export function resumable(stop: string | null | undefined, content: readonly { type: string }[]): boolean {
+  return stop === "pause_turn" || (stop === "tool_use" && !content.some((b) => b.type === "tool_use"));
 }
 
 /** The later copy of a file wins (a second make attempt replaces the first's). */

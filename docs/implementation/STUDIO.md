@@ -203,7 +203,26 @@ The owner lowered the limits for this run: US$5 for the whole task, US$2 per job
 
 **Fix made (tested with the fake, not with a paid run):** the write step now has up to 3 attempts and each retry carries the previous attempt as well as the problems; the write prompt states the main length limits and says to count characters (`PROMPT_VERSION` `studio-s0-2`). Test: `studioUnits.test.ts` "content that breaks the rules is sent back with its last attempt and the problems; three times is unreadable_result". **Whether this makes real write steps pass is unproven.**
 
-**Still unproven** (needs one more paid run, owner's call): the make step and everything in it (`container.skills` with `{type: "custom", skill_id, version}`, `pause_turn` with the same container, files at the top of `$OUTPUT_DIR` as `file_id`s, `retrieveMetadata`, `download`, `delete` and the 404 after delete), `blocked_domains` together with `max_uses`, a real rendered brief and infographic, and the checks on real files. No Anthropic-side file was made by this run, so there was nothing to delete (the Files API list was not queried).
+
+### Runs 2 to 4 (same day, mix `cheap`: Haiku 5.5 plans, extracts claims and renders; Sonnet 5.5 researches and writes)
+
+The owner then asked for a real report and deck and the cost by model. Three more runs of the same Polish job (8 searches and 8 fetches each), US$1.21 in all; total for the task **US$2.64**.
+
+| Run | Result | Cost | Why |
+|---|---|---|---|
+| 2 (prompt `studio-s0-2`) | failed `too_little_found` | $0.35 | Sonnet's research notes were only 6,290 characters with no figures or quotes; Haiku's pack found 2 claims and said so (it did not invent any) |
+| 3 (prompt `studio-s0-3`: detailed notes with quotes asked for) | failed `too_little_found` | $0.36 | The research request ended with `stop_reason: "tool_use"` and no tool call of ours (last block a thinking block); the code took it as the end, with a 30-character note. **Real bug.** |
+| 4 (`tool_use` without our own tool call is resumed like `pause_turn`, `resumable()` in `pipeline.ts`, tested with the fake) | **made, `ready`, all 14 checks passed** | **$0.51** | 280 s |
+
+**Run 4 by step:** plan Haiku $0.0004; research Sonnet $0.37 (+ $0.08 for 8 searches); pack Haiku $0.0067 (32 claims); write Sonnet $0.044; make Haiku $0.010. So Haiku cost about $0.02 in all, Sonnet about $0.41, searches $0.08; the code's cost and the cost implied by the per-call usage agree ($0.5076). Tokens: 27,700 fresh in, 46,352 out, 237,755 cache read, 82,896 cache write; container 43 s (not billed here). The same job with every step on Opus 5.5 (run 1, before the make step could run) was $1.42 up to write alone, so the cheap mix is about a third of the Opus price for a finished job.
+
+**What the real API confirmed in run 4:** custom skills as `container.skills` with `{type: "custom", skill_id, version}` plus `code_execution_20250825`, no beta header (accepted; Haiku 5.5 ran the skills' scripts first time, one request, no `pause_turn`); the four files saved at the top of `$OUTPUT_DIR` came back as `file_id`s in `bash_code_execution_tool_result`; `retrieveMetadata` gave the right names, `download` the bytes, `delete` worked and a deleted file then 404s (`fileGone` true for all 4); a Files API listing afterwards showed **0 files at Anthropic** (nothing left over from any run). The server's 14 file checks passed on the real files. `blocked_domains` together with `max_uses` is **still not tried** (no domains blocked in any run).
+
+**What the output looked like** (brief 4 pages, infographic 1080×1350, I looked at both): readable, brand colours, orange only on bars and rules, footnoted points, a "where sources disagree" part and a confidence line. Mistakes and weak points: (1) the infographic headline says "25–40 tys. zł" for an air-source pump, the lowest figure (one pump seller, TS Energy); the brief's own answer says "according to one source" but the headline doesn't, and another run found 35 to 55 thousand; (2) "zwrot ok. 6–10 lat" leaves out that the source says "z dofinansowaniem" (with a grant); (3) the chart is about grants ("Maks. dotacja"), not about what the headline is about, and mixes the Moje Ciepło ceiling with Czyste Powietrze percentages; (4) one fact ("Poniżej −15 °C pompa powietrzna włącza grzałkę") I did not check against its source; (5) I did not open the cited pages, so figures and quotes are not checked against them; (6) the code checks that claims exist and that the pack's source was seen, not that a headline is as careful as its sources.
+
+**The deck:** Studio S0 makes no decks (S1). The owner got a 9-slide deck made locally (python-pptx, no API) from run 4's written content, so it is not a Studio feature and cost nothing.
+
+**Still unproven after run 1 alone** (run 4 above has since covered the make step and the Files API): the make step and everything in it (`container.skills` with `{type: "custom", skill_id, version}`, `pause_turn` with the same container, files at the top of `$OUTPUT_DIR` as `file_id`s, `retrieveMetadata`, `download`, `delete` and the 404 after delete), `blocked_domains` together with `max_uses`, a real rendered brief and infographic, and the checks on real files. No Anthropic-side file was made by this run, so there was nothing to delete (the Files API list was not queried).
 
 ## Constitution evidence log (S0)
 

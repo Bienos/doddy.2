@@ -5,7 +5,7 @@ import { describe, test } from "node:test";
 import { SeenSources } from "../src/errands/researcher.js";
 import { checkFiles, contrast, failed, pngSize, scanSvg, TEXT_COLOURS } from "../src/studio/checks.js";
 import { fileIdsOf, parseSkills, STUDIO_MAKE_TOOL_TYPE, STUDIO_RESEARCH_TOOL_TYPES, AnthropicStudioApi } from "../src/studio/model.js";
-import { buildPack, runStudio, stepCostUsd, type StudioControl } from "../src/studio/pipeline.js";
+import { buildPack, resumable, runStudio, stepCostUsd, type StudioControl } from "../src/studio/pipeline.js";
 import { DEFAULT_STEP_MODELS, HAIKU, MODEL_MIXES, modelLabel, OPUS, SONNET, stepModelsFrom, tokenCostUsd } from "../src/studio/models.js";
 import { appState, contentProblems, jobBody, jobDigest, jobJson, type RenderContent, type Stage } from "../src/studio/schema.js";
 import { content, FakeStudioApi, goodFiles, goodSvg, job, packOutput, pdf, png, researchMessage, URLS } from "./studioFakes.js";
@@ -259,6 +259,18 @@ describe("the pipeline against a fake Claude", () => {
     assert.equal(api.researchInputs[1]!.length, 2, "the paused assistant turn goes back");
     if (out.kind === "made") assert.equal(out.files.some((f) => (f.name as string) === "notes.txt"), false);
     assert.equal(api.deleted.size, 5);
+  });
+
+  test("a research that stops with tool_use but no tool call of ours is resumed like pause_turn", async () => {
+    const api = new FakeStudioApi();
+    api.researches.push(researchMessage("tool_use"), researchMessage());
+    api.makes.push({ files: goodFiles(content()) });
+    const out = await runStudio(api, job, control().c);
+    assert.equal(out.kind, "made");
+    assert.equal(api.researchInputs.length, 2, "the research was asked again");
+    const withCall = researchMessage("tool_use");
+    withCall.content.push({ type: "tool_use", id: "t1", name: "x", input: {} });
+    assert.equal(resumable(withCall.stop_reason, withCall.content), false, "a tool call of ours is not ours to skip");
   });
 
   test("a failed check goes back to make once, with the failures listed; a second failure is needs_look, never ready", async () => {
