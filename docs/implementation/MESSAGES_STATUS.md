@@ -53,6 +53,7 @@ Kept as they were: the Ask Doddy switch and consent, the invite code and gateway
 | DOD-09 correction and recovery | A message nobody answered stays and can be sent again; Stop leaves it as "No answer yet" without an error card; killed mid-send is swept on the next open | `testAMessageWithNoAnswerStaysInTheThreadAndCanBeSentAgainAtTheEnd`, `testStoppingLeavesTheMessage…`, `testAMessageLeftSendingWhenTheAppWasClosed…` | Kill during a real request not tried on a device |
 | DOD-11 observable privacy; `privacy_policy` | Disclosure on the screen says what is sent and that the thread is saved here; consent unchanged and checked before anything is saved or sent | `testNothingIsSavedOrSentWhileAskDoddyIsOffOrNotSetUp` | The consent dialog and Settings text were not reworded (owner decision 3) |
 | `memory_policy.deletion_claim_requires_storage_confirmation` | Delete is read back before the screen empties; `secure_delete` is on | Raw database file test | Same gap as Capture: notes, learned facts and procedures have no such test |
+| ADR-310 Face ID app lock | The lock cover is an overlay on the root view and a full-screen cover sits above it, so `MessagesView` closes itself when `AppLock.shared.isLocked` turns true. Found while answering the owner's questions: without it, a Messages screen left open could show the saved history over the lock | Not tested: the view is not compiled and `AppLock` needs iOS | Check item 8 below. The Voice conversation screen and other covers were not looked at |
 | ASK-01 | No tool, action or external write is added; a reply is text only | - | Studio's later steps (documents, sending) need cards |
 | DOD-07 content is data | Reply text is shown as text; citation check unchanged (A-14) | Existing `CitationVerifier` tests | - |
 
@@ -73,6 +74,7 @@ Kept as they were: the Ask Doddy switch and consent, the invite code and gateway
 5. ••• → Delete conversation → confirm. The thread is empty; Settings → Delete all also empties it.
 6. Home in Polish and in English, default and largest text: the bottom bar shows "Messages" and "Memories" with icons when they fit, the Messages icon alone when they do not, and the + button is always on screen.
 7. Turn Ask Doddy off: the box keeps what you type and nothing is saved.
+8. Turn the Face ID lock on (Settings). Open Messages, leave Doddy for longer than the lock's delay, come back: the lock shows and Messages is closed, not readable above it.
 
 ## Next
 

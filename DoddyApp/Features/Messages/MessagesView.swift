@@ -82,6 +82,14 @@ struct MessagesView: View {
         .onChange(of: model.isSending) { _, sending in
             DoddyDirector.shared.askSending(sending, failed: model.error != nil)
         }
+        // The Face ID cover (ADR-310) is on the root view, and a full-screen cover sits above it. The saved
+        // conversation must not stay readable over the lock, so this screen closes when the lock comes up.
+        .onChange(of: AppLock.shared.isLocked) { _, locked in
+            if locked {
+                model.cancel()
+                close()
+            }
+        }
         .onDisappear {
             model.cancel()
             DoddyDirector.shared.askClosing()
