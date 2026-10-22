@@ -21,6 +21,7 @@ app.log.info({
   newsWriter: !!providers.news.writer, newsSearch: !!providers.news.search,
   taskCalls: !!(providers.taskCalls && providers.cipher && config.publicBaseUrl), taskCallsKillSwitch: config.taskCallSettings.killSwitch,
   errands: !!(providers.errands.researcher && providers.cipher), errandsModel: config.errandSettings.model,
+  assistant: !!providers.assistant.responder, assistantModel: config.assistantSettings.model,
 }, "configured features");
 
 // One service instead of web + worker (a small or free deploy): RUN_WORKER_IN_WEB=1 runs the
