@@ -18255,6 +18255,17 @@
         }
       }
     },
+    "Doddy is recording. Stop the recording to record a voice memo.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nagrywa. Zatrzymaj nagrywanie, aby nagrać notatkę głosową."
+          }
+        }
+      }
+    },
     "Doddy is recording. Stop the recording to talk to him.": {
       "extractionState": "manual",
       "localizations": {
@@ -56524,6 +56535,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "试听"
+          }
+        }
+      }
+    },
+    "Samples don't play while Doddy is recording.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Próbki nie odtwarzają się, gdy Doddy nagrywa."
           }
         }
       }

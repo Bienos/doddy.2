@@ -194,9 +194,9 @@ struct RecordingDetailView: View {
         }
         .navigationTitle(Text(verbatim: model.recording?.displayTitle(language) ?? ""))
         .navigationBarTitleDisplayMode(.inline)
-        .task {
-            await model.load()
-            // While the words are being written out, the page follows.
+        .task { await model.load() }
+        // While the words are being written out, the page follows; it starts again for "Write out again".
+        .task(id: model.isWorking) {
             while !Task.isCancelled, model.isWorking {
                 try? await Task.sleep(for: .seconds(2))
                 await model.refresh()

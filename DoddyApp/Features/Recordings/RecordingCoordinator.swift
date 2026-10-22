@@ -57,6 +57,14 @@ final class RecordingCoordinator {
     @ObservationIgnored private var activeID: UUID?
     @ObservationIgnored private var activeOrigin: CaptureOrigin = .app
     @ObservationIgnored private var isSwitchingPart = false
+    /// A recorder is being started (resume, or the retry after an interruption). A second request
+    /// meanwhile is ignored: two recorders on one file would corrupt the part.
+    @ObservationIgnored private var isStartingPart = false
+    /// Pause or an interruption is still saving the part it closed. A Stop waits for it, or the part
+    /// would be missing from the save and its audio removed.
+    @ObservationIgnored private var closesInFlight = 0
+    /// Parts whose row could not be written when they opened (part index → start offset).
+    @ObservationIgnored private var openDebt: [Int: Int] = [:]
     @ObservationIgnored private var persistenceDebt: [Int: Int] = [:]
     @ObservationIgnored private var ticker: Task<Void, Never>?
     @ObservationIgnored private var tickCount = 0
@@ -91,6 +99,9 @@ final class RecordingCoordinator {
         actions.stop = { [weak self] in _ = await self?.stop() }
         actions.pause = { [weak self] in await self?.pause() }
         actions.resume = { [weak self] in await self?.resume() }
+        activity.onEndedBySystem = { [weak self] in
+            Task { @MainActor in await self?.send(.activityEnded) }
+        }
         watchAudioSession()
     }
 
@@ -191,6 +202,9 @@ final class RecordingCoordinator {
                 await send(.preflightPassed(at: .now))
             }
         case .startRecorder(let index):
+            guard !isStartingPart else { return }
+            isStartingPart = true
+            defer { isStartingPart = false }
             await startRecorderPart(index)
         case .startActivity:
             await requestActivity()
@@ -199,6 +213,8 @@ final class RecordingCoordinator {
         case .rotate(let closing, let opening):
             await rotate(closing: closing, opening: opening)
         case .closePart(let index):
+            closesInFlight += 1
+            defer { closesInFlight -= 1 }
             let milliseconds = await closeOpenPart(index)
             await persistClosed(index, milliseconds)
             await send(.partClosed(index: index, milliseconds: milliseconds, at: .now))
@@ -230,6 +246,8 @@ final class RecordingCoordinator {
         // Read once in the app, before any start, so a start from Siri or a control is never the first notice.
         guard Self.noticeAccepted else { return .noticeNotAccepted }
         guard VoiceSessionController.runningConversation == nil else { return .conversationRunning }
+        // A voice memo has the microphone: starting here would take the audio session from it.
+        guard !MicrophoneHolders.shared.isRecording else { return .microphoneBusy }
         guard repository != nil, files.directory != nil else { return .databaseUnavailable }
         if origin.requiresLiveActivity, !ActivityAuthorizationInfo().areActivitiesEnabled { return .liveActivityUnavailable }
         switch AVAudioApplication.shared.recordPermission {
@@ -327,6 +345,19 @@ final class RecordingCoordinator {
                 newRecorder.stop()
                 throw AudioStartError.noAudio
             }
+            guard machineExpects(part: index) else {
+                // Stop, the give-up or an interruption came while the recorder was starting: this audio
+                // belongs to nobody. Telling the machine would make it throw the whole recording away.
+                newRecorder.stop()
+                Self.log.notice("a recorder started after the machine moved on; stopped")
+                if !machine.isActive {
+                    _ = try? await repository.discard(recordingID: id)
+                    files.remove(recordingID: id)
+                } else if openPartIndex != index {
+                    files.remove(recordingID: id, fileNames: [part.fileName])
+                }
+                return
+            }
             recorder = newRecorder
             recorderDelegate = delegate
             openPartIndex = index
@@ -338,6 +369,15 @@ final class RecordingCoordinator {
     }
 
     private enum AudioStartError: Error { case refused, noAudio }
+
+    /// Whether the machine is waiting for exactly this part to start.
+    private func machineExpects(part index: Int) -> Bool {
+        switch machine.state {
+        case .preparing: index == 1
+        case .paused(let s), .interrupted(let s, _): s.nextPartIndex == index
+        default: false
+        }
+    }
 
     private static func failure(for error: any Error) -> CaptureFailure {
         if error is RecordingStoreError { return .databaseUnavailable }
@@ -467,14 +507,35 @@ final class RecordingCoordinator {
     private func persistOpened(_ index: Int, offset: Int) async {
         guard let repository, let id = activeID else { return }
         for _ in 0..<2 {
-            if (try? await repository.openPart(recordingID: id, index: index, startOffsetMilliseconds: offset)) != nil { return }
+            if (try? await repository.openPart(recordingID: id, index: index, startOffsetMilliseconds: offset)) != nil {
+                openDebt[index] = nil
+                return
+            }
             try? await Task.sleep(for: .milliseconds(200))
         }
+        // The audio goes on into a part with no row. It is tried again at the next checkpoint and
+        // before the save; without the row the audio could not be found after a kill.
+        openDebt[index] = offset
         Self.log.notice("opening part \(index, privacy: .public) not saved")
+    }
+
+    /// Writes what an earlier try could not: part rows first, then lengths.
+    private func settleDebts(_ repository: any RecordingRepository, _ id: UUID) async {
+        for (index, offset) in openDebt {
+            if (try? await repository.openPart(recordingID: id, index: index, startOffsetMilliseconds: offset)) != nil {
+                openDebt[index] = nil
+            }
+        }
+        for (index, milliseconds) in persistenceDebt {
+            if (try? await repository.closePart(recordingID: id, index: index, durationMilliseconds: milliseconds)) != nil {
+                persistenceDebt[index] = nil
+            }
+        }
     }
 
     private func checkpoint() async {
         guard let repository, let id = activeID, let gaps = machine.session?.gaps else { return }
+        if !openDebt.isEmpty || !persistenceDebt.isEmpty { await settleDebts(repository, id) }
         try? await repository.checkpoint(recordingID: id, gaps: gaps)
     }
 
@@ -485,17 +546,18 @@ final class RecordingCoordinator {
             await send(.finalizeFailed)
             return
         }
-        await updateActivity() // "Saving…"
+        // The microphone first: nothing below may keep it open, and iOS can take a while to answer an activity update.
         if let open = machine.session?.openPart, openPartIndex == open.index {
             let milliseconds = await closeOpenPart(open.index)
             await persistClosed(open.index, milliseconds)
             await send(.partClosed(index: open.index, milliseconds: milliseconds, at: .now))
         }
+        // A pause or an interruption may still be saving the part it closed; its length has to be in before the save.
+        for _ in 0..<100 where closesInFlight > 0 { try? await Task.sleep(for: .milliseconds(20)) }
+        await updateActivity() // "Saving…"
         guard let session = machine.session, case .finalizing(_, let reason) = machine.state else { return }
-        // Any close that did not reach the database is tried once more before the recording is called saved.
-        for (index, milliseconds) in persistenceDebt {
-            do { try await repository.closePart(recordingID: id, index: index, durationMilliseconds: milliseconds); persistenceDebt[index] = nil } catch {}
-        }
+        // Any row or length that did not reach the database is tried once more before the recording is called saved.
+        await settleDebts(repository, id)
         do {
             let finished = try await repository.finish(
                 recordingID: id, phase: .saved, endedAt: .now, endReason: reason, parts: session.closedParts, gaps: session.gaps)
@@ -535,7 +597,9 @@ final class RecordingCoordinator {
         tickCount = 0
         activeID = nil
         persistenceDebt = [:]
+        openDebt = [:]
         isSwitchingPart = false
+        isStartingPart = false
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
 
@@ -570,14 +634,23 @@ final class RecordingCoordinator {
         guard machine.isCapturingAudio, !isSwitchingPart else { return }
         if recorder?.isRecording != true {
             Self.log.notice("the recorder stopped by itself")
-            await send(.recorderStoppedUnexpectedly(at: .now))
+            await reportRecorderStopped()
         }
+    }
+
+    /// The recorder stopped and nobody said why. A call, an alarm or Siri is announced by iOS close to
+    /// the moment the recorder stops, so the machine gets a moment to hear that first: otherwise it
+    /// would retry into the call and spend its attempts before the interruption ends.
+    private func reportRecorderStopped() async {
+        try? await Task.sleep(for: .milliseconds(700))
+        guard machine.isCapturingAudio, !isSwitchingPart, recorder?.isRecording != true else { return }
+        await send(.recorderStoppedUnexpectedly(at: .now))
     }
 
     /// A recorder said it finished. Ours, deliberately closed, were forgotten first, so this is news.
     fileprivate func recorderFinished(_ key: ObjectIdentifier) {
         guard let recorder, ObjectIdentifier(recorder) == key, machine.isCapturingAudio, !isSwitchingPart else { return }
-        Task { await send(.recorderStoppedUnexpectedly(at: .now)) }
+        Task { await reportRecorderStopped() }
     }
 
     // MARK: - iOS's audio notifications
@@ -667,6 +740,8 @@ final class RecordingCoordinator {
         }
         if let known = try? await repository.allIDs() {
             for name in CaptureRecovery.orphanDirectories(onDisk: files.folderNames(), knownIDs: known) {
+                // A recording that began while this ran has a folder and, as far as `known` goes, no row.
+                guard !machine.isActive, name != activeID?.uuidString.lowercased() else { continue }
                 files.removeFolder(named: name)
             }
         }

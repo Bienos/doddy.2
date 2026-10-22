@@ -37,8 +37,29 @@ Environment: Linux x86_64 (Ubuntu 24.04), Swift 6.1.2 (the version CI uses), no 
 | `python3 -I tools/build_strings_catalog.py --check` | PASS (catalogs regenerated; Polish 1,731 of 1,810 UI strings; the rest of the languages show new screens in English) |
 | `scripts/typecheck_app_logic.sh` | PASS, 25 app files (it failed first: my edit to `ShortcutRouter` needed a field in its stand-in; fixed) |
 | `swiftc -parse -swift-version 6` on the 24 app, shared and widget Swift files I touched | all parse. **Syntax only** |
-| Independent read-through of the app layer for compile errors | CI_REVIEW_PENDING |
+| Independent read-through of the app layer (a reviewing agent read every app, widget and shared file I added or touched) | **Done: no definite compile error found, 15 other findings** (table below). A read-through, not a compile |
 | `scripts/ci.sh --core-only` (everything that runs without a Mac) | **PASS for core-only scope, run on the final tree** (exit 0). It prints `NOT RUN  iOS app build + tests`: the app is not verified by it |
+
+### What the read-through found, and what was done
+Fixes are **not compiled or run** either. Each was re-read and the files re-parsed.
+
+| # | Finding | Result |
+|---|---|---|
+| 1 | Resume tapped twice started two recorders on one file; a late "started" could make the machine delete the whole recording | **Fixed in the app:** a start already in flight is ignored; a start the machine no longer waits for is stopped and never reported. The machine's own rule (a stray "started" while idle or mismatched means discard) is unchanged |
+| 2 | Stop during a Pause's save could leave that part out of the save and remove its audio | **Fixed:** the save waits (up to 2 s) for any close in flight |
+| 3 | The microphone stayed open while the "Saving…" update was sent | **Fixed:** the part is closed first |
+| 4 | No stale date or heartbeat on the Live Activity; a card removed by iOS was never noticed | **Fixed:** while audio is written, a 60 s heartbeat keeps a 150 s stale date ahead (as the voice island does); an ended or dismissed card is reported to the machine. Paused and interrupted cards have no stale date |
+| 5 | Voice memos, read-aloud, voice samples and call rehearsal could take the audio session from a recording | **Fixed:** each refuses while a recording runs; a recording refuses to start while a voice memo records. Not checked on a device; "Hey Doddy" listening was not audited |
+| 6 | Background task ended after the expiration handler returned | **Fixed:** ended inside the handler |
+| 7 | `InterruptionReason.routeDisconnected` might not exist | **Checked, no change:** Apple's documentation lists it from iOS 17.0, our minimum |
+| 8 | Dragging the playback slider rebuilt the player and the audio session on every tick | **Fixed:** seeks in place; rebuilds the queue only across a part boundary |
+| 9 | The page stopped following after "Write out again" | **Fixed:** the follow loop restarts when work starts |
+| 10 | The orphan-folder sweep could delete the folder of a recording that began meanwhile | **Fixed:** skipped while a recording is active |
+| 11 | A recorder that stopped for a call could be retried before iOS announced the interruption | **Mitigated:** 0.7 s grace before the machine hears "stopped by itself". The race is not proven or disproven |
+| 12 | A rotation whose new part's row failed to save left audio unreachable | **Fixed:** retried at each checkpoint and before the save; if it still fails the save fails and the recording stays for recovery |
+| 13 | A part already being written out kept running when a recording started | **Partly fixed:** no part starts while recording; one in progress finishes (its cost on a recording is unmeasured) |
+| 14 | The island's three buttons would appear as Shortcuts actions | **Fixed:** not discoverable, like the other Live Activity buttons |
+| 15 | "Open Latest Recording" did nothing with Recordings already open | **Fixed:** the screen watches for it |
 
 **Not run, and why:** `xcodegen`, `xcodebuild` (no Xcode), any simulator or device test, UI tests, the hosted macOS CI. **The app, the widget extension and the UI tests have not been built with these changes.**
 
@@ -66,6 +87,11 @@ Run on an iPhone with Doddy installed from this branch, a free-team build is eno
 | 17 | Swipe the Lock Screen card away while recording; then Stop in Doddy | Recording unaffected; saved | Island dismissed |
 | 18 | Settings › Live Activities off, then start from the control | Refuses with a sentence; starting inside Doddy still works | Activity rule |
 | 19 | VoiceOver on the Recordings page and the Lock Screen card | Controls and timer are spoken | Accessibility |
+| 20 | Pause, then tap Resume twice quickly (also from the Lock Screen) | One recording carries on; the part plays back without a glitch | No double start |
+| 21 | Pause, then Stop at once, ten times | Every recording keeps all its audio | The Stop-during-close wait |
+| 22 | Force-quit Doddy while recording and watch the Lock Screen card for three minutes | The card turns "can't tell whether it's still recording" and drops its buttons | Stale date and heartbeat |
+| 23 | While recording: start a voice memo, play a memo, Read aloud, a voice sample, a call rehearsal | Each refuses with a sentence; the recording is untouched | Audio session guards |
+| 24 | Drag the playback slider while playing | Smooth, no gaps, no restart per tick | In-place seek |
 
 ## Security and privacy
 - **Nothing leaves the iPhone** (audio, words, search, the notes made from them). The capability guard bans any networking in `Features/Recordings`. Not yet checked with a network proxy on a device.

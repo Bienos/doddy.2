@@ -68,11 +68,23 @@ final class RecordingPlayer {
         release()
     }
 
+    /// Moves the position. While playing the audio session is already set up, so this only moves the
+    /// player (or, across a part boundary, rebuilds its queue): a drag calls this many times a second.
     func seek(toMilliseconds milliseconds: Int) {
-        if isPlaying {
-            play(from: milliseconds)
-        } else {
+        guard isPlaying, player != nil, hasAudio else {
             positionMilliseconds = min(max(0, milliseconds), totalMilliseconds)
+            return
+        }
+        let target = min(max(0, milliseconds), max(0, totalMilliseconds - 1))
+        if let item = player?.currentItem, let position = items[ObjectIdentifier(item)],
+           pieces[position].offsetMilliseconds <= target,
+           target < pieces[position].offsetMilliseconds + pieces[position].durationMilliseconds {
+            let inside = target - pieces[position].offsetMilliseconds
+            player?.seek(to: CMTime(value: CMTimeValue(inside), timescale: 1000), toleranceBefore: .zero, toleranceAfter: .zero)
+            positionMilliseconds = target
+        } else {
+            rebuild(at: target)
+            player?.play()
         }
     }
 

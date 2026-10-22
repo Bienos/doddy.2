@@ -64,6 +64,10 @@ struct RecordingsView: View {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
             }
             .navigationDestination(item: $opened) { id in RecordingDetailView(id: id) }
+            // "Open Latest Recording" while this screen is already up.
+            .onChange(of: ShortcutRouter.shared.hasRecordingToOpen) {
+                if let id = ShortcutRouter.shared.takeRecordingToOpen() { opened = id }
+            }
             .task {
                 if let id = ShortcutRouter.shared.takeRecordingToOpen() { opened = id }
                 // The list follows the work: a new recording, words being written out.

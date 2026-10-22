@@ -26,10 +26,11 @@ enum CaptureIntentLog {
     }
 }
 
-/// "Stop" on the island and the Lock Screen, and in Shortcuts. Always available while a recording
-/// exists: a recording must always be stoppable.
+/// "Stop" on the island and the Lock Screen. Always available while a recording exists: a recording
+/// must always be stoppable. (Stop listening, in Shortcuts, also stops and saves a recording.)
 struct StopDoddyRecordingIntent: LiveActivityIntent {
     static let title: LocalizedStringResource = "Stop DODDY Recording"
+    static let isDiscoverable = false
     static var description: IntentDescription {
         IntentDescription("Stops the recording and saves it in Recordings.")
     }
@@ -63,6 +64,7 @@ struct StopDoddyRecordingIntent: LiveActivityIntent {
 /// off; it is not a muted microphone.
 struct PauseDoddyRecordingIntent: LiveActivityIntent {
     static let title: LocalizedStringResource = "Pause DODDY Recording"
+    static let isDiscoverable = false
     static var description: IntentDescription {
         IntentDescription("Pauses the recording. The microphone is off until you resume.")
     }
@@ -88,6 +90,7 @@ struct PauseDoddyRecordingIntent: LiveActivityIntent {
 /// unless the recorder reported audio coming in.
 struct ResumeDoddyRecordingIntent: LiveActivityIntent {
     static let title: LocalizedStringResource = "Resume DODDY Recording"
+    static let isDiscoverable = false
     static var description: IntentDescription {
         IntentDescription("Carries on a paused or interrupted recording.")
     }

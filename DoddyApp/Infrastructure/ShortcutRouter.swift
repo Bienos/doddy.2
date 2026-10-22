@@ -168,6 +168,9 @@ final class ShortcutRouter {
         openRecordings()
     }
 
+    /// True from "Open Latest Recording" until the Recordings screen has taken it.
+    var hasRecordingToOpen: Bool { recordingToOpen != nil }
+
     /// The recording to open once, when Recordings appears.
     func takeRecordingToOpen() -> UUID? {
         defer { recordingToOpen = nil }

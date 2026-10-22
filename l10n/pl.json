@@ -1729,5 +1729,7 @@
   "Delete all recordings?": "Usunąć wszystkie nagrania?",
   "Every recording on this iPhone is removed, with its audio and its words. A recording in progress is stopped first. Notes you saved from them stay. This can't be undone.": "Wszystkie nagrania na tym iPhonie zostaną usunięte razem z dźwiękiem i zapisem słów. Nagranie w toku zostanie najpierw zatrzymane. Notatki zapisane z nagrań zostają. Nie da się tego cofnąć.",
   "Every recording, with its audio and its words, is removed too.": "Usuwane są też wszystkie nagrania, razem z dźwiękiem i zapisem słów.",
-  "Doddy couldn't delete your recordings. They are still on this iPhone.": "Doddy nie mógł usunąć Twoich nagrań. Nadal są na tym iPhonie."
+  "Doddy couldn't delete your recordings. They are still on this iPhone.": "Doddy nie mógł usunąć Twoich nagrań. Nadal są na tym iPhonie.",
+  "Doddy is recording. Stop the recording to record a voice memo.": "Doddy nagrywa. Zatrzymaj nagrywanie, aby nagrać notatkę głosową.",
+  "Samples don't play while Doddy is recording.": "Próbki nie odtwarzają się, gdy Doddy nagrywa."
 }

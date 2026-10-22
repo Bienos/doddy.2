@@ -119,7 +119,8 @@ private final class BackgroundWork {
     func begin() {
         guard identifier == .invalid else { return }
         identifier = UIApplication.shared.beginBackgroundTask(withName: "doddy-write-out-recording") { [weak self] in
-            Task { @MainActor in self?.end() }
+            // iOS ends the app if the task is still open when this returns, so it is ended here, not later.
+            MainActor.assumeIsolated { self?.end() }
         }
     }
 
@@ -130,8 +131,9 @@ private final class BackgroundWork {
     }
 }
 
-/// Writes out saved recordings one at a time, never while another is being recorded (the processor
-/// and the recorder would compete for the same cores and battery).
+/// Writes out saved recordings one at a time. A recording or a part is never started while another
+/// recording is being made (the two would compete for the same cores and battery); a part already
+/// being written out when a recording starts is allowed to finish.
 @MainActor
 @Observable
 final class RecordingProcessor {
@@ -203,6 +205,7 @@ final class RecordingProcessor {
         let parts = (try? await repository.parts(recordingID: id)) ?? []
         var assembly: [AssemblyPart] = []
         for part in parts {
+            while RecordingCoordinator.shared.isActive { try? await Task.sleep(for: .seconds(5)) }
             guard let duration = part.durationMilliseconds, let url = files.url(recordingID: id, fileName: part.fileName),
                   FileManager.default.fileExists(atPath: url.path) else {
                 // A part whose file is gone is not skipped quietly: the words would then be missing from the middle.
