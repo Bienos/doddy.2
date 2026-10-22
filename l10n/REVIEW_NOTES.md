@@ -32,6 +32,12 @@ Polish only, written by the agent that built the Tasks screens; the other eight 
 - The task list's intro, the result card, Home's "Gotowe: %@" / "Nie udało się dokończyć: %@" card and the error lines in `ErrandsModel`.
 - Not in the tables: the failure explanations come from DoddyCore (`ErrandFailureCode.explanation`) in English.
 
+## Added 22 October 2026 (ADR-579 to 581: Action Button, Settings, Terms)
+
+- 73 new Polish lines, machine-written, for the Settings groups and pages, the Action Button choice and the "Before we start" step. The other eight tables have none: those rows show in English there.
+- **Check first:** "Przełączniki" for iOS's Action Button › *Controls* and "Przycisk czynności" for the Action Button: use exactly the words Polish iOS shows. "Regulamin" for Terms & Conditions and "Polityka prywatności" for the Privacy Policy, to match the website's Polish legal pages (`site/pl/terms/`, `site/pl/privacy/`) and the lawyer's wording. "Akceptuję Regulamin" on the unticked box.
+- 31 Polish lines and 23 lines in each other table were removed with the Settings paragraphs they translated.
+
 ## Per language
 
 **French (fr).** Uses non-breaking spaces before `? ! : ;` and inside « ». Unsure: "Receipts" → "Confirmations" (#782); "is now due" (#1357); "Item" → "Objet" (#449); "Way" → "Moyen" (#1233); "Focusing" (#384); "Grounded" → "Posé" (#405). Terms: memories = souvenirs; Morning check-in = Point du matin; Evening wrap-up = Bilan du soir; Weekly look-back = Retour sur la semaine; Shopping mode = Mode courses; Focus = Concentration (also Doddy's own focus timer); "Hey Siri" = « Dis Siri ».
@@ -90,3 +96,14 @@ ElevenLabs became the default voice (ADR-546), so seven privacy texts that named
 - `Stored on this iPhone with your memories, but separately: forgetting these doesn't delete …`
 - `Talking sends these reminders and list names to ElevenLabs, or OpenAI if you switch Home's…`
 - `While you talk, your voice, this conversation, your saved notes, your list names (and a li…`
+
+## Legal pages in Polish (22 Oct 2026)
+
+`site/pl/terms/index.html` (Regulamin) and `site/pl/privacy/index.html` (Polityka prywatności) were written in Polish by the agent that wrote the English drafts, not by a translation agent and not with `tools/l10n_batch.py`. **They need a native Polish speaker and the lawyer** before the draft banner comes off; the pages say so themselves. Legal text is never machine-translated into the other eight languages: their footers link to the English pages, labelled "(English)" in each language (`Terms` and `Privacy Policy` in `l10n/site/<code>.json`, also unreviewed).
+
+Check first:
+- Legal terms: "Regulamin" for Terms and Conditions; "administrator", "inspektor ochrony danych", "umowa powierzenia przetwarzania", "prawnie uzasadniony interes" and the RODO article references in the legal-bases table.
+- Apple's own Polish names: "Zaloguj się przez Apple" (Sign in with Apple), "Ruch i sprawność" (Motion & Fitness), "pęk kluczy" (Keychain), "Mapy Apple".
+- Tone: informal "Ty" with capitals (Twoje, Ciebie), as in the app; gendered past forms are masculine ("jeśli korzystałeś"), which a reviewer may want to make neutral.
+- App labels quoted in English because the Polish app still shows them in English: "What leaves this iPhone", "Delete Doddy voice account", "Sign out of voice", "Ask again before sharing voice". Once the app translates them, the pages should use the Polish labels.
+- The Siri phrase is quoted from `l10n/pl_shortcuts.json` ("Zapytaj aplikację Doddy, co mam zapisane").

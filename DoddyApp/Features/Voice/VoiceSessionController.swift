@@ -409,7 +409,11 @@ final class VoiceSessionController {
     private(set) var provider: VoiceProvider = .elevenLabs
     /// The OpenAI model of the conversation being started or open (only meaningful when `provider` is OpenAI).
     private(set) var openAIModel: OpenAIRealtimeModel = .default
-    private var startedAt: Date?
+    /// When the current start began (the press or tap); a repeat press reads it (ADR-579).
+    private(set) var startedAt: Date?
+    /// The last start without opening Doddy failed because iOS refused the island or the
+    /// microphone in the background, not because of the conversation: opening Doddy fixes it (ADR-579).
+    private(set) var backgroundStartRefused = false
     /// Private conversation (PRD item 6, ADR-170): when on at the end, nothing of it is kept on the
     /// phone, so it never comes back as "recent conversations". Explicit saves still need a tap.
     var isPrivate = false {
@@ -568,7 +572,10 @@ final class VoiceSessionController {
         isMuted = false
         savedThisConversation = 0
         islandFlash = nil
-        islandExpansion = IslandExpansion(BackTapAction.stored(UserDefaults.standard.string(forKey: PreferenceKey.backTapAction)))
+        // Settings › Dynamic Island › "Open up when Doddy speaks" (ADR-579; was Back Tap's "Small island").
+        islandExpansion = IslandExpansion(isOn: LaunchPreferencesMigration.islandExpands(
+            UserDefaults.standard.object(forKey: LaunchPreferencesMigration.islandExpandsKey) as? Bool))
+        backgroundStartRefused = false
         proposedNoteTexts = []
         saveSuggestions = nil
         suggestionsOffered = false
@@ -611,10 +618,12 @@ final class VoiceSessionController {
             guard island.isShowing else {
                 let noIsland = "no island for a start without opening: attempt \(attempt)"
                 Self.audioLog.notice("\(noIsland, privacy: .public)")
+                backgroundStartRefused = true
                 fail(NSLocalizedString("Doddy couldn't show himself in the Dynamic Island, so he can't listen without opening. Open Doddy to talk.", comment: ""))
                 return
             }
             if let problem = Self.takeAudioSessionWithoutOpening() {
+                backgroundStartRefused = true
                 fail(problem)
                 return
             }
@@ -986,7 +995,7 @@ final class VoiceSessionController {
             // The code is AVAudioSession's number for the refusal (no text, nothing said).
             let refused = "audio session refused without opening: \(LogSafeError.kind(of: error)), code \((error as NSError).code)"
             audioLog.notice("\(refused, privacy: .public)")
-            return NSLocalizedString("iOS didn't let Doddy start the microphone without opening him. Use Talk to Doddy, which opens the app.", comment: "")
+            return NSLocalizedString("iOS didn't let Doddy start the microphone without opening him. Open Doddy to talk.", comment: "")
         }
     }
 
@@ -2070,9 +2079,14 @@ final class VoiceSessionController {
         // Only a conversation that showed itself on the island ends it.
         guard ownsIsland else { return }
         ownsIsland = false
-        if phase == .ended {
+        switch phase {
+        case .ended:
             island.finish(savedCount: savedThisConversation)
-        } else {
+        case .failed:
+            // It couldn't start or the connection dropped: the Lock Screen says so for a moment,
+            // with Open Doddy, instead of the island just vanishing (ADR-579).
+            island.finishFailed(savedCount: savedThisConversation)
+        default:
             island.end()
         }
     }

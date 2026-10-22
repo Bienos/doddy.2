@@ -11,7 +11,8 @@ final class DoddyArtTests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["-inMemoryStore", "YES", "-AppleLanguages", "(en)", "-AppleLocale", "en_US", "-onboardingDone", "YES", "-backTapSetupStatus", "deferred",
                                "-appearance", "light", "-openingScene", "NO", "-listenOnOpen", "NO",
-                               "-doddyArtMarkers", "YES", "-hideCharacterArt", hideArt ? "YES" : "NO"]
+                               "-doddyArtMarkers", "YES", "-hideCharacterArt", hideArt ? "YES" : "NO",
+                               "-legalAcceptanceSkippedForUITests", "YES"]
         if pauseAll { app.launchArguments += ["-connections.pauseAll", "YES"] }
         app.launch()
         XCTAssertTrue(app.waitForTab("home", timeout: 10))

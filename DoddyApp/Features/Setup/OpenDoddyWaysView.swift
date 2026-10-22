@@ -254,7 +254,7 @@ struct OpenDoddyWaysView: View {
             Text("Press it to talk.")
                 .font(.largeTitle.bold())
                 .accessibilityAddTraits(.isHeader)
-            Text("Make the Action Button start a conversation with Doddy.")
+            Text("One press, and Doddy is in the Dynamic Island, listening. Press again to end.")
             if device.actionButton != .yes {
                 Text("Only some iPhones have an Action Button. If yours doesn't, pick another way.")
                     .padding(16)
@@ -263,14 +263,15 @@ struct OpenDoddyWaysView: View {
             }
             VStack(alignment: .leading, spacing: 14) {
                 numbered(1) { Text("Open Settings and choose Action Button.") }
-                numbered(2) { Text("Swipe to Controls (Shortcut on iOS 17) and tap the button under it.") }
-                numbered(3) { Text("Pick Talk to Doddy.") }
+                numbered(2) { Text("Swipe to Controls (iOS 18 or later) and tap the button under it.") }
+                numbered(3) { Text("Search for Doddy and pick Talk to Doddy.") }
             }
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 16))
-            // ADR-577: the control that starts the conversation without bringing Doddy forward.
-            Text("To talk without Doddy opening, pick Talk in the Island instead (iOS 18 or later). He greets you and stays in the Dynamic Island; tap it to see the conversation.")
+            // ADR-579: the control follows Doddy's Settings › Action Button. The Shortcut option
+            // (and iOS 17) runs the App Shortcut, which always opens the app.
+            Text("What a press does is up to you in Doddy's Settings, Action Button: the Dynamic Island, or the app. Pick Controls, not Shortcut: the shortcut always opens Doddy.")
             openSettingsButton
             Text("The names can differ a little between iOS versions. Doddy can't see this setting.")
                 .hintStyle()

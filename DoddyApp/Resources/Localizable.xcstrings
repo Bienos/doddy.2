@@ -60,65 +60,6 @@
         }
       }
     },
-    "\"Talk to Doddy\" is built in as a shortcut for Siri, the Shortcuts app and the Action Button, and on iOS 18 or later as a control you can add to Control Center or the Lock Screen (edit Control Center, then Add a Control, then search Doddy). Back Tap and controls are placed by you; Doddy can't add them and can't see whether they're set.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "„Mit Doddy reden“ ist als Kurzbefehl für Siri, die App Kurzbefehle und die Aktionstaste eingebaut, und ab iOS 18 als Steuerelement, das du zum Kontrollzentrum oder Sperrbildschirm hinzufügen kannst (Kontrollzentrum bearbeiten, dann Steuerelement hinzufügen, dann nach Doddy suchen). Auf Rückseite tippen und Steuerelemente richtest du selbst ein; Doddy kann sie weder hinzufügen noch sehen, ob sie eingerichtet sind."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "“Hablar con Doddy” viene integrado como atajo para Siri, la app Atajos y el Botón de acción, y en iOS 18 o posterior como un control que puedes añadir al Centro de control o a la Pantalla de bloqueo (edita el Centro de control, luego Añadir un control y busca Doddy). Tocar atrás y los controles los colocas tú; Doddy no puede añadirlos ni ver si están configurados."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "« Parler à Doddy » est intégré comme raccourci pour Siri, l’app Raccourcis et le Bouton Action, et sur iOS 18 ou plus récent comme commande que tu peux ajouter au Centre de contrôle ou à l’Écran verrouillé (modifie le Centre de contrôle, puis Ajouter une commande, puis cherche Doddy). Toucher le dos de l’appareil et les commandes sont placés par toi ; Doddy ne peut pas les ajouter ni voir s’ils sont configurés."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "„Razgovaraj s Doddyjem“ ugrađen je kao prečac za Siri, aplikaciju Prečaci i Tipku za radnju, a na iOS-u 18 ili novijem kao kontrola koju možeš dodati u Kontrolni centar ili na Zaključani zaslon (uredi Kontrolni centar, zatim Dodaj kontrolu, pa potraži Doddy). Dodir stražnje strane i kontrole postavljaš ti; Doddy ih ne može dodati niti vidjeti jesu li postavljeni."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "“Parla con Doddy” è integrato come comando rapido per Siri, l'app Comandi Rapidi e il tasto Azione, e su iOS 18 o successivo come controllo che puoi aggiungere al Centro di Controllo o al Blocco schermo (modifica il Centro di Controllo, poi Aggiungi un controllo, poi cerca Doddy). Tocco posteriore e controlli li imposti tu; Doddy non può aggiungerli e non può vedere se sono impostati."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "「Doddyと話す」は、Siri、ショートカットアプリ、アクションボタン用のショートカットとして組み込まれています。iOS 18以降では、コントロールセンターやロック画面に追加できるコントロールとしても使えます（コントロールセンターを編集 › コントロールを追加 › 「Doddy」で検索）。背面タップとコントロールの配置はあなたが行います。Doddyが追加することはできず、設定されているかどうかも見えません。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "„Porozmawiaj z Doddym” jest wbudowane jako skrót dla Siri, aplikacji Skróty i przycisku czynności, a od iOS 18 jako element sterujący, który możesz dodać do Centrum sterowania lub ekranu blokady (edytuj Centrum sterowania, potem Dodaj element sterujący i wyszukaj Doddy). Stuknięcie w tył i elementy sterujące ustawiasz samodzielnie; Doddy nie może ich dodać ani sprawdzić, czy są ustawione."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "“Falar com o Doddy” vem embutido como atalho para a Siri, o app Atalhos e o Botão de Ação, e no iOS 18 ou posterior como um controle que você pode adicionar à Central de Controle ou à Tela Bloqueada (edite a Central de Controle, depois Adicionar Controle, depois busque Doddy). O Toque na Parte Traseira e os controles são colocados por você; o Doddy não pode adicioná-los nem ver se estão definidos."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "“和 Doddy 聊聊”内置为 Siri、“快捷指令”应用和操作按钮的快捷指令，在 iOS 18 或更高版本上还可作为控制添加到控制中心或锁定屏幕（编辑控制中心，然后添加控制，再搜索 Doddy）。轻点背面和控制由你自己放置；Doddy 无法添加它们，也看不到它们是否已设置。"
-          }
-        }
-      }
-    },
     "\"That's wrong\" keeps it below, out of use, so you can see it. Delete removes it.": {
       "extractionState": "manual",
       "localizations": {
@@ -2597,6 +2538,17 @@
         }
       }
     },
+    "About": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O aplikacji"
+          }
+        }
+      }
+    },
     "About %lld min of travel, plus %lld min spare": {
       "extractionState": "manual",
       "localizations": {
@@ -2892,6 +2844,17 @@
         }
       }
     },
+    "Access": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dostęp"
+          }
+        }
+      }
+    },
     "Access expired or was removed at Google. Reconnect to keep using it.": {
       "extractionState": "manual",
       "localizations": {
@@ -2947,6 +2910,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "访问权限已过期或已在 Google 端被移除。重新连接以继续使用。"
+          }
+        }
+      }
+    },
+    "Account": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Konto"
           }
         }
       }
@@ -4171,6 +4145,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "添加到其备注：“%@”"
+          }
+        }
+      }
+    },
+    "Advanced": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaawansowane"
           }
         }
       }
@@ -6093,65 +6078,6 @@
         }
       }
     },
-    "Appearance and accessibility": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Erscheinungsbild und Bedienungshilfen"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aspecto y accesibilidad"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Apparence et accessibilité"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Izgled i pristupačnost"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aspetto e accessibilità"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "外観とアクセシビリティ"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wygląd i dostępność"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aparência e acessibilidade"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "外观与辅助功能"
-          }
-        }
-      }
-    },
     "Apple Calendar": {
       "extractionState": "manual",
       "localizations": {
@@ -7339,6 +7265,17 @@
         }
       }
     },
+    "Auto-start voice": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatyczny start głosu"
+          }
+        }
+      }
+    },
     "Automatic": {
       "extractionState": "manual",
       "localizations": {
@@ -7512,65 +7449,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "返回"
-          }
-        }
-      }
-    },
-    "Back Tap and Siri": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rückseite tippen & Siri"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tocar atrás y Siri"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Toucher le dos et Siri"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dodir stražnje strane i Siri"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tocco posteriore e Siri"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "背面タップとSiri"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Stuknięcie w tył i Siri"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Toque na Parte Traseira e Siri"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "轻点背面和 Siri"
           }
         }
       }
@@ -7822,13 +7700,13 @@
         }
       }
     },
-    "Big island: start a conversation": {
+    "Before we start": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Duża wyspa: rozpocznij rozmowę"
+            "value": "Zanim zaczniemy"
           }
         }
       }
@@ -8305,6 +8183,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zajęte"
+          }
+        }
+      }
+    },
+    "By continuing, you agree to Doddy's Terms & Conditions and acknowledge the Privacy Policy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kontynuując, akceptujesz Regulamin Doddy’ego i potwierdzasz, że znasz Politykę prywatności."
           }
         }
       }
@@ -10122,6 +10011,17 @@
         }
       }
     },
+    "Check-ins and reminders": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podsumowania i przypomnienia"
+          }
+        }
+      }
+    },
     "Checked %@. Prices and availability can change.": {
       "extractionState": "manual",
       "localizations": {
@@ -11556,6 +11456,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "已连接的账户"
+          }
+        }
+      }
+    },
+    "Connected apps": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Połączone aplikacje"
           }
         }
       }
@@ -15071,6 +14982,24 @@
               }
             }
           }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Usunięto na tym iPadzie, ale nie udało się zatrzymać udostępniania list (%lld: %@). Ich kopia zostaje w iCloud i u osób, które zaprosiłeś."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Usunięto na tym iPhonie, ale nie udało się zatrzymać udostępniania list (%lld: %@). Ich kopia zostaje w iCloud i u osób, które zaprosiłeś."
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -15498,246 +15427,13 @@
         }
       }
     },
-    "Development build. Doddy is an AI assistant, not a person. This memory interface uses your approved numbered-asset design; physical-device and release checks remain outstanding.": {
+    "Development build. Physical-device and release checks are still outstanding.": {
       "extractionState": "manual",
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Entwicklungsversion. Doddy ist ein KI-Assistent, kein Mensch. Diese Gedächtnis-Oberfläche verwendet dein freigegebenes Design mit nummerierten Assets; Prüfungen auf einem physischen Gerät und vor der Veröffentlichung stehen noch aus."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Versión de desarrollo. Doddy es un asistente de IA, no una persona. Esta interfaz de recuerdos usa tu diseño aprobado de recursos numerados; las comprobaciones en dispositivo físico y de lanzamiento siguen pendientes."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Version de développement. Doddy est un assistant IA, pas une personne. Cette interface de mémoire utilise ton design validé à partir des assets numérotés ; les vérifications sur appareil physique et avant publication restent à faire."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Razvojna verzija. Doddy je AI asistent, ne osoba. Ovo sučelje sjećanja koristi tvoj odobreni dizajn s numeriranim resursima; provjere na fizičkom uređaju i prije objave još nisu obavljene."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Versione di sviluppo. Doddy è un assistente IA, non una persona. Questa interfaccia dei ricordi usa il design approvato con asset numerati; i controlli su dispositivo fisico e prima del rilascio sono ancora da fare."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "開発ビルドです。DoddyはAIアシスタントであり、人ではありません。この記憶インターフェイスは、承認済みの番号付きアセットデザインを使用しています。実機での確認とリリース前の確認はまだ行われていません。"
-          }
-        },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Wersja deweloperska. Doddy to asystent AI, nie człowiek. Ten interfejs pamięci korzysta z zatwierdzonego projektu z numerowanymi zasobami; testy na fizycznym urządzeniu i przed wydaniem jeszcze się nie odbyły."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Versão de desenvolvimento. Doddy é um assistente de IA, não uma pessoa. Esta interface de memória usa o design aprovado com recursos numerados; as verificações em aparelho físico e de lançamento ainda estão pendentes."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "开发版本。Doddy 是 AI 助手，不是真人。此记忆界面使用你批准的编号素材设计；实体设备测试和发布检查尚未完成。"
-          }
-        }
-      }
-    },
-    "Development setting. Use https, or http://localhost with the Simulator. The token comes from the server owner and is stored only in this iPhone's Keychain, for the server address set when you saved it; it is never sent to another address.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Entwicklungseinstellung. Verwende https oder http://localhost mit dem Simulator. Das Token kommt vom Serverbetreiber und wird nur im Schlüsselbund von diesem iPad gespeichert, für die beim Speichern festgelegte Serveradresse; es wird nie an eine andere Adresse gesendet."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Entwicklungseinstellung. Verwende https oder http://localhost mit dem Simulator. Das Token kommt vom Serverbetreiber und wird nur im Schlüsselbund von diesem iPhone gespeichert, für die beim Speichern festgelegte Serveradresse; es wird nie an eine andere Adresse gesendet."
-                }
-              }
-            }
-          }
-        },
-        "en": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Development setting. Use https, or http://localhost with the Simulator. The token comes from the server owner and is stored only in this iPad's Keychain, for the server address set when you saved it; it is never sent to another address."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Development setting. Use https, or http://localhost with the Simulator. The token comes from the server owner and is stored only in this iPhone's Keychain, for the server address set when you saved it; it is never sent to another address."
-                }
-              }
-            }
-          }
-        },
-        "es": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Ajuste de desarrollo. Usa https, o http://localhost con el simulador. El token lo da el propietario del servidor y se guarda solo en el llavero de este iPad, para la dirección de servidor fijada cuando lo guardaste; nunca se envía a otra dirección."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Ajuste de desarrollo. Usa https, o http://localhost con el simulador. El token lo da el propietario del servidor y se guarda solo en el llavero de este iPhone, para la dirección de servidor fijada cuando lo guardaste; nunca se envía a otra dirección."
-                }
-              }
-            }
-          }
-        },
-        "fr": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Réglage de développement. Utilise https, ou http://localhost avec le Simulateur. Le jeton vient du propriétaire du serveur et n’est stocké que dans le trousseau de cet iPad, pour l’adresse de serveur réglée au moment de l’enregistrement ; il n’est jamais envoyé à une autre adresse."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Réglage de développement. Utilise https, ou http://localhost avec le Simulateur. Le jeton vient du propriétaire du serveur et n’est stocké que dans le trousseau de cet iPhone, pour l’adresse de serveur réglée au moment de l’enregistrement ; il n’est jamais envoyé à une autre adresse."
-                }
-              }
-            }
-          }
-        },
-        "hr": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Razvojna postavka. Koristi https ili http://localhost sa Simulatorom. Token dolazi od vlasnika poslužitelja i čuva se samo u Keychainu ovog iPada, za adresu poslužitelja postavljenu u trenutku spremanja; nikad se ne šalje na drugu adresu."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Razvojna postavka. Koristi https ili http://localhost sa Simulatorom. Token dolazi od vlasnika poslužitelja i čuva se samo u Keychainu ovog iPhonea, za adresu poslužitelja postavljenu u trenutku spremanja; nikad se ne šalje na drugu adresu."
-                }
-              }
-            }
-          }
-        },
-        "it": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Impostazione di sviluppo. Usa https, oppure http://localhost con il Simulatore. Il token viene dal proprietario del server ed è conservato solo nel portachiavi di questo iPad, per l'indirizzo del server impostato quando l'hai salvato; non viene mai inviato a un altro indirizzo."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Impostazione di sviluppo. Usa https, oppure http://localhost con il Simulatore. Il token viene dal proprietario del server ed è conservato solo nel portachiavi di questo iPhone, per l'indirizzo del server impostato quando l'hai salvato; non viene mai inviato a un altro indirizzo."
-                }
-              }
-            }
-          }
-        },
-        "ja": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "開発用の設定です。httpsを使うか、シミュレータではhttp://localhostを使ってください。トークンはサーバーの所有者から受け取るもので、保存時に設定したサーバーアドレス用として、このiPadのキーチェーンにのみ保存されます。ほかのアドレスに送られることはありません。"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "開発用の設定です。httpsを使うか、シミュレータではhttp://localhostを使ってください。トークンはサーバーの所有者から受け取るもので、保存時に設定したサーバーアドレス用として、このiPhoneのキーチェーンにのみ保存されます。ほかのアドレスに送られることはありません。"
-                }
-              }
-            }
-          }
-        },
-        "pl": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Ustawienie deweloperskie. Użyj https albo http://localhost w Symulatorze. Token pochodzi od właściciela serwera i jest przechowywany tylko w pęku kluczy tego iPada, dla adresu serwera ustawionego przy zapisie; nigdy nie jest wysyłany pod inny adres."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Ustawienie deweloperskie. Użyj https albo http://localhost w Symulatorze. Token pochodzi od właściciela serwera i jest przechowywany tylko w pęku kluczy tego iPhone’a, dla adresu serwera ustawionego przy zapisie; nigdy nie jest wysyłany pod inny adres."
-                }
-              }
-            }
-          }
-        },
-        "pt-BR": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Configuração de desenvolvimento. Use https, ou http://localhost com o Simulador. O token vem do dono do servidor e é guardado só nas Chaves deste iPad, para o endereço de servidor definido quando você salvou; nunca é enviado a outro endereço."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Configuração de desenvolvimento. Use https, ou http://localhost com o Simulador. O token vem do dono do servidor e é guardado só nas Chaves deste iPhone, para o endereço de servidor definido quando você salvou; nunca é enviado a outro endereço."
-                }
-              }
-            }
-          }
-        },
-        "zh-Hans": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "开发设置。请使用 https，或在模拟器中使用 http://localhost。令牌由服务器所有者提供，只存储在这台 iPad 的钥匙串中，并与保存时设置的服务器地址绑定；绝不会发送到其他地址。"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "开发设置。请使用 https，或在模拟器中使用 http://localhost。令牌由服务器所有者提供，只存储在这台 iPhone 的钥匙串中，并与保存时设置的服务器地址绑定；绝不会发送到其他地址。"
-                }
-              }
-            }
+            "value": "Wersja rozwojowa. Sprawdzenie na urządzeniu i przed wydaniem jeszcze się nie odbyło."
           }
         }
       }
@@ -17081,6 +16777,28 @@
         }
       }
     },
+    "Doddy couldn't save this on your iPhone. Try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie mógł zapisać tego na twoim iPhonie. Spróbuj ponownie."
+          }
+        }
+      }
+    },
+    "Doddy couldn't show himself in the Dynamic Island, so he can't listen without opening. Open Doddy to talk.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie mógł pojawić się w Dynamic Island, więc nie może słuchać bez otwierania aplikacji. Otwórz Doddy’ego, żeby porozmawiać."
+          }
+        }
+      }
+    },
     "Doddy counts how often you undo something, change a step, say \"That's wrong\", ask for the same thing again or leave a card unanswered, so you can see whether he gets better. Only the kind of event and the tool name are kept, for 90 days, on this iPhone, never sent.": {
       "extractionState": "manual",
       "localizations": {
@@ -17838,6 +17556,17 @@
         }
       }
     },
+    "Doddy is an AI, not a person. Links open outside Doddy; nothing from the app is shared.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy to AI, nie człowiek. Linki otwierają się poza Doddym; nic z aplikacji nie jest udostępniane."
+          }
+        }
+      }
+    },
     "Doddy is an AI, not a person. Notes are kept on this iPhone, and because Memory on calls is on, a copy is on your Doddy messaging server so Doddy can answer on calls. While a conversation is open, notes and your last few conversations go to ElevenLabs, or OpenAI if you switch Home's voice to it so Doddy knows them. Typed questions go to Doddy's server and OpenAI only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connected Apps.": {
       "extractionState": "manual",
       "localizations": {
@@ -18045,6 +17774,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy 已锁定"
+          }
+        }
+      }
+    },
+    "Doddy is locked. Open Doddy and unlock him to talk.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy jest zablokowany. Otwórz Doddy’ego i odblokuj go, żeby porozmawiać."
           }
         }
       }
@@ -18322,29 +18062,6 @@
         }
       }
     },
-    "Doddy keeps your voice session on this iPhone. When you start a conversation, it requests a short-lived connection credential from Doddy’s server. Your voice and conversation go to the selected provider only after you agree on first use. You never need a provider key or access code.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Doddy keeps your voice session on this iPad. When you start a conversation, it requests a short-lived connection credential from Doddy’s server. Your voice and conversation go to the selected provider only after you agree on first use. You never need a provider key or access code."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Doddy keeps your voice session on this iPhone. When you start a conversation, it requests a short-lived connection credential from Doddy’s server. Your voice and conversation go to the selected provider only after you agree on first use. You never need a provider key or access code."
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "Doddy last heard you say": {
       "extractionState": "manual",
       "localizations": {
@@ -18585,6 +18302,17 @@
         }
       }
     },
+    "Doddy messaging data": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dane wiadomości Doddy’ego"
+          }
+        }
+      }
+    },
     "Doddy must not": {
       "extractionState": "manual",
       "localizations": {
@@ -18651,6 +18379,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy 需要权限才能提醒你"
+          }
+        }
+      }
+    },
+    "Doddy needs the microphone. Open Doddy and start a conversation once to allow it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy potrzebuje mikrofonu. Otwórz Doddy’ego i raz zacznij rozmowę, żeby na to pozwolić."
           }
         }
       }
@@ -19455,6 +19194,17 @@
         }
       }
     },
+    "Doddy talks without opening only in the Dynamic Island. Turn on Live Activities for Doddy in iPhone Settings, or open Doddy to talk.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bez otwierania Doddy rozmawia tylko w Dynamic Island. Włącz Live Activities dla Doddy’ego w Ustawieniach iPhone’a albo otwórz Doddy’ego, żeby porozmawiać."
+          }
+        }
+      }
+    },
     "Doddy translates between you and someone who speaks another language.": {
       "extractionState": "manual",
       "localizations": {
@@ -20173,6 +19923,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Głos Doddy’ego (ElevenLabs)"
+          }
+        }
+      }
+    },
+    "Doddy's voice isn't available right now. Open Doddy to see why.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Głos Doddy’ego jest teraz niedostępny. Otwórz Doddy’ego, żeby zobaczyć dlaczego."
           }
         }
       }
@@ -21881,6 +21642,17 @@
         }
       }
     },
+    "Dynamic Island": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dynamic Island"
+          }
+        }
+      }
+    },
     "Dynamic Island style": {
       "extractionState": "manual",
       "localizations": {
@@ -22799,6 +22571,28 @@
         }
       }
     },
+    "Everything Doddy sends": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wszystko, co wysyła Doddy"
+          }
+        }
+      }
+    },
+    "Everything Doddy sends, in one page": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wszystko, co wysyła Doddy, na jednej stronie"
+          }
+        }
+      }
+    },
     "Everything in this backup is already on this iPhone. Nothing to add.": {
       "extractionState": "manual",
       "localizations": {
@@ -22980,6 +22774,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Expand when Doddy speaks": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rozwijaj, gdy Doddy mówi"
           }
         }
       }
@@ -24717,65 +24522,6 @@
         }
       }
     },
-    "Follow Doddy": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy folgen"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Seguir a Doddy"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Suivre Doddy"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prati Doddyja"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Segui Doddy"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddyをフォロー"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Obserwuj Doddy’ego"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Seguir o Doddy"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "关注 Doddy"
-          }
-        }
-      }
-    },
     "For a guide, a talk or an announcement. Doddy translates into your language and never speaks to the people around you. Not for someone's private conversation.": {
       "extractionState": "manual",
       "localizations": {
@@ -25724,65 +25470,6 @@
         }
       }
     },
-    "Gmail, Google Drive, Notion and Todoist through Composio, with a switch for every tool. All off until you turn them on; anything that adds or creates asks you first.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gmail, Google Drive, Notion und Todoist über Composio, mit einem Schalter für jedes Werkzeug. Alle aus, bis du sie einschaltest; alles, was etwas hinzufügt oder erstellt, fragt dich zuerst."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gmail, Google Drive, Notion y Todoist a través de Composio, con un interruptor para cada herramienta. Todo desactivado hasta que lo actives; lo que añade o crea algo te pregunta primero."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gmail, Google Drive, Notion et Todoist via Composio, avec un interrupteur pour chaque outil. Tous désactivés tant que tu ne les actives pas ; tout ce qui ajoute ou crée te demande d’abord."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gmail, Google Drive, Notion i Todoist preko usluge Composio, s prekidačem za svaki alat. Sve je isključeno dok ne uključiš; sve što dodaje ili stvara prvo te pita."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gmail, Google Drive, Notion e Todoist tramite Composio, con un interruttore per ogni strumento. Tutti disattivati finché non li attivi; tutto ciò che aggiunge o crea ti chiede prima."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Composio経由のGmail、Googleドライブ、Notion、Todoistで、ツールごとにスイッチがあります。オンにするまですべてオフです。何かを追加したり作成したりするものは、必ず先に確認します。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gmail, Dysk Google, Notion i Todoist przez Composio, z przełącznikiem dla każdego narzędzia. Wszystkie są wyłączone, dopóki ich nie włączysz; wszystko, co coś dodaje lub tworzy, najpierw pyta Ciebie."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gmail, Google Drive, Notion e Todoist via Composio, com um interruptor para cada ferramenta. Tudo desligado até você ligar; qualquer coisa que adicione ou crie pergunta antes."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "通过 Composio 连接 Gmail、Google Drive、Notion 和 Todoist，每个工具都有一个开关。全部默认关闭，直到你开启；任何会添加或创建内容的操作都会先询问你。"
-          }
-        }
-      }
-    },
     "Go through the steps again": {
       "extractionState": "manual",
       "localizations": {
@@ -25993,65 +25680,6 @@
         }
       }
     },
-    "Google Calendar, read-only. Shows tomorrow's events when you ask; nothing is saved unless you tap Save.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Google Kalender, nur lesend. Zeigt die Termine von morgen, wenn du fragst; nichts wird gespeichert, außer du tippst auf Speichern."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Google Calendar, solo lectura. Muestra los eventos de mañana cuando lo pides; no se guarda nada a menos que toques Guardar."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Google Agenda, en lecture seule. Affiche les événements de demain quand tu le demandes ; rien n’est enregistré sauf si tu touches Enregistrer."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Google Kalendar, samo za čitanje. Prikazuje sutrašnje događaje kad pitaš; ništa se ne sprema osim ako dodirneš Spremi."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Google Calendar, in sola lettura. Mostra gli eventi di domani quando lo chiedi; niente viene salvato a meno che tu non tocchi Salva."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Googleカレンダー（読み取りのみ）。聞かれたときに明日のイベントを表示します。「保存」をタップしない限り、何も保存されません。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kalendarz Google, tylko do odczytu. Pokazuje jutrzejsze wydarzenia, gdy zapytasz; nic nie jest zapisywane, dopóki nie stukniesz Zapisz."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Google Agenda, somente leitura. Mostra os eventos de amanhã quando você pede; nada é salvo a menos que você toque em Salvar."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Google 日历，只读。在你询问时显示明天的日程；除非你轻点“保存”，否则不会保存任何内容。"
-          }
-        }
-      }
-    },
     "Got it.": {
       "extractionState": "manual",
       "localizations": {
@@ -26177,6 +25805,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Przekaż Doddy’emu sprawę w rozmowie, np. „porównaj loty do Rzymu w przyszłym miesiącu do 2000 zł”. Jedno „tak” pozwala Doddy’emu szukać w sieci i czytać strony w tle tyle razy, ile sprawa wymaga. Gdy skończy, dostaniesz powiadomienie. Nic nie jest rezerwowane, kupowane ani wysyłane."
+          }
+        }
+      }
+    },
+    "Help": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pomoc"
           }
         }
       }
@@ -26789,6 +26428,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "幽默"
+          }
+        }
+      }
+    },
+    "I agree to the Terms & Conditions": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Akceptuję Regulamin"
           }
         }
       }
@@ -30359,6 +30009,88 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "保留在这台 iPhone 上的 Doddy 中"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Kept in Doddy on this iPhone and in your iPhone backups. Photos and voice memos aren't in exports; an encrypted backup can include them. Deleting here doesn't remove files you exported or older backups.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Kept in Doddy on this iPad and in your iPad backups. Photos and voice memos aren't in exports; an encrypted backup can include them. Deleting here doesn't remove files you exported or older backups."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Kept in Doddy on this iPhone and in your iPhone backups. Photos and voice memos aren't in exports; an encrypted backup can include them. Deleting here doesn't remove files you exported or older backups."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Przechowywane w Doddym na tym iPadzie i w kopiach zapasowych iPada. Zdjęcia i notatki głosowe nie trafiają do eksportu; może je zawierać zaszyfrowana kopia zapasowa. Usunięcie tutaj nie kasuje wyeksportowanych plików ani starszych kopii."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Przechowywane w Doddym na tym iPhonie i w kopiach zapasowych iPhone’a. Zdjęcia i notatki głosowe nie trafiają do eksportu; może je zawierać zaszyfrowana kopia zapasowa. Usunięcie tutaj nie kasuje wyeksportowanych plików ani starszych kopii."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Kept on this iPhone, apart from your memories: forgetting these keeps your memories, and the other way round.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Kept on this iPad, apart from your memories: forgetting these keeps your memories, and the other way round."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Kept on this iPhone, apart from your memories: forgetting these keeps your memories, and the other way round."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Przechowywane na tym iPadzie, osobno od twoich wspomnień: zapomnienie tych odpowiedzi nie usuwa wspomnień i odwrotnie."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Przechowywane na tym iPhonie, osobno od twoich wspomnień: zapomnienie tych odpowiedzi nie usuwa wspomnień i odwrotnie."
                 }
               }
             }
@@ -34400,17 +34132,6 @@
         }
       }
     },
-    "Make the Action Button start a conversation with Doddy.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Niech przycisk czynności zaczyna rozmowę z Doddym."
-          }
-        }
-      }
-    },
     "Make this presentation?": {
       "extractionState": "manual",
       "localizations": {
@@ -34857,372 +34578,24 @@
         }
       }
     },
-    "Memories are kept in this app on this iPhone, protected by iOS Data Protection. Like other app data they are included in your iPhone backups. Photos and voice memos added to notes stay on this iPhone and aren't in exports; they go in an encrypted backup file only if you include them. Deleting a note deletes its photo and recording. Voice memos are written out on this iPhone, never sent. Deleting here does not remove files you exported or older backups. Your answers under About you and your voice and personality settings are exported there, not here.": {
+    "Memories: export or delete": {
       "extractionState": "manual",
       "localizations": {
-        "de": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Gemerktes wird in dieser App auf diesem iPad gespeichert, geschützt durch den Datenschutz von iOS (Data Protection). Wie andere App-Daten ist es in deinen iPad-Backups enthalten. Fotos und Sprachmemos, die zu Notizen hinzugefügt wurden, bleiben auf diesem iPad und sind nicht in Exporten; in eine verschlüsselte Backup-Datei kommen sie nur, wenn du sie einschließt. Das Löschen einer Notiz löscht ihr Foto und ihre Aufnahme. Sprachmemos werden auf diesem iPad verschriftlicht, nie gesendet. Löschen hier entfernt keine exportierten Dateien und keine älteren Backups. Deine Antworten unter Über dich sowie deine Stimm- und Persönlichkeitseinstellungen werden dort exportiert, nicht hier."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Gemerktes wird in dieser App auf diesem iPhone gespeichert, geschützt durch den Datenschutz von iOS (Data Protection). Wie andere App-Daten ist es in deinen iPhone-Backups enthalten. Fotos und Sprachmemos, die zu Notizen hinzugefügt wurden, bleiben auf diesem iPhone und sind nicht in Exporten; in eine verschlüsselte Backup-Datei kommen sie nur, wenn du sie einschließt. Das Löschen einer Notiz löscht ihr Foto und ihre Aufnahme. Sprachmemos werden auf diesem iPhone verschriftlicht, nie gesendet. Löschen hier entfernt keine exportierten Dateien und keine älteren Backups. Deine Antworten unter Über dich sowie deine Stimm- und Persönlichkeitseinstellungen werden dort exportiert, nicht hier."
-                }
-              }
-            }
-          }
-        },
-        "en": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Memories are kept in this app on this iPad, protected by iOS Data Protection. Like other app data they are included in your iPad backups. Photos and voice memos added to notes stay on this iPad and aren't in exports; they go in an encrypted backup file only if you include them. Deleting a note deletes its photo and recording. Voice memos are written out on this iPad, never sent. Deleting here does not remove files you exported or older backups. Your answers under About you and your voice and personality settings are exported there, not here."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Memories are kept in this app on this iPhone, protected by iOS Data Protection. Like other app data they are included in your iPhone backups. Photos and voice memos added to notes stay on this iPhone and aren't in exports; they go in an encrypted backup file only if you include them. Deleting a note deletes its photo and recording. Voice memos are written out on this iPhone, never sent. Deleting here does not remove files you exported or older backups. Your answers under About you and your voice and personality settings are exported there, not here."
-                }
-              }
-            }
-          }
-        },
-        "es": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Los recuerdos se guardan en esta app en este iPad, protegidos por la Protección de datos de iOS. Como otros datos de apps, se incluyen en las copias de seguridad de tu iPad. Las fotos y notas de voz añadidas a las notas se quedan en este iPad y no van en las exportaciones; van en un archivo de copia de seguridad cifrado solo si las incluyes. Eliminar una nota elimina su foto y su grabación. Las notas de voz se transcriben en este iPad, nunca se envían. Eliminar aquí no elimina los archivos que exportaste ni las copias de seguridad anteriores. Tus respuestas en Sobre ti y tus ajustes de voz y personalidad se exportan allí, no aquí."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Los recuerdos se guardan en esta app en este iPhone, protegidos por la Protección de datos de iOS. Como otros datos de apps, se incluyen en las copias de seguridad de tu iPhone. Las fotos y notas de voz añadidas a las notas se quedan en este iPhone y no van en las exportaciones; van en un archivo de copia de seguridad cifrado solo si las incluyes. Eliminar una nota elimina su foto y su grabación. Las notas de voz se transcriben en este iPhone, nunca se envían. Eliminar aquí no elimina los archivos que exportaste ni las copias de seguridad anteriores. Tus respuestas en Sobre ti y tus ajustes de voz y personalidad se exportan allí, no aquí."
-                }
-              }
-            }
-          }
-        },
-        "fr": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Les souvenirs sont conservés dans cette app sur cet iPad, protégés par la protection des données d’iOS. Comme les autres données d’app, ils sont inclus dans les sauvegardes de ton iPad. Les photos et mémos vocaux ajoutés aux notes restent sur cet iPad et ne sont pas dans les exports ; ils vont dans un fichier de sauvegarde chiffré uniquement si tu les inclus. Supprimer une note supprime sa photo et son enregistrement. Les mémos vocaux sont transcrits sur cet iPad, jamais envoyés. Supprimer ici ne retire pas les fichiers que tu as exportés ni les sauvegardes plus anciennes. Tes réponses sous À propos de toi et tes réglages de voix et de personnalité sont exportés là-bas, pas ici."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Les souvenirs sont conservés dans cette app sur cet iPhone, protégés par la protection des données d’iOS. Comme les autres données d’app, ils sont inclus dans les sauvegardes de ton iPhone. Les photos et mémos vocaux ajoutés aux notes restent sur cet iPhone et ne sont pas dans les exports ; ils vont dans un fichier de sauvegarde chiffré uniquement si tu les inclus. Supprimer une note supprime sa photo et son enregistrement. Les mémos vocaux sont transcrits sur cet iPhone, jamais envoyés. Supprimer ici ne retire pas les fichiers que tu as exportés ni les sauvegardes plus anciennes. Tes réponses sous À propos de toi et tes réglages de voix et de personnalité sont exportés là-bas, pas ici."
-                }
-              }
-            }
-          }
-        },
-        "hr": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Sjećanja se čuvaju u ovoj aplikaciji na ovom iPadu, zaštićena zaštitom podataka sustava iOS. Kao i drugi podaci aplikacija, uključena su u sigurnosne kopije tvojeg iPada. Fotografije i glasovne bilješke dodane bilješkama ostaju na ovom iPadu i nisu u izvozima; u šifriranu datoteku sigurnosne kopije idu samo ako ih uključiš. Brisanje bilješke briše njezinu fotografiju i snimku. Glasovne bilješke pretvaraju se u tekst na ovom iPadu, nikad se ne šalju. Brisanje ovdje ne uklanja izvezene datoteke ni starije sigurnosne kopije. Tvoji odgovori pod O tebi te postavke glasa i osobnosti izvoze se ondje, ne ovdje."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Sjećanja se čuvaju u ovoj aplikaciji na ovom iPhoneu, zaštićena zaštitom podataka sustava iOS. Kao i drugi podaci aplikacija, uključena su u sigurnosne kopije tvojeg iPhonea. Fotografije i glasovne bilješke dodane bilješkama ostaju na ovom iPhoneu i nisu u izvozima; u šifriranu datoteku sigurnosne kopije idu samo ako ih uključiš. Brisanje bilješke briše njezinu fotografiju i snimku. Glasovne bilješke pretvaraju se u tekst na ovom iPhoneu, nikad se ne šalju. Brisanje ovdje ne uklanja izvezene datoteke ni starije sigurnosne kopije. Tvoji odgovori pod O tebi te postavke glasa i osobnosti izvoze se ondje, ne ovdje."
-                }
-              }
-            }
-          }
-        },
-        "it": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "I ricordi sono conservati in questa app su questo iPad, protetti dalla Protezione dati di iOS. Come gli altri dati delle app, sono inclusi nei backup del tuo iPad. Le foto e i memo vocali aggiunti alle note restano su questo iPad e non sono negli export; vanno in un file di backup cifrato solo se li includi. Eliminare una nota elimina la sua foto e la sua registrazione. I memo vocali vengono trascritti su questo iPad, mai inviati. Eliminare qui non rimuove i file che hai esportato né i backup precedenti. Le tue risposte sotto Su di te e le impostazioni di voce e personalità vengono esportate lì, non qui."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "I ricordi sono conservati in questa app su questo iPhone, protetti dalla Protezione dati di iOS. Come gli altri dati delle app, sono inclusi nei backup del tuo iPhone. Le foto e i memo vocali aggiunti alle note restano su questo iPhone e non sono negli export; vanno in un file di backup cifrato solo se li includi. Eliminare una nota elimina la sua foto e la sua registrazione. I memo vocali vengono trascritti su questo iPhone, mai inviati. Eliminare qui non rimuove i file che hai esportato né i backup precedenti. Le tue risposte sotto Su di te e le impostazioni di voce e personalità vengono esportate lì, non qui."
-                }
-              }
-            }
-          }
-        },
-        "ja": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "記憶は、このiPadのこのアプリ内に保存され、iOSのデータ保護で守られています。ほかのアプリデータと同じように、iPadのバックアップに含まれます。メモに追加した写真とボイスメモはこのiPadにとどまり、書き出しには含まれません。暗号化バックアップファイルには、あなたが含めた場合にだけ入ります。メモを削除すると、その写真と録音も削除されます。ボイスメモはこのiPad上で文字に書き起こされ、送信されることはありません。ここで削除しても、書き出したファイルや古いバックアップは削除されません。「あなたについて」の回答と、声や性格の設定は、ここではなくそちらから書き出されます。"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "記憶は、このiPhoneのこのアプリ内に保存され、iOSのデータ保護で守られています。ほかのアプリデータと同じように、iPhoneのバックアップに含まれます。メモに追加した写真とボイスメモはこのiPhoneにとどまり、書き出しには含まれません。暗号化バックアップファイルには、あなたが含めた場合にだけ入ります。メモを削除すると、その写真と録音も削除されます。ボイスメモはこのiPhone上で文字に書き起こされ、送信されることはありません。ここで削除しても、書き出したファイルや古いバックアップは削除されません。「あなたについて」の回答と、声や性格の設定は、ここではなくそちらから書き出されます。"
-                }
-              }
-            }
-          }
-        },
         "pl": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Notatki są przechowywane w tej aplikacji na tym iPadzie, chronione przez ochronę danych iOS. Jak inne dane aplikacji są w kopiach zapasowych iPada. Zdjęcia i notatki głosowe dodane do notatek zostają na tym iPadzie i nie ma ich w eksportach; do zaszyfrowanego pliku kopii zapasowej trafiają tylko wtedy, gdy je dołączysz. Usunięcie notatki usuwa jej zdjęcie i nagranie. Notatki głosowe są zapisywane jako tekst na tym iPadzie, nigdy nie są wysyłane. Usunięcie tutaj nie usuwa wyeksportowanych plików ani starszych kopii zapasowych. Twoje odpowiedzi w sekcji O Tobie oraz ustawienia głosu i osobowości są eksportowane tam, nie tutaj."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Notatki są przechowywane w tej aplikacji na tym iPhonie, chronione przez ochronę danych iOS. Jak inne dane aplikacji są w kopiach zapasowych iPhone’a. Zdjęcia i notatki głosowe dodane do notatek zostają na tym iPhonie i nie ma ich w eksportach; do zaszyfrowanego pliku kopii zapasowej trafiają tylko wtedy, gdy je dołączysz. Usunięcie notatki usuwa jej zdjęcie i nagranie. Notatki głosowe są zapisywane jako tekst na tym iPhonie, nigdy nie są wysyłane. Usunięcie tutaj nie usuwa wyeksportowanych plików ani starszych kopii zapasowych. Twoje odpowiedzi w sekcji O Tobie oraz ustawienia głosu i osobowości są eksportowane tam, nie tutaj."
-                }
-              }
-            }
-          }
-        },
-        "pt-BR": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "As memórias ficam neste app, neste iPad, protegidas pela Proteção de Dados do iOS. Como outros dados de apps, elas entram nos backups do seu iPad. Fotos e gravações de voz adicionadas a notas ficam neste iPad e não entram nas exportações; só vão para um arquivo de backup criptografado se você incluí-las. Apagar uma nota apaga a foto e a gravação dela. As gravações de voz são transcritas neste iPad, nunca enviadas. Apagar aqui não remove arquivos que você exportou nem backups antigos. Suas respostas em Sobre você e seus ajustes de voz e personalidade são exportados lá, não aqui."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "As memórias ficam neste app, neste iPhone, protegidas pela Proteção de Dados do iOS. Como outros dados de apps, elas entram nos backups do seu iPhone. Fotos e gravações de voz adicionadas a notas ficam neste iPhone e não entram nas exportações; só vão para um arquivo de backup criptografado se você incluí-las. Apagar uma nota apaga a foto e a gravação dela. As gravações de voz são transcritas neste iPhone, nunca enviadas. Apagar aqui não remove arquivos que você exportou nem backups antigos. Suas respostas em Sobre você e seus ajustes de voz e personalidade são exportados lá, não aqui."
-                }
-              }
-            }
-          }
-        },
-        "zh-Hans": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "记忆保存在这台 iPad 上的本应用中，受 iOS 数据保护功能保护。和其他应用数据一样，它们会包含在你的 iPad 备份中。添加到笔记的照片和语音备忘录只保留在这台 iPad 上，不包含在导出中；只有你选择包含时才会进入加密备份文件。删除笔记会一并删除其照片和录音。语音备忘录在这台 iPad 上转写成文字，绝不发送。在这里删除不会移除你已导出的文件或较早的备份。你在“关于你”下的回答以及语音和个性设置在那里导出，而不是在这里。"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "记忆保存在这台 iPhone 上的本应用中，受 iOS 数据保护功能保护。和其他应用数据一样，它们会包含在你的 iPhone 备份中。添加到笔记的照片和语音备忘录只保留在这台 iPhone 上，不包含在导出中；只有你选择包含时才会进入加密备份文件。删除笔记会一并删除其照片和录音。语音备忘录在这台 iPhone 上转写成文字，绝不发送。在这里删除不会移除你已导出的文件或较早的备份。你在“关于你”下的回答以及语音和个性设置在那里导出，而不是在这里。"
-                }
-              }
-            }
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wspomnienia: eksport lub usunięcie"
           }
         }
       }
     },
-    "Memories live only in this app on this iPhone, protected by iOS Data Protection. Like other app data they are included in your iPhone backups. Photos and voice memos added to notes stay on this iPhone and aren't in exports; they go in an encrypted backup file only if you include them. Deleting a note deletes its photo and recording. Voice memos are written out on this iPhone, never sent. Deleting here does not remove files you exported or older backups. Your answers under About you and your voice and personality settings are exported there, not here.": {
+    "Memory and privacy": {
       "extractionState": "manual",
       "localizations": {
-        "de": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Gemerktes liegt nur in dieser App auf diesem iPad, geschützt durch den Datenschutz von iOS (Data Protection). Wie andere App-Daten ist es in deinen iPad-Backups enthalten. Fotos und Sprachmemos, die zu Notizen hinzugefügt wurden, bleiben auf diesem iPad und sind nicht in Exporten; in eine verschlüsselte Backup-Datei kommen sie nur, wenn du sie einschließt. Das Löschen einer Notiz löscht ihr Foto und ihre Aufnahme. Sprachmemos werden auf diesem iPad verschriftlicht, nie gesendet. Löschen hier entfernt keine exportierten Dateien und keine älteren Backups. Deine Antworten unter Über dich sowie deine Stimm- und Persönlichkeitseinstellungen werden dort exportiert, nicht hier."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Gemerktes liegt nur in dieser App auf diesem iPhone, geschützt durch den Datenschutz von iOS (Data Protection). Wie andere App-Daten ist es in deinen iPhone-Backups enthalten. Fotos und Sprachmemos, die zu Notizen hinzugefügt wurden, bleiben auf diesem iPhone und sind nicht in Exporten; in eine verschlüsselte Backup-Datei kommen sie nur, wenn du sie einschließt. Das Löschen einer Notiz löscht ihr Foto und ihre Aufnahme. Sprachmemos werden auf diesem iPhone verschriftlicht, nie gesendet. Löschen hier entfernt keine exportierten Dateien und keine älteren Backups. Deine Antworten unter Über dich sowie deine Stimm- und Persönlichkeitseinstellungen werden dort exportiert, nicht hier."
-                }
-              }
-            }
-          }
-        },
-        "en": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Memories live only in this app on this iPad, protected by iOS Data Protection. Like other app data they are included in your iPad backups. Photos and voice memos added to notes stay on this iPad and aren't in exports; they go in an encrypted backup file only if you include them. Deleting a note deletes its photo and recording. Voice memos are written out on this iPad, never sent. Deleting here does not remove files you exported or older backups. Your answers under About you and your voice and personality settings are exported there, not here."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Memories live only in this app on this iPhone, protected by iOS Data Protection. Like other app data they are included in your iPhone backups. Photos and voice memos added to notes stay on this iPhone and aren't in exports; they go in an encrypted backup file only if you include them. Deleting a note deletes its photo and recording. Voice memos are written out on this iPhone, never sent. Deleting here does not remove files you exported or older backups. Your answers under About you and your voice and personality settings are exported there, not here."
-                }
-              }
-            }
-          }
-        },
-        "es": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Los recuerdos viven solo en esta app en este iPad, protegidos por la Protección de datos de iOS. Como otros datos de apps, se incluyen en las copias de seguridad de tu iPad. Las fotos y notas de voz añadidas a las notas se quedan en este iPad y no van en las exportaciones; van en un archivo de copia de seguridad cifrado solo si las incluyes. Eliminar una nota elimina su foto y su grabación. Las notas de voz se transcriben en este iPad, nunca se envían. Eliminar aquí no elimina los archivos que exportaste ni las copias de seguridad anteriores. Tus respuestas en Sobre ti y tus ajustes de voz y personalidad se exportan allí, no aquí."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Los recuerdos viven solo en esta app en este iPhone, protegidos por la Protección de datos de iOS. Como otros datos de apps, se incluyen en las copias de seguridad de tu iPhone. Las fotos y notas de voz añadidas a las notas se quedan en este iPhone y no van en las exportaciones; van en un archivo de copia de seguridad cifrado solo si las incluyes. Eliminar una nota elimina su foto y su grabación. Las notas de voz se transcriben en este iPhone, nunca se envían. Eliminar aquí no elimina los archivos que exportaste ni las copias de seguridad anteriores. Tus respuestas en Sobre ti y tus ajustes de voz y personalidad se exportan allí, no aquí."
-                }
-              }
-            }
-          }
-        },
-        "fr": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Les souvenirs ne vivent que dans cette app sur cet iPad, protégés par la protection des données d’iOS. Comme les autres données d’app, ils sont inclus dans les sauvegardes de ton iPad. Les photos et mémos vocaux ajoutés aux notes restent sur cet iPad et ne sont pas dans les exports ; ils vont dans un fichier de sauvegarde chiffré uniquement si tu les inclus. Supprimer une note supprime sa photo et son enregistrement. Les mémos vocaux sont transcrits sur cet iPad, jamais envoyés. Supprimer ici ne retire pas les fichiers que tu as exportés ni les sauvegardes plus anciennes. Tes réponses sous À propos de toi et tes réglages de voix et de personnalité sont exportés là-bas, pas ici."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Les souvenirs ne vivent que dans cette app sur cet iPhone, protégés par la protection des données d’iOS. Comme les autres données d’app, ils sont inclus dans les sauvegardes de ton iPhone. Les photos et mémos vocaux ajoutés aux notes restent sur cet iPhone et ne sont pas dans les exports ; ils vont dans un fichier de sauvegarde chiffré uniquement si tu les inclus. Supprimer une note supprime sa photo et son enregistrement. Les mémos vocaux sont transcrits sur cet iPhone, jamais envoyés. Supprimer ici ne retire pas les fichiers que tu as exportés ni les sauvegardes plus anciennes. Tes réponses sous À propos de toi et tes réglages de voix et de personnalité sont exportés là-bas, pas ici."
-                }
-              }
-            }
-          }
-        },
-        "hr": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Sjećanja postoje samo u ovoj aplikaciji na ovom iPadu, zaštićena zaštitom podataka sustava iOS. Kao i drugi podaci aplikacija, uključena su u sigurnosne kopije tvojeg iPada. Fotografije i glasovne bilješke dodane bilješkama ostaju na ovom iPadu i nisu u izvozima; u šifriranu datoteku sigurnosne kopije idu samo ako ih uključiš. Brisanje bilješke briše njezinu fotografiju i snimku. Glasovne bilješke pretvaraju se u tekst na ovom iPadu, nikad se ne šalju. Brisanje ovdje ne uklanja izvezene datoteke ni starije sigurnosne kopije. Tvoji odgovori pod O tebi te postavke glasa i osobnosti izvoze se ondje, ne ovdje."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Sjećanja postoje samo u ovoj aplikaciji na ovom iPhoneu, zaštićena zaštitom podataka sustava iOS. Kao i drugi podaci aplikacija, uključena su u sigurnosne kopije tvojeg iPhonea. Fotografije i glasovne bilješke dodane bilješkama ostaju na ovom iPhoneu i nisu u izvozima; u šifriranu datoteku sigurnosne kopije idu samo ako ih uključiš. Brisanje bilješke briše njezinu fotografiju i snimku. Glasovne bilješke pretvaraju se u tekst na ovom iPhoneu, nikad se ne šalju. Brisanje ovdje ne uklanja izvezene datoteke ni starije sigurnosne kopije. Tvoji odgovori pod O tebi te postavke glasa i osobnosti izvoze se ondje, ne ovdje."
-                }
-              }
-            }
-          }
-        },
-        "it": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "I ricordi esistono solo in questa app su questo iPad, protetti dalla Protezione dati di iOS. Come gli altri dati delle app, sono inclusi nei backup del tuo iPad. Le foto e i memo vocali aggiunti alle note restano su questo iPad e non sono negli export; vanno in un file di backup cifrato solo se li includi. Eliminare una nota elimina la sua foto e la sua registrazione. I memo vocali vengono trascritti su questo iPad, mai inviati. Eliminare qui non rimuove i file che hai esportato né i backup precedenti. Le tue risposte sotto Su di te e le impostazioni di voce e personalità vengono esportate lì, non qui."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "I ricordi esistono solo in questa app su questo iPhone, protetti dalla Protezione dati di iOS. Come gli altri dati delle app, sono inclusi nei backup del tuo iPhone. Le foto e i memo vocali aggiunti alle note restano su questo iPhone e non sono negli export; vanno in un file di backup cifrato solo se li includi. Eliminare una nota elimina la sua foto e la sua registrazione. I memo vocali vengono trascritti su questo iPhone, mai inviati. Eliminare qui non rimuove i file che hai esportato né i backup precedenti. Le tue risposte sotto Su di te e le impostazioni di voce e personalità vengono esportate lì, non qui."
-                }
-              }
-            }
-          }
-        },
-        "ja": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "記憶は、このiPadのこのアプリ内にだけあり、iOSのデータ保護で守られています。ほかのアプリデータと同じように、iPadのバックアップに含まれます。メモに追加した写真とボイスメモはこのiPadにとどまり、書き出しには含まれません。暗号化バックアップファイルには、あなたが含めた場合にだけ入ります。メモを削除すると、その写真と録音も削除されます。ボイスメモはこのiPad上で文字に書き起こされ、送信されることはありません。ここで削除しても、書き出したファイルや古いバックアップは削除されません。「あなたについて」の回答と、声や性格の設定は、ここではなくそちらから書き出されます。"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "記憶は、このiPhoneのこのアプリ内にだけあり、iOSのデータ保護で守られています。ほかのアプリデータと同じように、iPhoneのバックアップに含まれます。メモに追加した写真とボイスメモはこのiPhoneにとどまり、書き出しには含まれません。暗号化バックアップファイルには、あなたが含めた場合にだけ入ります。メモを削除すると、その写真と録音も削除されます。ボイスメモはこのiPhone上で文字に書き起こされ、送信されることはありません。ここで削除しても、書き出したファイルや古いバックアップは削除されません。「あなたについて」の回答と、声や性格の設定は、ここではなくそちらから書き出されます。"
-                }
-              }
-            }
-          }
-        },
         "pl": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Notatki są tylko w tej aplikacji na tym iPadzie, chronione przez ochronę danych iOS. Jak inne dane aplikacji są w kopiach zapasowych iPada. Zdjęcia i notatki głosowe dodane do notatek zostają na tym iPadzie i nie ma ich w eksportach; do zaszyfrowanego pliku kopii zapasowej trafiają tylko wtedy, gdy je dołączysz. Usunięcie notatki usuwa jej zdjęcie i nagranie. Notatki głosowe są zapisywane jako tekst na tym iPadzie, nigdy nie są wysyłane. Usunięcie tutaj nie usuwa wyeksportowanych plików ani starszych kopii zapasowych. Twoje odpowiedzi w sekcji O Tobie oraz ustawienia głosu i osobowości są eksportowane tam, nie tutaj."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Notatki są tylko w tej aplikacji na tym iPhonie, chronione przez ochronę danych iOS. Jak inne dane aplikacji są w kopiach zapasowych iPhone’a. Zdjęcia i notatki głosowe dodane do notatek zostają na tym iPhonie i nie ma ich w eksportach; do zaszyfrowanego pliku kopii zapasowej trafiają tylko wtedy, gdy je dołączysz. Usunięcie notatki usuwa jej zdjęcie i nagranie. Notatki głosowe są zapisywane jako tekst na tym iPhonie, nigdy nie są wysyłane. Usunięcie tutaj nie usuwa wyeksportowanych plików ani starszych kopii zapasowych. Twoje odpowiedzi w sekcji O Tobie oraz ustawienia głosu i osobowości są eksportowane tam, nie tutaj."
-                }
-              }
-            }
-          }
-        },
-        "pt-BR": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "As memórias existem só neste app, neste iPad, protegidas pela Proteção de Dados do iOS. Como outros dados de apps, elas entram nos backups do seu iPad. Fotos e gravações de voz adicionadas a notas ficam neste iPad e não entram nas exportações; só vão para um arquivo de backup criptografado se você incluí-las. Apagar uma nota apaga a foto e a gravação dela. As gravações de voz são transcritas neste iPad, nunca enviadas. Apagar aqui não remove arquivos que você exportou nem backups antigos. Suas respostas em Sobre você e seus ajustes de voz e personalidade são exportados lá, não aqui."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "As memórias existem só neste app, neste iPhone, protegidas pela Proteção de Dados do iOS. Como outros dados de apps, elas entram nos backups do seu iPhone. Fotos e gravações de voz adicionadas a notas ficam neste iPhone e não entram nas exportações; só vão para um arquivo de backup criptografado se você incluí-las. Apagar uma nota apaga a foto e a gravação dela. As gravações de voz são transcritas neste iPhone, nunca enviadas. Apagar aqui não remove arquivos que você exportou nem backups antigos. Suas respostas em Sobre você e seus ajustes de voz e personalidade são exportados lá, não aqui."
-                }
-              }
-            }
-          }
-        },
-        "zh-Hans": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "记忆只存在于这台 iPad 上的本应用中，受 iOS 数据保护功能保护。和其他应用数据一样，它们会包含在你的 iPad 备份中。添加到笔记的照片和语音备忘录只保留在这台 iPad 上，不包含在导出中；只有你选择包含时才会进入加密备份文件。删除笔记会一并删除其照片和录音。语音备忘录在这台 iPad 上转写成文字，绝不发送。在这里删除不会移除你已导出的文件或较早的备份。你在“关于你”下的回答以及语音和个性设置在那里导出，而不是在这里。"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "记忆只存在于这台 iPhone 上的本应用中，受 iOS 数据保护功能保护。和其他应用数据一样，它们会包含在你的 iPhone 备份中。添加到笔记的照片和语音备忘录只保留在这台 iPhone 上，不包含在导出中；只有你选择包含时才会进入加密备份文件。删除笔记会一并删除其照片和录音。语音备忘录在这台 iPhone 上转写成文字，绝不发送。在这里删除不会移除你已导出的文件或较早的备份。你在“关于你”下的回答以及语音和个性设置在那里导出，而不是在这里。"
-                }
-              }
-            }
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pamięć i prywatność"
           }
         }
       }
@@ -35282,65 +34655,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "通话记忆"
-          }
-        }
-      }
-    },
-    "Messages from Doddy": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nachrichten von Doddy"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mensajes de Doddy"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Messages de Doddy"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Poruke od Doddyja"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Messaggi da Doddy"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddyからのメッセージ"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wiadomości od Doddy’ego"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mensagens do Doddy"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "来自 Doddy 的消息"
           }
         }
       }
@@ -36595,6 +35909,28 @@
         }
       }
     },
+    "My profile": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mój profil"
+          }
+        }
+      }
+    },
+    "My profile: export or forget": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mój profil: eksport lub zapomnienie"
+          }
+        }
+      }
+    },
     "Name": {
       "extractionState": "manual",
       "localizations": {
@@ -36908,65 +36244,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "自然"
-          }
-        }
-      }
-    },
-    "Needs a Doddy messaging server. Each one is off until you turn it on.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Braucht einen Doddy-Nachrichtenserver. Jede Option ist aus, bis du sie einschaltest."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Necesita un servidor de mensajes de Doddy. Cada una está desactivada hasta que la actives."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nécessite un serveur de messagerie Doddy. Chaque option est désactivée tant que tu ne l’actives pas."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Treba Doddyjev poslužitelj za poruke. Svaka je opcija isključena dok je ne uključiš."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Richiede un server di messaggistica di Doddy. Ogni opzione è disattivata finché non la attivi."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddyのメッセージサーバーが必要です。どれもオンにするまでオフです。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wymaga serwera wiadomości Doddy’ego. Każda opcja jest wyłączona, dopóki jej nie włączysz."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Precisa de um servidor de mensagens do Doddy. Cada opção fica desligada até você ligar."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "需要一台 Doddy 消息服务器。每一项在你开启之前都是关闭的。"
           }
         }
       }
@@ -40116,6 +39393,17 @@
         }
       }
     },
+    "Not set": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie ustawiono"
+          }
+        }
+      }
+    },
     "Not set up": {
       "extractionState": "manual",
       "localizations": {
@@ -40230,6 +39518,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "措辞不一样。请确认这是你想要的那一条。"
+          }
+        }
+      }
+    },
+    "Not ticked": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie zaznaczone"
           }
         }
       }
@@ -42208,6 +41507,17 @@
         }
       }
     },
+    "Nothing yet": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jeszcze nic"
+          }
+        }
+      }
+    },
     "Nothing yet. Doddy only keeps what you confirm.": {
       "extractionState": "manual",
       "localizations": {
@@ -43695,6 +43005,17 @@
         }
       }
     },
+    "Off": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wył."
+          }
+        }
+      }
+    },
     "Off by default. When on, an encrypted copy of your memories is kept on the Doddy messaging server so Doddy can answer from them on a call, after your PIN. The server can read this copy in order to answer, so it is not end-to-end encrypted. What Doddy reads out is processed by ElevenLabs. Turning this off deletes the copy.": {
       "extractionState": "manual",
       "localizations": {
@@ -43872,6 +43193,17 @@
         }
       }
     },
+    "On": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wł."
+          }
+        }
+      }
+    },
     "On every call, Doddy asks for this PIN before looking at your memories or taking a note, because a caller's number can be faked. After five wrong tries PIN entry locks, for longer each time, and you get a notification.": {
       "extractionState": "manual",
       "localizations": {
@@ -43942,61 +43274,43 @@
         }
       }
     },
-    "On your first launch, Doddy makes a quick basketball entrance. You can skip it; with Reduce Motion on, it stays calm and still. Voice and microphone access never start from the intro.": {
+    "On: these answers go to ElevenLabs, or OpenAI if you chose it, at the start of each conversation. Off: they stay on this iPhone.": {
       "extractionState": "manual",
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Beim ersten Start kommt Doddy mit einem kurzen Basketball-Auftritt. Du kannst ihn überspringen. Bei „Bewegung reduzieren“ bleibt er ruhig und still. Die Einführung startet weder Sprache noch Mikrofonzugriff."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La primera vez que abras la app, Doddy hará una breve entrada de baloncesto. Puedes saltártela; con Reducir movimiento, será estática y tranquila. La introducción no inicia la voz ni accede al micrófono."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Au premier lancement, Doddy fait une courte entrée de basket. Tu peux la passer ; avec Réduire les animations, l’intro reste calme et immobile. Elle ne démarre ni la voix ni le microphone."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pri prvom pokretanju Doddy će kratko ući s košarkaškim potezom. Možeš to preskočiti; uz smanjeno kretanje prikaz je miran i statičan. Uvod ne pokreće glas ni mikrofon."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Al primo avvio, Doddy fa un rapido ingresso da basket. Puoi saltarlo; con Riduci movimento, resta calmo e immobile. L’introduzione non avvia la voce né accede al microfono."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "初回起動時に、Doddyがバスケットボールの演出で登場します。スキップできます。「視差効果を減らす」がオンの場合は、静止した落ち着いた表示になります。この演出から音声やマイクが起動することはありません。"
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "On: these answers go to ElevenLabs, or OpenAI if you chose it, at the start of each conversation. Off: they stay on this iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "On: these answers go to ElevenLabs, or OpenAI if you chose it, at the start of each conversation. Off: they stay on this iPhone."
+                }
+              }
+            }
           }
         },
         "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Przy pierwszym uruchomieniu Doddy pojawi się w krótkiej koszykarskiej scenie. Możesz ją pominąć; przy ograniczeniu ruchu będzie spokojna i statyczna. Wstęp nie uruchamia głosu ani mikrofonu."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Na primeira abertura, Doddy faz uma entrada rápida de basquete. Você pode pular; com Reduzir Movimento ativado, a cena fica estática e tranquila. A introdução não inicia a voz nem acessa o microfone."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "首次启动时，Doddy会以简短的篮球动作登场。你可以跳过；开启“减弱动态效果”后，画面会保持静止平和。此介绍不会启动语音或访问麦克风。"
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Włączone: te odpowiedzi trafiają do ElevenLabs, albo do OpenAI, jeśli je wybrałeś, na początku każdej rozmowy. Wyłączone: zostają na tym iPadzie."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Włączone: te odpowiedzi trafiają do ElevenLabs, albo do OpenAI, jeśli je wybrałeś, na początku każdej rozmowy. Wyłączone: zostają na tym iPhonie."
+                }
+              }
+            }
           }
         }
       }
@@ -44115,6 +43429,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "每周一次，通知只会显示“你和 Doddy 的这一周”。其界面显示你保存、勾选完成和让 Doddy 做的事，以及即将到来的事。没有连续打卡或分数。"
+          }
+        }
+      }
+    },
+    "Once a week for four weeks, only until you use one. Only if notifications are already on.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raz w tygodniu przez cztery tygodnie, tylko dopóki z któregoś nie skorzystasz. Tylko jeśli powiadomienia są już włączone."
           }
         }
       }
@@ -44296,13 +43621,13 @@
         }
       }
     },
-    "One quiet reminder a week for four weeks, only until you use a way to open Doddy. It is sent only if notifications are already allowed; Doddy doesn't ask for them just for this.": {
+    "One press, and Doddy is in the Dynamic Island, listening. Press again to end.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Jedno ciche przypomnienie tygodniowo przez cztery tygodnie, tylko dopóki nie użyjesz któregoś ze sposobów otwierania Doddy’ego. Przychodzi tylko wtedy, gdy powiadomienia są już dozwolone; Doddy nie prosi o nie specjalnie z tego powodu."
+            "value": "Jedno naciśnięcie i Doddy słucha w Dynamic Island. Naciśnij ponownie, żeby zakończyć."
           }
         }
       }
@@ -45282,6 +44607,17 @@
         }
       }
     },
+    "Open App": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz aplikację"
+          }
+        }
+      }
+    },
     "Open Doddy": {
       "extractionState": "manual",
       "localizations": {
@@ -45337,6 +44673,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "打开 Doddy"
+          }
+        }
+      }
+    },
+    "Open Doddy and start a conversation once to set up his voice. After that this works without opening him.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz Doddy’ego i raz zacznij rozmowę, żeby skonfigurować jego głos. Potem zadziała to bez otwierania aplikacji."
           }
         }
       }
@@ -45584,6 +44931,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "打开 Doddy 以保存或不保存"
+          }
+        }
+      }
+    },
+    "Open Doddy to accept the terms first.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najpierw otwórz Doddy’ego i zaakceptuj regulamin."
           }
         }
       }
@@ -45949,6 +45307,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "打开 Doddy 查看清单的当前状态。"
+          }
+        }
+      }
+    },
+    "Open Doddy to talk.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz Doddy’ego, żeby porozmawiać."
           }
         }
       }
@@ -47041,6 +46410,17 @@
         }
       }
     },
+    "Opens Doddy and starts talking.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwiera Doddy’ego i zaczyna rozmowę."
+          }
+        }
+      }
+    },
     "Opens Doddy ready for a new note. Nothing is saved until you tap Save.": {
       "extractionState": "manual",
       "localizations": {
@@ -47155,65 +46535,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "打开 Doddy 并准备好保存这段文字。在你轻点“保存”之前，不会保存任何内容。"
-          }
-        }
-      }
-    },
-    "Opens TikTok or Instagram outside Doddy. Nothing from the app is shared.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Öffnet TikTok oder Instagram außerhalb von Doddy. Nichts aus der App wird geteilt."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Abre TikTok o Instagram fuera de Doddy. No se comparte nada de la app."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ouvre TikTok ou Instagram en dehors de Doddy. Rien de l’app n’est partagé."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Otvara TikTok ili Instagram izvan Doddyja. Ništa iz aplikacije ne dijeli se."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Apre TikTok o Instagram fuori da Doddy. Niente dell'app viene condiviso."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddyの外でTikTokまたはInstagramを開きます。アプリの内容は何も共有されません。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Otwiera TikToka lub Instagram poza Doddym. Nic z aplikacji nie jest udostępniane."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Abre o TikTok ou o Instagram fora do Doddy. Nada do app é compartilhado."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在 Doddy 之外打开 TikTok 或 Instagram。不会分享应用中的任何内容。"
           }
         }
       }
@@ -48552,17 +47873,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zdjęcia i aparat"
-          }
-        }
-      }
-    },
-    "Pick Talk to Doddy.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wybierz „Porozmawiaj z Doddym”."
           }
         }
       }
@@ -50253,6 +49563,17 @@
         }
       }
     },
+    "Privacy Policy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Polityka prywatności"
+          }
+        }
+      }
+    },
     "Private": {
       "extractionState": "manual",
       "localizations": {
@@ -50308,6 +49629,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "私密"
+          }
+        }
+      }
+    },
+    "Private beta. Typed questions go to Doddy's server and OpenAI only while this is on.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prywatna beta. Wpisane pytania trafiają na serwer Doddy’ego i do OpenAI tylko wtedy, gdy to jest włączone."
           }
         }
       }
@@ -50556,187 +49888,13 @@
         }
       }
     },
-    "Private-beta feature. Doddy's server keeps the AI key, so no key is stored on your iPhone. The invite code and a random install ID (not linked to you) are kept in the iOS Keychain on this iPhone to prove it may use the server.": {
+    "Profile": {
       "extractionState": "manual",
       "localizations": {
-        "de": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Private-Beta-Funktion. Der Doddy-Server verwahrt den KI-Schlüssel, also ist kein Schlüssel auf deinem iPad gespeichert. Der Einladungscode und eine zufällige Installations-ID (nicht mit dir verknüpft) liegen im iOS-Schlüsselbund auf diesem iPad, um zu belegen, dass es den Server nutzen darf."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Private-Beta-Funktion. Der Doddy-Server verwahrt den KI-Schlüssel, also ist kein Schlüssel auf deinem iPhone gespeichert. Der Einladungscode und eine zufällige Installations-ID (nicht mit dir verknüpft) liegen im iOS-Schlüsselbund auf diesem iPhone, um zu belegen, dass es den Server nutzen darf."
-                }
-              }
-            }
-          }
-        },
-        "en": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Private-beta feature. Doddy's server keeps the AI key, so no key is stored on your iPad. The invite code and a random install ID (not linked to you) are kept in the iOS Keychain on this iPad to prove it may use the server."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Private-beta feature. Doddy's server keeps the AI key, so no key is stored on your iPhone. The invite code and a random install ID (not linked to you) are kept in the iOS Keychain on this iPhone to prove it may use the server."
-                }
-              }
-            }
-          }
-        },
-        "es": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Función de beta privada. El servidor de Doddy guarda la clave de la IA, así que no se almacena ninguna clave en tu iPad. El código de invitación y un ID de instalación aleatorio (no vinculado a ti) se guardan en el llavero de iOS en este iPad para demostrar que puede usar el servidor."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Función de beta privada. El servidor de Doddy guarda la clave de la IA, así que no se almacena ninguna clave en tu iPhone. El código de invitación y un ID de instalación aleatorio (no vinculado a ti) se guardan en el llavero de iOS en este iPhone para demostrar que puede usar el servidor."
-                }
-              }
-            }
-          }
-        },
-        "fr": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Fonction en bêta privée. Le serveur de Doddy garde la clé IA, donc aucune clé n’est stockée sur ton iPad. Le code d’invitation et un identifiant d’installation aléatoire (non lié à toi) sont conservés dans le trousseau iOS de cet iPad pour prouver qu’il peut utiliser le serveur."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Fonction en bêta privée. Le serveur de Doddy garde la clé IA, donc aucune clé n’est stockée sur ton iPhone. Le code d’invitation et un identifiant d’installation aléatoire (non lié à toi) sont conservés dans le trousseau iOS de cet iPhone pour prouver qu’il peut utiliser le serveur."
-                }
-              }
-            }
-          }
-        },
-        "hr": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Značajka privatne bete. Doddyjev poslužitelj čuva AI ključ, pa na tvom iPadu nije pohranjen nijedan ključ. Pozivni kod i nasumični ID instalacije (nepovezan s tobom) čuvaju se u iOS Keychainu na ovom iPadu kao dokaz da smije koristiti poslužitelj."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Značajka privatne bete. Doddyjev poslužitelj čuva AI ključ, pa na tvom iPhoneu nije pohranjen nijedan ključ. Pozivni kod i nasumični ID instalacije (nepovezan s tobom) čuvaju se u iOS Keychainu na ovom iPhoneu kao dokaz da smije koristiti poslužitelj."
-                }
-              }
-            }
-          }
-        },
-        "it": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Funzione in beta privata. Il server di Doddy tiene la chiave dell'IA, quindi nessuna chiave è conservata sul tuo iPad. Il codice di invito e un ID di installazione casuale (non collegato a te) sono conservati nel portachiavi iOS di questo iPad per dimostrare che può usare il server."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Funzione in beta privata. Il server di Doddy tiene la chiave dell'IA, quindi nessuna chiave è conservata sul tuo iPhone. Il codice di invito e un ID di installazione casuale (non collegato a te) sono conservati nel portachiavi iOS di questo iPhone per dimostrare che può usare il server."
-                }
-              }
-            }
-          }
-        },
-        "ja": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "プライベートベータの機能です。AIのキーはDoddyのサーバーが保持するため、iPadにキーは保存されません。招待コードと、ランダムなインストールID（あなたとは結び付けられません）は、サーバーを使う資格を証明するためにこのiPadのiOSキーチェーンに保存されます。"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "プライベートベータの機能です。AIのキーはDoddyのサーバーが保持するため、iPhoneにキーは保存されません。招待コードと、ランダムなインストールID（あなたとは結び付けられません）は、サーバーを使う資格を証明するためにこのiPhoneのiOSキーチェーンに保存されます。"
-                }
-              }
-            }
-          }
-        },
         "pl": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Funkcja z prywatnej bety. Klucz SI trzyma serwer Doddy’ego, więc na iPadzie nie ma żadnego klucza. Kod zaproszenia i losowy identyfikator instalacji (niepowiązany z Tobą) są w pęku kluczy iOS na tym iPadzie, żeby udowodnić, że może korzystać z serwera."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Funkcja z prywatnej bety. Klucz SI trzyma serwer Doddy’ego, więc na iPhonie nie ma żadnego klucza. Kod zaproszenia i losowy identyfikator instalacji (niepowiązany z Tobą) są w pęku kluczy iOS na tym iPhonie, żeby udowodnić, że może korzystać z serwera."
-                }
-              }
-            }
-          }
-        },
-        "pt-BR": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Recurso de beta privado. O servidor do Doddy guarda a chave da IA, então nenhuma chave fica no seu iPad. O código de convite e um ID de instalação aleatório (não vinculado a você) ficam nas Chaves do iOS neste iPad para provar que ele pode usar o servidor."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Recurso de beta privado. O servidor do Doddy guarda a chave da IA, então nenhuma chave fica no seu iPhone. O código de convite e um ID de instalação aleatório (não vinculado a você) ficam nas Chaves do iOS neste iPhone para provar que ele pode usar o servidor."
-                }
-              }
-            }
-          }
-        },
-        "zh-Hans": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "私测功能。AI 密钥由 Doddy 的服务器保管，所以你的 iPad 上不存储任何密钥。邀请码和一个随机的安装 ID（与你本人无关联）保存在这台 iPad 的 iOS 钥匙串中，用于证明它可以使用该服务器。"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "私测功能。AI 密钥由 Doddy 的服务器保管，所以你的 iPhone 上不存储任何密钥。邀请码和一个随机的安装 ID（与你本人无关联）保存在这台 iPhone 的 iOS 钥匙串中，用于证明它可以使用该服务器。"
-                }
-              }
-            }
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profil"
           }
         }
       }
@@ -55380,6 +54538,17 @@
         }
       }
     },
+    "Right now": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W tej chwili"
+          }
+        }
+      }
+    },
     "Ringing": {
       "extractionState": "manual",
       "localizations": {
@@ -58377,187 +57546,13 @@
         }
       }
     },
-    "Say \"Ask Doddy what I saved\", then what you're looking for. Doddy searches your notes on this iPhone and Siri reads the matching note and when you saved it, without opening the app. Your iPhone must be unlocked. Siri is Apple's: it hears your request and speaks the answer, under your Siri settings.": {
+    "Say \"Ask Doddy what I saved\". Siri reads the matching note aloud, with your iPhone unlocked. Siri is Apple's and works under your Siri settings.": {
       "extractionState": "manual",
       "localizations": {
-        "de": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Sag „Frag Doddy, was ich gespeichert habe“ und dann, wonach du suchst. Doddy durchsucht deine Notizen auf diesem iPad, und Siri liest die passende Notiz vor und wann du sie gespeichert hast, ohne die App zu öffnen. Dein iPad muss entsperrt sein. Siri gehört Apple: Sie hört deine Anfrage und spricht die Antwort, gemäß deinen Siri-Einstellungen."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Sag „Frag Doddy, was ich gespeichert habe“ und dann, wonach du suchst. Doddy durchsucht deine Notizen auf diesem iPhone, und Siri liest die passende Notiz vor und wann du sie gespeichert hast, ohne die App zu öffnen. Dein iPhone muss entsperrt sein. Siri gehört Apple: Sie hört deine Anfrage und spricht die Antwort, gemäß deinen Siri-Einstellungen."
-                }
-              }
-            }
-          }
-        },
-        "en": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Say \"Ask Doddy what I saved\", then what you're looking for. Doddy searches your notes on this iPad and Siri reads the matching note and when you saved it, without opening the app. Your iPad must be unlocked. Siri is Apple's: it hears your request and speaks the answer, under your Siri settings."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Say \"Ask Doddy what I saved\", then what you're looking for. Doddy searches your notes on this iPhone and Siri reads the matching note and when you saved it, without opening the app. Your iPhone must be unlocked. Siri is Apple's: it hears your request and speaks the answer, under your Siri settings."
-                }
-              }
-            }
-          }
-        },
-        "es": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Di “Pregúntale a Doddy qué he guardado” y luego lo que buscas. Doddy busca en tus notas en este iPad y Siri lee la nota que coincide y cuándo la guardaste, sin abrir la app. Tu iPad debe estar desbloqueado. Siri es de Apple: oye tu petición y dice la respuesta, según tus ajustes de Siri."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Di “Pregúntale a Doddy qué he guardado” y luego lo que buscas. Doddy busca en tus notas en este iPhone y Siri lee la nota que coincide y cuándo la guardaste, sin abrir la app. Tu iPhone debe estar desbloqueado. Siri es de Apple: oye tu petición y dice la respuesta, según tus ajustes de Siri."
-                }
-              }
-            }
-          }
-        },
-        "fr": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Dis « Demande à Doddy ce que j’ai enregistré », puis ce que tu cherches. Doddy cherche dans tes notes sur cet iPad et Siri lit la note correspondante et la date où tu l’as enregistrée, sans ouvrir l’app. Ton iPad doit être déverrouillé. Siri appartient à Apple : elle entend ta demande et dit la réponse, selon tes réglages Siri."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Dis « Demande à Doddy ce que j’ai enregistré », puis ce que tu cherches. Doddy cherche dans tes notes sur cet iPhone et Siri lit la note correspondante et la date où tu l’as enregistrée, sans ouvrir l’app. Ton iPhone doit être déverrouillé. Siri appartient à Apple : elle entend ta demande et dit la réponse, selon tes réglages Siri."
-                }
-              }
-            }
-          }
-        },
-        "hr": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Reci „Pitaj aplikaciju Doddy što imam spremljeno“, a zatim što tražiš. Doddy pretražuje tvoje bilješke na ovom iPadu, a Siri čita odgovarajuću bilješku i kad je spremljena, bez otvaranja aplikacije. Tvoj iPad mora biti otključan. Siri je Appleova: čuje tvoj zahtjev i izgovara odgovor, prema tvojim postavkama za Siri."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Reci „Pitaj aplikaciju Doddy što imam spremljeno“, a zatim što tražiš. Doddy pretražuje tvoje bilješke na ovom iPhoneu, a Siri čita odgovarajuću bilješku i kad je spremljena, bez otvaranja aplikacije. Tvoj iPhone mora biti otključan. Siri je Appleova: čuje tvoj zahtjev i izgovara odgovor, prema tvojim postavkama za Siri."
-                }
-              }
-            }
-          }
-        },
-        "it": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Di' “Chiedi a Doddy cosa ho salvato”, poi ciò che cerchi. Doddy cerca nelle tue note su questo iPad e Siri legge la nota corrispondente e quando l'hai salvata, senza aprire l'app. Il tuo iPad deve essere sbloccato. Siri è di Apple: sente la tua richiesta e pronuncia la risposta, secondo le tue impostazioni di Siri."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Di' “Chiedi a Doddy cosa ho salvato”, poi ciò che cerchi. Doddy cerca nelle tue note su questo iPhone e Siri legge la nota corrispondente e quando l'hai salvata, senza aprire l'app. Il tuo iPhone deve essere sbloccato. Siri è di Apple: sente la tua richiesta e pronuncia la risposta, secondo le tue impostazioni di Siri."
-                }
-              }
-            }
-          }
-        },
-        "ja": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "「保存した内容をDoddyに聞く」と言ってから、探しているものを言ってください。DoddyがこのiPadのメモを検索し、アプリを開かずにSiriが一致するメモとその保存日時を読み上げます。iPadはロック解除されている必要があります。SiriはAppleのものです。あなたのSiri設定に従って、依頼を聞き取り、答えを話します。"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "「保存した内容をDoddyに聞く」と言ってから、探しているものを言ってください。DoddyがこのiPhoneのメモを検索し、アプリを開かずにSiriが一致するメモとその保存日時を読み上げます。iPhoneはロック解除されている必要があります。SiriはAppleのものです。あなたのSiri設定に従って、依頼を聞き取り、答えを話します。"
-                }
-              }
-            }
-          }
-        },
         "pl": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Powiedz „Zapytaj aplikację Doddy, co mam zapisane”, a potem, czego szukasz. Doddy przeszuka notatki na tym iPadzie, a Siri przeczyta pasującą notatkę i datę jej zapisania, bez otwierania aplikacji. iPad musi być odblokowany. Siri należy do Apple: słyszy Twoją prośbę i wypowiada odpowiedź zgodnie z Twoimi ustawieniami Siri."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Powiedz „Zapytaj aplikację Doddy, co mam zapisane”, a potem, czego szukasz. Doddy przeszuka notatki na tym iPhonie, a Siri przeczyta pasującą notatkę i datę jej zapisania, bez otwierania aplikacji. iPhone musi być odblokowany. Siri należy do Apple: słyszy Twoją prośbę i wypowiada odpowiedź zgodnie z Twoimi ustawieniami Siri."
-                }
-              }
-            }
-          }
-        },
-        "pt-BR": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Diga “Perguntar ao Doddy o que eu salvei” e depois o que você procura. O Doddy busca nas suas notas neste iPad e a Siri lê a nota correspondente e quando você a salvou, sem abrir o app. Seu iPad precisa estar desbloqueado. A Siri é da Apple: ela ouve seu pedido e fala a resposta, conforme seus ajustes da Siri."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Diga “Perguntar ao Doddy o que eu salvei” e depois o que você procura. O Doddy busca nas suas notas neste iPhone e a Siri lê a nota correspondente e quando você a salvou, sem abrir o app. Seu iPhone precisa estar desbloqueado. A Siri é da Apple: ela ouve seu pedido e fala a resposta, conforme seus ajustes da Siri."
-                }
-              }
-            }
-          }
-        },
-        "zh-Hans": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "说“问 Doddy 我存了什么”，然后说你要找的内容。Doddy 会在这台 iPad 上搜索你的笔记，Siri 会读出匹配的笔记及其保存时间，无需打开应用。你的 iPad 必须处于解锁状态。Siri 属于 Apple：它会听到你的请求并说出答案，遵循你的 Siri 设置。"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "说“问 Doddy 我存了什么”，然后说你要找的内容。Doddy 会在这台 iPhone 上搜索你的笔记，Siri 会读出匹配的笔记及其保存时间，无需打开应用。你的 iPhone 必须处于解锁状态。Siri 属于 Apple：它会听到你的请求并说出答案，遵循你的 Siri 设置。"
-                }
-              }
-            }
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powiedz „Zapytaj Doddy’ego, co mam zapisane”. Siri przeczyta pasującą notatkę na głos, gdy iPhone jest odblokowany. Siri należy do Apple i działa według twoich ustawień Siri."
           }
         }
       }
@@ -58919,6 +57914,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wyszukaj Doddy i wybierz „Porozmawiaj z Doddym”."
+          }
+        }
+      }
+    },
+    "Search for Doddy and pick Talk to Doddy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyszukaj Doddy i wybierz Porozmawiaj z Doddym."
           }
         }
       }
@@ -62838,6 +61844,17 @@
         }
       }
     },
+    "Siri and Back Tap": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Siri i stuknięcie w tył"
+          }
+        }
+      }
+    },
     "Siri can read my notes aloud": {
       "extractionState": "manual",
       "localizations": {
@@ -62963,17 +61980,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "更慢"
-          }
-        }
-      }
-    },
-    "Small island: start a conversation": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mała wyspa: rozpocznij rozmowę"
           }
         }
       }
@@ -63612,6 +62618,17 @@
         }
       }
     },
+    "Start a conversation": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zacznij rozmowę"
+          }
+        }
+      }
+    },
     "Start a new list?": {
       "extractionState": "manual",
       "localizations": {
@@ -63907,65 +62924,6 @@
         }
       }
     },
-    "Start listening when I open Doddy": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zuhören starten, wenn ich Doddy öffne"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Empezar a escuchar cuando abra Doddy"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Commencer à écouter quand j’ouvre Doddy"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Počni slušati kad otvorim Doddyja"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Inizia ad ascoltare quando apro Doddy"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddyを開いたら聞き取りを開始"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zacznij słuchać, gdy otwieram Doddy’ego"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Começar a escutar quando eu abrir o Doddy"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "打开 Doddy 时开始聆听"
-          }
-        }
-      }
-    },
     "Start shopping mode": {
       "extractionState": "manual",
       "localizations": {
@@ -64021,6 +62979,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "开启购物模式"
+          }
+        }
+      }
+    },
+    "Start talking when Doddy opens.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaczynaj rozmowę, gdy otwierasz Doddy’ego."
           }
         }
       }
@@ -65294,47 +64263,6 @@
         }
       }
     },
-    "Stored on this iPhone with your memories, but separately: forgetting these doesn't delete memories, and deleting memories doesn't forget these. With \"Use in voice conversations\" on, these answers are sent to ElevenLabs, or OpenAI if you switch Home's voice to it at the start of each conversation so Doddy knows them; off, they stay on this iPhone.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Stored on this iPad with your memories, but separately: forgetting these doesn't delete memories, and deleting memories doesn't forget these. With \"Use in voice conversations\" on, these answers are sent to ElevenLabs, or OpenAI if you switch Home's voice to it at the start of each conversation so Doddy knows them; off, they stay on this iPad."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Stored on this iPhone with your memories, but separately: forgetting these doesn't delete memories, and deleting memories doesn't forget these. With \"Use in voice conversations\" on, these answers are sent to ElevenLabs, or OpenAI if you switch Home's voice to it at the start of each conversation so Doddy knows them; off, they stay on this iPhone."
-                }
-              }
-            }
-          }
-        },
-        "pl": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Przechowywane na tym iPadzie razem z notatkami, ale osobno: zapomnienie ich nie usuwa notatek, a usunięcie notatek ich nie zapomina. Gdy „Używaj w rozmowach głosowych” jest włączone, te odpowiedzi trafiają do ElevenLabs albo OpenAI, jeśli przełączysz na niego głos na ekranie głównym na początku każdej rozmowy, żeby Doddy je znał; gdy wyłączone, zostają na tym iPadzie."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Przechowywane na tym iPhonie razem z notatkami, ale osobno: zapomnienie ich nie usuwa notatek, a usunięcie notatek ich nie zapomina. Gdy „Używaj w rozmowach głosowych” jest włączone, te odpowiedzi trafiają do ElevenLabs albo OpenAI, jeśli przełączysz na niego głos na ekranie głównym na początku każdej rozmowy, żeby Doddy je znał; gdy wyłączone, zostają na tym iPhonie."
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "Straight from your note": {
       "extractionState": "manual",
       "localizations": {
@@ -65604,13 +64532,13 @@
         }
       }
     },
-    "Swipe to Controls (Shortcut on iOS 17) and tap the button under it.": {
+    "Swipe to Controls (iOS 18 or later) and tap the button under it.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Przesuń do Elementów sterujących (na iOS 17: Skrót) i stuknij przycisk pod nimi."
+            "value": "Przesuń do Przełączników (iOS 18 lub nowszy) i stuknij przycisk pod spodem."
           }
         }
       }
@@ -66190,6 +65118,17 @@
         }
       }
     },
+    "Talk without opening Doddy. Press again to end.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rozmawiaj bez otwierania Doddy’ego. Naciśnij ponownie, żeby zakończyć."
+          }
+        }
+      }
+    },
     "Talking isn't available right now. You can type instead.": {
       "extractionState": "manual",
       "localizations": {
@@ -66459,6 +65398,28 @@
         }
       }
     },
+    "Terms & Conditions": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Regulamin"
+          }
+        }
+      }
+    },
+    "Terms accepted": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Regulamin zaakceptowany"
+          }
+        }
+      }
+    },
     "Tested by you": {
       "extractionState": "manual",
       "localizations": {
@@ -66525,65 +65486,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "文本"
-          }
-        }
-      }
-    },
-    "Text capture and search work locally. Voice has separate network and microphone behaviour, explained below.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Texterfassung und Suche arbeiten lokal. Die Stimme hat ein eigenes Netzwerk- und Mikrofonverhalten, unten erklärt."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La captura de texto y la búsqueda funcionan en local. La voz tiene un comportamiento aparte de red y micrófono, explicado abajo."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La saisie de texte et la recherche fonctionnent en local. La voix a un comportement réseau et micro distinct, expliqué ci-dessous."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bilježenje teksta i pretraživanje rade lokalno. Glas ima zasebno ponašanje mreže i mikrofona, objašnjeno u nastavku."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "L'acquisizione del testo e la ricerca funzionano in locale. La voce ha un comportamento separato per rete e microfono, spiegato qui sotto."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "テキストの記録と検索はローカルで動作します。音声には、以下で説明する別のネットワークとマイクの動作があります。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zapisywanie tekstu i wyszukiwanie działają lokalnie. Głos ma osobne zasady dotyczące sieci i mikrofonu, opisane poniżej."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "A captura de texto e a busca funcionam localmente. A voz tem comportamento próprio de rede e microfone, explicado abaixo."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "文字记录和搜索都在本地进行。语音有单独的网络和麦克风行为，见下方说明。"
           }
         }
       }
@@ -66765,61 +65667,13 @@
         }
       }
     },
-    "Text size follows your iOS settings, including larger accessibility sizes.": {
+    "Text size follows your iPhone's settings. With Reduce Motion on, Doddy stays still.": {
       "extractionState": "manual",
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Die Textgröße folgt deinen iOS-Einstellungen, auch den größeren Bedienungshilfen-Größen."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "El tamaño del texto sigue tus ajustes de iOS, incluidos los tamaños grandes de accesibilidad."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La taille du texte suit tes réglages iOS, y compris les grandes tailles d’accessibilité."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Veličina teksta prati tvoje postavke iOS-a, uključujući veće veličine za pristupačnost."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La dimensione del testo segue le tue impostazioni di iOS, incluse le dimensioni più grandi di accessibilità."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "文字サイズはiOSの設定に従い、アクセシビリティの大きいサイズにも対応します。"
-          }
-        },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Rozmiar tekstu odpowiada ustawieniom iOS, także większym rozmiarom dostępności."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O tamanho do texto segue seus ajustes do iOS, incluindo os tamanhos maiores de acessibilidade."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "文字大小跟随你的 iOS 设置，包括更大的辅助功能字号。"
+            "value": "Rozmiar tekstu zgodny z ustawieniami iPhone’a. Przy włączonym Ograniczeniu ruchu Doddy się nie rusza."
           }
         }
       }
@@ -69723,6 +68577,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "无法设置早间概览。请重试。"
+          }
+        }
+      }
+    },
+    "The copy on your Doddy messaging server (Memory on calls) couldn't be emptied yet: %@ Doddy tries again the next time you open it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się jeszcze opróżnić kopii na twoim serwerze wiadomości Doddy’ego (Pamięć w rozmowach): %@ Doddy spróbuje ponownie, gdy go następnym razem otworzysz."
           }
         }
       }
@@ -73490,65 +72355,6 @@
         }
       }
     },
-    "This build of Doddy can't share anything with widgets (it isn't signed with Doddy's App Group), so widgets show only \"Open Doddy\".": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Diese Version von Doddy kann nichts mit Widgets teilen (sie ist nicht mit der App-Gruppe von Doddy signiert), also zeigen Widgets nur „Doddy öffnen“."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Esta versión de Doddy no puede compartir nada con los widgets (no está firmada con el App Group de Doddy), así que los widgets solo muestran “Abrir Doddy”."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cette version de Doddy ne peut rien partager avec les widgets (elle n’est pas signée avec l’App Group de Doddy), donc les widgets affichent seulement « Ouvrir Doddy »."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ova verzija Doddyja ne može ništa dijeliti s widgetima (nije potpisana Doddyjevom App Group), pa widgeti prikazuju samo „Otvori Doddyja“."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Questa versione di Doddy non può condividere niente con i widget (non è firmata con l'App Group di Doddy), quindi i widget mostrano solo “Apri Doddy”."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "このビルドのDoddyはウィジェットと何も共有できないため（DoddyのApp Groupで署名されていません）、ウィジェットには「Doddyを開く」だけが表示されます。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ta wersja Doddy’ego nie może niczego udostępniać widżetom (nie jest podpisana grupą aplikacji Doddy’ego), więc widżety pokazują tylko „Otwórz Doddy’ego”."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Esta versão do Doddy não pode compartilhar nada com os widgets (não está assinada com o App Group do Doddy), então os widgets mostram só “Abrir o Doddy”."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "此版本的 Doddy 无法与小组件共享任何内容（未使用 Doddy 的 App Group 签名），所以小组件只显示“打开 Doddy”。"
-          }
-        }
-      }
-    },
     "This call": {
       "extractionState": "manual",
       "localizations": {
@@ -73729,6 +72535,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "这只会清空 Doddy 的清单。提醒事项、日历或你的笔记中的内容都不会改变。"
+          }
+        }
+      }
+    },
+    "This doesn't turn anything on. Doddy asks separately before using the microphone or sending anything.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To niczego nie włącza. Doddy pyta osobno, zanim użyje mikrofonu albo cokolwiek wyśle."
           }
         }
       }
@@ -76358,6 +75175,17 @@
         }
       }
     },
+    "Ticked": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaznaczone"
+          }
+        }
+      }
+    },
     "Ticked by %@": {
       "extractionState": "manual",
       "localizations": {
@@ -76963,6 +75791,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "标题"
+          }
+        }
+      }
+    },
+    "To add Doddy: iPhone Settings › Action Button › Controls › Talk to Doddy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jak dodać Doddy’ego: Ustawienia iPhone’a › Przycisk czynności › Przełączniki › Porozmawiaj z Doddym."
           }
         }
       }
@@ -80088,6 +78927,17 @@
         }
       }
     },
+    "Up to three things you said, offered when a conversation ends. Nothing is saved unless you tap Save.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do trzech rzeczy, które powiedziałeś, proponowanych po zakończeniu rozmowy. Nic nie jest zapisywane, dopóki nie stukniesz Zapisz."
+          }
+        }
+      }
+    },
     "Updated the “%@” template: %lld items.": {
       "extractionState": "manual",
       "localizations": {
@@ -80560,6 +79410,29 @@
         }
       }
     },
+    "Use https, or http://localhost with the Simulator. The token is kept in this iPhone's Keychain for that address only.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Use https, or http://localhost with the Simulator. The token is kept in this iPad's Keychain for that address only."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Use https, or http://localhost with the Simulator. The token is kept in this iPhone's Keychain for that address only."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Use in voice conversations": {
       "extractionState": "manual",
       "localizations": {
@@ -80851,6 +79724,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "已使用一次，在 %@"
+          }
+        }
+      }
+    },
+    "Uses the Dynamic Island, or opens Doddy when something needs setting up first.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Używa Dynamic Island albo otwiera Doddy’ego, gdy najpierw trzeba coś ustawić."
           }
         }
       }
@@ -81275,6 +80159,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "语音"
+          }
+        }
+      }
+    },
+    "Voice account": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Konto głosowe"
+          }
+        }
+      }
+    },
+    "Voice and interaction": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Głos i obsługa"
           }
         }
       }
@@ -81754,6 +80660,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sposoby na otwarcie Doddy’ego"
+          }
+        }
+      }
+    },
+    "We've updated our terms": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaktualizowaliśmy regulamin"
           }
         }
       }
@@ -82414,6 +81331,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "我学到的"
+          }
+        }
+      }
+    },
+    "What a press does is up to you in Doddy's Settings, Action Button: the Dynamic Island, or the app. Pick Controls, not Shortcut: the shortcut always opens Doddy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To, co robi naciśnięcie, wybierasz w Ustawieniach Doddy’ego, Przycisk czynności: Dynamic Island albo aplikacja. Wybierz Przełączniki, nie Skrót: skrót zawsze otwiera Doddy’ego."
           }
         }
       }
@@ -83639,141 +82567,33 @@
         }
       }
     },
-    "When I use Talk to Doddy": {
+    "When Siri or Back Tap opens Doddy": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Gdy używam „Talk to Doddy”"
+            "value": "Gdy Siri lub stuknięcie w tył otwiera Doddy’ego"
           }
         }
       }
     },
-    "When a conversation ends, Doddy may offer up to three things you said, in your words, to save as notes. Nothing is ticked and nothing is saved unless you tap Save. They're picked on this iPhone; never for a private conversation, and never passwords or card numbers.": {
+    "When a conversation starts, Doddy gets your saved notes and, with this on, your last few conversations. They're kept only on this iPhone.": {
       "extractionState": "manual",
       "localizations": {
-        "de": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Wenn ein Gespräch endet, kann Doddy bis zu drei Dinge anbieten, die du gesagt hast, in deinen Worten, zum Speichern als Notizen. Nichts ist angehakt und nichts wird gespeichert, außer du tippst auf Speichern. Sie werden auf diesem iPad ausgewählt; nie bei einem privaten Gespräch und nie Passwörter oder Kartennummern."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Wenn ein Gespräch endet, kann Doddy bis zu drei Dinge anbieten, die du gesagt hast, in deinen Worten, zum Speichern als Notizen. Nichts ist angehakt und nichts wird gespeichert, außer du tippst auf Speichern. Sie werden auf diesem iPhone ausgewählt; nie bei einem privaten Gespräch und nie Passwörter oder Kartennummern."
-                }
-              }
-            }
-          }
-        },
         "en": {
           "variations": {
             "device": {
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "When a conversation ends, Doddy may offer up to three things you said, in your words, to save as notes. Nothing is ticked and nothing is saved unless you tap Save. They're picked on this iPad; never for a private conversation, and never passwords or card numbers."
+                  "value": "When a conversation starts, Doddy gets your saved notes and, with this on, your last few conversations. They're kept only on this iPad."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "When a conversation ends, Doddy may offer up to three things you said, in your words, to save as notes. Nothing is ticked and nothing is saved unless you tap Save. They're picked on this iPhone; never for a private conversation, and never passwords or card numbers."
-                }
-              }
-            }
-          }
-        },
-        "es": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Cuando termina una conversación, Doddy puede ofrecerte hasta tres cosas que dijiste, con tus palabras, para guardarlas como notas. No se marca nada y no se guarda nada a menos que toques Guardar. Se eligen en este iPad; nunca en una conversación privada, y nunca contraseñas ni números de tarjeta."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Cuando termina una conversación, Doddy puede ofrecerte hasta tres cosas que dijiste, con tus palabras, para guardarlas como notas. No se marca nada y no se guarda nada a menos que toques Guardar. Se eligen en este iPhone; nunca en una conversación privada, y nunca contraseñas ni números de tarjeta."
-                }
-              }
-            }
-          }
-        },
-        "fr": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Quand une conversation se termine, Doddy peut proposer jusqu’à trois choses que tu as dites, avec tes mots, à enregistrer comme notes. Rien n’est coché et rien n’est enregistré sauf si tu touches Enregistrer. Elles sont choisies sur cet iPad ; jamais pour une conversation privée, et jamais de mots de passe ni de numéros de carte."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Quand une conversation se termine, Doddy peut proposer jusqu’à trois choses que tu as dites, avec tes mots, à enregistrer comme notes. Rien n’est coché et rien n’est enregistré sauf si tu touches Enregistrer. Elles sont choisies sur cet iPhone ; jamais pour une conversation privée, et jamais de mots de passe ni de numéros de carte."
-                }
-              }
-            }
-          }
-        },
-        "hr": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Kad razgovor završi, Doddy može ponuditi do tri stvari iz razgovora, tvojim riječima, za spremanje kao bilješke. Ništa nije označeno i ništa se ne sprema osim ako dodirneš Spremi. Biraju se na ovom iPadu; nikad za privatni razgovor i nikad lozinke ili brojevi kartica."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Kad razgovor završi, Doddy može ponuditi do tri stvari iz razgovora, tvojim riječima, za spremanje kao bilješke. Ništa nije označeno i ništa se ne sprema osim ako dodirneš Spremi. Biraju se na ovom iPhoneu; nikad za privatni razgovor i nikad lozinke ili brojevi kartica."
-                }
-              }
-            }
-          }
-        },
-        "it": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Quando una conversazione finisce, Doddy può proporti fino a tre cose che hai detto, con parole tue, da salvare come note. Niente è spuntato e niente viene salvato a meno che tu non tocchi Salva. Vengono scelte su questo iPad; mai per una conversazione privata, e mai password o numeri di carte."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Quando una conversazione finisce, Doddy può proporti fino a tre cose che hai detto, con parole tue, da salvare come note. Niente è spuntato e niente viene salvato a meno che tu non tocchi Salva. Vengono scelte su questo iPhone; mai per una conversazione privata, e mai password o numeri di carte."
-                }
-              }
-            }
-          }
-        },
-        "ja": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "会話が終わると、Doddyがあなたの発言から最大3つを、あなたの言葉のままメモとして保存するよう提案することがあります。「保存」をタップしない限り、何もチェックされず、何も保存されません。選ぶのはこのiPad上で行われ、プライベートな会話では決して行われず、パスワードやカード番号が選ばれることもありません。"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "会話が終わると、Doddyがあなたの発言から最大3つを、あなたの言葉のままメモとして保存するよう提案することがあります。「保存」をタップしない限り、何もチェックされず、何も保存されません。選ぶのはこのiPhone上で行われ、プライベートな会話では決して行われず、パスワードやカード番号が選ばれることもありません。"
+                  "value": "When a conversation starts, Doddy gets your saved notes and, with this on, your last few conversations. They're kept only on this iPhone."
                 }
               }
             }
@@ -83785,234 +82605,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Gdy rozmowa się kończy, Doddy może zaproponować do trzech rzeczy z rozmowy, Twoimi słowami, do zapisania jako notatki. Nic nie jest zaznaczone ani zapisane, dopóki nie stukniesz Zapisz. Są wybierane na tym iPadzie; nigdy po prywatnej rozmowie i nigdy hasła ani numery kart."
+                  "value": "Na początku rozmowy Doddy dostaje twoje zapisane notatki i, przy włączonej opcji, kilka ostatnich rozmów. Są przechowywane tylko na tym iPadzie."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Gdy rozmowa się kończy, Doddy może zaproponować do trzech rzeczy z rozmowy, Twoimi słowami, do zapisania jako notatki. Nic nie jest zaznaczone ani zapisane, dopóki nie stukniesz Zapisz. Są wybierane na tym iPhonie; nigdy po prywatnej rozmowie i nigdy hasła ani numery kart."
-                }
-              }
-            }
-          }
-        },
-        "pt-BR": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Quando uma conversa termina, o Doddy pode oferecer até três coisas que você disse, nas suas palavras, para salvar como notas. Nada fica marcado e nada é salvo a menos que você toque em Salvar. Elas são escolhidas neste iPad; nunca em uma conversa privada, e nunca senhas ou números de cartão."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Quando uma conversa termina, o Doddy pode oferecer até três coisas que você disse, nas suas palavras, para salvar como notas. Nada fica marcado e nada é salvo a menos que você toque em Salvar. Elas são escolhidas neste iPhone; nunca em uma conversa privada, e nunca senhas ou números de cartão."
-                }
-              }
-            }
-          }
-        },
-        "zh-Hans": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "对话结束时，Doddy 可能会用你的原话提出最多三条你说过的内容，供你保存为笔记。除非你轻点“保存”，否则不会勾选也不会保存任何内容。这些是在这台 iPad 上挑选的；私密对话绝不会有，密码或卡号也绝不会有。"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "对话结束时，Doddy 可能会用你的原话提出最多三条你说过的内容，供你保存为笔记。除非你轻点“保存”，否则不会勾选也不会保存任何内容。这些是在这台 iPhone 上挑选的；私密对话绝不会有，密码或卡号也绝不会有。"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "When a conversation starts, the app hands Doddy your saved notes and, if this is on, your last few conversations, so he can carry on where you left off. They are kept only on this iPhone. Weather comes from Open-Meteo and facts from Wikipedia.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Wenn ein Gespräch beginnt, übergibt die App Doddy deine gespeicherten Notizen und, wenn das an ist, deine letzten paar Gespräche, damit er da weitermachen kann, wo ihr aufgehört habt. Sie werden nur auf diesem iPad behalten. Das Wetter kommt von Open-Meteo und Fakten von Wikipedia."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Wenn ein Gespräch beginnt, übergibt die App Doddy deine gespeicherten Notizen und, wenn das an ist, deine letzten paar Gespräche, damit er da weitermachen kann, wo ihr aufgehört habt. Sie werden nur auf diesem iPhone behalten. Das Wetter kommt von Open-Meteo und Fakten von Wikipedia."
-                }
-              }
-            }
-          }
-        },
-        "en": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "When a conversation starts, the app hands Doddy your saved notes and, if this is on, your last few conversations, so he can carry on where you left off. They are kept only on this iPad. Weather comes from Open-Meteo and facts from Wikipedia."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "When a conversation starts, the app hands Doddy your saved notes and, if this is on, your last few conversations, so he can carry on where you left off. They are kept only on this iPhone. Weather comes from Open-Meteo and facts from Wikipedia."
-                }
-              }
-            }
-          }
-        },
-        "es": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Cuando empieza una conversación, la app entrega a Doddy tus notas guardadas y, si esto está activado, tus últimas conversaciones, para que pueda seguir donde lo dejaste. Se guardan solo en este iPad. El tiempo viene de Open-Meteo y los datos de Wikipedia."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Cuando empieza una conversación, la app entrega a Doddy tus notas guardadas y, si esto está activado, tus últimas conversaciones, para que pueda seguir donde lo dejaste. Se guardan solo en este iPhone. El tiempo viene de Open-Meteo y los datos de Wikipedia."
-                }
-              }
-            }
-          }
-        },
-        "fr": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Quand une conversation commence, l’app transmet à Doddy tes notes enregistrées et, si ceci est activé, tes dernières conversations, pour qu’il reprenne là où tu t’étais arrêté. Elles ne sont conservées que sur cet iPad. La météo vient d’Open-Meteo et les faits de Wikipédia."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Quand une conversation commence, l’app transmet à Doddy tes notes enregistrées et, si ceci est activé, tes dernières conversations, pour qu’il reprenne là où tu t’étais arrêté. Elles ne sont conservées que sur cet iPhone. La météo vient d’Open-Meteo et les faits de Wikipédia."
-                }
-              }
-            }
-          }
-        },
-        "hr": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Kad razgovor počne, aplikacija Doddyju predaje tvoje spremljene bilješke i, ako je ovo uključeno, tvojih nekoliko zadnjih razgovora, da može nastaviti gdje ste stali. Čuvaju se samo na ovom iPadu. Vrijeme dolazi s Open-Meteo, a činjenice s Wikipedije."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Kad razgovor počne, aplikacija Doddyju predaje tvoje spremljene bilješke i, ako je ovo uključeno, tvojih nekoliko zadnjih razgovora, da može nastaviti gdje ste stali. Čuvaju se samo na ovom iPhoneu. Vrijeme dolazi s Open-Meteo, a činjenice s Wikipedije."
-                }
-              }
-            }
-          }
-        },
-        "it": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Quando inizia una conversazione, l'app passa a Doddy le tue note salvate e, se questa opzione è attiva, le tue ultime conversazioni, così può riprendere da dove eravate rimasti. Sono conservate solo su questo iPad. Il meteo viene da Open-Meteo e i fatti da Wikipedia."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Quando inizia una conversazione, l'app passa a Doddy le tue note salvate e, se questa opzione è attiva, le tue ultime conversazioni, così può riprendere da dove eravate rimasti. Sono conservate solo su questo iPhone. Il meteo viene da Open-Meteo e i fatti da Wikipedia."
-                }
-              }
-            }
-          }
-        },
-        "ja": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "会話が始まると、アプリは保存したメモと、これがオンなら直近の数回の会話をDoddyに渡し、前回の続きから話せるようにします。これらはこのiPadにのみ保存されます。天気はOpen-Meteoから、事実はWikipediaから取得します。"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "会話が始まると、アプリは保存したメモと、これがオンなら直近の数回の会話をDoddyに渡し、前回の続きから話せるようにします。これらはこのiPhoneにのみ保存されます。天気はOpen-Meteoから、事実はWikipediaから取得します。"
-                }
-              }
-            }
-          }
-        },
-        "pl": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Gdy zaczyna się rozmowa, aplikacja przekazuje Doddy’emu zapisane notatki oraz, jeśli to jest włączone, kilka ostatnich rozmów, żeby mógł kontynuować tam, gdzie skończyliście. Są przechowywane tylko na tym iPadzie. Pogoda pochodzi z Open-Meteo, a fakty z Wikipedii."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Gdy zaczyna się rozmowa, aplikacja przekazuje Doddy’emu zapisane notatki oraz, jeśli to jest włączone, kilka ostatnich rozmów, żeby mógł kontynuować tam, gdzie skończyliście. Są przechowywane tylko na tym iPhonie. Pogoda pochodzi z Open-Meteo, a fakty z Wikipedii."
-                }
-              }
-            }
-          }
-        },
-        "pt-BR": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Quando uma conversa começa, o app passa ao Doddy suas notas salvas e, se isto estiver ativado, suas últimas conversas, para ele continuar de onde você parou. Elas ficam só neste iPad. O clima vem do Open-Meteo e os fatos, da Wikipédia."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Quando uma conversa começa, o app passa ao Doddy suas notas salvas e, se isto estiver ativado, suas últimas conversas, para ele continuar de onde você parou. Elas ficam só neste iPhone. O clima vem do Open-Meteo e os fatos, da Wikipédia."
-                }
-              }
-            }
-          }
-        },
-        "zh-Hans": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "对话开始时，应用会把你保存的笔记交给 Doddy；如果此项开启，还会交给他你最近几次的对话，以便他接着上次的话题继续。它们只保留在这台 iPad 上。天气来自 Open-Meteo，事实来自维基百科。"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "对话开始时，应用会把你保存的笔记交给 Doddy；如果此项开启，还会交给他你最近几次的对话，以便他接着上次的话题继续。它们只保留在这台 iPhone 上。天气来自 Open-Meteo，事实来自维基百科。"
+                  "value": "Na początku rozmowy Doddy dostaje twoje zapisane notatki i, przy włączonej opcji, kilka ostatnich rozmów. Są przechowywane tylko na tym iPhonie."
                 }
               }
             }
@@ -87091,6 +85690,17 @@
         }
       }
     },
+    "Your data and account": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoje dane i konto"
+          }
+        }
+      }
+    },
     "Your day": {
       "extractionState": "manual",
       "localizations": {
@@ -87334,65 +85944,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "你在 Doddy 中的清单。通知不会显示它的名称或项目。"
-          }
-        }
-      }
-    },
-    "Your memories": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dein Gemerktes"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tus recuerdos"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tes souvenirs"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tvoja sjećanja"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "I tuoi ricordi"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "あなたの記憶"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Twoje wspomnienia"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Suas memórias"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "你的记忆"
           }
         }
       }
@@ -88797,6 +87348,17 @@
         }
       }
     },
+    "Your voice and the conversation go to the voice service only after you agree, the first time you talk. iOS shows its orange dot while Doddy listens.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twój głos i rozmowa trafiają do usługi głosowej dopiero po twojej zgodzie, przy pierwszej rozmowie. Gdy Doddy słucha, iOS pokazuje pomarańczową kropkę."
+          }
+        }
+      }
+    },
     "Your voice note": {
       "extractionState": "manual",
       "localizations": {
@@ -89331,6 +87893,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "iCloud 未确认。不算已完成；请重试。"
+          }
+        }
+      }
+    },
+    "iOS didn't let Doddy start the microphone without opening him. Open Doddy to talk.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iOS nie pozwolił Doddy’emu włączyć mikrofonu bez otwierania aplikacji. Otwórz Doddy’ego, żeby porozmawiać."
           }
         }
       }

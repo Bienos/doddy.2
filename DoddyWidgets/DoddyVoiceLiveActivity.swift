@@ -99,6 +99,7 @@ private struct DoddyArt: View {
     let size: CGFloat
 
     private var pose: IslandPose {
+        if shown.state.isFailed { return .facepalm }
         if shown.state.isEnded { return shown.state.savedCount > 0 ? .fistpump : .crosslegged }
         // Translating keeps its board on the island (no pose); here he listens.
         return shown.state.wholeDoddyPose(stale: shown.isStale) ?? .listening
@@ -255,12 +256,12 @@ private struct LockScreenView: View {
     private var statusLine: some View {
         if shown.state.isEnded {
             HStack(spacing: 4) {
-                if shown.state.savedCount > 0 {
+                if shown.state.savedCount > 0, !shown.state.isFailed {
                     Image(systemName: "checkmark")
                         .foregroundStyle(Palette.confirmed)
                 }
                 Text(shown.detail ?? "")
-                    .foregroundStyle(shown.state.savedCount > 0 ? Palette.confirmed : Palette.secondary)
+                    .foregroundStyle(shown.state.savedCount > 0 && !shown.state.isFailed ? Palette.confirmed : Palette.secondary)
                 if let endedAt = shown.state.endedAt {
                     Text("· \(Self.total(from: startedAt, to: endedAt)) total")
                         .foregroundStyle(Palette.secondary)

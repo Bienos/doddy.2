@@ -1,648 +1,33 @@
 import DoddyCore
 import SwiftUI
-import UniformTypeIdentifiers
 
+/// Settings (ADR-580): six short groups of controls, each a row or a switch. Explanations live on
+/// the screen a row opens, in Help, in "What leaves this iPhone" and in the Privacy Policy, not
+/// here; a short line stays where a choice sends something off the iPhone. The inventory of
+/// where each old setting went is `docs/implementation/SETTINGS_SIMPLIFIED.md`.
 struct SettingsView: View {
     @Environment(MemoryStore.self) private var store
     @Environment(ProfileStore.self) private var profiles
-    @AppStorage(PreferenceKey.appearance) private var appearanceRaw = AppearancePreference.system.rawValue
-    @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
-    @AppStorage(PreferenceKey.listenOnOpen) private var listenOnOpen = OpeningPreferences.listenOnOpenDefault
-    #if DEBUG
-    @AppStorage(VoiceConfig.directVoiceKey) private var directVoice = true
-    #endif
-    @AppStorage(PreferenceKey.widgetsShowContent) private var widgetsOn = true
-    @AppStorage(PreferenceKey.backTapAction) private var backTapActionRaw = BackTapAction.conversation.rawValue
-    @AppStorage(PreferenceKey.rememberConversations) private var rememberConversations = true
-    @State private var connections = ConnectionController()
-    @AppStorage(PreferenceKey.shareProfileWithVoice) private var shareProfileWithVoice = false
-    @AppStorage(PreferenceKey.connectedAppsServerURL) private var connectedAppsServerURL = ""
-    @AppStorage(PreferenceKey.memoryCopyOn) private var memoryCopyOn = false
-
-    /// The privacy summary that used to be at the bottom of Home (ADR-326).
-    private var privacySummary: String {
-        memoryCopyOn
-            ? NSLocalizedString("Doddy is an AI, not a person. Notes are kept on this iPhone, and because Memory on calls is on, a copy is on your Doddy messaging server so Doddy can answer on calls. While a conversation is open, notes and your last few conversations go to ElevenLabs, or OpenAI if you switch Home's voice to it so Doddy knows them. Typed questions go to Doddy's server and OpenAI only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connected Apps.", comment: "")
-            : NSLocalizedString("Doddy is an AI, not a person. Notes stay on this iPhone; while a conversation is open they and your last few conversations go to ElevenLabs, or OpenAI if you switch Home's voice to it so Doddy knows them. Typed questions go to Doddy's server and OpenAI only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connected Apps.", comment: "")
-    }
-    @State private var sessionTokenDraft = ""
-    @State private var hasSessionToken = KeychainSessionStore.hasToken
-    @State private var tokenMessage: String?
-    @State private var confirmDeleteAll = false
-    @State private var choosingRestoreFile = false
-    @State private var restorePlan: MemoryRestorePlan?
-    /// List items from the same file (ADR-216), put back after their lists.
-    @State private var restoreItems: [ListItem] = []
-    @State private var restoreMessage: String?
-    @State private var restoreFailed = false
-    @State private var deleteError: String?
-    @AppStorage(PreferenceKey.suggestSavesAfterConversation) private var suggestSaves = true
-    @AppStorage(PreferenceKey.learningOn) private var learningOn = false
-    @AppStorage(PreferenceKey.siriReadsNotes) private var siriReadsNotes = true
-    @State private var editingProfile = false
-    @State private var confirmForget = false
-    @State private var forgetError: String?
+    @AppStorage(TalkLaunchMode.preferenceKey) private var talkLaunchRaw = TalkLaunchMode.default.rawValue
+    @AppStorage(LaunchPreferencesMigration.islandExpandsKey) private var islandExpands = true
+    @AppStorage(VoiceProvider.preferenceKey) private var voiceProvider = ""
     @AppStorage(PreferenceKey.assistantConsent) private var assistantConsent = false
-    @AppStorage(PreferenceKey.assistantUseNotes) private var assistantUseNotes = true
-    @AppStorage(PreferenceKey.gatewayAddress) private var gatewayAddress = ""
-    @State private var showAssistantConsent = false
-    @State private var inviteDraft = ""
-    @State private var hasInviteCode = false
-    @State private var inviteError: String?
-
-    private var environment: AppEnvironment { store.environment }
-    private var privacy: PrivacyDefaults { environment.privacy }
-    private var router: ShortcutRouter { .shared }
-    private var conversationLogs: ConversationLogStore { .shared }
-    private var activityLog: ActivityLogStore { .shared }
     @AppStorage(ConnectionPause.preferenceKey) private var pauseAllConnections = false
+    @AppStorage(LegalAcceptance.preferenceKey) private var legalRecordData: Data?
+    @State private var connections = ConnectionController()
 
-    private var activitySummary: String {
-        let today = activityLog.entries.filter { Calendar.current.isDateInToday($0.at) }.count
-        return activityLog.entries.isEmpty ? "Nothing yet" : "\(today) today"
-    }
-
-    private var backTapStatus: String {
-        switch router.setup.phase {
-        case .notStarted: NSLocalizedString("Not set up", comment: "")
-        case .deferred: NSLocalizedString("Set up later", comment: "")
-        case .userReportedTested(let at): "Tested by you · \(DateText.full(at))"
-        case .guiding, .testing, .receiptReceived: NSLocalizedString("In progress", comment: "")
-        }
-    }
+    private var activityLog: ActivityLogStore { .shared }
 
     var body: some View {
         NavigationStack {
             Form {
-                Section {
-                    JourneyHeading(eyebrow: "Less magic. More control.", title: "Yours to keep.\nYours to change.")
-                    HStack(spacing: 18) {
-                        if DoddyDirector.shared.isActive {
-                            // Motion v2 (Q4): Doddy's spot on Settings is where this picture
-                            // stands, on its own floor (3 pt above the box: the picture's ground
-                            // is at 97 %). No new line: the one Doddy stands here instead of a
-                            // picture of him, in the picture's place (same size, no gap).
-                            Color.clear.frame(width: 73, height: 110)
-                                .overlay(alignment: .bottom) {
-                                    Color.clear.frame(width: 60, height: 1)
-                                        .padding(.bottom, 3)
-                                        .motionSurface(.ledge("settings"))
-                                }
-                        } else {
-                            UploadedCharacterView(assetName: "UploadedDoddy_Privacy", height: 110)
-                        }
-                        Text("You choose each saved memory. See the original, edit it or remove it.")
-                            .font(.subheadline)
-                    }
-                    Text("Text capture and search work locally. Voice has separate network and microphone behaviour, explained below.")
-                        .font(.footnote).foregroundStyle(Theme.secondaryText)
-                }
-                .listRowBackground(Theme.canvas)
-                Section("About this build") {
-                    StatusRow(title: "Version", value: Self.versionText)
-                    Text("Development build. Doddy is an AI assistant, not a person. This memory interface uses your approved numbered-asset design; physical-device and release checks remain outstanding.")
-                }
-
-                Section {
-                    Link(destination: Self.tiktokURL) {
-                        Label("TikTok · doddy_mate", systemImage: "play.rectangle")
-                    }
-                    .accessibilityIdentifier("settings.tiktok")
-                    Link(destination: Self.instagramURL) {
-                        Label("Instagram · doddy_mate", systemImage: "camera")
-                    }
-                    .accessibilityIdentifier("settings.instagram")
-                } header: {
-                    Text("Follow Doddy")
-                } footer: {
-                    Text("Opens TikTok or Instagram outside Doddy. Nothing from the app is shared.")
-                }
-
-                Section("About you") {
-                    if profiles.profile.isEmpty {
-                        Text("Nothing saved. Doddy only keeps what you review and save.")
-                            .foregroundStyle(Theme.secondaryText)
-                    } else {
-                        ForEach(ProfileKey.allCases.filter { profiles.profile.value($0) != nil }, id: \.self) { key in
-                            StatusRow(title: key.label, value: profiles.profile.value(key) ?? "")
-                        }
-                    }
-                    Button(profiles.profile.isEmpty ? "Add preferences" : "Edit") { editingProfile = true }
-                        .disabled(profiles.progress == nil)
-                        .accessibilityIdentifier("settings.editProfile")
-                    Button("Answer the intro questions again") {
-                        Task { await profiles.reopenIntroduction() }
-                    }
-                    .disabled(profiles.progress == nil)
-                    Toggle("Use in voice conversations", isOn: $shareProfileWithVoice)
-                        .accessibilityIdentifier("settings.shareProfileWithVoice")
-                    Button("Forget all of this", role: .destructive) { confirmForget = true }
-                        .disabled(profiles.profile.isEmpty)
-                        .accessibilityIdentifier("settings.forgetProfile")
-                        // On the row that opens it, so on iPad its popover points here (ADR-437).
-                        .confirmationDialog(
-                            "Forget your name and preferences?",
-                            isPresented: $confirmForget, titleVisibility: .visible
-                        ) {
-                            Button("Forget", role: .destructive) { Task { await forgetProfile() } }
-                            Button("Cancel", role: .cancel) {}
-                        } message: {
-                            Text("This removes what you told Doddy in the introduction from this iPhone. Your saved memories stay.")
-                        }
-                    if let forgetError {
-                        Label(forgetError, systemImage: "exclamationmark.triangle")
-                            .foregroundStyle(Theme.error)
-                    }
-                    ShareLink(
-                        item: ProfileJSONExport(profile: profiles.profile),
-                        preview: SharePreview("Doddy profile and settings (JSON)")
-                    ) {
-                        Label("Export with your settings as JSON", systemImage: "square.and.arrow.up")
-                    }
-                    .accessibilityIdentifier("settings.exportProfileJSON")
-                    ShareLink(
-                        item: ProfileTextExport(profile: profiles.profile),
-                        preview: SharePreview("Doddy profile and settings (text)")
-                    ) {
-                        Label("Export with your settings as text", systemImage: "doc.plaintext")
-                    }
-                    .accessibilityIdentifier("settings.exportProfileText")
-                    Text("Stored on this iPhone with your memories, but separately: forgetting these doesn't delete memories, and deleting memories doesn't forget these. With \"Use in voice conversations\" on, these answers are sent to ElevenLabs, or OpenAI if you switch Home's voice to it at the start of each conversation so Doddy knows them; off, they stay on this iPhone.")
-                        .font(.footnote)
-                        .foregroundStyle(Theme.secondaryText)
-                }
-
-                Section("Your memories") {
-                    StatusRow(title: "Saved on this iPhone", value: "\(store.memories.count)")
-                    ShareLink(
-                        item: JSONExport(
-                            records: store.memories + store.lists.map(\.record), listItems: store.lists.flatMap(\.items),
-                            corrections: store.corrections),
-                        preview: SharePreview("Doddy memories (JSON)")
-                    ) {
-                        Label("Export as JSON", systemImage: "square.and.arrow.up")
-                    }
-                    .disabled(!hasSavedAnything)
-                    ShareLink(
-                        item: MemoryExport.plainText(store.memories, lists: store.lists, corrections: store.corrections, exportedAt: .now),
-                        preview: SharePreview("Doddy memories (text)")
-                    ) {
-                        Label("Export as text", systemImage: "doc.plaintext")
-                    }
-                    .disabled(!hasSavedAnything)
-                    ShareLink(
-                        item: MarkdownFileExport(records: store.memories, lists: store.lists, corrections: store.corrections),
-                        preview: SharePreview("Doddy memories (Markdown)")
-                    ) {
-                        Label("Export as Markdown", systemImage: "doc.richtext")
-                    }
-                    .disabled(!hasSavedAnything)
-                    .accessibilityIdentifier("settings.exportMarkdown")
-                    Button {
-                        restoreMessage = nil
-                        choosingRestoreFile = true
-                    } label: {
-                        Label("Restore from a JSON export", systemImage: "square.and.arrow.down")
-                    }
-                    .disabled(!store.isStorageAvailable)
-                    .accessibilityIdentifier("settings.restoreMemories")
-                        // On the row that opens it, so on iPad its popover points here (ADR-437).
-                        .confirmationDialog(
-                            restorePlan.map(RestoreCopy.title) ?? "",
-                            isPresented: Binding(get: { restorePlan != nil }, set: { if !$0 { restorePlan = nil } }),
-                            titleVisibility: .visible,
-                            presenting: restorePlan
-                        ) { plan in
-                            Button(RestoreCopy.action(plan)) { Task { await restore(plan) } }
-                            Button("Cancel", role: .cancel) { restorePlan = nil }
-                        } message: { plan in
-                            Text(RestoreCopy.details(plan))
-                        }
-                    if let restoreMessage {
-                        Label(restoreMessage, systemImage: restoreFailed ? "exclamationmark.triangle" : "checkmark.circle")
-                            .foregroundStyle(restoreFailed ? Theme.error : Theme.confirmed)
-                    }
-                    Button("Delete all memories", role: .destructive) { confirmDeleteAll = true }
-                        .disabled(!hasSavedAnything)
-                        .accessibilityIdentifier("settings.deleteAll")
-                        // On the row that opens it, so on iPad its popover points here (ADR-437).
-                        .confirmationDialog(
-                            deleteAllTitle,
-                            isPresented: $confirmDeleteAll, titleVisibility: .visible
-                        ) {
-                            Button("Delete all", role: .destructive) { Task { await deleteAll() } }
-                            Button("Cancel", role: .cancel) {}
-                        } message: {
-                            Text("This removes every note, every list with its items, the search index and any unfinished notes from this iPhone and can't be undone. Lists you shared stop being shared, so the people you invited lose them too. With Memory on calls on, the copy on your Doddy messaging server is emptied. Exported files and older backups aren't affected. Everything Doddy learned from what you said, and the counts of what you corrected, are removed too. So are the notes and lists rows in What Doddy did.")
-                        }
-                    if let deleteError {
-                        Label(deleteError, systemImage: "exclamationmark.triangle")
-                            .foregroundStyle(Theme.error)
-                    }
-                    Text(memoriesWhereText)
-                        .font(.footnote)
-                        .foregroundStyle(Theme.secondaryText)
-                }
-
-                MorningCheckInSettingsSection()
-
-                EveningWrapUpSettingsSection()
-
-                WeeklyLookBackSettingsSection()
-
-                TidyUpSettingsSection()
-
-                BackupSettingsSection()
-
-                NoteImportSettingsSection()
-
-                WatchSettingsSection()
-
-                // Widgets (ADR-219): what they show, and the switch that empties the shared file.
-                Section("Widgets") {
-                    if WidgetSync.shared.isAvailable {
-                        Toggle("Show notes and lists in widgets", isOn: $widgetsOn)
-                            .accessibilityIdentifier("settings.widgetsOn")
-                        Text(widgetsOn
-                             ? "Widgets show your pinned notes, your next reminders and your lists, shortened. They're kept in a file only Doddy and its widgets can open. On the Lock Screen, iOS hides the text until you unlock. Ticking from a widget needs your iPhone unlocked."
-                             : "Widgets show nothing of yours, and the widgets' file holds nothing of yours.")
-                            .font(.footnote).foregroundStyle(Theme.secondaryText)
-                        if let problem = WidgetSync.shared.problem {
-                            Label(problem, systemImage: "exclamationmark.triangle").foregroundStyle(Theme.error)
-                        }
-                    } else {
-                        Text("This build of Doddy can't share anything with widgets (it isn't signed with Doddy's App Group), so widgets show only \"Open Doddy\".")
-                            .font(.footnote).foregroundStyle(Theme.secondaryText)
-                    }
-                }
-
-                Section("Privacy") {
-                    // ADR-310: Face ID when Doddy opens, and after a minute away.
-                    AppLockToggle()
-                    // The short version that used to sit at the bottom of Home (ADR-326); it follows
-                    // Memory on calls as it did there.
-                    Text(privacySummary)
-                        .font(.footnote)
-                        .foregroundStyle(Theme.secondaryText)
-                        .accessibilityIdentifier("settings.privacySummary")
-                    // iPhone search (ADR-330), off until switched on.
-                    SpotlightToggle()
-                    NavigationLink {
-                        DataFlowView()
-                    } label: {
-                        Label("What leaves this iPhone", systemImage: "arrow.up.right.circle")
-                    }
-                    .accessibilityIdentifier("settings.dataFlow")
-                    StatusRow(title: "Voice sign-in", value: "Optional for notes; required for voice")
-                    // From the same rows as What leaves this iPhone, for the settings right now (ADR-447).
-                    StatusRow(title: "Network", value: privacy.networkRequestsMade ? DataFlow.networkSummary(.current()) : "None")
-                    StatusRow(
-                        title: "Microphone",
-                        value: !privacy.microphoneUsed ? "Not used"
-                            : listenOnOpen ? "Only while talking. A conversation starts when you open Doddy; turn that off under Voice"
-                            : "Only while talking")
-                    StatusRow(title: "Analytics and telemetry", value: privacy.analyticsEnabled || privacy.contentTelemetryEnabled ? "On" : "Off (not built)")
-                    StatusRow(title: "Cloud AI", value: privacy.cloudAIEnabled ? DataFlow.cloudAISummary(.current()) : "Off (not built)")
-                    StatusRow(title: "Sync", value: privacy.syncText)
-                    // DataFlow (What leaves this iPhone) restates this paragraph row by row; change both together.
-                    Text("Your notes stay on this iPhone. During a voice conversation, your voice, the conversation, your saved notes (except ones you mark Private), your list names (a list's items only when Doddy reads or changes it), your personality settings, and (if switched on) your last few conversations and your introduction answers are sent to ElevenLabs, or OpenAI if you switch Home's voice to it, which runs the voice agent. Calendar entries, contact names and birthdays (day and month) or message drafts Doddy uses in a conversation go too. When you ask for weather or facts with ElevenLabs as the voice, it looks them up for Doddy: the place name and coordinates go to Open-Meteo, and search words go to Wikipedia; this app makes no such requests itself. ElevenLabs keeps a recording and transcript of each conversation it runs; how long OpenAI keeps the audio and transcript isn't verified in this build. When you sign in with Apple, its identity token is sent to Doddy’s server for verification. Voice requests use a short-lived Doddy session credential; this server does not receive your voice, transcripts, notes or profile details for token requests. If you use Connected Apps or switch on an online-account tool, the app sends what you ask (a date, a search word, or the text of a draft, reply or task you confirm) to your Doddy server, which talks to Google, Microsoft (Outlook), Notion or Todoist through Composio, and the results come back to the app and, during a conversation, to ElevenLabs, or OpenAI if you switch Home's voice to it so Doddy can answer; your saved notes are never sent to that server. If you ask Siri \u{201C}Ask Doddy what I saved\u{201D} (it can be turned off below), Doddy searches on this iPhone and hands the matching note to Siri, Apple's assistant, to read aloud; Siri handles what you say and the answer under your Siri settings. If you switch on web search, your search words go the same way to your Doddy server, which looks them up through Monid (a paid search service Doddy's server uses; you don't sign in to it). If you turn on Ask Doddy, typed questions (and, if you allow it, saved notes that match them) go to the Ask Doddy gateway, a separate server, which passes them to OpenAI. If a Doddy messaging server is set and you turn on notifications, texts, phone calls or daily news, it gets an anonymous account token, this iPhone's notification token, your phone number once you confirm it with a code, and the news topics you pick; it sends through Apple and Twilio, runs calls on ElevenLabs, and writes the news with an AI (Anthropic or OpenAI, as the server is set up; Daily news names which) and GNews. Your saved notes go there only if you turn on \u{201C}Let Doddy use my memories on calls\u{201D}. If you search for a place for a reminder, the words you type (and roughly where you are, if Doddy already knows) go to Apple Maps; the place you pick stays on this iPhone, and iOS, not Doddy, notices when you get there. In translator mode the other person's voice goes to ElevenLabs, or OpenAI if you switch Home's voice to it too (listen only hears whoever is near you); started from Translate on Home, your notes, conversations and profile aren't sent, and nothing of it is kept on this iPhone unless you tap Copy or Save within 5 minutes. If you share a list, its name and items go to your iCloud (Apple) and to the people you invite, and their changes come back; a list reminder's place goes there too only if you tap Share this place. If you ask Doddy to convert money, the app downloads the European Central Bank's public exchange-rate file; nothing about you is sent with it. If you switch on Read an email or Read a Notion page, the one email (sender, subject and its text) or page (title and text) you ask about, cut short, comes from your Doddy server and goes to ElevenLabs, or OpenAI if you switch Home's voice to it during that conversation. Text you share to Doddy from another app, to-dos found in a voice memo and your Focus settings stay on this iPhone; the parking widget shows when you parked and your note, never where. If you ask Doddy to remind you when to leave, where your iPhone is and the place you're going go to Apple Maps once, to work out the travel time; neither is kept. If you turn on Show notes in iPhone search, your notes and lists (never private ones) are indexed by iOS on this iPhone. Nothing else is sent anywhere.")
-                        .font(.footnote)
-                        .foregroundStyle(Theme.secondaryText)
-                }
-                .accessibilityIdentifier("settings.privacy")
-
-                Section {
-                    NavigationLink {
-                        ConnectedAppsScreen()
-                    } label: {
-                        Label("Connected Apps", systemImage: "link")
-                    }
-                    .accessibilityIdentifier("settings.connectedApps")
-                } header: {
-                    Text("Connected Apps")
-                } footer: {
-                    Text("Google Calendar, read-only. Shows tomorrow's events when you ask; nothing is saved unless you tap Save.")
-                }
-
-                Section {
-                    NavigationLink {
-                        OnlineAccountsScreen()
-                    } label: {
-                        Label("Online accounts", systemImage: "switch.2")
-                    }
-                    .accessibilityIdentifier("settings.onlineAccounts")
-                } header: {
-                    Text("Online accounts")
-                } footer: {
-                    Text("Gmail, Google Drive, Notion and Todoist through Composio, with a switch for every tool. All off until you turn them on; anything that adds or creates asks you first.")
-                }
-
-                Section {
-                    TextField("Server address (https://…)", text: $connectedAppsServerURL)
-                        .font(.body.monospaced())
-                        .keyboardType(.URL)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .accessibilityIdentifier("settings.connectedAppsServer")
-                    if hasSessionToken {
-                        StatusRow(title: "Session token", value: "Saved in Keychain")
-                        Button("Remove session token", role: .destructive) {
-                            KeychainSessionStore.delete()
-                            hasSessionToken = false
-                            tokenMessage = nil
-                        }
-                    } else {
-                        SecureField("Session token", text: $sessionTokenDraft)
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                            .accessibilityIdentifier("settings.connectedAppsToken")
-                        Button("Save session token") {
-                            let token = sessionTokenDraft.trimmingCharacters(in: .whitespacesAndNewlines)
-                            // The token is kept for this server only and never sent to another (DOD-11).
-                            if let server = URL(string: connectedAppsServerURL.trimmingCharacters(in: .whitespaces)),
-                               server.scheme != nil, server.host != nil {
-                                if KeychainSessionStore.save(token, issuedBy: server) {
-                                    hasSessionToken = true
-                                    tokenMessage = nil
-                                } else {
-                                    tokenMessage = "The Keychain didn't accept the token, so it wasn't saved."
-                                }
-                                sessionTokenDraft = ""
-                            } else {
-                                tokenMessage = "Enter the server address first. The token is kept for that server only."
-                            }
-                        }
-                        .disabled(sessionTokenDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    }
-                    if let tokenMessage {
-                        Label(tokenMessage, systemImage: "exclamationmark.triangle").foregroundStyle(Theme.error)
-                    }
-                } header: {
-                    Text("Connected Apps server (development)")
-                } footer: {
-                    Text("Development setting. Use https, or http://localhost with the Simulator. The token comes from the server owner and is stored only in this iPhone's Keychain, for the server address set when you saved it; it is never sent to another address.")
-                }
-
-                Section("What Doddy knows") {
-                    Toggle("Remember recent conversations", isOn: $rememberConversations)
-                        .accessibilityIdentifier("settings.rememberConversations")
-                    NavigationLink {
-                        RememberedConversationsView(store: conversationLogs)
-                    } label: {
-                        StatusRow(title: "Remembered conversations", value: "\(conversationLogs.logs.count) of the last \(ConversationLogStore.maxLogs)")
-                    }
-                    .accessibilityIdentifier("settings.rememberedConversations")
-                    Button("Forget remembered conversations", role: .destructive) { conversationLogs.clear() }
-                        .disabled(conversationLogs.logs.isEmpty)
-                    // ADR-247: "Worth keeping?" after a voice conversation.
-                    Toggle("Suggest notes after a conversation", isOn: $suggestSaves)
-                        .accessibilityIdentifier("settings.suggestSaves")
-                    Text("When a conversation ends, Doddy may offer up to three things you said, in your words, to save as notes. Nothing is ticked and nothing is saved unless you tap Save. They're picked on this iPhone; never for a private conversation, and never passwords or card numbers.")
-                        .font(.footnote)
-                        .foregroundStyle(Theme.secondaryText)
-                    if let learning = store.learning, learning.isAvailable {
-                        // ADR-440: facts and routines Doddy kept, each confirmed by the user.
-                        NavigationLink {
-                            LearnedView(learning: learning)
-                        } label: {
-                            StatusRow(
-                                title: "What I've learned",
-                                value: learningOn
-                                    ? "On · \(learning.confirmedFacts.count + learning.confirmedProcedures.count)"
-                                    : "Off")
-                        }
-                        .accessibilityIdentifier("settings.learned")
-                    }
-                    if let problem = conversationLogs.problem {
-                        Label(problem, systemImage: "exclamationmark.triangle")
-                            .foregroundStyle(Theme.error)
-                    }
-                    Text("When a conversation starts, the app hands Doddy your saved notes and, if this is on, your last few conversations, so he can carry on where you left off. They are kept only on this iPhone. Weather comes from Open-Meteo and facts from Wikipedia.")
-                        .font(.footnote)
-                        .foregroundStyle(Theme.secondaryText)
-                }
-
-                if environment.capabilities.isAvailable(.noteReminders) {
-                    NoteReminderSettingsSection()
-                }
-
-                Section("Voice") {
-                    PersonalityLinkRow()
-                    // The Dynamic Island and Lock Screen styles: iPhone only (ADR-432, ADR-453).
-                    if DeviceSupport.hasDynamicIsland { IslandStyleLinkRow() }
-                    Toggle("Start listening when I open Doddy", isOn: $listenOnOpen)
-                        .accessibilityIdentifier("settings.listenOnOpen")
-                    Text(listenOnOpen
-                        ? "When you open Doddy (after the opening, if that's on), Talk to Doddy opens by itself and listens until you end the conversation, as if you had tapped the button. It starts by itself only after you've allowed the microphone, which iOS asks the first time you tap Talk to Doddy; iOS shows its orange indicator while Doddy listens. Coming back within five minutes doesn't start another one. It doesn't start when you open Doddy from Back Tap or Siri, which start their own."
-                        : "Off: nothing listens until you tap Talk to Doddy.")
-                        .font(.footnote)
-                        .foregroundStyle(Theme.secondaryText)
-                        .accessibilityIdentifier("settings.listenOnOpen.note")
-                    VoiceProviderPicker(idPrefix: "settings")
-                    #if DEBUG
-                    Toggle("Developer: talk without Apple sign-in", isOn: $directVoice)
-                        .accessibilityIdentifier("settings.directVoice")
-                    Text("Debug builds only. Connects straight to Doddy's ElevenLabs agent, so voice works with a free Apple ID. Turn it off to try the real Apple sign-in. Release and TestFlight builds always use a voice account.")
-                        .font(.footnote)
-                        .foregroundStyle(Theme.secondaryText)
-                    #endif
-                    VoiceAccountSettings()
-                    StatusRow(title: "Connection", value: connectionText)
-                        .accessibilityIdentifier("settings.voiceConnection")
-                    Text("Doddy keeps your voice session on this iPhone. When you start a conversation, it requests a short-lived connection credential from Doddy’s server. Your voice and conversation go to the selected provider only after you agree on first use. You never need a provider key or access code.")
-                        .font(.footnote)
-                        .foregroundStyle(Theme.secondaryText)
-                }
-
-                Section {
-                    // Back Tap exists only on iPhone (ADR-337).
-                    if DeviceSupport.hasBackTap {
-                        StatusRow(title: "Double Back Tap", value: backTapStatus)
-                            .accessibilityIdentifier("settings.backTap.status")
-                        // The Back Tap guide, the Action Button, the controls and Siri (ADR-558).
-                        Button("Ways to open Doddy") {
-                            router.isSetupPresented = true
-                        }
-                        .accessibilityIdentifier("settings.backTap")
-                        // One reminder a week for four weeks, until a way is in use (ADR-559).
-                        Toggle("Remind me about ways to open Doddy", isOn: Binding(
-                            get: { !router.setup.offer.remindersOff },
-                            set: { on in
-                                router.setup.setReminders(on: on)
-                                Task { await OpenWaysReminderScheduler.refresh(router.setup) }
-                            }))
-                            .accessibilityIdentifier("settings.waysReminder")
-                        Text("One quiet reminder a week for four weeks, only until you use a way to open Doddy. It is sent only if notifications are already allowed; Doddy doesn't ask for them just for this.")
-                            .font(.footnote)
-                            .foregroundStyle(Theme.secondaryText)
-                    }
-                    // What "Talk to Doddy" does, for Back Tap, the Action Button, Siri and the control.
-                    Picker("When I use Talk to Doddy", selection: $backTapActionRaw) {
-                        Text("Big island: start a conversation").tag(BackTapAction.conversation.rawValue)
-                        Text("Small island: start a conversation").tag(BackTapAction.smallIsland.rawValue)
-                        Text("Only open Doddy").tag(BackTapAction.openApp.rawValue)
-                    }
-                    .accessibilityIdentifier("settings.backTapAction")
-                    Text("\"Talk to Doddy\" is built in as a shortcut for Siri, the Shortcuts app and the Action Button, and on iOS 18 or later as a control you can add to Control Center or the Lock Screen (edit Control Center, then Add a Control, then search Doddy). Back Tap and controls are placed by you; Doddy can't add them and can't see whether they're set.")
-                        .font(.footnote)
-                        .foregroundStyle(Theme.secondaryText)
-                    // ADR-248: "Ask Doddy what I saved".
-                    Toggle("Siri can read my notes aloud", isOn: $siriReadsNotes)
-                        .accessibilityIdentifier("settings.siriReadsNotes")
-                    Text("Say \"Ask Doddy what I saved\", then what you're looking for. Doddy searches your notes on this iPhone and Siri reads the matching note and when you saved it, without opening the app. Your iPhone must be unlocked. Siri is Apple's: it hears your request and speaks the answer, under your Siri settings.")
-                        .font(.footnote)
-                        .foregroundStyle(Theme.secondaryText)
-                } header: {
-                    if DeviceSupport.hasBackTap { Text("Back Tap and Siri") } else { Text("Siri") }
-                }
-
-                Section {
-                    Toggle("Pause all connections", isOn: $pauseAllConnections)
-                        .accessibilityIdentifier("settings.pauseAll")
-                    NavigationLink {
-                        ConnectionsView()
-                    } label: {
-                        StatusRow(title: "Calendar, reminders, contacts", value: connectionSummary)
-                    }
-                    .accessibilityIdentifier("settings.connections")
-                    // Connections uses its own controller; re-read when coming back from it.
-                    .onAppear { Task { await connections.refresh() } }
-                    NavigationLink {
-                        ActivityView()
-                    } label: {
-                        StatusRow(title: "What Doddy did", value: activitySummary)
-                    }
-                    .accessibilityIdentifier("settings.activity")
-                    NavigationLink {
-                        AlarmsView()
-                    } label: {
-                        Label("Alarms", systemImage: "alarm")
-                    }
-                    .accessibilityIdentifier("settings.alarms")
-                    NavigationLink {
-                        BirthdaysView()
-                    } label: {
-                        Label("Birthdays", systemImage: "gift")
-                    }
-                    .accessibilityIdentifier("settings.birthdays")
-                    NavigationLink {
-                        PlanPracticeView()
-                    } label: {
-                        Label("Try a plan card", systemImage: "checklist")
-                    }
-                    .accessibilityIdentifier("settings.planPractice")
-                } header: {
-                    Text("Connections")
-                } footer: {
-                    HStack(alignment: .top, spacing: 12) {
-                        // Paused: Doddy lies low, crouching (ADR-323).
-                        if pauseAllConnections { WholeDoddyView(pose: .sneakyCrouch, height: 56) }
-                        Text(pauseAllConnections
-                            ? "Paused: Doddy doesn't use Calendar, Reminders, Contacts, Timers, Maps, Shortcuts, Messages or your online accounts. Your notes still work. Turning this off brings back the ones you had on; iPhone permissions don't change."
-                            : "Each one starts off. Turning one on asks iPhone for permission first.")
-                    }
-                }
-
-                Section {
-                    NavigationLink {
-                        UpdatesSettingsView()
-                    } label: {
-                        Label("Notifications and texts", systemImage: "bell")
-                    }
-                    .accessibilityIdentifier("settings.updates")
-                    NavigationLink {
-                        NewsSettingsView()
-                    } label: {
-                        Label("Daily news", systemImage: "newspaper")
-                    }
-                    .accessibilityIdentifier("settings.news")
-                    NavigationLink {
-                        CallsSettingsView()
-                    } label: {
-                        Label("Phone calls", systemImage: "phone")
-                    }
-                    .accessibilityIdentifier("settings.calls")
-                } header: {
-                    Text("Messages from Doddy")
-                } footer: {
-                    Text("Needs a Doddy messaging server. Each one is off until you turn it on.")
-                }
-
-                Section("Ask Doddy (typed questions)") {
-                    Toggle("Turn on Ask Doddy", isOn: Binding(
-                        get: { assistantConsent },
-                        set: { wanted in
-                            if wanted { showAssistantConsent = true } else { assistantConsent = false }
-                        }))
-                        .accessibilityIdentifier("settings.assistantConsent")
-                        // On the row that opens it, so on iPad its popover points here (ADR-437).
-                        .confirmationDialog(
-                            "Turn on Ask Doddy?",
-                            isPresented: $showAssistantConsent, titleVisibility: .visible
-                        ) {
-                            Button("Turn on") { assistantConsent = true }
-                            Button("Not now", role: .cancel) {}
-                        } message: {
-                            Text("When you ask a question, it is sent with your last few messages to Doddy's server, which passes it to OpenAI to write the answer. If \"Use relevant saved notes\" is on, notes that match your question are sent too, and the answer shows which ones. Doddy's server does not store them and logs no text. We ask OpenAI not to keep the reply, but we can't verify that. Voice conversations are separate. You can turn this off at any time.")
-                        }
-                    Toggle("Use relevant saved notes", isOn: $assistantUseNotes)
-                        .disabled(!assistantConsent)
-                        .accessibilityIdentifier("settings.assistantUseNotes")
-                    TextField("Gateway address (https://…)", text: $gatewayAddress)
-                        .keyboardType(.URL)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .accessibilityIdentifier("settings.gatewayAddress")
-                    if !gatewayAddress.isEmpty && GatewayConfiguration(string: gatewayAddress) == nil {
-                        Label("That isn't a valid https address.", systemImage: "exclamationmark.triangle")
-                            .foregroundStyle(Theme.error)
-                    }
-                    SecureField(hasInviteCode ? "Invite code saved. Enter a new one to replace it" : "Invite code", text: $inviteDraft)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .accessibilityIdentifier("settings.inviteCode")
-                    Button("Save invite code") { Task { await saveInviteCode() } }
-                        .disabled(inviteDraft.trimmingCharacters(in: .whitespacesAndNewlines).count < 4)
-                    if hasInviteCode {
-                        Button("Remove invite code", role: .destructive) { Task { await removeInviteCode() } }
-                    }
-                    if let inviteError {
-                        Label(inviteError, systemImage: "exclamationmark.triangle")
-                            .foregroundStyle(Theme.error)
-                    }
-                    StatusRow(title: "Status", value: assistantStatus)
-                        .accessibilityIdentifier("settings.assistantStatus")
-                    Text("Private-beta feature. Doddy's server keeps the AI key, so no key is stored on your iPhone. The invite code and a random install ID (not linked to you) are kept in the iOS Keychain on this iPhone to prove it may use the server.")
-                        .font(.footnote)
-                        .foregroundStyle(Theme.secondaryText)
-                }
-                .task { await refreshInviteState() }
-
-                AppLanguageSettingsSection()
-
-                Section("Appearance and accessibility") {
-                    Picker("Appearance", selection: $appearanceRaw) {
-                        ForEach(AppearancePreference.allCases, id: \.rawValue) { option in
-                            Text(option.rawValue.capitalized).tag(option.rawValue)
-                        }
-                    }
-                    Toggle("Hide character artwork", isOn: $hideCharacterArt)
-                    Text("On your first launch, Doddy makes a quick basketball entrance. You can skip it; with Reduce Motion on, it stays calm and still. Voice and microphone access never start from the intro.")
-                        .font(.footnote)
-                        .foregroundStyle(Theme.secondaryText)
-                    Text("Text size follows your iOS settings, including larger accessibility sizes.")
-                        .font(.footnote)
-                        .foregroundStyle(Theme.secondaryText)
-                }
-
-                Section("What's built") {
-                    ForEach(Capability.allCases, id: \.self) { capability in
-                        StatusRow(
-                            title: capability.displayName,
-                            value: StatusCopy.text(for: environment.capabilities.status(of: capability)))
-                    }
-                }
-                .accessibilityIdentifier("settings.capabilities")
+                header
+                profileSection
+                voiceSection
+                memorySection
+                connectedAppsSection
+                notificationsSection
+                aboutSection
             }
             .scrollContentBackground(.hidden)
             .background(Theme.canvas)
@@ -653,41 +38,272 @@ struct SettingsView: View {
             .navigationTitle("Settings")
             .toolbar(.hidden, for: .tabBar)
             .navigationBarTitleDisplayMode(.inline)
-            .fileImporter(isPresented: $choosingRestoreFile, allowedContentTypes: [.json]) { result in
-                prepareRestore(result)
-            }
-            .sheet(isPresented: $editingProfile) { ProfileEditSheet() }
-            // Motion v2 (MV3): a sheet or the file picker hides him in the frame it starts.
-            .coversDoddy(editingProfile || choosingRestoreFile)
         }
         .foregroundStyle(Theme.ink)
     }
 
-    /// Where memories are, as switched on now (DOD-11): never "only on this iPhone" while a copy is
-    /// on the messaging server or a list is shared through iCloud.
-    private var memoriesWhereText: String {
-        let sharedLists = SharedListsController.shared.links.count
-        guard memoryCopyOn || sharedLists > 0 else {
-            return NSLocalizedString("Memories live only in this app on this iPhone, protected by iOS Data Protection. Like other app data they are included in your iPhone backups. Photos and voice memos added to notes stay on this iPhone and aren't in exports; they go in an encrypted backup file only if you include them. Deleting a note deletes its photo and recording. Voice memos are written out on this iPhone, never sent. Deleting here does not remove files you exported or older backups. Your answers under About you and your voice and personality settings are exported there, not here.", comment: "")
+    // MARK: Groups
+
+    private var header: some View {
+        Section {
+            JourneyHeading(eyebrow: "Less magic. More control.", title: "Yours to keep.\nYours to change.")
+            HStack(spacing: 18) {
+                if DoddyDirector.shared.isActive {
+                    // Motion v2 (Q4): Doddy's spot on Settings is where this picture
+                    // stands, on its own floor (3 pt above the box: the picture's ground
+                    // is at 97 %). No new line: the one Doddy stands here instead of a
+                    // picture of him, in the picture's place (same size, no gap).
+                    Color.clear.frame(width: 73, height: 110)
+                        .overlay(alignment: .bottom) {
+                            Color.clear.frame(width: 60, height: 1)
+                                .padding(.bottom, 3)
+                                .motionSurface(.ledge("settings"))
+                        }
+                } else {
+                    UploadedCharacterView(assetName: "UploadedDoddy_Privacy", height: 110)
+                }
+                Text("You choose each saved memory. See the original, edit it or remove it.")
+                    .font(.subheadline)
+            }
         }
-        var text = NSLocalizedString("Memories are kept in this app on this iPhone, protected by iOS Data Protection. Like other app data they are included in your iPhone backups. Photos and voice memos added to notes stay on this iPhone and aren't in exports; they go in an encrypted backup file only if you include them. Deleting a note deletes its photo and recording. Voice memos are written out on this iPhone, never sent. Deleting here does not remove files you exported or older backups. Your answers under About you and your voice and personality settings are exported there, not here.", comment: "")
-        if memoryCopyOn {
-            text += " " + NSLocalizedString("With Memory on calls on, a copy of your notes is also on your Doddy messaging server.", comment: "")
-        }
-        if sharedLists > 0 {
-            text += " " + NSLocalizedString("Lists you share are also in iCloud and with the people you invited.", comment: "")
-        }
-        return text
+        .listRowBackground(Theme.canvas)
     }
 
-    /// Lists are memories too: they are exported and deleted with the notes (DOD-06).
-    private var hasSavedAnything: Bool { !store.memories.isEmpty || !store.lists.isEmpty }
+    private var profileSection: some View {
+        Section("Profile") {
+            NavigationLink {
+                AboutYouSettingsView()
+            } label: {
+                StatusRow(title: "My profile", value: profiles.profile.isEmpty ? NSLocalizedString("Not set", comment: "") : (profiles.profile.value(.name) ?? NSLocalizedString("Saved", comment: "")))
+            }
+            .accessibilityIdentifier("settings.profile")
+            PersonalityLinkRow()
+            NavigationLink {
+                Form { AppLanguageSettingsSection() }
+                    .navigationTitle("Language")
+            } label: {
+                StatusRow(title: "Language", value: AppLanguageStore.chosen().nativeName ?? NSLocalizedString("Same as this iPhone", comment: ""))
+            }
+            .accessibilityIdentifier("settings.language")
+            NavigationLink {
+                AppearanceSettingsView()
+            } label: {
+                Text("Appearance")
+            }
+            .accessibilityIdentifier("settings.appearance")
+        }
+    }
 
-    /// Names everything Delete all removes, notes and lists, never notes alone.
-    private var deleteAllTitle: String {
-        String(
-            format: NSLocalizedString("Delete all %lld notes and %lld lists?", comment: ""),
-            store.memories.count, store.lists.count)
+    private var voiceSection: some View {
+        Section {
+            NavigationLink {
+                VoiceSettingsView()
+            } label: {
+                StatusRow(title: "Voice", value: VoiceProvider.effective(stored: voiceProvider, tokenServerSet: true).shortName)
+            }
+            .accessibilityIdentifier("settings.voice")
+            // What Doddy's "Talk to Doddy" control does (ADR-579). Which control the button runs is
+            // set in iPhone Settings; the footer says where.
+            Picker("Action Button", selection: $talkLaunchRaw) {
+                Text("Dynamic Island").tag(TalkLaunchMode.dynamicIsland.rawValue)
+                Text("Open App").tag(TalkLaunchMode.openApp.rawValue)
+                Text("Automatic").tag(TalkLaunchMode.automatic.rawValue)
+            }
+            .accessibilityIdentifier("settings.actionButton")
+            // The island and its styles: iPhone only (ADR-432, ADR-453).
+            if DeviceSupport.hasDynamicIsland {
+                IslandStyleLinkRow()
+                Toggle("Expand when Doddy speaks", isOn: $islandExpands)
+                    .accessibilityIdentifier("settings.islandExpands")
+            }
+            NavigationLink {
+                WaysSettingsView()
+            } label: {
+                if DeviceSupport.hasBackTap { Text("Siri and Back Tap") } else { Text("Siri") }
+            }
+            .accessibilityIdentifier("settings.ways")
+        } header: {
+            Text("Voice and interaction")
+        } footer: {
+            Text(actionButtonFooter)
+                .accessibilityIdentifier("settings.actionButton.note")
+        }
+    }
+
+    private var actionButtonFooter: String {
+        let what: String
+        switch TalkLaunchMode.stored(talkLaunchRaw) {
+        case .dynamicIsland: what = NSLocalizedString("Talk without opening Doddy. Press again to end.", comment: "")
+        case .openApp: what = NSLocalizedString("Opens Doddy and starts talking.", comment: "")
+        case .automatic: what = NSLocalizedString("Uses the Dynamic Island, or opens Doddy when something needs setting up first.", comment: "")
+        }
+        return what + " " + NSLocalizedString("To add Doddy: iPhone Settings › Action Button › Controls › Talk to Doddy.", comment: "")
+    }
+
+    private var memorySection: some View {
+        Section("Memory and privacy") {
+            NavigationLink {
+                MemoriesSettingsView()
+            } label: {
+                StatusRow(title: "Memories", value: "\(store.memories.count)")
+            }
+            .accessibilityIdentifier("settings.memories")
+            NavigationLink {
+                KnowledgeSettingsView()
+            } label: {
+                Text("What Doddy knows")
+            }
+            .accessibilityIdentifier("settings.knowledge")
+            NavigationLink {
+                PrivacySettingsView()
+            } label: {
+                Text("Privacy")
+            }
+            .accessibilityIdentifier("settings.privacyScreen")
+        }
+    }
+
+    private var connectedAppsSection: some View {
+        Section {
+            Toggle("Pause all connections", isOn: $pauseAllConnections)
+                .accessibilityIdentifier("settings.pauseAll")
+            NavigationLink {
+                ConnectionsView()
+            } label: {
+                StatusRow(title: "Calendar, reminders, contacts", value: connectionSummary)
+            }
+            .accessibilityIdentifier("settings.connections")
+            // Connections uses its own controller; re-read when coming back from it.
+            .onAppear { Task { await connections.refresh() } }
+            NavigationLink {
+                ConnectedAppsScreen()
+            } label: {
+                Text("Connected Apps")
+            }
+            .accessibilityIdentifier("settings.connectedApps")
+            NavigationLink {
+                OnlineAccountsScreen()
+            } label: {
+                Text("Online accounts")
+            }
+            .accessibilityIdentifier("settings.onlineAccounts")
+            NavigationLink {
+                AskDoddySettingsView()
+            } label: {
+                StatusRow(title: "Ask Doddy (typed questions)", value: assistantConsent ? NSLocalizedString("On", comment: "") : NSLocalizedString("Off", comment: ""))
+            }
+            .accessibilityIdentifier("settings.askDoddy")
+            NavigationLink {
+                ActivityView()
+            } label: {
+                StatusRow(title: "What Doddy did", value: activitySummary)
+            }
+            .accessibilityIdentifier("settings.activity")
+        } header: {
+            Text("Connected apps")
+        } footer: {
+            HStack(alignment: .top, spacing: 12) {
+                // Paused: Doddy lies low, crouching (ADR-323).
+                if pauseAllConnections { WholeDoddyView(pose: .sneakyCrouch, height: 56) }
+                Text(pauseAllConnections
+                    ? "Paused: Doddy doesn't use Calendar, Reminders, Contacts, Timers, Maps, Shortcuts, Messages or your online accounts. Your notes still work. Turning this off brings back the ones you had on; iPhone permissions don't change."
+                    : "Each one starts off. Turning one on asks iPhone for permission first.")
+            }
+        }
+    }
+
+    private var notificationsSection: some View {
+        Section("Notifications") {
+            NavigationLink {
+                UpdatesSettingsView()
+            } label: {
+                Text("Notifications and texts")
+            }
+            .accessibilityIdentifier("settings.updates")
+            NavigationLink {
+                RoutinesSettingsView()
+            } label: {
+                Text("Check-ins and reminders")
+            }
+            .accessibilityIdentifier("settings.routines")
+            NavigationLink {
+                AlarmsView()
+            } label: {
+                Text("Alarms")
+            }
+            .accessibilityIdentifier("settings.alarms")
+            NavigationLink {
+                BirthdaysView()
+            } label: {
+                Text("Birthdays")
+            }
+            .accessibilityIdentifier("settings.birthdays")
+            NavigationLink {
+                NewsSettingsView()
+            } label: {
+                Text("Daily news")
+            }
+            .accessibilityIdentifier("settings.news")
+            NavigationLink {
+                CallsSettingsView()
+            } label: {
+                Text("Phone calls")
+            }
+            .accessibilityIdentifier("settings.calls")
+        }
+    }
+
+    private var aboutSection: some View {
+        Section {
+            Link(destination: Self.helpURL) {
+                Label("Help", systemImage: "questionmark.circle")
+            }
+            .accessibilityIdentifier("settings.help")
+            NavigationLink {
+                PlanPracticeView()
+            } label: {
+                Text("Try a plan card")
+            }
+            .accessibilityIdentifier("settings.planPractice")
+            Link(destination: LegalDocuments.url(.terms, languageCode: Self.languageCode)) {
+                Label("Terms & Conditions", systemImage: "doc.text")
+            }
+            .accessibilityIdentifier("settings.terms")
+            Link(destination: LegalDocuments.url(.privacy, languageCode: Self.languageCode)) {
+                Label("Privacy Policy", systemImage: "hand.raised")
+            }
+            .accessibilityIdentifier("settings.privacyPolicy")
+            if let accepted = LegalAcceptance.decode(legalRecordData) {
+                StatusRow(title: "Terms accepted", value: DateText.full(accepted.acceptedAt))
+                    .accessibilityIdentifier("settings.termsAccepted")
+            }
+            Link(destination: Self.tiktokURL) {
+                Label("TikTok · doddy_mate", systemImage: "play.rectangle")
+            }
+            .accessibilityIdentifier("settings.tiktok")
+            Link(destination: Self.instagramURL) {
+                Label("Instagram · doddy_mate", systemImage: "camera")
+            }
+            .accessibilityIdentifier("settings.instagram")
+            StatusRow(title: "Version", value: Self.versionText)
+            NavigationLink {
+                AdvancedSettingsView()
+            } label: {
+                Text("Advanced")
+            }
+            .accessibilityIdentifier("settings.advanced")
+        } header: {
+            Text("About")
+        } footer: {
+            Text("Doddy is an AI, not a person. Links open outside Doddy; nothing from the app is shared.")
+        }
+    }
+
+    // MARK: Values
+
+    private var activitySummary: String {
+        let today = activityLog.entries.filter { Calendar.current.isDateInToday($0.at) }.count
+        return activityLog.entries.isEmpty ? NSLocalizedString("Nothing yet", comment: "") : "\(today) today"
     }
 
     private var connectionSummary: String {
@@ -696,416 +312,23 @@ struct SettingsView: View {
         return on == 0 ? "All off" : "\(on) of \(VoiceConnection.allCases.count) on"
     }
 
-    private var connectionText: String {
-        VoiceSessionKeychain.refreshToken() == nil
-            ? NSLocalizedString("Sign in on first use", comment: "")
-            : NSLocalizedString("Doddy voice account", comment: "")
-    }
+    /// The language the screens are showing, for the Polish or English legal pages.
+    static var languageCode: String? { Bundle.main.preferredLocalizations.first }
 
-    private static let assistantUnavailable = "Ask Doddy isn't available while Doddy's storage can't be opened."
-
-    private var assistantStatus: String {
-        if !assistantConsent { return "Off" }
-        if environment.assistant == nil { return NSLocalizedString("Not available (storage problem)", comment: "") }
-        if GatewayConfiguration(string: gatewayAddress) == nil { return NSLocalizedString("Needs a gateway address", comment: "") }
-        if !hasInviteCode { return NSLocalizedString("Needs an invite code", comment: "") }
-        return NSLocalizedString("Ready (not yet tested with a real server)", comment: "")
-    }
-
-    private func refreshInviteState() async {
-        guard let credentials = environment.assistant?.credentials else { return }
-        hasInviteCode = ((try? await credentials.inviteCode()) ?? nil) != nil
-    }
-
-    private func saveInviteCode() async {
-        guard let credentials = environment.assistant?.credentials else {
-            inviteError = Self.assistantUnavailable
-            return
-        }
-        let code = inviteDraft.trimmingCharacters(in: .whitespacesAndNewlines)
-        do {
-            try await credentials.setInviteCode(code)
-            try await credentials.setToken(nil) // a new code needs a new token
-            inviteDraft = ""
-            inviteError = nil
-            hasInviteCode = true
-        } catch {
-            inviteError = "Couldn't save the invite code on this iPhone."
-        }
-    }
-
-    private func removeInviteCode() async {
-        guard let credentials = environment.assistant?.credentials else {
-            inviteError = Self.assistantUnavailable
-            return
-        }
-        do {
-            try await credentials.setInviteCode(nil)
-            try await credentials.setToken(nil)
-            inviteError = nil
-            hasInviteCode = false
-        } catch {
-            inviteError = "Couldn't remove the invite code."
-        }
-    }
-
-    /// Stops sharing the user's own shared lists first (their iCloud copy is deleted for everyone),
-    /// then deletes on this iPhone, then empties the server copy if Memory on calls is on and
-    /// waits for the server's answer. Whatever couldn't be undone outside this iPhone is said
-    /// plainly, never covered by "deleted" (DOD-06/11).
-    private func deleteAll() async {
-        let stillShared = await SharedListsController.shared.stopAllOwnedShares()
-        let stillSharedNames = stillShared.compactMap { store.list(id: $0)?.name }
-        do {
-            try await store.deleteAll()
-            // Everything Doddy learned and the counts of corrections go with the notes (ADR-440).
-            try await store.learning?.deleteAll()
-            // Calls Doddy made for the user: cards, answers and transcripts on this iPhone (ADR-500).
-            try await environment.callCaseRepository.deleteAll()
-            // Tasks handed to Doddy (ADR-570): words and results kept on this iPhone.
-            try await environment.errandRepository.deleteAll()
-            UserDefaults.standard.removeObject(forKey: PreferenceKey.pinnedNotes)
-        } catch {
-            deleteError = UserFacingError.message(for: error)
-            return
-        }
-        var problems: [String] = []
-        if !stillShared.isEmpty {
-            problems.append(String(
-                format: NSLocalizedString("Deleted on this iPhone, but sharing couldn't be stopped for %lld shared lists (%@). Their copy stays in iCloud and with the people you invited.", comment: ""),
-                stillShared.count, stillSharedNames.joined(separator: ", ")))
-        }
-        do {
-            try await MemoryCopySync.shared.uploadNow([])
-        } catch {
-            problems.append(String(
-                format: NSLocalizedString("The copy on your Doddy messaging server (Memory on calls) couldn't be emptied yet: %@ Doddy tries again the next time you open it.", comment: ""),
-                UpdatesModel.text(for: error)))
-        }
-        deleteError = problems.isEmpty ? nil : problems.joined(separator: " ")
-    }
-
-    /// Reads and checks the chosen file and works out what it would add. Nothing is written
-    /// until the user confirms (ADR-178).
-    private func prepareRestore(_ result: Result<URL, any Error>) {
-        do {
-            let url = try result.get()
-            let scoped = url.startAccessingSecurityScopedResource()
-            defer { if scoped { url.stopAccessingSecurityScopedResource() } }
-            let size = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
-            guard size <= MemoryRestore.maxFileBytes else {
-                throw MemoryRestoreError.tooLarge(bytes: size, maximum: MemoryRestore.maxFileBytes)
-            }
-            let data = try Data(contentsOf: url)
-            let file = try MemoryRestore.read(data)
-            restoreItems = try MemoryRestore.listItems(data)
-            let plan = MemoryRestore.plan(
-                file.records, corrections: file.corrections, existing: store.memories + store.lists.map(\.record),
-                exportedAt: file.exportedAt)
-            if plan.isEmpty {
-                restoreFailed = false
-                restoreMessage = RestoreCopy.nothingToAdd(plan)
-            } else {
-                restorePlan = plan
-            }
-        } catch {
-            restoreFailed = true
-            restoreMessage = RestoreCopy.failure(error)
-        }
-    }
-
-    private func restore(_ plan: MemoryRestorePlan) async {
-        restorePlan = nil
-        do {
-            let added = try await store.restore(plan.toAdd, corrections: plan.corrections, listItems: restoreItems)
-            restoreItems = []
-            restoreFailed = false
-            restoreMessage = added.count == 1 ? "Added 1 note from the export." : "Added \(added.count) notes from the export."
-        } catch {
-            restoreFailed = true
-            restoreMessage = RestoreCopy.failure(error)
-        }
-    }
-
-    private func forgetProfile() async {
-        do {
-            try await profiles.forget()
-            forgetError = nil
-        } catch {
-            forgetError = ProfileErrorText.message(for: error)
-        }
+    private static var helpURL: URL {
+        URL(string: (languageCode ?? "").hasPrefix("pl")
+            ? "https://www.doddy.lol/pl/what-can-doddy-do/"
+            : "https://www.doddy.lol/what-can-doddy-do/")!
     }
 
     // Doddy's own social accounts (ADR-130). Opening one hands off to the system; the app sends nothing.
     private static let tiktokURL = URL(string: "https://www.tiktok.com/@doddy_mate")!
     private static let instagramURL = URL(string: "https://www.instagram.com/doddy_mate/")!
 
-    private static var versionText: String {
+    static var versionText: String {
         let info = Bundle.main.infoDictionary
         let version = info?["CFBundleShortVersionString"] as? String ?? "?"
         let build = info?["CFBundleVersion"] as? String ?? "?"
         return "\(version) (\(build))"
-    }
-}
-
-/// Edit the approved profile. Cancel leaves it exactly as it was.
-private struct ProfileEditSheet: View {
-    @Environment(ProfileStore.self) private var profiles
-    @Environment(\.dismiss) private var dismiss
-    @State private var draft = ProfileDraft()
-    @State private var isSaving = false
-    @State private var errorText: String?
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    ProfileFieldsEditor(draft: $draft)
-                    if draft.isEffectivelyEmpty {
-                        Text("Saving now stores nothing and removes anything saved before.")
-                            .font(.footnote)
-                            .foregroundStyle(Theme.secondaryText)
-                    }
-                    addMissing
-                    if let errorText {
-                        ProblemView(message: errorText)
-                    }
-                }
-                .padding(24)
-            }
-            .background(Theme.canvas)
-            .navigationTitle("About you")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button(isSaving ? "Saving…" : "Save") { Task { await save() } }
-                        .disabled(isSaving)
-                        .accessibilityIdentifier("profileEdit.save")
-                }
-            }
-            .onAppear { draft = profiles.profile.draft }
-        }
-        .foregroundStyle(Theme.ink)
-        .interactiveDismissDisabled(isSaving)
-    }
-
-    /// Fields not answered yet can be added here too.
-    @ViewBuilder
-    private var addMissing: some View {
-        let missing = ProfileKey.allCases.filter { draft[$0] == nil }
-        if !missing.isEmpty {
-            Menu {
-                ForEach(missing, id: \.self) { key in
-                    Button(key.label) { draft[key] = "" }
-                }
-            } label: {
-                Label("Add a preference", systemImage: "plus")
-            }
-        }
-    }
-
-    private func save() async {
-        isSaving = true
-        defer { isSaving = false }
-        do {
-            try await profiles.commit(draft)
-            dismiss()
-        } catch {
-            errorText = ProfileErrorText.message(for: error)
-        }
-    }
-}
-
-/// Wording for restoring memories from an export (ADR-178).
-enum RestoreCopy {
-    static func title(_ plan: MemoryRestorePlan) -> String {
-        plan.toAdd.count == 1 ? "Add 1 note from this export?" : "Add \(plan.toAdd.count) notes from this export?"
-    }
-
-    static func action(_ plan: MemoryRestorePlan) -> String {
-        plan.toAdd.count == 1 ? "Add 1 note" : "Add \(plan.toAdd.count) notes"
-    }
-
-    static func details(_ plan: MemoryRestorePlan) -> String {
-        var parts: [String] = []
-        if let exportedAt = plan.exportedAt {
-            parts.append("Exported \(exportedAt.formatted(date: .abbreviated, time: .shortened)).")
-        }
-        parts.append("Notes come back exactly as exported, with their original dates and corrections.")
-        if plan.alreadyHere > 0 { parts.append("\(plan.alreadyHere) already on this iPhone.") }
-        if plan.keptOnPhone > 0 {
-            parts.append("\(plan.keptOnPhone) changed on this iPhone since the export; those stay as they are here.")
-        }
-        if plan.skippedSamples > 0 { parts.append("\(plan.skippedSamples) sample notes are left out.") }
-        parts.append("Nothing on this iPhone is changed or removed.")
-        return parts.joined(separator: " ")
-    }
-
-    static func nothingToAdd(_ plan: MemoryRestorePlan) -> String {
-        plan.keptOnPhone > 0
-            ? "Nothing to add: every note in this export is already here, and the ones changed since stay as they are here."
-            : "Nothing to add: every note in this export is already on this iPhone."
-    }
-
-    static func failure(_ error: any Error) -> String {
-        guard let error = error as? MemoryRestoreError else {
-            if error is CocoaError { return NSLocalizedString("That file couldn't be opened. Nothing was added.", comment: "") }
-            if (error as? MemoryStoreError) == .verificationFailed {
-                return NSLocalizedString("The restored notes couldn't be confirmed, so nothing from the file was added.", comment: "")
-            }
-            return UserFacingError.message(for: error)
-        }
-        switch error {
-        case .tooLarge:
-            return NSLocalizedString("That file is too large to be a Doddy export. Nothing was added.", comment: "")
-        case .notADoddyExport:
-            return NSLocalizedString("That isn't a Doddy memory export (Settings › Export as JSON). Nothing was added.", comment: "")
-        case .newerFormat:
-            return NSLocalizedString("That export was made by a newer version of Doddy. Update the app, then try again. Nothing was added.", comment: "")
-        case .unreadableNote(let position):
-            return "Note \(position) in that file is damaged, so nothing from it was added."
-        case .conflictingDuplicate(let position):
-            return "Note \(position) in that file repeats another one with different text, so nothing from it was added."
-        case .unreadableCorrection(let position):
-            return "Correction \(position) in that file is damaged, so nothing from it was added."
-        }
-    }
-}
-
-/// Profile and style settings for the share sheet (format: `ProfileExport.json`, ADR-176).
-/// The settings are read when the file is made, so the export matches what is stored then.
-struct ProfileJSONExport: Transferable {
-    let profile: ApprovedProfile
-
-    static var transferRepresentation: some TransferRepresentation {
-        DataRepresentation(exportedContentType: .json) { export in
-            try ProfileExport.json(export.profile, style: .stored(), exportedAt: Date())
-        }
-        .suggestedFileName("doddy-profile.json")
-    }
-}
-
-/// The same as text. Built when shared, not when Settings last drew, so voice and personality
-/// changes made a moment ago are included.
-struct ProfileTextExport: Transferable {
-    let profile: ApprovedProfile
-
-    static var transferRepresentation: some TransferRepresentation {
-        ProxyRepresentation(exporting: { (export: ProfileTextExport) in
-            ProfileExport.plainText(export.profile, style: .stored(), exportedAt: Date())
-        })
-    }
-}
-
-/// Markdown file for the share sheet (`MarkdownExport`, ADR-203). Built when shared.
-struct MarkdownFileExport: Transferable {
-    let records: [MemoryRecord]
-    let lists: [DoddyList]
-    let corrections: [MemoryCorrection]
-
-    static var transferRepresentation: some TransferRepresentation {
-        DataRepresentation(exportedContentType: UTType(filenameExtension: "md", conformingTo: .plainText) ?? .plainText) { export in
-            Data(MarkdownExport.markdown(export.records, lists: export.lists, corrections: export.corrections, exportedAt: Date()).utf8)
-        }
-        .suggestedFileName("doddy-memories.md")
-    }
-}
-
-/// JSON export file for the share sheet (format: `MemoryExport.json`).
-struct JSONExport: Transferable {
-    let records: [MemoryRecord]
-    /// List items (ADR-216); their lists are among `records`.
-    let listItems: [ListItem]
-    let corrections: [MemoryCorrection]
-
-    static var transferRepresentation: some TransferRepresentation {
-        DataRepresentation(exportedContentType: .json) { export in
-            try MemoryExport.json(export.records, listItems: export.listItems, corrections: export.corrections, exportedAt: Date())
-        }
-        .suggestedFileName("doddy-memories.json")
-    }
-}
-
-/// Who runs Doddy's voice, and for OpenAI which model (ADR-265, ADR-442). Same notes, lists, tools
-/// and cards either way; it takes effect when the next conversation starts, and Settings › What
-/// leaves this iPhone follows it. Always in Settings › Voice; on Home only after the first
-/// conversation (ADR-325, ADR-443), so a new user's Home keeps to Talk to Doddy.
-struct VoiceProviderPicker: View {
-    /// "home" or "settings", for the UI tests' identifiers.
-    let idPrefix: String
-    /// Empty until the user chooses; then ElevenLabs (ADR-546).
-    @AppStorage(VoiceProvider.preferenceKey) private var voiceProvider = ""
-    @AppStorage(OpenAIRealtimeModel.preferenceKey) private var realtimeModel = OpenAIRealtimeModel.default.rawValue
-
-    var body: some View {
-        let provider = VoiceProvider.effective(stored: voiceProvider, tokenServerSet: true)
-        VStack(alignment: .leading, spacing: 6) {
-            Picker("Voice", selection: Binding(get: { provider.rawValue }, set: { voiceProvider = $0 })) {
-                ForEach(VoiceProvider.allCases) { option in
-                    Text(verbatim: option.shortName).tag(option.rawValue)
-                }
-            }
-            .pickerStyle(.segmented)
-            .accessibilityIdentifier("\(idPrefix).voiceProvider")
-            if provider == .openAIRealtime {
-                Picker("OpenAI model", selection: $realtimeModel) {
-                    ForEach(OpenAIRealtimeModel.allCases) { option in
-                        Text(verbatim: option.shortName).tag(option.rawValue)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .accessibilityIdentifier("\(idPrefix).realtimeModel")
-            }
-            Text(verbatim: provider == .openAIRealtime
-                ? "OpenAI Realtime \(OpenAIRealtimeModel(stored: realtimeModel).shortName) runs your next conversation, through the token server. Weather and Wikipedia don't work with it."
-                : "ElevenLabs runs your next conversation.")
-                .font(.caption2).foregroundStyle(Theme.secondaryText)
-        }
-    }
-}
-
-/// Voice identity is optional until the first voice feature is used. The persistent session
-/// restores in the background and sign-out revokes it on DODDY's server.
-private struct VoiceAccountSettings: View {
-    @State private var session = VoiceAuthSession.shared
-    @State private var confirmDelete = false
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            StatusRow(title: "Voice account", value: session.isSignedIn ? "Connected" : "Sign in when you first use voice")
-                .accessibilityIdentifier("settings.voiceAccount")
-            if session.isSignedIn {
-                Button("Sign out of voice", role: .destructive) {
-                    Task { await session.signOut() }
-                }
-                .accessibilityIdentifier("settings.voiceSignOut")
-                Button("Ask again before sharing voice") {
-                    VoiceProviderConsent.reset()
-                }
-                .accessibilityIdentifier("settings.resetVoiceConsent")
-                Button("Delete Doddy voice account", role: .destructive) { confirmDelete = true }
-                    .accessibilityIdentifier("settings.deleteVoiceAccount")
-            }
-            if let message = session.message {
-                Text(message)
-                    .font(.footnote)
-                    .foregroundStyle(Theme.secondaryText)
-                    .accessibilityAddTraits(.updatesFrequently)
-                if session.hasSavedSession {
-                    Button("Retry") { Task { await session.restore() } }
-                        .accessibilityIdentifier("settings.voiceRetry")
-                }
-            }
-        }
-        .task { await session.restore() }
-        .confirmationDialog("Delete your Doddy voice account?", isPresented: $confirmDelete, titleVisibility: .visible) {
-            Button("Delete voice account", role: .destructive) { Task { await session.deleteAccount() } }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("This revokes all Doddy voice sessions on your devices. To remove Doddy from Sign in with Apple, also revoke it in your Apple ID settings.")
-        }
     }
 }
