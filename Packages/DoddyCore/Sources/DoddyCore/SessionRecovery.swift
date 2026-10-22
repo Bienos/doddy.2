@@ -26,6 +26,10 @@ public enum VoiceSessionEnd: Equatable, Sendable {
         case connectionLost
         /// The voice service reported an error.
         case error(String)
+        /// iOS took the audio away (a phone call, an alarm, Siri) and didn't give it back within
+        /// `VoiceInterruptionPolicy.resumeGraceSeconds`, so the app ended the conversation instead
+        /// of leaving it "listening" with a microphone that hears nothing (ADR-584).
+        case audioInterrupted
     }
 
     /// What the voice SDK said when it disconnected. ElevenLabs 3.3.1 reports `.user` for its own
@@ -59,6 +63,7 @@ public enum VoiceSessionEnd: Equatable, Sendable {
         case .dropped(.offline): "dropped-offline"
         case .dropped(.connectionLost): "dropped-connection"
         case .dropped(.error): "dropped-error"
+        case .dropped(.audioInterrupted): "dropped-interrupted"
         }
     }
 }
@@ -119,6 +124,9 @@ public enum SessionRecovery {
             return ("Stopped listening", "Doddy's microphone is off.")
         case .dropped(.offline):
             return ("You're offline", "Doddy's voice needs the internet.")
+        case .dropped(.audioInterrupted):
+            return ("The conversation was interrupted",
+                    "iOS took the microphone, for example for a phone call, so Doddy ended the conversation. He didn't hear anything after that. Talk again when you're ready.")
         case .dropped(let drop) where !connected:
             if case .error(let message) = drop, !message.isEmpty { return ("Couldn't connect", message) }
             return ("Couldn't connect", "Check your internet connection and try again.")
@@ -135,7 +143,10 @@ public enum SessionRecovery {
     public static func resumeNote(newest log: ConversationLog?, now: Date, timeZone: TimeZone = .current) -> String? {
         guard let log, let ended = log.ended, ended.hasPrefix("dropped"),
               now.timeIntervalSince(log.endedAt) <= resumeWindow, now >= log.endedAt else { return nil }
-        return "Note: the newest conversation below was cut off at \(VoiceContext.format(log.endedAt, timeZone: timeZone)): the connection dropped; neither you nor the user ended it. Say briefly that it was cut off and offer to carry on from its last lines. Do not assume you heard anything after them or that anything after them was done."
+        let cause = ended == VoiceSessionEnd.dropped(.audioInterrupted).code
+            ? "iOS took the microphone, for example for a phone call"
+            : "the connection dropped"
+        return "Note: the newest conversation below was cut off at \(VoiceContext.format(log.endedAt, timeZone: timeZone)): \(cause); neither you nor the user ended it. Say briefly that it was cut off and offer to carry on from its last lines. Do not assume you heard anything after them or that anything after them was done."
     }
 
     /// The conversations text for the agent (`VoiceContext.recentConversations` of `logs`), with the
