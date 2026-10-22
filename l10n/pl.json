@@ -1678,5 +1678,20 @@
   "Pick Talk in the Island. Talk to Doddy opens the app instead.": "Wybierz „Talk in the Island”. „Porozmawiaj z Doddym” otwiera aplikację.",
   "Talk in the Island needs iOS 18 or later. If the button still opens Doddy, it is set to Talk to Doddy: choose again in Settings.": "„Talk in the Island” działa od iOS 18. Jeśli przycisk dalej otwiera Doddy’ego, jest ustawiony na „Porozmawiaj z Doddym”: wybierz jeszcze raz w Ustawieniach.",
   "To": "Do",
-  "Subject": "Temat"
+  "Subject": "Temat",
+  "Messages": "Wiadomości",
+  "New": "Nowe",
+  "Delete all messages": "Usuń wszystkie wiadomości",
+  "Delete all messages?": "Usunąć wszystkie wiadomości?",
+  "This deletes the messages and the files Doddy sent, from this iPhone only.": "To usuwa wiadomości i pliki od Doddy’ego, tylko z tego iPhone’a.",
+  "Write to Doddy": "Napisz do Doddy’ego",
+  "Write to Doddy.": "Napisz do Doddy’ego.",
+  "If your message is about something you saved, I'll look at the matching notes. Files and pictures I make for you arrive here.": "Jeśli piszesz o czymś, co zapisałeś, zajrzę do pasujących notatek. Pliki i obrazy, które dla Ciebie zrobię, przyjdą tutaj.",
+  "Your saved notes are not used. Turn them on in Settings if you want me to look at them. Files and pictures I make for you arrive here.": "Twoje zapisane notatki nie są używane. Włącz je w Ustawieniach, jeśli chcesz, żebym do nich zajrzał. Pliki i obrazy, które dla Ciebie zrobię, przyjdą tutaj.",
+  "Doddy is an AI, not a person. Your message, the last few messages and any notes shown under an answer are sent to Doddy's server and on to OpenAI to write the reply. Messages are kept on this iPhone.": "Doddy to sztuczna inteligencja, nie człowiek. Twoja wiadomość, kilka ostatnich wiadomości i notatki pokazane pod odpowiedzią są wysyłane na serwer Doddy’ego, a stamtąd do OpenAI, żeby napisać odpowiedź. Wiadomości są zapisane na tym iPhonie.",
+  "Messages can't be kept on this iPhone right now.": "Wiadomości nie mogą teraz być zapisane na tym iPhonie.",
+  "The saved messages couldn't be read. They were left as they are.": "Nie udało się odczytać zapisanych wiadomości. Zostały bez zmian.",
+  "This message couldn't be kept on this iPhone.": "Ta wiadomość nie mogła zostać zapisana na tym iPhonie.",
+  "The messages couldn't be deleted. Try again.": "Nie udało się usunąć wiadomości. Spróbuj jeszcze raz.",
+  "File is no longer on this iPhone": "Pliku nie ma już na tym iPhonie"
 }

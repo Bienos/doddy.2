@@ -19,7 +19,7 @@ struct AssistantWiring: Sendable {
 }
 
 /// Composition root. Local memory and the reviewed profile use one SQLite file; voice uses the
-/// ElevenLabs agent (VoiceView); typed questions go through the Doddy gateway (AskView); the Talk to
+/// ElevenLabs agent (VoiceView); typed messages go through the Doddy gateway (MessagesView); the Talk to
 /// Doddy shortcut and Back Tap guide live in `ShortcutRouter`; Connected Apps talks to a Doddy server
 /// (ConnectedAppsScreen); other actions stay explicit `Unavailable*` adapters.
 struct AppEnvironment: Sendable {

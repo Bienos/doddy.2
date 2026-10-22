@@ -3,7 +3,7 @@ import SwiftUI
 
 /// Home (ADR-545): a calm screen after the owner's "I'm here" mockup. Doddy sits cross-legged in
 /// the middle and is the Talk button; under him an orange dot, "I'm here." and "Tap Doddy to talk";
-/// at the bottom Type (Ask Doddy), Memories (a sheet) and + (Save a detail). Everything else Home
+/// at the bottom Messages (the chat with Doddy, ADR-582), Memories (a sheet) and + (Save a detail). Everything else Home
 /// used to list lives in the ••• menu. Cards appear only while something needs the user (a due
 /// reminder, a storage problem, an unfinished note, a one-time offer they can dismiss).
 ///
@@ -51,6 +51,8 @@ struct HomeView: View {
     private var router: ShortcutRouter { .shared }
     /// The conversation started on Home (ADR-579).
     private var conversation: HomeConversation { .shared }
+    /// The Messages thread (ADR-582).
+    private var messages: MessagesController { .shared }
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -125,7 +127,7 @@ struct HomeView: View {
                 case .focus: FocusView()
                 }
             }
-            .fullScreenCover(isPresented: $showAsk) { AskView(openSettings: { selectedTab = .settings }) }
+            .fullScreenCover(isPresented: $showAsk) { MessagesView(openSettings: { selectedTab = .settings }) }
             // The conversation opens once the start sheet has gone away.
             .sheet(isPresented: $showTranslator, onDismiss: {
                 if let choice = translatorChoice {
@@ -464,12 +466,22 @@ struct HomeView: View {
     private var restBar: some View {
         HStack(spacing: 12) {
             HStack(spacing: 0) {
+                // Messages (ADR-582): the chat with Doddy, kept on this iPhone, where Type was. The
+                // dot says Doddy sent something since it was last open.
                 Button { showAsk = true } label: {
-                    Label("Type", systemImage: "keyboard")
+                    Label("Messages", systemImage: messages.unread > 0 ? "bubble.left.fill" : "bubble.left")
+                        .overlay(alignment: .topTrailing) {
+                            if messages.unread > 0 {
+                                Circle().fill(Theme.orangeCue).frame(width: 9, height: 9)
+                                    .offset(x: 6, y: -4)
+                                    .accessibilityHidden(true)
+                            }
+                        }
                         .padding(.horizontal, 16)
                         .frame(minHeight: 44)
                         .contentShape(Rectangle())
                 }
+                .accessibilityValue(messages.unread > 0 ? Text("New") : Text(verbatim: ""))
                 .buttonStyle(DoddyPressStyle())
                 .disabled(!store.environment.capabilities.isAvailable(.textAssistant))
                 .accessibilityIdentifier("home.ask")

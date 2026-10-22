@@ -93,7 +93,6 @@ files=(
   DoddyApp/Infrastructure/ShortcutRouter.swift
   DoddyApp/Infrastructure/UnfinishedNoteStore.swift
   DoddyApp/Infrastructure/SiriNoteLookup.swift
-  DoddyApp/Features/Ask/AskController.swift
   DoddyApp/Features/NoteReminders/NoteReminderStore.swift
   DoddyApp/Features/Opening/OpeningModel.swift
   DoddyApp/Features/Photos/PhotoFiles.swift

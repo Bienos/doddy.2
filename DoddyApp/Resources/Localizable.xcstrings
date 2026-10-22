@@ -14144,6 +14144,28 @@
         }
       }
     },
+    "Delete all messages": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuń wszystkie wiadomości"
+          }
+        }
+      }
+    },
+    "Delete all messages?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usunąć wszystkie wiadomości?"
+          }
+        }
+      }
+    },
     "Delete everything": {
       "extractionState": "manual",
       "localizations": {
@@ -17913,6 +17935,47 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "Doddy to SI, nie człowiek. Notatki zostają na tym iPhonie; gdy rozmowa jest otwarta, one i kilka ostatnich rozmów trafiają do ElevenLabs albo OpenAI, jeśli przełączysz na niego głos na ekranie głównym, żeby Doddy je znał. Pisane pytania trafiają do serwera Doddy’ego i OpenAI tylko wtedy, gdy włączysz Zapytaj Doddy’ego w Ustawieniach. Kalendarz, przypomnienia i kontakty są wyłączone, dopóki nie włączysz ich w Ustawieniach, a Dziś czyta je tylko na tym iPhonie; czytanie Kalendarza Google jest w Ustawieniach › Połączone aplikacje."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Doddy is an AI, not a person. Your message, the last few messages and any notes shown under an answer are sent to Doddy's server and on to OpenAI to write the reply. Messages are kept on this iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy is an AI, not a person. Your message, the last few messages and any notes shown under an answer are sent to Doddy's server and on to OpenAI to write the reply. Messages are kept on this iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy is an AI, not a person. Your message, the last few messages and any notes shown under an answer are sent to Doddy's server and on to OpenAI to write the reply. Messages are kept on this iPhone."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy to sztuczna inteligencja, nie człowiek. Twoja wiadomość, kilka ostatnich wiadomości i notatki pokazane pod odpowiedzią są wysyłane na serwer Doddy’ego, a stamtąd do OpenAI, żeby napisać odpowiedź. Wiadomości są zapisane na tym iPadzie."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy to sztuczna inteligencja, nie człowiek. Twoja wiadomość, kilka ostatnich wiadomości i notatki pokazane pod odpowiedzią są wysyłane na serwer Doddy’ego, a stamtąd do OpenAI, żeby napisać odpowiedź. Wiadomości są zapisane na tym iPhonie."
                 }
               }
             }
@@ -23714,6 +23777,47 @@
         }
       }
     },
+    "File is no longer on this iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "File is no longer on this iPad"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "File is no longer on this iPhone"
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Pliku nie ma już na tym iPadzie"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Pliku nie ma już na tym iPhonie"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Find in Doddy": {
       "extractionState": "manual",
       "localizations": {
@@ -27279,6 +27383,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Jeśli Twój iPhone go ma."
+          }
+        }
+      }
+    },
+    "If your message is about something you saved, I'll look at the matching notes. Files and pictures I make for you arrive here.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jeśli piszesz o czymś, co zapisałeś, zajrzę do pasujących notatek. Pliki i obrazy, które dla Ciebie zrobię, przyjdą tutaj."
           }
         }
       }
@@ -35308,6 +35423,58 @@
         }
       }
     },
+    "Messages": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wiadomości"
+          }
+        }
+      }
+    },
+    "Messages can't be kept on this iPhone right now.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Messages can't be kept on this iPad right now."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Messages can't be kept on this iPhone right now."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Wiadomości nie mogą teraz być zapisane na tym iPadzie."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Wiadomości nie mogą teraz być zapisane na tym iPhonie."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Messages from Doddy": {
       "extractionState": "manual",
       "localizations": {
@@ -37435,6 +37602,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "不再建议"
+          }
+        }
+      }
+    },
+    "New": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nowe"
           }
         }
       }
@@ -70362,6 +70540,17 @@
         }
       }
     },
+    "The messages couldn't be deleted. Try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się usunąć wiadomości. Spróbuj jeszcze raz."
+          }
+        }
+      }
+    },
     "The microphone is off for Doddy. Turn it on in the Settings app to record.": {
       "extractionState": "manual",
       "localizations": {
@@ -71953,6 +72142,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "无法确认保存，所以不算已保存。你的文字还在这里。"
+          }
+        }
+      }
+    },
+    "The saved messages couldn't be read. They were left as they are.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się odczytać zapisanych wiadomości. Zostały bez zmian."
           }
         }
       }
@@ -73810,6 +74010,47 @@
         }
       }
     },
+    "This deletes the messages and the files Doddy sent, from this iPhone only.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "This deletes the messages and the files Doddy sent, from this iPad only."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "This deletes the messages and the files Doddy sent, from this iPhone only."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "To usuwa wiadomości i pliki od Doddy’ego, tylko z tego iPada."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "To usuwa wiadomości i pliki od Doddy’ego, tylko z tego iPhone’a."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "This evening": {
       "extractionState": "manual",
       "localizations": {
@@ -74702,6 +74943,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "这条记忆已不存在。"
+          }
+        }
+      }
+    },
+    "This message couldn't be kept on this iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "This message couldn't be kept on this iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "This message couldn't be kept on this iPhone."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Ta wiadomość nie mogła zostać zapisana na tym iPadzie."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Ta wiadomość nie mogła zostać zapisana na tym iPhonie."
+                }
+              }
+            }
           }
         }
       }
@@ -85277,6 +85559,28 @@
         }
       }
     },
+    "Write to Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Napisz do Doddy’ego"
+          }
+        }
+      }
+    },
+    "Write to Doddy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Napisz do Doddy’ego."
+          }
+        }
+      }
+    },
     "Writing it out on this iPhone…": {
       "extractionState": "manual",
       "localizations": {
@@ -88763,6 +89067,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "你的问题还在输入框里。你保存的笔记不受影响。"
+          }
+        }
+      }
+    },
+    "Your saved notes are not used. Turn them on in Settings if you want me to look at them. Files and pictures I make for you arrive here.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoje zapisane notatki nie są używane. Włącz je w Ustawieniach, jeśli chcesz, żebym do nich zajrzał. Pliki i obrazy, które dla Ciebie zrobię, przyjdą tutaj."
           }
         }
       }
