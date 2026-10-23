@@ -16,7 +16,8 @@ enum ListeningStop {
     static func snapshot() -> MicrophoneSnapshot {
         MicrophoneSnapshot(
             conversation: VoiceSessionController.microphone,
-            voiceMemoRecording: MicrophoneHolders.shared.isRecording)
+            voiceMemoRecording: MicrophoneHolders.shared.isRecording,
+            captureRecording: RecordingCoordinator.shared.isCapturingAudio)
     }
 
     /// Ends the conversation and stops a voice memo, then reads each one
@@ -28,6 +29,9 @@ enum ListeningStop {
             keptNoteDraft = await conversation.stopListening()
         }
         let keptMemoDraft = MicrophoneHolders.shared.stopAll()
+        // A DODDY Capture recording is stopped and saved (ADR-579); the report says "saved" only if it was read back.
+        var captureSaved = false
+        if before.open.contains(.capture) { captureSaved = await RecordingCoordinator.shared.stop() }
         var after = snapshot()
         let release: AudioRelease
         if before.open.isEmpty {
@@ -40,7 +44,7 @@ enum ListeningStop {
             after = snapshot()
         }
         let report = ListeningStopReport(before: before, after: after, release: release,
-                                         keptNoteDraft: keptNoteDraft, keptMemoDraft: keptMemoDraft)
+                                         keptNoteDraft: keptNoteDraft, keptMemoDraft: keptMemoDraft, captureSaved: captureSaved)
         log.notice("stop listening: still open \(report.stillOpen.map(\.rawValue), privacy: .public), release \(String(describing: release), privacy: .public)")
         ListeningIndicatorModel.shared.refresh()
         return report

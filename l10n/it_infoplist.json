@@ -20,16 +20,16 @@
     "it": "Doddy usa la tua posizione solo quando lo chiedi: per i promemoria che imposti in un luogo (per trovare dove sei quando tocchi Usa dove sono ora, e perché iOS possa ricordartelo quando arrivi o parti), per salvare dove hai parcheggiato, e per calcolare con Mappe di Apple quando partire per un posto. Doddy non la conserva e non traccia dove vai."
   },
   "NSMicrophoneUsageDescription": {
-    "en": "To hear you, Doddy needs the microphone. Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. Your voice in a conversation is sent to ElevenLabs to run it, or to OpenAI if you switch Home's voice to OpenAI. A voice memo you record on a note stays on this iPhone.",
-    "it": "Per sentirti, Doddy ha bisogno del microfono. Doddy ascolta mentre parli con lui: dopo che tocchi Parla con Doddy, o appena apri Doddy se l'hai attivato in Impostazioni. La tua voce in una conversazione viene inviata a ElevenLabs per condurla, o a OpenAI se in Home passi la voce a OpenAI. Un memo vocale che registri su una nota resta su questo iPhone."
+    "en": "To hear you, Doddy needs the microphone. Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. Your voice in a conversation is sent to ElevenLabs to run it, or to OpenAI if you switch Home's voice to OpenAI. A voice memo you record on a note stays on this iPhone. A recording you start with Record stays on this iPhone too, and Doddy shows it the whole time it records.",
+    "it": "Per sentirti, Doddy ha bisogno del microfono. Doddy ascolta mentre parli con lui: dopo che tocchi Parla con Doddy, o appena apri Doddy se l'hai attivato in Impostazioni. La tua voce in una conversazione viene inviata a ElevenLabs per condurla, o a OpenAI se in Home passi la voce a OpenAI. Un memo vocale che registri su una nota resta su questo iPhone. Anche una registrazione che avvii con Registra resta su questo iPhone, e Doddy lo mostra per tutto il tempo in cui registra."
   },
   "NSRemindersFullAccessUsageDescription": {
     "en": "Doddy adds, changes, completes or deletes a reminder only after you tap Add, Change, Mark done or Delete. Turn this off in Settings, Connections.",
     "it": "Doddy aggiunge, modifica, completa o elimina un promemoria solo dopo che tocchi Aggiungi, Modifica, Segna come fatto o Elimina. Disattivalo in Impostazioni, Collegamenti."
   },
   "NSSpeechRecognitionUsageDescription": {
-    "en": "Doddy writes out a voice memo on this iPhone when you record one, so you can check its words before saving. The recording and its words are not sent anywhere.",
-    "it": "Doddy trascrive un memo vocale su questo iPhone quando lo registri, così puoi controllarne il testo prima di salvare. La registrazione e il suo testo non vengono inviati da nessuna parte."
+    "en": "Doddy writes out voice memos and recordings on this iPhone, so you can check and search their words. The audio and its words are not sent anywhere.",
+    "it": "Doddy trascrive memo vocali e registrazioni su questo iPhone, così puoi controllarne e cercarne il testo. L’audio e il suo testo non vengono inviati da nessuna parte."
   },
   "NSMotionUsageDescription": {
     "en": "Doddy reads your steps, walking distance and floors climbed from Motion & Fitness only when you ask, for one day of the last seven. In a voice conversation those numbers go to ElevenLabs, which runs Doddy's voice, or to OpenAI if you switch Home's voice to it. Doddy keeps none of them and reads nothing from Health. Turn this off in Settings, Connections.",

@@ -53,6 +53,10 @@ struct AppEnvironment: Sendable {
     /// Tasks handed to Doddy's background worker (ADR-570): the user's words, the state, and the
     /// result once it is saved here (then the server deletes its copy), in the same file.
     var errandRepository: any ErrandRepository = UnavailableErrandRepository()
+    /// DODDY Capture (ADR-579): recordings, their parts and words, in the same file, and the folder of
+    /// audio next to it. `nil` when the memory store is not open: nothing can be recorded then.
+    var recordingRepository: (any RecordingRepository)?
+    var recordingFiles: RecordingFiles = .unavailable
     /// The typed conversation with Doddy (ADR-585): messages kept on this iPhone until deleted, in the same file.
     var messageThreadRepository: any MessageThreadRepository = UnavailableMessageThreadRepository()
 
@@ -107,6 +111,8 @@ struct AppEnvironment: Sendable {
                     outcomes: SQLiteOutcomeEventRepository(database: database)),
                 callCaseRepository: SQLiteCallCaseRepository(database: database),
                 errandRepository: SQLiteErrandRepository(database: database),
+                recordingRepository: SQLiteRecordingRepository(database: database),
+                recordingFiles: databaseFile.map(RecordingFiles.beside(database:)) ?? .temporary(),
                 messageThreadRepository: SQLiteMessageThreadRepository(database: database))
         } catch {
             return AppEnvironment(

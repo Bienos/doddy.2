@@ -24,6 +24,17 @@ struct DoddyShortcuts: AppShortcutsProvider {
             ],
             shortTitle: "Stop listening",
             systemImageName: "mic.slash")
+        // DODDY Capture (ADR-579). The tenth and last App Shortcut iOS allows. It opens Doddy first, and
+        // answers "Recording." only once the recorder delivers audio. Stop is "Stop listening" above.
+        AppShortcut(
+            intent: StartDoddyRecordingIntent(),
+            phrases: [
+                "Record this meeting in \(.applicationName)",
+                "Record with \(.applicationName)",
+                "Start recording in \(.applicationName)",
+            ],
+            shortTitle: "Record with DODDY",
+            systemImageName: "record.circle")
         // Free text can't be part of a phrase, so Siri asks "What should Doddy keep?".
         AppShortcut(
             intent: SaveToDoddyIntent(),

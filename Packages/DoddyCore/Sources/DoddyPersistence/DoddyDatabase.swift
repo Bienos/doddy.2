@@ -334,6 +334,67 @@ public final class DoddyDatabase: Sendable {
                 CREATE INDEX errands_created ON errands(created_at_ms);
                 """)
         }
+        // DODDY Capture (ADR-579): recordings, their audio parts, their words (searchable) and the
+        // notes the user chose to remember from them. A row exists before the audio does, so a kill
+        // leaves something to recover. Values are checked by length rather than by list, so a later
+        // build can add a kind or a phase without a new migration. A note's link to its recording
+        // is cleared, not deleted, with the recording: the note is the user's.
+        migrator.registerMigration("v16_recordings") { db in
+            try db.execute(sql: """
+                CREATE TABLE recordings (
+                    id TEXT PRIMARY KEY NOT NULL,
+                    title TEXT NOT NULL DEFAULT '' CHECK (length(title) <= \(CaptureLimits.maxTitleCharacters)),
+                    kind TEXT NOT NULL CHECK (length(kind) BETWEEN 1 AND 40),
+                    origin TEXT NOT NULL CHECK (length(origin) BETWEEN 1 AND 40),
+                    phase TEXT NOT NULL CHECK (length(phase) BETWEEN 1 AND 40),
+                    language TEXT NOT NULL CHECK (length(language) BETWEEN 2 AND 35),
+                    started_at_ms INTEGER NOT NULL,
+                    ended_at_ms INTEGER CHECK (ended_at_ms IS NULL OR ended_at_ms >= started_at_ms),
+                    duration_ms INTEGER NOT NULL DEFAULT 0 CHECK (duration_ms >= 0),
+                    end_reason TEXT CHECK (end_reason IS NULL OR length(end_reason) BETWEEN 1 AND 40),
+                    transcription TEXT NOT NULL DEFAULT 'notStarted' CHECK (length(transcription) BETWEEN 1 AND 40),
+                    gaps_json TEXT NOT NULL DEFAULT '[]',
+                    CHECK ((phase = 'recording') = (ended_at_ms IS NULL))
+                );
+                CREATE INDEX recordings_started ON recordings(started_at_ms);
+
+                CREATE TABLE recording_parts (
+                    recording_id TEXT NOT NULL REFERENCES recordings(id) ON DELETE CASCADE,
+                    idx INTEGER NOT NULL CHECK (idx BETWEEN 1 AND 9999),
+                    file_name TEXT NOT NULL CHECK (file_name GLOB 'part-[0-9][0-9][0-9][0-9].caf'),
+                    start_offset_ms INTEGER NOT NULL CHECK (start_offset_ms >= 0),
+                    duration_ms INTEGER CHECK (duration_ms IS NULL OR duration_ms >= 0),
+                    PRIMARY KEY (recording_id, idx)
+                ) WITHOUT ROWID;
+
+                CREATE TABLE recording_segments (
+                    recording_id TEXT NOT NULL REFERENCES recordings(id) ON DELETE CASCADE,
+                    idx INTEGER NOT NULL CHECK (idx >= 0),
+                    start_ms INTEGER NOT NULL CHECK (start_ms >= 0),
+                    end_ms INTEGER NOT NULL CHECK (end_ms >= start_ms),
+                    text TEXT NOT NULL CHECK (length(trim(text)) > 0),
+                    original_text TEXT NOT NULL,
+                    confidence REAL CHECK (confidence IS NULL OR (confidence >= 0 AND confidence <= 1)),
+                    search_text TEXT NOT NULL,
+                    UNIQUE (recording_id, idx)
+                );
+                CREATE INDEX recording_segments_time ON recording_segments(recording_id, start_ms);
+
+                CREATE TABLE recording_memories (
+                    memory_id TEXT PRIMARY KEY NOT NULL REFERENCES memories(id) ON DELETE CASCADE,
+                    recording_id TEXT REFERENCES recordings(id) ON DELETE SET NULL,
+                    at_ms INTEGER NOT NULL CHECK (at_ms >= 0),
+                    recording_title TEXT NOT NULL,
+                    linked_at_ms INTEGER NOT NULL
+                );
+                CREATE INDEX recording_memories_recording ON recording_memories(recording_id);
+                """)
+            try db.create(virtualTable: "recording_segments_fts", using: FTS5()) { t in
+                t.synchronize(withTable: "recording_segments")
+                t.tokenizer = .unicode61()
+                t.column("search_text")
+            }
+        }
         // The thread with Doddy (ADR-585): typed messages kept on this iPhone until the user deletes them.
         // The table refuses what the rules never produce: a Doddy message that is not "sent", a user
         // message with a basis, a Doddy message without one. (v16 belongs to Capture, ADR-579.)
