@@ -1,16 +1,21 @@
 import DoddyCore
 import Foundation
 
-/// Where the Doddy messaging server (`server/messaging`) lives. None is deployed yet (S1 status),
-/// so the default is empty and its features report "needs setup" until an address is entered.
+/// Where the Doddy messaging server (`server/messaging`) lives: the Render service `doddy-messaging` (owner, 22 Oct:
+/// "2 yes"). Messages (ADR-586), notifications, texts, daily news, calls, tasks and Connected Apps all use it, so
+/// they stop saying "needs setup" once a build has this address. The server is on Render's free plan today, which
+/// sleeps and takes about 20 seconds to wake; a paid instance is the owner's step (MESSAGES_STATUS).
 enum ServerConfig {
-    /// Fill in once `render.yaml` is applied, e.g. `https://doddy-messaging.onrender.com`.
-    static let defaultBaseURL = ""
+    /// The server's https origin.
+    static let defaultBaseURL = "https://doddy-messaging-zw1n.onrender.com"
 
     /// Settings → Notifications and texts lets a development build point at a different server.
     /// The address typed in Settings counts in debug builds only (ADR-175); shipped builds use
     /// `defaultBaseURL`, so the account token can't be pointed at another server.
-    static func baseURL(defaults: UserDefaults = .standard) -> URL? {
+    static func baseURL(defaults: UserDefaults = .standard, arguments: [String] = ProcessInfo.processInfo.arguments) -> URL? {
+        // UI-test launches (`-inMemoryStore`) have no server, as before this address was built in: they never
+        // reach a real one and their screens stay the same.
+        if arguments.contains("-inMemoryStore") { return nil }
         #if DEBUG
         let stored = defaults.string(forKey: PreferenceKey.messagingServerURL)?.trimmingCharacters(in: .whitespaces) ?? ""
         #else

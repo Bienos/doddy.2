@@ -92,7 +92,7 @@ struct VoiceAccessGate: View {
 }
 
 /// The one Sign in with Apple button for the Doddy voice account: the voice screen's gate and the
-/// first-launch welcome (ADR-596) both use it, so there is a single place that builds Apple's
+/// first-launch welcome (ADR-599) both use it, so there is a single place that builds Apple's
 /// request, checks its answer and hands it to `VoiceAuthSession`. It lives in this file because
 /// `check_forbidden_capabilities.sh` allows AuthenticationServices only in the voice account's files.
 ///

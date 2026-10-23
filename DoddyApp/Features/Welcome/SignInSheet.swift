@@ -1,7 +1,7 @@
 import DoddyCore
 import SwiftUI
 
-/// The sign-in sheet pinned to the bottom of the welcome (ADR-595, ADR-596). **Sign in with Apple is
+/// The sign-in sheet pinned to the bottom of the welcome (ADR-598, ADR-599). **Sign in with Apple is
 /// real**: it is the voice account's sign-in (`AppleAccountSignInButton`, `VoiceAuthSession`), and
 /// a finished sign-in moves on. Face ID, Google and email are UI only: no backend yet, so each says
 /// so and none looks like a success. "Try Doddy without an account" also moves on.

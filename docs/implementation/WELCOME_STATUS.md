@@ -1,4 +1,4 @@
-# The first-launch welcome: status (ADR-595)
+# The first-launch welcome: status (ADR-598)
 
 Date: 2026-10-22. Branch `claude/gifted-einstein-61p6hq`. Design: Figma file `kR2N76fNeMmptR53RnMgSj` (frames `13:62`, `13:106`, `13:159`, `13:217`, `13:286`, `13:340`) and the clickable prototype it was drawn from. The build prompt is `prompts/WELCOME_FLOW_2026-10-22.md`.
 
@@ -19,7 +19,7 @@ Five chapters you swipe right to left, one persistent Doddy who hops between the
 - **Position drives everything.** `ScrollView` paging with `scrollPosition`; the page position (0 to 4) is measured and every moving thing is a pure function of it (`WelcomeFlow` in DoddyCore: pose cross-over at half a page, hop, tilt, ground and skyline offsets, text slide). It follows the finger and can be grabbed and reversed. iOS 17 baseline (no `onScrollGeometryChange`).
 - **Scenes** are pure functions of the seconds since their chapter began to slide in (`WelcomeTimeline`), driven by a `TimelineView`, so a swipe ends any scene at once and nothing blocks input. A page that has gone off screen resets; Reduce Motion shows every scene in its final state, with no hop, parallax or typing.
 - **Sign-in sheet** (`SignInSheet.swift`): custom, two heights (138 and 384 pt), a drag that follows the finger, a spring on release, a scrim, Reduce Transparency opaque. Not a system sheet: that would sit above the Face ID lock's cover.
-- **Sign in with Apple is real (ADR-596).** The first button is Apple's system button (`AppleAccountSignInButton`, shared with the voice gate): a finished sign-in creates the Doddy voice account and ends the welcome. It needs the paid team's capability (A5) and the token server (A4); on a free-team build Apple's sheet fails and the sheet says so.
+- **Sign in with Apple is real (ADR-599).** The first button is Apple's system button (`AppleAccountSignInButton`, shared with the voice gate): a finished sign-in creates the Doddy voice account and ends the welcome. It needs the paid team's capability (A5) and the token server (A4); on a free-team build Apple's sheet fails and the sheet says so.
 - **The other three are not connected.** `UnconnectedSignIn` is their only provider and returns `.notConnectedYet`; Face ID, Google and email say "Sign-in isn't connected yet". "Try Doddy without an account" also moves on and uses the device session (ADR-563) as before.
 - **Labels** follow Apple's HIG: the first button says Face ID, Touch ID or passkey according to `AppLock.biometry` (read only; `LocalAuthentication` stays inside `AppLock.swift`).
 

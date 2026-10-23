@@ -66,7 +66,6 @@ enum PreferenceKey {
     /// Ask Doddy: the user agreed that questions go to the gateway and OpenAI. Off by default.
     static let assistantConsent = "assistantConsent"
     static let assistantUseNotes = "assistantUseNotes"
-    static let gatewayAddress = "gatewayAddress"
     /// Development setting: https origin of the Doddy messaging server (`server/messaging`).
     static let messagingServerURL = "messagingServerURL"
     /// The user turned Doddy's notifications on (re-registers the APNs token at launch).
@@ -87,7 +86,7 @@ enum PreferenceKey {
     /// counted once each; for when the "Open Doddy faster" card returns (ADR-559). It was the
     /// Hey Doddy card's (ADR-328); PR #108 removed it with that card, and this PR keeps it.
     static let connectedConversations = "connectedConversations"
-    /// The first-launch welcome (ADR-595) has been finished or skipped on this installation.
+    /// The first-launch welcome (ADR-598) has been finished or skipped on this installation.
     static let welcomeSeen = "welcomeSeen"
     /// Settings › "Show the welcome again": the welcome shows once more, then clears this.
     static let welcomeReplay = "welcomeReplay"
@@ -113,6 +112,8 @@ struct RootView: View {
     @State private var selectedTab: AppTab = .home
     @State private var showFind = false
     @State private var homePath: [UUID] = []
+    /// How tall the transcript sheet opens (ADR-595): full for Transcript, half for a card.
+    @State private var voiceDetent: PresentationDetent = .large
     @Environment(NoteReminderStore.self) private var noteReminders
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.openURL) private var openURL
@@ -129,12 +130,12 @@ struct RootView: View {
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideArt = false
     /// The Face ID cover is up (ADR-310); it stays briefly after an unlock for the door (ADR-380).
     @State private var lockCovered = false
-    /// Settings › "Show the welcome again" (ADR-595).
+    /// Settings › "Show the welcome again" (ADR-598).
     @AppStorage(PreferenceKey.welcomeReplay) private var welcomeReplay = false
     /// The welcome was finished in this run, so it doesn't show again until a replay is asked for.
     @State private var welcomeDone = false
 
-    /// The first-launch welcome (ADR-595) is on screen. It covers Home and the opening, and the first-use
+    /// The first-launch welcome (ADR-598) is on screen. It covers Home and the opening, and the first-use
     /// introduction waits until it is over. Only read once the store has loaded (`isFirstInstallation`).
     private var welcomeVisible: Bool {
         !welcomeDone && WelcomeRule.shouldShow(
@@ -241,7 +242,7 @@ struct RootView: View {
                 // On later returns, only the separately opted-in listen-on-open preference applies.
                 switch phase {
                 case .background: opening.appWentToBackground()
-                // While the first-launch welcome is up the opening waits for it (ADR-595).
+                // While the first-launch welcome is up the opening waits for it (ADR-598).
                 case .active: if !welcomeVisible { opening.appBecameActive(openingConditions) }
                 default: break
                 }
@@ -265,11 +266,14 @@ struct RootView: View {
             }
             .onAppear {
                 DoddyClock.install()
-                // MV5: a tap or hold on him opens the voice screen, as "Talk to Doddy" does.
+                // MV5: a tap or hold on him talks, as Home's Talk button does: on Home (ADR-595).
                 let store = store
+                let profiles = profiles
                 DoddyDirector.shared.onTalk = {
                     // As Home's own Talk button: not while voice input isn't available.
-                    if store.environment.capabilities.isAvailable(.voiceInput) { ShortcutRouter.shared.isVoicePresented = true }
+                    if store.environment.capabilities.isAvailable(.voiceInput) {
+                        HomeConversation.shared.talk(store: store, profile: profiles.profile)
+                    }
                 }
             }
             // MV5's listening pose read the wake word's conversation, the only one that could be
@@ -285,7 +289,7 @@ struct RootView: View {
             }
             // The first-use introduction and the Face ID cover are over the app: he is hidden.
             .coversDoddy(profiles.isIntroductionPresented || AppLock.shared.isLocked || lockCovered || welcomeVisible)
-            // Settings › "Show the welcome again": it shows even though it was seen (ADR-595).
+            // Settings › "Show the welcome again": it shows even though it was seen (ADR-598).
             .onChange(of: welcomeReplay) { _, on in if on { welcomeDone = false } }
             // A tapped note reminder opens its exact memory on Home.
             .task(id: noteReminders.pendingOpenMemoryID) {
@@ -357,7 +361,7 @@ struct RootView: View {
 
     private var introductionPresentation: Binding<Bool> {
         Binding(
-            // The introduction waits until the first-launch welcome is over (ADR-595).
+            // The introduction waits until the first-launch welcome is over (ADR-598).
             get: { profiles.isIntroductionPresented && !welcomeVisible },
             set: { presented in
                 guard !presented, profiles.isIntroductionPresented else { return }
@@ -380,7 +384,7 @@ struct RootView: View {
                     onFinished: { opening.finish() })
                 .zIndex(1)
             }
-            // The first-launch welcome (ADR-595) sits over everything here; the Face ID cover is
+            // The first-launch welcome (ADR-598) sits over everything here; the Face ID cover is
             // drawn above all of it by the view that owns this one.
             if welcomeVisible {
                 WelcomeView(finish: finishWelcome)
@@ -400,7 +404,21 @@ struct RootView: View {
         // One presentation point for the conversation, so a shortcut invocation while it is
         // open focuses it instead of starting a second one.
         // Waiting drafts appear only once a cover or sheet has finished going away.
-        .fullScreenCover(isPresented: $router.isVoicePresented, onDismiss: { router.showWaitingDraft() }) { VoiceView() }
+        // The conversation itself is on Home (ADR-595); this sheet is its transcript, and it comes
+        // up from the bottom, half height, when a card needs the user.
+        .sheet(isPresented: $router.isVoicePresented, onDismiss: {
+            voiceDetent = .large
+            router.showWaitingDraft()
+        }) {
+            VoiceView()
+                .presentationDetents([.medium, .large], selection: $voiceDetent)
+                .presentationDragIndicator(.visible)
+        }
+        .onChange(of: HomeConversation.shared.needsYou) { _, needsYou in
+            guard needsYou, !router.isVoicePresented else { return }
+            voiceDetent = .medium
+            router.isVoicePresented = true
+        }
         .sheet(isPresented: $router.isSetupPresented, onDismiss: { router.showWaitingDraft() }) {
             OpenDoddyWaysView(model: router.setup)
         }
@@ -435,7 +453,7 @@ struct RootView: View {
         .onChange(of: profiles.route == .home, initial: true) { _, atHome in
             router.isOnboardingShown = !atHome
             // The first time Home is ready and on screen is the launch (OpeningModel decides).
-            // Not while the first-launch welcome is up: it gets its turn when the welcome ends (ADR-595).
+            // Not while the first-launch welcome is up: it gets its turn when the welcome ends (ADR-598).
             if !welcomeVisible { opening.homeReady(openingConditions, isActive: scenePhase == .active) }
         }
         .onChange(of: welcomeVisible) { was, now in
@@ -445,6 +463,10 @@ struct RootView: View {
         // A conversation that comes up on its own (Back Tap, Siri, the island) ends the opening.
         .onChange(of: router.isVoicePresented) { _, presented in
             if presented { opening.conversationOpened() }
+        }
+        // So does one started on Home (ADR-595).
+        .onChange(of: HomeConversation.shared.live != nil) { _, live in
+            if live { opening.conversationOpened() }
         }
         // A Spotlight result (ADR-330) opens that note or list, as a widget's link does.
         .onContinueUserActivity(CSSearchableItemActionType) { activity in

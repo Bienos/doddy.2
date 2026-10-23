@@ -2,7 +2,7 @@ import DoddyCore
 import SwiftUI
 import UIKit
 
-// The five scenes of the welcome (ADR-595). Each is a SCRIPTED DEMONSTRATION: nothing is saved,
+// The five scenes of the welcome (ADR-598). Each is a SCRIPTED DEMONSTRATION: nothing is saved,
 // reminded, sent or looked up, and every card says "Example". A scene is a pure function of `e`,
 // the seconds since its chapter began to appear (`WelcomeTimeline`), so a swipe can end it at any
 // moment. A scene that is not on screen is drawn in its final state (`e` is large).

@@ -29,14 +29,14 @@ Code lives under `DoddyApp/Features/<Folder>/`. Status docs are in `docs/impleme
 | Opening | Animated intro, listen on open | 225 | OPENING_SCENE_STATUS |
 | DesignSystem/Motion (branches `claude/motion-mv1` to `mv6`, not on main yet) | One persistent Doddy: director, drawing, clock; the engine is in DoddyCore `Motion/` | 554, 555 | MOTION_V2_PLAN (in `docs/design/`), MOTION_V2_DEVICE_CHECKLIST, MOTION_V2_ART_REQUESTS |
 | Onboarding | Introduction, storybook welcome | 299, 380 | ONBOARDING_STATUS |
-| Welcome (on `claude/gifted-einstein-61p6hq`, not merged) | First-launch welcome "One morning in Warsaw": five chapters, a persistent Doddy, a sign-in sheet that is not connected yet; `DoddyCore/Welcome/` for the maths | 595 | WELCOME_STATUS |
+| Welcome (on `claude/gifted-einstein-61p6hq`, not merged) | First-launch welcome "One morning in Warsaw": five chapters, a persistent Doddy, a sign-in sheet (Apple is real, the rest not connected yet); `DoddyCore/Welcome/` for the maths | 598, 599 | WELCOME_STATUS |
 | Home | Home screen | 323, 380 | ONBOARDING_STATUS |
 | Memories | Notes list, find, detail, corrections | 252, 310 | MEMORY_HISTORY_STATUS, M1_STATUS |
 | Capture | New-note editor, "Save to Doddy" | 179 | M1_STATUS |
 | Lists | Lists, templates, share card, shopping mode | 216, 257, 334 | LISTS_STATUS, SHOPPING_MODE_STATUS |
 | NoteReminders | Time and place reminders on notes | 196, 211 | M4A_NOTE_REMINDERS_STATUS, PLACE_REMINDERS_STATUS |
 | Settings | Settings, island style, personality, what Doddy learned ("Hey Doddy" was removed, ADR-549) | 254, 440, 549 | HEY_DODDY_STATUS (history), M6_LEARNING_LOOP_STATUS |
-| Ask | Typed questions (gateway) | - | M2_STATUS |
+| Messages (was Ask) | The typed conversation with Doddy: bubbles saved on this iPhone until deleted; answers from the Ask gateway | 585 (115) | MESSAGES_STATUS, M2_STATUS |
 | Activity | "What Doddy did" and undo | 268, 271 | ACTIVITY_UNDO_STATUS |
 | Alarms | Alarms by voice (AlarmKit, iOS 26) | 260, 283 | ALARMS_STATUS |
 | Backup | Encrypted backup file | 222 | ENCRYPTED_BACKUP_STATUS |

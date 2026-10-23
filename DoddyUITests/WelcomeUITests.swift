@@ -1,6 +1,6 @@
 import XCTest
 
-/// The first-launch welcome (ADR-595). NOT RUN in the authoring environment (no Xcode): the hosted
+/// The first-launch welcome (ADR-598). NOT RUN in the authoring environment (no Xcode): the hosted
 /// Mac CI is the first run. The sign-in is UI only, so these tests check what the buttons say and
 /// that "Try Doddy without an account" is the only way on.
 final class WelcomeUITests: XCTestCase {

@@ -82,6 +82,15 @@ const schema = z.object({
   ERRAND_TIME_LIMIT_MINUTES: z.coerce.number().int().min(1).max(120).default(30),
   // Queued or running errands per account.
   ERRANDS_MAX_OPEN: z.coerce.number().int().min(1).max(20).default(5),
+
+  // Messages (ADR-585, ADR-586): the app's typed conversation asks Claude here. Text only, no tools.
+  // Runs only when ANTHROPIC_API_KEY is set too; "0" answers 503 notConfigured. The daily caps count
+  // requests per account and for the whole server (UTC day) and can only be lowered below the ceilings.
+  ASSISTANT_ENABLED: z.enum(["0", "1"]).default("0"),
+  ASSISTANT_MODEL: z.string().regex(/^[a-z0-9][a-z0-9.\-]{1,63}$/).default("claude-haiku-5-5"),
+  ASSISTANT_EFFORT: z.enum(["low", "medium", "high"]).default("medium"),
+  ASSISTANT_DAILY_PER_ACCOUNT: z.coerce.number().int().min(1).max(1000).default(100),
+  ASSISTANT_DAILY_PER_SERVER: z.coerce.number().int().min(1).max(100000).default(1000),
 });
 
 export interface ApnsConfig { teamId: string; keyId: string; privateKey: string; bundleId: string }
@@ -118,6 +127,11 @@ export interface ErrandSettings {
   enabled: boolean; model: string; effort: ErrandEffort; timeLimitMinutes: number; maxOpen: number;
 }
 
+/** Messages switches and caps (ADR-586). `enabled` is the env switch only; the key is checked where wired. */
+export interface AssistantSettings {
+  enabled: boolean; model: string; effort: "low" | "medium" | "high"; dailyPerAccount: number; dailyPerServer: number;
+}
+
 export interface Config {
   databaseUrl: string;
   port: number;
@@ -138,6 +152,7 @@ export interface Config {
   taskCalls?: TaskCallConfig;
   taskCallSettings: TaskCallSettings;
   errandSettings: ErrandSettings;
+  assistantSettings: AssistantSettings;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -205,6 +220,13 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       timeLimitMinutes: e.ERRAND_TIME_LIMIT_MINUTES,
       maxOpen: e.ERRANDS_MAX_OPEN,
     },
+    assistantSettings: {
+      enabled: e.ASSISTANT_ENABLED === "1",
+      model: e.ASSISTANT_MODEL,
+      effort: e.ASSISTANT_EFFORT,
+      dailyPerAccount: e.ASSISTANT_DAILY_PER_ACCOUNT,
+      dailyPerServer: e.ASSISTANT_DAILY_PER_SERVER,
+    },
   };
 }
 
@@ -224,4 +246,10 @@ export const DEFAULT_TASK_CALL_SETTINGS: TaskCallSettings = {
  * The environment's ERRANDS_ENABLED defaults to "0": errands start only when the owner turns them on. */
 export const DEFAULT_ERRAND_SETTINGS: ErrandSettings = {
   enabled: true, model: "claude-opus-5-5", effort: "high", timeLimitMinutes: 30, maxOpen: 5,
+};
+
+/** Settings for an injected AssistantDeps without its own (tests). The environment's ASSISTANT_ENABLED
+ * defaults to "0": the typed conversation reaches Claude only when the owner turns it on. */
+export const DEFAULT_ASSISTANT_SETTINGS: AssistantSettings = {
+  enabled: true, model: "claude-haiku-5-5", effort: "medium", dailyPerAccount: 100, dailyPerServer: 1000,
 };
