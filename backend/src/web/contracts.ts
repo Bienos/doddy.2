@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /**
- * Doddy Web contract, v1 (ADR-585). The iPhone app and the web app read the same shapes; the
+ * Doddy Web contract, v1 (ADR-600). The iPhone app and the web app read the same shapes; the
  * fixtures in contracts/web/ are written from real server output (`npm run fixtures`).
  */
 

@@ -225,7 +225,7 @@ export const SCHEMA_SQL = `
   CREATE INDEX IF NOT EXISTS memory_notes_age ON memory_notes(received_at);
 `;
 
-/** A browser signed in to Doddy Web (ADR-585). The cookie's token is stored only as a hash. */
+/** A browser signed in to Doddy Web (ADR-600). The cookie's token is stored only as a hash. */
 export interface WebSessionRow {
   session_id: string;
   user_id: string;
@@ -236,7 +236,7 @@ export interface WebSessionRow {
   expires_at: number;
 }
 
-/** A document without its file, for lists (ADR-585). */
+/** A document without its file, for lists (ADR-600). */
 export interface DocumentSummaryRow {
   id: string;
   status: DocumentRow["status"];
@@ -246,7 +246,7 @@ export interface DocumentSummaryRow {
   created_at: number;
 }
 
-/** A note kept on request (ADR-595): its text and provenance are one encrypted blob; the rest is what the server needs to list and sweep. */
+/** A note kept on request (ADR-603): its text and provenance are one encrypted blob; the rest is what the server needs to list and sweep. */
 export interface MemoryNoteRow {
   note_id: string;
   key_version: number;
@@ -255,7 +255,7 @@ export interface MemoryNoteRow {
   received_at: number;
 }
 
-/** A conversation kept on request (ADR-595). `ciphertext` holds the language, how it ended and every turn. */
+/** A conversation kept on request (ADR-603). `ciphertext` holds the language, how it ended and every turn. */
 export interface MemoryConversationRow {
   conversation_id: string;
   started_at: number;
@@ -266,7 +266,7 @@ export interface MemoryConversationRow {
   received_at: number;
 }
 
-/** One stored day of Logbook (ADR-593): the day, its summary as JSON text, and when the iPhone sent it. */
+/** One stored day of Logbook (ADR-602): the day, its summary as JSON text, and when the iPhone sent it. */
 export interface LogbookDayRow {
   day: string;
   summary: string;
@@ -703,7 +703,7 @@ export class Store {
     return { ...row, body: row.body === null ? null : Buffer.from(row.body as unknown as Uint8Array) };
   }
 
-  /** The user's own documents, newest first, without their files (ADR-585). */
+  /** The user's own documents, newest first, without their files (ADR-600). */
   async listDocuments(userId: string, limit: number): Promise<DocumentSummaryRow[]> {
     return (
       await this.db.query<DocumentSummaryRow>(
@@ -730,7 +730,7 @@ export class Store {
     return (await this.db.query("DELETE FROM documents WHERE created_at < $1", [now - 7 * 86_400_000])).rowCount;
   }
 
-  // ------------------------------------------------------------ Logbook (ADR-593)
+  // ------------------------------------------------------------ Logbook (ADR-602)
 
   /** Off until the iPhone turns it on. A user with no row is off. */
   async logbookEnabled(userId: string): Promise<boolean> {
@@ -788,7 +788,7 @@ export class Store {
     return (await this.db.query("DELETE FROM logbook_days WHERE day < $1", [oldest])).rowCount;
   }
 
-  // ------------------------------------------------------------ Kept memory (ADR-595)
+  // ------------------------------------------------------------ Kept memory (ADR-603)
 
   /** Both switches are off until the iPhone turns them on. A user with no row has both off. */
   async memoryState(userId: string): Promise<{ notes: boolean; conversations: boolean }> {
@@ -929,7 +929,7 @@ export class Store {
     return (await this.db.query("DELETE FROM memory_notes WHERE received_at < $1", [oldest])).rowCount;
   }
 
-  // ------------------------------------------------------------ Doddy Web (ADR-585)
+  // ------------------------------------------------------------ Doddy Web (ADR-600)
 
   /** A new sign-in code for `userId`. Any earlier code of theirs stops working. */
   async createWebLinkCode(userId: string, codeHash: string, now: number, ttlMs: number): Promise<void> {

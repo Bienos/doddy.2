@@ -8,7 +8,7 @@ import { USER_A, USER_B } from "./helpers.js";
 import { startWeb, type WebRig } from "./webRig.js";
 
 /**
- * Logbook, the server's half (ADR-593): the iPhone sends one counts-only summary per day, the
+ * Logbook, the server's half (ADR-602): the iPhone sends one counts-only summary per day, the
  * person reads them in Doddy Web. Off until the iPhone turns it on; nothing but numbers can be
  * stored; the browser reads, downloads and deletes but never writes.
  */

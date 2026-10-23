@@ -6,7 +6,7 @@ import { ErrorState, Loading } from "../components/States.js";
 import { useI18n } from "../i18n/i18n.js";
 
 /**
- * What Doddy can reach (GET /v1/tools), read-only on the web for now (ADR-585): connecting goes
+ * What Doddy can reach (GET /v1/tools), read-only on the web for now (ADR-600): connecting goes
  * through the iPhone's sign-in sheet, and switching a tool on is the iPhone's ASK-01 flow.
  */
 export function AppsPage() {

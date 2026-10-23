@@ -2,7 +2,7 @@ import { z } from "zod";
 import { AppError } from "../errors.js";
 
 /**
- * Kept memory, the server's contract (ADR-595, docs/product/CLOUD_MEMORY.md): the notes and
+ * Kept memory, the server's contract (ADR-603, docs/product/CLOUD_MEMORY.md): the notes and
  * conversations a person has chosen to keep on Doddy's server, in text only (never audio).
  * Unlike Logbook (counts), this is content. It is accepted only from the iPhone's own session,
  * only while the person's switch for that kind is on, and only in these shapes: every object is

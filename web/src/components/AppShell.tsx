@@ -8,8 +8,8 @@ import type { MessageKey } from "../i18n/messages.js";
 import { Wordmark } from "./Brand.js";
 
 /**
- * Only sections that work today are in the menu (ADR-585). Chat, memory and tasks come later.
- * Logbook is there too (ADR-593), marked Example until the iPhone can send it; Memory and Ask Doddy (ADR-595)
+ * Only sections that work today are in the menu (ADR-600). Chat, memory and tasks come later.
+ * Logbook is there too (ADR-602), marked Example until the iPhone can send it; Memory and Ask Doddy (ADR-603)
  * are marked Soon until the iPhone can send notes and conversations.
  */
 export const SECTIONS: { path: string; label: MessageKey; example?: boolean; soon?: boolean }[] = [

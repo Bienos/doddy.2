@@ -9,7 +9,7 @@ import type { ChatSource } from "../memory/schema.js";
 import { KeptNothing } from "./MemoryPage.js";
 
 /**
- * Ask Doddy on the web (ADR-595): a question about your own notes and conversations, answered by
+ * Ask Doddy on the web (ADR-603): a question about your own notes and conversations, answered by
  * Claude from the best-matching ones on Doddy's server (POST /v1/web/chat). It can only answer: no
  * tools, nothing saved or changed. Nothing about the chat is stored; the page keeps the turns in
  * memory and sends the last few with each question. Every answer shows the sources it cites, so

@@ -37,7 +37,7 @@ run_step "Blog pages up to date" python3 -I tools/build_blog.py --check
 run_step "Site pages in every language up to date" python3 -I tools/build_site_i18n.py --check
 run_step "String catalogs up to date" python3 -I tools/build_strings_catalog.py --check
 run_step "What-can-doddy-do page up to date" python3 -I tools/build_day.py --check
-run_step "Web app tokens and brand files match the app (ADR-585)" python3 -I tools/gen_web_assets.py --check
+run_step "Web app tokens and brand files match the app (ADR-600)" python3 -I tools/gen_web_assets.py --check
 run_step "Which pull requests need the macOS build (ADR-497)" scripts/test_ci_needs_mac.sh
 if python3 -I -c "import yaml" 2>/dev/null; then
   run_step "Per-platform Xcode specs in step" python3 -I scripts/check_platform_specs.py
@@ -89,7 +89,7 @@ else
   not_run "Gateway tests (node)" "node/npm not found on PATH"
 fi
 
-# Doddy Web (web/, ADR-585): type-check, unit tests against the server's own fixtures, and the
+# Doddy Web (web/, ADR-600): type-check, unit tests against the server's own fixtures, and the
 # production build. The end-to-end run (real backend + Chromium) needs a Playwright Chromium; where
 # there is none it is listed as SKIPPED, never PASS.
 if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then

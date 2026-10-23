@@ -8,7 +8,7 @@ import { USER_A, USER_B } from "./helpers.js";
 import { CHROME_MAC, COOKIE, cookieValue, startWeb, WEB_ORIGIN, type WebRig } from "./webRig.js";
 
 /**
- * Doddy Web (ADR-585): the iPhone vouches for a browser with a one-time code; the browser gets a
+ * Doddy Web (ADR-600): the iPhone vouches for a browser with a one-time code; the browser gets a
  * cookie session for the same user that can read the workspace and nothing more.
  */
 

@@ -97,7 +97,7 @@ ElevenLabs became the default voice (ADR-546), so seven privacy texts that named
 - `Talking sends these reminders and list names to ElevenLabs, or OpenAI if you switch Home's…`
 - `While you talk, your voice, this conversation, your saved notes, your list names (and a li…`
 
-## Doddy on the web (ADR-585, 22 Oct 2026)
+## Doddy on the web (ADR-600, 22 Oct 2026)
 - **App:** 22 new strings for Settings › Doddy on the web have Polish written by the agent (`l10n/pl.json`, the last lines). The other eight languages show them in English until `tools/l10n_batch.py` is run for them.
 - **Web app:** `web/src/i18n/messages.ts` holds the whole page in Polish (default) and English, Polish written by the agent. A native speaker should read the sign-in steps and the safety line first ("Wpisuj kod tylko tutaj…"), since they are what stops someone being talked into reading their code out. Receipt summaries and connected-app descriptions come from the server in English on both.
 

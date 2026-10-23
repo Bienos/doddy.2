@@ -10,7 +10,7 @@ import { USER_A, USER_B } from "./helpers.js";
 import { startWeb, type WebRig } from "./webRig.js";
 
 /**
- * Kept notes and conversations, and chat over them (ADR-595): content, not counts. Off until the
+ * Kept notes and conversations, and chat over them (ADR-603): content, not counts. Off until the
  * iPhone turns each kind on; encrypted at rest; the browser reads, downloads, deletes and asks,
  * and can never put anything on the server.
  */

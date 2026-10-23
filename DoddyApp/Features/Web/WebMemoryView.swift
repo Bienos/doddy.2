@@ -1,7 +1,7 @@
 import DoddyCore
 import SwiftUI
 
-/// Settings → Doddy on the web → Keep on Doddy's server (ADR-595): two switches (notes, conversations),
+/// Settings → Doddy on the web → Keep on Doddy's server (ADR-603): two switches (notes, conversations),
 /// a consent screen before either goes on, and one button that deletes everything the server keeps. The
 /// rules are `WebMemoryModel` in DoddyCore, tested on Linux; this file only draws them. A switch changes
 /// only after Doddy's server said so, and nothing is called kept or deleted before it did.

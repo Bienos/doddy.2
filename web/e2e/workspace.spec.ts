@@ -2,7 +2,7 @@ import { type APIRequestContext, expect, type Page, test } from "@playwright/tes
 import { daysAgo, logbookDay } from "./logbookDay.js";
 
 /**
- * The continuity promise, end to end (ADR-585): something made on the iPhone opens on the web,
+ * The continuity promise, end to end (ADR-600): something made on the iPhone opens on the web,
  * under the same account, with the iPhone vouching for the browser. "The iPhone" here is the
  * app's own HTTP calls (device sign-in, ASK-01's prepare and run, a sign-in code); the browser is
  * a real Chromium against the real backend.

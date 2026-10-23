@@ -1,7 +1,7 @@
 import Foundation
 import Observation
 
-/// The rules for keeping notes and conversations on Doddy's server (ADR-595), tested on Linux.
+/// The rules for keeping notes and conversations on Doddy's server (ADR-603), tested on Linux.
 /// The person turns each kind on or off; the server is asked first and the switch follows its answer
 /// (nothing is shown as kept, or as forgotten, until the server said so: DOD-08). Notes are sent as the
 /// whole current list, so a note deleted here is gone there at the next send; conversations are sent

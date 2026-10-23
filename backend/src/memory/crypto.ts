@@ -1,7 +1,7 @@
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 
 /**
- * AES-256-GCM for the notes and conversations a person chooses to keep on Doddy's server (ADR-595).
+ * AES-256-GCM for the notes and conversations a person chooses to keep on Doddy's server (ADR-603).
  * The key is held by the server, so the server can search what it keeps (for the web page and for
  * chatting with it): this is encryption at rest, not end-to-end. The associated data binds each
  * blob to its user, kind and row, so a row copied to another user or another row fails to decrypt.

@@ -2,7 +2,7 @@ import Foundation
 import XCTest
 @testable import DoddyCore
 
-/// Fixtures written by the backend from its own replies (`npm run fixtures:web`, ADR-595); the web
+/// Fixtures written by the backend from its own replies (`npm run fixtures:web`, ADR-603); the web
 /// app's tests read the same files.
 private func fixture(_ name: String) throws -> Data {
     let root = URL(fileURLWithPath: #filePath)

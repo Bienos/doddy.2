@@ -1,5 +1,5 @@
 /**
- * What Logbook counts, by name (ADR-593, docs/product/WEB_LOGBOOK.md). Tool ids are the voice
+ * What Logbook counts, by name (ADR-602, docs/product/WEB_LOGBOOK.md). Tool ids are the voice
  * agent's own (voice-agent/tools.json); what each is called, which app it belongs to, which job it
  * does and whether Doddy asks first come from here. The words are in i18n/logbookMessages.ts.
  * A tool this list doesn't know yet is shown under "Other" with its id, never dropped.

@@ -46,7 +46,7 @@ struct DataFlowView: View {
     @AppStorage(PreferenceKey.messagingServerURL) private var messagingServerURL = ""
     @AppStorage(PreferenceKey.pushUpdatesOn) private var pushOn = false
     @AppStorage(PreferenceKey.memoryCopyOn) private var memoryCopyOn = false
-    // Redraws this screen when a switch for keeping notes or conversations on Doddy's server changes (ADR-595).
+    // Redraws this screen when a switch for keeping notes or conversations on Doddy's server changes (ADR-603).
     @AppStorage(WebMemoryModel.notesKey) private var webNotesKept = false
     @AppStorage(WebMemoryModel.conversationsKey) private var webConversationsKept = false
     @AppStorage(PreferenceKey.siriReadsNotes) private var siriReadsNotes = true

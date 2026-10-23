@@ -1,7 +1,7 @@
 import type { Turn } from "./contract.js";
 
 /**
- * Lexical search over the notes and conversations a person keeps (ADR-595). The same rules as the
+ * Lexical search over the notes and conversations a person keeps (ADR-603). The same rules as the
  * app's note search and the messaging server's memory copy: case and diacritics don't matter,
  * every term matches the start of a word (loosely, so inflected forms match), and nothing is invented: only what matches is returned.
  */

@@ -12,7 +12,7 @@ import { IPHONE_SYNCS_MEMORY } from "../memory/config.js";
 import type { ConversationDetail, ConversationSummary, MemoryOverview, NoteView } from "../memory/schema.js";
 
 /**
- * Memory (ADR-595, docs/product/CLOUD_MEMORY.md): the notes and conversations a person chose to keep
+ * Memory (ADR-603, docs/product/CLOUD_MEMORY.md): the notes and conversations a person chose to keep
  * on Doddy's server, as text, read back from GET /v1/web/memory…. Nothing is shown that the server
  * didn't send, and every state is honest: loading, the server can't be reached, nothing kept, and
  * what is kept. The iPhone can't send anything yet (IPHONE_SYNCS_MEMORY), so the copy never points

@@ -7,7 +7,7 @@
 > - Text in [BRACKETS] is a placeholder. Text tagged **[CONFIRM: ...]** is something the code or docs do not settle.
 > - Every statement is meant to match what the code does today. Where the app's own screens say something different, this is noted in Appendix B.
 > - Many features here are built but never run on a device or against a live service (`docs/implementation/GO_LIVE_STATUS_2026-10-11.md`). A published policy must describe what is really running at launch, so every section needs a re-check.
-> - **Updated 2026-10-23 for ADR-595** (notes and conversations kept on Doddy's server, Section 5.13). That feature is built and tested on the server and in DoddyCore, but the iPhone screens are **not compiled** and the server code is **not deployed**. Section 5.13 describes what the code does; it must not be published until the feature really runs and has been checked on a device.
+> - **Updated 2026-10-23 for ADR-603** (notes and conversations kept on Doddy's server, Section 5.13). That feature is built and tested on the server and in DoddyCore, but the iPhone screens are **not compiled** and the server code is **not deployed**. Section 5.13 describes what the code does; it must not be published until the feature really runs and has been checked on a device.
 > - It depends on these owner decisions: who the controller is; which servers are really deployed; ElevenLabs retention; which processor agreements exist; the age rating; whether the website keeps Google Fonts and Google Analytics. See Appendix B.
 
 Effective date: [DATE]
@@ -240,7 +240,7 @@ Common points:
 | Cookies and storage | Only GA cookies (if you allow) and one localStorage entry for your analytics choice. The site has no other cookies. |
 | Blog | Pages are static (`site/blog`). No comments or forms were found. |
 
-### 5.13 Doddy's server: notes and conversations kept for the web (ADR-595)
+### 5.13 Doddy's server: notes and conversations kept for the web (ADR-603)
 
 Status: server and web pages built and tested; iPhone rules built and tested in DoddyCore; **iPhone screens not compiled; not deployed.** Describes what the code does (`docs/product/CLOUD_MEMORY.md`).
 
@@ -317,9 +317,9 @@ What the app lets you do today:
 | Clear the activity list | "Clear" in What Doddy did | `ActivityView.swift` |
 | Delete the messaging server data | "Delete my Doddy messaging data": the server deletes the account and, by cascade, the devices, phone number, queued and past messages, call notes, memory copies, call records, news settings and topics. The app then switches push and Memory on calls off. Notes on the iPhone are not touched. | `UpdatesModel.deleteServerAccount`, `DELETE /v1/account`, ADR-143 |
 | Turn off Memory on calls | Deletes every server copy of your notes | `server/messaging/README.md`, ADR-153 |
-| Turn off keeping notes or conversations on Doddy's server | The app asks the server first; the switch follows its answer. The server deletes that kind in the same step. | `WebMemoryModel.setKept`, `PUT /v1/web/memory/state`, ADR-595 |
-| Delete everything Doddy's server keeps | "Delete everything on Doddy's server" in the app, or "Delete everything here" on the web. Both switches go off. It says plainly if the server did not confirm. Notes and conversations on the iPhone stay. | `WebMemoryModel.deleteEverythingOnServer`, `DELETE /v1/web/memory`, ADR-595 |
-| Read, search, download or delete one conversation on the server | The web page (sign in with the iPhone) | `web/src/pages/MemoryPage.tsx`, `GET /v1/web/memory/export`, ADR-595 |
+| Turn off keeping notes or conversations on Doddy's server | The app asks the server first; the switch follows its answer. The server deletes that kind in the same step. | `WebMemoryModel.setKept`, `PUT /v1/web/memory/state`, ADR-603 |
+| Delete everything Doddy's server keeps | "Delete everything on Doddy's server" in the app, or "Delete everything here" on the web. Both switches go off. It says plainly if the server did not confirm. Notes and conversations on the iPhone stay. | `WebMemoryModel.deleteEverythingOnServer`, `DELETE /v1/web/memory`, ADR-603 |
+| Read, search, download or delete one conversation on the server | The web page (sign in with the iPhone) | `web/src/pages/MemoryPage.tsx`, `GET /v1/web/memory/export`, ADR-603 |
 | Stop sharing a list | Deletes the iCloud copy for everyone. Leave takes you off someone else's list. | ADR-263 |
 | Disconnect an online account | Deletes the connection record and asks Composio to revoke and delete. You can also remove access in your Google account. | `SECURITY_AND_PERMISSIONS.md` |
 | Delete your waitlist email | Ask [PRIVACY EMAIL ADDRESS]. The owner deletes it in the admin page. | `site/README.md` |
@@ -348,8 +348,8 @@ What the app **cannot** delete:
 | Messaging server account, phone number, news settings | Until deleted | `001_init.sql`, `003_news.sql` |
 | Queued message text | Until the message reaches a final state | `001_init.sql` |
 | Memory copy | Until Memory on calls is turned off | ADR-153 |
-| Notes kept on Doddy's server for the web | Until you turn it off or delete; mirrors the iPhone; 365 days without a send | ADR-595, `backend/src/store.ts` |
-| Conversations kept on Doddy's server for the web | 365 days from when they started, or until you delete them | ADR-595 |
+| Notes kept on Doddy's server for the web | Until you turn it off or delete; mirrors the iPhone; 365 days without a send | ADR-603, `backend/src/store.ts` |
+| Conversations kept on Doddy's server for the web | 365 days from when they started, or until you delete them | ADR-603 |
 | Call notes | Until you confirm or discard them **[CONFIRM: expiry]** | `002_calls.sql` |
 | Verification-start records | 2 days (hash of number only) | `routes/phone.ts` |
 | News sent records / digests / feed cache | 14 days / 30 days / 24 hours | `news/digest.ts`, `news/sources.ts` |
@@ -435,7 +435,7 @@ Paths are relative to the repository root. "ADR" means a row in `DECISIONS.md`.
 | A44 | No age gate | Searched `DoddyApp` and `Packages` for age gate, parental terms; none found |
 | A45 | Privacy manifest content | `DoddyApp/Resources/PrivacyInfo.xcprivacy`; ADR-118 |
 | A46 | Legal review not done, no privacy policy yet | `docs/security/PRIVACY_GDPR_AI_ACT.md`; `GO_LIVE_STATUS_2026-10-11.md` |
-| A47 | Notes and conversations are kept on Doddy's server only if switched on; text only; private ones left out; 365 days | `backend/src/memory/{contract,service,routes}.ts`; `Packages/DoddyCore/Sources/DoddyCore/OnlineAccounts/WebMemoryClient.swift` (`KeptNote.from`, `KeptConversation.mayBeSent`); ADR-595 |
+| A47 | Notes and conversations are kept on Doddy's server only if switched on; text only; private ones left out; 365 days | `backend/src/memory/{contract,service,routes}.ts`; `Packages/DoddyCore/Sources/DoddyCore/OnlineAccounts/WebMemoryClient.swift` (`KeptNote.from`, `KeptConversation.mayBeSent`); ADR-603 |
 | A48 | Encrypted at rest with AES-256-GCM bound to user, kind and row; server can read it; no key rotation | `backend/src/memory/crypto.ts`; `docs/product/CLOUD_MEMORY.md` |
 | A49 | Browser can read, search, export and delete, never switch keeping on | `backend/src/memory/routes.ts`; `backend/test/memory.test.ts` |
 | A50 | Logs hold no note, turn, question or answer | `backend/test/memory.test.ts` (planted strings) |

@@ -1,6 +1,6 @@
 # Text channels: asking Doddy about your notes by message (iMessage, SMS, WhatsApp)
 
-**Status (23 Oct 2026): design only. Nothing here is built, nothing sends or receives a message, and no account with Apple, Meta or a messaging provider has been opened for it.** It answers the owner's request of 22 Oct: "the iMessage thing where people could be connected to the information of Doddy and talk with it". It follows ADR-595 (`docs/product/CLOUD_MEMORY.md`): the answer is `MemoryChat.answer(userId, …)`, which knows nothing about the web, so a message channel is a new door onto the same function. The hard part is not the door; it is knowing which person is texting.
+**Status (23 Oct 2026): design only. Nothing here is built, nothing sends or receives a message, and no account with Apple, Meta or a messaging provider has been opened for it.** It answers the owner's request of 22 Oct: "the iMessage thing where people could be connected to the information of Doddy and talk with it". It follows ADR-603 (`docs/product/CLOUD_MEMORY.md`): the answer is `MemoryChat.answer(userId, …)`, which knows nothing about the web, so a message channel is a new door onto the same function. The hard part is not the door; it is knowing which person is texting.
 
 ## What exists today
 
@@ -35,7 +35,7 @@ A text arrives from a number. Doddy must decide *whose notes* it may read. Today
 2. The backend creates a **one-time link code** (single use, about 10 minutes, bound to the user). The app shows: "Text `LINK 483920` to Doddy's number from the number you want to use."
 3. The inbound webhook (signature-checked) sees the code from the sender number, proves the person controls it by *sending from it*, and calls the backend **service-to-service** (HMAC over the raw body with a shared secret, no user cookie) to complete the link. The backend stores a **peppered hash of the number**, the channel and the user id. It does not store the number in plain text; the messaging server already holds it for its own purposes.
 4. Later texts from that number are answered for that user only. Unknown numbers get a fixed reply that reveals nothing ("I don't know this number. Link it in the Doddy app.") and spend no model call.
-5. Unlinking is in the app and by texting STOP; deleting everything on the server (ADR-595) removes the links too; a link expires after 90 days unless the person re-confirms in the app.
+5. Unlinking is in the app and by texting STOP; deleting everything on the server (ADR-603) removes the links too; a link expires after 90 days unless the person re-confirms in the app.
 
 **What this does not defend against, and the mitigations that shrink it:**
 
@@ -47,7 +47,7 @@ A text arrives from a number. Doddy must decide *whose notes* it may read. Today
 | Cost abuse | Same daily caps as Ask Doddy, plus a per-number limit; nothing is sent to unlinked numbers. |
 | The carrier or provider reads the message | Said in the consent: Twilio / Meta / the MSP and the carriers carry the question *and the answer, which can quote your notes*. This is a new recipient of the text of your notes, beyond Doddy's server and Anthropic. |
 
-## Hard rules for any channel (from the constitution and ADR-595)
+## Hard rules for any channel (from the constitution and ADR-603)
 
 - Doddy answers only a message the person sent. It does not start conversations, send reminders about notes, or send an answer to a number that has not linked itself. Outbound updates stay a separate, already-consented feature (SMS updates, S1).
 - A channel can read and answer. It cannot switch keeping on, change what is kept, or delete. Those stay in the app.

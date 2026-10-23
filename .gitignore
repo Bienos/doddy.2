@@ -46,7 +46,7 @@ __pycache__/
 
 # Temporary git worktrees made by Claude Code helper agents
 .claude/worktrees/
-# Doddy Web (ADR-585): build output and Playwright's run folders
+# Doddy Web (ADR-600): build output and Playwright's run folders
 web/dist/
 web/test-results/
 web/playwright-report/

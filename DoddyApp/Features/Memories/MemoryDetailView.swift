@@ -172,7 +172,7 @@ struct MemoryDetailView: View {
         // What leaves the app follows straight away: widgets, the watch and the call copy.
         WidgetSync.shared.refresh()
         MemoryCopySync.shared.schedule(PrivateNotesStore.current().shareable(store.memories))
-        // Notes kept on Doddy's server (ADR-595), if the person turned that on. Making a note private takes
+        // Notes kept on Doddy's server (ADR-603), if the person turned that on. Making a note private takes
         // it off the server at the next send.
         WebMemory.shared.scheduleNotes(store.memories, privateNotes: PrivateNotesStore.current())
     }

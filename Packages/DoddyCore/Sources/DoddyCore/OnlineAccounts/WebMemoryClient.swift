@@ -1,6 +1,6 @@
 import Foundation
 
-/// ADR-595: notes and conversations kept on Doddy's server, as text, when the person turns that on.
+/// ADR-603: notes and conversations kept on Doddy's server, as text, when the person turns that on.
 /// This is the HTTP side and the shapes it sends, kept here so they are tested on Linux; the rules
 /// for when to send are `WebMemoryModel`, and the screen is `DoddyApp/Features/Web/WebMemoryView.swift`.
 ///

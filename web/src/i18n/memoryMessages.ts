@@ -1,5 +1,5 @@
 /**
- * Every word the Memory and Ask Doddy pages show (ADR-595), in English and Polish, spread into
+ * Every word the Memory and Ask Doddy pages show (ADR-603), in English and Polish, spread into
  * messages.ts. Same rules as there: components call t("key"), {name} placeholders, Polish is a
  * first draft by the agent that needs a native speaker's read (l10n/REVIEW_NOTES.md). Doddy is
  * "he" in Polish (ADR-573); the person is addressed without a gender.

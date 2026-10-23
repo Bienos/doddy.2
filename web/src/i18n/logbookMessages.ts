@@ -1,5 +1,5 @@
 /**
- * Every word Logbook shows (ADR-593), in English and Polish, spread into messages.ts. Same rules as
+ * Every word Logbook shows (ADR-602), in English and Polish, spread into messages.ts. Same rules as
  * there: components call t("key"), {name} placeholders, Polish is a first draft by the agent that
  * needs a native speaker's read (l10n/REVIEW_NOTES.md). Doddy is "he" in Polish (ADR-573); the
  * person is addressed without a gender ("Twoje „tak”", never "powiedziałeś").

@@ -3,7 +3,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { extname, join, normalize, resolve, sep } from "node:path";
 
 /**
- * Serves the built web app (`web/dist`, ADR-585) from this server, so the app, its API and its
+ * Serves the built web app (`web/dist`, ADR-600) from this server, so the app, its API and its
  * session cookie share one origin. Only files inside the folder with a known type are served; a
  * path without a file extension is a page of the app and gets `index.html`. API paths (`/v1/…`)
  * never reach here.

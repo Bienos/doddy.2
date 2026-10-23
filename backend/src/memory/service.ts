@@ -20,7 +20,7 @@ import type { MemoryCipher } from "./crypto.js";
 import { rankConversations, rankNotes, type ConversationExcerpt } from "./search.js";
 
 /**
- * Notes and conversations kept on request (ADR-595): the one place that encrypts them on the way
+ * Notes and conversations kept on request (ADR-603): the one place that encrypts them on the way
  * in and decrypts them on the way out. Everything is keyed by the caller's user id. A row that no
  * longer decrypts or reads is left out and counted in the log, never shown half-read. Logs carry
  * counts only, never a word of what is kept.

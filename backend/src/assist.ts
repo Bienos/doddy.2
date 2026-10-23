@@ -197,7 +197,7 @@ export class AssistService {
 
 /**
  * What a failed Claude call becomes for the client: a safe code and message, never the provider's
- * own text. `outcome` is the content-free word for the log. Shared with the memory chat (ADR-595).
+ * own text. `outcome` is the content-free word for the log. Shared with the memory chat (ADR-603).
  */
 export function claudeFailure(error: unknown): { error: AppError; outcome: string } {
   if (error instanceof ClaudeRefusal) return { error: new AppError("refused"), outcome: "refused" };

@@ -2,7 +2,7 @@ import { z } from "zod";
 import { ENDINGS, KINDS, LENGTHS, SOURCES, WAYS } from "./catalog.js";
 
 /**
- * One day's summary, as the iPhone will send it and the server will keep it (ADR-593,
+ * One day's summary, as the iPhone will send it and the server will keep it (ADR-602,
  * docs/product/WEB_LOGBOOK.md, "The daily summary"): whole numbers and fixed names, never a word
  * anyone said. Every object is strict, so a field this list doesn't name is refused rather than
  * shown, and a text where a number belongs is refused too. Tool ids only need the shape of an id

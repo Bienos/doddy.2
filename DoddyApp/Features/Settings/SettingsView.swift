@@ -187,7 +187,7 @@ struct SettingsView: View {
                 Text("Online accounts")
             }
             .accessibilityIdentifier("settings.onlineAccounts")
-            // ADR-585: sign in to Doddy on the web with a code from this iPhone.
+            // ADR-600: sign in to Doddy on the web with a code from this iPhone.
             NavigationLink {
                 WebSignInScreen()
             } label: {

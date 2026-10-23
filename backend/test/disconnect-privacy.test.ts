@@ -112,7 +112,7 @@ test("logs, receipts and the database hold no event content, tokens, nonces or s
     "SELECT table_name AS name FROM information_schema.tables WHERE table_schema = 'doddy_backend'",
   )).rows.map((t) => t.name);
   assert.ok(tables.includes("receipts"), "the schema's tables are listed");
-  // ADR-595: the three tables of notes and conversations a person chose to keep on the server (encrypted,
+  // ADR-603: the three tables of notes and conversations a person chose to keep on the server (encrypted,
   // off until the iPhone turns them on; test/memory.test.ts) are the only content tables allowed. Anything
   // else that looks like content still fails here.
   const keptOnRequest = new Set(["memory_state", "memory_notes", "memory_conversations"]);

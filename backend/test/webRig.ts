@@ -25,7 +25,7 @@ import { WebStatic } from "../src/web/static.js";
 import { Clock, USER_A } from "./helpers.js";
 
 /**
- * A running server with Doddy Web on (ADR-585), the mock tools and a tiny built web app in a
+ * A running server with Doddy Web on (ADR-600), the mock tools and a tiny built web app in a
  * temporary folder. "Phone" calls carry a dev Bearer token (dev-user-a / dev-user-b); "browser"
  * calls carry the session cookie, the web app's Origin and its header.
  */
@@ -37,7 +37,7 @@ export interface WebRig {
   base: string;
   store: Store;
   tools: CloudToolsService;
-  /** Kept notes and conversations (ADR-595), keyed with a throwaway test key unless the rig was started with `memoryKey: null`. */
+  /** Kept notes and conversations (ADR-603), keyed with a throwaway test key unless the rig was started with `memoryKey: null`. */
   memory: MemoryService;
   clock: Clock;
   logs: string[];

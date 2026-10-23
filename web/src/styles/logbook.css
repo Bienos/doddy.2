@@ -1,5 +1,5 @@
 /*
- * Logbook (ADR-593) in Doddy Web, in the website's design. Colours come from tokens.css and app.css.
+ * Logbook (ADR-602) in Doddy Web, in the website's design. Colours come from tokens.css and app.css.
  * Every class starts with lb-. Chart colours were checked with the dataviz validator: lightness
  * band, chroma floor, colour-blind separation (worst adjacent ΔE 10.5 light, 9.5 dark) and 3:1
  * contrast, on the paper in both themes. Slot 1 is Doddy's orange one step deeper so marks clear 3:1.

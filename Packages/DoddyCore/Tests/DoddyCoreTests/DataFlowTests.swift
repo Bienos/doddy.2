@@ -189,7 +189,7 @@ final class DataFlowSummaryTests: XCTestCase {
     }
 
     func testWebSignInSaysWhatTheBrowserSeesAndThatNotesStayHere() throws {
-        // ADR-585.
+        // ADR-600.
         var state = base
         state.doddyServerSet = true
         let row = try XCTUnwrap(DataFlow.rows(state).first { $0.id == "webSignIn" })
@@ -203,7 +203,7 @@ final class DataFlowSummaryTests: XCTestCase {
     }
 
     func testKeptNotesAndConversationsHaveTheirOwnRowAndNameAnthropic() throws {
-        // ADR-595.
+        // ADR-603.
         var state = base
         state.doddyServerSet = true
         let off = try XCTUnwrap(DataFlow.rows(state).first { $0.id == "webMemory" })

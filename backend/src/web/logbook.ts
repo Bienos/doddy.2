@@ -2,7 +2,7 @@ import { z } from "zod";
 import { AppError } from "../errors.js";
 
 /**
- * Logbook, the server's half (ADR-593, docs/product/WEB_LOGBOOK.md): one day's summary of how a
+ * Logbook, the server's half (ADR-602, docs/product/WEB_LOGBOOK.md): one day's summary of how a
  * person used Doddy, as the iPhone sends it. Counts only. The shape is an allow-list in code: every
  * object is strict, every value is a whole number in range, and the only names that can appear as
  * keys are Doddy's own tool ids, a note's nine types and short language codes. A word anyone said

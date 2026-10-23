@@ -35,7 +35,7 @@ export async function buildApp(
     toolsProvider?: ToolsProvider;
     webSearch?: WebSearchProvider | null;
     claude?: ClaudeProvider | null;
-    /** The model that chats with a person's kept notes and conversations (ADR-595). */
+    /** The model that chats with a person's kept notes and conversations (ADR-603). */
     chatClaude?: ClaudeProvider | null;
     store?: Store;
     verifier?: SessionVerifier;
@@ -100,11 +100,11 @@ export async function buildApp(
     (config.deviceSignup !== "off" || config.deviceInviteCodes.length > 0) && config.sessionSigningKey
       ? new DeviceSessionIssuer(config.sessionSigningKey, { signup: config.deviceSignup, inviteCodes: config.deviceInviteCodes, store })
       : null;
-  // Doddy Web (ADR-585): only when DODDY_WEB_ORIGIN is set.
+  // Doddy Web (ADR-600): only when DODDY_WEB_ORIGIN is set.
   const webAuth = config.web
     ? new WebAuth(store, config.web.origin, config.web.trustProxy, { ...REDEEM_LIMITS, perClientPerQuarter: config.web.signInTriesPerClient })
     : null;
-  // Notes and conversations kept on request, and chat over them (ADR-595). Without DODDY_MEMORY_KEY the
+  // Notes and conversations kept on request, and chat over them (ADR-603). Without DODDY_MEMORY_KEY the
   // routes answer "not set up"; chat uses its own (smaller) model, live only with an Anthropic key.
   const log = (line: Record<string, unknown>) => process.stdout.write(`${JSON.stringify(line)}\n`);
   const memory = new MemoryService({ store, cipher: config.memoryKey ? new MemoryCipher(config.memoryKey) : null, log });
@@ -148,7 +148,7 @@ export async function buildApp(
       .then(() => store.pruneLogbook(oldestKeptDay(Date.now())))
       .then(() => (web ? store.pruneWeb(Date.now(), SESSION_IDLE_MS) : 0))
       .catch(() => {}); // the store closed with the server; the next start sweeps again
-    // Kept memory (ADR-595) is swept on its own, so a failure in the steps above can't skip it, and its
+    // Kept memory (ADR-603) is swept on its own, so a failure in the steps above can't skip it, and its
     // own failure is logged (the step's name only, never a row) instead of going unseen.
     const cutoff = Date.now() - MEMORY_KEPT_DAYS * 86_400_000;
     for (const [step, sweep] of [

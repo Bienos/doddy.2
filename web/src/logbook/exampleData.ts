@@ -2,7 +2,7 @@ import { ENDINGS, KINDS, LENGTHS, SOURCES, TOOLS, TOOL_IDS, WAYS, type KindId, t
 import type { DaySummary, LogbookDays, ToolOutcomes } from "./schema.js";
 
 /**
- * Example days for Logbook while the iPhone doesn't send real ones (ADR-593). Not anyone's usage;
+ * Example days for Logbook while the iPhone doesn't send real ones (ADR-602). Not anyone's usage;
  * the page labels them as examples. The same 91 days on every load: a seeded generator, so the
  * two tabs agree and a screenshot is the same as the last one. Each day has exactly the shape of
  * the daily summary (schema.ts), which a test checks.

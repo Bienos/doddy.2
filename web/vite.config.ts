@@ -2,7 +2,7 @@ import react from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
 
 /**
- * Doddy Web is served by backend/ (ADR-585), so in production the API is the same origin.
+ * Doddy Web is served by backend/ (ADR-600), so in production the API is the same origin.
  * In development the Vite server forwards /v1 to a local backend started with
  * DODDY_WEB_ORIGIN=http://127.0.0.1:5173 (see web/README.md); Origin and cookies pass through.
  */

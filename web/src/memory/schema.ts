@@ -2,7 +2,7 @@ import { z } from "zod";
 import { ENDINGS, KINDS } from "../logbook/catalog.js";
 
 /**
- * What Doddy's server answers for kept notes and conversations (ADR-595), mirroring
+ * What Doddy's server answers for kept notes and conversations (ADR-603), mirroring
  * backend/src/memory/. test/contracts.test.ts reads contracts/web/memory-*.json, which the server
  * writes from its own replies, through these. Unknown fields are dropped, so a newer server doesn't
  * break an older page; a reply that doesn't fit is an error, never half-shown text.

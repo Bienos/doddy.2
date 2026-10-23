@@ -20,7 +20,7 @@ import type { MemoryService } from "../memory/service.js";
 import type { WebAuth, WebSessionContext } from "./sessions.js";
 
 /**
- * The `/v1/web/…` routes (ADR-585). Each route says who may call it:
+ * The `/v1/web/…` routes (ADR-600). Each route says who may call it:
  *  - `public`: no session (signing in).
  *  - `phone`: the iPhone's own session (Authorization header) only.
  *  - `either`: the iPhone's session, or a browser session cookie.
@@ -71,7 +71,7 @@ export class WebRoutes {
     private readonly store: Store,
     private readonly verifier: SessionVerifier,
     private readonly maxBodyBytes: number,
-    /** Notes and conversations kept on request, and chat over them (ADR-595). Without it those routes don't exist. */
+    /** Notes and conversations kept on request, and chat over them (ADR-603). Without it those routes don't exist. */
     memory?: { service: MemoryService; chat: MemoryChat },
   ) {
     this.routes = [
@@ -150,7 +150,7 @@ export class WebRoutes {
           return { status: 200, file: { name: row.name, mime: row.mime, bytes: row.body } };
         },
       },
-      // ---------------------------------------------------------------- Logbook (ADR-593)
+      // ---------------------------------------------------------------- Logbook (ADR-602)
       {
         method: "GET",
         pattern: /^\/v1\/web\/logbook$/,

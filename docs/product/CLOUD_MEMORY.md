@@ -1,4 +1,4 @@
-# Memory on Doddy's server, and chat with it (ADR-595)
+# Memory on Doddy's server, and chat with it (ADR-603)
 
 **Status: owner-approved 22 Oct 2026. The server and the web pages are built and tested. The iPhone half (23 Oct) is written: its rules and client are tested in DoddyCore on Linux, its SwiftUI screens and hooks are NOT COMPILED. Not deployed.** This is the first time the product stores a person's words on its server, so this page says exactly what is kept, how, for how long, who can read it, what is built and what is not.
 
@@ -24,7 +24,7 @@ Not decided here (still the owner's): whether notes should also expire at a year
 
 - **Notes:** text, how it was saved (voice, typed, shared, imported), its type, when. Private notes (ADR-310) must never be sent: the phone leaves them out, and the server can't tell. (The existing sync, `MemoryCopySync.swift`, already does this for the call copy.)
 - **Conversations:** language, how it ended, and every turn as text (`user` or `doddy`). Up to 400 turns of 4,000 characters, 1,500 conversations and 24 MiB per person.
-- **Never:** audio, photos, contacts, the address book, anything from connected apps. Logbook (ADR-593) stays counts only and says so; this is a separate page, switched on separately.
+- **Never:** audio, photos, contacts, the address book, anything from connected apps. Logbook (ADR-602) stays counts only and says so; this is a separate page, switched on separately.
 - **Two switches**, set only by the iPhone: notes, conversations. Off deletes that kind in the same transaction. Both off by default.
 
 ## How it is kept

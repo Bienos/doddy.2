@@ -1,5 +1,5 @@
 /**
- * Whether Logbook (ADR-593) is in Doddy Web's menu and routes. The server keeps and serves days
+ * Whether Logbook (ADR-602) is in Doddy Web's menu and routes. The server keeps and serves days
  * today, but the iPhone doesn't send any (see below), so the page shows an empty Logbook and an
  * example. It is on while Doddy Web is the owner's own; set it to false before anyone else gets
  * Doddy Web, unless the iPhone half has shipped (docs/product/WEB_LOGBOOK.md, "Build plan").

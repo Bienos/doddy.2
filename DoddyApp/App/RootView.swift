@@ -79,7 +79,7 @@ enum PreferenceKey {
     static let pushUpdatesOn = "pushUpdatesOn"
     /// The user turned on the server copy of their notes for phone calls (S2).
     static let memoryCopyOn = "memoryCopyOn"
-    // Notes and conversations kept on Doddy's server (ADR-595) are `WebMemoryModel.notesKey` and
+    // Notes and conversations kept on Doddy's server (ADR-603) are `WebMemoryModel.notesKey` and
     // `WebMemoryModel.conversationsKey` in DoddyCore, off by default.
     /// "Worth keeping?" after a voice conversation (ADR-247). On unless turned off; on-device rules.
     static let suggestSavesAfterConversation = "suggestSavesAfterConversation"
@@ -183,7 +183,7 @@ struct RootView: View {
                 // one that has no private notes (ADR-310), only if the notes were read successfully.
                 MemoryCopySync.shared.retryIfNeeded(PrivateNotesStore.current().shareable(store.memories),
                                                     notesLoaded: store.hasLoaded && store.loadError == nil)
-                // Notes and conversations kept on Doddy's server (ADR-595), only if the person turned that on:
+                // Notes and conversations kept on Doddy's server (ADR-603), only if the person turned that on:
                 // the list again if the last send failed, and conversations that couldn't be sent.
                 WebMemory.shared.retryIfNeeded(store.memories, privateNotes: PrivateNotesStore.current(),
                                                notesLoaded: store.hasLoaded && store.loadError == nil)
@@ -218,7 +218,7 @@ struct RootView: View {
                     // after the update, a copy that may hold private notes is replaced (ADR-310).
                     MemoryCopySync.shared.retryIfNeeded(PrivateNotesStore.current().shareable(store.memories),
                                                         notesLoaded: store.hasLoaded && store.loadError == nil)
-                    // Notes kept on Doddy's server (ADR-595): the same, for a send that failed.
+                    // Notes kept on Doddy's server (ADR-603): the same, for a send that failed.
                     WebMemory.shared.retryIfNeeded(store.memories, privateNotes: PrivateNotesStore.current(),
                                                    notesLoaded: store.hasLoaded && store.loadError == nil)
                     pickUpSharedItem()
@@ -293,7 +293,7 @@ struct RootView: View {
             .onChange(of: store.revision) {
                 guard store.hasLoaded, store.loadError == nil else { return }
                 MemoryCopySync.shared.schedule(PrivateNotesStore.current().shareable(store.memories))
-                // Notes kept on Doddy's server (ADR-595), if the person turned that on: the whole current
+                // Notes kept on Doddy's server (ADR-603), if the person turned that on: the whole current
                 // list, private notes left out by `WebMemoryModel`, after the same successful read.
                 WebMemory.shared.scheduleNotes(store.memories, privateNotes: PrivateNotesStore.current())
             }

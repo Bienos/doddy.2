@@ -6,7 +6,7 @@ import { CHROME_MAC, startWeb } from "./webRig.js";
 
 /**
  * Writes contracts/web/*.json from the real server (mock tools, fixed clock), so the iPhone's
- * decoder tests (DoddyCore) and the web app's schema tests read actual output (ADR-585).
+ * decoder tests (DoddyCore) and the web app's schema tests read actual output (ADR-600).
  * Run: npm run fixtures:web
  */
 const out = join(process.cwd(), "..", "contracts", "web");
@@ -43,7 +43,7 @@ write("session-current", (await rig.call("GET", "/v1/web/session", { cookie })).
 write("sessions-phone", (await rig.call("GET", "/v1/web/sessions", { token: USER_A })).body);
 write("error-signed-out", (await rig.call("GET", "/v1/web/session", { cookie: "x".repeat(43) })).body);
 
-// Logbook (ADR-593): the iPhone's calls and what the page reads. Counts only, fixed clock.
+// Logbook (ADR-602): the iPhone's calls and what the page reads. Counts only, fixed clock.
 const logbookDay = (date: string, n: number) => ({
   schema: "doddy.logbook.day.v1",
   day: date,
@@ -74,7 +74,7 @@ write("logbook-view", (await rig.call("GET", "/v1/web/logbook", { cookie })).bod
 write("logbook-export", JSON.parse((await rig.call("GET", "/v1/web/logbook/export", { cookie })).text));
 write("logbook-deleted", (await rig.call("DELETE", "/v1/web/logbook", { cookie, browser: true })).body);
 
-// Kept notes and conversations, and chat over them (ADR-595): content, text only, fixed clock.
+// Kept notes and conversations, and chat over them (ADR-603): content, text only, fixed clock.
 const keptNote = (n: number, text: string, kind?: string) => ({
   id: `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`,
   text,

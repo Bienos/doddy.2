@@ -31,7 +31,7 @@ import { type Formats, makeFormats } from "../logbook/format.js";
 import type { DaySummary } from "../logbook/schema.js";
 
 /**
- * Logbook (ADR-593, docs/product/WEB_LOGBOOK.md): how a person uses Doddy, counted on the iPhone.
+ * Logbook (ADR-602, docs/product/WEB_LOGBOOK.md): how a person uses Doddy, counted on the iPhone.
  * Two tabs: At a glance (the week, free) and Closer look (7, 30, 90 days or a year, a paid plan later).
  *
  * The numbers are what the iPhone sent to Doddy's server, read through GET /v1/web/logbook. Four

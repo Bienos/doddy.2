@@ -24,7 +24,7 @@ Code: `DoddyApp/Features/Settings/SettingsView.swift` (the groups), `SettingsScr
 | | Privacy | Face ID lock, iPhone search, What leaves this iPhone, Everything Doddy sends (the old paragraph, word for word), Privacy Policy, "Right now" status rows, widgets, Apple Watch |
 | **Connected apps** | Pause all connections | switch (footer art and text unchanged, ADR-323) |
 | | Calendar, reminders, contacts / Connected Apps / Online accounts / What Doddy did | unchanged pages |
-| | Doddy on the web | a code from this iPhone to sign in on a computer (ADR-585; added after this inventory) |
+| | Doddy on the web | a code from this iPhone to sign in on a computer (ADR-600; added after this inventory) |
 | | Ask Doddy (typed questions) | consent, notes, status. The gateway address and invite code were removed: it uses Doddy's server (ADR-587) |
 | **Notifications** | Notifications and texts / Daily news / Phone calls | unchanged pages |
 | | Check-ins and reminders | morning check-in, evening wrap-up, weekly look-back, tidy-up, note reminders |

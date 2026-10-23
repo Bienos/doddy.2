@@ -2,7 +2,7 @@ import { defineConfig, devices } from "@playwright/test";
 
 /**
  * End-to-end: the real backend (mock providers, in-memory database, device sign-in on) serves the
- * built web app on one origin, exactly as in production (ADR-585). The test plays the iPhone with
+ * built web app on one origin, exactly as in production (ADR-600). The test plays the iPhone with
  * the same HTTP calls the app makes. Build both first: `npm run build` here and in backend/.
  */
 const PORT = Number(process.env.DODDY_E2E_PORT ?? 8799);

@@ -1,6 +1,6 @@
-// Shared by the end-to-end specs: a Logbook day as the iPhone will send it (ADR-593).
+// Shared by the end-to-end specs: a Logbook day as the iPhone will send it (ADR-602).
 
-/** One day of Logbook as the iPhone will send it: counts only, every sum adding up (ADR-593). */
+/** One day of Logbook as the iPhone will send it: counts only, every sum adding up (ADR-602). */
 export function logbookDay(date: string, n: number) {
   return {
     schema: "doddy.logbook.day.v1",

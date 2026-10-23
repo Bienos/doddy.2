@@ -79,9 +79,9 @@ export interface Config {
   authMode: AuthMode;
   /** Owner-minted tokens (`signed`; also accepted next to Supabase in development when set). */
   sessionSigningKey: Buffer | null;
-  /** AES-256 key for the notes and conversations kept on request (ADR-595). Null: that feature says "not set up". */
+  /** AES-256 key for the notes and conversations kept on request (ADR-603). Null: that feature says "not set up". */
   memoryKey: Buffer | null;
-  /** Claude for chatting with your memory (ADR-595); defaults to a small, quick model. Null without an Anthropic key. */
+  /** Claude for chatting with your memory (ADR-603); defaults to a small, quick model. Null without an Anthropic key. */
   chatClaude: { apiKey: string; model: string } | null;
   /** Who may sign in with `POST /v1/session/device` (ADR-563). */
   deviceSignup: "off" | "first-device" | "open";
@@ -96,7 +96,7 @@ export interface Config {
   toolkits: Partial<Record<ToolkitId, ToolkitSettings>>;
   /** Live mode only; mock mode uses the offline demo search. */
   monid: MonidSettings | null;
-  /** Doddy Web (ADR-585). Null: no web routes and no web pages on this server. */
+  /** Doddy Web (ADR-600). Null: no web routes and no web pages on this server. */
   web: WebSettings | null;
   /** `DODDY_TRUST_PROXY=1`: behind one proxy that appends the client to X-Forwarded-For (Render). */
   trustProxy: boolean;
@@ -104,7 +104,7 @@ export interface Config {
 }
 
 /**
- * Doddy Web (ADR-585): the browser app is served by this server, on its own origin, so its session
+ * Doddy Web (ADR-600): the browser app is served by this server, on its own origin, so its session
  * is a first-party cookie the page's scripts can't read.
  */
 export interface WebSettings {
@@ -154,9 +154,9 @@ const EnvSchema = z.object({
   DODDY_AUTH_MODE: z.enum(["dev", "signed", "supabase"]).default("dev"),
   SUPABASE_URL: z.string().optional(),
   DODDY_SESSION_SIGNING_KEY: z.string().optional(),
-  /** Encrypts the notes and conversations a person chooses to keep on the server (ADR-595): base64 of exactly 32 random bytes. */
+  /** Encrypts the notes and conversations a person chooses to keep on the server (ADR-603): base64 of exactly 32 random bytes. */
   DODDY_MEMORY_KEY: z.string().optional(),
-  /** The model that answers questions about your own notes and conversations (ADR-595). */
+  /** The model that answers questions about your own notes and conversations (ADR-603). */
   DODDY_CHAT_MODEL: z.string().default("claude-haiku-5-5"),
   /** Device sign-in for the beta (ADR-563): `first-device` = the first iPhone owns the server. */
   DODDY_DEVICE_SIGNUP: z.enum(["off", "first-device", "open"]).default("off"),
@@ -199,7 +199,7 @@ const EnvSchema = z.object({
   DODDY_PAGE_SIZE: intSetting(50, 1, 250),
   DODDY_MAX_EVENTS: intSetting(100, 1, 500),
   DODDY_ATTEMPT_TTL_SECONDS: intSetting(600, 60, 3_600),
-  /** Doddy Web (ADR-585): the origin the browser app is opened at. Empty: the web app is off. */
+  /** Doddy Web (ADR-600): the origin the browser app is opened at. Empty: the web app is off. */
   DODDY_WEB_ORIGIN: z.string().optional(),
   DODDY_WEB_DIST: z.string().default("../web/dist"),
   DODDY_TRUST_PROXY: z.enum(["0", "1"]).default("0"),
@@ -379,7 +379,7 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     else memoryKey = key;
   }
 
-  // Doddy Web (ADR-585). Off unless an origin is given; https outside loopback development.
+  // Doddy Web (ADR-600). Off unless an origin is given; https outside loopback development.
   let web: WebSettings | null = null;
   const webOrigin = (e.DODDY_WEB_ORIGIN ?? "").trim();
   if (webOrigin !== "") {

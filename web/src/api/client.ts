@@ -4,7 +4,7 @@ import { ChatReply, ConversationDeleted, ConversationDetail, ConversationList, M
 import { CurrentSession, DocumentList, ErrorBody, ReceiptList, SessionList, SignedOut, ToolsCatalog } from "./schemas.js";
 
 /**
- * Talks to Doddy's server on this page's own origin (ADR-585). The session is a cookie the page
+ * Talks to Doddy's server on this page's own origin (ADR-600). The session is a cookie the page
  * can't read; this code never sees or stores it. Every reply is checked against its schema, and a
  * reply that doesn't fit is an error, never half-shown data.
  */
@@ -116,7 +116,7 @@ export const api = {
   documents: (signal?: AbortSignal) => json(DocumentList, "/v1/web/documents", { signal }),
   catalog: (signal?: AbortSignal) => json(ToolsCatalog, "/v1/tools", { signal }),
   receipts: (signal?: AbortSignal) => json(ReceiptList, "/v1/tools/receipts", { signal }).then((r) => r.receipts),
-  /** The days the iPhone has sent for Logbook (ADR-593), and whether it is on. */
+  /** The days the iPhone has sent for Logbook (ADR-602), and whether it is on. */
   logbook: (signal?: AbortSignal) => json(LogbookView, "/v1/web/logbook", { signal }),
   /** Deletes every stored Logbook day. Logbook stays as it was (on or off). */
   deleteLogbook: () => json(LogbookDeleted, "/v1/web/logbook", { method: "DELETE" }),
@@ -125,7 +125,7 @@ export const api = {
     const response = await send("/v1/web/logbook/export");
     return response.blob();
   },
-  /** What Doddy's server keeps of your notes and conversations, and whether each kind is on (ADR-595). */
+  /** What Doddy's server keeps of your notes and conversations, and whether each kind is on (ADR-603). */
   memory: (signal?: AbortSignal) => json(MemoryOverview, "/v1/web/memory", { signal }),
   memoryNotes: (o: { limit: number; offset: number }, signal?: AbortSignal) => json(NotesList, `/v1/web/memory/notes?limit=${o.limit}&offset=${o.offset}`, { signal }),
   /** What you search for goes in the body, never in the address. */

@@ -1,4 +1,4 @@
-"""Generate Doddy Web's design tokens and copy its brand files from the iPhone app (ADR-585).
+"""Generate Doddy Web's design tokens and copy its brand files from the iPhone app (ADR-600).
 
 Doddy Web follows the website's design (owner, 22 Oct), so its colours come from the same file as
 the website's (tools/gen_site_tokens.py reads it too), and nothing here is drawn or picked by hand:

@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /**
- * The shapes Doddy's server answers with (ADR-585). They mirror backend/src/web/contracts.ts and
+ * The shapes Doddy's server answers with (ADR-600). They mirror backend/src/web/contracts.ts and
  * backend/src/tools/contracts.ts; test/contracts.test.ts reads contracts/web/*.json and
  * contracts/online-accounts/*.json, which the server writes from its own output, through them.
  * Unknown fields are dropped, so a newer server doesn't break an older page.

@@ -7,7 +7,7 @@ import { ChatBody, refuse, type Turn } from "./contract.js";
 import type { MemoryService } from "./service.js";
 
 /**
- * Chatting with what a person keeps on Doddy's server (ADR-595): a question goes in, a Claude
+ * Chatting with what a person keeps on Doddy's server (ADR-603): a question goes in, a Claude
  * model answers from the best-matching notes and conversations, and the answer cites only what
  * it was given. The service is channel-agnostic on purpose: the web page calls it today, and a
  * text-message channel (SMS, WhatsApp, Apple Messages for Business once approved) would call the

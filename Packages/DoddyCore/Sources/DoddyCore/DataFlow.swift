@@ -22,7 +22,7 @@ public struct DataFlowState: Equatable, Sendable {
     /// The user turned on the server copy of their notes for phone calls.
     public var memoryCopyOn: Bool
     /// The user chose to keep notes, and conversations, as text on Doddy's server so the web can show them
-    /// and answer questions about them (ADR-595). Both off by default.
+    /// and answer questions about them (ADR-603). Both off by default.
     public var webNotesKept: Bool
     public var webConversationsKept: Bool
     /// The morning check-in is on (ADR-220).
@@ -184,7 +184,7 @@ public enum DataFlow {
                 note: !state.doddyServerSet
                     ? "No Doddy server is set, so nothing goes there."
                     : state.pauseAll ? "Connections are paused, so Doddy doesn't use it in conversations. The Connected Apps screen still works when you open it." : nil),
-            // ADR-585: the phone vouches for a browser; the browser sees what the server already keeps.
+            // ADR-600: the phone vouches for a browser; the browser sees what the server already keeps.
             DataFlowRow(
                 id: "webSignIn", destination: "A browser you sign in to Doddy on the web",
                 what: "From this iPhone only a request for a sign-in code, to your Doddy server. The browser you type the code into then sees what that server already keeps for you: files Doddy made, your online accounts and their tools, and Doddy's receipts. "
@@ -192,7 +192,7 @@ public enum DataFlow {
                 when: "When you tap Get a sign-in code, and while that browser stays signed in (30 days at most; sign it out in Settings › Doddy on the web).",
                 isActive: state.doddyServerSet,
                 note: state.doddyServerSet ? nil : "No Doddy server is set, so no browser can sign in."),
-            // ADR-595: only what the person chose to keep there, as text, and only while a switch is on.
+            // ADR-603: only what the person chose to keep there, as text, and only while a switch is on.
             DataFlowRow(
                 id: "webMemory", destination: "Your Doddy server, and Anthropic when you ask a question on the web (notes and conversations you keep there)",
                 what: webKept.isEmpty ? "Nothing: both switches are off." : sentence(webKept),
@@ -253,7 +253,7 @@ public enum DataFlow {
         if active.contains("elevenlabs") { parts.append("ElevenLabs (voice)") }
         if active.contains("openaiVoice") { parts.append("OpenAI (voice)") }
         if active.contains("askDoddy") { parts.append("Anthropic (Ask Doddy)") }
-        // ADR-595: Claude reads the best matches of what you keep on Doddy's server, when you ask on the web.
+        // ADR-603: Claude reads the best matches of what you keep on Doddy's server, when you ask on the web.
         if active.contains("webMemory") { parts.append("Anthropic (questions you ask on the web about what you keep on Doddy's server)") }
         if active.contains("messagingServer") {
             parts.append("ElevenLabs (phone calls) and \(newsWriter(state)) (daily news) on your messaging server")

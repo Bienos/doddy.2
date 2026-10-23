@@ -36,7 +36,7 @@ for (const scheme of ["light", "dark"] as const) {
       await page.waitForLoadState("networkidle");
       await page.screenshot({ path: `${out}/${project}-${scheme}-${name}.png`, fullPage: true });
     }
-    // Logbook (ADR-593): off at first, then both tabs with the example's numbers.
+    // Logbook (ADR-602): off at first, then both tabs with the example's numbers.
     await page.goto("/logbook");
     await expect(page.getByRole("heading", { level: 2, name: "Dziennik jest wyłączony" })).toBeVisible();
     await page.waitForLoadState("networkidle");
@@ -57,7 +57,7 @@ for (const scheme of ["light", "dark"] as const) {
     await page.waitForLoadState("networkidle");
     await page.screenshot({ path: `${out}/${project}-${scheme}-7-logbook-real.png`, fullPage: true });
     await request.put("/v1/web/logbook/state", { headers, data: { enabled: false } });
-    // Memory and Ask Doddy (ADR-595): off, then with notes and a conversation, then a chat answer.
+    // Memory and Ask Doddy (ADR-603): off, then with notes and a conversation, then a chat answer.
     await page.goto("/memory");
     await expect(page.getByRole("heading", { level: 2, name: "Na serwerze Doddy’ego nic nie jest przechowywane" })).toBeVisible();
     await page.waitForLoadState("networkidle");

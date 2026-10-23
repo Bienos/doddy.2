@@ -1,5 +1,5 @@
 /**
- * Whether the Memory and Ask Doddy pages (ADR-595) are in Doddy Web's menu and routes. The server
+ * Whether the Memory and Ask Doddy pages (ADR-603) are in Doddy Web's menu and routes. The server
  * keeps and serves what the iPhone sends, but the iPhone can't send yet (below), so the pages open on
  * "nothing is kept". Set it to false before anyone but the owner gets Doddy Web, unless the iPhone
  * half has shipped.

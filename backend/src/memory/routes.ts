@@ -5,7 +5,7 @@ import { MEMORY_CONVERSATION_MAX_BODY_BYTES, MEMORY_NOTES_MAX_BODY_BYTES, NotesS
 import type { MemoryService } from "./service.js";
 
 /**
- * The `/v1/web/memory…` and `/v1/web/chat` routes (ADR-595), added to the web router. Who may call:
+ * The `/v1/web/memory…` and `/v1/web/chat` routes (ADR-603), added to the web router. Who may call:
  *  - the iPhone's own session writes (switches, notes, conversations): a browser can never put
  *    anything on the server or switch keeping on;
  *  - the browser or the iPhone reads, downloads and deletes, and asks the chat. A cookie request

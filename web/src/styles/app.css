@@ -1,5 +1,5 @@
 /*
- * Doddy Web (ADR-585), in the website's design (owner, 22 Oct 2026): the cream canvas, paper cards
+ * Doddy Web (ADR-600), in the website's design (owner, 22 Oct 2026): the cream canvas, paper cards
  * with a soft lift, ink buttons with the orange underline, ruled notebook panels, Doddy's
  * handwriting for his own short lines. Colours and metrics come only from tokens.css, generated
  * from the same file as the website's (tools/gen_web_assets.py). Orange is decoration, never text.

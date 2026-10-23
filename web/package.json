@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Doddy Web (ADR-585): the browser workspace. Built to web/dist and served by backend/ on the same origin as its API.",
+  "description": "Doddy Web (ADR-600): the browser workspace. Built to web/dist and served by backend/ on the same origin as its API.",
   "engines": {
     "node": ">=22"
   },

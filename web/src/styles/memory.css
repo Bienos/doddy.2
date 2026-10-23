@@ -1,4 +1,4 @@
-/* Memory and Ask Doddy (ADR-595). Built on the site's cards, tabs and the Logbook's panels. */
+/* Memory and Ask Doddy (ADR-603). Built on the site's cards, tabs and the Logbook's panels. */
 
 .memory-summary { display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: baseline; margin: 0; color: var(--secondary-text); }
 .memory-summary strong { color: var(--reading-ink); font: 700 1.125rem/1.3 var(--display); }
