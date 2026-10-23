@@ -86,6 +86,10 @@ enum PreferenceKey {
     /// counted once each; for when the "Open Doddy faster" card returns (ADR-559). It was the
     /// Hey Doddy card's (ADR-328); PR #108 removed it with that card, and this PR keeps it.
     static let connectedConversations = "connectedConversations"
+    /// The first-launch welcome (ADR-598) has been finished or skipped on this installation.
+    static let welcomeSeen = "welcomeSeen"
+    /// Settings › "Show the welcome again": the welcome shows once more, then clears this.
+    static let welcomeReplay = "welcomeReplay"
 }
 
 enum AppTab: Hashable {
@@ -126,6 +130,24 @@ struct RootView: View {
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideArt = false
     /// The Face ID cover is up (ADR-310); it stays briefly after an unlock for the door (ADR-380).
     @State private var lockCovered = false
+    /// Settings › "Show the welcome again" (ADR-598).
+    @AppStorage(PreferenceKey.welcomeReplay) private var welcomeReplay = false
+    /// The welcome was finished in this run, so it doesn't show again until a replay is asked for.
+    @State private var welcomeDone = false
+
+    /// The first-launch welcome (ADR-598) is on screen. It covers Home and the opening, and the first-use
+    /// introduction waits until it is over. Only read once the store has loaded (`isFirstInstallation`).
+    private var welcomeVisible: Bool {
+        !welcomeDone && WelcomeRule.shouldShow(
+            seen: WelcomePreferences.seen(), firstInstallation: profiles.isFirstInstallation,
+            replayRequested: welcomeReplay, override: WelcomePreferences.override())
+    }
+
+    private func finishWelcome() {
+        WelcomePreferences.markSeen()
+        welcomeReplay = false
+        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.3)) { welcomeDone = true }
+    }
 
     private var colorScheme: ColorScheme? {
         switch AppearancePreference(rawValue: appearanceRaw) ?? .system {
@@ -187,6 +209,7 @@ struct RootView: View {
                 // its island brings him forward, and the conversation's screen comes with him. Also
                 // on the first screen, when iOS started Doddy in the background for that conversation.
                 // Not over the Face ID lock: then it comes after the unlock (the lock's onChange above).
+                // (The welcome, if it is up, holds back the opening: see `welcomeVisible`.)
                 if phase == .active, !AppLock.shared.isLocked, VoiceSessionController.runningConversation != nil {
                     router.showConversationStartedElsewhere()
                 }
@@ -219,7 +242,8 @@ struct RootView: View {
                 // On later returns, only the separately opted-in listen-on-open preference applies.
                 switch phase {
                 case .background: opening.appWentToBackground()
-                case .active: opening.appBecameActive(openingConditions)
+                // While the first-launch welcome is up the opening waits for it (ADR-598).
+                case .active: if !welcomeVisible { opening.appBecameActive(openingConditions) }
                 default: break
                 }
             }
@@ -264,7 +288,9 @@ struct RootView: View {
                 DoddyDirector.shared.setHomeScale(large ? 1.0 : 1.4)
             }
             // The first-use introduction and the Face ID cover are over the app: he is hidden.
-            .coversDoddy(profiles.isIntroductionPresented || AppLock.shared.isLocked || lockCovered)
+            .coversDoddy(profiles.isIntroductionPresented || AppLock.shared.isLocked || lockCovered || welcomeVisible)
+            // Settings › "Show the welcome again": it shows even though it was seen (ADR-598).
+            .onChange(of: welcomeReplay) { _, on in if on { welcomeDone = false } }
             // A tapped note reminder opens its exact memory on Home.
             .task(id: noteReminders.pendingOpenMemoryID) {
                 guard let memoryID = noteReminders.pendingOpenMemoryID else { return }
@@ -335,7 +361,8 @@ struct RootView: View {
 
     private var introductionPresentation: Binding<Bool> {
         Binding(
-            get: { profiles.isIntroductionPresented },
+            // The introduction waits until the first-launch welcome is over (ADR-598).
+            get: { profiles.isIntroductionPresented && !welcomeVisible },
             set: { presented in
                 guard !presented, profiles.isIntroductionPresented else { return }
                 Task { await profiles.finishIntroduction(saved: false) }
@@ -356,6 +383,13 @@ struct RootView: View {
                     onHandover: { opening.handoverStarted() },
                     onFinished: { opening.finish() })
                 .zIndex(1)
+            }
+            // The first-launch welcome (ADR-598) sits over everything here; the Face ID cover is
+            // drawn above all of it by the view that owns this one.
+            if welcomeVisible {
+                WelcomeView(finish: finishWelcome)
+                    .zIndex(2)
+                    .transition(.opacity)
             }
         }
         .environment(opening)
@@ -419,7 +453,12 @@ struct RootView: View {
         .onChange(of: profiles.route == .home, initial: true) { _, atHome in
             router.isOnboardingShown = !atHome
             // The first time Home is ready and on screen is the launch (OpeningModel decides).
-            opening.homeReady(openingConditions, isActive: scenePhase == .active)
+            // Not while the first-launch welcome is up: it gets its turn when the welcome ends (ADR-598).
+            if !welcomeVisible { opening.homeReady(openingConditions, isActive: scenePhase == .active) }
+        }
+        .onChange(of: welcomeVisible) { was, now in
+            // The welcome is over: the opening and the introduction go on as they always did.
+            if was, !now { opening.homeReady(openingConditions, isActive: scenePhase == .active) }
         }
         // A conversation that comes up on its own (Back Tap, Siri, the island) ends the opening.
         .onChange(of: router.isVoicePresented) { _, presented in

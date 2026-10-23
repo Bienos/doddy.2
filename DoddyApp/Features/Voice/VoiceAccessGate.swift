@@ -8,7 +8,6 @@ struct VoiceAccessGate: View {
     let provider: VoiceProvider
     let onContinue: () -> Void
     @State private var session = VoiceAuthSession.shared
-    @State private var rawNonce: String?
     @State private var consented = false
     /// A DODDY voice account, or (Debug builds only, ADR-551) the developer's direct connection.
     private var accessReady: Bool { session.isSignedIn || VoiceConfig.directVoiceEnabled }
@@ -41,17 +40,8 @@ struct VoiceAccessGate: View {
                     .font(.body)
                     .foregroundStyle(Theme.secondaryText)
                     .multilineTextAlignment(.center)
-                SignInWithAppleButton(.signIn, onRequest: { request in
-                    guard let nonce = AppleSignInNonce.make() else {
-                        session.message = "This iPhone couldn’t start secure Apple sign-in. Try again."
-                        return
-                    }
-                    rawNonce = nonce.raw
-                    request.nonce = nonce.hashed
-                }, onCompletion: completeSignIn)
-                .signInWithAppleButtonStyle(.black)
-                .frame(height: 50)
-                .accessibilityIdentifier("voice.auth.appleSignIn")
+                AppleAccountSignInButton(provider: provider)
+                    .accessibilityIdentifier("voice.auth.appleSignIn")
             } else {
                 VStack(alignment: .leading, spacing: 12) {
                     Label("Voice runs through \(provider.shortName)", systemImage: "waveform")
@@ -98,6 +88,43 @@ struct VoiceAccessGate: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .task { consented = VoiceProviderConsent.isGranted(for: provider) }
+    }
+}
+
+/// The one Sign in with Apple button for the Doddy voice account: the voice screen's gate and the
+/// first-launch welcome (ADR-599) both use it, so there is a single place that builds Apple's
+/// request, checks its answer and hands it to `VoiceAuthSession`. It lives in this file because
+/// `check_forbidden_capabilities.sh` allows AuthenticationServices only in the voice account's files.
+///
+/// Apple's rules (HIG, Sign in with Apple): the system button with a system title, black on light
+/// and white on dark backgrounds, no smaller than the other sign-in buttons. A rounder corner is
+/// allowed to match the other buttons.
+struct AppleAccountSignInButton: View {
+    let provider: VoiceProvider
+    /// "Continue with Apple" next to other "Continue with…" buttons; "Sign in with Apple" alone.
+    var usesContinueTitle = false
+    var height: CGFloat = 50
+    /// A capsule, to match the welcome's other buttons.
+    var isCapsule = false
+    /// Black on light backgrounds, white on dark ones, as Apple asks (the voice gate keeps black).
+    var adaptsToDarkAppearance = false
+
+    @State private var session = VoiceAuthSession.shared
+    @State private var rawNonce: String?
+    @Environment(\.colorScheme) private var colorScheme
+
+    var body: some View {
+        SignInWithAppleButton(usesContinueTitle ? .continue : .signIn, onRequest: { request in
+            guard let nonce = AppleSignInNonce.make() else {
+                session.message = "This iPhone couldn’t start secure Apple sign-in. Try again."
+                return
+            }
+            rawNonce = nonce.raw
+            request.nonce = nonce.hashed
+        }, onCompletion: completeSignIn)
+        .signInWithAppleButtonStyle(adaptsToDarkAppearance && colorScheme == .dark ? .white : .black)
+        .frame(height: height)
+        .clipShape(isCapsule ? AnyShape(Capsule()) : AnyShape(RoundedRectangle(cornerRadius: 8, style: .continuous)))
     }
 
     private func completeSignIn(_ result: Result<ASAuthorization, Error>) {

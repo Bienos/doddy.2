@@ -80,6 +80,7 @@ Starts when `V1_SCOPE.md` is marked up.
 | C13 | Languages | **Open** | All nine translations are unread machine drafts (`l10n/REVIEW_NOTES.md`). Hide eight in v1 (V1 decision 2) or get a native read of each | Both |
 | C14 | A one-page outage plan | **Open** | Nothing exists. It should say what to do when the token server or the voice provider is down, how to rotate a key, and how to switch voice off for everyone | Agent |
 | C15 | TestFlight test information | **Open** | What to test, a feedback email, and sign-in notes for Apple's beta review | Both |
+| C16 | Sign-in options and App Review | **Partly** (ADR-598, ADR-599) | Sign in with Apple is in the welcome's sheet next to Google, the same size, and is the real voice-account sign-in: App Review 4.8 is met on paper. Face ID, Google and email are still screens only (`UnconnectedSignIn`). Still needed: the paid team and App ID capability (A5), the token server answering (A4; the Vercel account is blocked at the time of writing), a real sign-in on a device, a passkey (paid team, Associated Domains, server verification), account deletion in the app (5.1.1(v); the voice account has it), and use without an account (kept) | Both |
 
 ## D. App Store 1.0
 
