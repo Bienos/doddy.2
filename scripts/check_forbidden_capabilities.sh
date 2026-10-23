@@ -15,10 +15,12 @@
 #    phone with an x_doddy.ask; every server tool has a card (preview) and runs only through the
 #    one approval gate (backend/src/tools/askFirst.ts); the voice controller checks AskFirst
 #    before any tool runs,
-#  - ElevenLabs code only inside DoddyApp/Features/Voice; audio (AVFoundation) only there and in
-#    DoddyApp/Features/VoiceMemos (recording and playing voice memos, ADR-230),
-#  - speech recognition (Speech) only inside DoddyApp/Features/VoiceMemos, and every recognition
-#    request there sets requiresOnDeviceRecognition = true (nothing is sent to Apple's servers),
+#  - ElevenLabs code only inside DoddyApp/Features/Voice; audio (AVFoundation) only there, in
+#    DoddyApp/Features/VoiceMemos (recording and playing voice memos, ADR-230) and in
+#    DoddyApp/Features/Recordings (DODDY Capture: long recordings, ADR-588),
+#  - speech recognition (Speech) only inside DoddyApp/Features/VoiceMemos and DoddyApp/Features/Recordings,
+#    and every recognition request in either sets requiresOnDeviceRecognition = true (nothing is
+#    sent to Apple's servers),
 #  - calendar (EventKit), contacts and Motion & Fitness step counts (CoreMotion's pedometer,
 #    ADR-568) code only inside DoddyApp/Infrastructure/Connections,
 #  - location and Apple Maps search code (place reminders, ADR-196) only there too, and never
@@ -79,6 +81,7 @@ voice_auth=DoddyApp/Features/Voice/VoiceAuthSession.swift
 apple_sign_in_other='ASAuthorizationPasswordProvider|ASAuthorizationPlatformPublicKeyCredential|ASAuthorizationSecurityKey|ASCredentialProvider|ASAuthorizationProviderExtension|ASPasskey'
 voice_only='import ElevenLabs'
 memos_dir=DoddyApp/Features/VoiceMemos
+recordings_dir=DoddyApp/Features/Recordings
 audio_only='import AVFoundation|import AVFAudio|AVAudio'
 speech_only='import Speech|SFSpeech'
 watch_link_dir=DoddyApp/Features/Watch
@@ -179,11 +182,11 @@ fi
 if grep -RInE --include='*.swift' "$voice_only" "${dirs[@]}" | grep -v "^$voice_dir/"; then
   echo "FAIL: ElevenLabs code outside $voice_dir." >&2; status=1
 fi
-if grep -RInE --include='*.swift' "$audio_only" "${dirs[@]}" | grep -v -e "^$voice_dir/" -e "^$memos_dir/" -e "^$camera_access_file:[0-9]*:import AVFoundation$"; then
-  echo "FAIL: audio code outside $voice_dir and $memos_dir (the camera permission file may only import AVFoundation)." >&2; status=1
+if grep -RInE --include='*.swift' "$audio_only" "${dirs[@]}" | grep -v -e "^$voice_dir/" -e "^$memos_dir/" -e "^$recordings_dir/" -e "^$camera_access_file:[0-9]*:import AVFoundation$"; then
+  echo "FAIL: audio code outside $voice_dir, $memos_dir and $recordings_dir (the camera permission file may only import AVFoundation)." >&2; status=1
 fi
-if grep -RInE --include='*.swift' "$speech_only" "${dirs[@]}" | grep -v "^$memos_dir/"; then
-  echo "FAIL: speech recognition outside $memos_dir (ADR-230)." >&2; status=1
+if grep -RInE --include='*.swift' "$speech_only" "${dirs[@]}" | grep -v -e "^$memos_dir/" -e "^$recordings_dir/"; then
+  echo "FAIL: speech recognition outside $memos_dir and $recordings_dir (ADR-230, ADR-588)." >&2; status=1
 fi
 if grep -RInE --include='*.swift' "$watch_only" "${dirs[@]}" | grep -v -e "^$watch_link_dir/" -e "^$watch_app_dir/"; then
   echo "FAIL: WatchConnectivity outside $watch_link_dir and $watch_app_dir (ADR-232)." >&2; status=1
@@ -201,15 +204,22 @@ fi
 if grep -RInE --include='*.swift' 'import GRDB|DoddyPersistence|URLSession|import Network|AVAudio|import Speech' DoddyMacWidgets; then
   echo "FAIL: the Mac desktop widget may only read the note count (ADR-439)." >&2; status=1
 fi
-if [ -d "$memos_dir" ]; then
-  for f in $(grep -RlE --include='*.swift' 'SFSpeech(URL|AudioBuffer)RecognitionRequest' "$memos_dir"); do
-    if ! grep -qE 'requiresOnDeviceRecognition = true' "$f"; then
-      echo "FAIL: $f makes a speech request without requiresOnDeviceRecognition = true." >&2; status=1
+for speech_dir in "$memos_dir" "$recordings_dir"; do
+  if [ -d "$speech_dir" ]; then
+    for f in $(grep -RlE --include='*.swift' 'SFSpeech(URL|AudioBuffer)RecognitionRequest' "$speech_dir"); do
+      if ! grep -qE 'requiresOnDeviceRecognition = true' "$f"; then
+        echo "FAIL: $f makes a speech request without requiresOnDeviceRecognition = true." >&2; status=1
+      fi
+    done
+    if grep -RInE --include='*.swift' 'requiresOnDeviceRecognition = false' "$speech_dir"; then
+      echo "FAIL: speech recognition may not leave the iPhone (ADR-230, ADR-588)." >&2; status=1
     fi
-  done
-  if grep -RInE --include='*.swift' 'requiresOnDeviceRecognition = false' "$memos_dir"; then
-    echo "FAIL: speech recognition may not leave the iPhone (ADR-230)." >&2; status=1
   fi
+done
+# DODDY Capture's audio and words never leave the iPhone (ADR-588): no networking of any kind in its
+# folder, and no upload API, whatever the general networking rule above allows elsewhere.
+if [ -d "$recordings_dir" ] && grep -RInE --include='*.swift' 'URLSession|URLRequest|import Network|uploadTask|\.upload\(|WCSession|import CloudKit' "$recordings_dir" | code_only; then
+  echo "FAIL: $recordings_dir may not send anything anywhere (ADR-588)." >&2; status=1
 fi
 if grep -RInE --include='*.swift' "$connections_only" "${dirs[@]}" | grep -v "^$connections_dir/"; then
   echo "FAIL: calendar, contacts, location or Motion & Fitness code outside $connections_dir." >&2; status=1
@@ -342,5 +352,5 @@ fi
 if grep -RnoE 'NS[A-Za-z]+UsageDescription' project.yml DoddyApp DoddyWidgets DoddyShare Config | grep -vE "$allowed_permissions"; then
   echo "FAIL: only the alarms, microphone, speech recognition, calendar, reminders, contacts, Motion & Fitness, camera, photo library (read), While Using location and Face ID permissions are allowed." >&2; status=1
 fi
-[ "$status" -eq 0 ] && echo "PASS: ASK-01: every voice tool and every server tool asks first through one gate; networking only in the token client, the voice account sign-in, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice and the ECB rates client, web auth only in Connected Apps, Sign in with Apple only in the voice account sign-in and no password or passkey APIs, ElevenLabs only in Voice, audio only in Voice and Voice memos, on-device speech recognition only in Voice memos, calendar, contacts, location and Motion & Fitness only in Connections, photo reading and the photo picker only in Photos, the photo library read only in PhotoLibrarySearch and the camera only through iOS's camera screen (no capture session, no library writes), no Always/background location, no analytics, no secrets, no 1Password code in the app or SDK in the servers, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts, Motion & Fitness, camera, photo library (read), While Using location and Face ID (LocalAuthentication only in the app lock); backend has no write tools beyond the reviewed Gmail draft and reply draft, the Outlook draft and Todoist add, complete and move, and no proxy execution."
+[ "$status" -eq 0 ] && echo "PASS: ASK-01: every voice tool and every server tool asks first through one gate; networking only in the token client, the voice account sign-in, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice and the ECB rates client, web auth only in Connected Apps, Sign in with Apple only in the voice account sign-in and no password or passkey APIs, ElevenLabs only in Voice, audio only in Voice, Voice memos and Recordings, on-device speech recognition only in Voice memos and Recordings (nothing in Recordings sends anything), calendar, contacts, location and Motion & Fitness only in Connections, photo reading and the photo picker only in Photos, the photo library read only in PhotoLibrarySearch and the camera only through iOS's camera screen (no capture session, no library writes), no Always/background location, no analytics, no secrets, no 1Password code in the app or SDK in the servers, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts, Motion & Fitness, camera, photo library (read), While Using location and Face ID (LocalAuthentication only in the app lock); backend has no write tools beyond the reviewed Gmail draft and reply draft, the Outlook draft and Todoist add, complete and move, and no proxy execution."
 exit "$status"

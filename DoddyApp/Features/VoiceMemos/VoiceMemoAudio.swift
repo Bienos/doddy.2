@@ -55,6 +55,10 @@ final class VoiceMemoRecorder {
     /// Asks for the microphone once (the same permission as talking to Doddy), then records.
     func start() async {
         guard !isRecording else { return }
+        guard !RecordingCoordinator.shared.isActive else {
+            state = .failed(NSLocalizedString("Doddy is recording. Stop the recording to record a voice memo.", comment: ""))
+            return
+        }
         guard await AVAudioApplication.requestRecordPermission() else {
             state = .failed(NSLocalizedString("The microphone is off for Doddy. Turn it on in the Settings app to record.", comment: ""))
             return
@@ -152,6 +156,10 @@ final class VoiceMemoPlayer {
     func toggle(_ url: URL) {
         if isPlaying {
             pause()
+            return
+        }
+        guard !RecordingCoordinator.shared.isActive else {
+            problem = NSLocalizedString("Stop recording to play this.", comment: "")
             return
         }
         do {

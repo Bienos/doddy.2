@@ -1,0 +1,61 @@
+# Logbook on the web: design v0.1
+
+**Status: design reference, 22 Oct 2026.** This folder is the first clickable mockup of Logbook, with example numbers (`example-data.js`). Logbook was then built in **Doddy Web**, the web app connected to the iPhone app, in the website's design: `web/src/pages/LogbookPage.tsx`, `web/src/logbook/`, `web/src/styles/logbook.css`. A first copy on the marketing site (doddy.lol/logbook) was taken back out the same day. The plan, the data rules and the owner's decisions are in `docs/product/WEB_LOGBOOK.md` (ADR-602). Everything below describes the mockup; where the web app differs (sign-in by the iPhone's code, no QR picture, system-font fallbacks, dark mode) the plan says so.
+
+The owner asked (22 Oct) for a signed-in page on the website where each person sees how they use Doddy: a basic tab and an advanced tab, both open for now, the advanced one paid later, designed to be engaging and easy to read. This folder is that page as a working mockup.
+
+## Look at it
+
+```sh
+python3 -m http.server 8765   # from the repository root
+# open http://localhost:8765/design/web-logbook-v0.1/
+```
+
+The dark strip at the top is for review only. It switches between the sign-in screen and the Logbook, shows where each number would come from today, and previews Closer look once it's paid. A link can open a state directly: `#closer`, `#signin`, `#closer-paid`, `#glance-sources`, `#closer-tables-d7`.
+
+## What's on it
+
+| Screen | What it shows | Picture |
+|---|---|---|
+| At a glance (free) | Week by week (‹ ›). A till receipt for the week: conversations, time talking, notes, list items, things Doddy did (right away / after your yes), asked first (yes / no), couldn't confirm, didn't work, tasks handed over. What you used Doddy for (seven jobs; hover for the tools in each). When you talked (one dot per conversation by hour, then mornings / afternoons / evenings). Notes you saved (one paper slip per note, by type). Each day. | `png/01-at-a-glance-1440.png`, `-390.png` |
+| Closer look (paid later) | 7, 30 or 90 days, tables instead of charts, Download CSV. Five totals with no arrows or comparisons. Conversations each day (each week at 90 days). Weekday by hour. How long conversations last and how they ended. Every tool, counted, sortable. When Doddy asked first. Notes by how and by type. Tasks handed over, languages, how you opened Doddy, lists and translating. | `png/02-closer-look-1440.png`, `-390.png` |
+| Sign in | Sign in with your iPhone: a code (QR or typed) the app approves. No password, no email. The code picture is an example, not a real code. | `png/03-sign-in-1440.png`, `-390.png` |
+| Closer look once it's paid | The calm locked state: what it adds, "See plans" and "Not now" the same size, "At a glance stays free", download and delete stay free, nothing deleted. | `png/04-closer-look-paid-later-1440.png` |
+| Where numbers come from | Review aid: each card says whether its numbers are on the iPhone today, need an app update, or are on Doddy's server. | `png/05-where-numbers-come-from-1440.png` |
+| Tables | Every chart as a table (the accessible twin). | `png/06-closer-look-tables-1440.png` |
+| Both tabs | What this page knows: what's on it, what never is, and the controls (off until turned on in the app, 90 days, download, delete). | in 01 and 02 |
+
+## Design choices
+
+- **A notebook on a desk.** At a glance is one ruled page with an orange margin line and a receipt taped to it. The receipt is Doddy's proof object (the brand's "Saved" receipt, "never All sorted without a receipt"), so the week's totals are printed as one, with a Counted stamp. Closer look turns the desk into graph paper and lays chart cards on it. Tabs are notebook divider tabs.
+- **Counts, not scores.** No streaks, no "up 20% on last week", no green and red arrows, no nudge to talk more. ADR-306 set this for the weekly look-back; the Logbook keeps it (DOD-10). Trends over time are plain charts.
+- **Honest outcomes.** "Couldn't confirm" and "Didn't work" have their own lines and colours, each with an icon and a word. A no is grey, not red: it's the person's choice, not a failure.
+- **Doddy's handwriting carries no numbers** (brand rule): "Here's the week, on one page." and "No password to forget." only.
+- **Character art** is the owner's pack only (`site/assets/day/poses/`): belly_reading (the week), shush (privacy), wave (sign-in), kneeling_inspect (Closer look's locked state).
+- **Colours** come from `site/tokens.css`. Chart colours were checked with the dataviz validator on paper `#FFFCF7` and canvas `#FFF7E9`: `#F05E00, #3164C4, #22966A, #A8489E` pass the lightness band, chroma floor, colour-blind separation (worst adjacent ΔE 10.5) and 3:1 contrast. Slot 1 is Doddy's orange one step deeper so bars clear 3:1 (`#FF6A00` is 2.81:1 on paper). The heatmap uses a one-hue orange ramp. Status colours are the app's confirmed green and error red, plus amber for "couldn't confirm" and grey for "you said no".
+- **Ready for the site's CSP.** No inline styles or scripts; all labels go in with `textContent`; charts are hand-built SVG with no library. The page can move to `site/logbook/` without loosening `vercel.json`.
+- **Accessible.** Every chart has a table view, keyboard focus shows the same tooltip as hover, tabs follow the ARIA tab pattern, decorative poses have empty `alt`, and reduced motion turns off the bar transitions.
+
+## Files
+
+| File | What |
+|---|---|
+| `index.html` | The page: review strip, sign-in screen, both tabs, privacy panel |
+| `logbook.css` | Styles, on top of `../../site/tokens.css` |
+| `logbook.js` | Draws everything from the example data; tabs, week and period controls, tooltips, table views, the two-tap delete |
+| `example-data.js` | 91 example days in the shape of the proposed daily summary (seeded, the same on every load) |
+| `render.mjs` | Headless Chromium screenshots of every state, with checks for sideways scroll, console errors and failed requests. `NODE_PATH=$(npm root -g) node design/web-logbook-v0.1/render.mjs` (add `--out <dir>` to write elsewhere) |
+| `png/` | The renders listed above |
+
+## Checked (22 Oct 2026, headless Chromium 1194 via Playwright 1.56.1, local server)
+
+- All nine renders (six states at 1440 px, three of them also at 390 px): no sideways scroll, no console errors, no failed requests, Bricolage Grotesque and Caveat loaded (fetched from Google Fonts through curl; no font files committed).
+- The receipt's totals, the job bars, the tool table and the asked-first stack all come from the same aggregation, so both tabs agree for the same days.
+- `scripts/verify_imported_pack.py` and `scripts/check_forbidden_capabilities.sh`: PASS (nothing under `site/` or the app changed).
+- Not checked: real Safari on iPhone, VoiceOver, keyboard-only use beyond focus order in the code, the production CSP headers on this page (it uses none of the things the CSP blocks, but it wasn't served with them), Lighthouse.
+
+## Not in this mockup
+
+- The empty states (Logbook off in the app; the iPhone hasn't sent anything for two days) and the error line. They're written in `docs/product/WEB_LOGBOOK.md`, "When something goes wrong".
+- The app's side: Settings › Logbook on the web (the switch, sign in on a computer, signed-in browsers). Described in the same doc.
+- Translations. The site's other pages come in ten languages; this page would need the same (`tools/build_site_i18n.py`).

@@ -29,8 +29,15 @@ enum PreferenceKey {
     /// Settings → Voice: open the conversation by itself when the app is opened (ADR-225). On unless turned off.
     static let listenOnOpen = "listenOnOpen"
     static let voiceAgentID = "voiceAgentID"
-    /// Settings → Back Tap and Siri: "Talk to Doddy" starts a conversation (default) or only opens the app (`BackTapAction`).
+    /// Settings → Siri and Back Tap: "Talk to Doddy" starts a conversation (default) or only opens the app (`BackTapAction`).
+    /// Its old "Small island" moved to `islandExpands` at launch (ADR-579).
     static let backTapAction = "backTapAction"
+    /// Settings → Action Button: what the "Talk to Doddy" control does (`TalkLaunchMode`, ADR-579).
+    static let talkLaunchMode = TalkLaunchMode.preferenceKey
+    /// Settings → Expand when Doddy speaks (`IslandExpansion`, ADR-577, ADR-579). On unless turned off.
+    static let islandExpands = LaunchPreferencesMigration.islandExpandsKey
+    /// JSON `LegalAcceptanceRecord`: the Terms and Privacy Policy versions accepted, when, where (ADR-581).
+    static let legalAcceptance = LegalAcceptance.preferenceKey
     /// JSON `BackTapSetupSummary` (outcome and any active test window), never transcripts.
     static let backTapSetup = "backTapSetup"
     /// JSON `OpenWaysOfferState`: counts and flags for the Home card's return and the weekly reminder (ADR-559).
@@ -63,7 +70,7 @@ enum PreferenceKey {
     static let voiceTokenServer = "voiceTokenServer"
     /// Development setting: base URL of the Doddy Connected Apps server (not a secret).
     static let connectedAppsServerURL = "connectedAppsServerURL"
-    /// Ask Doddy: the user agreed that questions go to the gateway and OpenAI. Off by default.
+    /// Ask Doddy: the user agreed that questions go to Doddy's server and Anthropic (ADR-587). Off by default.
     static let assistantConsent = "assistantConsent"
     static let assistantUseNotes = "assistantUseNotes"
     /// Development setting: https origin of the Doddy messaging server (`server/messaging`).
@@ -72,6 +79,8 @@ enum PreferenceKey {
     static let pushUpdatesOn = "pushUpdatesOn"
     /// The user turned on the server copy of their notes for phone calls (S2).
     static let memoryCopyOn = "memoryCopyOn"
+    // Notes and conversations kept on Doddy's server (ADR-603) are `WebMemoryModel.notesKey` and
+    // `WebMemoryModel.conversationsKey` in DoddyCore, off by default.
     /// "Worth keeping?" after a voice conversation (ADR-247). On unless turned off; on-device rules.
     static let suggestSavesAfterConversation = "suggestSavesAfterConversation"
     /// Siri may read saved notes aloud (ADR-248). On unless turned off; the phone must be unlocked.
@@ -149,6 +158,9 @@ struct RootView: View {
         withAnimation(reduceMotion ? nil : .easeOut(duration: 0.3)) { welcomeDone = true }
     }
 
+    /// The Terms acceptance (ADR-581); the "Before we start" step shows until it is stored.
+    @AppStorage(PreferenceKey.legalAcceptance) private var legalRecordData: Data?
+
     private var colorScheme: ColorScheme? {
         switch AppearancePreference(rawValue: appearanceRaw) ?? .system {
         case .system: nil
@@ -196,6 +208,11 @@ struct RootView: View {
                 // one that has no private notes (ADR-310), only if the notes were read successfully.
                 MemoryCopySync.shared.retryIfNeeded(PrivateNotesStore.current().shareable(store.memories),
                                                     notesLoaded: store.hasLoaded && store.loadError == nil)
+                // Notes and conversations kept on Doddy's server (ADR-603), only if the person turned that on:
+                // the list again if the last send failed, and conversations that couldn't be sent.
+                WebMemory.shared.retryIfNeeded(store.memories, privateNotes: PrivateNotesStore.current(),
+                                               notesLoaded: store.hasLoaded && store.loadError == nil)
+                await WebMemory.shared.retryConversations(from: ConversationLogStore.shared.logs, language: WebMemory.language())
                 await noteReminders.refreshOnForeground()
                 if scenePhase == .active { listeningIndicatorBecameActive() }
                 pickUpSharedItem()
@@ -227,6 +244,9 @@ struct RootView: View {
                     // after the update, a copy that may hold private notes is replaced (ADR-310).
                     MemoryCopySync.shared.retryIfNeeded(PrivateNotesStore.current().shareable(store.memories),
                                                         notesLoaded: store.hasLoaded && store.loadError == nil)
+                    // Notes kept on Doddy's server (ADR-603): the same, for a send that failed.
+                    WebMemory.shared.retryIfNeeded(store.memories, privateNotes: PrivateNotesStore.current(),
+                                                   notesLoaded: store.hasLoaded && store.loadError == nil)
                     pickUpSharedItem()
                     Task { await OpenWaysReminderScheduler.refresh(router.setup) }
                 }
@@ -305,10 +325,25 @@ struct RootView: View {
             .onChange(of: store.revision) {
                 guard store.hasLoaded, store.loadError == nil else { return }
                 MemoryCopySync.shared.schedule(PrivateNotesStore.current().shareable(store.memories))
+                // Notes kept on Doddy's server (ADR-603), if the person turned that on: the whole current
+                // list, private notes left out by `WebMemoryModel`, after the same successful read.
+                WebMemory.shared.scheduleNotes(store.memories, privateNotes: PrivateNotesStore.current())
             }
+            // First use: "Before we start" (ADR-581), then the introduction, in one cover.
             .fullScreenCover(isPresented: introductionPresentation) {
-                OnboardingFlowView()
-                    .preferredColorScheme(colorScheme)
+                Group {
+                    if legalGateUp {
+                        LegalAcceptanceView(source: LegalAcceptance.source(
+                            hasUsedDoddyBefore: !profiles.isFirstInstallation, previous: LegalAcceptanceStore.record))
+                    } else {
+                        OnboardingFlowView()
+                    }
+                }
+                .preferredColorScheme(colorScheme)
+            }
+            // Drafts and listen-on-open wait while the terms step is up, as during first use.
+            .onChange(of: legalGateUp, initial: true) { _, up in
+                router.isOnboardingShown = up || profiles.route != .home
             }
         } else {
             // A moment while the store opens, so Home doesn't flash before first-use onboarding.
@@ -359,12 +394,18 @@ struct RootView: View {
                 && !OpeningPreferences.firstLaunchIntroSeen())
     }
 
+    /// "Before we start" is due (ADR-581). Not over the Face ID lock: it comes after the unlock.
+    private var legalGateUp: Bool {
+        LegalAcceptanceStore.isNeeded(legalRecordData) && !AppLock.shared.isLocked
+    }
+
     private var introductionPresentation: Binding<Bool> {
         Binding(
-            // The introduction waits until the first-launch welcome is over (ADR-598).
-            get: { profiles.isIntroductionPresented && !welcomeVisible },
+            // The introduction, and the Terms step inside it, wait until the first-launch welcome is over (ADR-598, ADR-581).
+            get: { (legalGateUp || profiles.isIntroductionPresented) && !welcomeVisible },
             set: { presented in
-                guard !presented, profiles.isIntroductionPresented else { return }
+                // The terms step can't be closed without its Continue.
+                guard !presented, !legalGateUp, profiles.isIntroductionPresented else { return }
                 Task { await profiles.finishIntroduction(saved: false) }
             })
     }
@@ -451,7 +492,7 @@ struct RootView: View {
             showFind = true
         }
         .onChange(of: profiles.route == .home, initial: true) { _, atHome in
-            router.isOnboardingShown = !atHome
+            router.isOnboardingShown = !atHome || legalGateUp
             // The first time Home is ready and on screen is the launch (OpeningModel decides).
             // Not while the first-launch welcome is up: it gets its turn when the welcome ends (ADR-598).
             if !welcomeVisible { opening.homeReady(openingConditions, isActive: scenePhase == .active) }
@@ -467,6 +508,10 @@ struct RootView: View {
         // So does one started on Home (ADR-595).
         .onChange(of: HomeConversation.shared.live != nil) { _, live in
             if live { opening.conversationOpened() }
+        }
+        // Recordings (ADR-588) is a sheet on Home, so a link or intent from any tab comes back to it.
+        .onChange(of: router.isRecordingsPresented) { _, presented in
+            if presented { selectedTab = .home }
         }
         // A Spotlight result (ADR-330) opens that note or list, as a widget's link does.
         .onContinueUserActivity(CSSearchableItemActionType) { activity in
@@ -490,6 +535,9 @@ struct RootView: View {
             // The parking widget (ADR-315): the saved spot in Maps. No spot, nothing opens.
             case .parking:
                 if let spot = ParkingStore.current(), let maps = Parking.mapsURL(spot) { openURL(maps) }
+            // DODDY Capture (ADR-588): the island's Open button. Navigation only.
+            case .recordings:
+                router.openRecordings()
             }
         }
     }

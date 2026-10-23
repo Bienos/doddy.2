@@ -32,6 +32,10 @@ final class VoicePreviewPlayer {
             problem = NSLocalizedString("Samples don't play while you're talking to Doddy.", comment: "")
             return
         }
+        guard !RecordingCoordinator.shared.isActive else {
+            problem = NSLocalizedString("Samples don't play while Doddy is recording.", comment: "")
+            return
+        }
         guard let url = Bundle.main.url(forResource: style.voice.previewResourceName, withExtension: "mp3") else {
             problem = NSLocalizedString("This sample is missing from the app.", comment: "")
             return

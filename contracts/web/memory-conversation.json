@@ -1,0 +1,21 @@
+{
+  "id": "00000000-0000-4000-8000-0000000000c1",
+  "startedAt": "2026-10-20T08:00:00.000Z",
+  "endedAt": "2026-10-20T08:03:00.000Z",
+  "language": "pl",
+  "endedBy": "you",
+  "turns": [
+    {
+      "role": "user",
+      "text": "Kiedy są urodziny Anny?"
+    },
+    {
+      "role": "doddy",
+      "text": "Urodziny Anny są 14 marca."
+    },
+    {
+      "role": "user",
+      "text": "Dzięki, dodaj prezent do listy."
+    }
+  ]
+}

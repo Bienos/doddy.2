@@ -7,7 +7,7 @@ try {
   server.listen(config.port, config.host, () => {
     // Names and modes only; no secrets or IDs.
     process.stdout.write(
-      `${JSON.stringify({ level: "info", event: "listening", host: config.host, port: config.port, mode: config.mode, auth: config.authMode, env: config.env, store: store.db.kind })}\n`,
+      `${JSON.stringify({ level: "info", event: "listening", host: config.host, port: config.port, mode: config.mode, auth: config.authMode, env: config.env, store: store.db.kind, web: config.web ? "on" : "off" })}\n`,
     );
     if (config.mode === "mock") {
       process.stdout.write(

@@ -30,7 +30,8 @@ modules="$(swift build --package-path "$package" ${flags[@]+"${flags[@]}"} --sho
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 
-awk '/^enum PreferenceKey/{f=1} f{print} f&&/^}/{exit}' DoddyApp/App/RootView.swift > "$work/PreferenceKey.swift"
+# Some keys are DoddyCore's own (ADR-579, ADR-581), so the copy imports it as RootView does.
+{ echo "import DoddyCore"; awk '/^enum PreferenceKey/{f=1} f{print} f&&/^}/{exit}' DoddyApp/App/RootView.swift; } > "$work/PreferenceKey.swift"
 [ -s "$work/PreferenceKey.swift" ] || { echo "FAIL: could not extract PreferenceKey from RootView.swift"; exit 1; }
 cat > "$work/AppEnvironmentStub.swift" <<'SWIFT'
 import DoddyCore
@@ -46,6 +47,9 @@ struct AppEnvironment {
     let photoFiles: PhotoFiles
     let audioRepository: any AudioRepository
     let audioFiles: AudioFiles
+    // DODDY Capture (ADR-588): ShortcutRouter opens the newest recording through it.
+    let recordingRepository: (any RecordingRepository)?
+    static var shared: AppEnvironment { fatalError("a type-check stand-in is never run") }
 }
 SWIFT
 # SystemNoteNotifications imports UserNotifications; NoteReminderStore only calls its static
@@ -91,6 +95,7 @@ files=(
   DoddyApp/Infrastructure/MemoryStore+Lists.swift
   DoddyApp/Infrastructure/ProfileStore.swift
   DoddyApp/Infrastructure/ShortcutRouter.swift
+  DoddyApp/Infrastructure/LegalAcceptanceStore.swift
   DoddyApp/Infrastructure/UnfinishedNoteStore.swift
   DoddyApp/Infrastructure/SiriNoteLookup.swift
   # The thread with Doddy (ADR-585): the Messages screen's state, without the views.

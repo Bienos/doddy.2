@@ -7,6 +7,8 @@ final class DeepLinkTests: XCTestCase {
         XCTAssertEqual(DeepLink(url: URL(string: "doddy://home")!), .home)
         XCTAssertEqual(DeepLink(url: URL(string: "doddy://memories")!), .memories)
         XCTAssertEqual(DeepLink(url: URL(string: "DODDY://Settings")!), .settings)
+        XCTAssertEqual(DeepLink(url: URL(string: "doddy://recordings")!), .recordings, "the Live Activity's Open button (ADR-588)")
+        XCTAssertEqual(DeepLink(url: URL(string: "doddy://recordings/delete")!), .recordings, "a path is ignored: the link only ever opens the list")
     }
 
     func testBareSchemeOpensHome() {

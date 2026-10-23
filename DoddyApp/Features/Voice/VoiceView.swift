@@ -127,9 +127,10 @@ struct VoiceView: View {
         HomeConversation.shared.hold(controller)
         // Back Tap or another Talk to Doddy shortcut greets with "Hey <name>, what's up?", after the same
         // account and provider-consent gate used by a tap in the app.
+        // The router sets the opening only when it opened a conversation (Back Tap's "Only open
+        // Doddy" opens none; the Action Button's control always talks, ADR-579).
         let openedByShortcut = ShortcutRouter.shared.takeTalkToDoddyOpening()
-        let action = BackTapAction.stored(UserDefaults.standard.string(forKey: PreferenceKey.backTapAction))
-        let greeting = openedByShortcut && action.startsConversation ? TalkInIsland.greeting(for: profiles.profile) : nil
+        let greeting = openedByShortcut ? TalkInIsland.greeting(for: profiles.profile) : nil
         // The island opens up when Doddy starts speaking, not here (ADR-577): this screen is on top,
         // and iOS doesn't show Doddy's own island over Doddy, so a request now was always lost.
         await controller.start(

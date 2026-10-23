@@ -120,6 +120,13 @@ is unknown until step 3.
 | DOD-11 observable_privacy | No conversation text in the activity; the new log holds a bundle identifier and a yes/no only (`privacy: .public` on those two values, nothing else) | Guard PASS | Logs are readable in Console on a connected Mac; that is the point, and they contain nothing personal |
 | Honest capability claims (T35/T42) | This document and the ADR rows keep "unbuilt / not run"; the user-facing text in `VoiceView` already says iOS may stop Doddy in the background | — | Do not describe the island as working until step 3 above is recorded |
 
+## Since 22 Oct: one "Talk to Doddy" control that follows Settings (ADR-579)
+The section below is ADR-577's. Since ADR-579 the "Talk to Doddy" control itself starts in the Dynamic
+Island by default (Settings › Action Button: Dynamic Island, Open App or Automatic), a second press ends
+the conversation, "Small island" is Settings › "Expand when Doddy speaks", and a failed start leaves a
+"Conversation stopped" card on the Lock Screen. Root cause, flow and the 16-row device matrix:
+`ACTION_BUTTON_ISLAND.md`. Device check A below now applies to "Talk to Doddy".
+
 ## Talk in the Island, and an island that opens up (ADR-577, 2026-10-20)
 
 > **Changed 22 Oct (ADR-593):** the Action Button opens Doddy again. Owner: "make it so when I press

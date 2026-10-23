@@ -1,0 +1,919 @@
+/*
+ * Doddy Web (ADR-600), in the website's design (owner, 22 Oct 2026): the cream canvas, paper cards
+ * with a soft lift, ink buttons with the orange underline, ruled notebook panels, Doddy's
+ * handwriting for his own short lines. Colours and metrics come only from tokens.css, generated
+ * from the same file as the website's (tools/gen_web_assets.py). Orange is decoration, never text.
+ *
+ * Fonts: the website sets headings in Bricolage Grotesque and Doddy's lines in Caveat, loaded from
+ * Google Fonts. This server's content security policy allows no outside fonts, and no font files
+ * are bundled (CLAUDE.md), so the stacks below fall back to the system's: Avenir Next, Segoe UI,
+ * Bradley Hand, Segoe Print. Loading the real fonts is an owner decision (docs/platforms/web.md).
+ */
+
+:root {
+  --display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --hand: "Caveat", "Bradley Hand", "Segoe Print", cursive;
+  --text: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+  /* A brighter paper for cards and the ruled notebook page, derived from the canvas. */
+  --paper: color-mix(in srgb, var(--canvas) 35%, #fff);
+  --page: #fff;
+  --rule: color-mix(in srgb, var(--separator) 60%, transparent);
+  --lift: 0 1px 2px rgb(60 40 10 / 6%), 0 16px 36px -20px rgb(60 40 10 / 28%);
+  --lift-strong: 0 2px 4px rgb(60 40 10 / 8%), 0 40px 80px -32px rgb(60 40 10 / 40%);
+  --nav-height: 68px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: var(--quiet-surface);
+    --page: var(--quiet-surface);
+    --lift: 0 1px 2px rgb(0 0 0 / 30%), 0 16px 36px -20px rgb(0 0 0 / 60%);
+    --lift-strong: 0 2px 4px rgb(0 0 0 / 40%), 0 40px 80px -32px rgb(0 0 0 / 70%);
+  }
+}
+
+:root[data-theme="dark"] {
+  --paper: var(--quiet-surface);
+  --page: var(--quiet-surface);
+  --lift: 0 1px 2px rgb(0 0 0 / 30%), 0 16px 36px -20px rgb(0 0 0 / 60%);
+  --lift-strong: 0 2px 4px rgb(0 0 0 / 40%), 0 40px 80px -32px rgb(0 0 0 / 70%);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-padding-top: 84px;
+}
+
+body {
+  margin: 0;
+  background: var(--canvas);
+  color: var(--reading-ink);
+  font-family: var(--text);
+  font-size: 1.0625rem; /* 17 px at the default size, the app's body */
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+h1,
+h2,
+h3,
+p,
+ul,
+ol,
+dl,
+dd,
+figure {
+  margin: 0;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--display);
+  text-wrap: balance;
+}
+
+h1 {
+  font-size: clamp(2rem, 1.5rem + 2vw, 2.875rem);
+  line-height: 1.02;
+  font-weight: 750;
+  font-variation-settings: "opsz" 72;
+  letter-spacing: -0.02em;
+}
+
+h1:focus {
+  outline: none;
+}
+
+h2 {
+  font-size: 1.3125rem;
+  line-height: 1.2;
+  font-weight: 720;
+  letter-spacing: -0.01em;
+}
+
+h3 {
+  font-size: 1.0625rem;
+  line-height: 1.3;
+  font-weight: 700;
+}
+
+a {
+  color: var(--accent-text);
+  text-underline-offset: 0.18em;
+}
+
+:focus-visible {
+  outline: 3px solid var(--accent-text);
+  outline-offset: 3px;
+  border-radius: 8px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.skip-link {
+  position: absolute;
+  left: var(--space-4);
+  top: -100px;
+  z-index: 30;
+  padding: var(--space-2) var(--space-4);
+  background: var(--reading-ink);
+  color: var(--canvas);
+  border-radius: 12px;
+}
+
+.skip-link:focus {
+  top: var(--space-2);
+}
+
+/* Doddy's own short line: handwritten, never an instruction, a state or a number (brand guide). */
+.says {
+  font-family: var(--hand);
+  font-weight: 700;
+  font-size: 1.75rem;
+  line-height: 1;
+  color: var(--accent-text);
+  transform: rotate(-2deg);
+  transform-origin: left;
+}
+
+/* ---------------------------------------------------------------- brand */
+
+.wordmark {
+  display: inline-block;
+  height: 32px;
+  aspect-ratio: 113.168 / 51.47;
+  background-color: var(--reading-ink);
+  -webkit-mask: url("/brand/wordmark.svg") center / contain no-repeat;
+  mask: url("/brand/wordmark.svg") center / contain no-repeat;
+}
+
+.wordmark-large {
+  height: 40px;
+}
+
+.doddy-figure {
+  display: block;
+  height: auto;
+  user-select: none;
+}
+
+.cue-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: var(--space-2);
+  border-radius: 50%;
+  background: var(--orange-cue);
+  vertical-align: 0.1em;
+}
+
+/* ---------------------------------------------------------------- controls */
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: var(--tap-target);
+  padding: 0 var(--space-5);
+  border: 0;
+  border-radius: 14px;
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+  text-decoration: none;
+  background: var(--reading-ink);
+  color: var(--canvas);
+  box-shadow: inset 0 -3px 0 color-mix(in srgb, var(--orange-cue) 85%, transparent);
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: inset 0 -5px 0 var(--orange-cue);
+}
+
+.button:disabled {
+  cursor: progress;
+  opacity: 0.65;
+}
+
+.button-primary {
+  width: 100%;
+  min-height: var(--control-height);
+  border-radius: 18px;
+}
+
+.button-small {
+  padding: 0 var(--space-4);
+  font-size: 0.9375rem;
+}
+
+.button-quiet {
+  background: var(--paper);
+  color: var(--reading-ink);
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1.5px var(--separator);
+}
+
+.button-quiet:hover:not(:disabled) {
+  transform: none;
+  box-shadow: inset 0 0 0 1.5px var(--reading-ink);
+}
+
+.select,
+.language-picker select,
+.code-input {
+  font: inherit;
+  color: var(--reading-ink);
+  background: var(--paper);
+  border: 1.5px solid var(--separator);
+  border-radius: 14px;
+  min-height: var(--tap-target);
+  padding: 0 var(--space-3);
+}
+
+.code-input {
+  width: 100%;
+  min-height: var(--control-height);
+  font-size: 1.5rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  font-family: var(--mono);
+}
+
+.code-input::placeholder {
+  color: var(--secondary-text);
+  opacity: 0.6;
+}
+
+.field-label {
+  display: block;
+  margin-bottom: var(--space-2);
+  font-weight: 600;
+}
+
+.field-hint,
+.fine-print,
+.document-meta {
+  color: var(--secondary-text);
+  font-size: 0.9375rem; /* subheadline */
+}
+
+.field-hint {
+  margin: var(--space-2) 0 var(--space-4);
+}
+
+.field-error {
+  margin: var(--space-2) 0 var(--space-4);
+  color: var(--error);
+  font-weight: 500;
+}
+
+.notice {
+  padding: var(--space-3) var(--space-4);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--quiet-surface) 70%, transparent);
+  border: 1px solid var(--separator);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: var(--space-2);
+  padding: 2px 10px 3px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--quiet-surface) 70%, transparent);
+  border: 1px solid var(--separator);
+  color: var(--secondary-text);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.3;
+  vertical-align: 0.1em;
+  white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------- states */
+
+.state {
+  margin: var(--space-4) 0;
+  color: var(--secondary-text);
+}
+
+.state-error {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--error);
+}
+
+.state-error p {
+  flex: 1 1 18rem;
+}
+
+.state-loading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--separator);
+  border-top-color: var(--orange-cue);
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.status {
+  margin-top: var(--space-1);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--secondary-text);
+}
+
+.status-ready,
+.status-app-connected,
+.status-receipt-succeeded {
+  color: var(--confirmed);
+}
+
+.status-failed,
+.status-interrupted,
+.status-receipt-failed,
+.status-app-expired,
+.status-app-error,
+.status-app-permission_insufficient {
+  color: var(--error);
+}
+
+.status-working,
+.status-receipt-outcome_unknown {
+  color: var(--accent-text);
+}
+
+/* ---------------------------------------------------------------- sign-in and centred pages */
+
+.sign-in,
+.centered {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  padding: var(--space-6) 16px;
+}
+
+/* The notebook page: ruled paper, Doddy at the bottom corner, the website's sign-in card. */
+.sign-in-card {
+  position: relative;
+  width: 100%;
+  max-width: 34rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-6) var(--space-6) var(--space-6);
+  border-radius: 36px;
+  border: 1px solid var(--separator);
+  background-color: var(--page);
+  background-image: repeating-linear-gradient(180deg, transparent 0 35px, var(--rule) 35px 36px);
+  box-shadow: var(--lift);
+  overflow: hidden;
+}
+
+.sign-in-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.sign-in-foot {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: calc(var(--space-6) * -1);
+}
+
+.sign-in-foot .says {
+  margin-bottom: var(--space-6);
+}
+
+.steps {
+  padding-left: 1.4em;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.lead {
+  margin-top: var(--space-2);
+  color: var(--secondary-text);
+  max-width: 44rem;
+}
+
+.crash {
+  max-width: 30rem;
+  margin: 15vh auto 0;
+  padding: 0 16px;
+  display: grid;
+  gap: var(--space-4);
+}
+
+/* ---------------------------------------------------------------- shell: the website's header */
+
+.demo-banner {
+  padding: var(--space-2) 16px;
+  background: color-mix(in srgb, var(--quiet-surface) 70%, transparent);
+  border-bottom: 1px solid var(--separator);
+  color: var(--accent-text);
+  font-weight: 600;
+  text-align: center;
+}
+
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: color-mix(in srgb, var(--canvas) 86%, transparent);
+  -webkit-backdrop-filter: saturate(1.4) blur(12px);
+  backdrop-filter: saturate(1.4) blur(12px);
+  border-bottom: 1px solid color-mix(in srgb, var(--separator) 60%, transparent);
+}
+
+.nav-inner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  min-height: var(--nav-height);
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+
+.brand-link {
+  display: inline-flex;
+  min-height: var(--tap-target);
+  align-items: center;
+  color: inherit;
+  margin-right: auto;
+}
+
+.nav-menu {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+.nav-links {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.nav-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap-target);
+  color: var(--secondary-text);
+  text-decoration: none;
+  font-size: 0.9375rem;
+  font-weight: 550;
+  white-space: nowrap;
+}
+
+.nav-link:hover {
+  color: var(--reading-ink);
+}
+
+.nav-link.is-active {
+  color: var(--reading-ink);
+  text-decoration: underline;
+  text-decoration-color: var(--orange-cue);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 8px;
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.nav-actions .field-error {
+  margin: 0;
+  max-width: 18rem;
+  font-size: 0.875rem;
+}
+
+.menu-button {
+  display: none;
+  font: inherit;
+  font-weight: 600;
+  min-height: var(--tap-target);
+  padding: 0 var(--space-4);
+  border-radius: 14px;
+  border: 0;
+  background: var(--paper);
+  color: var(--reading-ink);
+  box-shadow: inset 0 0 0 1.5px var(--separator);
+  cursor: pointer;
+}
+
+.content {
+  width: 100%;
+  max-width: 64rem;
+  margin: 0 auto;
+  padding: var(--space-6) var(--gutter) 72px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.content.is-wide {
+  max-width: 1200px;
+}
+
+.page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.page-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* ---------------------------------------------------------------- cards and lists */
+
+.card {
+  padding: var(--space-5);
+  border-radius: 26px;
+  background: var(--paper);
+  border: 1px solid var(--separator);
+  box-shadow: var(--lift);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.card-quiet {
+  background: transparent;
+  border-style: dashed;
+  box-shadow: none;
+}
+
+.card-working {
+  border-color: var(--orange-cue);
+}
+
+.card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-3);
+}
+
+.card-head a {
+  white-space: nowrap;
+}
+
+/* Home: the website's ruled notebook page with Doddy sitting on it. */
+.home-hero {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-5);
+  padding: var(--space-6) var(--space-6) var(--space-5);
+  border-radius: 36px;
+  border: 1px solid var(--separator);
+  background-color: var(--page);
+  background-image: repeating-linear-gradient(180deg, transparent 0 35px, var(--rule) 35px 36px);
+  box-shadow: var(--lift);
+}
+
+.home-hero .page-header {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-bottom: var(--space-2);
+}
+
+.home-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  align-items: start;
+  gap: var(--space-4);
+}
+
+.plain-list,
+.document-list,
+.receipt-list,
+.app-list,
+.session-list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.document,
+.receipt,
+.app,
+.session {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--quiet-surface) 45%, var(--paper));
+  border: 1px solid var(--separator);
+}
+
+.content > .document-list > .document,
+.content > .receipt-list > .receipt,
+.content > .app-list > .app {
+  background: var(--paper);
+  box-shadow: var(--lift);
+}
+
+.document-main {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  min-width: 0;
+  flex: 1 1 20rem;
+}
+
+.document-text {
+  min-width: 0;
+}
+
+.document-name,
+.session-name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.kind-badge {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--quiet-surface);
+  border: 1px solid var(--separator);
+  color: var(--secondary-text);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.document-compact {
+  padding: var(--space-3);
+}
+
+.document > .field-error,
+.session > .field-error {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+.receipt {
+  display: grid;
+  gap: var(--space-1);
+  justify-content: stretch;
+}
+
+.receipt .status {
+  margin: 0;
+}
+
+.app {
+  display: grid;
+  gap: var(--space-2);
+  justify-content: stretch;
+}
+
+.app-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.app-head .status {
+  margin: 0;
+}
+
+.app-access {
+  color: var(--secondary-text);
+  font-size: 0.9375rem;
+}
+
+.tools summary {
+  cursor: pointer;
+  min-height: var(--tap-target);
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+}
+
+.tools ul {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.tool {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0 var(--space-3);
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--separator);
+}
+
+.tool-risk {
+  grid-column: 1 / -1;
+  color: var(--secondary-text);
+  font-size: 0.875rem;
+}
+
+.tool-switch {
+  color: var(--secondary-text);
+  font-weight: 600;
+}
+
+.tool-switch.is-on {
+  color: var(--confirmed);
+}
+
+/* ---------------------------------------------------------------- narrow screens */
+
+@media (max-width: 64rem) {
+  .nav-inner,
+  .nav-menu,
+  .nav-links {
+    gap: var(--space-4);
+  }
+}
+
+/*
+ * The header has eight links in Polish. Below this width they and Sign out move into a sheet under
+ * the header; above it they fit in one row, with the Example and Soon markers as small dots (their
+ * words stay in the accessible name and the tooltip, and show in full inside the sheet).
+ */
+@media (min-width: 78.0625rem) {
+  .nav-links { gap: var(--space-4); }
+  .nav-link { font-size: 0.875rem; }
+  .nav-link .pill {
+    font-size: 0;
+    width: 8px;
+    height: 8px;
+    min-width: 0;
+    padding: 0;
+    margin-left: 6px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--orange-cue);
+  }
+}
+
+@media (max-width: 78rem) {
+  .nav-inner {
+    gap: var(--space-3);
+  }
+
+  .menu-button {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* The links and Sign out move into a sheet under the header. */
+  .nav-menu {
+    display: none;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--gutter) var(--space-4);
+    background: var(--canvas);
+    border-bottom: 1px solid var(--separator);
+    box-shadow: var(--lift);
+  }
+
+  .nav-menu.is-open {
+    display: flex;
+  }
+
+  .nav-links {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+  }
+
+  .nav-link {
+    width: 100%;
+    min-height: 48px;
+    font-size: 1.0625rem;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .nav-link.is-active {
+    text-decoration: none;
+    box-shadow: inset 3px 0 0 var(--orange-cue);
+    padding-left: var(--space-3);
+  }
+
+  .nav-actions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 54rem) {
+  .content {
+    padding: var(--space-5) 16px 56px;
+  }
+
+  .home-hero {
+    align-items: center;
+    padding: var(--space-5) var(--space-4);
+    border-radius: 28px;
+  }
+
+  .home-hero .doddy-figure {
+    width: 64px;
+  }
+
+  .sign-in-card {
+    padding: var(--space-5) var(--space-4) var(--space-6);
+    border-radius: 28px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media (forced-colors: active) {
+  .wordmark {
+    background-color: CanvasText;
+  }
+
+  .nav-link.is-active {
+    outline: 2px solid Highlight;
+  }
+}

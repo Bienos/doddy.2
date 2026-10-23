@@ -104,6 +104,8 @@ public final class SQLiteListRepository: ListRepository {
             try db.execute(
                 sql: "UPDATE memories SET current_text = ?, updated_at_ms = ?, user_edited = 1, search_text = ? WHERE id = ?",
                 arguments: [name, DoddyDatabase.milliseconds(date), SearchFolding.fold(name), listID.uuidString])
+            // The list's name is indexed with the notes (ADR-584).
+            try DoddyDatabase.compactSearchIndex("memories_fts", in: db)
             guard let stored = try Self.list(listID, db), stored.record == renamed else { throw MemoryStoreError.verificationFailed }
             return stored
         }
@@ -283,6 +285,7 @@ extension SQLiteListRepository {
                 try db.execute(
                     sql: "UPDATE memories SET current_text = ?, updated_at_ms = ?, user_edited = 1, search_text = ? WHERE id = ?",
                     arguments: [name, DoddyDatabase.milliseconds(date), SearchFolding.fold(name), listID.uuidString])
+                try DoddyDatabase.compactSearchIndex("memories_fts", in: db)
             }
             let existing = Dictionary(list.items.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
             let wanted = Set(state.items.map(\.id))

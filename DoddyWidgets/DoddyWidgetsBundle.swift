@@ -30,13 +30,12 @@ struct DoddyWidgetsBundle: WidgetBundle {
         // Doddy on a call for the user (ADR-504).
         DoddyCallLiveActivity()
         DoddyToolLiveActivityWithWatch()
+        // A DODDY Capture recording (ADR-588).
+        DoddyCaptureLiveActivity()
         // One entry for all Home Screen widgets: the bundle builder has taken at most ten (ADR-331).
         DoddyHomeWidgets().body
-        TalkToDoddyControl()
-        // Was "Talk in the Island" (ADR-577); opens Doddy since ADR-593. Kept so an Action Button
-        // or control already set to it keeps working.
-        TalkInIslandControl()
-        NewNoteControl()
+        // One entry for all the controls, for the same reason.
+        DoddyControls().body
         #if canImport(AlarmKit)
         // A Doddy alarm's snooze countdown (ADR-283), iOS 26 and later.
         if #available(iOS 26.0, *) {
@@ -51,7 +50,23 @@ struct DoddyWidgetsBundle: WidgetBundle {
         ShoppingLiveActivity()
         DoddyCallLiveActivity()
         DoddyToolLiveActivity()
+        DoddyCaptureLiveActivity()
         DoddyHomeWidgets().body
+    }
+}
+
+/// The controls (iOS 18+), grouped so the main bundle stays within the builder's ten entries
+/// (ADR-331, ADR-588).
+@available(iOS 18.0, *)
+struct DoddyControls: WidgetBundle {
+    var body: some Widget {
+        TalkToDoddyControl()
+        // Was "Talk in the Island" (ADR-577); opens Doddy since ADR-593. Kept so an Action Button
+        // or control already set to it keeps working.
+        TalkInIslandControl()
+        NewNoteControl()
+        // Opens Doddy and starts a recording (ADR-588).
+        StartRecordingControl()
     }
 }
 

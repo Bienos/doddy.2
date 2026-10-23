@@ -112,6 +112,32 @@ export interface ClaudeProvider {
   ask(args: AskClaudeArgs, signal: AbortSignal): Promise<{ text: string }>;
   /** One finished file. Slow (often one to three minutes); run in the background. */
   makeDocument(args: MakeDocumentArgs, signal: AbortSignal): Promise<ClaudeFile>;
+  /**
+   * One JSON answer constrained to `schema` (structured output), for Ask Doddy (ADR-587). Throws
+   * `ClaudeRefusal` when the model declines and `ProviderError` for everything else that fails.
+   */
+  structured(input: StructuredInput, signal: AbortSignal): Promise<StructuredResult>;
+}
+
+export interface StructuredInput {
+  system: string;
+  user: string;
+  /** JSON Schema of the answer; every object needs `additionalProperties: false`. */
+  schema: Record<string, unknown>;
+  maxTokens: number;
+}
+
+export interface StructuredResult {
+  value: unknown;
+  usage: { inputTokens: number; outputTokens: number };
+}
+
+/** The model declined to answer (`stop_reason: "refusal"`). Not retried. */
+export class ClaudeRefusal extends Error {
+  constructor() {
+    super("refused");
+    this.name = "ClaudeRefusal";
+  }
 }
 
 function userContent(request: string, material: string | undefined, extra = ""): string {
@@ -151,6 +177,7 @@ interface MessageResponse {
   content: Block[];
   stop_reason: string | null;
   container?: { id?: string } | null;
+  usage?: { input_tokens?: number; output_tokens?: number } | null;
 }
 
 export class AnthropicClaudeProvider implements ClaudeProvider {
@@ -230,6 +257,34 @@ export class AnthropicClaudeProvider implements ClaudeProvider {
     // Best effort: Doddy keeps its own copy for a week; Anthropic's copy isn't needed.
     for (const id of fileIds) void this.deleteFile(id).catch(() => {});
     return { name: fileName(args.title, info.ext), mime: info.mime, bytes, summary: textOf(response.content).slice(0, 300) };
+  }
+
+  /**
+   * Structured output (`output_config.format` with a JSON schema) at low effort: Ask Doddy wants a
+   * short, quick answer. Thinking blocks, if any, are skipped; only the text block is the answer.
+   */
+  async structured(input: StructuredInput, signal: AbortSignal): Promise<StructuredResult> {
+    const response = await this.messages(
+      {
+        model: this.settings.model,
+        max_tokens: input.maxTokens,
+        system: input.system,
+        output_config: { effort: "low", format: { type: "json_schema", schema: input.schema } },
+        messages: [{ role: "user", content: input.user }],
+      },
+      signal,
+    );
+    if (response.stop_reason === "refusal") throw new ClaudeRefusal();
+    // Cut off by max_tokens: the JSON may be incomplete, so nothing of it is shown.
+    if (response.stop_reason === "max_tokens") throw new ProviderError("malformed_provider_result");
+    let value: unknown;
+    try {
+      value = JSON.parse(textOf(response.content));
+    } catch {
+      throw new ProviderError("malformed_provider_result");
+    }
+    const count = (n: unknown) => (typeof n === "number" && Number.isSafeInteger(n) && n >= 0 ? n : 0);
+    return { value, usage: { inputTokens: count(response.usage?.input_tokens), outputTokens: count(response.usage?.output_tokens) } };
   }
 
   private headers(): Record<string, string> {
@@ -314,5 +369,13 @@ export class MockClaudeProvider implements ClaudeProvider {
     if (this.delayMs) await new Promise((r) => setTimeout(r, this.delayMs));
     const info = KIND_INFO[args.kind];
     return { name: fileName(args.title, info.ext), mime: info.mime, bytes: Buffer.from(`DEMO ${info.label}: ${args.title}`), summary: `DEMO ${info.label}.` };
+  }
+  /** Demo: a short answer that cites the first note it was offered, if any. */
+  async structured(input: StructuredInput): Promise<StructuredResult> {
+    if (this.delayMs) await new Promise((r) => setTimeout(r, this.delayMs));
+    const props = (input.schema.properties ?? {}) as { sources?: { items?: { enum?: string[] } } };
+    const first = props.sources?.items?.enum?.[0];
+    const value = first ? { answer: "DEMO: here is what your saved note says.", sources: [first] } : { answer: "DEMO: a general answer, not from your notes." };
+    return { value, usage: { inputTokens: 0, outputTokens: 0 } };
   }
 }

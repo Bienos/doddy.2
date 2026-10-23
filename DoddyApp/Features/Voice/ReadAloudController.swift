@@ -52,6 +52,10 @@ final class ReadAloudController: NSObject, AVSpeechSynthesizerDelegate {
             problem = "Doddy is in a conversation. Read it aloud after it ends."
             return
         }
+        guard !RecordingCoordinator.shared.isActive else {
+            problem = "Doddy is recording. Read it aloud after the recording ends."
+            return
+        }
         if synthesizer.isSpeaking { synthesizer.stopSpeaking(at: .immediate) }
         do {
             let session = AVAudioSession.sharedInstance()

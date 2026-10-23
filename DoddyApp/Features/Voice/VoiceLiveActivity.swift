@@ -104,6 +104,30 @@ final class VoiceLiveActivity {
         }
     }
 
+    /// How long the "Conversation stopped" card stays on the Lock Screen after a failure.
+    static let failedCardFor: TimeInterval = 60
+
+    /// The conversation couldn't start or its connection dropped (ADR-579): the Lock Screen shows
+    /// "Conversation stopped" with Open Doddy for a minute, never a live status. The Dynamic
+    /// Island drops it at once; the reason is said by the app or the intent that started it.
+    func finishFailed(savedCount: Int) {
+        let beat = heartbeat
+        beat?.cancel()
+        heartbeat = nil
+        guard let activity else { return }
+        self.activity = nil
+        shown = nil
+        let final = DoddyVoiceAttributes.ContentState(status: .failed, isMuted: false, savedCount: savedCount, endedAt: Date())
+        let removeAt = Date().addingTimeInterval(Self.failedCardFor)
+        let pending = updating
+        updating = nil
+        ending = Task {
+            await beat?.value
+            await pending?.value
+            await activity.end(ActivityContent(state: final, staleDate: nil), dismissalPolicy: .after(removeAt))
+        }
+    }
+
     /// Waits until the last update and `finish`/`end` have reached iOS (so the island's End
     /// sees the state the app left it in).
     func settle() async {
@@ -130,9 +154,15 @@ final class VoiceLiveActivity {
         }
     }
 
-    /// Clears activities left over from an earlier run that was killed mid-conversation.
-    static func endStale() {
-        for activity in Activity<DoddyVoiceAttributes>.activities {
+    /// Clears activities left over from an earlier run that was killed mid-conversation. Called
+    /// once, from `DoddyApp.init`, before anything in this run can start one; the list is read
+    /// right away, so a conversation the Action Button starts in this run is never in it. To be
+    /// safe whatever calls it later (ADR-579), it also skips the activity this run owns and any
+    /// that began after this run did.
+    static func endStale(runStartedAt: Date = Date()) {
+        let own = shared.activity?.id
+        for activity in Activity<DoddyVoiceAttributes>.activities
+        where activity.id != own && activity.attributes.startedAt < runStartedAt {
             Task { await activity.end(nil, dismissalPolicy: .immediate) }
         }
     }
