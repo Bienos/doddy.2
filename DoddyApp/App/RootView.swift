@@ -66,7 +66,6 @@ enum PreferenceKey {
     /// Ask Doddy: the user agreed that questions go to the gateway and OpenAI. Off by default.
     static let assistantConsent = "assistantConsent"
     static let assistantUseNotes = "assistantUseNotes"
-    static let gatewayAddress = "gatewayAddress"
     /// Development setting: https origin of the Doddy messaging server (`server/messaging`).
     static let messagingServerURL = "messagingServerURL"
     /// The user turned Doddy's notifications on (re-registers the APNs token at launch).
@@ -109,6 +108,8 @@ struct RootView: View {
     @State private var selectedTab: AppTab = .home
     @State private var showFind = false
     @State private var homePath: [UUID] = []
+    /// How tall the transcript sheet opens (ADR-595): full for Transcript, half for a card.
+    @State private var voiceDetent: PresentationDetent = .large
     @Environment(NoteReminderStore.self) private var noteReminders
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.openURL) private var openURL
@@ -241,11 +242,14 @@ struct RootView: View {
             }
             .onAppear {
                 DoddyClock.install()
-                // MV5: a tap or hold on him opens the voice screen, as "Talk to Doddy" does.
+                // MV5: a tap or hold on him talks, as Home's Talk button does: on Home (ADR-595).
                 let store = store
+                let profiles = profiles
                 DoddyDirector.shared.onTalk = {
                     // As Home's own Talk button: not while voice input isn't available.
-                    if store.environment.capabilities.isAvailable(.voiceInput) { ShortcutRouter.shared.isVoicePresented = true }
+                    if store.environment.capabilities.isAvailable(.voiceInput) {
+                        HomeConversation.shared.talk(store: store, profile: profiles.profile)
+                    }
                 }
             }
             // MV5's listening pose read the wake word's conversation, the only one that could be
@@ -366,7 +370,21 @@ struct RootView: View {
         // One presentation point for the conversation, so a shortcut invocation while it is
         // open focuses it instead of starting a second one.
         // Waiting drafts appear only once a cover or sheet has finished going away.
-        .fullScreenCover(isPresented: $router.isVoicePresented, onDismiss: { router.showWaitingDraft() }) { VoiceView() }
+        // The conversation itself is on Home (ADR-595); this sheet is its transcript, and it comes
+        // up from the bottom, half height, when a card needs the user.
+        .sheet(isPresented: $router.isVoicePresented, onDismiss: {
+            voiceDetent = .large
+            router.showWaitingDraft()
+        }) {
+            VoiceView()
+                .presentationDetents([.medium, .large], selection: $voiceDetent)
+                .presentationDragIndicator(.visible)
+        }
+        .onChange(of: HomeConversation.shared.needsYou) { _, needsYou in
+            guard needsYou, !router.isVoicePresented else { return }
+            voiceDetent = .medium
+            router.isVoicePresented = true
+        }
         .sheet(isPresented: $router.isSetupPresented, onDismiss: { router.showWaitingDraft() }) {
             OpenDoddyWaysView(model: router.setup)
         }
@@ -406,6 +424,10 @@ struct RootView: View {
         // A conversation that comes up on its own (Back Tap, Siri, the island) ends the opening.
         .onChange(of: router.isVoicePresented) { _, presented in
             if presented { opening.conversationOpened() }
+        }
+        // So does one started on Home (ADR-595).
+        .onChange(of: HomeConversation.shared.live != nil) { _, live in
+            if live { opening.conversationOpened() }
         }
         // A Spotlight result (ADR-330) opens that note or list, as a widget's link does.
         .onContinueUserActivity(CSSearchableItemActionType) { activity in

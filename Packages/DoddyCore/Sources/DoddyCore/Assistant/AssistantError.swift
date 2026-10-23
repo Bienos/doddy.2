@@ -34,18 +34,23 @@ public enum AssistantError: Error, Equatable, Sendable {
     /// Whether a "Try again" button makes sense right now. The daily spend cap only resets on the
     /// next UTC day, so retrying sooner can only fail again (ADR-125).
     public var canRetryNow: Bool {
-        self != .dailyLimitReached
+        switch self {
+        // Nothing the person does by trying again changes these: the daily cap resets on the next UTC day
+        // (ADR-125), and a server without the feature or that doesn't know this iPhone is the owner's to fix.
+        case .dailyLimitReached, .notConfigured, .notAuthorized: false
+        default: true
+        }
     }
 
     /// Plain wording for the screen. Never includes request text.
     public var userMessage: String {
         switch self {
         case .notConfigured:
-            "Ask Doddy isn't set up yet. Add the gateway address and your invite code in Settings."
+            "Ask Doddy isn't available yet: Doddy's server isn't set up for it. Nothing was lost."
         case .consentRequired:
             "Turn on Ask Doddy in Settings first. It sends your question to a server."
         case .notAuthorized:
-            "This iPhone isn't authorised. Check your invite code in Settings."
+            "Doddy's server didn't accept this iPhone. Nothing was lost. Try again later."
         case .offline:
             "You're offline. Your notes still work. Try again when you're connected."
         case .timeout:
