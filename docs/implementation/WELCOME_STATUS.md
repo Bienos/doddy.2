@@ -2,7 +2,7 @@
 
 Date: 2026-10-22. Branch `claude/gifted-einstein-61p6hq`. Design: Figma file `kR2N76fNeMmptR53RnMgSj` (frames `13:62`, `13:106`, `13:159`, `13:217`, `13:286`, `13:340`) and the clickable prototype it was drawn from. The build prompt is `prompts/WELCOME_FLOW_2026-10-22.md`.
 
-**Built and tested by CI, not seen on a device.** The code was written in an environment with no Swift toolchain. PR #132's hosted run (run 39872214301, head `5e2e654`) then passed: `core` (Linux, including the DoddyCore tests) and the macOS job (build, unit tests, 60 UI tests with 1 skipped and 0 failures, including the 6 `WelcomeUITests`; `scripts/ci.sh` RESULT: PASS). Nobody has looked at it on a phone, so the look, the feel and the animations are unchecked.
+**Built and tested by CI, not seen on a device.** The code was written in an environment with no Swift toolchain. PR #132's hosted runs passed: run 39872214301 (head `5e2e654`, before Sign in with Apple): `core` (Linux, including the DoddyCore tests) and the macOS job (build, unit tests, 60 UI tests with 1 skipped and 0 failures, including the 6 `WelcomeUITests`; `scripts/ci.sh` RESULT: PASS). Run 39916690546 (head `b82edfe`, with the Apple button, merged with the base): `core` and the macOS job's `scripts/ci.sh` step both succeeded (I did not read its test counts; the `WelcomeUITests` now also assert the Apple button). Nobody has looked at it on a phone, so the look, the feel and the animations are unchecked, and a real Apple sign-in has never been tried.
 
 ## What it is
 Five chapters you swipe right to left, one persistent Doddy who hops between them, and a sign-in sheet pinned to the bottom. It shows what Doddy does as one morning in Warsaw, using the copy deck (`design/website-what-can-doddy-do/COPY.md`). It is a scripted demonstration: nothing is saved, reminded, sent or looked up, and every scene card is tagged **Example**.
@@ -35,6 +35,7 @@ Five chapters you swipe right to left, one persistent Doddy who hops between the
 ## What ran
 - Locally (Linux, no Swift): `check_forbidden_capabilities.sh` PASS, `build_strings_catalog.py --check` PASS, `l10n_batch.py status pl` 0 missing.
 - Hosted CI, PR #132, run 39872214301 on head `5e2e654`: `core` PASS (DoddyCore tests); macOS job PASS: XcodeGen, `build-for-testing`, unit tests, simulator restart, 60 UI tests (1 skipped, 0 failures) including `WelcomeUITests` 6 of 6 (five chapters by swipe, Skip, the sign-in options say "not connected" and only "Try Doddy without an account" moves on, the launch-argument skip, Reduce Motion, largest text).
+- Hosted CI, PR #132, run 39916690546 on head `b82edfe` (Apple button, merged with the base): `changes`, `core` and the macOS `ci` job all succeeded (`scripts/ci.sh` step 07:23 to 08:15 UTC). Test counts were not read from the log.
 - Not covered by any test: how it looks and feels, the animations, the Dynamic Island scene on a Dynamic Island iPhone, dark mode, VoiceOver order, the Face ID lock over the welcome.
 
 ## Owner decisions
