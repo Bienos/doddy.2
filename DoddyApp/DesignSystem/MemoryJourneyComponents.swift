@@ -190,20 +190,25 @@ struct CharacterArtImage: View {
         Image(decorative: assetName)
             .resizable().scaledToFit()
             .frame(height: height)
-            // The pose has black ink on a clear background. On the dark canvas the ink is inverted
-            // to light (and the hue turned back so his orange stays orange) instead of putting a
-            // cream plate behind him.
-            .modifier(DarkInkInversion(isDark: colorScheme == .dark))
+            // The pose is white fills and black ink on a clear background. On the dark canvas he
+            // keeps his own colours and gets a thin white outline round his whole shape, so the
+            // black arms and legs show, instead of a cream plate behind him.
+            .modifier(DarkOutline(isDark: colorScheme == .dark, width: max(1.5, height / 120)))
             .accessibilityHidden(true)
     }
 }
 
-private struct DarkInkInversion: ViewModifier {
+private struct DarkOutline: ViewModifier {
     let isDark: Bool
+    let width: CGFloat
 
     @ViewBuilder func body(content: Content) -> some View {
         if isDark {
-            content.colorInvert().hueRotation(.degrees(180))
+            content
+                .shadow(color: .white, radius: 0, x: width, y: 0)
+                .shadow(color: .white, radius: 0, x: -width, y: 0)
+                .shadow(color: .white, radius: 0, x: 0, y: width)
+                .shadow(color: .white, radius: 0, x: 0, y: -width)
         } else {
             content
         }
