@@ -33,7 +33,7 @@ private final class ScriptedTransport: HTTPTransport, @unchecked Sendable {
     }
 }
 
-private func record(_ n: Int, _ text: String, source: MemorySource = .explicitVoice, category: MemoryCategory = .fact, captured: TimeInterval? = nil) throws -> MemoryRecord {
+private func noteRecord(_ n: Int, _ text: String, source: MemorySource = .explicitVoice, category: MemoryCategory = .fact, captured: TimeInterval? = nil) throws -> MemoryRecord {
     try MemoryRecord(
         id: UUID(uuidString: String(format: "00000000-0000-4000-8000-%012d", n))!, rawText: text, source: source, category: category,
         capturedAt: source == .importedLegacyUnknown ? nil : Date(timeIntervalSince1970: captured ?? 1_700_000_000 + Double(n)))
@@ -79,7 +79,7 @@ final class WebMemoryClientTests: XCTestCase {
 
     func testNotesAreSentAsTheWholeListAndTheCountComesBackFromTheServer() async throws {
         let transport = ScriptedTransport(body: try fixture("memory-notes-stored"))
-        let items = [try record(1, "Anna's birthday is 14 March"), try record(2, "Dentist on Friday at 9", category: .commitment), try record(3, "Zaproszenie od Łukasza")]
+        let items = [try noteRecord(1, "Anna's birthday is 14 March"), try noteRecord(2, "Dentist on Friday at 9", category: .commitment), try noteRecord(3, "Zaproszenie od Łukasza")]
         let kept = KeptNote.from(items, excluding: PrivateNotes())
         let count = try await client(transport).replaceNotes(kept)
         XCTAssertEqual(count, 3)
@@ -100,7 +100,7 @@ final class WebMemoryClientTests: XCTestCase {
     func testACountThatIsntTheNumberSentIsNotBelieved() async throws {
         // The fixture's server answer is 3; sending 2 and being told 3 is a mismatch.
         let transport = ScriptedTransport(body: try fixture("memory-notes-stored"))
-        let two = KeptNote.from([try record(1, "one"), try record(2, "two")], excluding: PrivateNotes())
+        let two = KeptNote.from([try noteRecord(1, "one"), try noteRecord(2, "two")], excluding: PrivateNotes())
         let error = await failure { try await client(transport).replaceNotes(two) }
         XCTAssertEqual(error, .unreadable, "a different count must not pass")
     }
@@ -175,11 +175,11 @@ final class WebMemoryClientTests: XCTestCase {
     // MARK: what is sent
 
     func testPrivateNotesListsSamplesAndBlanksNeverLeaveTheiPhone() throws {
-        let kept = try record(1, "Anna's birthday")
-        let secret = try record(2, "PRIVATE the diagnosis")
-        let list = try record(3, "Shopping", category: .list)
-        let sample = try record(4, "A sample note", source: .sampleFixture)
-        let duplicate = try record(1, "Anna's birthday")
+        let kept = try noteRecord(1, "Anna's birthday")
+        let secret = try noteRecord(2, "PRIVATE the diagnosis")
+        let list = try noteRecord(3, "Shopping", category: .list)
+        let sample = try noteRecord(4, "A sample note", source: .sampleFixture)
+        let duplicate = try noteRecord(1, "Anna's birthday")
         let items = KeptNote.from([kept, secret, list, sample, duplicate], excluding: PrivateNotes(ids: [secret.id]))
         XCTAssertEqual(items.map(\.text), ["Anna's birthday"])
         XCTAssertEqual(items.count, 1, "each note once")
@@ -189,14 +189,14 @@ final class WebMemoryClientTests: XCTestCase {
     }
 
     func testAnImportedNoteWithNoDateIsSentWithoutOne() throws {
-        let undated = try record(1, "From an old import", source: .importedLegacyUnknown)
+        let undated = try noteRecord(1, "From an old import", source: .importedLegacyUnknown)
         let item = try XCTUnwrap(KeptNote.from([undated], excluding: PrivateNotes()).first)
         XCTAssertNil(item.capturedAt)
         XCTAssertEqual(item.source, "imported_legacy_unknown")
     }
 
     func testOverTheServersLimitTheNewestNotesAreSent() throws {
-        let many = try (1...5_003).map { try record($0, "Note \($0)", captured: Double($0)) }
+        let many = try (1...5_003).map { try noteRecord($0, "Note \($0)", captured: Double($0)) }
         let items = KeptNote.from(many, excluding: PrivateNotes())
         XCTAssertEqual(items.count, KeptNote.maxNotes)
         XCTAssertEqual(items.first?.text, "Note 5003")
