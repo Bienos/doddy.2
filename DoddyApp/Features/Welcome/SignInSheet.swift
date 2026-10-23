@@ -1,24 +1,30 @@
 import DoddyCore
 import SwiftUI
 
-/// The sign-in sheet pinned to the bottom of the welcome (ADR-595). UI only: no option is
-/// connected, so each says so and none looks like a success. "Try Doddy without an account" is the
-/// only button that moves on.
+/// The sign-in sheet pinned to the bottom of the welcome (ADR-595, ADR-596). **Sign in with Apple is
+/// real**: it is the voice account's sign-in (`AppleAccountSignInButton`, `VoiceAuthSession`), and
+/// a finished sign-in moves on. Face ID, Google and email are UI only: no backend yet, so each says
+/// so and none looks like a success. "Try Doddy without an account" also moves on.
 ///
 /// It is a custom bottom sheet, not a system `.sheet`: a system sheet would be presented above the
 /// Face ID lock's cover (`RootView` draws the lock as an overlay), and the lock must stay above
 /// everything. Two heights, a drag that follows the finger, and a spring on release.
 struct SignInSheet: View {
     static let collapsedHeight: CGFloat = 138
-    static let expandedHeight: CGFloat = 384
+    static let expandedHeight: CGFloat = 446
 
     @Binding var expanded: Bool
     let provider: SignInProviding
+    /// Which voice provider the voice account is created for (the stored choice, ElevenLabs by default).
+    let voiceProvider: VoiceProvider
     let continueWithoutAccount: () -> Void
+    /// Sign in with Apple finished: the Doddy account exists and the welcome is over.
+    let signedIn: () -> Void
 
     @GestureState private var drag: CGFloat = 0
     @State private var scanning = false
     @State private var notConnected = false
+    @State private var account = VoiceAuthSession.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
@@ -59,6 +65,7 @@ struct SignInSheet: View {
         .gesture(dragGesture)
         .animation(reduceMotion ? nil : .spring(response: 0.38, dampingFraction: 0.86), value: expanded)
         .sensoryFeedback(.impact(weight: .light), trigger: expanded)
+        .onChange(of: account.isSignedIn) { _, now in if now { signedIn() } }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("welcome.sheet")
     }
@@ -101,7 +108,7 @@ struct SignInSheet: View {
                 biometryGlyph(size: 40, scanning: false)
                 VStack(alignment: .leading, spacing: 1) {
                     Text("Get in").font(.headline)
-                    Text("Face ID, Google or email").font(.footnote).foregroundStyle(Theme.secondaryText)
+                    Text("Apple, Face ID, Google or email").font(.footnote).foregroundStyle(Theme.secondaryText)
                 }
                 Spacer(minLength: 8)
                 Image(systemName: "chevron.up").font(.headline).foregroundStyle(Theme.ink)
@@ -123,6 +130,10 @@ struct SignInSheet: View {
                 .font(.title3.weight(.bold))
                 .padding(.bottom, 4)
                 .accessibilityAddTraits(.isHeader)
+            // Apple first, and the same size as the others (Apple's rule): the one that works today.
+            AppleAccountSignInButton(provider: voiceProvider, usesContinueTitle: true, height: 52,
+                                     isCapsule: true, adaptsToDarkAppearance: true)
+                .accessibilityIdentifier("welcome.apple")
             Button { tap(.faceID) } label: {
                 HStack(spacing: 8) {
                     biometryGlyph(size: 24, scanning: scanning)
@@ -161,7 +172,16 @@ struct SignInSheet: View {
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("welcome.withoutAccount")
-            if notConnected {
+            if account.isLoading {
+                ProgressView().accessibilityIdentifier("welcome.apple.loading")
+            } else if let message = account.message {
+                // Apple's own failures (cancelled is silent), in the voice account's words.
+                Text(message)
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+                    .multilineTextAlignment(.center)
+                    .accessibilityIdentifier("welcome.apple.message")
+            } else if notConnected {
                 Text("Sign-in isn't connected yet. You can try Doddy without an account.")
                     .font(.footnote)
                     .foregroundStyle(Theme.secondaryText)

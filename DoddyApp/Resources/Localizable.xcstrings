@@ -6521,6 +6521,17 @@
         }
       }
     },
+    "Apple, Face ID, Google or email": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple, Face ID, Google lub e-mail"
+          }
+        }
+      }
+    },
     "Applies from your next voice conversation. \"Starts in\" sets the language Doddy greets you in; on Automatic he starts in English. Either way he follows whichever European language you speak, and switches when you do. The sample is Doddy's hello in English and Polish at your speed; expressiveness is only heard in a conversation. All voices speak every language Doddy does, each with its own accent; Wiktor is a native Polish speaker. Voices are candidates while Doddy's final voice is chosen.": {
       "extractionState": "manual",
       "localizations": {
@@ -23721,17 +23732,6 @@
                 }
               }
             }
-          }
-        }
-      }
-    },
-    "Face ID, Google or email": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Face ID, Google lub e-mail"
           }
         }
       }

@@ -1688,7 +1688,6 @@
   "Evening, 19:00": "Wieczorem, 19:00",
   "Example": "Przykład",
   "Face ID opens Doddy on this iPhone. Doddy only learns that it matched.": "Face ID otwiera Doddy’ego na tym iPhonie. Doddy dowiaduje się tylko, że pasuje.",
-  "Face ID, Google or email": "Face ID, Google lub e-mail",
   "Found in your notes": "Znalezione w Twoich notatkach",
   "Get in": "Wejdź",
   "Hi, I'm Doddy.": "Cześć, jestem Doddy.",
@@ -1720,5 +1719,6 @@
   "Your turn": "Twoja kolej",
   "Your words, not a guess.": "Twoje słowa, nie domysły.",
   "hi!": "hej!",
-  "wherever you are": "gdziekolwiek jesteś"
+  "wherever you are": "gdziekolwiek jesteś",
+  "Apple, Face ID, Google or email": "Apple, Face ID, Google lub e-mail"
 }

@@ -49,6 +49,10 @@ final class WelcomeUITests: XCTestCase {
         XCTAssertTrue(app.buttons["welcome.getIn"].waitForExistence(timeout: 8))
         app.buttons["welcome.getIn"].tap()
         XCTAssertTrue(app.buttons["welcome.faceID"].waitForExistence(timeout: 5))
+        // Apple's system button, first, the same size as the others. Not tapped: it opens Apple's sheet.
+        XCTAssertTrue(app.buttons["welcome.apple"].exists)
+        XCTAssertEqual(app.buttons["welcome.apple"].frame.height, app.buttons["welcome.google"].frame.height, accuracy: 1,
+                       "Apple's button is no smaller than the others")
         XCTAssertTrue(app.buttons["welcome.google"].exists)
         XCTAssertTrue(app.buttons["welcome.email"].exists)
 
