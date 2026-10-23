@@ -190,10 +190,23 @@ struct CharacterArtImage: View {
         Image(decorative: assetName)
             .resizable().scaledToFit()
             .frame(height: height)
-            .padding(.horizontal, colorScheme == .dark ? 12 : 0)
-            .background(colorScheme == .dark ? Color(red: 245/255, green: 239/255, blue: 226/255) : .clear,
-                        in: RoundedRectangle(cornerRadius: 24))
+            // The pose has black ink on a clear background. On the dark canvas the ink is inverted
+            // to light (and the hue turned back so his orange stays orange) instead of putting a
+            // cream plate behind him.
+            .modifier(DarkInkInversion(isDark: colorScheme == .dark))
             .accessibilityHidden(true)
+    }
+}
+
+private struct DarkInkInversion: ViewModifier {
+    let isDark: Bool
+
+    @ViewBuilder func body(content: Content) -> some View {
+        if isDark {
+            content.colorInvert().hueRotation(.degrees(180))
+        } else {
+            content
+        }
     }
 }
 
