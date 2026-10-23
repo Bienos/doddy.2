@@ -22305,6 +22305,17 @@
         }
       }
     },
+    "End the conversation": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zakończ rozmowę"
+          }
+        }
+      }
+    },
     "End the conversation with Doddy first: a rehearsal needs the microphone.": {
       "extractionState": "manual",
       "localizations": {
@@ -32706,6 +32717,17 @@
         }
       }
     },
+    "Listening…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Słucham…"
+          }
+        }
+      }
+    },
     "Lists": {
       "extractionState": "manual",
       "localizations": {
@@ -36418,6 +36440,17 @@
         }
       }
     },
+    "Mute": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wycisz"
+          }
+        }
+      }
+    },
     "Mute or unmute Doddy": {
       "extractionState": "manual",
       "localizations": {
@@ -36473,6 +36506,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "将 Doddy 静音或取消静音"
+          }
+        }
+      }
+    },
+    "Muted": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyciszone"
           }
         }
       }
@@ -65394,6 +65438,17 @@
         }
       }
     },
+    "Subject": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temat"
+          }
+        }
+      }
+    },
     "Subtle": {
       "extractionState": "manual",
       "localizations": {
@@ -66256,6 +66311,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Rozmowa wysyła te przypomnienia i nazwy list do ElevenLabs albo OpenAI, jeśli przełączysz na niego głos na ekranie głównym, żeby ją prowadzić, jak każda rozmowa. Wydarzenia z kalendarza są czytane tylko, gdy Kalendarz jest włączony w Ustawieniach, Połączenia."
+          }
+        }
+      }
+    },
+    "Tap Doddy to finish": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stuknij Doddy’ego, żeby skończyć"
           }
         }
       }
@@ -76967,6 +77033,17 @@
         }
       }
     },
+    "To": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do"
+          }
+        }
+      }
+    },
     "To do": {
       "extractionState": "manual",
       "localizations": {
@@ -79545,6 +79622,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "解锁"
+          }
+        }
+      }
+    },
+    "Unmute": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Włącz mikrofon"
           }
         }
       }

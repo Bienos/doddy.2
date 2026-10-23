@@ -322,7 +322,8 @@ struct IslandBottomView<Controls: View>: View {
         HStack(alignment: .center, spacing: 12) {
             Group {
                 if let pose = scene.pose {
-                    IslandPoseView(pose: pose, maxSize: CGSize(width: 82, height: 100))
+                    // Whole Doddy at his largest the island allows (owner, 22 Oct, ADR-596).
+                    IslandPoseView(pose: pose, maxSize: CGSize(width: 82, height: 118))
                 } else {
                     IslandArtView(art: scene.art(.expanded), face: scene.face, live: scene.live,
                                   showsHands: scene.showsHands, maxSize: CGSize(width: 82, height: 92),
@@ -336,12 +337,26 @@ struct IslandBottomView<Controls: View>: View {
                     subtitle
                 }
                 .accessibilityElement(children: .combine)
+                // ADR-596: he can hear you, so his line of waves sits under what he is doing.
+                if scene.waves == .listening {
+                    IslandWavesView(kind: .line, live: scene.live)
+                        .frame(height: 18)
+                }
                 HStack(spacing: 8) {
                     controls()
-                    IslandSignView(sign: scene.expandedSign, presentation: .expanded, live: scene.live, startedAt: startedAt)
+                    if scene.waves == .none {
+                        IslandSignView(sign: scene.expandedSign, presentation: .expanded, live: scene.live, startedAt: startedAt)
+                    }
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        // ADR-596: while he talks the whole island is his waves, behind him and his words.
+        .background {
+            if scene.waves == .speaking {
+                IslandWavesView(kind: .full, live: scene.live)
+                    .padding(.vertical, -8)
+            }
         }
     }
 
@@ -390,7 +405,8 @@ struct IslandCompactLeadingView: View {
     var body: some View {
         Group {
             if let pose = scene.pose {
-                IslandPoseFaceView(pose: pose, size: 24)
+                // The whole of him, small (owner, 22 Oct, ADR-596), not only his face.
+                IslandPoseView(pose: pose, maxSize: CGSize(width: 22, height: 30))
             } else {
                 IslandArtView(art: scene.art(.compact), face: scene.face, live: scene.live, showsHands: scene.showsHands)
             }
@@ -407,7 +423,13 @@ struct IslandCompactTrailingView: View {
     let startedAt: Date
 
     var body: some View {
-        IslandSignView(sign: scene.compactSign, presentation: .compact, live: scene.live, startedAt: startedAt)
+        // ADR-596: his waves while he hears you or talks; the sign otherwise.
+        if scene.waves != .none {
+            IslandWavesView(kind: .line, live: scene.live)
+                .frame(width: 34, height: 18)
+        } else {
+            IslandSignView(sign: scene.compactSign, presentation: .compact, live: scene.live, startedAt: startedAt)
+        }
     }
 }
 
