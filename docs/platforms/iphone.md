@@ -36,6 +36,7 @@ Code lives under `DoddyApp/Features/<Folder>/`. Status docs are in `docs/impleme
 | NoteReminders | Time and place reminders on notes | 196, 211 | M4A_NOTE_REMINDERS_STATUS, PLACE_REMINDERS_STATUS |
 | Settings | Settings, island style, personality, what Doddy learned ("Hey Doddy" was removed, ADR-549) | 254, 440, 549 | HEY_DODDY_STATUS (history), M6_LEARNING_LOOP_STATUS |
 | Ask | Typed questions (Doddy's server and Claude, ADR-587) | ADR-587 | M2_STATUS |
+| Web (`Features/Web`, `Infrastructure/WebMemoryClientFactory.swift`, DoddyCore `OnlineAccounts/WebMemory*`) | Sign in to Doddy Web; **Keep on Doddy's server** (ADR-595): two switches for notes and conversations, a consent screen, "Delete everything on Doddy's server". Rules and the HTTP client are in DoddyCore and tested on Linux. **The SwiftUI screens and the call from the voice controller are NOT COMPILED** (no Xcode in the sessions that wrote them); needs the hosted Mac build and a run on a device | 595 | CLOUD_MEMORY |
 | Activity | "What Doddy did" and undo | 268, 271 | ACTIVITY_UNDO_STATUS |
 | Alarms | Alarms by voice (AlarmKit, iOS 26) | 260, 283 | ALARMS_STATUS |
 | Backup | Encrypted backup file | 222 | ENCRYPTED_BACKUP_STATUS |

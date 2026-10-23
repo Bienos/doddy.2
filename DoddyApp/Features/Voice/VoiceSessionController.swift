@@ -1087,9 +1087,14 @@ final class VoiceSessionController {
         logUnanswered()
         guard let startedAt else { return }
         self.startedAt = nil
-        guard ConversationRetention.shouldKeep(rememberRecent: logs.isEnabled, isPrivate: isPrivate, lineCount: lines.count) else { return }
         let kept = lines.map { ConversationLog.Line(fromUser: $0.fromUser, text: $0.text) }
-        logs.append(ConversationLog(startedAt: startedAt, endedAt: Date(), lines: kept, voiceProvider: provider.rawValue, ended: sessionEnd?.code))
+        let log = ConversationLog(startedAt: startedAt, endedAt: Date(), lines: kept, voiceProvider: provider.rawValue, ended: sessionEnd?.code)
+        // Doddy's server keeps it as text for a year, only if the person turned that on in Settings › Doddy on
+        // the web, and never a private conversation (ADR-595). That is separate from what this iPhone remembers.
+        let isPrivate = self.isPrivate
+        Task { await WebMemory.shared.sendConversation(log, language: WebMemory.language(), isPrivate: isPrivate) }
+        guard ConversationRetention.shouldKeep(rememberRecent: logs.isEnabled, isPrivate: isPrivate, lineCount: lines.count) else { return }
+        logs.append(log)
     }
 
     /// A random, stable id for this install, so ElevenLabs can tell the owner's conversations

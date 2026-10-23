@@ -1,6 +1,6 @@
 # Memory on Doddy's server, and chat with it (ADR-595)
 
-**Status: owner-approved 22 Oct 2026. The server and the web pages are built and tested; the iPhone half is NOT built; not deployed.** This is the first time the product stores a person's words on its server, so this page says exactly what is kept, how, for how long, who can read it, what is built and what is not.
+**Status: owner-approved 22 Oct 2026. The server and the web pages are built and tested. The iPhone half (23 Oct) is written: its rules and client are tested in DoddyCore on Linux, its SwiftUI screens and hooks are NOT COMPILED. Not deployed.** This is the first time the product stores a person's words on its server, so this page says exactly what is kept, how, for how long, who can read it, what is built and what is not.
 
 ## What the owner asked for
 
@@ -61,7 +61,7 @@ A question goes in; Claude answers from the best-matching notes (up to 6) and co
 - **Cost control:** the same per-person and per-service daily caps as Ask Doddy (50 and 500), taken before anything is decrypted, and not spent when nothing is kept or no key is set.
 - **One Doddy, many doors:** `MemoryChat.answer(userId, …)` knows nothing about the web. A text-message channel would call the same function for the same person.
 
-## iMessage and other text channels: not built
+## iMessage and other text channels: not built (designed in `docs/architecture/TEXT_CHANNELS.md`)
 
 - **iMessage** can only be a business chat through **Apple Messages for Business**, whose application is pending (`docs/architecture/INTEGRATIONS_AND_CHANNELS.md`; it requires a way to reach a human). Apple's terms forbid relaying iMessage from a Mac, so that route is rejected.
 - **SMS or WhatsApp** (Twilio, already used by `server/messaging`) could reach the same `MemoryChat`. Either channel needs a **link between the sender's number and the person's account**, with a proof from the phone and an internal call from `server/messaging` to `backend/`: that is the identity work of the architecture plan, phase 2. Not built.
@@ -72,18 +72,23 @@ A question goes in; Claude answers from the best-matching notes (up to 6) and co
 - **Notes:** mirror the iPhone. Each list the phone sends rewrites every note's time, so only a phone that stopped sending for 365 days loses its notes to the sweep.
 - **Switching a kind off, or "Delete everything here"**, deletes it at once. Deleting on the web removes the server's copy only; the iPhone keeps its own, and says so.
 
-## Not built (the iPhone half; no Swift toolchain in these sessions)
+## The iPhone half (23 Oct): written, partly verified
 
-1. **Settings › Doddy on the web › Memory:** the two switches, with a consent screen that says what goes, to which server, encrypted how, who can read it (Doddy's server; Claude for chat), for how long, and how to delete it.
-2. **Notes:** point the existing full-list sync at `PUT /v1/web/memory/notes` over the phone's existing device session (the same list shape as `MemoryCopyItem`, private notes left out), and handle the 403 by switching the setting off, as `MemoryCopySync` already does for the call copy.
-3. **Conversations:** send each ended conversation (the app keeps the last 10 and only with "Remember recent conversations" on; sending every conversation needs a decision about that setting) to `PUT /v1/web/memory/conversations/:id`.
-4. Update `DataFlow.swift` ("What leaves this iPhone"), the privacy texts and tests (DoddyCore tests run on Linux; the app needs the hosted Mac build).
-5. Then flip `IPHONE_SYNCS_MEMORY` in `web/src/memory/config.ts`.
+| Piece | Where | Verified how |
+|---|---|---|
+| HTTP client for the five calls and the shapes it sends (an allow-list: id, text, source, type, time; turns as text) | `Packages/DoddyCore/Sources/DoddyCore/OnlineAccounts/WebMemoryClient.swift` | `WebMemoryClientTests` (DoddyCore, Linux) |
+| Rules: the switch follows the server's answer; notes sent as the whole list (so a deleted note goes); one send for a burst of edits; retry only after a successful read; conversations one at a time with a 50-entry retry list; private notes and private conversations never sent; a 403 switches that kind off | `OnlineAccounts/WebMemoryModel.swift` | `WebMemoryModelTests` (DoddyCore, Linux) |
+| "What leaves this iPhone" rows, switches and entries | `DataFlow.swift` | `DataFlowTests` (DoddyCore, Linux) |
+| Strings in Polish and the generated catalogs | `l10n/pl.json`, `DoddyApp/Resources/Localizable.xcstrings` | `tools/build_strings_catalog.py --check` |
+| **Settings › Doddy on the web › Keep on Doddy's server** (two switches, consent screen, delete button, status), the launch and foreground hooks, the call from `VoiceSessionController.keepLog`, `MemoryDetailView` changes, `WebMemoryClientFactory` | `DoddyApp/Features/Web/WebMemory*.swift`, `DoddyApp/Infrastructure/WebMemoryClientFactory.swift`, `RootView.swift`, `VoiceSessionController.swift`, `MemoryDetailView.swift`, `DataFlowView.swift` | **NOT COMPILED. NOT RUN.** `scripts/typecheck_app_logic.sh` does not cover `WebMemory.swift` or `WebMemoryClientFactory.swift`; the SwiftUI files need the hosted Mac build (`scripts/ci.sh`) and a run on a device |
+
+Still open: the Logbook day counter and summary builder (`IPHONE_SENDS_LOGBOOK`), a device test of the whole path (switch on, note appears on the web, delete on the web, the phone's next send is refused and the switch goes off), the answer to a person who keeps "Remember recent conversations" off but conversations-on-the-server on (the server then holds conversations the phone does not), and flipping `IPHONE_SYNCS_MEMORY` in `web/src/memory/config.ts` **only after** the device test.
 
 ## Before anyone but the owner uses it
 
 - `DODDY_MEMORY_KEY` must be set on the server (`openssl rand -base64 32`), kept somewhere safe, and **never changed**: there is no key rotation yet, so a different key makes existing rows unreadable (the page then says how many are left out; nothing is deleted). A rotation needs a key list chosen by each row's stored key version.
-- `docs/legal/PRIVACY_POLICY_DRAFT.md`, the site's Privacy Policy and the App Store privacy answers say the app keeps notes on the phone; they must describe this (what, where, how long, who can read it, Anthropic for chat) and get the legal review `doddy_rules.yaml` requires. Confirm the database region first.
+- `docs/legal/PRIVACY_POLICY_DRAFT.md` section 5.13 (23 Oct) now describes this, and Appendix B items 17 to 21 list what disagrees. The site's Privacy Policy, the in-app Settings paragraph, the website privacy panel and the App Store privacy answers still say the app keeps notes on the phone; they must be changed to match and get the legal review `doddy_rules.yaml` requires. Confirm the database region first.
+- **The key was generated in a working session and is in that session's transcript.** Copy it from the host's environment into a password manager. Decide whether to replace it with one generated by the owner before real notes are stored (rotation is not built, so replace it before the first note is kept).
 - Run the cross-user isolation checks again before a second account can exist (`DODDY_DEVICE_SIGNUP=first-device` means one account today).
 - The plaintext columns (times, turn count) are outside the encryption's authentication; someone who can write to the database could change a conversation's age or order. Binding them in is a later hardening.
 - The key is shared by all people and each note list is re-encrypted with fresh random nonces; fine at this scale, to be revisited with rotation.

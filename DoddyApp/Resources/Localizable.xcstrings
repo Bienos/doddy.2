@@ -503,13 +503,13 @@
         }
       }
     },
-    "A browser stays signed in for 30 days, or until it goes unused for 14. It sees the files Doddy made, your online accounts and Doddy's receipts, never your saved notes.": {
+    "A browser stays signed in for 30 days, or until it goes unused for 14. It sees the files Doddy made, your online accounts and Doddy's receipts. It sees your notes and conversations only if you keep them on Doddy's server, below.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Przeglądarka zostaje zalogowana przez 30 dni albo do 14 dni bez użycia. Widzi pliki zrobione przez Doddy’ego, Twoje konta online i potwierdzenia Doddy’ego, nigdy Twoich zapisanych notatek."
+            "value": "Przeglądarka zostaje zalogowana przez 30 dni albo do 14 dni bez użycia. Widzi pliki zrobione przez Doddy’ego, Twoje konta online i potwierdzenia Doddy’ego. Widzi Twoje notatki i rozmowy tylko wtedy, gdy przechowujesz je na serwerze Doddy’ego, poniżej."
           }
         }
       }
@@ -12315,6 +12315,17 @@
         }
       }
     },
+    "Conversations": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rozmowy"
+          }
+        }
+      }
+    },
     "Copied": {
       "extractionState": "manual",
       "localizations": {
@@ -14309,6 +14320,28 @@
         }
       }
     },
+    "Delete everything Doddy's server keeps for you?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usunąć wszystko, co serwer Doddy’ego dla Ciebie przechowuje?"
+          }
+        }
+      }
+    },
+    "Delete everything on Doddy's server": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuń wszystko z serwera Doddy’ego"
+          }
+        }
+      }
+    },
     "Delete list": {
       "extractionState": "manual",
       "localizations": {
@@ -15046,6 +15079,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "删除你的 Doddy 消息数据？"
+          }
+        }
+      }
+    },
+    "Deleted from Doddy's server. Both switches are off.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usunięto z serwera Doddy’ego. Oba przełączniki są wyłączone."
           }
         }
       }
@@ -18290,6 +18334,58 @@
         }
       }
     },
+    "Doddy keeps a copy of your saved notes, as text, so you can read and search them on the web and ask Doddy about them there. Private notes are never kept. The copy matches this iPhone: a note you delete here is deleted there at the next send.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy keeps a copy of your saved notes, as text, so you can read and search them on the web and ask Doddy about them there. Private notes are never kept. The copy matches this iPad: a note you delete here is deleted there at the next send."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy keeps a copy of your saved notes, as text, so you can read and search them on the web and ask Doddy about them there. Private notes are never kept. The copy matches this iPhone: a note you delete here is deleted there at the next send."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy przechowuje kopię Twoich zapisanych notatek, jako tekst, żeby można je było czytać i przeszukiwać w przeglądarce oraz pytać o nie Doddy’ego tam. Notatki prywatne nigdy nie są przechowywane. Kopia odpowiada temu iPad’owi: notatka usunięta tutaj zostanie usunięta tam przy następnym wysłaniu."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy przechowuje kopię Twoich zapisanych notatek, jako tekst, żeby można je było czytać i przeszukiwać w przeglądarce oraz pytać o nie Doddy’ego tam. Notatki prywatne nigdy nie są przechowywane. Kopia odpowiada temu iPhone’owi: notatka usunięta tutaj zostanie usunięta tam przy następnym wysłaniu."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Doddy keeps what you and Doddy said in each conversation, as text, for 1 year, so you can read and search it on the web and ask Doddy about it there. Never audio. Private conversations are never kept.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy przechowuje to, co powiedzieliście Ty i Doddy w każdej rozmowie, jako tekst, przez 1 rok, żeby można to było czytać i przeszukiwać w przeglądarce oraz pytać o to Doddy’ego tam. Nigdy dźwięk. Rozmowy prywatne nigdy nie są przechowywane."
+          }
+        }
+      }
+    },
     "Doddy last heard you say": {
       "extractionState": "manual",
       "localizations": {
@@ -19658,6 +19754,17 @@
         }
       }
     },
+    "Doddy will try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy spróbuje ponownie."
+          }
+        }
+      }
+    },
     "Doddy wrote these down during calls. They become memories only when you save them.": {
       "extractionState": "manual",
       "localizations": {
@@ -20237,6 +20344,17 @@
         }
       }
     },
+    "Doddy's server isn't keeping this any more (it may have been deleted on the web). Turn it on again if you want it kept.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego już tego nie przechowuje (mogło to zostać usunięte w przeglądarce). Włącz to ponownie, jeśli chcesz to zachować."
+          }
+        }
+      }
+    },
     "Doddy's server isn't set up in this build, so its copy of this task can't be deleted from here.": {
       "extractionState": "manual",
       "localizations": {
@@ -20255,6 +20373,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Serwer Doddy’ego nie jest skonfigurowany w tej wersji, więc sprawy nie mogą jeszcze działać."
+          }
+        }
+      }
+    },
+    "Doddy's server isn't set up to keep this yet. Nothing was sent.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego nie jest jeszcze przygotowany do przechowywania tego. Nic nie wysłano."
           }
         }
       }
@@ -20325,6 +20454,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Serwer Doddy’ego przysłał coś, czego aplikacja nie potrafi odczytać, więc niczego nie pokazuje."
+          }
+        }
+      }
+    },
+    "Doddy's server sent something the app couldn't read. Nothing was changed here.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego wysłał coś, czego aplikacja nie mogła odczytać. Nic tu nie zmieniono."
           }
         }
       }
@@ -28775,6 +28915,17 @@
         }
       }
     },
+    "It is stored encrypted, but Doddy's server can read it, so it can be searched. When you ask a question on the web, Claude (made by Anthropic) reads the best matches to write the answer. It is not sold and not used for ads.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jest przechowywane w postaci zaszyfrowanej, ale serwer Doddy’ego może to odczytać, więc można to przeszukiwać. Gdy zadajesz pytanie w przeglądarce, Claude (od Anthropic) czyta najlepiej pasujące fragmenty, żeby napisać odpowiedź. Nie jest to sprzedawane ani używane do reklam."
+          }
+        }
+      }
+    },
     "It may not have gone back. Check it in Calendar or Reminders.": {
       "extractionState": "manual",
       "localizations": {
@@ -30174,6 +30325,17 @@
         }
       }
     },
+    "Keep on Doddy's server": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przechowuj na serwerze Doddy’ego"
+          }
+        }
+      }
+    },
     "Keep them": {
       "extractionState": "manual",
       "localizations": {
@@ -30288,6 +30450,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "全部保留"
+          }
+        }
+      }
+    },
+    "Keep your conversations on Doddy's server?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przechowywać Twoje rozmowy na serwerze Doddy’ego?"
+          }
+        }
+      }
+    },
+    "Keep your notes on Doddy's server?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przechowywać Twoje notatki na serwerze Doddy’ego?"
           }
         }
       }
@@ -40485,6 +40669,17 @@
         }
       }
     },
+    "Notes on Doddy's server:": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notatki na serwerze Doddy’ego:"
+          }
+        }
+      }
+    },
     "Notes on this Mac": {
       "extractionState": "manual",
       "localizations": {
@@ -42042,6 +42237,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "目前没有需要整理的内容。"
+          }
+        }
+      }
+    },
+    "Nothing was kept, so nothing was deleted.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nic nie było przechowywane, więc nic nie usunięto."
           }
         }
       }
@@ -43610,6 +43816,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "默认关闭。开启后，你记忆的加密副本会保存在 Doddy 消息服务器上，以便 Doddy 在你输入 PIN 码后在通话中根据它们回答。服务器需要读取这份副本才能回答，所以这不是端到端加密。Doddy 读出的内容由 ElevenLabs 处理。关闭此项会删除该副本。"
+          }
+        }
+      }
+    },
+    "Off unless you turn it on. Otherwise your notes and what you and Doddy say stay on this iPhone. Text only, never audio; private notes and private conversations are never kept. Read and search it on the web, or ask Doddy about it there.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Off unless you turn it on. Otherwise your notes and what you and Doddy say stay on this iPad. Text only, never audio; private notes and private conversations are never kept. Read and search it on the web, or ask Doddy about it there."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Off unless you turn it on. Otherwise your notes and what you and Doddy say stay on this iPhone. Text only, never audio; private notes and private conversations are never kept. Read and search it on the web, or ask Doddy about it there."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Domyślnie wyłączone. W przeciwnym razie Twoje notatki i to, co mówicie Ty i Doddy, zostają na tym iPadzie. Tylko tekst, nigdy dźwięk; notatki prywatne i rozmowy prywatne nigdy nie są przechowywane. Czytaj i przeszukuj to w przeglądarce albo pytaj o to Doddy’ego tam."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Domyślnie wyłączone. W przeciwnym razie Twoje notatki i to, co mówicie Ty i Doddy, zostają na tym iPhonie. Tylko tekst, nigdy dźwięk; notatki prywatne i rozmowy prywatne nigdy nie są przechowywane. Czytaj i przeszukuj to w przeglądarce albo pytaj o to Doddy’ego tam."
+                }
+              }
+            }
           }
         }
       }
@@ -59704,6 +59951,17 @@
         }
       }
     },
+    "Sending your notes…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wysyłam Twoje notatki…"
+          }
+        }
+      }
+    },
     "Sent, with your current settings": {
       "extractionState": "manual",
       "localizations": {
@@ -68311,6 +68569,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "该时间已经过去。请选择至少一分钟之后的时间。"
+          }
+        }
+      }
+    },
+    "That was more than Doddy's server will keep. Nothing was stored.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To więcej, niż serwer Doddy’ego przechowa. Nic nie zapisano."
           }
         }
       }
@@ -77153,6 +77422,17 @@
         }
       }
     },
+    "Too many tries. Try again later.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zbyt wiele prób. Spróbuj później."
+          }
+        }
+      }
+    },
     "Too many tries. Wait a while and try again.": {
       "extractionState": "manual",
       "localizations": {
@@ -81199,6 +81479,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "等待中"
+          }
+        }
+      }
+    },
+    "Waiting for Doddy's server…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czekam na serwer Doddy’ego…"
           }
         }
       }
@@ -85352,6 +85643,17 @@
         }
       }
     },
+    "You can turn this off whenever you like. That deletes it from Doddy's server. You can also read it, download it and delete it on the web.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Możesz to wyłączyć, kiedy chcesz. To usuwa dane z serwera Doddy’ego. Możesz je też przeczytać, pobrać i usunąć w przeglądarce."
+          }
+        }
+      }
+    },
     "You can undo for a few seconds afterwards.": {
       "extractionState": "manual",
       "localizations": {
@@ -87427,6 +87729,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "你的笔记，你做主。不做推断。"
+          }
+        }
+      }
+    },
+    "Your notes and conversations on this iPhone stay. Both switches go off.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your notes and conversations on this iPad stay. Both switches go off."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your notes and conversations on this iPhone stay. Both switches go off."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Twoje notatki i rozmowy na tym iPadzie zostają. Oba przełączniki zostaną wyłączone."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Twoje notatki i rozmowy na tym iPhonie zostają. Oba przełączniki zostaną wyłączone."
+                }
+              }
+            }
           }
         }
       }

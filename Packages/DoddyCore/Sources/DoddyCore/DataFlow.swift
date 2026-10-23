@@ -21,6 +21,10 @@ public struct DataFlowState: Equatable, Sendable {
     public var pushOn: Bool
     /// The user turned on the server copy of their notes for phone calls.
     public var memoryCopyOn: Bool
+    /// The user chose to keep notes, and conversations, as text on Doddy's server so the web can show them
+    /// and answer questions about them (ADR-595). Both off by default.
+    public var webNotesKept: Bool
+    public var webConversationsKept: Bool
     /// The morning check-in is on (ADR-220).
     public var morningCheckInOn: Bool
     /// Siri may read saved notes aloud (ADR-248).
@@ -44,8 +48,11 @@ public struct DataFlowState: Equatable, Sendable {
         siriReadsNotes: Bool = false, sharedLists: Int = 0,
         voiceProvider: VoiceProvider = .elevenLabs,
         learnedSharedWithVoice: Bool = false,
-        newsWriterProvider: String? = nil
+        newsWriterProvider: String? = nil,
+        webNotesKept: Bool = false, webConversationsKept: Bool = false
     ) {
+        self.webNotesKept = webNotesKept
+        self.webConversationsKept = webConversationsKept
         self.learnedSharedWithVoice = learnedSharedWithVoice
         self.newsWriterProvider = newsWriterProvider
         self.morningCheckInOn = morningCheckInOn
@@ -102,6 +109,10 @@ public enum DataFlow {
         case "openai": "OpenAI"
         default: "Anthropic or OpenAI, as the server is set up"
         }
+
+        var webKept: [String] = []
+        if state.webNotesKept { webKept.append("a copy of your saved notes (not private ones), as text") }
+        if state.webConversationsKept { webKept.append("the text of your conversations (not private ones), never audio") }
 
         var ask = "Typed questions"
         if state.askDoddyUsesNotes { ask += " and the saved notes that match them" }
@@ -176,10 +187,22 @@ public enum DataFlow {
             // ADR-585: the phone vouches for a browser; the browser sees what the server already keeps.
             DataFlowRow(
                 id: "webSignIn", destination: "A browser you sign in to Doddy on the web",
-                what: "From this iPhone only a request for a sign-in code, to your Doddy server. The browser you type the code into then sees what that server already keeps for you: files Doddy made, your online accounts and their tools, and Doddy's receipts. Never your saved notes, lists, profile or conversations.",
+                what: "From this iPhone only a request for a sign-in code, to your Doddy server. The browser you type the code into then sees what that server already keeps for you: files Doddy made, your online accounts and their tools, and Doddy's receipts. "
+                    + (webKept.isEmpty ? "Never your saved notes, lists, profile or conversations." : "It also sees the notes and conversations you keep on Doddy's server (see the next row). Never your lists or profile."),
                 when: "When you tap Get a sign-in code, and while that browser stays signed in (30 days at most; sign it out in Settings › Doddy on the web).",
                 isActive: state.doddyServerSet,
                 note: state.doddyServerSet ? nil : "No Doddy server is set, so no browser can sign in."),
+            // ADR-595: only what the person chose to keep there, as text, and only while a switch is on.
+            DataFlowRow(
+                id: "webMemory", destination: "Your Doddy server, and Anthropic when you ask a question on the web (notes and conversations you keep there)",
+                what: webKept.isEmpty ? "Nothing: both switches are off." : sentence(webKept),
+                when: "Once when you turn a switch on, then whenever a note changes or a conversation ends. Claude reads the best matches only when you ask a question on the web.",
+                isActive: state.doddyServerSet && !webKept.isEmpty,
+                note: !state.doddyServerSet
+                    ? "No Doddy server is set, so nothing goes there."
+                    : webKept.isEmpty
+                        ? "Keep on Doddy's server is off in Settings › Doddy on the web, so nothing goes there."
+                        : "Stored encrypted; the server can read it so the web can search it. Never audio, never private notes or private conversations. Conversations are kept 1 year. Turning a switch off, or Delete everything, removes it from Doddy's server."),
             DataFlowRow(
                 id: "messagingServer", destination: "Your Doddy messaging server (Apple, Twilio, ElevenLabs, \(writer), GNews)",
                 what: sentence(messaging),
@@ -230,6 +253,8 @@ public enum DataFlow {
         if active.contains("elevenlabs") { parts.append("ElevenLabs (voice)") }
         if active.contains("openaiVoice") { parts.append("OpenAI (voice)") }
         if active.contains("askDoddy") { parts.append("Anthropic (Ask Doddy)") }
+        // ADR-595: Claude reads the best matches of what you keep on Doddy's server, when you ask on the web.
+        if active.contains("webMemory") { parts.append("Anthropic (questions you ask on the web about what you keep on Doddy's server)") }
         if active.contains("messagingServer") {
             parts.append("ElevenLabs (phone calls) and \(newsWriter(state)) (daily news) on your messaging server")
         }
@@ -253,6 +278,7 @@ public enum DataFlow {
         "errands": "Anthropic (tasks you hand over, through your messaging server)",
         "siri": "Siri (when you ask it)",
         "askDoddy": "your Doddy server and Anthropic (Ask Doddy)",
+        "webMemory": "your Doddy server and Anthropic (notes and conversations you keep there)",
     ]
 
     /// Covered by another name (translator mode goes to whichever service runs the voice, which is

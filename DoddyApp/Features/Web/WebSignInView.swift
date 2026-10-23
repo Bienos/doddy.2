@@ -3,7 +3,7 @@ import SwiftUI
 
 /// Settings → Doddy on the web (ADR-585). The iPhone vouches for a browser: it shows a one-time code
 /// and the web address to type it at, and lists the browsers signed in to this account, each with
-/// Sign out. The rules are `WebSignInModel` in DoddyCore, tested on Linux; this file only draws them.
+/// Sign out. Below that, what the person chooses to keep on Doddy's server (`WebMemorySection`, ADR-595). The rules are `WebSignInModel` in DoddyCore, tested on Linux; this file only draws them.
 struct WebSignInScreen: View {
     @State private var model = WebSignInModel(
         makeClient: { await WebLinkClientFactory.ready() },
@@ -36,8 +36,11 @@ struct WebSignInView: View {
             } header: {
                 Text("Signed-in browsers")
             } footer: {
-                Text("A browser stays signed in for 30 days, or until it goes unused for 14. It sees the files Doddy made, your online accounts and Doddy's receipts, never your saved notes.")
+                Text("A browser stays signed in for 30 days, or until it goes unused for 14. It sees the files Doddy made, your online accounts and Doddy's receipts. It sees your notes and conversations only if you keep them on Doddy's server, below.")
             }
+
+            // ADR-595: notes and conversations kept on Doddy's server, off unless turned on here.
+            WebMemorySection()
         }
         .navigationTitle("Doddy on the web")
         .task { await model.refreshBrowsers() }
