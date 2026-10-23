@@ -144,6 +144,28 @@ final class MessagesModel {
         if !saved { storage = .notSaved }
     }
 
+    // MARK: Tapbacks
+
+    /// A tapback on one of Doddy's messages (owner, 23 Oct 2026). It shows at once and is taken back
+    /// off when it couldn't be saved and read back, so the screen never shows one that isn't kept.
+    /// Kept on this iPhone only; Doddy doesn't see it.
+    func react(_ reaction: ThreadMessage.Reaction, to id: UUID) {
+        guard storage != .loading, let index = messages.firstIndex(where: { $0.id == id }),
+              ThreadRules.canReact(to: messages[index]) else { return }
+        let before = messages[index].reaction
+        let after = ThreadRules.reaction(after: reaction, on: messages[index])
+        messages[index].reaction = after
+        Task {
+            let repository = self.repository
+            let saved = await Task.detached { (try? await repository.setReaction(id: id, after)) != nil }.value
+            guard !saved else { return }
+            storage = .notSaved
+            if let index = messages.firstIndex(where: { $0.id == id }), messages[index].reaction == after {
+                messages[index].reaction = before
+            }
+        }
+    }
+
     // MARK: Deleting
 
     /// Removes the whole conversation from this iPhone. The screen is emptied only after the store read

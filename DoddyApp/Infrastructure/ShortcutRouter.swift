@@ -67,8 +67,7 @@ final class ShortcutRouter {
             return
         } else {
             isSetupPresented = false
-            if !isVoicePresented { talkToDoddyOpened = true }
-            isVoicePresented = true
+            requestTalkOnHome(greeted: true)
         }
     }
 
@@ -80,7 +79,36 @@ final class ShortcutRouter {
     func talkButtonOpenedApp() {
         if drafts.shown != nil { return }
         isSetupPresented = false
-        if !isVoicePresented { talkToDoddyOpened = true }
+        requestTalkOnHome(greeted: true)
+    }
+
+    /// A conversation for Home to start (owner, 23 Oct 2026): the Action Button, Back Tap, Siri and
+    /// "Start listening when I open Doddy" start it on Home like a tap on Doddy, with no transcript
+    /// sheet. `RootView` takes it once with `takeTalkOnHome()`.
+    struct TalkOnHomeRequest: Equatable {
+        let id = UUID()
+        /// Opened by "Talk to Doddy": he greets first.
+        let greeted: Bool
+    }
+
+    private(set) var talkOnHomeRequest: TalkOnHomeRequest?
+
+    private func requestTalkOnHome(greeted: Bool) {
+        // The transcript is already up: it shows the conversation, so nothing else starts.
+        guard !isVoicePresented else { return }
+        talkOnHomeRequest = TalkOnHomeRequest(greeted: greeted)
+    }
+
+    func takeTalkOnHome() -> TalkOnHomeRequest? {
+        defer { talkOnHomeRequest = nil }
+        return talkOnHomeRequest
+    }
+
+    /// Home can't start the conversation itself (sign-in or the voice-data question comes first):
+    /// the voice screen opens on that step, and greets when "Talk to Doddy" asked for it.
+    func openVoiceForGate(greeted: Bool) {
+        guard !isVoicePresented, drafts.shown == nil else { return }
+        talkToDoddyOpened = greeted
         isVoicePresented = true
     }
 
@@ -89,7 +117,7 @@ final class ShortcutRouter {
     /// never starts a second conversation and never pushes a sheet aside.
     func startListeningOnOpen() {
         guard !isVoicePresented, !isSetupPresented, !isCheckInPresented, !isTidyUpPresented, !isWrapUpPresented, !isLookBackPresented, !isOnboardingShown, drafts.shown == nil else { return }
-        isVoicePresented = true
+        requestTalkOnHome(greeted: false)
     }
 
     /// Call only while a conversation is running (`VoiceSessionController.runningConversation`).

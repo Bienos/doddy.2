@@ -8,9 +8,10 @@ include:
 name: DoddyiPhone
 # No entitlements in this project, so a Personal (free) Apple team can sign and install it: such a
 # team can't have Sign in with Apple, App Groups or push. A Debug build talks to Doddy without Apple
-# sign-in (Settings > Voice > "Developer: talk without Apple sign-in", PR #108). The cost: widgets
-# and "Save to Doddy" say they aren't set up. The shipping project (project.yml) keeps its
-# entitlements.
+# sign-in (Settings > Voice > "Developer: talk without Apple sign-in", PR #108). The widgets and
+# "Save to Doddy" can't work without App Groups, so they are left out of the app here (owner, 23 Oct
+# 2026): Xcode asks for a team for the app alone. The shipping project (project.yml) keeps its
+# entitlements and both extensions.
 settings:
   base:
     DODDY_APP_ENTITLEMENTS: ""
@@ -23,8 +24,6 @@ settings:
 targets:
   Doddy:
     dependencies:REPLACE:
-      - target: DoddyWidgets
-      - target: DoddyShare
       - package: DoddyCore
         product: DoddyCore
       - package: DoddyCore

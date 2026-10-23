@@ -425,6 +425,15 @@ public final class DoddyDatabase: Sendable {
                 CREATE INDEX thread_messages_created ON thread_messages(created_at_ms);
                 """)
         }
+        // Tapbacks on Doddy's messages (owner, 23 Oct 2026), kept on this iPhone only. Existing messages
+        // get none. The repository sets one only on a Doddy message.
+        migrator.registerMigration("v18_message_reactions") { db in
+            let reactions = sqlList(ThreadMessage.Reaction.allCases.map(\.rawValue))
+            try db.execute(sql: """
+                ALTER TABLE thread_messages ADD COLUMN reaction TEXT
+                    CHECK (reaction IS NULL OR reaction IN (\(reactions)));
+                """)
+        }
         return migrator
     }
 

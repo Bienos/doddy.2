@@ -25,6 +25,12 @@ public struct ThreadMessage: Equatable, Sendable, Identifiable, Codable {
         case savedNotes, general
     }
 
+    /// The user's tapback on one of Doddy's messages, as in iMessage (owner, 23 Oct 2026). Kept on this
+    /// iPhone only: it is not sent to Doddy's server or the model, so Doddy does not see it.
+    public enum Reaction: String, Sendable, Equatable, Codable, CaseIterable {
+        case heart, thumbsUp, thumbsDown, haha, emphasis, question
+    }
+
     public let id: UUID
     public let sender: Sender
     public let text: String
@@ -38,10 +44,13 @@ public struct ThreadMessage: Equatable, Sendable, Identifiable, Codable {
     public let notesSent: Int
     /// Searching the notes failed, so the question went without them.
     public let notesSearchFailed: Bool
+    /// The user's tapback (Doddy's messages only); nil when there is none.
+    public var reaction: Reaction?
 
     public init(
         id: UUID = UUID(), sender: Sender, text: String, createdAt: Date, delivery: Delivery,
-        basis: Basis? = nil, noteIDs: [UUID] = [], notesSent: Int = 0, notesSearchFailed: Bool = false
+        basis: Basis? = nil, noteIDs: [UUID] = [], notesSent: Int = 0, notesSearchFailed: Bool = false,
+        reaction: Reaction? = nil
     ) {
         self.id = id
         self.sender = sender
@@ -52,6 +61,7 @@ public struct ThreadMessage: Equatable, Sendable, Identifiable, Codable {
         self.noteIDs = noteIDs
         self.notesSent = notesSent
         self.notesSearchFailed = notesSearchFailed
+        self.reaction = reaction
     }
 
     /// A message the user is sending now.
@@ -83,6 +93,8 @@ public protocol MessageThreadRepository: Sendable {
     func append(_ message: ThreadMessage) async throws
     /// Changes the delivery state of a message the user sent.
     func setDelivery(id: UUID, _ delivery: ThreadMessage.Delivery) async throws
+    /// Sets or clears the user's tapback on one of Doddy's messages, then reads it back.
+    func setReaction(id: UUID, _ reaction: ThreadMessage.Reaction?) async throws
     /// Anything still "sending" when nothing is sending (the app was closed mid-send) is not delivered.
     /// Returns how many.
     func failUnfinished() async throws -> Int
@@ -98,6 +110,7 @@ public struct UnavailableMessageThreadRepository: MessageThreadRepository {
     public func recent(limit: Int) async throws -> [ThreadMessage] { throw DoddyError.capabilityUnavailable(.memoryStorage) }
     public func append(_ message: ThreadMessage) async throws { throw DoddyError.capabilityUnavailable(.memoryStorage) }
     public func setDelivery(id: UUID, _ delivery: ThreadMessage.Delivery) async throws { throw DoddyError.capabilityUnavailable(.memoryStorage) }
+    public func setReaction(id: UUID, _ reaction: ThreadMessage.Reaction?) async throws { throw DoddyError.capabilityUnavailable(.memoryStorage) }
     public func failUnfinished() async throws -> Int { throw DoddyError.capabilityUnavailable(.memoryStorage) }
     public func delete(id: UUID) async throws { throw DoddyError.capabilityUnavailable(.memoryStorage) }
     public func deleteAll() async throws { throw DoddyError.capabilityUnavailable(.memoryStorage) }

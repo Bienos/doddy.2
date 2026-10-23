@@ -50,6 +50,53 @@ final class MessagesModelTests: XCTestCase {
     }
 
     @MainActor
+    private func waitFor(_ condition: () async -> Bool) async {
+        for _ in 0..<100 {
+            if await condition() { return }
+            try? await Task.sleep(for: .milliseconds(10))
+        }
+    }
+
+    @MainActor
+    func testATapbackOnDoddysAnswerIsSavedAndTheSameOneAgainTakesItOff() async throws {
+        let (model, repository, _, service) = await loaded(client: ScriptedClient([.reply("Piątek, 9:00.")]))
+        model.draft = "Kiedy dentysta?"
+        model.send(using: service, policy: on, locale: "pl")
+        await settle(model)
+        let question = try XCTUnwrap(model.messages.first)
+        let answer = try XCTUnwrap(model.messages.last)
+
+        model.react(.heart, to: question.id)
+        XCTAssertNil(model.messages.first?.reaction, "the user's own message takes no tapback")
+
+        model.react(.heart, to: answer.id)
+        XCTAssertEqual(model.messages.last?.reaction, .heart)
+        await waitFor { await repository.all().last?.reaction == .heart }
+        var saved = await repository.all()
+        XCTAssertEqual(saved.last?.reaction, .heart)
+
+        model.react(.heart, to: answer.id)
+        XCTAssertNil(model.messages.last?.reaction)
+        await waitFor { await repository.all().last?.reaction == nil }
+        saved = await repository.all()
+        XCTAssertNil(saved.last?.reaction)
+    }
+
+    @MainActor
+    func testATapbackThatCantBeSavedIsTakenBackOff() async throws {
+        let (model, repository, _, service) = await loaded(client: ScriptedClient([.reply("Jest.")]))
+        model.draft = "Czy działa?"
+        model.send(using: service, policy: on, locale: "pl")
+        await settle(model)
+        let answer = try XCTUnwrap(model.messages.last)
+        await repository.setFailing(true)
+        model.react(.thumbsUp, to: answer.id)
+        for _ in 0..<100 where model.storage != .notSaved { try? await Task.sleep(for: .milliseconds(10)) }
+        XCTAssertEqual(model.storage, .notSaved)
+        XCTAssertNil(model.messages.last?.reaction, "never shown as kept when it wasn't")
+    }
+
+    @MainActor
     func testNothingIsSavedOrSentWhileAskDoddyIsOffOrNotSetUp() async {
         let (model, repository, client, service) = await loaded()
         model.draft = "Co mam jutro?"
@@ -260,6 +307,12 @@ private actor FakeThread: MessageThreadRepository {
         if failing { throw Down() }
         guard let index = rows.firstIndex(where: { $0.id == id }) else { throw MessageThreadError.notFound }
         rows[index].delivery = delivery
+    }
+
+    func setReaction(id: UUID, _ reaction: ThreadMessage.Reaction?) async throws {
+        if failing { throw Down() }
+        guard let index = rows.firstIndex(where: { $0.id == id && $0.sender == .doddy }) else { throw MessageThreadError.notFound }
+        rows[index].reaction = reaction
     }
 
     func failUnfinished() async throws -> Int {

@@ -70,7 +70,7 @@ enum PreferenceKey {
     static let voiceTokenServer = "voiceTokenServer"
     /// Development setting: base URL of the Doddy Connected Apps server (not a secret).
     static let connectedAppsServerURL = "connectedAppsServerURL"
-    /// Ask Doddy: the user agreed that questions go to Doddy's server and Anthropic (ADR-587). Off by default.
+    /// Ask Doddy's old switch (ADR-587). No longer read: Messages works without it (owner, 23 Oct 2026).
     static let assistantConsent = "assistantConsent"
     static let assistantUseNotes = "assistantUseNotes"
     /// Development setting: https origin of the Doddy messaging server (`server/messaging`).
@@ -467,6 +467,15 @@ struct RootView: View {
             VoiceView()
                 .presentationDetents([.medium, .large], selection: $voiceDetent)
                 .presentationDragIndicator(.visible)
+        }
+        // The Action Button, Back Tap, Siri and "Start listening when I open Doddy" talk on Home,
+        // not in this sheet (owner, 23 Oct 2026). `initial: true`: on a cold launch the shortcut
+        // runs before this view exists.
+        .onChange(of: router.talkOnHomeRequest, initial: true) { _, request in
+            guard request != nil, let request = router.takeTalkOnHome() else { return }
+            guard store.environment.capabilities.isAvailable(.voiceInput) else { return }
+            selectedTab = .home
+            HomeConversation.shared.startFromShortcut(store: store, profile: profiles.profile, greeted: request.greeted)
         }
         .onChange(of: HomeConversation.shared.needsYou) { _, needsYou in
             guard needsYou, !router.isVoicePresented else { return }

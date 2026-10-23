@@ -2,7 +2,7 @@
 """Keeps the per-platform XcodeGen specs in step (docs/platforms/README.md).
 
   project.yml         iPhone + iPad app and its extensions (ships). No Watch or Mac target (ADR-572).
-  project-iphone.yml  the same dependencies and scheme, with no entitlements
+  project-iphone.yml  the same dependencies (less the widget and share extensions) and scheme, with no entitlements
   project-watch.yml   PAUSED: project.yml plus the Apple Watch app embedded in the iPhone app
   project-mac.yml     PAUSED: the Mac app and widget only
 
@@ -41,8 +41,11 @@ def main():
 
     if iphone.get("include") != ["project.yml"]:
         problems.append("project-iphone.yml must include exactly project.yml")
-    if iphone["targets"]["Doddy"]["dependencies:REPLACE"] != app_deps:
-        problems.append("project-iphone.yml: Doddy's dependencies must equal project.yml's")
+    # A free Apple team signs only the app (owner, 23 Oct 2026): the widgets and Save to Doddy, which
+    # can't work without App Groups anyway, are left out, so Xcode asks for a team once.
+    extensions = ("DoddyWidgets", "DoddyShare")
+    if iphone["targets"]["Doddy"]["dependencies:REPLACE"] != [d for d in app_deps if d.get("target") not in extensions]:
+        problems.append("project-iphone.yml: Doddy's dependencies must be project.yml's without DoddyWidgets and DoddyShare")
     if iphone.get("schemes:REPLACE", {}).get("Doddy") != full["schemes"]["Doddy"]:
         problems.append("project-iphone.yml: the Doddy scheme must equal project.yml's")
 

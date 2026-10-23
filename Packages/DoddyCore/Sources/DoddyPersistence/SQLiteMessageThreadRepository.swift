@@ -2,7 +2,7 @@ import DoddyCore
 import Foundation
 import GRDB
 
-/// The thread with Doddy, on the iPhone (ADR-585, `v17_message_thread`). A save reads the row back and
+/// The thread with Doddy, on the iPhone (ADR-585, `v17_message_thread`; tapbacks `v18_message_reactions`). A save reads the row back and
 /// throws unless it matches, so a message is called saved only after that read. Deleting reads back too,
 /// and `secure_delete` (set in `DoddyDatabase`) overwrites the freed pages.
 public final class SQLiteMessageThreadRepository: MessageThreadRepository {
@@ -31,17 +31,17 @@ public final class SQLiteMessageThreadRepository: MessageThreadRepository {
             id: message.id, sender: message.sender, text: message.text,
             createdAt: DoddyDatabase.truncatedToMilliseconds(message.createdAt), delivery: message.delivery,
             basis: message.basis, noteIDs: message.noteIDs, notesSent: message.notesSent,
-            notesSearchFailed: message.notesSearchFailed)
+            notesSearchFailed: message.notesSearchFailed, reaction: message.reaction)
         try await dbQueue.write { db in
             try db.execute(
                 sql: """
-                INSERT INTO thread_messages (id, sender, text, created_at_ms, delivery, basis, note_ids, notes_sent, notes_search_failed)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO thread_messages (id, sender, text, created_at_ms, delivery, basis, note_ids, notes_sent, notes_search_failed, reaction)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 arguments: [
                     toStore.id.uuidString, toStore.sender.rawValue, toStore.text, DoddyDatabase.milliseconds(toStore.createdAt),
                     toStore.delivery.rawValue, toStore.basis?.rawValue, try LearningRows.json(toStore.noteIDs.map(\.uuidString)),
-                    toStore.notesSent, toStore.notesSearchFailed ? 1 : 0,
+                    toStore.notesSent, toStore.notesSearchFailed ? 1 : 0, toStore.reaction?.rawValue,
                 ])
             guard let stored = try Row.fetchOne(db, sql: "SELECT * FROM thread_messages WHERE id = ?", arguments: [toStore.id.uuidString])
                 .map(Self.message(from:)), stored == toStore else { throw MessageThreadError.verificationFailed }
@@ -56,6 +56,17 @@ public final class SQLiteMessageThreadRepository: MessageThreadRepository {
             guard db.changesCount == 1 else { throw MessageThreadError.notFound }
             let stored: String? = try String.fetchOne(db, sql: "SELECT delivery FROM thread_messages WHERE id = ?", arguments: [id.uuidString])
             guard stored == delivery.rawValue else { throw MessageThreadError.verificationFailed }
+        }
+    }
+
+    public func setReaction(id: UUID, _ reaction: ThreadMessage.Reaction?) async throws {
+        try await dbQueue.write { db in
+            try db.execute(
+                sql: "UPDATE thread_messages SET reaction = ? WHERE id = ? AND sender = 'doddy'",
+                arguments: [reaction?.rawValue, id.uuidString])
+            guard db.changesCount == 1 else { throw MessageThreadError.notFound }
+            let stored: String? = try String.fetchOne(db, sql: "SELECT reaction FROM thread_messages WHERE id = ?", arguments: [id.uuidString])
+            guard stored == reaction?.rawValue else { throw MessageThreadError.verificationFailed }
         }
     }
 
@@ -106,9 +117,12 @@ public final class SQLiteMessageThreadRepository: MessageThreadRepository {
         let basisRaw: String? = row["basis"]
         let basis = basisRaw.flatMap(ThreadMessage.Basis.init(rawValue:))
         guard (basisRaw == nil) == (basis == nil) else { throw LearningStoreError.corruptRecord(idString) }
+        let reactionRaw: String? = row["reaction"]
+        let reaction = reactionRaw.flatMap(ThreadMessage.Reaction.init(rawValue:))
+        guard (reactionRaw == nil) == (reaction == nil) else { throw LearningStoreError.corruptRecord(idString) }
         return ThreadMessage(
             id: id, sender: sender, text: row["text"], createdAt: DoddyDatabase.date(milliseconds: row["created_at_ms"]),
             delivery: delivery, basis: basis, noteIDs: noteIDs, notesSent: row["notes_sent"],
-            notesSearchFailed: (row["notes_search_failed"] as Int) == 1)
+            notesSearchFailed: (row["notes_search_failed"] as Int) == 1, reaction: reaction)
     }
 }

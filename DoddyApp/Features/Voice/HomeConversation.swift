@@ -67,6 +67,21 @@ final class HomeConversation {
         }
     }
 
+    /// The Action Button, Back Tap, Siri or "Start listening when I open Doddy" (owner, 23 Oct
+    /// 2026): the conversation starts here on Home, as a tap on Doddy does, never in the transcript
+    /// sheet. One already going is left as it is. When the sign-in or voice-data step isn't done,
+    /// the voice screen opens on it, as for a tap.
+    func startFromShortcut(store: MemoryStore, profile: ApprovedProfile, greeted: Bool) {
+        guard live == nil else { return }
+        Task {
+            if await Self.canStartInPlace() {
+                await start(store: store, profile: profile, greeting: greeted ? TalkInIsland.greeting(for: profile) : nil)
+            } else {
+                ShortcutRouter.shared.openVoiceForGate(greeted: greeted)
+            }
+        }
+    }
+
     /// The same check the voice screen makes before it starts by itself (`VoiceView`).
     static func canStartInPlace() async -> Bool {
         let provider = VoiceProvider.effective(
@@ -76,7 +91,7 @@ final class HomeConversation {
         return (auth.isSignedIn || VoiceConfig.directVoiceEnabled) && VoiceProviderConsent.isGranted(for: provider)
     }
 
-    private func start(store: MemoryStore, profile: ApprovedProfile) async {
+    private func start(store: MemoryStore, profile: ApprovedProfile, greeting: String? = nil) async {
         // One conversation at a time (ADR-496): one starting or live elsewhere is the one Home shows.
         if let running = VoiceSessionController.runningConversation {
             controller = running
@@ -84,6 +99,6 @@ final class HomeConversation {
         }
         let controller = VoiceSessionController(store: store)
         self.controller = controller
-        await controller.start(VoiceConfig.connectionMode, profile: profile)
+        await controller.start(VoiceConfig.connectionMode, profile: profile, wakeGreeting: greeting)
     }
 }

@@ -10,7 +10,6 @@ struct SettingsView: View {
     @Environment(ProfileStore.self) private var profiles
     @AppStorage(LaunchPreferencesMigration.islandExpandsKey) private var islandExpands = true
     @AppStorage(VoiceProvider.preferenceKey) private var voiceProvider = ""
-    @AppStorage(PreferenceKey.assistantConsent) private var assistantConsent = false
     @AppStorage(ConnectionPause.preferenceKey) private var pauseAllConnections = false
     @AppStorage(LegalAcceptance.preferenceKey) private var legalRecordData: Data?
     @State private var connections = ConnectionController()
@@ -175,7 +174,7 @@ struct SettingsView: View {
             NavigationLink {
                 AskDoddySettingsView()
             } label: {
-                StatusRow(title: "Ask Doddy (typed questions)", value: assistantConsent ? NSLocalizedString("On", comment: "") : NSLocalizedString("Off", comment: ""))
+                Text("Ask Doddy (typed questions)")
             }
             .accessibilityIdentifier("settings.askDoddy")
             NavigationLink {

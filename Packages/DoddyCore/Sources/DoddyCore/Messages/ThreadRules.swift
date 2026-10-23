@@ -57,4 +57,30 @@ public enum ThreadRules {
         case .sent: return nil
         }
     }
+
+    // MARK: Bubbles (owner, 23 Oct 2026: the thread looks like iMessage)
+
+    /// Messages from the same sender, with no date heading between them, are one group: they sit close
+    /// together and only the last has a tail.
+    public static func endsGroup(_ message: ThreadMessage, before next: ThreadMessage?) -> Bool {
+        guard let next else { return true }
+        return next.sender != message.sender || showsHeading(next, after: message)
+    }
+
+    /// The user message that gets "Delivered" under it: the newest one Doddy answered, and only when
+    /// nothing the user sent after it is still waiting. Never "Read": nothing here can know that.
+    public static func deliveredMarker(in messages: [ThreadMessage]) -> UUID? {
+        guard let last = messages.last(where: { $0.sender == .user }), last.delivery == .sent else { return nil }
+        return last.id
+    }
+
+    /// Only Doddy's messages take a tapback.
+    public static func canReact(to message: ThreadMessage) -> Bool {
+        message.sender == .doddy
+    }
+
+    /// Tapping the tapback a message already has takes it off, as in iMessage; another one replaces it.
+    public static func reaction(after tapped: ThreadMessage.Reaction, on message: ThreadMessage) -> ThreadMessage.Reaction? {
+        message.reaction == tapped ? nil : tapped
+    }
 }

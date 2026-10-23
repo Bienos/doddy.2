@@ -151,32 +151,30 @@ final class LaunchSmokeTests: XCTestCase {
     }
 
     @MainActor
-    func testAskDoddyIsOffByDefaultAndSaysWhyWithoutAnyNetworkCall() {
+    func testMessagesWorksWithoutASwitchAndSaysWhereQuestionsGo() {
         let app = launch(onboardingDone: true)
         XCTAssertTrue(app.buttons["home.ask"].waitForExistence(timeout: 5))
         app.buttons["home.ask"].tap()
 
         XCTAssertTrue(app.textFields["ask.input"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["ask.disclosure"].exists)
-        XCTAssertTrue(app.staticTexts["Turn on Ask Doddy in Settings first. It sends your question to a server."].exists)
+        // No "turn it on in Settings first" any more (owner, 23 Oct 2026).
+        XCTAssertFalse(app.staticTexts["Turn on Ask Doddy in Settings first. It sends your question to a server."].exists)
         // Nothing to send yet, so Send stays disabled.
         XCTAssertFalse(app.buttons["ask.send"].isEnabled)
     }
 
     @MainActor
-    func testSettingsShowsAskDoddyOffUntilTheUserTurnsItOn() {
+    func testSettingsHasNoAskDoddySwitchOnlyTheNotesChoice() {
         let app = launch(onboardingDone: true)
         XCTAssertTrue(app.waitForTab("settings", timeout: 5))
         app.goToTab("settings")
         app.openSettingsPage("settings.askDoddy")
-        let consent = app.switches["settings.assistantConsent"]
+        let notes = app.switches["settings.assistantUseNotes"]
         // The long Settings form creates rows lazily; scroll until the section is on screen.
-        XCTAssertTrue(app.reveal(consent))
-        XCTAssertEqual(consent.value as? String, "0")
-        // The status row sits below the toggles, so it may not be built yet.
-        let status = app.descendants(matching: .any)["settings.assistantStatus"].firstMatch
-        XCTAssertTrue(app.reveal(status))
-        XCTAssertTrue(status.label.contains("Off"), status.label)
+        XCTAssertTrue(app.reveal(notes))
+        XCTAssertTrue(notes.isEnabled)
+        XCTAssertFalse(app.switches["settings.assistantConsent"].exists)
     }
 
     @MainActor

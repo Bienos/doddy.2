@@ -34,6 +34,53 @@ final class SQLiteMessageThreadRepositoryTests: XCTestCase {
         XCTAssertEqual(none, [])
     }
 
+    func testATapbackIsSavedReadBackReplacedAndClearedOnlyOnDoddysMessages() async throws {
+        let database = try DoddyDatabase.inMemory()
+        let repo = SQLiteMessageThreadRepository(database: database)
+        let question = user("hello", at: 0)
+        let answer = doddy("hi", at: 1)
+        try await repo.append(question)
+        try await repo.append(answer)
+
+        try await repo.setReaction(id: answer.id, .heart)
+        var read = try await repo.recent(limit: 5)
+        XCTAssertEqual(read[1].reaction, .heart)
+        try await repo.setReaction(id: answer.id, .haha)
+        read = try await repo.recent(limit: 5)
+        XCTAssertEqual(read[1].reaction, .haha, "another tapback replaces it")
+        try await repo.setReaction(id: answer.id, nil)
+        read = try await repo.recent(limit: 5)
+        XCTAssertNil(read[1].reaction)
+
+        do {
+            try await repo.setReaction(id: question.id, .heart)
+            XCTFail("the user's own message takes no tapback")
+        } catch MessageThreadError.notFound {}
+        do {
+            try await repo.setReaction(id: UUID(), .heart)
+            XCTFail("an unknown message is not found")
+        } catch MessageThreadError.notFound {}
+        read = try await repo.recent(limit: 5)
+        XCTAssertNil(read[0].reaction)
+
+        // The table itself refuses a value the app never writes.
+        do {
+            try await database.queue.write { db in
+                try db.execute(sql: "UPDATE thread_messages SET reaction = 'wave' WHERE id = ?", arguments: [answer.id.uuidString])
+            }
+            XCTFail("the table refuses a tapback the app never writes")
+        } catch {}
+    }
+
+    func testAMessageAppendedWithATapbackKeepsIt() async throws {
+        let repo = SQLiteMessageThreadRepository(database: try DoddyDatabase.inMemory())
+        var answer = doddy("hi", at: 1)
+        answer.reaction = .thumbsUp
+        try await repo.append(answer)
+        let read = try await repo.recent(limit: 5)
+        XCTAssertEqual(read, [answer])
+    }
+
     func testTimesAreKeptToTheMillisecondAndTiesKeepTheirOrder() async throws {
         let repo = SQLiteMessageThreadRepository(database: try DoddyDatabase.inMemory())
         let same = t0.addingTimeInterval(0.0004)

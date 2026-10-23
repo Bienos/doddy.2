@@ -12,12 +12,12 @@ final class TalkButtonAndLegalTests: XCTestCase {
     }
 
     @MainActor
-    func testTheControlOpeningDoddyStartsTheConversationWithTheGreetingOnce() {
+    func testTheControlOpeningDoddyAsksHomeToTalkWithTheGreetingOnce() {
         let router = makeRouter()
         router.talkButtonOpenedApp()
-        XCTAssertTrue(router.isVoicePresented)
-        XCTAssertTrue(router.takeTalkToDoddyOpening(), "the shortcut greeting is used")
-        XCTAssertFalse(router.takeTalkToDoddyOpening(), "only once")
+        XCTAssertFalse(router.isVoicePresented, "the conversation starts on Home, not in the transcript sheet")
+        XCTAssertEqual(router.takeTalkOnHome()?.greeted, true, "the shortcut greeting is used")
+        XCTAssertNil(router.takeTalkOnHome(), "only once")
     }
 
     @MainActor
@@ -28,17 +28,17 @@ final class TalkButtonAndLegalTests: XCTestCase {
         UserDefaults.standard.set(BackTapAction.openApp.rawValue, forKey: key)
         let router = makeRouter()
         router.talkButtonOpenedApp()
-        XCTAssertTrue(router.isVoicePresented, "the Action Button's own choice says talk")
+        XCTAssertNotNil(router.takeTalkOnHome(), "the Action Button's own choice says talk")
     }
 
     @MainActor
-    func testASecondPressWithTheConversationOpenDoesntGreetAgain() {
+    func testWithTheTranscriptOpenAPressStartsNothingNew() {
         let router = makeRouter()
+        router.openVoiceForGate(greeted: true)
+        XCTAssertTrue(router.isVoicePresented, "Home couldn't start it: the voice screen opens on the sign-in step")
+        XCTAssertTrue(router.takeTalkToDoddyOpening(), "and greets once the step is done")
         router.talkButtonOpenedApp()
-        _ = router.takeTalkToDoddyOpening()
-        router.talkButtonOpenedApp()
-        XCTAssertTrue(router.isVoicePresented)
-        XCTAssertFalse(router.takeTalkToDoddyOpening(), "a conversation already open isn't a new opening")
+        XCTAssertNil(router.takeTalkOnHome(), "the open screen already shows the conversation")
     }
 
     func testAcceptingStoresTheRecordAndReadsItBack() {

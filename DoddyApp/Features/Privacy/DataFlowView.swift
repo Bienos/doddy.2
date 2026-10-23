@@ -18,7 +18,8 @@ extension DataFlowState {
             pauseAll: flag(ConnectionPause.preferenceKey, default: false),
             // Same rule as OnlineAccountsClientFactory: an address and a session token.
             doddyServerSet: !text(PreferenceKey.connectedAppsServerURL).isEmpty && KeychainSessionStore.read() != nil,
-            askDoddyOn: flag(PreferenceKey.assistantConsent, default: false),
+            // Messages works without a switch (owner, 23 Oct 2026).
+            askDoddyOn: true,
             askDoddyUsesNotes: flag(PreferenceKey.assistantUseNotes, default: true),
             // Same rule as ServerConfig: the built-in address, or a valid one entered in Settings.
             messagingServerSet: ServerConfig.baseURL(defaults: defaults) != nil,
@@ -40,7 +41,6 @@ struct DataFlowView: View {
     @AppStorage(PreferenceKey.rememberConversations) private var rememberConversations = true
     @AppStorage(PreferenceKey.shareProfileWithVoice) private var shareProfileWithVoice = false
     @AppStorage(PreferenceKey.connectedAppsServerURL) private var connectedAppsServerURL = ""
-    @AppStorage(PreferenceKey.assistantConsent) private var assistantConsent = false
     @AppStorage(PreferenceKey.assistantUseNotes) private var assistantUseNotes = true
     @AppStorage(ConnectionPause.preferenceKey) private var pauseAll = false
     @AppStorage(PreferenceKey.messagingServerURL) private var messagingServerURL = ""

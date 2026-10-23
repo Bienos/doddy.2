@@ -85,4 +85,46 @@ final class ThreadRulesTests: XCTestCase {
         XCTAssertTrue(fromNowhere.notesSearchFailed)
         XCTAssertTrue(fromNowhere.noteIDs.isEmpty)
     }
+
+    // MARK: Bubbles and tapbacks (owner, 23 Oct 2026)
+
+    func testOnlyTheLastBubbleOfASendersRunEndsTheGroup() {
+        let a = message(.user, "one", minutesAgo: 10)
+        let b = message(.user, "two", minutesAgo: 9)
+        let c = message(.doddy, "three", minutesAgo: 8)
+        let later = message(.doddy, "much later", minutesAgo: 1)
+        let afterAnHour = ThreadMessage(id: UUID(), sender: .doddy, text: "next day", createdAt: now.addingTimeInterval(3_600), delivery: .sent, basis: .general)
+        XCTAssertFalse(ThreadRules.endsGroup(a, before: b), "same sender, close together: one group")
+        XCTAssertTrue(ThreadRules.endsGroup(b, before: c), "the sender changes")
+        XCTAssertFalse(ThreadRules.endsGroup(c, before: later))
+        XCTAssertTrue(ThreadRules.endsGroup(later, before: afterAnHour), "a date heading starts a new group")
+        XCTAssertTrue(ThreadRules.endsGroup(later, before: nil))
+    }
+
+    func testDeliveredShowsOnlyUnderTheNewestUserMessageOnceItWasAnswered() {
+        let answered = message(.user, "first", minutesAgo: 10)
+        let reply = message(.doddy, "hi", minutesAgo: 9)
+        XCTAssertEqual(ThreadRules.deliveredMarker(in: [answered, reply]), answered.id)
+        let waiting = message(.user, "second", minutesAgo: 1, .sending)
+        XCTAssertNil(ThreadRules.deliveredMarker(in: [answered, reply, waiting]), "the newest is still on its way")
+        let failed = message(.user, "third", minutesAgo: 1, .failed)
+        XCTAssertNil(ThreadRules.deliveredMarker(in: [answered, reply, failed]))
+        XCTAssertNil(ThreadRules.deliveredMarker(in: [reply]))
+    }
+
+    func testTapbacksGoOnDoddysMessagesAndTappingTheSameOneTakesItOff() {
+        var answer = message(.doddy, "hi", minutesAgo: 1)
+        XCTAssertTrue(ThreadRules.canReact(to: answer))
+        XCTAssertFalse(ThreadRules.canReact(to: message(.user, "hello", minutesAgo: 2)))
+        XCTAssertEqual(ThreadRules.reaction(after: .heart, on: answer), .heart)
+        answer.reaction = .heart
+        XCTAssertNil(ThreadRules.reaction(after: .heart, on: answer), "the same tapback again takes it off")
+        XCTAssertEqual(ThreadRules.reaction(after: .question, on: answer), .question, "another one replaces it")
+    }
+
+    func testAnOlderExportWithoutTapbacksStillReads() throws {
+        let old = #"{"id":"6A0C3E51-3D59-4C0F-9F4E-2C7B5F0E8B11","sender":"doddy","text":"hi","createdAt":0,"delivery":"sent","basis":"general","noteIDs":[],"notesSent":0,"notesSearchFailed":false}"#
+        let decoded = try JSONDecoder().decode(ThreadMessage.self, from: Data(old.utf8))
+        XCTAssertNil(decoded.reaction)
+    }
 }
