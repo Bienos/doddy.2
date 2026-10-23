@@ -10,6 +10,8 @@ import type { TaskCallDeps } from "../taskCalls/context.js";
 import { ClaudeResultWriter } from "../taskCalls/writer.js";
 import type { ErrandDeps } from "../errands/context.js";
 import { ClaudeErrandResearcher } from "../errands/researcher.js";
+import type { AssistantDeps } from "../assistant/deps.js";
+import { ClaudeAssistantResponder } from "../assistant/responder.js";
 
 /** Real provider adapters for whatever is configured; anything missing stays undefined. */
 export function providersFrom(config: Config) {
@@ -39,6 +41,15 @@ export function providersFrom(config: Config) {
       ? new ClaudeErrandResearcher(config.anthropicApiKey, { model: es.model, effort: es.effort })
       : undefined,
   };
+  // Messages (ADR-586): a responder only with an Anthropic key and the switch on; otherwise the route
+  // answers 503 notConfigured.
+  const as = config.assistantSettings;
+  const assistant: AssistantDeps = {
+    settings: as,
+    responder: as.enabled && config.anthropicApiKey
+      ? new ClaudeAssistantResponder(config.anthropicApiKey, { model: as.model, effort: as.effort })
+      : undefined,
+  };
   return {
     push,
     sms: twilio,
@@ -47,6 +58,7 @@ export function providersFrom(config: Config) {
     cipher,
     taskCalls,
     errands,
+    assistant,
     news: {
       cipher,
       feeds: new HttpFeedSource(),

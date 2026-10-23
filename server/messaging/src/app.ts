@@ -19,6 +19,8 @@ import { taskCallWebhookRoutes } from "./routes/taskCallWebhooks.js";
 import { taskCallContext, type TaskCallContext, type TaskCallDeps } from "./taskCalls/context.js";
 import { errandRoutes } from "./routes/errands.js";
 import { errandContext, type ErrandContext, type ErrandDeps } from "./errands/context.js";
+import { assistantRoutes } from "./routes/assistant.js";
+import type { AssistantDeps } from "./assistant/deps.js";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -58,6 +60,8 @@ export interface Deps {
   errands?: ErrandDeps;
   /** Where errand log lines go (tests capture them); default: the request logger. */
   errandLog?: (msg: string, extra?: object) => void;
+  /** Messages (ADR-586): the typed conversation asks Claude here. Needs an Anthropic key and the switch on. */
+  assistant?: AssistantDeps;
 }
 
 export async function buildApp(deps: Deps): Promise<FastifyInstance> {
@@ -120,6 +124,7 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   await app.register(callCaseRoutes(deps, taskCtx));
   await app.register(taskCallWebhookRoutes(deps, taskCtx));
   await app.register(errandRoutes(deps, errandCtx));
+  await app.register(assistantRoutes(deps));
   return app;
 }
 

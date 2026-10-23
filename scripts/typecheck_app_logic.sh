@@ -96,7 +96,8 @@ files=(
   DoddyApp/Infrastructure/ShortcutRouter.swift
   DoddyApp/Infrastructure/UnfinishedNoteStore.swift
   DoddyApp/Infrastructure/SiriNoteLookup.swift
-  DoddyApp/Features/Ask/AskController.swift
+  # The thread with Doddy (ADR-585): the Messages screen's state, without the views.
+  DoddyApp/Features/Messages/MessagesModel.swift
   DoddyApp/Features/NoteReminders/NoteReminderStore.swift
   DoddyApp/Features/Opening/OpeningModel.swift
   DoddyApp/Features/Photos/PhotoFiles.swift

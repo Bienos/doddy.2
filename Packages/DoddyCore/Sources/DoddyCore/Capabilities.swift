@@ -95,9 +95,9 @@ public struct CapabilityCatalog: Sendable {
         .connectedAccounts: .limited("Google Calendar read-only; Gmail, Drive, Notion, Todoist tools you switch on; needs a Doddy server"),
     ]) { _, new in new })
 
-    /// M2: typed questions to a real model through the gateway, with checked citations.
-    /// "Available" means the code exists and its tests ran. Whether a given install can use it also
-    /// depends on a gateway address, an invite code and the user's consent (see `AssistantAvailability`).
+    /// M2: typed questions to a real model, with checked citations. Since ADR-586 the model is Claude, reached
+    /// through the messaging server (before that, the Ask gateway). "Available" means the code exists and its
+    /// tests ran. Whether a given install can use it also depends on a messaging server address and the user's consent.
     public static let m2 = CapabilityCatalog(statuses: v1Voice.statuses.merging([
         .textAssistant: .available,
     ]) { _, new in new })

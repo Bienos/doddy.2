@@ -395,6 +395,27 @@ public final class DoddyDatabase: Sendable {
                 t.column("search_text")
             }
         }
+        // The thread with Doddy (ADR-585): typed messages kept on this iPhone until the user deletes them.
+        // The table refuses what the rules never produce: a Doddy message that is not "sent", a user
+        // message with a basis, a Doddy message without one. (v16 belongs to Capture, ADR-579.)
+        migrator.registerMigration("v17_message_thread") { db in
+            try db.execute(sql: """
+                CREATE TABLE thread_messages (
+                    id TEXT PRIMARY KEY NOT NULL,
+                    sender TEXT NOT NULL CHECK (sender IN ('user', 'doddy')),
+                    text TEXT NOT NULL CHECK (length(text) BETWEEN 1 AND 50000),
+                    created_at_ms INTEGER NOT NULL,
+                    delivery TEXT NOT NULL CHECK (delivery IN ('sending', 'sent', 'failed')),
+                    basis TEXT CHECK (basis IS NULL OR basis IN ('savedNotes', 'general')),
+                    note_ids TEXT NOT NULL DEFAULT '[]',
+                    notes_sent INTEGER NOT NULL DEFAULT 0 CHECK (notes_sent >= 0),
+                    notes_search_failed INTEGER NOT NULL DEFAULT 0 CHECK (notes_search_failed IN (0, 1)),
+                    CHECK (sender = 'user' OR delivery = 'sent'),
+                    CHECK ((sender = 'doddy') = (basis IS NOT NULL))
+                );
+                CREATE INDEX thread_messages_created ON thread_messages(created_at_ms);
+                """)
+        }
         return migrator
     }
 
