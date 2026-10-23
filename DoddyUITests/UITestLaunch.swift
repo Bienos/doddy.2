@@ -24,7 +24,8 @@ enum UITestLaunch {
 
     static func arguments(
         store: Store, onboardingDone: Bool = true, appearance: String = "system", backTapSetup: String = "deferred",
-        opening: Bool = false, listen: Bool = false, language: Language = .english, welcome: Bool = false
+        opening: Bool = false, listen: Bool = false, language: Language = .english, welcome: Bool = false,
+        legalAccepted: Bool = true
     ) -> [String] {
         var arguments: [String]
         switch store {
@@ -47,6 +48,9 @@ enum UITestLaunch {
         // Memories remembers Notes or Lists in UserDefaults, which outlive the in-memory store: a
         // test that opened Lists would leave every later test looking at Lists, not the notes.
         arguments += ["-memoriesShowsLists", "NO"]
+        // "Before we start" (ADR-581) would cover every first screen; Debug builds skip it with
+        // this. `LegalAcceptanceUITests` turns it off to test the step itself.
+        if legalAccepted { arguments += ["-legalAcceptanceSkippedForUITests", "YES"] }
         return arguments
     }
 }
@@ -132,6 +136,14 @@ extension XCUIApplication {
         let item = buttons[identifier]
         _ = item.waitForExistence(timeout: 5)
         item.tap()
+    }
+
+    /// Settings (ADR-580): scrolls to a group's row and opens its page.
+    @MainActor
+    func openSettingsPage(_ identifier: String, file: StaticString = #filePath, line: UInt = #line) {
+        let row = buttons[identifier]
+        XCTAssertTrue(reveal(row), "Settings row \(identifier)", file: file, line: line)
+        row.tap()
     }
 
     /// A button found by what it says. A Section's accessibility identifier (Settings' Privacy

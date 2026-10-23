@@ -36,7 +36,8 @@ Code lives under `DoddyApp/Features/<Folder>/`. Status docs are in `docs/impleme
 | Lists | Lists, templates, share card, shopping mode | 216, 257, 334 | LISTS_STATUS, SHOPPING_MODE_STATUS |
 | NoteReminders | Time and place reminders on notes | 196, 211 | M4A_NOTE_REMINDERS_STATUS, PLACE_REMINDERS_STATUS |
 | Settings | Settings, island style, personality, what Doddy learned ("Hey Doddy" was removed, ADR-549) | 254, 440, 549 | HEY_DODDY_STATUS (history), M6_LEARNING_LOOP_STATUS |
-| Messages (was Ask) | The typed conversation with Doddy: bubbles saved on this iPhone until deleted; answers from the Ask gateway | 585 (115) | MESSAGES_STATUS, M2_STATUS |
+| Messages (was Ask) | The typed conversation with Doddy: bubbles saved on this iPhone until deleted; answers from Claude through the messaging server (`POST /v1/assistant/ask`) | 585, 586 (115) | MESSAGES_STATUS, M2_STATUS |
+| Web (`Features/Web`, `Infrastructure/WebMemoryClientFactory.swift`, DoddyCore `OnlineAccounts/WebMemory*`) | Sign in to Doddy Web; **Keep on Doddy's server** (ADR-603): two switches for notes and conversations, a consent screen, "Delete everything on Doddy's server". Rules and the HTTP client are in DoddyCore and tested on Linux. **The SwiftUI screens and the call from the voice controller are NOT COMPILED** (no Xcode in the sessions that wrote them); needs the hosted Mac build and a run on a device | 603 | CLOUD_MEMORY |
 | Activity | "What Doddy did" and undo | 268, 271 | ACTIVITY_UNDO_STATUS |
 | Alarms | Alarms by voice (AlarmKit, iOS 26) | 260, 283 | ALARMS_STATUS |
 | Backup | Encrypted backup file | 222 | ENCRYPTED_BACKUP_STATUS |
@@ -54,12 +55,15 @@ Code lives under `DoddyApp/Features/<Folder>/`. Status docs are in `docs/impleme
 | News, Updates | Daily news, server notifications and texts | 174, 175 | N1_NEWS_STATUS, S1_SERVER_STATUS |
 | Photos, VoiceMemos | Photo notes (picker and, since ADR-569, Doddy's camera), the photo search card, voice memos | 218, 230, 569 | PHOTO_NOTES_STATUS, VOICE_MEMOS_STATUS, APPLE_CONNECTIONS |
 | Privacy | Face ID lock, "What leaves this iPhone" | 310 | - |
+| Settings | Six groups and their pages (`SettingsView`, `SettingsScreens`); the Action Button choice | 580, 579 | SETTINGS_SIMPLIFIED, ACTION_BUTTON_ISLAND |
+| Onboarding | "Before we start": Terms acceptance (`LegalAcceptanceView`, `LegalAcceptanceStore`), then the optional introduction | 581 | LEGAL_PAGES_OWNER_CHECKLIST |
 | QuickActions, Spotlight | Icon menu, iPhone search | 339, 330 | - |
-| Setup | Ways to open Doddy: Back Tap guide, Action Button, control, Siri | 380, 558 | V2_SHORTCUT_SETUP_STATUS |
+| Setup | Ways to open Doddy: Back Tap guide, Action Button, control, Siri | 380, 558, 579 | V2_SHORTCUT_SETUP_STATUS, ACTION_BUTTON_ISLAND |
 | Sharing | Shared lists through iCloud | 263 | SHARED_LISTS_STATUS |
 | Translator | Translator mode | 215 | TRANSLATOR_STATUS |
 | Watch | iPhone side of the Watch app | 232 | APPLE_WATCH_STATUS |
 | Widgets | Keeps the widget snapshot current | 219, 331 | WIDGETS_STATUS |
+| Recordings (DODDY Capture) | Record a meeting or conversation (button, Siri, the Action Button's control, the island), on-device words, search, "Remember this". Logic in `DoddyCore/Capture/`, rows in `v16_recordings`. **App layer not compiled yet** | 579–583 | CAPTURE_STATUS, CAPTURE_AUDIT |
 
 **Other app folders:**
 - `DoddyApp/App`: entry, `RootView`, iPad sidebar.

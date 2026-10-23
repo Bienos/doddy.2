@@ -249,6 +249,16 @@ enum IslandSceneChecks {
         var ended = State(status: .ended, isMuted: false)
         ended.savedCount = 1
         expect(pose(ended) == .fistpump, "ended")
+        // ADR-579: a failed start or a dropped connection is a final card, never live or muted.
+        var failed = State(status: .failed, isMuted: true)
+        failed.savedCount = 1
+        expect(pose(failed) == .facepalm, "failed is the facepalm, even with a note saved")
+        expect(pose(failed, stale: true) == .facepalm, "failed while stale")
+        expect(failed.isEnded && !failed.isLiveCue && !failed.showsMuted, "failed is final, not live, not muted")
+        expect(failed.title == "Conversation stopped", "failed title: \(failed.title)")
+        expect(failed.detail == "Doddy isn't listening · 1 note saved", "failed detail: \(failed.detail ?? "nil")")
+        expect(State(status: .failed, isMuted: false).detail == "Doddy isn't listening · open Doddy to try again", "failed detail, nothing saved")
+        expect(!State(status: .failed, isMuted: false).islandScene(isStale: true).live, "a failed card is never live")
         let moments: [(State.Moment, IslandPose?)] = [
             (.noteWaiting, .reachingHigh), (.noteSaved, .fistpump), (.reminderWaiting, .reachingHigh),
             (.reminderAdding, .reachingHigh), (.reminderSet, .fistpump), (.planWaiting(steps: 3), .tiptoe),

@@ -162,7 +162,116 @@ export const SCHEMA_SQL = `
     created_at BIGINT NOT NULL
   );
   CREATE INDEX IF NOT EXISTS documents_user ON documents(user_id, created_at);
+  CREATE TABLE IF NOT EXISTS web_link_codes (
+    code_hash TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    created_at BIGINT NOT NULL,
+    expires_at BIGINT NOT NULL,
+    consumed_at BIGINT
+  );
+  CREATE INDEX IF NOT EXISTS web_link_codes_user ON web_link_codes(user_id);
+  CREATE TABLE IF NOT EXISTS web_sessions (
+    session_id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    token_hash TEXT NOT NULL UNIQUE,
+    browser TEXT NOT NULL,
+    os TEXT NOT NULL,
+    created_at BIGINT NOT NULL,
+    last_seen_at BIGINT NOT NULL,
+    expires_at BIGINT NOT NULL,
+    revoked_at BIGINT
+  );
+  CREATE INDEX IF NOT EXISTS web_sessions_user ON web_sessions(user_id, created_at);
+  CREATE TABLE IF NOT EXISTS logbook_state (
+    user_id TEXT PRIMARY KEY,
+    enabled BOOLEAN NOT NULL,
+    changed_at BIGINT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS logbook_days (
+    user_id TEXT NOT NULL,
+    day TEXT NOT NULL CHECK (day ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$'),
+    summary TEXT NOT NULL,
+    received_at BIGINT NOT NULL,
+    PRIMARY KEY (user_id, day)
+  );
+  CREATE TABLE IF NOT EXISTS memory_state (
+    user_id TEXT PRIMARY KEY,
+    notes BOOLEAN NOT NULL,
+    conversations BOOLEAN NOT NULL,
+    changed_at BIGINT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS memory_notes (
+    user_id TEXT NOT NULL,
+    note_id TEXT NOT NULL CHECK (note_id ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'),
+    key_version SMALLINT NOT NULL,
+    ciphertext BYTEA NOT NULL,
+    captured_at BIGINT,
+    received_at BIGINT NOT NULL,
+    PRIMARY KEY (user_id, note_id)
+  );
+  CREATE TABLE IF NOT EXISTS memory_conversations (
+    user_id TEXT NOT NULL,
+    conversation_id TEXT NOT NULL CHECK (conversation_id ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'),
+    started_at BIGINT NOT NULL,
+    ended_at BIGINT NOT NULL,
+    turn_count INTEGER NOT NULL,
+    key_version SMALLINT NOT NULL,
+    ciphertext BYTEA NOT NULL,
+    received_at BIGINT NOT NULL,
+    PRIMARY KEY (user_id, conversation_id)
+  );
+  CREATE INDEX IF NOT EXISTS memory_conversations_started ON memory_conversations(user_id, started_at);
+  CREATE INDEX IF NOT EXISTS memory_conversations_age ON memory_conversations(started_at);
+  CREATE INDEX IF NOT EXISTS memory_notes_age ON memory_notes(received_at);
 `;
+
+/** A browser signed in to Doddy Web (ADR-600). The cookie's token is stored only as a hash. */
+export interface WebSessionRow {
+  session_id: string;
+  user_id: string;
+  browser: string;
+  os: string;
+  created_at: number;
+  last_seen_at: number;
+  expires_at: number;
+}
+
+/** A document without its file, for lists (ADR-600). */
+export interface DocumentSummaryRow {
+  id: string;
+  status: DocumentRow["status"];
+  name: string;
+  mime: string;
+  size: number | null;
+  created_at: number;
+}
+
+/** A note kept on request (ADR-603): its text and provenance are one encrypted blob; the rest is what the server needs to list and sweep. */
+export interface MemoryNoteRow {
+  note_id: string;
+  key_version: number;
+  ciphertext: Buffer;
+  captured_at: number | null;
+  received_at: number;
+}
+
+/** A conversation kept on request (ADR-603). `ciphertext` holds the language, how it ended and every turn. */
+export interface MemoryConversationRow {
+  conversation_id: string;
+  started_at: number;
+  ended_at: number;
+  turn_count: number;
+  key_version: number;
+  ciphertext: Buffer;
+  received_at: number;
+}
+
+/** One stored day of Logbook (ADR-602): the day, its summary as JSON text, and when the iPhone sent it. */
+export interface LogbookDayRow {
+  day: string;
+  summary: string;
+  received_at: number;
+}
 
 /** A file Claude makes for the user (ADR-564). Kept a week, then pruned. */
 export interface DocumentRow {
@@ -594,9 +703,320 @@ export class Store {
     return { ...row, body: row.body === null ? null : Buffer.from(row.body as unknown as Uint8Array) };
   }
 
+  /** The user's own documents, newest first, without their files (ADR-600). */
+  async listDocuments(userId: string, limit: number): Promise<DocumentSummaryRow[]> {
+    return (
+      await this.db.query<DocumentSummaryRow>(
+        `SELECT id, status, name, mime, octet_length(body) AS size, created_at FROM documents
+         WHERE user_id = $1 ORDER BY created_at DESC, id LIMIT $2`,
+        [userId, limit],
+      )
+    ).rows;
+  }
+
+  /** One document, only when it belongs to `userId`; another user's ID reads as missing (the filter is in the query). */
+  async getOwnDocument(userId: string, id: string): Promise<DocumentRow | null> {
+    const row = await this.one<DocumentRow>(
+      this.db,
+      "SELECT id, user_id, status, name, mime, body, created_at FROM documents WHERE id = $1 AND user_id = $2",
+      [id, userId],
+    );
+    if (!row) return null;
+    return { ...row, body: row.body === null ? null : Buffer.from(row.body as unknown as Uint8Array) };
+  }
+
   /** Documents older than a week go. Separate from `prune` so its counts stay as they were. */
   async pruneDocuments(now: number): Promise<number> {
     return (await this.db.query("DELETE FROM documents WHERE created_at < $1", [now - 7 * 86_400_000])).rowCount;
+  }
+
+  // ------------------------------------------------------------ Logbook (ADR-602)
+
+  /** Off until the iPhone turns it on. A user with no row is off. */
+  async logbookEnabled(userId: string): Promise<boolean> {
+    const row = await this.one<{ enabled: boolean }>(this.db, "SELECT enabled FROM logbook_state WHERE user_id = $1", [userId]);
+    return row?.enabled === true;
+  }
+
+  /** Turns Logbook on or off for one user. Off deletes every stored day in the same transaction. */
+  async setLogbookEnabled(userId: string, enabled: boolean, now: number): Promise<{ deletedDays: number }> {
+    return this.db.transaction(async (tx) => {
+      await tx.query(
+        `INSERT INTO logbook_state (user_id, enabled, changed_at) VALUES ($1, $2, $3)
+         ON CONFLICT (user_id) DO UPDATE SET enabled = EXCLUDED.enabled, changed_at = EXCLUDED.changed_at`,
+        [userId, enabled, now],
+      );
+      const deleted = enabled ? 0 : (await tx.query("DELETE FROM logbook_days WHERE user_id = $1", [userId])).rowCount;
+      return { deletedDays: deleted };
+    });
+  }
+
+  /**
+   * Keeps one day, replacing the one already there for that day (a day is never added twice).
+   * Returns false, and stores nothing, when the user's Logbook is off.
+   */
+  async putLogbookDay(userId: string, day: string, summary: string, now: number): Promise<boolean> {
+    return this.db.transaction(async (tx) => {
+      const state = await this.one<{ enabled: boolean }>(tx, "SELECT enabled FROM logbook_state WHERE user_id = $1", [userId]);
+      if (state?.enabled !== true) return false;
+      await tx.query(
+        `INSERT INTO logbook_days (user_id, day, summary, received_at) VALUES ($1, $2, $3, $4)
+         ON CONFLICT (user_id, day) DO UPDATE SET summary = EXCLUDED.summary, received_at = EXCLUDED.received_at`,
+        [userId, day, summary, now],
+      );
+      return true;
+    });
+  }
+
+  /** The user's own days from `since` on (a "YYYY-MM-DD"), oldest first. The user filter is in the query. */
+  async logbookDays(userId: string, since: string): Promise<LogbookDayRow[]> {
+    return (
+      await this.db.query<LogbookDayRow>(
+        "SELECT day, summary, received_at FROM logbook_days WHERE user_id = $1 AND day >= $2 ORDER BY day",
+        [userId, since],
+      )
+    ).rows;
+  }
+
+  /** Deletes every stored day of one user, and returns how many went. The on/off state stays. */
+  async deleteLogbookDays(userId: string): Promise<number> {
+    return (await this.db.query("DELETE FROM logbook_days WHERE user_id = $1", [userId])).rowCount;
+  }
+
+  /** Days older than `oldest` (a "YYYY-MM-DD") go, for every user. Separate from `prune` so its counts stay as they were. */
+  async pruneLogbook(oldest: string): Promise<number> {
+    return (await this.db.query("DELETE FROM logbook_days WHERE day < $1", [oldest])).rowCount;
+  }
+
+  // ------------------------------------------------------------ Kept memory (ADR-603)
+
+  /** Both switches are off until the iPhone turns them on. A user with no row has both off. */
+  async memoryState(userId: string): Promise<{ notes: boolean; conversations: boolean }> {
+    const row = await this.one<{ notes: boolean; conversations: boolean }>(this.db, "SELECT notes, conversations FROM memory_state WHERE user_id = $1", [userId]);
+    return { notes: row?.notes === true, conversations: row?.conversations === true };
+  }
+
+  /** Sets both switches. A switch that is off deletes that kind of data in the same transaction. */
+  async setMemoryState(userId: string, next: { notes: boolean; conversations: boolean }, now: number): Promise<{ deletedNotes: number; deletedConversations: number }> {
+    return this.db.transaction(async (tx) => {
+      await tx.query(
+        `INSERT INTO memory_state (user_id, notes, conversations, changed_at) VALUES ($1, $2, $3, $4)
+         ON CONFLICT (user_id) DO UPDATE SET notes = EXCLUDED.notes, conversations = EXCLUDED.conversations, changed_at = EXCLUDED.changed_at`,
+        [userId, next.notes, next.conversations, now],
+      );
+      const deletedNotes = next.notes ? 0 : (await tx.query("DELETE FROM memory_notes WHERE user_id = $1", [userId])).rowCount;
+      const deletedConversations = next.conversations ? 0 : (await tx.query("DELETE FROM memory_conversations WHERE user_id = $1", [userId])).rowCount;
+      return { deletedNotes, deletedConversations };
+    });
+  }
+
+  /**
+   * Replaces every kept note with this list (a note gone from the phone is gone here too).
+   * Returns false, and changes nothing, when the user's notes switch is off.
+   */
+  async replaceMemoryNotes(userId: string, rows: MemoryNoteRow[], now: number): Promise<boolean> {
+    return this.db.transaction(async (tx) => {
+      const state = await this.one<{ notes: boolean }>(tx, "SELECT notes FROM memory_state WHERE user_id = $1", [userId]);
+      if (state?.notes !== true) return false;
+      await tx.query("DELETE FROM memory_notes WHERE user_id = $1", [userId]);
+      for (let i = 0; i < rows.length; i += 200) {
+        const chunk = rows.slice(i, i + 200);
+        const values: unknown[] = [];
+        const marks = chunk.map((row, j) => {
+          values.push(userId, row.note_id, row.key_version, row.ciphertext, row.captured_at, now);
+          const k = j * 6;
+          return `($${k + 1}, $${k + 2}, $${k + 3}, $${k + 4}, $${k + 5}, $${k + 6})`;
+        });
+        await tx.query(`INSERT INTO memory_notes (user_id, note_id, key_version, ciphertext, captured_at, received_at) VALUES ${marks.join(", ")}`, values);
+      }
+      return true;
+    });
+  }
+
+  /** Every kept note of one user, newest first. The user filter is in the query. */
+  async memoryNoteRows(userId: string): Promise<MemoryNoteRow[]> {
+    const rows = (
+      await this.db.query<MemoryNoteRow>(
+        "SELECT note_id, key_version, ciphertext, captured_at, received_at FROM memory_notes WHERE user_id = $1 ORDER BY captured_at DESC NULLS LAST, note_id",
+        [userId],
+      )
+    ).rows;
+    return rows.map((r) => ({ ...r, ciphertext: Buffer.from(r.ciphertext as unknown as Uint8Array) }));
+  }
+
+  /**
+   * Keeps one conversation, replacing the one with that id. "off" (nothing stored) when the
+   * conversations switch is off; "full" (nothing stored) when keeping it would pass `limits`.
+   */
+  async putMemoryConversation(
+    userId: string,
+    row: MemoryConversationRow,
+    limits: { conversations: number; bytes: number } = { conversations: Number.MAX_SAFE_INTEGER, bytes: Number.MAX_SAFE_INTEGER },
+  ): Promise<"ok" | "off" | "full"> {
+    return this.db.transaction(async (tx) => {
+      const state = await this.one<{ conversations: boolean }>(tx, "SELECT conversations FROM memory_state WHERE user_id = $1", [userId]);
+      if (state?.conversations !== true) return "off";
+      const others = await this.one<{ n: string; bytes: string }>(
+        tx,
+        "SELECT count(*) AS n, coalesce(sum(length(ciphertext)), 0) AS bytes FROM memory_conversations WHERE user_id = $1 AND conversation_id <> $2",
+        [userId, row.conversation_id],
+      );
+      if (Number(others?.n ?? 0) + 1 > limits.conversations || Number(others?.bytes ?? 0) + row.ciphertext.length > limits.bytes) return "full";
+      await tx.query(
+        `INSERT INTO memory_conversations (user_id, conversation_id, started_at, ended_at, turn_count, key_version, ciphertext, received_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         ON CONFLICT (user_id, conversation_id) DO UPDATE SET started_at = EXCLUDED.started_at, ended_at = EXCLUDED.ended_at,
+           turn_count = EXCLUDED.turn_count, key_version = EXCLUDED.key_version, ciphertext = EXCLUDED.ciphertext, received_at = EXCLUDED.received_at`,
+        [userId, row.conversation_id, row.started_at, row.ended_at, row.turn_count, row.key_version, row.ciphertext, row.received_at],
+      );
+      return "ok";
+    });
+  }
+
+  /** One user's conversations that started at or after `since`, newest first. Pass `limit` and `offset` to page. */
+  async memoryConversationRows(userId: string, since: number, limit: number, offset = 0): Promise<MemoryConversationRow[]> {
+    const rows = (
+      await this.db.query<MemoryConversationRow>(
+        `SELECT conversation_id, started_at, ended_at, turn_count, key_version, ciphertext, received_at FROM memory_conversations
+         WHERE user_id = $1 AND started_at >= $2 ORDER BY started_at DESC, conversation_id LIMIT $3 OFFSET $4`,
+        [userId, since, limit, offset],
+      )
+    ).rows;
+    return rows.map((r) => ({ ...r, ciphertext: Buffer.from(r.ciphertext as unknown as Uint8Array) }));
+  }
+
+  async memoryConversationRow(userId: string, id: string): Promise<MemoryConversationRow | null> {
+    const row = await this.one<MemoryConversationRow>(
+      this.db,
+      "SELECT conversation_id, started_at, ended_at, turn_count, key_version, ciphertext, received_at FROM memory_conversations WHERE user_id = $1 AND conversation_id = $2",
+      [userId, id],
+    );
+    return row ? { ...row, ciphertext: Buffer.from(row.ciphertext as unknown as Uint8Array) } : null;
+  }
+
+  async deleteMemoryConversation(userId: string, id: string): Promise<number> {
+    return (await this.db.query("DELETE FROM memory_conversations WHERE user_id = $1 AND conversation_id = $2", [userId, id])).rowCount;
+  }
+
+  /** What is kept for one user: how many notes and conversations (inside the window), and when the iPhone last sent either. */
+  async memoryCounts(userId: string, since: number): Promise<{ notes: number; conversations: number; lastReceivedAt: number | null }> {
+    const notes = await this.one<{ n: string; last: string | null }>(this.db, "SELECT count(*) AS n, max(received_at) AS last FROM memory_notes WHERE user_id = $1", [userId]);
+    const conversations = await this.one<{ n: string; last: string | null }>(
+      this.db,
+      "SELECT count(*) AS n, max(received_at) AS last FROM memory_conversations WHERE user_id = $1 AND started_at >= $2",
+      [userId, since],
+    );
+    const last = Math.max(Number(notes?.last ?? 0), Number(conversations?.last ?? 0));
+    return { notes: Number(notes?.n ?? 0), conversations: Number(conversations?.n ?? 0), lastReceivedAt: last > 0 ? last : null };
+  }
+
+  /** Deletes everything kept for one user and switches both off, so the iPhone's next send is refused and it stops. */
+  async deleteAllMemory(userId: string, now: number): Promise<{ deletedNotes: number; deletedConversations: number }> {
+    return this.setMemoryState(userId, { notes: false, conversations: false }, now);
+  }
+
+  /** Conversations that started before `oldest` (epoch ms) go, for every user. */
+  async pruneMemoryConversations(oldest: number): Promise<number> {
+    return (await this.db.query("DELETE FROM memory_conversations WHERE started_at < $1", [oldest])).rowCount;
+  }
+
+  /**
+   * Notes the iPhone last sent before `oldest` (epoch ms) go, for every user. Every note list the
+   * iPhone sends rewrites that time for all of its notes, so only an iPhone that stopped sending
+   * (an abandoned account) loses notes here.
+   */
+  async pruneMemoryNotes(oldest: number): Promise<number> {
+    return (await this.db.query("DELETE FROM memory_notes WHERE received_at < $1", [oldest])).rowCount;
+  }
+
+  // ------------------------------------------------------------ Doddy Web (ADR-600)
+
+  /** A new sign-in code for `userId`. Any earlier code of theirs stops working. */
+  async createWebLinkCode(userId: string, codeHash: string, now: number, ttlMs: number): Promise<void> {
+    await this.db.transaction(async (tx) => {
+      await tx.query("DELETE FROM web_link_codes WHERE user_id = $1", [userId]);
+      await tx.query("INSERT INTO web_link_codes (code_hash, user_id, created_at, expires_at) VALUES ($1, $2, $3, $4)", [codeHash, userId, now, now + ttlMs]);
+    });
+  }
+
+  /**
+   * Uses a sign-in code once and opens a browser session for its user, in one transaction: a code
+   * that is unknown, used or expired opens nothing. Beyond `maxSessions`, the user's oldest live
+   * sessions are signed out. Returns the user ID, or null.
+   */
+  async redeemWebLinkCode(input: {
+    codeHash: string;
+    session: { sessionId: string; tokenHash: string; browser: string; os: string; expiresAt: number };
+    now: number;
+    idleMs: number;
+    maxSessions: number;
+  }): Promise<string | null> {
+    return this.db.transaction(async (tx) => {
+      const used = await this.one<{ user_id: string }>(
+        tx,
+        "UPDATE web_link_codes SET consumed_at = $2 WHERE code_hash = $1 AND consumed_at IS NULL AND expires_at > $2 RETURNING user_id",
+        [input.codeHash, input.now],
+      );
+      if (!used) return null;
+      const s = input.session;
+      await tx.query(
+        `INSERT INTO web_sessions (session_id, user_id, token_hash, browser, os, created_at, last_seen_at, expires_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $6, $7)`,
+        [s.sessionId, used.user_id, s.tokenHash, s.browser, s.os, input.now, s.expiresAt],
+      );
+      await tx.query(
+        `UPDATE web_sessions SET revoked_at = $2 WHERE session_id IN (
+           SELECT session_id FROM web_sessions
+           WHERE user_id = $1 AND revoked_at IS NULL AND expires_at > $2 AND last_seen_at > $3
+           ORDER BY created_at DESC, session_id OFFSET $4)`,
+        [used.user_id, input.now, input.now - input.idleMs, input.maxSessions],
+      );
+      return used.user_id;
+    });
+  }
+
+  /** The live session behind a cookie's token hash: not revoked, not expired, not idle too long. */
+  async webSessionByToken(tokenHash: string, now: number, idleMs: number): Promise<WebSessionRow | null> {
+    return this.one<WebSessionRow>(
+      this.db,
+      `SELECT session_id, user_id, browser, os, created_at, last_seen_at, expires_at FROM web_sessions
+       WHERE token_hash = $1 AND revoked_at IS NULL AND expires_at > $2 AND last_seen_at > $3`,
+      [tokenHash, now, now - idleMs],
+    );
+  }
+
+  async touchWebSession(sessionId: string, now: number): Promise<void> {
+    await this.db.query("UPDATE web_sessions SET last_seen_at = $2 WHERE session_id = $1 AND revoked_at IS NULL", [sessionId, now]);
+  }
+
+  /** The user's live browser sessions, newest first. */
+  async webSessions(userId: string, now: number, idleMs: number, limit: number): Promise<WebSessionRow[]> {
+    return (
+      await this.db.query<WebSessionRow>(
+        `SELECT session_id, user_id, browser, os, created_at, last_seen_at, expires_at FROM web_sessions
+         WHERE user_id = $1 AND revoked_at IS NULL AND expires_at > $2 AND last_seen_at > $3
+         ORDER BY created_at DESC, session_id LIMIT $4`,
+        [userId, now, now - idleMs, limit],
+      )
+    ).rows;
+  }
+
+  /** Signs one browser out. False when it isn't one of `userId`'s live sessions. */
+  async revokeWebSession(userId: string, sessionId: string, now: number): Promise<boolean> {
+    const changed = await this.db.query("UPDATE web_sessions SET revoked_at = $3 WHERE session_id = $1 AND user_id = $2 AND revoked_at IS NULL", [sessionId, userId, now]);
+    return changed.rowCount === 1;
+  }
+
+  /** Codes a day past their expiry, and sessions a day past being revoked, expiring or going idle. */
+  async pruneWeb(now: number, idleMs: number): Promise<number> {
+    const DAY = 86_400_000;
+    return this.db.transaction(async (tx) => {
+      const codes = (await tx.query("DELETE FROM web_link_codes WHERE expires_at < $1", [now - DAY])).rowCount;
+      const sessions = (
+        await tx.query("DELETE FROM web_sessions WHERE revoked_at < $1 OR expires_at < $1 OR last_seen_at < $2", [now - DAY, now - idleMs - DAY])
+      ).rowCount;
+      return codes + sessions;
+    });
   }
 
   async usage(counter: string, period: string): Promise<number> {

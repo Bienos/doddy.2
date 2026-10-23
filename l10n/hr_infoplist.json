@@ -20,16 +20,16 @@
     "hr": "Doddy koristi tvoju lokaciju samo kad to zatražiš: za podsjetnike koje postaviš na mjestu (da pronađe gdje si kad dodirneš Koristi gdje sam sad, i da te iOS može podsjetiti kad stigneš ili odeš), za spremanje mjesta parkiranja i da s Appleovim Kartama izračuna kad krenuti nekamo. Doddy je ne čuva i ne prati kamo ideš."
   },
   "NSMicrophoneUsageDescription": {
-    "en": "To hear you, Doddy needs the microphone. Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. Your voice in a conversation is sent to ElevenLabs to run it, or to OpenAI if you switch Home's voice to OpenAI. A voice memo you record on a note stays on this iPhone.",
-    "hr": "Da bi te čuo, Doddy treba mikrofon. Doddy sluša dok razgovaraš s njim: nakon što dodirneš Razgovaraj s Doddyjem ili čim otvoriš Doddyja ako je to uključeno u Postavkama. Tvoj glas u razgovoru šalje se u ElevenLabs radi vođenja razgovora, ili u OpenAI ako na Početnoj prebaciš glas na OpenAI. Glasovna bilješka koju snimiš uz bilješku ostaje na ovom iPhoneu."
+    "en": "To hear you, Doddy needs the microphone. Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. Your voice in a conversation is sent to ElevenLabs to run it, or to OpenAI if you switch Home's voice to OpenAI. A voice memo you record on a note stays on this iPhone. A recording you start with Record stays on this iPhone too, and Doddy shows it the whole time it records.",
+    "hr": "Da bi te čuo, Doddy treba mikrofon. Doddy sluša dok razgovaraš s njim: nakon što dodirneš Razgovaraj s Doddyjem ili čim otvoriš Doddyja ako je to uključeno u Postavkama. Tvoj glas u razgovoru šalje se u ElevenLabs radi vođenja razgovora, ili u OpenAI ako na Početnoj prebaciš glas na OpenAI. Glasovna bilješka koju snimiš uz bilješku ostaje na ovom iPhoneu. Snimka koju pokreneš s Snimaj također ostaje na ovom iPhoneu, a Doddy to prikazuje cijelo vrijeme dok snima."
   },
   "NSRemindersFullAccessUsageDescription": {
     "en": "Doddy adds, changes, completes or deletes a reminder only after you tap Add, Change, Mark done or Delete. Turn this off in Settings, Connections.",
     "hr": "Doddy dodaje, mijenja, dovršava ili briše podsjetnik tek nakon što dodirneš Dodaj, Promijeni, Označi kao obavljeno ili Izbriši. Isključi to u Postavkama, Veze."
   },
   "NSSpeechRecognitionUsageDescription": {
-    "en": "Doddy writes out a voice memo on this iPhone when you record one, so you can check its words before saving. The recording and its words are not sent anywhere.",
-    "hr": "Doddy pretvara glasovnu bilješku u tekst na ovom iPhoneu kad je snimiš, da možeš provjeriti riječi prije spremanja. Snimka i njezine riječi ne šalju se nikamo."
+    "en": "Doddy writes out voice memos and recordings on this iPhone, so you can check and search their words. The audio and its words are not sent anywhere.",
+    "hr": "Doddy pretvara glasovne bilješke i snimke u tekst na ovom iPhoneu, da možeš provjeravati i pretraživati njihove riječi. Zvuk i njegove riječi ne šalju se nikamo."
   },
   "NSMotionUsageDescription": {
     "en": "Doddy reads your steps, walking distance and floors climbed from Motion & Fitness only when you ask, for one day of the last seven. In a voice conversation those numbers go to ElevenLabs, which runs Doddy's voice, or to OpenAI if you switch Home's voice to it. Doddy keeps none of them and reads nothing from Health. Turn this off in Settings, Connections.",

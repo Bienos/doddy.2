@@ -55,6 +55,10 @@ struct AppEnvironment: Sendable {
     var errandRepository: any ErrandRepository = UnavailableErrandRepository()
     /// The typed conversation with Doddy (ADR-585): messages kept on this iPhone until deleted, in the same file.
     var messageThreadRepository: any MessageThreadRepository = UnavailableMessageThreadRepository()
+    /// DODDY Capture (ADR-588): recordings, their parts and words, in the same file, and the folder of
+    /// audio next to it. `nil` when the memory store is not open: nothing can be recorded then.
+    var recordingRepository: (any RecordingRepository)?
+    var recordingFiles: RecordingFiles = .unavailable
 
     static let unavailable = AppEnvironment(
         memoryRepository: UnavailableMemoryRepository(),
@@ -107,7 +111,9 @@ struct AppEnvironment: Sendable {
                     outcomes: SQLiteOutcomeEventRepository(database: database)),
                 callCaseRepository: SQLiteCallCaseRepository(database: database),
                 errandRepository: SQLiteErrandRepository(database: database),
-                messageThreadRepository: SQLiteMessageThreadRepository(database: database))
+                messageThreadRepository: SQLiteMessageThreadRepository(database: database),
+                recordingRepository: SQLiteRecordingRepository(database: database),
+                recordingFiles: databaseFile.map(RecordingFiles.beside(database:)) ?? .temporary())
         } catch {
             return AppEnvironment(
                 memoryRepository: UnavailableMemoryRepository(),

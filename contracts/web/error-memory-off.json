@@ -1,0 +1,7 @@
+{
+  "error": {
+    "code": "capability_disabled",
+    "message": "Keeping notes on Doddy's server is off for this iPhone. Turn it on in Doddy first. Nothing was stored.",
+    "correlationId": "cb1a9355-e8ae-4990-9492-dc35b17a9beb"
+  }
+}

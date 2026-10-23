@@ -186,6 +186,8 @@ extension DoddyVoiceAttributes.ContentState {
             case .translating: return nil
             }
         }
+        // A failure is the facepalm, as on the voice screen; a normal end the fist pump.
+        if isFailed { return .facepalm }
         if isEnded { return .fistpump }
         if showsMuted { return .shush }
         let greets = !(greeting ?? "").isEmpty
@@ -199,6 +201,7 @@ extension DoddyVoiceAttributes.ContentState {
         case .wakeListening: return .crosslegged
         case .wakePaused: return .leaning
         case .ended: return .fistpump
+        case .failed: return .facepalm
         #if DEBUG
         case .testFixture: return .listening
         #endif
@@ -206,7 +209,7 @@ extension DoddyVoiceAttributes.ContentState {
     }
 
     private var face: IslandFace {
-        if isEnded { return savedCount > 0 ? .proud : .calm }
+        if isEnded { return savedCount > 0 && !isFailed ? .proud : .calm }
         if showsMuted { return .calm }
         switch status {
         case .listening: return .listening

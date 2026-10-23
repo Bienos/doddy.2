@@ -1,0 +1,28 @@
+{
+  "notes": [
+    {
+      "id": "00000000-0000-4000-8000-000000000001",
+      "text": "Anna's birthday is 14 March",
+      "source": "explicit_voice",
+      "kind": "fact",
+      "capturedAt": "2026-10-21T10:00:00.000Z"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000002",
+      "text": "Dentist on Friday at 9",
+      "source": "explicit_voice",
+      "kind": "commitment",
+      "capturedAt": "2026-10-20T10:00:00.000Z"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000003",
+      "text": "Zaproszenie od Łukasza na sobotę",
+      "source": "explicit_voice",
+      "kind": null,
+      "capturedAt": "2026-10-19T10:00:00.000Z"
+    }
+  ],
+  "total": 3,
+  "nextOffset": null,
+  "unreadable": 0
+}

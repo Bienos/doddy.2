@@ -1,4 +1,5 @@
 import { createServer, type Server } from "node:http";
+import { AssistService } from "./assist.js";
 import { AnyOfSessionVerifier, DevSessionVerifier, type SessionVerifier, SignedSessionVerifier, SupabaseSessionVerifier } from "./auth.js";
 import { defaultRegistry } from "./capabilities.js";
 import type { Config } from "./config.js";
@@ -6,6 +7,10 @@ import { DeviceSessionIssuer } from "./deviceSession.js";
 import { DocumentLinks } from "./documents.js";
 import { AnthropicClaudeProvider, type ClaudeProvider, MockClaudeProvider } from "./tools/claude.js";
 import { createHandler } from "./http.js";
+import { MemoryChat } from "./memory/chat.js";
+import { MemoryCipher } from "./memory/crypto.js";
+import { MEMORY_KEPT_DAYS } from "./memory/contract.js";
+import { MemoryService } from "./memory/service.js";
 import { ComposioCalendarProvider } from "./providers/composio.js";
 import { MockCalendarProvider } from "./providers/mock.js";
 import { UnconfiguredCalendarProvider, UnconfiguredToolsProvider } from "./providers/unconfigured.js";
@@ -17,6 +22,10 @@ import { MockToolsProvider } from "./tools/mock.js";
 import type { ToolsProvider } from "./tools/provider.js";
 import { CloudToolsService } from "./tools/service.js";
 import { MockWebSearchProvider, MonidWebSearchProvider, type WebSearchProvider } from "./tools/websearch.js";
+import { WebRoutes } from "./web/routes.js";
+import { oldestKeptDay } from "./web/logbook.js";
+import { REDEEM_LIMITS, SESSION_IDLE_MS, WebAuth } from "./web/sessions.js";
+import { WebStatic } from "./web/static.js";
 
 /** Composition root: picks adapters strictly from validated config (mock never silently replaces live). */
 export async function buildApp(
@@ -26,6 +35,8 @@ export async function buildApp(
     toolsProvider?: ToolsProvider;
     webSearch?: WebSearchProvider | null;
     claude?: ClaudeProvider | null;
+    /** The model that chats with a person's kept notes and conversations (ADR-603). */
+    chatClaude?: ClaudeProvider | null;
     store?: Store;
     verifier?: SessionVerifier;
   } = {},
@@ -83,19 +94,44 @@ export async function buildApp(
     completionMode: toolsProvider.mode === "mock" ? "mock" : (config.composio?.completionMode ?? "verifier"),
     log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`),
   });
-  // Beta device sign-in (ADR-563): first-device or invite codes, and a signing key (config checks both).
+  // Beta device sign-in (ADR-563): first-device, open (ADR-587: other iPhones get Ask Doddy only) or
+  // invite codes, and a signing key (config checks both).
   const deviceSessions =
     (config.deviceSignup !== "off" || config.deviceInviteCodes.length > 0) && config.sessionSigningKey
       ? new DeviceSessionIssuer(config.sessionSigningKey, { signup: config.deviceSignup, inviteCodes: config.deviceInviteCodes, store })
       : null;
+  // Doddy Web (ADR-600): only when DODDY_WEB_ORIGIN is set.
+  const webAuth = config.web
+    ? new WebAuth(store, config.web.origin, config.web.trustProxy, { ...REDEEM_LIMITS, perClientPerQuarter: config.web.signInTriesPerClient })
+    : null;
+  // Notes and conversations kept on request, and chat over them (ADR-603). Without DODDY_MEMORY_KEY the
+  // routes answer "not set up"; chat uses its own (smaller) model, live only with an Anthropic key.
+  const log = (line: Record<string, unknown>) => process.stdout.write(`${JSON.stringify(line)}\n`);
+  const memory = new MemoryService({ store, cipher: config.memoryKey ? new MemoryCipher(config.memoryKey) : null, log });
+  const chatClaude =
+    overrides.chatClaude !== undefined ? overrides.chatClaude : config.mode === "live" ? (config.chatClaude ? new AnthropicClaudeProvider(config.chatClaude) : null) : claude;
+  const memoryChat = new MemoryChat({ memory, store, claude: chatClaude, limits: config.limits, log });
+  const web =
+    config.web && webAuth
+      ? {
+          auth: webAuth,
+          routes: new WebRoutes(webAuth, store, verifier, config.limits.maxBodyBytes, { service: memory, chat: memoryChat }),
+          pages: new WebStatic(config.web.distDir, config.web.origin),
+        }
+      : null;
+  // Ask Doddy (ADR-587): always routed; without an Anthropic key it says "not set up" (503).
+  const assist = new AssistService({ store, claude, limits: config.limits, log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`) });
   const handler = createHandler({
     service,
     tools,
     verifier,
     deviceSessions,
+    web,
+    assist,
     documents: documentLinks ? { links: documentLinks, store } : null,
     appReturnUrl: config.appReturnUrl,
     maxBodyBytes: config.limits.maxBodyBytes,
+    trustProxy: config.trustProxy,
   });
   // Last line of defence: a handler failure closes that one connection, never the process.
   const server: Server = createServer((req, res) => {
@@ -109,13 +145,24 @@ export async function buildApp(
     void Promise.allSettled([service.sweepAbandoned(), tools.sweepAbandoned()])
       .then(() => store.prune(Date.now()))
       .then(() => store.pruneDocuments(Date.now()))
+      .then(() => store.pruneLogbook(oldestKeptDay(Date.now())))
+      .then(() => (web ? store.pruneWeb(Date.now(), SESSION_IDLE_MS) : 0))
       .catch(() => {}); // the store closed with the server; the next start sweeps again
+    // Kept memory (ADR-603) is swept on its own, so a failure in the steps above can't skip it, and its
+    // own failure is logged (the step's name only, never a row) instead of going unseen.
+    const cutoff = Date.now() - MEMORY_KEPT_DAYS * 86_400_000;
+    for (const [step, sweep] of [
+      ["conversations", () => store.pruneMemoryConversations(cutoff)],
+      ["notes", () => store.pruneMemoryNotes(cutoff)],
+    ] as const) {
+      sweep().catch(() => log({ level: "warn", event: "memory_sweep_failed", step }));
+    }
   };
   housekeeping();
   const pruning = setInterval(housekeeping, 3_600_000);
   pruning.unref();
   server.on("close", () => clearInterval(pruning));
-  return { server, store, service, tools, provider };
+  return { server, store, service, tools, provider, assist };
 }
 
 /** Which sign-ins this server accepts (ADR-526). */

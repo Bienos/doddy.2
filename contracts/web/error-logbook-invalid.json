@@ -1,0 +1,7 @@
+{
+  "error": {
+    "code": "invalid_request",
+    "message": "The Logbook summary wasn't valid (the summary as a whole). Nothing was stored.",
+    "correlationId": "8ea4a652-86b2-4662-bfc4-44f4f4fb0cc9"
+  }
+}

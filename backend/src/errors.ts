@@ -18,6 +18,7 @@ const HTTP_STATUS: Record<ErrorCode, number> = {
   provider_timeout: 504,
   malformed_provider_result: 502,
   live_not_configured: 503,
+  refused: 422,
   internal: 500,
 };
 
@@ -39,6 +40,7 @@ const MESSAGES: Record<ErrorCode, string> = {
   provider_timeout: "Google Calendar took too long to answer. Nothing was changed.",
   malformed_provider_result: "Google Calendar sent a result Doddy couldn't read, so nothing is shown.",
   live_not_configured: "Live connections are not set up on this server.",
+  refused: "Doddy can't help with that one.",
   internal: "Something went wrong on Doddy's server.",
 };
 

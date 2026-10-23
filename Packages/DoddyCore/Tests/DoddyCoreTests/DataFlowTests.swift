@@ -203,4 +203,57 @@ final class DataFlowSummaryTests: XCTestCase {
         state.newsWriterProvider = "anthropic"
         XCTAssertTrue(DataFlow.cloudAISummary(state).contains("Anthropic (daily news)"))
     }
+
+    func testWebSignInSaysWhatTheBrowserSeesAndThatNotesStayHere() throws {
+        // ADR-600.
+        var state = base
+        state.doddyServerSet = true
+        let row = try XCTUnwrap(DataFlow.rows(state).first { $0.id == "webSignIn" })
+        XCTAssertTrue(row.isActive)
+        XCTAssertTrue(row.what.contains("Never your saved notes"))
+        XCTAssertTrue(row.what.contains("files Doddy made"))
+        state.doddyServerSet = false
+        let off = try XCTUnwrap(DataFlow.rows(state).first { $0.id == "webSignIn" })
+        XCTAssertFalse(off.isActive)
+        XCTAssertNotNil(off.note)
+    }
+
+    func testKeptNotesAndConversationsHaveTheirOwnRowAndNameAnthropic() throws {
+        // ADR-603.
+        var state = base
+        state.doddyServerSet = true
+        let off = try XCTUnwrap(DataFlow.rows(state).first { $0.id == "webMemory" })
+        XCTAssertFalse(off.isActive)
+        XCTAssertEqual(off.what, "Nothing: both switches are off.")
+        XCTAssertTrue(DataFlow.rows(state).first { $0.id == "webSignIn" }?.what.contains("Never your saved notes, lists, profile or conversations.") ?? false)
+        XCTAssertFalse(DataFlow.cloudAISummary(state).contains("web"))
+
+        state.webNotesKept = true
+        let notes = try XCTUnwrap(DataFlow.rows(state).first { $0.id == "webMemory" })
+        XCTAssertTrue(notes.isActive)
+        XCTAssertTrue(notes.what.contains("saved notes (not private ones)"))
+        XCTAssertFalse(notes.what.contains("conversations"))
+        XCTAssertTrue(notes.destination.contains("Anthropic"))
+        XCTAssertTrue(notes.note?.contains("the server can read it") ?? false, "it says plainly that this is not end-to-end")
+
+        state.webConversationsKept = true
+        let both = try XCTUnwrap(DataFlow.rows(state).first { $0.id == "webMemory" })
+        XCTAssertTrue(both.what.contains("conversations (not private ones), never audio"))
+        XCTAssertTrue(both.note?.contains("1 year") ?? false)
+        XCTAssertTrue(DataFlow.cloudAISummary(state).contains("Anthropic (questions you ask on the web"))
+        XCTAssertTrue(DataFlow.networkSummary(state).contains("notes and conversations you keep there"))
+        // The browser's row no longer claims the browser never sees notes.
+        let browser = try XCTUnwrap(DataFlow.rows(state).first { $0.id == "webSignIn" })
+        XCTAssertFalse(browser.what.contains("Never your saved notes"))
+        XCTAssertTrue(browser.what.contains("notes and conversations you keep on Doddy's server"))
+    }
+
+    func testNothingIsSaidToGoToTheServerWithoutOne() throws {
+        var state = base
+        state.webNotesKept = true
+        state.doddyServerSet = false
+        let row = try XCTUnwrap(DataFlow.rows(state).first { $0.id == "webMemory" })
+        XCTAssertFalse(row.isActive)
+        XCTAssertEqual(row.note, "No Doddy server is set, so nothing goes there.")
+    }
 }

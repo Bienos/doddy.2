@@ -26,6 +26,7 @@ Each platform builds from its own XcodeGen spec into its own Xcode project. Gene
 | `Packages/DoddyCore` → `DoddyPersistence` (SQLite) | ✔ | | ✔ (its own database on that Mac) |
 | `voice-agent/`, `server/voice-token/` | ✔ (voice) | | |
 | `backend/`, `gateway/`, `server/messaging/`, `site/` | servers and site, not apps | | |
+| `web/` (Doddy Web, ADR-600/601; served by `backend/`) | browser app, not an Apple target: `docs/platforms/web.md` | | |
 
 ## Rules for changes
 - **Work on one platform:** change only its folders. Build its project.

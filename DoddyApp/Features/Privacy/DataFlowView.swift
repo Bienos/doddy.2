@@ -30,7 +30,9 @@ extension DataFlowState {
             // ElevenLabs is the default (ADR-546); a choice in Settings wins.
             voiceProvider: VoiceProvider.effective(
                 stored: defaults.string(forKey: VoiceProvider.preferenceKey), tokenServerSet: true),
-            learnedSharedWithVoice: defaults.bool(forKey: PreferenceKey.shareLearnedWithVoice))
+            learnedSharedWithVoice: defaults.bool(forKey: PreferenceKey.shareLearnedWithVoice),
+            webNotesKept: defaults.bool(forKey: WebMemoryModel.notesKey),
+            webConversationsKept: defaults.bool(forKey: WebMemoryModel.conversationsKey))
     }
 }
 
@@ -44,6 +46,9 @@ struct DataFlowView: View {
     @AppStorage(PreferenceKey.messagingServerURL) private var messagingServerURL = ""
     @AppStorage(PreferenceKey.pushUpdatesOn) private var pushOn = false
     @AppStorage(PreferenceKey.memoryCopyOn) private var memoryCopyOn = false
+    // Redraws this screen when a switch for keeping notes or conversations on Doddy's server changes (ADR-603).
+    @AppStorage(WebMemoryModel.notesKey) private var webNotesKept = false
+    @AppStorage(WebMemoryModel.conversationsKey) private var webConversationsKept = false
     @AppStorage(PreferenceKey.siriReadsNotes) private var siriReadsNotes = true
     @AppStorage(VoiceProvider.preferenceKey) private var voiceProvider = ""
 
