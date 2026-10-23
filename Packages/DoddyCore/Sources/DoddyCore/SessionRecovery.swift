@@ -26,6 +26,10 @@ public enum VoiceSessionEnd: Equatable, Sendable {
         case connectionLost
         /// The voice service reported an error.
         case error(String)
+        /// iOS took the audio away (a phone call, an alarm, Siri) and didn't give it back within
+        /// `VoiceInterruptionPolicy.resumeGraceSeconds`, so the app ended the conversation instead
+        /// of leaving it "listening" with a microphone that hears nothing (ADR-584).
+        case audioInterrupted
     }
 
     /// What the voice SDK said when it disconnected. ElevenLabs 3.3.1 reports `.user` for its own
@@ -59,6 +63,7 @@ public enum VoiceSessionEnd: Equatable, Sendable {
         case .dropped(.offline): "dropped-offline"
         case .dropped(.connectionLost): "dropped-connection"
         case .dropped(.error): "dropped-error"
+        case .dropped(.audioInterrupted): "dropped-interrupted"
         }
     }
 }
@@ -119,6 +124,9 @@ public enum SessionRecovery {
             return ("Stopped listening", "Doddy's microphone is off.")
         case .dropped(.offline):
             return ("You're offline", "Doddy's voice needs the internet.")
+        case .dropped(.audioInterrupted):
+            return ("The conversation was interrupted",
+                    "iOS took the microphone, for example for a phone call, so Doddy ended the conversation. He didn't hear anything after that. Talk again when you're ready.")
         case .dropped(let drop) where !connected:
             if case .error(let message) = drop, !message.isEmpty { return ("Couldn't connect", message) }
             return ("Couldn't connect", "Check your internet connection and try again.")
@@ -135,7 +143,63 @@ public enum SessionRecovery {
     public static func resumeNote(newest log: ConversationLog?, now: Date, timeZone: TimeZone = .current) -> String? {
         guard let log, let ended = log.ended, ended.hasPrefix("dropped"),
               now.timeIntervalSince(log.endedAt) <= resumeWindow, now >= log.endedAt else { return nil }
-        return "Note: the newest conversation below was cut off at \(VoiceContext.format(log.endedAt, timeZone: timeZone)): the connection dropped; neither you nor the user ended it. Say briefly that it was cut off and offer to carry on from its last lines. Do not assume you heard anything after them or that anything after them was done."
+        let cause = ended == VoiceSessionEnd.dropped(.audioInterrupted).code
+            ? "iOS took the microphone, for example for a phone call"
+            : "the connection dropped"
+        return "Note: the newest conversation below was cut off at \(VoiceContext.format(log.endedAt, timeZone: timeZone)): \(cause); neither you nor the user ended it. Say briefly that it was cut off and offer to carry on from its last lines. Do not assume you heard anything after them or that anything after them was done."
+    }
+
+    /// What Doddy says first when the newest conversation was cut off by a phone call or another
+    /// interruption a short while ago (ADR-584): that it was cut off, and where it stopped, in the
+    /// user's own last words. Nil otherwise (any other end, too long ago, nothing said yet).
+    ///
+    /// Only for a conversation the agent is also being told about (`withResumeNote`'s own test), so
+    /// it follows the same "Remember recent conversations" switch and never applies to a private
+    /// conversation. It names only what the kept lines show: the last thing the user said that was
+    /// more than a word or two, cut to `maxQuoteCharacters`. With nothing like that it says only that
+    /// the call cut the conversation off, and claims no memory of what was said.
+    /// The first message of both voice providers is fixed by the app, not written by the model, so
+    /// the resume note alone could only help from the second sentence on.
+    /// Polish and English; any other language gets English.
+    public static func interruptedOpening(
+        logs: [ConversationLog], now: Date, polish: Bool, timeZone: TimeZone = .current,
+        maxCharacters: Int = VoiceContext.defaultConversationsBudget
+    ) -> String? {
+        guard let newest = logs.max(by: { $0.endedAt < $1.endedAt }),
+              newest.ended == VoiceSessionEnd.dropped(.audioInterrupted).code,
+              now >= newest.endedAt, now.timeIntervalSince(newest.endedAt) <= resumeWindow,
+              VoiceContext.conversationsSentNextTime(logs, maxCharacters: maxCharacters, timeZone: timeZone).contains(newest.id)
+        else { return nil }
+        guard let quote = lastWords(of: newest) else {
+            return polish ? "Przepraszam, rozmowę przerwał telefon. Chcesz zacząć od nowa?"
+                          : "Sorry, the call cut us off. Want to start again?"
+        }
+        return polish ? "Przepraszam, rozmowę przerwał telefon. Skończyliśmy na „\(quote)”. Chcesz kontynuować?"
+                      : "Sorry, the call cut us off. We were on “\(quote)”. Want to carry on from there?"
+    }
+
+    /// The longest a quoted line may be: it is spoken aloud.
+    public static let maxQuoteCharacters = 80
+
+    /// The user's last line of at least three words, cleaned for being spoken back (no quotes,
+    /// brackets or line breaks) and cut at a word. Nil when the user said nothing like that.
+    static func lastWords(of log: ConversationLog) -> String? {
+        for line in log.lines.reversed() where line.fromUser {
+            let cleaned = String(line.text.unicodeScalars.map { scalar -> Character in
+                switch scalar {
+                case "\"", "“", "”", "„", "<", ">", "{", "}", "\\": return " "
+                default: return CharacterSet.controlCharacters.contains(scalar) || CharacterSet.newlines.contains(scalar) ? " " : Character(scalar)
+                }
+            })
+            let words = cleaned.split(whereSeparator: { $0.isWhitespace })
+            guard words.count >= 3 else { continue }
+            let joined = words.joined(separator: " ")
+            guard joined.count > maxQuoteCharacters else { return joined }
+            let cut = joined.prefix(maxQuoteCharacters)
+            let atWord = cut.lastIndex(of: " ").map { String(cut[..<$0]) } ?? String(cut)
+            return atWord + "…"
+        }
+        return nil
     }
 
     /// The conversations text for the agent (`VoiceContext.recentConversations` of `logs`), with the

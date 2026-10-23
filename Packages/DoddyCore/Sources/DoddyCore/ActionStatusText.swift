@@ -68,6 +68,9 @@ extension SessionRecovery {
             return ("Przestano słuchać", "Mikrofon Doddy’ego jest wyłączony.")
         case .dropped(.offline):
             return ("Jesteś offline", "Głos Doddy’ego potrzebuje internetu.")
+        case .dropped(.audioInterrupted):
+            return ("Rozmowa została przerwana",
+                    "iOS zabrał mikrofon, na przykład na połączenie telefoniczne, więc Doddy zakończył rozmowę. Nie słyszał niczego dalej. Porozmawiaj ponownie, kiedy zechcesz.")
         case .dropped(let drop) where !connected:
             if case .error(let message) = drop, !message.isEmpty { return ("Nie udało się połączyć", message) }
             return ("Nie udało się połączyć", "Sprawdź połączenie z internetem i spróbuj ponownie.")

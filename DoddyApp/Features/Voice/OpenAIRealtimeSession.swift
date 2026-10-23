@@ -387,7 +387,12 @@ final class RealtimeAudioIO: @unchecked Sendable {
         flushLocked()
         lock.unlock()
         player.stop()
-        if !engine.isRunning { try? engine.start() }
+        if !engine.isRunning {
+            // iOS deactivates the session for an interruption, and the engine can't start until it
+            // is active again (ADR-584). A long interruption ends the conversation in the controller.
+            try? AVAudioSession.sharedInstance().setActive(true)
+            try? engine.start()
+        }
         if engine.isRunning { player.play() }
         if hadQueue { onDrained() }
     }
