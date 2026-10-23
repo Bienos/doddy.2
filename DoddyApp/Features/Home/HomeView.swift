@@ -6,6 +6,10 @@ import SwiftUI
 /// at the bottom Messages (the typed conversation, ADR-585), Memories (a sheet) and + (Save a detail). Everything else Home
 /// used to list lives in the ••• menu. Cards appear only while something needs the user (a due
 /// reminder, a storage problem, an unfinished note, a one-time offer they can dismiss).
+///
+/// Talking happens here (ADR-595): a tap on Doddy starts the conversation on Home. While it runs,
+/// the words under him say what he is doing and show the last two lines, the bottom bar becomes
+/// Mute and End, and Transcript opens the whole conversation as a sheet.
 struct HomeView: View {
     @Binding var selectedTab: AppTab
     @Binding var showFind: Bool
@@ -45,6 +49,8 @@ struct HomeView: View {
     @AppStorage(VoiceConnection.reminders.preferenceKey) private var remindersOn = false
     @AppStorage(PreferenceKey.memoriesShowsLists) private var memoriesShowsLists = false
     private var router: ShortcutRouter { .shared }
+    /// The conversation started on Home (ADR-595).
+    private var conversation: HomeConversation { .shared }
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -80,6 +86,14 @@ struct HomeView: View {
                     .modifier(SlideIn(shown: buttonsShown, delay: 0))
             }
             .background(Theme.canvas.ignoresSafeArea())
+            // ADR-596: the island grows down with his waves while he talks on Home.
+            .overlay(alignment: .top) {
+                if let live = conversation.live {
+                    IslandExtension(look: islandLook(live))
+                        .transition(.opacity)
+                }
+            }
+            .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: conversation.live == nil)
             .animation(reduceMotion ? nil : .spring(duration: 0.5, bounce: 0.2), value: showMemories)
             .toolbar(.hidden, for: .navigationBar, .tabBar)
             .navigationDestination(for: UUID.self) { MemoryOrListView(id: $0) }
@@ -139,12 +153,41 @@ struct HomeView: View {
         ZStack {
             DoddyWordmark()
             HStack {
+                if conversation.live != nil {
+                    transcriptButton
+                }
                 Spacer()
                 moreMenu
             }
         }
         .frame(minHeight: 44)
-        .padding(.top, 8)
+        // Below the island's extension while he talks (ADR-596).
+        .padding(.top, conversation.live == nil ? 8 : 48)
+    }
+
+    private func islandLook(_ live: VoiceSessionController) -> IslandExtension.Look {
+        if live.isMuted { return .quiet }
+        switch live.phase {
+        case .speaking: return .speaking
+        case .listening: return .listening
+        default: return .quiet
+        }
+    }
+
+    /// Opens the whole conversation as a sheet (ADR-595); closing it doesn't end the conversation.
+    private var transcriptButton: some View {
+        Button { router.isVoicePresented = true } label: {
+            Label("Transcript", systemImage: "text.bubble")
+                .font(.footnote.weight(.semibold))
+                .padding(.horizontal, 12)
+                .frame(minHeight: 36)
+                .background(Theme.quietSurface, in: Capsule())
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(DoddyPressStyle())
+        .foregroundStyle(Theme.ink)
+        .accessibilityIdentifier("home.transcript")
     }
 
     /// What used to be listed down Home (ADR-545): the tools, the voice picker, the other tabs and
@@ -259,7 +302,7 @@ struct HomeView: View {
         }
         .buttonStyle(DoddyPressStyle())
         .disabled(!canTalk)
-        .accessibilityLabel("Talk to Doddy")
+        .accessibilityLabel(conversation.live == nil ? Text("Talk to Doddy") : Text("End the conversation"))
         .accessibilityIdentifier("home.talk")
         // Motion v2: his stage is the picture's floor, 31 pt above the box's bottom. It is laid over
         // the button, not inside it: a button is one accessibility element and would swallow the
@@ -286,7 +329,60 @@ struct HomeView: View {
         .task { await waveOnce() }
     }
 
+    @ViewBuilder
     private var status: some View {
+        if let live = conversation.live {
+            liveStatus(live)
+        } else {
+            restStatus
+        }
+    }
+
+    /// While he talks (ADR-595): what he is doing, then the last thing the user said and the last
+    /// thing he said. Only lines the provider sent; nothing here is made up on the phone.
+    private func liveStatus(_ live: VoiceSessionController) -> some View {
+        let you = live.lines.last(where: { $0.fromUser })
+        let him = live.lines.last(where: { !$0.fromUser })
+        return VStack(spacing: 12) {
+            ReadyDot()
+                .padding(.top, 14)
+            liveTitle(live)
+                .font(.largeTitle.weight(.bold)).tracking(-1)
+                .multilineTextAlignment(.center)
+                .accessibilityAddTraits(.isHeader)
+                .accessibilityIdentifier("home.liveStatus")
+            if let him {
+                if let you {
+                    Text(you.text)
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.secondaryText)
+                        .lineLimit(2)
+                }
+                Text(him.text)
+                    .font(.title3.weight(.semibold))
+                    .lineLimit(4)
+                    .accessibilityIdentifier("home.lastLine")
+            } else {
+                Text("Tap Doddy to finish")
+                    .font(.title3)
+                    .foregroundStyle(Theme.secondaryText)
+            }
+        }
+        .multilineTextAlignment(.center)
+        .frame(maxWidth: .infinity)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: live.lines.count)
+    }
+
+    private func liveTitle(_ live: VoiceSessionController) -> Text {
+        switch live.phase {
+        case .connecting: Text("Connecting…")
+        case .thinking: Text("Working on it…")
+        case .speaking: Text("Doddy is speaking")
+        default: live.isMuted ? Text("Muted") : Text("Listening…")
+        }
+    }
+
+    private var restStatus: some View {
         VStack(spacing: 12) {
             ReadyDot()
                 .padding(.top, 14)
@@ -319,7 +415,55 @@ struct HomeView: View {
 
     // MARK: Bottom
 
+    @ViewBuilder
     private var bottomBar: some View {
+        if let live = conversation.live {
+            talkBar(live)
+        } else {
+            restBar
+        }
+    }
+
+    /// While he talks (ADR-595): Mute and End, where Type and Memories were.
+    private func talkBar(_ live: VoiceSessionController) -> some View {
+        HStack(spacing: 12) {
+            Button {
+                Task { await live.toggleMute() }
+            } label: {
+                Group {
+                    if live.isMuted {
+                        Label("Unmute", systemImage: "mic.slash")
+                    } else {
+                        Label("Mute", systemImage: "mic")
+                    }
+                }
+                .frame(maxWidth: .infinity, minHeight: 56)
+                .foregroundStyle(Theme.canvas)
+                .background(Theme.ink, in: Capsule())
+            }
+            .buttonStyle(DoddyPressStyle())
+            .disabled(live.longTurn != .off)
+            .accessibilityIdentifier("home.mute")
+            Button {
+                Task { await live.stop() }
+            } label: {
+                Label("End", systemImage: "phone.down")
+                    .frame(maxWidth: .infinity, minHeight: 56)
+                    .background(Theme.quietSurface, in: Capsule())
+            }
+            .buttonStyle(DoddyPressStyle())
+            .accessibilityIdentifier("home.end")
+        }
+        .font(.body.weight(.semibold))
+        .lineLimit(1)
+        .dynamicTypeSize(...DynamicTypeSize.xxLarge)
+        .foregroundStyle(Theme.ink)
+        .padding(.horizontal, 16)
+        .padding(.bottom, 12)
+        .frame(maxWidth: .infinity)
+    }
+
+    private var restBar: some View {
         HStack(spacing: 12) {
             // "Messages" and "Memories" with their icons need more room than a narrow iPhone or a longer
             // language gives them (Polish: "Wiadomości", "Wspomnienia"): then Messages is its icon alone,
@@ -385,19 +529,19 @@ struct HomeView: View {
 
     private var canTalk: Bool { store.environment.capabilities.isAvailable(.voiceInput) }
 
-    /// He hops and perks up, then the conversation opens. At once under Reduce Motion or with his
-    /// pictures hidden.
+    /// He hops and perks up, then the conversation starts here on Home (ADR-595). At once under
+    /// Reduce Motion, with his pictures hidden, or when the tap ends the conversation.
     private func talk() {
         guard canTalk else { return }
-        guard !reduceMotion, !hideCharacterArt, ready == nil else {
-            router.isVoicePresented = true
+        guard !reduceMotion, !hideCharacterArt, ready == nil, conversation.live == nil else {
+            conversation.talk(store: store, profile: profiles.profile)
             return
         }
         tapHops &+= 1
         perking = true
         Task {
             try? await Task.sleep(for: .seconds(0.35))
-            router.isVoicePresented = true
+            conversation.talk(store: store, profile: profiles.profile)
             try? await Task.sleep(for: .seconds(0.8))
             perking = false
         }
