@@ -2,7 +2,7 @@
 
 Date: 2026-10-22. Branch `claude/gifted-einstein-61p6hq`. Design: Figma file `kR2N76fNeMmptR53RnMgSj` (frames `13:62`, `13:106`, `13:159`, `13:217`, `13:286`, `13:340`) and the clickable prototype it was drawn from. The build prompt is `prompts/WELCOME_FLOW_2026-10-22.md`.
 
-**Not compiled, not run, not seen on a device.** This environment has no Swift toolchain. Everything below says what was written, not what was proven.
+**Built and tested by CI, not seen on a device.** The code was written in an environment with no Swift toolchain. PR #132's hosted run (run 39872214301, head `5e2e654`) then passed: `core` (Linux, including the DoddyCore tests) and the macOS job (build, unit tests, 60 UI tests with 1 skipped and 0 failures, including the 6 `WelcomeUITests`; `scripts/ci.sh` RESULT: PASS). Nobody has looked at it on a phone, so the look, the feel and the animations are unchecked.
 
 ## What it is
 Five chapters you swipe right to left, one persistent Doddy who hops between them, and a sign-in sheet pinned to the bottom. It shows what Doddy does as one morning in Warsaw, using the copy deck (`design/website-what-can-doddy-do/COPY.md`). It is a scripted demonstration: nothing is saved, reminded, sent or looked up, and every scene card is tagged **Example**.
@@ -31,11 +31,10 @@ Five chapters you swipe right to left, one persistent Doddy who hops between the
 - Tests: `DoddyUITests/WelcomeUITests.swift`, `UITestLaunch` (`welcome:`).
 - Strings: 51 new Polish lines in `l10n/pl.json`; `DoddyApp/Resources/Localizable.xcstrings` regenerated. The other eight languages show English for these until `tools/l10n_batch.py` runs.
 
-## What ran here
-- `scripts/check_forbidden_capabilities.sh`: PASS.
-- `python3 -I tools/build_strings_catalog.py --check`: PASS. `python3 -I tools/l10n_batch.py status pl`: 0 missing.
-- DoddyCore tests: **NOT RUN** (no `swift`). Their expected values were checked by hand.
-- App and UI tests: **NOT RUN** (no Xcode). The SwiftUI was written without a compiler; expect compile fixes on the first Mac build.
+## What ran
+- Locally (Linux, no Swift): `check_forbidden_capabilities.sh` PASS, `build_strings_catalog.py --check` PASS, `l10n_batch.py status pl` 0 missing.
+- Hosted CI, PR #132, run 39872214301 on head `5e2e654`: `core` PASS (DoddyCore tests); macOS job PASS: XcodeGen, `build-for-testing`, unit tests, simulator restart, 60 UI tests (1 skipped, 0 failures) including `WelcomeUITests` 6 of 6 (five chapters by swipe, Skip, the sign-in options say "not connected" and only "Try Doddy without an account" moves on, the launch-argument skip, Reduce Motion, largest text).
+- Not covered by any test: how it looks and feels, the animations, the Dynamic Island scene on a Dynamic Island iPhone, dark mode, VoiceOver order, the Face ID lock over the welcome.
 
 ## Owner decisions
 1. **Caveat for Doddy's hand-written lines.** The design used Caveat; the app bundles no fonts, so `Theme.hand` is a system stand-in. Bundle Caveat (OFL), or keep the stand-in?
@@ -45,4 +44,4 @@ Five chapters you swipe right to left, one persistent Doddy who hops between the
 5. The Palace of Culture outline is simplified and unchecked against the building.
 
 ## Checks for a Mac and an iPhone
-Build `Doddy`, run `WelcomeUITests`. On a device: swipe feel and the hop, the sheet's two heights and its drag, the Face ID or Touch ID label, Dynamic Type at AX sizes (scene hides, text scrolls), Reduce Motion and Reduce Transparency, VoiceOver order, the Dynamic Island scene on a Dynamic Island iPhone, light and dark (the dark art backing comes from `CharacterArtImage`), and that the Face ID lock still covers the welcome.
+On a device: swipe feel and the hop, the sheet's two heights and its drag, the Face ID or Touch ID label, Dynamic Type at AX sizes (scene hides, text scrolls), Reduce Motion and Reduce Transparency, VoiceOver order, the Dynamic Island scene on a Dynamic Island iPhone, light and dark (the dark art backing comes from `CharacterArtImage`), and that the Face ID lock still covers the welcome.
