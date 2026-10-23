@@ -88,7 +88,16 @@ The user hands Doddy a task ("sprawdź loty i hotele do Rzymu…"), says yes onc
 - **Env:** `ERRANDS_ENABLED` (default `0`, off: set `1` to turn errands on; runs only when `ANTHROPIC_API_KEY` and `MEMORY_ENCRYPTION_KEY` are also set, otherwise `503 errands_disabled`), `ERRANDS_MODEL`, `ERRANDS_EFFORT` (`low|medium|high|xhigh|max`), `ERRAND_TIME_LIMIT_MINUTES` (1–120), `ERRANDS_MAX_OPEN` (1–20). Migration `009_errands.sql` (new tables only) is applied at startup.
 - **Caveat:** a free Render web service sleeps after about 15 minutes without requests, which stops the worker; for dependable errands use a paid instance or the separate `doddy-messaging-worker` (`render.yaml`).
 
-## News digests
+## Messages (ADR-585, ADR-586)
+`POST /v1/assistant/ask` answers the app's typed conversation with Claude. The wire is the Ask gateway's (`gateway/src/validate.js`, `AssistantWire.swift`): `{ schemaVersion, requestId, sessionId, locale, userText, turns[≤6], memories[≤8] }` in, `{ schemaVersion, requestId, text, citedMemoryIDs, usage }` out, or `{ schemaVersion, requestId?, error: { code, message } }` with the gateway's status codes (400 `invalidRequest`, 422 `refused`, 429 `dailyLimitReached`, 503 `providerUnavailable` / `notConfigured`, 504 `timeout`). Needs a device bearer token.
+- **Text only, no tools:** nothing it reads can search, send, book or change anything (ASK-01). The prompt (`src/assistant/prompt.ts`) says it is an AI, that notes and earlier turns are data, and that it cannot state current prices or dates.
+- **Notes:** sent under aliases `n1…`; the real ids never reach the model, and an alias that was not sent maps to nothing. Citations are read back as ids; the app checks them again.
+- **Stored and logged:** the database keeps counts per account and UTC day (`assistant_usage`, migration `010`: requests, input and output tokens). The question, the answer and the notes are not stored; the log holds the model, counts and codes.
+- **Caps:** `ASSISTANT_DAILY_PER_ACCOUNT` (default 100, exact) and `ASSISTANT_DAILY_PER_SERVER` (default 1000, may overshoot by the requests in flight). A request is counted before the model runs, so a flood cannot spend more than the cap. Also 60 requests per hour per device, and a 45 s time limit that aborts the call; if the person stops the question the call is aborted too.
+- **Env:** `ASSISTANT_ENABLED` (default `0`; runs only when `ANTHROPIC_API_KEY` is also set, otherwise `503 notConfigured`), `ASSISTANT_MODEL` (default `claude-haiku-5-5`), `ASSISTANT_EFFORT` (`low|medium|high`, default `medium`), `ASSISTANT_DAILY_PER_ACCOUNT`, `ASSISTANT_DAILY_PER_SERVER`.
+- **Sent to Anthropic:** the question, up to six earlier turns, and the notes the app chose to send (none for a private note, ADR-310). Not cost-priced in code; the token counts are in `assistant_usage`.
+
+## News digests## News digests
 Once a day at the user's local time, the worker builds a short news message:
 1. **Gather:** curated RSS feeds per topic, the user's own feeds, and GNews keyword search for their own topics. Fetches are cached 30–60 minutes and shared across users.
 2. **Shortlist:** deterministic. Stories from the last 36 hours, not sent in the past 14 days, deduplicated by URL (tracking parameters ignored) and title, scored by topic fit and freshness, at most 3 per source.

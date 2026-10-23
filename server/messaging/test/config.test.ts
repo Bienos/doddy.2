@@ -52,3 +52,25 @@ test("errands get a researcher only with an Anthropic key and the switch on", as
   assert.equal(keyed.researcher?.model, "claude-opus-5-5");
   assert.equal(providersFrom(loadConfig({ ...base, ANTHROPIC_API_KEY: "test-key", ERRANDS_ENABLED: "0" })).errands.researcher, undefined);
 });
+
+test("Messages: off by default, Haiku 5.5 at medium effort, 100 per account and 1000 per server; caps only go down", () => {
+  const base = { DATABASE_URL: "postgres://x/y" };
+  const c = loadConfig({ ...base, ASSISTANT_ENABLED: "", ASSISTANT_MODEL: "", ASSISTANT_EFFORT: "" });
+  assert.deepEqual(c.assistantSettings, { enabled: false, model: "claude-haiku-5-5", effort: "medium", dailyPerAccount: 100, dailyPerServer: 1000 });
+  const on = loadConfig({ ...base, ASSISTANT_ENABLED: "1", ASSISTANT_MODEL: "claude-sonnet-5-5", ASSISTANT_EFFORT: "low", ASSISTANT_DAILY_PER_ACCOUNT: "20", ASSISTANT_DAILY_PER_SERVER: "200" });
+  assert.deepEqual(on.assistantSettings, { enabled: true, model: "claude-sonnet-5-5", effort: "low", dailyPerAccount: 20, dailyPerServer: 200 });
+  for (const bad of [{ ASSISTANT_ENABLED: "yes" }, { ASSISTANT_EFFORT: "max" }, { ASSISTANT_DAILY_PER_ACCOUNT: "0" },
+    { ASSISTANT_DAILY_PER_ACCOUNT: "1001" }, { ASSISTANT_DAILY_PER_SERVER: "100001" }, { ASSISTANT_MODEL: "Claude Haiku" }]) {
+    assert.throws(() => loadConfig({ ...base, ...bad }), JSON.stringify(bad));
+  }
+});
+
+test("Messages gets a responder only with an Anthropic key and the switch on", async () => {
+  const { providersFrom } = await import("../src/providers/index.js");
+  const base = { DATABASE_URL: "postgres://x/y" };
+  assert.equal(providersFrom(loadConfig(base)).assistant.responder, undefined);
+  assert.equal(providersFrom(loadConfig({ ...base, ANTHROPIC_API_KEY: "test-key" })).assistant.responder, undefined, "keyed but not switched on");
+  assert.equal(providersFrom(loadConfig({ ...base, ASSISTANT_ENABLED: "1" })).assistant.responder, undefined, "switched on but no key");
+  const on = providersFrom(loadConfig({ ...base, ANTHROPIC_API_KEY: "test-key", ASSISTANT_ENABLED: "1", ASSISTANT_MODEL: "claude-sonnet-5-5" })).assistant;
+  assert.equal(on.responder?.model, "claude-sonnet-5-5");
+});

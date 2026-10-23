@@ -3,7 +3,7 @@ import SwiftUI
 
 /// Home (ADR-545): a calm screen after the owner's "I'm here" mockup. Doddy sits cross-legged in
 /// the middle and is the Talk button; under him an orange dot, "I'm here." and "Tap Doddy to talk";
-/// at the bottom Type (Ask Doddy), Memories (a sheet) and + (Save a detail). Everything else Home
+/// at the bottom Messages (the typed conversation, ADR-585), Memories (a sheet) and + (Save a detail). Everything else Home
 /// used to list lives in the ••• menu. Cards appear only while something needs the user (a due
 /// reminder, a storage problem, an unfinished note, a one-time offer they can dismiss).
 ///
@@ -125,7 +125,9 @@ struct HomeView: View {
                 case .focus: FocusView()
                 }
             }
-            .fullScreenCover(isPresented: $showAsk) { AskView(openSettings: { selectedTab = .settings }) }
+            .fullScreenCover(isPresented: $showAsk) {
+                MessagesView(repository: store.environment.messageThreadRepository, openSettings: { selectedTab = .settings })
+            }
             // The conversation opens once the start sheet has gone away.
             .sheet(isPresented: $showTranslator, onDismiss: {
                 if let choice = translatorChoice {
@@ -463,31 +465,13 @@ struct HomeView: View {
 
     private var restBar: some View {
         HStack(spacing: 12) {
-            HStack(spacing: 0) {
-                Button { showAsk = true } label: {
-                    Label("Type", systemImage: "keyboard")
-                        .padding(.horizontal, 16)
-                        .frame(minHeight: 44)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(DoddyPressStyle())
-                .disabled(!store.environment.capabilities.isAvailable(.textAssistant))
-                .accessibilityIdentifier("home.ask")
-                Rectangle().fill(Theme.separator).frame(width: 1, height: 24)
-                Button { showMemories = true } label: {
-                    Label("Memories", systemImage: "book.closed")
-                        .padding(.horizontal, 16)
-                        .frame(minHeight: 44)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(DoddyPressStyle())
-                .accessibilityIdentifier("home.memories")
+            // "Messages" and "Memories" with their icons need more room than a narrow iPhone or a longer
+            // language gives them (Polish: "Wiadomości", "Wspomnienia"): then Messages is its icon alone,
+            // still named "Messages" for VoiceOver.
+            ViewThatFits(in: .horizontal) {
+                bottomPill(messagesShowsTitle: true)
+                bottomPill(messagesShowsTitle: false)
             }
-            .font(.body.weight(.medium))
-            .lineLimit(1)
-            .padding(.horizontal, 6)
-            .frame(minHeight: 56)
-            .background(Theme.quietSurface, in: Capsule())
             Button { modal = .capture } label: {
                 Image(systemName: "plus")
                     .font(.title3.weight(.semibold))
@@ -505,6 +489,40 @@ struct HomeView: View {
         .padding(.horizontal, 16)
         .padding(.bottom, 12)
         .frame(maxWidth: .infinity)
+    }
+
+    private func bottomPill(messagesShowsTitle: Bool) -> some View {
+        HStack(spacing: 0) {
+            Button { showAsk = true } label: {
+                Group {
+                    if messagesShowsTitle {
+                        Label("Messages", systemImage: "bubble.left")
+                    } else {
+                        Label("Messages", systemImage: "bubble.left").labelStyle(.iconOnly)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(DoddyPressStyle())
+            .disabled(!store.environment.capabilities.isAvailable(.textAssistant))
+            .accessibilityIdentifier("home.ask")
+            Rectangle().fill(Theme.separator).frame(width: 1, height: 24)
+            Button { showMemories = true } label: {
+                Label("Memories", systemImage: "book.closed")
+                    .padding(.horizontal, 16)
+                    .frame(minHeight: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(DoddyPressStyle())
+            .accessibilityIdentifier("home.memories")
+        }
+        .font(.body.weight(.medium))
+        .lineLimit(1)
+        .padding(.horizontal, 6)
+        .frame(minHeight: 56)
+        .background(Theme.quietSurface, in: Capsule())
     }
 
     // MARK: Actions

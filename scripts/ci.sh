@@ -57,6 +57,8 @@ if command -v swift >/dev/null 2>&1; then
     run_step "App logic type-check (non-UI app files)" scripts/typecheck_app_logic.sh
     # The call screens' state, run with fakes for the server and the store (ADR-500).
     run_step "Call screens' state tests" scripts/test_call_cases_model.sh
+    # The Messages screen's state, run with fakes for the store and the server (ADR-585).
+    run_step "Messages screen's state tests" scripts/test_messages_model.sh
     run_step "Unfinished notes on real files" scripts/check_unfinished_note_store.sh
   else
     run_step "Swift package tests (DoddyCore)" swift test --package-path Packages/DoddyCore
