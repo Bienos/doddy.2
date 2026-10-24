@@ -55,7 +55,7 @@ struct HealthConnectionView: View {
                 }
 
                 section(Text("What leaves your phone")) {
-                    Text("Only a short summary of the week, and only when you allow it: in Messages when you send it yourself (to Doddy's server and Claude), or to Doddy's voice when you ask and say yes (ElevenLabs, with Google's Gemini or OpenAI). Never the raw data.")
+                    Text("Only a short summary of the week, and only when you allow it: in Messages when you send it yourself (to Doddy's server and Claude), or to Doddy's voice when you ask and say yes (ElevenLabs with an OpenAI model, or OpenAI directly). Never the raw data.")
                 }
 
                 section(Text("What stays here")) {
@@ -218,7 +218,7 @@ struct HealthConnectionView: View {
     private var voiceSection: some View {
         section(Text("Doddy's voice")) {
             if HealthVoiceConsent.isGranted(storedVersion: voiceConsentVersion) {
-                Text("When you ask \"How did my week go?\", Doddy asks first, then his voice hears this week's summary. It runs on ElevenLabs with Google's Gemini, or on OpenAI if you chose it.")
+                Text("When you ask \"How did my week go?\", Doddy asks first, then his voice hears this week's summary. It runs on ElevenLabs with an OpenAI model, or on OpenAI directly if you chose it.")
                 Button("Stop Doddy's voice hearing Health") {
                     voiceConsentVersion = 0
                     voiceConsentAt = 0
@@ -532,7 +532,7 @@ struct HealthShareConsentSheet: View {
                             point(Text("Nothing is sent by itself: each time, Messages opens with the text and you tap Send."))
                         } else {
                             point(Text("When you ask something like \"How did my week go?\", Doddy asks first, and only after your yes does his voice hear the same summary: the week's numbers, no raw data from Health."))
-                            point(Text("Doddy's voice runs on ElevenLabs, which answers with Google's Gemini, or on OpenAI if you chose it on Home. They get the summary as part of the conversation."))
+                            point(Text("Doddy's voice runs on ElevenLabs, which answers with an OpenAI model, or on OpenAI directly if you chose it on Home. Both get the summary as part of the conversation."))
                             point(Text("ElevenLabs keeps each conversation's recording and transcript. Doddy's settings there keep them with no time limit for now."))
                         }
                         point(Text("You can take this back on the Apple Health screen at any time."))

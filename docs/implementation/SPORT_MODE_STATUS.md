@@ -41,7 +41,7 @@ The summary: a question ("How did my week go? … No medical advice, please."), 
 | Health prompt: "None of it leaves this iPhone unless you send the week's summary to Doddy in Messages yourself, after a yes of its own" in ten languages | `project.yml`, `l10n/*_infoplist.json` | catalogs PASS; nine machine drafts |
 | 22 Polish lines | `l10n/pl.json` | catalogs PASS |
 
-**Different on purpose.** Not a voice tool: Doddy's voice runs on ElevenLabs with Google's Gemini (`voice-agent/session.json`), and ADR-620 allowed a summary to go to Claude only. "How did it go?" by voice needs the owner's decision first.
+**Different on purpose.** Not a voice tool: Doddy's voice runs on ElevenLabs (with an OpenAI model, `gpt-6-luna`, on the live agent read 24 Oct; `voice-agent/session.json` says Gemini and is out of date), and ADR-620 allowed a summary to go to Claude only. "How did it go?" by voice needs the owner's decision first.
 
 ## Step 3: "How did my week go?" by voice (ADR-623)
 
@@ -49,7 +49,7 @@ Owner, 24 Oct 2026: "1 tak" (Doddy's voice may hear the summary). Same branch.
 
 **What it does.** A new voice tool, `read_health_week`. When the person asks how their week, training or sleep went, Doddy says what he will look at and asks (ASK-01: a spoken yes or a tap on the card "Read your week from Apple Health?"). Then the iPhone works out the same week as the screen and gives the agent a short English summary with the rules for answering: rate briefly, compare with the week before, one change, no diagnosis or medical advice or calorie targets, and for chest pain, fainting, dizziness or unusual breathlessness, stop and see a doctor (112).
 
-**Its own consent.** On the Apple Health screen, **Doddy's voice** › **Let Doddy's voice hear the week**: a sheet that says the voice runs on ElevenLabs with Google's Gemini (or OpenAI if picked on Home), that they get the summary as part of the conversation, and that ElevenLabs keeps each conversation's recording and transcript, which Doddy's settings there keep with no time limit for now. Without that yes, or with Apple Health off, the tool answers "not allowed" and reads nothing. "Stop Doddy's voice hearing Health" takes it back.
+**Its own consent.** On the Apple Health screen, **Doddy's voice** › **Let Doddy's voice hear the week**: a sheet that says the voice runs on ElevenLabs with an OpenAI model (or OpenAI directly if picked on Home), that they get the summary as part of the conversation, and that ElevenLabs keeps each conversation's recording and transcript, which Doddy's settings there keep with no time limit for now. Without that yes, or with Apple Health off, the tool answers "not allowed" and reads nothing. "Stop Doddy's voice hearing Health" takes it back.
 
 | Part | File | Checked |
 |---|---|---|

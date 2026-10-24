@@ -21808,13 +21808,13 @@
         }
       }
     },
-    "Doddy's voice runs on ElevenLabs, which answers with Google's Gemini, or on OpenAI if you chose it on Home. They get the summary as part of the conversation.": {
+    "Doddy's voice runs on ElevenLabs, which answers with an OpenAI model, or on OpenAI directly if you chose it on Home. Both get the summary as part of the conversation.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Głos Doddy’ego działa na ElevenLabs, które odpowiada przez Gemini od Google, albo na OpenAI, jeśli wybrałeś je na ekranie głównym. Dostają podsumowanie jako część rozmowy."
+            "value": "Głos Doddy’ego działa na ElevenLabs, które odpowiada modelem OpenAI, albo bezpośrednio na OpenAI, jeśli wybrałeś je na ekranie głównym. Oba dostają podsumowanie jako część rozmowy."
           }
         }
       }
@@ -46816,13 +46816,13 @@
         }
       }
     },
-    "Only a short summary of the week, and only when you allow it: in Messages when you send it yourself (to Doddy's server and Claude), or to Doddy's voice when you ask and say yes (ElevenLabs, with Google's Gemini or OpenAI). Never the raw data.": {
+    "Only a short summary of the week, and only when you allow it: in Messages when you send it yourself (to Doddy's server and Claude), or to Doddy's voice when you ask and say yes (ElevenLabs with an OpenAI model, or OpenAI directly). Never the raw data.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tylko krótkie podsumowanie tygodnia i tylko za Twoją zgodą: w Wiadomościach, gdy sam je wyślesz (na serwer Doddy’ego i do Claude), albo do głosu Doddy’ego, gdy zapytasz i się zgodzisz (ElevenLabs z Gemini od Google albo OpenAI). Nigdy surowe dane."
+            "value": "Tylko krótkie podsumowanie tygodnia i tylko za Twoją zgodą: w Wiadomościach, gdy sam je wyślesz (na serwer Doddy’ego i do Claude), albo do głosu Doddy’ego, gdy zapytasz i się zgodzisz (ElevenLabs z modelem OpenAI albo bezpośrednio OpenAI). Nigdy surowe dane."
           }
         }
       }
@@ -87069,13 +87069,13 @@
         }
       }
     },
-    "When you ask \"How did my week go?\", Doddy asks first, then his voice hears this week's summary. It runs on ElevenLabs with Google's Gemini, or on OpenAI if you chose it.": {
+    "When you ask \"How did my week go?\", Doddy asks first, then his voice hears this week's summary. It runs on ElevenLabs with an OpenAI model, or on OpenAI directly if you chose it.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Gdy zapytasz „Jak mi poszedł tydzień?”, Doddy najpierw zapyta o zgodę, a potem jego głos usłyszy podsumowanie tego tygodnia. Głos działa na ElevenLabs z Gemini od Google albo na OpenAI, jeśli go wybrałeś."
+            "value": "Gdy zapytasz „Jak mi poszedł tydzień?”, Doddy najpierw zapyta o zgodę, a potem jego głos usłyszy podsumowanie tego tygodnia. Głos działa na ElevenLabs z modelem OpenAI albo bezpośrednio na OpenAI, jeśli go wybrałeś."
           }
         }
       }

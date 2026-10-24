@@ -1,8 +1,9 @@
 import Foundation
 
 // Sport mode step 3 (ADR-623): "How did my week go?" by voice. The owner allowed Doddy's voice to
-// hear the week's summary (24 Oct 2026, "1 tak"). The voice runs on ElevenLabs with Google's
-// Gemini, or OpenAI if the person picked it on Home, so it has a consent of its own, separate from
+// hear the week's summary (24 Oct 2026, "1 tak"). The voice runs on ElevenLabs with an OpenAI
+// model (`gpt-6-luna` on the live agent, read 24 Oct; voice-agent/session.json still says Gemini),
+// or on OpenAI directly if the person picked it on Home, so it has a consent of its own, separate from
 // the Messages one (ADR-622), and each call still asks first (ASK-01). The iPhone works the numbers
 // out; the agent gets only the lines below.
 
