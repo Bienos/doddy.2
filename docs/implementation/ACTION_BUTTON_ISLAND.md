@@ -1,5 +1,7 @@
 # Action Button → Dynamic Island → voice (ADR-579)
 
+> **24 Oct 2026 (ADR-632):** wired again after ADR-593 had both controls open the app (owner: "Action button talk to Doddy opens app not Dynamic Island :("). Both controls run `TalkButtonIntent`. What differs from the page below: **there is no Settings › Action Button choice** (dropped in the 23 Oct merge), so every press follows the **Dynamic Island** row of the table; `talkLaunchMode` is no longer read. Setup step 4 doesn't exist. The guide's line is now "Under Controls, Talk to Doddy talks in the Dynamic Island without opening Doddy… Under Shortcut, and on iOS 17, it opens Doddy." The device matrix is still NOT VERIFIED.
+
 Owner, 22 Oct 2026: "When I press the physical iPhone Action Button, DODDY frequently opens its full application instead of starting the intended Dynamic Island experience." Wanted: **Action Button → Doddy in the Dynamic Island → talk**, without the app.
 
 ## Why the Action Button opened the app

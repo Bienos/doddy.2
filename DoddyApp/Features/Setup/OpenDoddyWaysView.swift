@@ -269,6 +269,9 @@ struct OpenDoddyWaysView: View {
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 16))
+            // ADR-632: the control talks in the island; Shortcut (and iOS 17) runs the App
+            // Shortcut, which always opens the app.
+            Text("Under Controls, Talk to Doddy talks in the Dynamic Island without opening Doddy, and a second press ends it. Under Shortcut, and on iOS 17, it opens Doddy.")
             openSettingsButton
             Text("The names can differ a little between iOS versions. Doddy can't see this setting.")
                 .hintStyle()

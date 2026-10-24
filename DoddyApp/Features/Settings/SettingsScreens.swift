@@ -205,7 +205,7 @@ struct WaysSettingsView: View {
             }
             Section {
                 // What Siri, the Shortcuts app and Back Tap's "Talk to Doddy" do. The Action Button's
-                // control has its own choice in Settings (ADR-579).
+                // control doesn't follow it: it talks in the Dynamic Island (ADR-632).
                 Picker("When Siri or Back Tap opens Doddy", selection: $backTapActionRaw) {
                     Text("Start a conversation").tag(BackTapAction.conversation.rawValue)
                     Text("Only open Doddy").tag(BackTapAction.openApp.rawValue)

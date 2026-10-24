@@ -1,11 +1,11 @@
 import AppIntents
 
 /// "Talk to Doddy": opens the app in the foreground and starts (or focuses) the voice
-/// conversation. Used by the App Shortcut (Siri, Shortcuts, Action Button, a personal shortcut
-/// for Back Tap) and by both Control Center / Lock Screen / Action Button controls: "Talk to
-/// Doddy" and, since ADR-593, the one that was "Talk in the Island". During an active Back Tap
-/// test the invocation is the test's receipt instead. `TalkInIslandIntent` (ADR-577, Shortcuts
-/// app only) is the one that starts a conversation without opening the app.
+/// conversation. Used by the App Shortcut (Siri, the Shortcuts app, Action Button › Shortcut, a
+/// personal shortcut for Back Tap) and the Home Screen widget. The Control Center, Lock Screen and
+/// Action Button controls run `TalkButtonIntent` instead, which talks in the Dynamic Island
+/// without opening the app (ADR-632). During an active Back Tap test the invocation is the test's
+/// receipt instead.
 ///
 /// Compiled into the app and the widget extension, because the control needs the type. It
 /// opens the app, so iOS runs `perform()` in the app's process; in the extension it does nothing.
