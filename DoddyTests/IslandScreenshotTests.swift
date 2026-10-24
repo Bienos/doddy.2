@@ -317,11 +317,12 @@ private struct IslandBoardPicture: View {
                 }
             }
             .padding(.horizontal, 4)
+            // What iOS gives the bottom region (about 110 pt, measured on the native screenshot).
+            .frame(height: IslandBottomView<EmptyView>.fitsHeight)
         }
         .padding(.top, 8)
-        .padding(.bottom, 10)
         .padding(.horizontal, 14)
-        .frame(width: 371)
+        .frame(width: 371, height: 160, alignment: .top)
         .background(Color.islandBlack)
         .overlay(alignment: .top) {
             // The camera's place (Design-notes.md: x 122.83, y 8, 125.34 x 29 pt).

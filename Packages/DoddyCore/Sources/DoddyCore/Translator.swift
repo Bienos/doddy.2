@@ -392,12 +392,21 @@ extension VoiceToolReply {
         switch (setup.kind, setup.other) {
         case (.faceToFace, let other?):
             lines.append("First say exactly this to them, in \(other.englishName): \"\(other.hello)\" Then translate every turn.")
+            // ADR-611: it started without asking, so the user may not have said what yet.
+            lines.append(Self.askWhatToTranslate(setup.owner))
         case (.faceToFace, nil):
             lines.append("Their language isn't known yet. Tell the user in one short sentence, in \(setup.owner.englishName), to let them say something first. When they first speak, say the AI translator disclosure to them in their language before anything else, then translate.")
         case (.listen, _):
             lines.append("Say nothing to anyone else. Translate each thing you hear into \(setup.owner.englishName) for the user, one short line at a time.")
         }
         return lines.joined(separator: " ")
+    }
+
+    /// ADR-611 (owner, 24 Oct 2026): translator mode starts without asking; if the user hasn't
+    /// said what to translate, Doddy asks, once, in their own language.
+    static func askWhatToTranslate(_ owner: TranslatorLanguage) -> String {
+        "If the user hasn't said yet what to translate, ask them once, in \(owner.englishName), in one short line, what to translate"
+            + (owner.code == "pl" ? " (for example \"Co mam przetłumaczyć?\")" : "") + "; then only translate."
     }
 
     public static let translatorDeclined = "declined: the user chose not to start translating. Nothing changed; talk normally."

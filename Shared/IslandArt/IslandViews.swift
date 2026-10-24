@@ -194,6 +194,8 @@ struct IslandSignView: View {
         case .text(let text):
             IslandText(text)
                 .font(.system(size: presentation == .minimal ? 12 : 13, weight: .bold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
                 .monospacedDigit()
                 .foregroundStyle(presentation == .minimal && live ? Color.islandOrange : Color.islandCream)
         case .elapsed:
@@ -471,6 +473,11 @@ struct IslandMinimalView: View {
     let scene: IslandScene
     let startedAt: Date
 
+    private static func isText(_ sign: IslandSign) -> Bool {
+        if case .text = sign { return true }
+        return false
+    }
+
     var body: some View {
         ZStack(alignment: scene.minimalSignCentred ? .center : .trailing) {
             if let pose = scene.pose {
@@ -481,7 +488,8 @@ struct IslandMinimalView: View {
                 IslandArtView(art: scene.art(.minimal), face: scene.face, live: scene.live, showsHands: false)
             }
             IslandSignView(sign: scene.minimalSign, presentation: .minimal, live: scene.live, startedAt: startedAt)
-                .frame(width: scene.minimalSignCentred ? 36 : 16)
+                // A language code ("EN") needs more than the bars' 16 pt, or it breaks into two lines.
+                .frame(width: scene.minimalSignCentred ? 36 : (Self.isText(scene.minimalSign) ? 22 : 16))
                 .padding(.trailing, scene.minimalSignCentred ? 0 : 2)
         }
     }

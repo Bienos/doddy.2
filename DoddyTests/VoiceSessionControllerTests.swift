@@ -89,11 +89,11 @@ final class VoiceSessionControllerTests: XCTestCase {
         XCTAssertEqual(t.link.results.first?.text, VoiceToolReply.eventDeleted(event, calendar: .current))
     }
 
-    /// ASK-01 (ADR-483, `docs/trust/ASK_FIRST.md`): starting translator mode asks first, with a
-    /// spoken yes or a tap, and then starts at once with no second card (the 16 Oct change that
-    /// took out the translator's own setup card).
+    /// ADR-611 (owner, 24 Oct 2026: "nie pytaj, od razu działaj, przełącz się"): translator mode
+    /// starts the moment the agent asks for it, with no card or question, and the result tells
+    /// Doddy to ask what to translate. ADR-542 had it ask first.
     @MainActor
-    func testTranslatorAsksFirstThenStartsWithoutASecondCard() async {
+    func testTranslatorStartsAtOnceWithoutAQuestion() async {
         let t = Harness()
         defer { t.restore() }
         t.controller.beginForTesting(link: t.link)
@@ -101,21 +101,11 @@ final class VoiceSessionControllerTests: XCTestCase {
         await t.controller.receiveToolCallForTesting(
             name: VoiceToolName.startTranslator, id: "translator-1", parameters: #"{"their_language":"es"}"#).value
 
-        guard case .ask(let id, _, let needsTap, let toolName, _)? = t.controller.pendingAction else {
-            return XCTFail("expected the ASK-01 question, got \(String(describing: t.controller.pendingAction))")
-        }
-        XCTAssertEqual(id, "translator-1")
-        XCTAssertEqual(toolName, VoiceToolName.startTranslator)
-        XCTAssertFalse(needsTap, "a spoken yes is enough")
-        XCTAssertNil(t.controller.translator, "nothing starts before the answer")
-        XCTAssertTrue(t.link.results.isEmpty)
-
-        await t.controller.confirmPendingAction()
-
-        XCTAssertNil(t.controller.pendingAction, "no second card after the yes")
+        XCTAssertNil(t.controller.pendingAction, "no card, no question")
         XCTAssertEqual(t.controller.translator?.setup.other?.code, "es")
         XCTAssertEqual(t.link.results.map(\.id), ["translator-1"])
         XCTAssertTrue(t.link.results.first?.text.hasPrefix("started:") == true)
+        XCTAssertTrue(t.link.results.first?.text.contains("what to translate") == true)
     }
 
     // MARK: Declined card runs nothing

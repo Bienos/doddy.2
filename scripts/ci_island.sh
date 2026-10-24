@@ -19,7 +19,8 @@ echo "Destination: $dest"
 xcodebuild build-for-testing -project Doddy.xcodeproj -scheme Doddy -destination "$dest"
 # The island's views drawn in every state, in English and Polish, and their checks.
 xcodebuild test-without-building -project Doddy.xcodeproj -scheme Doddy -destination "$dest" \
-  -only-testing:DoddyTests/IslandScreenshotTests -only-testing:DoddyTests/IslandBaselineTests
+  -only-testing:DoddyTests/IslandScreenshotTests -only-testing:DoddyTests/IslandBaselineTests \
+  -only-testing:DoddyTests/VoiceSessionControllerTests/testTranslatorStartsAtOnceWithoutAQuestion
 # As in ci.sh (ADR-561): the UI tests start on a freshly restarted simulator.
 xcrun simctl shutdown "$sim_id" 2>/dev/null || true
 xcrun simctl bootstatus "$sim_id" -b
