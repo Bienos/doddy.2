@@ -22,6 +22,7 @@ import { MockToolsProvider } from "./tools/mock.js";
 import type { ToolsProvider } from "./tools/provider.js";
 import { CloudToolsService } from "./tools/service.js";
 import { MockWebSearchProvider, MonidWebSearchProvider, type WebSearchProvider } from "./tools/websearch.js";
+import { AccountContext } from "./web/chatContext.js";
 import { WebRoutes } from "./web/routes.js";
 import { oldestKeptDay } from "./web/logbook.js";
 import { REDEEM_LIMITS, SESSION_IDLE_MS, WebAuth } from "./web/sessions.js";
@@ -110,7 +111,9 @@ export async function buildApp(
   const memory = new MemoryService({ store, cipher: config.memoryKey ? new MemoryCipher(config.memoryKey) : null, log });
   const chatClaude =
     overrides.chatClaude !== undefined ? overrides.chatClaude : config.mode === "live" ? (config.chatClaude ? new AnthropicClaudeProvider(config.chatClaude) : null) : claude;
-  const memoryChat = new MemoryChat({ memory, store, claude: chatClaude, limits: config.limits, log });
+  // The chat also reads the account's other parts (ADR-604): Logbook, apps, documents, receipts.
+  const account = new AccountContext({ store, memory, tools });
+  const memoryChat = new MemoryChat({ memory, store, claude: chatClaude, limits: config.limits, account, log });
   const web =
     config.web && webAuth
       ? {

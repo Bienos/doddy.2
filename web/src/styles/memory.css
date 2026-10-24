@@ -28,30 +28,6 @@
 
 .memory-privacy-list { margin-top: 6px; }
 
-/* Ask Doddy */
-.ask { display: grid; gap: 18px; }
-.ask-hint { margin: 0; }
-.ask-turns { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
-.ask-turn { display: grid; gap: 6px; max-width: 760px; padding: 14px 18px; border-radius: 20px; border: 1px solid var(--separator); background: var(--page); min-width: 0; }
-.ask-turn-user { justify-self: end; background: var(--quiet-surface); }
-.ask-turn-doddy { justify-self: start; }
-.ask-who { font: 700 0.8125rem/1.4 var(--text); text-transform: uppercase; letter-spacing: 0.04em; color: var(--secondary-text); }
-.ask-text { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
-.ask-sources { font-size: 0.9375rem; }
-.ask-sources summary { cursor: pointer; color: var(--accent-text); font-weight: 600; min-height: 32px; }
-.ask-sources ul { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 10px; }
-.ask-sources li > .pill { justify-self: start; margin-left: 0; }
-.ask-sources li { display: grid; gap: 4px; border-left: 3px solid var(--orange-cue); padding-left: 12px; }
-.ask-source-text { overflow-wrap: anywhere; }
-.ask-sources time { color: var(--secondary-text); font-size: 0.875rem; }
-.ask-form { display: grid; gap: 10px; max-width: 760px; }
-.ask-input {
-  font: inherit; color: inherit; width: 100%; min-height: 96px; resize: vertical; padding: 12px 14px;
-  border-radius: 16px; border: 1.5px solid var(--separator); background: var(--page);
-}
-.ask-input:focus-visible { outline: 3px solid var(--orange-cue); outline-offset: 2px; }
-.ask-actions { display: flex; flex-wrap: wrap; gap: 8px; }
-
 @media (max-width: 560px) {
   .memory-turn { grid-template-columns: minmax(0, 1fr); gap: 2px; }
 }

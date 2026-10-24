@@ -1,6 +1,7 @@
 import { Link } from "react-router";
 import { api } from "../api/client.js";
 import { useResource } from "../api/useResource.js";
+import { CHAT_ENABLED } from "../chat/suggestions.js";
 import { DoddyFigure } from "../components/Brand.js";
 import { DocumentItem } from "../components/DocumentItem.js";
 import { PageHeader } from "../components/PageHeader.js";
@@ -11,7 +12,8 @@ import { refreshWhileWorking } from "./DocumentsPage.js";
 
 /**
  * The calm starting point (ADR-545's "I'm here", on a bigger screen). Every card is real data
- * from the server; there is no simulated progress, sample day or chat box that isn't wired up.
+ * from the server; there is no simulated progress or sample day. The one way to talk to Doddy is
+ * the chat (ADR-604), one click away.
  */
 export function HomePage() {
   const { t, dateTime } = useI18n();
@@ -28,7 +30,17 @@ export function HomePage() {
     <>
       <div className="home-hero">
         <DoddyFigure size={120} />
-        <PageHeader title={t("home.greeting")} lead={t("home.lead")} />
+        <PageHeader
+          title={t("home.greeting")}
+          lead={t("home.lead")}
+          actions={
+            CHAT_ENABLED ? (
+              <Link to="/chat" className="button">
+                {t("home.chat")}
+              </Link>
+            ) : undefined
+          }
+        />
       </div>
 
       {working.length > 0 ? (

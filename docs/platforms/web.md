@@ -13,6 +13,8 @@ A signed-in workspace in the browser for the same account the iPhone uses on Dod
 
 - **Memory** and **Ask Doddy** (ADR-603, `docs/product/CLOUD_MEMORY.md`): the notes and conversations a person chose to keep on Doddy's server, as text, kept for a year, encrypted with a server-held key; read, searched, downloaded and deleted from the browser, and a chat where Claude (`DODDY_CHAT_MODEL`, default `claude-haiku-5-5`) answers from them and cites its sources. **The iPhone's sending is written but its screens are not compiled or run on a device**, so the pages open on "nothing is kept" and are marked Soon in the menu (`IPHONE_SYNCS_MEMORY` in `web/src/memory/config.ts`). The server needs `DODDY_MEMORY_KEY`, or it says "not set up".
 
+- **Chat** (ADR-604, `docs/product/WEB_CHAT.md`, branch `claude/doddy-web-chat`): `/chat`, laid out like ChatGPT in Doddy's colours (the list of chats, the conversation, a round message box, suggested questions, sources under each answer, "What I can see"). It replaces Ask Doddy (`/ask` opens it). Claude answers from the kept notes and conversations **and the account**: Logbook's counts added up per period, counts over kept conversations, connected apps, the documents Doddy made and his receipts, all as cited data. So it already answers about apps, documents and activity; notes, conversations and usage counts follow when the iPhone sends them. The list of chats is kept **in this browser only** and deleted at Sign out. Tested with the demo model only; not deployed.
+
 It does not have tasks or projects. Home says so instead of showing empty versions of them.
 
 ## Design (ADR-594)
@@ -37,7 +39,9 @@ The phone can list and sign out every browser. A browser can sign itself or othe
 | `Packages/DoddyCore/.../WebLinkClient.swift`, `WebSignInModel.swift` | The iPhone's client and screen state (tested on Linux) |
 | `DoddyApp/Features/Web/WebSignInView.swift` | The iPhone screen (compiled only by the hosted Mac build) |
 | `web/src/logbook/`, `web/src/pages/LogbookPage.tsx` | Logbook: the summary contract (`schema.ts`, zod), the catalog of tools and categories, seeded example days, adding days up and filling gaps, CSV, formats, and the hand-built SVG charts |
-| `web/src/memory/`, `web/src/pages/MemoryPage.tsx`, `AskPage.tsx` | Memory and Ask Doddy: the schemas of what the server answers, the flags, the two pages |
+| `web/src/memory/`, `web/src/pages/MemoryPage.tsx` | Memory: the schemas of what the server answers (chat's too), the flags, the page |
+| `web/src/pages/ChatPage.tsx`, `web/src/chat/`, `src/styles/chat.css` | The chat (ADR-604): the page, the list of chats kept in this browser (`threads.ts`), the answer's light formatting (`RichText.tsx`), the suggested questions |
+| `backend/src/web/chatContext.ts`, `logbookDigest.ts` | What the chat reads about the account, and Logbook's days added up for it |
 | `backend/src/memory/` | Kept notes and conversations: the cipher, the contract, search, the service, chat and its routes |
 | `tools/gen_web_assets.py` | Copies the website's colours (`CandidateTokens.swift`, light and dark), the app's metrics, wordmark, five `WholeDoddy_*` poses and the favicon into `web/`; `--check` runs in CI |
 
@@ -61,7 +65,7 @@ curl -s -X POST localhost:8787/v1/web/link-codes -H "authorization: Bearer $TOKE
 | Command | What |
 |---|---|
 | `npm test` in `backend/` | All backend tests; `test/web.test.ts` is the web part (sign-in, isolation, CSRF, expiry, revocation, documents, pages, logs) |
-| `npm run typecheck && npm test` in `web/` | Type-check and unit tests (Vitest, jsdom) against the server's fixtures; 76 tests, about 50 of them for Logbook |
+| `npm run typecheck && npm test` in `web/` | Type-check and unit tests (Vitest, jsdom) against the server's fixtures; 117 tests (24 Oct), about 50 for Logbook and 25 for the chat |
 | `npm run build` in `backend/` and `web/`, then `npm run e2e` in `web/` | Playwright: the real backend (mock providers, in-memory database) serving the built app, Chromium at desktop and phone width |
 | `DODDY_SCREENS=<folder> npx playwright test e2e/screens.spec.ts` in `web/` | Screenshots in light and dark, for a person to look at |
 | `scripts/ci.sh --core-only` | All of the above. The end-to-end run is SKIPPED (not PASS) where there's no Playwright Chromium, as in the hosted Linux job |

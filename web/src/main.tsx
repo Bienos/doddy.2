@@ -9,6 +9,7 @@ import "./styles/tokens.css";
 import "./styles/app.css";
 import "./styles/logbook.css";
 import "./styles/memory.css";
+import "./styles/chat.css";
 
 const root = document.getElementById("root");
 if (root) {

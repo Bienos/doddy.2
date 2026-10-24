@@ -133,5 +133,13 @@ export function memoryRoutes({ service, chat }: { service: MemoryService; chat: 
       access: "either",
       run: async ({ caller, body }) => ({ status: 200, body: await chat.answer(caller!.userId, body) }),
     },
+    {
+      // What the chat can read for this person now (ADR-604): switches, counts and account names, no content.
+      method: "GET",
+      pattern: /^\/v1\/web\/chat\/context$/,
+      template: "GET /v1/web/chat/context",
+      access: "either",
+      run: async ({ caller }) => ({ status: 200, body: await chat.context(caller!.userId) }),
+    },
   ];
 }

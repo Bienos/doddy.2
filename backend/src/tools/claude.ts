@@ -375,7 +375,9 @@ export class MockClaudeProvider implements ClaudeProvider {
     if (this.delayMs) await new Promise((r) => setTimeout(r, this.delayMs));
     const props = (input.schema.properties ?? {}) as { sources?: { items?: { enum?: string[] } } };
     const first = props.sources?.items?.enum?.[0];
-    const value = first ? { answer: "DEMO: here is what your saved note says.", sources: [first] } : { answer: "DEMO: a general answer, not from your notes." };
+    // Notes are n1…, conversations c1…, the chat's account parts their own names (ADR-604).
+    const what = !first ? null : /^n\d+$/.test(first) ? "your saved note says" : /^c\d+$/.test(first) ? "your conversation says" : `your account's ${first} shows`;
+    const value = first ? { answer: `DEMO: here is what ${what}.`, sources: [first] } : { answer: "DEMO: a general answer, not from your notes." };
     return { value, usage: { inputTokens: 0, outputTokens: 0 } };
   }
 }

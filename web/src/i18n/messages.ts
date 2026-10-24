@@ -5,6 +5,7 @@
  */
 
 import { logbookEn, logbookPl } from "./logbookMessages.js";
+import { chatEn, chatPl } from "./chatMessages.js";
 import { memoryEn, memoryPl } from "./memoryMessages.js";
 
 const en = {
@@ -148,6 +149,7 @@ const en = {
   "crash.reload": "Reload",
   ...logbookEn,
   ...memoryEn,
+  ...chatEn,
 } as const;
 
 export type MessageKey = keyof typeof en;
@@ -294,6 +296,7 @@ const pl: Messages = {
   "crash.reload": "Odśwież",
   ...logbookPl,
   ...memoryPl,
+  ...chatPl,
 };
 
 export const LANGUAGES = ["pl", "en"] as const;

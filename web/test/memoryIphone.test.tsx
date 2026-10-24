@@ -30,6 +30,6 @@ describe("Memory once the iPhone can send it", () => {
     expect(card).not.toHaveTextContent("isn't built");
     const nav = screen.getByRole("navigation", { name: "Workspace" });
     expect(within(nav).getByRole("link", { name: "Memory" })).toHaveAttribute("aria-current", "page");
-    expect(within(nav).getByRole("link", { name: "Ask Doddy" })).toBeInTheDocument();
+    expect(within(nav).getByRole("link", { name: "Chat" })).toBeInTheDocument();
   });
 });

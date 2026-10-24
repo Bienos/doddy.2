@@ -1,6 +1,6 @@
 import type { z } from "zod";
 import { LogbookDeleted, LogbookView } from "../logbook/schema.js";
-import { ChatReply, ConversationDeleted, ConversationDetail, ConversationList, MemoryDeleted, MemoryOverview, NotesList } from "../memory/schema.js";
+import { ChatContext, ChatReply, ConversationDeleted, ConversationDetail, ConversationList, MemoryDeleted, MemoryOverview, NotesList } from "../memory/schema.js";
 import { CurrentSession, DocumentList, ErrorBody, ReceiptList, SessionList, SignedOut, ToolsCatalog } from "./schemas.js";
 
 /**
@@ -142,9 +142,14 @@ export const api = {
     const response = await send("/v1/web/memory/export");
     return response.blob();
   },
-  /** A question about your own notes and conversations, answered by Claude. Nothing is stored. */
-  chat: (body: { message: string; history: { role: "user" | "assistant"; text: string }[]; locale: string }, signal?: AbortSignal) =>
+  /**
+   * A message to Doddy's chat (ADR-603, ADR-604): Claude answers from your kept notes and
+   * conversations and your account (Logbook, apps, documents, activity). Nothing is stored on the server.
+   */
+  chat: (body: { message: string; history: { role: "user" | "assistant"; text: string }[]; locale: string; timeZone?: string }, signal?: AbortSignal) =>
     json(ChatReply, "/v1/web/chat", { method: "POST", body, signal }),
+  /** Which parts of the account the chat can read now, and whether it is set up on this server. */
+  chatContext: (signal?: AbortSignal) => json(ChatContext, "/v1/web/chat/context", { signal }),
   /** The document's file as a blob. Not shown in the page: it is saved through a download. */
   async documentFile(id: string): Promise<Blob> {
     const response = await send(`/v1/web/documents/${encodeURIComponent(id)}/file`);
