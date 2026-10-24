@@ -45,7 +45,7 @@ as a short Listening before Doddy answers. `vad_score` is not needed.
 
 - Run: `make test-core` (1,672 tests, 0 failures, 10 new), `scripts/check_island_art.sh` (pass),
   `scripts/typecheck_app_logic.sh` (26 files, pass), Swift 6.1.2 on Linux.
-- **Not compiled:** the SwiftUI and ActivityKit edits (hosted Mac CI is the first compile). **Not seen on a
+- **Hosted CI, 24 Oct, [run 40060080233](https://github.com/Bienos/doddy.2/actions/runs/40060080233) on `3f623a8` (started by hand):** `core` and the macOS job green; `scripts/ci.sh` built the app and widget and passed the unit and UI tests. The simulator does not run a real conversation, so this proves it compiles and nothing regressed, not that the island now says Speaking. **Not seen on a
   device**: whether the island now says Speaking, expands, and feels smoother. Measure on a ProMotion iPhone,
   Release build (Instruments: Time Profiler, Hitches, SwiftUI).
 
