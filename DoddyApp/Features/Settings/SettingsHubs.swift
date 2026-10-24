@@ -1,7 +1,7 @@
 import DoddyCore
 import SwiftUI
 
-// The pages behind Settings' short rows (ADR-607). Each gathers rows that used to sit on the top level,
+// The pages behind Settings' short rows (ADR-614). Each gathers rows that used to sit on the top level,
 // unchanged: same pages, same preference keys, same accessibility identifiers.
 
 /// Which memory screen a row opens. Notes, lists and search are their own screen (the Memories tab,
@@ -10,7 +10,7 @@ enum MemoryOpening: Equatable {
     case notes, lists, find
 }
 
-/// Settings › Doddy's memory (ADR-607): the one place for what Doddy remembers. It replaces Memories in
+/// Settings › Doddy's memory (ADR-614): the one place for what Doddy remembers. It replaces Memories in
 /// the tab bar and at the bottom of Home, the "Memories" sheet, and three separate Settings rows.
 struct DoddyMemorySettingsView: View {
     @Environment(MemoryStore.self) private var store
@@ -64,7 +64,7 @@ struct DoddyMemorySettingsView: View {
     }
 }
 
-/// Settings › Connections (ADR-607): everything Doddy connects to, the switch that pauses it all, and
+/// Settings › Connections (ADR-614): everything Doddy connects to, the switch that pauses it all, and
 /// what he did with it. Calendar, reminders and contacts; online accounts; the web; typed questions.
 struct ConnectionsSettingsView: View {
     @AppStorage(ConnectionPause.preferenceKey) private var pauseAllConnections = false
@@ -142,7 +142,7 @@ struct ConnectionsSettingsView: View {
     }
 }
 
-/// Settings › Notifications (ADR-607): everything that can reach the user without opening Doddy.
+/// Settings › Notifications (ADR-614): everything that can reach the user without opening Doddy.
 struct NotificationsSettingsView: View {
     var body: some View {
         Form {

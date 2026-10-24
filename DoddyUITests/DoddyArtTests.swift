@@ -81,7 +81,7 @@ final class DoddyArtTests: XCTestCase {
         for paused in [true, false] {
             let app = launch(pauseAll: paused)
             app.goToTab("settings")
-            // Settings › Connections (ADR-607).
+            // Settings › Connections (ADR-614).
             app.openSettingsPage("settings.connectionsHub")
             let toggle = app.switches["settings.pauseAll"]
             // A lazy Form row: it exists only once scrolled to.
@@ -101,7 +101,7 @@ final class DoddyArtTests: XCTestCase {
     func testEmptyActivityShowsDoddyWaiting() {
         let app = launch()
         app.goToTab("settings")
-        // Settings › Connections › What Doddy did (ADR-607).
+        // Settings › Connections › What Doddy did (ADR-614).
         app.openSettingsPage("settings.activity", under: "settings.connectionsHub")
         XCTAssertTrue(app.navigationBars["What Doddy did"].waitForExistence(timeout: 5))
         XCTAssertTrue(marker("doddy.pose.crosslegged", in: app).waitForExistence(timeout: 5))

@@ -70,7 +70,7 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertTrue(app.waitForTab("home", timeout: 5))
         XCTAssertEqual(app.staticTexts["home.greeting"].label, "Hi, Ola.")
         app.goToTab("settings")
-        // Settings › Doddy's memory › My profile (ADR-580, ADR-607).
+        // Settings › Doddy's memory › My profile (ADR-580, ADR-614).
         app.openSettingsPage("settings.profile", under: "settings.memory")
         let share = app.switches["settings.shareProfileWithVoice"]
         XCTAssertTrue(app.reveal(share))
@@ -92,7 +92,7 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertTrue(app.text("No memories yet").waitForExistence(timeout: 5))
 
         app.goToTab("settings")
-        // Settings' groups open their own pages (ADR-580): My profile (in Doddy's memory, ADR-607),
+        // Settings' groups open their own pages (ADR-580): My profile (in Doddy's memory, ADR-614),
         // then Privacy, on Settings' first page.
         app.openSettingsPage("settings.profile", under: "settings.memory")
         XCTAssertTrue(app.reveal(app.text("Nothing saved. Doddy only keeps what you review and save.")))
@@ -247,7 +247,7 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertFalse(app.buttons["home.backTap.later"].exists)
 
         app.descendants(matching: .any)["tab.settings"].firstMatch.tap()
-        // Settings › Voice › Siri (ADR-580, ADR-607); on iPhone the same page also has Back Tap.
+        // Settings › Voice › Siri (ADR-580, ADR-614); on iPhone the same page also has Back Tap.
         app.openSettingsPage("settings.ways", under: "settings.voice")
         // The Back Tap row would sit on the same page as this switch, so look once it is on screen.
         let siri = app.switches["settings.siriReadsNotes"]
@@ -291,7 +291,7 @@ final class LaunchSmokeTests: XCTestCase {
         let app = launch(onboardingDone: true)
         XCTAssertTrue(app.waitForTab("settings", timeout: 5))
         app.goToTab("settings")
-        // Settings › Connections › What Doddy did (ADR-607).
+        // Settings › Connections › What Doddy did (ADR-614).
         app.openSettingsPage("settings.activity", under: "settings.connectionsHub")
         XCTAssertTrue(app.navigationBars["What Doddy did"].waitForExistence(timeout: 5))
     }
@@ -301,7 +301,7 @@ final class LaunchSmokeTests: XCTestCase {
         let app = launch(onboardingDone: true)
         XCTAssertTrue(app.waitForTab("settings", timeout: 5))
         app.goToTab("settings")
-        // Settings › Advanced › Try a plan card (ADR-607).
+        // Settings › Advanced › Try a plan card (ADR-614).
         app.openSettingsPage("settings.planPractice", under: "settings.advanced")
         XCTAssertTrue(app.navigationBars["Try a plan card"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.descendants(matching: .any)["practice.banner"].exists)

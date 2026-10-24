@@ -6,7 +6,7 @@ Before: one Form of about 25 sections and 70 rows, with 17 explanatory paragraph
 
 Code: `DoddyApp/Features/Settings/SettingsView.swift` (the groups), `SettingsScreens.swift` (the pages), `SettingsSupport.swift` (the profile editor, exports, voice pickers, moved unchanged).
 
-## Shorter again: fourteen rows (ADR-607, 24 Oct 2026)
+## Shorter again: fourteen rows (ADR-614, 24 Oct 2026)
 
 Owner, 24 Oct 2026: fewer places for memories, Files instead of Memories at the bottom, memory as one row in Settings, cut Settings down so it is easy to understand, and one option for the connections. Again **no preference was removed, renamed or re-keyed**, and every row keeps its accessibility identifier; rows moved onto the pages below.
 
@@ -21,7 +21,7 @@ Owner, 24 Oct 2026: fewer places for memories, Files instead of Memories at the 
 
 **Removed from the top level:** Profile and "Voice and interaction" and "Memory and privacy" and "Connected apps" as group names; the separate rows for personality, island style, island expansion, Siri, Memories, What Doddy knows, the six connection rows and the six notification rows. **Connected Apps** (the first Google Calendar screen) needs the development server address and token, so for everyone else it only said "not set up" and listed planned apps; it now sits in Advanced under that server. Online accounts (ADR-563) is the real one.
 
-**Elsewhere in the app:** Home's bottom bar is Messages and **Files** (ADR-607); the tab bar off Home is Home and Settings, and Settings stays selected while notes or lists are open; Home's ••• menu lost Memories and Recordings (Recordings is in Files).
+**Elsewhere in the app:** Home's bottom bar is Messages and **Files** (ADR-614); the tab bar off Home is Home and Settings, and Settings stays selected while notes or lists are open; Home's ••• menu lost Memories and Recordings (Recordings is in Files).
 
 ## New structure (ADR-580, 22 Oct; replaced by the table above)
 

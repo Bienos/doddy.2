@@ -3,7 +3,7 @@ import SwiftUI
 
 /// Home (ADR-545): a calm screen after the owner's "I'm here" mockup. Doddy sits cross-legged in
 /// the middle and is the Talk button; under him an orange dot, "I'm here." and "Tap Doddy to talk";
-/// at the bottom Messages (the typed conversation, ADR-585), Files (a sheet, ADR-607) and + (Save a detail). Everything else Home
+/// at the bottom Messages (the typed conversation, ADR-585), Files (a sheet, ADR-614) and + (Save a detail). Everything else Home
 /// used to list lives in the ••• menu. Cards appear only while something needs the user (a due
 /// reminder, a storage problem, an unfinished note, a one-time offer they can dismiss).
 ///
@@ -36,7 +36,7 @@ struct HomeView: View {
     /// When the eyes last took the finger's position; a touch sample is 120 Hz, they need 30 (ADR-604).
     /// A reference, so writing it does not make Home redraw.
     @State private var follow = FingerFollowThrottle()
-    /// Files (ADR-607): what Doddy made and the recordings. It took Memories' place; notes and lists are in
+    /// Files (ADR-614): what Doddy made and the recordings. It took Memories' place; notes and lists are in
     /// Settings › Doddy's memory.
     @State private var showFiles = false
     @State private var showAsk = false

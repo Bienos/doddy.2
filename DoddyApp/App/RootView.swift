@@ -594,7 +594,7 @@ struct RootView: View {
                 // A sibling reserves real viewport space. A TabView-level safeAreaInset
                 // left nested NavigationStack's final action behind the bar on iOS 27.
                 // Home has its own bar and ••• menu, which reach Settings (ADR-545); notes and lists
-                // are reached from Settings › Doddy's memory (ADR-607).
+                // are reached from Settings › Doddy's memory (ADR-614).
                 if selectedTab != .home {
                     DoddyTabBar(selectedTab: $selectedTab)
                 }
@@ -602,7 +602,7 @@ struct RootView: View {
         }
     }
 
-    /// Settings › Doddy's memory opens notes, lists or search (ADR-607): the Memories screen, which no
+    /// Settings › Doddy's memory opens notes, lists or search (ADR-614): the Memories screen, which no
     /// longer has a tab of its own. Lists or notes is the screen's own switch (ADR-216).
     private func openMemories(_ opening: MemoryOpening) {
         switch opening {

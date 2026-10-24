@@ -874,7 +874,7 @@ final class VoiceSessionController {
     private func startOpenAI(_ mode: VoiceConnectionMode, variables: [String: String]) async {
         let attempt = startAttempt
         guard case .tokenServer(let endpoint) = mode else {
-            // Only the developer connection gets here (ADR-551); it reaches ElevenLabs only (ADR-607).
+            // Only the developer connection gets here (ADR-551); it reaches ElevenLabs only (ADR-614).
             fail(NSLocalizedString("OpenAI's voice needs a Doddy voice account (Sign in with Apple). The developer connection only reaches ElevenLabs.", comment: ""))
             return
         }

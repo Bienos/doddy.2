@@ -122,7 +122,7 @@ struct AppearanceSettingsView: View {
 
 /// Settings › Voice: how he sounds and talks, who runs his voice, starting on open, the island, Siri and
 /// Back Tap, and the voice account. Personality, the island and Siri were their own Settings rows until
-/// ADR-607.
+/// ADR-614.
 struct VoiceSettingsView: View {
     @AppStorage(PreferenceKey.listenOnOpen) private var listenOnOpen = OpeningPreferences.listenOnOpenDefault
     @AppStorage(LaunchPreferencesMigration.islandExpandsKey) private var islandExpands = true
@@ -719,7 +719,7 @@ struct AdvancedSettingsView: View {
                         .accessibilityIdentifier("settings.termsAccepted")
                 }
             }
-            // Rows that were on the main Settings page until ADR-607: a demo and a replay.
+            // Rows that were on the main Settings page until ADR-614: a demo and a replay.
             Section {
                 NavigationLink {
                     PlanPracticeView()
@@ -789,7 +789,7 @@ struct AdvancedSettingsView: View {
                 Label(tokenMessage, systemImage: "exclamationmark.triangle").foregroundStyle(Theme.error)
             }
             // The first Google Calendar screen (needs this development server and token). Online accounts
-            // in Settings › Connections replaced it for everyone else (ADR-563, ADR-607).
+            // in Settings › Connections replaced it for everyone else (ADR-563, ADR-614).
             NavigationLink {
                 ConnectedAppsScreen()
             } label: {

@@ -1,6 +1,6 @@
 import Foundation
 
-/// Files Doddy made on his server (ADR-564), as the iPhone's Files sheet lists them (ADR-607). It reads
+/// Files Doddy made on his server (ADR-564), as the iPhone's Files sheet lists them (ADR-614). It reads
 /// the same `GET /v1/web/documents` the web app uses (ADR-600), with the iPhone's own session, so no new
 /// server route is needed. A file's bytes are fetched only when the person taps it, from
 /// `GET /v1/web/documents/:id/file`. The server keeps each file a week and says so (`keptDays`); the

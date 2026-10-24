@@ -265,7 +265,7 @@ struct MemoryLinkCard: View {
     }
 }
 
-/// Home and Settings (ADR-607). Notes and lists are reached from Settings › Doddy's memory, so while
+/// Home and Settings (ADR-614). Notes and lists are reached from Settings › Doddy's memory, so while
 /// they are open Settings is the selected tab, and tapping it goes back there.
 struct DoddyTabBar: View {
     @Binding var selectedTab: AppTab
@@ -289,7 +289,7 @@ struct DoddyTabBar: View {
         .accessibilityLabel("App navigation")
     }
 
-    /// Doddy's memory belongs to Settings (ADR-607).
+    /// Doddy's memory belongs to Settings (ADR-614).
     private func isSelected(_ tab: AppTab) -> Bool {
         selectedTab == tab || (tab == .settings && selectedTab == .memories)
     }
