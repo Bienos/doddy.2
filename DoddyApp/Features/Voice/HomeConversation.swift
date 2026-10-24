@@ -73,7 +73,7 @@ final class HomeConversation {
             stored: UserDefaults.standard.string(forKey: VoiceProvider.preferenceKey), tokenServerSet: true)
         let auth = VoiceAuthSession.shared
         await auth.restore()
-        return (auth.isSignedIn || VoiceConfig.directVoiceEnabled) && VoiceProviderConsent.isGranted(for: provider)
+        return (auth.isSignedIn || VoiceConfig.usesDirectAgent(for: provider)) && VoiceProviderConsent.isGranted(for: provider)
     }
 
     private func start(store: MemoryStore, profile: ApprovedProfile) async {

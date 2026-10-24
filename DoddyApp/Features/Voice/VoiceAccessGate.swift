@@ -10,7 +10,7 @@ struct VoiceAccessGate: View {
     @State private var session = VoiceAuthSession.shared
     @State private var consented = false
     /// A DODDY voice account, or (Debug builds only, ADR-551) the developer's direct connection.
-    private var accessReady: Bool { session.isSignedIn || VoiceConfig.directVoiceEnabled }
+    private var accessReady: Bool { session.isSignedIn || VoiceConfig.usesDirectAgent(for: provider) }
 
     var body: some View {
         ScrollView {

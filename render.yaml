@@ -207,6 +207,8 @@ services:
         sync: false
       - key: ERRANDS_ENABLED # "0" (the default) refuses new errands and starts no queued one; "1" turns them on
         value: "0"
+      - key: WATCHES_ENABLED # Price watches (shopping stage 2): "0" (the default) answers 503 watches_disabled and checks nothing; "1" reads a shop page about 4 times a day for 30 days (the worker does the checks; needs MEMORY_ENCRYPTION_KEY)
+        value: "0"
       - key: ASSISTANT_ENABLED # Messages (ADR-586): "0" (the default) answers 503 notConfigured; "1" lets the app's typed conversation ask Claude
         value: "0"
       - key: SERPER_API_KEY # Shopping errands (ADR-607): Google Shopping offers for Poland; empty means find_offers answers "not set up"
@@ -295,6 +297,8 @@ services:
       - key: ANTHROPIC_API_KEY
         sync: false
       - key: ERRANDS_ENABLED # "0" (the default) refuses new errands and starts no queued one; "1" turns them on
+        value: "0"
+      - key: WATCHES_ENABLED # Price watches (shopping stage 2): "0" (the default) answers 503 watches_disabled and checks nothing; "1" reads a shop page about 4 times a day for 30 days (the worker does the checks; needs MEMORY_ENCRYPTION_KEY)
         value: "0"
       - key: ASSISTANT_ENABLED # Messages (ADR-586): "0" (the default) answers 503 notConfigured; "1" lets the app's typed conversation ask Claude
         value: "0"

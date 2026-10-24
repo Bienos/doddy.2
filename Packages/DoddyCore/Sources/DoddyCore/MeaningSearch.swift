@@ -87,6 +87,9 @@ public actor MeaningIndex {
         cache = cache.filter { keep.contains($0.key) }
         var pairs: [(record: MemoryRecord, vector: [Float])] = []
         for note in notes {
+            // Find cancels the search on every keystroke: a cancelled pass stops here instead of reading
+            // every remaining note with the model. Vectors already made stay cached for the next pass.
+            if Task.isCancelled { return [] }
             let text = MeaningSearch.text(of: note)
             if let cached = cache[note.id], cached.text == text {
                 pairs.append((note, cached.vector))

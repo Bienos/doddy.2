@@ -105,6 +105,9 @@ public struct ShoppingOffer: Codable, Equatable, Sendable, Identifiable {
     /// The shop's delivery text, as the source gave it.
     public let delivery: String?
     public let url: String
+    /// A tracked link to the same page, present only when Doddy has an affiliate programme with this shop
+    /// (ADR-612). The result card shows it as a partner link; `url` stays the shop's own page.
+    public let buyUrl: String?
     public let site: String?
     public let evidence: Evidence
     /// When the code saw this price.
@@ -114,14 +117,15 @@ public struct ShoppingOffer: Codable, Equatable, Sendable, Identifiable {
     /// Doddy's short words on the offer ("42 dB · 10 kompletów"), never a price.
     public let notes: String?
 
-    public init(id: String, title: String, shop: String, price: Money, delivery: String? = nil, url: String, site: String? = nil,
-                evidence: Evidence, seenAt: Date, gtin: String? = nil, notes: String? = nil) {
+    public init(id: String, title: String, shop: String, price: Money, delivery: String? = nil, url: String, buyUrl: String? = nil,
+                site: String? = nil, evidence: Evidence, seenAt: Date, gtin: String? = nil, notes: String? = nil) {
         self.id = id
         self.title = title
         self.shop = shop
         self.price = price
         self.delivery = delivery
         self.url = url
+        self.buyUrl = buyUrl
         self.site = site
         self.evidence = evidence
         self.seenAt = seenAt
@@ -129,7 +133,10 @@ public struct ShoppingOffer: Codable, Equatable, Sendable, Identifiable {
         self.notes = notes
     }
 
-    private enum CodingKeys: String, CodingKey { case id, title, shop, price, delivery, url, site, evidence, seenAt, gtin, notes }
+    /// True when "Buy at" opens a partner link: the screen, the report and the voice agent say so (ADR-612).
+    public var isAffiliate: Bool { buyUrl != nil }
+
+    private enum CodingKeys: String, CodingKey { case id, title, shop, price, delivery, url, buyUrl, site, evidence, seenAt, gtin, notes }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -139,6 +146,7 @@ public struct ShoppingOffer: Codable, Equatable, Sendable, Identifiable {
         price = try c.decode(Money.self, forKey: .price)
         delivery = try c.decodeIfPresent(String.self, forKey: .delivery)
         url = try c.decode(String.self, forKey: .url)
+        buyUrl = try c.decodeIfPresent(String.self, forKey: .buyUrl)
         site = try c.decodeIfPresent(String.self, forKey: .site)
         // A missing evidence is not a checked price.
         evidence = try c.decodeIfPresent(Evidence.self, forKey: .evidence) ?? .unknown
@@ -157,6 +165,7 @@ public struct ShoppingOffer: Codable, Equatable, Sendable, Identifiable {
         try c.encode(price, forKey: .price)
         try c.encodeIfPresent(delivery, forKey: .delivery)
         try c.encode(url, forKey: .url)
+        try c.encodeIfPresent(buyUrl, forKey: .buyUrl)
         try c.encodeIfPresent(site, forKey: .site)
         try c.encode(evidence.rawValue, forKey: .evidence)
         try c.encode(ShoppingDates.format(seenAt), forKey: .seenAt)
@@ -350,6 +359,9 @@ enum ShoppingResultText {
             if let tradeoff = pick.tradeoff { parts.append("trade-off: \(clip(tradeoff, 200))") }
             if let notes = offer.notes { parts.append("notes: \(clip(notes, 160))") }
             out.append(parts.joined(separator: " · "))
+        }
+        if shown.contains(where: { $0.offer.isAffiliate }) {
+            out.append("Some of these offers' \"Buy at\" buttons open a partner link: Doddy may earn a commission if the user buys there. It never changes the prices or the order of the picks; say so if asked.")
         }
         if !shopping.priorities.isEmpty {
             out.append("What the user said matters most, in order: " + shopping.priorities.map { "\"\(clip($0, 40))\"" }.joined(separator: ", "))

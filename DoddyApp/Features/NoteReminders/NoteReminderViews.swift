@@ -243,7 +243,12 @@ struct DueRemindersView: View {
         VStack(alignment: .leading, spacing: 8) {
             NavigationLink(value: record.id) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(record.currentText).lineLimit(4)
+                    // A private note's words only after Face ID (ADR-310); Home showed them here before.
+                    if PrivateNotesStore.current().contains(record.id) && !AppLock.shared.privateUnlocked {
+                        Label("Private note", systemImage: "lock.fill").foregroundStyle(Theme.secondaryText)
+                    } else {
+                        Text(record.currentText).lineLimit(4)
+                    }
                     Text("You asked to see this again · \(ReminderFormat.short(reminder))")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)

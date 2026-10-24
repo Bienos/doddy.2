@@ -6,7 +6,24 @@ Before: one Form of about 25 sections and 70 rows, with 17 explanatory paragraph
 
 Code: `DoddyApp/Features/Settings/SettingsView.swift` (the groups), `SettingsScreens.swift` (the pages), `SettingsSupport.swift` (the profile editor, exports, voice pickers, moved unchanged).
 
-## New structure
+## Shorter again: fourteen rows (ADR-633, 24 Oct 2026)
+
+Owner, 24 Oct 2026: fewer places for memories, Files instead of Memories at the bottom, memory as one row in Settings, cut Settings down so it is easy to understand, and one option for the connections. Again **no preference was removed, renamed or re-keyed**, and every row keeps its accessibility identifier; rows moved onto the pages below.
+
+| Group | Row | Opens |
+|---|---|---|
+| **Doddy** | Voice (`settings.voice`) | Voice and personality; provider picker and Auto-start; Dynamic Island style and "Expand when Doddy speaks"; Siri and Back Tap; voice account |
+| | Doddy's memory (`settings.memory`) | Notes, Lists, Find something (these open the Memories screen, which no longer has a tab); My profile; What Doddy knows; Export, backup and delete (the old "Memories" page) |
+| *(no header)* | Connections (`settings.connectionsHub`) | Pause all connections; Calendar, reminders, contacts; Online accounts; Doddy on the web; Ask Doddy (typed questions); What Doddy did |
+| | Notifications (`settings.notifications`) | Notifications and texts; Check-ins and reminders; Alarms; Birthdays; Daily news; Phone calls |
+| **This iPhone** | Language, Appearance, Privacy | unchanged pages |
+| **About** | Help, Terms & Conditions, Privacy Policy, TikTok, Instagram, Version, Advanced | TikTok and Instagram stay here (owner, 24 Oct). Advanced now also holds Terms accepted, Try a plan card, Show the welcome again, and (development server only) Connected Apps |
+
+**Removed from the top level:** Profile and "Voice and interaction" and "Memory and privacy" and "Connected apps" as group names; the separate rows for personality, island style, island expansion, Siri, Memories, What Doddy knows, the six connection rows and the six notification rows. **Connected Apps** (the first Google Calendar screen) needs the development server address and token, so for everyone else it only said "not set up" and listed planned apps; it now sits in Advanced under that server. Online accounts (ADR-563) is the real one.
+
+**Elsewhere in the app:** Home's bottom bar is Messages and **Files** (ADR-633); the tab bar off Home is Home and Settings, and Settings stays selected while notes or lists are open (tapping it returns to Settings' first page: Settings drops the Doddy's memory page when notes open, so Doddy makes one move, not two, MotionEvidenceTests); Home's ••• menu lost Memories and Recordings (Recordings is in Files), and Settings is its first item, so it stays on the menu's first screen at the largest text size (the dark, largest-text UI test found it pushed off once the shopping item was added).
+
+## New structure (ADR-580, 22 Oct; replaced by the table above)
 
 | Group | Row | Opens / does |
 |---|---|---|

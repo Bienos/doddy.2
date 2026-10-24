@@ -75,16 +75,38 @@ test("Messages gets a responder only with an Anthropic key and the switch on", a
   assert.equal(on.responder?.model, "claude-sonnet-5-5");
 });
 
-test("shopping errands (ADR-607): Sonnet 5.5 at medium effort, 8 offer searches and 15 page reads, no Serper key unless set", () => {
+test("shopping errands (ADR-607, ADR-611): Haiku 5.5 for everyone, Sonnet 5.5 for listed premium accounts, 8 offer searches and 15 page reads, no Serper key unless set", () => {
   const c = loadConfig({ DATABASE_URL: "postgres://x/y", SHOPPING_MODEL: "", SERPER_API_KEY: "" });
-  assert.deepEqual(c.shoppingSettings, { model: "claude-sonnet-5-5", effort: "medium", maxOfferSearches: 8, maxPageChecks: 15, serperApiKey: undefined });
+  assert.deepEqual(c.shoppingSettings, {
+    model: "claude-haiku-5-5", premiumModel: "claude-sonnet-5-5", premiumAccountIds: [],
+    effort: "medium", maxOfferSearches: 8, maxPageChecks: 15, serperApiKey: undefined, affiliateRules: [],
+  });
+  const ids = ["0c5d3f2e-8d3a-4b3e-9a57-0f2f0f5a1111", "7a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d"];
   const set = loadConfig({
-    DATABASE_URL: "postgres://x/y", SHOPPING_MODEL: "claude-haiku-5-5", SHOPPING_EFFORT: "low",
+    DATABASE_URL: "postgres://x/y", SHOPPING_MODEL: "claude-sonnet-5-5", SHOPPING_PREMIUM_MODEL: "claude-opus-5-5", SHOPPING_EFFORT: "low",
+    SHOPPING_PREMIUM_ACCOUNTS: ` ${ids[0]} , ${ids[1]},`,
     SHOPPING_MAX_OFFER_SEARCHES: "3", SHOPPING_MAX_PAGE_CHECKS: "5", SERPER_API_KEY: "serper-test-key",
   });
-  assert.deepEqual(set.shoppingSettings, { model: "claude-haiku-5-5", effort: "low", maxOfferSearches: 3, maxPageChecks: 5, serperApiKey: "serper-test-key" });
-  for (const bad of [{ SHOPPING_MAX_OFFER_SEARCHES: "0" }, { SHOPPING_MAX_OFFER_SEARCHES: "21" }, { SHOPPING_MAX_PAGE_CHECKS: "41" }, { SHOPPING_EFFORT: "extreme" }]) {
+  assert.deepEqual(set.shoppingSettings, {
+    model: "claude-sonnet-5-5", premiumModel: "claude-opus-5-5", premiumAccountIds: ids,
+    effort: "low", maxOfferSearches: 3, maxPageChecks: 5, serperApiKey: "serper-test-key", affiliateRules: [],
+  });
+  for (const bad of [
+    { SHOPPING_MAX_OFFER_SEARCHES: "0" }, { SHOPPING_MAX_OFFER_SEARCHES: "21" }, { SHOPPING_MAX_PAGE_CHECKS: "41" }, { SHOPPING_EFFORT: "extreme" },
+    { SHOPPING_PREMIUM_ACCOUNTS: "not-an-account-id" }, { SHOPPING_PREMIUM_ACCOUNTS: `${ids[0]};${ids[1]}` },
+  ]) {
     assert.throws(() => loadConfig({ DATABASE_URL: "postgres://x/y", ...bad }), JSON.stringify(bad));
+  }
+});
+
+test("affiliate links (ADR-612): none by default; a rule is a shop host and an https template with one {url}", () => {
+  assert.deepEqual(loadConfig({ DATABASE_URL: "postgres://x/y" }).shoppingSettings.affiliateRules, []);
+  const tpl = "https://network.example/click?id=7&to={url}";
+  const set = loadConfig({ DATABASE_URL: "postgres://x/y", AFFILIATE_LINKS: JSON.stringify({ "mediaexpert.pl": tpl }) });
+  assert.deepEqual(set.shoppingSettings.affiliateRules, [{ host: "mediaexpert.pl", template: tpl }]);
+  for (const bad of ["not json", "[]", '{"Media Expert": "https://n.example/?u={url}"}', '{"mediaexpert.pl": "https://n.example/"}',
+    '{"mediaexpert.pl": "https://n.example/?a={url}&b={url}"}', '{"mediaexpert.pl": "http://n.example/?u={url}"}', '{"mediaexpert.pl": 5}']) {
+    assert.throws(() => loadConfig({ DATABASE_URL: "postgres://x/y", AFFILIATE_LINKS: bad }), bad);
   }
 });
 
@@ -95,4 +117,29 @@ test("leaflets (ADR-609): off by default, Haiku 5.5 reads pages, 40 pages per ch
   for (const bad of [{ DEALS_ENABLED: "yes" }, { DEALS_MAX_PAGES: "101" }, { DEALS_DAILY_PER_ACCOUNT: "0" }, { DEALS_VISION_MODEL: "Claude Haiku" }]) {
     assert.throws(() => loadConfig({ DATABASE_URL: "postgres://x/y", ...bad }), JSON.stringify(bad));
   }
+});
+
+test("price watches (shopping stage 2): off by default, 5 open, a check every 6 hours; empty values count as unset; limits are validated", () => {
+  const c = loadConfig({ DATABASE_URL: "postgres://x/y", WATCHES_ENABLED: "", WATCHES_MAX_OPEN: "", WATCHES_CHECK_HOURS: "" });
+  assert.deepEqual(c.watchSettings, { enabled: false, maxOpen: 5, checkHours: 6 });
+  assert.deepEqual(loadConfig({ DATABASE_URL: "postgres://x/y" }).watchSettings, { enabled: false, maxOpen: 5, checkHours: 6 });
+  assert.equal(loadConfig({ DATABASE_URL: "postgres://x/y", WATCHES_ENABLED: "1" }).watchSettings.enabled, true);
+  const set = loadConfig({ DATABASE_URL: "postgres://x/y", WATCHES_ENABLED: "1", WATCHES_MAX_OPEN: "20", WATCHES_CHECK_HOURS: "24" });
+  assert.deepEqual(set.watchSettings, { enabled: true, maxOpen: 20, checkHours: 24 });
+  const low = loadConfig({ DATABASE_URL: "postgres://x/y", WATCHES_MAX_OPEN: "1", WATCHES_CHECK_HOURS: "6" });
+  assert.deepEqual(low.watchSettings, { enabled: false, maxOpen: 1, checkHours: 6 });
+  const bad: Record<string, string>[] = [
+    { WATCHES_ENABLED: "yes" }, { WATCHES_ENABLED: "true" }, { WATCHES_MAX_OPEN: "0" }, { WATCHES_MAX_OPEN: "21" }, { WATCHES_MAX_OPEN: "2.5" },
+    { WATCHES_CHECK_HOURS: "0" }, { WATCHES_CHECK_HOURS: "5" }, { WATCHES_CHECK_HOURS: "25" }, { WATCHES_CHECK_HOURS: "1.5" }, { WATCHES_CHECK_HOURS: "six" },
+  ];
+  for (const env of bad) assert.throws(() => loadConfig({ DATABASE_URL: "postgres://x/y", ...env }), JSON.stringify(env));
+});
+
+test("price watches read pages through the one shared polite fetcher, with the configured settings", async () => {
+  const { providersFrom } = await import("../src/providers/index.js");
+  const { PoliteFetcher } = await import("../src/deals/fetcher.js");
+  const p = providersFrom(loadConfig({ DATABASE_URL: "postgres://x/y", WATCHES_ENABLED: "1", WATCHES_CHECK_HOURS: "12", WATCHES_MAX_OPEN: "3" }));
+  assert.ok(p.watches.fetcher instanceof PoliteFetcher);
+  assert.equal(p.watches.fetcher, p.deals.fetcher, "the same instance as the leaflets (one robots.txt cache, one user agent)");
+  assert.deepEqual(p.watches.settings, { enabled: true, maxOpen: 3, checkHours: 12 });
 });
