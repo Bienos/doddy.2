@@ -39,7 +39,7 @@ struct MessagesView: View {
             }
             // A full-screen cover on iPad: one readable column (ADR-437).
             .readableColumn()
-            .background(Color(.systemBackground))
+            .background(Theme.canvas)
             .navigationTitle("Doddy")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -273,7 +273,7 @@ struct MessagesView: View {
                             }
                             .padding(10)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                             .accessibilityElement(children: .combine)
                         }
                         // A saved conversation outlives the notes it cited: say so rather than drop them quietly.
@@ -388,9 +388,9 @@ private struct MessagesComposer: View {
             } label: {
                 Image(systemName: "plus")
                     .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(Color(.systemGray))
+                    .foregroundStyle(Theme.secondaryText)
                     .frame(width: 34, height: 34)
-                    .background(Color(.systemGray5), in: Circle())
+                    .background(Theme.quietSurface, in: Circle())
                     .frame(minWidth: 44, minHeight: 44)
                     .contentShape(Rectangle())
             }
@@ -414,13 +414,13 @@ private struct MessagesComposer: View {
             .padding(.vertical, 1)
             .overlay(
                 RoundedRectangle(cornerRadius: 19, style: .continuous)
-                    .strokeBorder(Color(.systemGray4), lineWidth: 1)
+                    .strokeBorder(Theme.separator, lineWidth: 1)
             )
             .padding(.bottom, 5)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
-        .background(Color(.systemBackground))
+        .background(Theme.canvas)
         // Motion v2 (Q2): the composer is "the composer" he stands on, left of Send, and rides
         // with the keyboard.
         .motionSurface(.composer)
@@ -432,9 +432,9 @@ private struct MessagesComposer: View {
             Button { model.cancel() } label: {
                 Image(systemName: "stop.fill")
                     .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Theme.canvas)
                     .frame(width: 30, height: 30)
-                    .background(Color(.systemGray), in: Circle())
+                    .background(Theme.ink, in: Circle())
                     .contentShape(Circle().inset(by: -6))
             }
             .accessibilityLabel("Stop")
@@ -443,9 +443,9 @@ private struct MessagesComposer: View {
             Button(action: send) {
                 Image(systemName: "arrow.up")
                     .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(model.canSend ? BubbleInk.onOrange : Theme.secondaryText)
                     .frame(width: 30, height: 30)
-                    .background(model.canSend ? Color.blue : Color(.systemGray4), in: Circle())
+                    .background(model.canSend ? Theme.orangeCue : Theme.separator, in: Circle())
                     .contentShape(Circle().inset(by: -6))
             }
             .disabled(!model.canSend)
@@ -459,7 +459,13 @@ private struct MessagesComposer: View {
 
 // MARK: - Bubbles
 
-/// One bubble: blue with white text for the user, light grey for Doddy, with a tail when it ends a run.
+/// Text on Doddy's orange is always the dark ink, in light and dark appearance: cream on orange does not
+/// read (the brand guide passes ink on orange, not white). Orange itself is the app's `Theme.orangeCue`.
+private enum BubbleInk {
+    static let onOrange = Color(red: 8 / 255, green: 8 / 255, blue: 8 / 255)
+}
+
+/// One bubble: Doddy's orange with dark ink for the user, the quiet surface for Doddy, with a tail when it ends a run.
 /// Web links in the text can be tapped; they open in the browser only when the user taps one.
 private struct MessageBubble: View {
     let text: String
@@ -469,8 +475,8 @@ private struct MessageBubble: View {
     var body: some View {
         Text(Self.linked(text))
             .font(.body)
-            .foregroundStyle(fromUser ? Color.white : Color.primary)
-            .tint(fromUser ? Color.white : Color.blue)
+            .foregroundStyle(fromUser ? BubbleInk.onOrange : Theme.ink)
+            .tint(fromUser ? BubbleInk.onOrange : Theme.accentText)
             .padding(.horizontal, 12)
             .padding(.vertical, 7)
             .background(BubbleBackground(fromUser: fromUser, tail: tail))
@@ -503,7 +509,7 @@ private struct BubbleBackground: View {
     let tail: Bool
 
     var body: some View {
-        let colour = fromUser ? Color.blue : Color(.systemGray5)
+        let colour = fromUser ? Theme.orangeCue : Theme.quietSurface
         ZStack {
             RoundedRectangle(cornerRadius: 18, style: .continuous).fill(colour)
             // Filled apart from the body: two outlines filled as one path would cancel where they overlap.
@@ -566,6 +572,6 @@ private struct TypingBubble: View {
     }
 
     private func dot(opacity: Double) -> some View {
-        Circle().fill(Color(.systemGray)).opacity(opacity).frame(width: 8, height: 8)
+        Circle().fill(Theme.secondaryText).opacity(opacity).frame(width: 8, height: 8)
     }
 }

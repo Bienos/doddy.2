@@ -10,7 +10,7 @@ Messages asks **Claude Haiku 5.5** (`claude-haiku-5-5`, effort medium, text only
 
 | iMessage trait | In Doddy |
 |---|---|
-| Blue bubbles for you on the right, grey for the other side on the left | yes (system blue, system grey 5; dark mode follows the system) |
+| Orange bubbles for you on the right, quiet surface for Doddy on the left | yes (system blue, system grey 5; dark mode follows the system) |
 | Tail on the last bubble of a run, runs of one sender close together | yes (`BubbleTail`, `messageBlock`) |
 | Time heading after a pause | kept (`ThreadRules.showsHeading`) |
 | Typing bubble while the answer is on its way | yes (`TypingBubble`; still under Reduce Motion) |
@@ -22,7 +22,7 @@ Messages asks **Claude Haiku 5.5** (`claude-haiku-5-5`, effort medium, text only
 
 **Different on purpose.** No "Delivered" and no "Read": nothing here can know either (`ThreadRules.deliveryLine`, constitution: no claim without a confirmed status). Under a message you only ever see "Sending…" or "No answer yet. Tap to try again." Doddy keeps saying he is an AI (line under the thread) and where an answer came from (caption under the bubble).
 
-Not copied: Apple's name, logo or colours beyond the system's own blue and grey. The ids the UI tests use are unchanged.
+Not copied: Apple's name, logo or blue and grey. The ids the UI tests use are unchanged.
 
 ## Not done, and what each needs ("he will send me all the things")
 
