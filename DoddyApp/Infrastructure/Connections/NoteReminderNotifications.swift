@@ -14,6 +14,8 @@ struct SystemNoteNotifications: NoteNotificationScheduling {
     static let repeatingCategoryID = "DODDY_NOTE_REPEATING_REMINDER"
     /// Place reminders: no snooze (a place comes back on the next arrival).
     static let placeCategoryID = "DODDY_NOTE_PLACE_REMINDER"
+    /// The same for a list: "Open list" (ADR-614).
+    static let placeListCategoryID = "DODDY_LIST_PLACE_REMINDER"
     static let threadID = "doddy-note-reminders"
     static let openAction = "NOTE_OPEN"
     static let hourAction = "NOTE_IN_1_HOUR"
@@ -37,10 +39,14 @@ struct SystemNoteNotifications: NoteNotificationScheduling {
             identifier: repeatingCategoryID, actions: [open, hour, doneThisTime], intentIdentifiers: [], options: [])
         let placeCategory = UNNotificationCategory(
             identifier: placeCategoryID, actions: [open, done], intentIdentifiers: [], options: [])
-        let ours: Set<String> = [categoryID, repeatingCategoryID, placeCategoryID]
+        // The same identifiers as above with the list's words, so the router needs no new case.
+        let openList = UNNotificationAction(identifier: openAction, title: title(.openList), options: [.foreground])
+        let placeListCategory = UNNotificationCategory(
+            identifier: placeListCategoryID, actions: [openList, done], intentIdentifiers: [], options: [])
+        let ours: Set<String> = [categoryID, repeatingCategoryID, placeCategoryID, placeListCategoryID]
         let center = UNUserNotificationCenter.current()
         let existing = await center.notificationCategories().filter { !ours.contains($0.identifier) }
-        center.setNotificationCategories(existing.union([category, repeatingCategory, placeCategory]))
+        center.setNotificationCategories(existing.union([category, repeatingCategory, placeCategory, placeListCategory]))
     }
 
     func authorization() async -> NotificationAuthorization {
@@ -72,6 +78,7 @@ struct SystemNoteNotifications: NoteNotificationScheduling {
         case .once: content.categoryIdentifier = Self.categoryID
         case .repeating: content.categoryIdentifier = Self.repeatingCategoryID
         case .place: content.categoryIdentifier = Self.placeCategoryID
+        case .placeList: content.categoryIdentifier = Self.placeListCategoryID
         }
 
         let trigger: UNNotificationTrigger
