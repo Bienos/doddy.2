@@ -128,6 +128,11 @@ extension XCUIApplication {
     }
 
     /// Opens Home's ••• menu and taps the item with this identifier (ADR-545).
+    ///
+    /// At the largest text sizes the menu is taller than the screen and scrolls: its second
+    /// section (Memories, Settings, …) starts below the first screen once the first section has
+    /// five tools (shopping's "Cheapest this week" made it so, the stopwatch adds one more). A
+    /// swipe on a tool that is on screen scrolls the menu; a swipe beside it would dismiss it.
     @MainActor
     func tapHomeMenuItem(_ identifier: String) {
         let more = buttons["home.more"]
@@ -135,6 +140,16 @@ extension XCUIApplication {
         more.tap()
         let item = buttons[identifier]
         _ = item.waitForExistence(timeout: 5)
+        var swipes = 0
+        while !(item.exists && item.isHittable) && swipes < 6 {
+            // The first section's tools, in the menu's order; the lowest one on screen is the
+            // safest place to swipe. "home.find" is always in the menu.
+            let tools = ["home.find", "home.tasks", "home.deals", "home.focus", "home.stopwatch", "home.today", "home.voice"]
+            let onScreen = tools.map { buttons[$0] }.filter { $0.exists && $0.isHittable }
+            (onScreen.last ?? more).swipeUp()
+            _ = item.waitForExistence(timeout: 1)
+            swipes += 1
+        }
         item.tap()
     }
 
