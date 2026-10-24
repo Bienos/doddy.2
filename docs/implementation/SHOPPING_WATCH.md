@@ -2,7 +2,7 @@
 
 Owner, 24 Oct 2026: "Wszystko rób" (do everything), after a list that included stage 2 of `docs/strategy/TRYB_ZAKUPOW_2026-10.md` section 2 C. This page is the contract; ADR-614 records it. **It only notifies. It never buys, orders, signs in or fills in anything.**
 
-Status: see "Built and checked" at the end (filled in as the parts land).
+Status, 24 Oct 2026: built on the server and in DoddyCore and the app; **the SwiftUI is not compiled** (the hosted Mac job has not run on it yet) and nothing has run against a real shop or a device. See "Built and checked" at the end.
 
 ## 1. What it does
 
@@ -18,7 +18,7 @@ The card says, in the user's language: what is watched (title, shop, the page ad
 - **Already below.** If the price just read is at or below the user's number, there is no draft ("it is already at or below your price").
 - **One notification.** At the first confirmed read at or below the number the watch becomes `triggered`, with the price and the time, and a push is queued (the push has no product words: "Cena, której pilnujesz, spadła." / "A price you're watching dropped."). The app shows the details when opened, with "Kup w sklepie" (the shop's own page).
 - **It ends.** After 30 days (`expired`), on the user's Stop (`stopped`), or after 8 failed checks in a row, about two days (`failed`, with a push saying Doddy can no longer read that price, never claiming anything about the price).
-- **Caps.** At most 5 active watches per account (`WATCHES_MAX_OPEN`); 30 creates and 30 approvals an hour per device; 4 checks a day per watch (every 6 hours, with a small random shift); the worker checks one watch at a time and leaves at least 2 seconds between two requests to the same host.
+- **Caps.** At most 5 active watches per account (`WATCHES_MAX_OPEN`); 30 creates and 30 approvals an hour per device; 4 checks a day per watch (every 6 hours, with a small random shift; `WATCHES_CHECK_HOURS` is 6 to 24, so never more often than the card says); the worker checks one watch at a time and leaves at least 2 seconds between two requests to the same host.
 - **Off unless on.** `WATCHES_ENABLED` (default `0`) and `MEMORY_ENCRYPTION_KEY`: otherwise every route answers `503 watches_disabled` and nothing is stored or checked.
 - **Privacy.** Title, shop and the page address are stored encrypted (AES-256-GCM, AAD `{account}:watch:{id}`) and only for the watch's life: a finished watch (any end) is deleted, content and all, 30 days after it ended; DELETE removes it at once; deleting the account removes all. The server keeps no page content, only the price read, the time and counts. Logs carry ids and counts, never words or addresses.
 
@@ -52,9 +52,36 @@ Summary: `id`, `state` (`draft`, `active`, `triggered`, `expired`, `stopped`, `f
 | The page can't be read at a check | The check is recorded as failed; 8 in a row end the watch as `failed` with a push that says only that |
 | The price is read in another currency, or the page says out of stock | No trigger; the check is recorded |
 | The push can't be delivered | The watch is still `triggered`; the app shows it when opened |
-| The server restarts | Due watches are picked up again at the next tick; a watch is never checked twice for one due time |
+| The server restarts or a worker dies mid-check | The claim lapses after 15 minutes and the watch is due again; a clean shutdown gives the in-flight check back at once and never counts it as a failed one; a watch is never checked twice for one due time |
 | The user is offline | Nothing is lost: the state is on the server |
 
-## Built and checked
+## Decisions made while building (the owner can flip any of them)
 
-(Filled in as the parts land; see STATUS.md.)
+- Reading a price in **another currency**, or a page that says **out of stock**, is a readable check, not a failure: it counts as a check, resets the failure run and records no price. A shop stuck on another currency therefore runs to expiry instead of ending as `failed`.
+- `already_below` is judged on the price alone, even if the page says out of stock; a currency mismatch is reported before it; a page that isn't HTML maps to `no_price`.
+- The price read when the draft is made is not stored. The first check is one interval after approval.
+- The last check is scheduled at the end of the 30 days, then the watch expires, so with default settings there are 120 checks, and a drop at the last check still triggers.
+- The 2-second gap per host is kept per process: a web process running the loop and a separate worker don't coordinate with each other.
+- Failure push wording (the contract gave none): pl "Nie mogę już odczytać ceny, której pilnujesz." en "Doddy can no longer read a price you're watching."
+- Every route, reads included, answers `503 watches_disabled` when the feature is off (errands let reads through).
+- A row whose content can't be opened (another key, tampering, a price column that no longer matches the digest) is left out of the list, `GET` answers 404 and the worker never fetches it; `DELETE` still works.
+- App: a **two-step card**. The user's price is part of the create body, so the server's read price and the draft exist only after step 1. Step 1 has the price field and the button "Sprawdź stronę" ("Check the page"), never "Tak, pilnuj", so a first tap can't read as a yes. Step 2 shows the server's preview and the exact promise with "Tak, pilnuj" / "Nie"; only that tap approves, with the draft's own digest.
+- App: closing the card or "Nie" does a best-effort `DELETE` of the unapproved draft, so the server doesn't keep the title and address for 10 minutes.
+- App: an approval with no trustworthy answer is never sent again; the model looks that one watch up read-only (reconciliation first): active means started, a draft means "not started" (the preview is kept so the user can say yes again), anything else is "not sure".
+- App: after a confirmed approval the app asks iOS for notification permission and registers the push token as errands do; without it the trigger push can't arrive.
+- App: the create request waits up to 30 seconds (the server reads robots.txt and then the page while it makes the draft).
+
+## Gaps
+
+- Settings "Delete everything" doesn't touch server-side watches (or server errands, which was already so); each watch can be deleted in the list.
+- The long Privacy paragraph in Settings is not updated (errands and leaflets aren't in it either); `What leaves this iPhone` has a `watches` row.
+- Tapping the "price dropped" push doesn't open the list; Tasks does, with a refresh on open and pull-down.
+- There is no voice tool ("daj znać, jak spadnie…" by voice): it needs its own ask card and agent text.
+
+## Built and checked (24 Oct 2026, Linux; Node 22, Postgres 16, Swift 6.1.2)
+
+**Server** (`server/messaging`): migration `013_price_watches.sql` (strict CHECKs make "triggered" impossible without a confirmed price at or below the number and "failed" impossible before 8 failures in a row; 30 days stored as 720 hours; content is ciphertext only, bound by AAD to account and watch; cascade on account delete); `src/watches/` (digest identical to the fixture's canonical text and SHA-256; pure rules; create reads the page once through `checkOfferPage` and the shared `PoliteFetcher`; approve under an advisory lock; claim with `FOR UPDATE SKIP LOCKED` plus a 15-minute lease; each result and its single push written in one transaction that applies only while the watch is still active and held by that claim; deletion 30 days after any end); `src/routes/watches.ts` with the contract's limits. The full messaging suite: **393 tests, 0 failures** (including every contract error, the cap of 5 under concurrent approvals, trigger and no-trigger cases, 8 failures ending as `failed` with one push, 120 checks to expiry, racing workers, Stop, DELETE, shutdown during a read, the 30-day sweep, no plaintext in any column, logs without words or addresses, account deletion). Four guards broken on purpose and each caught.
+
+**iPhone** (DoddyCore and app): `Watch.swift` and `WatchesClient.swift` (draft digest equal to the fixture's, recomputed with Python; a preview that isn't for the shown words or whose digest differs is refused by the client and again by the model; every contract error mapped; an approval with no trustworthy answer is `unknown`, not sent again, looked up read-only; "dropped" only with the confirmed price at or below the user's number; an unknown state is never shown as active), `WatchModel.swift` (compiled and type-checked on Linux; its logic exercised with a fake backend), the DataFlow `watches` row. DoddyCore: 1,783 tests, 0 failures (WatchTests 31). Seventeen guards in the core and seven in the model were broken on purpose and each was caught.
+
+**Not compiled:** the SwiftUI (`WatchCard.swift`, `WatchesSection.swift`, `WatchPush.swift`, and the hooks in `ShoppingResultSections.swift` and `ErrandsView.swift`): only a syntax parse passed. **Not run:** any real shop page, APNs, a device, the separate worker process or `RUN_WORKER_IN_WEB`, a live database; the client against the real server; the Polish strings have no native review.
