@@ -126,11 +126,11 @@ test("price watches (shopping stage 2): off by default, 5 open, a check every 6 
   assert.equal(loadConfig({ DATABASE_URL: "postgres://x/y", WATCHES_ENABLED: "1" }).watchSettings.enabled, true);
   const set = loadConfig({ DATABASE_URL: "postgres://x/y", WATCHES_ENABLED: "1", WATCHES_MAX_OPEN: "20", WATCHES_CHECK_HOURS: "24" });
   assert.deepEqual(set.watchSettings, { enabled: true, maxOpen: 20, checkHours: 24 });
-  const low = loadConfig({ DATABASE_URL: "postgres://x/y", WATCHES_MAX_OPEN: "1", WATCHES_CHECK_HOURS: "1" });
-  assert.deepEqual(low.watchSettings, { enabled: false, maxOpen: 1, checkHours: 1 });
+  const low = loadConfig({ DATABASE_URL: "postgres://x/y", WATCHES_MAX_OPEN: "1", WATCHES_CHECK_HOURS: "6" });
+  assert.deepEqual(low.watchSettings, { enabled: false, maxOpen: 1, checkHours: 6 });
   const bad: Record<string, string>[] = [
     { WATCHES_ENABLED: "yes" }, { WATCHES_ENABLED: "true" }, { WATCHES_MAX_OPEN: "0" }, { WATCHES_MAX_OPEN: "21" }, { WATCHES_MAX_OPEN: "2.5" },
-    { WATCHES_CHECK_HOURS: "0" }, { WATCHES_CHECK_HOURS: "25" }, { WATCHES_CHECK_HOURS: "1.5" }, { WATCHES_CHECK_HOURS: "six" },
+    { WATCHES_CHECK_HOURS: "0" }, { WATCHES_CHECK_HOURS: "5" }, { WATCHES_CHECK_HOURS: "25" }, { WATCHES_CHECK_HOURS: "1.5" }, { WATCHES_CHECK_HOURS: "six" },
   ];
   for (const env of bad) assert.throws(() => loadConfig({ DATABASE_URL: "postgres://x/y", ...env }), JSON.stringify(env));
 });

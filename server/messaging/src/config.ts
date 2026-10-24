@@ -118,7 +118,7 @@ const schema = z.object({
   // two checks of one watch (6 = the four checks a day the card promises; a shorter time checks more often than that).
   WATCHES_ENABLED: z.enum(["0", "1"]).default("0"),
   WATCHES_MAX_OPEN: z.coerce.number().int().min(1).max(20).default(5),
-  WATCHES_CHECK_HOURS: z.coerce.number().int().min(1).max(24).default(6),
+  WATCHES_CHECK_HOURS: z.coerce.number().int().min(6).max(24).default(6),
 
   // Messages (ADR-585, ADR-586): the app's typed conversation asks Claude here. Text only, no tools.
   // Runs only when ANTHROPIC_API_KEY is set too; "0" answers 503 notConfigured. The daily caps count
