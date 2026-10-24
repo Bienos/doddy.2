@@ -23,6 +23,8 @@ enum WeeklyLookBackScheduler {
         content.body = WeeklyLookBack.body(language)
         // Doddy sitting cross-legged, as on the look-back's rooftop (ADR-323).
         if let art = NotificationArt.attachment(.crosslegged) { content.attachments = [art] }
+        // A routine: no sound, never through a Focus (ADR-607).
+        content.interruptionLevel = DoddyNotificationKind.weeklyLookBack.interruptionLevel
         var when = DateComponents()
         when.weekday = settings.weekday
         when.hour = settings.hour

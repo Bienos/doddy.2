@@ -576,6 +576,12 @@ struct VoiceView: View {
                 Text(label)
                     .foregroundStyle(Theme.secondaryText)
             }
+            // Said only when it is true: AlarmKit rings it (ADR-607); a notification may be silent.
+            if TimerRinger.canRing {
+                Text("It rings even in Silent mode or a Focus, with the time left on the Lock Screen.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+            }
         case .map(_, let place):
             Text("Open this in Maps?")
                 .font(.headline)

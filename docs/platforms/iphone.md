@@ -39,7 +39,7 @@ Code lives under `DoddyApp/Features/<Folder>/`. Status docs are in `docs/impleme
 | Messages (was Ask) | The typed conversation with Doddy: bubbles saved on this iPhone until deleted; answers from Claude through the messaging server (`POST /v1/assistant/ask`) | 585, 586 (115) | MESSAGES_STATUS, M2_STATUS |
 | Web (`Features/Web`, `Infrastructure/WebMemoryClientFactory.swift`, DoddyCore `OnlineAccounts/WebMemory*`) | Sign in to Doddy Web; **Keep on Doddy's server** (ADR-603): two switches for notes and conversations, a consent screen, "Delete everything on Doddy's server". Rules and the HTTP client are in DoddyCore and tested on Linux. **The SwiftUI screens and the call from the voice controller are NOT COMPILED** (no Xcode in the sessions that wrote them); needs the hosted Mac build and a run on a device | 603 | CLOUD_MEMORY |
 | Activity | "What Doddy did" and undo | 268, 271 | ACTIVITY_UNDO_STATUS |
-| Alarms | Alarms by voice (AlarmKit, iOS 26) | 260, 283 | ALARMS_STATUS |
+| Alarms | Alarms by voice (AlarmKit, iOS 26); timers ring through AlarmKit too, with a Lock Screen countdown (`TimerRinger`, ADR-607) | 260, 283, 607 | ALARMS_STATUS, NOTIFICATIONS_AND_TIMERS |
 | Backup | Encrypted backup file | 222 | ENCRYPTED_BACKUP_STATUS |
 | Birthdays | Birthday reminders from contacts | 288 | BIRTHDAYS_STATUS |
 | Calls | Calling Doddy on the phone, PIN | - | S2_CALLS_STATUS |

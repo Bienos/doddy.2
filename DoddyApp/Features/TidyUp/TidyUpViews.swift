@@ -20,6 +20,8 @@ enum TidyUpScheduler {
         let content = UNMutableNotificationContent()
         content.title = TidyUp.title(language)
         content.body = TidyUp.body(language)
+        // A routine: no sound, never through a Focus (ADR-607).
+        content.interruptionLevel = DoddyNotificationKind.tidyUp.interruptionLevel
         var when = DateComponents()
         when.weekday = settings.weekday
         when.hour = settings.hour

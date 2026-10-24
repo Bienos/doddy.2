@@ -49,6 +49,7 @@ enum OpenWaysReminderScheduler {
             content.title = OpenWaysReminder.title(language)
             content.body = OpenWaysReminder.body(language)
             content.sound = .default
+            content.interruptionLevel = DoddyNotificationKind.openWays.interruptionLevel
             let when = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: date)
             let trigger = UNCalendarNotificationTrigger(dateMatching: when, repeats: false)
             do {

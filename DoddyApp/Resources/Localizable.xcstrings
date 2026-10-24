@@ -30141,6 +30141,17 @@
         }
       }
     },
+    "It rings even in Silent mode or a Focus, with the time left on the Lock Screen.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zadzwoni nawet w trybie cichym i przy włączonym skupieniu, a na ekranie blokady zobaczysz, ile czasu zostało."
+          }
+        }
+      }
+    },
     "It takes a minute or two. Open it now; it shows the file as soon as it's ready.": {
       "extractionState": "manual",
       "localizations": {
@@ -49671,6 +49682,17 @@
         }
       }
     },
+    "Pause timer": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wstrzymaj minutnik"
+          }
+        }
+      }
+    },
     "Paused": {
       "extractionState": "manual",
       "localizations": {
@@ -56707,6 +56729,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wznów nagrywanie DODDY"
+          }
+        }
+      }
+    },
+    "Resume timer": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wznów minutnik"
           }
         }
       }
@@ -66752,6 +66785,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zatrzymaj tę sprawę"
+          }
+        }
+      }
+    },
+    "Stop timer": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zatrzymaj minutnik"
           }
         }
       }

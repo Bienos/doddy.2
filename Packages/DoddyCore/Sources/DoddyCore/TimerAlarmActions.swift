@@ -37,10 +37,13 @@ public enum TimerIdempotency {
 public struct PendingTimer: Equatable, Sendable {
     public let identifier: String
     public let firesAt: Date
+    /// How it will ring (ADR-607); nil when the writer doesn't say (fakes, older code).
+    public let ring: TimerRing?
 
-    public init(identifier: String, firesAt: Date) {
+    public init(identifier: String, firesAt: Date, ring: TimerRing? = nil) {
         self.identifier = identifier
         self.firesAt = firesAt
+        self.ring = ring
     }
 }
 
@@ -216,7 +219,7 @@ extension VoiceToolReply {
     public static func timer(_ outcome: TimerStartOutcome, draft: TimerDraft, calendar: Calendar) -> String {
         switch outcome {
         case .started(let timer):
-            return timerAdded(draft, endsAt: timer.firesAt, calendar: calendar)
+            return timerAdded(draft, endsAt: timer.firesAt, calendar: calendar, ring: timer.ring)
         case .alreadyRunning(let timer):
             let label = draft.label.map { " Its label:\n" + ToolData.block([quoted("Label", $0)]) } ?? ""
             return "added: timer \(durationText(draft.seconds)), rings at \(localText(timer.firesAt, hasTime: true, calendar: calendar)).\(label)"

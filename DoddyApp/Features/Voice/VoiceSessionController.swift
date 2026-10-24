@@ -2525,7 +2525,8 @@ final class VoiceSessionController {
                 await reply(call.toolCallId, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
             }
         case .setTimer(let draft):
-            guard await devices.notificationAccess() == .granted else {
+            // AlarmKit on iOS 26 needs no notification permission (ADR-607).
+            guard await devices.timerAccess() == .granted else {
                 await notConnected(call.toolCallId, .timers)
                 return
             }
@@ -2948,7 +2949,8 @@ final class VoiceSessionController {
         guard isOn(connection) else { return .notConnected(connection) }
         let access: DeviceConnections.Access
         if connection == .timers {
-            access = await devices.notificationAccess()
+            // Plan steps on Timers are timers (alarms aren't in plans): AlarmKit or notifications.
+            access = await devices.timerAccess()
         } else {
             access = devices.access(for: connection)
         }
@@ -3712,7 +3714,7 @@ final class VoiceSessionController {
     /// Looks for a running copy only after an unconfirmed try of the same timer (ADR-320); "started"
     /// only when the iPhone lists it, with the ring time it lists.
     private func timerResult(_ draft: TimerDraft, retry: ActionRetryDecision?) async -> WriteResult {
-        guard await devices.notificationAccess() == .granted else {
+        guard await devices.timerAccess() == .granted else {
             return WriteResult(reply: VoiceToolReply.notAdded("Notifications are off for Doddy."), attempted: false)
         }
         let outcome = await TimerStartAction.start(draft, with: devices, uncheckedSince: retry?.uncheckedSince)

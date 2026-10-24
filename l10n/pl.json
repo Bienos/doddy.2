@@ -1880,5 +1880,9 @@
   "PDF": "PDF",
   "Making files needs Doddy's server, which isn't set up in this build.": "Robienie plików wymaga serwera Doddy’ego, którego ta wersja aplikacji nie ma ustawionego.",
   "Doddy's server couldn't be reached. Nothing was confirmed. Check your connection and try again.": "Nie udało się połączyć z serwerem Doddy’ego. Nic nie zostało potwierdzone. Sprawdź połączenie i spróbuj jeszcze raz.",
-  "The file wasn't made, or Doddy couldn't confirm it. Try again.": "Plik nie powstał albo Doddy nie mógł tego potwierdzić. Spróbuj jeszcze raz."
+  "The file wasn't made, or Doddy couldn't confirm it. Try again.": "Plik nie powstał albo Doddy nie mógł tego potwierdzić. Spróbuj jeszcze raz.",
+  "It rings even in Silent mode or a Focus, with the time left on the Lock Screen.": "Zadzwoni nawet w trybie cichym i przy włączonym skupieniu, a na ekranie blokady zobaczysz, ile czasu zostało.",
+  "Pause timer": "Wstrzymaj minutnik",
+  "Resume timer": "Wznów minutnik",
+  "Stop timer": "Zatrzymaj minutnik"
 }

@@ -1,7 +1,7 @@
 {
   "NSAlarmKitUsageDescription": {
-    "en": "Doddy sets an alarm only when you ask and tap Set alarm. Its alarms ring even in Silent mode or a Focus. Turn them off in Doddy's Settings, Alarms.",
-    "it": "Doddy imposta una sveglia solo quando lo chiedi e tocchi Imposta sveglia. Le sue sveglie suonano anche in modalità Silenzioso o con una Full Immersion attiva. Disattivale nelle Impostazioni di Doddy, Sveglie."
+    "en": "Doddy sets an alarm or a timer only when you ask and tap Set alarm or Start. They ring even in Silent mode or a Focus. Turn alarms off in Doddy's Settings, Alarms.",
+    "it": "Doddy imposta una sveglia o un timer solo quando lo chiedi e tocchi Imposta sveglia o Inizia. Suonano anche in modalità Silenzioso o con una Full Immersion attiva. Disattiva le sveglie nelle Impostazioni di Doddy, Sveglie."
   },
   "NSCalendarsFullAccessUsageDescription": {
     "en": "Doddy reads your events for the days you ask about, and adds, changes or deletes an event only after you tap Add, Change or Delete. Turn this off in Settings, Connections.",

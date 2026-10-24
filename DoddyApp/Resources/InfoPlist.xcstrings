@@ -7,61 +7,61 @@
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy stellt einen Wecker nur, wenn du darum bittest und auf Wecker stellen tippst. Seine Wecker klingeln auch im Lautlos-Modus oder in einem Fokus. Schalte sie in den Doddy-Einstellungen unter Wecker aus."
+            "value": "Doddy stellt einen Wecker oder Timer nur, wenn du darum bittest und auf Wecker stellen oder Starten tippst. Sie klingeln auch im Lautlos-Modus oder in einem Fokus. Wecker schaltest du in den Doddy-Einstellungen unter Wecker aus."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy sets an alarm only when you ask and tap Set alarm. Its alarms ring even in Silent mode or a Focus. Turn them off in Doddy's Settings, Alarms."
+            "value": "Doddy sets an alarm or a timer only when you ask and tap Set alarm or Start. They ring even in Silent mode or a Focus. Turn alarms off in Doddy's Settings, Alarms."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy pone una alarma solo cuando se lo pides y tocas Poner alarma. Sus alarmas suenan incluso en modo Silencio o en un modo de concentración. Desactívalas en los Ajustes de Doddy, Alarmas."
+            "value": "Doddy pone una alarma o un temporizador solo cuando se lo pides y tocas Poner alarma o Empezar. Suenan incluso en modo Silencio o en un modo de concentración. Desactiva las alarmas en los Ajustes de Doddy, Alarmas."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy ne règle une alarme que si tu le demandes et touches Régler l’alarme. Ses alarmes sonnent même en mode Silence ou en mode Concentration. Désactive-les dans les Réglages de Doddy, Alarmes."
+            "value": "Doddy ne règle une alarme ou un minuteur que si tu le demandes et touches Régler l’alarme ou Commencer. Ils sonnent même en mode Silence ou en mode Concentration. Désactive les alarmes dans les Réglages de Doddy, Alarmes."
           }
         },
         "hr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy postavlja alarm samo kad to zatražiš i dodirneš Postavi alarm. Njegovi alarmi zvone čak i u tihom načinu ili tijekom Fokusa. Isključi ih u Doddyjevim Postavkama, Alarmi."
+            "value": "Doddy postavlja alarm ili mjerač vremena samo kad to zatražiš i dodirneš Postavi alarm ili Počni. Zvone čak i u tihom načinu ili tijekom Fokusa. Alarme isključi u Doddyjevim Postavkama, Alarmi."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy imposta una sveglia solo quando lo chiedi e tocchi Imposta sveglia. Le sue sveglie suonano anche in modalità Silenzioso o con una Full Immersion attiva. Disattivale nelle Impostazioni di Doddy, Sveglie."
+            "value": "Doddy imposta una sveglia o un timer solo quando lo chiedi e tocchi Imposta sveglia o Inizia. Suonano anche in modalità Silenzioso o con una Full Immersion attiva. Disattiva le sveglie nelle Impostazioni di Doddy, Sveglie."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddyがアラームを設定するのは、あなたが頼んで「アラームを設定」をタップしたときだけです。Doddyのアラームは消音モードや集中モード中でも鳴ります。オフにするには、Doddyの設定の「アラーム」を使ってください。"
+            "value": "Doddyがアラームやタイマーを設定するのは、あなたが頼んで「アラームを設定」または「開始」をタップしたときだけです。消音モードや集中モード中でも鳴ります。アラームをオフにするには、Doddyの設定の「アラーム」を使ってください。"
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy ustawia budzik tylko wtedy, gdy o to poprosisz i stukniesz Ustaw budzik. Jego budziki dzwonią nawet w trybie cichym i przy włączonym skupieniu. Wyłączysz je w Ustawieniach Doddy'ego, w sekcji Budziki."
+            "value": "Doddy ustawia budzik albo minutnik tylko wtedy, gdy o to poprosisz i stukniesz Ustaw budzik albo Zacznij. Dzwonią nawet w trybie cichym i przy włączonym skupieniu. Budziki wyłączysz w Ustawieniach Doddy'ego, w sekcji Budziki."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "O Doddy só define um alarme quando você pede e toca em Definir alarme. Os alarmes dele tocam mesmo no modo Silencioso ou em um Foco. Desative nos Ajustes do Doddy, em Alarmes."
+            "value": "O Doddy só define um alarme ou um timer quando você pede e toca em Definir alarme ou Começar. Eles tocam mesmo no modo Silencioso ou em um Foco. Desative os alarmes nos Ajustes do Doddy, em Alarmes."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "只有在你提出请求并轻点“设置闹钟”时，Doddy 才会设置闹钟。它的闹钟在静音模式或专注模式下也会响。可在 Doddy 设置的“闹钟”中关闭。"
+            "value": "只有在你提出请求并轻点“设置闹钟”或“开始”时，Doddy 才会设置闹钟或计时器。它们在静音模式或专注模式下也会响。可在 Doddy 设置的“闹钟”中关闭闹钟。"
           }
         }
       }
