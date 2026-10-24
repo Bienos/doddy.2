@@ -77,6 +77,21 @@ Strategia: `docs/strategy/TRYB_ZAKUPOW_2026-10.md`, research `docs/research/2026
 - **Płatność w aplikacji:** rzeczy fizyczne nie przez zakupy Apple (3.1.3(e)); zbieranie pieniędzy dla sklepu to usługa płatnicza z licencją KNF; BLIK dla asystentów to pilotaż [S]. Potwierdza L3 z PDF.
 - **Źródło ofert:** Serper (Google Shopping, Polska) jako najtańsze; cena z listy Google oznaczona jako `listing`, a odczytana ze strony sklepu jako `shop_page` (ADR-607, 608) [S]. To odpowiada statusom `verified_at` / `estimate` z PDF.
 
+### Otwarte PR-y z 24 paź i numery ADR (stan 18:50 UTC)
+
+| PR / gałąź | Co | Numery ADR |
+|---|---|---|
+| domyślna `claude/loving-dirac-uuxoux` | zakupy etap 1 i 2 (gazetki, oferty, koszyk, obserwowanie cen) | 607 do 614 |
+| #135 `claude/notifications-sound-timers` | dzwoniące minutniki i przypomnienia, plan tygodnia | **612, 613** |
+| #136 `claude/simpler-settings-files-openai` | „Pliki” zamiast „Wspomnień”, Ustawienia w 14 wierszach, głos OpenAI | **614** |
+| #137 `claude/sport-mode-health` | tryb sportowy: Apple Health, podsumowanie tygodnia | 620 do 623 |
+| #139 `claude/stopwatch-and-shop-list` | stoper i przypomnienie listy przy sklepie | **621** |
+| #140 ten PR | badania trybów, Lista zakupów+ | 630, 631 |
+
+Pogrubione numery się powtarzają: 612 i 613 (domyślna gałąź i #135, różne decyzje), 614 (domyślna i #136) oraz 621 (#137 i #139). Gałąź scalana później musi dostać nowe numery; ten PR się z nikim nie zderza. #136 przebudowuje zakładkę Wspomnień na „Pliki”, więc przy scalaniu warto sprawdzić przełącznik Notatki | Listy, na którym stoi „Lista zakupów+”.
+
+**Nie przeczytane:** transkrypty sesji o strategii rynkowej Dodiego, o silniku cen w sklepach spożywczych (jej gałęzi nie ma na serwerze), o łączeniu z API, o czacie webowym i o Twilio. Dwaj pomocnicy, którzy je czytali, zostali przerwani przez restart sesji i nic nie zwrócili. Strategię rynkową czytałem za to bezpośrednio w repo (`docs/strategy/DODI_PLAN_2026-10.md`).
+
 ## 5. Co w PDF jest nowe i warto zachować
 
 - **Faktury i administracja** (P1 Fakturownia/inFakt, P3 KSeF): w repo nie ma nic. Harmonogram KSeF z PDF jest zgodny ze stroną MF [V, ksef.podatki.gov.pl, opublikowane i zmienione 27.04.2026]: wystawianie od 1.02.2026 (sprzedaż > 200 mln zł w 2024) i od 1.04.2026 (pozostali); podatnicy z fakturowaną sprzedażą do 10 000 zł brutto miesięcznie od 1.01.2027; odbieranie w KSeF od 1.02.2026. **Dodatkowo (brak w PDF): kary będą stosowane dopiero od 1.01.2027** [V]. Fakturownia/inFakt to nowi dostawcy zewnętrzni: osobny kamień milowy i zgoda właściciela (CLAUDE.md zasada 6). Co pokazują ich strony [V, dziś]:
@@ -114,3 +129,4 @@ Każdy krok to osobny, mały kamień milowy z testami i wymaga „tak” właśc
 - Cen, limitów i planów API Fakturowni i inFaktu (ich strony tego nie podają) ani warunków API InPostu.
 - Aktualnego stanu metody `GET /offers/listing` Allegro na stronie dewelopera; zgodne z tym, co znalazła sesja zakupowa (brak publicznego API ofert od 16 wrz 2026 [S, `TRYB_ZAKUPOW_2026-10.md`]).
 - Źródeł arXiv o bezpieczeństwie LLM w żywieniu (2401.08420, 2512.04843).
+- Czy test ruchu `MotionEvidenceTests.testWithReduceMotionHeFadesAndNeverFlies` jest przypadkowy: padł raz na PR #140 (przeszedł na gałęzi domyślnej); drugi bieg na Macu to rozstrzygnie.
