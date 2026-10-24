@@ -22,6 +22,7 @@ app.log.info({
   taskCalls: !!(providers.taskCalls && providers.cipher && config.publicBaseUrl), taskCallsKillSwitch: config.taskCallSettings.killSwitch,
   errands: !!(providers.errands.researcher && providers.cipher), errandsModel: config.errandSettings.model,
   assistant: !!providers.assistant.responder, assistantModel: config.assistantSettings.model,
+  deals: config.dealsSettings.enabled, dealsReader: !!providers.deals.model, shoppingOffers: !!config.shoppingSettings.serperApiKey,
 }, "configured features");
 
 // One service instead of web + worker (a small or free deploy): RUN_WORKER_IN_WEB=1 runs the

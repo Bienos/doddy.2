@@ -1,0 +1,168 @@
+{
+ "self": "v4/flyer?flyer_identifier=gazetka-22-10-czw-kw43&region_id=0",
+ "version": 4,
+ "success": true,
+ "message": "Requested Flyer found.",
+ "dateTime": "2026-10-24T12:01:16+00:00",
+ "numberOfEntries": 1,
+ "flyer": {
+  "id": "01a159be-80f2-7c02-85c1-eff531526978",
+  "name": "Gazetka",
+  "title": "22.10",
+  "locale": "pl-PL",
+  "clientLocale": "lidl/pl-PL",
+  "category": "Katalogi",
+  "subcategory": "Aktualne gazetki",
+  "quitUrl": "https://www.lidl.pl/c/nasze-gazetki/s10008614",
+  "isActive": true,
+  "pdfUrl": "https://assets.leaflets.schwarz/leaflets/pdfs/01a159be-80f2-7c02-85c1-eff531526978/Gazetka-22-10-00.pdf",
+  "fileSize": 29481674,
+  "regions": [
+   {
+    "code": "0"
+   }
+  ],
+  "flyerUrlAbsolute": "https://www.lidl.pl/l/pl/gazetki/gazetka-22-10-czw-kw43/ar/0?_ab=1",
+  "startDate": "2026-10-21",
+  "endDate": "2026-10-24",
+  "offerStartDate": "2026-10-22",
+  "offerEndDate": "2026-10-24",
+  "pages": [
+   {
+    "id": "01a1698b-2d8a-733f-98a3-2543c83c7cc5",
+    "number": 1,
+    "width": 1420,
+    "height": 2400,
+    "type": "STANDARD",
+    "links": [],
+    "keyWords": "Oficjalny Dostawca Świeżych Warzyw Owoców Reprezentacji Polski Świeże Dostawy Czwartku Wszystkie Znicze Szczegóły Promocji Dostępne Maliny Cena Poza Promocją 499 899 Aktywuj Kupon Zeskanuj Aplikację -44% Przy Zakupie Banany Luzem 699 299 699* -57 Rzeźnik Kurczak – Filety Piersi Xxl 2480 Tylko 1499 2480* -39% Kawy Lavazza -60% Taniej Drugi Tańszy Produkt Produkty Chemiczne Prania Sprzątania Zmywania Karmy Psa Max’s World Grosz 249 -50% Pilos Masło Ekstra 83% Karkówka Wieprzowa Kości 1849 1199 -35% 1849* Więcej Prezentowane Materiale Reklamowym Znajdują Sprzedaży Terminach Podanych Wyczerpania Sprzedawane Sprzedaż Produktów Ilościach Znaki Towarowe Należą Cenie",
+    "altText": "Okładka gazetki promocyjnej Lidl z ofertą na świeże owoce, warzywa, mięso, masło i kawę.",
+    "image": "https://imgproxy.leaflets.schwarz/lYUjcPktbqW4rvnkpl1vUxY5YvzYZ7uaIsvU8U7Wzu0/rs:fit:1200:1200:1/g:no/czM6Ly9sZWFmbGV0cy9pbWFnZXMvMDFhMTU5YmUtODBmMi03YzAyLTg1YzEtZWZmNTMxNTI2OTc4L3BhZ2UtMDAxXzQyMTNlYjFhY2Q3MDY0ODFkMTc0NTAzZGZjZjEzZWJhLnBuZw.jpg",
+    "zoom": "https://imgproxy.leaflets.schwarz/aKC1bSE3zlUHgqBnOYnkaZbhqdQHaUnO34_wn8Cq3hk/rs:fit:2400:2400:1/g:no/czM6Ly9sZWFmbGV0cy9pbWFnZXMvMDFhMTU5YmUtODBmMi03YzAyLTg1YzEtZWZmNTMxNTI2OTc4L3BhZ2UtMDAxXzQyMTNlYjFhY2Q3MDY0ODFkMTc0NTAzZGZjZjEzZWJhLnBuZw.jpg",
+    "thumbnail": "https://imgproxy.leaflets.schwarz/ipeBUU0d3iUD3Qj4XsxR7T-C_PV5yuFrcS3w6OOypZc/rs:fit:400:400:1/g:no/czM6Ly9sZWFmbGV0cy9pbWFnZXMvMDFhMTU5YmUtODBmMi03YzAyLTg1YzEtZWZmNTMxNTI2OTc4L3BhZ2UtMDAxXzQyMTNlYjFhY2Q3MDY0ODFkMTc0NTAzZGZjZjEzZWJhLnBuZw.jpg",
+    "pageType": "page"
+   },
+   {
+    "id": "01a1698b-2d8a-733f-98a3-2543ca821d6c",
+    "number": 4,
+    "width": 1420,
+    "height": 2400,
+    "type": "STANDARD",
+    "links": [],
+    "keyWords": "1199 Aktywuj Kupon Zeskanuj Aplikację -35% 1849* Rzeźnik Karkówka Wieprzowa Kości Cena Poza Promocją 1849 Limit Szczegóły Promocji Dostępne Aplikacji Lidl Tylko Sobotę Tania Produkty Prezentowane Materiale Reklamowym Znajdują Sprzedaży Terminach Podanych Wyczerpania Sprzedawane Sprzedaż Produktów Ilościach Znaki Towarowe Należą Więcej",
+    "altText": "Oferta promocyjna na karkówkę wieprzową z kością marki Rzeźnik w aplikacji Lidl.",
+    "image": "https://imgproxy.leaflets.schwarz/gGyywOOyUHlsW5U62Rc7p1rpZhJxdhr_VCsf2oPyh-k/rs:fit:1200:1200:1/g:no/czM6Ly9sZWFmbGV0cy9pbWFnZXMvMDFhMTU5YmUtODBmMi03YzAyLTg1YzEtZWZmNTMxNTI2OTc4L3BhZ2UtMDA0XzE3YjI0NDZiN2FkNGI3MGRmN2IzNmM2MGFkNmVhMjliLnBuZw.jpg",
+    "zoom": "https://imgproxy.leaflets.schwarz/SYp6SD2GE3dARE7vYUuiWEb_LpyiSoPD1UiDsiD10lY/rs:fit:2400:2400:1/g:no/czM6Ly9sZWFmbGV0cy9pbWFnZXMvMDFhMTU5YmUtODBmMi03YzAyLTg1YzEtZWZmNTMxNTI2OTc4L3BhZ2UtMDA0XzE3YjI0NDZiN2FkNGI3MGRmN2IzNmM2MGFkNmVhMjliLnBuZw.jpg",
+    "thumbnail": "https://imgproxy.leaflets.schwarz/tIyN6Ap2DU89k3AX4lb1MxuuCSTu9mvofT-HDDZTtp4/rs:fit:400:400:1/g:no/czM6Ly9sZWFmbGV0cy9pbWFnZXMvMDFhMTU5YmUtODBmMi03YzAyLTg1YzEtZWZmNTMxNTI2OTc4L3BhZ2UtMDA0XzE3YjI0NDZiN2FkNGI3MGRmN2IzNmM2MGFkNmVhMjliLnBuZw.jpg",
+    "pageType": "page"
+   },
+   {
+    "id": "01a1698b-2d8a-733f-98a3-2543cb537043",
+    "number": 6,
+    "width": 1420,
+    "height": 2400,
+    "type": "STANDARD",
+    "links": [],
+    "keyWords": "Pilos Masło Ekstra 83% 125 Cena Poza Promocją 250 Przy Zakupie Limit Szczegóły Promocji Dostępne Aplikacji Lidl 249* Aktywuj Kupon Zeskanuj Aplikację -50% 499 Rzeźnik Polski Kurczak – Filety Piersi Xxl 2480 1499 2480* -39% Produkty Prezentowane Materiale Reklamowym Znajdują Sprzedaży Terminach Podanych Wyczerpania Sprzedawane Sprzedaż Produktów Tylko Ilościach Znaki Towarowe Należą Więcej Piątku",
+    "altText": "Piątkowa promocja na masło ekstra Pilos 83% oraz filety z piersi kurczaka XXL marki Rzeźnik.",
+    "image": "https://imgproxy.leaflets.schwarz/-BzHYQXjVNGKZxVfF94I9WMJJk_6hMFtSHggwrvCPMo/rs:fit:1200:1200:1/g:no/czM6Ly9sZWFmbGV0cy9pbWFnZXMvMDFhMTU5YmUtODBmMi03YzAyLTg1YzEtZWZmNTMxNTI2OTc4L3BhZ2UtMDA2XzE4NTJmOTE4YTFhNTJiNTk3NmEyOGQwNDFkYzM3OWIwLnBuZw.jpg",
+    "zoom": "https://imgproxy.leaflets.schwarz/aPvxTE1x4ISkYOJiU7iMMuJt03oMNevFfhUPQtD2qCY/rs:fit:2400:2400:1/g:no/czM6Ly9sZWFmbGV0cy9pbWFnZXMvMDFhMTU5YmUtODBmMi03YzAyLTg1YzEtZWZmNTMxNTI2OTc4L3BhZ2UtMDA2XzE4NTJmOTE4YTFhNTJiNTk3NmEyOGQwNDFkYzM3OWIwLnBuZw.jpg",
+    "thumbnail": "https://imgproxy.leaflets.schwarz/jWU1TrQ7CTFp-Q32p5F-MTVOcyBwummEFzHv60hxysQ/rs:fit:400:400:1/g:no/czM6Ly9sZWFmbGV0cy9pbWFnZXMvMDFhMTU5YmUtODBmMi03YzAyLTg1YzEtZWZmNTMxNTI2OTc4L3BhZ2UtMDA2XzE4NTJmOTE4YTFhNTJiNTk3NmEyOGQwNDFkYzM3OWIwLnBuZw.jpg",
+    "pageType": "page"
+   },
+   {
+    "id": "01a1698b-2d8e-7cb2-90c2-9b997457eae6",
+    "number": 30,
+    "width": 1420,
+    "height": 2400,
+    "type": "STANDARD",
+    "links": [],
+    "keyWords": "Miksuj Dowolnie Wszystkie Kawy Lavazza Limit Szczegóły Promocji Dostępne Aplikacji Lidl -60% Aktywuj Kupon Zeskanuj Aplikację Taniej Drugi Tańszy Produkt Nutri-Score? Nutri-Score Dobrowolnym Dodatkowym Systemem Oznaczania Wartości Odżywczych Przodu Opakowania Jako Uzupełnienie Klasycznej Szczegółowej Informacji Wartościach Umieszczonej Tyłu System Wskazuje Jednak Dana Żywność Zdrowa Więcej Znajdziesz Alesto Orzechy Włoskie Cena Poza Promocją 848 Gratis 1695 Poniedziałku Produkty Prezentowane Materiale Reklamowym Znajdują Sprzedaży Terminach Podanych Wyczerpania Sprzedawane Sprzedaż Produktów Tylko Ilościach Znaki Towarowe Należą Grafika Została Zmodyfikowana Przy Użyciu Czwartku",
+    "altText": "Promocja na wszystkie kawy Lavazza oraz orzechy włoskie Alesto.",
+    "image": "https://imgproxy.leaflets.schwarz/7bHCQhZUBowBuEBcDMSqUqmKjmPIsZIVBPhR4cOo-3s/rs:fit:1200:1200:1/g:no/czM6Ly9sZWFmbGV0cy9pbWFnZXMvMDFhMTU5YmUtODBmMi03YzAyLTg1YzEtZWZmNTMxNTI2OTc4L3BhZ2UtMDMwX2UwNWI1NWU4MmM3MGM0YWM3Y2Y5NTM5ODg2YjBiMzVjLnBuZw.jpg",
+    "zoom": "https://imgproxy.leaflets.schwarz/kFx9KTMO_q_1sqTAd_QP7YLmO7xhY_vDcuxc9-A88ls/rs:fit:2400:2400:1/g:no/czM6Ly9sZWFmbGV0cy9pbWFnZXMvMDFhMTU5YmUtODBmMi03YzAyLTg1YzEtZWZmNTMxNTI2OTc4L3BhZ2UtMDMwX2UwNWI1NWU4MmM3MGM0YWM3Y2Y5NTM5ODg2YjBiMzVjLnBuZw.jpg",
+    "thumbnail": "https://imgproxy.leaflets.schwarz/zewtzfzyin9BM4w1vSFuVlfZtFuBK2cqvt018ymBtb8/rs:fit:400:400:1/g:no/czM6Ly9sZWFmbGV0cy9pbWFnZXMvMDFhMTU5YmUtODBmMi03YzAyLTg1YzEtZWZmNTMxNTI2OTc4L3BhZ2UtMDMwX2UwNWI1NWU4MmM3MGM0YWM3Y2Y5NTM5ODg2YjBiMzVjLnBuZw.jpg",
+    "pageType": "page"
+   },
+   {
+    "id": "01a1698b-2d91-7efa-bf65-7a4b4a169815",
+    "number": 42,
+    "width": 1420,
+    "height": 2400,
+    "type": "STANDARD",
+    "links": [
+     {
+      "id": "01a1698b-37b0-730a-bd89-f36509f287ad",
+      "displayType": "product",
+      "url": "https://www.lidl.pl/p/esmara-kurtka-pikowana-damska/p100411982",
+      "title": "ESMARA® Kurtka pikowana damska",
+      "icon": "link",
+      "width": 94.444444444444,
+      "height": 87.610619469027,
+      "top": 6.194690265486997,
+      "left": 2.7777777777778,
+      "productDetails": {
+       "productId": "100411982",
+       "title": "ESMARA® Kurtka pikowana damska"
+      }
+     }
+    ],
+    "keyWords": "Esmara Pikowana Kurtka Damska Rozmiary S-Xl** Wzory Wszystkie Dostępne Każdym Najniższa Cena Dni Obniżką -20﹪ 7999 9999* Także Ciepłe Wypełnienie Zakładka Zatrzaski Wiatroodporna Moda Akcesoria Czwartku Więcej Produkty Prezentowane Materiale Reklamowym Znajdują Sprzedaży Terminach Podanych Wyczerpania Sprzedawane Sprzedaż Produktów Tylko Ilościach Znaki Towarowe Należą Artykuł Dostępny – Sprawdź Rafika Została Zmodyfikowana Przy Użyciu",
+    "altText": "Czwartkowa oferta modowa na damskie pikowane kurtki marki Esmara.",
+    "image": "https://imgproxy.leaflets.schwarz/EqYh7P_8jbAWGqgc2RCs5g_T-BF3dbOakPVcaZOa1iY/rs:fit:1200:1200:1/g:no/czM6Ly9sZWFmbGV0cy9pbWFnZXMvMDFhMTU5YmUtODBmMi03YzAyLTg1YzEtZWZmNTMxNTI2OTc4L3BhZ2UtMDQyXzE5OWNlMmM3NTkwOWViZDRkYjIwZTdiYjM2M2VkZTM3LnBuZw.jpg",
+    "zoom": "https://imgproxy.leaflets.schwarz/QYdAgiAzoLVwA2xwimH3QZEE_sM6KRrQo5SLJAsnVhc/rs:fit:2400:2400:1/g:no/czM6Ly9sZWFmbGV0cy9pbWFnZXMvMDFhMTU5YmUtODBmMi03YzAyLTg1YzEtZWZmNTMxNTI2OTc4L3BhZ2UtMDQyXzE5OWNlMmM3NTkwOWViZDRkYjIwZTdiYjM2M2VkZTM3LnBuZw.jpg",
+    "thumbnail": "https://imgproxy.leaflets.schwarz/17P2y9y4oHyZ_xOGKlM_hKciBOqH5NpeHBH4CceCeHM/rs:fit:400:400:1/g:no/czM6Ly9sZWFmbGV0cy9pbWFnZXMvMDFhMTU5YmUtODBmMi03YzAyLTg1YzEtZWZmNTMxNTI2OTc4L3BhZ2UtMDQyXzE5OWNlMmM3NTkwOWViZDRkYjIwZTdiYjM2M2VkZTM3LnBuZw.jpg",
+    "pageType": "page"
+   }
+  ],
+  "products": {
+   "01a1698b-37b0-730a-bd89-f36509f287ad": {
+    "productId": "100411982",
+    "title": "ESMARA® Kurtka pikowana damska",
+    "brand": "ESMARA®",
+    "currencyText": "PLN",
+    "wonCategoryPrimary": "Światy potrzeb/Moda i akcesoria/Moda damska",
+    "wonCategoryPrimaryPath": "0/15/1510",
+    "canonicalUrl": "/p/esmara-kurtka-pikowana-damska/p100411982",
+    "categoryPrimary": "Kategorie/Moda/Moda damska/Kurtki & płaszcze/Kurtki przejściowe",
+    "image": "https://www.lidl.pl/assets/gcp8ba2fc13d6094e4a80958785006d0cef.jpg",
+    "url": "https://www.lidl.pl/p/esmara-kurtka-pikowana-damska/p100411982",
+    "price": "79.99",
+    "currencySymbol": "zł",
+    "description": "Kolor: khaki, liliowy, biały Cecha: swobodny krój",
+    "categoryPrimaryPath": "0/46/4610/461018/46101813"
+   },
+   "01a1698b-37b0-730a-bd89-f3650e15b6ca": {
+    "productId": "100393937",
+    "title": "PARKSIDE® Reflektor roboczy, 2000 lm",
+    "brand": "PARKSIDE®",
+    "currencyText": "PLN",
+    "wonCategoryPrimary": "Światy potrzeb/Sklep dla majsterkowiczów i ogród/Warsztat i sprzęt",
+    "wonCategoryPrimaryPath": "0/12/1213",
+    "canonicalUrl": "/p/parkside-reflektor-roboczy-2000-lm/p100393937",
+    "categoryPrimary": "Kategorie/Warsztat/Warsztat/Wyposażenie warsztatu/Oświetlenie robocze",
+    "image": "https://www.lidl.pl/assets/gcpb23e9436a32d4c988f96146425336974.jpg",
+    "url": "https://www.lidl.pl/p/parkside-akumulatorowy-naswietlacz-roboczy-paal-6000-e1/p100393937",
+    "price": "49.99",
+    "currencySymbol": "zł",
+    "description": "Akumulatorowa lampa warsztatowa „PAAL 6000 E1” marki PARKSIDE® zapewnia mobilne, mocne oświetlenie do warsztatu, na plac budowy i do zastosowań zewnętrznych. Dioda COB‑LED o mocy 20 W i strumieniu świetlnym ok. 2000 lmCztery tryby: maks., tryb oszczędny 50%, SOS i czerwone światło migająceAkumulator litowo-jonowy 3,7 V / 6000 mAh zapewniający do 4 h pracy w trybie oszczędnymObudowa o stopniu ochrony IP65 z gumowanymi krawędziami do trudnych zastosowańRozkładana, magnetyczna podstawa i możliwość zawieszenia",
+    "categoryPrimaryPath": "0/41/4111/411120/41112010"
+   }
+  },
+  "relatedFlyers": [
+   {
+    "id": "01a144b3-da4c-7749-9f9d-e33b53d05160",
+    "slug": "gazetka-26-10-katalog-kw44",
+    "name": "Katalog",
+    "title": "26.10",
+    "url": "https://www.lidl.pl/l/pl/gazetki/gazetka-26-10-katalog-kw44/ar/0?_ab=1",
+    "startDate": "2026-10-19T00:00:00+02:00",
+    "endDate": "2026-10-31T23:59:59+01:00",
+    "thumbnailUrl": "https://imgproxy.leaflets.schwarz/zurx1349BKmZaGeAZFV0sP_NDMMdvu3z_lN23KrUBh4/rs:fit:400:400:1/g:no/czM6Ly9sZWFmbGV0cy9pbWFnZXMvMDFhMTQ0YjMtZGE0Yy03NzQ5LTlmOWQtZTMzYjUzZDA1MTYwL3BhZ2UtMDFfMmQwM2NkYmMyMGNiMjVkY2M1Yzc5NTBlNmYyNjJhYTYucG5n.jpg",
+    "pdfUrl": "https://assets.leaflets.schwarz/leaflets/pdfs/01a144b3-da4c-7749-9f9d-e33b53d05160/Katalog-26-10-00.pdf",
+    "regionCodes": [],
+    "stores": []
+   }
+  ]
+ }
+}

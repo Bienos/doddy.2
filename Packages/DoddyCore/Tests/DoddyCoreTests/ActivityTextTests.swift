@@ -52,6 +52,8 @@ final class ActivityTextTests: XCTestCase {
             .checkErrands(about: nil),
             // ADR-621.
             .startStopwatch(label: "Bieg"), .stopStopwatch, .checkStopwatch,
+            // SHOPPING.md.
+            .findDeals(DealsRequest(items: ["masło"], chains: [.biedronka])),
         ]
         requests += CloudToolName.all.sorted().map { .cloudTool(CloudToolCall(name: $0, arguments: [:])) }
         return requests
@@ -65,7 +67,7 @@ final class ActivityTextTests: XCTestCase {
              .lookupContact, .upcomingBirthdays, .setTimer, .setAlarm, .listAlarms, .cancelAlarm, .openMap, .runShortcut,
              .draftMessage, .draftBlikTransfer, .makePresentation, .readSteps, .findPhotos, .openCamera, .cloudTool, .addToList, .readList, .checkOff, .removeFromList, .createList,
              .changeCalendarEvent, .changeReminder, .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders,
-             .convertCurrency, .parkingSpot, .addIngredients, .findFreeTime, .leaveBy, .handOverErrand, .checkErrands,
+             .convertCurrency, .parkingSpot, .addIngredients, .findFreeTime, .leaveBy, .handOverErrand, .checkErrands, .findDeals,
              .startStopwatch, .stopStopwatch, .checkStopwatch:
             true
         case .needsClarification, .calculate, .convertUnits, .undoLast, .startTranslator, .stopTranslator, .unsupported, .invalid,
@@ -79,7 +81,7 @@ final class ActivityTextTests: XCTestCase {
         XCTAssertTrue(everyKind.allSatisfy(getsARow))
         // One of each kind that gets a row (cloud tools count once each, drafts twice).
         let kinds = Set(everyKind.map { String(describing: $0).prefix { $0 != "(" } })
-        XCTAssertEqual(kinds.count, 42)
+        XCTAssertEqual(kinds.count, 43)
         XCTAssertNil(ActivityRequest.describe(.undoLast, calendar: calendar))
         XCTAssertNil(ActivityRequest.describe(.calculate(expression: "1+1"), calendar: calendar))
     }

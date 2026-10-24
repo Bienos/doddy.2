@@ -23,6 +23,9 @@ public enum ConnectionPause {
         case .handOverErrand:
             // Doddy's server searches and reads the web for it (ADR-570).
             true
+        case .findDeals:
+            // Doddy's server fetches the chains' leaflet pages for it (SHOPPING.md).
+            true
         case .readCalendar, .findFreeTime, .leaveBy, .createCalendarEvent, .createReminder, .lookupContact, .upcomingBirthdays, .setTimer,
              .openMap, .runShortcut, .draftMessage, .draftBlikTransfer, .makePresentation, .readSteps, .findPhotos, .openCamera, .cloudTool, .changeCalendarEvent, .changeReminder,
              .deleteCalendarEvent, .deleteReminder, .setAlarm, .undoLast,

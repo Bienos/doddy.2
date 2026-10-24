@@ -62275,13 +62275,13 @@
         }
       }
     },
-    "Separate items with commas. Doddy's server reads the shops' own leaflets for this request and keeps nothing; nothing about you is sent to the shops.": {
+    "Separate items with commas. Doddy's server reads the shops' own leaflets for this request and keeps nothing. Nothing that identifies you goes to the shops; Rossmann gets the item names as a search.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Oddziel rzeczy przecinkami. Serwer Doddy’ego czyta gazetki sklepów na to jedno zapytanie i niczego nie zatrzymuje; nic o Tobie nie trafia do sklepów."
+            "value": "Oddziel rzeczy przecinkami. Serwer Doddy’ego czyta gazetki sklepów na to jedno zapytanie i niczego nie zatrzymuje. Nic, co Cię identyfikuje, nie trafia do sklepów; Rossmann dostaje nazwy rzeczy jako wyszukiwanie."
           }
         }
       }

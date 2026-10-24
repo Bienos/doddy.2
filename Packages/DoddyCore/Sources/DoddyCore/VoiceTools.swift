@@ -23,6 +23,8 @@ public enum VoiceToolName {
     public static let handOverErrand = "hand_over_errand"
     /// What Doddy found for the tasks handed over, as saved on this iPhone.
     public static let checkErrands = "check_errands"
+    /// This week's leaflets, read on Doddy's server on request (SHOPPING.md, Deals.swift).
+    public static let findDeals = "find_deals"
 }
 
 /// The functions a user turns on in Settings, Connections. All start off, and each one may also
@@ -267,6 +269,9 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case handOverErrand(ErrandDraft)
     /// The tasks handed over, as saved on this iPhone; `about` is which one, in the agent's words.
     case checkErrands(about: String?)
+    /// This week's leaflets from the chains asked (SHOPPING.md): a read of public data on Doddy's
+    /// server, after the user's yes. Nothing about the user goes to the shops.
+    case findDeals(DealsRequest)
     case unsupported(name: String)
     case invalid(name: String, reason: String)
 
@@ -371,6 +376,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return parseHandOverErrand(args, name: name)
         case VoiceToolName.checkErrands:
             return parseCheckErrands(args)
+        case VoiceToolName.findDeals:
+            return parseFindDeals(args, name: name)
         default:
             return parseCloud(name: name, parametersJSON: parametersJSON) ?? .unsupported(name: name)
         }
@@ -538,6 +545,24 @@ struct Arguments {
     func texts(_ key: String) -> [String]? {
         if let list = values[key] as? [Any] { return list.compactMap { $0 as? String } }
         return text(key).map { [$0] }
+    }
+
+    /// A list that must hold only strings (priorities, leaflet items, chains). Unlike `texts`,
+    /// nothing is dropped: a number or an object in it makes the whole list `notStrings`, so the
+    /// agent hears why instead of a list that lost an entry. A single string counts as a list of
+    /// one; missing or null is `absent`. The strings are as sent (blank ones included).
+    enum StringList: Equatable {
+        case absent
+        case list([String])
+        case notStrings
+    }
+
+    func stringList(_ key: String) -> StringList {
+        guard let value = values[key], !(value is NSNull) else { return .absent }
+        if let single = value as? String { return .list([single]) }
+        guard let list = value as? [Any] else { return .notStrings }
+        let strings = list.compactMap { $0 as? String }
+        return strings.count == list.count ? .list(strings) : .notStrings
     }
 
     func flag(_ key: String) -> Bool {

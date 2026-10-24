@@ -18,6 +18,13 @@ import Crypto
 
 // MARK: - The draft (what the user said yes to)
 
+/// What kind of task (docs/implementation/SHOPPING.md). Absent means a research task, exactly as
+/// before shopping tasks existed: same body, same digest.
+public enum ErrandKind: String, Codable, Hashable, Sendable, CaseIterable {
+    /// "Znajdź mi to": offers from shops in Poland, chosen by the user's priorities in their order.
+    case shopping
+}
+
 /// What Doddy hands over. The user's words are kept as given: only leading and trailing spaces are
 /// trimmed, nothing else is changed. The brief is Doddy's, and is labelled as Doddy's everywhere.
 public struct ErrandDraft: Codable, Equatable, Hashable, Sendable {
@@ -25,6 +32,9 @@ public struct ErrandDraft: Codable, Equatable, Hashable, Sendable {
     public static let maxBrief = 1_000
     public static let maxTitle = 80
     public static let defaultLanguage = "pl"
+    /// A shopping task's priorities (SHOPPING.md): at most 5, each 1 to 40 characters.
+    public static let maxPriorities = 5
+    public static let maxPriority = 40
 
     /// The user's exact words.
     public let words: String
@@ -34,12 +44,45 @@ public struct ErrandDraft: Codable, Equatable, Hashable, Sendable {
     public let title: String
     /// A two-letter language code, lower case.
     public let language: String
+    /// Nil for a research task.
+    public let kind: ErrandKind?
+    /// What matters most to the user, in the order they said it ("Cisza", "Cena", "Gwarancja").
+    /// Only for a shopping task; each one trimmed, nothing else changed.
+    public let priorities: [String]
 
-    public init(words: String, brief: String, title: String, language: String = ErrandDraft.defaultLanguage) {
+    public init(words: String, brief: String, title: String, language: String = ErrandDraft.defaultLanguage,
+                kind: ErrandKind? = nil, priorities: [String] = []) {
         self.words = words.trimmingCharacters(in: .whitespacesAndNewlines)
         self.brief = brief.trimmingCharacters(in: .whitespacesAndNewlines)
         self.title = title.trimmingCharacters(in: .whitespacesAndNewlines)
         self.language = language.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        self.kind = kind
+        self.priorities = priorities.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+    }
+
+    private enum CodingKeys: String, CodingKey { case words, brief, title, language, kind, priorities }
+
+    /// Read back exactly as stored. Drafts saved before shopping tasks have neither `kind` nor
+    /// `priorities`, and read as research tasks.
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        words = try c.decode(String.self, forKey: .words)
+        brief = try c.decode(String.self, forKey: .brief)
+        title = try c.decode(String.self, forKey: .title)
+        language = try c.decode(String.self, forKey: .language)
+        kind = try c.decodeIfPresent(ErrandKind.self, forKey: .kind)
+        priorities = try c.decodeIfPresent([String].self, forKey: .priorities) ?? []
+    }
+
+    /// A research draft is stored with the same four keys as before.
+    public func encode(to encoder: any Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(words, forKey: .words)
+        try c.encode(brief, forKey: .brief)
+        try c.encode(title, forKey: .title)
+        try c.encode(language, forKey: .language)
+        try c.encodeIfPresent(kind, forKey: .kind)
+        if kind != nil || !priorities.isEmpty { try c.encode(priorities, forKey: .priorities) }
     }
 
     /// Hints before sending, in a fixed order; the server checks the same limits again and decides.
@@ -51,17 +94,43 @@ public struct ErrandDraft: Codable, Equatable, Hashable, Sendable {
         if brief.isEmpty { issues.append(.missingBrief) } else if brief.utf16.count > Self.maxBrief { issues.append(.briefTooLong) }
         if title.isEmpty { issues.append(.missingTitle) } else if title.utf16.count > Self.maxTitle { issues.append(.titleTooLong) }
         if !Self.isLanguageCode(language) { issues.append(.languageNotACode) }
+        switch kind {
+        case .shopping?:
+            // Refused, never cut or merged: the agent hears why and asks the user.
+            if priorities.count > Self.maxPriorities { issues.append(.tooManyPriorities) }
+            if priorities.contains(where: \.isEmpty) { issues.append(.emptyPriority) }
+            if priorities.contains(where: { $0.utf16.count > Self.maxPriority }) { issues.append(.priorityTooLong) }
+            // As the server compares them: ignoring case only ("Cena" and "cena" are the same).
+            let named = priorities.filter { !$0.isEmpty }.map { $0.lowercased() }
+            if Set(named).count != named.count { issues.append(.duplicatePriority) }
+        case nil:
+            if !priorities.isEmpty { issues.append(.prioritiesNeedShopping) }
+        }
         return issues
     }
 
-    /// The digest the server binds the approval to: SHA-256 (hex) over the canonical JSON of
-    /// `{brief, language, title, words}`, keys sorted, no spaces, strings escaped as JavaScript's
-    /// JSON.stringify escapes them (server/messaging/src/errands/schema.ts). The app approves a
-    /// preview only when its digest is this one, so the yes is bound to exactly these words.
+    /// The exact text the digest is taken over: the canonical JSON of `{brief, language, title,
+    /// words}` for a research task (unchanged since ADR-570), and of `{brief, kind, language,
+    /// priorities, title, words}` for a shopping task. Keys sorted, no spaces, arrays as
+    /// `["a","b"]`, strings escaped as JavaScript's JSON.stringify escapes them
+    /// (server/messaging/src/errands/schema.ts; fixture errand_create_shopping_v1.json).
+    var canonicalJSON: String {
+        let tail = "\"title\":\(Self.jsonString(title)),\"words\":\(Self.jsonString(words))}"
+        switch kind {
+        case nil:
+            return "{\"brief\":\(Self.jsonString(brief)),\"language\":\(Self.jsonString(language)),\(tail)"
+        case .shopping?:
+            let list = "[" + priorities.map(Self.jsonString).joined(separator: ",") + "]"
+            return "{\"brief\":\(Self.jsonString(brief)),\"kind\":\(Self.jsonString(ErrandKind.shopping.rawValue)),"
+                + "\"language\":\(Self.jsonString(language)),\"priorities\":\(list),\(tail)"
+        }
+    }
+
+    /// The digest the server binds the approval to: SHA-256 (hex) over `canonicalJSON`. The app
+    /// approves a preview only when its digest is this one, so the yes is bound to exactly these
+    /// words (and, for a shopping task, exactly these priorities in this order).
     public var digest: String {
-        let json = "{\"brief\":\(Self.jsonString(brief)),\"language\":\(Self.jsonString(language)),"
-            + "\"title\":\(Self.jsonString(title)),\"words\":\(Self.jsonString(words))}"
-        return SHA256.hash(data: Data(json.utf8)).map { String(format: "%02x", $0) }.joined()
+        SHA256.hash(data: Data(canonicalJSON.utf8)).map { String(format: "%02x", $0) }.joined()
     }
 
     /// A JSON string literal exactly as JSON.stringify writes it: `"` and `\` escaped, control
@@ -93,6 +162,9 @@ public struct ErrandDraft: Codable, Equatable, Hashable, Sendable {
 
 public enum ErrandDraftIssue: Equatable, Sendable {
     case missingWords, wordsTooLong, missingBrief, briefTooLong, missingTitle, titleTooLong, languageNotACode
+    /// Shopping tasks (SHOPPING.md): priorities only with `kind: shopping`, at most five, none
+    /// empty or over 40 characters, no two the same ignoring case.
+    case prioritiesNeedShopping, tooManyPriorities, emptyPriority, priorityTooLong, duplicatePriority
 
     /// For the agent, in the style of the other tools' `invalid` reasons.
     public var reason: String {
@@ -104,17 +176,36 @@ public enum ErrandDraftIssue: Equatable, Sendable {
         case .missingTitle: "missing title"
         case .titleTooLong: "title is longer than \(ErrandDraft.maxTitle) characters"
         case .languageNotACode: "language must be a two-letter code such as pl or en"
+        case .prioritiesNeedShopping: "priorities are only for a shopping task (kind shopping)"
+        case .tooManyPriorities: "priorities has more than \(ErrandDraft.maxPriorities) entries"
+        case .emptyPriority: "a priority is empty"
+        case .priorityTooLong: "a priority is longer than \(ErrandDraft.maxPriority) characters"
+        case .duplicatePriority: "two priorities are the same"
         }
     }
 }
 
 extension VoiceToolRequest {
-    /// `{words, brief, title, language?}`. Too long or missing is refused, never cut or filled in:
-    /// the agent hears why and asks the user.
+    /// `{words, brief, title, language?, kind?, priorities?}`. Too long or missing is refused, never
+    /// cut or filled in: the agent hears why and asks the user. `kind` is "shopping" or left out (a
+    /// research task); `priorities` are the user's answers to "what matters most?", in their order.
     static func parseHandOverErrand(_ args: Arguments, name: String) -> VoiceToolRequest {
+        var kind: ErrandKind?
+        if let raw = args.text("kind") {
+            guard let known = ErrandKind(rawValue: raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()) else {
+                return .invalid(name: name, reason: "kind must be shopping, or left out for research")
+            }
+            kind = known
+        }
+        let priorities: [String]
+        switch args.stringList("priorities") {
+        case .absent: priorities = []
+        case .list(let list): priorities = list
+        case .notStrings: return .invalid(name: name, reason: "priorities must be a list of short texts")
+        }
         let draft = ErrandDraft(
             words: args.text("words") ?? "", brief: args.text("brief") ?? "", title: args.text("title") ?? "",
-            language: args.text("language") ?? ErrandDraft.defaultLanguage)
+            language: args.text("language") ?? ErrandDraft.defaultLanguage, kind: kind, priorities: priorities)
         let issues = draft.validationIssues()
         guard issues.isEmpty else { return .invalid(name: name, reason: issues.map(\.reason).joined(separator: "; ")) }
         return .handOverErrand(draft)
@@ -129,18 +220,35 @@ extension VoiceToolRequest {
 // MARK: - The ask (ASK-01)
 
 /// The cards for the two errand tools. Both change nothing on the iPhone or in an account, so a
-/// spoken yes or a tap answers them (ASK-01's read rule).
+/// spoken yes or a tap answers them (ASK-01's read rule). English, like the other cards in the
+/// core; the app shows them in the iPhone's language.
 public enum ErrandAsk {
     public static func handOverCard(_ draft: ErrandDraft) -> AskCard {
-        AskCard(
-            title: "Hand this to Doddy?",
-            lines: [
-                "\u{201C}\(draft.words)\u{201D}",
-                "Doddy's note: \(draft.brief)",
-                "Doddy searches the web and reads pages as often as this needs, in the background, and sends you a notification when it's done.",
-                "Nothing is booked, bought or sent.",
-            ],
-            confirmLabel: "Yes, go")
+        switch draft.kind {
+        case nil:
+            return AskCard(
+                title: "Hand this to Doddy?",
+                lines: [
+                    "\u{201C}\(draft.words)\u{201D}",
+                    "Doddy's note: \(draft.brief)",
+                    "Doddy searches the web and reads pages as often as this needs, in the background, and sends you a notification when it's done.",
+                    "Nothing is booked, bought or sent.",
+                ],
+                confirmLabel: "Yes, go")
+        case .shopping?:
+            // SHOPPING.md: the digest binds the words, Doddy's note and the priorities in their
+            // order, so the card shows all three.
+            return AskCard(
+                title: "Hand this to Doddy?",
+                lines: [
+                    "\u{201C}\(draft.words)\u{201D}",
+                    "Doddy's note: \(draft.brief)",
+                ] + (draft.priorities.isEmpty ? [] : ["What matters most: " + draft.priorities.joined(separator: ", ")]) + [
+                    "Doddy looks for offers in shops in Poland and reads their pages, in the background, and sends you a notification when it's done.",
+                    "Nothing is bought, ordered or sent.",
+                ],
+                confirmLabel: "Yes, go")
+        }
     }
 
     public static let checkCard = AskCard(
@@ -239,17 +347,24 @@ public struct ErrandPreview: Decodable, Equatable, Sendable {
     public let words: String
     public let brief: String
     public let expiresAt: Date
+    /// As the server echoed them (SHOPPING.md): `"shopping"` and the priorities for a shopping
+    /// task, nil for a research task. Kept as sent, so a kind this app doesn't know never matches.
+    public let kind: String?
+    public let priorities: [String]?
 
-    public init(id: UUID, digest: String, title: String, words: String, brief: String, expiresAt: Date) {
+    public init(id: UUID, digest: String, title: String, words: String, brief: String, expiresAt: Date,
+                kind: String? = nil, priorities: [String]? = nil) {
         self.id = id
         self.digest = digest
         self.title = title
         self.words = words
         self.brief = brief
         self.expiresAt = expiresAt
+        self.kind = kind
+        self.priorities = priorities
     }
 
-    private enum CodingKeys: String, CodingKey { case id, digest, title, words, brief, expiresAt }
+    private enum CodingKeys: String, CodingKey { case id, digest, title, words, brief, expiresAt, kind, priorities }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -259,12 +374,19 @@ public struct ErrandPreview: Decodable, Equatable, Sendable {
         words = try c.decode(String.self, forKey: .words)
         brief = try c.decode(String.self, forKey: .brief)
         expiresAt = try c.serverDate(.expiresAt)
+        kind = try c.decodeIfPresent(String.self, forKey: .kind)
+        priorities = try c.decodeIfPresent([String].self, forKey: .priorities)
     }
 
-    /// The server holds exactly what the user said yes to, and its digest is for exactly that.
-    /// Anything else is never approved.
+    /// The server holds exactly what the user said yes to, and its digest is for exactly that:
+    /// the same words, brief and title, the same kind, and for a shopping task the same priorities
+    /// in the same order. Anything else is never approved.
     public func matches(_ draft: ErrandDraft) -> Bool {
-        words == draft.words && brief == draft.brief && title == draft.title && digest == draft.digest
+        guard words == draft.words, brief == draft.brief, title == draft.title, digest == draft.digest else { return false }
+        switch draft.kind {
+        case nil: return kind == nil && (priorities ?? []).isEmpty
+        case .shopping?: return kind == ErrandKind.shopping.rawValue && priorities == draft.priorities
+        }
     }
 }
 
@@ -314,6 +436,10 @@ public struct ErrandSnapshot: Decodable, Equatable, Sendable {
     public let words: String?
     public let brief: String?
     public let language: String?
+    /// `"shopping"` and its priorities for a shopping task (SHOPPING.md); nil for research, and
+    /// after `ack`. Kept as sent.
+    public let kind: String?
+    public let priorities: [String]?
     public let state: ErrandState
     public let createdAt: Date
     public let approvedAt: Date?
@@ -331,8 +457,8 @@ public struct ErrandSnapshot: Decodable, Equatable, Sendable {
     public let failure: ErrandFailureCode?
 
     private enum CodingKeys: String, CodingKey {
-        case id, title, words, brief, language, state, createdAt, approvedAt, startedAt, finishedAt, acknowledgedAt, cancelRequested
-        case searches, fetches, result, resultDigest, failure
+        case id, title, words, brief, language, kind, priorities, state, createdAt, approvedAt, startedAt, finishedAt, acknowledgedAt
+        case cancelRequested, searches, fetches, result, resultDigest, failure
     }
 
     public init(from decoder: any Decoder) throws {
@@ -342,6 +468,8 @@ public struct ErrandSnapshot: Decodable, Equatable, Sendable {
         words = try c.decodeIfPresent(String.self, forKey: .words)
         brief = try c.decodeIfPresent(String.self, forKey: .brief)
         language = try c.decodeIfPresent(String.self, forKey: .language)
+        kind = try c.decodeIfPresent(String.self, forKey: .kind)
+        priorities = try c.decodeIfPresent([String].self, forKey: .priorities)
         state = try c.decode(ErrandState.self, forKey: .state)
         createdAt = try c.serverDate(.createdAt)
         approvedAt = try c.serverDateIfPresent(.approvedAt)
@@ -460,9 +588,12 @@ public struct ErrandResult: Codable, Equatable, Sendable {
     public let next: [String]
     public let sources: [Source]
     public let checkedAt: String
+    /// A shopping task's offers and picks (SHOPPING.md, Shopping.swift). Older servers and research
+    /// tasks send none; the fields above stay valid either way.
+    public let shopping: ShoppingResult?
 
     public init(answer: String, sections: [Section] = [], recommendation: String? = nil, budget: Budget? = nil,
-                next: [String] = [], sources: [Source] = [], checkedAt: String) {
+                next: [String] = [], sources: [Source] = [], checkedAt: String, shopping: ShoppingResult? = nil) {
         self.answer = answer
         self.sections = sections
         self.recommendation = recommendation
@@ -470,9 +601,10 @@ public struct ErrandResult: Codable, Equatable, Sendable {
         self.next = next
         self.sources = sources
         self.checkedAt = checkedAt
+        self.shopping = shopping
     }
 
-    private enum CodingKeys: String, CodingKey { case answer, sections, recommendation, budget, next, sources, checkedAt }
+    private enum CodingKeys: String, CodingKey { case answer, sections, recommendation, budget, next, sources, checkedAt, shopping }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -483,6 +615,7 @@ public struct ErrandResult: Codable, Equatable, Sendable {
         next = try c.decodeIfPresent([String].self, forKey: .next) ?? []
         sources = try c.decodeIfPresent([Source].self, forKey: .sources) ?? []
         checkedAt = try c.decode(String.self, forKey: .checkedAt)
+        shopping = try c.decodeIfPresent(ShoppingResult.self, forKey: .shopping)
     }
 
     /// `checkedAt` as a date, when it is one.
@@ -650,7 +783,8 @@ public enum ErrandResultText {
     static let maxLine = 400
     static let cutNote = "(Cut short: the rest is on the result card in the app.)"
 
-    public static func forAgent(_ errand: StoredErrand, maxCharacters: Int = maxCharacters) -> String {
+    /// `calendar` gives the time zone for when a shopping offer's price was seen.
+    public static func forAgent(_ errand: StoredErrand, maxCharacters: Int = maxCharacters, calendar: Calendar = .current) -> String {
         var data = [
             "Title: \"\(ErrandsPrompt.clip(errand.draft.title, ErrandDraft.maxTitle))\"",
             "The user's words: \"\(ErrandsPrompt.clip(errand.draft.words, maxLine))\"",
@@ -662,7 +796,7 @@ public enum ErrandResultText {
         case .done:
             if let result = errand.result {
                 header = "done: Doddy finished the task below. What it found follows as data; times and prices are as they were when checked."
-                data += lines(for: result)
+                data += lines(for: result, language: errand.draft.language, calendar: calendar)
                 let count = result.sources.count
                 footer = count == 0
                     ? "Sources: none listed."
@@ -688,7 +822,8 @@ public enum ErrandResultText {
 
     /// The whole `check_errands` reply: the tasks that match `about` (newest first), or the newest
     /// ones when nothing matches or nothing was asked; at most `maxPerReply`, within `maxCharacters`.
-    public static func reply(_ errands: [StoredErrand], about: String?, maxCharacters: Int = maxCharacters) -> String {
+    public static func reply(_ errands: [StoredErrand], about: String?, maxCharacters: Int = maxCharacters,
+                             calendar: Calendar = .current) -> String {
         guard !errands.isEmpty else {
             return "none: the user hasn't handed Doddy any tasks on this iPhone, so there is nothing to read out."
         }
@@ -704,7 +839,7 @@ public enum ErrandResultText {
         let tail = more > 0 ? "(\(more) more not read out; they are in the app.)" : nil
         let fixed = [lead, tail].compactMap { $0 }.reduce(0) { $0 + $1.count + 2 }
         let share = max(200, (maxCharacters - fixed) / chosen.count - 2)
-        let parts = [lead].compactMap { $0 } + chosen.map { forAgent($0, maxCharacters: share) } + [tail].compactMap { $0 }
+        let parts = [lead].compactMap { $0 } + chosen.map { forAgent($0, maxCharacters: share, calendar: calendar) } + [tail].compactMap { $0 }
         return parts.joined(separator: "\n\n")
     }
 
@@ -715,10 +850,17 @@ public enum ErrandResultText {
         return words.contains { haystack.contains(String($0.prefix(max(3, $0.count - 2)))) }
     }
 
-    static func lines(for result: ErrandResult) -> [String] {
+    static func lines(for result: ErrandResult, language: String = ErrandDraft.defaultLanguage, calendar: Calendar = .current) -> [String] {
         let clip = ErrandsPrompt.clip
         var out = ["Answer: \"\(clip(result.answer, 700))\""]
-        for section in result.sections {
+        var sections = result.sections
+        if let shopping = result.shopping {
+            out += ShoppingResultText.lines(shopping, language: language, calendar: calendar)
+            // The code builds the first section ("Propozycje") from the same picks (SHOPPING.md), so
+            // it isn't read out twice.
+            if sections.first?.kind == .options { sections.removeFirst() }
+        }
+        for section in sections {
             let count = section.items.count
             out.append("Section \"\(clip(section.heading, 120))\" (\(kindWords(section.kind)), \(count) item\(count == 1 ? "" : "s")):")
             for item in section.items {
@@ -757,7 +899,7 @@ public enum ErrandResultText {
     }
 
     /// Header, then as many data lines as fit, then the footer. A cut says so.
-    static func bounded(header: String, data: [String], footer: String?, maxCharacters: Int) -> String {
+    static func bounded(header: String, data: [String], footer: String?, maxCharacters: Int, cutNote: String = cutNote) -> String {
         let headerPart = header + "\n" + ToolData.begin
         let closing = { (cut: Bool) -> String in
             ([ToolData.end] + [cut ? cutNote : nil, footer].compactMap { $0 }).joined(separator: "\n")
@@ -780,7 +922,13 @@ public enum ErrandResultText {
 extension VoiceToolReply {
     /// The server said it has the task (`queued`). The title follows as data.
     public static func errandStarted(_ draft: ErrandDraft) -> String {
-        "started: Doddy's server has the task below and works on it in the background. It searches the web and reads pages as often as the task needs, and the user gets a notification when it's done. Nothing is booked, bought or sent. Tell the user they can close the app.\n"
+        let work = switch draft.kind {
+        case nil:
+            "It searches the web and reads pages as often as the task needs, and the user gets a notification when it's done. Nothing is booked, bought or sent."
+        case .shopping?:
+            "It looks for offers in shops in Poland and reads their pages, and the user gets a notification when it's done. Nothing is bought, ordered or sent."
+        }
+        return "started: Doddy's server has the task below and works on it in the background. \(work) Tell the user they can close the app.\n"
             + ToolData.block([quoted("Title", draft.title)])
     }
 
@@ -818,7 +966,7 @@ extension VoiceToolReply {
 // MARK: - Dates as the server writes them
 
 extension KeyedDecodingContainer {
-    fileprivate func serverDate(_ key: Key) throws -> Date {
+    func serverDate(_ key: Key) throws -> Date {
         let text = try decode(String.self, forKey: key)
         guard let date = ServerDates.parse(text) else {
             throw DecodingError.dataCorruptedError(forKey: key, in: self, debugDescription: "not an ISO 8601 time")
@@ -826,7 +974,7 @@ extension KeyedDecodingContainer {
         return date
     }
 
-    fileprivate func serverDateIfPresent(_ key: Key) throws -> Date? {
+    func serverDateIfPresent(_ key: Key) throws -> Date? {
         guard let text = try decodeIfPresent(String.self, forKey: key) else { return nil }
         guard let date = ServerDates.parse(text) else {
             throw DecodingError.dataCorruptedError(forKey: key, in: self, debugDescription: "not an ISO 8601 time")

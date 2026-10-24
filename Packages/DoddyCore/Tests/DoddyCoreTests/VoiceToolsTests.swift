@@ -261,6 +261,20 @@ final class VoiceToolsTests: XCTestCase {
         XCTAssertEqual(clarification.kind, .unreadable)
     }
 
+    /// Lists of strings (priorities, leaflet items, chains) are taken whole or refused: nothing in
+    /// them is dropped without the agent hearing it.
+    func testAStringListIsTakenWholeOrRefused() {
+        func list(_ json: String) -> Arguments.StringList { Arguments(Data(json.utf8)).stringList("k") }
+        XCTAssertEqual(list(#"{"k":["a"," b ",""]}"#), .list(["a", " b ", ""]), "as sent; the tool decides about blanks")
+        XCTAssertEqual(list(#"{"k":"a"}"#), .list(["a"]), "one string is a list of one")
+        XCTAssertEqual(list(#"{"k":[]}"#), .list([]))
+        XCTAssertEqual(list(#"{}"#), .absent)
+        XCTAssertEqual(list(#"{"k":null}"#), .absent)
+        XCTAssertEqual(list(#"{"k":["a",1]}"#), .notStrings)
+        XCTAssertEqual(list(#"{"k":{"a":"b"}}"#), .notStrings)
+        XCTAssertEqual(list(#"{"k":7}"#), .notStrings)
+    }
+
     func testLookupContactNeedsName() {
         XCTAssertEqual(parse("lookup_contact", #"{"name":"Marta"}"#), .lookupContact(name: "Marta"))
         XCTAssertEqual(parse("lookup_contact", #"{}"#), .invalid(name: "lookup_contact", reason: "missing name"))

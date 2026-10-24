@@ -19,7 +19,7 @@ export const LOGBOOK_MAX_BODY_BYTES = 16 * 1024;
 export const LOGBOOK_SCHEMA = "doddy.logbook.day.v1";
 
 /**
- * The voice agent's tool ids (voice-agent/tools.json, 97 today). A test reads that file and fails
+ * The voice agent's tool ids (voice-agent/tools.json, 98 today). A test reads that file and fails
  * if this list and the file disagree, so a new tool can't be counted before it is listed here.
  */
 export const LOGBOOK_TOOL_IDS = [
@@ -40,7 +40,7 @@ export const LOGBOOK_TOOL_IDS = [
   "add_todoist_task", "complete_todoist_task", "move_todoist_task", "rename_todoist_task", "web_search",
   "geocode_place", "get_weather", "wikipedia_search", "wikipedia_summary", "news_search", "find_places",
   "start_translator", "stop_translator", "add_to_list", "add_ingredients", "read_list", "check_off",
-  "remove_from_list", "create_list", "hand_over_errand", "check_errands", "note_capability_gap", "ask_claude",
+  "remove_from_list", "create_list", "hand_over_errand", "check_errands", "find_deals", "note_capability_gap", "ask_claude",
   "make_document",
 ] as const;
 
