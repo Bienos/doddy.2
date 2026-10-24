@@ -72,6 +72,7 @@ enum LaunchWork {
             ("Tidy up", { if TidyUpSettings.stored().isOn { _ = await TidyUpScheduler.apply(.stored()) } }),
             ("Evening wrap-up", { if EveningWrapUpSettings.stored().isOn { _ = await EveningWrapUpScheduler.apply(.stored()) } }),
             ("Weekly look back", { if WeeklyLookBackSettings.stored().isOn { _ = await WeeklyLookBackScheduler.apply(.stored()) } }),
+            ("Weekly plan", { if WeeklyPlanSettings.stored().isOn { _ = await WeeklyPlanScheduler.apply(.stored()) } }),
             ("Birthdays", { await BirthdayScheduler.refresh() }),
             // A recording Doddy was closed in the middle of is finished, or reported lost (ADR-588).
             ("Recordings recovery", { await RecordingCoordinator.shared.recoverUnfinished() }),

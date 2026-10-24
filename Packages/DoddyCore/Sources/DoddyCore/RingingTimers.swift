@@ -86,19 +86,21 @@ public enum NotificationUrgency: String, Equatable, Sendable {
 public enum DoddyNotificationKind: String, CaseIterable, Sendable {
     case timer, focusDone, noteReminder, leaveBy, eventNudge
     case morningCheckIn, eveningWrapUp, weeklyLookBack, tidyUp, birthday, openWays
+    /// The Monday plan (ADR-608).
+    case weeklyPlan
 
     public var urgency: NotificationUrgency {
         switch self {
         case .timer, .focusDone, .noteReminder, .leaveBy, .eventNudge: .timeSensitive
-        case .morningCheckIn, .eveningWrapUp, .weeklyLookBack, .tidyUp, .birthday, .openWays: .active
+        case .morningCheckIn, .eveningWrapUp, .weeklyLookBack, .tidyUp, .birthday, .openWays, .weeklyPlan: .active
         }
     }
 
     /// Whether it plays the notification sound. The evening, weekly and tidy-up routines arrive
-    /// without one, as they always have.
+    /// without one, as they always have, and so does the weekly plan.
     public var playsSound: Bool {
         switch self {
-        case .eveningWrapUp, .weeklyLookBack, .tidyUp: false
+        case .eveningWrapUp, .weeklyLookBack, .tidyUp, .weeklyPlan: false
         default: true
         }
     }

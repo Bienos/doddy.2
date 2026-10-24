@@ -1571,6 +1571,17 @@
         }
       }
     },
+    "A private note": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prywatna notatka"
+          }
+        }
+      }
+    },
     "A private note stays on this iPhone and isn't given to Doddy's voice, Siri, Ask Doddy, widgets, the watch or the call copy. Its words show after Face ID.": {
       "extractionState": "manual",
       "localizations": {
@@ -5549,7 +5560,7 @@
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "I jeszcze: %lld"
+            "value": "I jeszcze %lld"
           }
         },
         "pt-BR": {
@@ -8323,6 +8334,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "意思相近"
+          }
+        }
+      }
+    },
+    "Calendar is off in Connections, so events aren't shown.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kalendarz jest wyłączony w Połączeniach, więc wydarzeń tu nie ma."
           }
         }
       }
@@ -35533,6 +35555,47 @@
         }
       }
     },
+    "Made on this iPhone from your calendar, reminders, Doddy's reminders and the birthdays you picked. Nothing is sent anywhere.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Made on this iPad from your calendar, reminders, Doddy's reminders and the birthdays you picked. Nothing is sent anywhere."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Made on this iPhone from your calendar, reminders, Doddy's reminders and the birthdays you picked. Nothing is sent anywhere."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zrobione na tym iPadzie z Twojego kalendarza, przypomnień, przypomnień Doddy'ego i urodzin wybranych osób. Nic nie jest nigdzie wysyłane."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zrobione na tym iPhonie z Twojego kalendarza, przypomnień, przypomnień Doddy'ego i urodzin wybranych osób. Nic nie jest nigdzie wysyłane."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Made on this iPhone from your notes, lists and What Doddy did. Nothing is sent anywhere.": {
       "extractionState": "manual",
       "localizations": {
@@ -43337,6 +43400,28 @@
         }
       }
     },
+    "Nothing on your calendar, no reminders and no birthdays in the next seven days that Doddy can see.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W najbliższych siedmiu dniach Doddy nie widzi niczego w kalendarzu, żadnych przypomnień ani urodzin."
+          }
+        }
+      }
+    },
+    "Nothing planned": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nic zaplanowanego"
+          }
+        }
+      }
+    },
     "Nothing saved on this Mac yet.": {
       "extractionState": "manual",
       "localizations": {
@@ -44488,6 +44573,17 @@
         }
       }
     },
+    "Notifications are off for Doddy, so the plan can't arrive. Turn them on in iOS Settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powiadomienia dla Doddy'ego są wyłączone, więc plan nie może przyjść. Włącz je w Ustawieniach iOS."
+          }
+        }
+      }
+    },
     "Notifications are off for Doddy, so the tidy-up can't ring. Turn them on in iOS Settings.": {
       "extractionState": "manual",
       "localizations": {
@@ -45547,6 +45643,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "每周一次，Doddy 会建议处理重复保存的笔记、已过期的提醒和全部勾选完毕的清单。除非你轻点，否则什么都不会删除。"
+          }
+        }
+      }
+    },
+    "Once a week a notification says only \"New week\". Its screen shows the next seven days from your calendar, reminders, Doddy's reminders and the birthdays you picked. It comes quietly, never between 22:00 and 7:00.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raz w tygodniu powiadomienie mówi tylko „Nowy tydzień”. Jego ekran pokazuje najbliższe siedem dni z Twojego kalendarza, przypomnień, przypomnień Doddy'ego i urodzin wybranych osób. Przychodzi po cichu, nigdy między 22:00 a 7:00."
           }
         }
       }
@@ -48195,6 +48302,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "打开笔记"
+          }
+        }
+      }
+    },
+    "Open the plan now": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz plan teraz"
           }
         }
       }
@@ -54881,6 +54999,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "下周末前到期的提醒（含已逾期）：%lld"
+          }
+        }
+      }
+    },
+    "Reminders is off in Connections, so Apple Reminders aren't shown.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnienia są wyłączone w Połączeniach, więc przypomnień Apple tu nie ma."
           }
         }
       }
@@ -62119,6 +62248,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "已设置。每周回顾每周一次。"
+          }
+        }
+      }
+    },
+    "Set. The plan comes once a week.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ustawione. Plan przychodzi raz w tygodniu."
           }
         }
       }
@@ -72979,6 +73119,17 @@
         }
       }
     },
+    "The plan couldn't be set. Try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się ustawić planu. Spróbuj ponownie."
+          }
+        }
+      }
+    },
     "The pose SVGs are not in the bundle.": {
       "extractionState": "manual",
       "localizations": {
@@ -78335,6 +78486,17 @@
         }
       }
     },
+    "Timers, alarms and reminders you set always come, at any hour. Doddy's own check-ins and plans stay quiet from 22:00 to 7:00: a time in those hours moves to 7:00 or 21:30. A tip from Doddy never comes on a day a check-in already did.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minutniki, budziki i przypomnienia, które ustawisz, przychodzą zawsze, o każdej porze. Rutyny i plany Doddy'ego milczą od 22:00 do 7:00: godzina z tego zakresu przesuwa się na 7:00 albo 21:30. Podpowiedź od Doddy'ego nigdy nie przychodzi w dniu, w którym przyszła już rutyna."
+          }
+        }
+      }
+    },
     "Times are in this iPhone's time zone. Doddy checks the change the same way as its own suggestion.": {
       "extractionState": "manual",
       "localizations": {
@@ -78900,6 +79062,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "今天"
+          }
+        }
+      }
+    },
+    "Tomorrow": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jutro"
           }
         }
       }
@@ -83820,6 +83993,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "每周回顾"
+          }
+        }
+      }
+    },
+    "Weekly plan": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plan na tydzień"
           }
         }
       }
@@ -90504,6 +90688,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "你的语音笔记"
+          }
+        }
+      }
+    },
+    "Your week\nahead": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twój tydzień\\nprzed Tobą"
           }
         }
       }

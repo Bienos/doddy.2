@@ -178,6 +178,13 @@ extension TimerBanners {
         }
         // A birthday (ADR-288) just opens Doddy; nothing else happens.
         if Birthdays.isBirthday(notificationID: requestID) { return }
+        // The weekly plan (ADR-608) opens its screen.
+        if WeeklyPlan.isPlan(notificationID: requestID) {
+            if action != UNNotificationDismissActionIdentifier {
+                await MainActor.run { ShortcutRouter.shared.weeklyPlanOpened() }
+            }
+            return
+        }
         // The weekly look-back (ADR-306) opens its screen.
         if WeeklyLookBack.isLookBack(notificationID: requestID) {
             if action != UNNotificationDismissActionIdentifier {

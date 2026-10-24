@@ -75,7 +75,14 @@ B1's counts are read on the iPhone. iOS doesn't promise the app time on Sunday n
 5. **C1** birthday with a gift idea: shows what a memory companion is for.
 6. B6 and the rest when asked.
 
-## Decisions for the owner
+## Owner's answers (24 Oct 2026)
+
+- **Build A5, then B1:** both are in code on `claude/notifications-sound-timers` (ADR-608, `docs/implementation/RINGING_REMINDERS_AND_WEEKLY_PLAN.md`); not compiled or seen on a device yet.
+- **Quiet hours:** yes, 22:00 to 07:00, for Doddy's routines.
+- **One a day:** for notifications "out of nowhere" only. Timers and anything that is an action item always show. Built as: Doddy's own tip never comes on a day a routine already did.
+- Still open: 4 (an errand's title on the Lock Screen), 5 (sound), and the live-agent change for A5's `ring` (the exact text is in the ADR-608 doc).
+
+## Decisions for the owner (as asked on 24 Oct)
 
 1. Which of A5, B1, C1 to C5, D2 and B6 to build, and in what order (the list above is the recommendation).
 2. Quiet hours: 22:00 to 7:00 by default?

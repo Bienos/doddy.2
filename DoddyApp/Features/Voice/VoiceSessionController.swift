@@ -1524,13 +1524,13 @@ final class VoiceSessionController {
             toolCallID: id, memoryID: memoryID, noteText: text, savedAt: savedAt, target: .time(date, timeZoneID: zone, repeats: repeats))
     }
 
-    /// The user switched arriving/leaving on the card (the agent may have misheard).
     /// The card's "Ring like an alarm" switch (ADR-608).
     func setNoteReminderRings(_ rings: Bool) {
         guard case .noteReminder(_, _, _, _, .time) = pendingAction else { return }
         noteReminderRings = rings
     }
 
+    /// The user switched arriving/leaving on the card (the agent may have misheard).
     func setNoteReminderOnArrival(_ onArrival: Bool) {
         guard case .noteReminder(let id, let memoryID, let text, let savedAt, .place(let results, _)) = pendingAction else { return }
         pendingAction = .noteReminder(toolCallID: id, memoryID: memoryID, noteText: text, savedAt: savedAt, target: .place(results: results, onArrival: onArrival))

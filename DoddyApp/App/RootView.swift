@@ -380,7 +380,7 @@ struct RootView: View {
     /// A sheet or cover from the router is up (motion v2: Doddy is hidden while it is).
     private var routerCovers: Bool {
         router.isVoicePresented || router.isSetupPresented || router.isTidyUpPresented
-            || router.isWrapUpPresented || router.isLookBackPresented || router.isCheckInPresented
+            || router.isWrapUpPresented || router.isLookBackPresented || router.isWeeklyPlanPresented || router.isCheckInPresented
             || router.shownDraft != nil || SharedListsController.shared.invite != nil
     }
 
@@ -491,6 +491,8 @@ struct RootView: View {
         }
         // The weekly look-back (ADR-306), from its notification or Settings.
         .sheet(isPresented: $router.isLookBackPresented, onDismiss: { router.showWaitingDraft() }) { WeeklyLookBackView() }
+        // The weekly plan (ADR-608), from its notification or Settings.
+        .sheet(isPresented: $router.isWeeklyPlanPresented, onDismiss: { router.showWaitingDraft() }) { WeeklyPlanView() }
         // The morning check-in (ADR-220), from its notification or Settings.
         .sheet(isPresented: $router.isCheckInPresented, onDismiss: { router.checkInSheetDismissed() }) {
             MorningCheckInView(openSettings: { selectedTab = .settings })
