@@ -46,6 +46,21 @@ final class IslandExpansionTests: XCTestCase {
         XCTAssertFalse(rule.doddyStartedSpeaking(at: start.addingTimeInterval(60), appOnScreen: false))
     }
 
+    /// ADR-608: a card that waits opens the island, so Show is in front of the user.
+    func testACardThatWaitsOpensTheIsland() {
+        var rule = IslandExpansion(isOn: true)
+        XCTAssertTrue(rule.cardArrived(at: start, appOnScreen: false), "\"A text to check\" opens up")
+        XCTAssertFalse(rule.cardArrived(at: start.addingTimeInterval(5), appOnScreen: false), "not within the gap")
+        XCTAssertFalse(rule.cardArrived(at: start.addingTimeInterval(60), appOnScreen: true), "not over the app")
+        XCTAssertTrue(rule.cardArrived(at: start.addingTimeInterval(61), appOnScreen: false))
+        // It doesn't spend the turn of his next answer: that still opens once the gap has passed.
+        XCTAssertTrue(rule.doddyStartedSpeaking(at: start.addingTimeInterval(90), appOnScreen: false))
+        // His words opened it a moment ago: that open island already shows the card.
+        XCTAssertFalse(rule.cardArrived(at: start.addingTimeInterval(92), appOnScreen: false))
+        var small = IslandExpansion(.smallIsland)
+        XCTAssertFalse(small.cardArrived(at: start, appOnScreen: false), "Small island never opens up")
+    }
+
     func testTheOtherSettingsOpenIt() {
         XCTAssertTrue(IslandExpansion(.conversation).isOn)
         // "Only open Doddy" starts no conversation from the shortcut; one started another way still opens.

@@ -7,7 +7,9 @@ import WidgetKit
 /// (from real SDK events), how long you have been talking, and Mute / End.
 /// With "Hey Doddy" on (ADR-254) the same activity first says the iPhone is listening for the
 /// wake word, with only Stop listening; after the wake word it greets the user ("Hey Pat, what's up?").
-/// Tapping it opens the app (e.g. to Save or Don't save a proposed note).
+/// Tapping it opens the app; while a card waits (a note, a text, a transfer, …) or something Doddy
+/// made is ready, it opens the conversation on that card (`doddy://conversation`, ADR-608), and the
+/// expanded island's main button is Show. Nothing is approved from the island: the card is.
 /// When the app has not refreshed the activity for `VoiceLiveActivity.staleAfter` (iOS ended
 /// it in the background), iOS marks it stale and this view says so instead of "Listening".
 ///
@@ -18,8 +20,11 @@ import WidgetKit
 struct DoddyVoiceLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: DoddyVoiceAttributes.self) { context in
-            LockScreenView(shown: Shown(context), startedAt: context.state.conversationStart(activityStartedAt: context.attributes.startedAt))
+            let scene = context.state.islandScene(isStale: context.isStale)
+            return LockScreenView(shown: Shown(context), scene: scene,
+                           startedAt: context.state.conversationStart(activityStartedAt: context.attributes.startedAt))
                 .doddyCreamLockScreen()
+                .widgetURL(scene.showsInDoddy ? Self.conversationLink : nil)
         } dynamicIsland: { context in
             let shown = Shown(context)
             let scene = context.state.islandScene(isStale: context.isStale).respectingHiddenArt
@@ -39,7 +44,7 @@ struct DoddyVoiceLiveActivity: Widget {
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     IslandBottomView(scene: scene, startedAt: startedAt) {
-                        IslandControls(shown: shown)
+                        IslandControls(shown: shown, showsInDoddy: scene.showsInDoddy)
                     }
                     .padding(.horizontal, 4)
                 }
@@ -51,8 +56,13 @@ struct DoddyVoiceLiveActivity: Widget {
                 IslandMinimalView(scene: scene, startedAt: startedAt)
             }
             .keylineTint(scene.live ? Color.islandOrange : Color.islandSecondary)
+            // ADR-608: a tap anywhere on the island goes to the card that waits, not only Home.
+            .widgetURL(scene.showsInDoddy ? Self.conversationLink : nil)
         }
     }
+
+    /// `DeepLink.conversation` in DoddyCore: the running conversation, on the card that waits.
+    static let conversationLink = URL(string: "doddy://conversation")!
 }
 
 /// What to draw: the state the app sent, unless iOS reports it stale.
@@ -128,6 +138,9 @@ private struct ElapsedTime: View {
 /// Stop listening, which turns it off.
 private struct IslandControls: View {
     let shown: Shown
+    /// A card waits or something is ready in the conversation (ADR-608): Show, in cream, opens
+    /// it; otherwise Open goes to Home.
+    var showsInDoddy = false
 
     var body: some View {
         HStack(spacing: 6) {
@@ -142,12 +155,20 @@ private struct IslandControls: View {
                 }
                 .buttonStyle(.plain)
             }
-            // Opens the app's home screen (doddy://home, as the Lock Screen's "Open Doddy" does).
-            // Always offered: on a stale island it is the way back to Doddy.
-            Link(destination: URL(string: "doddy://home")!) {
-                IslandPillLabel(title: "Open", systemImage: "arrow.up.forward.app")
+            if showsInDoddy, !shown.isStale {
+                // The card itself, in the conversation; opening it approves nothing.
+                Link(destination: DoddyVoiceLiveActivity.conversationLink) {
+                    IslandPillLabel(title: "Show", systemImage: "hand.tap.fill", prominent: !shown.state.isMuted)
+                }
+                .buttonStyle(.plain)
+            } else {
+                // Opens the app's home screen (doddy://home, as the Lock Screen's "Open Doddy" does).
+                // Always offered: on a stale island it is the way back to Doddy.
+                Link(destination: URL(string: "doddy://home")!) {
+                    IslandPillLabel(title: "Open", systemImage: "arrow.up.forward.app")
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
             Button(intent: EndDoddyConversationIntent()) {
                 IslandPillLabel(title: shown.isStale ? "Dismiss" : (shown.state.isWakeMode ? "Stop listening" : "Stop"),
                                 systemImage: shown.isStale ? "xmark" : "stop.fill")
@@ -210,6 +231,8 @@ private struct Controls: View {
 
 private struct LockScreenView: View {
     let shown: Shown
+    /// The island's scene, for a card that waits (ADR-608): its fixed words and Show.
+    let scene: IslandScene
     let startedAt: Date
 
     var body: some View {
@@ -245,6 +268,15 @@ private struct LockScreenView: View {
                         .background(Palette.secondary.opacity(0.15), in: Capsule())
                 }
             } else {
+                if scene.showsInDoddy, !shown.isStale {
+                    Link(destination: DoddyVoiceLiveActivity.conversationLink) {
+                        Label("Show in Doddy", systemImage: "hand.tap.fill")
+                            .font(.callout.weight(.semibold))
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .foregroundStyle(Palette.card)
+                            .background(Palette.ink, in: Capsule())
+                    }
+                }
                 Controls(shown: shown)
             }
         }
@@ -272,6 +304,15 @@ private struct LockScreenView: View {
             Text(shown.title)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Palette.error)
+        } else if scene.showsInDoddy {
+            // ADR-608: what kind of thing waits, in the island's fixed words; never what it says.
+            VStack(alignment: .leading, spacing: 2) {
+                Text(scene.title)
+                    .foregroundStyle(Palette.accentText)
+                Text(scene.subtitle)
+                    .foregroundStyle(Palette.secondary)
+            }
+            .font(.subheadline)
         } else if shown.state.isWakeMode {
             VStack(alignment: .leading, spacing: 2) {
                 Text(shown.title)

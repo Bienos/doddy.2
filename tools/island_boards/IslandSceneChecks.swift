@@ -4,6 +4,77 @@ import Foundation
 enum IslandSceneChecks {
     typealias State = DoddyVoiceAttributes.ContentState
 
+    /// ADR-608: every card that waits, and every result, has its own fixed words on the island and
+    /// a Show button that opens it in Doddy; nothing from the card itself is carried.
+    static func actions() -> Int {
+        var failures = 0
+        func expect(_ ok: Bool, _ message: String) {
+            if !ok { print("FAIL: actions: \(message)"); failures += 1 }
+        }
+        var titles: Set<String> = []
+        for action in IslandAction.allCases {
+            var s = State(status: .needsConfirmation, isMuted: false)
+            s.moment = .actionWaiting(action)
+            s.islandStyle = .wholeDoddy
+            let scene = s.islandScene(isStale: false)
+            expect(scene.title == action.island.title && !scene.title.isEmpty, "\(action) has its title")
+            expect(!scene.subtitle.isEmpty && !scene.label.isEmpty, "\(action) has a label and a second line")
+            expect(scene.showsInDoddy, "\(action) offers Show")
+            expect(scene.pose == .reachingHigh, "\(action): Doddy reaches for the card")
+            expect(scene.waves == .none, "\(action): no waves while a card waits")
+            expect(scene.compactSign == .symbol("hand.tap.fill", .accent), "\(action): the compact island's hand")
+            expect(!scene.title.contains("Save or Don't save") && !scene.subtitle.contains("Save or Don't save"),
+                   "\(action) doesn't say Save or Don't save")
+            titles.insert(scene.title)
+            // Stale: the card can't be shown any more, so no Show and no moment.
+            let stale = s.islandScene(isStale: true)
+            expect(!stale.showsInDoddy && stale.title.hasPrefix("Lost"), "\(action) stale has no Show")
+            // The payload carries the kind word only.
+            if let data = try? JSONEncoder().encode(s), let text = String(data: data, encoding: .utf8) {
+                expect(text.contains("\"\(action.rawValue)\""), "\(action) encodes its kind")
+                let back = try? JSONDecoder().decode(State.self, from: data)
+                expect(back?.moment == .actionWaiting(action), "\(action) decodes")
+            } else {
+                expect(false, "\(action) encodes")
+            }
+        }
+        expect(titles.count == IslandAction.allCases.count, "each kind of card has its own title")
+
+        for result in IslandResult.allCases {
+            var s = State(status: .speaking, isMuted: false)
+            s.moment = .resultReady(result)
+            s.islandStyle = .wholeDoddy
+            let scene = s.islandScene(isStale: false)
+            expect(scene.showsInDoddy && scene.title == result.island.title, "\(result) shows with Show")
+            expect(scene.waves == .none, "\(result): the moment replaces the waves for its seconds")
+            let says = (scene.title + " " + scene.subtitle).lowercased()
+            if result == .documentStarted {
+                expect(!says.contains("ready") && scene.pose == .tiptoe, "a file still being made never says ready")
+            } else {
+                expect(says.contains("ready") || result == .photos, "\(result) says it is ready")
+                expect(scene.pose == .fistpump, "\(result): fist pump")
+            }
+        }
+
+        // A card that waits with no moment of its own still offers Show; plain talking doesn't.
+        let bare = State(status: .needsConfirmation, isMuted: false).islandScene(isStale: false)
+        expect(bare.showsInDoddy, "Confirm in Doddy offers Show")
+        expect(State(status: .needsConfirmation, isMuted: false).detail?.contains("Save or Don't save") == false,
+               "the Lock Screen line fits every card")
+        expect(!State(status: .listening, isMuted: false).islandScene(isStale: false).showsInDoddy, "listening has Open")
+        var note = State(status: .needsConfirmation, isMuted: false)
+        note.moment = .noteWaiting
+        expect(note.islandScene(isStale: false).showsInDoddy, "a note waiting offers Show")
+        var saved = State(status: .listening, isMuted: false)
+        saved.moment = .noteSaved
+        expect(!saved.islandScene(isStale: false).showsInDoddy, "a saved note has nothing to show")
+        // An unknown kind from a newer build falls back to no moment instead of failing.
+        let newer = Data(#"{"status":"needsConfirmation","isMuted":false,"moment":{"actionWaiting":{"_0":"teleport"}}}"#.utf8)
+        let decoded = try? JSONDecoder().decode(State.self, from: newer)
+        expect(decoded != nil && decoded?.moment == nil, "an unknown kind decodes without a moment")
+        return failures
+    }
+
     static func run() -> Int {
         var failures = 0
         func expect(_ ok: Bool, _ message: String) {

@@ -15,20 +15,25 @@ import XCTest
 final class IslandScreenshotTests: XCTestCase {
     private typealias State = DoddyVoiceAttributes.ContentState
 
-    private static func scene(_ status: State.Status, muted: Bool = false, style: IslandStyle = .wholeDoddy) -> IslandScene {
+    private static func scene(_ status: State.Status, muted: Bool = false, moment: State.Moment? = nil,
+                              style: IslandStyle = .wholeDoddy) -> IslandScene {
         var state = State(status: status, isMuted: muted)
+        state.moment = moment
         state.islandStyle = style
         return state.islandScene(isStale: false)
     }
 
-    /// The states shown, in a conversation's order.
-    private static let samples: [(file: String, name: String, status: State.Status, muted: Bool)] = [
-        ("1-connecting", "Connecting", .connecting, false),
-        ("2-listening", "Listening: he hears you", .listening, false),
-        ("3-speaking", "Speaking: the whole island in waves", .speaking, false),
-        ("4-thinking", "Working on it", .thinking, false),
-        ("5-muted", "Muted", .listening, true),
-        ("6-confirm", "A card waits in Doddy", .needsConfirmation, false),
+    /// The states shown, in a conversation's order, then cards and results (ADR-608).
+    private static let samples: [(file: String, name: String, status: State.Status, muted: Bool, moment: State.Moment?)] = [
+        ("1-connecting", "Connecting", .connecting, false, nil),
+        ("2-listening", "Listening: he hears you", .listening, false, nil),
+        ("3-speaking", "Speaking: his waves under his status", .speaking, false, nil),
+        ("4-thinking", "Working on it", .thinking, false, nil),
+        ("5-muted", "Muted", .listening, true, nil),
+        ("6-confirm", "A card waits in Doddy (no kind)", .needsConfirmation, false, nil),
+        ("7-text", "A text waits for your yes", .needsConfirmation, false, .actionWaiting(.text)),
+        ("8-transfer", "A BLIK transfer waits", .needsConfirmation, false, .actionWaiting(.transfer)),
+        ("9-document", "A document is ready", .speaking, false, .resultReady(.document)),
     ]
 
     // MARK: What the owner asked for
@@ -37,7 +42,7 @@ final class IslandScreenshotTests: XCTestCase {
     @MainActor
     func testTheCompactIslandShowsOnlyHisHead() throws {
         for sample in Self.samples {
-            let scene = Self.scene(sample.status, muted: sample.muted)
+            let scene = Self.scene(sample.status, muted: sample.muted, moment: sample.moment)
             XCTAssertNotNil(scene.pose, "\(sample.name): Whole Doddy has a pose")
             let head = try XCTUnwrap(pixels(IslandCompactLeadingView(scene: scene)), sample.name)
             XCTAssertEqual(head.width, 26 * 3, "\(sample.name): one 26 pt head")
@@ -102,7 +107,8 @@ final class IslandScreenshotTests: XCTestCase {
         let startedAt = Date(timeIntervalSinceNow: -83)
         var boards: [IslandBoardPicture] = []
         for sample in Self.samples {
-            let board = IslandBoardPicture(name: sample.name, scene: Self.scene(sample.status, muted: sample.muted),
+            let board = IslandBoardPicture(name: sample.name,
+                                           scene: Self.scene(sample.status, muted: sample.muted, moment: sample.moment),
                                            muted: sample.muted, startedAt: startedAt)
             _ = try keep(board.padding(16).background(Self.backdrop), name: sample.file)
             boards.append(board)
@@ -241,7 +247,12 @@ private struct IslandBoardPicture: View {
                 HStack(spacing: 6) {
                     IslandPillLabel(title: muted ? "Unmute" : "Mute",
                                     systemImage: muted ? "mic.fill" : "mic.slash.fill", prominent: muted)
-                    IslandPillLabel(title: "Open", systemImage: "arrow.up.forward.app")
+                    // As the widget: Show while a card waits or something is ready (ADR-608).
+                    if scene.showsInDoddy {
+                        IslandPillLabel(title: "Show", systemImage: "hand.tap.fill", prominent: !muted)
+                    } else {
+                        IslandPillLabel(title: "Open", systemImage: "arrow.up.forward.app")
+                    }
                     IslandPillLabel(title: "Stop", systemImage: "stop.fill")
                 }
             }
