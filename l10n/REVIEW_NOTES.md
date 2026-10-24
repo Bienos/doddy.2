@@ -38,6 +38,14 @@ Polish only, written by the agent that built the Tasks screens; the other eight 
 - **Check first:** "Przełączniki" for iOS's Action Button › *Controls* and "Przycisk czynności" for the Action Button: use exactly the words Polish iOS shows. "Regulamin" for Terms & Conditions and "Polityka prywatności" for the Privacy Policy, to match the website's Polish legal pages (`site/pl/terms/`, `site/pl/privacy/`) and the lawyer's wording. "Akceptuję Regulamin" on the unticked box.
 - 31 Polish lines and 23 lines in each other table were removed with the Settings paragraphs they translated.
 
+## Added 24 October 2026 (ADR-621, Apple Health)
+
+- **New permission prompt** `NSHealthShareUsageDescription` in all ten languages; the nine translations are machine drafts. The Health app's own names used: Zdrowie, Health (de), Salud, Santé, Salute, Zdravlje, ヘルスケア, Saúde, 健康. "Apple Health" is kept as the name of Doddy's screen.
+- **Motion & Fitness prompt:** the clause "and reads nothing from Health" was removed in all ten languages (no other words changed).
+- **40 Polish lines** for the Apple Health screen (`l10n/pl.json`), machine-drafted; the other languages show English.
+- **Same day, ADR-622:** the Health prompt changed again (a summary may now leave the iPhone when the person sends it in Messages), all ten languages redrafted by machine; 22 more Polish lines (the week summary and its consent sheet).
+- **Same day, ADR-623:** the Health prompt changed a third time (the summary may also go to Doddy's voice), ten languages redrafted by machine; 10 more Polish lines (the voice section and its consent). Workout kinds use new keys ("Running", not "Run", which already means "Uruchom").
+
 ## Per language
 
 **French (fr).** Uses non-breaking spaces before `? ! : ;` and inside « ». Unsure: "Receipts" → "Confirmations" (#782); "is now due" (#1357); "Item" → "Objet" (#449); "Way" → "Moyen" (#1233); "Focusing" (#384); "Grounded" → "Posé" (#405). Terms: memories = souvenirs; Morning check-in = Point du matin; Evening wrap-up = Bilan du soir; Weekly look-back = Retour sur la semaine; Shopping mode = Mode courses; Focus = Concentration (also Doddy's own focus timer); "Hey Siri" = « Dis Siri ».

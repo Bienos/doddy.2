@@ -140,6 +140,9 @@ files=(
   DoddyApp/Features/Shopping/DealsModel.swift
   # Price watch (SHOPPING_WATCH.md): the card's flow and the list's state, without the views.
   DoddyApp/Features/Shopping/WatchModel.swift
+  # The kept training plan (ADR-625), without the screens.
+  DoddyApp/Features/Sport/TrainingPlanStore.swift
+  DoddyApp/Features/Sport/PlanText.swift
 )
 for f in "${files[@]}"; do [ -f "$f" ] || { echo "FAIL: $f is missing; update scripts/typecheck_app_logic.sh"; exit 1; }; done
 

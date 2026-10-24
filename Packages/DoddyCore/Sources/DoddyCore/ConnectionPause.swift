@@ -25,7 +25,7 @@ public enum ConnectionPause {
             // Doddy's server fetches the chains' leaflet pages for it (SHOPPING.md).
             true
         case .readCalendar, .findFreeTime, .leaveBy, .createCalendarEvent, .createReminder, .lookupContact, .upcomingBirthdays, .setTimer,
-             .openMap, .runShortcut, .draftMessage, .draftBlikTransfer, .makePresentation, .readSteps, .findPhotos, .openCamera, .cloudTool, .changeCalendarEvent, .changeReminder,
+             .openMap, .runShortcut, .draftMessage, .draftBlikTransfer, .makePresentation, .readSteps, .readHealthWeek, .findPhotos, .openCamera, .cloudTool, .changeCalendarEvent, .changeReminder,
              .deleteCalendarEvent, .deleteReminder, .setAlarm, .undoLast,
              .deleteCalendarEvents, .moveReminders, .listAlarms, .cancelAlarm,
              .convertCurrency:

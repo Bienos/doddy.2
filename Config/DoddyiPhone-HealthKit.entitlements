@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- project-iphone.yml (free Apple team): HealthKit only, for sport mode step 1 (ADR-621). Apple lists
+     HealthKit for the free Apple Developer account (developer.apple.com/help/account/reference/
+     supported-capabilities-ios, read 24 Oct 2026). If Xcode still can't sign with a Personal team, set
+     DODDY_APP_ENTITLEMENTS back to "" in project-iphone.yml: the Apple Health screen then says this
+     build can't use Health. -->
+<plist version="1.0">
+<dict>
+	<key>com.apple.developer.healthkit</key>
+	<true/>
+	<key>com.apple.developer.healthkit.access</key>
+	<array/>
+</dict>
+</plist>

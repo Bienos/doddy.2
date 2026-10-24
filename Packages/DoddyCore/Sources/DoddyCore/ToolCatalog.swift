@@ -109,6 +109,8 @@ public enum ToolCatalog {
         .init(VoiceToolName.upcomingBirthdays, .lookup, .askFirst),
         // Motion & Fitness, read only (ADR-568).
         .init(VoiceToolName.readSteps, .lookup, .askFirst),
+        // Apple Health, the week as a summary, after its own consent (ADR-623).
+        .init(VoiceToolName.readHealthWeek, .lookup, .askFirst),
         // Counts and times from the photo library; the pictures stay on screen (ADR-569).
         .init(VoiceToolName.findPhotos, .lookup, .askFirst),
         .init(VoiceToolName.setTimer, .localChange, .card),
