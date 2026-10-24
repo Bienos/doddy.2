@@ -82,12 +82,24 @@ const agent = await api("POST", "/v1/convai/agents/create", {
   tags: el.tags,
   conversation_config: {
     agent: {
-      first_message: session.first_message.en,
+      // The first language in session.json is the default (Polish); the others are presets the
+      // built-in language_detection tool can switch to, mid-call too.
+      first_message: session.first_message[session.languages[0]],
       language: session.languages[0],
       // Placeholders for tests in the dashboard; real values come from the call-start webhook.
       dynamic_variables: { dynamic_variable_placeholders: el.placeholders },
-      prompt: { prompt, llm: el.llm, temperature: el.temperature, timezone: el.timezone, tool_ids: toolIds },
+      prompt: {
+        prompt, llm: el.llm, temperature: el.temperature, timezone: el.timezone, tool_ids: toolIds,
+        built_in_tools: {
+          language_detection: {
+            type: "system", name: "language_detection", description: "",
+            params: { system_tool_type: "language_detection", only_at_conversation_start: false },
+          },
+        },
+      },
     },
+    language_presets: Object.fromEntries(session.languages.slice(1).map((code) =>
+      [code, { overrides: { agent: { first_message: session.first_message[code] } } }])),
   },
   platform_settings: {
     overrides: el.overrides,
