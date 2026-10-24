@@ -93,4 +93,14 @@ Bearer: the account's device token, like errands. Off unless `DEALS_ENABLED=1`.
 
 ## Built and checked
 
-(Filled in as the parts land; see STATUS.md.)
+Stage 1, 24 Oct 2026, on `claude/loving-dirac-uuxoux` (ADR-607 to 610). Run on Linux in a cloud session (Node 22, Postgres 16, Swift 6.1.2); no Xcode, no device, no real Anthropic, Serper or chain traffic.
+
+| Part | Where | Checked | Not checked |
+|---|---|---|---|
+| Find me this (section 1) | `server/messaging/src/shopping/`, `src/errands/schema.ts`, `worker.ts` | `npm test` in `server/messaging`: 272/272 with Postgres (shopping runner with a scripted model and fake offers and pages; ids only on the card; unknown ids dropped; budget; the digest with kind and priorities; JSON-LD, microdata and Open Graph price reading; money parsing) | A real Sonnet 5.5 run with web search; Serper's real answers; real shop pages; what one task costs |
+| Leaflets (section 2) | `server/messaging/src/deals/`, `src/routes/deals.ts`, migration `012_deals_usage.sql` | 64 of those tests: robots.txt and blocks, each chain against small fixtures taken on 24 Oct, sizes and unit prices, matching, the page reader with a fake model, the route against `deals_search_v1.json`, both daily caps under concurrency, account deletion | Real Haiku 5.5 on Polish leaflet pages; the 25 s budget under real latency; Biedronka's cost (up to 40 pages a request); whether the chains' pages still look like the fixtures |
+| Shared core (section 3) | `Packages/DoddyCore` | `swift test`: 1,739/1,739 (draft and result, `DealsClient` against the fixture, `BasketSolver`, `find_deals` and its ask card, What leaves this iPhone) | — |
+| Voice agent spec | `voice-agent/` | `scripts/voice_agent_spec.py check`: PASS, 95 tools (`find_deals` and the new `hand_over_errand` fields are `not_synced`) | Not on the live ElevenLabs agent (needs the owner's yes to the exact text) |
+| iPhone screens and PDF | `DoddyApp/Features/Shopping/`, `ErrandsView`, `HomeView`, `VoiceSessionController` | `scripts/typecheck_app_logic.sh` (27 files, including `DealsModel`), the string catalogs, the forbidden-capability guard | **Not compiled:** the SwiftUI views and the PDF drawing need Xcode (the hosted Mac job on a pull request is the first compile); not seen on a device |
+
+The whole `scripts/ci.sh --core-only` run is recorded in STATUS.md.
