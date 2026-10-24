@@ -1,6 +1,6 @@
 import Foundation
 
-// What the invoice card says (ADR-633). The card is the person's one look at the exact invoice before
+// What the invoice card says (ADR-640). The card is the person's one look at the exact invoice before
 // they say yes, so its wording is made here, in code that is tested, and the SwiftUI view only lays it
 // out. Everything shown comes from the operation: the sums are InvoiceTotals', the problems are the
 // draft's own issues, and the card says "issued" only when a receipt exists.

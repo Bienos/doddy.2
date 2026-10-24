@@ -1,6 +1,6 @@
 import Foundation
 
-// The sums of an invoice, in integer grosze (ADR-633). Doddy "verifies the math, not only the
+// The sums of an invoice, in integer grosze (ADR-640). Doddy "verifies the math, not only the
 // language" (research 5.3 step 4): the model never states an amount that code did not compute.
 //
 // Rounding, stated once and tested:

@@ -12,7 +12,7 @@ private actor FakeFetcher: ParcelFetching {
     }
 }
 
-/// Looking a parcel up (ADR-634): only the person's own act starts one, the answer is read by HTTP code,
+/// Looking a parcel up (ADR-641): only the person's own act starts one, the answer is read by HTTP code,
 /// and whatever can't be read leaves the last known status alone.
 final class ParcelTrackerTests: XCTestCase {
     private let number = ParcelNumber("632085946340007012341234")!

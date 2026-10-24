@@ -1,6 +1,6 @@
 import Foundation
 
-// Where an invoice goes (ADR-633). A provider is the accounting program: it creates the invoice and,
+// Where an invoice goes (ADR-640). A provider is the accounting program: it creates the invoice and,
 // asked afterwards, says whether an invoice for an operation exists. Doddy talks to it only through
 // this protocol, so the rules in `InvoiceOperation` and `InvoiceSender` hold whichever program it is,
 // and tests use a fake. The real inFakt provider is a stub until its API facts are confirmed

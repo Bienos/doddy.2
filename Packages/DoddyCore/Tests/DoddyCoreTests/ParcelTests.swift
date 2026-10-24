@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// InPost parcels (ADR-634): numbers, statuses, the answer read by HTTP code, and the list.
+/// InPost parcels (ADR-641): numbers, statuses, the answer read by HTTP code, and the list.
 final class ParcelTests: XCTestCase {
     private let number = ParcelNumber("632085946340007012341234")!
 

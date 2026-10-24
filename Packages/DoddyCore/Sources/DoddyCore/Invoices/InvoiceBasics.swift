@@ -1,6 +1,6 @@
 import Foundation
 
-// Invoices through inFakt (ADR-633): the small types an invoice is made of. Nothing here talks to
+// Invoices through inFakt (ADR-640): the small types an invoice is made of. Nothing here talks to
 // the network. The rules come from the owner's research (docs/research/2026-10-24/
 // research_expert_modes_PL.md section 5): Doddy never guesses a NIP, an address or a VAT rate, and
 // the sums are worked out by code, in integer grosze, not by the model.

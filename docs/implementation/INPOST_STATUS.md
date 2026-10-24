@@ -1,4 +1,4 @@
-# InPost parcels: status check by tracking number (ADR-634)
+# InPost parcels: status check by tracking number (ADR-641)
 
 Owner, 24 Oct 2026: "Dodaj … InPost", and (answering "how, if their API is for firms only?") "Z tokenem użytkownika". Branch `claude/infakt-inpost`, stacked on `claude/expert-modes-research` (PR #140). Research behind it: `docs/research/2026-10-24/research_expert_modes_PL.md` (section 4.2, ranking P2). **Status of each part is at the end; nothing here has been seen on a device.**
 

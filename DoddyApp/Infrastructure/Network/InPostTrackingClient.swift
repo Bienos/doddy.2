@@ -1,7 +1,7 @@
 import DoddyCore
 import Foundation
 
-/// Asks InPost where a parcel is (Parcels, ADR-634), from this iPhone and only at
+/// Asks InPost where a parcel is (Parcels, ADR-641), from this iPhone and only at
 /// `InPostTracking.url(for:)`, which DoddyCore builds from a checked 24-digit number. InPost documents
 /// that address as open: no account, no token, no key. The request carries the number and the app's
 /// name, nothing about the user: ephemeral session, no cookies, no cache, redirects refused, a size

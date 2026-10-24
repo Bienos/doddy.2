@@ -309,7 +309,7 @@ final class DataFlowSummaryTests: XCTestCase {
     }
 }
 
-/// Invoices and parcels (ADR-633, ADR-634): what the screen says matches what the build can do.
+/// Invoices and parcels (ADR-640, ADR-641): what the screen says matches what the build can do.
 final class DataFlowInvoiceAndParcelTests: XCTestCase {
     private let base = DataFlowState(
         rememberConversations: false, shareProfileWithVoice: false, tokenServerSet: false,

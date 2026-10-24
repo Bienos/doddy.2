@@ -5,7 +5,7 @@ import CryptoKit
 import Crypto
 #endif
 
-// The life of one invoice (ADR-633), after docs/architecture/TOOLS_AND_ACTIONS.md's reminder
+// The life of one invoice (ADR-640), after docs/architecture/TOOLS_AND_ACTIONS.md's reminder
 // machine and the constitution's rules for external writes:
 //
 //   drafted → needsClarification → readyForConfirmation → userConfirmed

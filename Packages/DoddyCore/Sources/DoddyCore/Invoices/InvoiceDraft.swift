@@ -1,6 +1,6 @@
 import Foundation
 
-// An invoice as Doddy holds it before anything is sent (ADR-633). The person dictates the service,
+// An invoice as Doddy holds it before anything is sent (ADR-640). The person dictates the service,
 // the buyer, the amount, the currency and the date (research, section 5.3 step 1); Doddy fills no
 // gap by guessing. Every missing, unconfirmed or wrong field is reported by name, the sums are
 // worked out by code (InvoiceTotals), and a draft with any issue cannot be confirmed.

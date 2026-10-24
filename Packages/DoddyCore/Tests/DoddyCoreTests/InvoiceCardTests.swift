@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// The invoice card (ADR-633): the one look at the exact invoice before a yes. Its wording and sums
+/// The invoice card (ADR-640): the one look at the exact invoice before a yes. Its wording and sums
 /// come from code, it names every gap, and it says "issued" only with a receipt.
 final class InvoiceCardTests: XCTestCase {
     private func said<T: Equatable & Sendable & Codable>(_ value: T) -> Sourced<T> { Sourced(value, source: .saidByUser) }

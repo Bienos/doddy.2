@@ -1,7 +1,7 @@
 import DoddyCore
 import SwiftUI
 
-/// The invoice card (ADR-633): the exact invoice laid out for the person's yes. Every word and sum
+/// The invoice card (ADR-640): the exact invoice laid out for the person's yes. Every word and sum
 /// comes from `InvoiceCard` (DoddyCore, tested); this view only lays it out. It offers no Confirm
 /// button while `InvoiceCard.canConfirm` is false, which is always the case until a sandbox call has
 /// settled how inFakt takes an invoice (`InFaktAPI.createVerified`). Not seen on a device in this build.

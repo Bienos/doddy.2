@@ -1,6 +1,6 @@
 import Foundation
 
-// One look-up of a parcel at InPost (ADR-634), with the network left out. The app supplies a
+// One look-up of a parcel at InPost (ADR-641), with the network left out. The app supplies a
 // `ParcelFetching` (the URLSession client in DoddyApp); everything that decides is here, so it is
 // tested on Linux: a look-up starts only from the person's own act (`ParcelLookupPolicy`), the
 // answer is read by HTTP code, and anything that can't be read or reached is "unavailable", never

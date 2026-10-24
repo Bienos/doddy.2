@@ -377,14 +377,14 @@ struct MemoriesSettingsView: View {
             try await environment.recordingRepository?.deleteAll()
             environment.recordingFiles.removeAll()
             UserDefaults.standard.removeObject(forKey: PreferenceKey.pinnedNotes)
-            // The parcel numbers (ADR-634) are on this iPhone only.
+            // The parcel numbers (ADR-641) are on this iPhone only.
             ParcelsModel.forgetStoredList()
         } catch {
             deleteError = UserFacingError.message(for: error)
             return
         }
         var problems: [String] = []
-        // Keys pasted in for the person's own accounts (ADR-633) are in the Keychain, not in the database,
+        // Keys pasted in for the person's own accounts (ADR-640) are in the Keychain, not in the database,
         // so a failure to remove one is said plainly and does not stop the rest.
         if !AccountKeyStore.removeAll() {
             problems.append(NSLocalizedString("Your inFakt key couldn't be removed from this iPhone's Keychain. Remove it in Settings › Invoices (inFakt).", comment: ""))

@@ -1,7 +1,7 @@
 import DoddyCore
 import SwiftUI
 
-/// Settings › Parcels (InPost) (ADR-634). Off until the person turns it on. A parcel is checked with
+/// Settings › Parcels (InPost) (ADR-641). Off until the person turns it on. A parcel is checked with
 /// InPost only when they add it or tap Refresh; the list stays on this iPhone and "Delete all" removes it.
 /// Not seen on a device in this build (docs/implementation/INPOST_STATUS.md).
 struct ParcelsView: View {

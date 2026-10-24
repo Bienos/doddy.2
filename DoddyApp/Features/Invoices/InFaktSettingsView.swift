@@ -1,7 +1,7 @@
 import DoddyCore
 import SwiftUI
 
-/// Settings › Invoices (inFakt) (ADR-633): the person's own inFakt key, kept in this iPhone's Keychain,
+/// Settings › Invoices (inFakt) (ADR-640): the person's own inFakt key, kept in this iPhone's Keychain,
 /// and a look at how an invoice card is laid out. Saving a key sends nothing anywhere, and while
 /// `InFaktAPI.createVerified` is false nothing can be sent to inFakt at all: the screen says so.
 /// The key is shown masked and never read back out; Save and Remove are confirmed by asking the

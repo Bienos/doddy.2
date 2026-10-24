@@ -51,7 +51,7 @@ actor FakeInvoiceProvider: InvoiceProvider {
     }
 }
 
-/// Invoices (ADR-633): the draft, the sums, the confirmation and the "never twice" rule.
+/// Invoices (ADR-640): the draft, the sums, the confirmation and the "never twice" rule.
 final class InvoiceTests: XCTestCase {
     // MARK: Helpers
 

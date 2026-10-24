@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// The key a person pastes in for their own account (ADR-633): safe to put in one header, never
+/// The key a person pastes in for their own account (ADR-640): safe to put in one header, never
 /// shown again, and nothing here knows what a valid inFakt key looks like.
 final class AccountKeyTests: XCTestCase {
     func testPastedSpacesAndLineBreaksAroundAKeyAreDropped() throws {

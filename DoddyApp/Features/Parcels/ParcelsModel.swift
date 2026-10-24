@@ -2,7 +2,7 @@ import DoddyCore
 import Foundation
 import Observation
 
-/// The "Przesyłki" list's state (ADR-634): the parcels the person added, kept on this iPhone, and what
+/// The "Przesyłki" list's state (ADR-641): the parcels the person added, kept on this iPhone, and what
 /// InPost last said about each. The list is off until they turn it on; a parcel is looked up only when
 /// they add it or tap Refresh (`ParcelLookupPolicy`, checked again by `ParcelTracker`); a look-up that
 /// can't be read leaves the last known status as it was. No UI framework here, so

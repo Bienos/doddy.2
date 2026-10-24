@@ -2,7 +2,7 @@ import DoddyCore
 import Foundation
 import Security
 
-/// The keys a person pastes in for their own accounts (ADR-633). Today only the inFakt API key,
+/// The keys a person pastes in for their own accounts (ADR-640). Today only the inFakt API key,
 /// so invoices can go from this iPhone straight to inFakt without Doddy's server ever holding it.
 ///
 /// The key lives only in the Keychain, readable while the iPhone is unlocked

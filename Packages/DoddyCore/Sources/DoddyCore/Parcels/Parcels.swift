@@ -1,6 +1,6 @@
 import Foundation
 
-// InPost parcels (ADR-634): read a parcel's status by its tracking number, and keep a short list of
+// InPost parcels (ADR-641): read a parcel's status by its tracking number, and keep a short list of
 // the parcels the person is waiting for. What is known about InPost's tracking is in
 // docs/implementation/INPOST_STATUS.md: the endpoint needs no token (InPost's own documentation and a
 // live request agree), its real error answers differ from the documented ones, so the answer is read

@@ -1,6 +1,6 @@
 import Foundation
 
-// A key the person pastes in for their own account (ADR-633): today the inFakt API key. The key is
+// A key the person pastes in for their own account (ADR-640): today the inFakt API key. The key is
 // theirs and stays on their iPhone, in the Keychain (DoddyApp/Infrastructure/AccountKeyStore.swift);
 // it is never put in the repository, in preferences or in a message to Doddy's server. Only the
 // checks live here, so they are tested on Linux.

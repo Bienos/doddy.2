@@ -38,7 +38,7 @@ public struct DataFlowState: Equatable, Sendable {
     /// Who writes the daily news on the messaging server, as it reported it
     /// (`NewsSettings.Available.writerProvider`: "anthropic" or "openai"). Nil until it is known.
     public var newsWriterProvider: String?
-    /// The person saved their own inFakt key in this iPhone's Keychain (ADR-633).
+    /// The person saved their own inFakt key in this iPhone's Keychain (ADR-640).
     public var inFaktKeySaved: Bool
 
     public init(
@@ -176,7 +176,7 @@ public enum DataFlow {
                 what: "Only the barcode number of a product you scan on a list; nothing about you.",
                 when: "Only when you scan a barcode on a list, at most 10 a minute.", isActive: !state.pauseAll,
                 note: state.pauseAll ? "Connections are paused, so barcodes aren't looked up." : "The photo stays on this iPhone and isn't kept; the barcode is read here. Nothing is added until you tap Add."),
-            // Parcels (ADR-634): a tracking number you add, asked by this iPhone at InPost's public address.
+            // Parcels (ADR-641): a tracking number you add, asked by this iPhone at InPost's public address.
             DataFlowRow(
                 id: "inPost", destination: "InPost (parcel status)",
                 what: "Only the parcel number you add to Przesyłki or tap Refresh on. No account, no key, nothing else about you.",
@@ -184,7 +184,7 @@ public enum DataFlow {
                 note: state.pauseAll
                     ? "Connections are paused, so parcels aren't looked up."
                     : "InPost's tracking address asks for no sign-in, and sees this iPhone's internet address as any website would. A number in a message or an email is never looked up by itself."),
-            // Invoices (ADR-633): only an invoice you confirmed, from this iPhone to inFakt with your own key.
+            // Invoices (ADR-640): only an invoice you confirmed, from this iPhone to inFakt with your own key.
             // Off until a sandbox call has settled how inFakt takes it (InFaktAPI.createVerified).
             DataFlowRow(
                 id: "inFakt", destination: "inFakt (invoices)",
@@ -376,7 +376,7 @@ public enum DataFlow {
             // ADR-440: proposals are picked here; only what you confirm and switch on is ever handed over.
             "What Doddy learned (facts, routines, and counts of what you corrected): kept here; confirmed ones go to a conversation only if you turn that on.",
             "DODDY voice refresh sessions and connected-app credentials, in this iPhone's Keychain; short-lived provider credentials stay in memory.",
-            // ADR-633/634: the key is the person's own, and the list is theirs.
+            // ADR-640/641: the key is the person's own, and the list is theirs.
             "Your inFakt key, if you saved one: in this iPhone's Keychain only, never on Doddy's server. Your list of parcels.",
         ]
     }
