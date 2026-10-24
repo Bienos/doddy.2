@@ -60,7 +60,7 @@ Owner, 24 Oct 2026: "1 tak" (Doddy's voice may hear the summary). Same branch.
 | Agent spec: the tool (`not_synced`) and one prompt line | `voice-agent/tools.json`, `instructions.md`; `backend/src/web/logbook.ts` lists the new id | `voice_agent_spec.py check` PASS (96 tools); backend 428/428 |
 | Health prompt: a summary leaves only "in Messages when you send it yourself, or to Doddy's voice when you ask and say yes"; ten languages | `project.yml`, `l10n/*_infoplist.json` | catalogs PASS; nine machine drafts; 10 more Polish lines |
 
-**Live agent: not changed.** ElevenLabs gets the tool and the prompt line only on the owner's yes to the exact text. Until then, on ElevenLabs Doddy doesn't know the tool; the OpenAI voice gets it with the next app build.
+**Live agent: changed on the owner's yes** ("Jazda tak", 24 Oct, to the exact text shown): `tool_3001m5q73js3f5stcnshpx4d13f6`, saved as `agtvrsn_4701m5q787a7e9kvp21qvjza63t0` with an "## Apple Health" prompt section; rollback `agtvrsn_2801m5pzdaxpepgax0wwfawyc8tp` (`voice-agent/README.md`). An app build without the tool answers that it doesn't support it. The OpenAI voice gets it with the next app build.
 
 **Gap to know.** The red-flag rule reaches the voice as text in every reply and in the prompt; the model could still ignore it. A fixed, code-enforced reply for red-flag words is not built.
 
@@ -81,6 +81,6 @@ Owner, 24 Oct 2026: "1 tak" (Doddy's voice may hear the summary). Same branch.
 
 ## Next (each needs the owner's go-ahead)
 
-1. Owner: put `read_health_week` and its prompt line on the live ElevenLabs agent (the exact text first).
+1. A first real conversation with `read_health_week` on an app build from this branch, then the ElevenLabs log.
 2. Voice gym log and the wger exercise base.
 3. Running and strength plans with the safety rules from the research.
