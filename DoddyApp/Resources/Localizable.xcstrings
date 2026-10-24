@@ -119,6 +119,28 @@
         }
       }
     },
+    "%@ asleep": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ snu"
+          }
+        }
+      }
+    },
+    "%@ bpm": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ ud./min"
+          }
+        }
+      }
+    },
     "%@ over your budget": {
       "extractionState": "manual",
       "localizations": {
@@ -510,6 +532,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zrobione: 3"
+          }
+        }
+      }
+    },
+    "7-day average %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "średnia z 7 dni %@"
           }
         }
       }
@@ -13685,6 +13718,17 @@
         }
       }
     },
+    "Cycling": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rower"
+          }
+        }
+      }
+    },
     "Daily news": {
       "extractionState": "manual",
       "localizations": {
@@ -16774,6 +16818,17 @@
         }
       }
     },
+    "Doddy can read": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy może czytać"
+          }
+        }
+      }
+    },
     "Doddy can use these only when you say so. Each one starts off. Nothing is added, started, sent or opened until you tap.": {
       "extractionState": "manual",
       "localizations": {
@@ -17757,6 +17812,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy nie mógł przygotować zapisu słów do udostępnienia."
+          }
+        }
+      }
+    },
+    "Doddy couldn't read Health (%@).": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie mógł odczytać Zdrowia (%@)."
           }
         }
       }
@@ -27550,6 +27616,80 @@
         }
       }
     },
+    "Health can't be read while this iPhone is locked. Unlock it and try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Health can't be read while this iPad is locked. Unlock it and try again."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Health can't be read while this iPhone is locked. Unlock it and try again."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zdrowia nie da się odczytać, gdy iPad jest zablokowany. Odblokuj go i spróbuj ponownie."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zdrowia nie da się odczytać, gdy iPhone jest zablokowany. Odblokuj go i spróbuj ponownie."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Health isn't available on this device.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zdrowie nie jest dostępne na tym urządzeniu."
+          }
+        }
+      }
+    },
+    "Health keeps your data. Doddy reads it only while this screen is open, keeps none of it and writes nothing to Health.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoje dane trzyma aplikacja Zdrowie. Doddy czyta je tylko wtedy, gdy ten ekran jest otwarty, niczego nie zachowuje i nic nie zapisuje w Zdrowiu."
+          }
+        }
+      }
+    },
+    "Heart rate variability": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zmienność rytmu serca"
+          }
+        }
+      }
+    },
     "Help": {
       "extractionState": "manual",
       "localizations": {
@@ -27874,6 +28014,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wysoka pewność"
+          }
+        }
+      }
+    },
+    "Hiking": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wędrówka"
           }
         }
       }
@@ -29109,6 +29260,17 @@
         }
       }
     },
+    "In the Health app, tap your picture, then Apps, then Doddy, and turn off what Doddy may read. Doddy can't change that for you.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W aplikacji Zdrowie stuknij swoje zdjęcie, potem Aplikacje, potem Doddy, i wyłącz to, czego Doddy ma nie czytać. Doddy nie może zmienić tego za Ciebie."
+          }
+        }
+      }
+    },
     "Include photos": {
       "extractionState": "manual",
       "localizations": {
@@ -29282,6 +29444,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "意向"
+          }
+        }
+      }
+    },
+    "Intervals (HIIT)": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Interwały (HIIT)"
           }
         }
       }
@@ -33139,6 +33312,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "最近操作"
+          }
+        }
+      }
+    },
+    "Last night": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ostatnia noc"
+          }
+        }
+      }
+    },
+    "Last night's sleep: time asleep and its stages": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sen z ostatniej nocy: czas snu i jego fazy"
           }
         }
       }
@@ -40680,6 +40875,17 @@
         }
       }
     },
+    "None in the last 7 days": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brak w ostatnich 7 dniach"
+          }
+        }
+      }
+    },
     "None of your contacts has a birthday saved.": {
       "extractionState": "manual",
       "localizations": {
@@ -43977,6 +44183,17 @@
         }
       }
     },
+    "Nothing to show. Either Health has nothing from the last 7 days, or Doddy isn't allowed to read it. iPhone doesn't tell apps which.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie ma nic do pokazania. Albo w Zdrowiu nie ma nic z ostatnich 7 dni, albo Doddy nie ma pozwolenia, żeby to czytać. iPhone nie mówi aplikacjom, które z nich."
+          }
+        }
+      }
+    },
     "Nothing to tidy right now.": {
       "extractionState": "manual",
       "localizations": {
@@ -44172,6 +44389,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "还没有。当 Doddy 为你查找或添加了什么，就会显示在这里。"
+          }
+        }
+      }
+    },
+    "Nothing. For now Doddy only shows these numbers on this screen. Doddy's voice doesn't hear them; that will ask for your yes first.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nic. Na razie Doddy tylko pokazuje te liczby na tym ekranie. Głos Doddy’ego ich nie słyszy; zanim to się zmieni, Doddy zapyta Cię o zgodę."
           }
         }
       }
@@ -53309,6 +53537,17 @@
         }
       }
     },
+    "Read again": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odczytaj ponownie"
+          }
+        }
+      }
+    },
     "Read aloud": {
       "extractionState": "manual",
       "localizations": {
@@ -57059,6 +57298,28 @@
         }
       }
     },
+    "Resting heart rate": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tętno spoczynkowe"
+          }
+        }
+      }
+    },
+    "Resting heart rate and heart rate variability (HRV)": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tętno spoczynkowe i zmienność rytmu serca (HRV)"
+          }
+        }
+      }
+    },
     "Restore a backup": {
       "extractionState": "manual",
       "localizations": {
@@ -57641,6 +57902,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "运行这个快捷指令？"
+          }
+        }
+      }
+    },
+    "Running": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bieg"
           }
         }
       }
@@ -64592,6 +64864,17 @@
         }
       }
     },
+    "Shows what Doddy can read from Apple Health.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pokazuje, co Doddy może czytać z Apple Health."
+          }
+        }
+      }
+    },
     "Sign in on a computer": {
       "extractionState": "manual",
       "localizations": {
@@ -65624,6 +65907,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "语速"
+          }
+        }
+      }
+    },
+    "Sport and health": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sport i zdrowie"
           }
         }
       }
@@ -67509,6 +67803,17 @@
         }
       }
     },
+    "Strength training": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trening siłowy"
+          }
+        }
+      }
+    },
     "Subject": {
       "extractionState": "manual",
       "localizations": {
@@ -67726,6 +68031,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Podsumowanie napisane przez Claude na podstawie zapisu."
+          }
+        }
+      }
+    },
+    "Swimming": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pływanie"
           }
         }
       }
@@ -75757,6 +76073,17 @@
         }
       }
     },
+    "This build of Doddy can't use Health (%@).": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ta wersja Doddy’ego nie może korzystać ze Zdrowia (%@)."
+          }
+        }
+      }
+    },
     "This call": {
       "extractionState": "manual",
       "localizations": {
@@ -79485,6 +79812,17 @@
         }
       }
     },
+    "To stop it completely": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jak całkiem to wyłączyć"
+          }
+        }
+      }
+    },
     "Today": {
       "extractionState": "manual",
       "localizations": {
@@ -80879,6 +81217,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "请先开启“允许 Doddy 给我打电话”。"
+          }
+        }
+      }
+    },
+    "Turn on Apple Health": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Włącz Apple Health"
           }
         }
       }
@@ -83303,6 +83652,17 @@
         }
       }
     },
+    "VO₂ max, the newest one": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VO₂ max, najnowszy pomiar"
+          }
+        }
+      }
+    },
     "Verify my number": {
       "extractionState": "manual",
       "localizations": {
@@ -84047,6 +84407,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Czeka na start"
+          }
+        }
+      }
+    },
+    "Walking": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spacer"
           }
         }
       }
@@ -84825,6 +85196,17 @@
         }
       }
     },
+    "What Doddy sees now": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co Doddy widzi teraz"
+          }
+        }
+      }
+    },
     "What I can do": {
       "extractionState": "manual",
       "localizations": {
@@ -85220,6 +85602,17 @@
         }
       }
     },
+    "What leaves your phone": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co opuszcza telefon"
+          }
+        }
+      }
+    },
     "What next": {
       "extractionState": "manual",
       "localizations": {
@@ -85286,6 +85679,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "我该怎么称呼你？"
+          }
+        }
+      }
+    },
+    "What stays here": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co zostaje tutaj"
           }
         }
       }
@@ -87289,6 +87693,80 @@
         }
       }
     },
+    "Workout": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trening"
+          }
+        }
+      }
+    },
+    "Workouts": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Treningi"
+          }
+        }
+      }
+    },
+    "Workouts from the last 7 days: kind, time, distance, pace, calories and average heart rate": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Treningi z ostatnich 7 dni: rodzaj, czas, dystans, tempo, kalorie i średnie tętno"
+          }
+        }
+      }
+    },
+    "Workouts, sleep and heart, shown on this iPhone only": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Workouts, sleep and heart, shown on this iPad only"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Workouts, sleep and heart, shown on this iPhone only"
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Treningi, sen i serce, pokazywane tylko na tym iPadzie"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Treningi, sen i serce, pokazywane tylko na tym iPhonie"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Works for": {
       "extractionState": "manual",
       "localizations": {
@@ -87901,6 +88379,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "昨天"
+          }
+        }
+      }
+    },
+    "Yoga": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Joga"
           }
         }
       }
@@ -91604,6 +92093,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "已确认 %@"
+          }
+        }
+      }
+    },
+    "deep %@, REM %@, core %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "głęboki %@, REM %@, podstawowy %@"
           }
         }
       }

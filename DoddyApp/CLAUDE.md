@@ -3,6 +3,6 @@ Read `/STATUS.md`, then `docs/platforms/iphone.md`. It has the feature map (fold
 - **Scope:** iPhone/iPad only. Don't touch `DoddyWatch*` or `DoddyMac*` for an iPhone change.
 - **Build:**
   - `make project`, scheme `Doddy`: the shipping build. The Watch and Mac apps are paused (ADR-572) and are not in it.
-  - `make project-iphone`, scheme `Doddy`: the same with no entitlements, for a free Apple team.
+  - `make project-iphone`, scheme `Doddy`: the same with only HealthKit, for a free Apple team.
 - **Voice** is `Features/Voice/`, with the agent spec in `voice-agent/`. A voice change can stop calls: check the ElevenLabs conversation log after testing.
 - **Rules with no UI** belong in `Packages/DoddyCore`, where they're tested on Linux (`make test-core`).

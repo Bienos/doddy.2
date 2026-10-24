@@ -32,8 +32,12 @@
   "pl": "Doddy używa Face ID, żeby otworzyć aplikację albo prywatną notatkę, gdy włączysz blokadę. iOS sprawdza Twoją twarz; Doddy dowiaduje się tylko, czy się zgadza."
  },
  "NSMotionUsageDescription": {
-  "en": "Doddy reads your steps, walking distance and floors climbed from Motion & Fitness only when you ask, for one day of the last seven. In a voice conversation those numbers go to ElevenLabs, which runs Doddy's voice, or to OpenAI if you switch Home's voice to it. Doddy keeps none of them and reads nothing from Health. Turn this off in Settings, Connections.",
-  "pl": "Doddy odczytuje Twoje kroki, przebyty dystans i pokonane piętra z danych Ruch i fitness tylko wtedy, gdy o to poprosisz, dla jednego dnia z ostatnich siedmiu. W rozmowie głosowej te liczby trafiają do ElevenLabs, które obsługuje głos Doddy'ego, albo do OpenAI, jeśli przełączysz na nie głos na ekranie głównym. Doddy niczego z tego nie zachowuje i nie czyta nic z aplikacji Zdrowie. Wyłączysz to w Ustawieniach, w sekcji Połączenia."
+  "en": "Doddy reads your steps, walking distance and floors climbed from Motion & Fitness only when you ask, for one day of the last seven. In a voice conversation those numbers go to ElevenLabs, which runs Doddy's voice, or to OpenAI if you switch Home's voice to it. Doddy keeps none of them. Turn this off in Settings, Connections.",
+  "pl": "Doddy odczytuje Twoje kroki, przebyty dystans i pokonane piętra z danych Ruch i fitness tylko wtedy, gdy o to poprosisz, dla jednego dnia z ostatnich siedmiu. W rozmowie głosowej te liczby trafiają do ElevenLabs, które obsługuje głos Doddy'ego, albo do OpenAI, jeśli przełączysz na nie głos na ekranie głównym. Doddy niczego z tego nie zachowuje. Wyłączysz to w Ustawieniach, w sekcji Połączenia."
+ },
+ "NSHealthShareUsageDescription": {
+  "en": "Doddy reads your workouts, heart rate, resting heart rate, heart rate variability, sleep and VO2 max from Health only to show them to you on its Apple Health screen. For now none of it leaves this iPhone, Doddy keeps none of it and writes nothing to Health. Turn this off in Settings, Connections, Apple Health, or in the Health app.",
+  "pl": "Doddy odczytuje z aplikacji Zdrowie Twoje treningi, tętno, tętno spoczynkowe, zmienność rytmu serca (HRV), sen i VO2 max tylko po to, żeby pokazać je na swoim ekranie Apple Health. Na razie nic z tego nie opuszcza tego iPhone’a, Doddy niczego nie zachowuje i nic nie zapisuje w Zdrowiu. Wyłączysz to w Ustawieniach, w sekcji Połączenia, Apple Health, albo w aplikacji Zdrowie."
  },
  "NSCameraUsageDescription": {
   "en": "Doddy opens the camera only when you tap Take a photo or Open camera. The photo you keep goes into a note on this iPhone and its text is read here; it is never sent anywhere or saved to your photo library.",

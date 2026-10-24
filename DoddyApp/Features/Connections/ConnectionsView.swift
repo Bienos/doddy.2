@@ -35,6 +35,23 @@ struct ConnectionsView: View {
                     }
                 }
 
+                // Sport mode step 1 (ADR-621): Apple Health, read only and shown on its own screen.
+                // Not a voice connection yet: the voice gets no Health data in this step.
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Sport and health")
+                        .font(.footnote.weight(.semibold))
+                        .textCase(.uppercase)
+                        .foregroundStyle(Theme.secondaryText)
+                        .accessibilityAddTraits(.isHeader)
+                    NavigationLink {
+                        HealthConnectionView()
+                    } label: {
+                        HealthConnectionCard()
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("connections.appleHealth")
+                }
+
                 Text("Your notes are always on this iPhone. Weather and Wikipedia lookups run on ElevenLabs, are always on, and don't work when Home's voice is OpenAI.")
                     .font(.footnote)
                     .foregroundStyle(Theme.secondaryText)
@@ -393,7 +410,7 @@ struct ConnectionInfo {
                     "Today and the six days before it, which is what your iPhone keeps",
                 ],
                 leavesPhone: "That day's numbers, when Doddy uses them in a conversation.",
-                staysHere: "Doddy keeps none of it and reads nothing from the Health app. iPhone asks once for Motion & Fitness.")
+                staysHere: "Doddy keeps none of it. Steps come from Motion & Fitness, not from the Health app. iPhone asks once for Motion & Fitness.")
         case .photos:
             // ADR-569: counts and times to the voice, pictures on this screen only.
             ConnectionInfo(

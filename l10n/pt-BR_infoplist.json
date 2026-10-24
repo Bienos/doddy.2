@@ -32,8 +32,12 @@
     "pt-BR": "O Doddy transcreve neste iPhone as gravações de voz das notas e as gravações de reuniões e conversas, para você conferir e pesquisar as palavras. O áudio e as palavras dele não são enviados a lugar nenhum."
   },
   "NSMotionUsageDescription": {
-    "en": "Doddy reads your steps, walking distance and floors climbed from Motion & Fitness only when you ask, for one day of the last seven. In a voice conversation those numbers go to ElevenLabs, which runs Doddy's voice, or to OpenAI if you switch Home's voice to it. Doddy keeps none of them and reads nothing from Health. Turn this off in Settings, Connections.",
-    "pt-BR": "O Doddy lê seus passos, a distância caminhada e os andares subidos em Movimento e Condicionamento só quando você pede, de um dia entre os últimos sete. Em uma conversa por voz, esses números vão para a ElevenLabs, que executa a voz do Doddy, ou para a OpenAI se você mudar a voz da tela inicial para ela. O Doddy não guarda nada disso e não lê nada do app Saúde. Desative em Ajustes, Conexões."
+    "en": "Doddy reads your steps, walking distance and floors climbed from Motion & Fitness only when you ask, for one day of the last seven. In a voice conversation those numbers go to ElevenLabs, which runs Doddy's voice, or to OpenAI if you switch Home's voice to it. Doddy keeps none of them. Turn this off in Settings, Connections.",
+    "pt-BR": "O Doddy lê seus passos, a distância caminhada e os andares subidos em Movimento e Condicionamento só quando você pede, de um dia entre os últimos sete. Em uma conversa por voz, esses números vão para a ElevenLabs, que executa a voz do Doddy, ou para a OpenAI se você mudar a voz da tela inicial para ela. O Doddy não guarda nada disso. Desative em Ajustes, Conexões."
+  },
+  "NSHealthShareUsageDescription": {
+    "en": "Doddy reads your workouts, heart rate, resting heart rate, heart rate variability, sleep and VO2 max from Health only to show them to you on its Apple Health screen. For now none of it leaves this iPhone, Doddy keeps none of it and writes nothing to Health. Turn this off in Settings, Connections, Apple Health, or in the Health app.",
+    "pt-BR": "O Doddy lê seus treinos, frequência cardíaca, frequência cardíaca em repouso, variabilidade da frequência cardíaca (VFC), sono e VO2 máx. do app Saúde só para mostrá-los na tela Apple Health dele. Por enquanto nada disso sai deste iPhone, o Doddy não guarda nada e não escreve nada no Saúde. Desative em Ajustes, Conexões, Apple Health, ou no app Saúde."
   },
   "NSCameraUsageDescription": {
     "en": "Doddy opens the camera only when you tap Take a photo or Open camera. The photo you keep goes into a note on this iPhone and its text is read here; it is never sent anywhere or saved to your photo library.",

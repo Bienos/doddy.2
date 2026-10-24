@@ -32,8 +32,12 @@
     "ja": "Doddyは、ボイスメモや録音をこのiPhone上で文字に書き起こし、言葉を確認したり検索したりできるようにします。音声とその文字はどこにも送られません。"
   },
   "NSMotionUsageDescription": {
-    "en": "Doddy reads your steps, walking distance and floors climbed from Motion & Fitness only when you ask, for one day of the last seven. In a voice conversation those numbers go to ElevenLabs, which runs Doddy's voice, or to OpenAI if you switch Home's voice to it. Doddy keeps none of them and reads nothing from Health. Turn this off in Settings, Connections.",
-    "ja": "Doddyは、あなたが頼んだときだけ、過去7日間のうち1日分の歩数、歩行距離、上った階数を「モーションとフィットネス」から読み取ります。音声会話では、その数値がDoddyの声を動かすElevenLabsに送られます。ホームの音声をOpenAIに切り替えた場合はOpenAIに送られます。Doddyはこれらを保存せず、ヘルスケアからは何も読み取りません。オフにするには、設定の「連携」を使ってください。"
+    "en": "Doddy reads your steps, walking distance and floors climbed from Motion & Fitness only when you ask, for one day of the last seven. In a voice conversation those numbers go to ElevenLabs, which runs Doddy's voice, or to OpenAI if you switch Home's voice to it. Doddy keeps none of them. Turn this off in Settings, Connections.",
+    "ja": "Doddyは、あなたが頼んだときだけ、過去7日間のうち1日分の歩数、歩行距離、上った階数を「モーションとフィットネス」から読み取ります。音声会話では、その数値がDoddyの声を動かすElevenLabsに送られます。ホームの音声をOpenAIに切り替えた場合はOpenAIに送られます。Doddyはこれらを保存しません。オフにするには、設定の「連携」を使ってください。"
+  },
+  "NSHealthShareUsageDescription": {
+    "en": "Doddy reads your workouts, heart rate, resting heart rate, heart rate variability, sleep and VO2 max from Health only to show them to you on its Apple Health screen. For now none of it leaves this iPhone, Doddy keeps none of it and writes nothing to Health. Turn this off in Settings, Connections, Apple Health, or in the Health app.",
+    "ja": "Doddyは、ワークアウト、心拍数、安静時心拍数、心拍変動（HRV）、睡眠、VO2最大値をヘルスケアから読み取りますが、それはDoddyの「Apple Health」画面に表示するためだけです。現時点では、これらがこのiPhoneの外に出ることはなく、Doddyは何も保存せず、ヘルスケアに何も書き込みません。オフにするには、設定の「連携」の「Apple Health」か、ヘルスケアAppを使ってください。"
   },
   "NSCameraUsageDescription": {
     "en": "Doddy opens the camera only when you tap Take a photo or Open camera. The photo you keep goes into a note on this iPhone and its text is read here; it is never sent anywhere or saved to your photo library.",

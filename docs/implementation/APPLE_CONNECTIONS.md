@@ -46,6 +46,7 @@ Owner, 20 Oct 2026: "Connect to all of the Apple tools … every time you want t
 | **The permission sheet** | Slides up for any connection above that is off | Allow / Not now | `PermissionAsk` (DoddyCore), `PermissionAskSheet` (ADR-566) |
 | **Photos** (library, read only) | "How many photos did I take on Saturday?": counts photos and videos for a day or up to 31 days; the newest show on screen; Doddy's voice hears only counts and times | Connections switch (Photos) + iOS prompt; a yes or tap | `PhotosAndCamera` (DoddyCore), `PhotoLibrarySearch`, `PhotoResultsCard` (ADR-569) |
 | **Camera** | "Take a photo": a card, then iOS's camera screen; the kept photo opens a new note to check and save. Also **Take a photo** when writing a note | Connections switch (Camera) + iOS prompt; a card tap | `CameraCapture`, `CameraAccess`, `CaptureView` (ADR-569) |
+| **Health** (HealthKit, read only; branch `claude/sport-mode-health`, not compiled) | Connections › Apple Health: workouts, last night's sleep, resting heart rate, HRV and VO₂ max for the last 7 days, shown on that screen only. Nothing leaves the iPhone; no voice tool yet. HealthKit is available to a free Apple account | Turn on + iOS's Health sheet | `HealthGlance` (DoddyCore), `HealthReader`, `HealthConnectionView` (ADR-621, `SPORT_MODE_STATUS.md`) |
 
 ## 3. Possible next, with your OK (no paid team needed)
 
@@ -58,11 +59,10 @@ Owner, 20 Oct 2026: "Connect to all of the Apple tools … every time you want t
 
 ## 4. Needs a paid Apple Developer team or Apple's approval
 
-The free (Personal) team build has no entitlements (`project-iphone.yml`), so none of these can be turned on there.
+The free (Personal) team build has only the HealthKit entitlement (`project-iphone.yml`, ADR-621), so none of these can be turned on there.
 
 | Apple app or service | What it would do | Needs |
 |---|---|---|
-| Health (HealthKit) | Sleep, workouts, heart rate, more than steps | HealthKit entitlement, App ID capability, App Store health rules |
 | Home (HomeKit) | Lights, scenes, "I'm leaving" | HomeKit entitlement |
 | Weather (WeatherKit) | Weather from Apple | Entitlement and App ID; weather today comes from ElevenLabs |
 | Focus status | Know when you're in a Focus | Communication Notifications entitlement |

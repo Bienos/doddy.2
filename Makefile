@@ -1,7 +1,7 @@
 .PHONY: project project-iphone project-watch project-mac test-core ci ci-core
 project:        ## generate Doddy.xcodeproj from project.yml: iPhone/iPad app (macOS, needs xcodegen)
 	xcodegen generate --spec project.yml
-project-iphone: ## generate DoddyiPhone.xcodeproj: iPhone/iPad app with no entitlements (free Apple team)
+project-iphone: ## generate DoddyiPhone.xcodeproj: iPhone/iPad app with only HealthKit (free Apple team)
 	xcodegen generate --spec project-iphone.yml
 # Apple Watch and Mac development are paused (ADR-572). Their targets still build when asked for
 # on purpose: set ENABLE_WATCH=1 / ENABLE_MAC=1. Nothing else (CI, project.yml) builds them.

@@ -2,7 +2,7 @@
 """Keeps the per-platform XcodeGen specs in step (docs/platforms/README.md).
 
   project.yml         iPhone + iPad app and its extensions (ships). No Watch or Mac target (ADR-572).
-  project-iphone.yml  the same dependencies and scheme, with no entitlements
+  project-iphone.yml  the same dependencies and scheme, with only the HealthKit entitlement
   project-watch.yml   PAUSED: project.yml plus the Apple Watch app embedded in the iPhone app
   project-mac.yml     PAUSED: the Mac app and widget only
 
