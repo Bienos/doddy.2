@@ -129,6 +129,9 @@ files=(
   DoddyApp/Features/CallCases/CallCasesModel.swift
   # This week's leaflets (SHOPPING.md 2): the screen's state and the voice tool's answer, without the views.
   DoddyApp/Features/Shopping/DealsModel.swift
+  # The kept training plan (ADR-625), without the screens.
+  DoddyApp/Features/Sport/TrainingPlanStore.swift
+  DoddyApp/Features/Sport/PlanText.swift
 )
 for f in "${files[@]}"; do [ -f "$f" ] || { echo "FAIL: $f is missing; update scripts/typecheck_app_logic.sh"; exit 1; }; done
 

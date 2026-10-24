@@ -67,7 +67,7 @@ public enum PlanEngine {
     static let fiveKTwoDayWeeks = [0, 0, 1, 2, 3, 3, 4, 5, 6, 7, 8, 9, 10, 11]
 
     /// A five-minute walk before and after each block.
-    static let fiveKWalkMinutes = 5
+    public static let fiveKWalkMinutes = 5
 
     static func firstFiveK(_ request: PlanRequest) -> PlanDecision {
         let longest = fiveKTable.map(\.blockSeconds).max() ?? 0
@@ -291,5 +291,26 @@ enum ExerciseMenu {
                e("single_leg_glute_bridge", "Single-leg glute bridge", lower: true), e("side_plank", "Side plank", lower: false, .seconds)]
             : [e("back_squat", "Back squat", lower: true), e("romanian_deadlift", "Romanian deadlift", lower: true),
                e("leg_press", "Leg press", lower: true), e("calf_raise", "Calf raise", lower: true)]
+    }
+}
+
+extension TrainingPlan {
+    /// For 10 km and the half: the long run the plan builds towards, roughly the goal distance at an
+    /// easy pace. Nil for a first 5 km and strength.
+    public var goalLongRunMinutes: Int? {
+        request.goal == .tenK || request.goal == .halfMarathon ? PlanEngine.targetLongRun(request.goal) : nil
+    }
+
+    /// The long run of the plan's last week.
+    public var lastLongRunMinutes: Int? {
+        weeks.last?.sessions.filter { $0.kind == .longRun }.map(\.minutes).max()
+    }
+
+    /// False when a distance plan ends before its long run reaches the goal: growing at most 10% at a
+    /// time takes longer from where the person starts. The screen says so, and a next plan starts
+    /// from the last long run.
+    public var reachesGoal: Bool {
+        guard let goal = goalLongRunMinutes else { return true }
+        return (lastLongRunMinutes ?? 0) >= goal
     }
 }

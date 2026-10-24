@@ -30,7 +30,7 @@ public enum PlanLevel: String, CaseIterable, Sendable, Codable {
 /// The questions before a plan above light activity (research, safety rules 2 and 5), in Doddy's own
 /// words, after the logic of ACSM's 2015 screening (not the copyrighted PAR-Q+). Any "yes" to the first
 /// five means no plan, and the refusal says who to see.
-public struct PlanScreening: Equatable, Sendable {
+public struct PlanScreening: Equatable, Sendable, Codable {
     /// A heart, lung, kidney or metabolic condition (diabetes, for example).
     public var knownCondition: Bool
     /// Chest pain, fainting or dizziness, unusual breathlessness, or a racing heart, now or with effort.
@@ -62,7 +62,7 @@ public struct PlanScreening: Equatable, Sendable {
     public var isYouth: Bool { age < 18 }
 }
 
-public struct PlanRequest: Equatable, Sendable {
+public struct PlanRequest: Equatable, Sendable, Codable {
     public let goal: PlanGoal
     public let level: PlanLevel
     /// 2 to 5; more is treated as 5 for running and 4 for strength.
@@ -116,7 +116,7 @@ public enum SessionKind: String, Sendable, Codable {
 }
 
 /// Run/walk repeats for a first 5 km.
-public struct RunWalk: Equatable, Sendable {
+public struct RunWalk: Equatable, Sendable, Codable {
     public let runSeconds: Int
     public let walkSeconds: Int
     public let repeats: Int
@@ -125,7 +125,7 @@ public struct RunWalk: Equatable, Sendable {
     public var blockSeconds: Int { repeats * runSeconds + max(0, repeats - 1) * walkSeconds }
 }
 
-public struct Intervals: Equatable, Sendable {
+public struct Intervals: Equatable, Sendable, Codable {
     public let repeats: Int
     public let workSeconds: Int
     public let recoverySeconds: Int
@@ -135,7 +135,7 @@ public enum StrengthUnit: String, Sendable, Codable {
     case reps, seconds
 }
 
-public struct StrengthExercise: Equatable, Sendable {
+public struct StrengthExercise: Equatable, Sendable, Codable {
     /// A stable key for the exercise base (wger later); `name` is the English name.
     public let key: String
     public let name: String
@@ -148,7 +148,7 @@ public struct StrengthExercise: Equatable, Sendable {
     public let repsInReserve: Int
 }
 
-public struct PlanSession: Equatable, Sendable {
+public struct PlanSession: Equatable, Sendable, Codable {
     /// 1 is Monday, 7 Sunday.
     public let day: Int
     public let kind: SessionKind
@@ -183,7 +183,7 @@ public struct PlanSession: Equatable, Sendable {
     public var effort: Effort { isHard ? .hard : kind == .strength ? .steady : .easy }
 }
 
-public struct PlanWeek: Equatable, Sendable {
+public struct PlanWeek: Equatable, Sendable, Codable {
     public let number: Int
     public let sessions: [PlanSession]
     /// Every fourth week is lighter, so the body catches up.
@@ -199,7 +199,7 @@ public struct PlanWeek: Equatable, Sendable {
     }
 }
 
-public struct TrainingPlan: Equatable, Sendable {
+public struct TrainingPlan: Equatable, Sendable, Codable {
     public let request: PlanRequest
     public let weeks: [PlanWeek]
     /// The longest recent run the plan starts from, in minutes; nil for a first 5 km and strength.

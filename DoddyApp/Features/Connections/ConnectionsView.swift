@@ -35,8 +35,8 @@ struct ConnectionsView: View {
                     }
                 }
 
-                // Sport mode step 1 (ADR-621): Apple Health, read only and shown on its own screen.
-                // Not a voice connection yet: the voice gets no Health data in this step.
+                // Sport mode (ADR-621 to 625): Apple Health, read only and shown on its own screen
+                // (the voice hears the week only after its own yes), and the training plan.
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Sport and health")
                         .font(.footnote.weight(.semibold))
@@ -50,6 +50,13 @@ struct ConnectionsView: View {
                     }
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("connections.appleHealth")
+                    NavigationLink {
+                        TrainingPlanView()
+                    } label: {
+                        TrainingPlanCard()
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("connections.trainingPlan")
                 }
 
                 Text("Your notes are always on this iPhone. Weather and Wikipedia lookups run on ElevenLabs, are always on, and don't work when Home's voice is OpenAI.")

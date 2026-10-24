@@ -66,7 +66,7 @@ Owner, 24 Oct 2026: "1 tak" (Doddy's voice may hear the summary). Same branch.
 
 ## Step 4: running and strength plans, the engine (ADR-624)
 
-Owner, 24 Oct 2026: "2" (plans next). Same branch. **Only the engine so far** (DoddyCore, tested on Linux); no screen, voice tool or Messages yet: those wait for the first green Mac build of steps 1 to 3.
+Owner, 24 Oct 2026: "2" (plans next). Same branch. The engine (DoddyCore, tested on Linux), then the screens on the iPhone (ADR-625, below). No voice tool or Messages way to ask for a plan yet.
 
 **What it does.** `PlanEngine.make(request)` turns the person's answers (goal, level, days a week, minutes a session, longest recent run, the screening questions, age) into a plan or a refusal. Deterministic: the same answers give the same plan; a model may later explain a plan, never change its numbers.
 
@@ -84,15 +84,36 @@ Owner, 24 Oct 2026: "2" (plans next). Same branch. **Only the engine so far** (D
 | Refusals, the 10 km long-run sequence (33, 36, 39, 31, 42, 46, 50, 55 min from a 30 min start), half marathon 80/20, strength shapes, youth limits, short sessions, progression | 11 more tests |
 | A bad plan is caught | a hand-made week with a 50-minute jump, 25% hard, two hard days in a row, too many days, a long weekday, and a squat at 0 reps in reserve: each one found |
 
-**Not built:** the screen to answer the questions and see the plan, the voice and Messages way to ask for a plan, saving a plan, the exercise descriptions (wger), and adjusting the plan from what Apple Health shows was actually done.
+### On the iPhone: questions, the plan, keeping it (ADR-625)
+
+The hosted Mac build of steps 1 to 3 compiled the app (run 40106746382 on `d7349ff`: build-for-testing and the unit tests pass; the one failing UI test fails the same way on the base branch, see "Not checked"), so the screens were added.
+
+- **Where:** Settings › Connections › Sport and health › **Training plan** (a card under Apple Health; the plan needs no Health data).
+- **Questions** (a sheet): goal, how much you train now, days a week (2–5 running, 2–4 strength), minutes a session, for 10 km and the half the longest run of the last 30 days if known, then the five safety questions as Yes/No with nothing pre-set, and age. **Make the plan** stays off until every question has an answer.
+- **Answer:** a refusal says who to ask (doctor, doctor or midwife, physiotherapist, an adult, or the shorter goal first), with the safety note; a plan shows its weeks, a start (this week or next Monday) and **Keep this plan on this iPhone**. The screen says "kept" only after the file was written and read back.
+- **The kept plan:** where today falls ("Week 3 of 8", or the days until Monday, or finished), today's session or a rest day, and every week with its sessions in words ("Walk 5 min. Then run 1 min and walk 1 min 30 s, 8 times. Walk 5 min to finish."; "Squat: 3 × 8–12, stop with 2 reps left"). **Make a new plan** replaces it; **Delete this plan** asks, deletes and checks the file is gone.
+- **Honest about the goal:** with runs growing 10% at a time, a 10 km or half plan from far below ends short of the goal's long run (from 30 minutes, 8 weeks reach 55). Such a plan says so and says to make the next plan from there; its last long run is called "Your goal run" only when it reaches the goal (`TrainingPlan.reachesGoal`).
+- **File:** `Application Support/Sport/training-plan.json`, complete file protection, the folder left out of iCloud and computer backups (App Review 5.1.3). One plan; nothing sent anywhere. A file that isn't exactly what this Doddy's engine makes for its answers (edited, or from an older engine) is never shown as Doddy's plan, only "delete it or make a new one"; an unreadable file is kept until the person decides (`SavedTrainingPlan.read`).
+- **Safety note** on every plan and refusal (fixed text): an AI, not a doctor or coach, not medical advice; stop at once for chest, neck, jaw or arm pain, feeling faint or dizzy, unusual breathlessness or a racing heart; 112.
+- **Polish:** 126 new lines in `l10n/pl.json`, machine-written.
+
+| Checked | How |
+|---|---|
+| The kept plan's rules | DoddyCore `SavedPlanTests` 6 (read back exactly; an edited plan and a plan from answers that get no plan are both refused; unknown file and version are unreadable; Monday start whatever the first weekday, across the new year; where today falls, across the end of summer time in Warsaw; the start is a day, the same in New York) and `PlanGoalReachTests` 2 |
+| The store on real files | `scripts/check_training_plan_store.sh` (new CI step, Linux): kept and read back, read after a "restart", an edited file not shown and not written over, an unreadable file kept, a new plan replacing it, delete, a failed write reported with nothing claimed: 9 checks pass |
+| Store and text compile | `scripts/typecheck_app_logic.sh` now includes `TrainingPlanStore.swift` and `PlanText.swift` (Swift 6, Linux): 29 files pass |
+| The flow | `TrainingPlanUITests` (new): a "yes" gets "Talk to a doctor first" and nothing to keep; all "no" gets a plan, kept, shown, deleted. **NOT RUN** yet: it runs on the hosted Mac job |
+
+**Not built:** the voice and Messages way to ask for a plan, logging what was done and the next load from it (`StrengthProgression` is ready, no screen), the exercise descriptions and pictures (wger), and adjusting the plan from what Apple Health shows was actually done.
 
 ## Not checked
 
-- **The app has not been compiled with these changes** (steps 1 to 3). The hosted Mac job compiles it on a pull request.
+- **Steps 1 to 3 compile** (hosted Mac, run 40106746382 on `d7349ff`), and the app's unit tests pass there. **The step 4 screens (`TrainingPlanView.swift`) are not compiled yet**; the next run does it.
+- **One UI test fails, not from this branch:** `MemoryJourneyTests.testDarkLargestTextKeepsTextRoutesUsable` can't find Memories in Home's ••• menu at the largest text size. The base branch's own run (40105647967 on `f79a4bf`) fails it the same way; "Cheapest this week" (ADR-610) was added above Memories in that menu, which the test's comment warned about. Proposed fix in the PR comment.
 - Messages opened from Settings over the Apple Health screen (not from Home) has not been seen; the persistent Doddy rides Home's Messages cover, and may not appear here.
 - **Nothing has run on a device:** the Health sheet, the reads, the numbers against the Health app's own, a night recorded by both a watch and the iPhone, an iPhone that is locked while the screen reads (it should say so), iPad.
 - **Signing the free-team project with HealthKit.** Apple's capability table lists HealthKit for the free Apple Developer account (read 24 Oct 2026). If Xcode still refuses, set `DODDY_APP_ENTITLEMENTS: ""` in `project-iphone.yml`; the screen then says this build can't use Health.
-- No UI test for the new screen yet.
+- No UI test for the Apple Health screen. The training plan's UI test is written but hasn't run yet.
 
 ## Privacy and safety
 
@@ -100,9 +121,10 @@ Owner, 24 Oct 2026: "2" (plans next). Same branch. **Only the engine so far** (D
 - Withdrawing the consent stops new summaries; what was sent stays in Messages until the person deletes it, and the screen says so. Anthropic's own retention of API requests is not covered by this page; the legal pages must state it.
 - The legal pages (`site/privacy/`) don't mention Health or the summary yet; they must before this ships.
 - App Review 5.1.3: no Health data for ads, none in iCloud, nothing written to Health.
+- The training plan and the answers it was made from (every safety answer "no", and the age) stay on the iPhone in a protected file left out of backups; nothing about it is sent. **Delete this plan** removes it. Settings' "Delete all memories" doesn't touch it: a plan isn't a memory.
 
 ## Next (each needs the owner's go-ahead)
 
 1. A first real conversation with `read_health_week` on an app build from this branch, then the ElevenLabs log.
-2. Plans on screen: the questions, the plan week by week, and asking for it by voice or in Messages (after the Mac build of steps 1 to 3 is green).
+2. Asking for a plan by voice or in Messages; logging a session and the next load from it.
 3. Voice gym log and the wger exercise base.
