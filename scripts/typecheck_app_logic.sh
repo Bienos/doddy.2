@@ -140,6 +140,8 @@ files=(
   DoddyApp/Features/Shopping/DealsModel.swift
   # Price watch (SHOPPING_WATCH.md): the card's flow and the list's state, without the views.
   DoddyApp/Features/Shopping/WatchModel.swift
+  # The parcel list (ADR-634): its state and the look-up flow, without the views or the InPost client.
+  DoddyApp/Features/Parcels/ParcelsModel.swift
 )
 for f in "${files[@]}"; do [ -f "$f" ] || { echo "FAIL: $f is missing; update scripts/typecheck_app_logic.sh"; exit 1; }; done
 

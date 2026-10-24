@@ -38,6 +38,8 @@ public struct DataFlowState: Equatable, Sendable {
     /// Who writes the daily news on the messaging server, as it reported it
     /// (`NewsSettings.Available.writerProvider`: "anthropic" or "openai"). Nil until it is known.
     public var newsWriterProvider: String?
+    /// The person saved their own inFakt key in this iPhone's Keychain (ADR-633).
+    public var inFaktKeySaved: Bool
 
     public init(
         rememberConversations: Bool, shareProfileWithVoice: Bool, tokenServerSet: Bool,
@@ -49,8 +51,10 @@ public struct DataFlowState: Equatable, Sendable {
         voiceProvider: VoiceProvider = .elevenLabs,
         learnedSharedWithVoice: Bool = false,
         newsWriterProvider: String? = nil,
-        webNotesKept: Bool = false, webConversationsKept: Bool = false
+        webNotesKept: Bool = false, webConversationsKept: Bool = false,
+        inFaktKeySaved: Bool = false
     ) {
+        self.inFaktKeySaved = inFaktKeySaved
         self.webNotesKept = webNotesKept
         self.webConversationsKept = webConversationsKept
         self.learnedSharedWithVoice = learnedSharedWithVoice
@@ -172,6 +176,26 @@ public enum DataFlow {
                 what: "Only the barcode number of a product you scan on a list; nothing about you.",
                 when: "Only when you scan a barcode on a list, at most 10 a minute.", isActive: !state.pauseAll,
                 note: state.pauseAll ? "Connections are paused, so barcodes aren't looked up." : "The photo stays on this iPhone and isn't kept; the barcode is read here. Nothing is added until you tap Add."),
+            // Parcels (ADR-634): a tracking number you add, asked by this iPhone at InPost's public address.
+            DataFlowRow(
+                id: "inPost", destination: "InPost (parcel status)",
+                what: "Only the parcel number you add to Przesyłki or tap Refresh on. No account, no key, nothing else about you.",
+                when: "Only when you add a parcel or tap Refresh, at most 20 a minute.", isActive: !state.pauseAll,
+                note: state.pauseAll
+                    ? "Connections are paused, so parcels aren't looked up."
+                    : "InPost's tracking address asks for no sign-in, and sees this iPhone's internet address as any website would. A number in a message or an email is never looked up by itself."),
+            // Invoices (ADR-633): only an invoice you confirmed, from this iPhone to inFakt with your own key.
+            // Off until a sandbox call has settled how inFakt takes it (InFaktAPI.createVerified).
+            DataFlowRow(
+                id: "inFakt", destination: "inFakt (invoices)",
+                what: "Only an invoice you confirmed, exactly as its card showed it: the buyer's name, NIP and address, the lines, amounts and dates. Your own inFakt key goes with it. Doddy's server sees neither.",
+                when: "Only when you tap Confirm on an invoice card.",
+                isActive: InFaktAPI.createVerified && state.inFaktKeySaved && !state.pauseAll,
+                note: !InFaktAPI.createVerified
+                    ? "Sending invoices to inFakt isn't switched on in this build, so nothing goes there. A key you saved stays in this iPhone's Keychain."
+                    : !state.inFaktKeySaved
+                        ? "No inFakt key is saved, so nothing goes there."
+                        : state.pauseAll ? "Connections are paused, so invoices aren't sent." : nil),
             DataFlowRow(
                 id: "placeSearch", destination: "Apple Maps (place search and travel time)",
                 what: "The words you type to find a place, and roughly where you are if Doddy already knows. For a leave reminder: where your iPhone is and the place you're going.",
@@ -307,6 +331,8 @@ public enum DataFlow {
         "lookups": "Open-Meteo and Wikipedia (looked up by ElevenLabs)",
         "exchangeRates": "the European Central Bank (exchange rates; nothing about you)",
         "openFoodFacts": "Open Food Facts (barcodes you scan; nothing about you)",
+        "inPost": "InPost (parcel numbers you look up; nothing else about you)",
+        "inFakt": "inFakt (invoices you confirm, with your own key)",
         "placeSearch": "Apple Maps (place searches)",
         "tokenServer": "your voice token server",
         "doddyServer": "your Doddy server (Connected Apps)",
@@ -350,6 +376,8 @@ public enum DataFlow {
             // ADR-440: proposals are picked here; only what you confirm and switch on is ever handed over.
             "What Doddy learned (facts, routines, and counts of what you corrected): kept here; confirmed ones go to a conversation only if you turn that on.",
             "DODDY voice refresh sessions and connected-app credentials, in this iPhone's Keychain; short-lived provider credentials stay in memory.",
+            // ADR-633/634: the key is the person's own, and the list is theirs.
+            "Your inFakt key, if you saved one: in this iPhone's Keychain only, never on Doddy's server. Your list of parcels.",
         ]
     }
 

@@ -33,4 +33,20 @@ The token is **not needed for what this slice does** (read a parcel's status by 
 
 ## Status
 
-Filled in at the end of the build (see the commits).
+As of the last commit of branch `claude/infakt-inpost` (24 Oct 2026). "Tested" means `make test-core` on Linux (Swift 6.1.2): 1,896 tests, 0 failures. Nothing below has been compiled with Xcode or seen on a device; the app has never called InPost. Two requests were made to InPost's open tracking address from this session's shell, with made-up numbers, to see the error answers.
+
+| Part | State |
+|---|---|
+| `ParcelNumber` (24 digits), `ParcelLookupPolicy` (only the person's own act allows a look-up) (`Parcels/Parcels.swift`) | Real, tested (`ParcelTests`). The 24-digit rule is [U]. |
+| InPost's status names as Polish and English sentences; an unknown name is shown as unknown | Real, tested. Titles are those InPost publishes for the locker service. |
+| The answer read by HTTP code (`InPostTracking.parse`) | Real, tested, including InPost's live 404 body. |
+| `ParcelTracker`: policy, fetch, parse; unreadable or limited answers become "unavailable" (`Parcels/ParcelTracker.swift`) | Real, tested against a scripted fetcher. |
+| `ParcelBook`: off until turned on, 30 parcels, label cleaned, `apply` keeps only a parcel InPost answered for | Real, tested. |
+| `ParcelsModel`: add, refresh, remove, turn off; honours "Pause all connections" | Written; compiled by `typecheck_app_logic.sh` on Linux (Swift 6 mode); not run. |
+| `InPostTrackingClient` (URLSession, one address) | Written, **BLOCKED / NOT RUN** (URLSession is not type-checked on Linux; no device). The guard allows networking in this file only. |
+| Settings › Parcels (InPost) (`ParcelsView.swift`) | Written, **BLOCKED / NOT RUN** (SwiftUI). |
+| What leaves this iPhone row for InPost; Delete all removes the list | Real in DoddyCore (tested); the Delete all call is **BLOCKED / NOT RUN**. |
+| InPost token, the person's own shipments list (`/v1/organizations/{id}/shipments`) | **Not built**, and not needed for status by number. It needs a Parcel Manager account with company data: the owner's call. |
+| Reading numbers from email or messages | **Not built.** If it is ever added, a number found there stays a suggestion the person adds. |
+
+**For the owner:** whether the token path (own shipments, for a business account) is still wanted now that tracking by number needs none; if yes, an InPost sandbox token from Parcel Manager.

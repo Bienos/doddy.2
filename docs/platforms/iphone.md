@@ -34,6 +34,7 @@ Code lives under `DoddyApp/Features/<Folder>/`. Status docs are in `docs/impleme
 | Memories | Notes list, find, detail, corrections | 252, 310 | MEMORY_HISTORY_STATUS, M1_STATUS |
 | Capture | New-note editor, "Save to Doddy" | 179 | M1_STATUS |
 | Lists | Lists, templates, share card, shopping mode; quantities, the At home list and barcodes (Shopping list+, on `claude/expert-modes-research`) | 216, 257, 334, 631 | LISTS_STATUS, SHOPPING_MODE_STATUS, SHOPPING_LIST_PLUS |
+| Parcels, Invoices (`Features/Parcels`, `Features/Invoices`, `Infrastructure/AccountKeyStore.swift`, `Network/InPostTrackingClient.swift`; on `claude/infakt-inpost`, not merged) | InPost parcel status by number on a list that is off until turned on; the person's own inFakt key in the Keychain and the invoice card. **Nothing can be sent to inFakt** (its wire format is unverified). Rules are in DoddyCore `Invoices/` and `Parcels/`, tested on Linux; **the SwiftUI, the Keychain and the InPost client are NOT COMPILED or RUN** | 633, 634 | INFAKT_STATUS, INPOST_STATUS |
 | NoteReminders | Time and place reminders on notes | 196, 211 | M4A_NOTE_REMINDERS_STATUS, PLACE_REMINDERS_STATUS |
 | Settings | Settings, island style, personality, what Doddy learned ("Hey Doddy" was removed, ADR-549) | 254, 440, 549 | HEY_DODDY_STATUS (history), M6_LEARNING_LOOP_STATUS |
 | Messages (was Ask) | The typed conversation with Doddy: bubbles saved on this iPhone until deleted; answers from Claude through the messaging server (`POST /v1/assistant/ask`) | 585, 586 (115) | MESSAGES_STATUS, M2_STATUS |

@@ -165,6 +165,20 @@ struct SettingsView: View {
                 Text("Online accounts")
             }
             .accessibilityIdentifier("settings.onlineAccounts")
+            // ADR-634: parcels checked with InPost by the number you add; off until you turn it on.
+            NavigationLink {
+                ParcelsView()
+            } label: {
+                Text("Parcels (InPost)")
+            }
+            .accessibilityIdentifier("settings.parcels")
+            // ADR-633: your inFakt key, kept in this iPhone's Keychain.
+            NavigationLink {
+                InFaktSettingsView()
+            } label: {
+                Text("Invoices (inFakt)")
+            }
+            .accessibilityIdentifier("settings.invoices")
             // ADR-600: sign in to Doddy on the web with a code from this iPhone.
             NavigationLink {
                 WebSignInScreen()

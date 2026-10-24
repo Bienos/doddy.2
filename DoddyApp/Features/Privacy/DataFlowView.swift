@@ -32,7 +32,8 @@ extension DataFlowState {
                 stored: defaults.string(forKey: VoiceProvider.preferenceKey), tokenServerSet: true),
             learnedSharedWithVoice: defaults.bool(forKey: PreferenceKey.shareLearnedWithVoice),
             webNotesKept: defaults.bool(forKey: WebMemoryModel.notesKey),
-            webConversationsKept: defaults.bool(forKey: WebMemoryModel.conversationsKey))
+            webConversationsKept: defaults.bool(forKey: WebMemoryModel.conversationsKey),
+            inFaktKeySaved: AccountKeyStore.manager(for: .inFakt).state().isSaved)
     }
 }
 

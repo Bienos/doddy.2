@@ -307,6 +307,8 @@ struct MemoriesSettingsView: View {
                         Text("This removes every note, every list with its items, the search index and any unfinished notes from this iPhone and can't be undone. Lists you shared stop being shared, so the people you invited lose them too. With Memory on calls on, the copy on your Doddy messaging server is emptied. Exported files and older backups aren't affected. Everything Doddy learned from what you said, and the counts of what you corrected, are removed too. So are the notes and lists rows in What Doddy did.")
                             + Text(verbatim: " ")
                             + Text("Every recording, with its audio and its words, is removed too.")
+                            + Text(verbatim: " ")
+                            + Text("Your parcel list and your inFakt key are removed too.")
                     }
                 if let deleteError {
                     Label(deleteError, systemImage: "exclamationmark.triangle")
@@ -375,11 +377,18 @@ struct MemoriesSettingsView: View {
             try await environment.recordingRepository?.deleteAll()
             environment.recordingFiles.removeAll()
             UserDefaults.standard.removeObject(forKey: PreferenceKey.pinnedNotes)
+            // The parcel numbers (ADR-634) are on this iPhone only.
+            ParcelsModel.forgetStoredList()
         } catch {
             deleteError = UserFacingError.message(for: error)
             return
         }
         var problems: [String] = []
+        // Keys pasted in for the person's own accounts (ADR-633) are in the Keychain, not in the database,
+        // so a failure to remove one is said plainly and does not stop the rest.
+        if !AccountKeyStore.removeAll() {
+            problems.append(NSLocalizedString("Your inFakt key couldn't be removed from this iPhone's Keychain. Remove it in Settings › Invoices (inFakt).", comment: ""))
+        }
         if !stillShared.isEmpty {
             problems.append(String(
                 format: NSLocalizedString("Deleted on this iPhone, but sharing couldn't be stopped for %lld shared lists (%@). Their copy stays in iCloud and with the people you invited.", comment: ""),

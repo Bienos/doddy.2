@@ -6,7 +6,12 @@
 #    ADR-148); the ElevenLabs SDK does the voice connection, except the OpenAI Realtime test voice
 #    (ADR-265), whose WebSocket lives in one file in Features/Voice, the exchange-rate client
 #    (ADR-300), which downloads only the ECB's public rates file, and the Open Food Facts client
-#    (ADR-631), which asks only the address DoddyCore builds from a checked barcode,
+#    (ADR-631), which asks only the address DoddyCore builds from a checked barcode, and the InPost
+#    tracking client (ADR-634), which asks only the address DoddyCore builds from a checked parcel number;
+#    there is no inFakt client yet (ADR-633: its wire format is unverified), so nothing may talk to inFakt,
+#  - the Keychain (Security framework) only in the files that already hold a token or key, and a key the
+#    person pasted in for their own account (AccountKeyStore, ADR-633) is read only by the one file that
+#    will put it in a request header, never by a screen,
 #  - the system authentication browser is used only by Connected Apps; Sign in with Apple
 #    (AuthenticationServices without a browser or web view) only in the voice account sign-in
 #    (VoiceAccessGate, VoiceAuthSession), whose calls go to the voice token server's
@@ -70,6 +75,15 @@ messaging_transport=DoddyApp/Infrastructure/Server/ServerHTTPTransport.swift
 rates_client=DoddyApp/Infrastructure/Network/ExchangeRateClient.swift
 # A scanned product's barcode digits, one address built by DoddyCore (ADR-631).
 off_client=DoddyApp/Infrastructure/Network/OpenFoodFactsClient.swift
+# A parcel number, one address built by DoddyCore (ADR-634).
+inpost_client=DoddyApp/Infrastructure/Network/InPostTrackingClient.swift
+# The Keychain: the files that hold a token or key. AccountKeyStore (ADR-633) holds keys the person pasted in.
+keychain_only='import Security|SecItem(Add|Update|Delete|CopyMatching)|kSecClass'
+keychain_files='^(DoddyApp/Infrastructure/(Network/KeychainCredentialStore|Server/ServerKeychainStore|DeviceSession|KeychainSessionStore|AccountKeyStore)|DoddyApp/Features/Voice/VoiceAuthSession)\.swift:'
+account_key_store=DoddyApp/Infrastructure/AccountKeyStore.swift
+# The one file that will put the inFakt key in a header. It does not exist yet (ADR-633): until a sandbox call
+# has settled how inFakt takes an invoice, nothing in the app reads the key or talks to inFakt.
+infakt_client=DoddyApp/Infrastructure/Network/InFaktClient.swift
 # Every way Foundation can reach the network: sessions and their tasks, URL byte streams,
 # loading a web address straight into Data or String, and the older connection APIs. The app's own
 # URLSessionTransport type name is not networking and stays allowed.
@@ -128,8 +142,25 @@ status=0
 if grep -RInE --include='*.swift' --include='*.plist' "$anywhere" "${dirs[@]}" Config; then
   echo "FAIL: forbidden capability code found (see matches above)." >&2; status=1
 fi
-if grep -RInE --include='*.swift' "$network_only" "${dirs[@]}" | code_only | grep -v -e "^$network_file:" -e "^$token_client:" -e "^$assistant_transport:" -e "^$messaging_transport:" -e "^$openai_voice:" -e "^$rates_client:" -e "^$off_client:" -e "^$voice_auth:"; then
-  echo "FAIL: networking code outside $network_file, $assistant_transport, $messaging_transport, $token_client, $voice_auth, $openai_voice, $rates_client and $off_client." >&2; status=1
+if grep -RInE --include='*.swift' "$network_only" "${dirs[@]}" | code_only | grep -v -e "^$network_file:" -e "^$token_client:" -e "^$assistant_transport:" -e "^$messaging_transport:" -e "^$openai_voice:" -e "^$rates_client:" -e "^$off_client:" -e "^$inpost_client:" -e "^$voice_auth:"; then
+  echo "FAIL: networking code outside $network_file, $assistant_transport, $messaging_transport, $token_client, $voice_auth, $openai_voice, $rates_client, $off_client and $inpost_client." >&2; status=1
+fi
+# The Keychain only where a token or key already lives (ADR-633).
+if grep -RInE --include='*.swift' "$keychain_only" "${dirs[@]}" | code_only | grep -vE "$keychain_files"; then
+  echo "FAIL: Keychain code outside the files that hold a token or key (see keychain_files in this script)." >&2; status=1
+fi
+# A key the person pasted in is never read by a screen or anything else: only the inFakt client (not built yet),
+# which is the only place that may put it in a request. Its masked state is all a screen sees.
+if grep -RInE --include='*.swift' 'AccountKeyStore\.read\(|KeychainAccountKey' "${dirs[@]}" | code_only | grep -v -e "^$infakt_client:" -e "^$account_key_store:"; then
+  echo "FAIL: reading a pasted-in key outside $infakt_client; screens use AccountKeyStore.manager(for:), which has no key in it (ADR-633)." >&2; status=1
+fi
+# No key, however it is named, in a log line, a print or a string shown to the person.
+if [ -f "$account_key_store" ] && grep -nE 'print\(|NSLog|os_log|Logger|debugPrint|dump\(' "$account_key_store" | code_only; then
+  echo "FAIL: $account_key_store may not log or print anything (ADR-633)." >&2; status=1
+fi
+# Nothing in the app talks to inFakt until a client exists and its wire format is verified (ADR-633).
+if [ ! -f "$infakt_client" ] && grep -RInE --include='*.swift' 'api\.infakt\.pl|sandbox-infakt\.pl|X-inFakt-ApiKey|InFaktAPI\.(productionBase|sandboxBase|apiKeyHeader)' DoddyApp DoddyWidgets DoddyShare DoddyWatch | code_only; then
+  echo "FAIL: the app names inFakt's address or key header without a verified client at $infakt_client (ADR-633)." >&2; status=1
 fi
 # The voice account client may only post to VoiceConfig.authEndpoint, never an address it builds (ADR-484).
 if [ -f "$voice_auth" ] && grep -nE 'URL\(string|URLComponents|appendingPathComponent|https?://' "$voice_auth" | code_only; then
@@ -146,6 +177,10 @@ fi
 # The Open Food Facts client may only ask OpenFoodFacts.productURL(for:) (ADR-631), never an address it builds.
 if [ -f "$off_client" ] && grep -nE 'URL\(string|URLComponents|appendingPathComponent|https?://|URLRequest\(url: *[^ O]' "$off_client" | code_only; then
   echo "FAIL: $off_client may only ask OpenFoodFacts.productURL(for:)." >&2; status=1
+fi
+# The InPost client may only ask InPostTracking.url(for:) (ADR-634), never an address it builds.
+if [ -f "$inpost_client" ] && grep -nE 'URL\(string|URLComponents|appendingPathComponent|https?://|URLRequest\(url: *[^ I]' "$inpost_client" | code_only; then
+  echo "FAIL: $inpost_client may only ask InPostTracking.url(for:)." >&2; status=1
 fi
 if grep -RInE --include='*.swift' "$web_auth_only" "${dirs[@]}" | code_only | grep -v "^$web_auth_file:"; then
   echo "FAIL: web authentication / web views outside $web_auth_file." >&2; status=1
@@ -359,5 +394,5 @@ fi
 if grep -RnoE 'NS[A-Za-z]+UsageDescription' project.yml DoddyApp DoddyWidgets DoddyShare Config | grep -vE "$allowed_permissions"; then
   echo "FAIL: only the alarms, microphone, speech recognition, calendar, reminders, contacts, Motion & Fitness, camera, photo library (read), While Using location and Face ID permissions are allowed." >&2; status=1
 fi
-[ "$status" -eq 0 ] && echo "PASS: ASK-01: every voice tool and every server tool asks first through one gate; networking only in the token client, the voice account sign-in, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice, the ECB rates client and the Open Food Facts client (one address), web auth only in Connected Apps, Sign in with Apple only in the voice account sign-in and no password or passkey APIs, ElevenLabs only in Voice, audio only in Voice, Voice memos and Recordings, on-device speech recognition only in Voice memos and Recordings (nothing in Recordings sends anything), calendar, contacts, location and Motion & Fitness only in Connections, photo reading and the photo picker only in Photos, the photo library read only in PhotoLibrarySearch and the camera only through iOS's camera screen (no capture session, no library writes), no Always/background location, no analytics, no secrets, no 1Password code in the app or SDK in the servers, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts, Motion & Fitness, camera, photo library (read), While Using location and Face ID (LocalAuthentication only in the app lock); backend has no write tools beyond the reviewed Gmail draft and reply draft, the Outlook draft and Todoist add, complete and move, and no proxy execution."
+[ "$status" -eq 0 ] && echo "PASS: ASK-01: every voice tool and every server tool asks first through one gate; networking only in the token client, the voice account sign-in, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice, the ECB rates client, the Open Food Facts client and the InPost client (one address each) and nothing that talks to inFakt, the Keychain only in the files that hold a token or key (a key the person pasted in is read only by the inFakt client, which isn't built), web auth only in Connected Apps, Sign in with Apple only in the voice account sign-in and no password or passkey APIs, ElevenLabs only in Voice, audio only in Voice, Voice memos and Recordings, on-device speech recognition only in Voice memos and Recordings (nothing in Recordings sends anything), calendar, contacts, location and Motion & Fitness only in Connections, photo reading and the photo picker only in Photos, the photo library read only in PhotoLibrarySearch and the camera only through iOS's camera screen (no capture session, no library writes), no Always/background location, no analytics, no secrets, no 1Password code in the app or SDK in the servers, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts, Motion & Fitness, camera, photo library (read), While Using location and Face ID (LocalAuthentication only in the app lock); backend has no write tools beyond the reviewed Gmail draft and reply draft, the Outlook draft and Todoist add, complete and move, and no proxy execution."
 exit "$status"
