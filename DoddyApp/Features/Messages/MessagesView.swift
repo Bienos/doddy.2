@@ -1,10 +1,16 @@
 import DoddyCore
 import SwiftUI
+import UIKit
 
-/// Messages (ADR-585): the typed conversation with Doddy, in bubbles, saved on this iPhone until the user
-/// deletes it. Opt-in like before (Settings → Ask Doddy). Every answer says whether it comes from the user's
-/// saved notes (with the notes shown) or is a general answer that is not from their notes. What each line
-/// may claim is decided by `ThreadRules`; this view only draws it.
+/// Messages (ADR-585): the typed conversation with Doddy, saved on this iPhone until the user deletes it.
+/// Opt-in like before (Settings → Ask Doddy). Every answer says whether it comes from the user's saved
+/// notes (with the notes shown) or is a general answer that is not from their notes. What each line may
+/// claim is decided by `ThreadRules`; this view only draws it.
+///
+/// It is drawn like the iPhone's Messages (ADR-605): blue bubbles for you on the right, grey for Doddy on the
+/// left, a tail on the last bubble of a run, a typing bubble while the answer is on its way, a capsule
+/// composer with a round send button. Two things differ on purpose: there is no "Delivered" or "Read"
+/// (nothing here can know either, `ThreadRules.deliveryLine`), and Doddy says he is an AI.
 struct MessagesView: View {
     let openSettings: () -> Void
 
@@ -28,12 +34,12 @@ struct MessagesView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 thread
-                Divider()
-                composer
+                // The composer reads the draft itself, so typing redraws it and not the whole thread.
+                MessagesComposer(model: model, useNotes: $useNotes, focus: $inputFocused, send: send)
             }
             // A full-screen cover on iPad: one readable column (ADR-437).
             .readableColumn()
-            .background(Theme.canvas)
+            .background(Color(.systemBackground))
             .navigationTitle("Doddy")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -106,51 +112,44 @@ struct MessagesView: View {
     private var thread: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                VStack(alignment: .leading, spacing: 12) {
+                LazyVStack(alignment: .leading, spacing: 2) {
                     if model.messages.isEmpty && model.error == nil && model.storage != .loading {
                         intro
                     }
                     ForEach(Array(model.messages.enumerated()), id: \.element.id) { index, message in
-                        VStack(alignment: .leading, spacing: 12) {
-                            if ThreadRules.showsHeading(message, after: index > 0 ? model.messages[index - 1] : nil) {
-                                Text(DateText.full(message.createdAt))
-                                    .font(.footnote)
-                                    .foregroundStyle(Theme.secondaryText)
-                                    .frame(maxWidth: .infinity)
-                                    .accessibilityAddTraits(.isHeader)
-                            }
-                            row(message)
-                        }
-                        .id(message.id)
+                        messageBlock(at: index, message)
+                            .id(message.id)
                     }
                     if model.isSending {
-                        HStack(spacing: 8) {
-                            ProgressView()
-                            Text("Doddy is thinking…")
-                                .foregroundStyle(Theme.secondaryText)
+                        TypingBubble()
+                            .padding(.top, 8)
+                    }
+                    Group {
+                        if !consent {
+                            consentCard
                         }
-                        .accessibilityElement(children: .combine)
-                        .accessibilityIdentifier("ask.thinking")
-                    }
-                    if !consent {
-                        consentCard
-                    }
-                    if let error = model.error {
-                        errorCard(error)
-                    }
-                    if model.storage == .notSaved {
-                        Label("Doddy can't read or save this conversation on this iPhone right now. What you write here is gone when you close this screen.", systemImage: "exclamationmark.triangle")
+                        if let error = model.error {
+                            errorCard(error)
+                        }
+                        if model.storage == .notSaved {
+                            Label("Doddy can't read or save this conversation on this iPhone right now. What you write here is gone when you close this screen.", systemImage: "exclamationmark.triangle")
+                                .font(.footnote)
+                                .foregroundStyle(Theme.error)
+                                .accessibilityIdentifier("messages.notSaved")
+                        }
+                        Text("Doddy is an AI, not a person. This conversation is saved on this iPhone until you delete it. Your question, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply.")
                             .font(.footnote)
-                            .foregroundStyle(Theme.error)
-                            .accessibilityIdentifier("messages.notSaved")
+                            .foregroundStyle(Theme.secondaryText)
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: .infinity)
+                            .accessibilityIdentifier("ask.disclosure")
                     }
-                    Text("Doddy is an AI, not a person. This conversation is saved on this iPhone until you delete it. Your question, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply.")
-                        .font(.footnote)
-                        .foregroundStyle(Theme.secondaryText)
-                        .accessibilityIdentifier("ask.disclosure")
+                    .padding(.top, 14)
                 }
-                .padding(24)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 12)
             }
+            .scrollDismissesKeyboard(.interactively)
             // Opens at the newest message.
             .defaultScrollAnchor(.bottom)
             // Motion v2: Doddy stands on the composer's top edge; the conversation keeps 108 pt
@@ -172,6 +171,7 @@ struct MessagesView: View {
                  : "Your saved notes are not used. Turn them on in Settings if you want me to look at them.")
                 .foregroundStyle(Theme.secondaryText)
         }
+        .padding(12)
     }
 
     /// Shown while Ask Doddy is off: nothing is sent or saved until the user turns it on.
@@ -185,37 +185,56 @@ struct MessagesView: View {
 
     // MARK: Rows
 
+    /// One message with the time heading above it when the pause was long, and the run it belongs to:
+    /// bubbles of one sender close together, the tail only on the last one.
     @ViewBuilder
-    private func row(_ message: ThreadMessage) -> some View {
-        switch message.sender {
-        case .user: userRow(message)
-        case .doddy: doddyRow(message)
+    private func messageBlock(at index: Int, _ message: ThreadMessage) -> some View {
+        let previous = index > 0 ? model.messages[index - 1] : nil
+        let next = index + 1 < model.messages.count ? model.messages[index + 1] : nil
+        let heading = ThreadRules.showsHeading(message, after: previous)
+        let startsRun = heading || previous?.sender != message.sender
+        let endsRun = next.map { ThreadRules.showsHeading($0, after: message) || $0.sender != message.sender } ?? true
+        VStack(alignment: .leading, spacing: 2) {
+            if heading {
+                Text(DateText.full(message.createdAt))
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 12)
+                    .padding(.bottom, 4)
+                    .accessibilityAddTraits(.isHeader)
+            }
+            switch message.sender {
+            case .user: userRow(message, tail: endsRun)
+            case .doddy: doddyRow(message, tail: endsRun)
+            }
         }
+        .padding(.top, startsRun && !heading ? 8 : 0)
     }
 
-    private func userRow(_ message: ThreadMessage) -> some View {
+    private func userRow(_ message: ThreadMessage, tail: Bool) -> some View {
         VStack(alignment: .trailing, spacing: 4) {
-            HStack {
-                Spacer(minLength: 40)
-                Text(message.text)
-                    .padding(12)
-                    .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 16))
+            HStack(spacing: 0) {
+                Spacer(minLength: 56)
+                MessageBubble(text: message.text, fromUser: true, tail: tail)
                     .accessibilityLabel("You: \(message.text)")
             }
             // Only what is known: on its way, or no answer yet. Never "read".
             switch ThreadRules.deliveryLine(for: message) {
             case .sending:
                 Text("Sending…")
-                    .font(.footnote)
+                    .font(.caption)
                     .foregroundStyle(Theme.secondaryText)
+                    .padding(.trailing, 6)
             case .notDelivered:
                 Button {
                     retry(message.id)
                 } label: {
                     Text("No answer yet. Tap to try again.")
-                        .font(.footnote)
+                        .font(.caption)
                         .foregroundStyle(Theme.error)
                         .frame(minHeight: 44, alignment: .trailing)
+                        .padding(.trailing, 6)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -227,58 +246,63 @@ struct MessagesView: View {
         }
     }
 
-    private func doddyRow(_ message: ThreadMessage) -> some View {
+    private func doddyRow(_ message: ThreadMessage, tail: Bool) -> some View {
         let notes = sources(of: message)
-        return VStack(alignment: .leading, spacing: 10) {
-            Text(message.text)
-                .padding(12)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Theme.separator, lineWidth: 1))
-                .accessibilityLabel("Doddy: \(message.text)")
-                .accessibilityIdentifier("ask.answer")
+        return VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 0) {
+                MessageBubble(text: message.text, fromUser: false, tail: tail)
+                    .accessibilityLabel("Doddy: \(message.text)")
+                    .accessibilityIdentifier("ask.answer")
+                Spacer(minLength: 56)
+            }
 
-            switch message.basis {
-            case .savedNotes:
-                VStack(alignment: .leading, spacing: 6) {
-                    Label("From your saved notes", systemImage: "note.text")
-                        .font(.footnote.bold())
-                        .accessibilityIdentifier("ask.basis.notes")
-                    ForEach(notes) { record in
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(record.currentText).lineLimit(3)
-                            Text("\(record.source.displayName) · \(DateText.full(record.capturedAt))")
+            // Where the answer came from, small and grey under the bubble, as a caption would be.
+            Group {
+                switch message.basis {
+                case .savedNotes:
+                    VStack(alignment: .leading, spacing: 6) {
+                        Label("From your saved notes", systemImage: "note.text")
+                            .font(.caption.bold())
+                            .accessibilityIdentifier("ask.basis.notes")
+                        ForEach(notes) { record in
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(record.currentText).lineLimit(3)
+                                Text("\(record.source.displayName) · \(DateText.full(record.capturedAt))")
+                                    .font(.footnote)
+                                    .foregroundStyle(Theme.secondaryText)
+                            }
+                            .padding(10)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .accessibilityElement(children: .combine)
+                        }
+                        // A saved conversation outlives the notes it cited: say so rather than drop them quietly.
+                        if store.hasLoaded && notes.count < message.noteIDs.count {
+                            Text("Some of these notes have since been deleted.")
                                 .font(.footnote)
                                 .foregroundStyle(Theme.secondaryText)
                         }
-                        .padding(10)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 12))
-                        .accessibilityElement(children: .combine)
                     }
-                    // A saved conversation outlives the notes it cited: say so rather than drop them quietly.
-                    if store.hasLoaded && notes.count < message.noteIDs.count {
-                        Text("Some of these notes have since been deleted.")
-                            .font(.footnote)
-                            .foregroundStyle(Theme.secondaryText)
-                    }
+                case .general, nil:
+                    Label("Not from your notes. This is a general answer.", systemImage: "info.circle")
+                        .font(.caption)
+                        .foregroundStyle(Theme.secondaryText)
+                        .accessibilityIdentifier("ask.basis.general")
                 }
-            case .general, nil:
-                Label("Not from your notes. This is a general answer.", systemImage: "info.circle")
-                    .font(.footnote)
-                    .foregroundStyle(Theme.secondaryText)
-                    .accessibilityIdentifier("ask.basis.general")
-            }
 
-            if message.notesSent > 0 {
-                Text(message.notesSent == 1 ? "1 saved note was sent with this question." : "\(message.notesSent) saved notes were sent with this question.")
-                    .font(.footnote)
-                    .foregroundStyle(Theme.secondaryText)
+                if message.notesSent > 0 {
+                    Text(message.notesSent == 1 ? "1 saved note was sent with this question." : "\(message.notesSent) saved notes were sent with this question.")
+                        .font(.caption)
+                        .foregroundStyle(Theme.secondaryText)
+                }
+                if message.notesSearchFailed {
+                    Label("Couldn't search your notes this time, so none were used.", systemImage: "exclamationmark.triangle")
+                        .font(.caption)
+                        .foregroundStyle(Theme.error)
+                }
             }
-            if message.notesSearchFailed {
-                Label("Couldn't search your notes this time, so none were used.", systemImage: "exclamationmark.triangle")
-                    .font(.footnote)
-                    .foregroundStyle(Theme.error)
-            }
+            .padding(.leading, 14)
+            .padding(.trailing, 56)
         }
     }
 
@@ -325,42 +349,6 @@ struct MessagesView: View {
         error == .consentRequired
     }
 
-    // MARK: Composer
-
-    private var composer: some View {
-        HStack(alignment: .bottom, spacing: 12) {
-            TextField("Ask a question", text: $model.draft, axis: .vertical)
-                .lineLimit(1...5)
-                .textFieldStyle(.roundedBorder)
-                .focused($inputFocused)
-                .submitLabel(.send)
-                .onSubmit { send() }
-                .disabled(model.isSending)
-                .accessibilityIdentifier("ask.input")
-            if model.isSending {
-                Button("Stop") { model.cancel() }
-                    .buttonStyle(SecondaryButtonStyle())
-                    .accessibilityIdentifier("ask.stop")
-            } else {
-                Button {
-                    send()
-                } label: {
-                    Image(systemName: "arrow.up.circle.fill").font(.title)
-                }
-                .disabled(!model.canSend)
-                .accessibilityLabel("Send")
-                .accessibilityIdentifier("ask.send")
-                // His zone stays 24 pt from Send (brief rule 8).
-                .motionMark("send")
-            }
-        }
-        .padding(16)
-        .background(Theme.canvas)
-        // Motion v2 (Q2): the composer is "the composer" he stands on, left of Send, and rides
-        // with the keyboard.
-        .motionSurface(.composer)
-    }
-
     // MARK: Sending
 
     private func send() {
@@ -379,5 +367,205 @@ struct MessagesView: View {
         // Private notes (ADR-310) are never sent with a question.
         let recall = ShareableRecallService(base: store.environment.recallService) { PrivateNotesStore.current().ids }
         return wiring.service(recall: recall)
+    }
+}
+
+// MARK: - Composer
+
+/// The box at the bottom: a plus button, a capsule with the text and a round send button inside it.
+/// Plus holds the one real choice there is (use saved notes or not); photos, files and voice notes are not
+/// offered because they are not built.
+private struct MessagesComposer: View {
+    @Bindable var model: MessagesModel
+    @Binding var useNotes: Bool
+    var focus: FocusState<Bool>.Binding
+    let send: () -> Void
+
+    var body: some View {
+        HStack(alignment: .bottom, spacing: 8) {
+            Menu {
+                Toggle("Use relevant saved notes", isOn: $useNotes)
+            } label: {
+                Image(systemName: "plus")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(Color(.systemGray))
+                    .frame(width: 34, height: 34)
+                    .background(Color(.systemGray5), in: Circle())
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(Rectangle())
+            }
+            .accessibilityLabel("More")
+            .accessibilityIdentifier("messages.plus")
+
+            HStack(alignment: .bottom, spacing: 6) {
+                TextField("Ask a question", text: $model.draft, axis: .vertical)
+                    .lineLimit(1...5)
+                    .focused(focus)
+                    .submitLabel(.send)
+                    .onSubmit { send() }
+                    .disabled(model.isSending)
+                    .padding(.vertical, 8)
+                    .accessibilityIdentifier("ask.input")
+                trailingButton
+                    .padding(.bottom, 3)
+            }
+            .padding(.leading, 14)
+            .padding(.trailing, 4)
+            .padding(.vertical, 1)
+            .overlay(
+                RoundedRectangle(cornerRadius: 19, style: .continuous)
+                    .strokeBorder(Color(.systemGray4), lineWidth: 1)
+            )
+            .padding(.bottom, 5)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(Color(.systemBackground))
+        // Motion v2 (Q2): the composer is "the composer" he stands on, left of Send, and rides
+        // with the keyboard.
+        .motionSurface(.composer)
+    }
+
+    @ViewBuilder
+    private var trailingButton: some View {
+        if model.isSending {
+            Button { model.cancel() } label: {
+                Image(systemName: "stop.fill")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 30, height: 30)
+                    .background(Color(.systemGray), in: Circle())
+                    .contentShape(Circle().inset(by: -6))
+            }
+            .accessibilityLabel("Stop")
+            .accessibilityIdentifier("ask.stop")
+        } else {
+            Button(action: send) {
+                Image(systemName: "arrow.up")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 30, height: 30)
+                    .background(model.canSend ? Color.blue : Color(.systemGray4), in: Circle())
+                    .contentShape(Circle().inset(by: -6))
+            }
+            .disabled(!model.canSend)
+            .accessibilityLabel("Send")
+            .accessibilityIdentifier("ask.send")
+            // His zone stays 24 pt from Send (brief rule 8).
+            .motionMark("send")
+        }
+    }
+}
+
+// MARK: - Bubbles
+
+/// One bubble: blue with white text for the user, light grey for Doddy, with a tail when it ends a run.
+/// Web links in the text can be tapped; they open in the browser only when the user taps one.
+private struct MessageBubble: View {
+    let text: String
+    let fromUser: Bool
+    let tail: Bool
+
+    var body: some View {
+        Text(Self.linked(text))
+            .font(.body)
+            .foregroundStyle(fromUser ? Color.white : Color.primary)
+            .tint(fromUser ? Color.white : Color.blue)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 7)
+            .background(BubbleBackground(fromUser: fromUser, tail: tail))
+            // The tail sticks out 5 pt; every bubble of a run keeps that room so they line up.
+            .padding(fromUser ? .trailing : .leading, 6)
+            .contextMenu {
+                Button("Copy", systemImage: "doc.on.doc") { UIPasteboard.general.string = text }
+            }
+    }
+
+    /// The text with http and https addresses made tappable.
+    private static func linked(_ text: String) -> AttributedString {
+        var out = AttributedString(text)
+        guard text.contains("."),
+              let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue) else { return out }
+        let whole = NSRange(text.startIndex..., in: text)
+        for match in detector.matches(in: text, range: whole) {
+            guard let url = match.url, let scheme = url.scheme?.lowercased(), scheme == "http" || scheme == "https",
+                  let range = Range(match.range, in: text),
+                  let lower = AttributedString.Index(range.lowerBound, within: out),
+                  let upper = AttributedString.Index(range.upperBound, within: out) else { continue }
+            out[lower..<upper].link = url
+        }
+        return out
+    }
+}
+
+private struct BubbleBackground: View {
+    let fromUser: Bool
+    let tail: Bool
+
+    var body: some View {
+        let colour = fromUser ? Color.blue : Color(.systemGray5)
+        ZStack {
+            RoundedRectangle(cornerRadius: 18, style: .continuous).fill(colour)
+            // Filled apart from the body: two outlines filled as one path would cancel where they overlap.
+            if tail {
+                BubbleTail(fromUser: fromUser).fill(colour)
+            }
+        }
+    }
+}
+
+/// The small curl at the bottom corner of the last bubble of a run: a wedge from the bottom edge out to a
+/// point 5 pt past the side, with a hollow flank, tucked into the rounded corner of the body.
+private struct BubbleTail: Shape {
+    let fromUser: Bool
+
+    func path(in rect: CGRect) -> Path {
+        let w = rect.width
+        // Measured from the bubble's own left edge for the user (tail on the right), mirrored for Doddy.
+        func x(_ v: CGFloat) -> CGFloat { fromUser ? rect.minX + v : rect.minX + w - v }
+        var path = Path()
+        path.move(to: CGPoint(x: x(w - 14), y: rect.maxY))
+        path.addQuadCurve(to: CGPoint(x: x(w + 5), y: rect.maxY), control: CGPoint(x: x(w - 2), y: rect.maxY))
+        path.addQuadCurve(to: CGPoint(x: x(w), y: rect.maxY - 14), control: CGPoint(x: x(w - 1), y: rect.maxY - 3))
+        path.closeSubpath()
+        return path
+    }
+}
+
+/// Three dots in a grey bubble while the answer is on its way. Still under Reduce Motion.
+private struct TypingBubble: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        HStack(spacing: 0) {
+            dots
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
+                .background(BubbleBackground(fromUser: false, tail: true))
+                .padding(.leading, 6)
+            Spacer(minLength: 56)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Doddy is thinking…")
+        .accessibilityIdentifier("ask.thinking")
+    }
+
+    @ViewBuilder
+    private var dots: some View {
+        if reduceMotion {
+            HStack(spacing: 5) { ForEach(0..<3, id: \.self) { _ in dot(opacity: 0.6) } }
+        } else {
+            TimelineView(.periodic(from: .now, by: 0.4)) { context in
+                let active = Int(context.date.timeIntervalSinceReferenceDate / 0.4) % 3
+                HStack(spacing: 5) {
+                    ForEach(0..<3, id: \.self) { i in dot(opacity: i == active ? 1 : 0.4) }
+                }
+                .animation(.easeInOut(duration: 0.3), value: active)
+            }
+        }
+    }
+
+    private func dot(opacity: Double) -> some View {
+        Circle().fill(Color(.systemGray)).opacity(opacity).frame(width: 8, height: 8)
     }
 }
