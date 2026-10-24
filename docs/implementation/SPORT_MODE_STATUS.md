@@ -88,7 +88,7 @@ Owner, 24 Oct 2026: "2" (plans next). Same branch. The engine (DoddyCore, tested
 
 The hosted Mac build of steps 1 to 3 compiled the app (run 40106746382 on `d7349ff`: build-for-testing and the unit tests pass; the one failing UI test fails the same way on the base branch, see "Not checked"), so the screens were added.
 
-- **Where:** Settings › Connections › Sport and health › **Training plan** (a card under Apple Health; the plan needs no Health data).
+- **Where:** Settings › Connections › Sport and health › **Training plan**, a row under Apple Health; the plan needs no Health data. Since ADR-633 (Settings in fourteen rows) Sport and health is a section of its own on the Connections page, not cards inside Calendar, reminders, contacts.
 - **Questions** (a sheet): goal, how much you train now, days a week (2–5 running, 2–4 strength), minutes a session, for 10 km and the half the longest run of the last 30 days if known, then the five safety questions as Yes/No with nothing pre-set, and age. **Make the plan** stays off until every question has an answer.
 - **Answer:** a refusal says who to ask (doctor, doctor or midwife, physiotherapist, an adult, or the shorter goal first), with the safety note; a plan shows its weeks, a start (this week or next Monday) and **Keep this plan on this iPhone**. The screen says "kept" only after the file was written and read back.
 - **The kept plan:** where today falls ("Week 3 of 8", or the days until Monday, or finished), today's session or a rest day, and every week with its sessions in words ("Walk 5 min. Then run 1 min and walk 1 min 30 s, 8 times. Walk 5 min to finish."; "Squat: 3 × 8–12, stop with 2 reps left"). **Make a new plan** replaces it; **Delete this plan** asks, deletes and checks the file is gone.

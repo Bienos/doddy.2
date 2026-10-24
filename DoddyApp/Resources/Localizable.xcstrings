@@ -50760,17 +50760,6 @@
         }
       }
     },
-    "Opens your training plan.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Otwiera Twój plan treningowy."
-          }
-        }
-      }
-    },
     "Optional note type": {
       "extractionState": "manual",
       "localizations": {
@@ -59236,47 +59225,6 @@
         }
       }
     },
-    "Running and strength plans, kept on this iPhone": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Running and strength plans, kept on this iPad"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Running and strength plans, kept on this iPhone"
-                }
-              }
-            }
-          }
-        },
-        "pl": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Plany biegowe i siłowe, zachowane na tym iPadzie"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Plany biegowe i siłowe, zachowane na tym iPhonie"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "SHOP": {
       "extractionState": "manual",
       "localizations": {
@@ -66157,17 +66105,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "每次都会显示卡片并等待你轻点"
-          }
-        }
-      }
-    },
-    "Shows what Doddy can read from Apple Health.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pokazuje, co Doddy może czytać z Apple Health."
           }
         }
       }
@@ -89630,47 +89567,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Treningi z ostatnich 7 dni: rodzaj, czas, dystans, tempo, kalorie i średnie tętno"
-          }
-        }
-      }
-    },
-    "Workouts, sleep and heart, shown on this iPhone only": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Workouts, sleep and heart, shown on this iPad only"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Workouts, sleep and heart, shown on this iPhone only"
-                }
-              }
-            }
-          }
-        },
-        "pl": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Treningi, sen i serce, pokazywane tylko na tym iPadzie"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Treningi, sen i serce, pokazywane tylko na tym iPhonie"
-                }
-              }
-            }
           }
         }
       }

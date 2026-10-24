@@ -1,7 +1,7 @@
 import DoddyCore
 import SwiftUI
 
-/// Settings › Connections › Apple Health (sport mode step 1, ADR-621). What Doddy may read from
+/// Settings › Connections › Sport and health › Apple Health (sport mode step 1, ADR-621). What Doddy may read from
 /// Health and, once it's on, exactly what it sees for the last seven days. Nothing leaves the iPhone
 /// from here except the week's summary, each way with a consent of its own: Messages opens with
 /// that exact text and the person sends it (ADR-622), or Doddy's voice hears it after the person's
@@ -330,41 +330,6 @@ struct HealthConnectionView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, 4)
         .accessibilityElement(children: .combine)
-    }
-}
-
-/// The card on Settings › Connections that opens the Apple Health screen.
-struct HealthConnectionCard: View {
-    @AppStorage(HealthConnectionView.preferenceKey) private var isOn = false
-
-    var body: some View {
-        HStack(alignment: .center, spacing: 14) {
-            Image(systemName: "heart.text.square")
-                .font(.title3)
-                .foregroundStyle(Theme.ink)
-                .frame(width: 48, height: 48)
-                .background(Theme.quietSurface, in: Circle())
-                .accessibilityHidden(true)
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Apple Health")
-                    .font(.headline)
-                    .foregroundStyle(Theme.ink)
-                Text("Workouts, sleep and heart, shown on this iPhone only")
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.secondaryText)
-                    .multilineTextAlignment(.leading)
-            }
-
-            Spacer(minLength: 8)
-            StatusPill(state: isOn ? .on : .off)
-        }
-        .padding(16)
-        .background(Theme.canvas, in: RoundedRectangle(cornerRadius: 20))
-        .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(Theme.separator, lineWidth: 1))
-        .contentShape(RoundedRectangle(cornerRadius: 20))
-        .accessibilityElement(children: .combine)
-        .accessibilityHint("Shows what Doddy can read from Apple Health.")
     }
 }
 
