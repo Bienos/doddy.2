@@ -255,11 +255,15 @@ final class ShoppingTests: XCTestCase {
         XCTAssertEqual(o1.price, Money(minor: 189_900, currency: "PLN"))
         XCTAssertEqual(o1.delivery, "Dostawa jutro, 0 zł")
         XCTAssertEqual(o1.site, "mediaexpert.pl")
+        XCTAssertEqual(o1.buyUrl, "https://network.example/click?id=7&to=https%3A%2F%2Fwww.mediaexpert.pl%2Fagd-do-zabudowy%2Fzmywarki-do-zabudowy%2Fprzyklad-45")
+        XCTAssertTrue(o1.isAffiliate)
+        XCTAssertNil(shopping.offers[1].buyUrl, "no programme with that shop")
+        XCTAssertFalse(shopping.offers[1].isAffiliate)
         XCTAssertEqual(o1.evidence, .shopPage)
         XCTAssertEqual(o1.seenAt, ServerDates.parse("2026-10-24T12:02:00.000Z"))
         XCTAssertEqual(o1.gtin, "5901234123457")
         XCTAssertEqual(o1.notes, "42 dB · 10 kompletów · klasa C")
-        XCTAssertEqual(shopping.offers[1].evidence, .listing)
+        XCTAssertEqual(shopping.offers[1].evidence, .shopPage, "the server shows only offers confirmed on a shop's page")
         XCTAssertNil(shopping.offers[1].delivery)
         XCTAssertNil(shopping.offers[2].gtin)
         XCTAssertEqual(shopping.picks.map(\.role), [.best, .cheapest, .premium])
@@ -376,9 +380,10 @@ final class ShoppingTests: XCTestCase {
         let block = try XCTUnwrap(text.components(separatedBy: ToolData.begin).last?.components(separatedBy: ToolData.end).first)
         let nbsp = "\u{00A0}"
         XCTAssertTrue(block.contains("- Best pick: \"Zmywarka do zabudowy 45 cm, 42 dB, 10 kompletów\" · 1\(nbsp)899,00\(nbsp)zł at Media Expert · price checked on the shop's page, 2026-10-24 14:02"), block)
-        XCTAssertTrue(block.contains("- Cheapest: \"Zmywarka do zabudowy 45 cm, 47 dB, 9 kompletów\" · 1\(nbsp)449,00\(nbsp)zł at RTV Euro AGD · price from the Google Shopping list, 2026-10-24 14:03"))
+        XCTAssertTrue(block.contains("- Cheapest: \"Zmywarka do zabudowy 45 cm, 47 dB, 9 kompletów\" · 1\(nbsp)449,00\(nbsp)zł at RTV Euro AGD · price checked on the shop's page, 2026-10-24 14:03"))
         XCTAssertTrue(block.contains("- No compromises: \"Zmywarka do zabudowy 45 cm, 39 dB, 10 kompletów\" · 2\(nbsp)299,00\(nbsp)zł at x-kom · price checked on the shop's page, 2026-10-24 14:04 · 299,00\(nbsp)zł over the budget"))
         XCTAssertTrue(block.contains("why: Najcichsza z ofert do 2000 zł. · trade-off: Montaż osobno."))
+        XCTAssertTrue(block.contains("open a partner link: Doddy may earn a commission if the user buys there. It never changes the prices or the order of the picks"), block)
         XCTAssertTrue(block.contains("What the user said matters most, in order: \"Cisza\", \"Cena\", \"Gwarancja\""))
         XCTAssertTrue(block.contains("Budget the user gave: 2\(nbsp)000,00\(nbsp)zł"))
         XCTAssertTrue(block.contains("Watch out: \"Montaż nie jest w cenie.\""))
@@ -390,6 +395,37 @@ final class ShoppingTests: XCTestCase {
         var english = try storedShopping(try resultFixture())
         english.draft = ErrandDraft(words: "w", brief: "b", title: "t", language: "en", kind: .shopping)
         XCTAssertTrue(ErrandResultText.forAgent(english, calendar: warsaw).contains("PLN 1,899.00 at Media Expert"))
+    }
+
+    func testAnOfferWithoutAPartnerLinkReadsAsBeforeAndTheLinkSurvivesTheRoundTrip() throws {
+        // A result stored before affiliate links has no buyUrl and is not told to the agent as a partner link.
+        var old = try resultFixture()
+        let shopping = try XCTUnwrap(old.shopping)
+        let plain = ShoppingResult(priorities: shopping.priorities, budget: shopping.budget,
+                                   offers: shopping.offers.map { ShoppingOffer(id: $0.id, title: $0.title, shop: $0.shop, price: $0.price, delivery: $0.delivery,
+                                                                              url: $0.url, site: $0.site, evidence: $0.evidence, seenAt: $0.seenAt, gtin: $0.gtin, notes: $0.notes) },
+                                   picks: shopping.picks, howChosen: shopping.howChosen, watchOuts: shopping.watchOuts,
+                                   unknowns: shopping.unknowns, rejected: shopping.rejected, stats: shopping.stats)
+        old = ErrandResult(answer: old.answer, sections: old.sections, recommendation: old.recommendation, budget: old.budget, next: old.next,
+                           sources: old.sources, checkedAt: old.checkedAt, shopping: plain)
+        XCTAssertTrue(old.shopping?.offers.allSatisfy { !$0.isAffiliate } ?? false)
+        let text = ErrandResultText.forAgent(try storedShopping(old), calendar: warsaw)
+        XCTAssertFalse(text.contains("partner link"), text)
+        // The link in the fixture survives being kept on the iPhone and read back.
+        let kept = try JSONEncoder().encode(try resultFixture())
+        let back = try JSONDecoder().decode(ErrandResult.self, from: kept)
+        XCTAssertEqual(back.shopping?.offers.first?.buyUrl, try resultFixture().shopping?.offers.first?.buyUrl)
+    }
+
+    func testAResultWithNoConfirmedPriceIsAPlainCardWithNoPriceAndIsReadAsOne() throws {
+        let result = try JSONDecoder().decode(ErrandResult.self, from: Fixtures.data("errand_result_shopping_unconfirmed_v1.json"))
+        XCTAssertNil(result.shopping, "no shopping block: nothing was confirmed, so nothing is priced")
+        XCTAssertTrue(result.answer.contains("nie podaję żadnych cen"))
+        XCTAssertTrue(result.sections.flatMap(\.items).allSatisfy { $0.price == nil && $0.url == nil })
+        let text = ErrandResultText.forAgent(try storedShopping(result), calendar: warsaw)
+        XCTAssertTrue(text.hasPrefix("done: "), text)
+        XCTAssertTrue(text.contains("nie podaję żadnych cen"), text)
+        XCTAssertFalse(text.contains("1\u{00A0}299") || text.contains("1 299") || text.contains("PLN"), "no price reaches the agent either")
     }
 
     func testCheckErrandsNeverInventsAPickWhoseOfferIsMissing() throws {

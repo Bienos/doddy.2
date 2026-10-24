@@ -317,6 +317,10 @@ private struct ReportPageTwo: View {
                 Text(String(format: NSLocalizedString("Buying? Tap \u{201C}Buy at %@\u{201D} in the app. The shop's page opens and you pay there: Apple Pay, BLIK or a card. Doddy doesn't see the payment.", comment: ""), best.offer.shop))
                     .font(.system(size: 9)).foregroundStyle(Paper.paper).fixedSize(horizontal: false, vertical: true)
             }
+            if report.shopping.offers.contains(where: \.isAffiliate) {
+                Text("Some of the Buy buttons use partner links: Doddy may earn a commission if you buy. Prices and the order of the picks don't change.")
+                    .font(.system(size: 9)).foregroundStyle(Paper.paper).fixedSize(horizontal: false, vertical: true)
+            }
             Text("Want to wait? Ask Doddy to look again later: prices change.").font(.system(size: 9)).foregroundStyle(Paper.paper)
         }
         .padding(14)

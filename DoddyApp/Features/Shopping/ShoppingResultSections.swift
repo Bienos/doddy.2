@@ -39,7 +39,7 @@ struct ShoppingResultSections: View {
         ForEach(Array(shopping.picksInDisplayOrder.enumerated()), id: \.offset) { _, row in
             Section(row.pick.role.label(language)) {
                 PickRow(pick: row.pick, offer: row.offer, language: language)
-                if let url = ShopPage.url(row.offer.url) {
+                if let url = ShopPage.url(row.offer.buyUrl ?? row.offer.url) {
                     Button {
                         let page = ShopPage(url: url, offer: row.offer)
                         openURL(url) { opened in if opened { ShopPage.record(page) } }
@@ -48,6 +48,12 @@ struct ShoppingResultSections: View {
                               systemImage: "bag")
                     }
                     .accessibilityIdentifier("shopping.buy")
+                    // A partner link is said right under the button, before it is tapped (ADR-612).
+                    if row.offer.isAffiliate {
+                        Text("Partner link: the page goes through an affiliate network on its way to the shop, and Doddy may earn a commission if you buy. Prices and the order of the picks don't change.")
+                            .font(.footnote).foregroundStyle(Theme.secondaryText)
+                            .accessibilityIdentifier("shopping.partnerNote")
+                    }
                 }
             }
         }

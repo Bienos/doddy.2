@@ -1921,6 +1921,8 @@
   "%lld offers looked at, in %lld shops.": "Przejrzane oferty: %lld, sklepy: %lld.",
   "Your budget: %@": "Twój budżet: %@",
   "Buy at %@": "Kup w %@",
+  "Partner link: the page goes through an affiliate network on its way to the shop, and Doddy may earn a commission if you buy. Prices and the order of the picks don't change.": "Link partnerski: strona przejdzie przez sieć partnerską w drodze do sklepu, a Doddy może dostać prowizję, jeśli kupisz. Ceny i kolejność propozycji bez zmian.",
+  "Some of the Buy buttons use partner links: Doddy may earn a commission if you buy. Prices and the order of the picks don't change.": "Część przycisków Kup używa linków partnerskich: Doddy może dostać prowizję, jeśli kupisz. Ceny i kolejność propozycji bez zmian.",
   "The report couldn't be made on this iPhone. Try again.": "Nie udało się zrobić raportu na tym iPhonie. Spróbuj jeszcze raz.",
   "Opened %@'s page": "Otwarto stronę sklepu %@",
   "Doddy's server isn't set up in this build, so leaflets can't be checked yet.": "Serwer Doddy’ego nie jest ustawiony w tej wersji, więc gazetek nie da się jeszcze sprawdzić.",
