@@ -38,13 +38,16 @@ Date: 2026-10-24. Owner (24 Oct, in Polish, from the list in `docs/product/NOTIF
 ## Hosted Mac run (24 Oct, `dc6d4d51`, the first compile)
 
 - `xcodebuild build-for-testing` and the unit tests passed: the stopwatch screen, the Live Activity, the intents and the three voice cases compile and the unit suite is green.
-- UI tests: 60 of 62 passed, 1 skipped, 2 failed. `LaunchSmokeTests.testWhatICanDoOpensFromTheHomeMenu`: the stopwatch's own row made the ••• menu twelve rows and its last items unreachable at the default text size; fixed by the one "Focus and stopwatch" row above, not yet re-run. `MemoryJourneyTests.testDarkLargestTextKeepsTextRoutesUsable`: fails on the base branch too (run 40105647967 on `f79a4bf3`), since shopping's "Cheapest this week" row put Memories below the menu's first screen at the largest text size; not this branch's, open on the base.
+- UI tests: 60 of 62 passed, 1 skipped, 2 failed. `LaunchSmokeTests.testWhatICanDoOpensFromTheHomeMenu`: the stopwatch's own row made the ••• menu twelve rows and its last items unreachable at the default text size; fixed by the one "Focus and stopwatch" row above; the next run (`94ffd3fa`, 40122146299) compiled it and that test passed. `MemoryJourneyTests.testDarkLargestTextKeepsTextRoutesUsable`: fails on the base branch too (run 40105647967 on `f79a4bf3`), since shopping's "Cheapest this week" row put Memories below the menu's first screen at the largest text size; not this branch's, open on the base.
 - A test-helper change that swiped the menu to its lower items was tried on #135 and reverted: a swipe on a menu item activates it.
+
+## Hosted Mac run (24 Oct, `94ffd3fa`, with the one row)
+
+- Build for testing and the unit tests: PASS. UI tests: 61 of 62 passed, 1 skipped; the one failure is the base branch's `testDarkLargestTextKeepsTextRoutesUsable` (see above). Nothing of this branch's is red.
 
 ## NOT RUN
 
-- No Xcode build of the "Focus and stopwatch" row yet; the first run compiled the rest.
-- Everything below still holds. No Xcode build before the run above: the SwiftUI screen, the Live Activity and widget code, the App Intents buttons and `VoiceSessionController`'s three cases are uncompiled until the hosted Mac job.
+- Everything below still holds. No Xcode build before the runs above: the SwiftUI screen, the Live Activity and widget code, the App Intents buttons and `VoiceSessionController`'s three cases are uncompiled until the hosted Mac job.
 - No device. Checklist (iOS 17+):
   1. Home › ••• › Focus and stopwatch › Stopwatch › Start with the label "Gotowanie": the Lock Screen and the island show the label and a time counting up, second by second, with no stutter, app closed.
   2. Pause on the Lock Screen: the time freezes. Resume: it carries on from there, not from the wall clock.
