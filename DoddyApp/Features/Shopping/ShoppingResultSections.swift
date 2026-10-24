@@ -55,6 +55,10 @@ struct ShoppingResultSections: View {
                             .accessibilityIdentifier("shopping.partnerNote")
                     }
                 }
+                // Only a price read from the shop's own page can be watched (SHOPPING_WATCH.md).
+                if row.offer.canWatchPrice {
+                    WatchPriceButton(offer: row.offer)
+                }
             }
         }
 
@@ -155,9 +159,15 @@ struct ShopPage: Identifiable {
     /// it is never recorded as bought (constitution: done only on a provider's confirmation).
     @MainActor
     static func record(_ page: ShopPage) {
+        record(shop: page.offer.shop, title: page.offer.title)
+    }
+
+    /// The same line for a page opened from a watched price (WatchesSection), where there is no offer.
+    @MainActor
+    static func record(shop: String, title: String) {
         ActivityLogStore.shared.append(ActivityEntry(
             at: Date(), app: .web,
-            title: String(format: NSLocalizedString("Opened %@'s page", comment: "activity log"), page.offer.shop),
-            detail: page.offer.title, outcome: .opened))
+            title: String(format: NSLocalizedString("Opened %@'s page", comment: "activity log"), shop),
+            detail: title, outcome: .opened))
     }
 }
