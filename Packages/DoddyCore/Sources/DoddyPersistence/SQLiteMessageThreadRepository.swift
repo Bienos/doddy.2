@@ -31,17 +31,18 @@ public final class SQLiteMessageThreadRepository: MessageThreadRepository {
             id: message.id, sender: message.sender, text: message.text,
             createdAt: DoddyDatabase.truncatedToMilliseconds(message.createdAt), delivery: message.delivery,
             basis: message.basis, noteIDs: message.noteIDs, notesSent: message.notesSent,
-            notesSearchFailed: message.notesSearchFailed)
+            notesSearchFailed: message.notesSearchFailed, document: message.document)
+        let documentJSON = try toStore.document.map { try LearningRows.json($0) }
         try await dbQueue.write { db in
             try db.execute(
                 sql: """
-                INSERT INTO thread_messages (id, sender, text, created_at_ms, delivery, basis, note_ids, notes_sent, notes_search_failed)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO thread_messages (id, sender, text, created_at_ms, delivery, basis, note_ids, notes_sent, notes_search_failed, document_json)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 arguments: [
                     toStore.id.uuidString, toStore.sender.rawValue, toStore.text, DoddyDatabase.milliseconds(toStore.createdAt),
                     toStore.delivery.rawValue, toStore.basis?.rawValue, try LearningRows.json(toStore.noteIDs.map(\.uuidString)),
-                    toStore.notesSent, toStore.notesSearchFailed ? 1 : 0,
+                    toStore.notesSent, toStore.notesSearchFailed ? 1 : 0, documentJSON,
                 ])
             guard let stored = try Row.fetchOne(db, sql: "SELECT * FROM thread_messages WHERE id = ?", arguments: [toStore.id.uuidString])
                 .map(Self.message(from:)), stored == toStore else { throw MessageThreadError.verificationFailed }
@@ -106,9 +107,17 @@ public final class SQLiteMessageThreadRepository: MessageThreadRepository {
         let basisRaw: String? = row["basis"]
         let basis = basisRaw.flatMap(ThreadMessage.Basis.init(rawValue:))
         guard (basisRaw == nil) == (basis == nil) else { throw LearningStoreError.corruptRecord(idString) }
+        let documentJSON: String? = row["document_json"]
+        let document: ThreadDocument?
+        if let documentJSON {
+            guard let decoded = try? LearningRows.decode(ThreadDocument.self, documentJSON) else { throw LearningStoreError.corruptRecord(idString) }
+            document = decoded
+        } else {
+            document = nil
+        }
         return ThreadMessage(
             id: id, sender: sender, text: row["text"], createdAt: DoddyDatabase.date(milliseconds: row["created_at_ms"]),
             delivery: delivery, basis: basis, noteIDs: noteIDs, notesSent: row["notes_sent"],
-            notesSearchFailed: (row["notes_search_failed"] as Int) == 1)
+            notesSearchFailed: (row["notes_search_failed"] as Int) == 1, document: document)
     }
 }

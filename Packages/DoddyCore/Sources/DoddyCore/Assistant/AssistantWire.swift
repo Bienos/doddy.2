@@ -31,11 +31,19 @@ struct AssistWireResponse: Codable, Equatable {
         let outputTokens: Int
     }
 
+    /// A file the person asked for, offered as a card (ADR-606). Absent from older servers and when none was asked for.
+    struct Proposal: Codable, Equatable {
+        let kind: String
+        let title: String
+        let request: String
+    }
+
     let schemaVersion: Int
     let requestId: String
     let text: String
     let citedMemoryIDs: [String]
     let usage: Usage?
+    var proposal: Proposal? = nil
 }
 
 struct AssistWireError: Codable, Equatable {

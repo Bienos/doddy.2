@@ -36,20 +36,21 @@ struct IslandWavesView: View {
             ForEach(Array(Self.waves(kind).enumerated()), id: \.offset) { _, wave in
                 let line = IslandWaveLine(wave: wave, shape: shape, phase: phase)
                 let style = StrokeStyle(lineWidth: wave.width, lineCap: .round, lineJoin: .round)
-                Group {
-                    if kind == .speech {
-                        // Nothing where they meet beside him; full strength from 15 % of the way.
-                        line.stroke(LinearGradient(stops: [
-                            .init(color: colour.opacity(0), location: 0),
-                            .init(color: colour, location: 0.15),
-                            .init(color: colour, location: 0.85),
-                            .init(color: colour.opacity(0.4), location: 1),
-                        ], startPoint: .leading, endPoint: .trailing), style: style)
-                    } else {
-                        line.stroke(colour, style: style)
-                    }
+                // The fade is in the colour, not a `.opacity` on the view: a view opacity makes
+                // SwiftUI composite each line in its own offscreen layer, every frame while he
+                // talks (ADR-604). A single stroked line looks the same either way.
+                let strength = colour.opacity(wave.opacity)
+                if kind == .speech {
+                    // Nothing where they meet beside him; full strength from 15 % of the way.
+                    line.stroke(LinearGradient(stops: [
+                        .init(color: colour.opacity(0), location: 0),
+                        .init(color: strength, location: 0.15),
+                        .init(color: strength, location: 0.85),
+                        .init(color: colour.opacity(0.4 * wave.opacity), location: 1),
+                    ], startPoint: .leading, endPoint: .trailing), style: style)
+                } else {
+                    line.stroke(strength, style: style)
                 }
-                .opacity(wave.opacity)
             }
         }
         .accessibilityHidden(true)
@@ -64,28 +65,35 @@ struct IslandWavesView: View {
     }
 
     /// The lines, in fractions of the drawing's height: two for `.line`, five for `.speech`,
-    /// seven for `.full`.
+    /// seven for `.full`. Built once: the animated version asks for them on every frame (ADR-604).
     static func waves(_ kind: Kind) -> [IslandWave] {
         switch kind {
-        case .line:
-            [IslandWave(amplitude: 0.30, frequency: 2, offset: 0, rise: 0, width: 3, opacity: 1),
-             IslandWave(amplitude: 0.18, frequency: 3, offset: 1.9, rise: 0, width: 2, opacity: 0.5)]
-        case .full:
-            // Lighter at the top; strongest at the bottom.
-            (0..<7).map { i in
-                let n = Double(i)
-                return IslandWave(amplitude: 0.10 + 0.012 * n, frequency: 1.4 + 0.3 * n, offset: 0.9 * n,
-                                  rise: (n - 3) * 0.10, width: 2.2, opacity: 0.3 + 0.1 * n)
-            }
-        case .speech:
-            // The strongest in the middle; each ends up a little above or below it.
-            [IslandWave(amplitude: 0.12, frequency: 2.2, offset: 0, rise: -0.28, width: 2.2, opacity: 0.5),
-             IslandWave(amplitude: 0.16, frequency: 2.8, offset: 1.1, rise: -0.14, width: 2.4, opacity: 0.7),
-             IslandWave(amplitude: 0.20, frequency: 2.0, offset: 2.2, rise: 0, width: 3, opacity: 1),
-             IslandWave(amplitude: 0.16, frequency: 2.6, offset: 3.3, rise: 0.14, width: 2.4, opacity: 0.7),
-             IslandWave(amplitude: 0.12, frequency: 2.4, offset: 4.4, rise: 0.28, width: 2.2, opacity: 0.5)]
+        case .line: lineWaves
+        case .full: fullWaves
+        case .speech: speechWaves
         }
     }
+
+    private static let lineWaves: [IslandWave] = [
+        IslandWave(amplitude: 0.30, frequency: 2, offset: 0, rise: 0, width: 3, opacity: 1),
+        IslandWave(amplitude: 0.18, frequency: 3, offset: 1.9, rise: 0, width: 2, opacity: 0.5),
+    ]
+
+    /// Lighter at the top; strongest at the bottom.
+    private static let fullWaves: [IslandWave] = (0..<7).map { i in
+        let n = Double(i)
+        return IslandWave(amplitude: 0.10 + 0.012 * n, frequency: 1.4 + 0.3 * n, offset: 0.9 * n,
+                          rise: (n - 3) * 0.10, width: 2.2, opacity: 0.3 + 0.1 * n)
+    }
+
+    /// The strongest in the middle; each ends up a little above or below it.
+    private static let speechWaves: [IslandWave] = [
+        IslandWave(amplitude: 0.12, frequency: 2.2, offset: 0, rise: -0.28, width: 2.2, opacity: 0.5),
+        IslandWave(amplitude: 0.16, frequency: 2.8, offset: 1.1, rise: -0.14, width: 2.4, opacity: 0.7),
+        IslandWave(amplitude: 0.20, frequency: 2.0, offset: 2.2, rise: 0, width: 3, opacity: 1),
+        IslandWave(amplitude: 0.16, frequency: 2.6, offset: 3.3, rise: 0.14, width: 2.4, opacity: 0.7),
+        IslandWave(amplitude: 0.12, frequency: 2.4, offset: 4.4, rise: 0.28, width: 2.2, opacity: 0.5),
+    ]
 }
 
 struct IslandWave: Equatable, Sendable {

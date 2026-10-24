@@ -605,11 +605,17 @@ struct IslandDoddyLight: View {
 
 extension View {
     /// A 1 pt cream edge around a picture's opaque pixels, so black outlines read on black.
+    /// Off, it adds nothing: four invisible shadows were still four offscreen passes per frame on
+    /// Doddy's moving sprite in light appearance (ADR-604).
+    @ViewBuilder
     func islandCreamEdge(_ on: Bool = true) -> some View {
-        let edge = on ? Color.islandCream : .clear
-        return shadow(color: edge, radius: 0, x: 1, y: 0)
-            .shadow(color: edge, radius: 0, x: -1, y: 0)
-            .shadow(color: edge, radius: 0, x: 0, y: 1)
-            .shadow(color: edge, radius: 0, x: 0, y: -1)
+        if on {
+            shadow(color: .islandCream, radius: 0, x: 1, y: 0)
+                .shadow(color: .islandCream, radius: 0, x: -1, y: 0)
+                .shadow(color: .islandCream, radius: 0, x: 0, y: 1)
+                .shadow(color: .islandCream, radius: 0, x: 0, y: -1)
+        } else {
+            self
+        }
     }
 }

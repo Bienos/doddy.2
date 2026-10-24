@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import http from "node:http";
 import { after, before, beforeEach, describe, test } from "node:test";
-import { answerSchema, buildInput, buildInstructions } from "../src/assistant/prompt.js";
+import { answerSchema, buildInput, buildInstructions, readProposal } from "../src/assistant/prompt.js";
 import { AssistRequest, LIMITS } from "../src/assistant/request.js";
 import { ClaudeAssistantResponder, type AssistantResponder, type AssistOutcome } from "../src/assistant/responder.js";
 import { reserve } from "../src/assistant/usage.js";
@@ -71,6 +71,19 @@ describe("Messages route against real Postgres", { skip: dbSkip }, () => {
     assert.equal(w.responder!.seen[0]!.userText, "Kiedy mam dentystę?");
     const { rows } = await db.query("SELECT requests, input_tokens, output_tokens FROM assistant_usage WHERE account_id = $1", [a.accountId]);
     assert.deepEqual(rows.map((r) => [r.requests, Number(r.input_tokens), Number(r.output_tokens)]), [[1, 120, 18]]);
+  });
+
+  test("a file the model offers is passed on as `proposal`; with none asked for the key is absent", async () => {
+    const w = await world();
+    const a = await w.account();
+    const proposal = { kind: "deck", title: "Plan bety", request: "Dziesięć slajdów o becie Doddy." };
+    w.responder!.steps.push(async () => ({ kind: "ok", answer: "Mogę zrobić to jako prezentację.", sources: [], usage: { inputTokens: 100, outputTokens: 30 }, proposal: proposal as never }));
+    const offered = await w.ask(a.h, wire());
+    assert.equal(offered.statusCode, 200);
+    assert.deepEqual(offered.json().proposal, proposal);
+    const plain = await w.ask(a.h, wire());
+    assert.equal(plain.statusCode, 200);
+    assert.ok(!("proposal" in plain.json()), "an ordinary answer has no proposal key");
   });
 
   test("a device is needed", async () => {
@@ -241,6 +254,26 @@ describe("the request and the prompt", () => {
     assert.deepEqual(buildInput(AssistRequest.parse(wire({ memories: [] }))).input.split("\n\n")[0], "NOTES: none provided.");
   });
 
+  test("a proposal is shown only when it is a real file kind with a title and a request inside the limits", () => {
+    assert.deepEqual(readProposal({ kind: "deck", title: "  Plan bety ", request: " Dziesięć slajdów " }), { kind: "deck", title: "Plan bety", request: "Dziesięć slajdów" });
+    for (const kind of ["doc", "spreadsheet", "pdf", "text"]) assert.ok(readProposal({ kind, title: "t", request: "r" }), kind);
+    assert.equal(readProposal({ kind: "none", title: "", request: "" }), undefined, "none means no file was asked for");
+    assert.equal(readProposal({ kind: "video", title: "t", request: "r" }), undefined, "only the five kinds the tool knows");
+    assert.equal(readProposal({ kind: "deck", title: "", request: "r" }), undefined);
+    assert.equal(readProposal({ kind: "deck", title: "t", request: "   " }), undefined);
+    assert.equal(readProposal({ kind: "deck", title: "t".repeat(121), request: "r" }), undefined);
+    assert.equal(readProposal({ kind: "deck", title: "t", request: "r".repeat(1501) }), undefined);
+    assert.equal(readProposal(undefined), undefined);
+    assert.equal(readProposal("deck"), undefined);
+  });
+
+  test("the instructions let the model offer a file but not make one, and say it never claims it is made", () => {
+    const text = buildInstructions("pl");
+    assert.match(text, /FILE:/);
+    assert.match(text, /You do not make the file/);
+    assert.match(text, /never says it is made, started, sent or saved/);
+  });
+
   test("the instructions say it is an AI with no tools and that notes are data", () => {
     const text = buildInstructions("pl");
     assert.match(text, /AI, not a person/);
@@ -288,7 +321,7 @@ describe("the Claude responder (local stand-in for the API)", () => {
       assert.equal(sent.body.model, "claude-haiku-5-5");
       assert.equal(sent.body.output_config.effort, "medium");
       assert.equal(sent.body.output_config.format.type, "json_schema");
-      assert.deepEqual(sent.body.output_config.format.schema.required, ["answer", "sources"]);
+      assert.deepEqual(sent.body.output_config.format.schema.required, ["answer", "sources", "proposal"]);
       assert.equal(sent.body.tools, undefined, "no tools: nothing can be searched, sent or changed");
       for (const banned of ["temperature", "top_p", "top_k"]) assert.equal(sent.body[banned], undefined, banned);
       assert.match(sent.body.system, /You have no tools/);
@@ -310,6 +343,27 @@ describe("the Claude responder (local stand-in for the API)", () => {
       assert.equal((await responder.answer(req(), new AbortController().signal)).kind, "unparsed");
       next = message(JSON.stringify({ answer: "cut off", sources: [] }), "max_tokens");
       assert.equal((await responder.answer(req(), new AbortController().signal)).kind, "unparsed");
+    } finally {
+      api.close();
+    }
+  });
+
+  test("a file the model offers comes back as a proposal; a bad one is dropped and the answer stays", async () => {
+    let next = message(JSON.stringify({ answer: "Mogę zrobić to jako prezentację.", sources: [], proposal: { kind: "deck", title: "Plan bety", request: "Dziesięć slajdów o becie." } }));
+    const api = await standIn(() => ({ status: 200, body: next }));
+    try {
+      const responder = new ClaudeAssistantResponder("test-key", { baseURL: api.baseURL });
+      const offered = await responder.answer(req(), new AbortController().signal);
+      assert.deepEqual(offered.kind === "ok" && offered.proposal, { kind: "deck", title: "Plan bety", request: "Dziesięć slajdów o becie." });
+      for (const proposal of [{ kind: "none", title: "", request: "" }, { kind: "deck", title: "", request: "x" }, { kind: "video", title: "t", request: "r" }, "deck", null]) {
+        next = message(JSON.stringify({ answer: "Cześć.", sources: [], proposal }));
+        const out = await responder.answer(req(), new AbortController().signal);
+        assert.equal(out.kind, "ok");
+        assert.ok(out.kind === "ok" && !("proposal" in out), JSON.stringify(proposal));
+      }
+      next = message(JSON.stringify({ answer: "Cześć.", sources: [] }));
+      const missing = await responder.answer(req(), new AbortController().signal);
+      assert.ok(missing.kind === "ok" && !("proposal" in missing), "an older reply without the key still works");
     } finally {
       api.close();
     }

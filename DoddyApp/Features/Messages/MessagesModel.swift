@@ -25,12 +25,20 @@ final class MessagesModel {
     private(set) var storage: Storage = .loading
     /// Deleting the conversation did not read back as done, so nothing is claimed gone.
     private(set) var deleteFailed = false
+    /// A file Doddy offered with an answer (ADR-606), by the id of that answer. Kept for this session only: the card
+    /// is an offer, not a record, so after the app closes the offer is gone and nothing was made.
+    private(set) var proposals: [UUID: AssistantProposal] = [:]
+    /// The answer whose file is being made now. One at a time, so a double tap makes one file.
+    private(set) var making: UUID?
+    /// Why the last file was not made. The offer stays so the person can try again or decline.
+    private(set) var makeFailure: ThreadDocumentError?
     var draft = ""
 
     private let repository: any MessageThreadRepository
     private let now: @Sendable () -> Date
     private let sessionID = UUID()
     private var task: Task<Void, Never>?
+    private var makeTask: Task<Void, Never>?
     private var didLoad = false
 
     init(repository: any MessageThreadRepository, now: @escaping @Sendable () -> Date = { Date() }) {
@@ -118,6 +126,7 @@ final class MessagesModel {
             let reply = ThreadMessage.doddy(answer, now: now())
             setDelivery(of: message.id, .sent)
             messages.append(reply)
+            if let proposal = answer.answer.proposal { proposals[reply.id] = proposal }
             await persist {
                 try await $0.setDelivery(id: message.id, .sent)
                 try await $0.append(reply)
@@ -144,6 +153,51 @@ final class MessagesModel {
         if !saved { storage = .notSaved }
     }
 
+    // MARK: Files
+
+    /// The person tapped Make on a card. Only the words on the card are made; the model is not asked again. The file
+    /// bubble is added once the server returned a link and it was saved and read back; a failure leaves the offer.
+    func makeDocument(for id: UUID, using maker: (any ThreadDocumentMaker)?) {
+        guard making == nil, storage != .loading, let proposal = proposals[id] else { return }
+        makeFailure = nil
+        guard let maker else { makeFailure = .notConfigured; return }
+        making = id
+        makeTask = Task {
+            let result: Result<ThreadDocument, ThreadDocumentError>
+            do {
+                result = .success(try await maker.make(proposal))
+            } catch let failure as ThreadDocumentError {
+                result = .failure(failure)
+            } catch {
+                result = .failure(.failed)
+            }
+            await self.finishMaking(id, result)
+        }
+    }
+
+    private func finishMaking(_ id: UUID, _ result: Result<ThreadDocument, ThreadDocumentError>) async {
+        switch result {
+        case .success(let document):
+            let file = ThreadMessage.file(document, now: now())
+            proposals[id] = nil
+            messages.append(file)
+            await persist { try await $0.append(file) }
+        case .failure(let failure):
+            makeFailure = failure
+        }
+        making = nil
+        makeTask = nil
+    }
+
+    /// "Not now": the offer goes. Nothing was made, so nothing is deleted.
+    func dismissProposal(_ id: UUID) {
+        guard making != id else { return }
+        proposals[id] = nil
+        makeFailure = nil
+    }
+
+    func clearMakeFailure() { makeFailure = nil }
+
     // MARK: Deleting
 
     /// Removes the whole conversation from this iPhone. The screen is emptied only after the store read
@@ -154,7 +208,9 @@ final class MessagesModel {
         do {
             try await repository.deleteAll()
             messages = []
+            proposals = [:]
             error = nil
+            makeFailure = nil
             storage = .saving
         } catch {
             deleteFailed = true

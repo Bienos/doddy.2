@@ -31,7 +31,7 @@ final class DeviceConnections {
         case unconfirmed
     }
 
-    struct ContactMatch: Identifiable, Equatable {
+    struct ContactMatch: Identifiable, Equatable, Sendable {
         let id: String
         let name: String
         let phoneNumbers: [String]
@@ -203,14 +203,34 @@ final class DeviceConnections {
 
     /// Title and times only; notes and locations are not read.
     func events(in range: VoiceTimeRange) -> [CalendarEventSummary] {
-        let predicate = eventStore.predicateForEvents(withStart: range.start, end: range.end, calendars: nil)
-        return eventStore.events(matching: predicate)
+        Self.sortedSummaries(in: eventStore, range: range)
+    }
+
+    /// The same read, off the main actor (ADR-604): `events(matching:)` is a synchronous call to the
+    /// calendar daemon and takes longer on a big calendar. Called from a tool call, it froze Doddy
+    /// and the island while he was "thinking". Returns plain values only.
+    func readEvents(in range: VoiceTimeRange) async -> [CalendarEventSummary] {
+        let stores = Stores(events: eventStore, contacts: contactStore)
+        return await Task.detached(priority: .userInitiated) {
+            Self.sortedSummaries(in: stores.events, range: range)
+        }.value
+    }
+
+    /// EventKit and Contacts stores may be used for reads off the main thread; this lets one cross.
+    private struct Stores: @unchecked Sendable {
+        let events: EKEventStore
+        let contacts: CNContactStore
+    }
+
+    private nonisolated static func sortedSummaries(in store: EKEventStore, range: VoiceTimeRange) -> [CalendarEventSummary] {
+        let predicate = store.predicateForEvents(withStart: range.start, end: range.end, calendars: nil)
+        return store.events(matching: predicate)
             .sorted { $0.startDate < $1.startDate }
             .map { Self.summary($0) }
     }
 
     /// Repeating events share one identifier, so the start time is added: one id per occurrence.
-    private static func occurrenceID(_ event: EKEvent) -> String {
+    private nonisolated static func occurrenceID(_ event: EKEvent) -> String {
         CalendarEventSummary.occurrenceID(itemID: event.calendarItemIdentifier, start: event.startDate)
     }
 
@@ -417,7 +437,7 @@ final class DeviceConnections {
         return eventStore.events(matching: predicate)
     }
 
-    private static func summary(_ event: EKEvent) -> CalendarEventSummary {
+    private nonisolated static func summary(_ event: EKEvent) -> CalendarEventSummary {
         CalendarEventSummary(
             id: occurrenceID(event), title: event.title ?? "Untitled", start: event.startDate,
             end: event.endDate, allDay: event.isAllDay)
@@ -691,12 +711,24 @@ final class DeviceConnections {
     // MARK: Contacts
 
     func findContacts(named name: String) throws -> [ContactMatch] {
+        try Self.matches(named: name, in: contactStore)
+    }
+
+    /// The same read, off the main actor (ADR-604); see `readEvents`.
+    func readContacts(named name: String) async throws -> [ContactMatch] {
+        let stores = Stores(events: eventStore, contacts: contactStore)
+        return try await Task.detached(priority: .userInitiated) {
+            try Self.matches(named: name, in: stores.contacts)
+        }.value
+    }
+
+    private nonisolated static func matches(named name: String, in store: CNContactStore) throws -> [ContactMatch] {
         let keys: [CNKeyDescriptor] = [
             CNContactFormatter.descriptorForRequiredKeys(for: .fullName),
             CNContactPhoneNumbersKey as CNKeyDescriptor,
             CNContactEmailAddressesKey as CNKeyDescriptor,
         ]
-        let found = try contactStore.unifiedContacts(matching: CNContact.predicateForContacts(matchingName: name), keysToFetch: keys)
+        let found = try store.unifiedContacts(matching: CNContact.predicateForContacts(matchingName: name), keysToFetch: keys)
         return found.map { contact in
             ContactMatch(
                 id: contact.identifier,
@@ -710,12 +742,24 @@ final class DeviceConnections {
     /// (ADR-269). Nothing else is read.
     /// Only the day and month reach the agent (`VoiceToolReply.birthdays`); the year stays here.
     func contactBirthdays() throws -> [ContactBirthday] {
+        try Self.birthdays(in: contactStore)
+    }
+
+    /// The same read, off the main actor (ADR-604); walking every contact is the slow one.
+    func readContactBirthdays() async throws -> [ContactBirthday] {
+        let stores = Stores(events: eventStore, contacts: contactStore)
+        return try await Task.detached(priority: .userInitiated) {
+            try Self.birthdays(in: stores.contacts)
+        }.value
+    }
+
+    private nonisolated static func birthdays(in store: CNContactStore) throws -> [ContactBirthday] {
         let keys: [CNKeyDescriptor] = [
             CNContactFormatter.descriptorForRequiredKeys(for: .fullName),
             CNContactBirthdayKey as CNKeyDescriptor,
         ]
         var found: [ContactBirthday] = []
-        try contactStore.enumerateContacts(with: CNContactFetchRequest(keysToFetch: keys)) { contact, _ in
+        try store.enumerateContacts(with: CNContactFetchRequest(keysToFetch: keys)) { contact, _ in
             // Gregorian birthdays only; a card with only a non-Gregorian date is skipped.
             guard let birthday = contact.birthday, let month = birthday.month, let day = birthday.day,
                   birthday.calendar == nil || birthday.calendar?.identifier == .gregorian else { return }
@@ -780,6 +824,10 @@ protocol DeviceConnecting: ReminderStore, CalendarEventWriter, TimerWriter, Send
     func reminderLists() -> [ReminderListRef]
     func findContacts(named name: String) throws -> [DeviceConnections.ContactMatch]
     func contactBirthdays() throws -> [ContactBirthday]
+    /// The same reads off the main actor, for tool calls (ADR-604).
+    func readEvents(in range: VoiceTimeRange) async -> [CalendarEventSummary]
+    func readContacts(named name: String) async throws -> [DeviceConnections.ContactMatch]
+    func readContactBirthdays() async throws -> [ContactBirthday]
 }
 
 extension DeviceConnections: DeviceConnecting {}
@@ -791,6 +839,9 @@ extension DeviceConnecting {
     func steps(on day: StepDay, now: Date) async throws -> StepTotals { throw DeviceConnections.Failure.stepsNotAllowed }
     var cameraAvailable: Bool { false }
     func findPhotos(_ request: PhotoSearchRequest, now: Date) -> PhotoSearchFound { .empty }
+    func readEvents(in range: VoiceTimeRange) async -> [CalendarEventSummary] { events(in: range) }
+    func readContacts(named name: String) async throws -> [DeviceConnections.ContactMatch] { try findContacts(named: name) }
+    func readContactBirthdays() async throws -> [ContactBirthday] { try contactBirthdays() }
 }
 
 /// Resumes a continuation once: whichever comes first, EventKit's answer or the timeout.

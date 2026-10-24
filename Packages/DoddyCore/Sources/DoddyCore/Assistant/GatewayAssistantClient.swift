@@ -112,7 +112,9 @@ public struct GatewayAssistantClient: AssistantClient {
             guard let id = UUID(uuidString: raw) else { throw AssistantError.invalidCitations }
             cited.append(id)
         }
-        return AssistantReply(text: wire.text, citedMemoryIDs: cited)
+        // A proposal that does not fit the limits is dropped; the answer is still shown.
+        let proposal = wire.proposal.flatMap { AssistantProposal.make(kind: $0.kind, title: $0.title, request: $0.request) }
+        return AssistantReply(text: wire.text, citedMemoryIDs: cited, proposal: proposal)
     }
 
     static func error(from response: GatewayHTTPResponse) -> AssistantError {

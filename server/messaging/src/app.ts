@@ -20,6 +20,8 @@ import { taskCallContext, type TaskCallContext, type TaskCallDeps } from "./task
 import { errandRoutes } from "./routes/errands.js";
 import { errandContext, type ErrandContext, type ErrandDeps } from "./errands/context.js";
 import { assistantRoutes } from "./routes/assistant.js";
+import { dealsRoutes } from "./routes/deals.js";
+import type { DealsDeps } from "./deals/service.js";
 import type { AssistantDeps } from "./assistant/deps.js";
 
 declare module "fastify" {
@@ -58,6 +60,8 @@ export interface Deps {
   taskCallLog?: (msg: string, extra?: object) => void;
   /** Errands (ADR-570): settings and the researcher (needs an Anthropic key). Needs `cipher` too. */
   errands?: ErrandDeps;
+  /** Leaflets (ADR-609, SHOPPING.md section 2): settings, the polite fetcher and the Haiku reader. */
+  deals?: DealsDeps;
   /** Where errand log lines go (tests capture them); default: the request logger. */
   errandLog?: (msg: string, extra?: object) => void;
   /** Messages (ADR-586): the typed conversation asks Claude here. Needs an Anthropic key and the switch on. */
@@ -125,6 +129,7 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   await app.register(taskCallWebhookRoutes(deps, taskCtx));
   await app.register(errandRoutes(deps, errandCtx));
   await app.register(assistantRoutes(deps));
+  await app.register(dealsRoutes(deps));
   return app;
 }
 

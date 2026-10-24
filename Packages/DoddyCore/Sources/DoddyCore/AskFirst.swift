@@ -106,6 +106,10 @@ public enum AskFirst {
             return .yesFirst(ErrandAsk.handOverCard(draft))
         case .checkErrands:
             return .yesFirst(ErrandAsk.checkCard)
+        case .findDeals(let request):
+            // Public leaflets read on Doddy's server, changing nothing (SHOPPING.md). Not one of
+            // `publicLookups`: whether leaflet look-ups run at once is an open owner decision.
+            return .yesFirst(DealsAsk.card(request))
         case .addToList(let request):
             return .tapFirst(AskCard(title: "Add to \(request.list)?", lines: request.items, confirmLabel: "Add"))
         case .checkOff(let request):

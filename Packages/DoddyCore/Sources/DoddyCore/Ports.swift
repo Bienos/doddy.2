@@ -144,10 +144,13 @@ public struct AssistantReply: Equatable, Sendable {
     public let text: String
     /// Must be a subset of the request's grounding memory IDs. `CitationVerifier` enforces this.
     public let citedMemoryIDs: [UUID]
+    /// A file the person asked for (ADR-606), already checked against the limits; nil when none was asked for.
+    public let proposal: AssistantProposal?
 
-    public init(text: String, citedMemoryIDs: [UUID] = []) {
+    public init(text: String, citedMemoryIDs: [UUID] = [], proposal: AssistantProposal? = nil) {
         self.text = text
         self.citedMemoryIDs = citedMemoryIDs
+        self.proposal = proposal
     }
 }
 

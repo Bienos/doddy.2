@@ -10,6 +10,12 @@ import SwiftUI
 /// Talking happens here (ADR-595): a tap on Doddy starts the conversation on Home. While it runs,
 /// the words under him say what he is doing and show the last two lines, the bottom bar becomes
 /// Mute and End, and Transcript opens the whole conversation as a sheet.
+/// Remembers when the eyes last followed the finger (ADR-604). A class on purpose: `@State` of a
+/// plain value would invalidate Home on every write.
+private final class FingerFollowThrottle {
+    var last: TimeInterval = 0
+}
+
 struct HomeView: View {
     @Binding var selectedTab: AppTab
     @Binding var showFind: Bool
@@ -27,6 +33,9 @@ struct HomeView: View {
     /// A tap on Doddy: he hops and perks up (listening pose) as the conversation opens.
     @State private var perking = false
     @State private var tapHops = 0
+    /// When the eyes last took the finger's position; a touch sample is 120 Hz, they need 30 (ADR-604).
+    /// A reference, so writing it does not make Home redraw.
+    @State private var follow = FingerFollowThrottle()
     @State private var showMemories = false
     @State private var showAsk = false
     @State private var tool: HomeTool?
@@ -38,6 +47,8 @@ struct HomeView: View {
     @State private var showToday = false
     /// Tasks handed to Doddy (ADR-570): the list and each result card.
     @State private var showErrands = false
+    /// This week's leaflets and the basket (SHOPPING.md 2).
+    @State private var showDeals = false
     @State private var showVoicePicker = false
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
     /// First visit (ADR-326): until a conversation has really connected, Home keeps to talking and
@@ -74,8 +85,12 @@ struct HomeView: View {
                 // taps and scrolling work as before; a finger on him is his touch area's.
                 .simultaneousGesture(
                     DragGesture(minimumDistance: 0, coordinateSpace: .global)
-                        .onChanged {
-                            DoddyDirector.shared.fingerElsewhere(x: Double($0.location.x), y: Double($0.location.y))
+                        .onChanged { value in
+                            // At most 30 times a second (ADR-604): every sample ran the motion engine.
+                            let uptime = ProcessInfo.processInfo.systemUptime
+                            guard uptime - follow.last >= 1.0 / 30 else { return }
+                            follow.last = uptime
+                            DoddyDirector.shared.fingerElsewhere(x: Double(value.location.x), y: Double(value.location.y))
                         }
                         .onEnded { _ in DoddyDirector.shared.fingerElsewhereLifted() }
                 )
@@ -100,6 +115,7 @@ struct HomeView: View {
             .sheet(item: $modal) { _ in CaptureView() }
             .sheet(isPresented: $showDataFlow) { DataFlowSheet() }
             .sheet(isPresented: $showErrands) { ErrandsView() }
+            .sheet(isPresented: $showDeals) { DealsView() }
             .sheet(isPresented: Binding(get: { router.isRecordingsPresented }, set: { router.isRecordingsPresented = $0 })) { RecordingsView() }
             .sheet(isPresented: $showCapabilities) { CapabilitiesSheet() }
             .sheet(isPresented: $showMemories) {
@@ -205,6 +221,9 @@ struct HomeView: View {
                 // Tasks handed to Doddy's background worker (ADR-570).
                 Button { showErrands = true } label: { Label("Tasks", systemImage: "checklist") }
                     .accessibilityIdentifier("home.tasks")
+                // Leaflets read on request (SHOPPING.md 2).
+                Button { showDeals = true } label: { Label("Cheapest this week", systemImage: "cart") }
+                    .accessibilityIdentifier("home.deals")
                 Button { tool = .focus } label: {
                     if FocusController.shared.session.map({ !$0.isOver }) ?? false {
                         Label("Focus · on", systemImage: "timer")

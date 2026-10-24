@@ -91,6 +91,25 @@ final class DataFlowTests: XCTestCase {
         XCTAssertTrue(errands.note?.contains("no words from the task") ?? false)
     }
 
+    /// SHOPPING.md: leaflets go through the messaging server; nothing that identifies the user goes to the
+    /// shops, and the row says Rossmann gets the item names as a search.
+    func testLeafletsRowSaysNothingIdentifyingGoesToTheShops() {
+        XCTAssertFalse(row("deals", base).isActive)
+        XCTAssertTrue(row("deals", base).note?.contains("can't be checked") ?? false)
+        var state = base
+        state.messagingServerSet = true
+        let deals = row("deals", state)
+        XCTAssertTrue(deals.isActive)
+        XCTAssertTrue(deals.destination.contains("Anthropic"))
+        XCTAssertTrue(deals.what.contains("Nothing that identifies you goes to any shop."))
+        XCTAssertTrue(deals.what.contains("rossmann.pl as a search"), "the one shop that gets the item names is named")
+        XCTAssertTrue(deals.what.contains("Never your saved notes"))
+        XCTAssertTrue(deals.note?.contains("only daily counts") ?? false)
+        state.pauseAll = true
+        XCTAssertFalse(row("deals", state).isActive, "paused: the server isn't asked")
+        XCTAssertTrue(row("errands", state).what.contains("Serper"), "shopping tasks name the offer source")
+    }
+
     func testMessagingServerRowListsNotesOnlyWhenTheCopyIsOn() {
         XCTAssertFalse(row("messagingServer", base).isActive)
         var state = base
@@ -194,7 +213,7 @@ final class DataFlowSummaryTests: XCTestCase {
         // OpenAI runs the voice where the token server is set (ADR-442): ElevenLabs gets no voice then.
         XCTAssertEqual(
             DataFlow.cloudAISummary(everything),
-            "OpenAI (voice); Anthropic (Ask Doddy); ElevenLabs (phone calls) and Anthropic or OpenAI (daily news) on your messaging server; Anthropic (tasks you hand over)")
+            "OpenAI (voice); Anthropic (Ask Doddy); ElevenLabs (phone calls) and Anthropic or OpenAI (daily news) on your messaging server; Anthropic (tasks you hand over); Anthropic (leaflets you check)")
         XCTAssertFalse(DataFlow.networkSummary(everything).contains("ElevenLabs (while talking)"))
         var elevenLabs = everything
         elevenLabs.voiceProvider = .elevenLabs

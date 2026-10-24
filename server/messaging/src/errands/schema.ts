@@ -23,12 +23,33 @@ export const LIMITS = {
 
 const text = (max: number) => z.string().max(max).refine((s) => s.trim().length > 0, "empty");
 
-/** POST /v1/errands. The words are stored exactly as sent (never trimmed or rewritten). */
+export const ERRAND_KINDS = ["shopping"] as const;
+export const PRIORITY_LIMITS = { count: 5, length: 40 } as const;
+
+const priority = z.string().min(1).max(PRIORITY_LIMITS.length)
+  .refine((s) => s === s.trim() && s.trim().length > 0, "untrimmed or empty");
+
+/**
+ * POST /v1/errands. The words are stored exactly as sent (never trimmed or rewritten). A shopping
+ * errand (docs/implementation/SHOPPING.md) adds `kind: "shopping"` and the user's priorities in their
+ * order; priorities are allowed only on a shopping errand and are required there (may be empty).
+ */
 export const createBody = z.strictObject({
   words: text(LIMITS.words),
   brief: text(LIMITS.brief),
   title: text(LIMITS.title),
   language: z.string().regex(/^[a-z]{2}$/),
+  kind: z.enum(ERRAND_KINDS).optional(),
+  priorities: z.array(priority).max(PRIORITY_LIMITS.count).optional(),
+}).superRefine((b, ctx) => {
+  if (b.kind === "shopping" && !b.priorities) ctx.addIssue({ code: "custom", path: ["priorities"], message: "required for shopping" });
+  if (b.kind !== "shopping" && b.priorities) ctx.addIssue({ code: "custom", path: ["priorities"], message: "only for shopping" });
+  const seen = new Set<string>();
+  for (const p of b.priorities ?? []) {
+    const k = p.toLocaleLowerCase("pl");
+    if (seen.has(k)) ctx.addIssue({ code: "custom", path: ["priorities"], message: "duplicate" });
+    seen.add(k);
+  }
 });
 export type ErrandContent = z.infer<typeof createBody>;
 
@@ -36,8 +57,13 @@ export type ErrandContent = z.infer<typeof createBody>;
  * What the user approves: SHA-256 over the canonical JSON of {brief, language, title, words} (keys
  * sorted, no spaces, strings as JSON.stringify writes them), UTF-8. Plain SHA-256 as the contract
  * says, so the app can recompute it from the words it showed; the call-case digest is an HMAC instead.
+ * A shopping errand also binds `kind` and `priorities` (fixture errand_create_shopping_v1.json); a
+ * research errand's digest is unchanged.
  */
 export function contentJson(c: ErrandContent): string {
+  if (c.kind === "shopping") {
+    return canonicalJson({ brief: c.brief, kind: c.kind, language: c.language, priorities: c.priorities ?? [], title: c.title, words: c.words });
+  }
   return canonicalJson({ brief: c.brief, language: c.language, title: c.title, words: c.words });
 }
 export const contentDigest = (c: ErrandContent): Buffer => createHash("sha256").update(contentJson(c), "utf8").digest();
@@ -53,6 +79,47 @@ const ResultItem = z.strictObject({
   site: text(LIMITS.site).optional(),
 });
 
+export const SHOPPING_LIMITS = {
+  offers: 12, picks: 4, offerTitle: 160, shop: 80, delivery: 120, notes: 160, line: 200,
+  howChosen: 3, watchOuts: 4, unknowns: 4, rejected: 4,
+} as const;
+export const PICK_ROLES = ["best", "cheapest", "premium", "alternative"] as const;
+export const EVIDENCE = ["shop_page", "listing"] as const;
+
+const money = z.strictObject({ minor: z.number().int().positive().max(1e11), currency: z.string().regex(/^[A-Z]{3}$/) });
+
+/** `result.shopping` (SHOPPING.md): every offer was registered by the code, never written by the model. */
+export const ShoppingResultSchema = z.strictObject({
+  priorities: z.array(z.string().max(PRIORITY_LIMITS.length)).max(PRIORITY_LIMITS.count),
+  budget: money.optional(),
+  offers: z.array(z.strictObject({
+    id: z.string().regex(/^o\d{1,3}$/),
+    title: text(SHOPPING_LIMITS.offerTitle),
+    shop: text(SHOPPING_LIMITS.shop),
+    price: money,
+    delivery: text(SHOPPING_LIMITS.delivery).optional(),
+    url: httpUrl,
+    site: text(LIMITS.site).optional(),
+    evidence: z.enum(EVIDENCE),
+    seenAt: z.iso.datetime(),
+    gtin: z.string().regex(/^\d{8,14}$/).optional(),
+    notes: text(SHOPPING_LIMITS.notes).optional(),
+  })).min(1).max(SHOPPING_LIMITS.offers),
+  picks: z.array(z.strictObject({
+    role: z.enum(PICK_ROLES),
+    offerId: z.string().regex(/^o\d{1,3}$/),
+    why: text(SHOPPING_LIMITS.line),
+    tradeoff: text(SHOPPING_LIMITS.line).optional(),
+    overBudget: money.optional(),
+  })).min(1).max(SHOPPING_LIMITS.picks),
+  howChosen: z.array(text(SHOPPING_LIMITS.line)).max(SHOPPING_LIMITS.howChosen),
+  watchOuts: z.array(text(SHOPPING_LIMITS.line)).max(SHOPPING_LIMITS.watchOuts),
+  unknowns: z.array(text(SHOPPING_LIMITS.line)).max(SHOPPING_LIMITS.unknowns),
+  rejected: z.array(text(SHOPPING_LIMITS.line)).max(SHOPPING_LIMITS.rejected),
+  stats: z.strictObject({ offersSeen: z.number().int().min(0), shops: z.number().int().min(0) }),
+});
+export type ShoppingResult = z.infer<typeof ShoppingResultSchema>;
+
 /** The result card as stored and served. Optional fields are left out, never null. */
 export const ErrandResultSchema = z.strictObject({
   answer: text(LIMITS.answer),
@@ -66,6 +133,7 @@ export const ErrandResultSchema = z.strictObject({
   next: z.array(text(LIMITS.nextLine)).max(LIMITS.next),
   sources: z.array(z.strictObject({ title: text(LIMITS.sourceTitle), url: httpUrl, site: text(LIMITS.site).optional() })).max(LIMITS.sources),
   checkedAt: z.iso.datetime(),
+  shopping: ShoppingResultSchema.optional(),
 });
 export type ErrandResult = z.infer<typeof ErrandResultSchema>;
 
