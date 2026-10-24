@@ -110,6 +110,38 @@ final class DataFlowTests: XCTestCase {
         XCTAssertTrue(row("errands", state).what.contains("Serper"), "shopping tasks name the offer source")
     }
 
+    /// SHOPPING_WATCH.md (ADR-614): a watched price goes to the messaging server, which reads the shop's page;
+    /// the notification has no product words, nothing is bought, no AI service is involved, and nothing is sent
+    /// without a server or while Connections are paused.
+    func testPriceWatchRowSaysWhatGoesWhereAndThatNothingIsBought() {
+        XCTAssertFalse(row("watches", base).isActive)
+        XCTAssertEqual(row("watches", base).note, "No messaging server is set, so prices can't be watched.")
+        XCTAssertFalse(DataFlow.networkSummary(base).contains("prices you watch"))
+        var state = base
+        state.messagingServerSet = true
+        let watches = row("watches", state)
+        XCTAssertTrue(watches.isActive)
+        XCTAssertTrue(watches.destination.contains("messaging server"))
+        XCTAssertTrue(watches.destination.contains("shops' pages"))
+        for part in ["shop's name and page address", "the product's title", "the price you want", "a few times a day for 30 days",
+                     "The notification has no product words", "Nothing is bought, ordered or signed in", "Never your saved notes"] {
+            XCTAssertTrue(watches.what.contains(part), part)
+        }
+        XCTAssertTrue(watches.when.contains("when you say yes"))
+        XCTAssertTrue(watches.note?.contains("keeps no page content") ?? false)
+        XCTAssertTrue(DataFlow.networkSummary(state).contains("the shops' pages, read by your messaging server (prices you watch)"))
+        // No model reads a watch: it is in no AI summary.
+        XCTAssertFalse(watches.destination.contains("Anthropic"))
+        XCTAssertFalse(DataFlow.cloudAISummary(state).localizedCaseInsensitiveContains("watch"))
+        // Paused: nothing new goes, and the row says the server still checks what is already running.
+        state.pauseAll = true
+        let paused = row("watches", state)
+        XCTAssertFalse(paused.isActive)
+        XCTAssertTrue(paused.note?.contains("already watch") ?? false)
+        XCTAssertTrue(paused.note?.contains("until you stop or delete them") ?? false)
+        XCTAssertFalse(DataFlow.networkSummary(state).contains("prices you watch"))
+    }
+
     func testMessagingServerRowListsNotesOnlyWhenTheCopyIsOn() {
         XCTAssertFalse(row("messagingServer", base).isActive)
         var state = base

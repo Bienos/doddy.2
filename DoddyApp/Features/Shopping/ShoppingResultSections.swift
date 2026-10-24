@@ -39,7 +39,7 @@ struct ShoppingResultSections: View {
         ForEach(Array(shopping.picksInDisplayOrder.enumerated()), id: \.offset) { _, row in
             Section(row.pick.role.label(language)) {
                 PickRow(pick: row.pick, offer: row.offer, language: language)
-                if let url = ShopPage.url(row.offer.url) {
+                if let url = ShopPage.url(row.offer.buyUrl ?? row.offer.url) {
                     Button {
                         let page = ShopPage(url: url, offer: row.offer)
                         openURL(url) { opened in if opened { ShopPage.record(page) } }
@@ -48,6 +48,16 @@ struct ShoppingResultSections: View {
                               systemImage: "bag")
                     }
                     .accessibilityIdentifier("shopping.buy")
+                    // A partner link is said right under the button, before it is tapped (ADR-612).
+                    if row.offer.isAffiliate {
+                        Text("Partner link: the page goes through an affiliate network on its way to the shop, and Doddy may earn a commission if you buy. Prices and the order of the picks don't change.")
+                            .font(.footnote).foregroundStyle(Theme.secondaryText)
+                            .accessibilityIdentifier("shopping.partnerNote")
+                    }
+                }
+                // Only a price read from the shop's own page can be watched (SHOPPING_WATCH.md).
+                if row.offer.canWatchPrice {
+                    WatchPriceButton(offer: row.offer)
                 }
             }
         }
@@ -149,9 +159,15 @@ struct ShopPage: Identifiable {
     /// it is never recorded as bought (constitution: done only on a provider's confirmation).
     @MainActor
     static func record(_ page: ShopPage) {
+        record(shop: page.offer.shop, title: page.offer.title)
+    }
+
+    /// The same line for a page opened from a watched price (WatchesSection), where there is no offer.
+    @MainActor
+    static func record(shop: String, title: String) {
         ActivityLogStore.shared.append(ActivityEntry(
             at: Date(), app: .web,
-            title: String(format: NSLocalizedString("Opened %@'s page", comment: "activity log"), page.offer.shop),
-            detail: page.offer.title, outcome: .opened))
+            title: String(format: NSLocalizedString("Opened %@'s page", comment: "activity log"), shop),
+            detail: title, outcome: .opened))
     }
 }
