@@ -44,11 +44,20 @@ enum OpenWaysReminderScheduler {
         let now = Date.now
         let language = NotificationLanguage.current
         let calendar = Calendar.current
-        for (id, date) in zip(OpenWaysReminder.ids(), OpenWaysReminder.fireDates(after: now, calendar: calendar)) {
+        // A tip nobody set a time for (ADR-613): never on a day one of Doddy's routines already
+        // comes, so Doddy says at most one thing a day of its own. A week with a routine every
+        // day gets no tip.
+        let routineDays = OwnNotificationDays.routineWeekdays(
+            morning: .stored(), evening: .stored(), plan: .stored(), lookBack: .stored(), tidyUp: .stored())
+        let dates = OwnNotificationDays.tipDates(
+            OpenWaysReminder.fireDates(after: now, calendar: calendar), routineWeekdays: routineDays, calendar: calendar)
+        let planned = Array(OpenWaysReminder.ids().prefix(dates.count))
+        for (id, date) in zip(planned, dates) {
             let content = UNMutableNotificationContent()
             content.title = OpenWaysReminder.title(language)
             content.body = OpenWaysReminder.body(language)
             content.sound = .default
+            content.interruptionLevel = DoddyNotificationKind.openWays.interruptionLevel
             let when = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: date)
             let trigger = UNCalendarNotificationTrigger(dateMatching: when, repeats: false)
             do {
@@ -57,9 +66,9 @@ enum OpenWaysReminderScheduler {
                 break
             }
         }
-        // Read back from iOS: the round counts as set only if all four are really pending.
+        // Read back from iOS: the round counts as set only if every planned one is really pending.
         let pendingNow = Set(await center.pendingNotificationRequests().map(\.identifier))
-        if Set(OpenWaysReminder.ids()).isSubset(of: pendingNow) {
+        if Set(planned).isSubset(of: pendingNow) {
             setup.reminderRoundArmed(at: now)
         } else {
             center.removePendingNotificationRequests(withIdentifiers: OpenWaysReminder.ids())

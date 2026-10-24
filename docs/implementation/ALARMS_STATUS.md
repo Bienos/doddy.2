@@ -58,3 +58,6 @@ Date: 2026-10-11. Owner: "do all of them" (item 6).
 - **NOT RUN:**
   - `AlarmManager.AlarmConfiguration(countdownDuration:schedule:attributes:)`, `AlarmPresentation(alert:countdown:)`, `secondaryButtonBehavior: .countdown` and `AlarmPresentationState.mode` have never been compiled;
   - Snooze has never been pressed on a device.
+
+## Part 3: timers (ADR-612)
+Voice timers now ring through AlarmKit on iOS 26 (`Features/Alarms/TimerRinger.swift`), with Pause, Resume and Stop on the Lock Screen (`DoddyWidgets/AlarmLiveActivity.swift`, `Shared/Alarms/DoddyTimerIntents.swift`). Settings › Alarms still lists only alarms. Details and the device checklist: `NOTIFICATIONS_AND_TIMERS.md`.

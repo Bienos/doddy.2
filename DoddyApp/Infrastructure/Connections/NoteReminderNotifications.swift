@@ -5,7 +5,8 @@ import UserNotifications
 /// Note reminders (M4a, ADR-190) as local notifications. Only identifiers starting with
 /// `MemoryReminder.notificationPrefix` are scheduled here; timers and event nudges
 /// (`DeviceConnections`) and server pushes share the same iOS queue and are never touched.
-/// No badge, no remote registration, interruption level `.active`.
+/// No badge, no remote registration. Time Sensitive since ADR-612: the user set it for a moment,
+/// so a Focus lets it through where they allow Time Sensitive notifications.
 struct SystemNoteNotifications: NoteNotificationScheduling {
     static let categoryID = "DODDY_NOTE_REMINDER"
     /// Repeating reminders (ADR-211): "In 1 hour" and "Done this time"; no "Tomorrow 09:00" (owner
@@ -62,7 +63,7 @@ struct SystemNoteNotifications: NoteNotificationScheduling {
         content.body = notification.body
         content.sound = .default
         content.threadIdentifier = Self.threadID
-        content.interruptionLevel = .active
+        content.interruptionLevel = DoddyNotificationKind.noteReminder.interruptionLevel
         content.userInfo = [Self.memoryIDKey: notification.memoryID.uuidString]
         // Doddy reaching for it (ADR-313), the pose for a reminder waiting; no extra words.
         if let art = NotificationArt.attachment(.reachingHigh) { content.attachments = [art] }
@@ -177,6 +178,13 @@ extension TimerBanners {
         }
         // A birthday (ADR-288) just opens Doddy; nothing else happens.
         if Birthdays.isBirthday(notificationID: requestID) { return }
+        // The weekly plan (ADR-613) opens its screen.
+        if WeeklyPlan.isPlan(notificationID: requestID) {
+            if action != UNNotificationDismissActionIdentifier {
+                await MainActor.run { ShortcutRouter.shared.weeklyPlanOpened() }
+            }
+            return
+        }
         // The weekly look-back (ADR-306) opens its screen.
         if WeeklyLookBack.isLookBack(notificationID: requestID) {
             if action != UNNotificationDismissActionIdentifier {

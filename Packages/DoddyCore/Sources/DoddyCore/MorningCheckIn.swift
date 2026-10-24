@@ -56,13 +56,15 @@ public enum MorningCheckIn {
 
     public static func requests(_ settings: MorningCheckInSettings) -> [Request] {
         guard settings.isOn else { return [] }
+        // Never in quiet hours (ADR-613): a time inside them moves to 07:00 or 21:30.
+        let time = QuietHours.adjusted(hour: settings.hour, minute: settings.minute)
         guard settings.weekdaysOnly else {
-            return [Request(id: "\(notificationPrefix).daily", weekday: nil, hour: settings.hour, minute: settings.minute)]
+            return [Request(id: "\(notificationPrefix).daily", weekday: nil, hour: time.hour, minute: time.minute)]
         }
         // A named parameter: `$0` here was read as an optional (it is passed on as `Int?`), which put
         // "Optional(2)" in the id.
         return (2...6).map { (weekday: Int) in
-            Request(id: "\(notificationPrefix).weekday\(weekday)", weekday: weekday, hour: settings.hour, minute: settings.minute)
+            Request(id: "\(notificationPrefix).weekday\(weekday)", weekday: weekday, hour: time.hour, minute: time.minute)
         }
     }
 

@@ -23,10 +23,14 @@ enum WeeklyLookBackScheduler {
         content.body = WeeklyLookBack.body(language)
         // Doddy sitting cross-legged, as on the look-back's rooftop (ADR-323).
         if let art = NotificationArt.attachment(.crosslegged) { content.attachments = [art] }
+        // A routine: no sound, never through a Focus (ADR-612).
+        content.interruptionLevel = DoddyNotificationKind.weeklyLookBack.interruptionLevel
         var when = DateComponents()
         when.weekday = settings.weekday
-        when.hour = settings.hour
-        when.minute = settings.minute
+        // Never in quiet hours (ADR-613).
+        let time = QuietHours.adjusted(hour: settings.hour, minute: settings.minute)
+        when.hour = time.hour
+        when.minute = time.minute
         let request = UNNotificationRequest(
             identifier: WeeklyLookBack.notificationID, content: content,
             trigger: UNCalendarNotificationTrigger(dateMatching: when, repeats: true))
@@ -140,8 +144,10 @@ struct WeeklyLookBackSettingsSection: View {
             get: { Calendar.current.date(from: DateComponents(hour: settings.hour, minute: settings.minute)) ?? .now },
             set: { date in
                 let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
-                settings.hour = parts.hour ?? 19
-                settings.minute = parts.minute ?? 0
+                // Quiet hours (ADR-613): the picker shows where the time really goes.
+                let time = QuietHours.adjusted(hour: parts.hour ?? 19, minute: parts.minute ?? 0)
+                settings.hour = time.hour
+                settings.minute = time.minute
             })
     }
 

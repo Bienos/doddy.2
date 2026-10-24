@@ -34,12 +34,12 @@ Code lives under `DoddyApp/Features/<Folder>/`. Status docs are in `docs/impleme
 | Memories | Notes list, find, detail, corrections | 252, 310 | MEMORY_HISTORY_STATUS, M1_STATUS |
 | Capture | New-note editor, "Save to Doddy" | 179 | M1_STATUS |
 | Lists | Lists, templates, share card, shopping mode | 216, 257, 334 | LISTS_STATUS, SHOPPING_MODE_STATUS |
-| NoteReminders | Time and place reminders on notes | 196, 211 | M4A_NOTE_REMINDERS_STATUS, PLACE_REMINDERS_STATUS |
+| NoteReminders | Time and place reminders on notes; "Ring like an alarm" through AlarmKit (`Alarms/ReminderRinger`, ADR-613) | 196, 211, 608 | M4A_NOTE_REMINDERS_STATUS, PLACE_REMINDERS_STATUS, RINGING_REMINDERS_AND_WEEKLY_PLAN |
 | Settings | Settings, island style, personality, what Doddy learned ("Hey Doddy" was removed, ADR-549) | 254, 440, 549 | HEY_DODDY_STATUS (history), M6_LEARNING_LOOP_STATUS |
 | Messages (was Ask) | The typed conversation with Doddy: bubbles saved on this iPhone until deleted; answers from Claude through the messaging server (`POST /v1/assistant/ask`) | 585, 586 (115) | MESSAGES_STATUS, M2_STATUS |
 | Web (`Features/Web`, `Infrastructure/WebMemoryClientFactory.swift`, DoddyCore `OnlineAccounts/WebMemory*`) | Sign in to Doddy Web; **Keep on Doddy's server** (ADR-603): two switches for notes and conversations, a consent screen, "Delete everything on Doddy's server". Rules and the HTTP client are in DoddyCore and tested on Linux. **The SwiftUI screens and the call from the voice controller are NOT COMPILED** (no Xcode in the sessions that wrote them); needs the hosted Mac build and a run on a device | 603 | CLOUD_MEMORY |
 | Activity | "What Doddy did" and undo | 268, 271 | ACTIVITY_UNDO_STATUS |
-| Alarms | Alarms by voice (AlarmKit, iOS 26) | 260, 283 | ALARMS_STATUS |
+| Alarms | Alarms by voice (AlarmKit, iOS 26); timers ring through AlarmKit too, with a Lock Screen countdown (`TimerRinger`, ADR-612) | 260, 283, 607 | ALARMS_STATUS, NOTIFICATIONS_AND_TIMERS |
 | Backup | Encrypted backup file | 222 | ENCRYPTED_BACKUP_STATUS |
 | Birthdays | Birthday reminders from contacts | 288 | BIRTHDAYS_STATUS |
 | Calls | Calling Doddy on the phone, PIN | - | S2_CALLS_STATUS |
@@ -51,7 +51,7 @@ Code lives under `DoddyApp/Features/<Folder>/`. Status docs are in `docs/impleme
 | Import | Google Keep and text import | 231 | NOTE_IMPORT_STATUS |
 | LeaveBy, Parking, Today | Time to leave, parking spot, Today card | 335, 301 | TODAY_STATUS |
 | Meaning | Find by meaning (on-device) | 227 | MEANING_SEARCH_STATUS |
-| MorningCheckIn, EveningWrapUp, WeeklyLookBack, TidyUp | Daily and weekly routines | 220, 261, 306, 228 | MORNING_CHECKIN_STATUS, EVENING_WRAPUP_STATUS, TIDY_UP_STATUS |
+| MorningCheckIn, EveningWrapUp, WeeklyLookBack, WeeklyPlan, TidyUp | Daily and weekly routines; quiet hours 22:00–07:00 for all of them (ADR-613) | 220, 261, 306, 228, 608 | MORNING_CHECKIN_STATUS, EVENING_WRAPUP_STATUS, TIDY_UP_STATUS, RINGING_REMINDERS_AND_WEEKLY_PLAN |
 | News, Updates | Daily news, server notifications and texts | 174, 175 | N1_NEWS_STATUS, S1_SERVER_STATUS |
 | Photos, VoiceMemos | Photo notes (picker and, since ADR-569, Doddy's camera), the photo search card, voice memos | 218, 230, 569 | PHOTO_NOTES_STATUS, VOICE_MEMOS_STATUS, APPLE_CONNECTIONS |
 | Privacy | Face ID lock, "What leaves this iPhone" | 310 | - |

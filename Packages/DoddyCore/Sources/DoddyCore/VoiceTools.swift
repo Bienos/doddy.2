@@ -812,8 +812,15 @@ public enum VoiceToolReply {
 
     /// The timer is scheduled and confirmed. The user hears it ring at `endsAt`. A label is the
     /// agent's words, so it follows as data (ToolData).
-    public static func timerAdded(_ draft: TimerDraft, endsAt: Date, calendar: Calendar) -> String {
-        let text = "added: timer \(durationText(draft.seconds)), rings at \(localText(endsAt, hasTime: true, calendar: calendar))."
+    /// `ring` (ADR-612) adds how it will ring, so the agent never promises a sound the iPhone
+    /// won't make; nil leaves the line as it was.
+    public static func timerAdded(_ draft: TimerDraft, endsAt: Date, calendar: Calendar, ring: TimerRing? = nil) -> String {
+        var text = "added: timer \(durationText(draft.seconds)), rings at \(localText(endsAt, hasTime: true, calendar: calendar))."
+        switch ring {
+        case .alarm: text += " It rings like the Clock app's timer, even in Silent mode or a Focus."
+        case .notification: text += " It comes as a notification: in Silent mode it only vibrates."
+        case nil: break
+        }
         guard let label = draft.label else { return text }
         return text + " Its label:\n" + ToolData.block([quoted("Label", label)])
     }
