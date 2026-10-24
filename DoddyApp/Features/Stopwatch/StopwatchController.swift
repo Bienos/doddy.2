@@ -2,7 +2,7 @@ import DoddyCore
 import Foundation
 import Observation
 
-/// The stopwatch (ADR-621): one at a time, kept in UserDefaults so it survives the app being
+/// The stopwatch (ADR-642): one at a time, kept in UserDefaults so it survives the app being
 /// closed, with a Lock Screen and Dynamic Island clock that counts up by itself. The timing rules
 /// are `Stopwatch` (DoddyCore, tested). It sends no notification: nothing ends. It measures time
 /// and claims nothing else.

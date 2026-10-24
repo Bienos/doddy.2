@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// ADR-621: the stopwatch by voice. Start and stop need a tap, reading asks "yes" first, and
+/// ADR-642: the stopwatch by voice. Start and stop need a tap, reading asks "yes" first, and
 /// Doddy says only what the clock says.
 final class StopwatchVoiceTests: XCTestCase {
     private let t0 = Date(timeIntervalSince1970: 1_792_000_000)

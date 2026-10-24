@@ -225,7 +225,7 @@ struct HomeView: View {
                 // Leaflets read on request (SHOPPING.md 2).
                 Button { showDeals = true } label: { Label("Cheapest this week", systemImage: "cart") }
                     .accessibilityIdentifier("home.deals")
-                // Focus counts down, the stopwatch counts up (ADR-621). One row for both: the menu
+                // Focus counts down, the stopwatch counts up (ADR-642). One row for both: the menu
                 // fits eleven rows on an iPhone at the default text size, and a twelfth put "What I
                 // can do" and "What leaves this iPhone" out of reach (the hosted UI tests caught it).
                 Menu {

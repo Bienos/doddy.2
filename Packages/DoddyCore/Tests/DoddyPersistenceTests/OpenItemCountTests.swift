@@ -3,7 +3,7 @@ import DoddyCore
 import Foundation
 import XCTest
 
-/// ADR-621: the count on a list's place reminder is read from the real list items: only the ones
+/// ADR-642: the count on a list's place reminder is read from the real list items: only the ones
 /// not ticked, only that list.
 final class OpenItemCountTests: XCTestCase {
     func testOnlyOpenItemsOfThatListAreCounted() async throws {

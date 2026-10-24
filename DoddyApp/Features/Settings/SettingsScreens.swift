@@ -653,7 +653,7 @@ struct RoutinesSettingsView: View {
 
     var body: some View {
         Form {
-            // ADR-613: what comes when, in one place.
+            // ADR-641: what comes when, in one place.
             Section {
                 Text("Timers, alarms and reminders you set always come, at any hour. Doddy's own check-ins and plans stay quiet from 22:00 to 7:00: a time in those hours moves to 7:00 or 21:30. A tip from Doddy never comes on a day a check-in already did.")
                     .font(.footnote)

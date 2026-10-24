@@ -23,7 +23,7 @@ public struct NoteReminderVoiceDraft: Equatable, Sendable {
     public let target: NoteReminderVoiceTarget
     /// A time reminder that repeats (ADR-211): the weekday, day and clock time come from the time.
     public let repeats: ReminderRepeat?
-    /// The user asked for it to ring like an alarm (ADR-613). Only a proposal: the card shows it as
+    /// The user asked for it to ring like an alarm (ADR-641). Only a proposal: the card shows it as
     /// a switch, and nothing rings unless it is on when the user taps Set reminder.
     public let rings: Bool
 
@@ -154,7 +154,7 @@ extension VoiceToolReply {
         return " It replaced the note's earlier reminder (\(phrase(previous, earlier: true))), which is gone now. Tell the user."
     }
 
-    /// Added to a set reminder's reply when the card's "Ring like an alarm" was on (ADR-613): said as
+    /// Added to a set reminder's reply when the card's "Ring like an alarm" was on (ADR-641): said as
     /// ringing only when AlarmKit lists the alarm.
     public static func noteReminderRingLine(confirmed: Bool) -> String {
         confirmed

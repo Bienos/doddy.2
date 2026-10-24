@@ -115,7 +115,7 @@ public enum ToolCatalog {
         .init(VoiceToolName.setAlarm, .localChange, .card),
         .init(VoiceToolName.listAlarms, .lookup, .askFirst),
         .init(VoiceToolName.cancelAlarm, .localChange, .card),
-        // A stopwatch that counts up (ADR-621): Doddy's own tool, no other app.
+        // A stopwatch that counts up (ADR-642): Doddy's own tool, no other app.
         .init(VoiceToolName.startStopwatch, .localChange, .card),
         .init(VoiceToolName.stopStopwatch, .localChange, .card),
         .init(VoiceToolName.checkStopwatch, .lookup, .askFirst),

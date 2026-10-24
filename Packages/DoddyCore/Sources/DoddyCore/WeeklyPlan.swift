@@ -1,6 +1,6 @@
 import Foundation
 
-// The weekly plan (ADR-613; owner, 24 Oct 2026: "budujemy … potem plan na tydzień"). Off by
+// The weekly plan (ADR-641; owner, 24 Oct 2026: "budujemy … potem plan na tydzień"). Off by
 // default. Once a week, Monday 08:00 to start, a notification says only "Nowy tydzień · Zerknąć,
 // co Cię czeka?" ("New week · Take a look at what's coming?"): no names, no counts, so nothing
 // private is on the Lock Screen and nothing can be out of date by the time it arrives. Its screen

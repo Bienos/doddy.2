@@ -5,7 +5,7 @@ import UserNotifications
 /// Note reminders (M4a, ADR-190) as local notifications. Only identifiers starting with
 /// `MemoryReminder.notificationPrefix` are scheduled here; timers and event nudges
 /// (`DeviceConnections`) and server pushes share the same iOS queue and are never touched.
-/// No badge, no remote registration. Time Sensitive since ADR-612: the user set it for a moment,
+/// No badge, no remote registration. Time Sensitive since ADR-640: the user set it for a moment,
 /// so a Focus lets it through where they allow Time Sensitive notifications.
 struct SystemNoteNotifications: NoteNotificationScheduling {
     static let categoryID = "DODDY_NOTE_REMINDER"
@@ -14,7 +14,7 @@ struct SystemNoteNotifications: NoteNotificationScheduling {
     static let repeatingCategoryID = "DODDY_NOTE_REPEATING_REMINDER"
     /// Place reminders: no snooze (a place comes back on the next arrival).
     static let placeCategoryID = "DODDY_NOTE_PLACE_REMINDER"
-    /// The same for a list: "Open list" (ADR-621).
+    /// The same for a list: "Open list" (ADR-642).
     static let placeListCategoryID = "DODDY_LIST_PLACE_REMINDER"
     static let threadID = "doddy-note-reminders"
     static let openAction = "NOTE_OPEN"
@@ -185,7 +185,7 @@ extension TimerBanners {
         }
         // A birthday (ADR-288) just opens Doddy; nothing else happens.
         if Birthdays.isBirthday(notificationID: requestID) { return }
-        // The weekly plan (ADR-613) opens its screen.
+        // The weekly plan (ADR-641) opens its screen.
         if WeeklyPlan.isPlan(notificationID: requestID) {
             if action != UNNotificationDismissActionIdentifier {
                 await MainActor.run { ShortcutRouter.shared.weeklyPlanOpened() }

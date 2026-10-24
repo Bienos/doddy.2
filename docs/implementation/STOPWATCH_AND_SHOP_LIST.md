@@ -1,6 +1,6 @@
-# A real stopwatch, and a shop list that says what is left (ADR-621)
+# A real stopwatch, and a shop list that says what is left (ADR-642)
 
-Date: 2026-10-24. Owner (24 Oct, in Polish, from the list in `docs/product/NOTIFICATION_IDEAS.md`): "1 i 3" = (1) the list-at-a-shop reminder says how many things are left, and (3) a real count-up stopwatch. Branch `claude/stopwatch-and-shop-list`, stacked on `claude/notifications-sound-timers` (ADR-612, ADR-613). Not merged.
+Date: 2026-10-24. Owner (24 Oct, in Polish, from the list in `docs/product/NOTIFICATION_IDEAS.md`): "1 i 3" = (1) the list-at-a-shop reminder says how many things are left, and (3) a real count-up stopwatch. Branch `claude/stopwatch-and-shop-list`, stacked on `claude/notifications-sound-timers` (ADR-640, ADR-641). Not merged.
 
 ## 1. A list's reminder at a place says what is left
 
@@ -14,7 +14,7 @@ Date: 2026-10-24. Owner (24 Oct, in Polish, from the list in `docs/product/NOTIF
 
 - **Where:** Home › ••• › Focus and stopwatch › Stopwatch. One menu row for Focus and the stopwatch: the ••• menu fits eleven rows on an iPhone at the default text size, and the stopwatch as a twelfth row put "What I can do" and "What leaves this iPhone" out of reach (the hosted UI test `testWhatICanDoOpensFromTheHomeMenu` caught it on the first Mac run). One stopwatch at a time, on this iPhone. Start (optional label, 40 characters at most), Pause/Resume, Stop. A stopped one keeps its time on screen until dismissed ("Zatrzymany na 12 min 7 s").
 - **Lock Screen and island:** a Live Activity of the existing tool kind (`DoddyToolAttributes.Kind.stopwatch`). The time is a self-ticking `Text(timerInterval:)` counting up from a clock start the app computes (`Stopwatch.clock`), so it keeps running with the app closed and nothing is redrawn every second (this is what stuttered in the old timer design). Paused: the activity shows the fixed time. The island's minimal view is `stopwatch.fill`; the big view is the time, the label on top ("STOPWATCH").
-- **No notification:** nothing ends, so nothing rings or buzzes. It is not a timer; for a countdown that rings, `set_timer` (ADR-612) is unchanged.
+- **No notification:** nothing ends, so nothing rings or buzzes. It is not a timer; for a countdown that rings, `set_timer` (ADR-640) is unchanged.
 - **Limit:** 24 hours (`Stopwatch.maxElapsed`). A stopwatch left running is stopped at exactly 24 h the next time the app starts or comes to the foreground (`refresh`, `stopIfAtLimit`); until then the Lock Screen clock keeps counting, because nothing runs in the app while it is closed. Kept in UserDefaults (`stopwatch`), so a relaunch or a reboot loses nothing; the elapsed time is always computed from stored dates, never from a counter that could stop when the app is suspended.
 - **Buttons on the Lock Screen and in the island:** Pause/Resume and Stop, the same pills and intents as Focus (`ToggleDoddyToolPauseIntent`, `StopDoddyToolIntent`), wired to the stopwatch through `ToolActivityActions` (registered for `.stopwatch`).
 - **Voice:** three tools in `voice-agent/tools.json`: `start_stopwatch` (optional `label`), `stop_stopwatch`, `check_stopwatch`. In the app they ask first (ASK-01): a tap card for start and stop, "Yes, read it" for the reading. A second start doesn't start another: it reports the one running. The replies come from the stored stopwatch only ("The stopwatch is running: 12 minutes 7 seconds so far."), never from a guess. Pause all and car mode are handled (start/stop are off in car mode; the reading is allowed).

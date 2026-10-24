@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// ADR-612: timers ring through AlarmKit on iOS 26, everything the user set for a moment is Time
+/// ADR-640: timers ring through AlarmKit on iOS 26, everything the user set for a moment is Time
 /// Sensitive, and the agent hears how a timer will ring. AlarmKit and UserNotifications
 /// themselves only run on an iPhone.
 final class RingingTimersTests: XCTestCase {
