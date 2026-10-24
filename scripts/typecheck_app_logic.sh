@@ -87,6 +87,15 @@ enum ServerConfig {
 }
 SWIFT
 
+# WatchModel (SHOPPING_WATCH.md) asks iOS for this iPhone's push token through WatchPush (UserNotifications)
+# once the user said yes to a watch; only its one entry point is needed here.
+cat > "$work/WatchPushStub.swift" <<'SWIFT'
+@MainActor
+enum WatchPush {
+    static func register() async {}
+}
+SWIFT
+
 # The one type IslandPose.swift needs from the island drawing model (ADR-313).
 cat > "$work/IslandRectStub.swift" <<'SWIFT'
 struct IslandRect: Equatable, Sendable {
@@ -129,6 +138,8 @@ files=(
   DoddyApp/Features/CallCases/CallCasesModel.swift
   # This week's leaflets (SHOPPING.md 2): the screen's state and the voice tool's answer, without the views.
   DoddyApp/Features/Shopping/DealsModel.swift
+  # Price watch (SHOPPING_WATCH.md): the card's flow and the list's state, without the views.
+  DoddyApp/Features/Shopping/WatchModel.swift
   # The kept training plan (ADR-625), without the screens.
   DoddyApp/Features/Sport/TrainingPlanStore.swift
   DoddyApp/Features/Sport/PlanText.swift
@@ -136,7 +147,7 @@ files=(
 for f in "${files[@]}"; do [ -f "$f" ] || { echo "FAIL: $f is missing; update scripts/typecheck_app_logic.sh"; exit 1; }; done
 
 echo "Type-checking ${#files[@]} app files against DoddyCore (Swift 6)"
-swiftc -typecheck -swift-version 6 -I "$modules" "$work/PreferenceKey.swift" "$work/AppEnvironmentStub.swift" "$work/PlaceLocationStub.swift" "$work/SystemNoteNotificationsStub.swift" "$work/IslandRectStub.swift" "$work/OpenWaysReminderSchedulerStub.swift" "$work/ServerConfigStub.swift" "${files[@]}"
+swiftc -typecheck -swift-version 6 -I "$modules" "$work/PreferenceKey.swift" "$work/AppEnvironmentStub.swift" "$work/PlaceLocationStub.swift" "$work/SystemNoteNotificationsStub.swift" "$work/IslandRectStub.swift" "$work/OpenWaysReminderSchedulerStub.swift" "$work/ServerConfigStub.swift" "$work/WatchPushStub.swift" "${files[@]}"
 echo "PASS: ${#files[@]} app files type-check (SwiftUI, App Intents and widget code are not covered)"
 
 # App files that import no UI framework but aren't in the list: most use types this script can't

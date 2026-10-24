@@ -10440,6 +10440,17 @@
         }
       }
     },
+    "Check the page": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdź stronę"
+          }
+        }
+      }
+    },
     "Check the words, then Save.": {
       "extractionState": "manual",
       "localizations": {
@@ -15688,6 +15699,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Usunąć tę sprawę?"
+          }
+        }
+      }
+    },
+    "Delete this watch?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usunąć to pilnowanie?"
           }
         }
       }
@@ -21907,6 +21929,17 @@
         }
       }
     },
+    "Doddy's server gets the shop's name and page address, the title and your price, and reads that page for you. You can stop or delete the watch any time.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego dostaje nazwę sklepu i adres strony, tytuł i Twoją cenę oraz czyta tę stronę za Ciebie. Możesz zatrzymać albo usunąć pilnowanie w każdej chwili."
+          }
+        }
+      }
+    },
     "Doddy's server isn't keeping this any more (it may have been deleted on the web). Turn it on again if you want it kept.": {
       "extractionState": "manual",
       "localizations": {
@@ -22017,6 +22050,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "AI 密钥由 Doddy 的服务器保管，所以你的 iPhone 上不会存放任何密钥。这部 iPhone 使用其匿名 Doddy 账户来证明它可以使用该服务器。"
+          }
+        }
+      }
+    },
+    "Doddy's server reads each shop's page a few times a day while a watch is on. It only tells you; it never buys anything.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego czyta stronę każdego sklepu kilka razy dziennie, dopóki pilnowanie trwa. Tylko daje znać; niczego nie kupuje."
           }
         }
       }
@@ -29328,6 +29372,17 @@
         }
       }
     },
+    "I'll tell you when the price I read is at or below this. Suggested: 5 percent below the price, rounded down to whole złoty. Type another if you like.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dam Ci znać, gdy odczytana cena będzie równa tej albo niższa. Podpowiedź: 5 procent poniżej ceny, w dół do pełnych złotych. Możesz wpisać inną."
+          }
+        }
+      }
+    },
     "I'm here.": {
       "extractionState": "manual",
       "localizations": {
@@ -31675,6 +31730,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Jest w plikach tymczasowych Doddy’ego, dopóki iOS ich nie wyczyści. Zapisz ją w Keynote albo w Plikach, żeby ją zachować."
+          }
+        }
+      }
+    },
+    "It's removed from this list and from Doddy's server.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zniknie z tej listy i z serwera Doddy’ego."
           }
         }
       }
@@ -34202,6 +34268,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "最近操作"
+          }
+        }
+      }
+    },
+    "Last checked %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ostatnio sprawdzono: %@"
           }
         }
       }
@@ -51136,6 +51213,28 @@
         }
       }
     },
+    "Page address": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adres strony"
+          }
+        }
+      }
+    },
+    "Page read %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Strona odczytana: %@."
+          }
+        }
+      }
+    },
     "Palette": {
       "extractionState": "manual",
       "localizations": {
@@ -51272,6 +51371,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Część kosztu nie jest jeszcze znana; zostanie sprawdzona ponownie, gdy otworzysz to połączenie."
+          }
+        }
+      }
+    },
+    "Partner link: the page goes through an affiliate network on its way to the shop, and Doddy may earn a commission if you buy. Prices and the order of the picks don't change.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link partnerski: strona przejdzie przez sieć partnerską w drodze do sklepu, a Doddy może dostać prowizję, jeśli kupisz. Ceny i kolejność propozycji bez zmian."
           }
         }
       }
@@ -53684,6 +53794,28 @@
         }
       }
     },
+    "Price on the page now": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cena na stronie teraz"
+          }
+        }
+      }
+    },
+    "Price when Doddy found it": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cena, gdy Doddy ją znalazł"
+          }
+        }
+      }
+    },
     "Prices can change after the time they were checked. Buying happens on the shop's page: you pay the shop with Apple Pay, BLIK or a card, and Doddy doesn't see the payment.": {
       "extractionState": "manual",
       "localizations": {
@@ -54919,6 +55051,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Czytam gazetki…"
+          }
+        }
+      }
+    },
+    "Reading the page…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czytam stronę…"
           }
         }
       }
@@ -66678,6 +66821,17 @@
         }
       }
     },
+    "Some of the Buy buttons use partner links: Doddy may earn a commission if you buy. Prices and the order of the picks don't change.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Część przycisków Kup używa linków partnerskich: Doddy może dostać prowizję, jeśli kupisz. Ceny i kolejność propozycji bez zmian."
+          }
+        }
+      }
+    },
     "Some of these notes have since been deleted.": {
       "extractionState": "manual",
       "localizations": {
@@ -68041,6 +68195,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "已开始"
+          }
+        }
+      }
+    },
+    "Starting the watch…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Włączam pilnowanie…"
           }
         }
       }
@@ -75534,6 +75699,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "应用包中没有姿势 SVG 文件。"
+          }
+        }
+      }
+    },
+    "The price in the result is %@. Type something lower.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cena w wyniku to %@. Wpisz coś niższego."
           }
         }
       }
@@ -86331,6 +86507,50 @@
         }
       }
     },
+    "Watch the price": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pilnuj ceny"
+          }
+        }
+      }
+    },
+    "Watch this price": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pilnuj tej ceny"
+          }
+        }
+      }
+    },
+    "Watched prices": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pilnowane ceny"
+          }
+        }
+      }
+    },
+    "Watching until %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pilnowane do: %@"
+          }
+        }
+      }
+    },
     "Way": {
       "extractionState": "manual",
       "localizations": {
@@ -87669,6 +87889,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "说过的话"
+          }
+        }
+      }
+    },
+    "What will be watched": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co będzie pilnowane"
           }
         }
       }
@@ -90155,6 +90386,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "是，还是这样"
+          }
+        }
+      }
+    },
+    "Yes, watch": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tak, pilnuj"
           }
         }
       }
@@ -93416,6 +93658,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Twoja prezentacja jest gotowa"
+          }
+        }
+      }
+    },
+    "Your price": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoja cena"
           }
         }
       }

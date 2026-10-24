@@ -46,6 +46,8 @@ export interface ErrandTask {
   kind?: "shopping";
   /** A shopping errand's priorities, in the user's order. */
   priorities?: string[];
+  /** The account (shopping errands only), to pick the premium model for listed accounts. Never logged with words. */
+  accountId?: string;
 }
 
 export interface ResearchControl {
