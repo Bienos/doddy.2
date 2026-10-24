@@ -102,18 +102,21 @@ The hosted Mac build of steps 1 to 3 compiled the app (run 40106746382 on `d7349
 | The kept plan's rules | DoddyCore `SavedPlanTests` 6 (read back exactly; an edited plan and a plan from answers that get no plan are both refused; unknown file and version are unreadable; Monday start whatever the first weekday, across the new year; where today falls, across the end of summer time in Warsaw; the start is a day, the same in New York) and `PlanGoalReachTests` 2 |
 | The store on real files | `scripts/check_training_plan_store.sh` (new CI step, Linux): kept and read back, read after a "restart", an edited file not shown and not written over, an unreadable file kept, a new plan replacing it, delete, a failed write reported with nothing claimed: 9 checks pass |
 | Store and text compile | `scripts/typecheck_app_logic.sh` now includes `TrainingPlanStore.swift` and `PlanText.swift` (Swift 6, Linux): 29 files pass |
-| The flow | `TrainingPlanUITests` (new): a "yes" gets "Talk to a doctor first" and nothing to keep; all "no" gets a plan, kept, shown, deleted. **NOT RUN** yet: it runs on the hosted Mac job |
+| The flow | `TrainingPlanUITests`: a "yes" gets "Talk to a doctor first" and nothing to keep; all "no" gets a plan, kept, shown, deleted. **Passes** on the hosted Mac (run 40128474881 on `53777ef`, iPhone simulator). Its first run (40122886800) found that the number pad covered "Make the plan" and had no key to close it; the sheet now has Done above the keyboard |
 
 **Not built:** the voice and Messages way to ask for a plan, logging what was done and the next load from it (`StrengthProgression` is ready, no screen), the exercise descriptions and pictures (wger), and adjusting the plan from what Apple Health shows was actually done.
 
 ## Not checked
 
-- **Steps 1 to 3 compile** (hosted Mac, run 40106746382 on `d7349ff`), and the app's unit tests pass there. **The step 4 screens (`TrainingPlanView.swift`) are not compiled yet**; the next run does it.
-- **One UI test fails, not from this branch:** `MemoryJourneyTests.testDarkLargestTextKeepsTextRoutesUsable` can't find Memories in Home's ••• menu at the largest text size. The base branch's own run (40105647967 on `f79a4bf`) fails it the same way; "Cheapest this week" (ADR-610) was added above Memories in that menu, which the test's comment warned about. Proposed fix in the PR comment.
+- **Steps 1 to 4 compile and pass on the hosted Mac:** run 40128474881 on `53777ef`.
+  - Build-for-testing, the app's unit tests and every UI test (63, 1 skipped: iPad only) pass.
+  - The run includes `TrainingPlanUITests` and the base's menu fix.
+  - Earlier runs failed `MemoryJourneyTests.testDarkLargestTextKeepsTextRoutesUsable`, which came from the base: "Cheapest this week" sat above Memories in Home's menu. The base fixed it in `185155b`, merged here.
+  - The base's price watch also left two settings out of `secrets/manifest.json`, which this branch adds (`695b525`).
 - Messages opened from Settings over the Apple Health screen (not from Home) has not been seen; the persistent Doddy rides Home's Messages cover, and may not appear here.
 - **Nothing has run on a device:** the Health sheet, the reads, the numbers against the Health app's own, a night recorded by both a watch and the iPhone, an iPhone that is locked while the screen reads (it should say so), iPad.
 - **Signing the free-team project with HealthKit.** Apple's capability table lists HealthKit for the free Apple Developer account (read 24 Oct 2026). If Xcode still refuses, set `DODDY_APP_ENTITLEMENTS: ""` in `project-iphone.yml`; the screen then says this build can't use Health.
-- No UI test for the Apple Health screen. The training plan's UI test is written but hasn't run yet.
+- No UI test for the Apple Health screen. The training plan's UI test passes on the simulator; nobody has used the screens on a device.
 
 ## Privacy and safety
 
