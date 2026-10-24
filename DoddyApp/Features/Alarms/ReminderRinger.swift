@@ -5,7 +5,7 @@ import AlarmKit
 import SwiftUI
 #endif
 
-// Important reminders that ring like an alarm (ADR-612). The user marks a note's reminder "Ring
+// Important reminders that ring like an alarm (ADR-613). The user marks a note's reminder "Ring
 // like an alarm" (the reminder sheet, or the voice card after the user's tap); the note reminder
 // itself is unchanged, and an AlarmKit alarm rings at the same moment, through Silent mode and a
 // Focus, with Stop and "In 10 min". `sync` makes AlarmKit match the database reminders whenever

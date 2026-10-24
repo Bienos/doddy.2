@@ -38,10 +38,10 @@ enum EveningWrapUpScheduler {
         content.body = EveningWrapUp.body(language)
         // Doddy sitting cross-legged, winding down (ADR-323); the words are unchanged.
         if let art = NotificationArt.attachment(.crosslegged) { content.attachments = [art] }
-        // A routine: no sound, never through a Focus (ADR-611).
+        // A routine: no sound, never through a Focus (ADR-612).
         content.interruptionLevel = DoddyNotificationKind.eveningWrapUp.interruptionLevel
         var when = DateComponents()
-        // Never in quiet hours (ADR-612).
+        // Never in quiet hours (ADR-613).
         let time = QuietHours.adjusted(hour: settings.hour, minute: settings.minute)
         when.hour = time.hour
         when.minute = time.minute
@@ -230,7 +230,7 @@ struct EveningWrapUpSettingsSection: View {
             get: { Calendar.current.date(from: DateComponents(hour: settings.hour, minute: settings.minute)) ?? .now },
             set: { date in
                 let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
-                // Quiet hours (ADR-612): the picker shows where the time really goes.
+                // Quiet hours (ADR-613): the picker shows where the time really goes.
                 let time = QuietHours.adjusted(hour: parts.hour ?? 21, minute: parts.minute ?? 0)
                 settings.hour = time.hour
                 settings.minute = time.minute

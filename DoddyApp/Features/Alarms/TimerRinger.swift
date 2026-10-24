@@ -5,7 +5,7 @@ import AlarmKit
 import SwiftUI
 #endif
 
-// Timers that ring like the Clock app's (ADR-611). On iOS 26 a timer the user tapped Start for is
+// Timers that ring like the Clock app's (ADR-612). On iOS 26 a timer the user tapped Start for is
 // handed to AlarmKit: it rings through Silent mode and a Focus, with Stop and Repeat, and its
 // countdown shows on the Lock Screen and in the Dynamic Island (`AlarmLiveActivity`, with Pause
 // and Resume). AlarmKit gets the UUID in the timer's identifier, so the action status model

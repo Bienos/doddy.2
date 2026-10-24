@@ -1,12 +1,12 @@
-# Reminders that ring like an alarm, the weekly plan, quiet hours (ADR-612)
+# Reminders that ring like an alarm, the weekly plan, quiet hours (ADR-613)
 
-Date: 2026-10-24. Owner (24 Oct, in Polish, after `docs/product/NOTIFICATION_IDEAS.md`): build "ring like an alarm" (A5), then the weekly plan (B1); quiet hours yes; a notification "out of nowhere" is limited, but a timer or anything that is an action item always shows. Follows ADR-611 (`NOTIFICATIONS_AND_TIMERS.md`). **Not compiled with Xcode; not seen on a device.**
+Date: 2026-10-24. Owner (24 Oct, in Polish, after `docs/product/NOTIFICATION_IDEAS.md`): build "ring like an alarm" (A5), then the weekly plan (B1); quiet hours yes; a notification "out of nowhere" is limited, but a timer or anything that is an action item always shows. Follows ADR-612 (`NOTIFICATIONS_AND_TIMERS.md`). **Not compiled with Xcode; not seen on a device.**
 
 ## What comes when (the rule, in one place)
 
 | Kind | Examples | When it may come |
 |---|---|---|
-| Action items | Timers, alarms, Apple Reminders, Doddy's reminders on notes, time to leave, before an event, focus done, an errand done | Always, at any hour. Nothing in ADR-612 touches them. |
+| Action items | Timers, alarms, Apple Reminders, Doddy's reminders on notes, time to leave, before an event, focus done, an errand done | Always, at any hour. Nothing in ADR-613 touches them. |
 | Routines the user turned on | Morning check-in, evening wrap-up, weekly plan, weekly look-back, tidy-up | At the time picked, never 22:00–07:00. A time in those hours moves to 07:00 (morning) or 21:30 (evening), in the time picker as well, so Settings shows where it really goes. |
 | Doddy's own tips | Today only "Open Doddy faster" (ADR-559) | Never on a day a routine already comes; a week with a routine every day gets no tip. So Doddy says at most one thing a day on its own. |
 
@@ -37,7 +37,7 @@ Birthdays (09:00 on the day, people the user picked) are a routine the user set 
 
 ## Verified (Linux, Swift 6.1.2)
 
-- DoddyCore: the full suite (see ADR-612 for the count), with the 29 new tests.
+- DoddyCore: the full suite (see ADR-613 for the count), with the 29 new tests.
 - `scripts/typecheck_app_logic.sh`: `ReminderRinger.swift` (outside `#if canImport(AlarmKit)`), `NoteReminderStore.swift` and `ShortcutRouter.swift` type-check in Swift 6.
 - Capability guard, string catalogs, voice agent spec.
 - Found on the way: adding a method to the `NoteReminderCoordinator` actor made the Linux test binary crash in `swift_getErrorValue` (Swift 6.1.2), in a test that never called it; the method was dropped and the note text comes from `MemoryStore` instead. Not investigated further.

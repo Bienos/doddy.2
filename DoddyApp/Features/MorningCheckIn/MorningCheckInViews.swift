@@ -81,7 +81,7 @@ struct MorningCheckInSettingsSection: View {
             get: { Calendar.current.date(from: DateComponents(hour: settings.hour, minute: settings.minute)) ?? .now },
             set: { date in
                 let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
-                // Quiet hours (ADR-612): the picker shows where the time really goes.
+                // Quiet hours (ADR-613): the picker shows where the time really goes.
                 let time = QuietHours.adjusted(hour: parts.hour ?? 8, minute: parts.minute ?? 0)
                 settings.hour = time.hour
                 settings.minute = time.minute

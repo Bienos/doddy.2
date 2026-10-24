@@ -297,8 +297,8 @@ public struct ReminderWrite: Equatable, Sendable {
 
     public var markerURL: String { ReminderIdempotency.markerURL(key: key) }
 
-    /// When Reminders should alert (ADR-611): at a timed due, as the Reminders app itself sets it.
-    /// Without an alarm iOS lists the reminder but never alerts, so before ADR-611 Doddy's
+    /// When Reminders should alert (ADR-612): at a timed due, as the Reminders app itself sets it.
+    /// Without an alarm iOS lists the reminder but never alerts, so before ADR-612 Doddy's
     /// reminders came with no sound and no banner. A whole-day due gets none: Reminders' own
     /// "Today" notification covers those.
     public func alertDate(local: Calendar) -> Date? {
@@ -306,7 +306,7 @@ public struct ReminderWrite: Equatable, Sendable {
     }
 }
 
-/// The one alert a timed reminder gets (ADR-611).
+/// The one alert a timed reminder gets (ADR-612).
 public enum ReminderAlert {
     public static func date(for due: ReminderDue?, local: Calendar) -> Date? {
         guard let due, due.hasTime else { return nil }

@@ -1,6 +1,6 @@
 import Foundation
 
-// Important reminders that ring like an alarm (ADR-612; owner, 24 Oct 2026: "budujemy dzwoni jak
+// Important reminders that ring like an alarm (ADR-613; owner, 24 Oct 2026: "budujemy dzwoni jak
 // budzik"). A note reminder the user marks "Ring like an alarm" keeps everything it has (the
 // notification with Open note, In 1 hour and Done, Home's "Due now", the database row) and also
 // gets an AlarmKit alarm at the same moment, so it rings through Silent mode and a Focus. The
