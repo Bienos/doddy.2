@@ -2,13 +2,14 @@
 // language, from the notes the app sent or from general knowledge, with no tools. Behind an interface so
 // tests drive the route with a fake. Logs carry counts and codes only, never words.
 import Anthropic from "@anthropic-ai/sdk";
-import { answerJsonSchema, answerSchema, buildInput, buildInstructions } from "./prompt.js";
+import { answerJsonSchema, answerSchema, buildInput, buildInstructions, readProposal, type Proposal } from "./prompt.js";
 import type { AssistRequest } from "./request.js";
 
 export interface AssistUsage { inputTokens: number; outputTokens: number }
 
 export type AssistOutcome =
-  | { kind: "ok"; answer: string; /** Real note ids, in the order cited, each once. */ sources: string[]; usage: AssistUsage }
+  | { kind: "ok"; answer: string; /** Real note ids, in the order cited, each once. */ sources: string[]; usage: AssistUsage;
+      /** A file the user asked for, offered as a card (ADR-606). Absent when none was asked for. */ proposal?: Proposal }
   | { kind: "refused"; usage?: AssistUsage }
   | { kind: "unparsed"; usage?: AssistUsage };
 
@@ -63,6 +64,7 @@ export class ClaudeAssistantResponder implements AssistantResponder {
         sources.push(id);
       }
     }
-    return { kind: "ok", answer: parsed.data.answer, sources, usage };
+    const proposal = readProposal(parsed.data.proposal);
+    return { kind: "ok", answer: parsed.data.answer, sources, usage, ...(proposal ? { proposal } : {}) };
   }
 }

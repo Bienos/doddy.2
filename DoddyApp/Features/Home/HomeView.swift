@@ -10,6 +10,12 @@ import SwiftUI
 /// Talking happens here (ADR-595): a tap on Doddy starts the conversation on Home. While it runs,
 /// the words under him say what he is doing and show the last two lines, the bottom bar becomes
 /// Mute and End, and Transcript opens the whole conversation as a sheet.
+/// Remembers when the eyes last followed the finger (ADR-604). A class on purpose: `@State` of a
+/// plain value would invalidate Home on every write.
+private final class FingerFollowThrottle {
+    var last: TimeInterval = 0
+}
+
 struct HomeView: View {
     @Binding var selectedTab: AppTab
     @Binding var showFind: Bool
@@ -27,6 +33,9 @@ struct HomeView: View {
     /// A tap on Doddy: he hops and perks up (listening pose) as the conversation opens.
     @State private var perking = false
     @State private var tapHops = 0
+    /// When the eyes last took the finger's position; a touch sample is 120 Hz, they need 30 (ADR-604).
+    /// A reference, so writing it does not make Home redraw.
+    @State private var follow = FingerFollowThrottle()
     @State private var showMemories = false
     @State private var showAsk = false
     @State private var tool: HomeTool?
@@ -74,8 +83,12 @@ struct HomeView: View {
                 // taps and scrolling work as before; a finger on him is his touch area's.
                 .simultaneousGesture(
                     DragGesture(minimumDistance: 0, coordinateSpace: .global)
-                        .onChanged {
-                            DoddyDirector.shared.fingerElsewhere(x: Double($0.location.x), y: Double($0.location.y))
+                        .onChanged { value in
+                            // At most 30 times a second (ADR-604): every sample ran the motion engine.
+                            let uptime = ProcessInfo.processInfo.systemUptime
+                            guard uptime - follow.last >= 1.0 / 30 else { return }
+                            follow.last = uptime
+                            DoddyDirector.shared.fingerElsewhere(x: Double(value.location.x), y: Double(value.location.y))
                         }
                         .onEnded { _ in DoddyDirector.shared.fingerElsewhereLifted() }
                 )

@@ -23,7 +23,8 @@ public enum ThreadRules {
                 // A user message counts once it was answered: only then did the question go through.
                 return message.delivery == .sent ? ConversationTurn(role: .user, text: message.text) : nil
             case .doddy:
-                return ConversationTurn(role: .assistant, text: message.text)
+                // A file bubble is a name, not something Doddy said: it is not sent as conversation.
+                return message.document == nil ? ConversationTurn(role: .assistant, text: message.text) : nil
             }
         }
     }

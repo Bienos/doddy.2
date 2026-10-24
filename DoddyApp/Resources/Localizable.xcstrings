@@ -13940,6 +13940,17 @@
         }
       }
     },
+    "Deck": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prezentacja"
+          }
+        }
+      }
+    },
     "Default": {
       "extractionState": "manual",
       "localizations": {
@@ -16307,6 +16318,17 @@
         }
       }
     },
+    "Document": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dokument"
+          }
+        }
+      }
+    },
     "Doddy": {
       "extractionState": "manual",
       "localizations": {
@@ -16568,6 +16590,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy 给你打电话"
+          }
+        }
+      }
+    },
+    "Doddy can make a file": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy może zrobić plik"
           }
         }
       }
@@ -21038,6 +21071,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nie udało się połączyć z serwerem Doddy’ego. Sprawdź połączenie i spróbuj ponownie."
+          }
+        }
+      }
+    },
+    "Doddy's server couldn't be reached. Nothing was confirmed. Check your connection and try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się połączyć z serwerem Doddy’ego. Nic nie zostało potwierdzone. Sprawdź połączenie i spróbuj jeszcze raz."
           }
         }
       }
@@ -35711,6 +35755,17 @@
         }
       }
     },
+    "Make it": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zrób to"
+          }
+        }
+      }
+    },
     "Make one here, or tell Doddy: “add milk to my shopping list”. Lists stay on this iPhone.": {
       "extractionState": "manual",
       "localizations": {
@@ -35914,6 +35969,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Przygotować tę prezentację?"
+          }
+        }
+      }
+    },
+    "Making files needs Doddy's server, which isn't set up in this build.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Robienie plików wymaga serwera Doddy’ego, którego ta wersja aplikacji nie ma ustawionego."
+          }
+        }
+      }
+    },
+    "Making it…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Robię to…"
           }
         }
       }
@@ -49122,6 +49199,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "已逾期"
+          }
+        }
+      }
+    },
+    "PDF": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PDF"
           }
         }
       }
@@ -64916,6 +65004,17 @@
         }
       }
     },
+    "Spreadsheet": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arkusz"
+          }
+        }
+      }
+    },
     "Start": {
       "extractionState": "manual",
       "localizations": {
@@ -67799,6 +67898,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Stuknij plus w lewym górnym rogu, potem Dodaj element sterujący."
+          }
+        }
+      }
+    },
+    "Tap to open": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dotknij, by otworzyć"
           }
         }
       }
@@ -71252,6 +71362,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "The file wasn't made, or Doddy couldn't confirm it. Try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plik nie powstał albo Doddy nie mógł tego potwierdzić. Spróbuj jeszcze raz."
           }
         }
       }

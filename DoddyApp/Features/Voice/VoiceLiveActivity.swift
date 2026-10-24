@@ -1,4 +1,5 @@
 @preconcurrency import ActivityKit
+import DoddyCore
 import Foundation
 
 /// Starts, updates and ends the conversation's Live Activity (Dynamic Island / Lock Screen).
@@ -10,6 +11,11 @@ import Foundation
 /// stops claiming Doddy is listening (ADR-055). A heartbeat re-sends the current status with a
 /// fresh stale date while the conversation is alive; the status itself still changes only on
 /// SDK events.
+///
+/// Updates are paced (ADR-604): one task sends the newest state, at most one update is in
+/// flight, and two go at least `minimumUpdateGap` apart. Before this, every change was queued
+/// behind the one before it, so a status that flipped quickly (speaking, listening, speaking)
+/// reached the island one step at a time, seconds late, and it looked stuck.
 @MainActor
 final class VoiceLiveActivity {
     /// The one island the voice conversation uses. (Until ADR-549 "Hey Doddy" listening shared it.)
@@ -19,13 +25,23 @@ final class VoiceLiveActivity {
     static let staleAfter: TimeInterval = 90
     /// Must be comfortably shorter than `staleAfter`.
     static let heartbeatEvery: TimeInterval = 40
+    /// The shortest time between two content updates (ADR-604).
+    static let minimumUpdateGap: TimeInterval = 0.5
 
     private var activity: Activity<DoddyVoiceAttributes>?
-    private var shown: DoddyVoiceAttributes.ContentState?
+    /// What the app wants shown, and what iOS was last given (ADR-604).
+    private var pacer = LiveActivityPacer<DoddyVoiceAttributes.ContentState>(minimumGap: VoiceLiveActivity.minimumUpdateGap)
     private var heartbeat: Task<Void, Never>?
-    /// The last content update sent to iOS. `finish`/`end` wait for it, so a late update can't
-    /// land after the end and turn the "Conversation ended" card back into a live one.
+    /// The task that sends the newest state, while there is one to send. `finish`/`end` cancel it
+    /// and wait for an update already in flight, so a late update can't land after the end and
+    /// turn the "Conversation ended" card back into a live one.
     private var updating: Task<Void, Never>?
+    /// Tells a finished sender apart from the one that replaced it.
+    private var updatingID = 0
+    /// Asks the next update to carry the alert that opens the island up (`expand`).
+    private var wantsAlert = false
+    /// Asks the next update to go even if the state is the one iOS has (the heartbeat).
+    private var wantsRefresh = false
     /// The last `finish`/`end` request, so callers can wait until iOS has it.
     private var ending: Task<Void, Never>?
 
@@ -36,14 +52,8 @@ final class VoiceLiveActivity {
     /// in the foreground, or from a `LiveActivityIntent` running without it ("Talk in the Island",
     /// ADR-577).
     func show(_ state: DoddyVoiceAttributes.ContentState, startedAt: Date) {
-        if let activity {
-            guard state != shown else { return }
-            shown = state
-            let previous = updating
-            updating = Task {
-                await previous?.value
-                await activity.update(Self.content(state))
-            }
+        if activity != nil {
+            if pacer.want(state) { sendSoon() }
             return
         }
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
@@ -52,7 +62,7 @@ final class VoiceLiveActivity {
                 attributes: DoddyVoiceAttributes(startedAt: startedAt),
                 content: Self.content(state),
                 pushType: nil)
-            shown = state
+            pacer.started(with: state, at: Date())
             startHeartbeat()
         } catch {
             // Not fatal: the conversation works without the island.
@@ -66,16 +76,9 @@ final class VoiceLiveActivity {
     /// anything said. A no-op when there is no activity. Only for a conversation the app is
     /// running, so no push is needed.
     func expand() {
-        guard let activity, let shown else { return }
-        let alert = AlertConfiguration(
-            title: LocalizedStringResource(stringLiteral: "Doddy"),
-            body: LocalizedStringResource(stringLiteral: shown.title),
-            sound: .default)
-        let previous = updating
-        updating = Task {
-            await previous?.value
-            await activity.update(Self.content(shown), alertConfiguration: alert)
-        }
+        guard activity != nil, pacer.latest != nil else { return }
+        wantsAlert = true
+        sendSoon()
     }
 
     /// How long the "Conversation ended" card stays on the Lock Screen. The Dynamic Island
@@ -91,13 +94,11 @@ final class VoiceLiveActivity {
         heartbeat = nil
         guard let activity else { return }
         self.activity = nil
-        shown = nil
+        let pending = stopUpdating()
         let final = DoddyVoiceAttributes.ContentState(status: .ended, isMuted: false, savedCount: savedCount, endedAt: Date())
         let removeAt = Date().addingTimeInterval(Self.endedCardFor)
-        let pending = updating
-        updating = nil
         ending = Task {
-            // A heartbeat update already in flight finishes first (the sleep ends at cancel).
+            // An update already in flight finishes first (the sleep ends at cancel).
             await beat?.value
             await pending?.value
             await activity.end(ActivityContent(state: final, staleDate: nil), dismissalPolicy: .after(removeAt))
@@ -116,11 +117,9 @@ final class VoiceLiveActivity {
         heartbeat = nil
         guard let activity else { return }
         self.activity = nil
-        shown = nil
+        let pending = stopUpdating()
         let final = DoddyVoiceAttributes.ContentState(status: .failed, isMuted: false, savedCount: savedCount, endedAt: Date())
         let removeAt = Date().addingTimeInterval(Self.failedCardFor)
-        let pending = updating
-        updating = nil
         ending = Task {
             await beat?.value
             await pending?.value
@@ -143,11 +142,8 @@ final class VoiceLiveActivity {
         heartbeat = nil
         guard let activity else { return }
         self.activity = nil
-        shown = nil
-        let pending = updating
-        updating = nil
+        let pending = stopUpdating()
         ending = Task {
-            // A heartbeat update already in flight finishes first (the sleep ends at cancel).
             await beat?.value
             await pending?.value
             await activity.end(nil, dismissalPolicy: .immediate)
@@ -171,14 +167,73 @@ final class VoiceLiveActivity {
         ActivityContent(state: state, staleDate: Date().addingTimeInterval(staleAfter))
     }
 
+    /// The alert that opens the island up. Its words are the status, never anything said.
+    private static func alert(for state: DoddyVoiceAttributes.ContentState) -> AlertConfiguration {
+        AlertConfiguration(
+            title: LocalizedStringResource(stringLiteral: "Doddy"),
+            body: LocalizedStringResource(stringLiteral: state.title),
+            sound: .default)
+    }
+
+    // MARK: Sending
+
+    /// Makes sure a task is sending the newest state. If one is already running it picks the new
+    /// state up itself, so nothing queues behind it (ADR-604).
+    private func sendSoon() {
+        guard updating == nil, activity != nil else { return }
+        updatingID &+= 1
+        let id = updatingID
+        updating = Task { [weak self] in await self?.sendNewest(id: id) }
+    }
+
+    /// Sends the newest state as soon as the gap since the last update allows, and again while
+    /// something newer is waiting; then stops. The last check and clearing `updating` happen with
+    /// no suspension between them, so a state asked for just after can't be missed.
+    private func sendNewest(id: Int) async {
+        defer { if updatingID == id { updating = nil } }
+        while !Task.isCancelled, let activity {
+            // Nothing newer than what iOS has: don't wait out a gap for nothing.
+            guard wantsAlert || wantsRefresh || pacer.hasPending else { return }
+            let wait = pacer.delay(now: Date())
+            if wait > 0 { try? await Task.sleep(for: .seconds(wait)) }
+            // `finish`/`end` cancel this task before they end the activity.
+            guard !Task.isCancelled, self.activity?.id == activity.id else { return }
+            let alert = wantsAlert
+            let refresh = wantsRefresh
+            wantsAlert = false
+            wantsRefresh = false
+            let state = (alert || refresh) ? pacer.resend(now: Date()) : pacer.next(now: Date())
+            guard let state else { return }
+            if alert {
+                await activity.update(Self.content(state), alertConfiguration: Self.alert(for: state))
+            } else {
+                await activity.update(Self.content(state))
+            }
+        }
+    }
+
+    /// Stops the sender for good and gives back its task, so an update already in flight can
+    /// finish before the activity ends. Forgets what was shown.
+    private func stopUpdating() -> Task<Void, Never>? {
+        let pending = updating
+        pending?.cancel()
+        updating = nil
+        updatingID &+= 1
+        wantsAlert = false
+        wantsRefresh = false
+        pacer.reset()
+        return pending
+    }
+
     /// Proves the app is still there by pushing the stale date forward. Stops with `end()`.
     private func startHeartbeat() {
         heartbeat?.cancel()
         heartbeat = Task { [weak self] in
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(Self.heartbeatEvery))
-                guard !Task.isCancelled, let self, let activity = self.activity, let shown = self.shown else { return }
-                await activity.update(Self.content(shown))
+                guard !Task.isCancelled, let self, self.activity != nil else { return }
+                self.wantsRefresh = true
+                self.sendSoon()
             }
         }
     }

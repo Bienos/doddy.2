@@ -197,6 +197,8 @@ final class VoiceSessionController {
 
     private(set) var phase: Phase = .idle {
         didSet {
+            // The same phase again (the SDK repeats states) changes nothing; skip the work (ADR-604).
+            guard phase != oldValue else { return }
             Self.conversationInProgress = isLive
             if isLive { Self.current = self } else if Self.current === self { Self.current = nil }
             ListeningIndicatorModel.shared.refresh()
@@ -725,6 +727,12 @@ final class VoiceSessionController {
         if let code = ConversationLanguage.stored().overrideCode, let language = Language(rawValue: code) {
             config.agentOverrides = AgentOverrides(language: language)
         }
+        // Doddy speaking and thinking (ADR-604). The SDK calls `onAgentStateChange` only in its
+        // event-based mode: with no configuration (ElevenLabs Swift SDK 3.3.1, `Conversation.
+        // setupAgentStateManager` returns early) the callback never fires, so the island, Home's
+        // waves and his talking pose stayed on "Listening" while he spoke. The defaults use the
+        // agent's own events and the room's speaking detection; no `vad_score` events are needed.
+        config.agentStateConfiguration = AgentStateConfiguration()
         config.onAgentStateChange = { state in
             Task { @MainActor in ref.value?.apply(state) }
         }
@@ -2424,7 +2432,7 @@ final class VoiceSessionController {
                 await notConnected(call.toolCallId, .calendar)
                 return
             }
-            let events = devices.events(in: range)
+            let events = await devices.readEvents(in: range)
             await reply(call.toolCallId, VoiceToolReply.calendarEvents(events, range: range, calendar: .current))
         case .findFreeTime(let request):
             // Read-only (ADR-332): gaps worked out here from the iPhone's calendars.
@@ -2432,7 +2440,7 @@ final class VoiceSessionController {
                 await notConnected(call.toolCallId, .calendar)
                 return
             }
-            let events = devices.events(in: request.range(calendar: .current))
+            let events = await devices.readEvents(in: request.range(calendar: .current))
             let days = FreeTime.days(request, events: events, now: Date(), calendar: .current)
             await reply(call.toolCallId, VoiceToolReply.freeTime(days, request: request, calendar: .current))
         case .createCalendarEvent(let draft):
@@ -2469,7 +2477,7 @@ final class VoiceSessionController {
                 return
             }
             do {
-                let matches = try devices.findContacts(named: name)
+                let matches = try await devices.readContacts(named: name)
                 contactCard = ContactCard(query: name, matches: matches)
                 await reply(call.toolCallId, VoiceToolReply.contactMatches(matches.map(\.name), query: name))
             } catch {
@@ -2510,7 +2518,8 @@ final class VoiceSessionController {
                 return
             }
             do {
-                let found = UpcomingBirthdays.upcoming(try devices.contactBirthdays(), now: Date(), days: days, calendar: .current)
+                let everyone = try await devices.readContactBirthdays()
+                let found = UpcomingBirthdays.upcoming(everyone, now: Date(), days: days, calendar: .current)
                 await reply(call.toolCallId, VoiceToolReply.birthdays(found, days: days, calendar: .current))
             } catch {
                 await reply(call.toolCallId, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
@@ -3369,7 +3378,7 @@ final class VoiceSessionController {
             await notConnected(toolCallID, .calendar)
             return
         }
-        let events = devices.events(in: EventChange.searchRange(draft, calendar: .current))
+        let events = await devices.readEvents(in: EventChange.searchRange(draft, calendar: .current))
         switch EventChange.match(draft, in: events, calendar: .current) {
         case .none:
             await reply(toolCallID, VoiceToolReply.eventNotFound(draft.title))
@@ -3517,7 +3526,8 @@ final class VoiceSessionController {
             await notConnected(toolCallID, .calendar)
             return
         }
-        let events = BulkChange.eventsToDelete(devices.events(in: range), in: range)
+        let inRange = await devices.readEvents(in: range)
+        let events = BulkChange.eventsToDelete(inRange, in: range)
         await proposeBulk(events.map(BulkItem.deleteEvent), verb: "deleted", skipped: [], toolCallID: toolCallID)
     }
 
@@ -3578,7 +3588,7 @@ final class VoiceSessionController {
             await notConnected(toolCallID, .calendar)
             return
         }
-        let events = devices.events(in: EventChange.searchRange(draft, calendar: .current))
+        let events = await devices.readEvents(in: EventChange.searchRange(draft, calendar: .current))
         switch EventChange.match(draft, in: events, calendar: .current) {
         case .none: await reply(toolCallID, VoiceToolReply.eventNotFound(draft.title))
         case .several(let found): await reply(toolCallID, VoiceToolReply.eventAmbiguous(found, calendar: .current))
