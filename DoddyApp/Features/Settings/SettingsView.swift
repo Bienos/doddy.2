@@ -1,7 +1,7 @@
 import DoddyCore
 import SwiftUI
 
-/// Settings (ADR-580, shortened by ADR-607): four short groups and twelve rows. Each row opens a page;
+/// Settings (ADR-580, shortened by ADR-607): four short groups and fourteen rows. Each row opens a page;
 /// the controls that were rows here (the island, Siri, the connections, the notifications, the memory
 /// pages) are on those pages with the same preference keys and accessibility identifiers, so nothing a
 /// user set changes. Explanations live on the screen a row opens, in Help, in "What leaves this
@@ -142,6 +142,15 @@ struct SettingsView: View {
                 Label("Privacy Policy", systemImage: "hand.raised")
             }
             .accessibilityIdentifier("settings.privacyPolicy")
+            // Doddy's own social accounts (ADR-130); they stay on this page (owner, 24 Oct 2026).
+            Link(destination: Self.tiktokURL) {
+                Label("TikTok · doddy_mate", systemImage: "play.rectangle")
+            }
+            .accessibilityIdentifier("settings.tiktok")
+            Link(destination: Self.instagramURL) {
+                Label("Instagram · doddy_mate", systemImage: "camera")
+            }
+            .accessibilityIdentifier("settings.instagram")
             StatusRow(title: NSLocalizedString("Version", comment: ""), value: Self.versionText)
             NavigationLink {
                 AdvancedSettingsView()
@@ -173,10 +182,9 @@ struct SettingsView: View {
             : "https://www.doddy.lol/what-can-doddy-do/")!
     }
 
-    // Doddy's own social accounts (ADR-130), in Settings › Advanced (ADR-607). Opening one hands off to
-    // the system; the app sends nothing.
-    static let tiktokURL = URL(string: "https://www.tiktok.com/@doddy_mate")!
-    static let instagramURL = URL(string: "https://www.instagram.com/doddy_mate/")!
+    // Doddy's own social accounts (ADR-130). Opening one hands off to the system; the app sends nothing.
+    private static let tiktokURL = URL(string: "https://www.tiktok.com/@doddy_mate")!
+    private static let instagramURL = URL(string: "https://www.instagram.com/doddy_mate/")!
 
     static var versionText: String {
         let info = Bundle.main.infoDictionary

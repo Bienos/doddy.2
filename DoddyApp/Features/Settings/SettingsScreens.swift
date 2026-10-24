@@ -689,7 +689,7 @@ struct RoutinesSettingsView: View {
 // MARK: About
 
 /// Settings › Advanced: build details, the Terms acceptance, the plan-card demo, the welcome again,
-/// Doddy's social accounts, what's built, and the development server with its Connected Apps screen.
+/// what's built, and the development server with its Connected Apps screen.
 /// The server fields show only in Debug builds, or when one is already set, so it can still be removed.
 struct AdvancedSettingsView: View {
     @Environment(MemoryStore.self) private var store
@@ -719,8 +719,7 @@ struct AdvancedSettingsView: View {
                         .accessibilityIdentifier("settings.termsAccepted")
                 }
             }
-            // Rows that were on the main Settings page until ADR-607: a demo, a replay and Doddy's own
-            // social accounts (ADR-130), which open outside the app and share nothing.
+            // Rows that were on the main Settings page until ADR-607: a demo and a replay.
             Section {
                 NavigationLink {
                     PlanPracticeView()
@@ -733,14 +732,6 @@ struct AdvancedSettingsView: View {
                     WelcomePreferences.requestReplay()
                 }
                 .accessibilityIdentifier("settings.welcomeAgain")
-                Link(destination: SettingsView.tiktokURL) {
-                    Label("TikTok · doddy_mate", systemImage: "play.rectangle")
-                }
-                .accessibilityIdentifier("settings.tiktok")
-                Link(destination: SettingsView.instagramURL) {
-                    Label("Instagram · doddy_mate", systemImage: "camera")
-                }
-                .accessibilityIdentifier("settings.instagram")
             }
             Section("What's built") {
                 ForEach(Capability.allCases, id: \.self) { capability in

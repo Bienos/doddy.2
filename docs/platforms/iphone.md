@@ -56,7 +56,7 @@ Code lives under `DoddyApp/Features/<Folder>/`. Status docs are in `docs/impleme
 | News, Updates | Daily news, server notifications and texts | 174, 175 | N1_NEWS_STATUS, S1_SERVER_STATUS |
 | Photos, VoiceMemos | Photo notes (picker and, since ADR-569, Doddy's camera), the photo search card, voice memos | 218, 230, 569 | PHOTO_NOTES_STATUS, VOICE_MEMOS_STATUS, APPLE_CONNECTIONS |
 | Privacy | Face ID lock, "What leaves this iPhone" | 310 | - |
-| Settings | Twelve rows in four groups and their pages (`SettingsView`, `SettingsHubs`, `SettingsScreens`); the Action Button choice | 580, 579, 607 | SETTINGS_SIMPLIFIED, ACTION_BUTTON_ISLAND |
+| Settings | Fourteen rows in four groups and their pages (`SettingsView`, `SettingsHubs`, `SettingsScreens`); the Action Button choice | 580, 579, 607 | SETTINGS_SIMPLIFIED, ACTION_BUTTON_ISLAND |
 | Onboarding | "Before we start": Terms acceptance (`LegalAcceptanceView`, `LegalAcceptanceStore`), then the optional introduction | 581 | LEGAL_PAGES_OWNER_CHECKLIST |
 | QuickActions, Spotlight | Icon menu, iPhone search | 339, 330 | - |
 | Setup | Ways to open Doddy: Back Tap guide, Action Button, control, Siri | 380, 558, 579 | V2_SHORTCUT_SETUP_STATUS, ACTION_BUTTON_ISLAND |

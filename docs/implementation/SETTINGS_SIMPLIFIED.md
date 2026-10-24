@@ -6,7 +6,7 @@ Before: one Form of about 25 sections and 70 rows, with 17 explanatory paragraph
 
 Code: `DoddyApp/Features/Settings/SettingsView.swift` (the groups), `SettingsScreens.swift` (the pages), `SettingsSupport.swift` (the profile editor, exports, voice pickers, moved unchanged).
 
-## Shorter again: twelve rows (ADR-607, 24 Oct 2026)
+## Shorter again: fourteen rows (ADR-607, 24 Oct 2026)
 
 Owner, 24 Oct 2026: fewer places for memories, Files instead of Memories at the bottom, memory as one row in Settings, cut Settings down so it is easy to understand, and one option for the connections. Again **no preference was removed, renamed or re-keyed**, and every row keeps its accessibility identifier; rows moved onto the pages below.
 
@@ -17,7 +17,7 @@ Owner, 24 Oct 2026: fewer places for memories, Files instead of Memories at the 
 | *(no header)* | Connections (`settings.connectionsHub`) | Pause all connections; Calendar, reminders, contacts; Online accounts; Doddy on the web; Ask Doddy (typed questions); What Doddy did |
 | | Notifications (`settings.notifications`) | Notifications and texts; Check-ins and reminders; Alarms; Birthdays; Daily news; Phone calls |
 | **This iPhone** | Language, Appearance, Privacy | unchanged pages |
-| **About** | Help, Terms & Conditions, Privacy Policy, Version, Advanced | Advanced now also holds Terms accepted, Try a plan card, Show the welcome again, TikTok, Instagram, and (development server only) Connected Apps |
+| **About** | Help, Terms & Conditions, Privacy Policy, TikTok, Instagram, Version, Advanced | TikTok and Instagram stay here (owner, 24 Oct). Advanced now also holds Terms accepted, Try a plan card, Show the welcome again, and (development server only) Connected Apps |
 
 **Removed from the top level:** Profile and "Voice and interaction" and "Memory and privacy" and "Connected apps" as group names; the separate rows for personality, island style, island expansion, Siri, Memories, What Doddy knows, the six connection rows and the six notification rows. **Connected Apps** (the first Google Calendar screen) needs the development server address and token, so for everyone else it only said "not set up" and listed planned apps; it now sits in Advanced under that server. Online accounts (ADR-563) is the real one.
 
