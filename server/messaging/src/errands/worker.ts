@@ -116,7 +116,10 @@ export async function runClaimed(ctx: ErrandContext, e: Claimed, shutdown?: Abor
   let outcome: ResearchOutcome;
   try {
     outcome = await researcher.research(
-      { id: e.id, words: content.words, brief: content.brief, language: content.language },
+      {
+        id: e.id, words: content.words, brief: content.brief, language: content.language,
+        ...(content.kind ? { kind: content.kind, priorities: content.priorities ?? [] } : {}),
+      },
       { deadline, isCancelled, signal: shutdown, now: ctx.now, cancelPollMs: ctx.cancelPollMs, log: ctx.log });
   } catch (err) {
     ctx.log("errand researcher threw", { errandId: e.id, error: (err as Error).name });
@@ -142,20 +145,21 @@ async function finish(ctx: ErrandContext, e: Claimed, outcome: ResearchOutcome):
       "SELECT state, cancel_requested_at FROM errands WHERE id = $1 FOR UPDATE", [e.id]);
     const r = rows[0];
     if (!r || r.state !== "running") return r ? `already_${r.state}` : "deleted";
-    const stats = [e.id, now, outcome.searches, outcome.fetches, u.inputTokens, u.cacheWriteTokens, u.cacheReadTokens, u.outputTokens];
-    const set = `finished_at = $2, searches = $3, fetches = $4, input_tokens = $5, cache_write_tokens = $6, cache_read_tokens = $7, output_tokens = $8`;
+    const stats = [e.id, now, outcome.searches, outcome.fetches, u.inputTokens, u.cacheWriteTokens, u.cacheReadTokens, u.outputTokens, outcome.model.slice(0, 64)];
+    // The model that actually ran (a shopping errand runs on the shopping model, not the one claimed).
+    const set = `finished_at = $2, searches = $3, fetches = $4, input_tokens = $5, cache_write_tokens = $6, cache_read_tokens = $7, output_tokens = $8, model = $9`;
     if (outcome.kind === "cancelled" || r.cancel_requested_at) {
       await c.query(`UPDATE errands SET state = 'cancelled', ${set} WHERE id = $1`, stats);
       return "cancelled";
     }
     if (outcome.kind === "done") {
       await c.query(
-        `UPDATE errands SET state = 'done', ${set}, result_key_version = $9, result_ciphertext = $10, result_digest = $11 WHERE id = $1`,
+        `UPDATE errands SET state = 'done', ${set}, result_key_version = $10, result_ciphertext = $11, result_digest = $12 WHERE id = $1`,
         [...stats, ctx.cipher.keyVersion, ctx.cipher.encrypt(resultJson(outcome.result), resultAad(e.account_id, e.id)), resultDigest(outcome.result)]);
       await push(c, ctx, e.account_id, e.id, "done", e.language, now);
       return "done";
     }
-    await c.query(`UPDATE errands SET state = 'failed', failure = $9, ${set} WHERE id = $1`, [...stats, outcome.code]);
+    await c.query(`UPDATE errands SET state = 'failed', failure = $10, ${set} WHERE id = $1`, [...stats, outcome.code]);
     await push(c, ctx, e.account_id, e.id, "failed", e.language, now);
     return "failed";
   });
