@@ -58,15 +58,34 @@ final class IslandScreenshotTests: XCTestCase {
     func testTheExpandedIslandShowsAllOfHimWithAFaintLight() throws {
         let scene = Self.scene(.listening)
         XCTAssertEqual(scene.pose, .listening)
-        let figure = try XCTUnwrap(pixels(IslandPoseView(pose: .listening, maxSize: CGSize(width: 82, height: 118),
+        let figure = try XCTUnwrap(pixels(IslandPoseView(pose: .listening, maxSize: CGSize(width: 82, height: 104),
                                                          edgeWidth: 1.5)))
-        XCTAssertEqual(figure.height, 118 * 3)
+        XCTAssertEqual(figure.height, 104 * 3)
         let light = try XCTUnwrap(pixels(IslandDoddyLight().background(Color.islandBlack)))
         XCTAssertEqual(light.width, 110 * 3)
         let middle = light.brightness(x: light.width / 2, y: light.height / 2)
         XCTAssertGreaterThan(middle, 30, "a little light in the middle")
         XCTAssertLessThan(middle, 80, "only a little: not a spotlight")
         XCTAssertLessThan(light.brightness(x: 2, y: light.height / 2), 15, "black at the edge")
+    }
+
+    /// iOS gives the expanded island's bottom region about 110 pt; at 118 pt it cut his shoes off
+    /// (native screenshot of run 40083307695). Every state, with its waves and three pills, fits.
+    @MainActor
+    func testTheExpandedIslandFitsWhatIOSGivesIt() throws {
+        for sample in Self.samples {
+            let scene = Self.scene(sample.status, muted: sample.muted, moment: sample.moment)
+            let bottom = IslandBottomView(scene: scene, startedAt: Date()) {
+                HStack(spacing: 6) {
+                    IslandPillLabel(title: "Mute", systemImage: "mic.slash.fill")
+                    IslandPillLabel(title: "Open", systemImage: "arrow.up.forward.app")
+                    IslandPillLabel(title: "Stop", systemImage: "stop.fill")
+                }
+            }
+            .frame(width: 335)
+            let drawn = try XCTUnwrap(pixels(bottom), sample.name)
+            XCTAssertLessThanOrEqual(drawn.height, Int(IslandBottomView<EmptyView>.fitsHeight * 3), "\(sample.name) fits")
+        }
     }
 
     /// The waves are 2 pt or more (owner: the 1.3 pt lines were too thin), and a thick line on the

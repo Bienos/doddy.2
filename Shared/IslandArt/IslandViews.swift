@@ -281,6 +281,12 @@ struct IslandBottomView<Controls: View>: View {
     let startedAt: Date
     @ViewBuilder let controls: () -> Controls
 
+    /// What iOS leaves for the expanded island's bottom region is about 110 pt (measured on the
+    /// native screenshot); everything here stays within it, so nothing is cut (ADR-607).
+    static var fitsHeight: CGFloat { 110 }
+    static var figureHeight: CGFloat { 104 }
+    static var waveBand: CGFloat { 24 }
+
     var body: some View {
         if scene.board == .editorial {
             editorial
@@ -331,8 +337,9 @@ struct IslandBottomView<Controls: View>: View {
                 if let pose = scene.pose {
                     // Whole Doddy at his largest the island allows (owner, 22 Oct, ADR-596), with a
                     // 1.5 pt cream edge and a faint light, so his black lines read on the black
-                    // island (ADR-607).
-                    IslandPoseView(pose: pose, maxSize: CGSize(width: 82, height: 118), edgeWidth: 1.5)
+                    // island (ADR-607). 104 pt: iOS gives the expanded island's bottom region about
+                    // 110 pt, and at 118 it cut his shoes off (native screenshot, run 40083307695).
+                    IslandPoseView(pose: pose, maxSize: CGSize(width: 82, height: Self.figureHeight), edgeWidth: 1.5)
                         .background { IslandDoddyLight() }
                 } else {
                     IslandArtView(art: scene.art(.expanded), face: scene.face, live: scene.live,
@@ -341,21 +348,21 @@ struct IslandBottomView<Controls: View>: View {
                 }
             }
             .frame(width: 82)
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 3) {
                 VStack(alignment: .leading, spacing: 2) {
                     title
                     subtitle
                 }
                 .accessibilityElement(children: .combine)
-                // ADR-596: his waves sit under what he is doing, in one 28 pt band: a calm line
+                // ADR-596: his waves sit under what he is doing, in one 24 pt band: a calm line
                 // while he hears you; while he talks a livelier one that starts beside him
                 // (owner, 24 Oct: not across the whole island, ADR-607).
                 if scene.waves == .listening {
                     IslandWavesView(kind: .line, live: scene.live)
-                        .frame(height: 28)
+                        .frame(height: Self.waveBand)
                 } else if scene.waves == .speaking {
                     IslandWavesView(kind: .speech, live: scene.live)
-                        .frame(height: 28)
+                        .frame(height: Self.waveBand)
                         .padding(.leading, -6)
                 }
                 HStack(spacing: 8) {
