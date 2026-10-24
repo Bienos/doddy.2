@@ -1,0 +1,96 @@
+{
+  "answer": "Mój wybór: zmywarka 45 cm, 42 dB, za 1 899,00 zł w Media Expert. Najcichsza z ofert w budżecie; najtańsza jest o 5 dB głośniejsza.",
+  "sections": [
+    {
+      "heading": "Propozycje",
+      "kind": "options",
+      "items": [
+        {
+          "title": "Zmywarka do zabudowy 45 cm, 42 dB, 10 kompletów",
+          "detail": "Mój wybór · Najcichsza z ofert do 2000 zł. · Cena sprawdzona na stronie sklepu",
+          "price": "1 899,00 zł",
+          "url": "https://www.mediaexpert.pl/agd-do-zabudowy/zmywarki-do-zabudowy/przyklad-45",
+          "site": "mediaexpert.pl"
+        },
+        {
+          "title": "Zmywarka do zabudowy 45 cm, 47 dB, 9 kompletów",
+          "detail": "Najtańsza · O 5 dB głośniejsza od mojego wyboru. · Cena z listy Google Shopping",
+          "price": "1 449,00 zł",
+          "url": "https://www.google.com/shopping/product/1234567890",
+          "site": "google.com"
+        },
+        {
+          "title": "Zmywarka do zabudowy 45 cm, 39 dB, 10 kompletów",
+          "detail": "Bez kompromisów · Najcichsza ze wszystkich. · 299,00 zł ponad budżet · Cena sprawdzona na stronie sklepu",
+          "price": "2 299,00 zł",
+          "url": "https://www.x-kom.pl/p/przyklad-zmywarka-45",
+          "site": "x-kom.pl"
+        }
+      ]
+    }
+  ],
+  "recommendation": "Jeśli liczy się cisza, bierz tę za 1 899,00 zł. Jeśli cena, najtańsza też jest w porządku, tylko głośniejsza.",
+  "budget": { "asked": "do 2000 zł", "within": "yes" },
+  "next": ["Sprawdzić montaż?", "Pilnować ceny?"],
+  "sources": [
+    { "title": "Zmywarka 45 cm, 42 dB", "url": "https://www.mediaexpert.pl/agd-do-zabudowy/zmywarki-do-zabudowy/przyklad-45", "site": "mediaexpert.pl" },
+    { "title": "Google Shopping: zmywarka 45 cm", "url": "https://www.google.com/shopping/product/1234567890", "site": "google.com" },
+    { "title": "Zmywarka 45 cm, 39 dB", "url": "https://www.x-kom.pl/p/przyklad-zmywarka-45", "site": "x-kom.pl" }
+  ],
+  "checkedAt": "2026-10-24T12:05:00.000Z",
+  "shopping": {
+    "priorities": ["Cisza", "Cena", "Gwarancja"],
+    "budget": { "minor": 200000, "currency": "PLN" },
+    "offers": [
+      {
+        "id": "o1",
+        "title": "Zmywarka do zabudowy 45 cm, 42 dB, 10 kompletów",
+        "shop": "Media Expert",
+        "price": { "minor": 189900, "currency": "PLN" },
+        "delivery": "Dostawa jutro, 0 zł",
+        "url": "https://www.mediaexpert.pl/agd-do-zabudowy/zmywarki-do-zabudowy/przyklad-45",
+        "site": "mediaexpert.pl",
+        "evidence": "shop_page",
+        "seenAt": "2026-10-24T12:02:00.000Z",
+        "gtin": "5901234123457",
+        "notes": "42 dB · 10 kompletów · klasa C"
+      },
+      {
+        "id": "o2",
+        "title": "Zmywarka do zabudowy 45 cm, 47 dB, 9 kompletów",
+        "shop": "RTV Euro AGD",
+        "price": { "minor": 144900, "currency": "PLN" },
+        "url": "https://www.google.com/shopping/product/1234567890",
+        "site": "google.com",
+        "evidence": "listing",
+        "seenAt": "2026-10-24T12:03:00.000Z",
+        "notes": "47 dB · 9 kompletów · klasa E"
+      },
+      {
+        "id": "o3",
+        "title": "Zmywarka do zabudowy 45 cm, 39 dB, 10 kompletów",
+        "shop": "x-kom",
+        "price": { "minor": 229900, "currency": "PLN" },
+        "delivery": "Dostawa jutro",
+        "url": "https://www.x-kom.pl/p/przyklad-zmywarka-45",
+        "site": "x-kom.pl",
+        "evidence": "shop_page",
+        "seenAt": "2026-10-24T12:04:00.000Z"
+      }
+    ],
+    "picks": [
+      { "role": "best", "offerId": "o1", "why": "Najcichsza z ofert do 2000 zł.", "tradeoff": "Montaż osobno." },
+      { "role": "cheapest", "offerId": "o2", "why": "Najtańsza, która pasuje do wnęki 45 cm.", "tradeoff": "O 5 dB głośniejsza." },
+      { "role": "premium", "offerId": "o3", "why": "Najcichsza ze wszystkich.", "overBudget": { "minor": 29900, "currency": "PLN" } }
+    ],
+    "howChosen": [
+      "Odsiałem za duże i oferty bez ceny.",
+      "Ułożyłem po Twojej kolejności: cisza, cena, gwarancja.",
+      "Pokazałem też najtańszą i jedną ponad budżet."
+    ],
+    "watchOuts": ["Montaż nie jest w cenie."],
+    "unknowns": ["Czy cena utrzyma się po niedzieli."],
+    "rejected": ["1 oferta 60 cm: nie zmieści się we wnęce 45 cm."],
+    "stats": { "offersSeen": 23, "shops": 6 }
+  }
+}

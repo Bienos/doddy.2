@@ -2720,6 +2720,10 @@ final class VoiceSessionController {
             await reply(call.toolCallId, await ErrandsModel.shared.handOver(draft))
         case .checkErrands(let about):
             await reply(call.toolCallId, await ErrandsModel.shared.agentReply(about: about))
+        case .findDeals(let request):
+            // SHOPPING.md 2: after the ask card's yes, one request to Doddy's server, which reads the
+            // chains' leaflets for it and keeps nothing. The answer also stays on the leaflets screen.
+            await reply(call.toolCallId, await DealsModel.shared.searchForAgent(request))
         case .noteCapabilityGap(let category):
             // Nothing changes and no app is used: one row on this iPhone, as a category (ADR-440).
             await store.learning?.recordGap(category, requestID: call.toolCallId, sessionID: conversationID)
