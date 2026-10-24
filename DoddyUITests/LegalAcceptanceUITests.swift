@@ -56,7 +56,7 @@ final class LegalAcceptanceUITests: XCTestCase {
         app.goToTab("settings")
         XCTAssertTrue(app.reveal(app.descendants(matching: .any)["settings.terms"].firstMatch), "the Terms stay one tap away")
         XCTAssertTrue(app.reveal(app.descendants(matching: .any)["settings.privacyPolicy"].firstMatch))
-        // When they were accepted is in Settings › Advanced (ADR-614).
+        // When they were accepted is in Settings › Advanced (ADR-633).
         app.openSettingsPage("settings.advanced")
         XCTAssertTrue(app.reveal(app.descendants(matching: .any)["settings.termsAccepted"].firstMatch))
     }

@@ -33,7 +33,7 @@ enum VoiceConfig {
     }
 
     /// The Debug developer connection (ADR-551) reaches only the ElevenLabs agent. OpenAI's key stays on
-    /// the token server, so OpenAI always goes through it, with a Doddy voice account (ADR-614).
+    /// the token server, so OpenAI always goes through it, with a Doddy voice account (ADR-633).
     static func usesDirectAgent(for provider: VoiceProvider) -> Bool {
         directVoiceEnabled && provider == .elevenLabs
     }
@@ -47,7 +47,7 @@ enum VoiceConfig {
 
     /// The connection for the chosen voice. The voice screen, Home and Talk in the Island (ADR-577)
     /// all start with it. It used to ignore the voice, so in a Debug build OpenAI got the developer
-    /// connection and failed with "Voice isn't set up yet" before any network call (ADR-614).
+    /// connection and failed with "Voice isn't set up yet" before any network call (ADR-633).
     static var connectionMode: VoiceConnectionMode { connectionMode(for: chosenProvider) }
 
     static var authEndpoint: URL? {

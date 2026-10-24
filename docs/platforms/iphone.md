@@ -13,7 +13,7 @@
   - ElevenLabs `agent_0501m4et27vyeawrwqfdxxfszfa6`. The prompt and tools are in `voice-agent/` (`instructions.md`, `tools.json`, `session.json`). `python3 -I scripts/voice_agent_spec.py check` validates them.
   - The live agent is changed by the owner, never from the app.
   - The app sends dynamic variables at start (notes, lists, profile, `learned_context`, opening line). A variable the live prompt requires but the app doesn't send stops the call before it starts.
-- **Providers:** ElevenLabs (default, ADR-546) or OpenAI Realtime, chosen in Settings › Voice (and on Home after the first conversation) (ADR-265, ADR-442, ADR-443). `docs/implementation/VOICE_PROVIDER_TEST_STATUS.md`. OpenAI always goes through the token server with a Doddy voice account (Sign in with Apple, so a paid Apple team); a Debug build's developer connection reaches ElevenLabs only (ADR-551, ADR-614).
+- **Providers:** ElevenLabs (default, ADR-546) or OpenAI Realtime, chosen in Settings › Voice (and on Home after the first conversation) (ADR-265, ADR-442, ADR-443). `docs/implementation/VOICE_PROVIDER_TEST_STATUS.md`. OpenAI always goes through the token server with a Doddy voice account (Sign in with Apple, so a paid Apple team); a Debug build's developer connection reaches ElevenLabs only (ADR-551, ADR-633).
 - **Status docs:** `V1_VOICE_STATUS`, `V3_ISLAND_STATUS` (Dynamic Island), `HEY_DODDY_STATUS`, `OPENING_SCENE_STATUS` (the intro and listen-on-open).
 - **To debug a voice problem,** look at the ElevenLabs conversation log for the agent first:
   - no conversation at all means the app failed before connecting;
@@ -31,8 +31,8 @@ Code lives under `DoddyApp/Features/<Folder>/`. Status docs are in `docs/impleme
 | Onboarding | Introduction, storybook welcome | 299, 380 | ONBOARDING_STATUS |
 | Welcome (on `claude/gifted-einstein-61p6hq`, not merged) | First-launch welcome "One morning in Warsaw": five chapters, a persistent Doddy, a sign-in sheet (Apple is real, the rest not connected yet); `DoddyCore/Welcome/` for the maths | 598, 599 | WELCOME_STATUS |
 | Home | Home screen | 323, 380 | ONBOARDING_STATUS |
-| Memories | Notes list, find, detail, corrections. No tab of its own since ADR-614: opened from Settings › Doddy's memory (and Find, links, widgets) | 252, 310, 607 | MEMORY_HISTORY_STATUS, M1_STATUS |
-| Files | Home's Files sheet (ADR-614): files Doddy made on his server (`GET /v1/web/documents` with the phone's session, `MadeDocumentsClient` in DoddyCore), opened in Quick Look; and Recordings | 564, 607 | SETTINGS_SIMPLIFIED |
+| Memories | Notes list, find, detail, corrections. No tab of its own since ADR-633: opened from Settings › Doddy's memory (and Find, links, widgets) | 252, 310, 607 | MEMORY_HISTORY_STATUS, M1_STATUS |
+| Files | Home's Files sheet (ADR-633): files Doddy made on his server (`GET /v1/web/documents` with the phone's session, `MadeDocumentsClient` in DoddyCore), opened in Quick Look; and Recordings | 564, 607 | SETTINGS_SIMPLIFIED |
 | Capture | New-note editor, "Save to Doddy" | 179 | M1_STATUS |
 | Lists | Lists, templates, share card, shopping mode | 216, 257, 334 | LISTS_STATUS, SHOPPING_MODE_STATUS |
 | NoteReminders | Time and place reminders on notes | 196, 211 | M4A_NOTE_REMINDERS_STATUS, PLACE_REMINDERS_STATUS |

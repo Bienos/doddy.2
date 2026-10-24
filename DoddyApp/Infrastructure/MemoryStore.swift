@@ -31,7 +31,7 @@ final class MemoryStore {
     private(set) var hasLoaded = false
     private(set) var loadError: String?
     /// Bumped by a successful reload that read something new (or the first good read), so searches
-    /// re-run after edits and deletes. An unchanged read doesn't bump it (ADR-614). A failed read
+    /// re-run after edits and deletes. An unchanged read doesn't bump it (ADR-633). A failed read
     /// keeps the last good copy and doesn't bump it: the memory copy on the server and the widgets
     /// follow this (review G1).
     private(set) var revision = 0
@@ -68,7 +68,7 @@ final class MemoryStore {
             // Many callers reload only to read (each voice conversation, list tools, shared-list sync on
             // every foreground). An unchanged read keeps the arrays and the revision, so it doesn't redraw
             // the screens, refresh widgets and Spotlight, re-run Find, or send the whole note list to the
-            // server copies again (ADR-614). The first good read, or one after a failed read, always counts.
+            // server copies again (ADR-633). The first good read, or one after a failed read, always counts.
             var changed = !hasLoaded || loadError != nil
             if notes != memories { memories = notes; changed = true }
             if storedCorrections != corrections { corrections = storedCorrections; changed = true }

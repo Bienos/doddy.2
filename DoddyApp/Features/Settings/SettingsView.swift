@@ -1,7 +1,7 @@
 import DoddyCore
 import SwiftUI
 
-/// Settings (ADR-580, shortened by ADR-614): four short groups and fourteen rows. Each row opens a page;
+/// Settings (ADR-580, shortened by ADR-633): four short groups and fourteen rows. Each row opens a page;
 /// the controls that were rows here (the island, Siri, the connections, the notifications, the memory
 /// pages) are on those pages with the same preference keys and accessibility identifiers, so nothing a
 /// user set changes. Explanations live on the screen a row opens, in Help, in "What leaves this
@@ -11,7 +11,7 @@ struct SettingsView: View {
     @AppStorage(VoiceProvider.preferenceKey) private var voiceProvider = ""
     @AppStorage(ConnectionPause.preferenceKey) private var pauseAllConnections = false
     @State private var connections = ConnectionController()
-    /// Opens notes, lists or search (ADR-614). They are their own screen, reached from Doddy's memory.
+    /// Opens notes, lists or search (ADR-633). They are their own screen, reached from Doddy's memory.
     var openMemories: (MemoryOpening) -> Void = { _ in }
 
     var body: some View {

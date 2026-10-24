@@ -2,7 +2,7 @@ import DoddyCore
 import QuickLook
 import SwiftUI
 
-/// Files (ADR-614): what used to be Memories at the bottom of Home. Two real sources, nothing invented:
+/// Files (ADR-633): what used to be Memories at the bottom of Home. Two real sources, nothing invented:
 /// the files Doddy made on his server (decks, documents, spreadsheets, PDFs; kept a week, ADR-564), read
 /// with this iPhone's own session from `GET /v1/web/documents`, and the recordings on this iPhone
 /// (DODDY Capture, ADR-588). A file is downloaded only when it is tapped, then opens in Quick Look, whose

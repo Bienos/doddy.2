@@ -41,7 +41,7 @@ final class MotionSurfaceTests: XCTestCase {
         app.goToTab("memories")
         let rail = surface("rail", in: app)
         XCTAssertTrue(rail.waitForExistence(timeout: 5))
-        // The capsule's top edge: 8 pt above the tab buttons (Home and Settings since ADR-614).
+        // The capsule's top edge: 8 pt above the tab buttons (Home and Settings since ADR-633).
         XCTAssertEqual(rail.frame.minY, app.buttons["tab.settings"].frame.minY - 8, accuracy: 3)
     }
 

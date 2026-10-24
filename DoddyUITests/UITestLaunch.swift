@@ -116,7 +116,7 @@ extension XCUIApplication {
 
     /// Goes to tab `name` ("memories", "settings"): the tab bar (or iPad's sidebar) where there is
     /// one, else Home's ••• menu (ADR-545). Notes and lists have no tab on iPhone any more: they
-    /// open from Settings › Doddy's memory › Notes (ADR-614).
+    /// open from Settings › Doddy's memory › Notes (ADR-633).
     @MainActor
     func goToTab(_ name: String) {
         if name == "memories" {
@@ -133,7 +133,7 @@ extension XCUIApplication {
         } else {
             tapHomeMenuItem("home.menu.\(name)")
         }
-        // Settings keeps the page it was on: Doddy's memory, when notes were opened from it (ADR-614).
+        // Settings keeps the page it was on: Doddy's memory, when notes were opened from it (ADR-633).
         // Back to its first page (Voice is its first row), where the tests start.
         if name == "settings" {
             _ = buttons["settings.voice"].waitForExistence(timeout: 2)
@@ -165,7 +165,7 @@ extension XCUIApplication {
         row.tap()
     }
 
-    /// A row on one of Settings' short pages (ADR-614): opens the page `group` first ("settings.voice",
+    /// A row on one of Settings' short pages (ADR-633): opens the page `group` first ("settings.voice",
     /// "settings.memory", "settings.connectionsHub", "settings.advanced"), unless it is open already.
     @MainActor
     func openSettingsPage(_ identifier: String, under group: String, file: StaticString = #filePath, line: UInt = #line) {

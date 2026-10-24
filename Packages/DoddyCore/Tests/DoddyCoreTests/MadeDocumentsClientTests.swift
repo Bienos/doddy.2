@@ -33,7 +33,7 @@ private final class OneReplyTransport: HTTPTransport, @unchecked Sendable {
     }
 }
 
-/// The Files sheet's list of what Doddy made (ADR-614), read from the server's own fixtures.
+/// The Files sheet's list of what Doddy made (ADR-633), read from the server's own fixtures.
 final class MadeDocumentsClientTests: XCTestCase {
     private let server = URL(string: "https://doddy.example.com")!
 
