@@ -2,7 +2,7 @@
 
 Owner, 24 Oct 2026: "Wszystko rób" (do everything), after a list that included stage 2 of `docs/strategy/TRYB_ZAKUPOW_2026-10.md` section 2 C. This page is the contract; ADR-614 records it. **It only notifies. It never buys, orders, signs in or fills in anything.**
 
-Status, 24 Oct 2026: built on the server and in DoddyCore and the app; **the SwiftUI is not compiled** (the hosted Mac job has not run on it yet) and nothing has run against a real shop or a device. See "Built and checked" at the end.
+Status, 24 Oct 2026: built on the server and in DoddyCore and the app, and **compiled and tested on the hosted Mac job** (run 40123163712 on `3b06a1c`: build, unit tests and UI tests passed); nothing has run against a real shop or on a device, and no UI test opens the watch screens. See "Built and checked" at the end.
 
 ## 1. What it does
 
@@ -84,4 +84,4 @@ Summary: `id`, `state` (`draft`, `active`, `triggered`, `expired`, `stopped`, `f
 
 **iPhone** (DoddyCore and app): `Watch.swift` and `WatchesClient.swift` (draft digest equal to the fixture's, recomputed with Python; a preview that isn't for the shown words or whose digest differs is refused by the client and again by the model; every contract error mapped; an approval with no trustworthy answer is `unknown`, not sent again, looked up read-only; "dropped" only with the confirmed price at or below the user's number; an unknown state is never shown as active), `WatchModel.swift` (compiled and type-checked on Linux; its logic exercised with a fake backend), the DataFlow `watches` row. DoddyCore: 1,783 tests, 0 failures (WatchTests 31). Seventeen guards in the core and seven in the model were broken on purpose and each was caught.
 
-**Not compiled:** the SwiftUI (`WatchCard.swift`, `WatchesSection.swift`, `WatchPush.swift`, and the hooks in `ShoppingResultSections.swift` and `ErrandsView.swift`): only a syntax parse passed. **Not run:** any real shop page, APNs, a device, the separate worker process or `RUN_WORKER_IN_WEB`, a live database; the client against the real server; the Polish strings have no native review.
+**Compiled on the Mac job:** the SwiftUI (`WatchCard.swift`, `WatchesSection.swift`, `WatchPush.swift`, and the hooks in `ShoppingResultSections.swift` and `ErrandsView.swift`) built, and `DoddyTests/WatchModelTests.swift` ran there (17 more tests run on Linux by `scripts/test_watch_model.sh`). **Not run:** the screens on a device; any real shop page, APNs, a device, the separate worker process or `RUN_WORKER_IN_WEB`, a live database; the client against the real server; the Polish strings have no native review.
