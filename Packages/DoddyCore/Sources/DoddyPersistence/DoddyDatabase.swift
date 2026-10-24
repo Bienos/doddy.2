@@ -425,6 +425,10 @@ public final class DoddyDatabase: Sendable {
                 CREATE INDEX thread_messages_created ON thread_messages(created_at_ms);
                 """)
         }
+        // A file Doddy made from a message (ADR-606): its name, kind and link as JSON. Older rows have none.
+        migrator.registerMigration("v18_thread_document") { db in
+            try db.execute(sql: "ALTER TABLE thread_messages ADD COLUMN document_json TEXT")
+        }
         return migrator
     }
 

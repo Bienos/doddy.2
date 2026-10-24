@@ -13,6 +13,8 @@ public struct VerifiedAnswer: Equatable, Sendable {
     public let text: String
     /// The cited notes, resolved to the real stored records, in the order cited.
     public let sources: [MemoryRecord]
+    /// A file the person asked for, offered as a card (ADR-606). Nothing is made until they tap it.
+    public var proposal: AssistantProposal? = nil
 
     public var basis: AnswerBasis { sources.isEmpty ? .general : .savedNotes }
 }
@@ -32,6 +34,6 @@ public enum CitationVerifier {
             guard let record = allowed[id], seen.insert(id).inserted else { throw .invalidCitations }
             sources.append(record)
         }
-        return VerifiedAnswer(text: reply.text, sources: sources)
+        return VerifiedAnswer(text: reply.text, sources: sources, proposal: reply.proposal)
     }
 }

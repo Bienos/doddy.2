@@ -1869,5 +1869,16 @@
   "Doddy's server sent something the app couldn't read. Nothing was changed here.": "Serwer Doddy’ego wysłał coś, czego aplikacja nie mogła odczytać. Nic tu nie zmieniono.",
   "Nothing was kept, so nothing was deleted.": "Nic nie było przechowywane, więc nic nie usunięto.",
   "Deleted from Doddy's server. Both switches are off.": "Usunięto z serwera Doddy’ego. Oba przełączniki są wyłączone.",
-  "A browser stays signed in for 30 days, or until it goes unused for 14. It sees the files Doddy made, your online accounts and Doddy's receipts. It sees your notes and conversations only if you keep them on Doddy's server, below.": "Przeglądarka zostaje zalogowana przez 30 dni albo do 14 dni bez użycia. Widzi pliki zrobione przez Doddy’ego, Twoje konta online i potwierdzenia Doddy’ego. Widzi Twoje notatki i rozmowy tylko wtedy, gdy przechowujesz je na serwerze Doddy’ego, poniżej."
+  "A browser stays signed in for 30 days, or until it goes unused for 14. It sees the files Doddy made, your online accounts and Doddy's receipts. It sees your notes and conversations only if you keep them on Doddy's server, below.": "Przeglądarka zostaje zalogowana przez 30 dni albo do 14 dni bez użycia. Widzi pliki zrobione przez Doddy’ego, Twoje konta online i potwierdzenia Doddy’ego. Widzi Twoje notatki i rozmowy tylko wtedy, gdy przechowujesz je na serwerze Doddy’ego, poniżej.",
+  "Doddy can make a file": "Doddy może zrobić plik",
+  "Make it": "Zrób to",
+  "Making it…": "Robię to…",
+  "Tap to open": "Dotknij, by otworzyć",
+  "Deck": "Prezentacja",
+  "Document": "Dokument",
+  "Spreadsheet": "Arkusz",
+  "PDF": "PDF",
+  "Making files needs Doddy's server, which isn't set up in this build.": "Robienie plików wymaga serwera Doddy’ego, którego ta wersja aplikacji nie ma ustawionego.",
+  "Doddy's server couldn't be reached. Nothing was confirmed. Check your connection and try again.": "Nie udało się połączyć z serwerem Doddy’ego. Nic nie zostało potwierdzone. Sprawdź połączenie i spróbuj jeszcze raz.",
+  "The file wasn't made, or Doddy couldn't confirm it. Try again.": "Plik nie powstał albo Doddy nie mógł tego potwierdzić. Spróbuj jeszcze raz."
 }

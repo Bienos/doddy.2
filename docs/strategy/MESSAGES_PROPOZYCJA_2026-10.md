@@ -1,6 +1,6 @@
 # Messages: jak łączy się z aplikacją i co Dodi wysyła sam (propozycja, 24 paź 2026)
 
-Do decyzji właściciela. Nic z tego nie jest zbudowane. Makiety: https://claude.ai/artifact/CmQEKD2mzAYpMZojFZkmDg (ekrany 3–5). Stan dzisiejszy i decyzje o wyglądzie: `docs/implementation/MESSAGES_IMESSAGE_STYLE.md`.
+Do decyzji właściciela. Zbudowany jest tylko pierwszy kawałek E3: Dodi proponuje plik, powstaje po dotknięciu (ADR-606, niesprawdzone na Macu). Reszta nie jest zbudowana. Makiety: https://claude.ai/artifact/CmQEKD2mzAYpMZojFZkmDg (ekrany 3–5). Stan dzisiejszy i decyzje o wyglądzie: `docs/implementation/MESSAGES_IMESSAGE_STYLE.md`.
 
 ## Zasady (nie do negocjacji, z konstytucji)
 

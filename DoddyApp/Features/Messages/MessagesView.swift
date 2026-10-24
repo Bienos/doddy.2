@@ -7,8 +7,8 @@ import UIKit
 /// notes (with the notes shown) or is a general answer that is not from their notes. What each line may
 /// claim is decided by `ThreadRules`; this view only draws it.
 ///
-/// It is drawn like the iPhone's Messages (ADR-605): blue bubbles for you on the right, grey for Doddy on the
-/// left, a tail on the last bubble of a run, a typing bubble while the answer is on its way, a capsule
+/// It is drawn like the iPhone's Messages (ADR-605): orange bubbles for you on the right, Doddy's on the
+/// left in the app's quiet surface, a tail on the last bubble of a run, a typing bubble while the answer is on its way, a capsule
 /// composer with a round send button. Two things differ on purpose: there is no "Delivered" or "Read"
 /// (nothing here can know either, `ThreadRules.deliveryLine`), and Doddy says he is an AI.
 struct MessagesView: View {
@@ -251,14 +251,20 @@ struct MessagesView: View {
     private func doddyRow(_ message: ThreadMessage, tail: Bool) -> some View {
         let notes = sources(of: message)
         return VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 0) {
-                MessageBubble(text: message.text, fromUser: false, tail: tail)
-                    .accessibilityLabel("Doddy: \(message.text)")
-                    .accessibilityIdentifier("ask.answer")
-                Spacer(minLength: 56)
+            // A file Doddy made is a card with Open; it is not an answer, so it has no "from your notes" line.
+            if let document = message.document {
+                fileBubble(document)
+            } else {
+                HStack(spacing: 0) {
+                    MessageBubble(text: message.text, fromUser: false, tail: tail)
+                        .accessibilityLabel("Doddy: \(message.text)")
+                        .accessibilityIdentifier("ask.answer")
+                    Spacer(minLength: 56)
+                }
             }
 
             // Where the answer came from, small and grey under the bubble, as a caption would be.
+            if message.document == nil {
             Group {
                 switch message.basis {
                 case .savedNotes:
@@ -305,6 +311,126 @@ struct MessagesView: View {
             }
             .padding(.leading, 14)
             .padding(.trailing, 56)
+            }
+
+            if let proposal = model.proposals[message.id] {
+                proposalCard(proposal, answerID: message.id)
+            }
+        }
+    }
+
+    /// The file Doddy offered with an answer (ADR-606): the exact words that will be made, and nothing runs until
+    /// the person taps Make. Not now removes the offer; nothing was made, so nothing is deleted.
+    private func proposalCard(_ proposal: AssistantProposal, answerID: UUID) -> some View {
+        let isMaking = model.making == answerID
+        return VStack(alignment: .leading, spacing: 10) {
+            Label("Doddy can make a file", systemImage: Self.icon(forKind: proposal.kind.rawValue))
+                .font(.subheadline.bold())
+            kindName(proposal.kind.rawValue)
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+            Text(proposal.title)
+                .font(.headline)
+            Text(proposal.request)
+                .font(.callout)
+                .foregroundStyle(Theme.secondaryText)
+            if let failure = model.makeFailure, model.making == nil {
+                Label { failureText(failure) } icon: { Image(systemName: "exclamationmark.triangle") }
+                    .font(.footnote)
+                    .foregroundStyle(Theme.error)
+                    .accessibilityIdentifier("messages.makeFailed")
+            }
+            HStack(spacing: 10) {
+                Button {
+                    model.makeDocument(for: answerID, using: ServerThreadDocumentMaker())
+                } label: {
+                    if isMaking {
+                        HStack(spacing: 8) {
+                            ProgressView()
+                            Text("Making it…")
+                        }
+                    } else {
+                        Text("Make it")
+                    }
+                }
+                .buttonStyle(PrimaryButtonStyle())
+                .disabled(model.making != nil)
+                .accessibilityIdentifier("messages.makeFile")
+                Button("Not now") { model.dismissProposal(answerID) }
+                    .buttonStyle(SecondaryButtonStyle())
+                    .disabled(isMaking)
+                    .accessibilityIdentifier("messages.dismissFile")
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .padding(.trailing, 24)
+        .accessibilityElement(children: .contain)
+    }
+
+    /// The file bubble. Its link opens the file in Safari (Quick Look and Share); until the file is ready its page
+    /// says so and checks again by itself, so the thread holds no status.
+    private func fileBubble(_ document: ThreadDocument) -> some View {
+        Button {
+            UIApplication.shared.open(document.url)
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: Self.icon(forKind: document.kind))
+                    .font(.title2)
+                    .foregroundStyle(Theme.accentText)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(document.name)
+                        .font(.body.bold())
+                        .multilineTextAlignment(.leading)
+                    HStack(spacing: 4) {
+                        kindName(document.kind)
+                        Text(verbatim: "·")
+                        Text("Tap to open")
+                    }
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .padding(.trailing, 40)
+        .accessibilityIdentifier("messages.file")
+    }
+
+    private static func icon(forKind kind: String) -> String {
+        switch kind {
+        case "deck": "rectangle.on.rectangle"
+        case "spreadsheet": "tablecells"
+        case "pdf": "doc.richtext"
+        case "doc": "doc.text"
+        default: "doc.plaintext"
+        }
+    }
+
+    @ViewBuilder
+    private func failureText(_ failure: ThreadDocumentError) -> some View {
+        switch failure {
+        case .notConfigured: Text("Making files needs Doddy's server, which isn't set up in this build.")
+        case .offline: Text("Doddy's server couldn't be reached. Nothing was confirmed. Check your connection and try again.")
+        case .failed: Text("The file wasn't made, or Doddy couldn't confirm it. Try again.")
+        }
+    }
+
+    /// "Deck", "Document", … in the person's language (the same words as `ThreadDocument.label`).
+    @ViewBuilder
+    private func kindName(_ kind: String) -> some View {
+        switch kind {
+        case "deck": Text("Deck")
+        case "doc": Text("Document")
+        case "spreadsheet": Text("Spreadsheet")
+        case "pdf": Text("PDF")
+        default: Text("Text")
         }
     }
 

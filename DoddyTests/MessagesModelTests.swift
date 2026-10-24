@@ -191,9 +191,140 @@ final class MessagesModelTests: XCTestCase {
         model.cancel()
         await settle(model)
     }
+
+    // MARK: Files from Doddy (ADR-606)
+
+    private let deck = AssistantProposal.make(kind: "deck", title: "Plan bety", request: "Dziesięć slajdów o becie.")!
+    private let link = URL(string: "https://doddy.example.com/d/abc")!
+
+    @MainActor
+    private func askedForAFile() async -> (MessagesModel, FakeThread, UUID) {
+        let (model, repository, _, service) = await loaded(client: ScriptedClient([.offer("Mogę to zrobić jako prezentację.", deck)]))
+        model.draft = "Zrób mi prezentację o becie"
+        model.send(using: service, policy: on, locale: "pl")
+        await settle(model)
+        return (model, repository, model.messages.last!.id)
+    }
+
+    @MainActor
+    private func settleMaking(_ model: MessagesModel) async {
+        for _ in 0..<400 where model.making != nil { try? await Task.sleep(for: .milliseconds(10)) }
+    }
+
+    @MainActor
+    func testAnOfferIsOnlyAnOfferNothingIsMadeUntilTheTap() async {
+        let maker = FakeMaker()
+        let (model, repository, answer) = await askedForAFile()
+        XCTAssertEqual(model.proposals[answer], deck)
+        XCTAssertEqual(model.messages.map(\.sender), [.user, .doddy])
+        XCTAssertNil(model.messages.last?.document)
+        let calls = await maker.calls
+        let saved = await repository.all()
+        XCTAssertTrue(calls.isEmpty, "the model proposed; no tool ran")
+        XCTAssertEqual(saved.count, 2, "only the question and the answer are saved")
+    }
+
+    @MainActor
+    func testTappingMakeAddsAFileBubbleAfterItIsSavedAndUsesUpTheOffer() async {
+        let maker = FakeMaker(.make(ThreadDocument(url: link, name: "Plan bety.pptx", kind: "deck")))
+        let (model, repository, answer) = await askedForAFile()
+        model.makeDocument(for: answer, using: maker)
+        XCTAssertEqual(model.making, answer)
+        await settleMaking(model)
+        XCTAssertNil(model.making)
+        XCTAssertNil(model.proposals[answer], "an offer is used once")
+        XCTAssertEqual(model.messages.last?.document, ThreadDocument(url: link, name: "Plan bety.pptx", kind: "deck"))
+        XCTAssertEqual(model.messages.last?.sender, .doddy)
+        let calls = await maker.calls
+        let saved = await repository.all()
+        XCTAssertEqual(calls, [deck], "exactly the words on the card")
+        XCTAssertEqual(saved, model.messages, "the file bubble is saved like any message")
+    }
+
+    @MainActor
+    func testAFailedMakeKeepsTheOfferSaysWhyAndCanBeTriedAgain() async {
+        let maker = FakeMaker(.fail(.offline), .make(ThreadDocument(url: link, name: "Plan bety.pptx", kind: "deck")))
+        let (model, _, answer) = await askedForAFile()
+        model.makeDocument(for: answer, using: maker)
+        await settleMaking(model)
+        XCTAssertEqual(model.makeFailure, .offline)
+        XCTAssertEqual(model.proposals[answer], deck, "nothing was made, so the offer stays")
+        XCTAssertEqual(model.messages.count, 2)
+
+        model.makeDocument(for: answer, using: maker)
+        XCTAssertNil(model.makeFailure, "a new try clears the old failure")
+        await settleMaking(model)
+        XCTAssertNotNil(model.messages.last?.document)
+    }
+
+    @MainActor
+    func testASecondTapWhileMakingMakesNothingTwiceAndNoServerMeansNotConfigured() async {
+        let maker = FakeMaker(.hang)
+        let (model, _, answer) = await askedForAFile()
+        model.makeDocument(for: answer, using: maker)
+        model.makeDocument(for: answer, using: maker)
+        try? await Task.sleep(for: .milliseconds(50))
+        let calls = await maker.calls
+        XCTAssertEqual(calls.count, 1)
+        model.dismissProposal(answer)
+        XCTAssertEqual(model.proposals[answer], deck, "cannot decline while it is being made")
+
+        let (other, _, again) = await askedForAFile()
+        other.makeDocument(for: again, using: nil)
+        XCTAssertEqual(other.makeFailure, .notConfigured)
+        XCTAssertNil(other.making)
+    }
+
+    @MainActor
+    func testNotNowRemovesTheOfferAndMakesNothing() async {
+        let maker = FakeMaker()
+        let (model, repository, answer) = await askedForAFile()
+        model.dismissProposal(answer)
+        XCTAssertNil(model.proposals[answer])
+        model.makeDocument(for: answer, using: maker)
+        let calls = await maker.calls
+        let saved = await repository.all()
+        XCTAssertNil(model.making)
+        XCTAssertTrue(calls.isEmpty)
+        XCTAssertEqual(saved.count, 2)
+    }
+
+    @MainActor
+    func testDeletingTheConversationAlsoDropsTheOffers() async {
+        let (model, _, answer) = await askedForAFile()
+        await model.deleteConversation()
+        XCTAssertNil(model.proposals[answer])
+        XCTAssertTrue(model.messages.isEmpty)
+    }
 }
 
 // MARK: Fakes
+
+private actor FakeMaker: ThreadDocumentMaker {
+    enum Step {
+        case make(ThreadDocument)
+        case fail(ThreadDocumentError)
+        /// Waits until cancelled.
+        case hang
+    }
+
+    private var steps: [Step]
+    private(set) var calls: [AssistantProposal] = []
+
+    init(_ steps: Step...) { self.steps = steps }
+
+    func make(_ proposal: AssistantProposal) async throws -> ThreadDocument {
+        calls.append(proposal)
+        guard !steps.isEmpty else { throw ThreadDocumentError.failed }
+        switch steps.removeFirst() {
+        case .make(let document): return document
+        case .fail(let error): throw error
+        case .hang:
+            try await Task.sleep(for: .seconds(60))
+            throw ThreadDocumentError.failed
+        }
+    }
+}
 
 private final class TickingClock: @unchecked Sendable {
     private let lock = NSLock()
@@ -214,6 +345,8 @@ private struct NoNotes: RecallService {
 private actor ScriptedClient: AssistantClient {
     enum Step {
         case reply(String)
+        /// An answer that also offers a file (ADR-606).
+        case offer(String, AssistantProposal)
         case fail(AssistantError)
         /// Waits until the request is cancelled.
         case hang
@@ -229,6 +362,7 @@ private actor ScriptedClient: AssistantClient {
         guard !steps.isEmpty else { throw AssistantError.providerUnavailable }
         switch steps.removeFirst() {
         case .reply(let text): return AssistantReply(text: text)
+        case .offer(let text, let proposal): return AssistantReply(text: text, proposal: proposal)
         case .fail(let error): throw error
         case .hang:
             try await Task.sleep(for: .seconds(60))
