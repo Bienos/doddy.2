@@ -92,7 +92,7 @@ Fitbit + Gemini personal health coach (preview, expanded to 37 countries includi
 - **B. A + Garmin and COROS directly:** plans on those watches; needs a server with OAuth, Garmin's business application and AI consent.
 - **C. Aggregator:** fastest multi-vendor route; $300–999 a month, a further health-data processor, and still no Strava or Oura for AI.
 
-Suggested order for A (each a small change with tests; a new milestone, so it needs the owner's go-ahead before any code): HealthKit permissions and reads with a "what Doddy can see" screen → "How did it go?" and a weekly summary (numbers computed in code) → voice gym log and wger exercises → running and strength plans with the rules above → WorkoutKit and calendar after a yes → food (per the open decision 3) → extras (readiness from HRV and sleep, Garmin/COROS, photo estimates, live coaching in headphones).
+Suggested order for A (each a small change with tests; a new milestone, so it needs the owner's go-ahead before any code): HealthKit permissions and reads with a "what Doddy can see" screen → "How did it go?" and a weekly summary (numbers computed in code) → voice gym log and wger exercises → running and strength plans with the rules above → WorkoutKit and calendar after a yes → food (tips by default, counting calories and protein only after the person turns it on and passes the check; ADR-620) → extras (readiness from HRV and sleep, Garmin/COROS, photo estimates, live coaching in headphones).
 
 ## Sources
 
