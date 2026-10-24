@@ -401,6 +401,31 @@ enum IslandSceneChecks {
         expect(b.board == .calmTide && b.time == .countdown(end), "breathing")
         expect(!b.title.contains("in") || b.title == "Breathing", "breathing shows no phase")
 
+        // The stopwatch counts up (ADR-614): a ticking clock with no end, never stale.
+        let watch = DoddyToolAttributes(kind: .stopwatch, startedAt: now, duration: 0)
+        let from = now.addingTimeInterval(-90)
+        let counting = watch.islandScene(.init(isPaused: false, endsAt: nil, label: "Bieg", countsFrom: from), isStale: false, now: now)
+        expect(counting.board == .tinyPromise && counting.scenario == 0 && counting.live, "stopwatch running")
+        expect(counting.bigTitle == .elapsed && counting.compactSign == .elapsed && counting.subtitle == "Bieg", "stopwatch counts up")
+        expect(counting.label == "STOPWATCH" && counting.time == .text("Running"), "stopwatch label")
+        expect(watch.clockStart(.init(isPaused: false, countsFrom: from)) == from, "the clock starts where the last resume put it")
+        expect(watch.clockStart(.init(isPaused: true)) == now, "no count-from falls back to the start")
+        expect(DoddyToolAttributes(kind: .focus, startedAt: now, duration: 60).clockStart(.init(isPaused: false, countsFrom: from)) == now,
+               "only a stopwatch moves its clock")
+        let stopwatchPaused = watch.islandScene(.init(isPaused: true, endsAt: nil, elapsed: 727), isStale: false, now: now)
+        expect(stopwatchPaused.scenario == 1 && !stopwatchPaused.live && stopwatchPaused.bigTitle == .bigText("12:07"), "stopwatch paused 12:07")
+        expect(stopwatchPaused.compactSign == .text("12:07"), "stopwatch paused compact shows the reading")
+        let stopwatchStopped = watch.islandScene(.init(isPaused: false, endsAt: nil, isFinished: true, elapsed: 3_727), isStale: false, now: now)
+        expect(stopwatchStopped.title == "Stopped at 1:02:07" && !stopwatchStopped.live && stopwatchStopped.compactSign == .check, "stopwatch stopped")
+        func watchPose(_ state: DoddyToolAttributes.ContentState) -> IslandPose? {
+            var s = state
+            s.islandStyle = .wholeDoddy
+            return watch.islandScene(s, isStale: false, now: now).pose
+        }
+        expect(watchPose(.init(isPaused: false, countsFrom: from)) == .tiptoe, "whole doddy on his toes while it runs")
+        expect(watchPose(.init(isPaused: true, elapsed: 5)) == .crosslegged, "whole doddy waits while paused")
+        expect(watchPose(.init(isPaused: false, isFinished: true, elapsed: 5)) == .fistpump, "whole doddy when stopped")
+
         let read = DoddyToolAttributes(kind: .readAloud, startedAt: now, duration: 0)
         expect(read.islandScene(.init(isPaused: false), isStale: false, now: now).compactSign == .bars, "reading")
         let lost = read.islandScene(.init(isPaused: false), isStale: true, now: now)

@@ -9,6 +9,8 @@ import Foundation
 struct DoddyToolAttributes: ActivityAttributes {
     enum Kind: String, Codable, Hashable {
         case focus, breathing, readAloud
+        /// A stopwatch that counts up (ADR-614).
+        case stopwatch
     }
 
     struct ContentState: Codable, Hashable {
@@ -24,10 +26,22 @@ struct DoddyToolAttributes: ActivityAttributes {
         /// The island style picked in Settings when this was sent (ADR-299): with Whole Doddy the
         /// read-aloud island shows his reading pose. Nil from older builds: the board's art.
         var islandStyle: IslandStyle?
+        /// Stopwatch only (ADR-614): when a clock that counts up from zero would have started to
+        /// show the time so far; the Lock Screen's text ticks from it with no updates from the app.
+        /// Nil while paused or stopped.
+        var countsFrom: Date?
+        /// Stopwatch only: the time counted so far, shown while paused and after it was stopped.
+        var elapsed: TimeInterval?
     }
 
     var kind: Kind
     var startedAt: Date
+
+    /// Where the count-up clock starts: a stopwatch's moves with every pause and resume, so it
+    /// comes from the state; everything else counts from `startedAt`.
+    func clockStart(_ state: ContentState) -> Date {
+        kind == .stopwatch ? (state.countsFrom ?? startedAt) : startedAt
+    }
     /// Focus and breathing: the length chosen.
     var duration: TimeInterval
 }

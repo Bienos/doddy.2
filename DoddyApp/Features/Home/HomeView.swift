@@ -140,6 +140,7 @@ struct HomeView: View {
             .sheet(item: $tool) { tool in
                 switch tool {
                 case .focus: FocusView()
+                case .stopwatch: StopwatchView()
                 }
             }
             .fullScreenCover(isPresented: $showAsk) {
@@ -232,6 +233,15 @@ struct HomeView: View {
                     }
                 }
                 .accessibilityIdentifier("home.focus")
+                // Counts up (ADR-614).
+                Button { tool = .stopwatch } label: {
+                    if StopwatchController.shared.watch.map({ !$0.isOver }) ?? false {
+                        Label("Stopwatch · on", systemImage: "stopwatch")
+                    } else {
+                        Label("Stopwatch", systemImage: "stopwatch")
+                    }
+                }
+                .accessibilityIdentifier("home.stopwatch")
                 // Today only points to Settings until something is connected (ADR-326).
                 if hadFirstConversation || calendarOn || remindersOn {
                     Button { showToday = true } label: { Label("Today", systemImage: "calendar") }
@@ -1053,7 +1063,7 @@ private struct SlideIn: ViewModifier {
 }
 
 private enum HomeTool: String, Identifiable {
-    case focus
+    case focus, stopwatch
     var id: String { rawValue }
 }
 

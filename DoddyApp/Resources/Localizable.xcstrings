@@ -13519,6 +13519,28 @@
         }
       }
     },
+    "Counting up": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liczy w górę"
+          }
+        }
+      }
+    },
+    "Counts up until you stop it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liczy w górę, dopóki go nie zatrzymasz."
+          }
+        }
+      }
+    },
     "Create": {
       "extractionState": "manual",
       "localizations": {
@@ -50174,6 +50196,17 @@
         }
       }
     },
+    "Pause": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pauza"
+          }
+        }
+      }
+    },
     "Pause DODDY Recording": {
       "extractionState": "manual",
       "localizations": {
@@ -53762,6 +53795,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "已在 Doddy 中就绪"
+          }
+        }
+      }
+    },
+    "Ready when you are": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gotowy, kiedy Ty"
           }
         }
       }
@@ -57394,6 +57438,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "从备份文件恢复"
+          }
+        }
+      }
+    },
+    "Resume": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wznów"
           }
         }
       }
@@ -66302,6 +66357,17 @@
         }
       }
     },
+    "Start stopwatch": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Włącz stoper"
+          }
+        }
+      }
+    },
     "Start talking when Doddy opens.": {
       "extractionState": "manual",
       "localizations": {
@@ -67678,6 +67744,17 @@
         }
       }
     },
+    "Stopped at %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zatrzymany na %@"
+          }
+        }
+      }
+    },
     "Stops the recording and saves it in Recordings.": {
       "extractionState": "manual",
       "localizations": {
@@ -67685,6 +67762,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zatrzymuje nagrywanie i zapisuje je w Nagraniach."
+          }
+        }
+      }
+    },
+    "Stopwatch": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stoper"
+          }
+        }
+      }
+    },
+    "Stopwatch · on": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stoper · włączony"
           }
         }
       }
@@ -76810,6 +76909,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "这不是 Google Keep 笔记。"
+          }
+        }
+      }
+    },
+    "This line shows on your Lock Screen and in the Dynamic Island while the stopwatch runs. Leave it empty to show only the time.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ta linijka pokazuje się na ekranie blokady i w Dynamic Island, gdy stoper działa. Zostaw puste, żeby pokazać tylko czas."
           }
         }
       }
