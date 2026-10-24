@@ -124,6 +124,10 @@ struct ListDetailView: View {
     /// The last open item was just ticked (ADR-313): Doddy jumps, once.
     @State private var finishedNow = false
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
+    /// Shopping list+ (ADR-631): which list is the At home list, on this iPhone; "" for none.
+    @AppStorage(HomeStock.preferenceKey) private var homeListID = ""
+
+    private var homeList: DoddyList? { HomeStock.list(storedID: homeListID, in: store.lists) }
 
     var body: some View {
         Group {
@@ -155,6 +159,12 @@ struct ListDetailView: View {
                     Text(list.name).font(.largeTitle.weight(.medium)).accessibilityAddTraits(.isHeader)
                         .accessibilityIdentifier("list.name")
                     Text(list.summary).font(.subheadline).foregroundStyle(Theme.secondaryText)
+                    if homeList?.id == list.id {
+                        Label("Your At home list", systemImage: "house")
+                            .font(.footnote)
+                            .foregroundStyle(Theme.secondaryText)
+                            .accessibilityIdentifier("list.atHome")
+                    }
                 }
                 .listRowBackground(Theme.canvas)
                 if let link = sharing.isShared(list.id) {
@@ -244,7 +254,7 @@ struct ListDetailView: View {
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
         .safeAreaInset(edge: .bottom) {
-            if let undo = store.listUndo, undo.listID == listID {
+            if let undo = store.listUndo, undo.listID == listID || undo.shownOn == listID {
                 // A new identity per change, so a failed undo isn't carried to the next one (review F7).
                 ListUndoBar(undo: undo).id(undo.id)
             }
@@ -423,6 +433,7 @@ struct ListDetailView: View {
                     Button { confirmSharing = true } label: { Label("Share with people…", systemImage: "person.2") }
                 }
             }
+            atHomeMenu(list)
             // List templates (ADR-334): the items as written, ticks not kept.
             Button { saveTemplate(list) } label: { Label("Save as template", systemImage: "square.on.square") }
                 .disabled(list.items.isEmpty)
@@ -480,6 +491,59 @@ struct ListDetailView: View {
             .compactMap { $0 }.joined(separator: " · ")
     }
 
+    /// Shopping list+ (ADR-631): choose the At home list, and add ticked items between it and
+    /// another list. Each move is one ordinary add to one list, with its Undo.
+    @ViewBuilder
+    private func atHomeMenu(_ list: DoddyList) -> some View {
+        if homeList?.id == list.id {
+            Button { homeListID = "" } label: { Label("Not my At home list", systemImage: "house.slash") }
+            let others = store.lists.filter { $0.id != list.id }
+            if !list.done.isEmpty, !others.isEmpty {
+                Menu {
+                    ForEach(others) { other in
+                        Button(other.name) { addTicked(from: list, to: other) }
+                    }
+                } label: { Label("Add ticked to a list", systemImage: "cart.badge.plus") }
+            }
+        } else {
+            Button { homeListID = list.id.uuidString } label: { Label("This is my At home list", systemImage: "house") }
+            if let home = homeList, !list.done.isEmpty {
+                Button { addTicked(from: list, to: home) } label: {
+                    Label(String(format: NSLocalizedString("Add ticked to “%@”", comment: ""), home.name), systemImage: "house")
+                }
+            }
+        }
+    }
+
+    private func addTicked(from list: DoddyList, to target: DoddyList) {
+        let words = HomeStock.tickedWords(of: list)
+        guard !words.isEmpty else { return }
+        errorMessage = nil
+        Task {
+            do {
+                let result = try await store.addToList(words, listID: target.id, source: .typed, shownOn: list.id)
+                addNote = Self.addedTickedNote(result, to: target.name)
+            } catch {
+                errorMessage = UserFacingError.listMessage(for: error)
+            }
+        }
+    }
+
+    /// "Added 3 to “W domu”. Already there: rice."
+    static func addedTickedNote(_ result: ListAddResult, to name: String) -> String {
+        var parts: [String] = []
+        if !result.added.isEmpty {
+            parts.append(String(format: NSLocalizedString("Added %lld to “%@”.", comment: ""), result.added.count, name))
+        }
+        if !result.alreadyThere.isEmpty {
+            parts.append(String(format: NSLocalizedString("Already there: %@.", comment: ""), result.alreadyThere.joined(separator: ", ")))
+        }
+        if !result.noRoom.isEmpty {
+            parts.append(String(format: NSLocalizedString("No room for %lld: “%@” is full.", comment: ""), result.noRoom.count, name))
+        }
+        return parts.isEmpty ? NSLocalizedString("Nothing was added.", comment: "") : parts.joined(separator: " ")
+    }
+
     private func add(_ list: DoddyList) async {
         guard let text = ListText.cleaned(newItem) else { return }
         errorMessage = nil
@@ -490,6 +554,11 @@ struct ListDetailView: View {
                 : "The list is full (\(ListLimits.itemsPerList) items).")
                 : "An item can be up to \(ListLimits.itemLength) characters.")
                 : "“\(text)” is already on the list."
+            // Shopping list+ (ADR-631): added anyway; the At home list has it open.
+            let atHome = HomeStock.onHomeList(result.added.map(\.text), home: homeList, addingTo: list.id)
+            if addNote == nil, !atHome.isEmpty, let home = homeList {
+                addNote = String(format: NSLocalizedString("Also on “%@”: %@.", comment: ""), home.name, atHome.joined(separator: ", "))
+            }
             addFocused = true
         } catch {
             errorMessage = UserFacingError.listMessage(for: error)

@@ -3655,6 +3655,28 @@
         }
       }
     },
+    "Add ticked to a list": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj odhaczone do listy"
+          }
+        }
+      }
+    },
+    "Add ticked to “%@”": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj odhaczone do „%@”"
+          }
+        }
+      }
+    },
     "Add to": {
       "extractionState": "manual",
       "localizations": {
@@ -3898,6 +3920,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "已将 %lld 项添加到“%@”。"
+          }
+        }
+      }
+    },
+    "Added %lld to “%@”.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodano %lld do listy „%@”."
           }
         }
       }
@@ -5045,6 +5078,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "清单上已经有了"
+          }
+        }
+      }
+    },
+    "Already there: %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Już tam są: %@."
+          }
+        }
+      }
+    },
+    "Also on “%@”: %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na liście „%@” jest też: %@."
           }
         }
       }
@@ -40322,6 +40377,17 @@
         }
       }
     },
+    "No room for %lld: “%@” is full.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie zmieściło się: %lld, lista „%@” jest pełna."
+          }
+        }
+      }
+    },
     "No speech was found in this recording.": {
       "extractionState": "manual",
       "localizations": {
@@ -41520,6 +41586,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nieznane: %@. Nigdy nie liczone jako zero."
+          }
+        }
+      }
+    },
+    "Not my At home list": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To już nie jest lista domowa"
           }
         }
       }
@@ -44036,6 +44113,17 @@
         }
       }
     },
+    "Nothing was added.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nic nie zostało dodane."
+          }
+        }
+      }
+    },
     "Nothing was kept, so nothing was deleted.": {
       "extractionState": "manual",
       "localizations": {
@@ -45862,6 +45950,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "W czyim imieniu"
+          }
+        }
+      }
+    },
+    "On your At home list": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jest na Twojej liście domowej"
           }
         }
       }
@@ -76435,6 +76534,17 @@
         }
       }
     },
+    "This is my At home list": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ustaw jako listę domową (co mam w domu)"
+          }
+        }
+      }
+    },
     "This is the name you say to ask for the routine. Its steps stay as they are.": {
       "extractionState": "manual",
       "localizations": {
@@ -89126,6 +89236,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dzisiejsze sprawdzenia gazetek się skończyły. Jutro możesz sprawdzić znowu."
+          }
+        }
+      }
+    },
+    "Your At home list": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoja lista domowa (co masz w domu)"
           }
         }
       }

@@ -1951,5 +1951,16 @@
   "Basket": "Koszyk",
   "Some prices couldn't be confirmed by Doddy. Check the leaflet.": "Części cen Doddy nie mógł potwierdzić. Sprawdź w gazetce.",
   "Saves %@ against one shop. Worth it if you pass both anyway.": "%@ taniej niż w jednym sklepie. Warto, jeśli i tak jedziesz obok obu.",
-  "Not in these leaflets: %@": "Nie ma w tych gazetkach: %@"
+  "Not in these leaflets: %@": "Nie ma w tych gazetkach: %@",
+  "Your At home list": "Twoja lista domowa (co masz w domu)",
+  "This is my At home list": "Ustaw jako listę domową (co mam w domu)",
+  "Not my At home list": "To już nie jest lista domowa",
+  "Add ticked to a list": "Dodaj odhaczone do listy",
+  "Add ticked to “%@”": "Dodaj odhaczone do „%@”",
+  "Added %lld to “%@”.": "Dodano %lld do listy „%@”.",
+  "Already there: %@.": "Już tam są: %@.",
+  "No room for %lld: “%@” is full.": "Nie zmieściło się: %lld, lista „%@” jest pełna.",
+  "Nothing was added.": "Nic nie zostało dodane.",
+  "Also on “%@”: %@.": "Na liście „%@” jest też: %@.",
+  "On your At home list": "Jest na Twojej liście domowej"
 }
