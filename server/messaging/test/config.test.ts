@@ -118,3 +118,28 @@ test("leaflets (ADR-609): off by default, Haiku 5.5 reads pages, 40 pages per ch
     assert.throws(() => loadConfig({ DATABASE_URL: "postgres://x/y", ...bad }), JSON.stringify(bad));
   }
 });
+
+test("price watches (shopping stage 2): off by default, 5 open, a check every 6 hours; empty values count as unset; limits are validated", () => {
+  const c = loadConfig({ DATABASE_URL: "postgres://x/y", WATCHES_ENABLED: "", WATCHES_MAX_OPEN: "", WATCHES_CHECK_HOURS: "" });
+  assert.deepEqual(c.watchSettings, { enabled: false, maxOpen: 5, checkHours: 6 });
+  assert.deepEqual(loadConfig({ DATABASE_URL: "postgres://x/y" }).watchSettings, { enabled: false, maxOpen: 5, checkHours: 6 });
+  assert.equal(loadConfig({ DATABASE_URL: "postgres://x/y", WATCHES_ENABLED: "1" }).watchSettings.enabled, true);
+  const set = loadConfig({ DATABASE_URL: "postgres://x/y", WATCHES_ENABLED: "1", WATCHES_MAX_OPEN: "20", WATCHES_CHECK_HOURS: "24" });
+  assert.deepEqual(set.watchSettings, { enabled: true, maxOpen: 20, checkHours: 24 });
+  const low = loadConfig({ DATABASE_URL: "postgres://x/y", WATCHES_MAX_OPEN: "1", WATCHES_CHECK_HOURS: "1" });
+  assert.deepEqual(low.watchSettings, { enabled: false, maxOpen: 1, checkHours: 1 });
+  const bad: Record<string, string>[] = [
+    { WATCHES_ENABLED: "yes" }, { WATCHES_ENABLED: "true" }, { WATCHES_MAX_OPEN: "0" }, { WATCHES_MAX_OPEN: "21" }, { WATCHES_MAX_OPEN: "2.5" },
+    { WATCHES_CHECK_HOURS: "0" }, { WATCHES_CHECK_HOURS: "25" }, { WATCHES_CHECK_HOURS: "1.5" }, { WATCHES_CHECK_HOURS: "six" },
+  ];
+  for (const env of bad) assert.throws(() => loadConfig({ DATABASE_URL: "postgres://x/y", ...env }), JSON.stringify(env));
+});
+
+test("price watches read pages through the one shared polite fetcher, with the configured settings", async () => {
+  const { providersFrom } = await import("../src/providers/index.js");
+  const { PoliteFetcher } = await import("../src/deals/fetcher.js");
+  const p = providersFrom(loadConfig({ DATABASE_URL: "postgres://x/y", WATCHES_ENABLED: "1", WATCHES_CHECK_HOURS: "12", WATCHES_MAX_OPEN: "3" }));
+  assert.ok(p.watches.fetcher instanceof PoliteFetcher);
+  assert.equal(p.watches.fetcher, p.deals.fetcher, "the same instance as the leaflets (one robots.txt cache, one user agent)");
+  assert.deepEqual(p.watches.settings, { enabled: true, maxOpen: 3, checkHours: 12 });
+});
