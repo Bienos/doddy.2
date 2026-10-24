@@ -54,6 +54,29 @@ final class MeaningSearchTests: XCTestCase {
         XCTAssertTrue(none.isEmpty, "the word search already showed it; lists and samples never count")
     }
 
+    /// Counts the texts it reads, so a test can see what a cancelled search still did.
+    private final class CountingEmbedder: MeaningEmbedder, @unchecked Sendable {
+        private let lock = NSLock()
+        private var count = 0
+        var calls: Int { lock.withLock { count } }
+        func vector(for text: String) async -> [Float]? {
+            lock.withLock { count += 1 }
+            return [1, 0, 0, 0]
+        }
+    }
+
+    func testACancelledSearchStopsReadingNotes() async throws {
+        let embedder = CountingEmbedder()
+        let index = MeaningIndex(embedder: embedder)
+        let notes = try (0..<50).map { try note("note \($0)") }
+        let task = Task { await index.search("dumplings place", in: notes, excluding: []) }
+        task.cancel()
+        let hits = await task.value
+        XCTAssertTrue(hits.isEmpty)
+        // Only the question was read (or nothing, if the task never started): not the fifty notes.
+        XCTAssertLessThanOrEqual(embedder.calls, 1)
+    }
+
     func testShortOrUnreadableQuestionsFindNothing() async throws {
         let index = MeaningIndex(embedder: embedder)
         let notes = [try note("dumplings")]
