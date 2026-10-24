@@ -54,7 +54,7 @@ export function providersFrom(config: Config) {
         new ShoppingErrandResearcher(config.anthropicApiKey, {
           offers: new SerperOfferSource(ss.serperApiKey), fetcher,
           maxOfferSearches: ss.maxOfferSearches, maxPageChecks: ss.maxPageChecks,
-        }, { model: ss.model, effort: ss.effort }))
+        }, { model: ss.model, effort: ss.effort, premiumModel: ss.premiumModel, premiumAccountIds: ss.premiumAccountIds }))
       : undefined,
   };
   // Leaflets (ADR-609): without an Anthropic key, Dino and Rossmann still answer from their own data

@@ -14,10 +14,10 @@
         },
         {
           "title": "Zmywarka do zabudowy 45 cm, 47 dB, 9 kompletów",
-          "detail": "Najtańsza · O 5 dB głośniejsza od mojego wyboru. · Cena z listy Google Shopping",
+          "detail": "Najtańsza · O 5 dB głośniejsza od mojego wyboru. · Cena sprawdzona na stronie sklepu",
           "price": "1 449,00 zł",
-          "url": "https://www.google.com/shopping/product/1234567890",
-          "site": "google.com"
+          "url": "https://www.euro.com.pl/zmywarki-do-zabudowy/przyklad-47.bhtml",
+          "site": "euro.com.pl"
         },
         {
           "title": "Zmywarka do zabudowy 45 cm, 39 dB, 10 kompletów",
@@ -34,7 +34,7 @@
   "next": ["Sprawdzić montaż?", "Pilnować ceny?"],
   "sources": [
     { "title": "Zmywarka 45 cm, 42 dB", "url": "https://www.mediaexpert.pl/agd-do-zabudowy/zmywarki-do-zabudowy/przyklad-45", "site": "mediaexpert.pl" },
-    { "title": "Google Shopping: zmywarka 45 cm", "url": "https://www.google.com/shopping/product/1234567890", "site": "google.com" },
+    { "title": "Zmywarka 45 cm, 47 dB", "url": "https://www.euro.com.pl/zmywarki-do-zabudowy/przyklad-47.bhtml", "site": "euro.com.pl" },
     { "title": "Zmywarka 45 cm, 39 dB", "url": "https://www.x-kom.pl/p/przyklad-zmywarka-45", "site": "x-kom.pl" }
   ],
   "checkedAt": "2026-10-24T12:05:00.000Z",
@@ -60,9 +60,9 @@
         "title": "Zmywarka do zabudowy 45 cm, 47 dB, 9 kompletów",
         "shop": "RTV Euro AGD",
         "price": { "minor": 144900, "currency": "PLN" },
-        "url": "https://www.google.com/shopping/product/1234567890",
-        "site": "google.com",
-        "evidence": "listing",
+        "url": "https://www.euro.com.pl/zmywarki-do-zabudowy/przyklad-47.bhtml",
+        "site": "euro.com.pl",
+        "evidence": "shop_page",
         "seenAt": "2026-10-24T12:03:00.000Z",
         "notes": "47 dB · 9 kompletów · klasa E"
       },

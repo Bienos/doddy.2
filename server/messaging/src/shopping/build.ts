@@ -78,9 +78,51 @@ export function keepBackedSentences(text: string, allowed: ReadonlySet<number>, 
   return out || undefined;
 }
 
+/** Confirmed: the code read this price on the shop's own page. Only these can be picked, priced or shown (ADR-611). */
+export const isConfirmed = (o: RegisteredOffer): boolean => o.evidence === "shop_page";
+
+/** One line, written by the code, naming the shops whose offers were found only in Google's list (no prices). */
+export function unconfirmedLine(leads: readonly RegisteredOffer[], lang: string): string | undefined {
+  if (!leads.length) return undefined;
+  const shops = [...new Set(leads.map((o) => o.shop))];
+  const shown = shops.slice(0, 3).join(", ") + (shops.length > 3 ? (lang === "pl" ? " i inne" : " and others") : "");
+  return shorten(lang === "pl"
+    ? `Oferty z listy Google Shopping bez potwierdzenia na stronie sklepu (nie podaję ich cen): ${shown}.`
+    : `Offers from the Google Shopping list not confirmed on the shop's page (prices not shown): ${shown}.`, SHOPPING_LIMITS.line);
+}
+
+/**
+ * The result when no price could be confirmed on a shop's own page: an honest research-style card with no
+ * `shopping` block and no price anywhere (ADR-611: "only confirmed prices, and say so when there are none").
+ * Offers found only in Google's list appear by name and shop, never with a price or a link.
+ */
+export function buildUnconfirmedResult(registry: OfferRegistry, content: { language: string }, now: Date): ErrandResult | undefined {
+  const pl = content.language === "pl";
+  const leads = registry.list().filter((o) => !isConfirmed(o));
+  const items = leads.slice(0, LIMITS.items).map((o) => ({
+    title: shorten(o.title, LIMITS.itemTitle),
+    detail: shorten(pl ? `${o.shop} · cena niepotwierdzona na stronie sklepu, więc bez ceny` : `${o.shop} · price not confirmed on the shop's page, so none shown`, LIMITS.detail),
+  }));
+  const answer = pl
+    ? "Nie udało mi się potwierdzić ceny na stronie żadnego sklepu, więc nie podaję żadnych cen."
+      + (leads.length ? " Znalazłem tylko oferty z listy Google Shopping." : " Nie znalazłem też żadnej oferty z odczytywalną ceną.")
+    : "I couldn't confirm a price on any shop's own page, so I'm not giving any prices."
+      + (leads.length ? " I only found offers from the Google Shopping list." : " I also found no offer with a readable price.");
+  const draft = {
+    answer,
+    sections: items.length ? [{ heading: pl ? "Bez potwierdzonej ceny" : "Not confirmed", kind: "brief" as const, items }] : [],
+    next: [pl ? "Spróbuj jeszcze raz za jakiś czas albo opisz dokładniej, czego szukasz." : "Try again later, or describe more exactly what you're looking for."],
+    sources: [],
+    checkedAt: now.toISOString(),
+  };
+  const parsed = ErrandResultSchema.safeParse(draft);
+  return parsed.success ? parsed.data : undefined;
+}
+
 /**
  * Builds the stored result. Returns undefined (the errand fails as unreadable_result) when no `best`
- * pick names a registered offer.
+ * pick names an offer confirmed on a shop's page. Offers known only from Google's list are never picked,
+ * priced or shown; one code-written line says so.
  */
 export function buildShoppingResult(card: ShoppingCardOutput, registry: OfferRegistry, content: ShoppingContent, now: Date):
   { result: ErrandResult; stats: ShoppingBuildStats } | undefined {
@@ -93,7 +135,7 @@ export function buildShoppingResult(card: ShoppingCardOutput, registry: OfferReg
   for (const p of card.picks) {
     const offer = registry.get(p.offerId.trim());
     const dupRole = p.role !== "alternative" && picks.some((x) => x.role === p.role);
-    if (!offer || dupRole || picks.some((x) => x.offer.id === offer.id) || picks.length >= SHOPPING_LIMITS.picks) {
+    if (!offer || !isConfirmed(offer) || dupRole || picks.some((x) => x.offer.id === offer.id) || picks.length >= SHOPPING_LIMITS.picks) {
       stats.droppedPicks++;
       continue;
     }
@@ -124,7 +166,7 @@ export function buildShoppingResult(card: ShoppingCardOutput, registry: OfferReg
 
   // Amounts a model sentence may state: offer prices, the budget, and differences the code can compute.
   const allowed = new Set<number>();
-  const prices = registry.list().map((o) => o.price.minor);
+  const prices = registry.list().filter(isConfirmed).map((o) => o.price.minor);
   for (const a of prices) allowed.add(a);
   if (budget) {
     allowed.add(budget.minor);
@@ -145,7 +187,8 @@ export function buildShoppingResult(card: ShoppingCardOutput, registry: OfferReg
   for (const n of card.offerNotes) {
     const id = n.offerId.trim();
     const t = line(n.notes, SHOPPING_LIMITS.notes);
-    if (registry.get(id) && t && !notes.has(id)) notes.set(id, t);
+    const noted = registry.get(id);
+    if (noted && isConfirmed(noted) && t && !notes.has(id)) notes.set(id, t);
   }
   const ids: string[] = [];
   for (const p of picks) ids.push(p.offer.id);
@@ -166,6 +209,7 @@ export function buildShoppingResult(card: ShoppingCardOutput, registry: OfferReg
     return [{ role: p.role, offerId: p.offer.id, why, tradeoff: line(p.tradeoff), overBudget: over(p.offer) }];
   });
 
+  const notConfirmed = unconfirmedLine(registry.list().filter((o) => !isConfirmed(o)), lang);
   const shopping: ShoppingResult = {
     priorities: content.priorities,
     budget,
@@ -173,7 +217,8 @@ export function buildShoppingResult(card: ShoppingCardOutput, registry: OfferReg
     picks: shoppingPicks,
     howChosen: lines(card.howChosen, SHOPPING_LIMITS.howChosen),
     watchOuts: lines(card.watchOuts, SHOPPING_LIMITS.watchOuts),
-    unknowns: lines(card.unknowns, SHOPPING_LIMITS.unknowns),
+    // The code's own line about unconfirmed offers comes first, so the cap never cuts it.
+    unknowns: [...(notConfirmed ? [notConfirmed] : []), ...lines(card.unknowns, SHOPPING_LIMITS.unknowns)].slice(0, SHOPPING_LIMITS.unknowns),
     rejected: lines(card.rejected, SHOPPING_LIMITS.rejected),
     stats: { offersSeen: Math.max(registry.seen, registry.size), shops: registry.shopCount },
   };

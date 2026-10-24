@@ -259,7 +259,7 @@ final class ShoppingTests: XCTestCase {
         XCTAssertEqual(o1.seenAt, ServerDates.parse("2026-10-24T12:02:00.000Z"))
         XCTAssertEqual(o1.gtin, "5901234123457")
         XCTAssertEqual(o1.notes, "42 dB · 10 kompletów · klasa C")
-        XCTAssertEqual(shopping.offers[1].evidence, .listing)
+        XCTAssertEqual(shopping.offers[1].evidence, .shopPage, "the server shows only offers confirmed on a shop's page")
         XCTAssertNil(shopping.offers[1].delivery)
         XCTAssertNil(shopping.offers[2].gtin)
         XCTAssertEqual(shopping.picks.map(\.role), [.best, .cheapest, .premium])
@@ -376,7 +376,7 @@ final class ShoppingTests: XCTestCase {
         let block = try XCTUnwrap(text.components(separatedBy: ToolData.begin).last?.components(separatedBy: ToolData.end).first)
         let nbsp = "\u{00A0}"
         XCTAssertTrue(block.contains("- Best pick: \"Zmywarka do zabudowy 45 cm, 42 dB, 10 kompletów\" · 1\(nbsp)899,00\(nbsp)zł at Media Expert · price checked on the shop's page, 2026-10-24 14:02"), block)
-        XCTAssertTrue(block.contains("- Cheapest: \"Zmywarka do zabudowy 45 cm, 47 dB, 9 kompletów\" · 1\(nbsp)449,00\(nbsp)zł at RTV Euro AGD · price from the Google Shopping list, 2026-10-24 14:03"))
+        XCTAssertTrue(block.contains("- Cheapest: \"Zmywarka do zabudowy 45 cm, 47 dB, 9 kompletów\" · 1\(nbsp)449,00\(nbsp)zł at RTV Euro AGD · price checked on the shop's page, 2026-10-24 14:03"))
         XCTAssertTrue(block.contains("- No compromises: \"Zmywarka do zabudowy 45 cm, 39 dB, 10 kompletów\" · 2\(nbsp)299,00\(nbsp)zł at x-kom · price checked on the shop's page, 2026-10-24 14:04 · 299,00\(nbsp)zł over the budget"))
         XCTAssertTrue(block.contains("why: Najcichsza z ofert do 2000 zł. · trade-off: Montaż osobno."))
         XCTAssertTrue(block.contains("What the user said matters most, in order: \"Cisza\", \"Cena\", \"Gwarancja\""))
@@ -390,6 +390,17 @@ final class ShoppingTests: XCTestCase {
         var english = try storedShopping(try resultFixture())
         english.draft = ErrandDraft(words: "w", brief: "b", title: "t", language: "en", kind: .shopping)
         XCTAssertTrue(ErrandResultText.forAgent(english, calendar: warsaw).contains("PLN 1,899.00 at Media Expert"))
+    }
+
+    func testAResultWithNoConfirmedPriceIsAPlainCardWithNoPriceAndIsReadAsOne() throws {
+        let result = try JSONDecoder().decode(ErrandResult.self, from: Fixtures.data("errand_result_shopping_unconfirmed_v1.json"))
+        XCTAssertNil(result.shopping, "no shopping block: nothing was confirmed, so nothing is priced")
+        XCTAssertTrue(result.answer.contains("nie podaję żadnych cen"))
+        XCTAssertTrue(result.sections.flatMap(\.items).allSatisfy { $0.price == nil && $0.url == nil })
+        let text = ErrandResultText.forAgent(try storedShopping(result), calendar: warsaw)
+        XCTAssertTrue(text.hasPrefix("done: "), text)
+        XCTAssertTrue(text.contains("nie podaję żadnych cen"), text)
+        XCTAssertFalse(text.contains("1\u{00A0}299") || text.contains("1 299") || text.contains("PLN"), "no price reaches the agent either")
     }
 
     func testCheckErrandsNeverInventsAPickWhoseOfferIsMissing() throws {

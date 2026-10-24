@@ -112,6 +112,8 @@ Każdy etap kończy się raportem według `CLAUDE.md` (pliki, zachowanie, testy,
 
 ## 9. Decyzje właściciela (od najważniejszej)
 
+**Odpowiedzi właściciela z 24 paź 2026** (zapisane w `DECISIONS.md`, ADR-611; numery poniżej): 1 i 2: tak, jak w liście (gazetki na żądanie z 4 sieci, Haiku 5.5 czyta strony). 3: Serper. **4: tylko potwierdzone ceny, a gdy nie ma potwierdzenia, Doddy to mówi** ("daj tylko potwierdzone ceny a jak nie są to powiedz"). **5: karta zgody zostaje.** 6: odpowiedź "tak może być" jest niejednoznaczna (linki partnerskie tak, czy zgoda na rekomendację "nie"); nic nie zbudowano, czeka na doprecyzowanie. **7: Haiku 5.5 dla wszystkich, Sonnet 5.5 dla opcji premium w aplikacji.** 8: odpowiedź "wdrażaj" jest niejednoznaczna (zacząć płatności w aplikacji czy wdrożyć to, co jest); nic nie zbudowano ani nie wdrożono, czeka na doprecyzowanie. 9: bez odpowiedzi.
+
 1. **Skąd gazetki:** na start odczyt na żądanie z oficjalnych gazetek czterech sieci, bez wspólnej bazy; równolegle prośba o licencję (Blix, Interia, Moja Gazetka, Kimbino, Tjek); opinia prawnika od praw do baz danych (sekcja 4).
 2. **Nowe użycie AI w chmurze:** Haiku 5.5 czyta wycinki gazetek i strony sklepów (CLAUDE.md, zasada 6: osobna zgoda).
 3. **Dostawca ofert i budżet:** SearchApi albo SerpApi; miesięczny limit wydatków i limit na użytkownika.
@@ -126,4 +128,4 @@ Wciąż otwarte z wcześniej: `ERRANDS_ENABLED=1`, płatny Render (darmowa baza 
 
 ## 10. Czego nie sprawdzono
 
-Żaden kod trybu zakupów nie istnieje; nic nie było uruchomione na telefonie ani na prawdziwym API. Nie sprawdzono: jak często prawdziwe strony polskich sklepów mają poprawne dane schema.org z ceną; czy pobieranie stron Anthropic przechodzi przez blokady botów sklepów; jakości odczytu prawdziwych polskich gazetek przez Haiku 5.5 (brak polskiego testu); czy OCR na iPhonie dobrze czyta polskie gazetki; czy Haiku 5.5 obsługuje narzędzia wyszukiwania (sprawdzić w Models API); warunków licencji agregatorów gazetek; opinii prawnej o gazetkach i płatnościach. Ceny dostawców i prowizje z dnia 24 paź 2026, część ze źródeł wtórnych.
+Stan z chwili pisania tego dokumentu (przed budową): żaden kod trybu zakupów nie istniał. Etap 1 zbudowano 24 paź 2026 (`docs/implementation/SHOPPING.md`, ADR-607 do 611); nic nie było uruchomione na telefonie ani na prawdziwym API. Nie sprawdzono: jak często prawdziwe strony polskich sklepów mają poprawne dane schema.org z ceną; czy pobieranie stron Anthropic przechodzi przez blokady botów sklepów; jakości odczytu prawdziwych polskich gazetek przez Haiku 5.5 (brak polskiego testu); czy OCR na iPhonie dobrze czyta polskie gazetki; czy Haiku 5.5 obsługuje narzędzia wyszukiwania (sprawdzić w Models API); warunków licencji agregatorów gazetek; opinii prawnej o gazetkach i płatnościach. Ceny dostawców i prowizje z dnia 24 paź 2026, część ze źródeł wtórnych.

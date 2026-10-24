@@ -86,7 +86,12 @@ const schema = z.object({
   // Shopping errands (ADR-607, docs/implementation/SHOPPING.md): the runner's model and the paid
   // look-ups per errand. Serper is the offer source (Google Shopping for Poland); without its key,
   // find_offers answers "not set up" and the runner reads shop pages it finds through web search.
-  SHOPPING_MODEL: z.string().regex(/^[a-z0-9][a-z0-9.\-]{1,63}$/).default("claude-sonnet-5-5"),
+  // Owner, 24 Oct 2026 (ADR-611): Haiku for everyone, Sonnet for the premium option. There are no plans yet, so
+  // premium is the accounts listed in SHOPPING_PREMIUM_ACCOUNTS (comma-separated account ids, empty by default).
+  SHOPPING_MODEL: z.string().regex(/^[a-z0-9][a-z0-9.\-]{1,63}$/).default("claude-haiku-5-5"),
+  SHOPPING_PREMIUM_MODEL: z.string().regex(/^[a-z0-9][a-z0-9.\-]{1,63}$/).default("claude-sonnet-5-5"),
+  SHOPPING_PREMIUM_ACCOUNTS: z.string().default("").transform((v) => v.split(",").map((x) => x.trim()).filter(Boolean))
+    .refine((ids) => ids.every((id) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu.test(id)), "account ids, comma-separated"),
   SHOPPING_EFFORT: z.enum(["low", "medium", "high", "xhigh", "max"]).default("medium"),
   SHOPPING_MAX_OFFER_SEARCHES: z.coerce.number().int().min(1).max(20).default(8),
   SHOPPING_MAX_PAGE_CHECKS: z.coerce.number().int().min(1).max(40).default(15),
@@ -146,7 +151,8 @@ export interface ErrandSettings {
 
 /** Shopping errands (ADR-607): the runner's model and the paid look-ups per errand. */
 export interface ShoppingSettings {
-  model: string; effort: ErrandEffort; maxOfferSearches: number; maxPageChecks: number; serperApiKey?: string;
+  model: string; premiumModel: string; premiumAccountIds: string[];
+  effort: ErrandEffort; maxOfferSearches: number; maxPageChecks: number; serperApiKey?: string;
 }
 
 /** Messages switches and caps (ADR-586). `enabled` is the env switch only; the key is checked where wired. */
@@ -246,6 +252,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     },
     shoppingSettings: {
       model: e.SHOPPING_MODEL,
+      premiumModel: e.SHOPPING_PREMIUM_MODEL,
+      premiumAccountIds: e.SHOPPING_PREMIUM_ACCOUNTS,
       effort: e.SHOPPING_EFFORT,
       maxOfferSearches: e.SHOPPING_MAX_OFFER_SEARCHES,
       maxPageChecks: e.SHOPPING_MAX_PAGE_CHECKS,

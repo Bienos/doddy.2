@@ -118,7 +118,7 @@ export async function runClaimed(ctx: ErrandContext, e: Claimed, shutdown?: Abor
     outcome = await researcher.research(
       {
         id: e.id, words: content.words, brief: content.brief, language: content.language,
-        ...(content.kind ? { kind: content.kind, priorities: content.priorities ?? [] } : {}),
+        ...(content.kind ? { kind: content.kind, priorities: content.priorities ?? [], accountId: e.account_id } : {}),
       },
       { deadline, isCancelled, signal: shutdown, now: ctx.now, cancelPollMs: ctx.cancelPollMs, log: ctx.log });
   } catch (err) {
