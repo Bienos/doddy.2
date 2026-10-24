@@ -37,7 +37,7 @@ public enum TimerIdempotency {
 public struct PendingTimer: Equatable, Sendable {
     public let identifier: String
     public let firesAt: Date
-    /// How it will ring (ADR-607); nil when the writer doesn't say (fakes, older code).
+    /// How it will ring (ADR-611); nil when the writer doesn't say (fakes, older code).
     public let ring: TimerRing?
 
     public init(identifier: String, firesAt: Date, ring: TimerRing? = nil) {

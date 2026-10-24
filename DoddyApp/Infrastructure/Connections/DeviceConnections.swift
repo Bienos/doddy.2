@@ -111,7 +111,7 @@ final class DeviceConnections {
         }
     }
 
-    /// What a timer needs (ADR-607): nothing more on iOS 26 with alarms not refused, since it rings
+    /// What a timer needs (ADR-611): nothing more on iOS 26 with alarms not refused, since it rings
     /// through AlarmKit (asked at the Start tap); otherwise notifications, as before.
     func timerAccess() async -> Access {
         TimerRinger.canRing ? .granted : await notificationAccess()
@@ -488,7 +488,7 @@ final class DeviceConnections {
         if let due = write.due {
             reminder.dueDateComponents = Self.components(due)
         }
-        // The alert itself (ADR-607): without an alarm Reminders lists it but never rings.
+        // The alert itself (ADR-611): without an alarm Reminders lists it but never rings.
         if let alertAt = write.alertDate(local: .current) { reminder.addAlarm(EKAlarm(absoluteDate: alertAt)) }
         if let repeats = write.repeats { reminder.recurrenceRules = [Self.rule(repeats, calendar: .current)] }
         try eventStore.save(reminder, commit: true)
@@ -557,7 +557,7 @@ final class DeviceConnections {
     }
 
     /// A new due; an alarm set for the old due moves with it, or goes when the due is cleared.
-    /// A reminder with no alarm at all (one an older Doddy wrote, ADR-607) gets one at a new timed due.
+    /// A reminder with no alarm at all (one an older Doddy wrote, ADR-611) gets one at a new timed due.
     private func moveDue(of reminder: EKReminder, from oldDue: ReminderDue?, to newDue: ReminderDue?) {
         let oldDate = oldDue.flatMap { EventChange.moment($0, local: .current) }
         let hadAlarms = !(reminder.alarms ?? []).isEmpty
@@ -695,7 +695,7 @@ final class DeviceConnections {
 
     // MARK: Timers
 
-    /// Doddy's timers still waiting to ring (TimerWriter, ADR-320): those AlarmKit runs (ADR-607)
+    /// Doddy's timers still waiting to ring (TimerWriter, ADR-320): those AlarmKit runs (ADR-611)
     /// and those left as notifications. A notification's ring time is the one written into it
     /// when it was set, not recomputed from its trigger.
     func pendingTimers() async -> [PendingTimer] {
@@ -712,7 +712,7 @@ final class DeviceConnections {
     }
 
     /// Starts one timer under `identifier` (TimerStartAction reads it back). AlarmKit first, so it
-    /// rings like the Clock app's timer (ADR-607); a notification when AlarmKit can't be used, or
+    /// rings like the Clock app's timer (ADR-611); a notification when AlarmKit can't be used, or
     /// failed and doesn't list it (so a timer is never set twice).
     func scheduleTimer(_ draft: TimerDraft, identifier: String) async throws {
         if TimerRinger.canRing {
@@ -838,7 +838,7 @@ protocol DeviceConnecting: ReminderStore, CalendarEventWriter, TimerWriter, Send
     /// Asks iOS when it never has (the permission sheet's Allow, ADR-566).
     func request(_ connection: VoiceConnection) async -> DeviceConnections.Access
     func notificationAccess() async -> DeviceConnections.Access
-    /// What a timer needs: AlarmKit on iOS 26, notifications otherwise (ADR-607).
+    /// What a timer needs: AlarmKit on iOS 26, notifications otherwise (ADR-611).
     func timerAccess() async -> DeviceConnections.Access
     var stepCountingAvailable: Bool { get }
     func steps(on day: StepDay, now: Date) async throws -> StepTotals
@@ -866,7 +866,7 @@ extension DeviceConnections: DeviceConnecting {}
 /// Fakes that don't model them answer like a device without the permission (tests).
 extension DeviceConnecting {
     func request(_ connection: VoiceConnection) async -> DeviceConnections.Access { access(for: connection) }
-    /// A fake's timers need notifications, as every timer did before ADR-607.
+    /// A fake's timers need notifications, as every timer did before ADR-611.
     func timerAccess() async -> DeviceConnections.Access { await notificationAccess() }
     var stepCountingAvailable: Bool { false }
     func steps(on day: StepDay, now: Date) async throws -> StepTotals { throw DeviceConnections.Failure.stepsNotAllowed }
@@ -897,7 +897,7 @@ private final class OnceContinuation<Value: Sendable>: @unchecked Sendable {
 
 /// iOS hides notification banners for the app that is in front. This shows timer and nudge
 /// banners anyway, so they still ring while Doddy is open, and keeps them in Notification Center
-/// and on the Lock Screen afterwards (`.list`, ADR-607), as when Doddy was closed.
+/// and on the Lock Screen afterwards (`.list`, ADR-611), as when Doddy was closed.
 final class TimerBanners: NSObject, UNUserNotificationCenterDelegate, @unchecked Sendable {
     static let shared = TimerBanners()
 
@@ -906,7 +906,7 @@ final class TimerBanners: NSObject, UNUserNotificationCenterDelegate, @unchecked
     }
 }
 
-/// How each Doddy notification comes through (DoddyCore `DoddyNotificationKind`, ADR-607).
+/// How each Doddy notification comes through (DoddyCore `DoddyNotificationKind`, ADR-611).
 extension DoddyNotificationKind {
     var interruptionLevel: UNNotificationInterruptionLevel {
         switch urgency {

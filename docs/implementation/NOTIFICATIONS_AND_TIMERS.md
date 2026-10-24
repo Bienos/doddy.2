@@ -1,4 +1,4 @@
-# Notifications that ring: timers, reminders, the Lock Screen (ADR-607)
+# Notifications that ring: timers, reminders, the Lock Screen (ADR-611)
 
 Date: 2026-10-24. Owner (24 Oct, in Polish): timers and reminders make no sound at all; setting a timer ("stoper") and the Lock Screen notifications should work properly and not stutter; check everything; and think up other notifications (for example once a week), with examples of what they would say. The ideas are in `docs/product/NOTIFICATION_IDEAS.md`.
 
@@ -59,7 +59,7 @@ Silent mode silences every app's notifications; only alarms and timers (AlarmKit
 
 ## Verified (Linux, Swift 6.1.2)
 
-- DoddyCore tests, including `RingingTimersTests` (12) and the existing timer, reply and plan tests: see the run recorded in ADR-607.
+- DoddyCore tests, including `RingingTimersTests` (12) and the existing timer, reply and plan tests: see the run recorded in ADR-611.
 - `scripts/typecheck_app_logic.sh`: `TimerRinger.swift` type-checks in Swift 6 outside `#if canImport(AlarmKit)`.
 - `scripts/check_forbidden_capabilities.sh` and `tools/build_strings_catalog.py --check` pass.
 - Every AlarmKit name used was looked up in Apple's documentation (developer.apple.com, 24 Oct): `AlarmConfiguration(countdownDuration:schedule:attributes:…)`, `AlarmPresentation(alert:countdown:paused:)`, `Countdown(title:pauseButton:)`, `Paused(title:resumeButton:)`, `Alert(title:secondaryButton:secondaryButtonBehavior:)` (iOS 26.1; the `stopButton:` form, deprecated in 26.1, is used before that), `AlarmManager.pause/resume/stop/cancel(id:)`, `AlarmPresentationState.alarmID` and `Mode.paused`'s `totalCountdownDuration` and `previouslyElapsedDuration`. Looked up is not compiled.

@@ -30,7 +30,7 @@ final class LeaveByScheduler: LeaveByWriter {
         content.title = text.title
         content.body = text.body
         content.sound = .default
-        // A time the user asked for: through a Focus where allowed (ADR-607).
+        // A time the user asked for: through a Focus where allowed (ADR-611).
         content.interruptionLevel = DoddyNotificationKind.leaveBy.interruptionLevel
         let parts = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: plan.leaveAt)
         let request = UNNotificationRequest(identifier: identifier, content: content,

@@ -44,7 +44,7 @@ enum OpenWaysReminderScheduler {
         let now = Date.now
         let language = NotificationLanguage.current
         let calendar = Calendar.current
-        // A tip nobody set a time for (ADR-608): never on a day one of Doddy's routines already
+        // A tip nobody set a time for (ADR-612): never on a day one of Doddy's routines already
         // comes, so Doddy says at most one thing a day of its own. A week with a routine every
         // day gets no tip.
         let routineDays = OwnNotificationDays.routineWeekdays(

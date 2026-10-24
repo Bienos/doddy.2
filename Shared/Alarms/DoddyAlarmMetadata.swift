@@ -1,7 +1,7 @@
 #if canImport(AlarmKit)
 import AlarmKit
 
-/// What Doddy's alarms and timers carry for their system screens (ADR-260, ADR-283, ADR-607):
+/// What Doddy's alarms and timers carry for their system screens (ADR-260, ADR-283, ADR-611):
 /// only whether it is a timer, nothing personal. It is shared by the app, which sets them, and the
 /// widget extension, which draws the countdown. AlarmKit is allowed only here (`Shared/Alarms`),
 /// in `DoddyApp/Features/Alarms` and in the widget's `AlarmLiveActivity.swift`
@@ -10,11 +10,11 @@ import AlarmKit
 struct DoddyAlarmMetadata: AlarmMetadata {
     enum Kind: String, Codable, Hashable, Sendable {
         case timer
-        /// A note reminder that rings like an alarm (ADR-608).
+        /// A note reminder that rings like an alarm (ADR-612).
         case reminder
     }
 
-    /// `timer` for a voice timer (ADR-607), `reminder` for an important reminder (ADR-608); nil
+    /// `timer` for a voice timer (ADR-611), `reminder` for an important reminder (ADR-612); nil
     /// for an alarm, including every alarm set before.
     var kind: Kind? = nil
     /// The language the app set it in (`NotificationLanguage` raw value), so the card's buttons

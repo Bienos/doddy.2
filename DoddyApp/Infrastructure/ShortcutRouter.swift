@@ -24,7 +24,7 @@ final class ShortcutRouter {
     var isWrapUpPresented = false
     /// The weekly look-back (ADR-306).
     var isLookBackPresented = false
-    /// The weekly plan (ADR-608), from its notification or Settings.
+    /// The weekly plan (ADR-612), from its notification or Settings.
     var isWeeklyPlanPresented = false
     /// "Talk it through": the conversation that opens next starts with this briefing.
     private var checkInBriefing: MorningBriefing?
@@ -143,7 +143,7 @@ final class ShortcutRouter {
         isWrapUpPresented = true
     }
 
-    /// The weekly plan's notification was tapped, or Settings asked for it (ADR-608).
+    /// The weekly plan's notification was tapped, or Settings asked for it (ADR-612).
     func weeklyPlanOpened() {
         guard !isVoicePresented, !isCheckInPresented, !isTidyUpPresented, !isWrapUpPresented, !isLookBackPresented,
               drafts.shown == nil else { return }

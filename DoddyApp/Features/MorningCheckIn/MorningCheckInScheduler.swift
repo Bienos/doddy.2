@@ -52,7 +52,7 @@ enum MorningCheckInScheduler {
             // Doddy stretching awake (ADR-323); the words are unchanged.
             if let art = NotificationArt.attachment(.yawnStretch) { content.attachments = [art] }
             content.sound = .default
-            // A routine: never through a Focus (ADR-607).
+            // A routine: never through a Focus (ADR-611).
             content.interruptionLevel = DoddyNotificationKind.morningCheckIn.interruptionLevel
             var when = DateComponents()
             when.hour = request.hour

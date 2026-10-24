@@ -2,7 +2,7 @@ import DoddyCore
 import SwiftUI
 import UserNotifications
 
-/// Puts the weekly plan's notification in iOS and reads it back (ADR-608). The notification says
+/// Puts the weekly plan's notification in iOS and reads it back (ADR-612). The notification says
 /// only "New week · Take a look at what's coming?": no names and no counts, so nothing private is
 /// on the Lock Screen and nothing can be out of date when it arrives. It is a routine: no sound,
 /// never through a Focus, never in quiet hours.
@@ -194,7 +194,7 @@ struct WeeklyPlanSettingsSection: View {
             get: { Calendar.current.date(from: DateComponents(hour: settings.hour, minute: settings.minute)) ?? .now },
             set: { date in
                 let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
-                // Quiet hours (ADR-608): the picker shows where the time really goes.
+                // Quiet hours (ADR-612): the picker shows where the time really goes.
                 let moved = QuietHours.adjusted(hour: parts.hour ?? 8, minute: parts.minute ?? 0)
                 settings.hour = moved.hour
                 settings.minute = moved.minute
