@@ -139,6 +139,7 @@ final class IslandScreenshotTests: XCTestCase {
         XCTAssertEqual(IslandLanguage.text("Listening", "pl"), "Słucham")
         XCTAssertEqual(IslandLanguage.text("A text to check", "pl"), "SMS do sprawdzenia")
         XCTAssertEqual(IslandLanguage.text("Show", "pl"), "Pokaż")
+        XCTAssertTrue(IslandPillLabel.keptAsIs.contains("Stop"), "the island's Stop pill stays Stop (owner)")
         XCTAssertEqual(IslandLanguage.text("Step 2 of 3", "pl"), "Krok 2 z 3", "a number goes back into the words")
         XCTAssertEqual(IslandLanguage.text("Doddy isn't listening · 4 notes saved", "pl"), "Doddy nie słucha · zapisane notatki: 4")
         XCTAssertEqual(IslandLanguage.text("EN ⇄ FR", "pl"), "EN ⇄ FR", "language codes stay as they are")

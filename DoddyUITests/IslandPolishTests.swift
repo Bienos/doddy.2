@@ -2,7 +2,7 @@ import XCTest
 
 /// ADR-609: the real Dynamic Island in Polish, the app's default language. The offline fixture
 /// (no microphone, no provider) runs with the app in Polish; the island's words and buttons
-/// come from the app's Polish table, sent with each update. Screenshots are attached to the
+/// come from the app's Polish table, sent with each update ("Stop" stays "Stop"). Screenshots are attached to the
 /// result, as `MemoryBaselineTests` does in English.
 final class IslandPolishTests: XCTestCase {
     @MainActor
@@ -24,8 +24,9 @@ final class IslandPolishTests: XCTestCase {
         XCTAssertTrue(compact.waitForExistence(timeout: 30), "The island's words follow the app's Polish.")
         attach(springboard, name: "Native compact Island in Polish - offline labelled fixture")
         compact.press(forDuration: 1.2)
-        let stop = springboard.buttons["Zatrzymaj"]
-        XCTAssertTrue(stop.waitForExistence(timeout: 15), "Stop is Zatrzymaj")
+        // The owner kept "Stop" on the island in Polish too: "Zatrzymaj" didn't fit.
+        let stop = springboard.buttons["Stop"]
+        XCTAssertTrue(stop.waitForExistence(timeout: 15), "Stop stays Stop")
         XCTAssertTrue(springboard.buttons["Wycisz"].exists, "Mute is Wycisz")
         attach(springboard, name: "Native expanded Island in Polish - offline labelled fixture")
         stop.tap()

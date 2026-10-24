@@ -255,13 +255,17 @@ struct IslandPillLabel: View {
     let systemImage: String
     var prominent = false
 
+    /// Words a pill keeps as they are in every language: "Stop" fits beside Doddy where
+    /// "Zatrzymaj" didn't (owner, 24 Oct 2026, ADR-609). The Lock Screen's End is still translated.
+    static let keptAsIs: Set<String> = ["Stop"]
+
     var body: some View {
         ViewThatFits(in: .horizontal) {
             HStack(spacing: 5) {
                 Image(systemName: systemImage).font(.system(size: 10, weight: .bold))
-                IslandText(title)
+                word
             }
-            IslandText(title)
+            word
                 .minimumScaleFactor(0.8)
         }
         .font(.system(size: 13, weight: .semibold))
@@ -271,6 +275,15 @@ struct IslandPillLabel: View {
         .frame(height: 34)
         .background(prominent ? Color.islandCream : Color.islandPill, in: Capsule())
         .contentShape(Capsule())
+    }
+
+    @ViewBuilder
+    private var word: some View {
+        if Self.keptAsIs.contains(title) {
+            Text(verbatim: title)
+        } else {
+            IslandText(title)
+        }
     }
 }
 
