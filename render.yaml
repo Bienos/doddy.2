@@ -209,6 +209,10 @@ services:
         value: "0"
       - key: ASSISTANT_ENABLED # Messages (ADR-586): "0" (the default) answers 503 notConfigured; "1" lets the app's typed conversation ask Claude
         value: "0"
+      - key: SERPER_API_KEY # Shopping errands (ADR-607): Google Shopping offers for Poland; empty means find_offers answers "not set up"
+        sync: false
+      - key: DEALS_ENABLED # Leaflets (ADR-609): "0" (the default) answers 503 deals_disabled; "1" reads the four chains' leaflets on request
+        value: "0"
       - key: OPENAI_API_KEY # used only when ANTHROPIC_API_KEY is empty (ADR-197)
         sync: false
       - key: GNEWS_API_KEY
@@ -294,6 +298,8 @@ services:
         value: "0"
       - key: ASSISTANT_ENABLED # Messages (ADR-586): "0" (the default) answers 503 notConfigured; "1" lets the app's typed conversation ask Claude
         value: "0"
+      - key: SERPER_API_KEY # Shopping errands (ADR-607): Google Shopping offers for Poland; empty means find_offers answers "not set up"
+        sync: false
       - key: OPENAI_API_KEY # used only when ANTHROPIC_API_KEY is empty (ADR-197)
         sync: false
       - key: GNEWS_API_KEY

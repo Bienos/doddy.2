@@ -72,6 +72,7 @@ export async function createErrand(ctx: ErrandContext, accountId: string, body: 
     draft: {
       id, digest: digest.toString("hex"), title: content.title, words: content.words, brief: content.brief,
       language: content.language, expiresAt: expiresAt.toISOString(),
+      ...(content.kind ? { kind: content.kind, priorities: content.priorities ?? [] } : {}),
     },
   };
 }
@@ -111,6 +112,7 @@ function view(ctx: ErrandContext, e: ErrandRow) {
     id: e.id,
     // Content fields exist only while the server holds the content (gone after ack, DELETE or 30 days).
     ...(content ? { title: content.title, words: content.words, brief: content.brief, digest: e.payload_digest.toString("hex") } : {}),
+    ...(content?.kind ? { kind: content.kind, priorities: content.priorities ?? [] } : {}),
     language: e.language,
     state: e.state,
     createdAt: iso(e.created_at),

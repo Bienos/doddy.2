@@ -214,12 +214,23 @@ public enum DataFlow {
             // ADR-570: a task handed to Doddy's background worker.
             DataFlowRow(
                 id: "errands", destination: "Your Doddy messaging server and Anthropic (tasks you hand over)",
-                what: "The words of a task you hand to Doddy, Doddy's one-line note on it and its language. Anthropic's Claude searches the web and reads pages for it, so search words made from your task go to Anthropic's search provider. Never your saved notes, lists, profile or earlier conversations.",
+                what: "The words of a task you hand to Doddy, Doddy's one-line note on it and its language, and for a shopping task what matters most to you. Anthropic's Claude searches the web and reads pages for it, so search words made from your task go to Anthropic's search provider. For a shopping task, search words Claude writes also go to Serper (Google Shopping results), and Doddy's server opens shops' pages; your own words go to neither. Never your saved notes, lists, profile or earlier conversations.",
                 when: "Only when you say yes to handing a task over, until its result is saved on this iPhone.",
                 isActive: state.messagingServerSet,
                 note: state.messagingServerSet
                     ? "The server keeps the words and the result, encrypted, until the result is saved on this iPhone, then deletes them; a result never fetched is deleted after 30 days. The notification has no words from the task."
                     : "No messaging server is set, so tasks can't be handed over."),
+            // SHOPPING.md section 2: leaflets read on request; nothing about the user goes to the chains.
+            DataFlowRow(
+                id: "deals", destination: "Your Doddy messaging server, the shops' leaflet pages and Anthropic (leaflets)",
+                what: "The names of the items you ask about and which shops to check. Doddy's server fetches the shops' leaflet pages itself and, for leaflets that are only pictures, sends those pages and the item names to Anthropic's Claude to read. Nothing about you goes to the shops. Never your saved notes, lists or profile.",
+                when: "Only when you say yes to checking this week's leaflets.",
+                isActive: state.messagingServerSet && !state.pauseAll,
+                note: !state.messagingServerSet
+                    ? "No messaging server is set, so leaflets can't be checked."
+                    : state.pauseAll
+                        ? "Connections are paused, so leaflets aren't checked."
+                        : "The server keeps no leaflet pages, offers or item names, only daily counts of checks."),
             DataFlowRow(
                 id: "siri", destination: "Apple (Siri)",
                 what: "What you ask Siri to look for, and the note Siri reads back with when you saved it.",
@@ -263,6 +274,8 @@ public enum DataFlow {
         }
         // ADR-570: Claude researches the tasks you hand over.
         if active.contains("errands") { parts.append("Anthropic (tasks you hand over)") }
+        // SHOPPING.md: item names and leaflet pages, for leaflets that are only pictures.
+        if active.contains("deals") { parts.append("Anthropic (leaflets you check)") }
         return parts.isEmpty ? "None" : parts.joined(separator: "; ")
     }
 
@@ -279,6 +292,7 @@ public enum DataFlow {
         "doddyServer": "your Doddy server (Connected Apps)",
         "messagingServer": "your Doddy messaging server",
         "errands": "Anthropic (tasks you hand over, through your messaging server)",
+        "deals": "the shops' leaflet pages and Anthropic (leaflets you check, through your messaging server)",
         "siri": "Siri (when you ask it)",
         "askDoddy": "Anthropic (Ask Doddy, through your messaging server)",
         "webMemory": "your Doddy server and Anthropic (notes and conversations you keep there)",

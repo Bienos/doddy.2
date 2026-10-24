@@ -151,6 +151,23 @@ final class ErrandTests: XCTestCase {
         XCTAssertNil(failed.readyResult)
     }
 
+    /// SHOPPING.md: a snapshot of a shopping task keeps its kind and priorities as sent, so the app
+    /// can rebuild the draft; a research snapshot has neither.
+    func testASnapshotKeepsTheKindAndPriorities() throws {
+        let id = UUID().uuidString.lowercased()
+        let shopping = try JSONDecoder().decode(ErrandSnapshot.self, from: Data("""
+        {"id":"\(id)","title":"Zmywarka","words":"w","brief":"b","language":"pl","kind":"shopping","priorities":["Cisza","Cena"],
+         "state":"queued","createdAt":"2026-10-24T12:00:00Z"}
+        """.utf8))
+        XCTAssertEqual(shopping.kind, "shopping")
+        XCTAssertEqual(shopping.priorities, ["Cisza", "Cena"])
+        let research = try JSONDecoder().decode(ErrandSnapshot.self, from: Data("""
+        {"id":"\(id)","state":"queued","createdAt":"2026-10-24T12:00:00Z"}
+        """.utf8))
+        XCTAssertNil(research.kind)
+        XCTAssertNil(research.priorities)
+    }
+
     func testTheListDecodes() throws {
         let list = try JSONDecoder().decode([ErrandSummary].self, from: Data("""
         [{"id":"\(UUID().uuidString.lowercased())","title":"Rzym","state":"running","createdAt":"2026-10-21T09:00:00Z","finishedAt":null},

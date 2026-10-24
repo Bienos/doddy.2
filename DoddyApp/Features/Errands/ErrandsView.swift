@@ -105,7 +105,12 @@ struct ErrandDetailView: View {
                 }
             }
             if let result = errand.result {
-                resultSections(result)
+                if let shopping = result.shopping {
+                    // A shopping task (SHOPPING.md): the picks, their prices and the report.
+                    ShoppingResultSections(errand: errand, result: result, shopping: shopping)
+                } else {
+                    resultSections(result)
+                }
             }
             Section("You said") {
                 Text("\u{201C}\(errand.draft.words)\u{201D}").foregroundStyle(Theme.ink).textSelection(.enabled)

@@ -42,6 +42,10 @@ export interface ErrandTask {
   words: string;
   brief: string;
   language: string;
+  /** "shopping" runs the shopping runner (docs/implementation/SHOPPING.md); absent is research. */
+  kind?: "shopping";
+  /** A shopping errand's priorities, in the user's order. */
+  priorities?: string[];
 }
 
 export interface ResearchControl {

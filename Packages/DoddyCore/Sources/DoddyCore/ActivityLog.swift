@@ -306,6 +306,13 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(app: .web, title: "Hand over a task", detail: "“\(draft.title)”", logDetail: nil, isLookup: false)
         case .checkErrands:
             return ActivityRequest(app: .web, title: "Checked your tasks", detail: nil, isLookup: true)
+        case .findDeals(let request):
+            // SHOPPING.md: the card shows the items; the 30-day log keeps only how many and where.
+            let count = request.items.count
+            let chains = request.chainsAsked.map(\.name).joined(separator: ", ")
+            return ActivityRequest(
+                app: .web, title: "Checked the leaflets", detail: request.items.joined(separator: ", ") + " · " + chains,
+                logDetail: "\(count) item\(count == 1 ? "" : "s") · \(chains)", isLookup: true)
         case .unsupported, .invalid, .needsClarification, .startTranslator, .stopTranslator, .calculate, .convertUnits:
             // A clarification goes straight back to the agent; no app is used. Translator mode
             // uses no app either, and leaves no trace of the conversation (ADR-215). Sums and

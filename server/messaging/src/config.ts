@@ -82,6 +82,14 @@ const schema = z.object({
   ERRAND_TIME_LIMIT_MINUTES: z.coerce.number().int().min(1).max(120).default(30),
   // Queued or running errands per account.
   ERRANDS_MAX_OPEN: z.coerce.number().int().min(1).max(20).default(5),
+  // Shopping errands (ADR-607, docs/implementation/SHOPPING.md): the runner's model and the paid
+  // look-ups per errand. Serper is the offer source (Google Shopping for Poland); without its key,
+  // find_offers answers "not set up" and the runner reads shop pages it finds through web search.
+  SHOPPING_MODEL: z.string().regex(/^[a-z0-9][a-z0-9.\-]{1,63}$/).default("claude-sonnet-5-5"),
+  SHOPPING_EFFORT: z.enum(["low", "medium", "high", "xhigh", "max"]).default("medium"),
+  SHOPPING_MAX_OFFER_SEARCHES: z.coerce.number().int().min(1).max(20).default(8),
+  SHOPPING_MAX_PAGE_CHECKS: z.coerce.number().int().min(1).max(40).default(15),
+  SERPER_API_KEY: z.string().min(8).optional(),
 
   // Messages (ADR-585, ADR-586): the app's typed conversation asks Claude here. Text only, no tools.
   // Runs only when ANTHROPIC_API_KEY is set too; "0" answers 503 notConfigured. The daily caps count
@@ -127,6 +135,11 @@ export interface ErrandSettings {
   enabled: boolean; model: string; effort: ErrandEffort; timeLimitMinutes: number; maxOpen: number;
 }
 
+/** Shopping errands (ADR-607): the runner's model and the paid look-ups per errand. */
+export interface ShoppingSettings {
+  model: string; effort: ErrandEffort; maxOfferSearches: number; maxPageChecks: number; serperApiKey?: string;
+}
+
 /** Messages switches and caps (ADR-586). `enabled` is the env switch only; the key is checked where wired. */
 export interface AssistantSettings {
   enabled: boolean; model: string; effort: "low" | "medium" | "high"; dailyPerAccount: number; dailyPerServer: number;
@@ -152,6 +165,7 @@ export interface Config {
   taskCalls?: TaskCallConfig;
   taskCallSettings: TaskCallSettings;
   errandSettings: ErrandSettings;
+  shoppingSettings: ShoppingSettings;
   assistantSettings: AssistantSettings;
 }
 
@@ -219,6 +233,13 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       effort: e.ERRANDS_EFFORT,
       timeLimitMinutes: e.ERRAND_TIME_LIMIT_MINUTES,
       maxOpen: e.ERRANDS_MAX_OPEN,
+    },
+    shoppingSettings: {
+      model: e.SHOPPING_MODEL,
+      effort: e.SHOPPING_EFFORT,
+      maxOfferSearches: e.SHOPPING_MAX_OFFER_SEARCHES,
+      maxPageChecks: e.SHOPPING_MAX_PAGE_CHECKS,
+      serperApiKey: e.SERPER_API_KEY,
     },
     assistantSettings: {
       enabled: e.ASSISTANT_ENABLED === "1",
