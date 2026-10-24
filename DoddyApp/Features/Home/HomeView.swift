@@ -221,9 +221,6 @@ struct HomeView: View {
                 // Tasks handed to Doddy's background worker (ADR-570).
                 Button { showErrands = true } label: { Label("Tasks", systemImage: "checklist") }
                     .accessibilityIdentifier("home.tasks")
-                // Leaflets read on request (SHOPPING.md 2).
-                Button { showDeals = true } label: { Label("Cheapest this week", systemImage: "cart") }
-                    .accessibilityIdentifier("home.deals")
                 Button { tool = .focus } label: {
                     if FocusController.shared.session.map({ !$0.isOver }) ?? false {
                         Label("Focus · on", systemImage: "timer")
@@ -255,6 +252,11 @@ struct HomeView: View {
                 // screen (the dark, largest-text UI test goes through Memories).
                 Button { router.openRecordings() } label: { Label("Recordings", systemImage: "waveform.circle") }
                     .accessibilityIdentifier("home.recordings")
+                // Leaflets read on request (SHOPPING.md 2). Here, below Memories and Settings, for the same
+                // reason as Recordings: in the first section it pushed Memories off the first screen at the
+                // largest text size and the dark, largest-text UI test (MemoryJourneyTests) failed on the Mac job.
+                Button { showDeals = true } label: { Label("Cheapest this week", systemImage: "cart") }
+                    .accessibilityIdentifier("home.deals")
                 // What is built and what isn't, from the capability catalog (T35/T42, ADR-195, ADR-548).
                 Button { showCapabilities = true } label: { Label("What I can do", systemImage: "sparkles") }
                     .accessibilityIdentifier("home.capabilities")
