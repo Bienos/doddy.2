@@ -91,8 +91,9 @@ final class DataFlowTests: XCTestCase {
         XCTAssertTrue(errands.note?.contains("no words from the task") ?? false)
     }
 
-    /// SHOPPING.md: leaflets go through the messaging server; nothing about the user goes to the shops.
-    func testLeafletsRowSaysNothingAboutYouGoesToTheShops() {
+    /// SHOPPING.md: leaflets go through the messaging server; nothing that identifies the user goes to the
+    /// shops, and the row says Rossmann gets the item names as a search.
+    func testLeafletsRowSaysNothingIdentifyingGoesToTheShops() {
         XCTAssertFalse(row("deals", base).isActive)
         XCTAssertTrue(row("deals", base).note?.contains("can't be checked") ?? false)
         var state = base
@@ -100,7 +101,8 @@ final class DataFlowTests: XCTestCase {
         let deals = row("deals", state)
         XCTAssertTrue(deals.isActive)
         XCTAssertTrue(deals.destination.contains("Anthropic"))
-        XCTAssertTrue(deals.what.contains("Nothing about you goes to the shops."))
+        XCTAssertTrue(deals.what.contains("Nothing that identifies you goes to any shop."))
+        XCTAssertTrue(deals.what.contains("rossmann.pl as a search"), "the one shop that gets the item names is named")
         XCTAssertTrue(deals.what.contains("Never your saved notes"))
         XCTAssertTrue(deals.note?.contains("only daily counts") ?? false)
         state.pauseAll = true

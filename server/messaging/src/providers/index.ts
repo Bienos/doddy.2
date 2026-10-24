@@ -12,6 +12,12 @@ import type { ErrandDeps } from "../errands/context.js";
 import { ClaudeErrandResearcher } from "../errands/researcher.js";
 import type { AssistantDeps } from "../assistant/deps.js";
 import { ClaudeAssistantResponder } from "../assistant/responder.js";
+import { PoliteFetcher } from "../deals/fetcher.js";
+import type { DealsDeps } from "../deals/service.js";
+import { AnthropicDealsModel } from "../deals/vision.js";
+import { log } from "../log.js";
+import { SerperOfferSource } from "../shopping/offers.js";
+import { RoutingErrandResearcher, ShoppingErrandResearcher } from "../shopping/runner.js";
 
 /** Real provider adapters for whatever is configured; anything missing stays undefined. */
 export function providersFrom(config: Config) {
@@ -34,12 +40,31 @@ export function providersFrom(config: Config) {
   } : undefined;
   // Errands (ADR-570): a researcher only with an Anthropic key and the switch on. Without
   // MEMORY_ENCRYPTION_KEY the routes answer 503 errands_disabled whatever is set here.
+  // One polite fetcher (robots.txt, DoddyBot user agent, blocks never worked around) for the shop pages
+  // of shopping errands and for the leaflets (ADR-608, ADR-609).
+  const fetcher = new PoliteFetcher();
   const es = config.errandSettings;
+  const ss = config.shoppingSettings;
+  // Shopping errands (ADR-607) go to the shopping runner; the rest to the research runner, as before.
   const errands: ErrandDeps = {
     settings: es,
     researcher: es.enabled && config.anthropicApiKey
-      ? new ClaudeErrandResearcher(config.anthropicApiKey, { model: es.model, effort: es.effort })
+      ? new RoutingErrandResearcher(
+        new ClaudeErrandResearcher(config.anthropicApiKey, { model: es.model, effort: es.effort }),
+        new ShoppingErrandResearcher(config.anthropicApiKey, {
+          offers: new SerperOfferSource(ss.serperApiKey), fetcher,
+          maxOfferSearches: ss.maxOfferSearches, maxPageChecks: ss.maxPageChecks,
+        }, { model: ss.model, effort: ss.effort }))
       : undefined,
+  };
+  // Leaflets (ADR-609): without an Anthropic key, Dino and Rossmann still answer from their own data
+  // and Biedronka and Lidl come back failed.
+  const ds = config.dealsSettings;
+  const deals: DealsDeps = {
+    settings: ds,
+    fetcher,
+    model: ds.enabled && config.anthropicApiKey ? new AnthropicDealsModel(config.anthropicApiKey, { model: ds.visionModel }) : undefined,
+    log,
   };
   // Messages (ADR-586): a responder only with an Anthropic key and the switch on; otherwise the route
   // answers 503 notConfigured.
@@ -59,6 +84,7 @@ export function providersFrom(config: Config) {
     taskCalls,
     errands,
     assistant,
+    deals,
     news: {
       cipher,
       feeds: new HttpFeedSource(),

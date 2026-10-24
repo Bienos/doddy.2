@@ -487,7 +487,7 @@ public enum DealsAsk {
             lines: [
                 "Items: " + request.items.joined(separator: ", "),
                 "Shops: " + chains.joined(separator: ", "),
-                "Doddy reads the leaflets on its server; nothing about you is sent to the shops.",
+                "Doddy reads the leaflets on its server. Nothing that identifies you goes to the shops; Rossmann gets the item names as a search.",
             ],
             confirmLabel: "Yes, check")
     }

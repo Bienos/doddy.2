@@ -88,7 +88,7 @@ Bearer: the account's device token, like errands. Off unless `DEALS_ENABLED=1`.
 ## Privacy
 
 - **Find me this:** as research errands (ERRANDS.md "Privacy"), plus search words to Serper (when set) and page requests to shops from Doddy's server. The user's words never go to Serper or the shops; only search phrases the model writes and the shop page addresses.
-- **Leaflets:** the item names go to Doddy's server; leaflet pages are fetched from the chains by the server and, for image leaflets, sent to Anthropic. Nothing about the user goes to the chains. Logs carry counts and timings only.
+- **Leaflets:** the item names go to Doddy's server; leaflet pages are fetched from the chains by the server and, for image leaflets, sent to Anthropic with the item names. Rossmann's leaflet site disallows all robots, so Rossmann is read from `rossmann.pl/promocje?Search=…`: **the item names go to rossmann.pl as a search**, from the server, with no cookies and nothing that identifies the user (an open owner decision: keep, or make Rossmann link-only). Nothing that identifies the user goes to any chain. Alcohol offers are skipped (Dino, Lidl). Logs carry counts and timings only.
 - **The report** is made on the iPhone from what is already there.
 
 ## Built and checked

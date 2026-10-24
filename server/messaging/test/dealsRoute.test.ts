@@ -6,7 +6,6 @@ import type { Db } from "../src/db.js";
 import { PoliteFetcher } from "../src/deals/fetcher.js";
 import { DEFAULT_DEALS_SETTINGS, type DealsSettings } from "../src/deals/types.js";
 import { reserve } from "../src/deals/usage.js";
-import { dealsRoutes } from "../src/routes/deals.js";
 import { chainsWeb, contractFixture, FakeModel, read, ResponseSchema } from "./dealsFakes.js";
 import { dbSkip, freshDb, testApp } from "./helpers.js";
 
@@ -19,14 +18,13 @@ describe("leaflet search route against real Postgres", { skip: dbSkip }, () => {
   async function world(opts: { settings?: Partial<DealsSettings>; off?: boolean } = {}) {
     const web = chainsWeb();
     const model = new FakeModel().page("biedronka:2", { products: [read({ name: "Masło Extra 82%", size: "200 g", price: "4,99" })] });
-    const base = await testApp(db);
-    await base.app.register(dealsRoutes({
-      db,
+    // buildApp registers the route (app.ts); the test hands it the leaflet deps.
+    const base = await testApp(db, {
       deals: opts.off ? undefined : {
         settings: { ...DEFAULT_DEALS_SETTINGS, ...opts.settings }, fetcher: new PoliteFetcher({ fetch: web.fetch }), model,
         now: () => new Date("2026-10-24T06:10:00Z"),
       },
-    }));
+    });
     const account = async () => {
       const r = await base.app.inject({ method: "POST", url: "/v1/accounts" });
       const { accountId, deviceToken } = r.json() as { accountId: string; deviceToken: string };
