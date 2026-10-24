@@ -58,7 +58,7 @@ Before ADR-604 the web chat sent Claude only the best-matching notes and excerpt
 
 ## Not done or not verified
 
-- Not deployed. The live service runs another branch; deploying is the owner's step (`docs/platforms/web.md`).
+- **Deployed 24 Oct 2026, 11:08 UTC** (owner's yes): Render service `doddy`, deploy `dep-dbe92nhsrm7s73bbpsu0`, commit `69762f6` (the live branch `claude/exciting-carson-08x2pk` was fast-forwarded to it; between the old live commit and this one only comments changed besides the chat). Checked: `/v1/health` 200 in live mode, the page's script file is the one tested here, `GET /v1/web/chat/context` answers 401 without a session (the route exists). **Not checked:** a signed-in chat on the live server, and whether it has an Anthropic key (without one, the page says the chat isn't switched on). Rollback: redeploy the previous deploy (`dep-dbdjmpeq1p3s738rsof0`, commit `1b83bea`) from the Render dashboard.
 - Never run against the real Claude model: the tests use the demo model. Answer quality (Polish, counts, "how do you talk with me") is unchecked.
 - No streaming: the answer arrives whole and unrolls (a CSS reveal; reduced motion shows it at once).
 - Screen readers not tried. Structure is tested: one `h1`, focus on it after navigation, labelled box and buttons, a live list of turns.
