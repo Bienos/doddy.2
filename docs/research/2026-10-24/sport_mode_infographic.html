@@ -1,0 +1,668 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- Owner infographic for docs/research/2026-10-24/research_sport_mode.md (ADR-620). Research only: nothing in it is built. -->
+<title>Doddy Trener</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Caveat:wght@600;700&display=swap">
+<style>
+/* Layout: a training log. Race-bib header, one flow (data → Doddy → you), sources graded like heart-rate zones Z1–Z5, then the build as a course with km markers. */
+:root{
+  --paper:#FFF7E9; --ink:#171715; --muted:#625C52; --card:#FFFDF8; --surface:#F6EAD5; --line:#E5D7BF;
+  --orange:#FF6A00; --orange-text:#A64B00; --orange-soft:#FFE6D1;
+  --good:#2F6443; --good-soft:#DCEDDF; --warn:#7E5200; --warn-soft:#FAEAC4; --bad:#9C3928; --bad-soft:#F8DDD6;
+  --z1:#9CC3AA; --z2:#5E9C74; --z3:#E2A72E; --z4:#F07E2E; --z5:#C8432B;
+  --display:"Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --hand:"Caveat", "Bradley Hand", "Segoe Print", cursive;
+  --body:system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono:ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#16171C; --ink:#FFF7E9; --muted:#B8B2A6; --card:#1E1F25; --surface:#24252C; --line:#383A44;
+    --orange:#FF7A1A; --orange-text:#FFA061; --orange-soft:#3A2416;
+    --good:#97CEA6; --good-soft:#1C3125; --warn:#F2C46B; --warn-soft:#382D15; --bad:#FFA98E; --bad-soft:#3D221D;
+    --z1:#5F8C70; --z2:#6FB386; --z3:#E8B23E; --z4:#F58A3C; --z5:#E05A40;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#16171C; --ink:#FFF7E9; --muted:#B8B2A6; --card:#1E1F25; --surface:#24252C; --line:#383A44;
+  --orange:#FF7A1A; --orange-text:#FFA061; --orange-soft:#3A2416;
+  --good:#97CEA6; --good-soft:#1C3125; --warn:#F2C46B; --warn-soft:#382D15; --bad:#FFA98E; --bad-soft:#3D221D;
+  --z1:#5F8C70; --z2:#6FB386; --z3:#E8B23E; --z4:#F58A3C; --z5:#E05A40;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font:16px/1.55 var(--body);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding-block:28px 64px;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));display:grid;gap:56px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.1}
+h2{font-size:clamp(1.6rem,3.6vw,2.2rem);font-weight:800;letter-spacing:-.01em}
+h3{font-size:1.12rem;font-weight:700}
+p{margin:0}
+a{color:var(--orange-text);text-underline-offset:2px}
+a:focus-visible{outline:2px solid var(--orange);outline-offset:2px;border-radius:3px}
+.eyebrow{font:600 .74rem/1.2 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.lead{font-size:1.08rem;max-width:62ch}
+.muted{color:var(--muted)}
+.note{font-family:var(--hand);font-size:1.45rem;line-height:1.15;color:var(--orange-text)}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+section{display:grid;gap:20px;min-width:0}
+.sec-head{display:grid;gap:8px;max-width:70ch}
+
+/* Race bib header */
+.bib{position:relative;background:var(--card);border:1.5px solid var(--line);border-radius:6px;padding:36px clamp(20px,4vw,44px) 30px;display:grid;gap:18px;box-shadow:0 1px 0 var(--line),0 14px 30px -24px rgba(0,0,0,.35)}
+.bib::before,.bib::after{content:"";position:absolute;top:14px;width:10px;height:10px;border-radius:50%;background:var(--paper);border:1.5px solid var(--line)}
+.bib::before{left:14px}.bib::after{right:14px}
+.bib .pins-b::before,.bib .pins-b::after{content:"";position:absolute;bottom:14px;width:10px;height:10px;border-radius:50%;background:var(--paper);border:1.5px solid var(--line)}
+.bib .pins-b::before{left:14px}.bib .pins-b::after{right:14px}
+.bib-top{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline}
+.bib-band{height:10px;background:var(--orange);border-radius:2px}
+.bib h1{font-size:clamp(2.6rem,9vw,5.2rem);font-weight:800;letter-spacing:-.02em}
+.bib-no{font-family:var(--display);font-weight:800;font-size:1rem;letter-spacing:.06em;color:var(--orange-text)}
+.answer{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.ans{border-top:3px solid var(--c,var(--line));padding-top:10px;display:grid;gap:4px;align-content:start;min-width:0}
+.ans b{font-family:var(--display);font-size:1.05rem}
+.ans .verdict{font:700 .78rem/1 var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--c)}
+.ans.yes{--c:var(--good)} .ans.maybe{--c:var(--warn)} .ans.no{--c:var(--bad)}
+
+/* Flow */
+.flow{display:grid;grid-template-columns:1fr auto 1.15fr auto 1fr;gap:14px;align-items:stretch}
+.col{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px;display:grid;gap:12px;align-content:start;min-width:0}
+.col.core{background:var(--surface);border-color:var(--orange)}
+.step{font:700 .74rem/1 var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--orange-text)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:.86rem;border:1px solid var(--line);border-radius:999px;padding:3px 10px;background:var(--paper);white-space:nowrap}
+.chip.hl{border-color:var(--orange);background:var(--orange-soft)}
+.layers{display:grid;gap:8px}
+.layer{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:grid;gap:2px}
+.layer b{font-size:.95rem}
+.layer span{font-size:.86rem;color:var(--muted)}
+.arrow{display:grid;place-items:center;color:var(--orange)}
+.arrow svg{width:28px;height:28px}
+.outs{display:grid;gap:8px;list-style:none;margin:0;padding:0}
+.outs li{display:flex;gap:8px;align-items:baseline;font-size:.95rem}
+.outs li::before{content:"";flex:none;width:8px;height:8px;border-radius:50%;background:var(--orange);transform:translateY(-1px)}
+@media (max-width:820px){
+  .flow{grid-template-columns:1fr}
+  .arrow svg{transform:rotate(90deg)}
+}
+
+/* Example rating */
+.example{display:grid;grid-template-columns:1.1fr 1fr;gap:20px;background:var(--card);border:1px dashed var(--muted);border-radius:10px;padding:20px}
+@media (max-width:760px){.example{grid-template-columns:1fr}}
+.tag{display:inline-block;font:700 .7rem/1 var(--body);letter-spacing:.08em;text-transform:uppercase;padding:5px 8px;border-radius:4px;background:var(--warn-soft);color:var(--warn)}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media (max-width:440px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.stat{display:grid;gap:2px}
+.stat .v{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:1.25rem;font-weight:600}
+.stat .k{font-size:.78rem;color:var(--muted)}
+.zbar{display:flex;height:22px;border-radius:4px;overflow:hidden;border:1px solid var(--line)}
+.zbar span{display:block;height:100%}
+.zlegend{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;font-size:.76rem;color:var(--muted)}
+.zlegend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px}
+.speech{background:var(--surface);border-radius:10px;padding:14px 16px;display:grid;gap:8px;align-content:start}
+.speech p{font-size:.98rem}
+
+/* Source cards */
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(290px,1fr))}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;display:grid;gap:10px;align-content:start;min-width:0}
+.card.star{border-color:var(--orange);box-shadow:inset 0 0 0 1px var(--orange)}
+.card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.card p{font-size:.93rem}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:.86rem;margin:0}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0;min-width:0}
+.pill{display:inline-block;font:700 .7rem/1 var(--body);letter-spacing:.06em;text-transform:uppercase;padding:5px 8px;border-radius:999px;white-space:nowrap}
+.pill.good{background:var(--good-soft);color:var(--good)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.bad{background:var(--bad-soft);color:var(--bad)}
+.pill.neutral{background:var(--surface);color:var(--muted)}
+.zm{display:inline-flex;gap:3px;align-items:center}
+.zm i{display:block;width:14px;height:8px;border-radius:2px;background:var(--line)}
+.zm.z1 i:nth-child(-n+1),.zm.z2 i:nth-child(-n+2),.zm.z3 i:nth-child(-n+3),.zm.z4 i:nth-child(-n+4),.zm.z5 i:nth-child(-n+5){background:var(--c)}
+.zm i:nth-child(1){--c:var(--z1)} .zm i:nth-child(2){--c:var(--z2)} .zm i:nth-child(3){--c:var(--z3)} .zm i:nth-child(4){--c:var(--z4)} .zm i:nth-child(5){--c:var(--z5)}
+.zm-label{font-size:.78rem;color:var(--muted);margin-left:6px}
+.callout{background:var(--orange-soft);border-radius:10px;padding:16px 18px;display:grid;gap:6px}
+.callout b{font-family:var(--display)}
+
+/* Features */
+.feat{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
+.f{border-top:2px solid var(--ink);padding-top:10px;display:grid;gap:6px;align-content:start;min-width:0}
+.f p{font-size:.92rem;color:var(--muted)}
+.f .when{font:700 .7rem/1 var(--body);letter-spacing:.08em;text-transform:uppercase}
+.when.s{color:var(--good)} .when.m{color:var(--warn)} .when.l{color:var(--bad)}
+
+/* Plan builder */
+.builder{display:grid;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px}
+.brow{display:grid;grid-template-columns:120px 1fr;gap:10px;align-items:start}
+@media (max-width:520px){.brow{grid-template-columns:1fr;gap:6px}}
+.brow > span{font-weight:600;font-size:.9rem;padding-top:3px}
+
+/* Two-col lists */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:760px){.two{grid-template-columns:1fr}}
+.list{margin:0;padding-left:1.1em;display:grid;gap:6px;font-size:.95rem}
+.list li::marker{color:var(--orange)}
+
+/* Safety */
+.safe{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
+.s{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--sc,var(--line));border-radius:8px;padding:14px;display:grid;gap:6px;align-content:start;min-width:0}
+.s p{font-size:.9rem}
+.s.red{--sc:var(--bad)} .s.amber{--sc:var(--warn)} .s.green{--sc:var(--good)}
+
+/* Paths */
+.paths{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(270px,1fr))}
+.path{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px;display:grid;gap:10px;align-content:start}
+.path.rec{border:2px solid var(--orange)}
+.path .letter{font-family:var(--display);font-weight:800;font-size:2.2rem;line-height:1;color:var(--orange-text)}
+.pc{display:grid;gap:4px;font-size:.9rem;margin:0;padding:0;list-style:none}
+.pc li{display:flex;gap:8px}
+.pc li::before{flex:none;font-weight:700;width:1em}
+.pc .plus::before{content:"+";color:var(--good)}
+.pc .minus::before{content:"–";color:var(--bad)}
+
+/* Course */
+.course{position:relative;display:grid;gap:0;padding-left:34px}
+.course::before{content:"";position:absolute;left:11px;top:8px;bottom:8px;width:3px;background:repeating-linear-gradient(to bottom,var(--orange) 0 10px,transparent 10px 16px);border-radius:2px}
+.km{position:relative;padding:0 0 22px 0;display:grid;gap:4px}
+.km:last-child{padding-bottom:0}
+.km::before{content:"";position:absolute;left:-30px;top:4px;width:17px;height:17px;border-radius:50%;background:var(--paper);border:3px solid var(--orange)}
+.km.done::before{background:var(--orange)}
+.km .marker{font-family:var(--mono);font-size:.8rem;font-weight:700;color:var(--orange-text);letter-spacing:.04em}
+.km p{font-size:.93rem;color:var(--muted);max-width:68ch}
+.size{font:700 .7rem/1 var(--body);letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--line);border-radius:4px;padding:3px 6px;margin-left:6px;color:var(--muted);vertical-align:2px}
+
+/* Competitors */
+.comp{display:grid;gap:0;border-top:1px solid var(--line)}
+.crow{display:grid;grid-template-columns:180px 1fr;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:.93rem}
+.crow b{font-family:var(--display)}
+@media (max-width:560px){.crow{grid-template-columns:1fr;gap:2px}}
+
+/* Decisions */
+.dec{counter-reset:d;display:grid;gap:10px;list-style:none;margin:0;padding:0}
+.dec li{counter-increment:d;display:grid;grid-template-columns:34px 1fr;gap:10px;align-items:start;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+.dec li::before{content:counter(d);font-family:var(--display);font-weight:800;font-size:1.3rem;color:var(--orange-text);line-height:1.2}
+.dec li div{display:grid;gap:3px;min-width:0}
+.dec li span{font-size:.9rem;color:var(--muted)}
+
+.sources{font-size:.85rem;columns:2 300px;column-gap:28px}
+.sources p{break-inside:avoid;margin-bottom:6px;overflow-wrap:anywhere}
+footer{font-size:.85rem;color:var(--muted);border-top:1px solid var(--line);padding-top:14px}
+@media (prefers-reduced-motion:no-preference){
+  .km.done::before{animation:pulse 2.4s ease-in-out infinite}
+  @keyframes pulse{50%{box-shadow:0 0 0 6px var(--orange-soft)}}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+<!-- HERO / BIB -->
+<header class="bib">
+  <span class="pins-b" aria-hidden="true"></span>
+  <div class="bib-top">
+    <span class="bib-no">NR 24·10 · RESEARCH</span>
+    <span class="eyebrow">Tryb sportowy · propozycja, nic nie jest jeszcze zbudowane</span>
+  </div>
+  <div class="bib-band" aria-hidden="true"></div>
+  <h1>Doddy Trener</h1>
+  <p class="lead">Krótko: <b>da się</b>, ale nie od Stravy. Najlepszy start to <b>Apple Health</b>. Jest na każdym iPhonie, nic nie kosztuje, a dane zostają na telefonie. Większość zegarków (Garmin, Polar, Suunto, COROS, Oura, WHOOP) i sama Strava potrafią zapisywać treningi w Apple Health, więc jedno podłączenie daje dużo. Bezpośrednie API Garmina czy COROS to dodatki na później.</p>
+  <div class="answer">
+    <div class="ans yes"><span class="verdict">Tak, start tutaj</span><b>Apple Health</b><span class="muted">Treningi, tętno, sen, HRV, VO₂max, kroki, posiłki. Działa nawet na darmowym koncie Apple do testów.</span></div>
+    <div class="ans yes"><span class="verdict">Tak</span><b>Apple Watch</b><span class="muted">Doddy może sam ułożyć trening interwałowy i wysłać go do aplikacji Trening na zegarku.</span></div>
+    <div class="ans no"><span class="verdict">Nie przez API</span><b>Strava</b><span class="muted">Od 1 czerwca 2026 regulamin Stravy zabrania wysyłania jej danych do AI. Zostaje okrężna droga: Strava zapisuje treningi w Apple Health, a Doddy czyta Apple Health.</span></div>
+    <div class="ans maybe"><span class="verdict">Tak, po wniosku</span><b>Garmin</b><span class="muted">Program dla twórców ruszył znowu 21 października 2026. Wysyła treningi na zegarek, ale dla użytkowników aplikacji trzeba wniosku firmy i serwera.</span></div>
+  </div>
+  <p class="note">Ja układam plan i pilnuję, żebyś nie przesadził. Biegasz Ty.</p>
+</header>
+
+<!-- FLOW -->
+<section aria-labelledby="h-flow">
+  <div class="sec-head">
+    <span class="eyebrow">Jak to działa</span>
+    <h2 id="h-flow">Dane wchodzą, Doddy liczy, Ty decydujesz</h2>
+    <p class="muted">Reguły trenera siedzą w kodzie (strefy, limity, przerwy). AI tylko układa z tego plan i mówi to po ludzku. Tak samo działa reszta Doddy'ego: model coś proponuje, kod sprawdza, Ty mówisz „tak".</p>
+  </div>
+  <div class="flow">
+    <div class="col">
+      <span class="step">1 · Dane</span>
+      <div class="chips">
+        <span class="chip hl">Apple Health</span><span class="chip">Apple Watch</span><span class="chip">Strava</span><span class="chip">Garmin</span><span class="chip">Polar · Suunto · COROS</span><span class="chip">Oura · WHOOP</span><span class="chip hl">Twój głos</span>
+      </div>
+      <p class="muted" style="font-size:.88rem">Głosem: „zrobiłem 3 serie po 10 przysiadów z 60 kg". Apple Health nie zapisuje serii i ciężarów, więc dziennik siłowni Doddy prowadzi sam.</p>
+    </div>
+    <div class="arrow" aria-hidden="true"><svg viewBox="0 0 28 28" fill="none"><path d="M4 14h18m-6-7 7 7-7 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <div class="col core">
+      <span class="step">2 · Głowa Doddy'ego</span>
+      <div class="layers">
+        <div class="layer"><b>Reguły trenera w kodzie</b><span>Strefy tętna, skala wysiłku, ile może urosnąć najdłuższy bieg, kiedy dołożyć ciężar, czerwone flagi.</span></div>
+        <div class="layer"><b>Bazy wiedzy</b><span>Ćwiczenia z opisem i zamiennikami, produkty spożywcze, wytyczne WHO i ACSM.</span></div>
+        <div class="layer"><b>AI (Claude)</b><span>Składa plan z klocków, tłumaczy, odpowiada na pytania. Dostaje streszczenie, a nie surowe dane zdrowotne.</span></div>
+        <div class="layer"><b>Ty mówisz „tak"</b><span>Zanim coś trafi do kalendarza, na zegarek albo do pamięci.</span></div>
+      </div>
+    </div>
+    <div class="arrow" aria-hidden="true"><svg viewBox="0 0 28 28" fill="none"><path d="M4 14h18m-6-7 7 7-7 7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <div class="col">
+      <span class="step">3 · Co dostajesz</span>
+      <ul class="outs">
+        <li>Ocena każdego treningu</li>
+        <li>Plan na tydzień, łatwy albo pod cel</li>
+        <li>Trening wysłany na zegarek</li>
+        <li>„Dziś lżej", gdy sen i HRV są słabe</li>
+        <li>Rady do jedzenia pod Twój dzień</li>
+        <li>Podsumowanie tygodnia głosem</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- EXAMPLE -->
+<section aria-labelledby="h-ex">
+  <div class="sec-head">
+    <span class="eyebrow">Przykład</span>
+    <h2 id="h-ex">Tak mogłaby wyglądać ocena biegu</h2>
+  </div>
+  <div class="example">
+    <div style="display:grid;gap:14px;min-width:0">
+      <div><span class="tag">Makieta · przykładowe liczby</span></div>
+      <div class="stats">
+        <div class="stat"><span class="v">8,2 km</span><span class="k">dystans</span></div>
+        <div class="stat"><span class="v">47:10</span><span class="k">czas</span></div>
+        <div class="stat"><span class="v">5:45</span><span class="k">min/km</span></div>
+        <div class="stat"><span class="v">152</span><span class="k">śr. tętno</span></div>
+      </div>
+      <div style="display:grid;gap:6px">
+        <span class="eyebrow">Czas w strefach tętna</span>
+        <div class="zbar" role="img" aria-label="Strefa 1: 10%, strefa 2: 62%, strefa 3: 20%, strefa 4: 8%, strefa 5: 0%">
+          <span style="width:10%;background:var(--z1)"></span><span style="width:62%;background:var(--z2)"></span><span style="width:20%;background:var(--z3)"></span><span style="width:8%;background:var(--z4)"></span>
+        </div>
+        <div class="zlegend num"><span><i style="background:var(--z1)"></i>Z1 10%</span><span><i style="background:var(--z2)"></i>Z2 62%</span><span><i style="background:var(--z3)"></i>Z3 20%</span><span><i style="background:var(--z4)"></i>Z4 8%</span><span><i style="background:var(--z5)"></i>Z5 0%</span></div>
+      </div>
+    </div>
+    <div class="speech">
+      <span class="step">Doddy mówi</span>
+      <p>„Spokojny bieg wyszedł dobrze: 72% czasu w strefach 1–2, czyli tak jak w planie. Ostatnie 2 km poszły szybciej o 15 s na kilometr. Jutro w planie odpoczynek. Zostawiamy tak?"</p>
+      <p class="muted" style="font-size:.85rem">Ocena porównuje bieg z planem, nie z ideałem. Liczby wylicza kod, AI tylko je opisuje.</p>
+    </div>
+  </div>
+</section>
+
+<!-- SOURCES -->
+<section aria-labelledby="h-src">
+  <div class="sec-head">
+    <span class="eyebrow">Skąd brać dane</span>
+    <h2 id="h-src">Co można podłączyć</h2>
+    <p class="muted">Trudność pokazuję jak strefy tętna: Z1 to spacer, Z5 to sprint.</p>
+  </div>
+  <div class="grid" id="sources-grid">
+    <article class="card star">
+      <div class="card-head"><h3>Apple Health (HealthKit)</h3><span class="pill good">Polecam</span></div>
+      <div><span class="zm z2" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="zm-label">Z2 · łatwo</span></div>
+      <p>Główne źródło. Wszystko leży na iPhonie, a Doddy dostaje tylko to, na co pozwolisz.</p>
+      <dl class="kv">
+        <dt>Daje</dt><dd>treningi z trasą, tętno, HRV, tętno spoczynkowe, VO₂max, sen (fazy), kroki, kalorie, moc i krok biegu, regeneracja tętna, wysiłek treningu, waga, posiłki</dd>
+        <dt>Zapisuje</dt><dd>treningi i posiłki (po Twoim potwierdzeniu)</dd>
+        <dt>Koszt</dt><dd>0 zł, działa też na darmowym koncie Apple do testów</dd>
+        <dt>Uwaga</dt><dd>osobna zgoda na każdy typ danych; od iOS 27 można dać tylko ostatnie tygodnie historii</dd>
+      </dl>
+    </article>
+    <article class="card star">
+      <div class="card-head"><h3>Apple Watch (WorkoutKit)</h3><span class="pill good">Polecam</span></div>
+      <div><span class="zm z3" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="zm-label">Z3 · średnio</span></div>
+      <p>Doddy układa trening, np. 6×400 m z przerwami, i wysyła go do aplikacji Trening na zegarku. Zegarek sam prowadzi przez odcinki.</p>
+      <dl class="kv">
+        <dt>Daje</dt><dd>interwały, trening na czas lub dystans, tempo docelowe, multisport</dd>
+        <dt>Koszt</dt><dd>0 zł; nie trzeba pisać aplikacji na zegarek</dd>
+        <dt>Uwaga</dt><dd>Apple ogranicza liczbę zaplanowanych treningów naraz</dd>
+      </dl>
+    </article>
+    <article class="card">
+      <div class="card-head"><h3>Twój głos i pliki</h3><span class="pill good">Zawsze działa</span></div>
+      <div><span class="zm z1" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="zm-label">Z1 · spacer</span></div>
+      <p>„Przysiad 3×10, 60 kg, ciężko, RPE 8". Do tego pliki GPX lub FIT udostępnione przez „Zapisz w Doddy".</p>
+      <dl class="kv">
+        <dt>Daje</dt><dd>serie i ciężary (Apple Health ich nie ma), samopoczucie, ból, cele</dd>
+        <dt>Koszt</dt><dd>0 zł</dd>
+      </dl>
+    </article>
+    <article class="card">
+      <div class="card-head"><h3>Strava</h3><span class="pill bad">AI zakazane</span></div>
+      <div><span class="zm z5" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="zm-label">Z5 · zablokowane</span></div>
+      <p>Regulamin API od 1 czerwca 2026 (§5.3) zabrania używania danych Stravy w jakiejkolwiek aplikacji AI, nawet przez wklejenie ich do zapytania. Do tego zakaz analiz (§5.4) i konkurowania ze Stravą (§5.2).</p>
+      <dl class="kv">
+        <dt>Wyjątek</dt><dd>Strava MCP, ale tylko do prywatnego użytku subskrybentów, nie dla aplikacji takich jak Doddy</dd>
+        <dt>Obejście</dt><dd>Strava zapisuje treningi w Apple Health, Doddy czyta HealthKit. Prawnik musi to potwierdzić</dd>
+        <dt>Plany</dt><dd>API i tak nie umie wysyłać planów, tylko gotowe treningi</dd>
+      </dl>
+    </article>
+    <article class="card">
+      <div class="card-head"><h3>Garmin Connect</h3><span class="pill warn">Wniosek firmy</span></div>
+      <div><span class="zm z4" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="zm-label">Z4 · ciężko</span></div>
+      <p>Program ruszył znowu 21.10.2026 w trzech wersjach: Personal (tylko własne dane), Starter (firma, ograniczona liczba osób) i Enterprise (płatny).</p>
+      <dl class="kv">
+        <dt>Daje</dt><dd>treningi, zdrowie, sen; Training API wysyła treningi i plany do kalendarza Garmin Connect, a stamtąd na zegarek</dd>
+        <dt>AI</dt><dd>potrzebna zgoda użytkownika i informacja o AI (część zasad niepotwierdzona)</dd>
+        <dt>Uwaga</dt><dd>wymaga serwera Doddy'ego do logowania i odbioru danych</dd>
+      </dl>
+    </article>
+    <article class="card">
+      <div class="card-head"><h3>COROS</h3><span class="pill good">Otwarte na AI</span></div>
+      <div><span class="zm z3" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="zm-label">Z3 · średnio</span></div>
+      <p>COROS ma własny MCP bez wniosku, który czyta dane i zapisuje plany treningowe. Sam wymienia „aplikacje z trenerem AI" jako przykład użycia.</p>
+      <dl class="kv">
+        <dt>Uwaga</dt><dd>MCP jest na jedno konto; dla wielu użytkowników jest Partner API po wniosku</dd>
+      </dl>
+    </article>
+    <article class="card">
+      <div class="card-head"><h3>Oura i WHOOP</h3><span class="pill warn">Z ograniczeniami</span></div>
+      <div><span class="zm z3" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="zm-label">Z3 · średnio</span></div>
+      <p>Sen, gotowość, HRV, obciążenie. Oura od 8.06.2026 zabrania wysyłania danych z API do modelu AI (wolno tylko przez ich MCP). WHOOP: do 10 osób bez akceptacji, o AI regulamin milczy.</p>
+      <dl class="kv"><dt>Prościej</dt><dd>oba zapisują sen i tętno w Apple Health</dd></dl>
+    </article>
+    <article class="card">
+      <div class="card-head"><h3>Polar i Suunto</h3><span class="pill neutral">Można</span></div>
+      <div><span class="zm z3" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="zm-label">Z3 · średnio</span></div>
+      <p>Polar: darmowa samodzielna rejestracja, tylko treningi z ostatnich 30 dni, bez wysyłania planów. Suunto: tylko dla firm, weryfikacja ok. 2 tygodni, trasy i pliki.</p>
+      <dl class="kv"><dt>Prościej</dt><dd>oba synchronizują treningi z Apple Health</dd></dl>
+    </article>
+    <article class="card">
+      <div class="card-head"><h3>Agregatory</h3><span class="pill warn">Drogo</span></div>
+      <div><span class="zm z2" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span class="zm-label">Z2 · łatwo, ale płatnie</span></div>
+      <p>Terra, Junction, ROOK, Thryve, Spike: jedno API do wielu zegarków.</p>
+      <dl class="kv">
+        <dt>Koszt</dt><dd class="num">od ok. 300 do 999 $ miesięcznie</dd>
+        <dt>Minus</dt><dd>dane zdrowotne trafiają do kolejnej firmy; Strava zabrania pośredników, a Oura zabrania im wysyłania danych do AI</dd>
+      </dl>
+    </article>
+    <article class="card">
+      <div class="card-head"><h3>Reszta</h3><span class="pill neutral">Na później</span></div>
+      <dl class="kv">
+        <dt>Fitbit</dt><dd>stare API wyłączane 2.11.2026; nowe Google Health API wymaga audytu bezpieczeństwa</dd>
+        <dt>Wahoo</dt><dd>plany na liczniki rowerowe, po akceptacji</dd>
+        <dt>intervals.icu</dt><dd>darmowe, zapisuje treningi w kalendarzu, ale nie oddaje danych ze Stravy</dd>
+        <dt>TrainingPeaks</dt><dd>nie przyjmuje nowych partnerów</dd>
+        <dt>Withings</dt><dd>waga, ciśnienie, sen; samodzielna rejestracja</dd>
+        <dt>Health Connect</dt><dd>tylko Android</dd>
+      </dl>
+    </article>
+  </div>
+  <div class="callout">
+    <b>Najważniejsze odkrycie</b>
+    <p>Apple Health działa jak skrzyżowanie. Garmin Connect, Strava, Polar Flow, Suunto, COROS, Oura i WHOOP potrafią zapisywać treningi albo sen do Apple Health (użytkownik włącza to w ich aplikacji). Doddy, czytając tylko Apple Health, widzi więc treningi z prawie każdego zegarka. Traci detale typowe dla danej marki (np. obciążenie treningowe Garmina czy segmenty Stravy), ale na start to wystarczy.</p>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section aria-labelledby="h-feat">
+  <div class="sec-head">
+    <span class="eyebrow">Opcje</span>
+    <h2 id="h-feat">Co Doddy może robić w trybie sportowym</h2>
+    <p class="muted">Kolor przy nazwie to rozmiar pracy: <b style="color:var(--good)">mały</b>, <b style="color:var(--warn)">średni</b>, <b style="color:var(--bad)">duży</b>.</p>
+  </div>
+  <div class="feat">
+    <div class="f"><span class="when s">Mały</span><h3>„Jak mi poszło?"</h3><p>Po treningu pytasz głosem. Doddy czyta trening z Apple Health i ocenia: tempo, tętno w strefach, porównanie z poprzednimi.</p></div>
+    <div class="f"><span class="when s">Mały</span><h3>Podsumowanie tygodnia</h3><p>W niedzielę: ile km, ile treningów, ile snu, co poszło dobrze. Bez wyrzutów, gdy tydzień był słabszy.</p></div>
+    <div class="f"><span class="when s">Mały</span><h3>Dziennik siłowni głosem</h3><p>„Wyciskanie 4×8, 70 kg". Doddy zapisuje serie i ciężary, następnym razem podpowiada, ile dołożyć.</p></div>
+    <div class="f"><span class="when m">Średni</span><h3>Plan biegowy</h3><p>Od zera do 5 km, 10 km, półmaraton, maraton. Łatwy, normalny albo ambitny. Tempa wyliczone z Twojego ostatniego wyniku.</p></div>
+    <div class="f"><span class="when m">Średni</span><h3>Plan siłowy</h3><p>Dom bez sprzętu, siłownia, kalistenika. Całe ciało albo podział na dni. Cel: siła, masa, sylwetka, zdrowe plecy.</p></div>
+    <div class="f"><span class="when m">Średni</span><h3>Trener od ćwiczeń</h3><p>Jak zrobić martwy ciąg, czym zastąpić przysiad, gdy nie ma sztangi, jak się rozgrzać. Opisy z bazy ćwiczeń, nie z wyobraźni AI.</p></div>
+    <div class="f"><span class="when m">Średni</span><h3>„Dziś lżej"</h3><p>Rano Doddy patrzy na sen, HRV i tętno spoczynkowe. Gdy są słabe, proponuje lżejszy trening zamiast interwałów.</p></div>
+    <div class="f"><span class="when m">Średni</span><h3>Trening na zegarek</h3><p>Interwały z planu trafiają do aplikacji Trening na Apple Watch (WorkoutKit). Zegarek sam prowadzi przez odcinki.</p></div>
+    <div class="f"><span class="when m">Średni</span><h3>Jedzenie pod Twój dzień</h3><p>Kalorie i białko pod cel, pomysły na posiłki przy pracy zmianowej, małym budżecie albo diecie wege. Lista zakupów do list Doddy'ego.</p></div>
+    <div class="f"><span class="when m">Średni</span><h3>Treningi w kalendarzu</h3><p>Doddy widzi Twój kalendarz i proponuje, kiedy trenować. Wpis do kalendarza dopiero po Twoim „tak".</p></div>
+    <div class="f"><span class="when l">Duży</span><h3>Zdjęcie talerza</h3><p>Robisz zdjęcie, Doddy szacuje kalorie. W badaniach AI myli się o ok. 24–36% i więcej, więc zawsze jako widełki do poprawienia.</p></div>
+    <div class="f"><span class="when l">Duży</span><h3>Trener na żywo</h3><p>Doddy mówi w trakcie biegu: „zwolnij, jesteś w strefie 4". Na iPhonie ze słuchawkami albo na zegarku (aplikacja na zegarek jest teraz wstrzymana).</p></div>
+  </div>
+</section>
+
+<!-- PLAN BUILDER -->
+<section aria-labelledby="h-plan">
+  <div class="sec-head">
+    <span class="eyebrow">Plan „jaki chcesz"</span>
+    <h2 id="h-plan">O co Doddy zapyta, zanim ułoży plan</h2>
+    <p class="muted">Pięć pytań głosem albo kafelkami. Z odpowiedzi kod składa szkielet planu, AI dopisuje opisy.</p>
+  </div>
+  <div class="builder">
+    <div class="brow"><span>Cel</span><div class="chips"><span class="chip">zdrowie i forma</span><span class="chip">schudnąć</span><span class="chip hl">5 km</span><span class="chip">10 km</span><span class="chip">półmaraton</span><span class="chip">maraton</span><span class="chip">siła</span><span class="chip">masa</span><span class="chip">sylwetka</span><span class="chip">mobilność</span><span class="chip">rower · pływanie</span></div></div>
+    <div class="brow"><span>Poziom</span><div class="chips"><span class="chip hl">zaczynam od zera</span><span class="chip">trochę ćwiczę</span><span class="chip">regularnie</span><span class="chip">startuję w zawodach</span></div></div>
+    <div class="brow"><span>Czas</span><div class="chips"><span class="chip">2 dni</span><span class="chip hl">3 dni</span><span class="chip">4 dni</span><span class="chip">5+ dni</span><span class="chip">20 min</span><span class="chip hl">45 min</span><span class="chip">60+ min</span></div></div>
+    <div class="brow"><span>Miejsce</span><div class="chips"><span class="chip">dom</span><span class="chip">siłownia</span><span class="chip hl">park · ulica</span><span class="chip">bieżnia</span></div></div>
+    <div class="brow"><span>Ograniczenia</span><div class="chips"><span class="chip">kolano</span><span class="chip">plecy</span><span class="chip">brak sprzętu</span><span class="chip">praca zmianowa</span><span class="chip">ciąża → lekarz</span><span class="chip">poniżej 18 lat → tylko ogólne rady</span></div></div>
+    <p class="note" style="font-size:1.25rem">Przykład: „od zera do 5 km, 3 razy w tygodniu po 45 minut w parku" → 8 tygodni marszobiegów.</p>
+  </div>
+</section>
+
+<!-- KNOWLEDGE -->
+<section aria-labelledby="h-know">
+  <div class="sec-head">
+    <span class="eyebrow">Baza trenera</span>
+    <h2 id="h-know">Skąd Doddy ma wiedzieć, co radzić</h2>
+    <p class="muted">Zasada: każda rada ma źródło, które da się pokazać. Doddy nie wymyśla fizjologii.</p>
+  </div>
+  <div class="two">
+    <div class="card"><h3>Wiedza treningowa</h3>
+      <ul class="list">
+        <li><b>WHO 2020:</b> 150–300 min umiarkowanego albo 75–150 min intensywnego ruchu w tygodniu i siła 2 razy w tygodniu. Wolno cytować.</li>
+        <li><b>ACSM 2026</b> (nowe zalecenia siłowe): każda grupa mięśni 2 razy w tygodniu, do upadku nie trzeba, wystarczy 2–3 powtórzenia zapasu; pod masę od 10 serii na mięsień w tygodniu.</li>
+        <li><b>Strefy tętna:</b> wzór 208 − 0,7 × wiek, ale myli się o ok. 11–12 uderzeń, więc pokazujemy zakresy i wolimy test albo skalę wysiłku.</li>
+        <li><b>80/20:</b> ok. 80% treningu spokojnie. Rozsądny punkt wyjścia, a nie twarde prawo.</li>
+        <li><b>Długość biegu:</b> badanie 5205 biegaczy (BJSM 2025): ryzyko rośnie, gdy jeden bieg jest o ponad 10% dłuższy od najdłuższego z ostatnich 30 dni. Popularna „zasada 10% tygodniowo" ma słabe dowody.</li>
+        <li><b>Obciążenie:</b> wysiłek 0–10 × minuty. Wskaźnika ACWR nie używamy do „przewidywania kontuzji", bo badania go podważają.</li>
+        <li><b>Tempa z wyniku:</b> równania Danielsa i Gilberta z 1979 r. można liczyć samemu. Tabel z książki i nazwy VDOT nie kopiujemy.</li>
+        <li><b>Od zera do 5 km:</b> wzór NHS: 9 tygodni, 3 biegi, na start 60 s biegu i 90 s marszu. Bez marki i nagrań NHS.</li>
+      </ul>
+      <p class="muted" style="font-size:.85rem">Książki ACSM, NSCA i Danielsa są chronione. Liczby i fakty można opisać własnymi słowami ze źródłem, tekstów i tabel kopiować nie wolno.</p>
+    </div>
+    <div class="card"><h3>Baza ćwiczeń</h3>
+      <ul class="list">
+        <li><b>wger</b> (polecam): 932 ćwiczenia, 383 zdjęcia, 78 filmów, darmowe API bez klucza. Każdy wpis ma swoją licencję Creative Commons, więc trzeba podpisać autorów.</li>
+        <li><b>free-exercise-db:</b> ponad 800 ćwiczeń ze zdjęciami, kod wolny, ale nie wiadomo, skąd są zdjęcia. Ryzyko przy płatnej aplikacji.</li>
+        <li><b>ExerciseDB:</b> 1500 ćwiczeń z animacjami GIF, ale bez licencji na użytek komercyjny. Potrzebna pisemna zgoda.</li>
+        <li><b>API Ninjas:</b> ponad 3000 ćwiczeń, sam tekst; w darmowej wersji bez użytku komercyjnego.</li>
+        <li><b>ExRx:</b> duża, sprawdzona baza na płatnej licencji.</li>
+        <li><b>Własne krótkie filmy:</b> najdroższe, ale bez kłopotów z licencją. Doddy'ego w pozach ćwiczeń nie generujemy; nowe pozy mogą przyjść tylko z Twojej paczki rysunków.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- FOOD -->
+<section aria-labelledby="h-food">
+  <div class="sec-head">
+    <span class="eyebrow">Jedzenie</span>
+    <h2 id="h-food">Rady do jedzenia pod tryb życia</h2>
+  </div>
+  <div class="grid">
+    <article class="card">
+      <h3>Jak notujesz</h3>
+      <ul class="list">
+        <li><b>Głosem:</b> „owsianka z bananem i kawa z mlekiem".</li>
+        <li><b>Kod kreskowy:</b> Open Food Facts.</li>
+        <li><b>Zdjęcie:</b> tylko jako widełki, np. 450–650 kcal, do poprawienia palcem.</li>
+        <li>Do Apple Health trafia dopiero po Twoim „zgadza się". Apple zabrania wpisywania tam fałszywych danych.</li>
+      </ul>
+    </article>
+    <article class="card">
+      <h3>Co Doddy wylicza</h3>
+      <dl class="kv">
+        <dt>Spoczynek</dt><dd>wzór Mifflina-St Jeora (waga, wzrost, wiek)</dd>
+        <dt>Cały dzień</dt><dd class="num">× 1,4–2,4 wg aktywności (FAO/WHO)</dd>
+        <dt>Białko</dt><dd class="num">1,4–2,0 g na kg masy ciała, 20–40 g na posiłek (ISSN)</dd>
+        <dt>Woda</dt><dd class="num">ok. 2,0 l (kobiety) i 2,5 l (mężczyźni) dziennie razem z jedzeniem (EFSA)</dd>
+        <dt>Deficyt</dt><dd class="num">najwyżej ok. 500 kcal dziennie</dd>
+      </dl>
+    </article>
+    <article class="card">
+      <h3>Pod Twój tryb życia</h3>
+      <ul class="list">
+        <li>Praca zmianowa: kiedy jeść przed i po treningu.</li>
+        <li>Biuro i mało ruchu: mniejsze porcje, więcej białka i warzyw.</li>
+        <li>Mało czasu: posiłki na 10 minut i gotowanie na 2 dni.</li>
+        <li>Mały budżet, dieta wege, trening rano albo wieczorem.</li>
+        <li>Lista zakupów od razu do list Doddy'ego.</li>
+      </ul>
+    </article>
+    <article class="card">
+      <h3>Skąd dane o jedzeniu</h3>
+      <dl class="kv">
+        <dt>Open Food Facts</dt><dd>darmowe, kody kreskowe; ok. 38 tys. produktów z Polski na 4,8 mln, więc z dziurami</dd>
+        <dt>USDA</dt><dd>darmowe, produkty podstawowe (jabłko, ryż, kurczak)</dd>
+        <dt>Polskie tabele</dt><dd>NIZP PZH-PIB: tylko książka i PDF, bez API; potrzebna zgoda wydawcy</dd>
+        <dt>FatSecret</dt><dd>za darmo tylko dane z USA, polskie płatne</dd>
+        <dt>Edamam</dt><dd>mały darmowy limit, potem od 69 $ miesięcznie</dd>
+      </dl>
+    </article>
+  </div>
+</section>
+
+<!-- SAFETY -->
+<section aria-labelledby="h-safe">
+  <div class="sec-head">
+    <span class="eyebrow">Bezpieczeństwo i prawo</span>
+    <h2 id="h-safe">Granice, które trzeba wpisać w kod</h2>
+    <p class="muted">Dane o zdrowiu to najbardziej wrażliwe dane, jakie Doddy może dostać. Te zasady muszą działać w kodzie, a nie tylko w prompcie.</p>
+  </div>
+  <div class="safe">
+    <div class="s red"><h3>Czerwone flagi</h3><p>Ból w klatce, szyi, szczęce lub ręce, omdlenie, zawroty, nagła duszność, kołatanie serca. Doddy mówi stałym tekstem: „przerwij teraz, w nagłym wypadku dzwoń 112" i kończy tryb sportowy. AI nie może tego zmienić.</p></div>
+    <div class="s red"><h3>To nie lekarz</h3><p>Aplikacja „na formę" nie podlega przepisom o wyrobach medycznych (MDR), dopóki nie obiecuje diagnozy ani leczenia. Nie piszemy: „wyleczy kolano", „wykryje arytmię", „przewidzi kontuzję". Przy bólu i urazie: fizjoterapeuta albo lekarz.</p></div>
+    <div class="s red"><h3>Bez głodzenia</h3><p>Nigdy poniżej spoczynkowego zapotrzebowania i nigdy poniżej 800 kcal. Przy BMI poniżej 18,5 żadnego odchudzania. Gdy widać sygnały zaburzeń odżywiania, Doddy wyłącza liczby i wagę. Chatbot „Tessa" (NEDA) zdjęto w 2023 właśnie za takie rady.</p></div>
+    <div class="s amber"><h3>Krótka ankieta na start</h3><p>Przed planem mocniejszym niż lekki: pytania o obecny ruch, choroby i objawy (logika ACSM). Każde „tak" oznacza: najpierw lekarz. Gotowa ankieta PAR-Q+ jest chroniona prawem autorskim.</p></div>
+    <div class="s amber"><h3>Młodzi i ciąża</h3><p>Poniżej 18 lat: bez odchudzania i bez maksymalnych ciężarów. Poniżej 16 lat w Polsce potrzebna zgoda rodzica. W ciąży tylko ogólne zasady WHO i „zapytaj lekarza lub położną".</p></div>
+    <div class="s amber"><h3>RODO art. 9</h3><p>Tętno, HRV, sen, waga, kontuzje i dieta to dane szczególne. Potrzebna wyraźna zgoda, ocena skutków (DPIA) i łatwe cofnięcie. Apple wymaga zgody przed wysłaniem danych do zewnętrznego AI i zabrania używania danych zdrowotnych do reklam.</p></div>
+    <div class="s green"><h3>Mówimy, że to AI</h3><p>Od 2 sierpnia 2026 AI Act (art. 50) wymaga informacji, że rozmawiasz z AI. Trener „na formę" nie jest systemem wysokiego ryzyka, dopóki nie jest wyrobem medycznym.</p></div>
+    <div class="s green"><h3>Zasady Doddy'ego</h3><p>Pyta, zanim przeczyta dane. Nie zapisuje sam wrażliwych rzeczy. Nie mówi „zapisane", zanim zapis się uda. Nie zawstydza za opuszczony trening i nie żartuje, gdy chodzi o zdrowie.</p></div>
+    <div class="s green"><h3>Bezpieczny postęp</h3><p>Jeden bieg najwyżej o 10% dłuższy od najdłuższego z 30 dni. Ok. 80% spokojnie. Ciężar w górę dopiero, gdy zostają 2–3 powtórzenia zapasu. Nigdy liczby typu „ryzyko kontuzji 37%".</p></div>
+  </div>
+</section>
+
+<!-- PATHS -->
+<section aria-labelledby="h-paths">
+  <div class="sec-head">
+    <span class="eyebrow">Trzy drogi</span>
+    <h2 id="h-paths">Jak to zbudować</h2>
+  </div>
+  <div class="paths">
+    <article class="path rec">
+      <span class="letter">A</span>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><h3>Najpierw Apple</h3><span class="pill good">Polecam</span></div>
+      <p class="muted" style="font-size:.9rem">Apple Health + Apple Watch + głos.</p>
+      <ul class="pc">
+        <li class="plus">0 zł za dane, wszystko na telefonie</li>
+        <li class="plus">widzi większość zegarków przez Apple Health</li>
+        <li class="plus">nie potrzebuje serwera do danych</li>
+        <li class="plus">testy na darmowym koncie Apple</li>
+        <li class="minus">bez detali marek, np. obciążenia Garmina</li>
+        <li class="minus">ludzie muszą włączyć zapis do Apple Health w aplikacji zegarka</li>
+      </ul>
+    </article>
+    <article class="path">
+      <span class="letter">B</span>
+      <h3>Apple + Garmin i COROS</h3>
+      <p class="muted" style="font-size:.9rem">Droga A i bezpośrednie API zegarków.</p>
+      <ul class="pc">
+        <li class="plus">plany prosto na zegarki Garmin i COROS</li>
+        <li class="plus">dane, których nie ma w Apple Health</li>
+        <li class="minus">serwer z logowaniem do kont zegarków</li>
+        <li class="minus">wniosek firmy do Garmina, zgody na AI</li>
+        <li class="minus">duży plan Garmina płatny od 2027</li>
+      </ul>
+    </article>
+    <article class="path">
+      <span class="letter">C</span>
+      <h3>Agregator</h3>
+      <p class="muted" style="font-size:.9rem">Terra, Junction albo ROOK zamiast własnych integracji.</p>
+      <ul class="pc">
+        <li class="plus">jeden kod do wielu zegarków</li>
+        <li class="plus">szybciej niż droga B</li>
+        <li class="minus">300–999 $ miesięcznie</li>
+        <li class="minus">dane zdrowotne u kolejnej firmy</li>
+        <li class="minus">Strava i Oura i tak odpadają dla AI</li>
+      </ul>
+    </article>
+  </div>
+  <p class="muted" style="font-size:.9rem">W żadnej drodze nie da się zgodnie z regulaminem podpiąć API Stravy pod AI. Strava wchodzi tylko przez Apple Health albo pliki, które użytkownik sam udostępni.</p>
+</section>
+
+<!-- COURSE -->
+<section aria-labelledby="h-course">
+  <div class="sec-head">
+    <span class="eyebrow">Trasa budowy (droga A)</span>
+    <h2 id="h-course">Kolejność, kilometr po kilometrze</h2>
+  </div>
+  <div class="course">
+    <div class="km done"><span class="marker">START · JUŻ JEST</span><h3>Doddy czyta kroki</h3><p>Z „Ruchu i sprawności": kroki, dystans i piętra z ostatnich 7 dni, po Twoim „tak" (ADR-568).</p></div>
+    <div class="km"><span class="marker">KM 0</span><h3>Zgody i odczyt Apple Health <span class="size">mały</span></h3><p>Treningi, tętno, sen, HRV. Ekran „co Doddy widzi" i jak to wyłączyć.</p></div>
+    <div class="km"><span class="marker">KM 5</span><h3>„Jak mi poszło?" i podsumowanie tygodnia <span class="size">mały</span></h3><p>Strefy i tempo liczy kod, AI je opisuje.</p></div>
+    <div class="km"><span class="marker">KM 10</span><h3>Dziennik siłowni głosem i baza ćwiczeń <span class="size">średni</span></h3><p>wger z podpisami autorów, zamienniki ćwiczeń, opis techniki.</p></div>
+    <div class="km"><span class="marker">KM 15</span><h3>Plany biegowe i siłowe <span class="size">średni</span></h3><p>Reguły w kodzie: postęp, 80/20, ankieta na start, czerwone flagi.</p></div>
+    <div class="km"><span class="marker">KM 21,1</span><h3>Plan na Apple Watch i do kalendarza <span class="size">średni</span></h3><p>WorkoutKit wysyła interwały na zegarek; wpis w kalendarzu po Twoim „tak".</p></div>
+    <div class="km"><span class="marker">KM 30</span><h3>Jedzenie <span class="size">średni</span></h3><p>Głos i kod kreskowy, kalorie i białko z progami bezpieczeństwa, zapis do Apple Health po potwierdzeniu.</p></div>
+    <div class="km"><span class="marker">KM 42,2</span><h3>Dodatki <span class="size">duży</span></h3><p>„Dziś lżej" z HRV i snu, Garmin i COROS bezpośrednio, zdjęcie talerza, trener na żywo w słuchawkach.</p></div>
+  </div>
+  <p class="muted" style="font-size:.9rem">Każdy odcinek to osobna, mała zmiana z testami. To nowy etap produktu, więc według zasad repo potrzebuje Twojej zgody i zapisanej decyzji (ADR), zanim ruszy.</p>
+</section>
+
+<!-- COMPETITORS -->
+<section aria-labelledby="h-comp">
+  <div class="sec-head">
+    <span class="eyebrow">Inni</span>
+    <h2 id="h-comp">Jak robią to inni</h2>
+  </div>
+  <div class="comp">
+    <div class="crow"><b>Fitbit + Gemini</b><span>Trener AI Google'a, od kwietnia 2026 także w Polsce, pełna wersja w Premium. Najbliższy konkurent u nas.</span></div>
+    <div class="crow"><b>Runna</b><span>Plany biegowe od AI i trenerów, 19,99 $ miesięcznie. Od 2025 należy do Stravy.</span></div>
+    <div class="crow"><b>Strava</b><span>„Athlete Intelligence" streszcza każdy trening subskrybentom.</span></div>
+    <div class="crow"><b>Apple Workout Buddy</b><span>Głos podczas treningu na Apple Watch (watchOS 26), na start tylko po angielsku.</span></div>
+    <div class="crow"><b>Garmin Connect+</b><span>6,99 $ miesięcznie, „Active Intelligence"; krytykowany za ogólne rady.</span></div>
+    <div class="crow"><b>WHOOP i Oura</b><span>Czat AI nad danymi z opaski albo pierścienia, w cenie abonamentu.</span></div>
+    <div class="crow"><b>Fitbod</b><span>Algorytm układa plany siłowe, bez czatu AI; 15,99 $ miesięcznie.</span></div>
+    <div class="crow"><b>MacroFactor, Cronometer</b><span>AI rozpoznaje jedzenie, ale liczby biorą z bazy, a nie od AI.</span></div>
+    <div class="crow"><b>MyFitnessPal + Cal AI</b><span>Kalorie ze zdjęcia; MyFitnessPal kupił Cal AI w 2026.</span></div>
+  </div>
+  <div class="callout">
+    <b>Wniosek</b>
+    <p>Wszyscy robią to tak samo: liczby biorą z baz i algorytmów, a AI tłumaczy i motywuje. Doddy może się wyróżnić tym, że rozmawia głosem po polsku i ma w jednym miejscu pamięć, kalendarz i listy.</p>
+  </div>
+</section>
+
+<!-- DECISIONS -->
+<section aria-labelledby="h-dec">
+  <div class="sec-head">
+    <span class="eyebrow">Dla Ciebie</span>
+    <h2 id="h-dec">Decyzje przed startem</h2>
+  </div>
+  <ol class="dec">
+    <li><div><b>Start od drogi A?</b><span>Apple Health, Apple Watch i głos. Polecam. Strava tylko przez Apple Health.</span></div></li>
+    <li><div><b>Czy dane zdrowotne mogą wyjść z telefonu?</b><span>a) do Claude idzie tylko krótkie streszczenie, np. „bieg 8 km, 72% w strefie 2" (polecam); b) nic nie wychodzi, liczy tylko model Apple na telefonie (słabszy); c) pełne dane (nie polecam). To ta sama otwarta decyzja, co przy pamięci na serwerze.</span></div></li>
+    <li><div><b>Jedzenie: liczby czy wskazówki?</b><span>Kalorie i białko z progami bezpieczeństwa albo tylko ogólne rady bez liczenia (bezpieczniej).</span></div></li>
+    <li><div><b>Garmin od razu czy później?</b><span>Wymaga wniosku firmy i serwera. Polecam później.</span></div></li>
+    <li><div><b>Za darmo czy w płatnym planie?</b><span>Dane z Apple nic nie kosztują; płacisz za Claude przy ocenach i planach.</span></div></li>
+    <li><div><b>Prawnik</b><span>Czy obejście Stravy przez Apple Health jest w porządku i jak brzmi zgoda na dane zdrowotne (RODO art. 9).</span></div></li>
+  </ol>
+</section>
+
+<section aria-labelledby="h-srcs">
+  <div class="sec-head"><span class="eyebrow">Źródła</span><h2 id="h-srcs">Skąd to wiem</h2></div>
+  <div class="sources">
+    <p><b>Strava</b>: <a href="https://www.strava.com/legal/api_policy">API Policy (od 1.06.2026, §5.3 AI)</a> · <a href="https://www.strava.com/legal/api">API Agreement</a> · <a href="https://developers.strava.com/docs/rate-limits/">limity</a></p>
+    <p><b>Apple</b>: <a href="https://developer.apple.com/documentation/healthkit">HealthKit</a> · <a href="https://developer.apple.com/documentation/healthkit/protecting-user-privacy">prywatność</a> · <a href="https://developer.apple.com/documentation/workoutkit">WorkoutKit</a> · <a href="https://developer.apple.com/help/account/reference/supported-capabilities-ios/">HealthKit na darmowym koncie</a> · <a href="https://developer.apple.com/app-store/review/guidelines/">zasady App Store</a> · <a href="https://developer.apple.com/videos/play/wwdc2026/207/">WWDC26: strefy</a></p>
+    <p><b>Garmin</b>: <a href="https://developer.garmin.com/gc-developer-program/overview/">program</a> · <a href="https://developer.garmin.com/gc-developer-program/training-api/">Training API</a></p>
+    <p><b>Inne zegarki</b>: <a href="https://support.coros.com/hc/en-us/articles/53181619102996-Build-on-COROS-MCP">COROS MCP</a> · <a href="https://cloud.ouraring.com/legal/api-agreement">Oura (umowa API)</a> · <a href="https://developer.whoop.com/docs/developing/app-approval/">WHOOP</a> · <a href="https://www.polar.com/accesslink-api/">Polar</a> · <a href="https://apizone.suunto.com/faq">Suunto</a> · <a href="https://developers.google.com/health/about">Google Health API</a> · <a href="https://api.trainingpeaks.com/request-access">TrainingPeaks</a></p>
+    <p><b>Trening</b>: <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC7719906/">WHO 2020</a> · <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC12965823">ACSM 2026</a> · <a href="https://doi.org/10.1136/bjsports-2024-109380">BJSM 2025, długość biegu</a> · <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC11329428/">80/20</a> · <a href="https://pubmed.ncbi.nlm.nih.gov/11153730/">tętno max</a> · <a href="https://iris.univr.it/handle/11562/1139126">krytyka ACWR</a></p>
+    <p><b>Ćwiczenia</b>: <a href="https://github.com/wger-project/wger">wger</a> · <a href="https://github.com/yuhonas/free-exercise-db">free-exercise-db</a> · <a href="https://exercisedb.dev/">ExerciseDB</a></p>
+    <p><b>Jedzenie</b>: <a href="https://openfoodfacts.github.io/documentation/docs/Product-Opener/api/">Open Food Facts</a> · <a href="https://fdc.nal.usda.gov/api-guide">USDA</a> · <a href="https://platform.fatsecret.com/api-editions">FatSecret</a> · <a href="https://doaj.org/article/fcc34534a75d466aa37abda0042df7a7">białko (ISSN)</a> · <a href="https://www.efsa.europa.eu/pl/press/news/nda100326">woda (EFSA)</a> · <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC12513282/">AI i kalorie ze zdjęć</a></p>
+    <p><b>Prawo</b>: <a href="https://eur-lex.europa.eu/eli/reg/2017/745/oj">MDR</a> · <a href="https://eur-lex.europa.eu/eli/reg/2016/679/oj">RODO</a> · <a href="https://eur-lex.europa.eu/eli/reg/2024/1689/oj">AI Act</a> · <a href="https://www.npr.org/2023/06/08/1181131532/eating-disorder-helpline-takes-down-chatbot-after-it-gave-weight-loss-advice">sprawa Tessa</a></p>
+    <p><b>Konkurencja</b>: <a href="https://blog.google/products-and-platforms/devices/fitbit/fitbit-personal-health-coach-expansion/">Fitbit + Gemini</a> · <a href="https://macrofactor.com/ai-food-logging/">MacroFactor</a> · <a href="https://techcrunch.com/2026/03/02/myfitnesspal-has-acquired-cal-ai-the-viral-calorie-app-built-by-teens">MyFitnessPal + Cal AI</a></p>
+  </div>
+</section>
+
+<footer>Research z 24 października 2026. Nic z tego nie jest jeszcze zbudowane ani sprawdzone na telefonie; przykład oceny to makieta z wymyślonymi liczbami. To nie jest porada prawna ani medyczna.</footer>
+</div>
+</body>
+</html>
