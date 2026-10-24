@@ -1136,6 +1136,17 @@ struct VoiceView: View {
                     .buttonStyle(SecondaryButtonStyle())
                     .accessibilityIdentifier("voice.noteReminder.changeTime")
             }
+            // ADR-608: only where it can ring; a monthly repeat says why it can't.
+            if ReminderRinger.isAvailable {
+                let reason = ReminderRing.unsupportedReason(
+                    ReminderRing.support(repeats: repeats, isPlace: false), NotificationLanguage.current)
+                Toggle("Ring like an alarm", isOn: Binding(get: { controller.noteReminderRings }, set: { controller.setNoteReminderRings($0) }))
+                    .disabled(reason != nil)
+                    .accessibilityIdentifier("voice.noteReminder.rings")
+                Text(reason ?? NSLocalizedString("Rings even in Silent mode or a Focus, with Stop and In 10 min.", comment: ""))
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+            }
         case .place(let results, let onArrival):
             Picker("When", selection: Binding(get: { onArrival }, set: { controller.setNoteReminderOnArrival($0) })) {
                 Text("When I arrive").tag(true)

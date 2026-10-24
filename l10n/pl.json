@@ -1884,5 +1884,10 @@
   "It rings even in Silent mode or a Focus, with the time left on the Lock Screen.": "Zadzwoni nawet w trybie cichym i przy włączonym skupieniu, a na ekranie blokady zobaczysz, ile czasu zostało.",
   "Pause timer": "Wstrzymaj minutnik",
   "Resume timer": "Wznów minutnik",
-  "Stop timer": "Zatrzymaj minutnik"
+  "Stop timer": "Zatrzymaj minutnik",
+  "Ring like an alarm": "Dzwoń jak budzik",
+  "For what you mustn't miss: it rings even in Silent mode or a Focus, with Stop and In 10 min. The notification with Done still comes too.": "Na to, czego nie możesz przegapić: zadzwoni nawet w trybie cichym i przy włączonym skupieniu, z przyciskami Zatrzymaj i Za 10 min. Powiadomienie z przyciskiem Gotowe też przyjdzie.",
+  "Rings even in Silent mode or a Focus, with Stop and In 10 min.": "Zadzwoni nawet w trybie cichym i przy włączonym skupieniu, z przyciskami Zatrzymaj i Za 10 min.",
+  "Rings like an alarm, even in Silent mode": "Dzwoni jak budzik, także w trybie cichym",
+  "Set to ring like an alarm, but the iPhone hasn't confirmed the alarm. Check that Doddy may set alarms in iPhone Settings.": "Ma dzwonić jak budzik, ale iPhone nie potwierdził budzika. Sprawdź w Ustawieniach iPhone’a, czy Doddy może ustawiać budziki."
 }

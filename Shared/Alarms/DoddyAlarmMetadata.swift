@@ -10,9 +10,12 @@ import AlarmKit
 struct DoddyAlarmMetadata: AlarmMetadata {
     enum Kind: String, Codable, Hashable, Sendable {
         case timer
+        /// A note reminder that rings like an alarm (ADR-608).
+        case reminder
     }
 
-    /// `timer` for a voice timer (ADR-607); nil for an alarm, including every alarm set before.
+    /// `timer` for a voice timer (ADR-607), `reminder` for an important reminder (ADR-608); nil
+    /// for an alarm, including every alarm set before.
     var kind: Kind? = nil
     /// The language the app set it in (`NotificationLanguage` raw value), so the card's buttons
     /// use the same words as the ringing screen.

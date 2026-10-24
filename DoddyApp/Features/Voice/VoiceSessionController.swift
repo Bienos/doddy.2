@@ -121,6 +121,8 @@ final class VoiceSessionController {
         let memoryID: UUID
         let noteText: String
         let when: When
+        /// "Ring like an alarm" as the card showed it at the tap (ADR-608).
+        var rings = false
     }
 
     /// The receipt after Set reminder on a note-reminder card (ADR-198), read back from the store.
@@ -273,6 +275,9 @@ final class VoiceSessionController {
     private(set) var planStatus: PlanStatus? { didSet { syncIsland() } }
     /// Which Apple Maps result the user picked on a place card (the first until they tap another).
     private(set) var selectedPlaceIndex = 0
+    /// The note-reminder card's "Ring like an alarm" switch (ADR-608): the agent's proposal, or what
+    /// the note had; the user can flip it before the tap.
+    private(set) var noteReminderRings = false
     /// The access card (ADR-578): a function the agent asked for is off, or iOS hasn't allowed it.
     /// The screen asks "Allow Doddy to use …?"; nothing turns on without the user's tap there.
     private(set) var accessRequest: ConnectionApprovalCard?
@@ -1414,7 +1419,13 @@ final class VoiceSessionController {
             // setting; the card showed it, and the reply names it to the agent.
             let previous = store.noteReminders?.reminder(forMemory: memoryID)
             let receipt = await setNoteReminder(confirmed, attempt: attempt)
-            await reply(id, Self.noteReminderReply(receipt, note: noteText, replacing: previous))
+            var text = Self.noteReminderReply(receipt, note: noteText, replacing: previous)
+            if confirmed.rings, text.hasPrefix("added") {
+                // Inserted before the data block, so the note's words stay last.
+                let ring = VoiceToolReply.noteReminderRingLine(confirmed: store.noteReminders?.ringing.contains(memoryID) == true)
+                if let newline = text.firstIndex(of: "\n") { text.insert(contentsOf: ring, at: newline) } else { text += ring }
+            }
+            await reply(id, text)
         case .changeEvent(let id, let plan):
             // Kept only if the reply says the change was checked (ActivityEntry).
             await reply(id, changeEvent(plan), undo: .changedEvent(plan))
@@ -1514,6 +1525,12 @@ final class VoiceSessionController {
     }
 
     /// The user switched arriving/leaving on the card (the agent may have misheard).
+    /// The card's "Ring like an alarm" switch (ADR-608).
+    func setNoteReminderRings(_ rings: Bool) {
+        guard case .noteReminder(_, _, _, _, .time) = pendingAction else { return }
+        noteReminderRings = rings
+    }
+
     func setNoteReminderOnArrival(_ onArrival: Bool) {
         guard case .noteReminder(let id, let memoryID, let text, let savedAt, .place(let results, _)) = pendingAction else { return }
         pendingAction = .noteReminder(toolCallID: id, memoryID: memoryID, noteText: text, savedAt: savedAt, target: .place(results: results, onArrival: onArrival))
@@ -1523,7 +1540,10 @@ final class VoiceSessionController {
     private func confirmedNoteReminder(memoryID: UUID, noteText: String, target: NoteReminderCardTarget) -> ConfirmedNoteReminder? {
         switch target {
         case .time(let date, let zone, let repeats):
-            return ConfirmedNoteReminder(memoryID: memoryID, noteText: noteText, when: .time(date, timeZoneID: zone, repeats: repeats))
+            let canRing = ReminderRinger.isAvailable && ReminderRing.support(repeats: repeats, isPlace: false) == .supported
+            return ConfirmedNoteReminder(
+                memoryID: memoryID, noteText: noteText, when: .time(date, timeZoneID: zone, repeats: repeats),
+                rings: noteReminderRings && canRing)
         case .place(let results, let onArrival):
             guard !results.isEmpty else { return nil }
             let choice = results[min(selectedPlaceIndex, results.count - 1)]
@@ -1549,6 +1569,8 @@ final class VoiceSessionController {
         if reminders.authorization == .notDetermined { await reminders.requestAuthorization() }
         switch confirmed.when {
         case .time(let date, let zone, let repeats):
+            // The card's switch, exactly as shown: on sets the alarm with the reminder, off ends one.
+            ReminderRinger.setWish(confirmed.memoryID, rings: confirmed.rings)
             await reminders.set(
                 memoryID: confirmed.memoryID, at: date, timeZone: TimeZone(identifier: zone) ?? .autoupdatingCurrent, repeats: repeats)
         case .place(let place):
@@ -3135,6 +3157,7 @@ final class VoiceSessionController {
         }
         switch draft.target {
         case .time(let date, let zone):
+            noteReminderRings = draft.rings || store.noteReminders?.wantsToRing(memoryID: record.id) == true
             propose(.noteReminder(toolCallID: toolCallID, memoryID: record.id, noteText: record.currentText,
                                   savedAt: record.capturedAt, target: .time(date, timeZoneID: zone, repeats: draft.repeats)),
                     toolCallID: toolCallID)

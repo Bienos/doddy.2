@@ -26098,6 +26098,17 @@
         }
       }
     },
+    "For what you mustn't miss: it rings even in Silent mode or a Focus, with Stop and In 10 min. The notification with Done still comes too.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na to, czego nie możesz przegapić: zadzwoni nawet w trybie cichym i przy włączonym skupieniu, z przyciskami Zatrzymaj i Za 10 min. Powiadomienie z przyciskiem Gotowe też przyjdzie."
+          }
+        }
+      }
+    },
     "Forget": {
       "extractionState": "manual",
       "localizations": {
@@ -56814,6 +56825,17 @@
         }
       }
     },
+    "Ring like an alarm": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dzwoń jak budzik"
+          }
+        }
+      }
+    },
     "Ringing": {
       "extractionState": "manual",
       "localizations": {
@@ -56843,6 +56865,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dzwoni…"
+          }
+        }
+      }
+    },
+    "Rings even in Silent mode or a Focus, with Stop and In 10 min.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zadzwoni nawet w trybie cichym i przy włączonym skupieniu, z przyciskami Zatrzymaj i Za 10 min."
+          }
+        }
+      }
+    },
+    "Rings like an alarm, even in Silent mode": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dzwoni jak budzik, także w trybie cichym"
           }
         }
       }
@@ -61946,6 +61990,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "稍后设置"
+          }
+        }
+      }
+    },
+    "Set to ring like an alarm, but the iPhone hasn't confirmed the alarm. Check that Doddy may set alarms in iPhone Settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ma dzwonić jak budzik, ale iPhone nie potwierdził budzika. Sprawdź w Ustawieniach iPhone’a, czy Doddy może ustawiać budziki."
           }
         }
       }

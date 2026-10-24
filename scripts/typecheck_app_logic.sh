@@ -107,6 +107,8 @@ files=(
   DoddyApp/Features/Alarms/AlarmScheduler.swift
   # Timers through AlarmKit (ADR-607): the same, only the part outside `#if canImport(AlarmKit)`.
   DoddyApp/Features/Alarms/TimerRinger.swift
+  # Reminders that ring like an alarm (ADR-608): NoteReminderStore calls it.
+  DoddyApp/Features/Alarms/ReminderRinger.swift
   DoddyApp/Features/VoiceMemos/AudioFiles.swift
   DoddyApp/Features/Parking/ParkingStore.swift
   DoddyApp/Features/Lists/ListTemplateStore.swift

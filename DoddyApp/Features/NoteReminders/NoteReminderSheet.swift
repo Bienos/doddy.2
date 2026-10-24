@@ -25,6 +25,8 @@ struct NoteReminderSheet: View {
     @State private var working = false
     /// Never (nil), every day, weekdays, every week or every month (ADR-211).
     @State private var repeatRule: ReminderRepeat?
+    /// Ring like an alarm (ADR-608), through Silent mode and a Focus.
+    @State private var rings = false
 
     private var resolvedDate: Date {
         switch choice {
@@ -96,6 +98,8 @@ struct NoteReminderSheet: View {
 
                 repeatChoices
 
+                ringChoice
+
                 HStack(alignment: .firstTextBaseline, spacing: 10) {
                     Image(systemName: repeatRule == nil ? "bell" : "repeat").accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: 2) {
@@ -150,6 +154,27 @@ struct NoteReminderSheet: View {
         }
         .onChange(of: resolvedDate) {
             if repeatRule == .monthly && !monthlyAllowed { repeatRule = nil }
+        }
+    }
+
+    /// "Ring like an alarm" (ADR-608): only where AlarmKit can ring it (iOS 26, alarms not refused),
+    /// and not for every month, which AlarmKit can't repeat.
+    @ViewBuilder
+    private var ringChoice: some View {
+        if ReminderRinger.isAvailable {
+            let reason = ReminderRing.unsupportedReason(
+                ReminderRing.support(repeats: repeatRule, isPlace: false), NotificationLanguage.current)
+            VStack(alignment: .leading, spacing: 6) {
+                Toggle("Ring like an alarm", isOn: $rings)
+                    .font(.headline)
+                    .disabled(reason != nil)
+                    .accessibilityIdentifier("reminder.rings")
+                Text(reason ?? NSLocalizedString(
+                    "For what you mustn't miss: it rings even in Silent mode or a Focus, with Stop and In 10 min. The notification with Done still comes too.",
+                    comment: ""))
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+            }
         }
     }
 
@@ -239,6 +264,7 @@ struct NoteReminderSheet: View {
 
     private func prepare() {
         options = ReminderQuickPick.options(now: .now, calendar: .autoupdatingCurrent)
+        rings = reminders.wantsToRing(memoryID: memoryID)
         if !startAtTime, let existing = reminders.reminder(forMemory: memoryID), existing.place != nil {
             atPlace = true
         } else if let existing = reminders.reminder(forMemory: memoryID), existing.repeats != nil,
@@ -265,6 +291,9 @@ struct NoteReminderSheet: View {
 
     private func commit() async {
         working = true
+        // The wish first, so setting the reminder sets (or ends) its alarm too (ADR-608).
+        let canRing = ReminderRinger.isAvailable && ReminderRing.support(repeats: repeatRule, isPlace: false) == .supported
+        ReminderRinger.setWish(memoryID, rings: rings && canRing)
         await reminders.set(memoryID: memoryID, at: resolvedDate, repeats: repeatRule)
         working = false
         dismiss()
