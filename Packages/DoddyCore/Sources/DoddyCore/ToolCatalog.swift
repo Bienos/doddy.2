@@ -25,7 +25,8 @@ public struct ToolDescriptor: Equatable, Sendable {
     /// ASK-01 (ADR-483): every tool asks first, except the public lookups that run at once (ADR-575).
     public enum Approval: String, Sendable, CaseIterable {
         /// A public lookup that reads nothing of the user's and changes nothing (`AskFirst.publicLookups`):
-        /// runs when the agent calls it (owner, 21 Oct 2026, ADR-575).
+        /// runs when the agent calls it (owner, 21 Oct 2026, ADR-575). Also translator mode's start
+        /// and stop, which read and send nothing (owner, 24 Oct 2026, ADR-619).
         case runsNow
         /// Changes nothing: the app shows what it will do and runs it on a tap or the user's own
         /// spoken yes (`AskFirst.Need.yesFirst`).
@@ -141,8 +142,9 @@ public enum ToolCatalog {
         // changes; it asks first until the owner decides whether it joins the public look-ups.
         .init(VoiceToolName.findDeals, .lookup, .askFirst),
         // The conversation itself.
-        .init(VoiceToolName.startTranslator, .session, .askFirst),
-        .init(VoiceToolName.stopTranslator, .session, .askFirst),
+        // ADR-619: translator mode starts and stops at once, without asking (owner, 24 Oct 2026).
+        .init(VoiceToolName.startTranslator, .session, .runsNow),
+        .init(VoiceToolName.stopTranslator, .session, .runsNow),
         .init(VoiceToolName.proposePlan, .session, .card),
     ]
 
