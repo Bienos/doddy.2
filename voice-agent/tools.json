@@ -339,21 +339,21 @@
         },
         "required": []
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "not_synced"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_7101m5q7d7ffexkrq2nj9sadhcxe"}
     },
     {
       "type": "function",
       "name": "stop_stopwatch",
       "description": "Propose stopping the user's stopwatch. Use it only when the user asks to stop it, or says they are done. The app shows the card and the user must tap Stop; the result starts with 'changed' and says the time it stopped at, or with 'declined' or 'failed'. Read the time out from the result, never guess it. Before this tool runs, say only one short line, for example 'Confirm on screen if I should stop it.' (Polish: 'Potwierdź na ekranie, jeśli mam zatrzymać stoper.'). Never say it is stopped unless the result starts with changed.",
       "parameters": {"type": "object", "properties": {}, "required": []},
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "not_synced"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_5401m5q7e8hzf8daj1ret0qtw220"}
     },
     {
       "type": "function",
       "name": "check_stopwatch",
       "description": "Read the user's stopwatch: whether it is running, paused or stopped, and how much time it shows. Use it when the user asks how long it has been, or what the stopwatch says. Say only the time the result gives, never one you worked out yourself. ASK-01: before this tool runs, say in one short line exactly what you will look at and ask, for example 'Shall I check the stopwatch?' (Polish: 'Mam sprawdzić stoper?'). The app shows the same question on screen and runs it only after the user says yes or taps Yes; if the result starts with 'declined', nothing was looked at: say so in one short sentence.",
       "parameters": {"type": "object", "properties": {}, "required": []},
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 60, "elevenlabs_tool_id": "not_synced"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 60, "elevenlabs_tool_id": "tool_8601m5q7h4w8eed9kk304qrsfq53"}
     },
     {
       "type": "function",

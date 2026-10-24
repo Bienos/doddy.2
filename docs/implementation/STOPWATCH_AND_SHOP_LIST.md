@@ -50,9 +50,9 @@ Date: 2026-10-24. Owner (24 Oct, in Polish, from the list in `docs/product/NOTIF
   8. Car mode: "Stop stopwatch" is refused; "How long?" answers.
 - The Polish lines are agent-written.
 
-## Live agent (needs the owner's yes)
+## Live agent (applied 24 Oct 2026)
 
-The three stopwatch tools do not exist on the live ElevenLabs agent, so by voice it can't start one yet. Nothing was changed there. To do, after the owner's explicit yes: create `start_stopwatch`, `stop_stopwatch` and `check_stopwatch` as client tools exactly as in `voice-agent/tools.json`, attach them to the agent, and add the stopwatch lines from `instructions.md` to the prompt. Read the live version first and keep its rollback id, as `voice-agent/README.md` says. Until then the stopwatch works from Home and the Lock Screen only.
+The owner said yes; `start_stopwatch`, `stop_stopwatch` and `check_stopwatch` were created on the live ElevenLabs agent exactly as the spec renders them and attached (version `agtvrsn_9201m5q7ka50e5gbbrg1cftrt2zk`; rollback `agtvrsn_4701m5q787a7e9kvp21qvjza63t0`). The live ids are in `tools.json`. The prompt was not changed. Details and what was not checked: `voice-agent/README.md`. A real conversation was not tried; an app build without #139 answers that it doesn't support the tool.
 
 ## Constitution evidence log
 
@@ -64,4 +64,4 @@ The three stopwatch tools do not exist on the live ElevenLabs agent, so by voice
 | DOD-11 observable_privacy | A list's notification carries a count only, never item or place names; the list's name only with "Show note text" on | `ListPlaceReminderTests` | The stopwatch's label is shown on the Lock Screen by design; the user typed it |
 | DOD-10 nonmanipulative_companionship | No notification, streak or nudge for the stopwatch | — | — |
 
-Claims to limit: don't say "the stopwatch works on the Lock Screen" or "the list reminder shows the count" until checklist rows 1 to 3 and 6 pass on a device; don't say "by voice" until the live agent has the tools.
+Claims to limit: don't say "the stopwatch works on the Lock Screen" or "the list reminder shows the count" until checklist rows 1 to 3 and 6 pass on a device; don't say "by voice" until a conversation on the live agent has started, read and stopped one.

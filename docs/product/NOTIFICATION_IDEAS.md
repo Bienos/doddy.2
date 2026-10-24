@@ -83,7 +83,7 @@ B1's counts are read on the iPhone. iOS doesn't promise the app time on Sunday n
 - **"1 i 3" (next):** a list's place reminder says how many things are left, and a real count-up stopwatch; both are in code on `claude/stopwatch-and-shop-list` (ADR-621, `docs/implementation/STOPWATCH_AND_SHOP_LIST.md`), not compiled or seen on a device.
 - **Sound (5), owner: "systemowy":** the system's own sounds. Notifications keep iOS's default sound, and timers and ringing reminders ring with the system alarm sound through AlarmKit. No custom sound is made or bundled.
 - **An errand's title on the Lock Screen (4), owner: "zrób jak trzeba" (left to me):** it stays out. The done push carries no words from the errand ("Gotowe. Wynik sprawy czeka w aplikacji."). Showing the title would mean putting it in the push payload, which the server and Apple's push service would then read, or building a notification service extension that fills it in on the phone; neither fits a change that can't be compiled or tried on a device here, and the current text already says where the result is. Open it again if the title becomes worth that cost.
-- Still open: the live-agent changes. The owner said yes ("2 tak", 24 Oct) to A5's `ring` and to the three stopwatch tools, but this session's safety check refused the write to the live agent a second time, so the live agent is unchanged (`voice-agent/README.md`).
+- **Live agent (24 Oct, owner: "2 tak"):** A5's `ring` and the three stopwatch tools are on the live agent (`voice-agent/README.md`). Not tried in a real conversation yet.
 
 ## Decisions for the owner (as asked on 24 Oct)
 
