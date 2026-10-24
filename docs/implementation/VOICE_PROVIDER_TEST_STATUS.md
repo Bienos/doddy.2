@@ -83,6 +83,15 @@ Home switch ──> VoiceSessionController.start
 2. **Put a monthly spending limit on that OpenAI project.** The token server has no counters (as with
    ElevenLabs, ADR-068). Realtime audio is billed per minute of audio in and out.
 3. In the app, Settings › Voice must use the token server (the public ElevenLabs agent ID can't start OpenAI).
+   **24 Oct 2026 (ADR-607):** a Debug build's "Developer: talk without Apple sign-in" (ADR-551, on by default)
+   used to send OpenAI down the developer connection too, which can't reach OpenAI, so every OpenAI
+   conversation stopped at once with "Voice isn't set up yet". Now the developer connection is used for
+   ElevenLabs only; with OpenAI chosen the app asks for the Doddy voice account (Sign in with Apple) and
+   Settings › Voice says so. Sign in with Apple needs the paid Apple team and `make project` (with
+   entitlements), not `make project-iphone`. Checked on 24 Oct without a sign-in: the token server answers
+   `401 apple_sign_in_failed` (not `503 server_not_configured`) to a dummy OpenAI sign-in, so the
+   deployed function has a non-empty `OPENAI_API_KEY`; whether the key has Realtime access and credit is
+   NOT VERIFIED (needs a real signed-in request).
 4. Build from Xcode (see `FIRST_BUILD_GUIDE.md`). This is the first compile of this code, so expect fixes.
 
 ## How to feel the difference (suggested test)

@@ -579,7 +579,7 @@ struct RootView: View {
                     MemoriesView(showFind: $showFind)
                         .tabItem { Label("Memories", systemImage: "note.text") }
                         .tag(AppTab.memories)
-                    SettingsView()
+                    SettingsView(openMemories: { openMemories($0) })
                         .tabItem { Label("Settings", systemImage: "gearshape") }
                         .tag(AppTab.settings)
                 }
@@ -593,12 +593,26 @@ struct RootView: View {
                 }
                 // A sibling reserves real viewport space. A TabView-level safeAreaInset
                 // left nested NavigationStack's final action behind the bar on iOS 27.
-                // Home has its own bar and ••• menu, which reach Memories and Settings (ADR-545).
+                // Home has its own bar and ••• menu, which reach Settings (ADR-545); notes and lists
+                // are reached from Settings › Doddy's memory (ADR-607).
                 if selectedTab != .home {
                     DoddyTabBar(selectedTab: $selectedTab)
                 }
             }
         }
+    }
+
+    /// Settings › Doddy's memory opens notes, lists or search (ADR-607): the Memories screen, which no
+    /// longer has a tab of its own. Lists or notes is the screen's own switch (ADR-216).
+    private func openMemories(_ opening: MemoryOpening) {
+        switch opening {
+        case .notes: UserDefaults.standard.set(false, forKey: PreferenceKey.memoriesShowsLists)
+        case .lists: UserDefaults.standard.set(true, forKey: PreferenceKey.memoriesShowsLists)
+        case .find: break
+        }
+        // Doddy follows through `onChange(of: selectedTab)`, as for a link.
+        selectedTab = .memories
+        if opening == .find { showFind = true }
     }
 
     /// The sidebar's detail column shows one screen at a time. Home's path lives here, so Home
@@ -608,7 +622,7 @@ struct RootView: View {
         switch selectedTab {
         case .home: HomeView(selectedTab: $selectedTab, showFind: $showFind, path: $homePath)
         case .memories: MemoriesView(showFind: $showFind)
-        case .settings: SettingsView()
+        case .settings: SettingsView(openMemories: { openMemories($0) })
         }
     }
 }

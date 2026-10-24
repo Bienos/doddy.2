@@ -70,8 +70,8 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertTrue(app.waitForTab("home", timeout: 5))
         XCTAssertEqual(app.staticTexts["home.greeting"].label, "Hi, Ola.")
         app.goToTab("settings")
-        // Settings › My profile (ADR-580).
-        app.openSettingsPage("settings.profile")
+        // Settings › Doddy's memory › My profile (ADR-580, ADR-607).
+        app.openSettingsPage("settings.profile", under: "settings.memory")
         let share = app.switches["settings.shareProfileWithVoice"]
         XCTAssertTrue(app.reveal(share))
         XCTAssertEqual(share.value as? String, "0", "saving preferences does not enable voice sharing")
@@ -92,9 +92,11 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertTrue(app.text("No memories yet").waitForExistence(timeout: 5))
 
         app.goToTab("settings")
-        // Settings' groups open their own pages (ADR-580): My profile, then Privacy.
-        app.openSettingsPage("settings.profile")
+        // Settings' groups open their own pages (ADR-580): My profile (in Doddy's memory, ADR-607),
+        // then Privacy, on Settings' first page.
+        app.openSettingsPage("settings.profile", under: "settings.memory")
         XCTAssertTrue(app.reveal(app.text("Nothing saved. Doddy only keeps what you review and save.")))
+        app.navigationBars.buttons.element(boundBy: 0).tap()
         app.navigationBars.buttons.element(boundBy: 0).tap()
         app.openSettingsPage("settings.privacyScreen")
         XCTAssertTrue(app.reveal(app.text("Microphone")))
@@ -168,7 +170,7 @@ final class LaunchSmokeTests: XCTestCase {
         let app = launch(onboardingDone: true)
         XCTAssertTrue(app.waitForTab("settings", timeout: 5))
         app.goToTab("settings")
-        app.openSettingsPage("settings.askDoddy")
+        app.openSettingsPage("settings.askDoddy", under: "settings.connectionsHub")
         let consent = app.switches["settings.assistantConsent"]
         // The long Settings form creates rows lazily; scroll until the section is on screen.
         XCTAssertTrue(app.reveal(consent))
@@ -196,7 +198,7 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertTrue(app.buttons["home.backTap.later"].waitForNonExistence(timeout: 5), app.debugDescription)
 
         app.goToTab("settings")
-        app.openSettingsPage("settings.ways")
+        app.openSettingsPage("settings.ways", under: "settings.voice")
         let status = app.descendants(matching: .any)["settings.backTap.status"].firstMatch
         // The long Settings form lazily creates rows; scroll to the status rather than
         // treating an off-screen label as a product failure.
@@ -212,7 +214,7 @@ final class LaunchSmokeTests: XCTestCase {
         try XCTSkipIf(UIDevice.current.userInterfaceIdiom == .pad, "the Settings entry is iPhone-only")
         let app = launch(onboardingDone: true, backTapSetup: "notStarted")
         app.goToTab("settings")
-        app.openSettingsPage("settings.ways")
+        app.openSettingsPage("settings.ways", under: "settings.voice")
         let entry = app.buttons["settings.backTap"]
         XCTAssertTrue(app.reveal(entry))
         // The weekly reminder is on until the user turns it off; it only sends with notifications already allowed.
@@ -245,8 +247,8 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertFalse(app.buttons["home.backTap.later"].exists)
 
         app.descendants(matching: .any)["tab.settings"].firstMatch.tap()
-        // Settings › Siri (ADR-580); on iPhone the same page also has Back Tap.
-        app.openSettingsPage("settings.ways")
+        // Settings › Voice › Siri (ADR-580, ADR-607); on iPhone the same page also has Back Tap.
+        app.openSettingsPage("settings.ways", under: "settings.voice")
         // The Back Tap row would sit on the same page as this switch, so look once it is on screen.
         let siri = app.switches["settings.siriReadsNotes"]
         for _ in 0..<8 {
@@ -289,9 +291,8 @@ final class LaunchSmokeTests: XCTestCase {
         let app = launch(onboardingDone: true)
         XCTAssertTrue(app.waitForTab("settings", timeout: 5))
         app.goToTab("settings")
-        let row = app.buttons["settings.activity"]
-        XCTAssertTrue(app.reveal(row))
-        row.tap()
+        // Settings › Connections › What Doddy did (ADR-607).
+        app.openSettingsPage("settings.activity", under: "settings.connectionsHub")
         XCTAssertTrue(app.navigationBars["What Doddy did"].waitForExistence(timeout: 5))
     }
 
@@ -300,9 +301,8 @@ final class LaunchSmokeTests: XCTestCase {
         let app = launch(onboardingDone: true)
         XCTAssertTrue(app.waitForTab("settings", timeout: 5))
         app.goToTab("settings")
-        let row = app.buttons["settings.planPractice"]
-        XCTAssertTrue(app.reveal(row))
-        row.tap()
+        // Settings › Advanced › Try a plan card (ADR-607).
+        app.openSettingsPage("settings.planPractice", under: "settings.advanced")
         XCTAssertTrue(app.navigationBars["Try a plan card"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.descendants(matching: .any)["practice.banner"].exists)
         let confirm = app.buttons["practice.confirm"]

@@ -3,7 +3,7 @@ import SwiftUI
 
 /// Home (ADR-545): a calm screen after the owner's "I'm here" mockup. Doddy sits cross-legged in
 /// the middle and is the Talk button; under him an orange dot, "I'm here." and "Tap Doddy to talk";
-/// at the bottom Messages (the typed conversation, ADR-585), Memories (a sheet) and + (Save a detail). Everything else Home
+/// at the bottom Messages (the typed conversation, ADR-585), Files (a sheet, ADR-607) and + (Save a detail). Everything else Home
 /// used to list lives in the ••• menu. Cards appear only while something needs the user (a due
 /// reminder, a storage problem, an unfinished note, a one-time offer they can dismiss).
 ///
@@ -36,7 +36,9 @@ struct HomeView: View {
     /// When the eyes last took the finger's position; a touch sample is 120 Hz, they need 30 (ADR-604).
     /// A reference, so writing it does not make Home redraw.
     @State private var follow = FingerFollowThrottle()
-    @State private var showMemories = false
+    /// Files (ADR-607): what Doddy made and the recordings. It took Memories' place; notes and lists are in
+    /// Settings › Doddy's memory.
+    @State private var showFiles = false
     @State private var showAsk = false
     @State private var tool: HomeTool?
     /// Translate (ADR-215): the start sheet, and what the user chose on it.
@@ -56,7 +58,6 @@ struct HomeView: View {
     @AppStorage(PreferenceKey.connectedConversations) private var connectedConversations = 0
     @AppStorage(VoiceConnection.calendar.preferenceKey) private var calendarOn = false
     @AppStorage(VoiceConnection.reminders.preferenceKey) private var remindersOn = false
-    @AppStorage(PreferenceKey.memoriesShowsLists) private var memoriesShowsLists = false
     private var router: ShortcutRouter { .shared }
     /// The conversation started on Home (ADR-595).
     private var conversation: HomeConversation { .shared }
@@ -71,7 +72,7 @@ struct HomeView: View {
                         Spacer(minLength: 24)
                         character
                         status
-                            .opacity(showMemories ? 0 : 1)
+                            .opacity(showFiles ? 0 : 1)
                         Spacer(minLength: 24)
                     }
                     .padding(.horizontal, 24)
@@ -95,7 +96,7 @@ struct HomeView: View {
             }
             .safeAreaInset(edge: .bottom) {
                 bottomBar
-                    .opacity(showMemories ? 0 : 1)
+                    .opacity(showFiles ? 0 : 1)
                     .modifier(SlideIn(shown: buttonsShown, delay: 0))
             }
             .background(Theme.canvas.ignoresSafeArea())
@@ -107,7 +108,7 @@ struct HomeView: View {
                 }
             }
             .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: conversation.live == nil)
-            .animation(reduceMotion ? nil : .spring(duration: 0.5, bounce: 0.2), value: showMemories)
+            .animation(reduceMotion ? nil : .spring(duration: 0.5, bounce: 0.2), value: showFiles)
             .toolbar(.hidden, for: .navigationBar, .tabBar)
             .navigationDestination(for: UUID.self) { MemoryOrListView(id: $0) }
             .sheet(item: $modal) { _ in CaptureView() }
@@ -115,21 +116,7 @@ struct HomeView: View {
             .sheet(isPresented: $showErrands) { ErrandsView() }
             .sheet(isPresented: Binding(get: { router.isRecordingsPresented }, set: { router.isRecordingsPresented = $0 })) { RecordingsView() }
             .sheet(isPresented: $showCapabilities) { CapabilitiesSheet() }
-            .sheet(isPresented: $showMemories) {
-                HomeMemoriesSheet(
-                    openNotes: { leaveForMemories(lists: false) },
-                    openLists: { leaveForMemories(lists: true) },
-                    openFind: { showMemories = false; selectedTab = .memories; showFind = true },
-                    openSettings: { showMemories = false; selectedTab = .settings },
-                    askAbout: { id in
-                        // The conversation opens once the sheet has gone.
-                        showMemories = false
-                        Task {
-                            try? await Task.sleep(for: .seconds(0.45))
-                            router.askAboutNote(id)
-                        }
-                    })
-            }
+            .sheet(isPresented: $showFiles) { FilesSheet() }
             .sheet(isPresented: $showToday) {
                 HomeTodaySheet(openSettings: { showToday = false; selectedTab = .settings })
             }
@@ -152,7 +139,7 @@ struct HomeView: View {
         }
         .foregroundStyle(Theme.ink)
         // Motion v2: each sheet and cover from Home hides him in the frame it starts. Ask isn't
-        // one of them (MV4: its cover carries him up on its composer), and the Memories sheet
+        // one of them (MV4: its cover carries him up on its composer), and the Files sheet
         // isn't either: the calm Home lifts him above it (ADR-545), and he rides with the box.
         .coversDoddy(modal != nil || showDataFlow || showCapabilities || tool != nil || showTranslator || showToday || showVoicePicker)
         // A note pushed over Home covers him where he stands.
@@ -240,15 +227,8 @@ struct HomeView: View {
                 Text("Doddy is an AI, not a person.")
             }
             Section {
-                Button { selectedTab = .memories } label: { Label("Memories", systemImage: "book.closed") }
-                    .accessibilityIdentifier("home.menu.memories")
                 Button { selectedTab = .settings } label: { Label("Settings", systemImage: "slider.horizontal.3") }
                     .accessibilityIdentifier("home.menu.settings")
-                // DODDY Capture (ADR-588): record a meeting or a conversation, and find it again. Below
-                // Memories and Settings, so at the largest text size they stay inside the menu's first
-                // screen (the dark, largest-text UI test goes through Memories).
-                Button { router.openRecordings() } label: { Label("Recordings", systemImage: "waveform.circle") }
-                    .accessibilityIdentifier("home.recordings")
                 // What is built and what isn't, from the capability catalog (T35/T42, ADR-195, ADR-548).
                 Button { showCapabilities = true } label: { Label("What I can do", systemImage: "sparkles") }
                     .accessibilityIdentifier("home.capabilities")
@@ -340,8 +320,8 @@ struct HomeView: View {
         // While the opening plays, its Doddy stands in for this one; when it ends, this one is in
         // the same place, so nothing moves.
         .opacity(opening?.play == nil ? 1 : 0)
-        // With Memories open he moves up above the sheet.
-        .offset(y: showMemories ? -120 : 0)
+        // With Files open he moves up above the sheet.
+        .offset(y: showFiles ? -120 : 0)
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: ready != nil)
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: waving)
         .animation(reduceMotion ? nil : .spring(duration: 0.3, bounce: 0.3), value: perking)
@@ -443,7 +423,7 @@ struct HomeView: View {
         }
     }
 
-    /// While he talks (ADR-595): Mute and End, where Type and Memories were.
+    /// While he talks (ADR-595): Mute and End, where Messages and Files are.
     private func talkBar(_ live: VoiceSessionController) -> some View {
         HStack(spacing: 12) {
             Button {
@@ -484,8 +464,8 @@ struct HomeView: View {
 
     private var restBar: some View {
         HStack(spacing: 12) {
-            // "Messages" and "Memories" with their icons need more room than a narrow iPhone or a longer
-            // language gives them (Polish: "Wiadomości", "Wspomnienia"): then Messages is its icon alone,
+            // "Messages" and "Files" with their icons need more room than a narrow iPhone or a longer
+            // language gives them (Polish: "Wiadomości", "Pliki"): then Messages is its icon alone,
             // still named "Messages" for VoiceOver.
             ViewThatFits(in: .horizontal) {
                 bottomPill(messagesShowsTitle: true)
@@ -528,14 +508,14 @@ struct HomeView: View {
             .disabled(!store.environment.capabilities.isAvailable(.textAssistant))
             .accessibilityIdentifier("home.ask")
             Rectangle().fill(Theme.separator).frame(width: 1, height: 24)
-            Button { showMemories = true } label: {
-                Label("Memories", systemImage: "book.closed")
+            Button { showFiles = true } label: {
+                Label("Files", systemImage: "folder")
                     .padding(.horizontal, 16)
                     .frame(minHeight: 44)
                     .contentShape(Rectangle())
             }
             .buttonStyle(DoddyPressStyle())
-            .accessibilityIdentifier("home.memories")
+            .accessibilityIdentifier("home.files")
         }
         .font(.body.weight(.medium))
         .lineLimit(1)
@@ -564,12 +544,6 @@ struct HomeView: View {
             try? await Task.sleep(for: .seconds(0.8))
             perking = false
         }
-    }
-
-    private func leaveForMemories(lists: Bool) {
-        showMemories = false
-        memoriesShowsLists = lists
-        selectedTab = .memories
     }
 
     /// Once per launch, when Home appears without the opening: the first time on a morning he waves
@@ -808,180 +782,6 @@ private struct DoddyPressStyle: ButtonStyle {
 }
 
 // MARK: - Sheets from Home
-
-/// Memories from Home (ADR-545): what Doddy knows about you, and the ways into your notes and
-/// lists. Notes, lists and search open the Memories tab, where the real screens are.
-private struct HomeMemoriesSheet: View {
-    let openNotes: () -> Void
-    let openLists: () -> Void
-    let openFind: () -> Void
-    let openSettings: () -> Void
-    let askAbout: (UUID) -> Void
-    @Environment(\.dismiss) private var dismiss
-    @Environment(MemoryStore.self) private var store
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    HStack {
-                        Text("Memories")
-                            .font(.largeTitle.weight(.bold)).tracking(-0.8)
-                            .accessibilityAddTraits(.isHeader)
-                        Spacer()
-                        Button { dismiss() } label: {
-                            Image(systemName: "xmark")
-                                .font(.body.weight(.semibold))
-                                .frame(width: 44, height: 44)
-                                .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("Close")
-                        .accessibilityIdentifier("home.memories.close")
-                    }
-                    Button(action: openFind) {
-                        HStack(spacing: 10) {
-                            Image(systemName: "magnifyingglass").accessibilityHidden(true)
-                            Text("Search your memories").foregroundStyle(Theme.secondaryText)
-                            Spacer()
-                        }
-                        .padding(.horizontal, 14)
-                        .frame(minHeight: 48)
-                        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 14))
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("home.memories.search")
-                    VStack(spacing: 0) {
-                        NavigationLink { HomeAboutYouView() } label: { row(Text("About you"), icon: "person") }
-                            .buttonStyle(.plain)
-                            .accessibilityIdentifier("home.memories.about")
-                        Divider()
-                        Button(action: openNotes) { row(Text("Saved details"), icon: "text.book.closed") }
-                            .buttonStyle(.plain)
-                            .accessibilityIdentifier("home.memories.notes")
-                        Divider()
-                        Button(action: openLists) { row(Text("Lists"), icon: "checklist") }
-                            .buttonStyle(.plain)
-                            .accessibilityIdentifier("home.memories.lists")
-                    }
-                    Button("Manage what Doddy remembers", action: openSettings)
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(Theme.accentText)
-                        .frame(maxWidth: .infinity, minHeight: 44)
-                        .accessibilityIdentifier("home.memories.manage")
-                    recent
-                }
-                .padding(.horizontal, 24)
-                .padding(.top, 20)
-                .padding(.bottom, 24)
-            }
-            .background(Theme.canvas)
-            .toolbar(.hidden, for: .navigationBar)
-        }
-        .foregroundStyle(Theme.ink)
-        .presentationDetents([.medium, .large])
-        .presentationDragIndicator(.visible)
-        .presentationCornerRadius(32)
-        .presentationBackground(Theme.canvas)
-    }
-
-    /// The three newest notes (they used to be on Home), each with "Ask me about it" (ADR-403),
-    /// never on a private one.
-    @ViewBuilder
-    private var recent: some View {
-        if !store.memories.isEmpty {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Recently saved")
-                    .font(.headline)
-                    .accessibilityAddTraits(.isHeader)
-                let privateNotes = PrivateNotesStore.current()
-                let canTalk = store.environment.capabilities.isAvailable(.voiceInput)
-                ForEach(store.memories.prefix(3)) { record in
-                    HStack(spacing: 8) {
-                        NavigationLink { MemoryOrListView(id: record.id) } label: {
-                            MemoryRow(record: record)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                        .buttonStyle(.plain)
-                        if canTalk && NoteQuestion.canAsk(about: record, privateNotes: privateNotes) {
-                            Button { askAbout(record.id) } label: {
-                                Image(systemName: "waveform.circle")
-                                    .font(.title2)
-                                    .frame(minWidth: 44, minHeight: 44)
-                            }
-                            .buttonStyle(.plain)
-                            .foregroundStyle(Theme.accentText)
-                            .accessibilityLabel("Ask me about it")
-                            .accessibilityIdentifier("home.recent.ask")
-                        }
-                    }
-                    Divider()
-                }
-            }
-            .padding(.top, 8)
-        } else if store.hasLoaded {
-            Text("Nothing saved yet. You choose what stays.")
-                .font(.footnote)
-                .foregroundStyle(Theme.secondaryText)
-                .padding(.top, 8)
-        }
-    }
-
-    private func row(_ title: Text, icon: String) -> some View {
-        HStack(spacing: 16) {
-            Image(systemName: icon)
-                .font(.title3)
-                .frame(width: 28)
-                .accessibilityHidden(true)
-            title.font(.body.weight(.medium))
-            Spacer()
-            Image(systemName: "chevron.right")
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(Theme.secondaryText)
-                .accessibilityHidden(true)
-        }
-        .frame(minHeight: 64)
-        .contentShape(Rectangle())
-    }
-}
-
-/// What the user approved in the introduction, shown back plainly (it used to sit on Home).
-/// Nothing is invented when the profile is empty.
-private struct HomeAboutYouView: View {
-    @Environment(ProfileStore.self) private var profiles
-    @AppStorage(PreferenceKey.shareProfileWithVoice) private var shareProfileWithVoice = false
-
-    var body: some View {
-        let profile = profiles.profile
-        let shown = [ProfileKey.context, .help, .style].filter { profile.value($0) != nil }
-        ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
-                if shown.isEmpty {
-                    Text("You haven't told me about yourself yet. You can, any time, in Settings.")
-                        .foregroundStyle(Theme.secondaryText)
-                } else {
-                    Text("What you told me")
-                        .font(.headline)
-                        .accessibilityAddTraits(.isHeader)
-                    ForEach(shown, id: \.self) { key in
-                        StatusRow(title: key.label, value: profile.value(key) ?? "")
-                    }
-                    Text(shareProfileWithVoice
-                        ? "Doddy knows these in voice conversations. Change or forget them in Settings."
-                        : "Change or forget these in Settings. Voice conversations don't use them unless you turn that on there.")
-                        .font(.footnote)
-                        .foregroundStyle(Theme.secondaryText)
-                }
-            }
-            .padding(24)
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .background(Theme.canvas)
-        .navigationTitle("About you")
-        .navigationBarTitleDisplayMode(.inline)
-    }
-}
 
 /// Today (it used to be a card on Home), from the ••• menu.
 private struct HomeTodaySheet: View {

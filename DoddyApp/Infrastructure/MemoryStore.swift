@@ -30,9 +30,10 @@ final class MemoryStore {
     /// so nothing takes the store for an empty one (review G1).
     private(set) var hasLoaded = false
     private(set) var loadError: String?
-    /// Bumped on every successful reload so searches re-run after edits and deletes. A failed
-    /// read keeps the last good copy and doesn't bump it: the memory copy on the server and the
-    /// widgets follow this (review G1).
+    /// Bumped by a successful reload that read something new (or the first good read), so searches
+    /// re-run after edits and deletes. An unchanged read doesn't bump it (ADR-607). A failed read
+    /// keeps the last good copy and doesn't bump it: the memory copy on the server and the widgets
+    /// follow this (review G1).
     private(set) var revision = 0
     /// The note deleted a moment ago, for the Undo bar (ADR-183). Memory only, never stored.
     private(set) var recentlyDeleted: DeletedNote?
@@ -64,11 +65,17 @@ final class MemoryStore {
             let notes = try await environment.memoryRepository.list(limit: nil).filter { $0.category != .list }
             let storedCorrections = try await environment.memoryRepository.allCorrections()
             let storedLists = try await environment.listRepository.lists()
-            memories = notes
-            corrections = storedCorrections
-            lists = storedLists
+            // Many callers reload only to read (each voice conversation, list tools, shared-list sync on
+            // every foreground). An unchanged read keeps the arrays and the revision, so it doesn't redraw
+            // the screens, refresh widgets and Spotlight, re-run Find, or send the whole note list to the
+            // server copies again (ADR-607). The first good read, or one after a failed read, always counts.
+            var changed = !hasLoaded || loadError != nil
+            if notes != memories { memories = notes; changed = true }
+            if storedCorrections != corrections { corrections = storedCorrections; changed = true }
+            if storedLists != lists { lists = storedLists; changed = true }
             if let linked = try? await environment.photoRepository.allPhotos() {
-                photos = Dictionary(linked.map { ($0.memoryID, $0) }, uniquingKeysWith: { first, _ in first })
+                let linkedPhotos = Dictionary(linked.map { ($0.memoryID, $0) }, uniquingKeysWith: { first, _ in first })
+                if linkedPhotos != photos { photos = linkedPhotos; changed = true }
                 // Once per launch, and only after the links were read: files left behind by a
                 // crash or by an Undo window that passed while the app was closed.
                 if !cleanedPhotoFiles {
@@ -77,15 +84,16 @@ final class MemoryStore {
                 }
             }
             if let linked = try? await environment.audioRepository.allAudio() {
-                recordings = Dictionary(linked.map { ($0.memoryID, $0) }, uniquingKeysWith: { first, _ in first })
+                let linkedAudio = Dictionary(linked.map { ($0.memoryID, $0) }, uniquingKeysWith: { first, _ in first })
+                if linkedAudio != recordings { recordings = linkedAudio; changed = true }
                 if !cleanedAudioFiles {
                     cleanedAudioFiles = true
                     environment.audioFiles.deleteOrphans(keeping: Set(linked.map(\.fileName)))
                 }
             }
-            loadError = nil
-            hasLoaded = true
-            revision += 1
+            if loadError != nil { loadError = nil }
+            if !hasLoaded { hasLoaded = true }
+            if changed { revision += 1 }
         } catch {
             loadError = UserFacingError.message(for: error)
         }

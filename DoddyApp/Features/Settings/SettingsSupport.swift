@@ -217,6 +217,13 @@ struct VoiceProviderPicker: View {
                 ? "OpenAI Realtime \(OpenAIRealtimeModel(stored: realtimeModel).shortName) runs your next conversation, through the token server. Weather and Wikipedia don't work with it."
                 : "ElevenLabs runs your next conversation.")
                 .font(.caption2).foregroundStyle(Theme.secondaryText)
+            // ADR-607: a Debug build's developer connection reaches ElevenLabs only, so OpenAI asks for
+            // Sign in with Apple, which needs a paid Apple team (not `make project-iphone`).
+            if provider == .openAIRealtime && VoiceConfig.directVoiceEnabled {
+                Text(verbatim: "OpenAI needs your Doddy voice account: Sign in with Apple, which needs a paid Apple team. The developer connection only reaches ElevenLabs.")
+                    .font(.caption2).foregroundStyle(Theme.secondaryText)
+                    .accessibilityIdentifier("\(idPrefix).openAINeedsAccount")
+            }
         }
     }
 }
