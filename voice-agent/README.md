@@ -343,5 +343,6 @@ places phone calls through the Twilio number (ADR-152, ADR-172). Same three file
 - **Version:** `agtvrsn_0201m57cm3vnfgsrv3fw49mqb9mk` → `agtvrsn_6401m57e22qwepwtr1ywwe64x2k4`, 85 tools. The stored prompt and tool list were read back and match the approved text exactly; no other agent setting changed. All 81 spec tools were compared with the live tools (description, parameters, timeout, speak-before): no differences. Rollback: the first version.
 - **Mixed versions:** an installed app from before ASK-01 doesn't show the read cards and answers "unsupported" to the 27 new tools. The app side is written but not built (needs a Mac): BLOCKED / NOT RUN.
 
-## 24 Oct 2026: translator without asking (ADR-611), partly live
-- `start_translator` updated on the live agent (description: start at once, then ask what to translate; `pre_tool_speech` auto). The prompt (still `agtvrsn_3501m5pk6ad9ed9v77hn049th27v`) and `stop_translator` are not changed yet: this session's safety check stopped those saves. Exact pending text: `docs/implementation/LIVE_AGENT_EDIT_2026-10-24.md`.
+## 24 Oct 2026: translator without asking (ADR-611), live
+- `start_translator` and `stop_translator` updated on the live agent (descriptions: start or stop at once, then ask what to translate; `pre_tool_speech` auto).
+- The prompt saved with four in-place translator edits after the owner's "Rób dalej": `agtvrsn_3501m5pk6ad9ed9v77hn049th27v` (rollback) → `agtvrsn_2801m5pzdaxpepgax0wwfawyc8tp`, read back byte for byte, 92 tools unchanged. Exact text: `docs/implementation/LIVE_AGENT_EDIT_2026-10-24.md`.
