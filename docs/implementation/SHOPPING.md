@@ -46,7 +46,7 @@ The research errand's body plus two fields:
 |---|---|
 | `priorities` | the user's order, from the errand |
 | `budget` | `{minor, currency}`, optional |
-| `offers[]` | 1 to 12: `id`, `title` (≤160), `shop` (≤80), `price {minor, currency}`, `delivery?` (≤120), `url`, `site`, `evidence` (`shop_page` / `listing`), `seenAt`, `gtin?` (8 to 14 digits), `notes?` (≤160, Doddy's words) |
+| `offers[]` | 1 to 12: `id`, `title` (≤160), `shop` (≤80), `price {minor, currency}`, `delivery?` (≤120), `url` (the shop's own page), `buyUrl?` (a tracked link to the same page, only with an affiliate programme: "Affiliate links" below), `site`, `evidence` (`shop_page` / `listing`), `seenAt`, `gtin?` (8 to 14 digits), `notes?` (≤160, Doddy's words) |
 | `picks[]` | 1 to 4: `role`, `offerId`, `why` (≤200), `tradeoff?` (≤200), `overBudget? {minor, currency}` |
 | `howChosen[]`, `watchOuts[]`, `unknowns[]`, `rejected[]` | at most 3, 4, 4 and 4 lines of ≤200 |
 | `stats` | `{offersSeen, shops}`, counted by the code |
@@ -79,17 +79,26 @@ Bearer: the account's device token, like errands. Off unless `DEALS_ENABLED=1`.
 
 **Legal stance** (research: `docs/research/2026-10-24/research_shopping_leaflets.md`; not legal advice): read on the user's request from the official source, facts only (names, prices, conditions, dates), no leaflet images shown or kept, link to the leaflet page, blocks never bypassed, a lawyer for database rights before launch.
 
+### Affiliate links (ADR-612)
+
+The owner said yes (24 Oct 2026). `AFFILIATE_LINKS` is a JSON object of a shop's host to an https template with exactly one `{url}`, for example `{"mediaexpert.pl": "https://network.example/click?id=123&to={url}"}`; empty by default, so nothing is tracked until a programme exists. The code wraps the shop's own page address (percent-encoded) for that host and its subdomains and writes it as `offers[].buyUrl` **last, into the finished result**. It never reaches the model or the card writer, so it can't change a pick, an order or a sentence (a test compares the result with and without it). `url` stays the shop's own page, used by the card's sources, the activity log and the PDF's source list. The app says it before the tap (caption under the button, a note in the PDF, and a line in what the voice agent reads). A bad setting stops the server at start with a message that names the problem, not the template.
+
 ## 3. Shared core and app
 
 - **`ErrandDraft`** gains `kind` and `priorities` with the digest rule above; `ErrandResult` gains the optional `shopping` block (older servers send none).
 - **`BasketSolver`** (DoddyCore, pure): from a deals answer, per chain the cheapest offer for each item; the cheapest single chain (most items first, then the lowest total), the cheapest pair (each item at the cheaper of the two), and every item at its cheapest; totals in minor units, coverage ("5 z 6"), the conditions carried along. Offers with `check: true` count, and the basket says they need checking.
 - **Voice:** `find_deals {items, chains?}` (a read of public data: the ask card under ASK-01; whether leaflet look-ups join the public look-ups that run at once is an open owner decision), and `hand_over_errand` with `kind: "shopping"` and `priorities`.
-- **Screens:** "Najtaniej w tym tygodniu", "Koszyk", the three picks inside a task's result, the PDF report (drawn on the iPhone from the stored result: no model, nothing sent), "Kup w sklepie" (the shop's page in Safari, its own checkout; recorded in What Doddy did as "opened", never as bought).
+- **Screens:** "Najtaniej w tym tygodniu", "Koszyk", the three picks inside a task's result, the PDF report (drawn on the iPhone from the stored result: no model, nothing sent), "Kup w sklepie" (the shop's page in Safari, or its partner link when `buyUrl` is present, with the caption above; its own checkout; recorded in What Doddy did as "opened", never as bought).
+
+## Stage 3: buying through Doddy
+
+Designed and its safety rules built, nothing connected: `docs/implementation/SHOPPING_CHECKOUT.md` (ADR-613).
 
 ## Privacy
 
 - **Find me this:** as research errands (ERRANDS.md "Privacy"), plus search words to Serper (when set) and page requests to shops from Doddy's server. The user's words never go to Serper or the shops; only search phrases the model writes and the shop page addresses.
 - **Leaflets:** the item names go to Doddy's server; leaflet pages are fetched from the chains by the server and, for image leaflets, sent to Anthropic with the item names. Rossmann's leaflet site disallows all robots, so Rossmann is read from `rossmann.pl/promocje?Search=…`: **the item names go to rossmann.pl as a search**, from the server, with no cookies and nothing that identifies the user (an open owner decision: keep, or make Rossmann link-only). Nothing that identifies the user goes to any chain. Alcohol offers are skipped (Dino, Lidl). Logs carry counts and timings only.
+- **A partner link** (ADR-612): the tap opens Safari through the affiliate network, which can set cookies and tells the shop that Doddy sent the user. Nothing from the user's words or notes goes with it. The Terms and Privacy pages must name each network once a programme is signed.
 - **The report** is made on the iPhone from what is already there.
 
 ## Built and checked
@@ -100,6 +109,8 @@ Stage 1, 24 Oct 2026, on `claude/loving-dirac-uuxoux` (ADR-607 to 610). Run on L
 |---|---|---|---|
 | Find me this (section 1) | `server/messaging/src/shopping/`, `src/errands/schema.ts`, `worker.ts` | `npm test` in `server/messaging`: 279/279 (after ADR-611) with Postgres (shopping runner with a scripted model and fake offers and pages; ids only on the card; unknown ids dropped; budget; the digest with kind and priorities; JSON-LD, microdata and Open Graph price reading; money parsing) | A real Sonnet 5.5 run with web search; Serper's real answers; real shop pages; what one task costs |
 | Leaflets (section 2) | `server/messaging/src/deals/`, `src/routes/deals.ts`, migration `012_deals_usage.sql` | 64 of those tests: robots.txt and blocks, each chain against small fixtures taken on 24 Oct, sizes and unit prices, matching, the page reader with a fake model, the route against `deals_search_v1.json`, both daily caps under concurrency, account deletion | Real Haiku 5.5 on Polish leaflet pages; the 25 s budget under real latency; Biedronka's cost (up to 40 pages a request); whether the chains' pages still look like the fixtures |
+| Affiliate links | `server/messaging/src/shopping/affiliate.ts`, `build.ts`, `config.ts`; `Shopping.swift` | Server tests (rules, no effect on the result, never shown to a model); DoddyCore tests (decode, round trip, agent line) | The SwiftUI caption and the PDF note are not compiled; no programme exists, so no real link was made |
+| Stage 3 rules | `Packages/DoddyCore/Sources/DoddyCore/Checkout.swift` | `CheckoutTests`: 10 tests, 0 failures | Nothing runs against a provider, a shop or Apple; no screen, route or tool exists |
 | Shared core (section 3) | `Packages/DoddyCore` | `swift test`: 1,740/1,740 (draft and result, `DealsClient` against the fixture, `BasketSolver`, `find_deals` and its ask card, What leaves this iPhone) | — |
 | Voice agent spec | `voice-agent/` | `scripts/voice_agent_spec.py check`: PASS, 95 tools (`find_deals` and the new `hand_over_errand` fields are `not_synced`) | Not on the live ElevenLabs agent (needs the owner's yes to the exact text) |
 | iPhone screens and PDF | `DoddyApp/Features/Shopping/`, `ErrandsView`, `HomeView`, `VoiceSessionController` | `scripts/typecheck_app_logic.sh` (27 files, including `DealsModel`), the string catalogs, the forbidden-capability guard | **Not compiled:** the SwiftUI views and the PDF drawing need Xcode (the hosted Mac job on a pull request is the first compile); not seen on a device |

@@ -124,7 +124,8 @@ export function buildUnconfirmedResult(registry: OfferRegistry, content: { langu
  * pick names an offer confirmed on a shop's page. Offers known only from Google's list are never picked,
  * priced or shown; one code-written line says so.
  */
-export function buildShoppingResult(card: ShoppingCardOutput, registry: OfferRegistry, content: ShoppingContent, now: Date):
+export function buildShoppingResult(card: ShoppingCardOutput, registry: OfferRegistry, content: ShoppingContent, now: Date,
+  affiliate?: { link(pageUrl: string): string | undefined }):
   { result: ErrandResult; stats: ShoppingBuildStats } | undefined {
   const lang = content.language;
   const stats: ShoppingBuildStats = { droppedPicks: 0, droppedSentences: 0, relabelled: 0 };
@@ -198,6 +199,8 @@ export function buildShoppingResult(card: ShoppingCardOutput, registry: OfferReg
     if (!o) return [];
     return [{
       id: o.id, title: o.title, shop: o.shop, price: o.price, delivery: o.delivery, url: o.url, site: o.site,
+      // Written last, from the finished picks: a tracked link never reaches the model or the ordering (ADR-612).
+      buyUrl: affiliate?.link(o.url),
       evidence: o.evidence, seenAt: o.seenAt, gtin: o.gtin, notes: notes.get(o.id),
     }];
   });

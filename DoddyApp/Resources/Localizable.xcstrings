@@ -49916,6 +49916,17 @@
         }
       }
     },
+    "Partner link: the page goes through an affiliate network on its way to the shop, and Doddy may earn a commission if you buy. Prices and the order of the picks don't change.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link partnerski: strona przejdzie przez sieć partnerską w drodze do sklepu, a Doddy może dostać prowizję, jeśli kupisz. Ceny i kolejność propozycji bez zmian."
+          }
+        }
+      }
+    },
     "Passphrase": {
       "extractionState": "manual",
       "localizations": {
@@ -65053,6 +65064,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "已稍后提醒"
+          }
+        }
+      }
+    },
+    "Some of the Buy buttons use partner links: Doddy may earn a commission if you buy. Prices and the order of the picks don't change.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Część przycisków Kup używa linków partnerskich: Doddy może dostać prowizję, jeśli kupisz. Ceny i kolejność propozycji bez zmian."
           }
         }
       }

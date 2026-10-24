@@ -14,6 +14,7 @@ import type { FailureCode } from "../errands/schema.js";
 import { buildShoppingResult, buildUnconfirmedResult, isConfirmed, ShoppingCardOutput } from "./build.js";
 import { formatMoney } from "./money.js";
 import { OfferRegistry, type OfferSource, type RegisteredOffer } from "./offers.js";
+import type { AffiliateLinks } from "./affiliate.js";
 import { checkOfferPage, type PageFetcher } from "./pagecheck.js";
 
 type Block = { type: string; [key: string]: unknown };
@@ -43,6 +44,8 @@ export interface ShoppingTools {
   maxOfferSearches?: number;
   /** Shop pages the code reads per errand (default 15). */
   maxPageChecks?: number;
+  /** Tracked links for shops the owner has a programme with (ADR-612); written into the finished result only. */
+  affiliate?: Pick<AffiliateLinks, "link">;
 }
 
 export const SHOPPING_SYSTEM = `You are Doddy's shopping researcher. One person handed Doddy a shopping task, and you find where to buy it in Poland while they get on with their day. Nobody is waiting on the line and you can't ask them anything, so make sensible assumptions and say what they were.
@@ -267,7 +270,7 @@ export async function runShopping(api: ShoppingModelApi, tools: ShoppingTools, t
   if (c.ok.kind === "unparsed") return failed("unreadable_result");
   const built = buildShoppingResult(c.ok.card, registry, {
     words: task.words, brief: task.brief, language: task.language, priorities: task.priorities ?? [],
-  }, now());
+  }, now(), tools.affiliate);
   if (!built) {
     log("shopping card had no usable best pick", { errandId: task.id, offers: registry.size });
     return failed("unreadable_result");

@@ -79,7 +79,7 @@ test("shopping errands (ADR-607, ADR-611): Haiku 5.5 for everyone, Sonnet 5.5 fo
   const c = loadConfig({ DATABASE_URL: "postgres://x/y", SHOPPING_MODEL: "", SERPER_API_KEY: "" });
   assert.deepEqual(c.shoppingSettings, {
     model: "claude-haiku-5-5", premiumModel: "claude-sonnet-5-5", premiumAccountIds: [],
-    effort: "medium", maxOfferSearches: 8, maxPageChecks: 15, serperApiKey: undefined,
+    effort: "medium", maxOfferSearches: 8, maxPageChecks: 15, serperApiKey: undefined, affiliateRules: [],
   });
   const ids = ["0c5d3f2e-8d3a-4b3e-9a57-0f2f0f5a1111", "7a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d"];
   const set = loadConfig({
@@ -89,13 +89,24 @@ test("shopping errands (ADR-607, ADR-611): Haiku 5.5 for everyone, Sonnet 5.5 fo
   });
   assert.deepEqual(set.shoppingSettings, {
     model: "claude-sonnet-5-5", premiumModel: "claude-opus-5-5", premiumAccountIds: ids,
-    effort: "low", maxOfferSearches: 3, maxPageChecks: 5, serperApiKey: "serper-test-key",
+    effort: "low", maxOfferSearches: 3, maxPageChecks: 5, serperApiKey: "serper-test-key", affiliateRules: [],
   });
   for (const bad of [
     { SHOPPING_MAX_OFFER_SEARCHES: "0" }, { SHOPPING_MAX_OFFER_SEARCHES: "21" }, { SHOPPING_MAX_PAGE_CHECKS: "41" }, { SHOPPING_EFFORT: "extreme" },
     { SHOPPING_PREMIUM_ACCOUNTS: "not-an-account-id" }, { SHOPPING_PREMIUM_ACCOUNTS: `${ids[0]};${ids[1]}` },
   ]) {
     assert.throws(() => loadConfig({ DATABASE_URL: "postgres://x/y", ...bad }), JSON.stringify(bad));
+  }
+});
+
+test("affiliate links (ADR-612): none by default; a rule is a shop host and an https template with one {url}", () => {
+  assert.deepEqual(loadConfig({ DATABASE_URL: "postgres://x/y" }).shoppingSettings.affiliateRules, []);
+  const tpl = "https://network.example/click?id=7&to={url}";
+  const set = loadConfig({ DATABASE_URL: "postgres://x/y", AFFILIATE_LINKS: JSON.stringify({ "mediaexpert.pl": tpl }) });
+  assert.deepEqual(set.shoppingSettings.affiliateRules, [{ host: "mediaexpert.pl", template: tpl }]);
+  for (const bad of ["not json", "[]", '{"Media Expert": "https://n.example/?u={url}"}', '{"mediaexpert.pl": "https://n.example/"}',
+    '{"mediaexpert.pl": "https://n.example/?a={url}&b={url}"}', '{"mediaexpert.pl": "http://n.example/?u={url}"}', '{"mediaexpert.pl": 5}']) {
+    assert.throws(() => loadConfig({ DATABASE_URL: "postgres://x/y", AFFILIATE_LINKS: bad }), bad);
   }
 });
 

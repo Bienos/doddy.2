@@ -49,6 +49,7 @@
         "price": { "minor": 189900, "currency": "PLN" },
         "delivery": "Dostawa jutro, 0 zł",
         "url": "https://www.mediaexpert.pl/agd-do-zabudowy/zmywarki-do-zabudowy/przyklad-45",
+        "buyUrl": "https://network.example/click?id=7&to=https%3A%2F%2Fwww.mediaexpert.pl%2Fagd-do-zabudowy%2Fzmywarki-do-zabudowy%2Fprzyklad-45",
         "site": "mediaexpert.pl",
         "evidence": "shop_page",
         "seenAt": "2026-10-24T12:02:00.000Z",

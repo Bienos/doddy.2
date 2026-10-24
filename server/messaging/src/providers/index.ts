@@ -16,6 +16,7 @@ import { PoliteFetcher } from "../deals/fetcher.js";
 import type { DealsDeps } from "../deals/service.js";
 import { AnthropicDealsModel } from "../deals/vision.js";
 import { log } from "../log.js";
+import { AffiliateLinks } from "../shopping/affiliate.js";
 import { SerperOfferSource } from "../shopping/offers.js";
 import { RoutingErrandResearcher, ShoppingErrandResearcher } from "../shopping/runner.js";
 
@@ -54,6 +55,7 @@ export function providersFrom(config: Config) {
         new ShoppingErrandResearcher(config.anthropicApiKey, {
           offers: new SerperOfferSource(ss.serperApiKey), fetcher,
           maxOfferSearches: ss.maxOfferSearches, maxPageChecks: ss.maxPageChecks,
+          affiliate: new AffiliateLinks(ss.affiliateRules),
         }, { model: ss.model, effort: ss.effort, premiumModel: ss.premiumModel, premiumAccountIds: ss.premiumAccountIds }))
       : undefined,
   };

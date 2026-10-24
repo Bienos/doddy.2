@@ -15,6 +15,7 @@ import { contentDigest, contentJson, createBody, ErrandResultSchema } from "../s
 import type { ErrandResearcher, ErrandTask, ResearchControl, ResearchOutcome } from "../src/errands/researcher.js";
 import { budgetBacked, buildShoppingResult, buildUnconfirmedResult, keepBackedSentences, type ShoppingCardOutput } from "../src/shopping/build.js";
 import { amountFromData, formatMoney, moneyMentions, parseAmount, parseMoney } from "../src/shopping/money.js";
+import { AffiliateLinks, parseAffiliateRules } from "../src/shopping/affiliate.js";
 import { OfferRegistry, SerperOfferSource, type OfferSource, type RawOffer } from "../src/shopping/offers.js";
 import { checkOfferPage, fromJsonLd, fromMicrodata, fromOpenGraph, type FetchOutcome, type PageFetcher } from "../src/shopping/pagecheck.js";
 import { FALLBACK_BETA } from "../src/errands/researcher.js";
@@ -515,6 +516,61 @@ describe("the shopping runner", () => {
     assert.deepEqual(seen, ["general:r1"]);
     assert.equal(out.model, "claude-sonnet-5-5");
     assert.equal(routing.model, "claude-opus-5-5");
+  });
+});
+
+describe("affiliate links (ADR-612)", () => {
+  const tpl = "https://network.example/click?id=7&to={url}";
+  const links = new AffiliateLinks(parseAffiliateRules(JSON.stringify({ "mediaexpert.pl": tpl, "x-kom.pl": "https://other.example/go/{url}/now" })));
+
+  test("a rule wraps the shop's own page address, percent-encoded, for that shop's host and its subdomains only", () => {
+    assert.equal(links.link("https://www.mediaexpert.pl/p/45?a=1&b=2#x"), "https://network.example/click?id=7&to=https%3A%2F%2Fwww.mediaexpert.pl%2Fp%2F45%3Fa%3D1%26b%3D2%23x");
+    assert.equal(links.link("https://sklep.mediaexpert.pl/p/1")?.startsWith("https://network.example/"), true);
+    assert.equal(links.link("https://www.x-kom.pl/p/9"), "https://other.example/go/https%3A%2F%2Fwww.x-kom.pl%2Fp%2F9/now");
+    assert.equal(links.link("https://notmediaexpert.pl/p/1"), undefined, "a host that only ends with the same letters is not the shop");
+    assert.equal(links.link("https://www.euro.com.pl/p/1"), undefined);
+    assert.equal(links.link("not an address"), undefined);
+    assert.equal(new AffiliateLinks().link("https://www.mediaexpert.pl/p/1"), undefined, "no rules, no links");
+  });
+
+  test("a bad setting is refused with a message that names the problem and not the template", () => {
+    assert.deepEqual(parseAffiliateRules(""), []);
+    assert.deepEqual(parseAffiliateRules("  "), []);
+    assert.throws(() => parseAffiliateRules('{"mediaexpert.pl": "https://n.example/secret-id-123"}'), (e: Error) => /exactly one \{url\}/u.test(e.message) && !e.message.includes("secret-id-123"));
+    assert.throws(() => parseAffiliateRules('{"mediaexpert.pl": "http://n.example/?u={url}"}'), /must be https/u);
+    assert.throws(() => parseAffiliateRules(JSON.stringify(Object.fromEntries(Array.from({ length: 31 }, (_, i) => [`shop${i}.pl`, tpl])))), /more than 30/u);
+  });
+
+  test("a tracked link is written into the result only; the picks, their order and every sentence are the same with and without it", () => {
+    const withLinks = buildShoppingResult(sampleCard(), sampleRegistry(), content, T0, links)!.result;
+    const without = buildShoppingResult(sampleCard(), sampleRegistry(), content, T0)!.result;
+    const strip = (r: typeof withLinks) => JSON.parse(JSON.stringify(r, (k, v) => (k === "buyUrl" ? undefined : v)));
+    assert.deepEqual(strip(withLinks), strip(without), "nothing but buyUrl differs");
+    const offers = withLinks.shopping!.offers;
+    assert.match(offers.find((o) => o.id === "o1")!.buyUrl ?? "", /^https:\/\/network\.example\/click\?id=7&to=/u);
+    assert.equal(offers.find((o) => o.id === "o1")!.url, "https://www.mediaexpert.pl/p/45", "the shop's own address stays as it is");
+    assert.equal(offers.find((o) => o.id === "o2")!.buyUrl, undefined, "no programme with euro.com.pl");
+    assert.equal(offers.find((o) => o.id === "o3")!.buyUrl?.startsWith("https://other.example/go/"), true);
+    assert.deepEqual(withLinks.sources, without.sources, "the sources on the card are the shops' own pages");
+    assert.ok(ErrandResultSchema.safeParse(withLinks).success);
+    assert.equal(without.shopping!.offers.some((o) => "buyUrl" in o), false, "without rules there is no buyUrl at all");
+  });
+
+  test("the runner never shows the card writer or the model a tracked link", async () => {
+    const source = fakeSource([{ title: "Zmywarka 45 cm 42 dB", shop: "Media Expert", priceText: "1 949,00 zł", link: "https://www.mediaexpert.pl/p/45" }]);
+    const fetcher = fakeFetcher({ "https://www.mediaexpert.pl/p/45": html(1899) });
+    const api = new FakeShoppingApi([
+      () => ({ content: [toolUse("t1", "find_offers", { query: "zmywarka" })], stop_reason: "tool_use", usage }),
+      () => ({ content: [toolUse("t2", "check_offer_page", { url: "https://www.mediaexpert.pl/p/45" })], stop_reason: "tool_use", usage }),
+      () => ({ content: [{ type: "text", text: "o1." }], stop_reason: "end_turn", usage }),
+    ], { kind: "ok", usage, card: sampleCard({ picks: [{ role: "best", offerId: "o1", why: "Najcichsza.", tradeoff: null }], budget: { amount: null }, offerNotes: [] }) });
+    const out = await runShopping(api, { offers: source, fetcher, affiliate: links }, task, control());
+    assert.equal(out.kind, "done");
+    if (out.kind !== "done") return;
+    assert.match(out.result.shopping!.offers[0]!.buyUrl ?? "", /^https:\/\/network\.example\//u);
+    const seenByModels = JSON.stringify(api.calls) + api.cardInputs.join("");
+    assert.equal(seenByModels.includes("network.example"), false);
+    assert.equal(seenByModels.includes("buyUrl"), false);
   });
 });
 

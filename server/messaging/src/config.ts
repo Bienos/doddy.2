@@ -1,4 +1,5 @@
 import type { DealsSettings } from "./deals/types.js";
+import { parseAffiliateRules, type AffiliateRule } from "./shopping/affiliate.js";
 import { z } from "zod";
 
 // Every provider block is optional: a missing block switches that feature off and the API
@@ -96,6 +97,11 @@ const schema = z.object({
   SHOPPING_MAX_OFFER_SEARCHES: z.coerce.number().int().min(1).max(20).default(8),
   SHOPPING_MAX_PAGE_CHECKS: z.coerce.number().int().min(1).max(40).default(15),
   SERPER_API_KEY: z.string().min(8).optional(),
+  // Affiliate links (ADR-612): {"shop host": "https template with one {url}"}. Empty by default, so no link is
+  // tracked until the owner has a programme with a shop. See docs/implementation/SHOPPING.md.
+  AFFILIATE_LINKS: z.string().default("").transform((v, ctx) => {
+    try { return parseAffiliateRules(v); } catch (err) { ctx.addIssue({ code: "custom", message: (err as Error).message }); return z.NEVER; }
+  }),
   // Leaflets (ADR-609, SHOPPING.md section 2): POST /v1/deals/search reads the official leaflets of
   // Biedronka, Lidl, Dino and Rossmann on request and keeps only counts. "0" answers 503 deals_disabled.
   // Image pages need ANTHROPIC_API_KEY (Claude Haiku reads them); the caps count requests per UTC day.
@@ -153,6 +159,7 @@ export interface ErrandSettings {
 export interface ShoppingSettings {
   model: string; premiumModel: string; premiumAccountIds: string[];
   effort: ErrandEffort; maxOfferSearches: number; maxPageChecks: number; serperApiKey?: string;
+  affiliateRules: AffiliateRule[];
 }
 
 /** Messages switches and caps (ADR-586). `enabled` is the env switch only; the key is checked where wired. */
@@ -258,6 +265,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       maxOfferSearches: e.SHOPPING_MAX_OFFER_SEARCHES,
       maxPageChecks: e.SHOPPING_MAX_PAGE_CHECKS,
       serperApiKey: e.SERPER_API_KEY,
+      affiliateRules: e.AFFILIATE_LINKS,
     },
     dealsSettings: {
       enabled: e.DEALS_ENABLED === "1", visionModel: e.DEALS_VISION_MODEL, maxPages: e.DEALS_MAX_PAGES,
