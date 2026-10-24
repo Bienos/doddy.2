@@ -251,14 +251,14 @@ struct IslandSignView: View {
 
 /// The boards' 34 pt pill: dark fill and cream label, or cream fill for the main action.
 /// When three pills and a sign don't fit beside Doddy, the pills drop their symbols (as the
-/// Figma island's "Wycisz" and "Zakończ") instead of cutting their words to "U…" (ADR-607).
+/// Figma island's "Wycisz" and "Zakończ") instead of cutting their words to "U…" (ADR-615).
 struct IslandPillLabel: View {
     let title: String
     let systemImage: String
     var prominent = false
 
     /// Words a pill keeps as they are in every language: "Stop" fits beside Doddy where
-    /// "Zatrzymaj" didn't (owner, 24 Oct 2026, ADR-609). The Lock Screen's End is still translated.
+    /// "Zatrzymaj" didn't (owner, 24 Oct 2026, ADR-617). The Lock Screen's End is still translated.
     static let keptAsIs: Set<String> = ["Stop"]
 
     var body: some View {
@@ -298,7 +298,7 @@ struct IslandBottomView<Controls: View>: View {
     @Environment(\.islandLanguage) private var language
 
     /// What iOS leaves for the expanded island's bottom region is about 110 pt (measured on the
-    /// native screenshot); everything here stays within it, so nothing is cut (ADR-607).
+    /// native screenshot); everything here stays within it, so nothing is cut (ADR-615).
     static var fitsHeight: CGFloat { 110 }
     static var figureHeight: CGFloat { 104 }
     static var waveBand: CGFloat { 24 }
@@ -353,7 +353,7 @@ struct IslandBottomView<Controls: View>: View {
                 if let pose = scene.pose {
                     // Whole Doddy at his largest the island allows (owner, 22 Oct, ADR-596), with a
                     // 1.5 pt cream edge and a faint light, so his black lines read on the black
-                    // island (ADR-607). 104 pt: iOS gives the expanded island's bottom region about
+                    // island (ADR-615). 104 pt: iOS gives the expanded island's bottom region about
                     // 110 pt, and at 118 it cut his shoes off (native screenshot, run 40083307695).
                     IslandPoseView(pose: pose, maxSize: CGSize(width: 82, height: Self.figureHeight), edgeWidth: 1.5)
                         .background { IslandDoddyLight() }
@@ -372,7 +372,7 @@ struct IslandBottomView<Controls: View>: View {
                 .accessibilityElement(children: .combine)
                 // ADR-596: his waves sit under what he is doing, in one 24 pt band: a calm line
                 // while he hears you; while he talks a livelier one that starts beside him
-                // (owner, 24 Oct: not across the whole island, ADR-607).
+                // (owner, 24 Oct: not across the whole island, ADR-615).
                 if scene.waves == .listening {
                     IslandWavesView(kind: .line, live: scene.live)
                         .frame(height: Self.waveBand)
@@ -438,7 +438,7 @@ struct IslandCompactLeadingView: View {
     var body: some View {
         Group {
             if let pose = scene.pose {
-                // Only his head (owner, 24 Oct, ADR-607): the whole of him at 30 pt was a few
+                // Only his head (owner, 24 Oct, ADR-615): the whole of him at 30 pt was a few
                 // hairlines. The expanded island shows all of him.
                 IslandPoseFaceView(pose: pose, size: 26)
             } else {
@@ -503,7 +503,7 @@ struct IslandPoseView: View {
     let maxSize: CGSize
     /// The cream edge for black backgrounds; off on the cream Lock Screen card.
     var edged = true
-    /// The edge's width; the expanded island's is 1.5 pt and round (ADR-607).
+    /// The edge's width; the expanded island's is 1.5 pt and round (ADR-615).
     var edgeWidth: CGFloat = 1
 
     var body: some View {
@@ -521,7 +521,7 @@ struct IslandFigureView: View {
     let maxSize: CGSize
     var edged = true
     /// Up to 1 pt: the four-shadow edge. Wider: a round edge of sixteen cream copies of the
-    /// picture's shape, which has no gaps on the diagonals (ADR-607).
+    /// picture's shape, which has no gaps on the diagonals (ADR-615).
     var edgeWidth: CGFloat = 1
 
     var body: some View {
@@ -582,7 +582,7 @@ struct IslandPoseFaceView: View {
 
 /// A faint light behind Whole Doddy on the expanded island, after the Figma island's
 /// "Światło za Doddym" (frame "A 2 · Słucham", file `yqoQlkN6BpevFGW3ySnNJU`) but at a fifth of
-/// its strength: the owner didn't want him lit up (24 Oct, ADR-607). His 1.5 pt cream edge is
+/// its strength: the owner didn't want him lit up (24 Oct, ADR-615). His 1.5 pt cream edge is
 /// what makes his black lines read on black; the light only lifts him off the island a little.
 struct IslandDoddyLight: View {
     static let peak = 0.2

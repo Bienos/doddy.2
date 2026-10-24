@@ -241,7 +241,7 @@ final class VoiceSessionController {
     private(set) var pendingAction: PendingAction? {
         didSet {
             syncIsland()
-            // ADR-608: a new card opens the island up while Doddy isn't on screen.
+            // ADR-616: a new card opens the island up while Doddy isn't on screen.
             if oldValue == nil, pendingAction != nil { expandIslandForCard() }
         }
     }
@@ -1377,7 +1377,7 @@ final class VoiceSessionController {
                 let url = try PresentationFiles.write(draft, created: Date())
                 if onScreen(attempt) {
                     presentationReady = PresentationReady(url: url, title: draft.title, slideCount: draft.slideCount)
-                    // ADR-608: written and read back, so it is ready; Show opens its card.
+                    // ADR-616: written and read back, so it is ready; Show opens its card.
                     flashIsland(.resultReady(.presentation))
                 }
                 await reply(id, VoiceToolReply.presentationMade(draft))
@@ -2039,7 +2039,7 @@ final class VoiceSessionController {
             greeting: wakeGreeting, conversationStartedAt: startedAt)
         state.moment = islandMoment
         state.islandStyle = IslandStyle.stored(UserDefaults.standard.string(forKey: PreferenceKey.islandStyle))
-        // ADR-609: the island speaks the language of Doddy's screens (Polish by default), which the
+        // ADR-617: the island speaks the language of Doddy's screens (Polish by default), which the
         // widget extension can't read for itself.
         state.language = Bundle.main.preferredLocalizations.first
         return state
@@ -2054,11 +2054,11 @@ final class VoiceSessionController {
         case .memory: return .noteWaiting
         case .plan(_, let steps, _): return .planWaiting(steps: steps.count)
         case .reminder, .noteReminder: return .reminderWaiting
-        // ADR-608: every other card has its kind on the island (it was the bare "Confirm in Doddy").
+        // ADR-616: every other card has its kind on the island (it was the bare "Confirm in Doddy").
         case .some(let action): return .actionWaiting(Self.islandAction(action))
         case nil: break
         }
-        // ADR-608: an iPhone permission, a function that is off, or an account to connect.
+        // ADR-616: an iPhone permission, a function that is off, or an account to connect.
         if permissionRequest != nil || accessRequest != nil { return .actionWaiting(.access) }
         if accountNeeded != nil { return .actionWaiting(.signIn) }
         // Translating (ADR-244): the language codes only, never a phrase. No tool runs in this
@@ -2078,7 +2078,7 @@ final class VoiceSessionController {
         return nil
     }
 
-    /// The island's word for a card (ADR-608): its kind only, never what it says.
+    /// The island's word for a card (ADR-616): its kind only, never what it says.
     private static func islandAction(_ action: PendingAction) -> IslandAction {
         switch action {
         case .message(_, let draft, _): return draft.channel == .email ? .email : .text
@@ -2118,7 +2118,7 @@ final class VoiceSessionController {
         if islandExpansion.doddyStartedSpeaking(at: Date(), appOnScreen: onScreen) { island.expand() }
     }
 
-    /// ADR-608: a card arrived; `IslandExpansion` says whether the island opens up for it.
+    /// ADR-616: a card arrived; `IslandExpansion` says whether the island opens up for it.
     private func expandIslandForCard() {
         guard ownsIsland, translator == nil else { return }
         let onScreen = UIApplication.shared.applicationState == .active
@@ -2662,7 +2662,7 @@ final class VoiceSessionController {
             let found = devices.findPhotos(request, now: Date())
             if isCurrent(call.toolCallId) {
                 photoResults = PhotoResults(request: request, summary: found.summary, identifiers: found.identifiers)
-                // ADR-608: the pictures are on the conversation's screen; the island says so.
+                // ADR-616: the pictures are on the conversation's screen; the island says so.
                 if !found.identifiers.isEmpty { flashIsland(.resultReady(.photos)) }
             }
             await reply(call.toolCallId, VoiceToolReply.photosFound(found.summary, request: request, calendar: .current))
@@ -3067,7 +3067,7 @@ final class VoiceSessionController {
             // ADR-564: a file Claude is making gets a button on screen; the agent never gets its link.
             if let document = result.document {
                 documents.insert(document, at: 0)
-                // ADR-608: "ready" only when the server says the file is ready.
+                // ADR-616: "ready" only when the server says the file is ready.
                 switch document.status {
                 case .ready: flashIsland(.resultReady(.document))
                 case .working: flashIsland(.resultReady(.documentStarted))

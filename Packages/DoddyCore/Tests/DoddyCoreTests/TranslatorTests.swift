@@ -81,7 +81,7 @@ final class TranslatorTests: XCTestCase {
         let reply = VoiceToolReply.translatorStarted(faceToFace())
         XCTAssertTrue(reply.hasPrefix("started:"))
         XCTAssertTrue(reply.contains(lang("es").hello))
-        // ADR-611: it started without asking, so Doddy asks what to translate if he wasn't told.
+        // ADR-619: it started without asking, so Doddy asks what to translate if he wasn't told.
         XCTAssertTrue(reply.contains("what to translate"))
         let detect = VoiceToolReply.translatorStarted(faceToFace("pl", nil))
         XCTAssertTrue(detect.contains("let them say something first"))

@@ -37,7 +37,7 @@ ASK = {"yes_or_tap", "tap", "runs_now"}
 # Read nothing of the user's and change nothing (AskFirst.publicLookups in DoddyCore must match).
 PUBLIC_LOOKUPS = {"calculate", "convert_units", "convert_currency", "web_search", "news_search", "find_places",
                   "geocode_place", "get_weather", "wikipedia_search", "wikipedia_summary"}
-# Translator mode starts and stops at once, without asking (owner, 24 Oct 2026, ADR-611).
+# Translator mode starts and stops at once, without asking (owner, 24 Oct 2026, ADR-619).
 RUNS_NOW_MODES = {"start_translator", "stop_translator"}
 APP_INSTRUCTIONS = SPEC / "instructions.md"
 
@@ -230,7 +230,7 @@ def check_app(tools, sources=APP_SOURCES):
         if (x.get("ask") == "tap") != bool(x.get("confirm_on_screen")):
             errors.append(f"tool {name}: x_doddy.ask 'tap' and confirm_on_screen go together (ASK-01)")
         if runs_now and name not in PUBLIC_LOOKUPS | RUNS_NOW_MODES:
-            errors.append(f"tool {name}: only the public lookups {sorted(PUBLIC_LOOKUPS)} and translator start/stop may run without asking (ADR-575, ADR-611)")
+            errors.append(f"tool {name}: only the public lookups {sorted(PUBLIC_LOOKUPS)} and translator start/stop may run without asking (ADR-575, ADR-619)")
         if not runs_now and x.get("speak_before") != "force":
             errors.append(f"tool {name}: ASK-01 needs speak_before 'force', so Doddy says what it will do before the tool runs")
         if not runs_now and x.get("ask") and (not isinstance(x.get("timeout_secs"), int) or x["timeout_secs"] < 60):

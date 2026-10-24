@@ -8,7 +8,7 @@ import WidgetKit
 /// With "Hey Doddy" on (ADR-254) the same activity first says the iPhone is listening for the
 /// wake word, with only Stop listening; after the wake word it greets the user ("Hey Pat, what's up?").
 /// Tapping it opens the app; while a card waits (a note, a text, a transfer, …) or something Doddy
-/// made is ready, it opens the conversation on that card (`doddy://conversation`, ADR-608), and the
+/// made is ready, it opens the conversation on that card (`doddy://conversation`, ADR-616), and the
 /// expanded island's main button is Show. Nothing is approved from the island: the card is.
 /// When the app has not refreshed the activity for `VoiceLiveActivity.staleAfter` (iOS ended
 /// it in the background), iOS marks it stale and this view says so instead of "Listening".
@@ -24,7 +24,7 @@ struct DoddyVoiceLiveActivity: Widget {
             return LockScreenView(shown: Shown(context), scene: scene,
                            startedAt: context.state.conversationStart(activityStartedAt: context.attributes.startedAt))
                 .doddyCreamLockScreen()
-                // ADR-609: the words in the language Doddy's screens use, not only the iPhone's.
+                // ADR-617: the words in the language Doddy's screens use, not only the iPhone's.
                 .environment(\.islandLanguage, context.state.language)
                 .widgetURL(scene.showsInDoddy ? Self.conversationLink : nil)
         } dynamicIsland: { context in
@@ -32,7 +32,7 @@ struct DoddyVoiceLiveActivity: Widget {
             let scene = context.state.islandScene(isStale: context.isStale).respectingHiddenArt
             // After "Hey Doddy" (ADR-254) the timer counts from the conversation, not the listening.
             let startedAt = context.state.conversationStart(activityStartedAt: context.attributes.startedAt)
-            // ADR-609: every region's words in the language Doddy's screens use.
+            // ADR-617: every region's words in the language Doddy's screens use.
             let language = context.state.language
             // The owner's V4 boards (design/dynamic-island-v4): the style picked in Settings
             // (ADR-239), or Thought Pocket / Step Stones / Reminder Knot for a moment (ADR-240).
@@ -66,7 +66,7 @@ struct DoddyVoiceLiveActivity: Widget {
                     .environment(\.islandLanguage, language)
             }
             .keylineTint(scene.live ? Color.islandOrange : Color.islandSecondary)
-            // ADR-608: a tap anywhere on the island goes to the card that waits, not only Home.
+            // ADR-616: a tap anywhere on the island goes to the card that waits, not only Home.
             .widgetURL(scene.showsInDoddy ? Self.conversationLink : nil)
         }
     }
@@ -148,7 +148,7 @@ private struct ElapsedTime: View {
 /// Stop listening, which turns it off.
 private struct IslandControls: View {
     let shown: Shown
-    /// A card waits or something is ready in the conversation (ADR-608): Show, in cream, opens
+    /// A card waits or something is ready in the conversation (ADR-616): Show, in cream, opens
     /// it; otherwise Open goes to Home.
     var showsInDoddy = false
 
@@ -244,7 +244,7 @@ private struct Controls: View {
 
 private struct LockScreenView: View {
     let shown: Shown
-    /// The island's scene, for a card that waits (ADR-608): its fixed words and Show.
+    /// The island's scene, for a card that waits (ADR-616): its fixed words and Show.
     let scene: IslandScene
     let startedAt: Date
 
@@ -321,7 +321,7 @@ private struct LockScreenView: View {
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Palette.error)
         } else if scene.showsInDoddy {
-            // ADR-608: what kind of thing waits, in the island's fixed words; never what it says.
+            // ADR-616: what kind of thing waits, in the island's fixed words; never what it says.
             VStack(alignment: .leading, spacing: 2) {
                 IslandText(scene.title)
                     .foregroundStyle(Palette.accentText)

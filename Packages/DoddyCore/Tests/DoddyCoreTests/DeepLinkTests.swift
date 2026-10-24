@@ -9,7 +9,7 @@ final class DeepLinkTests: XCTestCase {
         XCTAssertEqual(DeepLink(url: URL(string: "DODDY://Settings")!), .settings)
         XCTAssertEqual(DeepLink(url: URL(string: "doddy://recordings")!), .recordings, "the Live Activity's Open button (ADR-588)")
         XCTAssertEqual(DeepLink(url: URL(string: "doddy://recordings/delete")!), .recordings, "a path is ignored: the link only ever opens the list")
-        XCTAssertEqual(DeepLink(url: URL(string: "doddy://conversation")!), .conversation, "the voice island's Show button (ADR-608)")
+        XCTAssertEqual(DeepLink(url: URL(string: "doddy://conversation")!), .conversation, "the voice island's Show button (ADR-616)")
         XCTAssertEqual(DeepLink(url: URL(string: "doddy://conversation/approve?id=1")!), .conversation,
                        "a path or query is ignored: the link opens the conversation and approves nothing")
     }

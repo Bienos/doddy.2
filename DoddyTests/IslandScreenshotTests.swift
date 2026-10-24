@@ -5,7 +5,7 @@ import XCTest
 
 /// The Dynamic Island's own SwiftUI pieces (what `DoddyVoiceLiveActivity` puts into the island's
 /// regions), drawn off screen in the states a conversation goes through (owner, 24 Oct 2026,
-/// ADR-607): only his head on the compact island, all of him in his light on the expanded one,
+/// ADR-615): only his head on the compact island, all of him in his light on the expanded one,
 /// and the bolder waves.
 ///
 /// The pictures go to `build/island-screenshots/` (the hosted Mac job keeps that folder) and are
@@ -23,7 +23,7 @@ final class IslandScreenshotTests: XCTestCase {
         return state.islandScene(isStale: false)
     }
 
-    /// The states shown, in a conversation's order, then cards and results (ADR-608).
+    /// The states shown, in a conversation's order, then cards and results (ADR-616).
     private static let samples: [(file: String, name: String, status: State.Status, muted: Bool, moment: State.Moment?)] = [
         ("1-connecting", "Connecting", .connecting, false, nil),
         ("2-listening", "Listening: he hears you", .listening, false, nil),
@@ -44,7 +44,7 @@ final class IslandScreenshotTests: XCTestCase {
 
     // MARK: What the owner asked for
 
-    /// Small island: his head only, a 26 pt circle, never the whole of him at 30 pt (ADR-607).
+    /// Small island: his head only, a 26 pt circle, never the whole of him at 30 pt (ADR-615).
     @MainActor
     func testTheCompactIslandShowsOnlyHisHead() throws {
         for sample in Self.samples {
@@ -134,7 +134,7 @@ final class IslandScreenshotTests: XCTestCase {
         try draw(language: nil, prefix: "", note: "Doddy's Dynamic Island, drawn at 3x from the widget's own views (ImageRenderer). Sample states: not a conversation and not iOS's island.")
     }
 
-    /// ADR-609: the same states in Polish, the app's default language, as the widget draws them
+    /// ADR-617: the same states in Polish, the app's default language, as the widget draws them
     /// when the app sends "pl".
     @MainActor
     func testDrawTheIslandInPolish() throws {
@@ -142,7 +142,7 @@ final class IslandScreenshotTests: XCTestCase {
     }
 
     /// The island's words come from the app's Polish table (`pl.lproj`), numbers included, and
-    /// a word with no line stays English (ADR-609).
+    /// a word with no line stays English (ADR-617).
     func testTheIslandSpeaksPolish() {
         XCTAssertEqual(IslandLanguage.text("Listening", "pl"), "Słucham")
         XCTAssertEqual(IslandLanguage.text("A text to check", "pl"), "SMS do sprawdzenia")
@@ -307,7 +307,7 @@ private struct IslandBoardPicture: View {
                 HStack(spacing: 6) {
                     IslandPillLabel(title: muted ? "Unmute" : "Mute",
                                     systemImage: muted ? "mic.fill" : "mic.slash.fill", prominent: muted)
-                    // As the widget: Show while a card waits or something is ready (ADR-608).
+                    // As the widget: Show while a card waits or something is ready (ADR-616).
                     if scene.showsInDoddy {
                         IslandPillLabel(title: "Show", systemImage: "hand.tap.fill", prominent: !muted)
                     } else {

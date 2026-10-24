@@ -72,12 +72,12 @@ struct NativeIslandBaselineView: View {
     }
 
     /// The style a real conversation would use (Settings, Whole Doddy by default), so the
-    /// screenshots show the island people see (ADR-607). The fixture status keeps it saying
+    /// screenshots show the island people see (ADR-615). The fixture status keeps it saying
     /// "Test activity" and never lets it turn orange.
     private func fixtureState(muted: Bool) -> DoddyVoiceAttributes.ContentState {
         var state = DoddyVoiceAttributes.ContentState(status: .testFixture, isMuted: muted)
         state.islandStyle = IslandStyle.stored(UserDefaults.standard.string(forKey: PreferenceKey.islandStyle))
-        // The language of the app's screens, as a conversation sends it (ADR-609).
+        // The language of the app's screens, as a conversation sends it (ADR-617).
         state.language = Bundle.main.preferredLocalizations.first
         return state
     }

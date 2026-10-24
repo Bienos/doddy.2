@@ -32,7 +32,7 @@ final class IslandBaselineTests: XCTestCase {
             XCTAssertEqual(Set(json.keys), ["status", "isMuted", "savedCount", "islandStyle", "moment"], "\(moment)")
             // Every string anywhere in the payload is a fixed value: the status, the style, or a
             // language code of at most two letters ("?" while unknown).
-            // ADR-608: a card's or a result's kind is one fixed word too.
+            // ADR-616: a card's or a result's kind is one fixed word too.
             let fixed = Set(["listening", state.islandStyle.rawValue])
                 .union(IslandAction.allCases.map(\.rawValue)).union(IslandResult.allCases.map(\.rawValue))
             for text in strings(in: json) where !fixed.contains(text) {

@@ -95,7 +95,7 @@ public enum AskFirst {
             return .yesFirst(AskCard(title: "Read a list?", lines: ["List: \(name)"], confirmLabel: "Yes, read it"))
         case .parkingSpot(.find):
             return .yesFirst(AskCard(title: "Find your parking spot?", lines: ["Uses where your iPhone is now"], confirmLabel: "Yes, find it"))
-        // ADR-611 (owner, 24 Oct 2026: "nie pytaj, od razu działaj, przełącz się i pytaj, co
+        // ADR-619 (owner, 24 Oct 2026: "nie pytaj, od razu działaj, przełącz się i pytaj, co
         // tłumaczyć"), replacing ADR-542: translator mode starts and stops the moment the user asks.
         // It reads nothing and sends nothing; the conversation turns private, and the other person
         // still hears the AI translator disclosure first.

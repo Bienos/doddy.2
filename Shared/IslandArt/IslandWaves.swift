@@ -6,7 +6,7 @@ import SwiftUI
 /// them along. The island draws them still, because a Live Activity can't run an animation of
 /// its own between updates; the app's island extension on Home moves them (`IslandExtension`).
 ///
-/// Bolder since 24 Oct (owner: the lines were too thin and rendered poorly, ADR-607): fewer lines,
+/// Bolder since 24 Oct (owner: the lines were too thin and rendered poorly, ADR-615): fewer lines,
 /// 2 to 3 pt wide instead of 1.3 to 2.2, and drawn from a point every half point instead of every
 /// two, so a small wave is a curve and not a zigzag. On the expanded island his talking waves
 /// stay in the band under his status, as his listening line does, start beside him and spread

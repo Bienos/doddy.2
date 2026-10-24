@@ -110,7 +110,7 @@ struct IslandPreview: View {
             .frame(maxWidth: 371)
             .background(Color.islandBlack, in: RoundedRectangle(cornerRadius: 40, style: .continuous))
             // The light behind Whole Doddy reaches past his column; the island's edge cuts it,
-            // as iOS's island does (ADR-607).
+            // as iOS's island does (ADR-615).
             .clipShape(RoundedRectangle(cornerRadius: 40, style: .continuous))
             HStack(spacing: 10) {
                 HStack(spacing: 0) {

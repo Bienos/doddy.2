@@ -140,7 +140,7 @@ struct IslandScene: Equatable, Sendable {
     /// Whole Doddy's waves (ADR-596).
     var waves: IslandWaveState = .none
     /// Something waits for the user in the conversation, or is ready there: the expanded island's
-    /// main button is Show (`doddy://conversation`), which opens it (ADR-608). Opening approves nothing.
+    /// main button is Show (`doddy://conversation`), which opens it (ADR-616). Opening approves nothing.
     var showsInDoddy = false
 
     func art(_ presentation: IslandPresentation) -> IslandArt {
@@ -187,7 +187,7 @@ extension DoddyVoiceAttributes.ContentState {
             case .noteSaved, .reminderSet: return .fistpump
             case .planWaiting, .planRunning: return .tiptoe
             case .translating: return nil
-            // ADR-608: a card waits (he reaches for it), or what he made is ready (fist pump).
+            // ADR-616: a card waits (he reaches for it), or what he made is ready (fist pump).
             case .actionWaiting: return .reachingHigh
             case .resultReady(let result): return result == .documentStarted ? .tiptoe : .fistpump
             }
@@ -262,7 +262,7 @@ extension DoddyVoiceAttributes.ContentState {
             expandedSign: style == .leanIn ? sign : .none,
             compactSign: compact,
             minimalSign: minimal)
-        // A card waits in Doddy (ADR-608): Show opens it. Not when stale: there is no card to show.
+        // A card waits in Doddy (ADR-616): Show opens it. Not when stale: there is no card to show.
         scene.showsInDoddy = !stale && status == .needsConfirmation
         return scene
     }
@@ -330,7 +330,7 @@ extension DoddyVoiceAttributes.ContentState {
                            IslandArtLabel(text: b, x: 71.5, y: 96, size: 10)]
             return s
         case .actionWaiting(let action):
-            // ADR-608: the kind of card only, in fixed words; the card itself is in Doddy.
+            // ADR-616: the kind of card only, in fixed words; the card itself is in Doddy.
             let words = action.island
             var s = scene(.thoughtPocket, 0, label: words.label, time: .elapsed, title: words.title,
                           subtitle: words.subtitle, compact: waiting, minimal: .none)
@@ -347,7 +347,7 @@ extension DoddyVoiceAttributes.ContentState {
     }
 }
 
-/// What the island says for each kind of card (ADR-608): a label beside the camera, a title and
+/// What the island says for each kind of card (ADR-616): a label beside the camera, a title and
 /// a second line, all fixed words. A change never happens from the island: Show opens the card.
 struct IslandWords: Equatable, Sendable {
     let label: String

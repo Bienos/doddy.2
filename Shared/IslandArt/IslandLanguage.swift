@@ -2,7 +2,7 @@ import Foundation
 import SwiftUI
 
 /// The island's and the Lock Screen's words in the language Doddy's screens use (owner, 24 Oct
-/// 2026: "zrób też opcję Polska", ADR-609). The widget extension is its own process and doesn't
+/// 2026: "zrób też opcję Polska", ADR-617). The widget extension is its own process and doesn't
 /// see the language the app set for itself (Polish by default, ADR-573), so the app sends its
 /// language with each update (`ContentState.language`) and these views look every English word
 /// up in that language's table of the string catalog (`<code>.lproj`). A word with no line there
@@ -61,7 +61,7 @@ private struct IslandLanguageKey: EnvironmentKey {
 }
 
 extension EnvironmentValues {
-    /// The language the app's screens are in, for the island's words (ADR-609). Nil: this
+    /// The language the app's screens are in, for the island's words (ADR-617). Nil: this
     /// process's own language (the app's screens in the app, the iPhone's in the widget).
     var islandLanguage: String? {
         get { self[IslandLanguageKey.self] }

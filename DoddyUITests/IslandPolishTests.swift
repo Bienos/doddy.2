@@ -1,6 +1,6 @@
 import XCTest
 
-/// ADR-609: the real Dynamic Island in Polish, the app's default language. The offline fixture
+/// ADR-617: the real Dynamic Island in Polish, the app's default language. The offline fixture
 /// (no microphone, no provider) runs with the app in Polish; the island's words and buttons
 /// come from the app's Polish table, sent with each update ("Stop" stays "Stop"). Screenshots are attached to the
 /// result, as `MemoryBaselineTests` does in English.

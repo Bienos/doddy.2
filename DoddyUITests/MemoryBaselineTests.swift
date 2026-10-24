@@ -85,7 +85,7 @@ final class MemoryBaselineTests: XCTestCase {
         XCUIDevice.shared.press(.home)
         let activeCompact = springboard.descendants(matching: .any).matching(NSPredicate(format: "label == 'Test activity'")).firstMatch
         XCTAssertTrue(activeCompact.waitForExistence(timeout: 15))
-        // Unmuted: Doddy's head on the compact island, all of him on the expanded one (ADR-607).
+        // Unmuted: Doddy's head on the compact island, all of him on the expanded one (ADR-615).
         attach(springboard, name: "Native compact Island, not muted - offline labelled fixture")
         activeCompact.press(forDuration: 1.2)
         // The island's end control is labelled "Stop" ("Stop listening" in Hey Doddy mode).

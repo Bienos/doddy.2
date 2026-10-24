@@ -89,7 +89,7 @@ final class VoiceSessionControllerTests: XCTestCase {
         XCTAssertEqual(t.link.results.first?.text, VoiceToolReply.eventDeleted(event, calendar: .current))
     }
 
-    /// ADR-611 (owner, 24 Oct 2026: "nie pytaj, od razu działaj, przełącz się"): translator mode
+    /// ADR-619 (owner, 24 Oct 2026: "nie pytaj, od razu działaj, przełącz się"): translator mode
     /// starts the moment the agent asks for it, with no card or question, and the result tells
     /// Doddy to ask what to translate. ADR-542 had it ask first.
     @MainActor

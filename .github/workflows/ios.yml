@@ -15,13 +15,13 @@ on:
   workflow_dispatch:
     inputs:
       only:
-        description: "all: the full run. island: only the Dynamic Island's tests and pictures, about 15-20 minutes (ADR-610); not enough for a merge."
+        description: "all: the full run. island: only the Dynamic Island's tests and pictures, about 15-20 minutes (ADR-618); not enough for a merge."
         type: choice
         options: [all, island]
         default: all
 
 concurrency:
-  # The quick island run (ADR-610) has its own group, so it doesn't cancel a full run of the same branch.
+  # The quick island run (ADR-618) has its own group, so it doesn't cancel a full run of the same branch.
   group: ios-${{ github.ref }}-${{ inputs.only || 'all' }}
   cancel-in-progress: true
 
@@ -106,7 +106,7 @@ jobs:
           retention-days: 7
 
       # Pictures of the Dynamic Island's views in each conversation state, drawn by
-      # DoddyTests/IslandScreenshotTests (ADR-607). Small PNGs, so the look can be checked from here.
+      # DoddyTests/IslandScreenshotTests (ADR-615). Small PNGs, so the look can be checked from here.
       - name: Keep the island pictures
         if: always()
         uses: actions/upload-artifact@v4
@@ -159,7 +159,7 @@ jobs:
       - name: scripts/ci.sh --core-only
         run: scripts/ci.sh --core-only
 
-  # The quick island-only check (ADR-610), run by hand with only=island: no wait for the Linux
+  # The quick island-only check (ADR-618), run by hand with only=island: no wait for the Linux
   # checks, one build, then only the Dynamic Island's unit and UI tests. Its pictures and the
   # simulator's screenshots are kept like the full run's. Not a substitute for the full run.
   island:

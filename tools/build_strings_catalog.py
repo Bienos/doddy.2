@@ -57,7 +57,7 @@ LITERAL = re.compile(CALLS + r'\(\s*"((?:[^"\\]|\\.)*)"')
 NAMED = re.compile(r'(?:eyebrow|title|subtitle):\s*"((?:[^"\\]|\\.)*)"')
 # Strings made in code (ADR-223 follow-up): NSLocalizedString("…"), App Intent titles and
 # descriptions, App Shortcut short titles.
-# The Dynamic Island's and Lock Screen's words (ADR-609): `islandWord("…")` in Shared/, which the
+# The Dynamic Island's and Lock Screen's words (ADR-617): `islandWord("…")` in Shared/, which the
 # island's views look up in the app's language (Shared/IslandArt/IslandLanguage.swift).
 RUNTIME = re.compile(r'(?:NSLocalizedString\(|LocalizedStringResource\(|IntentDescription\(|islandWord\(|(?:LocalizedStringResource|IntentDescription) = |shortTitle:\s*)\s*"((?:[^"\\]|\\.)*)"')
 # A % is allowed only in a format string from code (NSLocalizedString("Moved %@")): a translated

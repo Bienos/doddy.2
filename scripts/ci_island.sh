@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# The quick island-only Mac check (owner, 24 Oct 2026: "zrób szybko", ADR-610): builds the app once
+# The quick island-only Mac check (owner, 24 Oct 2026: "zrób szybko", ADR-618): builds the app once
 # and runs only the Dynamic Island's tests, so its pictures (build/island-screenshots) and the
 # simulator's screenshots of the real island (in the .xcresult) come in about 15 to 20 minutes
 # instead of the full run's 45. It proves nothing about the rest of the app: before a merge the

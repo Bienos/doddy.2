@@ -93,7 +93,7 @@ final class VoiceLiveActivity {
         self.activity = nil
         shown = nil
         var final = DoddyVoiceAttributes.ContentState(status: .ended, isMuted: false, savedCount: savedCount, endedAt: Date())
-        // ADR-609: the ended card in the language of Doddy's screens, as the island was.
+        // ADR-617: the ended card in the language of Doddy's screens, as the island was.
         final.language = Bundle.main.preferredLocalizations.first
         let removeAt = Date().addingTimeInterval(Self.endedCardFor)
         let pending = updating

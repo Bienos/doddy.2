@@ -44,7 +44,7 @@ public struct IslandExpansion: Equatable, Sendable {
         due = true
     }
 
-    /// A card that waits for the user arrived (ADR-608): a text, a transfer, a calendar change, an
+    /// A card that waits for the user arrived (ADR-616): a text, a transfer, a calendar change, an
     /// access question. True when the island should open up now, so its Show is in front of them.
     /// Same limits as his words (not with "Small island", not over the app, not within the gap);
     /// it doesn't spend the turn of his next answer. If his words opened the island a moment ago,

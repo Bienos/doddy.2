@@ -8,7 +8,7 @@ public enum DeepLink: String, CaseIterable, Sendable {
     case parking
     /// DODDY Capture (ADR-588): the list of recordings. The Live Activity's Open button uses it.
     case recordings
-    /// The voice island's Show button (ADR-608): the running conversation with the card that waits
+    /// The voice island's Show button (ADR-616): the running conversation with the card that waits
     /// for the user, or what Doddy just made. Navigation only: nothing is approved by opening it.
     case conversation
 

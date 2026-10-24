@@ -1,4 +1,4 @@
-# Live agent edit, 24 Oct 2026: translator mode without asking (ADR-611)
+# Live agent edit, 24 Oct 2026: translator mode without asking (ADR-619)
 
 Owner, 24 Oct 2026: "ogólnie to się nie pytaj nawet, od razu działaj i się przełącz i pytaj, co tłumaczyć", then "Ok" to updating the live agent.
 
@@ -13,4 +13,4 @@ Agent `agent_0501m4et27vyeawrwqfdxxfszfa6`. Read just before: version `agtvrsn_3
   3. "Approval cards": "…shows a card first, translation and lists included." → "…shows a card first, lists included." and, after the public lookups sentence, "Translator mode starts and stops at once, with no card and no question."
   4. Guardrails: "Public lookups run at once." → "Public lookups, and translator start and stop, run at once."
 
-The live prompt and both tools now tell Doddy to call `start_translator` the moment the user asks to translate, with no question, and then to ask what to translate; `stop_translator` likewise. Builds before ADR-611 still show their "Start translator mode?" card when the tool is called. Not yet tried in a conversation.
+The live prompt and both tools now tell Doddy to call `start_translator` the moment the user asks to translate, with no question, and then to ask what to translate; `stop_translator` likewise. Builds before ADR-619 still show their "Start translator mode?" card when the tool is called. Not yet tried in a conversation.

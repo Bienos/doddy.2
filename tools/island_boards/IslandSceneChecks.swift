@@ -4,7 +4,7 @@ import Foundation
 enum IslandSceneChecks {
     typealias State = DoddyVoiceAttributes.ContentState
 
-    /// ADR-608: every card that waits, and every result, has its own fixed words on the island and
+    /// ADR-616: every card that waits, and every result, has its own fixed words on the island and
     /// a Show button that opens it in Doddy; nothing from the card itself is carried.
     static func actions() -> Int {
         var failures = 0

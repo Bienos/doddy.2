@@ -239,7 +239,7 @@ final class AskFirstReplyTests: XCTestCase {
         XCTAssertTrue(reply.contains("nothing was looked at"), reply)
     }
 
-    /// ADR-611 (owner, 24 Oct 2026: "nie pytaj, od razu działaj"): translator mode starts and stops
+    /// ADR-619 (owner, 24 Oct 2026: "nie pytaj, od razu działaj"): translator mode starts and stops
     /// the moment the user asks, with no question first (ADR-542 had it ask).
     func testTranslatorStartsAndStopsWithoutAsking() {
         XCTAssertEqual(AskFirst.need(for: .startTranslator(TranslatorProposal(kind: .faceToFace, yours: nil, theirs: nil))), .runsNow)

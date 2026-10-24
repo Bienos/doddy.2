@@ -151,7 +151,7 @@ if grep -RInE --include='*.swift' "$apple_sign_in_other" "${dirs[@]}" | code_onl
 fi
 # ASK-01 (ADR-483): a tool without a way to ask first fails here. Only the public lookups of
 # ADR-575 (web, weather, Wikipedia, news, places, sums, conversions) and translator start and
-# stop (ADR-611, run on the phone) may run at once.
+# stop (ADR-619, run on the phone) may run at once.
 if ! python3 -I - voice-agent/tools.json <<'PY'
 import json, sys
 PUBLIC = {"calculate", "convert_units", "convert_currency", "web_search", "news_search", "find_places",
@@ -162,7 +162,7 @@ for t in json.load(open(sys.argv[1], encoding="utf-8"))["tools"]:
     x = t.get("x_doddy", {})
     if x.get("ask") == "runs_now":
         # ADR-575: public lookups run at once; they may never be a change.
-        # ADR-611: translator start and stop run at once, on the phone, with no card.
+        # ADR-619: translator start and stop run at once, on the phone, with no card.
         name = t.get("name")
         if x.get("confirm_on_screen") or not (name in PUBLIC or (name in MODES and x.get("runs_on") == "phone")):
             bad.append(name)
@@ -174,7 +174,7 @@ if bad:
     sys.exit(1)
 PY
 then
-  echo "FAIL: ASK-01: every voice tool must run on the phone and ask first (x_doddy.ask; 'tap' with confirm_on_screen), except ADR-575's public lookups and ADR-611's translator start and stop." >&2; status=1
+  echo "FAIL: ASK-01: every voice tool must run on the phone and ask first (x_doddy.ask; 'tap' with confirm_on_screen), except ADR-575's public lookups and ADR-619's translator start and stop." >&2; status=1
 fi
 voice_controller=DoddyApp/Features/Voice/VoiceSessionController.swift
 if [ -f "$voice_controller" ] && ! { grep -q 'AskFirst.need(for: request)' "$voice_controller" && grep -q 'askLedger.mayRun(' "$voice_controller"; }; then

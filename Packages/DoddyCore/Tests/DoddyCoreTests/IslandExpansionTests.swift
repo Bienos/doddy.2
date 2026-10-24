@@ -46,7 +46,7 @@ final class IslandExpansionTests: XCTestCase {
         XCTAssertFalse(rule.doddyStartedSpeaking(at: start.addingTimeInterval(60), appOnScreen: false))
     }
 
-    /// ADR-608: a card that waits opens the island, so Show is in front of the user.
+    /// ADR-616: a card that waits opens the island, so Show is in front of the user.
     func testACardThatWaitsOpensTheIsland() {
         var rule = IslandExpansion(isOn: true)
         XCTAssertTrue(rule.cardArrived(at: start, appOnScreen: false), "\"A text to check\" opens up")

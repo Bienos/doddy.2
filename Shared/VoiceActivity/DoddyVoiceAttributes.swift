@@ -62,9 +62,9 @@ struct DoddyVoiceAttributes: ActivityAttributes {
             /// listen only translates one way, `from` the room `to` the owner.
             case translating(from: String, to: String, bothWays: Bool)
             /// Any other card waits for the user's tap, or Doddy asks for access or a sign-in
-            /// (ADR-608). Only the kind: never who a text is to, what it says or which event.
+            /// (ADR-616). Only the kind: never who a text is to, what it says or which event.
             case actionWaiting(IslandAction)
-            /// Something Doddy made or found is on the conversation's screen (ADR-608), shown
+            /// Something Doddy made or found is on the conversation's screen (ADR-616), shown
             /// for a few seconds. Only the kind, and "ready" only for a file that is ready.
             case resultReady(IslandResult)
         }
@@ -76,7 +76,7 @@ struct DoddyVoiceAttributes: ActivityAttributes {
         /// listening (one activity carries both, because iOS can't start one in the background).
         var conversationStartedAt: Date?
         /// The language Doddy's screens are in ("pl", "en", …), so the island and the Lock Screen
-        /// use it too (ADR-609); the widget extension can't see the app's own setting. Nil: the
+        /// use it too (ADR-617); the widget extension can't see the app's own setting. Nil: the
         /// iPhone's language.
         var language: String?
     }
@@ -85,7 +85,7 @@ struct DoddyVoiceAttributes: ActivityAttributes {
     var startedAt: Date
 }
 
-/// The kind of card that waits for the user in a conversation, for the island (ADR-608). Each
+/// The kind of card that waits for the user in a conversation, for the island (ADR-616). Each
 /// is a fixed word: the island and the Lock Screen are visible to anyone, so nothing the card
 /// says (a name, a number, a message, an amount) is carried here.
 enum IslandAction: String, Codable, Hashable, Sendable, CaseIterable {
@@ -117,7 +117,7 @@ enum IslandAction: String, Codable, Hashable, Sendable, CaseIterable {
     case other
 }
 
-/// The kind of thing Doddy made or found that the conversation's screen now shows (ADR-608).
+/// The kind of thing Doddy made or found that the conversation's screen now shows (ADR-616).
 enum IslandResult: String, Codable, Hashable, Sendable, CaseIterable {
     /// A file Claude made that Doddy's server reports ready.
     case document
@@ -214,7 +214,7 @@ extension DoddyVoiceAttributes.ContentState {
             case 1: return islandWord("Doddy isn't listening · 1 note saved")
             default: return "Doddy isn't listening · \(savedCount) notes saved"
             }
-        // Every card, not only a note's (ADR-608: a text or a transfer said "Save or Don't save").
+        // Every card, not only a note's (ADR-616: a text or a transfer said "Save or Don't save").
         case .needsConfirmation: return islandWord("Open Doddy to see it and say yes or no")
         case .wakeListening: return islandWord("Listening on this iPhone for “Hey Doddy” only")
         case .wakePaused: return islandWord("Not listening right now")
@@ -251,7 +251,7 @@ extension DoddyVoiceAttributes.ContentState {
     }
 }
 
-/// An English word of the island or the Lock Screen that the string catalogs translate (ADR-609):
+/// An English word of the island or the Lock Screen that the string catalogs translate (ADR-617):
 /// `tools/build_strings_catalog.py` collects every `islandWord("…")`, and the island's views look
 /// it up in Doddy's language (`IslandLanguage`). It returns the English as it is, so the scene
 /// logic and its checks stay in English.
