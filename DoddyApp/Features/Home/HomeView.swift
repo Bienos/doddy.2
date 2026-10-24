@@ -140,6 +140,7 @@ struct HomeView: View {
             .sheet(item: $tool) { tool in
                 switch tool {
                 case .focus: FocusView()
+                case .stopwatch: StopwatchView()
                 }
             }
             .fullScreenCover(isPresented: $showAsk) {
@@ -224,14 +225,30 @@ struct HomeView: View {
                 // Leaflets read on request (SHOPPING.md 2).
                 Button { showDeals = true } label: { Label("Cheapest this week", systemImage: "cart") }
                     .accessibilityIdentifier("home.deals")
-                Button { tool = .focus } label: {
-                    if FocusController.shared.session.map({ !$0.isOver }) ?? false {
-                        Label("Focus · on", systemImage: "timer")
-                    } else {
-                        Label("Focus", systemImage: "timer")
+                // Focus counts down, the stopwatch counts up (ADR-621). One row for both: the menu
+                // fits eleven rows on an iPhone at the default text size, and a twelfth put "What I
+                // can do" and "What leaves this iPhone" out of reach (the hosted UI tests caught it).
+                Menu {
+                    Button { tool = .focus } label: {
+                        if FocusController.shared.session.map({ !$0.isOver }) ?? false {
+                            Label("Focus · on", systemImage: "timer")
+                        } else {
+                            Label("Focus", systemImage: "timer")
+                        }
                     }
+                    .accessibilityIdentifier("home.focus")
+                    Button { tool = .stopwatch } label: {
+                        if StopwatchController.shared.watch.map({ !$0.isOver }) ?? false {
+                            Label("Stopwatch · on", systemImage: "stopwatch")
+                        } else {
+                            Label("Stopwatch", systemImage: "stopwatch")
+                        }
+                    }
+                    .accessibilityIdentifier("home.stopwatch")
+                } label: {
+                    Label("Focus and stopwatch", systemImage: "timer")
                 }
-                .accessibilityIdentifier("home.focus")
+                .accessibilityIdentifier("home.timers")
                 // Today only points to Settings until something is connected (ADR-326).
                 if hadFirstConversation || calendarOn || remindersOn {
                     Button { showToday = true } label: { Label("Today", systemImage: "calendar") }
@@ -1053,7 +1070,7 @@ private struct SlideIn: ViewModifier {
 }
 
 private enum HomeTool: String, Identifiable {
-    case focus
+    case focus, stopwatch
     var id: String { rawValue }
 }
 

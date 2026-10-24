@@ -240,6 +240,7 @@ struct RootView: View {
                 // Tasks Doddy works on in the background (ADR-570): a finished one is saved here and acknowledged.
                 Task { await ErrandsModel.shared.refresh() }
                 FocusController.shared.refresh()
+                StopwatchController.shared.refresh()
                 // Shared lists (ADR-263): changes others made arrive when Doddy comes to the front.
                 // A cold launch also syncs (LaunchWork), so one that just ran is not repeated (ADR-547).
                 Task { await SharedListsController.shared.syncAllUnlessRecent() }

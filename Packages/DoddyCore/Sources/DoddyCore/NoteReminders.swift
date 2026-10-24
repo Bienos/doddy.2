@@ -358,6 +358,8 @@ public enum NoteReminderCopy {
     /// Long-press buttons, in the order the categories use them.
     public enum Action: Sendable {
         case openNote, inAnHour, tomorrowMorning, done, doneThisTime
+        /// A list's place reminder (ADR-621).
+        case openList
     }
 
     public static func action(_ action: Action, _ language: NotificationLanguage) -> String {
@@ -372,6 +374,37 @@ public enum NoteReminderCopy {
         case (.done, .polish): "Gotowe"
         case (.doneThisTime, .english): "Done this time"
         case (.doneThisTime, .polish): "Gotowe tym razem"
+        case (.openList, .english): "Open list"
+        case (.openList, .polish): "Otwórz listę"
+        }
+    }
+
+    /// What a list's place reminder says (ADR-621): how many things are still open, read when the
+    /// notification is set and again whenever the list changes (`refreshContent`). The list's name
+    /// only with "Show note text in notifications" on; the place's name never (see `ReminderPlace`).
+    /// Nil when the count isn't known: the caller keeps the plain private text.
+    public static func listPlaceBody(
+        listName: String?, openItems: Int?, language: NotificationLanguage
+    ) -> String? {
+        guard let openItems else { return nil }
+        let name = listName?.trimmingCharacters(in: .whitespacesAndNewlines).nonEmptyName
+        let shortName = name.map { $0.count > NoteReminderLimits.maxBodyLength / 2 ? String($0.prefix(NoteReminderLimits.maxBodyLength / 2 - 1)) + "…" : $0 }
+        let count = itemsOnList(openItems, language)
+        guard let shortName else { return count }
+        return "\(shortName) · \(count)"
+    }
+
+    /// "4 rzeczy na liście", "1 rzecz na liście", "wszystko odhaczone"; "4 items on the list".
+    public static func itemsOnList(_ count: Int, _ language: NotificationLanguage) -> String {
+        let count = max(0, count)
+        switch language {
+        case .english:
+            if count == 0 { return "everything is ticked off" }
+            return count == 1 ? "1 item on the list" : "\(count) items on the list"
+        case .polish:
+            if count == 0 { return "wszystko odhaczone" }
+            // "rzecz" has one plural, "rzeczy", from 2 up (2, 5, 12, 22 …).
+            return count == 1 ? "1 rzecz na liście" : "\(count) rzeczy na liście"
         }
     }
 
@@ -391,6 +424,8 @@ public enum NoteReminderCategory: String, Sendable {
     case repeating
     /// Open note, Done: a place comes back on the next arrival anyway.
     case place
+    /// The same for a list: "Open list" instead of "Open note" (ADR-621).
+    case placeList
 }
 
 /// Everything a notification adapter needs for one iOS request; built only from a stored reminder.
@@ -428,11 +463,18 @@ public struct NoteReminderNotification: Equatable, Sendable {
     /// match for a repeat (five for weekdays); plus a snooze still ahead.
     public static func requests(
         for reminder: MemoryReminder, noteText: String, showNoteText: Bool, at date: Date,
-        language: NotificationLanguage = .english, isList: Bool = false
+        language: NotificationLanguage = .english, isList: Bool = false, openItems: Int? = nil
     ) -> [NoteReminderNotification] {
         let body = NoteReminderCopy.body(noteText: noteText, showNoteText: showNoteText, language: language, isList: isList)
         let plainTitle = NoteReminderCopy.title(language)
         switch reminder.trigger {
+        case .place where isList:
+            // A list at a place (ADR-621): how many things are left, and "Open list".
+            let listBody = NoteReminderCopy.listPlaceBody(
+                listName: showNoteText ? noteText : nil, openItems: openItems, language: language)
+            return [NoteReminderNotification(
+                identifier: reminder.notificationID, memoryID: reminder.memoryID, title: plainTitle, body: listBody ?? body,
+                trigger: reminder.trigger, repeatMatch: nil, category: .placeList)]
         case .place:
             return [NoteReminderNotification(
                 identifier: reminder.notificationID, memoryID: reminder.memoryID, title: plainTitle, body: body,
@@ -507,11 +549,18 @@ public protocol NoteReminderRepository: Sendable {
     func currentText(ofMemory memoryID: UUID) async throws -> String?
     /// True when the memory is a list (ADR-216), so its private notification says "a list".
     func isList(memoryID: UUID) async -> Bool
+    /// Things still open on a list (not ticked), for its place reminder's text (ADR-621). Nil when
+    /// not known; the default knows nothing.
+    func openItemCount(listID: UUID) async -> Int?
     /// Stores the memory's one reminder, replacing any earlier one; returns it read back.
     /// Throws `NoteReminderError.memoryNotFound` if the memory does not exist.
     func upsertReminder(_ reminder: MemoryReminder) async throws -> MemoryReminder
     @discardableResult
     func deleteReminder(id: UUID) async throws -> Bool
+}
+
+extension NoteReminderRepository {
+    public func openItemCount(listID: UUID) async -> Int? { nil }
 }
 
 /// A quick pick resolved to a moment.
@@ -769,7 +818,8 @@ public actor NoteReminderCoordinator {
     private func addVerified(_ reminder: MemoryReminder, text: String) async throws {
         let requests = NoteReminderNotification.requests(
             for: reminder, noteText: text, showNoteText: showNoteText(), at: now(), language: language(),
-            isList: await repository.isList(memoryID: reminder.memoryID))
+            isList: await repository.isList(memoryID: reminder.memoryID),
+            openItems: await repository.openItemCount(listID: reminder.memoryID))
         for request in requests { try await center.add(request) }
         let pending = await center.pendingIdentifiers()
         guard requests.allSatisfy({ pending.contains($0.identifier) }) else { throw NoteReminderError.notScheduled }
@@ -881,8 +931,10 @@ public actor NoteReminderCoordinator {
     private func addIfPossible(_ reminder: MemoryReminder) async {
         guard let text = try? await repository.currentText(ofMemory: reminder.memoryID) else { return }
         let isList = await repository.isList(memoryID: reminder.memoryID)
+        let openItems = isList ? await repository.openItemCount(listID: reminder.memoryID) : nil
         for request in NoteReminderNotification.requests(
-            for: reminder, noteText: text, showNoteText: showNoteText(), at: now(), language: language(), isList: isList) {
+            for: reminder, noteText: text, showNoteText: showNoteText(), at: now(), language: language(), isList: isList,
+            openItems: openItems) {
             try? await center.add(request)
         }
     }
@@ -906,4 +958,8 @@ public struct UnavailableNoteReminderRepository: NoteReminderRepository {
     public func isList(memoryID: UUID) async -> Bool { false }
     public func upsertReminder(_ reminder: MemoryReminder) async throws -> MemoryReminder { throw DoddyError.capabilityUnavailable(.noteReminders) }
     public func deleteReminder(id: UUID) async throws -> Bool { throw DoddyError.capabilityUnavailable(.noteReminders) }
+}
+
+extension String {
+    fileprivate var nonEmptyName: String? { isEmpty ? nil : self }
 }

@@ -20,7 +20,7 @@ public enum CarProfile {
     public static func decision(for request: VoiceToolRequest) -> CarDecision {
         switch request {
         case .searchMemories, .readCalendar, .findFreeTime, .upcomingBirthdays, .readSteps, .findPhotos, .calculate, .convertUnits,
-             .convertCurrency, .readList, .listAlarms, .needsClarification, .unsupported, .invalid:
+             .convertCurrency, .readList, .listAlarms, .checkStopwatch, .needsClarification, .unsupported, .invalid:
             return .run
         case .noteCapabilityGap:
             // Bookkeeping on the iPhone (ADR-440): one category, none of the user's data, nothing to undo.
@@ -46,7 +46,7 @@ public enum CarProfile {
         case .addToList(let request):
             return .askAloud(readBack: CarConfirmation.readBack(adding: request.items, to: request.list))
         case .leaveBy, .createCalendarEvent, .createReminder, .remindAboutNote, .lookupContact, .addIngredients, .undoLast,
-             .setTimer, .setAlarm, .cancelAlarm, .openMap, .runShortcut, .draftMessage, .makePresentation, .openCamera, .startTranslator,
+             .setTimer, .setAlarm, .cancelAlarm, .startStopwatch, .stopStopwatch, .openMap, .runShortcut, .draftMessage, .makePresentation, .openCamera, .startTranslator,
              .stopTranslator, .checkOff, .removeFromList, .createList, .changeCalendarEvent, .changeReminder,
              .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders:
             return .refuse(reason: "This needs a tap on a card on the iPhone, so it waits until the user isn't driving.")

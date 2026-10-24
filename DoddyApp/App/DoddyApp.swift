@@ -67,7 +67,9 @@ struct DoddyApp: App {
         // A focus timer does survive one (it is saved); this also lets its island's buttons work
         // when iOS starts the app just to run them (ADR-241). Read-aloud doesn't.
         FocusController.shared.refresh()
-        ToolLiveActivity.endLeftovers(keeping: [.focus])
+        // The stopwatch (ADR-621) is saved too, and its island's buttons must work the same way.
+        StopwatchController.shared.refresh()
+        ToolLiveActivity.endLeftovers(keeping: [.focus, .stopwatch])
         // A call Doddy makes for the user runs on the server, so its island may outlive a
         // relaunch; its Take over and End buttons reach the server from here (ADR-504).
         CallLiveActivity.shared.registerActions()

@@ -3401,6 +3401,17 @@
         }
       }
     },
+    "Stopwatch": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stoper"
+          }
+        }
+      }
+    },
     "Take over": {
       "extractionState": "manual",
       "localizations": {

@@ -99,6 +99,8 @@ enum IslandTitle: Equatable, Sendable {
     case countdown(Date)
     /// A fixed time left (paused), in the same big numerals.
     case bigText(String)
+    /// The stopwatch's time so far, counting up from the clock start (ADR-621).
+    case elapsed
 }
 
 /// A short word drawn on the art itself, where the board has text the generator leaves out
@@ -352,6 +354,7 @@ extension DoddyToolAttributes {
         case .focus: return .basketballDribble
         case .breathing: return .onelegBalance
         case .readAloud: return .bellyReading
+        case .stopwatch: return .tiptoe
         }
     }
 
@@ -409,7 +412,30 @@ extension DoddyToolAttributes {
                               subtitle: "Your note", compact: .bars, minimal: .bars)
             }
             return shown
+        case .stopwatch:
+            // Counts up (ADR-621): the Tiny Promise board with a ticking time, no end and no alert.
+            let total = Self.elapsedClock(state.elapsed ?? 0)
+            if state.isFinished {
+                return scene(.tinyPromise, 0, label: "STOPWATCH", time: .text("Stopped"), title: "Stopped at \(total)",
+                             bigTitle: .bigText(total), subtitle: state.label ?? "Nicely timed",
+                             compact: .check, minimal: .check, centred: true)
+            }
+            if state.isPaused {
+                return scene(.tinyPromise, 1, label: "STOPWATCH", time: .text("Paused"), title: "Paused at \(total)",
+                             bigTitle: .bigText(total), subtitle: state.label ?? "Ready when you are",
+                             compact: .text(total), minimal: .symbol("pause.fill", .secondary), centred: true)
+            }
+            return scene(.tinyPromise, 0, label: "STOPWATCH", time: .text("Running"), title: "Stopwatch",
+                         bigTitle: .elapsed, subtitle: state.label ?? "Counting up",
+                         compact: .elapsed, minimal: .symbol("stopwatch.fill", .orange), centred: true)
         }
+    }
+
+    /// "12:07" for a time counted so far (whole seconds, never rounded up).
+    static func elapsedClock(_ seconds: TimeInterval) -> String {
+        let total = max(0, Int(seconds))
+        let h = total / 3600, m = (total % 3600) / 60, s = total % 60
+        return h > 0 ? String(format: "%d:%02d:%02d", h, m, s) : String(format: "%d:%02d", m, s)
     }
 
     /// "12:48" for a time left.

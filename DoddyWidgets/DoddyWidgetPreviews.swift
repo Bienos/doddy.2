@@ -48,6 +48,14 @@ private typealias Voice = DoddyVoiceAttributes.ContentState
     DoddyToolAttributes.ContentState(isPaused: false, endsAt: .now.addingTimeInterval(900), islandStyle: .wholeDoddy)
 }
 
+#Preview("Stopwatch · island", as: .dynamicIsland(.expanded),
+         using: DoddyToolAttributes(kind: .stopwatch, startedAt: .now, duration: 0)) {
+    DoddyToolLiveActivity()
+} contentStates: {
+    DoddyToolAttributes.ContentState(isPaused: false, label: "Bieg", islandStyle: .wholeDoddy, countsFrom: .now.addingTimeInterval(-727))
+    DoddyToolAttributes.ContentState(isPaused: true, islandStyle: .wholeDoddy, elapsed: 727)
+}
+
 #Preview("Breathing · island", as: .dynamicIsland(.expanded),
          using: DoddyToolAttributes(kind: .breathing, startedAt: .now, duration: 120)) {
     DoddyToolLiveActivity()

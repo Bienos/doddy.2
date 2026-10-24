@@ -463,6 +463,7 @@
   "Focus": "Skupienie",
   "Focus stopped.": "Skupienie przerwane.",
   "Focus · on": "Skupienie · trwa",
+  "Focus and stopwatch": "Skupienie i stoper",
   "Focused": "Skupiony",
   "Focusing": "Skupienie trwa",
   "For a guide, a talk or an announcement. Doddy translates into your language and never speaks to the people around you. Not for someone's private conversation.": "Do przewodnika, wykładu lub komunikatu. Doddy tłumaczy na Twój język i nigdy nie mówi do ludzi wokół Ciebie. Nie do czyjejś prywatnej rozmowy.",
@@ -1975,5 +1976,15 @@
   "Timers, alarms and reminders you set always come, at any hour. Doddy's own check-ins and plans stay quiet from 22:00 to 7:00: a time in those hours moves to 7:00 or 21:30. A tip from Doddy never comes on a day a check-in already did.": "Minutniki, budziki i przypomnienia, które ustawisz, przychodzą zawsze, o każdej porze. Rutyny i plany Doddy'ego milczą od 22:00 do 7:00: godzina z tego zakresu przesuwa się na 7:00 albo 21:30. Podpowiedź od Doddy'ego nigdy nie przychodzi w dniu, w którym przyszła już rutyna.",
   "Your week\\nahead": "Twój tydzień\\nprzed Tobą",
   "Once a week a notification says only \\\"New week\\\". Its screen shows the next seven days from your calendar, reminders, Doddy's reminders and the birthdays you picked. It comes quietly, never between 22:00 and 7:00.": "Raz w tygodniu powiadomienie mówi tylko „Nowy tydzień”. Jego ekran pokazuje najbliższe siedem dni z Twojego kalendarza, przypomnień, przypomnień Doddy'ego i urodzin wybranych osób. Przychodzi po cichu, nigdy między 22:00 a 7:00.",
-  "Tomorrow": "Jutro"
+  "Tomorrow": "Jutro",
+  "Stopwatch": "Stoper",
+  "Stopwatch · on": "Stoper · włączony",
+  "Counts up until you stop it.": "Liczy w górę, dopóki go nie zatrzymasz.",
+  "This line shows on your Lock Screen and in the Dynamic Island while the stopwatch runs. Leave it empty to show only the time.": "Ta linijka pokazuje się na ekranie blokady i w Dynamic Island, gdy stoper działa. Zostaw puste, żeby pokazać tylko czas.",
+  "Start stopwatch": "Włącz stoper",
+  "Counting up": "Liczy w górę",
+  "Ready when you are": "Gotowy, kiedy Ty",
+  "Stopped at %@": "Zatrzymany na %@",
+  "Pause": "Pauza",
+  "Resume": "Wznów"
 }

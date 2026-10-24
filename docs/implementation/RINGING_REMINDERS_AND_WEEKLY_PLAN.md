@@ -57,12 +57,9 @@ Birthdays (09:00 on the day, people the user picked) are a routine the user set 
   9. Morning check-in every day on: the "Open Doddy faster" tip never comes.
 - The Polish lines are agent-written.
 
-## Live agent (needs the owner's yes)
+## Live agent (applied 24 Oct 2026)
 
-The exact change for the live ElevenLabs agent, nothing else:
-1. Tool `remind_me_about_note` (`tool_7401m4k84jjgf1ctk26vj03kextq`): add the boolean parameter `ring` with the description in `voice-agent/tools.json`, and the added sentence at the end of the tool's description ("If the user wants it to ring like an alarm, give ring; …").
-2. Prompt: in the `remind_me_about_note` line, the added sentence "If they want it to ring like an alarm ("niech zadzwoni", medicine, picking someone up), also give ring; say it will ring only if the result says so."
-Read the live version first and keep its rollback id, as `voice-agent/README.md` says.
+Tool `remind_me_about_note` (`tool_7401m4k84jjgf1ctk26vj03kextq`) on the live ElevenLabs agent now has the boolean `ring` and the added last sentence of its description, exactly as in `voice-agent/tools.json` (owner: "2 tak"; version `agtvrsn_9201m5q7ka50e5gbbrg1cftrt2zk`, rollback `agtvrsn_4701m5q787a7e9kvp21qvjza63t0`). The prompt sentence planned for the `remind_me_about_note` line was not added: the live prompt has no such line, and the tool description carries the rule. Record: `voice-agent/README.md`. Not checked: a real conversation asking for a ringing reminder.
 
 ## Constitution evidence log
 

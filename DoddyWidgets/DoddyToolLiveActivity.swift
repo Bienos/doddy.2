@@ -19,7 +19,8 @@ struct DoddyToolLiveActivity: Widget {
 
     static func island(_ context: ActivityViewContext<DoddyToolAttributes>) -> DynamicIsland {
         let scene = context.attributes.islandScene(context.state, isStale: context.isStale).respectingHiddenArt
-        let startedAt = context.attributes.startedAt
+        // A stopwatch counts up from where its last resume put the clock (ADR-621).
+        let startedAt = context.attributes.clockStart(context.state)
         return DynamicIsland {
             DynamicIslandExpandedRegion(.leading) {
                 IslandLabelView(scene: scene)
@@ -97,6 +98,8 @@ private struct ToolWatchView: View {
                 Spacer(minLength: 4)
                 if case .countdown(let end) = scene.time {
                     IslandCountdownText(end: end).font(.caption).monospacedDigit()
+                } else if scene.bigTitle == .elapsed {
+                    IslandElapsedText(startedAt: attributes.clockStart(state)).font(.caption).monospacedDigit()
                 }
             }
             Text(scene.title).font(.headline).lineLimit(1)
@@ -163,6 +166,7 @@ private struct ToolLockScreenView: View {
                         switch scene.bigTitle {
                         case .countdown(let end): IslandCountdownText(end: end)
                         case .bigText(let text): Text(text).monospacedDigit()
+                        case .elapsed: IslandElapsedText(startedAt: attributes.clockStart(state))
                         default: Text(scene.title)
                         }
                     }
