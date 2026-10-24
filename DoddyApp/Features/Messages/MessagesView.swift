@@ -43,6 +43,8 @@ struct MessagesView: View {
             .navigationTitle("Doddy")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                // The guide's "Doddy" wordmark in the header, as on Home, Notes and the other screens.
+                ToolbarItem(placement: .principal) { DoddyWordmark() }
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close") {
                         model.cancel()
