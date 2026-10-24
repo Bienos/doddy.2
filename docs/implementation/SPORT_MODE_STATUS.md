@@ -64,6 +64,28 @@ Owner, 24 Oct 2026: "1 tak" (Doddy's voice may hear the summary). Same branch.
 
 **Gap to know.** The red-flag rule reaches the voice as text in every reply and in the prompt; the model could still ignore it. A fixed, code-enforced reply for red-flag words is not built.
 
+## Step 4: running and strength plans, the engine (ADR-624)
+
+Owner, 24 Oct 2026: "2" (plans next). Same branch. **Only the engine so far** (DoddyCore, tested on Linux); no screen, voice tool or Messages yet: those wait for the first green Mac build of steps 1 to 3.
+
+**What it does.** `PlanEngine.make(request)` turns the person's answers (goal, level, days a week, minutes a session, longest recent run, the screening questions, age) into a plan or a refusal. Deterministic: the same answers give the same plan; a model may later explain a plan, never change its numbers.
+
+- **Refusals first:** an injury or pain → a physiotherapist or doctor; pregnant or recently gave birth → a doctor or midwife; a condition, symptoms or a doctor's limit → a doctor first; under 16 → with a parent, PE teacher or coach; a 10 km or half marathon for a beginner → a first 5 km first; a half marathon at 16 or 17 → a 10 km first; too few days or minutes → says how many.
+- **First 5 km:** run/walk, 12 weeks on three days (14 on two), from 8 × (1 min run, 1.5 min walk) to 30 minutes without stopping (for many people 4 to 5 km), with 5-minute walks around each block. Doddy's own table, not NHS's.
+- **10 km (8 weeks), half marathon (12 weeks):** easy runs, one hard session (tempo or intervals) for people who train (from week 3 for "now and then"), the long run on the weekend building to 70 or 120 minutes, every fourth week easier, the last week lighter.
+- **Strength at home or in the gym (8 weeks):** full body on two or three days with a day between, upper and lower on four days for people who train regularly; 8–12 reps with 2 reps in reserve (16 and 17: 10–15 with 3); beginners start with 2 sets; every fourth week a set fewer; short sessions drop exercises, then sets.
+- **`PlanRules.violations`** checks any plan against the rules: no run more than 10% longer than the longest of the four weeks before (time on feet), at most 20% of running time hard, nothing hard the day after a hard session, full-body days apart, weekday sessions within the person's time, at least 2 reps in reserve, at most 5 sets, 16 and 17 never under 10 reps.
+- **`StrengthProgression.next`:** load goes up only after every set reached the top of the range with 2 reps in reserve (5 kg legs, 2.5 kg upper body, a harder version at home); a set to failure keeps the load; two short sets mean lighter.
+
+| Checked | How |
+|---|---|
+| Every plan the engine can make keeps every rule | `TrainingPlanTests.testEveryPlanTheEngineMakesKeepsTheRules`: every goal × level × 1–6 days × 8 session lengths × 6 starting runs × 4 ages, over 1,000 plans, no violation. With the long-run growth loosened to 25% on purpose it fails; restored |
+| The 5 km table | checked by a script and by the test above, for three and two days |
+| Refusals, the 10 km long-run sequence (33, 36, 39, 31, 42, 46, 50, 55 min from a 30 min start), half marathon 80/20, strength shapes, youth limits, short sessions, progression | 11 more tests |
+| A bad plan is caught | a hand-made week with a 50-minute jump, 25% hard, two hard days in a row, too many days, a long weekday, and a squat at 0 reps in reserve: each one found |
+
+**Not built:** the screen to answer the questions and see the plan, the voice and Messages way to ask for a plan, saving a plan, the exercise descriptions (wger), and adjusting the plan from what Apple Health shows was actually done.
+
 ## Not checked
 
 - **The app has not been compiled with these changes** (steps 1 to 3). The hosted Mac job compiles it on a pull request.
@@ -82,5 +104,5 @@ Owner, 24 Oct 2026: "1 tak" (Doddy's voice may hear the summary). Same branch.
 ## Next (each needs the owner's go-ahead)
 
 1. A first real conversation with `read_health_week` on an app build from this branch, then the ElevenLabs log.
-2. Voice gym log and the wger exercise base.
-3. Running and strength plans with the safety rules from the research.
+2. Plans on screen: the questions, the plan week by week, and asking for it by voice or in Messages (after the Mac build of steps 1 to 3 is green).
+3. Voice gym log and the wger exercise base.
