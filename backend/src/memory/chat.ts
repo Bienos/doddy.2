@@ -167,7 +167,7 @@ export class MemoryChat {
       result = await claude.structured({ system: CHAT_SYSTEM, user, schema: buildSchema([...sourceByAlias.keys()]), maxTokens: MAX_OUTPUT_TOKENS }, AbortSignal.timeout(CHAT_TIMEOUT_MS));
     } catch (error) {
       const failure = claudeFailure(error);
-      this.deps.log?.({ level: "info", event: "memory_chat", outcome: failure.outcome, ...counts, ms: Date.now() - started });
+      this.deps.log?.({ level: "info", event: "memory_chat", outcome: failure.outcome, ...failure.log, ...counts, ms: Date.now() - started });
       throw failure.error;
     }
     const answer = readAnswer(result.value, new Map([...sourceByAlias.keys()].map((alias) => [alias, alias])), { repeats: "merge" });

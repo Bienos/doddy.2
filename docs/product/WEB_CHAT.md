@@ -35,7 +35,7 @@ Also sent: today's date and weekday in the browser's time zone (`timeZone`, vali
 - **Only answers:** no tools. It never claims to have saved, sent, connected or changed anything.
 - **Caller's own data only:** every read is keyed by the session's user id (tested with a second person's apps, documents, receipts and Logbook days).
 - **Cost:** the same daily caps as Ask Doddy (50 per person, 500 for the server), taken before anything is read. A server without a chat model answers `ready: false` and the page offers no box.
-- **Logs:** counts and tokens only, plus whether the account was read (tested: no document name, receipt summary, Logbook number or question).
+- **Logs:** counts and tokens only, plus whether the account was read (tested: no document name, receipt summary, Logbook number or question). When Claude says no, the log line also carries `providerStatus`, `providerError` (Anthropic's own error type, e.g. `authentication_error`) and `providerHint` from a fixed list (`credit_balance`, `api_key`, `model`, `output_config`, `schema`, `max_tokens`, `workspace`). Anthropic's message text is never kept, since an invalid-request message can quote what was sent. The same fields are on Ask Doddy, `ask_claude` and document failures. The person still sees only the plain error.
 
 ## The list of chats is kept in this browser only (`web/src/chat/threads.ts`)
 

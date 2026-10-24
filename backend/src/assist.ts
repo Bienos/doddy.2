@@ -170,7 +170,7 @@ export class AssistService {
       result = await claude.structured({ system: ASSIST_SYSTEM, user, schema: buildSchema([...aliasToId.keys()]), maxTokens: MAX_OUTPUT_TOKENS }, AbortSignal.timeout(ASSIST_TIMEOUT_MS));
     } catch (error) {
       const failure = claudeFailure(error);
-      this.deps.log?.({ level: "info", event: "assist", outcome: failure.outcome, notes: req.memories.length, turns: req.turns.length, ms: Date.now() - started });
+      this.deps.log?.({ level: "info", event: "assist", outcome: failure.outcome, ...failure.log, notes: req.memories.length, turns: req.turns.length, ms: Date.now() - started });
       throw failure.error;
     }
 
@@ -199,8 +199,8 @@ export class AssistService {
  * What a failed Claude call becomes for the client: a safe code and message, never the provider's
  * own text. `outcome` is the content-free word for the log. Shared with the memory chat (ADR-603).
  */
-export function claudeFailure(error: unknown): { error: AppError; outcome: string } {
-  if (error instanceof ClaudeRefusal) return { error: new AppError("refused"), outcome: "refused" };
+export function claudeFailure(error: unknown): { error: AppError; outcome: string; log: Record<string, unknown> } {
+  if (error instanceof ClaudeRefusal) return { error: new AppError("refused"), outcome: "refused", log: {} };
   if (error instanceof ProviderError) {
     const message =
       error.code === "provider_timeout"
@@ -210,9 +210,12 @@ export function claudeFailure(error: unknown): { error: AppError; outcome: strin
           : error.code === "malformed_provider_result"
             ? "Doddy got an answer it couldn't read, so it was discarded."
             : "The assistant is unavailable right now. Try again in a moment.";
-    return { error: new AppError(error.code, { message, ...(error.retryAfterSeconds ? { retryAfterSeconds: error.retryAfterSeconds } : {}) }), outcome: error.code };
+    // The provider's status, error type and hint (content-free) go to the log only, so a failing
+    // key, an empty credit balance or a refused request shape can be told apart from outside.
+    const log = error.detail ? { providerStatus: error.detail.status, providerError: error.detail.type, providerHint: error.detail.hint } : {};
+    return { error: new AppError(error.code, { message, ...(error.retryAfterSeconds ? { retryAfterSeconds: error.retryAfterSeconds } : {}) }), outcome: error.code, log };
   }
-  return { error: new AppError("provider_unavailable", { message: "The assistant is unavailable right now. Try again in a moment." }), outcome: "provider_unavailable" };
+  return { error: new AppError("provider_unavailable", { message: "The assistant is unavailable right now. Try again in a moment." }), outcome: "provider_unavailable", log: {} };
 }
 
 /** The answer and its cited note IDs, or null when it isn't the shape asked for. */

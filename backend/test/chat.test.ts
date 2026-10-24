@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
-import { type ClaudeProvider, MockClaudeProvider, type StructuredInput } from "../src/tools/claude.js";
+import { buildSchema } from "../src/assist.js";
+import { ProviderError } from "../src/errors.js";
+import { AnthropicClaudeProvider, type ClaudeProvider, MockClaudeProvider, type StructuredInput } from "../src/tools/claude.js";
 import { digestLogbook } from "../src/web/logbookDigest.js";
 import { DaySummarySchema } from "../src/web/logbook.js";
 import { USER_A, USER_B } from "./helpers.js";
@@ -290,4 +292,64 @@ test("the digest: no days is null; a day ahead of 'today' still counts; ties kee
   assert.equal(digest.periods[0]!.daysWithData, 2);
   assert.deepEqual(digest.periods[0]!.tools.map((t) => t.id).slice(0, 2), ["read_calendar", "save_memory"]);
   assert.deepEqual(digest.recentDays.map((d) => [d.day, d.weekday]), [[TODAY, "thu"], [tomorrow, "fri"]]);
+});
+
+// ------------------------------------------------------------------ why Claude said no, for the log
+
+test("an Anthropic error becomes a status, its error type and a fixed hint; the message itself is never kept", async () => {
+  const replies: [number, string, Record<string, string>?][] = [
+    [401, JSON.stringify({ type: "error", error: { type: "authentication_error", message: "invalid x-api-key" } })],
+    [400, JSON.stringify({ type: "error", error: { type: "invalid_request_error", message: "Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits." } })],
+    [404, JSON.stringify({ type: "error", error: { type: "not_found_error", message: "model: claude-nope" } })],
+    [400, JSON.stringify({ type: "error", error: { type: "invalid_request_error", message: "messages.0.content: PLANTED-secret is not allowed here" } })],
+    [400, JSON.stringify({ type: "error", error: { type: "Bad Type! PLANTED", message: "x" } })],
+    [500, "<html>oops PLANTED</html>"],
+    [429, JSON.stringify({ type: "error", error: { type: "rate_limit_error", message: "slow down" } }), { "retry-after": "7" }],
+  ];
+  const fetchImpl = (async () => {
+    const [status, body, headers] = replies.shift()!;
+    return new Response(body, { status, headers: { "content-type": "application/json", ...(headers ?? {}) } });
+  }) as unknown as typeof fetch;
+  const claude = new AnthropicClaudeProvider({ apiKey: "sk-ant-test-key-1234", model: "claude-haiku-5-5" }, fetchImpl, "https://anthropic.test");
+  const input = { system: "S", user: "U", schema: buildSchema(["n1"]), maxTokens: 100 };
+  const caught = async () => {
+    try {
+      await claude.structured(input, AbortSignal.timeout(1_000));
+    } catch (error) {
+      assert.ok(error instanceof ProviderError);
+      return error;
+    }
+    assert.fail("expected a provider error");
+  };
+  const results = [];
+  for (let i = 0; i < 7; i += 1) results.push(await caught());
+  assert.deepEqual(
+    results.map((e) => [e.code, e.detail]),
+    [
+      ["provider_unavailable", { status: 401, type: "authentication_error", hint: "api_key" }],
+      ["provider_unavailable", { status: 400, type: "invalid_request_error", hint: "credit_balance" }],
+      ["provider_unavailable", { status: 404, type: "not_found_error", hint: "model" }],
+      ["provider_unavailable", { status: 400, type: "invalid_request_error", hint: null }],
+      ["provider_unavailable", { status: 400, type: null, hint: null }],
+      ["provider_unavailable", { status: 500, type: null, hint: null }],
+      ["rate_limited", { status: 429, type: "rate_limit_error", hint: null }],
+    ],
+  );
+  assert.equal(results[6]!.retryAfterSeconds, 7);
+  assert.ok(!JSON.stringify(results.map((e) => e.detail)).includes("PLANTED"), "nothing from the message or body is kept");
+});
+
+test("a failed chat logs why (status, type, hint), and the person still sees only the plain error", async () => {
+  const failing: ClaudeProvider = Object.assign(new MockClaudeProvider(), {
+    structured: async () => {
+      throw new ProviderError("provider_unavailable", undefined, { status: 400, type: "invalid_request_error", hint: "credit_balance" });
+    },
+  });
+  rig = await startWeb({ chatClaude: failing });
+  const res = await ask(rig, "Which apps do I have?");
+  assert.equal(res.status, 502, res.text);
+  assert.equal(res.body.error.code, "provider_unavailable");
+  assert.ok(!/credit|invalid_request/.test(res.text), "the reason stays in the log");
+  const line = rig.logs.find((l) => l.includes('"event":"memory_chat"'))!;
+  assert.match(line, /"providerStatus":400,"providerError":"invalid_request_error","providerHint":"credit_balance"/);
 });
