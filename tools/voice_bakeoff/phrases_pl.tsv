@@ -1,0 +1,36 @@
+id	category	text
+p01	num	Spotkanie jest 14 listopada o 16:45 na ulicy Marszałkowskiej 104 lok. 12.
+p02	num	Przelej 1 249,99 złotych na rachunek 12 3456 7890 0000 1111.
+p03	num	Mój numer to plus czterdzieści osiem sześćset dwanaście trzysta czterdzieści pięć sześćset siedemdziesiąt osiem.
+p04	num	Pół do trzeciej, a nie za piętnaście trzecia.
+p05	num	Zadzwoń do mnie 3 stycznia 2027 roku o ósmej trzydzieści.
+p06	num	Kod pocztowy to 02-495, a PESEL zaczyna się od 90.
+p07	name	Umów mnie do doktora Wojciechowskiego na wtorek rano.
+p08	name	Napisz do Agnieszki Przybylskiej-Kowalczyk, że spóźnię się dziesięć minut.
+p09	name	Przypomnij mi, żeby zadzwonić do Szczepana i Grzegorza z Częstochowy.
+p10	name	Jedziemy przez Łódź, Wrocław i Żyrardów, potem do Józefowa.
+p11	en	Ustaw przypomnienie, żeby zrobić backup na Google Drive przed deadline'm.
+p12	en	Wyślij maila z załącznikiem PDF do teamu i dodaj meeting w Zoomie na jutro.
+p13	en	Zamów na Allegro ładowarkę USB-C i sprawdź, czy jest free delivery.
+p14	en	Otwórz Spotify i puść playlistę Discover Weekly.
+p15	cmd	Dodaj mleko, jajka i chleb do listy zakupów.
+p16	cmd	Ustaw minutnik na dwanaście minut.
+p17	cmd	Co mam jutro w kalendarzu?
+p18	cmd	Zapamiętaj, że klucze zapasowe są u sąsiadki z drugiego piętra.
+p19	cmd	Nie, nie to. Anuluj.
+p20	cmd	Tak, wyślij.
+p21	long	Wczoraj byłem u lekarza, powiedział, że wyniki są w porządku, ale mam wrócić za trzy miesiące na kontrolę i wcześniej zrobić badanie krwi na czczo.
+p22	long	Chciałabym, żebyś przypomniał mi w piątek po południu o zwrocie paczki, bo termin mija w poniedziałek, a muszę jeszcze znaleźć paragon.
+p23	long	Mama dzwoniła rano w sprawie niedzielnego obiadu: będzie dziewięć osób, trzeba kupić ciasto i zarezerwować stolik na dwunastą.
+p24	long	Zastanawiam się, czy lepiej wziąć raty zero procent na dwanaście miesięcy, czy zapłacić od razu i dostać rabat piętnaście procent.
+p25	diac	Zażółć gęślą jaźń: pchnąć w tę łódź jeża lub ośm skrzyń fig.
+p26	diac	Mężczyzna z Gdańska kupił żółte buty w Łodzi.
+p27	diac	Wąż, ząb, ćma, źdźbło, dźwięk, chrząszcz brzmi w trzcinie.
+p28	emo	Ojej, naprawdę? To świetna wiadomość, bardzo się cieszę!
+p29	emo	Przykro mi to słyszeć. Czy chcesz, żebym zadzwonił do kogoś bliskiego?
+p30	emo	Spokojnie, mam to. Sprawdzam i za chwilę wracam.
+p31	fem	Zapisałam to w notatkach i przypomnę ci jutro rano.
+p32	fem	Sprawdziłem kalendarz, jutro jesteś wolna po piętnastej.
+p33	short	Dobrze.
+p34	short	Jasne, już się robi.
+p35	short	Nie wiem, ale mogę to sprawdzić.

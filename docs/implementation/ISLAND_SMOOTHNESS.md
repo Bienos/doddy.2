@@ -31,6 +31,10 @@ Static review on Linux (no Xcode, no device): **nothing here was measured or see
 | Waves: 30 fps cap, colour alpha instead of view opacity, line sets built once | `IslandExtension.swift`, `IslandWaves.swift` |
 | `phase.didSet` returns when the phase did not change | `VoiceSessionController.swift` |
 | Opening scene capped at 60 fps | `OpeningSceneView.swift` |
+| Calendar, contacts and birthdays reads in tool calls run off the main actor (`readEvents`, `readContacts`, `readContactBirthdays`; fakes keep working through protocol defaults) | `DeviceConnections.swift`, `VoiceSessionController.swift` |
+| Doddy's clock asks for 120 Hz only while he really moves (hop, fade, shuffle, finger down); breathing and blinks run at 60 Hz | `DoddyClock.swift`, `DoddyDirector.wantsHighRate` |
+| The cream edge adds nothing in light appearance (it was four invisible shadows) | `IslandViews.swift` |
+| Home's finger-following eyes take at most 30 touch samples a second | `HomeView.swift` |
 
 **Side effect to watch:** for the first time on ElevenLabs, `.speaking` happens, so the big-island request
 (ADR-577, with its alert sound, at most every 20 s, only while Doddy is not on screen), Home's wide waves and
@@ -51,12 +55,8 @@ as a short Listening before Doddy answers. `vad_score` is not needed.
 
 ## Suggested, not applied (from the app-wide static audit)
 
-- Calendar / contacts / birthdays reads run on the main actor (`DeviceConnections`, called from
-  `VoiceSessionController`): move to a detached task returning Sendable values. Highest value, medium risk.
-- Doddy's display link asks for 120 Hz even for idle breathing (`DoddyClock.swift:47`): 60 Hz for idle, 120
-  only in flight. Four cream-edge shadows per sprite (`islandCreamEdge`) only in dark mode.
-- Home's full-screen `DragGesture(minimumDistance: 0)` publishes on every touch sample: throttle to 30 Hz.
-- `DoddyApp.init` does Keychain, GRDB migrations and log decoding before the first frame; `LaunchWork.later()`
-  starts seven jobs 1.5 s in: add signposts, start them after the opening.
-- `ActivityLogStore` re-encodes and writes the whole log on every append; `MemoryStore.reload()` bumps
-  `revision` every time. Full report and fix sketches were kept by the session that wrote this.
+- Photos search (`PhotoLibrarySearch`) is still on the main actor; birthdays at launch (`BirthdayScheduler`), the Today card and the weekly look-back still read calendar and contacts synchronously.
+- `DoddyApp.init` does Keychain, GRDB migrations and log decoding before the first frame; `LaunchWork.later()` starts seven jobs 1.5 s in: add signposts, start them after the opening.
+- `ActivityLogStore` re-encodes and writes the whole log on every append; `MemoryStore.reload()` bumps `revision` every time; `RootView.body` reads live conversation state.
+- Bake the cream outline into dark-mode sprites instead of four runtime shadows; downscale the 800×1200 `UploadedDoddy_Listening`.
+- All of this needs measuring first (Instruments on a ProMotion iPhone, Release build). Full report: `docs/research/2026-10-24/perf_audit_app.md`.

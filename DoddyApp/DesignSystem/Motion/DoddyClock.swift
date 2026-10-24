@@ -42,9 +42,17 @@ final class DoddyClock: NSObject, DoddyClockDriving {
     func run() {
         wake?.cancel()
         wake = nil
-        guard link == nil else { return }
+        // 120 Hz only for real movement; idle breathing and blinks at 60 (ADR-604). Asked again on
+        // every call, so a link that is already running follows the change.
+        let range = director.wantsHighRate
+            ? CAFrameRateRange(minimum: 80, maximum: 120, preferred: 120)
+            : CAFrameRateRange(minimum: 30, maximum: 60, preferred: 60)
+        if let link {
+            link.preferredFrameRateRange = range
+            return
+        }
         let l = CADisplayLink(target: self, selector: #selector(frame(_:)))
-        l.preferredFrameRateRange = CAFrameRateRange(minimum: 80, maximum: 120, preferred: 120)
+        l.preferredFrameRateRange = range
         l.add(to: .main, forMode: .common)
         link = l
     }

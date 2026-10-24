@@ -136,6 +136,9 @@ Dalej: rynki anglojęzyczne organicznie, Niemcy po czytaniu przez native speaker
 ## 6. Wymogi prawne przed startem
 Apple 5.1.2(i): wyraźna zgoda z nazwą dostawcy zanim dane trafią do zewnętrznego AI; 2.5.14 wskaźnik nagrywania; 5.1.1(v) usuwanie konta; 4.8 logowanie; 3.1.2 opis próby i ceny [V]. Unijny AI Act art. 50: poinformować, że to AI (obowiązuje od 2 sie 2026 [S]); zapytać ElevenLabs o oznaczanie audio. RODO: umowy powierzenia (ElevenLabs, OpenAI, Anthropic itd.), DPIA, ustawić retencję agenta zamiast „bez limitu"; rezydencja danych w UE u ElevenLabs tylko w Enterprise [S]. Wiek: kwestionariusz Apple, Declared Age Range, minimum 16 lat [I]. Prawo konsumenckie: polskie warunki, ceny z VAT, 14 dni odstąpienia. **Nagrywanie rozmów telefonicznych i tłumacz: opinia prawnika przed uruchomieniem [I, nie sprawdzone].**
 
+## 7a. Odpowiedzi właściciela (24 paź)
+Otworzyć PR z poprawkami wyspy: tak. Wdrożyć poprawki wydajności z audytu: tak (odczyty kalendarza i kontaktów poza głównym wątkiem, zegar 60 Hz, krawędź tylko w trybie ciemnym, gest na Home 30 Hz). Przygotować test polskich głosów: tak (`tools/voice_bakeoff/`). Ceny do testu w Best Mate: 34,99 zł i 49,99 zł.
+
 ## 7. Decyzje właściciela (w kolejności ważności)
 1. Dodać `agent_tool_request` do zdarzeń klienta żywego agenta ElevenLabs (nie ruszałem agenta).
 2. Włączyć uwierzytelnianie agenta i ustawić limit retencji nagrań; ustawić limit wydatków na kluczu Anthropic.
