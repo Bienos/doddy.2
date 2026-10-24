@@ -85,6 +85,9 @@ public enum TrainingReview {
     /// Holds the engine prescribes in seconds. A test sweeps the engine's plans to keep this honest.
     static let timedKeys: Set<String> = ["plank", "side_plank"]
 
+    /// Whether `reps` of this exercise means seconds of a hold, so a screen can say so when it asks.
+    public static func isTimedHold(_ key: String) -> Bool { timedKeys.contains(key) }
+
     public static func review(sessions: [LoggedSession], plan: TrainingPlan? = nil, atHome: Bool = false,
                               now: Date) -> TrainingReviewResult {
         let from = now.addingTimeInterval(-Double(windowDays) * 86_400)

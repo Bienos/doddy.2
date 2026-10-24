@@ -279,7 +279,7 @@ final class TrainingReviewTests: XCTestCase {
         }
         XCTAssertGreaterThanOrEqual(seen.count, 20)
         for (key, facts) in seen {
-            XCTAssertEqual(TrainingReview.timedKeys.contains(key), facts.timed, "timed: \(key)")
+            XCTAssertEqual(TrainingReview.isTimedHold(key), facts.timed, "timed: \(key)")
             XCTAssertEqual(TrainingReview.isLowerBody(key), facts.lower, "lower body: \(key)")
         }
     }

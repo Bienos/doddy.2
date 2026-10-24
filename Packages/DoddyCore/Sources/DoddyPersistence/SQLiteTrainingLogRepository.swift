@@ -2,7 +2,8 @@ import DoddyCore
 import Foundation
 import GRDB
 
-/// The training logbook on this iPhone (ADR-632), in the same SQLite file as the notes. Three rules
+/// The training logbook on this iPhone (ADR-632), on whatever `DoddyDatabase` it is given. The app gives it
+/// its own file, left out of backups (`TrainingLogDatabase`), not the notes' file. Three rules
 /// hold in every method:
 ///   - nothing is written without the person's yes, checked in the same transaction as the write
 ///     (so a withdrawn yes cannot be raced);

@@ -57,6 +57,13 @@ struct ConnectionsView: View {
                     }
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("connections.trainingPlan")
+                    NavigationLink {
+                        TrainingLogView()
+                    } label: {
+                        TrainingLogCard()
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("connections.trainingLog")
                 }
 
                 Text("Your notes are always on this iPhone. Weather and Wikipedia lookups run on ElevenLabs, are always on, and don't work when Home's voice is OpenAI.")
