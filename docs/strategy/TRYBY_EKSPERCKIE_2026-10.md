@@ -54,6 +54,20 @@ Research: `docs/research/2026-10-24/research_sport_mode.md` na tamtej gałęzi. 
 - **MDR:** nie obiecywać „rehabilitacji kolana” ani „wykrywania arytmii”, żeby nie wejść w wyrób medyczny [S].
 - **Zdjęcia posiłków:** ok. 36% średniego błędu energii u dużych modeli; pokazywać jako edytowalny zakres [S].
 
+### Tryb sportowy, kroki 1 i 2 (gałąź `claude/sport-mode-health`, ADR-621 i 622, niescalona, kod)
+
+Ta sama sesja po decyzjach z ADR-620 zbudowała (testy DoddyCore na Linuksie; nie skompilowane w Xcode, nie na telefonie):
+- **Krok 1 (ADR-621):** ekran Ustawienia › Połączenia › Sport i zdrowie › Apple Health; tylko odczyt ostatnich 7 dni (treningi, sen z fazami, tętno spoczynkowe, HRV, VO₂ max); nic nie wychodzi z iPhone'a; strażnik repo pozwala na HealthKit tylko w jednym pliku i zabrania zapisu.
+- **Krok 2 (ADR-622):** „Jak mi poszedł tydzień?”: dokładny tekst podsumowania (bez surowych próbek, do 2000 znaków) trafia do pola w Wiadomościach po osobnej zgodzie; wysyła dopiero stuknięcie, więc zgoda dotyczy dokładnej treści. Głosem jeszcze nie, bo głos idzie przez ElevenLabs z modelem Google, a ADR-620 pozwolił tylko na Claude.
+
+To pokrywa „HealthKit po zgodzie” (P1 z PDF) i część przeglądu postępów trenera. Wywiad, plan i dziennik treningów z PDF jeszcze nie istnieją, a test 11 (bez zgody na HealthKit działa na danych podanych ręcznie) czeka na nie.
+
+### Lista przy sklepie i stoper (gałąź `claude/stopwatch-and-shop-list`, „ADR-621”, niescalona, kod)
+
+Przypomnienie listy przy sklepie mówi, ile rzeczy zostało („Zakupy · 4 rzeczy na liście”, nigdy nazwy), z przyciskiem „Otwórz listę”; do tego stoper liczący w górę z trzema narzędziami głosowymi (tylko w specyfikacji, nie na żywym agencie). Stoi na `claude/notifications-sound-timers` (ADR-612, 613). Pasuje do L1 z PDF i nie koliduje z „Listą zakupów+”, ale dotyka tych samych plików tekstów (`l10n/pl.json`) i strażnika.
+
+**Komplikacja: dwa różne ADR-621.** Gałąź sportowa i gałąź stopera nadały ten sam numer różnym decyzjom. Przy scalaniu jedna musi dostać nowy numer. Ten dokument używa ADR-630, żeby nie wejść w zakres 611 do 622.
+
 ### Tryb zakupów (domyślna gałąź `claude/loving-dirac-uuxoux`, ADR-607 do 610, etap 1 scalony)
 
 Strategia: `docs/strategy/TRYB_ZAKUPOW_2026-10.md`, research `docs/research/2026-10-24/research_shopping_*.md`. Dodaje do PDF:
@@ -81,19 +95,19 @@ Strategia: `docs/strategy/TRYB_ZAKUPOW_2026-10.md`, research `docs/research/2026
 Każdy krok to osobny, mały kamień milowy z testami i wymaga „tak” właściciela przed kodem (CLAUDE.md, zasada 2). Kolejność łączy ranking z PDF z tym, co już jest i co właściciel już zdecydował.
 
 1. **Lista zakupów z głosu, rozszerzona:** jednostki i ilości w pozycjach, „co już jest w domu”, kod kreskowy na iPhonie (Open Food Facts z iPhone'a). Opiera się na ADR-216 i ADR-610.
-2. **Tryb sportowy, krok 1 z ADR-620:** wywiad i plan z danymi z głosu (test 1, 2, 11), czerwone flagi jako stały komunikat w kodzie, potem HealthKit (uprawnienia, ekran „co Doddy widzi”).
+2. **Tryb sportowy:** odczyt Apple Health i tygodniowe podsumowanie są już w kodzie na `claude/sport-mode-health` (ADR-621, 622). Dalej z PDF: wywiad i plan z danymi z głosu (testy 1, 2, 11), czerwone flagi jako stały komunikat w kodzie, dziennik treningów.
 3. **Jadłospis → lista:** porady bez liczb (ADR-620), alergie jako dane wrażliwe z osobną zgodą, agregacja składników do istniejącej listy, koszyk z ADR-610.
 4. **Wspólny kontrakt wyniku i ekran „Dlaczego tak?”** dla trybów 2 i 3.
 5. **Faktury przez Fakturownię lub inFakt** (szkic, podgląd netto/VAT/brutto liczony w kodzie, zgoda, status, `unknown` → sprawdzenie stanu): dopiero po wyborze dostawcy przez właściciela.
 6. **Gmail na prawdziwym koncie:** istniejące `check_email` i `draft_email` (ADR-096 do 103) sprawdzone poza danymi testowymi; przedtem weryfikacja Google dla zakresów restricted i odpowiedź właściciela na ADR-099.
 7. **Bezpośredni KSeF i pełny checkout:** nie teraz.
 
-## 7. Decyzje dla właściciela
+## 7. Decyzje właściciela (24 paź, ADR-630)
 
-1. Czy tryb żywienia z PDF przyjmuje ADR-620 (bez liczb domyślnie) bez zmian?
-2. Czy dopisać do ADR-609, że czytanie gazetek to świadomy wyjątek od zasady „bez scrapingu” z PDF, z licencją agregatora jako celem?
-3. Faktury: Fakturownia, inFakt, czy na razie nic?
-4. Czy pierwszy krok to rozszerzona lista zakupów (punkt 1 wyżej), czy tryb sportowy (punkt 2)?
+1. **Żywienie według ADR-620:** „Tak, ADR-620”. Jadłospisy i listy bez kalorii i białka domyślnie; liczenie tylko po włączeniu i sprawdzeniu w kodzie.
+2. **Gazetki:** „Tak, dopisz”. ADR-609 ma dopisek: świadomy wyjątek od zasady „bez ukrytego scrapingu” z PDF, celem jest licencja agregatora.
+3. **Faktury:** „inFakt”. Wybrany dostawca; budowa to osobny kamień milowy, przed kodem zgoda na dokładny zakres, przechowywanie tokenu i tekst prywatności.
+4. **Pierwsza budowa:** „Lista zakupów+”: ilości i jednostki, „co już jest w domu”, kod kreskowy na iPhonie z Open Food Facts pytanym z iPhone'a. Plan i stan: `docs/implementation/SHOPPING_LIST_PLUS.md`.
 
 ## 8. Czego nie sprawdziłem
 
