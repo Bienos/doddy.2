@@ -285,9 +285,22 @@ struct ListDetailView: View {
             .accessibilityValue(item.isDone ? "Ticked" : "Not ticked")
             .accessibilityAddTraits(.isToggle)
             VStack(alignment: .leading, spacing: 2) {
-                Text(item.text)
-                    .strikethrough(item.isDone)
-                    .foregroundStyle(item.isDone ? Theme.secondaryText : Theme.ink)
+                // Shopping list+ (ADR-631): a quantity read from the words shows as a label
+                // ("mleka · 2 l"); VoiceOver and every other place keep the full words.
+                let words = ListItemWords.read(item.text)
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(verbatim: words.quantity == nil ? item.text : words.product)
+                        .strikethrough(item.isDone)
+                        .foregroundStyle(item.isDone ? Theme.secondaryText : Theme.ink)
+                    if let quantity = words.quantity {
+                        Text(verbatim: quantity.display(polish: Self.polishLabels))
+                            .font(.subheadline.monospacedDigit())
+                            .foregroundStyle(item.isDone ? Theme.secondaryText : Theme.ink)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 2)
+                            .overlay(Capsule().stroke(Theme.secondaryText.opacity(0.5), lineWidth: 1))
+                    }
+                }
                 // Shared lists (ADR-285): who else added or ticked it, on this iPhone only.
                 let who = sharing.label(for: item)
                 if !who.isEmpty {
@@ -454,6 +467,9 @@ struct ListDetailView: View {
             errorMessage = SharingError.message(for: error)
         }
     }
+
+    /// Quantity labels in the screens' language: "1,5 kg", "10 szt." in Polish; "1.5 kg", "10 pcs" otherwise.
+    static var polishLabels: Bool { NotificationLanguage.preferred(Bundle.main.preferredLocalizations) == .polish }
 
     /// "Added by Marta · Ticked by Tom" (ADR-285).
     static func whoText(_ label: SharedItemLabel) -> String {
