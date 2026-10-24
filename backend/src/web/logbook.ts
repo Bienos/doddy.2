@@ -19,7 +19,7 @@ export const LOGBOOK_MAX_BODY_BYTES = 16 * 1024;
 export const LOGBOOK_SCHEMA = "doddy.logbook.day.v1";
 
 /**
- * The voice agent's tool ids (voice-agent/tools.json, 94 today). A test reads that file and fails
+ * The voice agent's tool ids (voice-agent/tools.json, 96 today). A test reads that file and fails
  * if this list and the file disagree, so a new tool can't be counted before it is listed here.
  */
 export const LOGBOOK_TOOL_IDS = [
@@ -28,7 +28,7 @@ export const LOGBOOK_TOOL_IDS = [
   "delete_calendar_events", "move_reminders", "remind_me_about_note", "lookup_contact", "upcoming_birthdays",
   "calculate", "convert_units", "convert_currency", "set_timer", "set_alarm", "list_alarms", "cancel_alarm",
   "propose_plan", "open_map", "parking_spot", "remind_when_to_leave", "run_shortcut", "draft_message",
-  "draft_blik_transfer", "make_presentation", "read_steps", "find_photos", "open_camera", "check_email",
+  "draft_blik_transfer", "make_presentation", "read_steps", "read_health_week", "find_photos", "open_camera", "check_email",
   "read_email", "draft_email", "draft_email_reply", "send_email", "reply_to_email", "forward_email", "change_email",
   "trash_email", "find_drive_file", "create_drive_doc", "search_notion", "read_notion_page", "create_notion_page",
   "append_notion_page", "trash_notion_page", "check_outlook_email", "read_outlook_email", "draft_outlook_email",

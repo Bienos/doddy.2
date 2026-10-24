@@ -51,6 +51,7 @@ Before = `voice-agent/tools.json` at `2278430`. "Card, tap" tools already asked;
 | `convert_units` | **Doesn't ask**: runs on the agent's call | Card; **spoken yes or tap** |
 | `convert_currency` | **Doesn't ask**: runs on the agent's call | Card; **spoken yes or tap** |
 | `read_steps` (ADR-568, live 21 Oct) | (new tool) | Card; **spoken yes or tap**. If Steps is off, the permission sheet (ADR-566) shows the same question and its Allow is the tap |
+| `read_health_week` (ADR-623, not on the live ElevenLabs agent) | (new tool) | Card; **spoken yes or tap**. Runs only with Apple Health on and the voice's own consent (Settings › Connections › Apple Health); otherwise it answers "not allowed" and nothing is read |
 | `make_presentation` (ADR-567, live 21 Oct) | (new tool) | Card with every slide; **tap only**. The file is made on the tap; the share sheet hands it on |
 | `find_photos` (ADR-569, live 21 Oct) | (new tool) | Card; **spoken yes or tap**. Counts and times to the agent; the pictures on screen only |
 | `open_camera` (ADR-569, live 21 Oct) | (new tool) | Card; **tap only**. The camera opens on the tap; a kept photo becomes a note the user saves |

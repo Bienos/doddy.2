@@ -36,8 +36,8 @@
     "zh-Hans": "只有在你提出请求时，Doddy 才会从“运动与健身”读取最近七天中某一天的步数、步行距离和爬楼层数。在语音对话中，这些数字会发送给运行 Doddy 语音的 ElevenLabs；如果你在主屏幕把语音切换为 OpenAI，则发送给 OpenAI。Doddy 不保存这些数据。可在设置的“连接”中关闭。"
   },
   "NSHealthShareUsageDescription": {
-    "en": "Doddy reads your workouts, heart rate, resting heart rate, heart rate variability, sleep and VO2 max from Health to show them to you on its Apple Health screen. None of it leaves this iPhone unless you send the week's summary to Doddy in Messages yourself, after a yes of its own. Doddy keeps none of it and writes nothing to Health. Turn this off in Settings, Connections, Apple Health, or in the Health app.",
-    "zh-Hans": "Doddy 从“健康”读取你的体能训练、心率、静息心率、心率变异性（HRV）、睡眠和最大摄氧量，并在它的“Apple Health”页面上显示给你看。除非你在另行同意后自己在“信息”中把本周摘要发给 Doddy，否则这些数据都不会离开这部 iPhone。Doddy 不保存任何数据，也不会向“健康”写入任何内容。可在设置的“连接”中的“Apple Health”或在“健康”App 中关闭。"
+    "en": "Doddy reads your workouts, heart rate, resting heart rate, heart rate variability, sleep and VO2 max from Health to show them to you on its Apple Health screen. Only a short summary of the week leaves this iPhone, and only when you allow it: in Messages when you send it yourself, or to Doddy's voice when you ask and say yes. Doddy keeps none of it and writes nothing to Health. Turn this off in Settings, Connections, Apple Health, or in the Health app.",
+    "zh-Hans": "Doddy 从“健康”读取你的体能训练、心率、静息心率、心率变异性（HRV）、睡眠和最大摄氧量，并在它的“Apple Health”页面上显示给你看。只有本周的简短摘要会离开这部 iPhone，而且只在你允许时：你在“信息”中自己发送时，或你询问并同意后交给 Doddy 的语音。Doddy 不保存任何数据，也不会向“健康”写入任何内容。可在设置的“连接”中的“Apple Health”或在“健康”App 中关闭。"
   },
   "NSCameraUsageDescription": {
     "en": "Doddy opens the camera only when you tap Take a photo or Open camera. The photo you keep goes into a note on this iPhone and its text is read here; it is never sent anywhere or saved to your photo library.",

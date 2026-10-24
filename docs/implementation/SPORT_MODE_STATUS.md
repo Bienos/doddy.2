@@ -43,9 +43,30 @@ The summary: a question ("How did my week go? … No medical advice, please."), 
 
 **Different on purpose.** Not a voice tool: Doddy's voice runs on ElevenLabs with Google's Gemini (`voice-agent/session.json`), and ADR-620 allowed a summary to go to Claude only. "How did it go?" by voice needs the owner's decision first.
 
+## Step 3: "How did my week go?" by voice (ADR-623)
+
+Owner, 24 Oct 2026: "1 tak" (Doddy's voice may hear the summary). Same branch.
+
+**What it does.** A new voice tool, `read_health_week`. When the person asks how their week, training or sleep went, Doddy says what he will look at and asks (ASK-01: a spoken yes or a tap on the card "Read your week from Apple Health?"). Then the iPhone works out the same week as the screen and gives the agent a short English summary with the rules for answering: rate briefly, compare with the week before, one change, no diagnosis or medical advice or calorie targets, and for chest pain, fainting, dizziness or unusual breathlessness, stop and see a doctor (112).
+
+**Its own consent.** On the Apple Health screen, **Doddy's voice** › **Let Doddy's voice hear the week**: a sheet that says the voice runs on ElevenLabs with Google's Gemini (or OpenAI if picked on Home), that they get the summary as part of the conversation, and that ElevenLabs keeps each conversation's recording and transcript, which Doddy's settings there keep with no time limit for now. Without that yes, or with Apple Health off, the tool answers "not allowed" and reads nothing. "Stop Doddy's voice hearing Health" takes it back.
+
+| Part | File | Checked |
+|---|---|---|
+| The tool: name, parse, ASK-01 card, a look-up in the catalog, a row in What Doddy did (Apple Health, Polish "Zdrowie"), paused by Pause all, allowed in the car, no Connections switch | `HealthVoice.swift`, `VoiceTools.swift`, `ToolCatalog.swift`, `AskFirst.swift`, `ActivityLog.swift`, `ActivityText.swift`, `ConnectionPause.swift`, `CarProfile.swift` | `HealthVoiceTests` 7 tests (the agent's exact lines included); `ActivityTextTests` now counts 41 kinds; `ToolCatalogTests` matches `tools.json` |
+| What the agent hears and the refusals | `VoiceToolReply.healthWeek`, `healthWeekNotAllowed`, `healthWeekEmpty`, `healthWeekFailed` | same tests |
+| The handler: Apple Health on and the voice consent, else "not allowed" | `VoiceSessionController.swift` | **NOT COMPILED** |
+| The voice section and its consent sheet | `HealthConnectionView.swift` | **NOT COMPILED** |
+| Agent spec: the tool (`not_synced`) and one prompt line | `voice-agent/tools.json`, `instructions.md`; `backend/src/web/logbook.ts` lists the new id | `voice_agent_spec.py check` PASS (96 tools); backend 428/428 |
+| Health prompt: a summary leaves only "in Messages when you send it yourself, or to Doddy's voice when you ask and say yes"; ten languages | `project.yml`, `l10n/*_infoplist.json` | catalogs PASS; nine machine drafts; 10 more Polish lines |
+
+**Live agent: not changed.** ElevenLabs gets the tool and the prompt line only on the owner's yes to the exact text. Until then, on ElevenLabs Doddy doesn't know the tool; the OpenAI voice gets it with the next app build.
+
+**Gap to know.** The red-flag rule reaches the voice as text in every reply and in the prompt; the model could still ignore it. A fixed, code-enforced reply for red-flag words is not built.
+
 ## Not checked
 
-- **The app has not been compiled with these changes** (steps 1 and 2). The hosted Mac job compiles it on a pull request.
+- **The app has not been compiled with these changes** (steps 1 to 3). The hosted Mac job compiles it on a pull request.
 - Messages opened from Settings over the Apple Health screen (not from Home) has not been seen; the persistent Doddy rides Home's Messages cover, and may not appear here.
 - **Nothing has run on a device:** the Health sheet, the reads, the numbers against the Health app's own, a night recorded by both a watch and the iPhone, an iPhone that is locked while the screen reads (it should say so), iPad.
 - **Signing the free-team project with HealthKit.** Apple's capability table lists HealthKit for the free Apple Developer account (read 24 Oct 2026). If Xcode still refuses, set `DODDY_APP_ENTITLEMENTS: ""` in `project-iphone.yml`; the screen then says this build can't use Health.
@@ -60,6 +81,6 @@ The summary: a question ("How did my week go? … No medical advice, please."), 
 
 ## Next (each needs the owner's go-ahead)
 
-1. Owner decision: may a summary go to Doddy's voice (ElevenLabs and Google's Gemini) for "How did it go?" by voice?
+1. Owner: put `read_health_week` and its prompt line on the live ElevenLabs agent (the exact text first).
 2. Voice gym log and the wger exercise base.
 3. Running and strength plans with the safety rules from the research.

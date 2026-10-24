@@ -2,10 +2,10 @@ import DoddyCore
 import SwiftUI
 
 /// Settings › Connections › Apple Health (sport mode step 1, ADR-621). What Doddy may read from
-/// Health and, once it's on, exactly what it sees for the last seven days. Nothing is sent or
-/// spoken from here, except the week's summary (ADR-622): after a consent of its own, Messages
-/// opens with that exact text and the person sends it with their own tap (ADR-620, decision 2).
-/// Doddy's voice doesn't get Health data.
+/// Health and, once it's on, exactly what it sees for the last seven days. Nothing leaves the iPhone
+/// from here except the week's summary, each way with a consent of its own: Messages opens with
+/// that exact text and the person sends it (ADR-622), or Doddy's voice hears it after the person's
+/// yes to "How did my week go?" (ADR-623, owner's "1 tak").
 struct HealthConnectionView: View {
     /// Doddy's own switch. Off means Doddy reads nothing from Health; the permission itself lives
     /// in the Health app, which only the person can change.
@@ -25,6 +25,12 @@ struct HealthConnectionView: View {
 
     static let shareConsentVersionKey = "sport.healthShare.consentVersion"
     static let shareConsentAtKey = "sport.healthShare.consentAt"
+    // Step 3 (ADR-623): the voice's own yes; VoiceSessionController reads it before read_health_week.
+    static let voiceConsentVersionKey = "sport.healthVoice.consentVersion"
+    static let voiceConsentAtKey = "sport.healthVoice.consentAt"
+    @AppStorage(HealthConnectionView.voiceConsentVersionKey) private var voiceConsentVersion = 0
+    @AppStorage(HealthConnectionView.voiceConsentAtKey) private var voiceConsentAt: Double = 0
+    @State private var askingVoiceConsent = false
 
     var body: some View {
         ScrollView {
@@ -49,7 +55,7 @@ struct HealthConnectionView: View {
                 }
 
                 section(Text("What leaves your phone")) {
-                    Text("Nothing, unless you send the week's summary to Doddy in Messages yourself. Then only that text goes to Doddy's server and Claude (Anthropic), after your yes. Doddy's voice doesn't hear Health data.")
+                    Text("Only a short summary of the week, and only when you allow it: in Messages when you send it yourself (to Doddy's server and Claude), or to Doddy's voice when you ask and say yes (ElevenLabs, with Google's Gemini or OpenAI). Never the raw data.")
                 }
 
                 section(Text("What stays here")) {
@@ -62,6 +68,10 @@ struct HealthConnectionView: View {
 
                 if isOn, let glance, !glance.isEmpty, let summary = HealthText.summary(glance) {
                     shareSection(summary)
+                }
+
+                if isOn {
+                    voiceSection
                 }
 
                 if let problem {
@@ -97,6 +107,16 @@ struct HealthConnectionView: View {
                     pendingDraft = summary
                 }
                 askingConsent = false
+            }
+            .presentationDetents([.large])
+        }
+        .sheet(isPresented: $askingVoiceConsent) {
+            HealthShareConsentSheet(kind: .voice) { allowed in
+                if allowed {
+                    voiceConsentVersion = HealthVoiceConsent.version
+                    voiceConsentAt = Date().timeIntervalSince1970
+                }
+                askingVoiceConsent = false
             }
             .presentationDetents([.large])
         }
@@ -189,6 +209,30 @@ struct HealthConnectionView: View {
                 Text("Messages you already sent stay in Messages until you delete them.")
                     .font(.footnote)
                     .foregroundStyle(Theme.secondaryText)
+            }
+        }
+    }
+
+    // MARK: Doddy's voice (ADR-623)
+
+    private var voiceSection: some View {
+        section(Text("Doddy's voice")) {
+            if HealthVoiceConsent.isGranted(storedVersion: voiceConsentVersion) {
+                Text("When you ask \"How did my week go?\", Doddy asks first, then his voice hears this week's summary. It runs on ElevenLabs with Google's Gemini, or on OpenAI if you chose it.")
+                Button("Stop Doddy's voice hearing Health") {
+                    voiceConsentVersion = 0
+                    voiceConsentAt = 0
+                }
+                .buttonStyle(SecondaryButtonStyle(tint: Theme.error))
+                .accessibilityIdentifier("health.withdrawVoice")
+            } else {
+                Text("Doddy's voice doesn't hear Health data. You can let it hear the week's summary when you ask how your week went.")
+                    .foregroundStyle(Theme.secondaryText)
+                Button("Let Doddy's voice hear the week") {
+                    askingVoiceConsent = true
+                }
+                .buttonStyle(SecondaryButtonStyle())
+                .accessibilityIdentifier("health.allowVoice")
             }
         }
     }
@@ -456,24 +500,41 @@ struct MessagesDraft: Identifiable {
     let text: String
 }
 
-/// The yes before a summary of Health data can go to Doddy's server and Claude (ADR-620, decision
-/// 2; GDPR Art. 9; App Review 5.1.2(i)). Asked once per wording (`HealthShareConsent.version`);
-/// each summary is still sent only by the person's own tap on Send in Messages.
+/// The yes before a summary of Health data leaves the iPhone (GDPR Art. 9; App Review 5.1.2(i)):
+/// to Doddy's server and Claude in Messages (ADR-622), or to Doddy's voice (ADR-623). Each is asked
+/// once per wording (`HealthShareConsent.version`, `HealthVoiceConsent.version`); each summary is
+/// still sent only after the person's own tap on Send, or their yes to the voice's question.
 struct HealthShareConsentSheet: View {
+    enum Kind {
+        case messages, voice
+    }
+
+    var kind: Kind = .messages
     let answer: (Bool) -> Void
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
-                    Text("Send Health summaries to Doddy?")
-                        .font(.title2.bold())
+                    if kind == .messages {
+                        Text("Send Health summaries to Doddy?")
+                            .font(.title2.bold())
+                    } else {
+                        Text("Let Doddy's voice hear your week?")
+                            .font(.title2.bold())
+                    }
                     Text("Health data is sensitive. Here is what happens if you allow it:")
                     VStack(alignment: .leading, spacing: 10) {
-                        point(Text("Only the summary you see goes: the week's numbers, no raw data from Health."))
-                        point(Text("It goes to Doddy's server and to Claude (Anthropic), which writes the answer. Doddy's server doesn't keep or log what you write, only how many questions you asked."))
-                        point(Text("Your message and the answer are saved in Messages on this iPhone until you delete them."))
-                        point(Text("Nothing is sent by itself: each time, Messages opens with the text and you tap Send."))
+                        if kind == .messages {
+                            point(Text("Only the summary you see goes: the week's numbers, no raw data from Health."))
+                            point(Text("It goes to Doddy's server and to Claude (Anthropic), which writes the answer. Doddy's server doesn't keep or log what you write, only how many questions you asked."))
+                            point(Text("Your message and the answer are saved in Messages on this iPhone until you delete them."))
+                            point(Text("Nothing is sent by itself: each time, Messages opens with the text and you tap Send."))
+                        } else {
+                            point(Text("When you ask something like \"How did my week go?\", Doddy asks first, and only after your yes does his voice hear the same summary: the week's numbers, no raw data from Health."))
+                            point(Text("Doddy's voice runs on ElevenLabs, which answers with Google's Gemini, or on OpenAI if you chose it on Home. They get the summary as part of the conversation."))
+                            point(Text("ElevenLabs keeps each conversation's recording and transcript. Doddy's settings there keep them with no time limit for now."))
+                        }
                         point(Text("You can take this back on the Apple Health screen at any time."))
                     }
                     Text("Doddy is an AI, not a doctor or a coach. For pain, dizziness or anything that worries you, see a doctor.")
@@ -481,10 +542,10 @@ struct HealthShareConsentSheet: View {
                         .foregroundStyle(Theme.secondaryText)
                     Button("Allow") { answer(true) }
                         .buttonStyle(PrimaryButtonStyle())
-                        .accessibilityIdentifier("health.share.allow")
+                        .accessibilityIdentifier(kind == .messages ? "health.share.allow" : "health.voice.allow")
                     Button("Not now") { answer(false) }
                         .buttonStyle(SecondaryButtonStyle())
-                        .accessibilityIdentifier("health.share.notNow")
+                        .accessibilityIdentifier(kind == .messages ? "health.share.notNow" : "health.voice.notNow")
                 }
                 .padding(24)
             }

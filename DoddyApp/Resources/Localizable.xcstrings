@@ -21579,6 +21579,17 @@
         }
       }
     },
+    "Doddy's voice": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Głos Doddy’ego"
+          }
+        }
+      }
+    },
     "Doddy's voice (ElevenLabs)": {
       "extractionState": "manual",
       "localizations": {
@@ -21586,6 +21597,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Głos Doddy’ego (ElevenLabs)"
+          }
+        }
+      }
+    },
+    "Doddy's voice doesn't hear Health data. You can let it hear the week's summary when you ask how your week went.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Głos Doddy’ego nie słyszy danych ze Zdrowia. Możesz pozwolić mu usłyszeć podsumowanie tygodnia, gdy zapytasz, jak Ci poszło."
           }
         }
       }
@@ -21782,6 +21804,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Doddy's voice runs on ElevenLabs, which answers with Google's Gemini, or on OpenAI if you chose it on Home. They get the summary as part of the conversation.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Głos Doddy’ego działa na ElevenLabs, które odpowiada przez Gemini od Google, albo na OpenAI, jeśli wybrałeś je na ekranie głównym. Dostają podsumowanie jako część rozmowy."
           }
         }
       }
@@ -23511,6 +23544,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "编辑这条笔记"
+          }
+        }
+      }
+    },
+    "ElevenLabs keeps each conversation's recording and transcript. Doddy's settings there keep them with no time limit for now.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ElevenLabs przechowuje nagranie i zapis każdej rozmowy. Ustawienia Doddy’ego w ElevenLabs trzymają je na razie bez limitu czasu."
           }
         }
       }
@@ -34141,6 +34185,28 @@
         }
       }
     },
+    "Let Doddy's voice hear the week": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pozwól głosowi Doddy’ego usłyszeć tydzień"
+          }
+        }
+      }
+    },
+    "Let Doddy's voice hear your week?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pozwolić głosowi Doddy’ego usłyszeć Twój tydzień?"
+          }
+        }
+      }
+    },
     "Let them say something first, so Doddy can hear their language.": {
       "extractionState": "manual",
       "localizations": {
@@ -44503,17 +44569,6 @@
         }
       }
     },
-    "Nothing, unless you send the week's summary to Doddy in Messages yourself. Then only that text goes to Doddy's server and Claude (Anthropic), after your yes. Doddy's voice doesn't hear Health data.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nic, chyba że sam wyślesz Doddy’emu podsumowanie tygodnia w Wiadomościach. Wtedy tylko ten tekst trafia na serwer Doddy’ego i do Claude (Anthropic), po Twojej zgodzie. Głos Doddy’ego nie słyszy danych ze Zdrowia."
-          }
-        }
-      }
-    },
     "Notification": {
       "extractionState": "manual",
       "localizations": {
@@ -46757,6 +46812,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "在线账户需要一台 Doddy 服务器。请在设置 › 已连接的应用服务器中设置其地址和会话令牌。"
+          }
+        }
+      }
+    },
+    "Only a short summary of the week, and only when you allow it: in Messages when you send it yourself (to Doddy's server and Claude), or to Doddy's voice when you ask and say yes (ElevenLabs, with Google's Gemini or OpenAI). Never the raw data.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tylko krótkie podsumowanie tygodnia i tylko za Twoją zgodą: w Wiadomościach, gdy sam je wyślesz (na serwer Doddy’ego i do Claude), albo do głosu Doddy’ego, gdy zapytasz i się zgodzisz (ElevenLabs z Gemini od Google albo OpenAI). Nigdy surowe dane."
           }
         }
       }
@@ -67548,6 +67614,17 @@
         }
       }
     },
+    "Stop Doddy's voice hearing Health": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyłącz Zdrowie dla głosu Doddy’ego"
+          }
+        }
+      }
+    },
     "Stop listening": {
       "extractionState": "manual",
       "localizations": {
@@ -86992,6 +87069,17 @@
         }
       }
     },
+    "When you ask \"How did my week go?\", Doddy asks first, then his voice hears this week's summary. It runs on ElevenLabs with Google's Gemini, or on OpenAI if you chose it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gdy zapytasz „Jak mi poszedł tydzień?”, Doddy najpierw zapyta o zgodę, a potem jego głos usłyszy podsumowanie tego tygodnia. Głos działa na ElevenLabs z Gemini od Google albo na OpenAI, jeśli go wybrałeś."
+          }
+        }
+      }
+    },
     "When you ask a question, it is sent with your last few messages to Doddy's server, which passes it to Anthropic to write the answer. If \"Use relevant saved notes\" is on, notes that match your question are sent too, and the answer shows which ones. Doddy's server does not store them and logs no text. Anthropic, which runs the model, keeps requests under its own rules; we can't verify for how long. Voice conversations are separate. You can turn this off at any time.": {
       "extractionState": "manual",
       "localizations": {
@@ -87047,6 +87135,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "当你提问时，问题会和你最近几条消息一起发送到 Doddy 的服务器，再由它转给 Anthropic 来撰写回答。如果“使用相关的已保存笔记”已开启，与你问题匹配的笔记也会一并发送，回答中会显示用了哪些。Doddy 的服务器不会存储它们，也不会记录任何文字。运行模型的 Anthropic 会按其自身规则保留请求；我们无法验证保留多久。语音对话是分开的。你可以随时关闭此项。"
+          }
+        }
+      }
+    },
+    "When you ask something like \"How did my week go?\", Doddy asks first, and only after your yes does his voice hear the same summary: the week's numbers, no raw data from Health.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gdy zapytasz na przykład „Jak mi poszedł tydzień?”, Doddy najpierw zapyta, a dopiero po Twoim „tak” jego głos usłyszy to samo podsumowanie: liczby z tygodnia, bez surowych danych ze Zdrowia."
           }
         }
       }

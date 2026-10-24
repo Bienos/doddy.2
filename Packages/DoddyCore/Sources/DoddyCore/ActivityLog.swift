@@ -19,6 +19,8 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
     case steps
     /// The photo library and Doddy's camera (ADR-569).
     case photos, camera
+    /// Apple Health, read only (ADR-621, ADR-623).
+    case health
 
     public var title: String {
         switch self {
@@ -42,6 +44,7 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
         case .steps: "Steps"
         case .photos: "Photos"
         case .camera: "Camera"
+        case .health: "Apple Health"
         }
     }
 }
@@ -217,6 +220,8 @@ public struct ActivityRequest: Equatable, Sendable {
                 logDetail: "\(draft.slideCount) slides", isLookup: false)
         case .readSteps(let day):
             return ActivityRequest(app: .steps, title: "Read steps", detail: day.text, isLookup: true)
+        case .readHealthWeek:
+            return ActivityRequest(app: .health, title: "Read the week from Apple Health", detail: "Last 7 days", isLookup: true)
         case .findPhotos(let request):
             return ActivityRequest(app: .photos, title: "Looked through photos", detail: request.text(calendar: calendar), isLookup: true)
         case .openCamera:

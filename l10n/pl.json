@@ -1991,7 +1991,6 @@
   "deep %@, REM %@, core %@": "głęboki %@, REM %@, podstawowy %@",
   "7-day average %@": "średnia z 7 dni %@",
   "%@ bpm": "%@ ud./min",
-  "Nothing, unless you send the week's summary to Doddy in Messages yourself. Then only that text goes to Doddy's server and Claude (Anthropic), after your yes. Doddy's voice doesn't hear Health data.": "Nic, chyba że sam wyślesz Doddy’emu podsumowanie tygodnia w Wiadomościach. Wtedy tylko ten tekst trafia na serwer Doddy’ego i do Claude (Anthropic), po Twojej zgodzie. Głos Doddy’ego nie słyszy danych ze Zdrowia.",
   "Ask Doddy about this week": "Zapytaj Doddy’ego o ten tydzień",
   "This is exactly what goes to Doddy if you send it. Messages opens with it in the box; you can change it, and nothing is sent until you tap Send.": "Dokładnie to trafi do Doddy’ego, jeśli to wyślesz. Wiadomości otworzą się z tym tekstem w polu; możesz go zmienić, a nic nie zostanie wysłane, dopóki nie stukniesz Wyślij.",
   "Stop sending Health summaries": "Przestań wysyłać podsumowania ze Zdrowia",
@@ -2012,5 +2011,15 @@
   "workouts %@": "treningi: %@",
   "total time %@": "łączny czas %@",
   "running %@ km": "bieg %@ km",
-  "average %@ /km": "średnio %@ /km"
+  "average %@ /km": "średnio %@ /km",
+  "Only a short summary of the week, and only when you allow it: in Messages when you send it yourself (to Doddy's server and Claude), or to Doddy's voice when you ask and say yes (ElevenLabs, with Google's Gemini or OpenAI). Never the raw data.": "Tylko krótkie podsumowanie tygodnia i tylko za Twoją zgodą: w Wiadomościach, gdy sam je wyślesz (na serwer Doddy’ego i do Claude), albo do głosu Doddy’ego, gdy zapytasz i się zgodzisz (ElevenLabs z Gemini od Google albo OpenAI). Nigdy surowe dane.",
+  "Doddy's voice": "Głos Doddy’ego",
+  "When you ask \\\"How did my week go?\\\", Doddy asks first, then his voice hears this week's summary. It runs on ElevenLabs with Google's Gemini, or on OpenAI if you chose it.": "Gdy zapytasz „Jak mi poszedł tydzień?”, Doddy najpierw zapyta o zgodę, a potem jego głos usłyszy podsumowanie tego tygodnia. Głos działa na ElevenLabs z Gemini od Google albo na OpenAI, jeśli go wybrałeś.",
+  "Stop Doddy's voice hearing Health": "Wyłącz Zdrowie dla głosu Doddy’ego",
+  "Doddy's voice doesn't hear Health data. You can let it hear the week's summary when you ask how your week went.": "Głos Doddy’ego nie słyszy danych ze Zdrowia. Możesz pozwolić mu usłyszeć podsumowanie tygodnia, gdy zapytasz, jak Ci poszło.",
+  "Let Doddy's voice hear the week": "Pozwól głosowi Doddy’ego usłyszeć tydzień",
+  "Let Doddy's voice hear your week?": "Pozwolić głosowi Doddy’ego usłyszeć Twój tydzień?",
+  "When you ask something like \\\"How did my week go?\\\", Doddy asks first, and only after your yes does his voice hear the same summary: the week's numbers, no raw data from Health.": "Gdy zapytasz na przykład „Jak mi poszedł tydzień?”, Doddy najpierw zapyta, a dopiero po Twoim „tak” jego głos usłyszy to samo podsumowanie: liczby z tygodnia, bez surowych danych ze Zdrowia.",
+  "Doddy's voice runs on ElevenLabs, which answers with Google's Gemini, or on OpenAI if you chose it on Home. They get the summary as part of the conversation.": "Głos Doddy’ego działa na ElevenLabs, które odpowiada przez Gemini od Google, albo na OpenAI, jeśli wybrałeś je na ekranie głównym. Dostają podsumowanie jako część rozmowy.",
+  "ElevenLabs keeps each conversation's recording and transcript. Doddy's settings there keep them with no time limit for now.": "ElevenLabs przechowuje nagranie i zapis każdej rozmowy. Ustawienia Doddy’ego w ElevenLabs trzymają je na razie bez limitu czasu."
 }
