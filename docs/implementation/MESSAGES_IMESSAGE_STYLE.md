@@ -10,11 +10,11 @@ Messages asks **Claude Haiku 5.5** (`claude-haiku-5-5`, effort medium, text only
 
 | iMessage trait | In Doddy |
 |---|---|
-| Orange bubbles for you on the right, quiet surface for Doddy on the left | yes (system blue, system grey 5; dark mode follows the system) |
+| Orange bubbles for you on the right, quiet surface for Doddy on the left | yes, in the app's own colours: `Theme.orangeCue` with dark ink for you (cream on orange does not read), `Theme.quietSurface` for Doddy, the cream canvas; dark mode uses the app's dark palette |
 | Tail on the last bubble of a run, runs of one sender close together | yes (`BubbleTail`, `messageBlock`) |
 | Time heading after a pause | kept (`ThreadRules.showsHeading`) |
 | Typing bubble while the answer is on its way | yes (`TypingBubble`; still under Reduce Motion) |
-| Capsule composer, round blue send arrow inside it, grey while empty, stop button while sending | yes |
+| Capsule composer, round orange send arrow inside it, grey while empty, stop button while sending | yes |
 | "+" button left of the composer | yes, holds the one real choice: use saved notes or not. Photos, files and voice notes are not offered because they are not built |
 | Press and hold a bubble: Copy | yes |
 | Links tappable | yes, http and https only, opened only when tapped |
