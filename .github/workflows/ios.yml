@@ -13,9 +13,16 @@ name: iOS build and tests
 on:
   pull_request:
   workflow_dispatch:
+    inputs:
+      only:
+        description: "all: the full run. island: only the Dynamic Island's tests and pictures, about 15-20 minutes (ADR-610); not enough for a merge."
+        type: choice
+        options: [all, island]
+        default: all
 
 concurrency:
-  group: ios-${{ github.ref }}
+  # The quick island run (ADR-610) has its own group, so it doesn't cancel a full run of the same branch.
+  group: ios-${{ github.ref }}-${{ inputs.only || 'all' }}
   cancel-in-progress: true
 
 permissions:
@@ -56,7 +63,7 @@ jobs:
     # a red one usually fails this job anyway), and only when `changes` says the app can be
     # affected. A Linux-only failure (the app logic type-check) now holds the Mac build back too.
     needs: [changes, core]
-    if: needs.changes.outputs.mac == 'true'
+    if: needs.changes.outputs.mac == 'true' && inputs.only != 'island'
     runs-on: macos-latest
     timeout-minutes: 75
     steps:
@@ -113,6 +120,7 @@ jobs:
   # package tests, token server, backend, gateway and messaging server tests (with Postgres). Cheaper than the macOS job and gives
   # every pull request a real signal even when no hosted Mac is available.
   core:
+    if: inputs.only != 'island'
     runs-on: ubuntu-24.04
     # Official Swift image, same toolchain the Linux checks were run with (Swift 6.1).
     container: swift:6.1-noble
@@ -151,3 +159,41 @@ jobs:
       - name: scripts/ci.sh --core-only
         run: scripts/ci.sh --core-only
 
+  # The quick island-only check (ADR-610), run by hand with only=island: no wait for the Linux
+  # checks, one build, then only the Dynamic Island's unit and UI tests. Its pictures and the
+  # simulator's screenshots are kept like the full run's. Not a substitute for the full run.
+  island:
+    if: github.event_name == 'workflow_dispatch' && inputs.only == 'island'
+    runs-on: macos-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select the latest stable Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: scripts/ci_island.sh
+        run: scripts/ci_island.sh
+
+      - name: Keep the test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcode-test-results
+          path: ~/Library/Developer/Xcode/DerivedData/**/Logs/Test/*.xcresult
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Keep the island pictures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: island-screenshots
+          path: build/island-screenshots/
+          if-no-files-found: ignore
+          retention-days: 14

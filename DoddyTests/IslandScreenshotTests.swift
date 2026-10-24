@@ -34,6 +34,12 @@ final class IslandScreenshotTests: XCTestCase {
         ("7-text", "A text waits for your yes", .needsConfirmation, false, .actionWaiting(.text)),
         ("8-transfer", "A BLIK transfer waits", .needsConfirmation, false, .actionWaiting(.transfer)),
         ("9-document", "A document is ready", .speaking, false, .resultReady(.document)),
+        // Translator mode (ADR-244), started by asking Doddy in a conversation (start_translator):
+        // only the language pair, never a word of what is said.
+        ("10-translator", "Translator: face to face, PL ⇄ EN", .listening, false,
+         .translating(from: "pl", to: "en", bothWays: true)),
+        ("11-translator-listen", "Translator: listening, IT → PL", .listening, false,
+         .translating(from: "it", to: "pl", bothWays: false)),
     ]
 
     // MARK: What the owner asked for
@@ -43,6 +49,8 @@ final class IslandScreenshotTests: XCTestCase {
     func testTheCompactIslandShowsOnlyHisHead() throws {
         for sample in Self.samples {
             let scene = Self.scene(sample.status, muted: sample.muted, moment: sample.moment)
+            // Translating keeps its Language Bridge board, with no pose (ADR-244).
+            if case .translating = sample.moment { continue }
             XCTAssertNotNil(scene.pose, "\(sample.name): Whole Doddy has a pose")
             let head = try XCTUnwrap(pixels(IslandCompactLeadingView(scene: scene)), sample.name)
             XCTAssertEqual(head.width, 26 * 3, "\(sample.name): one 26 pt head")
