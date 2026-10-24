@@ -119,6 +119,17 @@
         }
       }
     },
+    "%@ over your budget": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ ponad Twój budżet"
+          }
+        }
+      }
+    },
     "%@ shared a reminder at “%@”.": {
       "extractionState": "manual",
       "localizations": {
@@ -377,6 +388,28 @@
         }
       }
     },
+    "%lld offers looked at, in %lld shops.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przejrzane oferty: %lld, sklepy: %lld."
+          }
+        }
+      }
+    },
+    "%lld offers, %lld shops.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ofert: %lld, sklepów: %lld."
+          }
+        }
+      }
+    },
     "%lld photos and %lld voice memos couldn't be read on this iPhone, so they aren't in this backup.": {
       "extractionState": "manual",
       "localizations": {
@@ -455,6 +488,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "（Doddy 会询问：%@）"
+          }
+        }
+      }
+    },
+    "+%@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+%@"
           }
         }
       }
@@ -7689,6 +7733,17 @@
         }
       }
     },
+    "Basket": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Koszyk"
+          }
+        }
+      }
+    },
     "Before it slips away": {
       "extractionState": "manual",
       "localizations": {
@@ -8253,6 +8308,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zajęte"
+          }
+        }
+      }
+    },
+    "Butter, nappies size 4, ground coffee": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Masło, pieluchy rozmiar 4, kawa mielona"
+          }
+        }
+      }
+    },
+    "Buy at %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kup w %@"
+          }
+        }
+      }
+    },
+    "Buying? Tap “Buy at %@” in the app. The shop's page opens and you pay there: Apple Pay, BLIK or a card. Doddy doesn't see the payment.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kupujesz? Stuknij \\u{201E}Kup w %@\\u{201D} w aplikacji. Otworzy się strona sklepu i tam płacisz: Apple Pay, BLIK-iem albo kartą. Doddy nie widzi płatności."
           }
         }
       }
@@ -9893,6 +9981,17 @@
         }
       }
     },
+    "Cheapest this week": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najtaniej w tym tygodniu"
+          }
+        }
+      }
+    },
     "Check again": {
       "extractionState": "manual",
       "localizations": {
@@ -10088,6 +10187,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sprawdź tę wypowiedź."
+          }
+        }
+      }
+    },
+    "Check this week's leaflets": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdź tegotygodniowe gazetki"
           }
         }
       }
@@ -17381,6 +17491,17 @@
         }
       }
     },
+    "Doddy couldn't confirm this one. Check the leaflet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie mógł tego potwierdzić. Sprawdź w gazetce."
+          }
+        }
+      }
+    },
     "Doddy couldn't confirm this task started. Pull down to check again; it isn't sent again by itself.": {
       "extractionState": "manual",
       "localizations": {
@@ -17887,6 +18008,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy nie zapowiada nagrywania (podstawa prawna nie jest jeszcze potwierdzona)."
+          }
+        }
+      }
+    },
+    "Doddy doesn't read this chain's leaflet yet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie czyta jeszcze gazetki tej sieci."
           }
         }
       }
@@ -18726,6 +18858,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Doddy is an AI. Prices and availability can change after the time they were checked. Check the price in the shop before you pay.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy to AI. Ceny i dostępność mogą się zmienić po godzinie sprawdzenia. Sprawdź cenę w sklepie, zanim zapłacisz."
           }
         }
       }
@@ -19951,6 +20094,47 @@
         }
       }
     },
+    "Doddy put this report together from offers his server's code found and checked. A price without the page it came from is left out. The file was made on this iPhone from the task's result; nobody else received it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy put this report together from offers his server's code found and checked. A price without the page it came from is left out. The file was made on this iPad from the task's result; nobody else received it."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy put this report together from offers his server's code found and checked. A price without the page it came from is left out. The file was made on this iPhone from the task's result; nobody else received it."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Raport złożył Doddy z ofert, które znalazł i sprawdził kod jego serwera. Cena bez strony, z której pochodzi, jest pominięta. Plik powstał na tym iPadzie z wyniku sprawy; nikt inny go nie dostał."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Raport złożył Doddy z ofert, które znalazł i sprawdził kod jego serwera. Cena bez strony, z której pochodzi, jest pominięta. Plik powstał na tym iPhonie z wyniku sprawy; nikt inny go nie dostał."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Doddy records only when you start it. The audio and its words stay on this iPhone.": {
       "extractionState": "manual",
       "localizations": {
@@ -20106,6 +20290,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "今天的 Doddy 提醒"
+          }
+        }
+      }
+    },
+    "Doddy report – %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raport Doddy’ego – %@"
           }
         }
       }
@@ -21075,6 +21270,17 @@
         }
       }
     },
+    "Doddy's server couldn't be reached. Nothing was checked; try again when you're online.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się połączyć z serwerem Doddy’ego. Nic nie zostało sprawdzone; spróbuj, gdy będziesz online."
+          }
+        }
+      }
+    },
     "Doddy's server couldn't be reached. Nothing was confirmed. Check your connection and try again.": {
       "extractionState": "manual",
       "localizations": {
@@ -21127,6 +21333,17 @@
         }
       }
     },
+    "Doddy's server didn't accept this list. Use up to 12 items of up to 60 characters.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego nie przyjął tej listy. Wpisz do 12 rzeczy, każdą do 60 znaków."
+          }
+        }
+      }
+    },
     "Doddy's server isn't keeping this any more (it may have been deleted on the web). Turn it on again if you want it kept.": {
       "extractionState": "manual",
       "localizations": {
@@ -21145,6 +21362,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Serwer Doddy’ego nie jest skonfigurowany w tej wersji, więc nie można stąd usunąć jego kopii tej sprawy."
+          }
+        }
+      }
+    },
+    "Doddy's server isn't set up in this build, so leaflets can't be checked yet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego nie jest ustawiony w tej wersji, więc gazetek nie da się jeszcze sprawdzić."
           }
         }
       }
@@ -24021,6 +24249,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wszystko, co wysyła Doddy, na jednej stronie"
+          }
+        }
+      }
+    },
+    "Everything at its cheapest": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wszystko najtaniej"
           }
         }
       }
@@ -27698,6 +27937,17 @@
         }
       }
     },
+    "How I chose": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jak wybierałem"
+          }
+        }
+      }
+    },
     "How close": {
       "extractionState": "manual",
       "localizations": {
@@ -30746,6 +30996,17 @@
         }
       }
     },
+    "Its site doesn't let automated readers in, and Doddy doesn't get around that.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Strona sieci nie wpuszcza automatów, a Doddy tego nie obchodzi."
+          }
+        }
+      }
+    },
     "Its words were added below, written out on this iPhone. Speech-to-text makes mistakes, so check it before saving.": {
       "extractionState": "manual",
       "localizations": {
@@ -33188,6 +33449,39 @@
         }
       }
     },
+    "Leaflet": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gazetka"
+          }
+        }
+      }
+    },
+    "Leaflet checks are switched off on Doddy's server.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdzanie gazetek jest wyłączone na serwerze Doddy’ego."
+          }
+        }
+      }
+    },
+    "Leaflet, page %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gazetka, strona %lld"
+          }
+        }
+      }
+    },
     "Learn from how I use Doddy": {
       "extractionState": "manual",
       "localizations": {
@@ -33431,6 +33725,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "保持不变（那天没有这个时间）：%@"
+          }
+        }
+      }
+    },
+    "Left out, and why": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odrzucone i dlaczego"
           }
         }
       }
@@ -33689,6 +33994,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Przejdźmy się."
+          }
+        }
+      }
+    },
+    "Link to the leaflet only": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tylko link do gazetki"
           }
         }
       }
@@ -35489,6 +35805,17 @@
         }
       }
     },
+    "Lowest in the last 30 days: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najniższa cena z 30 dni: %@"
+          }
+        }
+      }
+    },
     "Lunch with Alex": {
       "extractionState": "manual",
       "localizations": {
@@ -35692,6 +36019,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Make a PDF report": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zrób raport PDF"
           }
         }
       }
@@ -39615,6 +39953,17 @@
         }
       }
     },
+    "No leaflet for this week was found.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie ma gazetki na ten tydzień."
+          }
+        }
+      }
+    },
     "No list lines were found in that photo. Nothing was added.": {
       "extractionState": "manual",
       "localizations": {
@@ -40862,6 +41211,28 @@
         }
       }
     },
+    "Not checked": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie sprawdzone"
+          }
+        }
+      }
+    },
+    "Not checked.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie sprawdzone."
+          }
+        }
+      }
+    },
     "Not confirmed": {
       "extractionState": "manual",
       "localizations": {
@@ -41105,6 +41476,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "不是来自你的笔记。这是一个一般性回答。"
+          }
+        }
+      }
+    },
+    "Not in the leaflets that were read.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie ma w przeczytanych gazetkach."
+          }
+        }
+      }
+    },
+    "Not in these leaflets: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie ma w tych gazetkach: %@"
           }
         }
       }
@@ -42599,6 +42992,17 @@
         }
       }
     },
+    "Nothing in particular.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nic szczególnego."
+          }
+        }
+      }
+    },
     "Nothing learned is shared. Doddy can't use it in a conversation until you turn this on.": {
       "extractionState": "manual",
       "localizations": {
@@ -42831,6 +43235,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "你的清单上没有剩余项目。"
+          }
+        }
+      }
+    },
+    "Nothing left out.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nic nie odrzuciłem."
           }
         }
       }
@@ -43311,6 +43726,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "你明天的日历上没有安排。"
+          }
+        }
+      }
+    },
+    "Nothing open that I know of.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie widzę otwartych pytań."
           }
         }
       }
@@ -45060,6 +45486,17 @@
         }
       }
     },
+    "OFFER": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OFERTA"
+          }
+        }
+      }
+    },
     "OK": {
       "extractionState": "manual",
       "localizations": {
@@ -45783,6 +46220,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "文本文件中每段一条笔记"
+          }
+        }
+      }
+    },
+    "One shop": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jeden sklep"
           }
         }
       }
@@ -48059,6 +48507,17 @@
         }
       }
     },
+    "Open the leaflet": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz gazetkę"
+          }
+        }
+      }
+    },
     "Open the look-back now": {
       "extractionState": "manual",
       "localizations": {
@@ -48350,6 +48809,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "在地图中打开？"
+          }
+        }
+      }
+    },
+    "Opened %@'s page": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwarto stronę sklepu %@"
           }
         }
       }
@@ -49280,6 +49750,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "PIN 码"
+          }
+        }
+      }
+    },
+    "PRICE": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CENA"
+          }
+        }
+      }
+    },
+    "PRICE FROM": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SKĄD CENA"
           }
         }
       }
@@ -51788,6 +52280,17 @@
         }
       }
     },
+    "Prices can change after the time they were checked. Buying happens on the shop's page: you pay the shop with Apple Pay, BLIK or a card, and Doddy doesn't see the payment.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ceny mogą się zmienić po godzinie sprawdzenia. Kupujesz na stronie sklepu: płacisz sklepowi Apple Pay, BLIK-iem albo kartą, a Doddy nie widzi płatności."
+          }
+        }
+      }
+    },
     "Privacy": {
       "extractionState": "manual",
       "localizations": {
@@ -52500,6 +53003,17 @@
         }
       }
     },
+    "Read %@. Prices are the leaflets'; in the shop they can differ.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odczytane %@. Ceny z gazetek; w sklepie mogą być inne."
+          }
+        }
+      }
+    },
     "Read %lld lines from the photo. Check them before Create.": {
       "extractionState": "manual",
       "localizations": {
@@ -52968,6 +53482,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在朗读"
+          }
+        }
+      }
+    },
+    "Reading the leaflets…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czytam gazetki…"
           }
         }
       }
@@ -53720,6 +54245,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Numer sprawy"
+          }
+        }
+      }
+    },
+    "Regular price %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cena regularna %@"
           }
         }
       }
@@ -57109,6 +57645,28 @@
         }
       }
     },
+    "SHOP": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SKLEP"
+          }
+        }
+      }
+    },
+    "SHOPPING REPORT": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "RAPORT ZAKUPOWY"
+          }
+        }
+      }
+    },
     "Same as this iPhone": {
       "extractionState": "manual",
       "localizations": {
@@ -59564,6 +60122,17 @@
         }
       }
     },
+    "Saves %@ against one shop. Worth it if you pass both anyway.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ taniej niż w jednym sklepie. Warto, jeśli i tak jedziesz obok obu."
+          }
+        }
+      }
+    },
     "Saving memories": {
       "extractionState": "manual",
       "localizations": {
@@ -61445,6 +62014,17 @@
         }
       }
     },
+    "Separate items with commas. Doddy's server reads the shops' own leaflets for this request and keeps nothing; nothing about you is sent to the shops.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oddziel rzeczy przecinkami. Serwer Doddy’ego czyta gazetki sklepów na to jedno zapytanie i niczego nie zatrzymuje; nic o Tobie nie trafia do sklepów."
+          }
+        }
+      }
+    },
     "Server (development)": {
       "extractionState": "manual",
       "localizations": {
@@ -62507,6 +63087,17 @@
         }
       }
     },
+    "Share the PDF report": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Udostępnij raport PDF"
+          }
+        }
+      }
+    },
     "Share the export": {
       "extractionState": "manual",
       "localizations": {
@@ -62514,6 +63105,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Udostępnij eksport"
+          }
+        }
+      }
+    },
+    "Share the two lists": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Udostępnij obie listy"
           }
         }
       }
@@ -64514,6 +65116,17 @@
         }
       }
     },
+    "Some prices couldn't be confirmed by Doddy. Check the leaflet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Części cen Doddy nie mógł potwierdzić. Sprawdź w gazetce."
+          }
+        }
+      }
+    },
     "Someone on the list shared a reminder at “%@”.": {
       "extractionState": "manual",
       "localizations": {
@@ -64731,6 +65344,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Coś poszło nie tak na serwerze Doddy’ego. Nic nie zostało zmienione."
+          }
+        }
+      }
+    },
+    "Something went wrong on Doddy's server. Nothing was checked.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coś poszło nie tak na serwerze Doddy’ego. Nic nie zostało sprawdzone."
           }
         }
       }
@@ -71436,6 +72060,17 @@
         }
       }
     },
+    "The leaflet couldn't be read this time.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tym razem nie udało się przeczytać gazetki."
+          }
+        }
+      }
+    },
     "The list's name and items are copied to your iCloud, and you choose who to invite. Everyone you invite can see, add and tick items; their changes come back here. Your notes and other lists aren't shared.": {
       "extractionState": "manual",
       "localizations": {
@@ -72415,6 +73050,17 @@
         }
       }
     },
+    "The offers worth a look": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oferty warte uwagi"
+          }
+        }
+      }
+    },
     "The one question Doddy asks": {
       "extractionState": "manual",
       "localizations": {
@@ -73146,6 +73792,88 @@
         }
       }
     },
+    "The report couldn't be made on this iPhone. Try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The report couldn't be made on this iPad. Try again."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The report couldn't be made on this iPhone. Try again."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Nie udało się zrobić raportu na tym iPadzie. Spróbuj jeszcze raz."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Nie udało się zrobić raportu na tym iPhonie. Spróbuj jeszcze raz."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "The report is made on this iPhone from this result. Nothing is sent to make it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The report is made on this iPad from this result. Nothing is sent to make it."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The report is made on this iPhone from this result. Nothing is sent to make it."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Raport powstaje na tym iPadzie z tego wyniku. Nic nie jest wysyłane, żeby go zrobić."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Raport powstaje na tym iPhonie z tego wyniku. Nic nie jest wysyłane, żeby go zrobić."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "The restored notes couldn't be confirmed, so nothing from the file was added.": {
       "extractionState": "manual",
       "localizations": {
@@ -73374,6 +74102,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Proponowanego cytatu nie było dosłownie w zapisie, więc został pominięty."
+          }
+        }
+      }
+    },
+    "The sums are added up by the app from the leaflet prices, not by an AI. Conditions such as the shop's app or a minimum quantity are listed with each item.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sumy liczy aplikacja z cen w gazetkach, nie AI. Warunki, takie jak aplikacja sklepu albo minimalna liczba sztuk, są przy każdej rzeczy."
           }
         }
       }
@@ -80686,6 +81425,17 @@
         }
       }
     },
+    "Two shops": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dwa sklepy"
+          }
+        }
+      }
+    },
     "Type": {
       "extractionState": "manual",
       "localizations": {
@@ -81493,6 +82243,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "取消勾选你不想要的，或轻点“更改”来修正某一步。其余步骤会按此顺序执行，每一步都有自己的结果。"
+          }
+        }
+      }
+    },
+    "Until %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do %@"
           }
         }
       }
@@ -83290,6 +84051,17 @@
         }
       }
     },
+    "Want to wait? Ask Doddy to look again later: prices change.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wolisz poczekać? Poproś Doddy’ego, żeby później poszukał jeszcze raz: ceny się zmieniają."
+          }
+        }
+      }
+    },
     "Warm and engaging": {
       "extractionState": "manual",
       "localizations": {
@@ -83404,6 +84176,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "温暖、流畅而平稳"
+          }
+        }
+      }
+    },
+    "Watch out for": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na co uważać"
           }
         }
       }
@@ -84097,6 +84880,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "我能做什么"
+          }
+        }
+      }
+    },
+    "What I don't know": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czego nie wiem"
           }
         }
       }
@@ -85828,6 +86622,17 @@
         }
       }
     },
+    "Where the prices come from": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skąd są ceny"
+          }
+        }
+      }
+    },
     "Where your information goes, based on your settings right now. Nothing is sold, and there are no ads or analytics.": {
       "extractionState": "manual",
       "localizations": {
@@ -86351,6 +87156,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "文字会与文件中完全一致地保留。Keep 的清单会变成清单。Keep 中的照片、录音和标签不会导入。导入的笔记会标记为“从文件导入”。"
+          }
+        }
+      }
+    },
+    "Work out the basket: one shop or two": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Policz koszyk: jeden sklep czy dwa"
           }
         }
       }
@@ -86897,6 +87713,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "你保存的笔记"
+          }
+        }
+      }
+    },
+    "YOUR WORDS, UNCHANGED": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TWOJE SŁOWA, BEZ ZMIAN"
           }
         }
       }
@@ -88292,6 +89119,17 @@
         }
       }
     },
+    "You've used today's leaflet checks. You can check again tomorrow.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dzisiejsze sprawdzenia gazetek się skończyły. Jutro możesz sprawdzić znowu."
+          }
+        }
+      }
+    },
     "Your Doddy messaging data was deleted. Memories on this iPhone were not touched.": {
       "extractionState": "manual",
       "localizations": {
@@ -88555,6 +89393,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "你的 PIN 码"
+          }
+        }
+      }
+    },
+    "Your budget: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twój budżet: %@"
           }
         }
       }
@@ -89974,6 +90823,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "你的号码"
+          }
+        }
+      }
+    },
+    "Your order:": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoja kolejność:"
+          }
+        }
+      }
+    },
+    "Your order: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoja kolejność: %@"
           }
         }
       }

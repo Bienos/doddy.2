@@ -6,7 +6,7 @@ Three parts:
 
 1. **Find me this** ("Znajdź mi to"): a shopping errand. The existing errand flow (ADR-570) with `kind: "shopping"` and the user's priorities. The runner finds offers through tools the code runs, and **no price ever comes from the model**: the result card refers to offers by id, and the code writes every price, shop, link and time.
 2. **Leaflets** ("Gazetki"): `POST /v1/deals/search`, read on request from the official leaflets of Biedronka, Lidl, Dino and Rossmann. Nothing is kept on the server except daily counts. Other chains come back as a link.
-3. **The app**: the cheapest-this-week list, the basket (one shop or two, summed by code in DoddyCore), three picks, a PDF report drawn on the iPhone, and "Buy in the shop", which opens the shop's page (the shop takes the payment; Doddy records "handed to the shop", never "bought").
+3. **The app**: the cheapest-this-week list, the basket (one shop or two, summed by code in DoddyCore), three picks, a PDF report drawn on the iPhone, and "Buy in the shop", which opens the shop's page in Safari (the shop takes the payment; Doddy records "the shop's page was opened", never "bought"; the app has no web view outside sign-in, scripts/check_forbidden_capabilities.sh).
 
 ## 1. Shopping errand
 
@@ -83,7 +83,7 @@ Bearer: the account's device token, like errands. Off unless `DEALS_ENABLED=1`.
 - **`ErrandDraft`** gains `kind` and `priorities` with the digest rule above; `ErrandResult` gains the optional `shopping` block (older servers send none).
 - **`BasketSolver`** (DoddyCore, pure): from a deals answer, per chain the cheapest offer for each item; the cheapest single chain (most items first, then the lowest total), the cheapest pair (each item at the cheaper of the two), and every item at its cheapest; totals in minor units, coverage ("5 z 6"), the conditions carried along. Offers with `check: true` count, and the basket says they need checking.
 - **Voice:** `find_deals {items, chains?}` (a read of public data: the ask card under ASK-01; whether leaflet look-ups join the public look-ups that run at once is an open owner decision), and `hand_over_errand` with `kind: "shopping"` and `priorities`.
-- **Screens:** "Najtaniej w tym tygodniu", "Koszyk", the three picks inside a task's result, the PDF report (drawn on the iPhone from the stored result: no model, nothing sent), "Kup w sklepie" (Safari inside the app, the shop's checkout; recorded as handed to the shop).
+- **Screens:** "Najtaniej w tym tygodniu", "Koszyk", the three picks inside a task's result, the PDF report (drawn on the iPhone from the stored result: no model, nothing sent), "Kup w sklepie" (the shop's page in Safari, its own checkout; recorded in What Doddy did as "opened", never as bought).
 
 ## Privacy
 
