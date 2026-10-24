@@ -24,9 +24,14 @@ class ScriptedApi implements ShoppingModelApi {
   private step = 0;
   async research(): Promise<ShoppingMessage> {
     // The API reports each response's own server-tool use: two searches in the first, none after.
-    if (this.step++ === 0) {
+    const step = this.step++;
+    if (step === 0) {
       const usage = { input_tokens: 2000, output_tokens: 300, server_tool_use: { web_search_requests: 2, web_fetch_requests: 1 } };
       return { content: [{ type: "tool_use", id: "t1", name: "find_offers", input: { query: "zmywarka do zabudowy 45 cm" } }], stop_reason: "tool_use", usage };
+    }
+    // Then the shop's own page is read: only a price confirmed there is shown (ADR-611).
+    if (step === 1) {
+      return { content: [{ type: "tool_use", id: "t2", name: "check_offer_page", input: { url: "https://www.mediaexpert.pl/p/45" } }], stop_reason: "tool_use", usage: { input_tokens: 2000, output_tokens: 100 } };
     }
     return { content: [{ type: "text", text: "o1 najcichsza." }], stop_reason: "end_turn", usage: { input_tokens: 2000, output_tokens: 300 } };
   }
@@ -63,7 +68,14 @@ describe("shopping errands against real Postgres", { skip: dbSkip }, () => {
           { title: "Zmywarka 45 cm 47 dB", shop: "RTV Euro AGD", priceText: "1 449,00 zł", link: "https://www.google.com/shopping/product/1" },
         ] };
       } },
-      fetcher: { async fetchPage() { return { kind: "blocked", reason: "403" }; } },
+      fetcher: { async fetchPage(url) {
+        // Only Media Expert's own page can be read; the Google link is a lead that stays unconfirmed.
+        if (url !== "https://www.mediaexpert.pl/p/45") return { kind: "blocked", reason: "403" };
+        const ld = { "@context": "https://schema.org", "@type": "Product", name: "Zmywarka 45 cm 42 dB",
+          offers: { "@type": "Offer", price: "1899.00", priceCurrency: "PLN", seller: { "@type": "Organization", name: "Media Expert" } } };
+        return { kind: "ok", status: 200, contentType: "text/html", finalUrl: url,
+          body: Buffer.from(`<html><head><script type="application/ld+json">${JSON.stringify(ld)}</script></head><body></body></html>`) };
+      } },
     });
     const clock = { now: new Date(Date.now() - 3600_000) };
     const base = await testApp(db, {
@@ -97,10 +109,14 @@ describe("shopping errands against real Postgres", { skip: dbSkip }, () => {
     assert.ok(ErrandResultSchema.safeParse(got.result).success);
     const s = got.result.shopping;
     assert.deepEqual(s.priorities, ["Cisza", "Cena", "Gwarancja"]);
-    assert.deepEqual(s.picks.map((p: { role: string; offerId: string }) => [p.role, p.offerId]), [["best", "o1"], ["cheapest", "o2"]]);
-    assert.deepEqual(s.offers.find((o: { id: string }) => o.id === "o1").price, { minor: 189900, currency: "PLN" });
-    assert.equal(s.offers.find((o: { id: string }) => o.id === "o1").evidence, "listing");
+    assert.deepEqual(s.picks.map((p: { role: string; offerId: string }) => [p.role, p.offerId]), [["best", "o1"]], "the unconfirmed o2 can't be picked");
+    assert.deepEqual(s.offers.map((o: { id: string }) => o.id), ["o1"]);
+    assert.deepEqual(s.offers[0].price, { minor: 189900, currency: "PLN" });
+    assert.equal(s.offers[0].evidence, "shop_page");
+    assert.match(s.unknowns[0], /RTV Euro AGD/u, "the code says which shop's offer was not confirmed");
+    assert.doesNotMatch(JSON.stringify(got.result), /144900|1.449,00/u, "the unconfirmed listing's price is nowhere");
     assert.equal(got.searches, 3, "two Anthropic searches and one offer search");
+    assert.equal(got.fetches, 2, "one Anthropic fetch and one page read");
     const row = (await db.query("SELECT model FROM errands WHERE id = $1", [draft.id])).rows[0];
     assert.equal(row.model, "claude-sonnet-5-5", "the stored model is the one that ran");
     assert.equal(general.tasks.length, 0, "a shopping errand never goes to the research runner");

@@ -99,6 +99,8 @@ export const ShoppingResultSchema = z.strictObject({
     price: money,
     delivery: text(SHOPPING_LIMITS.delivery).optional(),
     url: httpUrl,
+    /** A tracked link to the same page, only when the owner has an affiliate programme with this shop (ADR-612). */
+    buyUrl: httpUrl.optional(),
     site: text(LIMITS.site).optional(),
     evidence: z.enum(EVIDENCE),
     seenAt: z.iso.datetime(),

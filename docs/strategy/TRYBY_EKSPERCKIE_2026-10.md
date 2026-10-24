@@ -66,7 +66,7 @@ To pokrywa „HealthKit po zgodzie” (P1 z PDF) i część przeglądu postępó
 
 Przypomnienie listy przy sklepie mówi, ile rzeczy zostało („Zakupy · 4 rzeczy na liście”, nigdy nazwy), z przyciskiem „Otwórz listę”; do tego stoper liczący w górę z trzema narzędziami głosowymi (tylko w specyfikacji, nie na żywym agencie). Stoi na `claude/notifications-sound-timers` (ADR-612, 613). Pasuje do L1 z PDF i nie koliduje z „Listą zakupów+”, ale dotyka tych samych plików tekstów (`l10n/pl.json`) i strażnika.
 
-**Komplikacja: dwa różne ADR-621.** Gałąź sportowa i gałąź stopera nadały ten sam numer różnym decyzjom. Przy scalaniu jedna musi dostać nowy numer. Ten dokument używa ADR-630, żeby nie wejść w zakres 611 do 622.
+**Komplikacja: podwójne numery ADR.** Gałąź sportowa i gałąź stopera nadały ADR-621 różnym decyzjom. Tak samo ADR-612 i 613: na domyślnej gałęzi to linki partnerskie i zasady płatności w zakupach, a na `claude/notifications-sound-timers` (i stojącej na niej gałęzi stopera) dzwoniące minutniki i przypomnienia. Przy scalaniu gałęzie, które scalą się później, muszą dostać nowe numery. Ten dokument używa ADR-630 i 631, żeby nie wejść w zakres 611 do 622.
 
 ### Tryb zakupów (domyślna gałąź `claude/loving-dirac-uuxoux`, ADR-607 do 610, etap 1 scalony)
 
