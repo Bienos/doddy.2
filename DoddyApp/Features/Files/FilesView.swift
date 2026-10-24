@@ -215,7 +215,7 @@ final class MadeDocumentsModel {
         guard let error = error as? WebLinkError else {
             return NSLocalizedString("Couldn't reach Doddy's server. Try again in a moment.", comment: "")
         }
-        switch error {
+        return switch error {
         case .transport: NSLocalizedString("No connection. Try again when you're online.", comment: "")
         case .rateLimited: NSLocalizedString("Too many tries. Wait a minute and try again.", comment: "")
         case .server(let message): message
