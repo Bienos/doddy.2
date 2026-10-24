@@ -111,6 +111,15 @@ const schema = z.object({
   DEALS_DAILY_PER_ACCOUNT: z.coerce.number().int().min(1).max(1000).default(30),
   DEALS_DAILY_PER_SERVER: z.coerce.number().int().min(1).max(100000).default(1000),
 
+  // Price watches (shopping stage 2, docs/implementation/SHOPPING_WATCH.md): after one yes, the worker reads one shop
+  // page about four times a day for 30 days and sends one push when the confirmed price is at or below the user's
+  // number. No model is used. "0" (the default) answers 503 watches_disabled and checks nothing; it also needs
+  // MEMORY_ENCRYPTION_KEY. WATCHES_MAX_OPEN is active watches per account; WATCHES_CHECK_HOURS is the time between
+  // two checks of one watch (6 = the four checks a day the card promises; a shorter time checks more often than that).
+  WATCHES_ENABLED: z.enum(["0", "1"]).default("0"),
+  WATCHES_MAX_OPEN: z.coerce.number().int().min(1).max(20).default(5),
+  WATCHES_CHECK_HOURS: z.coerce.number().int().min(6).max(24).default(6),
+
   // Messages (ADR-585, ADR-586): the app's typed conversation asks Claude here. Text only, no tools.
   // Runs only when ANTHROPIC_API_KEY is set too; "0" answers 503 notConfigured. The daily caps count
   // requests per account and for the whole server (UTC day) and can only be lowered below the ceilings.
@@ -162,6 +171,9 @@ export interface ShoppingSettings {
   affiliateRules: AffiliateRule[];
 }
 
+/** Price watches: `enabled` is the env switch only; the cipher and the fetcher are checked where wired. */
+export interface WatchSettings { enabled: boolean; maxOpen: number; checkHours: number }
+
 /** Messages switches and caps (ADR-586). `enabled` is the env switch only; the key is checked where wired. */
 export interface AssistantSettings {
   enabled: boolean; model: string; effort: "low" | "medium" | "high"; dailyPerAccount: number; dailyPerServer: number;
@@ -189,6 +201,7 @@ export interface Config {
   errandSettings: ErrandSettings;
   shoppingSettings: ShoppingSettings;
   dealsSettings: DealsSettings;
+  watchSettings: WatchSettings;
   assistantSettings: AssistantSettings;
 }
 
@@ -271,6 +284,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       enabled: e.DEALS_ENABLED === "1", visionModel: e.DEALS_VISION_MODEL, maxPages: e.DEALS_MAX_PAGES,
       dailyPerAccount: e.DEALS_DAILY_PER_ACCOUNT, dailyPerServer: e.DEALS_DAILY_PER_SERVER,
     },
+    watchSettings: { enabled: e.WATCHES_ENABLED === "1", maxOpen: e.WATCHES_MAX_OPEN, checkHours: e.WATCHES_CHECK_HOURS },
     assistantSettings: {
       enabled: e.ASSISTANT_ENABLED === "1",
       model: e.ASSISTANT_MODEL,
@@ -298,6 +312,10 @@ export const DEFAULT_TASK_CALL_SETTINGS: TaskCallSettings = {
 export const DEFAULT_ERRAND_SETTINGS: ErrandSettings = {
   enabled: true, model: "claude-opus-5-5", effort: "high", timeLimitMinutes: 30, maxOpen: 5,
 };
+
+/** Settings for an injected WatchDeps without its own (tests): on, 5 open, a check every 6 hours.
+ * The environment's WATCHES_ENABLED defaults to "0": watches run only when the owner turns them on. */
+export const DEFAULT_WATCH_SETTINGS: WatchSettings = { enabled: true, maxOpen: 5, checkHours: 6 };
 
 /** Settings for an injected AssistantDeps without its own (tests). The environment's ASSISTANT_ENABLED
  * defaults to "0": the typed conversation reaches Claude only when the owner turns it on. */

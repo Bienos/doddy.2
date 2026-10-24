@@ -4,6 +4,7 @@ import { createPool, migrateOrExit } from "./db.js";
 import { providersFrom } from "./providers/index.js";
 import { taskCallContext } from "./taskCalls/context.js";
 import { errandContext } from "./errands/context.js";
+import { watchContext } from "./watches/context.js";
 import { log, runWorkerLoop } from "./workerLoop.js";
 
 const config = loadConfig();
@@ -23,6 +24,7 @@ app.log.info({
   errands: !!(providers.errands.researcher && providers.cipher), errandsModel: config.errandSettings.model,
   assistant: !!providers.assistant.responder, assistantModel: config.assistantSettings.model,
   deals: config.dealsSettings.enabled, dealsReader: !!providers.deals.model, shoppingOffers: !!config.shoppingSettings.serperApiKey,
+  watches: config.watchSettings.enabled && !!providers.cipher,
 }, "configured features");
 
 // One service instead of web + worker (a small or free deploy): RUN_WORKER_IN_WEB=1 runs the
@@ -34,7 +36,8 @@ if (config.runWorkerInWeb) {
   log("worker started in the web process", { push: !!providers.push, sms: !!providers.sms });
   const taskCtx = taskCallContext(db, providers.taskCalls, providers.cipher, config.publicBaseUrl, providers.push, log);
   const errandCtx = errandContext(db, providers.errands, providers.cipher, providers.push, log);
-  workerDone = runWorkerLoop(db, { ...providers, taskCalls: taskCtx, errands: errandCtx }, () => stopping);
+  const watchCtx = watchContext(db, providers.watches, providers.cipher, providers.push, log);
+  workerDone = runWorkerLoop(db, { ...providers, taskCalls: taskCtx, errands: errandCtx, watches: watchCtx }, () => stopping);
 }
 
 const shutdown = async () => {
