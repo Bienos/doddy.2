@@ -429,6 +429,39 @@ public final class DoddyDatabase: Sendable {
         migrator.registerMigration("v18_thread_document") { db in
             try db.execute(sql: "ALTER TABLE thread_messages ADD COLUMN document_json TEXT")
         }
+        // The training logbook (ADR-632): what the person did in a session, kept only with their yes.
+        // The checks sit in the table as well as in `LoggedSession`, so a row that breaks a rule cannot
+        // be written by any other path. Load is in grams so 2.5 kg compares exactly.
+        migrator.registerMigration("v19_training_log") { db in
+            try db.execute(sql: """
+                CREATE TABLE training_log_consent (
+                    id INTEGER PRIMARY KEY CHECK (id = 1),
+                    granted INTEGER NOT NULL CHECK (granted IN (0, 1)),
+                    changed_at_ms INTEGER NOT NULL
+                )
+                """)
+            try db.execute(sql: """
+                CREATE TABLE training_sessions (
+                    id TEXT PRIMARY KEY,
+                    performed_at_ms INTEGER NOT NULL,
+                    plan_week INTEGER CHECK (plan_week IS NULL OR plan_week BETWEEN 1 AND 52),
+                    feeling TEXT NOT NULL CHECK (feeling IN ('easy', 'okay', 'hard', 'pain')),
+                    run_minutes INTEGER CHECK (run_minutes IS NULL OR run_minutes BETWEEN 1 AND 600)
+                )
+                """)
+            try db.execute(sql: "CREATE INDEX training_sessions_performed_at ON training_sessions(performed_at_ms)")
+            try db.execute(sql: """
+                CREATE TABLE training_sets (
+                    session_id TEXT NOT NULL REFERENCES training_sessions(id) ON DELETE CASCADE,
+                    position INTEGER NOT NULL CHECK (position >= 0),
+                    exercise_key TEXT NOT NULL CHECK (length(exercise_key) BETWEEN 1 AND 48),
+                    reps INTEGER NOT NULL CHECK (reps BETWEEN 0 AND 200),
+                    load_grams INTEGER CHECK (load_grams IS NULL OR load_grams BETWEEN 0 AND 500000),
+                    reps_in_reserve INTEGER CHECK (reps_in_reserve IS NULL OR reps_in_reserve BETWEEN 0 AND 10),
+                    PRIMARY KEY (session_id, position)
+                )
+                """)
+        }
         return migrator
     }
 

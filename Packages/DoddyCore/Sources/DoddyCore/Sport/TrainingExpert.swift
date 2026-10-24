@@ -120,7 +120,7 @@ public enum TrainingExpert {
         return []
     }
 
-    private static func disclosure(_ polish: Bool) -> String {
+    static func disclosure(_ polish: Bool) -> String {
         polish ? "Jestem AI, nie trenerem z certyfikatem, fizjoterapeutą ani lekarzem."
                : "I'm an AI, not a certified trainer, a physiotherapist or a doctor."
     }
