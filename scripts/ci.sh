@@ -60,6 +60,8 @@ if command -v swift >/dev/null 2>&1; then
     run_step "Call screens' state tests" scripts/test_call_cases_model.sh
     # The Messages screen's state, run with fakes for the store and the server (ADR-585).
     run_step "Messages screen's state tests" scripts/test_messages_model.sh
+    # The price watch's state, run with a fake for Doddy's server (SHOPPING_WATCH.md).
+    run_step "Price watch state tests" scripts/test_watch_model.sh
     run_step "Unfinished notes on real files" scripts/check_unfinished_note_store.sh
     # The kept training plan (ADR-625): read back, edited and unreadable files, delete.
     run_step "Training plan on real files" scripts/check_training_plan_store.sh

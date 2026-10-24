@@ -120,15 +120,21 @@ struct AppearanceSettingsView: View {
 
 // MARK: Voice and interaction
 
-/// Settings › Voice: who runs Doddy's voice, starting on open, and the voice account.
+/// Settings › Voice: how he sounds and talks, who runs his voice, starting on open, the island, Siri and
+/// Back Tap, and the voice account. Personality, the island and Siri were their own Settings rows until
+/// ADR-633.
 struct VoiceSettingsView: View {
     @AppStorage(PreferenceKey.listenOnOpen) private var listenOnOpen = OpeningPreferences.listenOnOpenDefault
+    @AppStorage(LaunchPreferencesMigration.islandExpandsKey) private var islandExpands = true
     #if DEBUG
     @AppStorage(VoiceConfig.directVoiceKey) private var directVoice = true
     #endif
 
     var body: some View {
         Form {
+            Section {
+                PersonalityLinkRow()
+            }
             Section {
                 VoiceProviderPicker(idPrefix: "settings")
                 Toggle(isOn: $listenOnOpen) {
@@ -146,6 +152,20 @@ struct VoiceSettingsView: View {
                 #endif
             } footer: {
                 Text("Your voice and the conversation go to the voice service only after you agree, the first time you talk. iOS shows its orange dot while Doddy listens.")
+            }
+            Section {
+                // The island and its styles: iPhone only (ADR-432, ADR-453).
+                if DeviceSupport.hasDynamicIsland {
+                    IslandStyleLinkRow()
+                    Toggle("Expand when Doddy speaks", isOn: $islandExpands)
+                        .accessibilityIdentifier("settings.islandExpands")
+                }
+                NavigationLink {
+                    WaysSettingsView()
+                } label: {
+                    if DeviceSupport.hasBackTap { Text("Siri and Back Tap") } else { Text("Siri") }
+                }
+                .accessibilityIdentifier("settings.ways")
             }
             Section("Account") {
                 VoiceAccountSettings()
@@ -505,8 +525,8 @@ struct PrivacySettingsView: View {
     /// The privacy summary that used to be at the bottom of Home (ADR-326).
     private var privacySummary: String {
         memoryCopyOn
-            ? NSLocalizedString("Doddy is an AI, not a person. Notes are kept on this iPhone, and because Memory on calls is on, a copy is on your Doddy messaging server so Doddy can answer on calls. While a conversation is open, notes and your last few conversations go to ElevenLabs, or OpenAI if you switch Home's voice to it so Doddy knows them. Typed questions go to Doddy's server and Anthropic only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connected Apps.", comment: "")
-            : NSLocalizedString("Doddy is an AI, not a person. Notes stay on this iPhone; while a conversation is open they and your last few conversations go to ElevenLabs, or OpenAI if you switch Home's voice to it so Doddy knows them. Typed questions go to Doddy's server and Anthropic only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connected Apps.", comment: "")
+            ? NSLocalizedString("Doddy is an AI, not a person. Notes are kept on this iPhone, and because Memory on calls is on, a copy is on your Doddy messaging server so Doddy can answer on calls. While a conversation is open, notes and your last few conversations go to ElevenLabs, or OpenAI if you switch Home's voice to it so Doddy knows them. Typed questions go to Doddy's server and Anthropic only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connections › Online accounts.", comment: "")
+            : NSLocalizedString("Doddy is an AI, not a person. Notes stay on this iPhone; while a conversation is open they and your last few conversations go to ElevenLabs, or OpenAI if you switch Home's voice to it so Doddy knows them. Typed questions go to Doddy's server and Anthropic only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connections › Online accounts.", comment: "")
     }
 
     var body: some View {
@@ -668,11 +688,13 @@ struct RoutinesSettingsView: View {
 
 // MARK: About
 
-/// Settings › Advanced: build details, what's built, and the development server. The server
-/// fields show only in Debug builds, or when one is already set, so it can still be removed.
+/// Settings › Advanced: build details, the Terms acceptance, the plan-card demo, the welcome again,
+/// what's built, and the development server with its Connected Apps screen.
+/// The server fields show only in Debug builds, or when one is already set, so it can still be removed.
 struct AdvancedSettingsView: View {
     @Environment(MemoryStore.self) private var store
     @AppStorage(PreferenceKey.connectedAppsServerURL) private var connectedAppsServerURL = ""
+    @AppStorage(LegalAcceptance.preferenceKey) private var legalRecordData: Data?
     @State private var sessionTokenDraft = ""
     @State private var hasSessionToken = KeychainSessionStore.hasToken
     @State private var tokenMessage: String?
@@ -692,6 +714,24 @@ struct AdvancedSettingsView: View {
                 Text("Development build. Physical-device and release checks are still outstanding.")
                     .font(.footnote)
                     .foregroundStyle(Theme.secondaryText)
+                if let accepted = LegalAcceptance.decode(legalRecordData) {
+                    StatusRow(title: "Terms accepted", value: DateText.full(accepted.acceptedAt))
+                        .accessibilityIdentifier("settings.termsAccepted")
+                }
+            }
+            // Rows that were on the main Settings page until ADR-633: a demo and a replay.
+            Section {
+                NavigationLink {
+                    PlanPracticeView()
+                } label: {
+                    Text("Try a plan card")
+                }
+                .accessibilityIdentifier("settings.planPractice")
+                // The first-launch welcome again (ADR-598): for a look, or to show someone.
+                Button("Show the welcome again") {
+                    WelcomePreferences.requestReplay()
+                }
+                .accessibilityIdentifier("settings.welcomeAgain")
             }
             Section("What's built") {
                 ForEach(Capability.allCases, id: \.self) { capability in
@@ -748,6 +788,14 @@ struct AdvancedSettingsView: View {
             if let tokenMessage {
                 Label(tokenMessage, systemImage: "exclamationmark.triangle").foregroundStyle(Theme.error)
             }
+            // The first Google Calendar screen (needs this development server and token). Online accounts
+            // in Settings › Connections replaced it for everyone else (ADR-563, ADR-633).
+            NavigationLink {
+                ConnectedAppsScreen()
+            } label: {
+                Text("Connected Apps")
+            }
+            .accessibilityIdentifier("settings.connectedApps")
         } header: {
             Text("Connected Apps server (development)")
         } footer: {

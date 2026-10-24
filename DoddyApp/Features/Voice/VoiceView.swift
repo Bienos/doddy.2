@@ -80,7 +80,7 @@ struct VoiceView: View {
         .foregroundStyle(Theme.ink)
         .task {
             await authSession.restore()
-            if (authSession.isSignedIn || VoiceConfig.directVoiceEnabled) && VoiceProviderConsent.isGranted(for: provider) {
+            if (authSession.isSignedIn || VoiceConfig.usesDirectAgent(for: provider)) && VoiceProviderConsent.isGranted(for: provider) {
                 await beginConversation()
             }
         }
