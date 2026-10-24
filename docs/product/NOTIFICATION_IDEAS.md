@@ -81,13 +81,15 @@ B1's counts are read on the iPhone. iOS doesn't promise the app time on Sunday n
 - **Quiet hours:** yes, 22:00 to 07:00, for Doddy's routines.
 - **One a day:** for notifications "out of nowhere" only. Timers and anything that is an action item always show. Built as: Doddy's own tip never comes on a day a routine already did.
 - **"1 i 3" (next):** a list's place reminder says how many things are left, and a real count-up stopwatch; both are in code on `claude/stopwatch-and-shop-list` (ADR-621, `docs/implementation/STOPWATCH_AND_SHOP_LIST.md`), not compiled or seen on a device.
-- Still open: 4 (an errand's title on the Lock Screen), 5 (sound), and the live-agent changes: A5's `ring` (the exact text is in the ADR-613 doc) and the three stopwatch tools (ADR-621 doc).
+- **Sound (5), owner: "systemowy":** the system's own sounds. Notifications keep iOS's default sound, and timers and ringing reminders ring with the system alarm sound through AlarmKit. No custom sound is made or bundled.
+- **An errand's title on the Lock Screen (4), owner: "zrób jak trzeba" (left to me):** it stays out. The done push carries no words from the errand ("Gotowe. Wynik sprawy czeka w aplikacji."). Showing the title would mean putting it in the push payload, which the server and Apple's push service would then read, or building a notification service extension that fills it in on the phone; neither fits a change that can't be compiled or tried on a device here, and the current text already says where the result is. Open it again if the title becomes worth that cost.
+- Still open: the live-agent changes. The owner said yes ("2 tak", 24 Oct) to A5's `ring` and to the three stopwatch tools, but this session's safety check refused the write to the live agent a second time, so the live agent is unchanged (`voice-agent/README.md`).
 
 ## Decisions for the owner (as asked on 24 Oct)
 
 1. Which of A5, B1, C1 to C5, D2 and B6 to build, and in what order (the list above is the recommendation).
 2. Quiet hours: 22:00 to 7:00 by default?
 3. At most one routine notification a day?
-4. D1: the task's title on the Lock Screen, or only with "Show note text"?
-5. Sound: iOS's default notification sound (as today), or a short Doddy sound (a sound file of up to 30 seconds, made for Doddy and licensed; needs sound design)?
+4. D1: the task's title on the Lock Screen, or only with "Show note text"? (Answered 24 Oct: left to the builder; it stays out, see above.)
+5. Sound: iOS's default notification sound (as today), or a short Doddy sound (a sound file of up to 30 seconds, made for Doddy and licensed; needs sound design)? (Answered 24 Oct: the system's.)
 6. A5, B6 and C5 add or change voice tools: each needs a yes on the exact live-agent change.
