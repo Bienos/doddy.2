@@ -65,7 +65,10 @@ Strategia: `docs/strategy/TRYB_ZAKUPOW_2026-10.md`, research `docs/research/2026
 
 ## 5. Co w PDF jest nowe i warto zachować
 
-- **Faktury i administracja** (P1 Fakturownia/inFakt, P3 KSeF): w repo nie ma nic. Harmonogram KSeF z PDF jest zgodny ze stroną MF [V, ksef.podatki.gov.pl, opublikowane i zmienione 27.04.2026]: wystawianie od 1.02.2026 (sprzedaż > 200 mln zł w 2024) i od 1.04.2026 (pozostali); podatnicy z fakturowaną sprzedażą do 10 000 zł brutto miesięcznie od 1.01.2027; odbieranie w KSeF od 1.02.2026. **Dodatkowo (brak w PDF): kary będą stosowane dopiero od 1.01.2027** [V]. Fakturownia/inFakt to nowi dostawcy zewnętrzni z kontem i kluczem: osobny kamień milowy i zgoda właściciela (CLAUDE.md zasada 6, ADR o dostawcach).
+- **Faktury i administracja** (P1 Fakturownia/inFakt, P3 KSeF): w repo nie ma nic. Harmonogram KSeF z PDF jest zgodny ze stroną MF [V, ksef.podatki.gov.pl, opublikowane i zmienione 27.04.2026]: wystawianie od 1.02.2026 (sprzedaż > 200 mln zł w 2024) i od 1.04.2026 (pozostali); podatnicy z fakturowaną sprzedażą do 10 000 zł brutto miesięcznie od 1.01.2027; odbieranie w KSeF od 1.02.2026. **Dodatkowo (brak w PDF): kary będą stosowane dopiero od 1.01.2027** [V]. Fakturownia/inFakt to nowi dostawcy zewnętrzni: osobny kamień milowy i zgoda właściciela (CLAUDE.md zasada 6). Co pokazują ich strony [V, dziś]:
+  - **Fakturownia:** token API generowany przez użytkownika w aplikacji („Ustawienia → Ustawienia konta → Integracja → Kod autoryzacyjny API”), wysyłany jako Bearer; dodanie faktury przez `POST invoices.json`; OAuth ani przepływ partnerski nie są opisane; limity i plany nie są podane. KSeF łączy się po stronie Fakturowni (certyfikaty, Profil Zaufany, mObywatel lub podpis kwalifikowany), z trybem automatycznym lub ręcznym wysyłki i pobieraniem faktur kosztowych.
+  - **inFakt:** wystawianie faktur przez REST API, wysyłka do KSeF i sprawdzanie statusu (także wielu faktur naraz); sandbox; sposób logowania i plany tylko w `docs.infakt.pl` (strona zmieniona 21.05.2026).
+  - **Wniosek [I]:** Doddy nie musi łączyć się z KSeF sam (P3 z PDF można pominąć); robi to program księgowy użytkownika. Za to token konta księgowego to dostęp do finansów firmy: trzymać go w Pęku kluczy iPhone'a albo w zaszyfrowanym magazynie serwera, nigdy w logach, z odwołaniem jednym przyciskiem. Sprawdzenie statusu po `unknown` (test 9) jest możliwe w inFakcie przez API statusu.
 - **Przepływ jadłospis → lista zakupów** (3.3): łączy tryb żywienia z istniejącymi listami (ADR-216) i koszykiem (ADR-610). `pantry_subtractor` i `unit_normalizer` nie istnieją.
 - **Wspólny kształt trybu:** pakiet umiejętności (7.1) i kontrakt wyniku (7.2) z `sources`, `caveats`, `risk_level`, `verified_external_action`. Wynik sprawy zakupowej (ADR-607) ma już podobne pola (źródła, zastrzeżenia, niewiadome), więc kontrakt z PDF może z niego wyrosnąć zamiast zaczynać od zera [I].
 - **Ekran „Dlaczego tak?”** ze źródłami i obliczeniami na żądanie (7.3 pkt 4).
@@ -94,6 +97,6 @@ Każdy krok to osobny, mały kamień milowy z testami i wymaga „tak” właśc
 
 ## 8. Czego nie sprawdziłem
 
-- Cen i warunków API Fakturowni, inFaktu i InPostu (PDF podaje tylko linki).
+- Cen, limitów i planów API Fakturowni i inFaktu (ich strony tego nie podają) ani warunków API InPostu.
 - Aktualnego stanu metody `GET /offers/listing` Allegro na stronie dewelopera; zgodne z tym, co znalazła sesja zakupowa (brak publicznego API ofert od 16 wrz 2026 [S, `TRYB_ZAKUPOW_2026-10.md`]).
 - Źródeł arXiv o bezpieczeństwie LLM w żywieniu (2401.08420, 2512.04843).
