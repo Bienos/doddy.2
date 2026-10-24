@@ -98,6 +98,17 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+      # Pictures of the Dynamic Island's views in each conversation state, drawn by
+      # DoddyTests/IslandScreenshotTests (ADR-607). Small PNGs, so the look can be checked from here.
+      - name: Keep the island pictures
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: island-screenshots
+          path: build/island-screenshots/
+          if-no-files-found: ignore
+          retention-days: 14
+
   # Everything except the iOS build, on Linux (ADR-137): pack check, guards, agent spec, Swift
   # package tests, token server, backend, gateway and messaging server tests (with Postgres). Cheaper than the macOS job and gives
   # every pull request a real signal even when no hosted Mac is available.

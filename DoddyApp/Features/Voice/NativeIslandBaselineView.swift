@@ -62,13 +62,22 @@ struct NativeIslandBaselineView: View {
     private func start() {
         isRunning = true
         isMuted = false
-        island.show(.init(status: .testFixture, isMuted: false), startedAt: .now)
+        island.show(fixtureState(muted: false), startedAt: .now)
     }
 
     private func toggleMute() {
         guard isRunning else { return }
         isMuted.toggle()
-        island.show(.init(status: .testFixture, isMuted: isMuted), startedAt: .now)
+        island.show(fixtureState(muted: isMuted), startedAt: .now)
+    }
+
+    /// The style a real conversation would use (Settings, Whole Doddy by default), so the
+    /// screenshots show the island people see (ADR-607). The fixture status keeps it saying
+    /// "Test activity" and never lets it turn orange.
+    private func fixtureState(muted: Bool) -> DoddyVoiceAttributes.ContentState {
+        var state = DoddyVoiceAttributes.ContentState(status: .testFixture, isMuted: muted)
+        state.islandStyle = IslandStyle.stored(UserDefaults.standard.string(forKey: PreferenceKey.islandStyle))
+        return state
     }
 
     private func end() {

@@ -248,19 +248,26 @@ struct IslandSignView: View {
 }
 
 /// The boards' 34 pt pill: dark fill and cream label, or cream fill for the main action.
+/// When three pills and a sign don't fit beside Doddy, the pills drop their symbols (as the
+/// Figma island's "Wycisz" and "Zakończ") instead of cutting their words to "U…" (ADR-607).
 struct IslandPillLabel: View {
     let title: String
     let systemImage: String
     var prominent = false
 
     var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: systemImage).font(.system(size: 10, weight: .bold))
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 5) {
+                Image(systemName: systemImage).font(.system(size: 10, weight: .bold))
+                Text(title)
+            }
             Text(title)
+                .minimumScaleFactor(0.8)
         }
         .font(.system(size: 13, weight: .semibold))
+        .lineLimit(1)
         .foregroundStyle(prominent ? Color.islandBlack : Color.islandCream)
-        .padding(.horizontal, 15)
+        .padding(.horizontal, 12)
         .frame(height: 34)
         .background(prominent ? Color.islandCream : Color.islandPill, in: Capsule())
         .contentShape(Capsule())
@@ -322,8 +329,11 @@ struct IslandBottomView<Controls: View>: View {
         HStack(alignment: .center, spacing: 12) {
             Group {
                 if let pose = scene.pose {
-                    // Whole Doddy at his largest the island allows (owner, 22 Oct, ADR-596).
+                    // Whole Doddy at his largest the island allows (owner, 22 Oct, ADR-596), in
+                    // the Figma island's light, so his black lines read on the black island
+                    // (ADR-607).
                     IslandPoseView(pose: pose, maxSize: CGSize(width: 82, height: 118))
+                        .background { IslandDoddyLight() }
                 } else {
                     IslandArtView(art: scene.art(.expanded), face: scene.face, live: scene.live,
                                   showsHands: scene.showsHands, maxSize: CGSize(width: 82, height: 92),
@@ -340,7 +350,7 @@ struct IslandBottomView<Controls: View>: View {
                 // ADR-596: he can hear you, so his line of waves sits under what he is doing.
                 if scene.waves == .listening {
                     IslandWavesView(kind: .line, live: scene.live)
-                        .frame(height: 18)
+                        .frame(height: 24)
                 }
                 HStack(spacing: 8) {
                     controls()
@@ -405,8 +415,9 @@ struct IslandCompactLeadingView: View {
     var body: some View {
         Group {
             if let pose = scene.pose {
-                // The whole of him, small (owner, 22 Oct, ADR-596), not only his face.
-                IslandPoseView(pose: pose, maxSize: CGSize(width: 22, height: 30))
+                // Only his head (owner, 24 Oct, ADR-607): the whole of him at 30 pt was a few
+                // hairlines. The expanded island shows all of him.
+                IslandPoseFaceView(pose: pose, size: 26)
             } else {
                 IslandArtView(art: scene.art(.compact), face: scene.face, live: scene.live, showsHands: scene.showsHands)
             }
@@ -426,7 +437,7 @@ struct IslandCompactTrailingView: View {
         // ADR-596: his waves while he hears you or talks; the sign otherwise.
         if scene.waves != .none {
             IslandWavesView(kind: .line, live: scene.live)
-                .frame(width: 34, height: 18)
+                .frame(width: 42, height: 22)
         } else {
             IslandSignView(sign: scene.compactSign, presentation: .compact, live: scene.live, startedAt: startedAt)
         }
@@ -510,6 +521,29 @@ struct IslandPoseFaceView: View {
             .offset(x: size / 2 - CGFloat(head.x) * width, y: size / 2 - CGFloat(head.y) * height)
             .frame(width: size, height: size, alignment: .topLeading)
             .clipShape(Circle())
+            .accessibilityHidden(true)
+    }
+}
+
+/// The light behind Whole Doddy on the expanded island (Figma "Światło za Doddym" in the frame
+/// "A 2 · Słucham", file `yqoQlkN6BpevFGW3ySnNJU`): cream in the middle fading to the island's
+/// black, about 150 pt across, so his black lines and shoes read on the black island (ADR-607).
+/// The stops are the Figma frame's brightness, measured along a radius.
+struct IslandDoddyLight: View {
+    static let stops: [Gradient.Stop] = [
+        .init(color: .islandCream.opacity(0.94), location: 0),
+        .init(color: .islandCream.opacity(0.71), location: 0.33),
+        .init(color: .islandCream.opacity(0.56), location: 0.53),
+        .init(color: .islandCream.opacity(0.41), location: 0.67),
+        .init(color: .islandCream.opacity(0.25), location: 0.8),
+        .init(color: .islandCream.opacity(0.09), location: 0.93),
+        .init(color: .islandCream.opacity(0), location: 1),
+    ]
+
+    var body: some View {
+        EllipticalGradient(stops: Self.stops, center: .center, startRadiusFraction: 0, endRadiusFraction: 0.5)
+            .frame(width: 150, height: 136)
+            .allowsHitTesting(false)
             .accessibilityHidden(true)
     }
 }
