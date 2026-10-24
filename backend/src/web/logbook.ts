@@ -39,7 +39,7 @@ export const LOGBOOK_TOOL_IDS = [
   "add_todoist_task", "complete_todoist_task", "move_todoist_task", "rename_todoist_task", "web_search",
   "geocode_place", "get_weather", "wikipedia_search", "wikipedia_summary", "news_search", "find_places",
   "start_translator", "stop_translator", "add_to_list", "add_ingredients", "read_list", "check_off",
-  "remove_from_list", "create_list", "hand_over_errand", "check_errands", "note_capability_gap", "ask_claude",
+  "remove_from_list", "create_list", "hand_over_errand", "check_errands", "find_deals", "note_capability_gap", "ask_claude",
   "make_document",
 ] as const;
 

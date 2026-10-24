@@ -74,3 +74,25 @@ test("Messages gets a responder only with an Anthropic key and the switch on", a
   const on = providersFrom(loadConfig({ ...base, ANTHROPIC_API_KEY: "test-key", ASSISTANT_ENABLED: "1", ASSISTANT_MODEL: "claude-sonnet-5-5" })).assistant;
   assert.equal(on.responder?.model, "claude-sonnet-5-5");
 });
+
+test("shopping errands (ADR-607): Sonnet 5.5 at medium effort, 8 offer searches and 15 page reads, no Serper key unless set", () => {
+  const c = loadConfig({ DATABASE_URL: "postgres://x/y", SHOPPING_MODEL: "", SERPER_API_KEY: "" });
+  assert.deepEqual(c.shoppingSettings, { model: "claude-sonnet-5-5", effort: "medium", maxOfferSearches: 8, maxPageChecks: 15, serperApiKey: undefined });
+  const set = loadConfig({
+    DATABASE_URL: "postgres://x/y", SHOPPING_MODEL: "claude-haiku-5-5", SHOPPING_EFFORT: "low",
+    SHOPPING_MAX_OFFER_SEARCHES: "3", SHOPPING_MAX_PAGE_CHECKS: "5", SERPER_API_KEY: "serper-test-key",
+  });
+  assert.deepEqual(set.shoppingSettings, { model: "claude-haiku-5-5", effort: "low", maxOfferSearches: 3, maxPageChecks: 5, serperApiKey: "serper-test-key" });
+  for (const bad of [{ SHOPPING_MAX_OFFER_SEARCHES: "0" }, { SHOPPING_MAX_OFFER_SEARCHES: "21" }, { SHOPPING_MAX_PAGE_CHECKS: "41" }, { SHOPPING_EFFORT: "extreme" }]) {
+    assert.throws(() => loadConfig({ DATABASE_URL: "postgres://x/y", ...bad }), JSON.stringify(bad));
+  }
+});
+
+test("leaflets (ADR-609): off by default, Haiku 5.5 reads pages, 40 pages per chain, 30 a day per account, 1000 per server", () => {
+  const c = loadConfig({ DATABASE_URL: "postgres://x/y", DEALS_ENABLED: "" });
+  assert.deepEqual(c.dealsSettings, { enabled: false, visionModel: "claude-haiku-5-5", maxPages: 40, dailyPerAccount: 30, dailyPerServer: 1000 });
+  assert.equal(loadConfig({ DATABASE_URL: "postgres://x/y", DEALS_ENABLED: "1" }).dealsSettings.enabled, true);
+  for (const bad of [{ DEALS_ENABLED: "yes" }, { DEALS_MAX_PAGES: "101" }, { DEALS_DAILY_PER_ACCOUNT: "0" }, { DEALS_VISION_MODEL: "Claude Haiku" }]) {
+    assert.throws(() => loadConfig({ DATABASE_URL: "postgres://x/y", ...bad }), JSON.stringify(bad));
+  }
+});

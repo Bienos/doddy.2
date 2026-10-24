@@ -1,0 +1,41 @@
+{
+ "images_desktop": [
+  {
+   "page": 0,
+   "images": [
+    "",
+    "https://images.biedronka.cloud/api/v1/cdn-cgi/r2/leaflet-prod/images/2026_ROK/2026_FOOD/2026_FOOD_T43/2026_FOOD_T43B/2026_FOOD_T43B_PODSTAWA/2026_FOOD_T43_B_PODSTAWA_P01_caelvqr3ia.png"
+   ]
+  },
+  {
+   "page": 1,
+   "images": [
+    "https://images.biedronka.cloud/api/v1/cdn-cgi/r2/leaflet-prod/images/2026_ROK/2026_FOOD/2026_FOOD_T43/2026_FOOD_T43B/2026_FOOD_T43B_PODSTAWA/2026_FOOD_T43_B_PODSTAWA_P02_caelvqr3ia.png",
+    "https://images.biedronka.cloud/api/v1/cdn-cgi/r2/leaflet-prod/images/2026_ROK/2026_FOOD/2026_FOOD_T43/2026_FOOD_T43B/2026_FOOD_T43B_PODSTAWA/2026_FOOD_T43_B_PODSTAWA_P03_caelvqr3ia.png"
+   ]
+  }
+ ],
+ "images_mobile": [
+  {
+   "page": 0,
+   "image": "https://images.biedronka.cloud/api/v1/cdn-cgi/r2/leaflet-prod/images/2026_ROK/2026_FOOD/2026_FOOD_T43/2026_FOOD_T43B/2026_FOOD_T43B_PODSTAWA/2026_FOOD_T43_B_PODSTAWA_P01_caelvqr3ia.png"
+  },
+  {
+   "page": 1,
+   "image": "https://images.biedronka.cloud/api/v1/cdn-cgi/r2/leaflet-prod/images/2026_ROK/2026_FOOD/2026_FOOD_T43/2026_FOOD_T43B/2026_FOOD_T43B_PODSTAWA/2026_FOOD_T43_B_PODSTAWA_P02_caelvqr3ia.png"
+  },
+  {
+   "page": 2,
+   "image": "https://images.biedronka.cloud/api/v1/cdn-cgi/r2/leaflet-prod/images/2026_ROK/2026_FOOD/2026_FOOD_T43/2026_FOOD_T43B/2026_FOOD_T43B_PODSTAWA/2026_FOOD_T43_B_PODSTAWA_P03_caelvqr3ia.png"
+  },
+  {
+   "page": 3,
+   "image": "https://images.biedronka.cloud/api/v1/cdn-cgi/r2/leaflet-prod/images/2026_ROK/2026_FOOD/2026_FOOD_T43/2026_FOOD_T43B/2026_FOOD_T43B_PODSTAWA/2026_FOOD_T43_B_PODSTAWA_P04_caelvqr3ia.png"
+  },
+  {
+   "page": 4,
+   "image": "https://images.biedronka.cloud/api/v1/cdn-cgi/r2/leaflet-prod/images/2026_ROK/2026_FOOD/2026_FOOD_T43/2026_FOOD_T43B/2026_FOOD_T43B_PODSTAWA/2026_FOOD_T43_B_PODSTAWA_P05_caelvqr3ia.png"
+  }
+ ],
+ "format": "rectangle"
+}
