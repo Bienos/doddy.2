@@ -2,9 +2,10 @@ import DoddyCore
 import SwiftUI
 
 /// Settings › Connections › Apple Health (sport mode step 1, ADR-621). What Doddy may read from
-/// Health and, once it's on, exactly what it sees for the last seven days. Nothing on this screen
-/// is sent anywhere or spoken: Doddy's voice doesn't get Health data in this step (ADR-620,
-/// decision 2: that comes later, as a short summary, after a yes of its own).
+/// Health and, once it's on, exactly what it sees for the last seven days. Nothing is sent or
+/// spoken from here, except the week's summary (ADR-622): after a consent of its own, Messages
+/// opens with that exact text and the person sends it with their own tap (ADR-620, decision 2).
+/// Doddy's voice doesn't get Health data.
 struct HealthConnectionView: View {
     /// Doddy's own switch. Off means Doddy reads nothing from Health; the permission itself lives
     /// in the Health app, which only the person can change.
@@ -14,6 +15,16 @@ struct HealthConnectionView: View {
     @State private var glance: HealthGlance?
     @State private var problem: String?
     @State private var isWorking = false
+    // Step 2 (ADR-622): the yes to sending a week summary to Doddy in Messages, with its version and time.
+    @Environment(MemoryStore.self) private var store
+    @AppStorage(HealthConnectionView.shareConsentVersionKey) private var shareConsentVersion = 0
+    @AppStorage(HealthConnectionView.shareConsentAtKey) private var shareConsentAt: Double = 0
+    @State private var askingConsent = false
+    @State private var messagesDraft: MessagesDraft?
+    @State private var pendingDraft: String?
+
+    static let shareConsentVersionKey = "sport.healthShare.consentVersion"
+    static let shareConsentAtKey = "sport.healthShare.consentAt"
 
     var body: some View {
         ScrollView {
@@ -38,7 +49,7 @@ struct HealthConnectionView: View {
                 }
 
                 section(Text("What leaves your phone")) {
-                    Text("Nothing. For now Doddy only shows these numbers on this screen. Doddy's voice doesn't hear them; that will ask for your yes first.")
+                    Text("Nothing, unless you send the week's summary to Doddy in Messages yourself. Then only that text goes to Doddy's server and Claude (Anthropic), after your yes. Doddy's voice doesn't hear Health data.")
                 }
 
                 section(Text("What stays here")) {
@@ -47,6 +58,10 @@ struct HealthConnectionView: View {
 
                 if isOn {
                     seenNow
+                }
+
+                if isOn, let glance, !glance.isEmpty, let summary = HealthText.summary(glance) {
+                    shareSection(summary)
                 }
 
                 if let problem {
@@ -67,6 +82,26 @@ struct HealthConnectionView: View {
         .navigationBarTitleDisplayMode(.inline)
         .task(id: isOn) {
             if isOn { await load() } else { glance = nil }
+        }
+        // Messages opens once the consent sheet has gone away, never while it is still closing.
+        .sheet(isPresented: $askingConsent, onDismiss: {
+            if let text = pendingDraft {
+                pendingDraft = nil
+                messagesDraft = MessagesDraft(text: text)
+            }
+        }) {
+            HealthShareConsentSheet { allowed in
+                if allowed, let glance, let summary = HealthText.summary(glance) {
+                    shareConsentVersion = HealthShareConsent.version
+                    shareConsentAt = Date().timeIntervalSince1970
+                    pendingDraft = summary
+                }
+                askingConsent = false
+            }
+            .presentationDetents([.large])
+        }
+        .fullScreenCover(item: $messagesDraft) { draft in
+            MessagesView(repository: store.environment.messageThreadRepository, draft: draft.text)
         }
     }
 
@@ -114,6 +149,47 @@ struct HealthConnectionView: View {
         }
         if let vo2Max = glance.vo2Max {
             row(title: "VO₂ max", value: HealthText.vo2Max(vo2Max))
+        }
+    }
+
+    // MARK: Ask Doddy about the week (ADR-622)
+
+    /// The exact text that would be sent, and the button that puts it into Messages. Sending is
+    /// the person's own tap on Send there.
+    private func shareSection(_ summary: String) -> some View {
+        section(Text("Ask Doddy about this week")) {
+            Text("This is exactly what goes to Doddy if you send it. Messages opens with it in the box; you can change it, and nothing is sent until you tap Send.")
+                .foregroundStyle(Theme.secondaryText)
+            Text(verbatim: summary)
+                .font(.callout)
+                .monospacedDigit()
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 12))
+                .textSelection(.enabled)
+                .accessibilityIdentifier("health.summary")
+            Button {
+                if HealthShareConsent.isGranted(storedVersion: shareConsentVersion) {
+                    messagesDraft = MessagesDraft(text: summary)
+                } else {
+                    askingConsent = true
+                }
+            } label: {
+                Label("Ask Doddy about this week", systemImage: "bubble.left.and.text.bubble.right")
+            }
+            .buttonStyle(PrimaryButtonStyle())
+            .accessibilityIdentifier("health.askAboutWeek")
+            if HealthShareConsent.isGranted(storedVersion: shareConsentVersion) {
+                Button("Stop sending Health summaries") {
+                    shareConsentVersion = 0
+                    shareConsentAt = 0
+                }
+                .buttonStyle(SecondaryButtonStyle(tint: Theme.error))
+                .accessibilityIdentifier("health.withdrawShare")
+                Text("Messages you already sent stay in Messages until you delete them.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+            }
         }
     }
 
@@ -310,6 +386,52 @@ enum HealthText {
             + " · " + reading.date.formatted(date: .abbreviated, time: .omitted)
     }
 
+    // MARK: The week summary (ADR-622)
+
+    /// The message for Messages: the question, each workout of the last 7 days, the two weeks'
+    /// totals, last night, resting heart rate, HRV and VO₂ max, in the app's language. Only what the
+    /// screen shows; the oldest workouts are left out if it is too long. Nil if nothing fits.
+    static func summary(_ glance: HealthGlance) -> String? {
+        let question = NSLocalizedString("How did my week go? Rate it briefly, compare it with the week before and suggest one thing to change. No medical advice, please.", comment: "Apple Health summary")
+            + "\n\n" + NSLocalizedString("My numbers from Apple Health:", comment: "Apple Health summary")
+        let workoutLines = glance.workouts.map { "• " + name($0.activity) + " · " + details($0) }
+        var other = [
+            totals(glance.thisWeek, label: NSLocalizedString("Last 7 days", comment: "Apple Health summary")),
+            totals(glance.previousWeek, label: NSLocalizedString("The 7 days before", comment: "Apple Health summary")),
+        ]
+        if let night = glance.lastNight {
+            other.append(NSLocalizedString("Last night", comment: "Apple Health") + ": " + sleep(night))
+        }
+        if let resting = glance.restingHeartRate {
+            other.append(NSLocalizedString("Resting heart rate", comment: "Apple Health") + ": " + reading(resting, unit: .beatsPerMinute))
+        }
+        if let hrv = glance.heartRateVariability {
+            other.append(NSLocalizedString("Heart rate variability", comment: "Apple Health") + ": " + reading(hrv, unit: .milliseconds))
+        }
+        if let vo2 = glance.vo2Max {
+            other.append("VO₂ max: " + vo2Max(vo2))
+        }
+        return HealthShareText.assemble(question: question, workoutLines: workoutLines, otherLines: other) { count in
+            String(format: NSLocalizedString("(%@ older workouts left out)", comment: "Apple Health summary"), count.formatted())
+        }
+    }
+
+    /// "Last 7 days: workouts 4 · total time 3 hr 5 min · running 14.0 km · average 5:21 /km".
+    static func totals(_ week: WeekTotals, label: String) -> String {
+        var parts = [String(format: NSLocalizedString("workouts %@", comment: "Apple Health summary"), week.workouts.formatted())]
+        if week.duration > 0 {
+            parts.append(String(format: NSLocalizedString("total time %@", comment: "Apple Health summary"), duration(week.duration)))
+        }
+        if week.runningMeters > 0 {
+            parts.append(String(format: NSLocalizedString("running %@ km", comment: "Apple Health summary"),
+                                (week.runningMeters / 1000).formatted(.number.precision(.fractionLength(1)))))
+        }
+        if let pace = week.runningPaceSecondsPerKilometre {
+            parts.append(String(format: NSLocalizedString("average %@ /km", comment: "Apple Health summary"), HealthFormat.pace(pace)))
+        }
+        return label + ": " + parts.joined(separator: " · ")
+    }
+
     private static func beats(_ value: Double) -> String {
         String(format: NSLocalizedString("%@ bpm", comment: "Heart rate, beats per minute"), Int(value.rounded()).formatted())
     }
@@ -318,12 +440,67 @@ enum HealthText {
         String(format: NSLocalizedString("%@ ms", comment: "Milliseconds"), Int(value.rounded()).formatted())
     }
 
-    private static func duration(_ seconds: TimeInterval) -> String {
+    static func duration(_ seconds: TimeInterval) -> String {
         let formatter = DateComponentsFormatter()
         formatter.allowedUnits = [.hour, .minute]
         formatter.unitsStyle = .abbreviated
         formatter.zeroFormattingBehavior = .dropAll
         // Whole minutes, so no "59 sec" rounding surprises.
         return formatter.string(from: (seconds / 60).rounded() * 60) ?? HealthFormat.clock(seconds)
+    }
+}
+
+/// The summary waiting in Messages' box (ADR-622).
+struct MessagesDraft: Identifiable {
+    let id = UUID()
+    let text: String
+}
+
+/// The yes before a summary of Health data can go to Doddy's server and Claude (ADR-620, decision
+/// 2; GDPR Art. 9; App Review 5.1.2(i)). Asked once per wording (`HealthShareConsent.version`);
+/// each summary is still sent only by the person's own tap on Send in Messages.
+struct HealthShareConsentSheet: View {
+    let answer: (Bool) -> Void
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    Text("Send Health summaries to Doddy?")
+                        .font(.title2.bold())
+                    Text("Health data is sensitive. Here is what happens if you allow it:")
+                    VStack(alignment: .leading, spacing: 10) {
+                        point(Text("Only the summary you see goes: the week's numbers, no raw data from Health."))
+                        point(Text("It goes to Doddy's server and to Claude (Anthropic), which writes the answer. Doddy's server doesn't keep or log what you write, only how many questions you asked."))
+                        point(Text("Your message and the answer are saved in Messages on this iPhone until you delete them."))
+                        point(Text("Nothing is sent by itself: each time, Messages opens with the text and you tap Send."))
+                        point(Text("You can take this back on the Apple Health screen at any time."))
+                    }
+                    Text("Doddy is an AI, not a doctor or a coach. For pain, dizziness or anything that worries you, see a doctor.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                    Button("Allow") { answer(true) }
+                        .buttonStyle(PrimaryButtonStyle())
+                        .accessibilityIdentifier("health.share.allow")
+                    Button("Not now") { answer(false) }
+                        .buttonStyle(SecondaryButtonStyle())
+                        .accessibilityIdentifier("health.share.notNow")
+                }
+                .padding(24)
+            }
+            .background(Theme.canvas)
+            .navigationBarTitleDisplayMode(.inline)
+        }
+        .foregroundStyle(Theme.ink)
+    }
+
+    private func point(_ line: Text) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+            Circle()
+                .fill(Theme.orangeCue)
+                .frame(width: 6, height: 6)
+                .accessibilityHidden(true)
+            line
+        }
     }
 }

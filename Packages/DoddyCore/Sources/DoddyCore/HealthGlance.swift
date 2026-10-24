@@ -206,14 +206,20 @@ public struct ReadingGlance: Equatable, Sendable {
 /// Everything "What Doddy sees" shows for the last seven days.
 public struct HealthGlance: Equatable, Sendable {
     public let workouts: [HealthWorkout]
+    /// All workouts of the last seven days added up, and of the seven days before (ADR-622).
+    public let thisWeek: WeekTotals
+    public let previousWeek: WeekTotals
     public let lastNight: SleepNight?
     public let restingHeartRate: ReadingGlance?
     public let heartRateVariability: ReadingGlance?
     public let vo2Max: HealthReading?
 
-    public init(workouts: [HealthWorkout], lastNight: SleepNight?, restingHeartRate: ReadingGlance?,
+    public init(workouts: [HealthWorkout], thisWeek: WeekTotals = .none, previousWeek: WeekTotals = .none,
+                lastNight: SleepNight?, restingHeartRate: ReadingGlance?,
                 heartRateVariability: ReadingGlance?, vo2Max: HealthReading?) {
         self.workouts = workouts
+        self.thisWeek = thisWeek
+        self.previousWeek = previousWeek
         self.lastNight = lastNight
         self.restingHeartRate = restingHeartRate
         self.heartRateVariability = heartRateVariability
@@ -223,7 +229,7 @@ public struct HealthGlance: Equatable, Sendable {
     /// Health gives an app no way to tell "not allowed" from "nothing recorded": both read as
     /// empty. The screen says so instead of guessing which.
     public var isEmpty: Bool {
-        workouts.isEmpty && lastNight == nil && restingHeartRate == nil && heartRateVariability == nil && vo2Max == nil
+        workouts.isEmpty && previousWeek.workouts == 0 && lastNight == nil && restingHeartRate == nil && heartRateVariability == nil && vo2Max == nil
     }
 }
 

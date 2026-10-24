@@ -332,61 +332,61 @@
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy liest deine Trainings, Herzfrequenz, Ruheherzfrequenz, Herzfrequenzvariabilität (HRV), deinen Schlaf und VO2max aus Health nur, um sie dir auf seinem Apple-Health-Bildschirm zu zeigen. Vorerst verlässt nichts davon dieses iPhone, Doddy speichert nichts davon und schreibt nichts in Health. Schalte das unter Einstellungen, Verbindungen, Apple Health oder in der Health-App aus."
+            "value": "Doddy liest deine Trainings, Herzfrequenz, Ruheherzfrequenz, Herzfrequenzvariabilität (HRV), deinen Schlaf und VO2max aus Health, um sie dir auf seinem Apple-Health-Bildschirm zu zeigen. Nichts davon verlässt dieses iPhone, außer du schickst Doddy die Wochenzusammenfassung selbst in „Nachrichten“, nach einer eigenen Zustimmung. Doddy speichert nichts davon und schreibt nichts in Health. Schalte das unter Einstellungen, Verbindungen, Apple Health oder in der Health-App aus."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy reads your workouts, heart rate, resting heart rate, heart rate variability, sleep and VO2 max from Health only to show them to you on its Apple Health screen. For now none of it leaves this iPhone, Doddy keeps none of it and writes nothing to Health. Turn this off in Settings, Connections, Apple Health, or in the Health app."
+            "value": "Doddy reads your workouts, heart rate, resting heart rate, heart rate variability, sleep and VO2 max from Health to show them to you on its Apple Health screen. None of it leaves this iPhone unless you send the week's summary to Doddy in Messages yourself, after a yes of its own. Doddy keeps none of it and writes nothing to Health. Turn this off in Settings, Connections, Apple Health, or in the Health app."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy lee tus entrenamientos, frecuencia cardiaca, frecuencia cardiaca en reposo, variabilidad de la frecuencia cardiaca (VFC), sueño y VO2 máx. de Salud solo para mostrártelos en su pantalla de Apple Health. Por ahora nada de esto sale de este iPhone, Doddy no guarda nada y no escribe nada en Salud. Desactívalo en Ajustes, Conexiones, Apple Health, o en la app Salud."
+            "value": "Doddy lee tus entrenamientos, frecuencia cardiaca, frecuencia cardiaca en reposo, variabilidad de la frecuencia cardiaca (VFC), sueño y VO2 máx. de Salud para mostrártelos en su pantalla de Apple Health. Nada de esto sale de este iPhone, salvo que tú mismo envíes a Doddy el resumen de la semana en Mensajes, tras un permiso aparte. Doddy no guarda nada y no escribe nada en Salud. Desactívalo en Ajustes, Conexiones, Apple Health, o en la app Salud."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy lit tes entraînements, ta fréquence cardiaque, ta fréquence cardiaque au repos, ta variabilité de la fréquence cardiaque (VFC), ton sommeil et ta VO2 max dans Santé uniquement pour te les montrer sur son écran Apple Health. Pour l’instant, rien ne quitte cet iPhone, Doddy n’en garde rien et n’écrit rien dans Santé. Désactive ceci dans Réglages, Connexions, Apple Health, ou dans l’app Santé."
+            "value": "Doddy lit tes entraînements, ta fréquence cardiaque, ta fréquence cardiaque au repos, ta variabilité de la fréquence cardiaque (VFC), ton sommeil et ta VO2 max dans Santé pour te les montrer sur son écran Apple Health. Rien ne quitte cet iPhone, sauf si tu envoies toi-même le résumé de la semaine à Doddy dans Messages, après un accord à part. Doddy n’en garde rien et n’écrit rien dans Santé. Désactive ceci dans Réglages, Connexions, Apple Health, ou dans l’app Santé."
           }
         },
         "hr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy čita tvoje treninge, puls, puls u mirovanju, varijabilnost srčanog ritma (HRV), san i VO2 max iz aplikacije Zdravlje samo da ti ih prikaže na svom zaslonu Apple Health. Zasad ništa od toga ne napušta ovaj iPhone, Doddy ništa ne čuva i ništa ne upisuje u Zdravlje. Isključi to u Postavkama, Veze, Apple Health, ili u aplikaciji Zdravlje."
+            "value": "Doddy čita tvoje treninge, puls, puls u mirovanju, varijabilnost srčanog ritma (HRV), san i VO2 max iz aplikacije Zdravlje da ti ih prikaže na svom zaslonu Apple Health. Ništa od toga ne napušta ovaj iPhone, osim ako sam ne pošalješ Doddyju tjedni sažetak u Porukama, uz zasebni pristanak. Doddy ništa ne čuva i ništa ne upisuje u Zdravlje. Isključi to u Postavkama, Veze, Apple Health, ili u aplikaciji Zdravlje."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy legge i tuoi allenamenti, la frequenza cardiaca, la frequenza cardiaca a riposo, la variabilità della frequenza cardiaca (HRV), il sonno e il VO2 max da Salute solo per mostrarteli nella sua schermata Apple Health. Per ora nulla di tutto ciò lascia questo iPhone, Doddy non conserva nulla e non scrive nulla in Salute. Disattivalo in Impostazioni, Collegamenti, Apple Health, o nell’app Salute."
+            "value": "Doddy legge i tuoi allenamenti, la frequenza cardiaca, la frequenza cardiaca a riposo, la variabilità della frequenza cardiaca (HRV), il sonno e il VO2 max da Salute per mostrarteli nella sua schermata Apple Health. Nulla di tutto ciò lascia questo iPhone, a meno che tu non invii a Doddy il riepilogo della settimana in Messaggi, dopo un consenso a parte. Doddy non conserva nulla e non scrive nulla in Salute. Disattivalo in Impostazioni, Collegamenti, Apple Health, o nell’app Salute."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddyは、ワークアウト、心拍数、安静時心拍数、心拍変動（HRV）、睡眠、VO2最大値をヘルスケアから読み取りますが、それはDoddyの「Apple Health」画面に表示するためだけです。現時点では、これらがこのiPhoneの外に出ることはなく、Doddyは何も保存せず、ヘルスケアに何も書き込みません。オフにするには、設定の「連携」の「Apple Health」か、ヘルスケアAppを使ってください。"
+            "value": "Doddyは、ワークアウト、心拍数、安静時心拍数、心拍変動（HRV）、睡眠、VO2最大値をヘルスケアから読み取り、Doddyの「Apple Health」画面に表示します。あなたが別の同意のうえで週のまとめをメッセージでDoddyに自分で送らない限り、これらがこのiPhoneの外に出ることはありません。Doddyは何も保存せず、ヘルスケアに何も書き込みません。オフにするには、設定の「連携」の「Apple Health」か、ヘルスケアAppを使ってください。"
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy odczytuje z aplikacji Zdrowie Twoje treningi, tętno, tętno spoczynkowe, zmienność rytmu serca (HRV), sen i VO2 max tylko po to, żeby pokazać je na swoim ekranie Apple Health. Na razie nic z tego nie opuszcza tego iPhone’a, Doddy niczego nie zachowuje i nic nie zapisuje w Zdrowiu. Wyłączysz to w Ustawieniach, w sekcji Połączenia, Apple Health, albo w aplikacji Zdrowie."
+            "value": "Doddy odczytuje z aplikacji Zdrowie Twoje treningi, tętno, tętno spoczynkowe, zmienność rytmu serca (HRV), sen i VO2 max, żeby pokazać je na swoim ekranie Apple Health. Nic z tego nie opuszcza tego iPhone’a, chyba że sam wyślesz Doddy’emu podsumowanie tygodnia w Wiadomościach, po osobnej zgodzie. Doddy niczego nie zachowuje i nic nie zapisuje w Zdrowiu. Wyłączysz to w Ustawieniach, w sekcji Połączenia, Apple Health, albo w aplikacji Zdrowie."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "O Doddy lê seus treinos, frequência cardíaca, frequência cardíaca em repouso, variabilidade da frequência cardíaca (VFC), sono e VO2 máx. do app Saúde só para mostrá-los na tela Apple Health dele. Por enquanto nada disso sai deste iPhone, o Doddy não guarda nada e não escreve nada no Saúde. Desative em Ajustes, Conexões, Apple Health, ou no app Saúde."
+            "value": "O Doddy lê seus treinos, frequência cardíaca, frequência cardíaca em repouso, variabilidade da frequência cardíaca (VFC), sono e VO2 máx. do app Saúde para mostrá-los na tela Apple Health dele. Nada disso sai deste iPhone, a menos que você mesmo envie ao Doddy o resumo da semana em Mensagens, após um consentimento à parte. O Doddy não guarda nada e não escreve nada no Saúde. Desative em Ajustes, Conexões, Apple Health, ou no app Saúde."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy 从“健康”读取你的体能训练、心率、静息心率、心率变异性（HRV）、睡眠和最大摄氧量，只是为了在它的“Apple Health”页面上显示给你看。目前这些数据都不会离开这部 iPhone，Doddy 不保存任何数据，也不会向“健康”写入任何内容。可在设置的“连接”中的“Apple Health”或在“健康”App 中关闭。"
+            "value": "Doddy 从“健康”读取你的体能训练、心率、静息心率、心率变异性（HRV）、睡眠和最大摄氧量，并在它的“Apple Health”页面上显示给你看。除非你在另行同意后自己在“信息”中把本周摘要发给 Doddy，否则这些数据都不会离开这部 iPhone。Doddy 不保存任何数据，也不会向“健康”写入任何内容。可在设置的“连接”中的“Apple Health”或在“健康”App 中关闭。"
           }
         }
       }

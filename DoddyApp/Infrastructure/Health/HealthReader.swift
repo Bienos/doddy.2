@@ -69,16 +69,20 @@ final class HealthReader: @unchecked Sendable {
     func glance(now: Date, calendar: Calendar = .current) async throws -> HealthGlance {
         guard Self.isAvailable else { throw Failure.unavailable }
         let window = HealthWindow.lastDays(now: now, calendar: calendar)
+        let previous = HealthWindow.previousDays(now: now, calendar: calendar)
         let night = HealthWindow.night(wakingOn: now, now: now, calendar: calendar)
         let ninetyDaysAgo = calendar.date(byAdding: .day, value: -90, to: now) ?? window.start
         do {
-            let workouts = try await workouts(from: window.start, to: window.end)
+            // Two weeks, so the summary can compare this week with the one before (ADR-622).
+            let workouts = try await workouts(from: previous.start, to: window.end)
             let sleep = try await sleepSamples(from: night.start, to: night.end)
             let resting = try await readings(.restingHeartRate, from: window.start, to: window.end)
             let hrv = try await readings(.heartRateVariability, from: window.start, to: window.end)
             let vo2Max = try await readings(.vo2Max, from: ninetyDaysAgo, to: now, limit: 1)
             return HealthGlance(
                 workouts: HealthWorkout.recent(workouts, in: window),
+                thisWeek: WeekTotals.of(workouts, in: window),
+                previousWeek: WeekTotals.of(workouts, in: previous),
                 lastNight: SleepNight.summarize(sleep, window: night),
                 restingHeartRate: ReadingGlance.of(resting, calendar: calendar),
                 heartRateVariability: ReadingGlance.of(hrv, calendar: calendar),
@@ -97,7 +101,7 @@ final class HealthReader: @unchecked Sendable {
         let descriptor = HKSampleQueryDescriptor(
             predicates: [.workout(predicate)],
             sortDescriptors: [SortDescriptor(\.endDate, order: .reverse)],
-            limit: 40)
+            limit: 80)
         return try await descriptor.result(for: store).map(Self.workout)
     }
 

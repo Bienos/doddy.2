@@ -42,7 +42,8 @@ Polish only, written by the agent that built the Tasks screens; the other eight 
 
 - **New permission prompt** `NSHealthShareUsageDescription` in all ten languages; the nine translations are machine drafts. The Health app's own names used: Zdrowie, Health (de), Salud, Santé, Salute, Zdravlje, ヘルスケア, Saúde, 健康. "Apple Health" is kept as the name of Doddy's screen.
 - **Motion & Fitness prompt:** the clause "and reads nothing from Health" was removed in all ten languages (no other words changed).
-- **40 Polish lines** for the Apple Health screen (`l10n/pl.json`), machine-drafted; the other languages show English. Workout kinds use new keys ("Running", not "Run", which already means "Uruchom").
+- **40 Polish lines** for the Apple Health screen (`l10n/pl.json`), machine-drafted; the other languages show English.
+- **Same day, ADR-622:** the Health prompt changed again (a summary may now leave the iPhone when the person sends it in Messages), all ten languages redrafted by machine; 22 more Polish lines (the week summary and its consent sheet). Workout kinds use new keys ("Running", not "Run", which already means "Uruchom").
 
 ## Per language
 

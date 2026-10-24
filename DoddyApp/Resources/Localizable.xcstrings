@@ -455,6 +455,17 @@
         }
       }
     },
+    "(%@ older workouts left out)": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "(pominięte starsze treningi: %@)"
+          }
+        }
+      }
+    },
     "(Doddy asks for: %@)": {
       "extractionState": "manual",
       "localizations": {
@@ -6811,6 +6822,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "问 Doddy（文字提问）"
+          }
+        }
+      }
+    },
+    "Ask Doddy about this week": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapytaj Doddy’ego o ten tydzień"
           }
         }
       }
@@ -18591,6 +18613,17 @@
         }
       }
     },
+    "Doddy is an AI, not a doctor or a coach. For pain, dizziness or anything that worries you, see a doctor.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy to AI, a nie lekarz ani trener. Przy bólu, zawrotach głowy albo czymkolwiek, co Cię niepokoi, idź do lekarza."
+          }
+        }
+      }
+    },
     "Doddy is an AI, not a person.": {
       "extractionState": "manual",
       "localizations": {
@@ -27657,6 +27690,17 @@
         }
       }
     },
+    "Health data is sensitive. Here is what happens if you allow it:": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dane o zdrowiu są wrażliwe. Oto co się stanie, jeśli się zgodzisz:"
+          }
+        }
+      }
+    },
     "Health isn't available on this device.": {
       "extractionState": "manual",
       "localizations": {
@@ -28213,6 +28257,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "多近，以米为单位"
+          }
+        }
+      }
+    },
+    "How did my week go? Rate it briefly, compare it with the week before and suggest one thing to change. No medical advice, please.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jak mi poszedł ten tydzień? Oceń go krótko, porównaj z poprzednim i podpowiedz jedną rzecz do zmiany. Bez porad medycznych, proszę."
           }
         }
       }
@@ -29573,6 +29628,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "没成功，给我看看步骤"
+          }
+        }
+      }
+    },
+    "It goes to Doddy's server and to Claude (Anthropic), which writes the answer. Doddy's server doesn't keep or log what you write, only how many questions you asked.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trafia na serwer Doddy’ego i do Claude (Anthropic), który pisze odpowiedź. Serwer Doddy’ego nie zapisuje ani nie loguje tego, co piszesz, tylko liczbę pytań."
           }
         }
       }
@@ -33253,6 +33319,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "语言"
+          }
+        }
+      }
+    },
+    "Last 7 days": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ostatnie 7 dni"
           }
         }
       }
@@ -37114,6 +37191,17 @@
         }
       }
     },
+    "Messages you already sent stay in Messages until you delete them.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wiadomości, które już wysłałeś, zostają w Wiadomościach, dopóki ich nie usuniesz."
+          }
+        }
+      }
+    },
     "Microphone": {
       "extractionState": "manual",
       "localizations": {
@@ -38345,6 +38433,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "我的订阅源"
+          }
+        }
+      }
+    },
+    "My numbers from Apple Health:": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moje liczby z Apple Health:"
           }
         }
       }
@@ -43209,6 +43308,17 @@
         }
       }
     },
+    "Nothing is sent by itself: each time, Messages opens with the text and you tap Send.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nic nie wysyła się samo: za każdym razem Wiadomości otwierają się z tekstem, a Ty stukasz Wyślij."
+          }
+        }
+      }
+    },
     "Nothing learned is shared. Doddy can't use it in a conversation until you turn this on.": {
       "extractionState": "manual",
       "localizations": {
@@ -44393,13 +44503,13 @@
         }
       }
     },
-    "Nothing. For now Doddy only shows these numbers on this screen. Doddy's voice doesn't hear them; that will ask for your yes first.": {
+    "Nothing, unless you send the week's summary to Doddy in Messages yourself. Then only that text goes to Doddy's server and Claude (Anthropic), after your yes. Doddy's voice doesn't hear Health data.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nic. Na razie Doddy tylko pokazuje te liczby na tym ekranie. Głos Doddy’ego ich nie słyszy; zanim to się zmieni, Doddy zapyta Cię o zgodę."
+            "value": "Nic, chyba że sam wyślesz Doddy’emu podsumowanie tygodnia w Wiadomościach. Wtedy tylko ten tekst trafia na serwer Doddy’ego i do Claude (Anthropic), po Twojej zgodzie. Głos Doddy’ego nie słyszy danych ze Zdrowia."
           }
         }
       }
@@ -47149,6 +47259,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "只有按住按钮一方的话会被听到并翻译。"
+          }
+        }
+      }
+    },
+    "Only the summary you see goes: the week's numbers, no raw data from Health.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wysyłane jest tylko podsumowanie, które widzisz: liczby z tygodnia, bez surowych danych ze Zdrowia."
           }
         }
       }
@@ -61733,6 +61854,17 @@
         }
       }
     },
+    "Send Health summaries to Doddy?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wysyłać Doddy’emu podsumowania ze Zdrowia?"
+          }
+        }
+      }
+    },
     "Send a test notification": {
       "extractionState": "manual",
       "localizations": {
@@ -67545,6 +67677,17 @@
         }
       }
     },
+    "Stop sending Health summaries": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przestań wysyłać podsumowania ze Zdrowia"
+          }
+        }
+      }
+    },
     "Stop sharing this place": {
       "extractionState": "manual",
       "localizations": {
@@ -71349,6 +71492,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "To Twój własny numer. Doddy dzwoni w Twoim imieniu do innych."
+          }
+        }
+      }
+    },
+    "The 7 days before": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "7 dni wcześniej"
           }
         }
       }
@@ -76758,6 +76912,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "这台 iPhone 的 Doddy 消息账户已不存在。请重试以创建一个新账户。"
+          }
+        }
+      }
+    },
+    "This is exactly what goes to Doddy if you send it. Messages opens with it in the box; you can change it, and nothing is sent until you tap Send.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dokładnie to trafi do Doddy’ego, jeśli to wyślesz. Wiadomości otworzą się z tym tekstem w polu; możesz go zmienić, a nic nie zostanie wysłane, dopóki nie stukniesz Wyślij."
           }
         }
       }
@@ -88593,6 +88758,17 @@
         }
       }
     },
+    "You can take this back on the Apple Health screen at any time.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Możesz to w każdej chwili cofnąć na ekranie Apple Health."
+          }
+        }
+      }
+    },
     "You can turn this off whenever you like. That deletes it from Doddy's server. You can also read it, download it and delete it on the web.": {
       "extractionState": "manual",
       "localizations": {
@@ -90280,6 +90456,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "你的记忆。"
+          }
+        }
+      }
+    },
+    "Your message and the answer are saved in Messages on this iPhone until you delete them.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your message and the answer are saved in Messages on this iPad until you delete them."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your message and the answer are saved in Messages on this iPhone until you delete them."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Twoja wiadomość i odpowiedź są zapisane w Wiadomościach na tym iPadzie, dopóki ich nie usuniesz."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Twoja wiadomość i odpowiedź są zapisane w Wiadomościach na tym iPhonie, dopóki ich nie usuniesz."
+                }
+              }
+            }
           }
         }
       }
@@ -92038,6 +92255,17 @@
         }
       }
     },
+    "average %@ /km": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "średnio %@ /km"
+          }
+        }
+      }
+    },
     "confirmed %@": {
       "extractionState": "manual",
       "localizations": {
@@ -92646,6 +92874,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "w toku"
+          }
+        }
+      }
+    },
+    "running %@ km": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "bieg %@ km"
           }
         }
       }
@@ -93358,6 +93597,17 @@
         }
       }
     },
+    "total time %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "łączny czas %@"
+          }
+        }
+      }
+    },
     "until %@": {
       "extractionState": "manual",
       "localizations": {
@@ -93424,6 +93674,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "gdziekolwiek jesteś"
+          }
+        }
+      }
+    },
+    "workouts %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "treningi: %@"
           }
         }
       }
