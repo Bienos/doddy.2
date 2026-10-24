@@ -34,7 +34,7 @@ struct DoddyApp: App {
         let store = MemoryStore(environment: environment)
         let noteReminders = NoteReminderStore(coordinator: environment.noteReminders)
         store.noteReminders = noteReminders
-        // The title of a reminder that rings like an alarm (ADR-613) is the note's own text.
+        // The title of a reminder that rings like an alarm (ADR-641) is the note's own text.
         noteReminders.noteText = { [weak store] id in store?.memories.first { $0.id == id }?.currentText }
         // The learning loop (ADR-440) listens to "What Doddy did" for what was corrected.
         let learning = LearningStore(service: environment.learningService)

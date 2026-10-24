@@ -121,7 +121,7 @@ final class VoiceSessionController {
         let memoryID: UUID
         let noteText: String
         let when: When
-        /// "Ring like an alarm" as the card showed it at the tap (ADR-613).
+        /// "Ring like an alarm" as the card showed it at the tap (ADR-641).
         var rings = false
     }
 
@@ -275,7 +275,7 @@ final class VoiceSessionController {
     private(set) var planStatus: PlanStatus? { didSet { syncIsland() } }
     /// Which Apple Maps result the user picked on a place card (the first until they tap another).
     private(set) var selectedPlaceIndex = 0
-    /// The note-reminder card's "Ring like an alarm" switch (ADR-613): the agent's proposal, or what
+    /// The note-reminder card's "Ring like an alarm" switch (ADR-641): the agent's proposal, or what
     /// the note had; the user can flip it before the tap.
     private(set) var noteReminderRings = false
     /// The access card (ADR-578): a function the agent asked for is off, or iOS hasn't allowed it.
@@ -1524,7 +1524,7 @@ final class VoiceSessionController {
             toolCallID: id, memoryID: memoryID, noteText: text, savedAt: savedAt, target: .time(date, timeZoneID: zone, repeats: repeats))
     }
 
-    /// The card's "Ring like an alarm" switch (ADR-613).
+    /// The card's "Ring like an alarm" switch (ADR-641).
     func setNoteReminderRings(_ rings: Bool) {
         guard case .noteReminder(_, _, _, _, .time) = pendingAction else { return }
         noteReminderRings = rings
@@ -2547,7 +2547,7 @@ final class VoiceSessionController {
                 await reply(call.toolCallId, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
             }
         case .setTimer(let draft):
-            // AlarmKit on iOS 26 needs no notification permission (ADR-612).
+            // AlarmKit on iOS 26 needs no notification permission (ADR-640).
             guard await devices.timerAccess() == .granted else {
                 await notConnected(call.toolCallId, .timers)
                 return

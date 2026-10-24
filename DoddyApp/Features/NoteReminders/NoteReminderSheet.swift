@@ -25,7 +25,7 @@ struct NoteReminderSheet: View {
     @State private var working = false
     /// Never (nil), every day, weekdays, every week or every month (ADR-211).
     @State private var repeatRule: ReminderRepeat?
-    /// Ring like an alarm (ADR-613), through Silent mode and a Focus.
+    /// Ring like an alarm (ADR-641), through Silent mode and a Focus.
     @State private var rings = false
 
     private var resolvedDate: Date {
@@ -157,7 +157,7 @@ struct NoteReminderSheet: View {
         }
     }
 
-    /// "Ring like an alarm" (ADR-613): only where AlarmKit can ring it (iOS 26, alarms not refused),
+    /// "Ring like an alarm" (ADR-641): only where AlarmKit can ring it (iOS 26, alarms not refused),
     /// and not for every month, which AlarmKit can't repeat.
     @ViewBuilder
     private var ringChoice: some View {
@@ -291,7 +291,7 @@ struct NoteReminderSheet: View {
 
     private func commit() async {
         working = true
-        // The wish first, so setting the reminder sets (or ends) its alarm too (ADR-613).
+        // The wish first, so setting the reminder sets (or ends) its alarm too (ADR-641).
         let canRing = ReminderRinger.isAvailable && ReminderRing.support(repeats: repeatRule, isPlace: false) == .supported
         ReminderRinger.setWish(memoryID, rings: rings && canRing)
         await reminders.set(memoryID: memoryID, at: resolvedDate, repeats: repeatRule)

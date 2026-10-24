@@ -5,7 +5,7 @@
 <dict>
 	<key>com.apple.developer.applesignin</key>
 	<array><string>Default</string></array>
-	<!-- Timers, reminders and "time to leave" come through a Focus where the user allows it (ADR-612). -->
+	<!-- Timers, reminders and "time to leave" come through a Focus where the user allows it (ADR-640). -->
 	<key>com.apple.developer.usernotifications.time-sensitive</key>
 	<true/>
 	<key>aps-environment</key>

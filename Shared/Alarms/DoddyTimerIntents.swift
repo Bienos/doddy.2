@@ -3,7 +3,7 @@ import AlarmKit
 import AppIntents
 import Foundation
 
-// The buttons on a Doddy timer's Lock Screen card and Dynamic Island (ADR-612): Pause, Resume
+// The buttons on a Doddy timer's Lock Screen card and Dynamic Island (ADR-640): Pause, Resume
 // and Stop. They run in the app's process, like the other Live Activity buttons (ADR-131), and
 // only ever touch the one timer they were drawn for, by its AlarmKit id. AlarmKit is the truth:
 // the card changes when AlarmKit's state does, so a button that fails leaves the card as it was.

@@ -7,7 +7,7 @@ import WidgetKit
 
 /// AlarmKit's Live Activity for Doddy, on the Lock Screen and in the Dynamic Island. AlarmKit
 /// draws the ringing screen itself; this draws the time in between:
-/// - a voice timer (ADR-612): the label, the countdown ticking on its own (no app updates, so it
+/// - a voice timer (ADR-640): the label, the countdown ticking on its own (no app updates, so it
 ///   never stutters), Pause or Resume, and Stop; when it rings, "Time's up" and Stop;
 /// - a snoozed alarm (ADR-283): the minutes until it rings again, as before.
 /// Doddy is on the cream card like his other Lock Screen cards (ADR-323), unless his pictures are
