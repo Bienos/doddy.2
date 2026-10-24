@@ -78,18 +78,21 @@ final class IslandScreenshotTests: XCTestCase {
         XCTAssertEqual(IslandWaveLine.waveCount(main, width: 12), 12 / 18, accuracy: 0.001, "fewer, never a zigzag")
     }
 
-    /// His talking waves start together beside him and spread out to the right (owner: they
-    /// should end before him, not run behind him).
-    func testHisTalkingWavesStartTogetherBesideHimAndSpreadOut() {
+    /// His talking waves start together beside him, spread out to the right and stay inside
+    /// their band under his status (owner: not across the whole island, and not behind him).
+    func testHisTalkingWavesStartBesideHimAndStayInTheirBand() {
         let lines = IslandWavesView.waves(.speech).map {
             IslandWaveLine(wave: $0, shape: .fromLeading(centre: IslandWavesView.speechCentre), phase: 0)
         }
         for line in lines {
             XCTAssertEqual(line.y(at: 0, waves: line.wave.frequency), IslandWavesView.speechCentre, accuracy: 0.0001)
+            for step in 0...200 {
+                let y = line.y(at: Double(step) / 200, waves: line.wave.frequency)
+                XCTAssertTrue((0...1).contains(y), "inside the band at \(step)")
+            }
         }
         let atEnd = lines.map { $0.y(at: 1, waves: $0.wave.frequency) }
-        XCTAssertGreaterThan((atEnd.max() ?? 0) - (atEnd.min() ?? 0), 0.4, "spread over much of the island")
-        XCTAssertGreaterThan(atEnd.min() ?? 0, 0.2, "the top line stays below his status")
+        XCTAssertGreaterThan((atEnd.max() ?? 0) - (atEnd.min() ?? 0), 0.4, "spread out by the end")
     }
 
     // MARK: The pictures

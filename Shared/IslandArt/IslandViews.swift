@@ -347,10 +347,16 @@ struct IslandBottomView<Controls: View>: View {
                     subtitle
                 }
                 .accessibilityElement(children: .combine)
-                // ADR-596: he can hear you, so his line of waves sits under what he is doing.
+                // ADR-596: his waves sit under what he is doing, in one 28 pt band: a calm line
+                // while he hears you; while he talks a livelier one that starts beside him
+                // (owner, 24 Oct: not across the whole island, ADR-607).
                 if scene.waves == .listening {
                     IslandWavesView(kind: .line, live: scene.live)
-                        .frame(height: 24)
+                        .frame(height: 28)
+                } else if scene.waves == .speaking {
+                    IslandWavesView(kind: .speech, live: scene.live)
+                        .frame(height: 28)
+                        .padding(.leading, -6)
                 }
                 HStack(spacing: 8) {
                     controls()
@@ -360,15 +366,6 @@ struct IslandBottomView<Controls: View>: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        // While he talks, his waves come out of him: they start together just right of him and
-        // spread out behind his words (owner, 24 Oct: they should end before him, ADR-607).
-        .background {
-            if scene.waves == .speaking {
-                IslandWavesView(kind: .speech, live: scene.live)
-                    .padding(.leading, 86)
-                    .padding(.vertical, -8)
-            }
         }
     }
 

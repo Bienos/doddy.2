@@ -9,15 +9,16 @@ import SwiftUI
 /// Bolder since 24 Oct (owner: the lines were too thin and rendered poorly, ADR-607): fewer lines,
 /// 2 to 3 pt wide instead of 1.3 to 2.2, and drawn from a point every half point instead of every
 /// two, so a small wave is a curve and not a zigzag. On the expanded island his talking waves
-/// start beside him and spread out to the right (owner: they should end before him).
+/// stay in the band under his status, as his listening line does, start beside him and spread
+/// out to the right (owner: not across the whole island, and they should end before him).
 struct IslandWavesView: View {
     enum Kind: Sendable {
         /// A band of two lines.
         case line
         /// Lines across the whole drawing (the Home extension while he talks).
         case full
-        /// Lines that start together at the leading edge, at `speechCentre`, fade in and spread
-        /// out to the right: his voice coming out of him on the expanded island.
+        /// A livelier band: five lines that start together at the leading edge, fade in and
+        /// spread out to the right, his voice coming out of him on the expanded island.
         case speech
     }
 
@@ -26,10 +27,8 @@ struct IslandWavesView: View {
     /// Orange only while Doddy is live; grey otherwise, as the island's other signs (ADR-239).
     var live = true
 
-    /// Where the speech lines meet, as a fraction of the drawing's height: the gap between his
-    /// status and the buttons in the expanded island's layout (`IslandBottomView`), whose text
-    /// sizes are fixed points.
-    static let speechCentre = 0.53
+    /// Where the speech lines meet: the middle of their band.
+    static let speechCentre = 0.5
 
     var body: some View {
         let colour = live ? Color.islandOrange : Color.islandSecondary
@@ -39,10 +38,10 @@ struct IslandWavesView: View {
                 let style = StrokeStyle(lineWidth: wave.width, lineCap: .round, lineJoin: .round)
                 Group {
                     if kind == .speech {
-                        // Nothing where they meet beside him; full strength from a fifth of the way.
+                        // Nothing where they meet beside him; full strength from 15 % of the way.
                         line.stroke(LinearGradient(stops: [
                             .init(color: colour.opacity(0), location: 0),
-                            .init(color: colour, location: 0.2),
+                            .init(color: colour, location: 0.15),
                             .init(color: colour, location: 0.85),
                             .init(color: colour.opacity(0.4), location: 1),
                         ], startPoint: .leading, endPoint: .trailing), style: style)
@@ -64,12 +63,13 @@ struct IslandWavesView: View {
         }
     }
 
-    /// The lines, in fractions of the drawing's height: two for `.line`, seven otherwise.
+    /// The lines, in fractions of the drawing's height: two for `.line`, five for `.speech`,
+    /// seven for `.full`.
     static func waves(_ kind: Kind) -> [IslandWave] {
         switch kind {
         case .line:
-            [IslandWave(amplitude: 0.34, frequency: 2, offset: 0, rise: 0, width: 3, opacity: 1),
-             IslandWave(amplitude: 0.20, frequency: 3, offset: 1.9, rise: 0, width: 2, opacity: 0.5)]
+            [IslandWave(amplitude: 0.30, frequency: 2, offset: 0, rise: 0, width: 3, opacity: 1),
+             IslandWave(amplitude: 0.18, frequency: 3, offset: 1.9, rise: 0, width: 2, opacity: 0.5)]
         case .full:
             // Lighter at the top; strongest at the bottom.
             (0..<7).map { i in
@@ -78,14 +78,12 @@ struct IslandWavesView: View {
                                   rise: (n - 3) * 0.10, width: 2.2, opacity: 0.3 + 0.1 * n)
             }
         case .speech:
-            // Where each line ends up, above (less, where his words are) or below the middle one.
-            [IslandWave(amplitude: 0.07, frequency: 1.6, offset: 0, rise: -0.22, width: 2.2, opacity: 0.45),
-             IslandWave(amplitude: 0.09, frequency: 2.2, offset: 0.9, rise: -0.15, width: 2.2, opacity: 0.55),
-             IslandWave(amplitude: 0.10, frequency: 2.8, offset: 1.8, rise: -0.07, width: 2.2, opacity: 0.7),
-             IslandWave(amplitude: 0.12, frequency: 2.0, offset: 2.7, rise: 0, width: 2.4, opacity: 1),
-             IslandWave(amplitude: 0.10, frequency: 2.5, offset: 3.6, rise: 0.09, width: 2.2, opacity: 0.8),
-             IslandWave(amplitude: 0.09, frequency: 1.8, offset: 4.5, rise: 0.18, width: 2.2, opacity: 0.6),
-             IslandWave(amplitude: 0.07, frequency: 2.3, offset: 5.4, rise: 0.27, width: 2.2, opacity: 0.5)]
+            // The strongest in the middle; each ends up a little above or below it.
+            [IslandWave(amplitude: 0.12, frequency: 2.2, offset: 0, rise: -0.28, width: 2.2, opacity: 0.5),
+             IslandWave(amplitude: 0.16, frequency: 2.8, offset: 1.1, rise: -0.14, width: 2.4, opacity: 0.7),
+             IslandWave(amplitude: 0.20, frequency: 2.0, offset: 2.2, rise: 0, width: 3, opacity: 1),
+             IslandWave(amplitude: 0.16, frequency: 2.6, offset: 3.3, rise: 0.14, width: 2.4, opacity: 0.7),
+             IslandWave(amplitude: 0.12, frequency: 2.4, offset: 4.4, rise: 0.28, width: 2.2, opacity: 0.5)]
         }
     }
 }
@@ -106,8 +104,8 @@ struct IslandWaveLine: Shape {
     enum Spread: Equatable, Sendable {
         /// Highest in the middle, fading to `floor` at the ends, around the middle of the height.
         case envelope(floor: Double)
-        /// Starts at `centre` with no height and spreads to its rise and full height by a little
-        /// past half way.
+        /// Starts at `centre` with no height and spreads to its rise and full height by 40 % of
+        /// the way.
         case fromLeading(centre: Double)
     }
 
@@ -141,7 +139,7 @@ struct IslandWaveLine: Shape {
             let envelope = floor + (1 - floor) * sin(.pi * along)
             return 0.5 + wave.rise + wave.amplitude * envelope * sine
         case .fromLeading(let centre):
-            let spread = Self.smoothstep(0, 0.55, along)
+            let spread = Self.smoothstep(0, 0.4, along)
             return centre + (wave.rise + wave.amplitude * sine) * spread
         }
     }
