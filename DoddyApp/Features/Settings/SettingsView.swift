@@ -1,31 +1,31 @@
 import DoddyCore
 import SwiftUI
 
-/// Settings (ADR-580): six short groups of controls, each a row or a switch. Explanations live on
-/// the screen a row opens, in Help, in "What leaves this iPhone" and in the Privacy Policy, not
-/// here; a short line stays where a choice sends something off the iPhone. The inventory of
-/// where each old setting went is `docs/implementation/SETTINGS_SIMPLIFIED.md`.
+/// Settings (ADR-580, shortened by ADR-633): four short groups and fourteen rows. Each row opens a page;
+/// the controls that were rows here (the island, Siri, the connections, the notifications, the memory
+/// pages) are on those pages with the same preference keys and accessibility identifiers, so nothing a
+/// user set changes. Explanations live on the screen a row opens, in Help, in "What leaves this
+/// iPhone" and in the Privacy Policy. Where each old row went: `docs/implementation/SETTINGS_SIMPLIFIED.md`.
 struct SettingsView: View {
     @Environment(MemoryStore.self) private var store
-    @Environment(ProfileStore.self) private var profiles
-    @AppStorage(LaunchPreferencesMigration.islandExpandsKey) private var islandExpands = true
     @AppStorage(VoiceProvider.preferenceKey) private var voiceProvider = ""
-    @AppStorage(PreferenceKey.assistantConsent) private var assistantConsent = false
     @AppStorage(ConnectionPause.preferenceKey) private var pauseAllConnections = false
-    @AppStorage(LegalAcceptance.preferenceKey) private var legalRecordData: Data?
     @State private var connections = ConnectionController()
-
-    private var activityLog: ActivityLogStore { .shared }
+    /// Opens notes, lists or search (ADR-633). They are their own screen, reached from Doddy's memory.
+    var openMemories: (MemoryOpening) -> Void = { _ in }
+    /// A new value empties the page stack. Set when notes, lists or search open from Doddy's memory, so
+    /// Settings is on its first page when it is next shown (ADR-633): one move for Doddy, the one any
+    /// return to Settings makes, not a move to the tab bar and another as the page closes. That second
+    /// move changed his size while he was still visible (the motion checks, MotionEvidenceTests).
+    @State private var stackID = UUID()
 
     var body: some View {
         NavigationStack {
             Form {
                 header
-                profileSection
-                voiceSection
-                memorySection
-                connectedAppsSection
-                notificationsSection
+                doddySection
+                connectionsSection
+                iPhoneSection
                 aboutSection
             }
             .scrollContentBackground(.hidden)
@@ -38,6 +38,7 @@ struct SettingsView: View {
             .toolbar(.hidden, for: .tabBar)
             .navigationBarTitleDisplayMode(.inline)
         }
+        .id(stackID)
         .foregroundStyle(Theme.ink)
     }
 
@@ -68,20 +69,57 @@ struct SettingsView: View {
         .listRowBackground(Theme.canvas)
     }
 
-    private var profileSection: some View {
-        Section("Profile") {
+    /// His voice and his memory: the two things that make him Doddy.
+    private var doddySection: some View {
+        Section("Doddy") {
             NavigationLink {
-                AboutYouSettingsView()
+                VoiceSettingsView()
             } label: {
-                StatusRow(title: "My profile", value: profiles.profile.isEmpty ? NSLocalizedString("Not set", comment: "") : (profiles.profile.value(.name) ?? NSLocalizedString("Saved", comment: "")))
+                StatusRow(title: NSLocalizedString("Voice", comment: ""),
+                          value: VoiceProvider.effective(stored: voiceProvider, tokenServerSet: true).shortName)
             }
-            .accessibilityIdentifier("settings.profile")
-            PersonalityLinkRow()
+            .accessibilityIdentifier("settings.voice")
+            NavigationLink {
+                DoddyMemorySettingsView(openMemories: { opening in
+                    openMemories(opening)
+                    stackID = UUID()
+                })
+            } label: {
+                StatusRow(title: NSLocalizedString("Doddy's memory", comment: "Settings row: notes, lists and what Doddy knows"),
+                          value: String(format: NSLocalizedString("%lld notes", comment: "Settings › Doddy's memory: how many notes"), store.memories.count))
+            }
+            .accessibilityIdentifier("settings.memory")
+        }
+    }
+
+    /// Everything Doddy connects to, and everything that reaches the user unasked: one row each.
+    private var connectionsSection: some View {
+        Section {
+            NavigationLink {
+                ConnectionsSettingsView()
+            } label: {
+                StatusRow(title: NSLocalizedString("Connections", comment: ""), value: connectionSummary)
+            }
+            .accessibilityIdentifier("settings.connectionsHub")
+            // Its page uses its own controller; re-read when coming back from it.
+            .onAppear { Task { await connections.refresh() } }
+            NavigationLink {
+                NotificationsSettingsView()
+            } label: {
+                Text("Notifications")
+            }
+            .accessibilityIdentifier("settings.notifications")
+        }
+    }
+
+    private var iPhoneSection: some View {
+        Section("This iPhone") {
             NavigationLink {
                 Form { AppLanguageSettingsSection() }
                     .navigationTitle("Language")
             } label: {
-                StatusRow(title: "Language", value: AppLanguageStore.chosen().nativeName ?? NSLocalizedString("Same as this iPhone", comment: ""))
+                StatusRow(title: NSLocalizedString("Language", comment: ""),
+                          value: AppLanguageStore.chosen().nativeName ?? NSLocalizedString("Same as this iPhone", comment: ""))
             }
             .accessibilityIdentifier("settings.language")
             NavigationLink {
@@ -90,48 +128,6 @@ struct SettingsView: View {
                 Text("Appearance")
             }
             .accessibilityIdentifier("settings.appearance")
-        }
-    }
-
-    private var voiceSection: some View {
-        Section {
-            NavigationLink {
-                VoiceSettingsView()
-            } label: {
-                StatusRow(title: "Voice", value: VoiceProvider.effective(stored: voiceProvider, tokenServerSet: true).shortName)
-            }
-            .accessibilityIdentifier("settings.voice")
-            // The island and its styles: iPhone only (ADR-432, ADR-453).
-            if DeviceSupport.hasDynamicIsland {
-                IslandStyleLinkRow()
-                Toggle("Expand when Doddy speaks", isOn: $islandExpands)
-                    .accessibilityIdentifier("settings.islandExpands")
-            }
-            NavigationLink {
-                WaysSettingsView()
-            } label: {
-                if DeviceSupport.hasBackTap { Text("Siri and Back Tap") } else { Text("Siri") }
-            }
-            .accessibilityIdentifier("settings.ways")
-        } header: {
-            Text("Voice and interaction")
-        }
-    }
-
-    private var memorySection: some View {
-        Section("Memory and privacy") {
-            NavigationLink {
-                MemoriesSettingsView()
-            } label: {
-                StatusRow(title: "Memories", value: "\(store.memories.count)")
-            }
-            .accessibilityIdentifier("settings.memories")
-            NavigationLink {
-                KnowledgeSettingsView()
-            } label: {
-                Text("What Doddy knows")
-            }
-            .accessibilityIdentifier("settings.knowledge")
             NavigationLink {
                 PrivacySettingsView()
             } label: {
@@ -141,120 +137,12 @@ struct SettingsView: View {
         }
     }
 
-    private var connectedAppsSection: some View {
-        Section {
-            Toggle("Pause all connections", isOn: $pauseAllConnections)
-                .accessibilityIdentifier("settings.pauseAll")
-            NavigationLink {
-                ConnectionsView()
-            } label: {
-                StatusRow(title: "Calendar, reminders, contacts", value: connectionSummary)
-            }
-            .accessibilityIdentifier("settings.connections")
-            // Connections uses its own controller; re-read when coming back from it.
-            .onAppear { Task { await connections.refresh() } }
-            NavigationLink {
-                ConnectedAppsScreen()
-            } label: {
-                Text("Connected Apps")
-            }
-            .accessibilityIdentifier("settings.connectedApps")
-            NavigationLink {
-                OnlineAccountsScreen()
-            } label: {
-                Text("Online accounts")
-            }
-            .accessibilityIdentifier("settings.onlineAccounts")
-            // ADR-600: sign in to Doddy on the web with a code from this iPhone.
-            NavigationLink {
-                WebSignInScreen()
-            } label: {
-                Text("Doddy on the web")
-            }
-            .accessibilityIdentifier("settings.web")
-            NavigationLink {
-                AskDoddySettingsView()
-            } label: {
-                StatusRow(title: "Ask Doddy (typed questions)", value: assistantConsent ? NSLocalizedString("On", comment: "") : NSLocalizedString("Off", comment: ""))
-            }
-            .accessibilityIdentifier("settings.askDoddy")
-            NavigationLink {
-                ActivityView()
-            } label: {
-                StatusRow(title: "What Doddy did", value: activitySummary)
-            }
-            .accessibilityIdentifier("settings.activity")
-        } header: {
-            Text("Connected apps")
-        } footer: {
-            HStack(alignment: .top, spacing: 12) {
-                // Paused: Doddy lies low, crouching (ADR-323).
-                if pauseAllConnections { WholeDoddyView(pose: .sneakyCrouch, height: 56) }
-                Text(pauseAllConnections
-                    ? "Paused: Doddy doesn't use Calendar, Reminders, Contacts, Timers, Maps, Shortcuts, Messages or your online accounts. Your notes still work. Turning this off brings back the ones you had on; iPhone permissions don't change."
-                    : "Each one starts off. Turning one on asks iPhone for permission first.")
-            }
-        }
-    }
-
-    private var notificationsSection: some View {
-        Section("Notifications") {
-            NavigationLink {
-                UpdatesSettingsView()
-            } label: {
-                Text("Notifications and texts")
-            }
-            .accessibilityIdentifier("settings.updates")
-            NavigationLink {
-                RoutinesSettingsView()
-            } label: {
-                Text("Check-ins and reminders")
-            }
-            .accessibilityIdentifier("settings.routines")
-            NavigationLink {
-                AlarmsView()
-            } label: {
-                Text("Alarms")
-            }
-            .accessibilityIdentifier("settings.alarms")
-            NavigationLink {
-                BirthdaysView()
-            } label: {
-                Text("Birthdays")
-            }
-            .accessibilityIdentifier("settings.birthdays")
-            NavigationLink {
-                NewsSettingsView()
-            } label: {
-                Text("Daily news")
-            }
-            .accessibilityIdentifier("settings.news")
-            NavigationLink {
-                CallsSettingsView()
-            } label: {
-                Text("Phone calls")
-            }
-            .accessibilityIdentifier("settings.calls")
-        }
-    }
-
     private var aboutSection: some View {
         Section {
             Link(destination: Self.helpURL) {
                 Label("Help", systemImage: "questionmark.circle")
             }
             .accessibilityIdentifier("settings.help")
-            NavigationLink {
-                PlanPracticeView()
-            } label: {
-                Text("Try a plan card")
-            }
-            .accessibilityIdentifier("settings.planPractice")
-            // The first-launch welcome again (ADR-598): for a look, or to show someone.
-            Button("Show the welcome again") {
-                WelcomePreferences.requestReplay()
-            }
-            .accessibilityIdentifier("settings.welcomeAgain")
             Link(destination: LegalDocuments.url(.terms, languageCode: Self.languageCode)) {
                 Label("Terms & Conditions", systemImage: "doc.text")
             }
@@ -263,10 +151,7 @@ struct SettingsView: View {
                 Label("Privacy Policy", systemImage: "hand.raised")
             }
             .accessibilityIdentifier("settings.privacyPolicy")
-            if let accepted = LegalAcceptance.decode(legalRecordData) {
-                StatusRow(title: "Terms accepted", value: DateText.full(accepted.acceptedAt))
-                    .accessibilityIdentifier("settings.termsAccepted")
-            }
+            // Doddy's own social accounts (ADR-130); they stay on this page (owner, 24 Oct 2026).
             Link(destination: Self.tiktokURL) {
                 Label("TikTok · doddy_mate", systemImage: "play.rectangle")
             }
@@ -275,7 +160,7 @@ struct SettingsView: View {
                 Label("Instagram · doddy_mate", systemImage: "camera")
             }
             .accessibilityIdentifier("settings.instagram")
-            StatusRow(title: "Version", value: Self.versionText)
+            StatusRow(title: NSLocalizedString("Version", comment: ""), value: Self.versionText)
             NavigationLink {
                 AdvancedSettingsView()
             } label: {
@@ -290,11 +175,6 @@ struct SettingsView: View {
     }
 
     // MARK: Values
-
-    private var activitySummary: String {
-        let today = activityLog.entries.filter { Calendar.current.isDateInToday($0.at) }.count
-        return activityLog.entries.isEmpty ? NSLocalizedString("Nothing yet", comment: "") : "\(today) today"
-    }
 
     private var connectionSummary: String {
         if pauseAllConnections { return NSLocalizedString("Paused", comment: "") }
