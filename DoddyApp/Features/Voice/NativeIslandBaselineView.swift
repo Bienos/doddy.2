@@ -77,6 +77,8 @@ struct NativeIslandBaselineView: View {
     private func fixtureState(muted: Bool) -> DoddyVoiceAttributes.ContentState {
         var state = DoddyVoiceAttributes.ContentState(status: .testFixture, isMuted: muted)
         state.islandStyle = IslandStyle.stored(UserDefaults.standard.string(forKey: PreferenceKey.islandStyle))
+        // The language of the app's screens, as a conversation sends it (ADR-609).
+        state.language = Bundle.main.preferredLocalizations.first
         return state
     }
 

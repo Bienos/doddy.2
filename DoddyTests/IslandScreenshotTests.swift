@@ -123,18 +123,49 @@ final class IslandScreenshotTests: XCTestCase {
 
     @MainActor
     func testDrawTheIslandInEveryState() throws {
+        try draw(language: nil, prefix: "", note: "Doddy's Dynamic Island, drawn at 3x from the widget's own views (ImageRenderer). Sample states: not a conversation and not iOS's island.")
+    }
+
+    /// ADR-609: the same states in Polish, the app's default language, as the widget draws them
+    /// when the app sends "pl".
+    @MainActor
+    func testDrawTheIslandInPolish() throws {
+        try draw(language: "pl", prefix: "pl-", note: "Wyspa Doddy’ego po polsku, narysowana z widoków widżetu (ImageRenderer, 3x). Przykładowe stany: nie rozmowa i nie wyspa z iOS.")
+    }
+
+    /// The island's words come from the app's Polish table (`pl.lproj`), numbers included, and
+    /// a word with no line stays English (ADR-609).
+    func testTheIslandSpeaksPolish() {
+        XCTAssertEqual(IslandLanguage.text("Listening", "pl"), "Słucham")
+        XCTAssertEqual(IslandLanguage.text("A text to check", "pl"), "SMS do sprawdzenia")
+        XCTAssertEqual(IslandLanguage.text("Show", "pl"), "Pokaż")
+        XCTAssertEqual(IslandLanguage.text("Step 2 of 3", "pl"), "Krok 2 z 3", "a number goes back into the words")
+        XCTAssertEqual(IslandLanguage.text("Doddy isn't listening · 4 notes saved", "pl"), "Doddy nie słucha · zapisane notatki: 4")
+        XCTAssertEqual(IslandLanguage.text("EN ⇄ FR", "pl"), "EN ⇄ FR", "language codes stay as they are")
+        XCTAssertEqual(IslandLanguage.text("Hey Pat, what's up?", "pl"), "Hey Pat, what's up?", "a greeting is shown as it came")
+        XCTAssertEqual(IslandLanguage.text("Listening", "en"), "Listening")
+        XCTAssertEqual(IslandLanguage.text("Listening", "xx"), "Listening", "no table: the English")
+        for word in IslandLanguage.formats {
+            XCTAssertNotEqual(IslandLanguage.text(word.replacingOccurrences(of: "%lld", with: "7"), "pl"),
+                              word.replacingOccurrences(of: "%lld", with: "7"), "\(word) has a Polish line")
+        }
+    }
+
+    @MainActor
+    private func draw(language: String?, prefix: String, note: String) throws {
         let startedAt = Date(timeIntervalSinceNow: -83)
         var boards: [IslandBoardPicture] = []
         for sample in Self.samples {
-            let board = IslandBoardPicture(name: sample.name,
+            let board = IslandBoardPicture(name: (language.map { "\($0.uppercased()) · " } ?? "") + sample.name,
                                            scene: Self.scene(sample.status, muted: sample.muted, moment: sample.moment),
                                            muted: sample.muted, startedAt: startedAt)
-            _ = try keep(board.padding(16).background(Self.backdrop), name: sample.file)
+            _ = try keep(board.padding(16).background(Self.backdrop).environment(\.islandLanguage, language),
+                         name: prefix + sample.file)
             boards.append(board)
         }
         let all = boards
         let sheet = VStack(alignment: .leading, spacing: 22) {
-            Text(verbatim: "Doddy's Dynamic Island, drawn at 3x from the widget's own views (ImageRenderer). Sample states: not a conversation and not iOS's island.")
+            Text(verbatim: note)
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(Color.white.opacity(0.7))
                 .frame(width: 371, alignment: .leading)
@@ -142,7 +173,8 @@ final class IslandScreenshotTests: XCTestCase {
         }
         .padding(20)
         .background(Self.backdrop)
-        let image = try keep(sheet, name: "0-all-states")
+        .environment(\.islandLanguage, language)
+        let image = try keep(sheet, name: prefix + "0-all-states")
         XCTAssertGreaterThan(image.size.height, 160 * CGFloat(Self.samples.count))
     }
 

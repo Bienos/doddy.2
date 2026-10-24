@@ -24,12 +24,16 @@ struct DoddyVoiceLiveActivity: Widget {
             return LockScreenView(shown: Shown(context), scene: scene,
                            startedAt: context.state.conversationStart(activityStartedAt: context.attributes.startedAt))
                 .doddyCreamLockScreen()
+                // ADR-609: the words in the language Doddy's screens use, not only the iPhone's.
+                .environment(\.islandLanguage, context.state.language)
                 .widgetURL(scene.showsInDoddy ? Self.conversationLink : nil)
         } dynamicIsland: { context in
             let shown = Shown(context)
             let scene = context.state.islandScene(isStale: context.isStale).respectingHiddenArt
             // After "Hey Doddy" (ADR-254) the timer counts from the conversation, not the listening.
             let startedAt = context.state.conversationStart(activityStartedAt: context.attributes.startedAt)
+            // ADR-609: every region's words in the language Doddy's screens use.
+            let language = context.state.language
             // The owner's V4 boards (design/dynamic-island-v4): the style picked in Settings
             // (ADR-239), or Thought Pocket / Step Stones / Reminder Knot for a moment (ADR-240).
             // Label and time beside the camera; drawing, status, buttons and sign below it.
@@ -37,23 +41,29 @@ struct DoddyVoiceLiveActivity: Widget {
                 DynamicIslandExpandedRegion(.leading) {
                     IslandLabelView(scene: scene)
                         .padding(.leading, 8)
+                        .environment(\.islandLanguage, language)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
                     IslandTimeView(scene: scene, startedAt: startedAt)
                         .padding(.trailing, 8)
+                        .environment(\.islandLanguage, language)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     IslandBottomView(scene: scene, startedAt: startedAt) {
                         IslandControls(shown: shown, showsInDoddy: scene.showsInDoddy)
                     }
                     .padding(.horizontal, 4)
+                    .environment(\.islandLanguage, language)
                 }
             } compactLeading: {
                 IslandCompactLeadingView(scene: scene)
+                    .environment(\.islandLanguage, language)
             } compactTrailing: {
                 IslandCompactTrailingView(scene: scene, startedAt: startedAt)
+                    .environment(\.islandLanguage, language)
             } minimal: {
                 IslandMinimalView(scene: scene, startedAt: startedAt)
+                    .environment(\.islandLanguage, language)
             }
             .keylineTint(scene.live ? Color.islandOrange : Color.islandSecondary)
             // ADR-608: a tap anywhere on the island goes to the card that waits, not only Home.
@@ -79,7 +89,7 @@ private struct Shown {
     var title: String {
         guard isStale else { return state.title }
         // A stale "Hey Doddy" activity: iOS ended the app, so nothing is listening any more.
-        return state.isWakeMode ? "Not listening — open Doddy" : "Lost Doddy — open the app"
+        return state.isWakeMode ? islandWord("Not listening — open Doddy") : islandWord("Lost Doddy — open the app")
     }
     var detail: String? { isStale ? nil : state.detail }
     /// Orange only while Doddy is live and can hear you; never when muted, stale or ended.
@@ -149,7 +159,7 @@ private struct IslandControls: View {
             if !shown.isStale, !shown.state.isEnded, !shown.state.isWakeMode {
                 Button(intent: ToggleDoddyMuteIntent()) {
                     // While muted, Unmute is the cream pill so getting Doddy back is one obvious tap.
-                    IslandPillLabel(title: shown.state.isMuted ? "Unmute" : "Mute",
+                    IslandPillLabel(title: shown.state.isMuted ? islandWord("Unmute") : islandWord("Mute"),
                                     systemImage: shown.state.isMuted ? "mic.fill" : "mic.slash.fill",
                                     prominent: shown.state.isMuted)
                 }
@@ -170,7 +180,8 @@ private struct IslandControls: View {
                 .buttonStyle(.plain)
             }
             Button(intent: EndDoddyConversationIntent()) {
-                IslandPillLabel(title: shown.isStale ? "Dismiss" : (shown.state.isWakeMode ? "Stop listening" : "Stop"),
+                IslandPillLabel(title: shown.isStale ? islandWord("Dismiss")
+                                    : (shown.state.isWakeMode ? islandWord("Stop listening") : islandWord("Stop")),
                                 systemImage: shown.isStale ? "xmark" : "stop.fill")
             }
             .buttonStyle(.plain)
@@ -189,7 +200,7 @@ private struct Controls: View {
                 muteButton
             }
             Button(intent: EndDoddyConversationIntent()) {
-                Label(endTitle, systemImage: endSymbol)
+                Label { IslandText(endTitle) } icon: { Image(systemName: endSymbol) }
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)
@@ -199,8 +210,8 @@ private struct Controls: View {
     }
 
     private var endTitle: String {
-        if shown.isStale { return "Dismiss" }
-        return shown.state.isWakeMode ? "Stop listening" : "End"
+        if shown.isStale { return islandWord("Dismiss") }
+        return shown.state.isWakeMode ? islandWord("Stop listening") : islandWord("End")
     }
 
     private var endSymbol: String {
@@ -213,8 +224,10 @@ private struct Controls: View {
     private var muteButton: some View {
         let muted = shown.state.isMuted
         let button = Button(intent: ToggleDoddyMuteIntent()) {
-            Label(muted ? "Unmute" : "Mute", systemImage: muted ? "mic.fill" : "mic.slash.fill")
-                .frame(maxWidth: .infinity)
+            Label { IslandText(muted ? islandWord("Unmute") : islandWord("Mute")) } icon: {
+                Image(systemName: muted ? "mic.fill" : "mic.slash.fill")
+            }
+            .frame(maxWidth: .infinity)
         }
         if muted {
             button
@@ -240,7 +253,8 @@ private struct LockScreenView: View {
             HStack(spacing: 12) {
                 DoddyArt(shown: shown, size: 52)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(shown.state.isEnded ? shown.title : (shown.state.isWakeMode ? "Hey Doddy is on" : "Talking to Doddy"))
+                    IslandText(shown.state.isEnded ? shown.title
+                               : (shown.state.isWakeMode ? islandWord("Hey Doddy is on") : islandWord("Talking to Doddy")))
                         .font(.headline)
                         .foregroundStyle(Palette.ink)
                     statusLine
@@ -261,7 +275,7 @@ private struct LockScreenView: View {
             }
             if shown.state.isEnded {
                 Link(destination: URL(string: "doddy://home")!) {
-                    Text("Open Doddy")
+                    IslandText("Open Doddy")
                         .font(.callout.weight(.semibold))
                         .frame(maxWidth: .infinity, minHeight: 44)
                         .foregroundStyle(Palette.ink)
@@ -270,7 +284,7 @@ private struct LockScreenView: View {
             } else {
                 if scene.showsInDoddy, !shown.isStale {
                     Link(destination: DoddyVoiceLiveActivity.conversationLink) {
-                        Label("Show in Doddy", systemImage: "hand.tap.fill")
+                        Label { IslandText("Show in Doddy") } icon: { Image(systemName: "hand.tap.fill") }
                             .font(.callout.weight(.semibold))
                             .frame(maxWidth: .infinity, minHeight: 44)
                             .foregroundStyle(Palette.card)
@@ -292,43 +306,49 @@ private struct LockScreenView: View {
                     Image(systemName: "checkmark")
                         .foregroundStyle(Palette.confirmed)
                 }
-                Text(shown.detail ?? "")
+                IslandText(shown.detail ?? "")
                     .foregroundStyle(shown.state.savedCount > 0 && !shown.state.isFailed ? Palette.confirmed : Palette.secondary)
                 if let endedAt = shown.state.endedAt {
-                    Text("· \(Self.total(from: startedAt, to: endedAt)) total")
+                    Text(verbatim: "· \(Self.total(from: startedAt, to: endedAt))")
+                        .foregroundStyle(Palette.secondary)
+                    IslandText(islandWord("total"))
                         .foregroundStyle(Palette.secondary)
                 }
             }
             .font(.subheadline)
         } else if shown.isStale {
-            Text(shown.title)
+            IslandText(shown.title)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(Palette.error)
         } else if scene.showsInDoddy {
             // ADR-608: what kind of thing waits, in the island's fixed words; never what it says.
             VStack(alignment: .leading, spacing: 2) {
-                Text(scene.title)
+                IslandText(scene.title)
                     .foregroundStyle(Palette.accentText)
-                Text(scene.subtitle)
+                IslandText(scene.subtitle)
                     .foregroundStyle(Palette.secondary)
             }
             .font(.subheadline)
         } else if shown.state.isWakeMode {
             VStack(alignment: .leading, spacing: 2) {
-                Text(shown.title)
+                IslandText(shown.title)
                     .foregroundStyle(Palette.accentText)
-                Text(shown.detail ?? "")
+                IslandText(shown.detail ?? "")
                     .foregroundStyle(Palette.secondary)
             }
             .font(.subheadline)
         } else if let detail = shown.detail {
-            Text("\(shown.title) · \(detail)")
-                .font(.subheadline)
-                .foregroundStyle(Palette.secondary)
+            HStack(spacing: 4) {
+                IslandText(shown.title)
+                Text(verbatim: "·")
+                IslandText(detail)
+            }
+            .font(.subheadline)
+            .foregroundStyle(Palette.secondary)
         } else {
             HStack(spacing: 4) {
-                Text(shown.title)
-                Text("·")
+                IslandText(shown.title)
+                Text(verbatim: "·")
                 ElapsedTime(startedAt: startedAt)
             }
             .font(.subheadline)

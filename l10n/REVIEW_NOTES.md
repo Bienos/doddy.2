@@ -113,3 +113,7 @@ Check first:
 - Tone: informal "Ty" with capitals (Twoje, Ciebie), as in the app; gendered past forms are masculine ("jeśli korzystałeś"), which a reviewer may want to make neutral.
 - App labels quoted in English because the Polish app still shows them in English: "What leaves this iPhone", "Delete Doddy voice account", "Sign out of voice", "Ask again before sharing voice". Once the app translates them, the pages should use the Polish labels.
 - The Siri phrase is quoted from `l10n/pl_shortcuts.json` ("Zapytaj aplikację Doddy, co mam zapisane").
+
+## Dynamic Island and Lock Screen, Polish (24 Oct 2026, ADR-609)
+
+92 lines in `l10n/pl.json` for the island's words: labels (GŁOS, SMS, PRZYPOMNIENIE, …), titles ("SMS do sprawdzenia", "Twój dokument jest gotowy"), second lines and the Lock Screen. Written in a coding session, not read by another Polish speaker. Check on a device first: whether PRZYPOMNIENIE fits beside the camera with LIVE, and whether "Wysyłasz go Ty, w Wiadomościach" reads naturally.

@@ -128,12 +128,12 @@ struct IslandLabelView: View {
 
     var body: some View {
         HStack(spacing: 5) {
-            Text(scene.label)
+            IslandText(scene.label)
                 .foregroundStyle(Color.islandSecondary)
             if scene.live {
                 HStack(spacing: 3) {
                     Circle().fill(Color.islandOrange).frame(width: 5, height: 5)
-                    Text("LIVE").foregroundStyle(Color.islandOrange)
+                    IslandText("LIVE").foregroundStyle(Color.islandOrange)
                 }
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("Live, Doddy can hear you")
@@ -155,7 +155,7 @@ struct IslandTimeView: View {
             switch scene.time {
             case .elapsed: IslandElapsedText(startedAt: startedAt)
             case .countdown(let end): IslandCountdownText(end: end)
-            case .text(let text): Text(text)
+            case .text(let text): IslandText(text)
             }
         }
         .font(.system(size: 11.5, weight: .semibold))
@@ -192,7 +192,7 @@ struct IslandSignView: View {
                 .font(presentation == .expanded ? .body : .caption)
                 .foregroundStyle(color(tint))
         case .text(let text):
-            Text(text)
+            IslandText(text)
                 .font(.system(size: presentation == .minimal ? 12 : 13, weight: .bold))
                 .monospacedDigit()
                 .foregroundStyle(presentation == .minimal && live ? Color.islandOrange : Color.islandCream)
@@ -259,9 +259,9 @@ struct IslandPillLabel: View {
         ViewThatFits(in: .horizontal) {
             HStack(spacing: 5) {
                 Image(systemName: systemImage).font(.system(size: 10, weight: .bold))
-                Text(title)
+                IslandText(title)
             }
-            Text(title)
+            IslandText(title)
                 .minimumScaleFactor(0.8)
         }
         .font(.system(size: 13, weight: .semibold))
@@ -280,6 +280,7 @@ struct IslandBottomView<Controls: View>: View {
     let scene: IslandScene
     let startedAt: Date
     @ViewBuilder let controls: () -> Controls
+    @Environment(\.islandLanguage) private var language
 
     /// What iOS leaves for the expanded island's bottom region is about 110 pt (measured on the
     /// native screenshot); everything here stays within it, so nothing is cut (ADR-607).
@@ -304,18 +305,18 @@ struct IslandBottomView<Controls: View>: View {
                 .font(.system(size: 32, weight: .medium))
                 .foregroundStyle(Color.islandCream)
                 .lineLimit(1)
-                .accessibilityLabel(scene.title)
+                .accessibilityLabel(Text(verbatim: IslandLanguage.text(scene.title, language)))
         case .bigText(let text):
-            Text(text)
+            IslandText(text)
                 .font(.system(size: 32, weight: .medium))
                 .monospacedDigit()
                 .foregroundStyle(Color.islandCream)
                 .lineLimit(1)
-                .accessibilityLabel(scene.title)
+                .accessibilityLabel(Text(verbatim: IslandLanguage.text(scene.title, language)))
         case .text(let text):
-            Text(text).font(.system(size: 21, weight: .medium)).foregroundStyle(Color.islandCream).lineLimit(1)
+            IslandText(text).font(.system(size: 21, weight: .medium)).foregroundStyle(Color.islandCream).lineLimit(1)
         case nil:
-            Text(scene.title)
+            IslandText(scene.title)
                 .font(.system(size: 21, weight: .medium))
                 .foregroundStyle(Color.islandCream)
                 .lineLimit(1)
@@ -324,7 +325,7 @@ struct IslandBottomView<Controls: View>: View {
     }
 
     private var subtitle: some View {
-        Text(scene.subtitle)
+        IslandText(scene.subtitle)
             .font(.system(size: 12.5, weight: .medium))
             .foregroundStyle(scene.subtitleIsWarning ? Color.yellow : Color.islandSecondary)
             .lineLimit(1)
@@ -381,7 +382,7 @@ struct IslandBottomView<Controls: View>: View {
         HStack(alignment: .top, spacing: 8) {
             VStack(alignment: .leading, spacing: 4) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(scene.title)
+                    IslandText(scene.title)
                         .font(.system(size: 29, weight: .medium))
                         .tracking(-1.2)
                         .foregroundStyle(Color.islandCream)
@@ -394,7 +395,7 @@ struct IslandBottomView<Controls: View>: View {
                     Capsule()
                         .fill(scene.live ? Color.islandOrange : Color.islandSecondary)
                         .frame(width: 1.7, height: 14)
-                    Text(scene.live ? "Doddy can hear you" : " ")
+                    IslandText(scene.live ? islandWord("Doddy can hear you") : " ")
                         .font(.system(size: 10.5, weight: .medium))
                         .foregroundStyle(Color.islandSecondary)
                 }
@@ -417,6 +418,7 @@ struct IslandBottomView<Controls: View>: View {
 
 struct IslandCompactLeadingView: View {
     let scene: IslandScene
+    @Environment(\.islandLanguage) private var language
 
     var body: some View {
         Group {
@@ -431,7 +433,7 @@ struct IslandCompactLeadingView: View {
         // The drawings are hidden from VoiceOver, so the compact island says what Doddy is doing
         // ("Listening", "Muted"), the same status the expanded island and Lock Screen show.
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(scene.title)
+        .accessibilityLabel(Text(verbatim: IslandLanguage.text(scene.title, language)))
     }
 }
 
