@@ -270,6 +270,7 @@ struct PlanQuestionsView: View {
     @State private var answers: [PlanScreeningQuestion: Bool] = [:]
     @State private var ageText = ""
     @State private var decision: PlanDecision?
+    @FocusState private var ageFocused: Bool
 
     private var isDistance: Bool { goal == .tenK || goal == .halfMarathon }
     private var maxDays: Int { goal.isRunning ? 5 : 4 }
@@ -360,6 +361,7 @@ struct PlanQuestionsView: View {
                 }
                 TextField("Your age", text: $ageText)
                     .keyboardType(.numberPad)
+                    .focused($ageFocused)
                     .accessibilityIdentifier("plan.age")
             } header: {
                 Text("Before a plan")
@@ -379,7 +381,13 @@ struct PlanQuestionsView: View {
             ToolbarItem(placement: .cancellationAction) {
                 Button("Cancel") { dismiss() }
             }
+            // The number pad has no return key: this closes it, so the button below can be reached.
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") { ageFocused = false }.accessibilityIdentifier("plan.age.done")
+            }
         }
+        .scrollDismissesKeyboard(.interactively)
         .onChange(of: goal) { _, _ in days = min(days, maxDays) }
         .navigationDestination(isPresented: Binding(get: { decision != nil }, set: { if !$0 { decision = nil } })) {
             if let decision {

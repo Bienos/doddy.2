@@ -31,6 +31,10 @@ final class TrainingPlanUITests: XCTestCase {
         let age = app.textFields["plan.age"]
         XCTAssertTrue(show(age, in: app))
         age.tapAndType("30")
+        // The number pad covers the bottom of the sheet and has no return key; its Done closes it.
+        let done = app.buttons["plan.age.done"]
+        XCTAssertTrue(done.waitForExistence(timeout: 5), "the number pad's Done")
+        done.tap()
         let makePlan = app.buttons["plan.questions.make"]
         XCTAssertTrue(show(makePlan, in: app))
         XCTAssertTrue(makePlan.isEnabled, "every question answered")
@@ -82,13 +86,13 @@ final class TrainingPlanUITests: XCTestCase {
     private func show(_ element: XCUIElement, in app: XCUIApplication, upwards: Bool = false) -> Bool {
         for _ in 0..<15 {
             if element.exists && element.isHittable { return true }
-            if upwards {
-                let from = app.coordinate(withNormalizedOffset: CGVector(dx: 0.04, dy: 0.25))
-                let to = app.coordinate(withNormalizedOffset: CGVector(dx: 0.04, dy: 0.8))
-                from.press(forDuration: 0.05, thenDragTo: to, withVelocity: .default, thenHoldForDuration: 0.2)
-            } else {
-                app.scrollStep()
-            }
+            // A drag that starts on the keyboard doesn't scroll the form: start above it.
+            let keyboard = app.keyboards.firstMatch
+            let bottom = keyboard.exists && app.frame.height > 0 ? min(0.75, keyboard.frame.minY / app.frame.height - 0.05) : 0.75
+            let (start, end) = upwards ? (0.25, bottom) : (bottom, 0.2)
+            let from = app.coordinate(withNormalizedOffset: CGVector(dx: 0.04, dy: start))
+            let to = app.coordinate(withNormalizedOffset: CGVector(dx: 0.04, dy: end))
+            from.press(forDuration: 0.05, thenDragTo: to, withVelocity: .default, thenHoldForDuration: 0.2)
         }
         return element.exists && element.isHittable
     }
