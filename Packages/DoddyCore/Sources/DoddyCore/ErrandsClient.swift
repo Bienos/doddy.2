@@ -29,8 +29,8 @@ public enum ErrandError: Error, Equatable, Sendable {
 
 extension DoddyServerClient {
     /// A draft on the server; nothing runs. Checked against the draft before it is returned (the
-    /// words, brief and title echoed back, and the digest recomputed here), so the digest the app
-    /// approves is for exactly what the user said yes to.
+    /// words, brief, title, kind and priorities echoed back, and the digest recomputed here), so
+    /// the digest the app approves is for exactly what the user said yes to.
     public func createErrand(_ draft: ErrandDraft) async throws -> ErrandPreview {
         let response = try await errandRequest(.post, "/v1/errands", body: try Self.json(CreateErrandBody(draft)))
         guard response.status == 201, let preview = try? JSONDecoder().decode(ErrandPreview.self, from: response.body)
@@ -123,18 +123,23 @@ extension DoddyServerClient {
     }
 }
 
-/// Exactly the four fields the server's schema takes.
+/// Exactly the fields the server's schema takes: the four of a research task, plus `kind` and
+/// `priorities` (even when empty) for a shopping task only (SHOPPING.md). Nil fields aren't sent.
 private struct CreateErrandBody: Encodable {
     let words: String
     let brief: String
     let title: String
     let language: String
+    let kind: String?
+    let priorities: [String]?
 
     init(_ draft: ErrandDraft) {
         words = draft.words
         brief = draft.brief
         title = draft.title
         language = draft.language
+        kind = draft.kind?.rawValue
+        priorities = draft.kind == nil ? nil : draft.priorities
     }
 }
 

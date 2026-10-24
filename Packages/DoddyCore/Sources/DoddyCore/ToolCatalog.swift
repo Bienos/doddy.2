@@ -137,6 +137,9 @@ public enum ToolCatalog {
         // spoken yes or a tap starts it; one yes covers every look-up of that task.
         .init(VoiceToolName.handOverErrand, .lookup, .askFirst),
         .init(VoiceToolName.checkErrands, .lookup, .askFirst),
+        // This week's leaflets, read on Doddy's server (SHOPPING.md): public data, nothing
+        // changes; it asks first until the owner decides whether it joins the public look-ups.
+        .init(VoiceToolName.findDeals, .lookup, .askFirst),
         // The conversation itself.
         .init(VoiceToolName.startTranslator, .session, .askFirst),
         .init(VoiceToolName.stopTranslator, .session, .askFirst),
