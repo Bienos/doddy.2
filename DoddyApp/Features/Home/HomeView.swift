@@ -233,7 +233,7 @@ struct HomeView: View {
                     }
                 }
                 .accessibilityIdentifier("home.focus")
-                // Counts up (ADR-614).
+                // Counts up (ADR-621).
                 Button { tool = .stopwatch } label: {
                     if StopwatchController.shared.watch.map({ !$0.isOver }) ?? false {
                         Label("Stopwatch · on", systemImage: "stopwatch")

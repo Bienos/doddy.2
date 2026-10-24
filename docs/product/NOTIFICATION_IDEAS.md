@@ -80,7 +80,8 @@ B1's counts are read on the iPhone. iOS doesn't promise the app time on Sunday n
 - **Build A5, then B1:** both are in code on `claude/notifications-sound-timers` (ADR-613, `docs/implementation/RINGING_REMINDERS_AND_WEEKLY_PLAN.md`); not compiled or seen on a device yet.
 - **Quiet hours:** yes, 22:00 to 07:00, for Doddy's routines.
 - **One a day:** for notifications "out of nowhere" only. Timers and anything that is an action item always show. Built as: Doddy's own tip never comes on a day a routine already did.
-- Still open: 4 (an errand's title on the Lock Screen), 5 (sound), and the live-agent change for A5's `ring` (the exact text is in the ADR-613 doc).
+- **"1 i 3" (next):** a list's place reminder says how many things are left, and a real count-up stopwatch; both are in code on `claude/stopwatch-and-shop-list` (ADR-621, `docs/implementation/STOPWATCH_AND_SHOP_LIST.md`), not compiled or seen on a device.
+- Still open: 4 (an errand's title on the Lock Screen), 5 (sound), and the live-agent changes: A5's `ring` (the exact text is in the ADR-613 doc) and the three stopwatch tools (ADR-621 doc).
 
 ## Decisions for the owner (as asked on 24 Oct)
 

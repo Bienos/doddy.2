@@ -401,7 +401,7 @@ enum IslandSceneChecks {
         expect(b.board == .calmTide && b.time == .countdown(end), "breathing")
         expect(!b.title.contains("in") || b.title == "Breathing", "breathing shows no phase")
 
-        // The stopwatch counts up (ADR-614): a ticking clock with no end, never stale.
+        // The stopwatch counts up (ADR-621): a ticking clock with no end, never stale.
         let watch = DoddyToolAttributes(kind: .stopwatch, startedAt: now, duration: 0)
         let from = now.addingTimeInterval(-90)
         let counting = watch.islandScene(.init(isPaused: false, endsAt: nil, label: "Bieg", countsFrom: from), isStale: false, now: now)

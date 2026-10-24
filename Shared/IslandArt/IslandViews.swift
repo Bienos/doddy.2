@@ -300,7 +300,7 @@ struct IslandBottomView<Controls: View>: View {
                 .lineLimit(1)
                 .accessibilityLabel(scene.title)
         case .elapsed:
-            // The stopwatch (ADR-614): counting up, ticking with no app updates.
+            // The stopwatch (ADR-621): counting up, ticking with no app updates.
             IslandElapsedText(startedAt: startedAt)
                 .font(.system(size: 32, weight: .medium))
                 .foregroundStyle(Color.islandCream)

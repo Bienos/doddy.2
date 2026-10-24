@@ -99,7 +99,7 @@ enum IslandTitle: Equatable, Sendable {
     case countdown(Date)
     /// A fixed time left (paused), in the same big numerals.
     case bigText(String)
-    /// The stopwatch's time so far, counting up from the clock start (ADR-614).
+    /// The stopwatch's time so far, counting up from the clock start (ADR-621).
     case elapsed
 }
 
@@ -413,7 +413,7 @@ extension DoddyToolAttributes {
             }
             return shown
         case .stopwatch:
-            // Counts up (ADR-614): the Tiny Promise board with a ticking time, no end and no alert.
+            // Counts up (ADR-621): the Tiny Promise board with a ticking time, no end and no alert.
             let total = Self.elapsedClock(state.elapsed ?? 0)
             if state.isFinished {
                 return scene(.tinyPromise, 0, label: "STOPWATCH", time: .text("Stopped"), title: "Stopped at \(total)",

@@ -19,7 +19,7 @@ struct DoddyToolLiveActivity: Widget {
 
     static func island(_ context: ActivityViewContext<DoddyToolAttributes>) -> DynamicIsland {
         let scene = context.attributes.islandScene(context.state, isStale: context.isStale).respectingHiddenArt
-        // A stopwatch counts up from where its last resume put the clock (ADR-614).
+        // A stopwatch counts up from where its last resume put the clock (ADR-621).
         let startedAt = context.attributes.clockStart(context.state)
         return DynamicIsland {
             DynamicIslandExpandedRegion(.leading) {

@@ -14,7 +14,7 @@ struct SystemNoteNotifications: NoteNotificationScheduling {
     static let repeatingCategoryID = "DODDY_NOTE_REPEATING_REMINDER"
     /// Place reminders: no snooze (a place comes back on the next arrival).
     static let placeCategoryID = "DODDY_NOTE_PLACE_REMINDER"
-    /// The same for a list: "Open list" (ADR-614).
+    /// The same for a list: "Open list" (ADR-621).
     static let placeListCategoryID = "DODDY_LIST_PLACE_REMINDER"
     static let threadID = "doddy-note-reminders"
     static let openAction = "NOTE_OPEN"

@@ -330,6 +330,33 @@
     },
     {
       "type": "function",
+      "name": "start_stopwatch",
+      "description": "Propose a stopwatch on the user's iPhone: it counts up from zero until the user stops it, and shows on the Lock Screen and in the Dynamic Island. Use it when the user asks for a stopwatch ('stoper'), or to time something with no set length ('time my run'). For a countdown with a length use set_timer instead. Give a short label only if the user said what it is for. One stopwatch at a time: if one is running, the result starts with 'failed' and tells you its reading. The app shows the card and the user must tap Start; the result starts with 'added', 'declined' or 'failed'. Before this tool runs, say only one short line, for example 'Confirm on screen if I should start the stopwatch.' (Polish: 'Potwierdź na ekranie, jeśli mam włączyć stoper.'). Never say it is running unless the result starts with added.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "label": {"type": "string", "description": "A short label such as 'bieg', only if the user said what the stopwatch is for. Leave out otherwise."}
+        },
+        "required": []
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "not_synced"}
+    },
+    {
+      "type": "function",
+      "name": "stop_stopwatch",
+      "description": "Propose stopping the user's stopwatch. Use it only when the user asks to stop it, or says they are done. The app shows the card and the user must tap Stop; the result starts with 'changed' and says the time it stopped at, or with 'declined' or 'failed'. Read the time out from the result, never guess it. Before this tool runs, say only one short line, for example 'Confirm on screen if I should stop it.' (Polish: 'Potwierdź na ekranie, jeśli mam zatrzymać stoper.'). Never say it is stopped unless the result starts with changed.",
+      "parameters": {"type": "object", "properties": {}, "required": []},
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "not_synced"}
+    },
+    {
+      "type": "function",
+      "name": "check_stopwatch",
+      "description": "Read the user's stopwatch: whether it is running, paused or stopped, and how much time it shows. Use it when the user asks how long it has been, or what the stopwatch says. Say only the time the result gives, never one you worked out yourself. ASK-01: before this tool runs, say in one short line exactly what you will look at and ask, for example 'Shall I check the stopwatch?' (Polish: 'Mam sprawdzić stoper?'). The app shows the same question on screen and runs it only after the user says yes or taps Yes; if the result starts with 'declined', nothing was looked at: say so in one short sentence.",
+      "parameters": {"type": "object", "properties": {}, "required": []},
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 60, "elevenlabs_tool_id": "not_synced"}
+    },
+    {
+      "type": "function",
       "name": "list_alarms",
       "description": "Read the alarms Doddy set on this iPhone: their times and labels. Use it when the user asks what alarms they have, or before turning one off if you aren't sure of its time. Alarms from the Clock app aren't visible to Doddy; say so if it matters. Only mention alarms the result lists. ASK-01: before this tool runs, say in one short line exactly what you will look at and ask, for example 'Shall I check your inbox?' (Polish: 'Mam sprawdzić twoją skrzynkę?'). The app shows the same question on screen and runs it only after the user says yes or taps Yes; if the result starts with 'declined', nothing was looked at: say so in one short sentence.",
       "parameters": {

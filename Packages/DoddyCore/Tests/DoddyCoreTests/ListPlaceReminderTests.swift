@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// ADR-614: a list's reminder at a place says how many things are left on the list, and offers
+/// ADR-621: a list's reminder at a place says how many things are left on the list, and offers
 /// "Open list". The place's name is never in the notification (ReminderPlace).
 final class ListPlaceReminderTests: XCTestCase {
     private let now = Date(timeIntervalSince1970: 1_792_000_000)
