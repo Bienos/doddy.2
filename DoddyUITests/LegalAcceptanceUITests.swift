@@ -54,8 +54,10 @@ final class LegalAcceptanceUITests: XCTestCase {
         XCTAssertTrue(app.buttons["home.talk"].waitForExistence(timeout: 10))
         XCTAssertFalse(app.staticTexts["legal.title"].exists, "accepted once is enough until the terms change")
         app.goToTab("settings")
-        XCTAssertTrue(app.reveal(app.descendants(matching: .any)["settings.termsAccepted"].firstMatch))
         XCTAssertTrue(app.reveal(app.descendants(matching: .any)["settings.terms"].firstMatch), "the Terms stay one tap away")
         XCTAssertTrue(app.reveal(app.descendants(matching: .any)["settings.privacyPolicy"].firstMatch))
+        // When they were accepted is in Settings › Advanced (ADR-633).
+        app.openSettingsPage("settings.advanced")
+        XCTAssertTrue(app.reveal(app.descendants(matching: .any)["settings.termsAccepted"].firstMatch))
     }
 }
