@@ -644,7 +644,8 @@ struct ListDetailView: View {
             if addNote == nil, !atHome.isEmpty, let home = homeList {
                 addNote = String(format: NSLocalizedString("Also on “%@”: %@.", comment: ""), home.name, atHome.joined(separator: ", "))
             }
-            addFocused = true
+            // After a scan the keyboard stays down; typing goes on with it up.
+            if scanned == nil { addFocused = true }
         } catch {
             errorMessage = UserFacingError.listMessage(for: error)
         }
