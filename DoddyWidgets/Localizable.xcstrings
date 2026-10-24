@@ -5463,7 +5463,7 @@
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Twój dokument jest gotowy"
+            "value": "Dokument gotowy"
           }
         }
       }
@@ -5533,7 +5533,7 @@
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Twoje slajdy są gotowe"
+            "value": "Slajdy gotowe"
           }
         }
       }
