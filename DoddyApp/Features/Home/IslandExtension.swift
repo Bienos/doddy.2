@@ -54,8 +54,10 @@ struct IslandExtension: View {
         if reduceMotion || !live {
             IslandWavesView(kind: kind, live: live)
         } else {
-            // One trip of the waves every 1.2 s (Figma "Jak ruszają się fale").
-            TimelineView(.animation) { context in
+            // One trip of the waves every 1.2 s (Figma "Jak ruszają się fale"). Capped at 30
+            // frames a second like Doddy's breathing (ADR-604): uncapped, the nine lines were
+            // redrawn at 120 Hz next to his own 120 Hz display link.
+            TimelineView(.animation(minimumInterval: 1.0 / 30)) { context in
                 let seconds = context.date.timeIntervalSinceReferenceDate
                 IslandWavesView(kind: kind, phase: -seconds * 2 * .pi / 1.2, live: live)
             }

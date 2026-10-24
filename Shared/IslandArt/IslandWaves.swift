@@ -16,31 +16,36 @@ struct IslandWavesView: View {
     var live = true
 
     var body: some View {
+        let colour = live ? Color.islandOrange : Color.islandSecondary
         ZStack {
             ForEach(Array(Self.waves(kind).enumerated()), id: \.offset) { _, wave in
+                // The fade is in the colour, not a `.opacity` on the view: a view opacity makes
+                // SwiftUI composite each line in its own offscreen layer, nine of them per frame
+                // while he talks (ADR-604). A single stroked line looks the same either way.
                 IslandWaveLine(wave: wave, envelopeFloor: kind == .full ? 0.45 : 0, phase: phase)
-                    .stroke(live ? Color.islandOrange : Color.islandSecondary,
+                    .stroke(colour.opacity(wave.opacity),
                             style: StrokeStyle(lineWidth: wave.width, lineCap: .round))
-                    .opacity(wave.opacity)
             }
         }
         .accessibilityHidden(true)
     }
 
     /// The lines, in fractions of the drawing's height: three for `.line`, nine for `.full`.
+    /// Built once: the animated version asks for them on every frame.
     static func waves(_ kind: Kind) -> [IslandWave] {
-        switch kind {
-        case .line:
-            [IslandWave(amplitude: 0.30, frequency: 2, offset: 0, rise: 0, width: 2.2, opacity: 1),
-             IslandWave(amplitude: 0.20, frequency: 3, offset: 1.2, rise: 0, width: 1.8, opacity: 0.55),
-             IslandWave(amplitude: 0.13, frequency: 4.5, offset: 2.4, rise: 0, width: 1.4, opacity: 0.3)]
-        case .full:
-            (0..<9).map { i in
-                let n = Double(i)
-                return IslandWave(amplitude: 0.10 + 0.012 * n, frequency: 1.5 + 0.25 * n, offset: 0.7 * n,
-                                  rise: (n - 4) * 0.11, width: 1.3, opacity: 0.15 + 0.08 * n)
-            }
-        }
+        kind == .line ? lineWaves : fullWaves
+    }
+
+    private static let lineWaves: [IslandWave] = [
+        IslandWave(amplitude: 0.30, frequency: 2, offset: 0, rise: 0, width: 2.2, opacity: 1),
+        IslandWave(amplitude: 0.20, frequency: 3, offset: 1.2, rise: 0, width: 1.8, opacity: 0.55),
+        IslandWave(amplitude: 0.13, frequency: 4.5, offset: 2.4, rise: 0, width: 1.4, opacity: 0.3),
+    ]
+
+    private static let fullWaves: [IslandWave] = (0..<9).map { i in
+        let n = Double(i)
+        return IslandWave(amplitude: 0.10 + 0.012 * n, frequency: 1.5 + 0.25 * n, offset: 0.7 * n,
+                          rise: (n - 4) * 0.11, width: 1.3, opacity: 0.15 + 0.08 * n)
     }
 }
 

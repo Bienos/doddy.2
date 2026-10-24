@@ -197,6 +197,8 @@ final class VoiceSessionController {
 
     private(set) var phase: Phase = .idle {
         didSet {
+            // The same phase again (the SDK repeats states) changes nothing; skip the work (ADR-604).
+            guard phase != oldValue else { return }
             Self.conversationInProgress = isLive
             if isLive { Self.current = self } else if Self.current === self { Self.current = nil }
             ListeningIndicatorModel.shared.refresh()
@@ -725,6 +727,12 @@ final class VoiceSessionController {
         if let code = ConversationLanguage.stored().overrideCode, let language = Language(rawValue: code) {
             config.agentOverrides = AgentOverrides(language: language)
         }
+        // Doddy speaking and thinking (ADR-604). The SDK calls `onAgentStateChange` only in its
+        // event-based mode: with no configuration (ElevenLabs Swift SDK 3.3.1, `Conversation.
+        // setupAgentStateManager` returns early) the callback never fires, so the island, Home's
+        // waves and his talking pose stayed on "Listening" while he spoke. The defaults use the
+        // agent's own events and the room's speaking detection; no `vad_score` events are needed.
+        config.agentStateConfiguration = AgentStateConfiguration()
         config.onAgentStateChange = { state in
             Task { @MainActor in ref.value?.apply(state) }
         }
