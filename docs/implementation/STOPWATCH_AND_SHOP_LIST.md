@@ -12,7 +12,7 @@ Date: 2026-10-24. Owner (24 Oct, in Polish, from the list in `docs/product/NOTIF
 
 ## 3. The stopwatch (counts up)
 
-- **Where:** Home › Stopwatch (new, next to Focus). One stopwatch at a time, on this iPhone. Start (optional label, 40 characters at most), Pause/Resume, Stop. A stopped one keeps its time on screen until dismissed ("Zatrzymany na 12 min 7 s").
+- **Where:** Home › ••• › Focus and stopwatch › Stopwatch. One menu row for Focus and the stopwatch: the ••• menu fits eleven rows on an iPhone at the default text size, and the stopwatch as a twelfth row put "What I can do" and "What leaves this iPhone" out of reach (the hosted UI test `testWhatICanDoOpensFromTheHomeMenu` caught it on the first Mac run). One stopwatch at a time, on this iPhone. Start (optional label, 40 characters at most), Pause/Resume, Stop. A stopped one keeps its time on screen until dismissed ("Zatrzymany na 12 min 7 s").
 - **Lock Screen and island:** a Live Activity of the existing tool kind (`DoddyToolAttributes.Kind.stopwatch`). The time is a self-ticking `Text(timerInterval:)` counting up from a clock start the app computes (`Stopwatch.clock`), so it keeps running with the app closed and nothing is redrawn every second (this is what stuttered in the old timer design). Paused: the activity shows the fixed time. The island's minimal view is `stopwatch.fill`; the big view is the time, the label on top ("STOPWATCH").
 - **No notification:** nothing ends, so nothing rings or buzzes. It is not a timer; for a countdown that rings, `set_timer` (ADR-612) is unchanged.
 - **Limit:** 24 hours (`Stopwatch.maxElapsed`). A stopwatch left running is stopped at exactly 24 h the next time the app starts or comes to the foreground (`refresh`, `stopIfAtLimit`); until then the Lock Screen clock keeps counting, because nothing runs in the app while it is closed. Kept in UserDefaults (`stopwatch`), so a relaunch or a reboot loses nothing; the elapsed time is always computed from stored dates, never from a counter that could stop when the app is suspended.
@@ -35,11 +35,18 @@ Date: 2026-10-24. Owner (24 Oct, in Polish, from the list in `docs/product/NOTIF
 - Island art checks: the stopwatch scene in `IslandSceneChecks.swift`.
 - Web end-to-end: 16 passed, 4 skipped, with `PLAYWRIGHT_CHROMIUM=/opt/pw-browsers/chromium` (without it this container fails to launch its Chromium: the installed build is newer than the one Playwright expects; unrelated to this change).
 
+## Hosted Mac run (24 Oct, `dc6d4d51`, the first compile)
+
+- `xcodebuild build-for-testing` and the unit tests passed: the stopwatch screen, the Live Activity, the intents and the three voice cases compile and the unit suite is green.
+- UI tests: 60 of 62 passed, 1 skipped, 2 failed. `LaunchSmokeTests.testWhatICanDoOpensFromTheHomeMenu`: the stopwatch's own row made the ••• menu twelve rows and its last items unreachable at the default text size; fixed by the one "Focus and stopwatch" row above, not yet re-run. `MemoryJourneyTests.testDarkLargestTextKeepsTextRoutesUsable`: fails on the base branch too (run 40105647967 on `f79a4bf3`), since shopping's "Cheapest this week" row put Memories below the menu's first screen at the largest text size; not this branch's, open on the base.
+- A test-helper change that swiped the menu to its lower items was tried on #135 and reverted: a swipe on a menu item activates it.
+
 ## NOT RUN
 
-- No Xcode build: the SwiftUI screen, the Live Activity and widget code, the App Intents buttons and `VoiceSessionController`'s three cases are uncompiled until the hosted Mac job.
+- No Xcode build of the "Focus and stopwatch" row yet; the first run compiled the rest.
+- Everything below still holds. No Xcode build before the run above: the SwiftUI screen, the Live Activity and widget code, the App Intents buttons and `VoiceSessionController`'s three cases are uncompiled until the hosted Mac job.
 - No device. Checklist (iOS 17+):
-  1. Home › Stopwatch › Start with the label "Gotowanie": the Lock Screen and the island show the label and a time counting up, second by second, with no stutter, app closed.
+  1. Home › ••• › Focus and stopwatch › Stopwatch › Start with the label "Gotowanie": the Lock Screen and the island show the label and a time counting up, second by second, with no stutter, app closed.
   2. Pause on the Lock Screen: the time freezes. Resume: it carries on from there, not from the wall clock.
   3. Force-quit the app, wait two minutes, open it: the time includes the two minutes; stopped, it keeps the final time and shows "Zatrzymany na …".
   3b. Buttons: Pause and Stop on the Lock Screen and in the expanded island both work.

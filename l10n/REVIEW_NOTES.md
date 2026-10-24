@@ -126,7 +126,7 @@ Twenty-one new Polish lines in `l10n/pl.json`, agent-written: the "Ring like an 
 
 ## The stopwatch and a list's reminder at a place (ADR-621, 24 Oct 2026)
 
-Ten new Polish lines in `l10n/pl.json`, agent-written: "Stoper", "Stoper · włączony", "Liczy w górę, dopóki go nie zatrzymasz.", the label field's help line, "Włącz stoper", "Liczy w górę", "Gotowy, kiedy Ty", "Zatrzymany na %@", "Pauza", "Wznów". The other nine languages show these in English until reviewed.
+Eleven new Polish lines in `l10n/pl.json`, agent-written: "Skupienie i stoper" (the ••• menu row that holds Focus and the stopwatch), "Stoper", "Stoper · włączony", "Liczy w górę, dopóki go nie zatrzymasz.", the label field's help line, "Włącz stoper", "Liczy w górę", "Gotowy, kiedy Ty", "Zatrzymany na %@", "Pauza", "Wznów". The other nine languages show these in English until reviewed.
 
 - **Notification text is in DoddyCore** (`NoteReminderCopy.itemsOnList`, Polish and English only, like the other notifications): "4 rzeczy na liście", "1 rzecz na liście", "wszystko odhaczone". "rzecz" has one plural form, "rzeczy", from 2 up; a native check of the three phrases is wanted.
 - **Voice replies** for the stopwatch (`VoiceToolReply`) are English instructions to the agent, like every other tool reply; the activity-log rows have a Polish form in `ActivityText` ("Włącz stoper", "Zatrzymaj stoper", "Odczytano stoper").

@@ -26075,6 +26075,17 @@
         }
       }
     },
+    "Focus and stopwatch": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skupienie i stoper"
+          }
+        }
+      }
+    },
     "Focus stopped.": {
       "extractionState": "manual",
       "localizations": {
