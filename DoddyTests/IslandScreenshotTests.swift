@@ -47,23 +47,27 @@ final class IslandScreenshotTests: XCTestCase {
         }
     }
 
-    /// Big island: all of him (the pose, standing in an 82 x 118 pt box), in the Figma light.
+    /// Big island: all of him (the pose, standing in an 82 x 118 pt box) with a 1.5 pt cream edge
+    /// and only a faint light behind him (owner: he doesn't need to be lit up so much).
     @MainActor
-    func testTheExpandedIslandShowsAllOfHimInHisLight() throws {
+    func testTheExpandedIslandShowsAllOfHimWithAFaintLight() throws {
         let scene = Self.scene(.listening)
         XCTAssertEqual(scene.pose, .listening)
-        let figure = try XCTUnwrap(pixels(IslandPoseView(pose: .listening, maxSize: CGSize(width: 82, height: 118))))
+        let figure = try XCTUnwrap(pixels(IslandPoseView(pose: .listening, maxSize: CGSize(width: 82, height: 118),
+                                                         edgeWidth: 1.5)))
         XCTAssertEqual(figure.height, 118 * 3)
         let light = try XCTUnwrap(pixels(IslandDoddyLight().background(Color.islandBlack)))
-        XCTAssertEqual(light.width, 150 * 3)
-        XCTAssertGreaterThan(light.brightness(x: light.width / 2, y: light.height / 2), 200, "cream in the middle")
-        XCTAssertLessThan(light.brightness(x: 2, y: light.height / 2), 20, "black at the edge")
+        XCTAssertEqual(light.width, 110 * 3)
+        let middle = light.brightness(x: light.width / 2, y: light.height / 2)
+        XCTAssertGreaterThan(middle, 30, "a little light in the middle")
+        XCTAssertLessThan(middle, 80, "only a little: not a spotlight")
+        XCTAssertLessThan(light.brightness(x: 2, y: light.height / 2), 15, "black at the edge")
     }
 
     /// The waves are 2 pt or more (owner: the 1.3 pt lines were too thin), and a thick line on the
     /// narrow compact island keeps at least six line widths per wave.
     func testTheWavesAreBoldAndStayWavesWhenNarrow() {
-        for kind in [IslandWavesView.Kind.line, .full] {
+        for kind in [IslandWavesView.Kind.line, .full, .speech] {
             for wave in IslandWavesView.waves(kind) {
                 XCTAssertGreaterThanOrEqual(wave.width, 2, "\(kind)")
             }
@@ -72,6 +76,20 @@ final class IslandScreenshotTests: XCTestCase {
         XCTAssertEqual(IslandWaveLine.waveCount(main, width: 240), main.frequency, "a wide line keeps its waves")
         XCTAssertEqual(IslandWaveLine.waveCount(main, width: 42), main.frequency, "the compact line too")
         XCTAssertEqual(IslandWaveLine.waveCount(main, width: 12), 12 / 18, accuracy: 0.001, "fewer, never a zigzag")
+    }
+
+    /// His talking waves start together beside him and spread out to the right (owner: they
+    /// should end before him, not run behind him).
+    func testHisTalkingWavesStartTogetherBesideHimAndSpreadOut() {
+        let lines = IslandWavesView.waves(.speech).map {
+            IslandWaveLine(wave: $0, shape: .fromLeading(centre: IslandWavesView.speechCentre), phase: 0)
+        }
+        for line in lines {
+            XCTAssertEqual(line.y(at: 0, waves: line.wave.frequency), IslandWavesView.speechCentre, accuracy: 0.0001)
+        }
+        let atEnd = lines.map { $0.y(at: 1, waves: $0.wave.frequency) }
+        XCTAssertGreaterThan((atEnd.max() ?? 0) - (atEnd.min() ?? 0), 0.4, "spread over much of the island")
+        XCTAssertGreaterThan(atEnd.min() ?? 0, 0.2, "the top line stays below his status")
     }
 
     // MARK: The pictures

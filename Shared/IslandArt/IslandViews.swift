@@ -329,10 +329,10 @@ struct IslandBottomView<Controls: View>: View {
         HStack(alignment: .center, spacing: 12) {
             Group {
                 if let pose = scene.pose {
-                    // Whole Doddy at his largest the island allows (owner, 22 Oct, ADR-596), in
-                    // the Figma island's light, so his black lines read on the black island
-                    // (ADR-607).
-                    IslandPoseView(pose: pose, maxSize: CGSize(width: 82, height: 118))
+                    // Whole Doddy at his largest the island allows (owner, 22 Oct, ADR-596), with a
+                    // 1.5 pt cream edge and a faint light, so his black lines read on the black
+                    // island (ADR-607).
+                    IslandPoseView(pose: pose, maxSize: CGSize(width: 82, height: 118), edgeWidth: 1.5)
                         .background { IslandDoddyLight() }
                 } else {
                     IslandArtView(art: scene.art(.expanded), face: scene.face, live: scene.live,
@@ -361,10 +361,12 @@ struct IslandBottomView<Controls: View>: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        // ADR-596: while he talks the whole island is his waves, behind him and his words.
+        // While he talks, his waves come out of him: they start together just right of him and
+        // spread out behind his words (owner, 24 Oct: they should end before him, ADR-607).
         .background {
             if scene.waves == .speaking {
-                IslandWavesView(kind: .full, live: scene.live)
+                IslandWavesView(kind: .speech, live: scene.live)
+                    .padding(.leading, 86)
                     .padding(.vertical, -8)
             }
         }
@@ -474,9 +476,12 @@ struct IslandPoseView: View {
     let maxSize: CGSize
     /// The cream edge for black backgrounds; off on the cream Lock Screen card.
     var edged = true
+    /// The edge's width; the expanded island's is 1.5 pt and round (ADR-607).
+    var edgeWidth: CGFloat = 1
 
     var body: some View {
-        IslandFigureView(assetName: pose.assetName, figure: pose.figure, maxSize: maxSize, edged: edged)
+        IslandFigureView(assetName: pose.assetName, figure: pose.figure, maxSize: maxSize, edged: edged,
+                         edgeWidth: edgeWidth)
     }
 }
 
@@ -488,20 +493,43 @@ struct IslandFigureView: View {
     let figure: IslandRect
     let maxSize: CGSize
     var edged = true
+    /// Up to 1 pt: the four-shadow edge. Wider: a round edge of sixteen cream copies of the
+    /// picture's shape, which has no gaps on the diagonals (ADR-607).
+    var edgeWidth: CGFloat = 1
 
     var body: some View {
+        if edged, edgeWidth > 1 {
+            ZStack {
+                ForEach(0..<16, id: \.self) { i in
+                    let angle = Double(i) * .pi / 8
+                    picture(.template)
+                        .foregroundStyle(Color.islandCream)
+                        .offset(x: edgeWidth * CGFloat(cos(angle)), y: edgeWidth * CGFloat(sin(angle)))
+                }
+                picture(.original)
+            }
+            .frame(width: maxSize.width, height: maxSize.height, alignment: .bottom)
+            .accessibilityHidden(true)
+        } else {
+            picture(.original)
+                .islandCreamEdge(edged)
+                .frame(width: maxSize.width, height: maxSize.height, alignment: .bottom)
+                .accessibilityHidden(true)
+        }
+    }
+
+    /// The picture cropped to the figure box; `.template` draws only its shape.
+    private func picture(_ mode: Image.TemplateRenderingMode) -> some View {
         let box = figure
         // Picture width (points) so the figure fits; the picture is 2:3.
         let width = min(maxSize.width / CGFloat(box.width), maxSize.height / (CGFloat(box.height) * 1.5))
         let height = width * 1.5
-        Image(assetName)
+        return Image(assetName)
+            .renderingMode(mode)
             .resizable()
             .frame(width: width, height: height)
             .offset(x: -CGFloat(box.x) * width, y: -CGFloat(box.y) * height)
             .frame(width: CGFloat(box.width) * width, height: CGFloat(box.height) * height, alignment: .topLeading)
-            .islandCreamEdge(edged)
-            .frame(width: maxSize.width, height: maxSize.height, alignment: .bottom)
-            .accessibilityHidden(true)
     }
 }
 
@@ -525,24 +553,24 @@ struct IslandPoseFaceView: View {
     }
 }
 
-/// The light behind Whole Doddy on the expanded island (Figma "Światło za Doddym" in the frame
-/// "A 2 · Słucham", file `yqoQlkN6BpevFGW3ySnNJU`): cream in the middle fading to the island's
-/// black, about 150 pt across, so his black lines and shoes read on the black island (ADR-607).
-/// The stops are the Figma frame's brightness, measured along a radius.
+/// A faint light behind Whole Doddy on the expanded island, after the Figma island's
+/// "Światło za Doddym" (frame "A 2 · Słucham", file `yqoQlkN6BpevFGW3ySnNJU`) but at a fifth of
+/// its strength: the owner didn't want him lit up (24 Oct, ADR-607). His 1.5 pt cream edge is
+/// what makes his black lines read on black; the light only lifts him off the island a little.
 struct IslandDoddyLight: View {
+    static let peak = 0.2
+    /// Fades out smoothly (a smoothstep) to nothing at the edge of a 110 x 120 pt ellipse.
     static let stops: [Gradient.Stop] = [
-        .init(color: .islandCream.opacity(0.94), location: 0),
-        .init(color: .islandCream.opacity(0.71), location: 0.33),
-        .init(color: .islandCream.opacity(0.56), location: 0.53),
-        .init(color: .islandCream.opacity(0.41), location: 0.67),
-        .init(color: .islandCream.opacity(0.25), location: 0.8),
-        .init(color: .islandCream.opacity(0.09), location: 0.93),
+        .init(color: .islandCream.opacity(peak), location: 0),
+        .init(color: .islandCream.opacity(peak * 0.84), location: 0.25),
+        .init(color: .islandCream.opacity(peak * 0.5), location: 0.5),
+        .init(color: .islandCream.opacity(peak * 0.16), location: 0.75),
         .init(color: .islandCream.opacity(0), location: 1),
     ]
 
     var body: some View {
         EllipticalGradient(stops: Self.stops, center: .center, startRadiusFraction: 0, endRadiusFraction: 0.5)
-            .frame(width: 150, height: 136)
+            .frame(width: 110, height: 120)
             .allowsHitTesting(false)
             .accessibilityHidden(true)
     }
