@@ -13,6 +13,11 @@ struct SettingsView: View {
     @State private var connections = ConnectionController()
     /// Opens notes, lists or search (ADR-633). They are their own screen, reached from Doddy's memory.
     var openMemories: (MemoryOpening) -> Void = { _ in }
+    /// A new value empties the page stack. Set when notes, lists or search open from Doddy's memory, so
+    /// Settings is on its first page when it is next shown (ADR-633): one move for Doddy, the one any
+    /// return to Settings makes, not a move to the tab bar and another as the page closes. That second
+    /// move changed his size while he was still visible (the motion checks, MotionEvidenceTests).
+    @State private var stackID = UUID()
 
     var body: some View {
         NavigationStack {
@@ -33,6 +38,7 @@ struct SettingsView: View {
             .toolbar(.hidden, for: .tabBar)
             .navigationBarTitleDisplayMode(.inline)
         }
+        .id(stackID)
         .foregroundStyle(Theme.ink)
     }
 
@@ -74,7 +80,10 @@ struct SettingsView: View {
             }
             .accessibilityIdentifier("settings.voice")
             NavigationLink {
-                DoddyMemorySettingsView(openMemories: openMemories)
+                DoddyMemorySettingsView(openMemories: { opening in
+                    openMemories(opening)
+                    stackID = UUID()
+                })
             } label: {
                 StatusRow(title: NSLocalizedString("Doddy's memory", comment: "Settings row: notes, lists and what Doddy knows"),
                           value: String(format: NSLocalizedString("%lld notes", comment: "Settings › Doddy's memory: how many notes"), store.memories.count))

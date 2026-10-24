@@ -266,7 +266,7 @@ struct MemoryLinkCard: View {
 }
 
 /// Home and Settings (ADR-633). Notes and lists are reached from Settings › Doddy's memory, so while
-/// they are open Settings is the selected tab, and tapping it goes back there.
+/// they are open Settings is the selected tab, and tapping it goes back to Settings' first page.
 struct DoddyTabBar: View {
     @Binding var selectedTab: AppTab
 

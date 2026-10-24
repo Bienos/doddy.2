@@ -21,7 +21,7 @@ Owner, 24 Oct 2026: fewer places for memories, Files instead of Memories at the 
 
 **Removed from the top level:** Profile and "Voice and interaction" and "Memory and privacy" and "Connected apps" as group names; the separate rows for personality, island style, island expansion, Siri, Memories, What Doddy knows, the six connection rows and the six notification rows. **Connected Apps** (the first Google Calendar screen) needs the development server address and token, so for everyone else it only said "not set up" and listed planned apps; it now sits in Advanced under that server. Online accounts (ADR-563) is the real one.
 
-**Elsewhere in the app:** Home's bottom bar is Messages and **Files** (ADR-633); the tab bar off Home is Home and Settings, and Settings stays selected while notes or lists are open; Home's ••• menu lost Memories and Recordings (Recordings is in Files), and Settings is its first item, so it stays on the menu's first screen at the largest text size (the dark, largest-text UI test found it pushed off once the shopping item was added).
+**Elsewhere in the app:** Home's bottom bar is Messages and **Files** (ADR-633); the tab bar off Home is Home and Settings, and Settings stays selected while notes or lists are open (tapping it returns to Settings' first page: Settings drops the Doddy's memory page when notes open, so Doddy makes one move, not two, MotionEvidenceTests); Home's ••• menu lost Memories and Recordings (Recordings is in Files), and Settings is its first item, so it stays on the menu's first screen at the largest text size (the dark, largest-text UI test found it pushed off once the shopping item was added).
 
 ## New structure (ADR-580, 22 Oct; replaced by the table above)
 
