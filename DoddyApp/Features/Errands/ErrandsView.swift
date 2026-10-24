@@ -38,6 +38,8 @@ struct ErrandsView: View {
                 } else if model.hasLoaded && model.loadProblem == nil {
                     Section { Text("No tasks yet.").foregroundStyle(Theme.secondaryText) }
                 }
+                // Prices Doddy watches for the user (SHOPPING_WATCH.md): nothing here until there is one.
+                WatchesSection()
                 if let message = model.message {
                     Section { Label(message, systemImage: "info.circle").accessibilityIdentifier("errands.message") }
                 }
@@ -48,10 +50,14 @@ struct ErrandsView: View {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
             }
             .navigationDestination(item: $opened) { id in ErrandDetailView(id: id) }
-            .refreshable { await model.refresh() }
+            .refreshable {
+                await model.refresh()
+                await WatchModel.shared.refresh()
+            }
             .task {
                 await model.load()
                 await model.refresh()
+                await WatchModel.shared.refresh()
             }
         }
     }

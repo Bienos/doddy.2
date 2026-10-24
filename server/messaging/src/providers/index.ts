@@ -19,6 +19,7 @@ import { log } from "../log.js";
 import { AffiliateLinks } from "../shopping/affiliate.js";
 import { SerperOfferSource } from "../shopping/offers.js";
 import { RoutingErrandResearcher, ShoppingErrandResearcher } from "../shopping/runner.js";
+import type { WatchDeps } from "../watches/context.js";
 
 /** Real provider adapters for whatever is configured; anything missing stays undefined. */
 export function providersFrom(config: Config) {
@@ -68,6 +69,9 @@ export function providersFrom(config: Config) {
     model: ds.enabled && config.anthropicApiKey ? new AnthropicDealsModel(config.anthropicApiKey, { model: ds.visionModel }) : undefined,
     log,
   };
+  // Price watches (shopping stage 2): the same polite fetcher reads the pages; no model and no other key is
+  // involved. Without MEMORY_ENCRYPTION_KEY or WATCHES_ENABLED=1 the routes answer 503 watches_disabled.
+  const watches: WatchDeps = { settings: config.watchSettings, fetcher };
   // Messages (ADR-586): a responder only with an Anthropic key and the switch on; otherwise the route
   // answers 503 notConfigured.
   const as = config.assistantSettings;
@@ -87,6 +91,7 @@ export function providersFrom(config: Config) {
     errands,
     assistant,
     deals,
+    watches,
     news: {
       cipher,
       feeds: new HttpFeedSource(),

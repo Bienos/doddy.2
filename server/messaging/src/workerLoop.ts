@@ -9,6 +9,8 @@ import type { TaskCallContext } from "./taskCalls/context.js";
 import { runTaskCallPasses } from "./taskCalls/worker.js";
 import type { ErrandContext } from "./errands/context.js";
 import { newErrandLoopState, runErrandPasses, stopErrandRuns } from "./errands/worker.js";
+import type { WatchContext } from "./watches/context.js";
+import { BATCH, newWatchLoopState, runWatchPasses } from "./watches/worker.js";
 
 import { log } from "./log.js";
 
@@ -29,13 +31,43 @@ async function pause(ms: number, shouldStop: () => boolean) {
  * FOR UPDATE SKIP LOCKED.
  */
 export async function runWorkerLoop(
-  db: Db, deps: { push?: PushSender; sms?: SmsSender; cipher?: TextCipher; news: NewsDeps; taskCalls?: TaskCallContext; errands?: ErrandContext },
+  db: Db, deps: {
+    push?: PushSender; sms?: SmsSender; cipher?: TextCipher; news: NewsDeps; taskCalls?: TaskCallContext; errands?: ErrandContext;
+    watches?: WatchContext;
+  },
   shouldStop: () => boolean,
 ): Promise<void> {
   const loops = [dispatchLoop(db, deps, shouldStop), digestLoop(db, deps.news, shouldStop)];
   if (deps.taskCalls) loops.push(taskCallLoop(deps.taskCalls, shouldStop));
   if (deps.errands) loops.push(errandLoop(deps.errands, shouldStop));
+  if (deps.watches) loops.push(watchLoop(deps.watches, shouldStop));
   await Promise.all(loops);
+}
+
+/**
+ * Price watches (shopping stage 2): checks the watches that are due, one at a time and politely, and tidies
+ * drafts and finished watches. Its own loop, so a slow shop never holds back pushes. A watch is checked about
+ * every 6 hours, so the loop looks every 10 seconds (one cheap index lookup) and goes straight on while a full
+ * batch was due. On shutdown the check in flight is given back unrecorded.
+ */
+async function watchLoop(ctx: WatchContext, shouldStop: () => boolean) {
+  const state = newWatchLoopState();
+  const stopWatcher = setInterval(() => { if (shouldStop()) state.shutdown.abort(); }, 500);
+  try {
+    while (!shouldStop()) {
+      let more = false;
+      try {
+        const counts = await runWatchPasses(ctx, state);
+        if (Object.keys(counts).length) log("watch passes", counts);
+        more = (counts.claimed ?? 0) >= BATCH;
+      } catch (err) {
+        log("watch passes failed", { error: (err as Error).message });
+      }
+      if (!more) await pause(10_000, shouldStop);
+    }
+  } finally {
+    clearInterval(stopWatcher);
+  }
 }
 
 /**

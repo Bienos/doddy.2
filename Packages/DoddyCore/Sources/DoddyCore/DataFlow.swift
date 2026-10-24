@@ -238,6 +238,18 @@ public enum DataFlow {
                     : state.pauseAll
                         ? "Connections are paused, so leaflets aren't checked."
                         : "The server keeps no leaflet pages, offers or item names, only daily counts of checks."),
+            // SHOPPING_WATCH.md (ADR-614): a price Doddy's server watches for the user. No model is involved, so
+            // nothing here goes to an AI service; the shop's own page is read by Doddy's server, not by this app.
+            DataFlowRow(
+                id: "watches", destination: "Your Doddy messaging server and the shops' pages (prices you watch)",
+                what: "For each price you ask Doddy to watch: the shop's name and page address, the product's title and the price you want. Doddy's server reads that shop's page a few times a day for 30 days, as a polite automated reader that follows the shop's rules, and sends you one notification if the price it read reaches yours. The notification has no product words. Nothing is bought, ordered or signed in. Never your saved notes, lists or profile.",
+                when: "Only when you say yes to watching a price, until it ends (30 days at most) or you stop or delete it.",
+                isActive: state.messagingServerSet && !state.pauseAll,
+                note: !state.messagingServerSet
+                    ? "No messaging server is set, so prices can't be watched."
+                    : state.pauseAll
+                        ? "Connections are paused, so no new price is watched. Prices you already watch keep being checked by Doddy's server until you stop or delete them."
+                        : "The server keeps the words encrypted only while the watch runs and for 30 days after it ends; Delete removes it at once. It keeps no page content, only the prices it read and when."),
             DataFlowRow(
                 id: "siri", destination: "Apple (Siri)",
                 what: "What you ask Siri to look for, and the note Siri reads back with when you saved it.",
@@ -301,6 +313,7 @@ public enum DataFlow {
         "messagingServer": "your Doddy messaging server",
         "errands": "Anthropic (tasks you hand over, through your messaging server)",
         "deals": "the shops' leaflet pages and Anthropic (leaflets you check, through your messaging server)",
+        "watches": "the shops' pages, read by your messaging server (prices you watch)",
         "siri": "Siri (when you ask it)",
         "askDoddy": "Anthropic (Ask Doddy, through your messaging server)",
         "webMemory": "your Doddy server and Anthropic (notes and conversations you keep there)",
