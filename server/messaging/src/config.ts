@@ -1,3 +1,4 @@
+import type { DealsSettings } from "./deals/types.js";
 import { z } from "zod";
 
 // Every provider block is optional: a missing block switches that feature off and the API
@@ -90,6 +91,14 @@ const schema = z.object({
   SHOPPING_MAX_OFFER_SEARCHES: z.coerce.number().int().min(1).max(20).default(8),
   SHOPPING_MAX_PAGE_CHECKS: z.coerce.number().int().min(1).max(40).default(15),
   SERPER_API_KEY: z.string().min(8).optional(),
+  // Leaflets (ADR-609, SHOPPING.md section 2): POST /v1/deals/search reads the official leaflets of
+  // Biedronka, Lidl, Dino and Rossmann on request and keeps only counts. "0" answers 503 deals_disabled.
+  // Image pages need ANTHROPIC_API_KEY (Claude Haiku reads them); the caps count requests per UTC day.
+  DEALS_ENABLED: z.enum(["0", "1"]).default("0"),
+  DEALS_VISION_MODEL: z.string().regex(/^[a-z0-9][a-z0-9.\-]{1,63}$/).default("claude-haiku-5-5"),
+  DEALS_MAX_PAGES: z.coerce.number().int().min(0).max(100).default(40),
+  DEALS_DAILY_PER_ACCOUNT: z.coerce.number().int().min(1).max(1000).default(30),
+  DEALS_DAILY_PER_SERVER: z.coerce.number().int().min(1).max(100000).default(1000),
 
   // Messages (ADR-585, ADR-586): the app's typed conversation asks Claude here. Text only, no tools.
   // Runs only when ANTHROPIC_API_KEY is set too; "0" answers 503 notConfigured. The daily caps count
@@ -166,6 +175,7 @@ export interface Config {
   taskCallSettings: TaskCallSettings;
   errandSettings: ErrandSettings;
   shoppingSettings: ShoppingSettings;
+  dealsSettings: DealsSettings;
   assistantSettings: AssistantSettings;
 }
 
@@ -240,6 +250,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       maxOfferSearches: e.SHOPPING_MAX_OFFER_SEARCHES,
       maxPageChecks: e.SHOPPING_MAX_PAGE_CHECKS,
       serperApiKey: e.SERPER_API_KEY,
+    },
+    dealsSettings: {
+      enabled: e.DEALS_ENABLED === "1", visionModel: e.DEALS_VISION_MODEL, maxPages: e.DEALS_MAX_PAGES,
+      dailyPerAccount: e.DEALS_DAILY_PER_ACCOUNT, dailyPerServer: e.DEALS_DAILY_PER_SERVER,
     },
     assistantSettings: {
       enabled: e.ASSISTANT_ENABLED === "1",

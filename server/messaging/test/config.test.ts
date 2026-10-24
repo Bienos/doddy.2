@@ -87,3 +87,12 @@ test("shopping errands (ADR-607): Sonnet 5.5 at medium effort, 8 offer searches 
     assert.throws(() => loadConfig({ DATABASE_URL: "postgres://x/y", ...bad }), JSON.stringify(bad));
   }
 });
+
+test("leaflets (ADR-609): off by default, Haiku 5.5 reads pages, 40 pages per chain, 30 a day per account, 1000 per server", () => {
+  const c = loadConfig({ DATABASE_URL: "postgres://x/y", DEALS_ENABLED: "" });
+  assert.deepEqual(c.dealsSettings, { enabled: false, visionModel: "claude-haiku-5-5", maxPages: 40, dailyPerAccount: 30, dailyPerServer: 1000 });
+  assert.equal(loadConfig({ DATABASE_URL: "postgres://x/y", DEALS_ENABLED: "1" }).dealsSettings.enabled, true);
+  for (const bad of [{ DEALS_ENABLED: "yes" }, { DEALS_MAX_PAGES: "101" }, { DEALS_DAILY_PER_ACCOUNT: "0" }, { DEALS_VISION_MODEL: "Claude Haiku" }]) {
+    assert.throws(() => loadConfig({ DATABASE_URL: "postgres://x/y", ...bad }), JSON.stringify(bad));
+  }
+});

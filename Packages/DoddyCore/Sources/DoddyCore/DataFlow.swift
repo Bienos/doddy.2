@@ -220,10 +220,11 @@ public enum DataFlow {
                 note: state.messagingServerSet
                     ? "The server keeps the words and the result, encrypted, until the result is saved on this iPhone, then deletes them; a result never fetched is deleted after 30 days. The notification has no words from the task."
                     : "No messaging server is set, so tasks can't be handed over."),
-            // SHOPPING.md section 2: leaflets read on request; nothing about the user goes to the chains.
+            // SHOPPING.md section 2: leaflets read on request; nothing that identifies the user goes to the chains
+            // (Rossmann gets the item names as a search on rossmann.pl, from Doddy's server).
             DataFlowRow(
                 id: "deals", destination: "Your Doddy messaging server, the shops' leaflet pages and Anthropic (leaflets)",
-                what: "The names of the items you ask about and which shops to check. Doddy's server fetches the shops' leaflet pages itself and, for leaflets that are only pictures, sends those pages and the item names to Anthropic's Claude to read. Nothing about you goes to the shops. Never your saved notes, lists or profile.",
+                what: "The names of the items you ask about and which shops to check. Doddy's server fetches the shops' leaflet pages itself and, for leaflets that are only pictures, sends those pages and the item names to Anthropic's Claude to read. For Rossmann, the item names go to rossmann.pl as a search from Doddy's server. Nothing that identifies you goes to any shop. Never your saved notes, lists or profile.",
                 when: "Only when you say yes to checking this week's leaflets.",
                 isActive: state.messagingServerSet && !state.pauseAll,
                 note: !state.messagingServerSet

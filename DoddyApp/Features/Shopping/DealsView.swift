@@ -40,7 +40,7 @@ struct DealsView: View {
                     .disabled(items.isEmpty || chains.isEmpty || model.phase == .checking)
                     .accessibilityIdentifier("deals.search")
                 } footer: {
-                    Text("Separate items with commas. Doddy's server reads the shops' own leaflets for this request and keeps nothing; nothing about you is sent to the shops.")
+                    Text("Separate items with commas. Doddy's server reads the shops' own leaflets for this request and keeps nothing. Nothing that identifies you goes to the shops; Rossmann gets the item names as a search.")
                 }
 
                 switch model.phase {

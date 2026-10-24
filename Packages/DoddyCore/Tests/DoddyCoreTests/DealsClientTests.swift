@@ -235,7 +235,7 @@ final class DealsClientTests: XCTestCase {
             lines: [
                 "Items: masło, kawa mielona",
                 "Shops: Lidl, Kaufland (leaflet link only)",
-                "Doddy reads the leaflets on its server; nothing about you is sent to the shops.",
+                "Doddy reads the leaflets on its server. Nothing that identifies you goes to the shops; Rossmann gets the item names as a search.",
             ],
             confirmLabel: "Yes, check")))
         XCTAssertFalse(AskFirst.needsTap(need), "a read: a spoken yes or a tap")
