@@ -54,27 +54,30 @@ final class MeaningSearchTests: XCTestCase {
         XCTAssertTrue(none.isEmpty, "the word search already showed it; lists and samples never count")
     }
 
-    /// Counts the texts it reads, so a test can see what a cancelled search still did.
-    private final class CountingEmbedder: MeaningEmbedder, @unchecked Sendable {
+    /// Counts the texts it reads, so a test can see what a cancelled search still did. It cancels the
+    /// search's own task once it has read the question, as a keystroke in Find does mid-search.
+    private final class CancellingEmbedder: MeaningEmbedder, @unchecked Sendable {
         private let lock = NSLock()
         private var count = 0
         var calls: Int { lock.withLock { count } }
         func vector(for text: String) async -> [Float]? {
-            lock.withLock { count += 1 }
+            let first = lock.withLock { count += 1; return count == 1 }
+            if first { withUnsafeCurrentTask { $0?.cancel() } }
             return [1, 0, 0, 0]
         }
     }
 
     func testACancelledSearchStopsReadingNotes() async throws {
-        let embedder = CountingEmbedder()
+        let embedder = CancellingEmbedder()
         let index = MeaningIndex(embedder: embedder)
         let notes = try (0..<50).map { try note("note \($0)") }
+        // The cancel comes from inside the search, after the question, so the test doesn't race the
+        // task's start (a cancel() after Task { } sometimes landed after all fifty notes were read).
         let task = Task { await index.search("dumplings place", in: notes, excluding: []) }
-        task.cancel()
         let hits = await task.value
         XCTAssertTrue(hits.isEmpty)
-        // Only the question was read (or nothing, if the task never started): not the fifty notes.
-        XCTAssertLessThanOrEqual(embedder.calls, 1)
+        // Only the question was read: not the fifty notes.
+        XCTAssertEqual(embedder.calls, 1)
     }
 
     func testShortOrUnreadableQuestionsFindNothing() async throws {
