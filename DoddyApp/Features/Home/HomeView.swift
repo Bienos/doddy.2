@@ -212,9 +212,6 @@ struct HomeView: View {
                 // Tasks handed to Doddy's background worker (ADR-570).
                 Button { showErrands = true } label: { Label("Tasks", systemImage: "checklist") }
                     .accessibilityIdentifier("home.tasks")
-                // Leaflets read on request (SHOPPING.md 2).
-                Button { showDeals = true } label: { Label("Cheapest this week", systemImage: "cart") }
-                    .accessibilityIdentifier("home.deals")
                 Button { tool = .focus } label: {
                     if FocusController.shared.session.map({ !$0.isOver }) ?? false {
                         Label("Focus · on", systemImage: "timer")
@@ -237,6 +234,11 @@ struct HomeView: View {
                 Text("Doddy is an AI, not a person.")
             }
             Section {
+                // Leaflets read on request (SHOPPING.md 2). In this section, not the first: there it pushed the
+                // menu's first item off its first screen at the largest text size (the dark, largest-text UI test,
+                // MemoryJourneyTests). Settings, which leads to Doddy's memory too (ADR-633), heads the menu.
+                Button { showDeals = true } label: { Label("Cheapest this week", systemImage: "cart") }
+                    .accessibilityIdentifier("home.deals")
                 // What is built and what isn't, from the capability catalog (T35/T42, ADR-195, ADR-548).
                 Button { showCapabilities = true } label: { Label("What I can do", systemImage: "sparkles") }
                     .accessibilityIdentifier("home.capabilities")
