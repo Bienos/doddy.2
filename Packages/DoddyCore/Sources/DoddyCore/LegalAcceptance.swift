@@ -10,7 +10,7 @@ public enum LegalDocuments {
     /// The Terms version on https://www.doddy.lol/terms/.
     public static let termsVersion = "2026-10-22"
     /// The Privacy Policy version on https://www.doddy.lol/privacy/.
-    public static let privacyVersion = "2026-10-22"
+    public static let privacyVersion = "2026-10-25"
     /// The oldest Terms version that still counts. Raise it to `termsVersion` only when a change
     /// is material and everyone must accept again; a wording fix keeps it.
     public static let minimumTermsVersion = "2026-10-22"

@@ -26,6 +26,7 @@ extension ActivityApp {
         case .steps: return "Kroki"
         case .photos: return "Zdjęcia"
         case .camera: return "Aparat"
+        case .health: return "Zdrowie"
         }
     }
 }
@@ -67,6 +68,7 @@ public enum ActivityText {
         "Prepare a BLIK transfer": "Przygotuj przelew BLIK",
         "Make a presentation": "Przygotuj prezentację",
         "Read steps": "Odczytano kroki",
+        "Read the week from Apple Health": "Odczytano tydzień z Apple Health",
         "Looked through photos": "Przejrzano zdjęcia",
         "Open the camera": "Otwórz aparat",
         "Draft an email": "Szkic e-maila",
@@ -98,6 +100,9 @@ public enum ActivityText {
         // Round 3 (ADR-280, ADR-283), joined in the PR #34 merge.
         "Read alarms": "Odczytano budziki",
         "Turn off alarm": "Wyłącz budzik",
+        "Start stopwatch": "Włącz stoper",
+        "Stop stopwatch": "Zatrzymaj stoper",
+        "Read stopwatch": "Odczytano stoper",
         "Delete events": "Usuń wydarzenia",
         "Move reminders": "Przenieś przypomnienia",
         // Round 4 (ADR-300 onwards).

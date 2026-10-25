@@ -19,6 +19,8 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
     case steps
     /// The photo library and Doddy's camera (ADR-569).
     case photos, camera
+    /// Apple Health, read only (ADR-621, ADR-623).
+    case health
 
     public var title: String {
         switch self {
@@ -42,6 +44,7 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
         case .steps: "Steps"
         case .photos: "Photos"
         case .camera: "Camera"
+        case .health: "Apple Health"
         }
     }
 }
@@ -217,6 +220,8 @@ public struct ActivityRequest: Equatable, Sendable {
                 logDetail: "\(draft.slideCount) slides", isLookup: false)
         case .readSteps(let day):
             return ActivityRequest(app: .steps, title: "Read steps", detail: day.text, isLookup: true)
+        case .readHealthWeek:
+            return ActivityRequest(app: .health, title: "Read the week from Apple Health", detail: "Last 7 days", isLookup: true)
         case .findPhotos(let request):
             return ActivityRequest(app: .photos, title: "Looked through photos", detail: request.text(calendar: calendar), isLookup: true)
         case .openCamera:
@@ -275,6 +280,12 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(app: .timers, title: "Read alarms", detail: "Doddy's alarms", isLookup: true)
         case .cancelAlarm(let clock, let label):
             return ActivityRequest(app: .timers, title: "Turn off alarm", detail: [clock, label.map { "“\($0)”" }].compactMap { $0 }.joined(separator: " · "), isLookup: false)
+        case .startStopwatch(let label):
+            return ActivityRequest(app: .timers, title: "Start stopwatch", detail: label.map { "“\($0)”" } ?? "Counts up", isLookup: false)
+        case .stopStopwatch:
+            return ActivityRequest(app: .timers, title: "Stop stopwatch", detail: "Doddy's stopwatch", isLookup: false)
+        case .checkStopwatch:
+            return ActivityRequest(app: .timers, title: "Read stopwatch", detail: "Doddy's stopwatch", isLookup: true)
         case .deleteCalendarEvents(let range):
             return ActivityRequest(app: .calendar, title: "Delete events", detail: "\(when(range.start, hasTime: true)) – \(when(range.end, hasTime: true))", isLookup: false)
         case .moveReminders(let dueBy, let to):

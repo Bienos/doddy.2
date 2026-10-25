@@ -79,7 +79,7 @@ Failure codes: `interrupted` (the worker stopped mid-run; it is **not** re-run b
 - **Sent to Anthropic:** the user's words, the brief, the language and today's date (not the title), plus whatever the run searches and reads; search words made from the task go on to Anthropic's search provider. Nothing from notes, lists, the profile or earlier conversations.
 - **On the server:** the words, brief, title and language as one encrypted blob, and the result, encrypted with the existing text key (`MEMORY_ENCRYPTION_KEY`), until the app acknowledges the result. The approved digest covers exactly the stored blob and the worker checks it again before running. A draft that's never approved is deleted after 10 minutes; any finished errand's content is deleted after 30 days. Receipts go in `errand_deletions`. Without the key the server refuses errands (`503 errands_disabled`).
 - **On the iPhone:** the result, in Doddy's database (`v15_errands`), with the user's words. Deleting it in the app deletes it there; the server copy is already gone after `ack`.
-- **The push** carries no words from the errand, not even its title (owner decision open: the title on the Lock Screen would be more useful and less private).
+- **The push** carries no words from the errand, not even its title. Decided 24 Oct 2026 (owner: "zrób jak trzeba"): it stays that way. The title would have to travel in the push payload (read by the server and Apple) or be filled in by a notification service extension on the phone, which can't be built or tried here.
 
 ## Failure paths
 

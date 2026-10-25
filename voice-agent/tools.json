@@ -212,7 +212,7 @@
     {
       "type": "function",
       "name": "remind_me_about_note",
-      "description": "Propose Doddy's own reminder about one note the user already saved: a notification on this iPhone that opens the note, at a time or when the user arrives at or leaves a place. Use it only when the user asks to be reminded about a saved note (e.g. 'remind me about the parcel code when I get to the post office'). First find the note with search_memories, or use the text save_memory just saved, and pass that note's text exactly. Give due or place, never both. If the user wants it again and again (every day, on weekdays, every week or every month), also give repeat with due; the weekday, day and time come from due, and monthly works for days 1 to 28. You can't stop a repeat; the user does that on the note. It also works for one of the user's lists (e.g. 'remind me of my shopping list when I get to Lidl'): give list with the list's exact name instead of note; the notification says only that a list is due, never its name or items. For a new to-do that is not a saved note, use create_reminder instead. The app shows the note and the time or place on screen and the user must tap Set reminder; the result starts with 'added', 'declined' or 'failed'. Before this tool runs, say only one short line that asks the user to confirm on screen, for example 'Confirm on screen if I should set this.' (Polish: 'Potwierdź na ekranie, jeśli mam to ustawić.'). Never say it was set unless the result starts with added. If the result starts with 'failed: not added yet', ask the user the question it gives, then call this tool again with their answer.",
+      "description": "Propose Doddy's own reminder about one note the user already saved: a notification on this iPhone that opens the note, at a time or when the user arrives at or leaves a place. Use it only when the user asks to be reminded about a saved note (e.g. 'remind me about the parcel code when I get to the post office'). First find the note with search_memories, or use the text save_memory just saved, and pass that note's text exactly. Give due or place, never both. If the user wants it again and again (every day, on weekdays, every week or every month), also give repeat with due; the weekday, day and time come from due, and monthly works for days 1 to 28. You can't stop a repeat; the user does that on the note. It also works for one of the user's lists (e.g. 'remind me of my shopping list when I get to Lidl'): give list with the list's exact name instead of note; the notification says only that a list is due, never its name or items. For a new to-do that is not a saved note, use create_reminder instead. The app shows the note and the time or place on screen and the user must tap Set reminder; the result starts with 'added', 'declined' or 'failed'. Before this tool runs, say only one short line that asks the user to confirm on screen, for example 'Confirm on screen if I should set this.' (Polish: 'Potwierdź na ekranie, jeśli mam to ustawić.'). Never say it was set unless the result starts with added. If the result starts with 'failed: not added yet', ask the user the question it gives, then call this tool again with their answer. If the user wants it to ring like an alarm, give ring; a monthly or place reminder can't ring, and the result says whether the alarm was confirmed: never say it will ring unless the result says it rings.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -222,7 +222,8 @@
           "place": {"type": "string", "description": "For a place reminder: words to find the place in Apple Maps, as specific as the user gave them, e.g. 'InPost Marszałkowska Warszawa'. The user picks the exact place on screen. Leave out for a time reminder."},
           "when_leaving": {"type": "boolean", "description": "For a place reminder: true if the user wants it when they leave the place; leave out for when they arrive."},
           "repeat": {"type": "string", "enum": ["daily", "weekdays", "weekly", "monthly"], "description": "Only with due, only if the user asked for it to repeat: daily, weekdays (Monday to Friday), weekly (on due's weekday) or monthly (on due's day, 1 to 28). Leave out for a one-time reminder."},
-          "said_time": {"type": "string", "description": "The user's own words for when, exactly as they said them and in their language, with every day and time word they used, e.g. 'next Friday at 7', 'jutro rano', 'w sobotę o 19'. Never reword or fix them. The app checks the date against these words and may answer 'failed: not added yet' with one question to ask. Leave out for a place reminder."}
+          "said_time": {"type": "string", "description": "The user's own words for when, exactly as they said them and in their language, with every day and time word they used, e.g. 'next Friday at 7', 'jutro rano', 'w sobotę o 19'. Never reword or fix them. The app checks the date against these words and may answer 'failed: not added yet' with one question to ask. Leave out for a place reminder."},
+          "ring": {"type": "boolean", "description": "Only with due, only if the user asks for it to ring like an alarm or says it mustn't be missed (e.g. 'and make it ring', 'niech zadzwoni', medicine, picking someone up). The card then shows Ring like an alarm switched on; the user can switch it off before tapping. It rings even in Silent mode or a Focus. Leave out otherwise."}
         },
         "required": []
       },
@@ -326,6 +327,33 @@
         "required": ["time"]
       },
       "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_2701m4mf3jrre9ts0cksqvg7e2s5"}
+    },
+    {
+      "type": "function",
+      "name": "start_stopwatch",
+      "description": "Propose a stopwatch on the user's iPhone: it counts up from zero until the user stops it, and shows on the Lock Screen and in the Dynamic Island. Use it when the user asks for a stopwatch ('stoper'), or to time something with no set length ('time my run'). For a countdown with a length use set_timer instead. Give a short label only if the user said what it is for. One stopwatch at a time: if one is running, the result starts with 'failed' and tells you its reading. The app shows the card and the user must tap Start; the result starts with 'added', 'declined' or 'failed'. Before this tool runs, say only one short line, for example 'Confirm on screen if I should start the stopwatch.' (Polish: 'Potwierdź na ekranie, jeśli mam włączyć stoper.'). Never say it is running unless the result starts with added.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "label": {"type": "string", "description": "A short label such as 'bieg', only if the user said what the stopwatch is for. Leave out otherwise."}
+        },
+        "required": []
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_7101m5q7d7ffexkrq2nj9sadhcxe"}
+    },
+    {
+      "type": "function",
+      "name": "stop_stopwatch",
+      "description": "Propose stopping the user's stopwatch. Use it only when the user asks to stop it, or says they are done. The app shows the card and the user must tap Stop; the result starts with 'changed' and says the time it stopped at, or with 'declined' or 'failed'. Read the time out from the result, never guess it. Before this tool runs, say only one short line, for example 'Confirm on screen if I should stop it.' (Polish: 'Potwierdź na ekranie, jeśli mam zatrzymać stoper.'). Never say it is stopped unless the result starts with changed.",
+      "parameters": {"type": "object", "properties": {}, "required": []},
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_5401m5q7e8hzf8daj1ret0qtw220"}
+    },
+    {
+      "type": "function",
+      "name": "check_stopwatch",
+      "description": "Read the user's stopwatch: whether it is running, paused or stopped, and how much time it shows. Use it when the user asks how long it has been, or what the stopwatch says. Say only the time the result gives, never one you worked out yourself. ASK-01: before this tool runs, say in one short line exactly what you will look at and ask, for example 'Shall I check the stopwatch?' (Polish: 'Mam sprawdzić stoper?'). The app shows the same question on screen and runs it only after the user says yes or taps Yes; if the result starts with 'declined', nothing was looked at: say so in one short sentence.",
+      "parameters": {"type": "object", "properties": {}, "required": []},
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 60, "elevenlabs_tool_id": "tool_8601m5q7h4w8eed9kk304qrsfq53"}
     },
     {
       "type": "function",
@@ -478,6 +506,13 @@
         }
       },
       "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 60, "elevenlabs_tool_id": "tool_4601m5ewmkptekprzmx9vy9114eb"}
+    },
+    {
+      "type": "function",
+      "name": "read_health_week",
+      "description": "Read the user's last 7 days from Apple Health on their iPhone, as a short summary worked out there: each workout (kind, day and time, distance, time, pace, average heart rate, active calories), the totals of this week and the week before, last night's sleep, resting heart rate and heart rate variability with 7-day averages, and VO2 max. Use it when the user asks how their week, their training or a workout went, or how they slept or recovered. Say only the numbers it returns; rate the week in two or three short sentences, compare it with the week before and suggest one change. You are not a doctor: no diagnosis, no medical advice, no calorie targets; if the user mentions chest pain, fainting, dizziness or unusual breathlessness, tell them to stop and see a doctor, and to call 112 in an emergency. ASK-01: before this tool runs, say in one short line what you will look at and ask, for example 'Shall I look at your week in Apple Health?' (Polish: 'Mam zajrzeć do twojego tygodnia w Apple Health?'). The app shows the same question on screen and runs it only after the user says yes or taps Yes; if the result starts with 'declined', nothing was read: say so in one short sentence. If it starts with 'not allowed', the user hasn't let Doddy's voice hear Apple Health: say they can allow it in Settings, Connections, Apple Health, and don't ask again. If it starts with 'empty', say Apple Health has nothing Doddy may read, without guessing why.",
+      "parameters": {"type": "object", "properties": {}, "required": []},
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 60, "elevenlabs_tool_id": "tool_3001m5q73js3f5stcnshpx4d13f6"}
     },
     {
       "type": "function",
@@ -1172,7 +1207,7 @@
     {
       "type": "function",
       "name": "start_translator",
-      "description": "Start translator mode immediately when the user asks you to translate or to help them talk with someone who speaks another language. face_to_face: Doddy translates both ways between the user and the other person, with the phone between them. listen: Doddy translates what is said around the user (a guide, a talk, an announcement) into the user's language, for the user only. their_language is the other person's language as a two-letter code, or detect if the user doesn't know it. Give your_language only if the user wants to speak a different language from the one you are speaking now. The app asks the user first (a spoken yes or a tap) before it starts. The result starts with 'started' (then follow the Translator mode rules and the result's instructions) or 'failed'. Never for an emergency: tell the user to call their local emergency number. ASK-01: before this tool runs, say in one short line exactly what you will look at and ask, for example 'Shall I check your inbox?' (Polish: 'Mam sprawdzić twoją skrzynkę?'). The app shows the same question on screen and runs it only after the user says yes or taps Yes; if the result starts with 'declined', nothing was looked at: say so in one short sentence.",
+      "description": "Start translator mode the moment the user asks you to translate or to help them talk with someone who speaks another language. Don't ask first: the app starts it at once (the owner's rule of 24 October 2026). face_to_face: Doddy translates both ways between the user and the other person, with the phone between them. listen: Doddy translates what is said around the user (a guide, a talk, an announcement) into the user's language, for the user only. their_language is the other person's language as a two-letter code, or detect if the user doesn't know it. Give your_language only if the user wants to speak a different language from the one you are speaking now. The result starts with 'started' (then follow the Translator mode rules and the result's instructions; if the user hasn't said what to translate, ask them once what to translate) or 'failed'. Never for an emergency: tell the user to call their local emergency number.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -1182,7 +1217,7 @@
         },
         "required": ["their_language"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_6601m4krz5tqe0paj9jxza6vnjgp"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "timeout_secs": 90, "elevenlabs_tool_id": "tool_6601m4krz5tqe0paj9jxza6vnjgp"}
     },
     {
       "type": "function",
@@ -1193,7 +1228,7 @@
         "properties": {},
         "required": []
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 60, "elevenlabs_tool_id": "tool_4601m4krz73zeb1a9edtsxmn6c5s"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "force", "timeout_secs": 60, "elevenlabs_tool_id": "tool_4601m4krz73zeb1a9edtsxmn6c5s"}
     },
     {
       "type": "function",
@@ -1323,7 +1358,7 @@
         },
         "required": ["items"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "not_synced"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_9201m5rpyjhfe2kv0yd5xbbfk6k3"}
     },
     {
       "type": "function",

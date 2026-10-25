@@ -1,7 +1,7 @@
 {
   "NSAlarmKitUsageDescription": {
-    "de": "Doddy stellt einen Wecker nur, wenn du darum bittest und auf Wecker stellen tippst. Seine Wecker klingeln auch im Lautlos-Modus oder in einem Fokus. Schalte sie in den Doddy-Einstellungen unter Wecker aus.",
-    "en": "Doddy sets an alarm only when you ask and tap Set alarm. Its alarms ring even in Silent mode or a Focus. Turn them off in Doddy's Settings, Alarms."
+    "de": "Doddy stellt einen Wecker oder Timer nur, wenn du darum bittest und auf Wecker stellen oder Starten tippst. Sie klingeln auch im Lautlos-Modus oder in einem Fokus. Wecker schaltest du in den Doddy-Einstellungen unter Wecker aus.",
+    "en": "Doddy sets an alarm or a timer only when you ask and tap Set alarm or Start. They ring even in Silent mode or a Focus. Turn alarms off in Doddy's Settings, Alarms."
   },
   "NSCalendarsFullAccessUsageDescription": {
     "de": "Doddy liest deine Termine für die Tage, nach denen du fragst, und fügt einen Termin erst hinzu, ändert oder löscht ihn erst, nachdem du auf Hinzufügen, Ändern oder Löschen getippt hast. Schalte das unter Einstellungen, Verbindungen aus.",
@@ -32,8 +32,12 @@
     "en": "Doddy writes out voice memos and recordings on this iPhone, so you can check and search their words. The audio and its words are not sent anywhere."
   },
   "NSMotionUsageDescription": {
-    "en": "Doddy reads your steps, walking distance and floors climbed from Motion & Fitness only when you ask, for one day of the last seven. In a voice conversation those numbers go to ElevenLabs, which runs Doddy's voice, or to OpenAI if you switch Home's voice to it. Doddy keeps none of them and reads nothing from Health. Turn this off in Settings, Connections.",
-    "de": "Doddy liest deine Schritte, die Gehstrecke und die gestiegenen Etagen aus „Bewegung & Fitness“ nur, wenn du danach fragst, für einen Tag der letzten sieben. In einem Sprachgespräch gehen diese Zahlen an ElevenLabs, das die Stimme von Doddy betreibt, oder an OpenAI, wenn du die Stimme auf dem Startbildschirm darauf umstellst. Doddy speichert nichts davon und liest nichts aus Health. Schalte das unter Einstellungen, Verbindungen aus."
+    "en": "Doddy reads your steps, walking distance and floors climbed from Motion & Fitness only when you ask, for one day of the last seven. In a voice conversation those numbers go to ElevenLabs, which runs Doddy's voice, or to OpenAI if you switch Home's voice to it. Doddy keeps none of them. Turn this off in Settings, Connections.",
+    "de": "Doddy liest deine Schritte, die Gehstrecke und die gestiegenen Etagen aus „Bewegung & Fitness“ nur, wenn du danach fragst, für einen Tag der letzten sieben. In einem Sprachgespräch gehen diese Zahlen an ElevenLabs, das die Stimme von Doddy betreibt, oder an OpenAI, wenn du die Stimme auf dem Startbildschirm darauf umstellst. Doddy speichert nichts davon. Schalte das unter Einstellungen, Verbindungen aus."
+  },
+  "NSHealthShareUsageDescription": {
+    "en": "Doddy reads your workouts, heart rate, resting heart rate, heart rate variability, sleep and VO2 max from Health to show them to you on its Apple Health screen. Only a short summary of the week leaves this iPhone, and only when you allow it: in Messages when you send it yourself, or to Doddy's voice when you ask and say yes. Doddy keeps none of it and writes nothing to Health. Turn this off in Settings, Connections, Apple Health, or in the Health app.",
+    "de": "Doddy liest deine Trainings, Herzfrequenz, Ruheherzfrequenz, Herzfrequenzvariabilität (HRV), deinen Schlaf und VO2max aus Health, um sie dir auf seinem Apple-Health-Bildschirm zu zeigen. Nur eine kurze Wochenzusammenfassung verlässt dieses iPhone, und nur wenn du es erlaubst: in „Nachrichten“, wenn du sie selbst sendest, oder an Doddys Stimme, wenn du fragst und zustimmst. Doddy speichert nichts davon und schreibt nichts in Health. Schalte das unter Einstellungen, Verbindungen, Apple Health oder in der Health-App aus."
   },
   "NSCameraUsageDescription": {
     "en": "Doddy opens the camera only when you tap Take a photo or Open camera. The photo you keep goes into a note on this iPhone and its text is read here; it is never sent anywhere or saved to your photo library.",

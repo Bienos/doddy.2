@@ -38,6 +38,14 @@ Polish only, written by the agent that built the Tasks screens; the other eight 
 - **Check first:** "Przełączniki" for iOS's Action Button › *Controls* and "Przycisk czynności" for the Action Button: use exactly the words Polish iOS shows. "Regulamin" for Terms & Conditions and "Polityka prywatności" for the Privacy Policy, to match the website's Polish legal pages (`site/pl/terms/`, `site/pl/privacy/`) and the lawyer's wording. "Akceptuję Regulamin" on the unticked box.
 - 31 Polish lines and 23 lines in each other table were removed with the Settings paragraphs they translated.
 
+## Added 24 October 2026 (ADR-621, Apple Health)
+
+- **New permission prompt** `NSHealthShareUsageDescription` in all ten languages; the nine translations are machine drafts. The Health app's own names used: Zdrowie, Health (de), Salud, Santé, Salute, Zdravlje, ヘルスケア, Saúde, 健康. "Apple Health" is kept as the name of Doddy's screen.
+- **Motion & Fitness prompt:** the clause "and reads nothing from Health" was removed in all ten languages (no other words changed).
+- **40 Polish lines** for the Apple Health screen (`l10n/pl.json`), machine-drafted; the other languages show English.
+- **Same day, ADR-622:** the Health prompt changed again (a summary may now leave the iPhone when the person sends it in Messages), all ten languages redrafted by machine; 22 more Polish lines (the week summary and its consent sheet).
+- **Same day, ADR-623:** the Health prompt changed a third time (the summary may also go to Doddy's voice), ten languages redrafted by machine; 10 more Polish lines (the voice section and its consent). Workout kinds use new keys ("Running", not "Run", which already means "Uruchom").
+
 ## Per language
 
 **French (fr).** Uses non-breaking spaces before `? ! : ;` and inside « ». Unsure: "Receipts" → "Confirmations" (#782); "is now due" (#1357); "Item" → "Objet" (#449); "Way" → "Moyen" (#1233); "Focusing" (#384); "Grounded" → "Posé" (#405). Terms: memories = souvenirs; Morning check-in = Point du matin; Evening wrap-up = Bilan du soir; Weekly look-back = Retour sur la semaine; Shopping mode = Mode courses; Focus = Concentration (also Doddy's own focus timer); "Hey Siri" = « Dis Siri ».
@@ -113,3 +121,26 @@ Check first:
 - Tone: informal "Ty" with capitals (Twoje, Ciebie), as in the app; gendered past forms are masculine ("jeśli korzystałeś"), which a reviewer may want to make neutral.
 - App labels quoted in English because the Polish app still shows them in English: "What leaves this iPhone", "Delete Doddy voice account", "Sign out of voice", "Ask again before sharing voice". Once the app translates them, the pages should use the Polish labels.
 - The Siri phrase is quoted from `l10n/pl_shortcuts.json` ("Zapytaj aplikację Doddy, co mam zapisane").
+
+## Timers ring through AlarmKit (ADR-650, 24 Oct 2026)
+
+- **The alarm permission prompt** (`NSAlarmKitUsageDescription`) now names timers: "Doddy sets an alarm or a timer only when you ask and tap Set alarm or Start…". The nine translations in `l10n/*_infoplist.json` were rewritten by the agent from the earlier ones, reusing each table's words for Set alarm, Start and Alarms. Not reviewed by a native speaker.
+- **Four Polish lines in `l10n/pl.json`:** the Start card's "It rings even in Silent mode or a Focus…" and the three timer button intents. Agent-written.
+- **Timer and focus notification text** is in DoddyCore (`TimerCopy`, Polish and English only, like the other notifications): "Czas minął", "Minutnik na 10 min skończył odliczanie.", "Koniec skupienia", "Minęło 25 min skupienia.", buttons "Zatrzymaj", "Powtórz", "Pauza", "Wznów". Agent-written; a Polish speaker should read them.
+
+## Ringing reminders, the weekly plan, quiet hours (ADR-651, 24 Oct 2026)
+
+Twenty-one new Polish lines in `l10n/pl.json`, agent-written: the "Ring like an alarm" switch and its notes ("Dzwoń jak budzik", "Dzwoni jak budzik, także w trybie cichym"), the weekly plan's screen and Settings section ("Plan na tydzień", "Twój tydzień\nprzed Tobą", "Nic zaplanowanego", "Prywatna notatka"), the quiet-hours sentence in Settings › Check-ins and reminders, and "Jutro". Notification and alarm words are in DoddyCore: "Nowy tydzień · Zerknąć, co Cię czeka?", "Za 10 min", "Zatrzymaj", "Przypomnienie Doddy'ego". The other eight languages show these in English until translated.
+
+## The stopwatch and a list's reminder at a place (ADR-652, 24 Oct 2026)
+
+At the merge with the island's Polish (ADR-617, 25 Oct): the stopwatch's island label and state are now looked up like the others, with two new agent-written lines, "STOPWATCH" → "STOPER" and "Running" → "Liczy". "Nicely timed" and "Paused at …" still show in English on the island: the catalog tool doesn't pick them up from where the scene builds them.
+
+Eleven new Polish lines in `l10n/pl.json`, agent-written: "Skupienie i stoper" (the ••• menu row that holds Focus and the stopwatch), "Stoper", "Stoper · włączony", "Liczy w górę, dopóki go nie zatrzymasz.", the label field's help line, "Włącz stoper", "Liczy w górę", "Gotowy, kiedy Ty", "Zatrzymany na %@", "Pauza", "Wznów". The other nine languages show these in English until reviewed.
+
+- **Notification text is in DoddyCore** (`NoteReminderCopy.itemsOnList`, Polish and English only, like the other notifications): "4 rzeczy na liście", "1 rzecz na liście", "wszystko odhaczone". "rzecz" has one plural form, "rzeczy", from 2 up; a native check of the three phrases is wanted.
+- **Voice replies** for the stopwatch (`VoiceToolReply`) are English instructions to the agent, like every other tool reply; the activity-log rows have a Polish form in `ActivityText` ("Włącz stoper", "Zatrzymaj stoper", "Odczytano stoper").
+
+## Dynamic Island and Lock Screen, Polish (24 Oct 2026, ADR-617)
+
+92 lines in `l10n/pl.json` for the island's words: labels (GŁOS, SMS, PRZYPOMNIENIE, …), titles ("SMS do sprawdzenia", "Twój dokument jest gotowy"), second lines and the Lock Screen. Written in a coding session, not read by another Polish speaker. Check on a device first: whether PRZYPOMNIENIE fits beside the camera with LIVE, and whether "Wysyłasz go Ty, w Wiadomościach" reads naturally.
