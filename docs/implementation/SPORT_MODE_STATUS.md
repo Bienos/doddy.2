@@ -122,11 +122,11 @@ Owner, 25 Oct 2026: "okej" to "Plan zamawiany głosem albo w Wiadomościach". Br
 | The server: `plan` in the structured reply, `readPlanOffer`, the PLAN rule in the instructions | `server/messaging/src/assistant/prompt.ts`, `responder.ts`, `routes/assistant.ts` | `assistant.test.ts` 28 pass with a real Postgres (the route tests are skipped without `TEST_DATABASE_URL`) |
 | The offer in Messages | `MessagesModel.planAsks`, `MessagesView.planCard` | `MessagesModelTests` 17 pass on Linux; the view compiled on the hosted Mac (run 40166588339); not seen on a device |
 | The handler, the sheet over the conversation, the screen with a prefill | `VoiceSessionController`, `VoiceView`, `TrainingPlanView`, `PlanAskRequest` | Compiled and built on the hosted Mac (run 40166588339 on `6ab2960`, job `ci` green); no UI test drives them; not seen on a device |
-| Agent spec and prompt line | `voice-agent/tools.json` (`not_synced`), `instructions.md`; `backend/src/web/logbook.ts` | `voice_agent_spec.py check` PASS, 100 tools |
+| Agent spec and prompt line | `voice-agent/tools.json` (live id), `instructions.md`; `backend/src/web/logbook.ts` | `voice_agent_spec.py check` PASS, 100 tools |
 | Polish for the four new lines | `l10n/pl.json`; other languages show English | catalogs up to date |
 
 **Not done on purpose.**
-- **The live ElevenLabs agent has not been changed.** It has neither the tool nor the prompt line. That needs the owner's separate instruction, with the exact text shown first (`voice-agent/README.md`).
+- **The live ElevenLabs agent was changed on the owner's yes** (25 Oct, "ok zmien", then a yes to the exact tool text shown): `open_training_plan` is `tool_3101m5ry8754fmfb0ne7nf4nzhfd`, saved as `agtvrsn_8001m5ry9by6feyajtpxbdt3xrxp` (tool list only: 99 + 1), rollback `agtvrsn_2301m5rpzz0aeh7aymyth609bgpd`. The prompt was not changed. Until an app build with step 5 is installed, the voice may offer a plan the app cannot open (it answers that it doesn't support the tool). No conversation has used the tool (`voice-agent/README.md`).
 - **The Messages server must be deployed** for a card to appear; an older server sends no `plan`, and nothing breaks.
 - No UI test drives the new doors: nothing in the UI tests can make Messages or the voice answer with an offer. The model tests and the wire tests cover them; the screen with a prefill is not seen.
 - **Gap:** the "ask a doctor first" lines to the model are text only. A model could ignore them, but it still cannot skip the screen's questions or answer them. Code that checks the person's own words for red flags is not built.
@@ -154,5 +154,5 @@ Owner, 25 Oct 2026: "okej" to "Plan zamawiany głosem albo w Wiadomościach". Br
 ## Next (each needs the owner's go-ahead)
 
 1. A first real conversation with `read_health_week` on an app build from this branch, then the ElevenLabs log.
-2. Logging a session and the next load from it. (Asking for a plan by voice or in Messages is step 5; its live-agent change waits for the owner.)
+2. Logging a session and the next load from it. (Asking for a plan by voice or in Messages is step 5; the live agent has the tool since 25 Oct.)
 3. Voice gym log and the wger exercise base.
