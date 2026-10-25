@@ -95,7 +95,9 @@ final class VoiceLiveActivity {
         guard let activity else { return }
         self.activity = nil
         let pending = stopUpdating()
-        let final = DoddyVoiceAttributes.ContentState(status: .ended, isMuted: false, savedCount: savedCount, endedAt: Date())
+        var final = DoddyVoiceAttributes.ContentState(status: .ended, isMuted: false, savedCount: savedCount, endedAt: Date())
+        // ADR-617: the ended card in the language of Doddy's screens, as the island was.
+        final.language = Bundle.main.preferredLocalizations.first
         let removeAt = Date().addingTimeInterval(Self.endedCardFor)
         ending = Task {
             // An update already in flight finishes first (the sleep ends at cancel).
@@ -118,7 +120,8 @@ final class VoiceLiveActivity {
         guard let activity else { return }
         self.activity = nil
         let pending = stopUpdating()
-        let final = DoddyVoiceAttributes.ContentState(status: .failed, isMuted: false, savedCount: savedCount, endedAt: Date())
+        var final = DoddyVoiceAttributes.ContentState(status: .failed, isMuted: false, savedCount: savedCount, endedAt: Date())
+        final.language = Bundle.main.preferredLocalizations.first
         let removeAt = Date().addingTimeInterval(Self.failedCardFor)
         ending = Task {
             await beat?.value
