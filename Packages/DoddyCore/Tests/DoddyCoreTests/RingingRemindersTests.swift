@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// ADR-641: a note reminder marked "Ring like an alarm" also gets an AlarmKit alarm, kept in step
+/// ADR-651: a note reminder marked "Ring like an alarm" also gets an AlarmKit alarm, kept in step
 /// with the database reminder. AlarmKit itself only runs on an iPhone.
 final class RingingRemindersTests: XCTestCase {
     private let zone = "Europe/Warsaw"

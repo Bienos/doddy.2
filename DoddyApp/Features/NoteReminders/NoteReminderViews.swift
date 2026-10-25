@@ -86,7 +86,7 @@ struct NoteReminderSection: View {
                             .font(.footnote)
                             .foregroundStyle(Theme.secondaryText)
                     }
-                    // Said only when AlarmKit lists its alarm (ADR-641).
+                    // Said only when AlarmKit lists its alarm (ADR-651).
                     if reminders.ringing.contains(reminder.memoryID) {
                         Label("Rings like an alarm, even in Silent mode", systemImage: "alarm")
                             .font(.footnote)

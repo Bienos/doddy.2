@@ -1,8 +1,8 @@
 import Foundation
 
-// Timers that ring, and how loudly each Doddy notification may come through (ADR-640).
+// Timers that ring, and how loudly each Doddy notification may come through (ADR-650).
 //
-// Before ADR-640 a voice timer was an ordinary notification with the short default sound: in
+// Before ADR-650 a voice timer was an ordinary notification with the short default sound: in
 // Silent mode it only buzzed, a Focus held it back completely, and nothing showed the time left
 // on the Lock Screen. On iOS 26 a timer now goes to AlarmKit, which rings it like the Clock app's
 // timer (through Silent mode and a Focus) and shows the countdown on the Lock Screen and in the
@@ -80,13 +80,13 @@ public enum NotificationUrgency: String, Equatable, Sendable {
     case active
 }
 
-/// Every notification Doddy schedules on the iPhone, with how it may come through (ADR-640).
+/// Every notification Doddy schedules on the iPhone, with how it may come through (ADR-650).
 /// Only what the user set for a moment is Time Sensitive; Doddy's own routines never push through
 /// a Focus (no pressure, DOD-10 nonmanipulative_companionship).
 public enum DoddyNotificationKind: String, CaseIterable, Sendable {
     case timer, focusDone, noteReminder, leaveBy, eventNudge
     case morningCheckIn, eveningWrapUp, weeklyLookBack, tidyUp, birthday, openWays
-    /// The Monday plan (ADR-641).
+    /// The Monday plan (ADR-651).
     case weeklyPlan
 
     public var urgency: NotificationUrgency {

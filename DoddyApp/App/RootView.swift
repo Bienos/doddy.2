@@ -491,7 +491,7 @@ struct RootView: View {
         }
         // The weekly look-back (ADR-306), from its notification or Settings.
         .sheet(isPresented: $router.isLookBackPresented, onDismiss: { router.showWaitingDraft() }) { WeeklyLookBackView() }
-        // The weekly plan (ADR-641), from its notification or Settings.
+        // The weekly plan (ADR-651), from its notification or Settings.
         .sheet(isPresented: $router.isWeeklyPlanPresented, onDismiss: { router.showWaitingDraft() }) { WeeklyPlanView() }
         // The morning check-in (ADR-220), from its notification or Settings.
         .sheet(isPresented: $router.isCheckInPresented, onDismiss: { router.checkInSheetDismissed() }) {
