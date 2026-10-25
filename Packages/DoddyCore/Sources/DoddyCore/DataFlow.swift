@@ -166,6 +166,12 @@ public enum DataFlow {
                 what: "Nothing about you: the app downloads the ECB's public daily rates file.",
                 when: "When you ask Doddy to convert money, at most every six hours.", isActive: !state.pauseAll,
                 note: state.pauseAll ? "Connections are paused, so the rates aren't fetched." : "The amount and currencies stay on this iPhone; the conversion is worked out here."),
+            // Shopping list+ (ADR-631): a scanned product's barcode, asked by this iPhone.
+            DataFlowRow(
+                id: "openFoodFacts", destination: "Open Food Facts (product barcodes)",
+                what: "Only the barcode number of a product you scan on a list; nothing about you.",
+                when: "Only when you scan a barcode on a list, at most 10 a minute.", isActive: !state.pauseAll,
+                note: state.pauseAll ? "Connections are paused, so barcodes aren't looked up." : "The photo stays on this iPhone and isn't kept; the barcode is read here. Nothing is added until you tap Add."),
             DataFlowRow(
                 id: "placeSearch", destination: "Apple Maps (place search and travel time)",
                 what: "The words you type to find a place, and roughly where you are if Doddy already knows. For a leave reminder: where your iPhone is and the place you're going.",
@@ -300,6 +306,7 @@ public enum DataFlow {
         "iCloudSharing": "iCloud (lists you share)",
         "lookups": "Open-Meteo and Wikipedia (looked up by ElevenLabs)",
         "exchangeRates": "the European Central Bank (exchange rates; nothing about you)",
+        "openFoodFacts": "Open Food Facts (barcodes you scan; nothing about you)",
         "placeSearch": "Apple Maps (place searches)",
         "tokenServer": "your voice token server",
         "doddyServer": "your Doddy server (Connected Apps)",

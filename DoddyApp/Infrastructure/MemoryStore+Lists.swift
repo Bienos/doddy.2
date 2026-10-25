@@ -16,6 +16,9 @@ struct ListUndo: Equatable, Identifiable {
     let change: Change
     /// "Added eggs, 2 packs of bananas", shown on the receipt.
     let message: String
+    /// Another list's screen that shows the Undo bar too: the list ticked items were added from
+    /// (Shopping list+, ADR-631). The change itself is still to `listID` only.
+    var shownOn: UUID? = nil
 }
 
 /// Lists on the main actor. Every method returns only after the repository read its change back;
@@ -27,11 +30,13 @@ extension MemoryStore {
         return list
     }
 
+    /// `shownOn`: the list screen the add was made from, when that is another list (ADR-631).
     @discardableResult
-    func addToList(_ texts: [String], listID: UUID, source: ListItemSource) async throws -> ListAddResult {
+    func addToList(_ texts: [String], listID: UUID, source: ListItemSource, shownOn: UUID? = nil) async throws -> ListAddResult {
         let result = try await environment.listRepository.add(texts, to: listID, source: source)
         if !result.added.isEmpty {
-            listUndo = ListUndo(listID: listID, change: .added(result.added), message: "Added \(result.added.map(\.text).joined(separator: ", "))")
+            listUndo = ListUndo(listID: listID, change: .added(result.added), message: "Added \(result.added.map(\.text).joined(separator: ", "))",
+                                shownOn: shownOn)
         }
         await listChanged(listID)
         return result

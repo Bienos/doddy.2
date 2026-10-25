@@ -1434,6 +1434,7 @@ final class VoiceSessionController {
             let ticked = items.indices.filter { !ingredientsUnticked.contains($0) }.map { items[$0] }
             let leftOut = items.indices.filter { ingredientsUnticked.contains($0) }.map { items[$0] }
             ingredientsUnticked = []
+            ingredientsAtHome = []
             guard !ticked.isEmpty else {
                 await reply(id, VoiceToolReply.ingredientsNoneTicked)
                 return
@@ -1626,6 +1627,7 @@ final class VoiceSessionController {
         case .leaveBy(let id, _): await reply(id, VoiceToolReply.leaveByDeclined)
         case .ingredients(let id, _, _, _, _, _):
             ingredientsUnticked = []
+            ingredientsAtHome = []
             await reply(id, VoiceToolReply.ingredientsDeclined)
         case .bulk(let id, _, _, _):
             bulkUnticked = []
@@ -1674,6 +1676,10 @@ final class VoiceSessionController {
             lines += result.alreadyThere.map { .note("\($0) · already on the list, not added again") }
             lines += result.tooLong.map { .note("too long to add: \($0.prefix(40))…") }
             lines += result.noRoom.map { .note("\($0) · the list is full") }
+            // Shopping list+ (ADR-631): added anyway, but the At home list has them open.
+            let home = homeList
+            let atHome = HomeStock.onHomeList(result.added.map(\.text), home: home, addingTo: list.id)
+            lines += atHome.map { .note("\($0) · on your At home list") }
             // The write ran; its receipt only shows on its own conversation's screen (ADR-458).
             if isCurrent(toolCallID) {
                 listReceipt = ListReceipt(
@@ -1682,7 +1688,8 @@ final class VoiceSessionController {
             }
             // What Doddy did can undo it for a day (ADR-276); kept only when something was added.
             let undo: ActivityUndo? = result.added.isEmpty ? nil : .listAdded(listID: list.id, list: list.name, items: result.added)
-            await reply(toolCallID, VoiceToolReply.listAdded(result, list: list.name), undo: undo)
+            await reply(toolCallID, VoiceToolReply.listAdded(result, list: list.name)
+                + VoiceToolReply.onHomeList(atHome, home: home?.name ?? ""), undo: undo)
         } catch {
             writeResults[toolCallID] = WriteResult(reply: "", attempted: true)
             await reply(toolCallID, VoiceToolReply.listFailed(UserFacingError.listMessage(for: error)), isError: true)
@@ -2547,7 +2554,10 @@ final class VoiceSessionController {
             guard let list = await resolveList(proposal.list, toolCallID: call.toolCallId) else { return }
             guard isCurrent(call.toolCallId) else { return dropStale(call.toolCallId) }
             let open = IngredientsProposal.alreadyOpen(proposal.items, on: list)
-            ingredientsUnticked = open
+            // Shopping list+ (ADR-631): what the At home list has starts unticked too, and says so.
+            let atHome = HomeStock.positionsOnHomeList(proposal.items, home: homeList, addingTo: list.id).subtracting(open)
+            ingredientsAtHome = atHome
+            ingredientsUnticked = open.union(atHome)
             propose(.ingredients(toolCallID: call.toolCallId, listID: list.id, listName: list.name, dish: proposal.dish,
                                  items: proposal.items, alreadyOpen: open), toolCallID: call.toolCallId)
         case .convertCurrency(let request):
@@ -3570,6 +3580,13 @@ final class VoiceSessionController {
 
     /// Ingredients the user unticked on the card (ADR-305), by position.
     private(set) var ingredientsUnticked: Set<Int> = []
+    /// Shopping list+ (ADR-631): ingredients open on the At home list; the card says so and starts them unticked.
+    private(set) var ingredientsAtHome: Set<Int> = []
+
+    /// The At home list chosen on this iPhone (ADR-631), or nil.
+    private var homeList: DoddyList? {
+        HomeStock.list(storedID: UserDefaults.standard.string(forKey: HomeStock.preferenceKey), in: store.lists)
+    }
 
     func toggleIngredient(_ index: Int) {
         if ingredientsUnticked.contains(index) { ingredientsUnticked.remove(index) } else { ingredientsUnticked.insert(index) }
