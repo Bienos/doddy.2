@@ -45,6 +45,8 @@ final class ActivityTextTests: XCTestCase {
             // ADR-567, ADR-568.
             .makePresentation(PresentationDraft(title: "Trip", subtitle: nil, slides: [PresentationSlide(title: "Day 1", points: ["Old Town"])])),
             .readSteps(StepDay(daysAgo: 0)!),
+            // ADR-623.
+            .readHealthWeek,
             // ADR-569.
             .findPhotos(PhotoSearchRequest(firstDay: now, days: 1)!), .openCamera,
             // ADR-570.
@@ -65,7 +67,7 @@ final class ActivityTextTests: XCTestCase {
         switch request {
         case .searchMemories, .saveMemory, .readCalendar, .createCalendarEvent, .createReminder, .remindAboutNote,
              .lookupContact, .upcomingBirthdays, .setTimer, .setAlarm, .listAlarms, .cancelAlarm, .openMap, .runShortcut,
-             .draftMessage, .draftBlikTransfer, .makePresentation, .readSteps, .findPhotos, .openCamera, .cloudTool, .addToList, .readList, .checkOff, .removeFromList, .createList,
+             .draftMessage, .draftBlikTransfer, .makePresentation, .readSteps, .readHealthWeek, .findPhotos, .openCamera, .cloudTool, .addToList, .readList, .checkOff, .removeFromList, .createList,
              .changeCalendarEvent, .changeReminder, .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders,
              .convertCurrency, .parkingSpot, .addIngredients, .findFreeTime, .leaveBy, .handOverErrand, .checkErrands, .findDeals,
              .startStopwatch, .stopStopwatch, .checkStopwatch:
@@ -81,7 +83,7 @@ final class ActivityTextTests: XCTestCase {
         XCTAssertTrue(everyKind.allSatisfy(getsARow))
         // One of each kind that gets a row (cloud tools count once each, drafts twice).
         let kinds = Set(everyKind.map { String(describing: $0).prefix { $0 != "(" } })
-        XCTAssertEqual(kinds.count, 43)
+        XCTAssertEqual(kinds.count, 44, "read_health_week since ADR-623")
         XCTAssertNil(ActivityRequest.describe(.undoLast, calendar: calendar))
         XCTAssertNil(ActivityRequest.describe(.calculate(expression: "1+1"), calendar: calendar))
     }

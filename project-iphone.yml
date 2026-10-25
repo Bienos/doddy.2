@@ -13,6 +13,9 @@ name: DoddyiPhone
 # entitlements.
 settings:
   base:
+    # No HealthKit either (owner, 25 Oct 2026): Settings › Connections › Apple Health says this build
+    # can't use Health. To try Health on a free team, set this to Config/DoddyiPhone-HealthKit.entitlements
+    # (Apple lists HealthKit for free accounts; signing it has not been tried).
     DODDY_APP_ENTITLEMENTS: ""
     DODDY_WIDGET_ENTITLEMENTS: ""
     DODDY_SHARE_ENTITLEMENTS: ""

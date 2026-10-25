@@ -393,7 +393,7 @@ struct ConnectionInfo {
                     "Today and the six days before it, which is what your iPhone keeps",
                 ],
                 leavesPhone: "That day's numbers, when Doddy uses them in a conversation.",
-                staysHere: "Doddy keeps none of it and reads nothing from the Health app. iPhone asks once for Motion & Fitness.")
+                staysHere: "Doddy keeps none of it. Steps come from Motion & Fitness, not from the Health app. iPhone asks once for Motion & Fitness.")
         case .photos:
             // ADR-569: counts and times to the voice, pictures on this screen only.
             ConnectionInfo(

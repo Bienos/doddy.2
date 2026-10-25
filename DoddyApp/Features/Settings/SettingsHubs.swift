@@ -68,6 +68,7 @@ struct DoddyMemorySettingsView: View {
 /// what he did with it. Calendar, reminders and contacts; online accounts; the web; typed questions.
 struct ConnectionsSettingsView: View {
     @AppStorage(ConnectionPause.preferenceKey) private var pauseAllConnections = false
+    @AppStorage(HealthConnectionView.preferenceKey) private var appleHealthOn = false
     @AppStorage(PreferenceKey.assistantConsent) private var assistantConsent = false
     @State private var connections = ConnectionController()
 
@@ -117,6 +118,24 @@ struct ConnectionsSettingsView: View {
                 }
                 .accessibilityIdentifier("settings.askDoddy")
             }
+            // Sport mode (ADR-621 to 625): Apple Health, read only, and the training plan, each on its own page.
+            Section {
+                NavigationLink {
+                    HealthConnectionView()
+                } label: {
+                    StatusRow(title: "Apple Health",
+                              value: appleHealthOn ? NSLocalizedString("On", comment: "") : NSLocalizedString("Off", comment: ""))
+                }
+                .accessibilityIdentifier("connections.appleHealth")
+                NavigationLink {
+                    TrainingPlanView()
+                } label: {
+                    StatusRow(title: NSLocalizedString("Training plan", comment: ""), value: trainingPlanSummary)
+                }
+                .accessibilityIdentifier("connections.trainingPlan")
+            } header: {
+                Text("Sport and health")
+            }
             Section {
                 NavigationLink {
                     ActivityView()
@@ -134,6 +153,12 @@ struct ConnectionsSettingsView: View {
         if pauseAllConnections { return NSLocalizedString("Paused", comment: "") }
         let on = VoiceConnection.allCases.filter { connections.state(of: $0) == .on }.count
         return on == 0 ? "All off" : "\(on) of \(VoiceConnection.allCases.count) on"
+    }
+
+    /// "Week 3 of 8", the days until it starts, or None.
+    private var trainingPlanSummary: String {
+        guard let saved = TrainingPlanStore.shared.saved else { return NSLocalizedString("None", comment: "") }
+        return PlanText.position(PlanCalendar.position(of: saved.plan, start: saved.start, now: .now, calendar: .current), plan: saved.plan)
     }
 
     private var activitySummary: String {

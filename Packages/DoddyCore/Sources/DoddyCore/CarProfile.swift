@@ -19,7 +19,7 @@ public enum CarDecision: Equatable, Sendable {
 public enum CarProfile {
     public static func decision(for request: VoiceToolRequest) -> CarDecision {
         switch request {
-        case .searchMemories, .readCalendar, .findFreeTime, .upcomingBirthdays, .readSteps, .findPhotos, .calculate, .convertUnits,
+        case .searchMemories, .readCalendar, .findFreeTime, .upcomingBirthdays, .readSteps, .readHealthWeek, .findPhotos, .calculate, .convertUnits,
              .convertCurrency, .readList, .listAlarms, .checkStopwatch, .needsClarification, .unsupported, .invalid:
             return .run
         case .noteCapabilityGap:

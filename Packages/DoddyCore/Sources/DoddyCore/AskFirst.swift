@@ -89,6 +89,8 @@ public enum AskFirst {
             return .yesFirst(AskCard(title: "Look through your photos?", lines: [request.text(calendar: calendar), "Only the counts and times go to Doddy's voice; the photos stay on your screen."], confirmLabel: "Yes, look"))
         case .readSteps(let day):
             return .yesFirst(AskCard(title: "Read your steps?", lines: ["\(day.text), from Motion & Fitness"], confirmLabel: "Yes, read them"))
+        case .readHealthWeek:
+            return .yesFirst(AskCard(title: "Read your week from Apple Health?", lines: ["Workouts, sleep and heart, the last 7 days", "A short summary goes to Doddy's voice"], confirmLabel: "Yes, read it"))
         case .listAlarms:
             return .yesFirst(AskCard(title: "Check Doddy's alarms?", lines: ["The alarms Doddy set on this iPhone"], confirmLabel: "Yes, check"))
         case .startStopwatch(let label):

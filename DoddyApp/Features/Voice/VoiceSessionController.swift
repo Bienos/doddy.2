@@ -2718,6 +2718,21 @@ final class VoiceSessionController {
             } catch {
                 await reply(call.toolCallId, VoiceToolReply.stepsFailed(UserFacingError.message(for: error)), isError: true)
             }
+        case .readHealthWeek:
+            // ADR-623: the week from Apple Health as a summary worked out on the iPhone. Only with
+            // Apple Health on and the voice's own consent; the ask before it is ASK-01's.
+            let defaults = UserDefaults.standard
+            guard defaults.bool(forKey: HealthConnectionView.preferenceKey),
+                  HealthVoiceConsent.isGranted(storedVersion: defaults.integer(forKey: HealthConnectionView.voiceConsentVersionKey)) else {
+                await reply(call.toolCallId, VoiceToolReply.healthWeekNotAllowed)
+                return
+            }
+            do {
+                let glance = try await HealthReader.shared.glance(now: Date())
+                await reply(call.toolCallId, glance.isEmpty ? VoiceToolReply.healthWeekEmpty : VoiceToolReply.healthWeek(glance, calendar: .current))
+            } catch {
+                await reply(call.toolCallId, VoiceToolReply.healthWeekFailed(UserFacingError.message(for: error)), isError: true)
+            }
         case .findPhotos(let request):
             // ADR-569: counts and times to the agent; the pictures stay on this screen.
             guard devices.access(for: .photos) == .granted else {

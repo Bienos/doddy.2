@@ -230,6 +230,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case makePresentation(PresentationDraft)
     /// One day's steps from Motion & Fitness, read only (ADR-568).
     case readSteps(StepDay)
+    /// The last 7 days from Apple Health as a short summary, after a consent of its own (ADR-623).
+    case readHealthWeek
     /// Counts of the photos in the library for a span of days; pictures on screen only (ADR-569).
     case findPhotos(PhotoSearchRequest)
     /// Doddy's camera, after a card (ADR-569). A kept photo goes into a new note the user saves.
@@ -358,6 +360,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return parsePresentation(args, name: name)
         case VoiceToolName.readSteps:
             return parseSteps(args, name: name, now: now, calendar: calendar)
+        case VoiceToolName.readHealthWeek:
+            return .readHealthWeek
         case VoiceToolName.findPhotos:
             return parsePhotoSearch(args, name: name, now: now, calendar: calendar)
         case VoiceToolName.openCamera:

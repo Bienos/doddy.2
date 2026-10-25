@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Opt-in for project-iphone.yml (free Apple team): HealthKit only, for sport mode (ADR-621). Not used
+     by default since 25 Oct 2026 (owner): the free-team project has no entitlements. Apple lists
+     HealthKit for the free Apple Developer account (developer.apple.com/help/account/reference/
+     supported-capabilities-ios, read 24 Oct 2026), but signing it has not been tried. To try it, set
+     DODDY_APP_ENTITLEMENTS to this file in project-iphone.yml. -->
+<plist version="1.0">
+<dict>
+	<key>com.apple.developer.healthkit</key>
+	<true/>
+	<key>com.apple.developer.healthkit.access</key>
+	<array/>
+</dict>
+</plist>

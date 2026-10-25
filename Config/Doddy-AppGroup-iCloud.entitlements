@@ -21,5 +21,10 @@
 	<array>
 		<string>CloudKit</string>
 	</array>
+	<!-- Sport mode step 1 (ADR-621): read Apple Health. No clinical records. -->
+	<key>com.apple.developer.healthkit</key>
+	<true/>
+	<key>com.apple.developer.healthkit.access</key>
+	<array/>
 </dict>
 </plist>
