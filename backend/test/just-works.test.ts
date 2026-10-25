@@ -361,7 +361,7 @@ test("live adapter: a deck uses the pptx skill and code execution, follows pause
   assert.equal(content!.url, "https://anthropic.test/v1/files/file_1/content");
 });
 
-test("live adapter: a deck carries Doddy's own skill next to pptx on every round; other files don't (ADR-654)", async () => {
+test("live adapter: a deck uses pptx on every round, a Word file uses docx (ADR-564, skill removed ADR-656)", async () => {
   const deckFake = () =>
     fakeAnthropic([
       () => json({ content: [{ type: "text", text: "Working" }], stop_reason: "pause_turn", container: { id: "cntr_1" } }),
@@ -369,22 +369,15 @@ test("live adapter: a deck carries Doddy's own skill next to pptx on every round
       () => json({ filename: "plan.pptx", mime_type: "application/vnd.openxmlformats-officedocument.presentationml.presentation" }),
       () => new Response(Buffer.from("PPTX")),
     ]);
-  const settings = { apiKey: "sk-ant-test-key-1234", model: "claude-sonnet-5-5", deckSkillId: "skill_01AbCdEfGhIjKlMnOpQrStUv" };
-  const withSkill = deckFake();
-  await new AnthropicClaudeProvider(settings, withSkill.impl, "https://anthropic.test").makeDocument({ kind: "deck", title: "Plan", request: "A plan" }, AbortSignal.timeout(5_000));
-  const want = [
-    { type: "anthropic", skill_id: "pptx", version: "latest" },
-    { type: "custom", skill_id: "skill_01AbCdEfGhIjKlMnOpQrStUv", version: "latest" },
-  ];
-  assert.deepEqual(withSkill.calls[0]!.body.container.skills, want);
-  assert.deepEqual(withSkill.calls[1]!.body.container, { id: "cntr_1", skills: want }, "the continuation keeps both skills");
+  const settings = { apiKey: "sk-ant-test-key-1234", model: "claude-sonnet-5-5" };
+  // Decks use Anthropic's pptx skill alone: Doddy's own deck skill was removed (ADR-656).
+  const deck = deckFake();
+  await new AnthropicClaudeProvider(settings, deck.impl, "https://anthropic.test").makeDocument({ kind: "deck", title: "Plan", request: "A plan" }, AbortSignal.timeout(5_000));
+  const pptx = [{ type: "anthropic", skill_id: "pptx", version: "latest" }];
+  assert.deepEqual(deck.calls[0]!.body.container.skills, pptx);
+  assert.deepEqual(deck.calls[1]!.body.container, { id: "cntr_1", skills: pptx }, "the continuation keeps pptx");
 
-  // Without the setting: pptx alone, as before.
-  const plain = deckFake();
-  await new AnthropicClaudeProvider({ apiKey: settings.apiKey, model: settings.model }, plain.impl, "https://anthropic.test").makeDocument({ kind: "deck", title: "Plan", request: "A plan" }, AbortSignal.timeout(5_000));
-  assert.deepEqual(plain.calls[0]!.body.container.skills, [{ type: "anthropic", skill_id: "pptx", version: "latest" }]);
-
-  // A Word file never gets the deck skill.
+  // A Word file uses docx alone.
   const doc = fakeAnthropic([
     () => json({ content: [{ type: "bash_code_execution_tool_result", content: { type: "bash_code_execution_result", content: [{ file_id: "file_2" }] } }], stop_reason: "end_turn" }),
     () => json({ filename: "memo.docx", mime_type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" }),
@@ -430,13 +423,6 @@ test("config: Claude is live-only, checked, and has its own caps", () => {
   const live = { DODDY_MODE: "live", DODDY_AUTH_MODE: "signed", DODDY_SESSION_SIGNING_KEY: key, MONID_API_KEY: "monid_live_abcdefghij", DODDY_PUBLIC_BASE_URL: "https://doddy.test" };
   assert.deepEqual(loadConfig({ ...live, ANTHROPIC_API_KEY: "sk-ant-api03-abcdefghij" }).claude, { apiKey: "sk-ant-api03-abcdefghij", model: "claude-sonnet-5-5" });
   assert.equal(loadConfig(live).claude, null);
-  // ADR-654: Doddy's own deck skill is optional, and only its id shape is accepted.
-  assert.deepEqual(
-    loadConfig({ ...live, ANTHROPIC_API_KEY: "sk-ant-api03-abcdefghij", DODDY_DECK_SKILL_ID: " skill_01AbCdEfGhIjKlMnOpQrStUv " }).claude,
-    { apiKey: "sk-ant-api03-abcdefghij", model: "claude-sonnet-5-5", deckSkillId: "skill_01AbCdEfGhIjKlMnOpQrStUv" },
-  );
-  assert.equal(loadConfig({ ...live, ANTHROPIC_API_KEY: "sk-ant-api03-abcdefghij", DODDY_DECK_SKILL_ID: "  " }).claude?.deckSkillId, undefined);
-  assert.throws(() => loadConfig({ ...live, DODDY_DECK_SKILL_ID: "pptx" }), (e: ConfigError) => e.problems.some((p) => /DODDY_DECK_SKILL_ID/.test(p)));
   assert.equal(loadConfig({ DODDY_MODE: "mock", ANTHROPIC_API_KEY: "sk-ant-api03-abcdefghij" }).claude, null);
   assert.throws(() => loadConfig({ ...live, ANTHROPIC_API_KEY: "nope" }), (e: ConfigError) => e.problems.some((p) => /ANTHROPIC_API_KEY/.test(p) && !/nope/.test(p)));
   const limits = loadConfig({ DODDY_LIMIT_USER_DAILY_CLAUDE: "5", DODDY_LIMIT_SERVICE_DAILY_CLAUDE: "50" }).limits;

@@ -61,12 +61,6 @@ export interface MonidSettings {
 export interface ClaudeSettings {
   apiKey: string;
   model: string;
-  /**
-   * Doddy's own deck skill (`skills/doddy-decks`, ADR-654), uploaded once to Anthropic with
-   * `POST /v1/skills`. When set, every deck is made with it next to Anthropic's `pptx` skill, so
-   * decks carry Doddy's look. Absent: decks use `pptx` alone, as before.
-   */
-  deckSkillId?: string | undefined;
 }
 
 export interface Config {
@@ -171,8 +165,6 @@ const EnvSchema = z.object({
   /** Claude for writing, summaries and documents (ADR-564). Empty: those tools say "not set up". */
   ANTHROPIC_API_KEY: z.string().optional(),
   DODDY_CLAUDE_MODEL: z.string().default("claude-sonnet-5-5"),
-  /** The ID `POST /v1/skills` returned for `skills/doddy-decks` (ADR-654). Empty: no custom skill. */
-  DODDY_DECK_SKILL_ID: z.string().optional(),
   DODDY_LIMIT_USER_DAILY_CLAUDE: intSetting(40, 1, 10_000),
   DODDY_LIMIT_SERVICE_DAILY_CLAUDE: intSetting(100, 1, 100_000),
   /** Ask Doddy (ADR-587): typed questions answered by Claude. */
@@ -376,8 +368,6 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
   const claudeKey = e.DODDY_MODE === "live" ? (e.ANTHROPIC_API_KEY ?? "").trim() : "";
   if (claudeKey !== "" && !/^sk-ant-[A-Za-z0-9_-]{8,}$/.test(claudeKey)) problems.push("ANTHROPIC_API_KEY must look like sk-ant-…");
   if (!/^claude-[a-z0-9-]{3,60}$/.test(e.DODDY_CLAUDE_MODEL)) problems.push("DODDY_CLAUDE_MODEL must be a Claude model ID such as claude-sonnet-5-5");
-  const deckSkillId = (e.DODDY_DECK_SKILL_ID ?? "").trim();
-  if (deckSkillId !== "" && !/^skill_[A-Za-z0-9]{8,64}$/.test(deckSkillId)) problems.push("DODDY_DECK_SKILL_ID must look like skill_… (the id POST /v1/skills returned)");
   if (!/^claude-[a-z0-9-]{3,60}$/.test(e.DODDY_CHAT_MODEL)) problems.push("DODDY_CHAT_MODEL must be a Claude model ID such as claude-haiku-5-5");
   // The key for kept notes and conversations. A fixed throwaway demo key (published in this repository,
   // so never a secret) is used only for a mock-mode demo with no hosted database and outside production;
@@ -432,7 +422,7 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     memoryKey,
     deviceSignup: e.DODDY_DEVICE_SIGNUP,
     deviceInviteCodes,
-    claude: claudeKey !== "" ? { apiKey: claudeKey, model: e.DODDY_CLAUDE_MODEL, ...(deckSkillId !== "" ? { deckSkillId } : {}) } : null,
+    claude: claudeKey !== "" ? { apiKey: claudeKey, model: e.DODDY_CLAUDE_MODEL } : null,
     chatClaude: claudeKey !== "" ? { apiKey: claudeKey, model: e.DODDY_CHAT_MODEL } : null,
     supabaseUrl,
     composio,

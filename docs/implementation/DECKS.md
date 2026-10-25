@@ -1,5 +1,7 @@
 # Decks with Doddy's look, opened the iPhone's own way (ADR-654)
 
+> **Removed (ADR-656, owner, 25 Oct 2026: "remove: doddy-decks").** Doddy's own deck skill is no longer in the repository, and the server no longer sends a custom skill. Decks are made with Anthropic's `pptx` skill alone. The skill folder, its tests, `DODDY_DECK_SKILL_ID` and the upload steps below are gone or no longer apply. The file bubble, Quick Look and the transport fix (items 2 and 3) are unchanged.
+
 Owner, 25 Oct 2026: "ty robisz te prezentacje, ale zachowujesz skill set, na przykład brandingu do Doddy'ego … i otwierasz je … czy systemowo to działa … jak najbardziej taki interfejs systemowy, żeby otwierał w takich domyślnych też rzeczach". Proposal and mockups: `docs/strategy/DECKS_2026-10.md`.
 
 ## What changed
