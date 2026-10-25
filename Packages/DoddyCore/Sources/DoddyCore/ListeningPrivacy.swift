@@ -109,6 +109,21 @@ public struct ListeningIndicator: Equatable, Sendable {
         language == .polish ? "Przestań słuchać" : "Stop listening"
     }
 
+    /// Only the conversation has the microphone: no voice memo and no recording.
+    public var isConversationOnly: Bool {
+        kinds.allSatisfy { [.connecting, .conversation, .muted, .longTurn].contains($0) }
+    }
+
+    /// Whether the indicator steps aside. It does on the transcript, and on Home while Home shows
+    /// the conversation itself, with its own status, Mute and End (ADR-595, ADR-653): there the
+    /// pill only covered Home's header (owner, 25 Oct 2026). It stays when a memo or a recording
+    /// also has the microphone, since Home doesn't say so.
+    public static func stepsAside(_ indicator: ListeningIndicator?, transcriptOpen: Bool, homeShowsConversation: Bool) -> Bool {
+        if transcriptOpen { return true }
+        guard homeShowsConversation, let indicator else { return false }
+        return indicator.isConversationOnly
+    }
+
     private static func title(_ kind: Kind, _ language: NotificationLanguage) -> String {
         let polish = language == .polish
         switch kind {

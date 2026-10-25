@@ -43,6 +43,25 @@ final class ListeningPrivacyTests: XCTestCase {
         XCTAssertEqual(ListeningIndicator.stopLabel(.polish), "Przestań słuchać")
     }
 
+    /// ADR-653: on Home's own conversation screen the pill steps aside (Home shows the status, Mute
+    /// and End); anywhere else, or when a memo or a recording also listens, it stays.
+    func testTheIndicatorStepsAsideOnlyWhereTheConversationIsShown() throws {
+        let connecting = ListeningIndicator.current(MicrophoneSnapshot(conversation: .connecting))
+        let talking = ListeningIndicator.current(MicrophoneSnapshot(conversation: .listening))
+        let memoToo = ListeningIndicator.current(MicrophoneSnapshot(conversation: .listening, voiceMemoRecording: true))
+        let memoOnly = ListeningIndicator.current(MicrophoneSnapshot(voiceMemoRecording: true))
+
+        XCTAssertTrue(ListeningIndicator.stepsAside(connecting, transcriptOpen: false, homeShowsConversation: true), "the screenshot: Connecting… on Home")
+        XCTAssertTrue(ListeningIndicator.stepsAside(talking, transcriptOpen: false, homeShowsConversation: true))
+        XCTAssertFalse(ListeningIndicator.stepsAside(talking, transcriptOpen: false, homeShowsConversation: false), "Settings or Files while he talks")
+        XCTAssertFalse(ListeningIndicator.stepsAside(memoToo, transcriptOpen: false, homeShowsConversation: true), "Home doesn't say a memo records")
+        XCTAssertFalse(ListeningIndicator.stepsAside(memoOnly, transcriptOpen: false, homeShowsConversation: true))
+        XCTAssertFalse(ListeningIndicator.stepsAside(nil, transcriptOpen: false, homeShowsConversation: true), "nothing to hide: a Stop result still shows")
+        XCTAssertTrue(ListeningIndicator.stepsAside(memoToo, transcriptOpen: true, homeShowsConversation: false), "the transcript, as before")
+        XCTAssertTrue(try XCTUnwrap(talking).isConversationOnly)
+        XCTAssertFalse(try XCTUnwrap(memoToo).isConversationOnly)
+    }
+
     // MARK: Stop listening
 
     func testStoppedOnlyWhenEachSaysItIsClosed() {

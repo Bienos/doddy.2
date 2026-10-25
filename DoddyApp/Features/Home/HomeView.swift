@@ -52,6 +52,8 @@ struct HomeView: View {
     /// This week's leaflets and the basket (SHOPPING.md 2).
     @State private var showDeals = false
     @State private var showVoicePicker = false
+    /// Home's own page is on screen (not another tab or a note pushed over it).
+    @State private var onScreen = false
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
     /// First visit (ADR-326): until a conversation has really connected, Home keeps to talking and
     /// holds back the voice picker (ADR-443) and the Back Tap and Today offers.
@@ -102,12 +104,19 @@ struct HomeView: View {
                     .modifier(SlideIn(shown: buttonsShown, delay: 0))
             }
             .background(Theme.canvas.ignoresSafeArea())
-            // ADR-596: the island grows down with his waves while he talks on Home.
+            // ADR-596, ADR-653: the island pushes out to both sides with his waves while he talks on Home.
             .overlay(alignment: .top) {
                 if let live = conversation.live {
                     IslandExtension(look: islandLook(live))
                         .transition(.opacity)
                 }
+            }
+            // ADR-653: while Home shows the conversation, the listening pill steps aside; it only
+            // covered the header, and Home has its own status, Mute and End.
+            .onAppear { onScreen = true }
+            .onDisappear { onScreen = false }
+            .onChange(of: onScreen && !somethingOverHome, initial: true) { _, shown in
+                ListeningIndicatorModel.shared.homeChanged(onScreen: shown)
             }
             .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: conversation.live == nil)
             .animation(reduceMotion ? nil : .spring(duration: 0.5, bounce: 0.2), value: showFiles)
@@ -166,8 +175,14 @@ struct HomeView: View {
             }
         }
         .frame(minHeight: 44)
-        // Below the island's extension while he talks (ADR-596).
-        .padding(.top, conversation.live == nil ? 8 : 48)
+        // Below the island's strip while he talks (ADR-596, ADR-653).
+        .padding(.top, conversation.live == nil ? 8 : IslandExtension.headerClearance)
+    }
+
+    /// One of Home's sheets or covers is up, so Home's own Mute and End are out of sight.
+    private var somethingOverHome: Bool {
+        modal != nil || showDataFlow || showCapabilities || tool != nil || showTranslator || showToday
+            || showVoicePicker || showFiles || showAsk || showErrands || showDeals || router.isRecordingsPresented
     }
 
     private func islandLook(_ live: VoiceSessionController) -> IslandExtension.Look {

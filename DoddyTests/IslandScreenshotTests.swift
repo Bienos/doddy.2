@@ -99,7 +99,7 @@ final class IslandScreenshotTests: XCTestCase {
     /// The waves are 2 pt or more (owner: the 1.3 pt lines were too thin), and a thick line on the
     /// narrow compact island keeps at least six line widths per wave.
     func testTheWavesAreBoldAndStayWavesWhenNarrow() {
-        for kind in [IslandWavesView.Kind.line, .full, .speech] {
+        for kind in [IslandWavesView.Kind.line, .full, .speech, .across] {
             for wave in IslandWavesView.waves(kind) {
                 XCTAssertGreaterThanOrEqual(wave.width, 2, "\(kind)")
             }
@@ -108,6 +108,35 @@ final class IslandScreenshotTests: XCTestCase {
         XCTAssertEqual(IslandWaveLine.waveCount(main, width: 240), main.frequency, "a wide line keeps its waves")
         XCTAssertEqual(IslandWaveLine.waveCount(main, width: 42), main.frequency, "the compact line too")
         XCTAssertEqual(IslandWaveLine.waveCount(main, width: 12), 12 / 18, accuracy: 0.001, "fewer, never a zigzag")
+    }
+
+    /// ADR-653: on Home the island pushes out to both sides. The strip starts as the neck around
+    /// the camera and spreads to 12 pt from each edge without leaving its drawing, and its waves
+    /// stay inside the strip and keep every wave across it.
+    func testHomeStripPushesOutToBothSidesWithWavesAcrossIt() {
+        XCTAssertEqual(IslandStripShape.halfWidth(393, spread: 0), 75, "the neck around the camera")
+        XCTAssertEqual(IslandStripShape.halfWidth(393, spread: 1), 393 / 2 - 12, "almost to both edges")
+        XCTAssertEqual(IslandStripShape.halfWidth(100, spread: 1), 50, "never narrower than the neck, never wider than the screen")
+        let top: CGFloat = 59
+        for depth in [IslandExtension.depth(.listening), IslandExtension.depth(.speaking)] {
+            XCTAssertLessThan(depth, IslandExtension.headerClearance, "the header stays below the strip")
+            for step in 0...10 {
+                let spread = CGFloat(step) / 10
+                let rect = CGRect(x: 0, y: 0, width: 393, height: top + depth)
+                let bounds = IslandStripShape(top: top, depth: depth, spread: spread).path(in: rect).boundingRect
+                XCTAssertGreaterThanOrEqual(bounds.minX, -0.01, "spread \(spread)")
+                XCTAssertLessThanOrEqual(bounds.maxX, 393.01, "spread \(spread)")
+                XCTAssertLessThanOrEqual(bounds.maxY, top + depth + 0.01, "spread \(spread)")
+                XCTAssertEqual(bounds.width, 2 * IslandStripShape.halfWidth(393, spread: spread), accuracy: 0.5)
+            }
+        }
+        for wave in IslandWavesView.waves(.across) {
+            let line = IslandWaveLine(wave: wave, shape: .envelope(floor: 0.35), phase: 0)
+            XCTAssertEqual(IslandWaveLine.waveCount(wave, width: 347), wave.frequency, "every wave across the strip")
+            for step in 0...200 {
+                XCTAssertTrue((0...1).contains(line.y(at: Double(step) / 200, waves: wave.frequency)), "inside the strip at \(step)")
+            }
+        }
     }
 
     /// His talking waves start together beside him, spread out to the right and stay inside

@@ -102,16 +102,29 @@ final class ListeningIndicatorModel {
     /// The answer to the last Stop listening, shown for a moment (or until tapped when it failed).
     private(set) var result: ListeningStopReport?
     private(set) var isStopping = false
-    /// The voice screen shows its own status and End, so the indicator steps aside there.
+    /// The voice screen and Home's conversation show their own status and End, so the indicator
+    /// steps aside there (`ListeningIndicator.stepsAside`, ADR-653).
     private(set) var isHidden = false
+    /// Home is on screen with nothing over it (set by Home).
+    @ObservationIgnored private var isHomeOnScreen = false
     @ObservationIgnored private var clearResult: Task<Void, Never>?
 
     private init() {}
 
     func refresh() {
         indicator = ListeningIndicator.current(ListeningStop.snapshot())
-        isHidden = ShortcutRouter.shared.isVoicePresented
+        isHidden = ListeningIndicator.stepsAside(indicator,
+                                                 transcriptOpen: ShortcutRouter.shared.isVoicePresented,
+                                                 homeShowsConversation: isHomeOnScreen && HomeConversation.shared.live != nil)
         ListeningIndicatorWindow.shared.update()
+    }
+
+    /// Home tells this when it comes on screen or goes away (another tab, a note pushed over it,
+    /// one of its sheets).
+    func homeChanged(onScreen shown: Bool) {
+        guard isHomeOnScreen != shown else { return }
+        isHomeOnScreen = shown
+        refresh()
     }
 
     func stop() async {
