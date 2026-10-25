@@ -20,14 +20,21 @@ Use the **Doddy** look unless the request asks for another:
 | Title and body text | `171715` | `171715` | `FFF7E9` |
 | Secondary text | `655F56` | `555555` | `C5BCAD` |
 | Panels and cards | `F5EAD8` | `F4F4F4` | `252E39` |
-| Accent shapes (bar, numbers, one highlight) | `FF6A00` | `FF6A00` | `FF6A00` |
+| Accent shapes (the dot, numbers, one highlight) | `FF6A00` | `FF6A00` | `FF6A00` |
 | Accent text (small or on light) | `A64B00` | `A64B00` | `FFB56B` |
+| Thin lines (a timeline's line only) | `DFD5C6` | `DDDDDD` | `414953` |
 
 Orange `FF6A00` is for shapes and large numbers only: never small text on a light slide (too faint), never a whole-slide background. Small accent text uses the darker accent. Put `171715` text on top of any orange fill.
 
+### Where this skill overrides the pptx skill's general design advice
+
+The `pptx` skill gives generic taste rules. These choices are the brand's, so they win over it: the paper `FFF7E9` background in the Doddy look is the brand and not a default beige; one orange accent is the brand and not "blue by default"; Arial is the brand's font and is on the safe list. The pptx rules that still apply in full: no accent lines or color bars or edge stripes (the motif here is a dot, below), a visual element on every slide, no centered body text, no text overflow, 0.5 in margins.
+
+**The motif is the orange dot**, the one under Doddy on Home: a filled circle, 0.16 in across, `FF6A00`, placed top left of every content slide with a short label (the slide's topic in 1 to 3 words, capitals, 14 pt bold, accent text) to its right. Nothing else repeats. No lines under titles.
+
 ## 2. Type
 
-**Arial** for everything: bold for titles, regular for the rest. No other font name anywhere in the file, nothing embedded, nothing downloaded: Arial is on every phone, Mac, Windows PC and in Google Slides, so the deck looks the same wherever it opens.
+**Arial** for everything: bold for titles, regular for the rest. No other font on any slide, nothing embedded, nothing downloaded: Arial is on every phone, Mac, Windows PC and in Google Slides, so the deck looks the same wherever it opens.
 
 Sizes: title slide title 44 to 54 pt; slide titles 32 to 36 pt; body 20 pt or more (never below 18); captions and the source line 14 pt or more. Titles are sentences in the request's language, not labels: "Warszawa odbudowała się z ruin", not "Historia".
 
@@ -35,8 +42,8 @@ Sizes: title slide title 44 to 54 pt; slide titles 32 to 36 pt; body 20 pt or mo
 
 6 to 12 slides unless the request says a number. One idea per slide.
 
-1. **Title slide.** Title at the left, subtitle under it in secondary text, a short orange bar (0.5 in wide, 0.07 in tall) between them or under the title. In the Doddy look only: Doddy on the right, `doddy_wave.png`.
-2. **Content slides.** Title at the top left, the same short orange bar under it, then at most 5 short lines or 3 panels. Prefer a panel row, a short timeline of at most 4 steps, one big number with a line under it, or one native chart over a list of bullets. A slide that is only bullets twice in a row is a sign to change shape.
+1. **Title slide.** Title at the left, subtitle under it in secondary text, the orange dot above the title. In the Doddy look only: Doddy on the right, `doddy_wave.png`.
+2. **Content slides.** The dot and its label, then the title at the top left in the same place on every slide, then at most 5 short lines or 3 panels. Prefer a panel row, a short timeline of at most 4 steps, one big number with a line under it, or one native chart over a list of bullets. A slide that is only bullets twice in a row is a sign to change shape.
 3. **Last slide.** One sentence that closes the deck (not "Thank you" and not a question mark slide). In the Doddy look only: `doddy_fistpump.png`, small, at the right.
 
 Add speaker notes to every content slide: two or three sentences in the same language that someone could say aloud.

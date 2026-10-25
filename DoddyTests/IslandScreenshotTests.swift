@@ -153,6 +153,24 @@ final class IslandScreenshotTests: XCTestCase {
         }
     }
 
+    /// ADR-653: the waves fade into the camera and out of the other side. Whatever the pill's width
+    /// while it springs out, the gap is where the camera is and the gradient never goes backwards.
+    func testTheWavesRunBehindTheCameraWhateverThePillsWidth() {
+        for width in stride(from: IslandPillGeometry.camera, through: 280, by: 7) {
+            let drawing = width - IslandPillGeometry.height
+            let gap = IslandPillGeometry.waveGap(drawingWidth: drawing)
+            XCTAssertEqual(gap.lowerBound + gap.upperBound, 1, accuracy: 0.0001, "symmetric at \(width)")
+            XCTAssertTrue((0...0.5).contains(gap.lowerBound), "\(width)")
+            if drawing > IslandPillGeometry.camera {
+                XCTAssertEqual((gap.upperBound - gap.lowerBound) * Double(drawing), Double(IslandPillGeometry.camera), accuracy: 0.01, "the gap is the camera's width at \(width)")
+            }
+            let stops = IslandWavesView.acrossStops(.orange, gap: gap)
+            XCTAssertEqual(stops.first?.location, 0)
+            XCTAssertEqual(stops.last?.location, 1)
+            XCTAssertEqual(stops.map(\.location), stops.map(\.location).sorted(), "never backwards at \(width)")
+        }
+    }
+
     /// His talking waves start together beside him, spread out to the right and stay inside
     /// their band under his status (owner: not across the whole island, and not behind him).
     func testHisTalkingWavesStartBesideHimAndStayInTheirBand() {

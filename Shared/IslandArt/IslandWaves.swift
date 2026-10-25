@@ -26,6 +26,10 @@ struct IslandWavesView: View {
     }
 
     let kind: Kind
+    /// For `.across` only: the stretch of the drawing, as fractions of its width, that the camera
+    /// covers. The lines fade out into it and come back out of it, as if they ran behind the
+    /// camera (ADR-653). Nil: they run unbroken.
+    var gap: ClosedRange<Double>?
     var phase: Double = 0
     /// Orange only while Doddy is live; grey otherwise, as the island's other signs (ADR-239).
     var live = true
@@ -43,7 +47,12 @@ struct IslandWavesView: View {
                 // SwiftUI composite each line in its own offscreen layer, every frame while he
                 // talks (ADR-604). A single stroked line looks the same either way.
                 let strength = colour.opacity(wave.opacity)
-                if kind == .speech {
+                if kind == .across, let gap {
+                    // Fades at both ends and at the camera, in the colour (ADR-604), so the lines
+                    // dissolve into the black instead of stopping.
+                    line.stroke(LinearGradient(stops: Self.acrossStops(strength, gap: gap),
+                                               startPoint: .leading, endPoint: .trailing), style: style)
+                } else if kind == .speech {
                     // Nothing where they meet beside him; full strength from 15 % of the way.
                     line.stroke(LinearGradient(stops: [
                         .init(color: colour.opacity(0), location: 0),
@@ -57,6 +66,26 @@ struct IslandWavesView: View {
             }
         }
         .accessibilityHidden(true)
+    }
+
+    /// Gradient stops for `.across`: transparent at the left end, full from 10 %, fading into the
+    /// camera's gap, out of it on the other side, full again and transparent at the right end.
+    /// Locations never go backwards, whatever the gap (a gap that is nearly the whole drawing
+    /// leaves only the two ends).
+    static func acrossStops(_ colour: Color, gap: ClosedRange<Double>) -> [Gradient.Stop] {
+        let edge = 0.10, soft = 0.06
+        let lower = min(0.5, max(edge + soft, gap.lowerBound))
+        let upper = 1 - lower
+        return [
+            .init(color: colour.opacity(0), location: 0),
+            .init(color: colour, location: edge),
+            .init(color: colour, location: lower - soft),
+            .init(color: colour.opacity(0), location: lower),
+            .init(color: colour.opacity(0), location: upper),
+            .init(color: colour, location: upper + soft),
+            .init(color: colour, location: 1 - edge),
+            .init(color: colour.opacity(0), location: 1),
+        ]
     }
 
     private var shape: IslandWaveLine.Spread {

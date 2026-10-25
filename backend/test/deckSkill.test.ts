@@ -61,7 +61,7 @@ test("doddy-decks: the art is exactly the owner's imported poses, and nothing el
 // the app can't drift apart.
 test("doddy-decks: the Doddy colours are the app's", () => {
   const tokens = readFileSync(new URL("Packages/DoddyCore/Sources/DoddyDesignTokens/CandidateTokens.swift", root), "utf8");
-  for (const hex of ["FFF7E9", "171715", "655F56", "F5EAD8", "FF6A00", "A64B00", "171F29", "C5BCAD", "252E39", "FFB56B"]) {
+  for (const hex of ["FFF7E9", "171715", "655F56", "F5EAD8", "FF6A00", "A64B00", "171F29", "C5BCAD", "252E39", "FFB56B", "DFD5C6", "414953"]) {
     assert.ok(tokens.toUpperCase().includes(`#${hex}`), `#${hex} is an app colour`);
     assert.ok(skill.includes(hex), `${hex} is in SKILL.md`);
   }

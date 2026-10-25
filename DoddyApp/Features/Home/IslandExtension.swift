@@ -38,10 +38,13 @@ struct IslandExtension: View {
                 ZStack {
                     Capsule(style: .continuous)
                         .fill(Color.black)
-                    waves
-                        // Clear of the rounded ends; the middle is the camera, which is black too.
-                        .padding(.horizontal, IslandPillGeometry.height / 2)
-                        .padding(.vertical, 6)
+                    // The size is read while the pill springs out, so the camera's gap stays where the camera is.
+                    GeometryReader { drawing in
+                        waves(gap: IslandPillGeometry.waveGap(drawingWidth: drawing.size.width))
+                    }
+                    // Clear of the rounded ends; the middle is the camera, which is black too.
+                    .padding(.horizontal, IslandPillGeometry.height / 2)
+                    .padding(.vertical, 6)
                 }
                 .frame(width: width, height: IslandPillGeometry.height)
                 .position(x: geometry.size.width / 2, y: IslandPillGeometry.top + IslandPillGeometry.height / 2)
@@ -57,16 +60,16 @@ struct IslandExtension: View {
     }
 
     @ViewBuilder
-    private var waves: some View {
+    private func waves(gap: ClosedRange<Double>) -> some View {
         let live = look != .quiet
         if reduceMotion || look != .speaking {
-            IslandWavesView(kind: .across, live: live)
+            IslandWavesView(kind: .across, gap: gap, live: live)
         } else {
             // One trip of the waves every 1.2 s (Figma "Jak ruszają się fale"). Capped at 30
             // frames a second like Doddy's breathing (ADR-604).
             TimelineView(.animation(minimumInterval: 1.0 / 30)) { context in
                 let seconds = context.date.timeIntervalSinceReferenceDate
-                IslandWavesView(kind: .across, phase: -seconds * 2 * .pi / 1.2, live: true)
+                IslandWavesView(kind: .across, gap: gap, phase: -seconds * 2 * .pi / 1.2, live: true)
             }
         }
     }
@@ -87,6 +90,15 @@ enum IslandPillGeometry {
     /// speaks. The clock and the battery sit in the rest.
     static let listeningShare: CGFloat = 0.585
     static let speakingShare: CGFloat = 0.62
+
+    /// The part of the waves' drawing the camera covers, as fractions of its width, for a drawing
+    /// `drawingWidth` wide (the pill without its rounded ends). Nothing is covered once the
+    /// pill is no wider than the camera.
+    static func waveGap(drawingWidth: CGFloat) -> ClosedRange<Double> {
+        let half = Double(camera / 2) / Double(max(1, drawingWidth))
+        let lower = min(0.5, max(0, 0.5 - half))
+        return lower...(1 - lower)
+    }
 
     /// The pill's width: the camera's at `spread` 0, its full width at 1.
     static func width(screen: CGFloat, spread: CGFloat, speaking: Bool) -> CGFloat {
