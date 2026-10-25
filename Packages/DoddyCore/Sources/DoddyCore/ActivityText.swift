@@ -100,6 +100,9 @@ public enum ActivityText {
         // Round 3 (ADR-280, ADR-283), joined in the PR #34 merge.
         "Read alarms": "Odczytano budziki",
         "Turn off alarm": "Wyłącz budzik",
+        "Start stopwatch": "Włącz stoper",
+        "Stop stopwatch": "Zatrzymaj stoper",
+        "Read stopwatch": "Odczytano stoper",
         "Delete events": "Usuń wydarzenia",
         "Move reminders": "Przenieś przypomnienia",
         // Round 4 (ADR-300 onwards).

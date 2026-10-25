@@ -1,6 +1,8 @@
 # Lists by voice status (ADR-216)
 Date: 2026-10-10. Owner: "design lists by voice", then "approved, build it" (L1–L6 as proposed). Design: `docs/design/LISTS.md`, canvas "Doddy Lists".
 
+**Later (ADR-631, Shopping list+):** quantities read from an item's words, an At home list, and a product barcode looked up on Open Food Facts from the iPhone: `SHOPPING_LIST_PLUS.md`. The rules below (words kept, exact matching, duplicates) are unchanged.
+
 ## What ships
 **On screen**
 - **Memories:** a Notes | Lists switch. Lists shows one card per list (name, how many left, first items, a reminder if set) and a New list button. The new-list sheet takes a name and, optionally, first items, one per line.

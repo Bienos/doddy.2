@@ -5,7 +5,8 @@ import UserNotifications
 /// Note reminders (M4a, ADR-190) as local notifications. Only identifiers starting with
 /// `MemoryReminder.notificationPrefix` are scheduled here; timers and event nudges
 /// (`DeviceConnections`) and server pushes share the same iOS queue and are never touched.
-/// No badge, no remote registration, interruption level `.active`.
+/// No badge, no remote registration. Time Sensitive since ADR-650: the user set it for a moment,
+/// so a Focus lets it through where they allow Time Sensitive notifications.
 struct SystemNoteNotifications: NoteNotificationScheduling {
     static let categoryID = "DODDY_NOTE_REMINDER"
     /// Repeating reminders (ADR-211): "In 1 hour" and "Done this time"; no "Tomorrow 09:00" (owner
@@ -13,6 +14,8 @@ struct SystemNoteNotifications: NoteNotificationScheduling {
     static let repeatingCategoryID = "DODDY_NOTE_REPEATING_REMINDER"
     /// Place reminders: no snooze (a place comes back on the next arrival).
     static let placeCategoryID = "DODDY_NOTE_PLACE_REMINDER"
+    /// The same for a list: "Open list" (ADR-652).
+    static let placeListCategoryID = "DODDY_LIST_PLACE_REMINDER"
     static let threadID = "doddy-note-reminders"
     static let openAction = "NOTE_OPEN"
     static let hourAction = "NOTE_IN_1_HOUR"
@@ -36,10 +39,14 @@ struct SystemNoteNotifications: NoteNotificationScheduling {
             identifier: repeatingCategoryID, actions: [open, hour, doneThisTime], intentIdentifiers: [], options: [])
         let placeCategory = UNNotificationCategory(
             identifier: placeCategoryID, actions: [open, done], intentIdentifiers: [], options: [])
-        let ours: Set<String> = [categoryID, repeatingCategoryID, placeCategoryID]
+        // The same identifiers as above with the list's words, so the router needs no new case.
+        let openList = UNNotificationAction(identifier: openAction, title: title(.openList), options: [.foreground])
+        let placeListCategory = UNNotificationCategory(
+            identifier: placeListCategoryID, actions: [openList, done], intentIdentifiers: [], options: [])
+        let ours: Set<String> = [categoryID, repeatingCategoryID, placeCategoryID, placeListCategoryID]
         let center = UNUserNotificationCenter.current()
         let existing = await center.notificationCategories().filter { !ours.contains($0.identifier) }
-        center.setNotificationCategories(existing.union([category, repeatingCategory, placeCategory]))
+        center.setNotificationCategories(existing.union([category, repeatingCategory, placeCategory, placeListCategory]))
     }
 
     func authorization() async -> NotificationAuthorization {
@@ -62,7 +69,7 @@ struct SystemNoteNotifications: NoteNotificationScheduling {
         content.body = notification.body
         content.sound = .default
         content.threadIdentifier = Self.threadID
-        content.interruptionLevel = .active
+        content.interruptionLevel = DoddyNotificationKind.noteReminder.interruptionLevel
         content.userInfo = [Self.memoryIDKey: notification.memoryID.uuidString]
         // Doddy reaching for it (ADR-313), the pose for a reminder waiting; no extra words.
         if let art = NotificationArt.attachment(.reachingHigh) { content.attachments = [art] }
@@ -71,6 +78,7 @@ struct SystemNoteNotifications: NoteNotificationScheduling {
         case .once: content.categoryIdentifier = Self.categoryID
         case .repeating: content.categoryIdentifier = Self.repeatingCategoryID
         case .place: content.categoryIdentifier = Self.placeCategoryID
+        case .placeList: content.categoryIdentifier = Self.placeListCategoryID
         }
 
         let trigger: UNNotificationTrigger
@@ -177,6 +185,13 @@ extension TimerBanners {
         }
         // A birthday (ADR-288) just opens Doddy; nothing else happens.
         if Birthdays.isBirthday(notificationID: requestID) { return }
+        // The weekly plan (ADR-651) opens its screen.
+        if WeeklyPlan.isPlan(notificationID: requestID) {
+            if action != UNNotificationDismissActionIdentifier {
+                await MainActor.run { ShortcutRouter.shared.weeklyPlanOpened() }
+            }
+            return
+        }
         // The weekly look-back (ADR-306) opens its screen.
         if WeeklyLookBack.isLookBack(notificationID: requestID) {
             if action != UNNotificationDismissActionIdentifier {

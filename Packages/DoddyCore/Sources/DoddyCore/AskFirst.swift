@@ -93,17 +93,23 @@ public enum AskFirst {
             return .yesFirst(AskCard(title: "Read your week from Apple Health?", lines: ["Workouts, sleep and heart, the last 7 days", "A short summary goes to Doddy's voice"], confirmLabel: "Yes, read it"))
         case .listAlarms:
             return .yesFirst(AskCard(title: "Check Doddy's alarms?", lines: ["The alarms Doddy set on this iPhone"], confirmLabel: "Yes, check"))
+        case .startStopwatch(let label):
+            return .tapFirst(AskCard(
+                title: "Start a stopwatch?", lines: [label.map { "“\($0)”" } ?? "It counts up until you stop it"], confirmLabel: "Start"))
+        case .stopStopwatch:
+            return .tapFirst(AskCard(title: "Stop the stopwatch?", lines: ["It stops and keeps the time it reached"], confirmLabel: "Stop"))
+        case .checkStopwatch:
+            return .yesFirst(AskCard(title: "Read your stopwatch?", lines: ["How long it has been running"], confirmLabel: "Yes, read it"))
         case .readList(let name):
             return .yesFirst(AskCard(title: "Read a list?", lines: ["List: \(name)"], confirmLabel: "Yes, read it"))
         case .parkingSpot(.find):
             return .yesFirst(AskCard(title: "Find your parking spot?", lines: ["Uses where your iPhone is now"], confirmLabel: "Yes, find it"))
-        case .startTranslator:
-            return .yesFirst(AskCard(
-                title: "Start translator mode?",
-                lines: ["This conversation ends and a new one starts for translating. It has none of your notes, profile or lists."],
-                confirmLabel: "Yes, start"))
-        case .stopTranslator:
-            return .yesFirst(AskCard(title: "Stop translator mode?", lines: ["Doddy stops translating."], confirmLabel: "Yes, stop"))
+        // ADR-619 (owner, 24 Oct 2026: "nie pytaj, od razu działaj, przełącz się i pytaj, co
+        // tłumaczyć"), replacing ADR-542: translator mode starts and stops the moment the user asks.
+        // It reads nothing and sends nothing; the conversation turns private, and the other person
+        // still hears the AI translator disclosure first.
+        case .startTranslator, .stopTranslator:
+            return .runsNow
         case .handOverErrand(let draft):
             // Reads the web and changes nothing (ADR-570); the card shows the user's exact words.
             return .yesFirst(ErrandAsk.handOverCard(draft))

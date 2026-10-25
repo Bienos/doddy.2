@@ -121,6 +121,8 @@ final class VoiceSessionController {
         let memoryID: UUID
         let noteText: String
         let when: When
+        /// "Ring like an alarm" as the card showed it at the tap (ADR-651).
+        var rings = false
     }
 
     /// The receipt after Set reminder on a note-reminder card (ADR-198), read back from the store.
@@ -240,7 +242,13 @@ final class VoiceSessionController {
         return current.isMuted ? .muted : .listening
     }
     private(set) var lines: [Line] = []
-    private(set) var pendingAction: PendingAction? { didSet { syncIsland() } }
+    private(set) var pendingAction: PendingAction? {
+        didSet {
+            syncIsland()
+            // ADR-616: a new card opens the island up while Doddy isn't on screen.
+            if oldValue == nil, pendingAction != nil { expandIslandForCard() }
+        }
+    }
     /// ASK-01 (ADR-483): which calls the user said yes to. Checked right before a tool runs.
     private var askLedger = AskLedger()
     /// The type the user picks on the "Save this note?" card. Starts as Other for every proposal;
@@ -273,9 +281,12 @@ final class VoiceSessionController {
     private(set) var planStatus: PlanStatus? { didSet { syncIsland() } }
     /// Which Apple Maps result the user picked on a place card (the first until they tap another).
     private(set) var selectedPlaceIndex = 0
+    /// The note-reminder card's "Ring like an alarm" switch (ADR-651): the agent's proposal, or what
+    /// the note had; the user can flip it before the tap.
+    private(set) var noteReminderRings = false
     /// The access card (ADR-578): a function the agent asked for is off, or iOS hasn't allowed it.
     /// The screen asks "Allow Doddy to use …?"; nothing turns on without the user's tap there.
-    private(set) var accessRequest: ConnectionApprovalCard?
+    private(set) var accessRequest: ConnectionApprovalCard? { didSet { syncIsland() } }
     /// The function the access card is about. The paths that find one off or blocked set it; a
     /// card already up for the same function is kept as it is (it may be waiting for iOS).
     private(set) var connectionNeeded: VoiceConnection? {
@@ -286,7 +297,7 @@ final class VoiceSessionController {
         }
     }
     /// "Let Doddy use Calendar?" (ADR-566): a call held while the sheet asks the user.
-    private(set) var permissionRequest: PermissionRequest?
+    private(set) var permissionRequest: PermissionRequest? { didSet { syncIsland() } }
     /// Connections the user said Not now to in this conversation: not asked for again.
     private var declinedPermissions: Set<VoiceConnection> = []
     /// Each call as it came, until it is answered, so one held for the permission sheet can be
@@ -306,7 +317,7 @@ final class VoiceSessionController {
         /// "Gmail"
         let title: String
     }
-    private(set) var accountNeeded: AccountNeeded?
+    private(set) var accountNeeded: AccountNeeded? { didSet { syncIsland() } }
     private(set) var isConnectingAccount = false
     /// What went wrong the last time Connect was tapped, for the card.
     private(set) var accountMessage: String?
@@ -1380,6 +1391,8 @@ final class VoiceSessionController {
                 let url = try PresentationFiles.write(draft, created: Date())
                 if onScreen(attempt) {
                     presentationReady = PresentationReady(url: url, title: draft.title, slideCount: draft.slideCount)
+                    // ADR-616: written and read back, so it is ready; Show opens its card.
+                    flashIsland(.resultReady(.presentation))
                 }
                 await reply(id, VoiceToolReply.presentationMade(draft))
             } catch {
@@ -1415,7 +1428,13 @@ final class VoiceSessionController {
             // setting; the card showed it, and the reply names it to the agent.
             let previous = store.noteReminders?.reminder(forMemory: memoryID)
             let receipt = await setNoteReminder(confirmed, attempt: attempt)
-            await reply(id, Self.noteReminderReply(receipt, note: noteText, replacing: previous))
+            var text = Self.noteReminderReply(receipt, note: noteText, replacing: previous)
+            if confirmed.rings, text.hasPrefix("added") {
+                // Inserted before the data block, so the note's words stay last.
+                let ring = VoiceToolReply.noteReminderRingLine(confirmed: store.noteReminders?.ringing.contains(memoryID) == true)
+                if let newline = text.firstIndex(of: "\n") { text.insert(contentsOf: ring, at: newline) } else { text += ring }
+            }
+            await reply(id, text)
         case .changeEvent(let id, let plan):
             // Kept only if the reply says the change was checked (ActivityEntry).
             await reply(id, changeEvent(plan), undo: .changedEvent(plan))
@@ -1426,6 +1445,7 @@ final class VoiceSessionController {
             let ticked = items.indices.filter { !ingredientsUnticked.contains($0) }.map { items[$0] }
             let leftOut = items.indices.filter { ingredientsUnticked.contains($0) }.map { items[$0] }
             ingredientsUnticked = []
+            ingredientsAtHome = []
             guard !ticked.isEmpty else {
                 await reply(id, VoiceToolReply.ingredientsNoneTicked)
                 return
@@ -1514,6 +1534,12 @@ final class VoiceSessionController {
             toolCallID: id, memoryID: memoryID, noteText: text, savedAt: savedAt, target: .time(date, timeZoneID: zone, repeats: repeats))
     }
 
+    /// The card's "Ring like an alarm" switch (ADR-651).
+    func setNoteReminderRings(_ rings: Bool) {
+        guard case .noteReminder(_, _, _, _, .time) = pendingAction else { return }
+        noteReminderRings = rings
+    }
+
     /// The user switched arriving/leaving on the card (the agent may have misheard).
     func setNoteReminderOnArrival(_ onArrival: Bool) {
         guard case .noteReminder(let id, let memoryID, let text, let savedAt, .place(let results, _)) = pendingAction else { return }
@@ -1524,7 +1550,10 @@ final class VoiceSessionController {
     private func confirmedNoteReminder(memoryID: UUID, noteText: String, target: NoteReminderCardTarget) -> ConfirmedNoteReminder? {
         switch target {
         case .time(let date, let zone, let repeats):
-            return ConfirmedNoteReminder(memoryID: memoryID, noteText: noteText, when: .time(date, timeZoneID: zone, repeats: repeats))
+            let canRing = ReminderRinger.isAvailable && ReminderRing.support(repeats: repeats, isPlace: false) == .supported
+            return ConfirmedNoteReminder(
+                memoryID: memoryID, noteText: noteText, when: .time(date, timeZoneID: zone, repeats: repeats),
+                rings: noteReminderRings && canRing)
         case .place(let results, let onArrival):
             guard !results.isEmpty else { return nil }
             let choice = results[min(selectedPlaceIndex, results.count - 1)]
@@ -1550,6 +1579,8 @@ final class VoiceSessionController {
         if reminders.authorization == .notDetermined { await reminders.requestAuthorization() }
         switch confirmed.when {
         case .time(let date, let zone, let repeats):
+            // The card's switch, exactly as shown: on sets the alarm with the reminder, off ends one.
+            ReminderRinger.setWish(confirmed.memoryID, rings: confirmed.rings)
             await reminders.set(
                 memoryID: confirmed.memoryID, at: date, timeZone: TimeZone(identifier: zone) ?? .autoupdatingCurrent, repeats: repeats)
         case .place(let place):
@@ -1618,6 +1649,7 @@ final class VoiceSessionController {
         case .leaveBy(let id, _): await reply(id, VoiceToolReply.leaveByDeclined)
         case .ingredients(let id, _, _, _, _, _):
             ingredientsUnticked = []
+            ingredientsAtHome = []
             await reply(id, VoiceToolReply.ingredientsDeclined)
         case .bulk(let id, _, _, _):
             bulkUnticked = []
@@ -1666,6 +1698,10 @@ final class VoiceSessionController {
             lines += result.alreadyThere.map { .note("\($0) · already on the list, not added again") }
             lines += result.tooLong.map { .note("too long to add: \($0.prefix(40))…") }
             lines += result.noRoom.map { .note("\($0) · the list is full") }
+            // Shopping list+ (ADR-631): added anyway, but the At home list has them open.
+            let home = homeList
+            let atHome = HomeStock.onHomeList(result.added.map(\.text), home: home, addingTo: list.id)
+            lines += atHome.map { .note("\($0) · on your At home list") }
             // The write ran; its receipt only shows on its own conversation's screen (ADR-458).
             if isCurrent(toolCallID) {
                 listReceipt = ListReceipt(
@@ -1674,7 +1710,8 @@ final class VoiceSessionController {
             }
             // What Doddy did can undo it for a day (ADR-276); kept only when something was added.
             let undo: ActivityUndo? = result.added.isEmpty ? nil : .listAdded(listID: list.id, list: list.name, items: result.added)
-            await reply(toolCallID, VoiceToolReply.listAdded(result, list: list.name), undo: undo)
+            await reply(toolCallID, VoiceToolReply.listAdded(result, list: list.name)
+                + VoiceToolReply.onHomeList(atHome, home: home?.name ?? ""), undo: undo)
         } catch {
             writeResults[toolCallID] = WriteResult(reply: "", attempted: true)
             await reply(toolCallID, VoiceToolReply.listFailed(UserFacingError.listMessage(for: error)), isError: true)
@@ -2040,6 +2077,9 @@ final class VoiceSessionController {
             greeting: wakeGreeting, conversationStartedAt: startedAt)
         state.moment = islandMoment
         state.islandStyle = IslandStyle.stored(UserDefaults.standard.string(forKey: PreferenceKey.islandStyle))
+        // ADR-617: the island speaks the language of Doddy's screens (Polish by default), which the
+        // widget extension can't read for itself.
+        state.language = Bundle.main.preferredLocalizations.first
         return state
     }
 
@@ -2052,9 +2092,13 @@ final class VoiceSessionController {
         case .memory: return .noteWaiting
         case .plan(_, let steps, _): return .planWaiting(steps: steps.count)
         case .reminder, .noteReminder: return .reminderWaiting
-        case .some: return nil
+        // ADR-616: every other card has its kind on the island (it was the bare "Confirm in Doddy").
+        case .some(let action): return .actionWaiting(Self.islandAction(action))
         case nil: break
         }
+        // ADR-616: an iPhone permission, a function that is off, or an account to connect.
+        if permissionRequest != nil || accessRequest != nil { return .actionWaiting(.access) }
+        if accountNeeded != nil { return .actionWaiting(.signIn) }
         // Translating (ADR-244): the language codes only, never a phrase. No tool runs in this
         // mode, so no plan, reminder or "saved" moment can be hidden by it.
         if let setup = translator?.setup {
@@ -2070,6 +2114,27 @@ final class VoiceSessionController {
         if case .adding = reminderStatus { return .reminderAdding }
         if let flash = islandFlash, flash.until > Date() { return flash.moment }
         return nil
+    }
+
+    /// The island's word for a card (ADR-616): its kind only, never what it says.
+    private static func islandAction(_ action: PendingAction) -> IslandAction {
+        switch action {
+        case .message(_, let draft, _): return draft.channel == .email ? .email : .text
+        case .blik: return .transfer
+        case .event, .changeEvent, .deleteEvent: return .calendar
+        case .reminder, .noteReminder, .changeReminder, .deleteReminder: return .reminder
+        case .timer, .alarm, .cancelAlarm: return .alarm
+        case .map, .leaveBy: return .map
+        case .shortcut: return .shortcut
+        case .camera: return .camera
+        case .presentation: return .presentation
+        case .createList, .ingredients: return .list
+        case .cloud(_, let call, _, _, _):
+            let name = call.name.lowercased()
+            return name.contains("gmail") || name.contains("outlook") || name.contains("mail") ? .email : .onlineApp
+        case .ask, .cloudRead: return .askFirst
+        case .memory, .plan, .bulk, .undo, .parking: return .other
+        }
     }
 
     private func flashIsland(_ moment: DoddyVoiceAttributes.ContentState.Moment) {
@@ -2089,6 +2154,13 @@ final class VoiceSessionController {
         guard ownsIsland, translator == nil else { return }
         let onScreen = UIApplication.shared.applicationState == .active
         if islandExpansion.doddyStartedSpeaking(at: Date(), appOnScreen: onScreen) { island.expand() }
+    }
+
+    /// ADR-616: a card arrived; `IslandExpansion` says whether the island opens up for it.
+    private func expandIslandForCard() {
+        guard ownsIsland, translator == nil else { return }
+        let onScreen = UIApplication.shared.applicationState == .active
+        if islandExpansion.cardArrived(at: Date(), appOnScreen: onScreen) { island.expand() }
     }
 
     private func syncIsland() {
@@ -2504,7 +2576,10 @@ final class VoiceSessionController {
             guard let list = await resolveList(proposal.list, toolCallID: call.toolCallId) else { return }
             guard isCurrent(call.toolCallId) else { return dropStale(call.toolCallId) }
             let open = IngredientsProposal.alreadyOpen(proposal.items, on: list)
-            ingredientsUnticked = open
+            // Shopping list+ (ADR-631): what the At home list has starts unticked too, and says so.
+            let atHome = HomeStock.positionsOnHomeList(proposal.items, home: homeList, addingTo: list.id).subtracting(open)
+            ingredientsAtHome = atHome
+            ingredientsUnticked = open.union(atHome)
             propose(.ingredients(toolCallID: call.toolCallId, listID: list.id, listName: list.name, dish: proposal.dish,
                                  items: proposal.items, alreadyOpen: open), toolCallID: call.toolCallId)
         case .convertCurrency(let request):
@@ -2526,12 +2601,35 @@ final class VoiceSessionController {
                 await reply(call.toolCallId, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
             }
         case .setTimer(let draft):
-            guard await devices.notificationAccess() == .granted else {
+            // AlarmKit on iOS 26 needs no notification permission (ADR-650).
+            guard await devices.timerAccess() == .granted else {
                 await notConnected(call.toolCallId, .timers)
                 return
             }
             guard await mayTryAgain(call.toolCallId, app: .timers) else { return }
             propose(.timer(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
+        case .startStopwatch(let label):
+            // The user already tapped Start on the ask card (ASK-01). One stopwatch at a time: a
+            // second start reports the one running and changes nothing (ADR-652).
+            switch StopwatchController.shared.start(label: label) {
+            case .started(let watch):
+                await reply(call.toolCallId, VoiceToolReply.stopwatchStarted(label: watch.label))
+            case .alreadyThere(let watch):
+                await reply(call.toolCallId, VoiceToolReply.stopwatchAlreadyThere(elapsed: watch.elapsed(at: Date()), paused: watch.isPaused))
+            }
+        case .stopStopwatch:
+            // Said from the stored stopwatch, never from a guess: none, or one already stopped,
+            // is a failure the voice reads out as it is.
+            let before = StopwatchController.shared.watch
+            if let elapsed = StopwatchController.shared.stop() {
+                await reply(call.toolCallId, VoiceToolReply.stopwatchStopped(elapsed: elapsed))
+            } else {
+                let stoppedAt = before.flatMap { $0.isOver ? $0.elapsed(at: $0.stoppedAt ?? Date()) : nil }
+                await reply(call.toolCallId, VoiceToolReply.noStopwatchToStop(stoppedAt: stoppedAt))
+            }
+        case .checkStopwatch:
+            StopwatchController.shared.refresh()
+            await reply(call.toolCallId, VoiceToolReply.stopwatchReading(StopwatchController.shared.watch, now: Date()))
         case .listAlarms:
             // Read on the phone (ADR-283): times and labels Doddy set, nothing else. An unreadable
             // list is said as such, never as "none" (voice-agent review 2).
@@ -2644,6 +2742,8 @@ final class VoiceSessionController {
             let found = devices.findPhotos(request, now: Date())
             if isCurrent(call.toolCallId) {
                 photoResults = PhotoResults(request: request, summary: found.summary, identifiers: found.identifiers)
+                // ADR-616: the pictures are on the conversation's screen; the island says so.
+                if !found.identifiers.isEmpty { flashIsland(.resultReady(.photos)) }
             }
             await reply(call.toolCallId, VoiceToolReply.photosFound(found.summary, request: request, calendar: .current))
         case .openCamera:
@@ -2968,7 +3068,8 @@ final class VoiceSessionController {
         guard isOn(connection) else { return .notConnected(connection) }
         let access: DeviceConnections.Access
         if connection == .timers {
-            access = await devices.notificationAccess()
+            // Plan steps on Timers are timers (alarms aren't in plans): AlarmKit or notifications.
+            access = await devices.timerAccess()
         } else {
             access = devices.access(for: connection)
         }
@@ -3049,7 +3150,15 @@ final class VoiceSessionController {
         do {
             let result = try await client.run(cloud, timeZone: TimeZone.current.identifier, approvalId: approvalID)
             // ADR-564: a file Claude is making gets a button on screen; the agent never gets its link.
-            if let document = result.document { documents.insert(document, at: 0) }
+            if let document = result.document {
+                documents.insert(document, at: 0)
+                // ADR-616: "ready" only when the server says the file is ready.
+                switch document.status {
+                case .ready: flashIsland(.resultReady(.document))
+                case .working: flashIsland(.resultReady(.documentStarted))
+                case .failed: break
+                }
+            }
             await reply(toolCallID, VoiceToolReply.cloudResult(result))
         } catch {
             await reply(toolCallID, await cloudFailureReply(error, tool: cloud.name), isError: true)
@@ -3153,6 +3262,7 @@ final class VoiceSessionController {
         }
         switch draft.target {
         case .time(let date, let zone):
+            noteReminderRings = draft.rings || store.noteReminders?.wantsToRing(memoryID: record.id) == true
             propose(.noteReminder(toolCallID: toolCallID, memoryID: record.id, noteText: record.currentText,
                                   savedAt: record.capturedAt, target: .time(date, timeZoneID: zone, repeats: draft.repeats)),
                     toolCallID: toolCallID)
@@ -3532,6 +3642,13 @@ final class VoiceSessionController {
 
     /// Ingredients the user unticked on the card (ADR-305), by position.
     private(set) var ingredientsUnticked: Set<Int> = []
+    /// Shopping list+ (ADR-631): ingredients open on the At home list; the card says so and starts them unticked.
+    private(set) var ingredientsAtHome: Set<Int> = []
+
+    /// The At home list chosen on this iPhone (ADR-631), or nil.
+    private var homeList: DoddyList? {
+        HomeStock.list(storedID: UserDefaults.standard.string(forKey: HomeStock.preferenceKey), in: store.lists)
+    }
 
     func toggleIngredient(_ index: Int) {
         if ingredientsUnticked.contains(index) { ingredientsUnticked.remove(index) } else { ingredientsUnticked.insert(index) }
@@ -3732,7 +3849,7 @@ final class VoiceSessionController {
     /// Looks for a running copy only after an unconfirmed try of the same timer (ADR-320); "started"
     /// only when the iPhone lists it, with the ring time it lists.
     private func timerResult(_ draft: TimerDraft, retry: ActionRetryDecision?) async -> WriteResult {
-        guard await devices.notificationAccess() == .granted else {
+        guard await devices.timerAccess() == .granted else {
             return WriteResult(reply: VoiceToolReply.notAdded("Notifications are off for Doddy."), attempted: false)
         }
         let outcome = await TimerStartAction.start(draft, with: devices, uncheckedSince: retry?.uncheckedSince)

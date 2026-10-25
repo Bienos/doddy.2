@@ -240,6 +240,7 @@ struct RootView: View {
                 // Tasks Doddy works on in the background (ADR-570): a finished one is saved here and acknowledged.
                 Task { await ErrandsModel.shared.refresh() }
                 FocusController.shared.refresh()
+                StopwatchController.shared.refresh()
                 // Shared lists (ADR-263): changes others made arrive when Doddy comes to the front.
                 // A cold launch also syncs (LaunchWork), so one that just ran is not repeated (ADR-547).
                 Task { await SharedListsController.shared.syncAllUnlessRecent() }
@@ -380,7 +381,7 @@ struct RootView: View {
     /// A sheet or cover from the router is up (motion v2: Doddy is hidden while it is).
     private var routerCovers: Bool {
         router.isVoicePresented || router.isSetupPresented || router.isTidyUpPresented
-            || router.isWrapUpPresented || router.isLookBackPresented || router.isCheckInPresented
+            || router.isWrapUpPresented || router.isLookBackPresented || router.isWeeklyPlanPresented || router.isCheckInPresented
             || router.shownDraft != nil || SharedListsController.shared.invite != nil
     }
 
@@ -491,6 +492,8 @@ struct RootView: View {
         }
         // The weekly look-back (ADR-306), from its notification or Settings.
         .sheet(isPresented: $router.isLookBackPresented, onDismiss: { router.showWaitingDraft() }) { WeeklyLookBackView() }
+        // The weekly plan (ADR-651), from its notification or Settings.
+        .sheet(isPresented: $router.isWeeklyPlanPresented, onDismiss: { router.showWaitingDraft() }) { WeeklyPlanView() }
         // The morning check-in (ADR-220), from its notification or Settings.
         .sheet(isPresented: $router.isCheckInPresented, onDismiss: { router.checkInSheetDismissed() }) {
             MorningCheckInView(openSettings: { selectedTab = .settings })
@@ -551,6 +554,16 @@ struct RootView: View {
             // DODDY Capture (ADR-588): the island's Open button. Navigation only.
             case .recordings:
                 router.openRecordings()
+            // The voice island's Show (ADR-616): the conversation's sheet, on the card that waits or
+            // what Doddy made. Navigation only: the card still needs its own tap. With no
+            // conversation left (an island from before the app stopped) it is just Home, so
+            // opening the sheet never starts a new one.
+            case .conversation:
+                selectedTab = .home
+                if HomeConversation.shared.forTranscript != nil || VoiceSessionController.runningConversation != nil {
+                    voiceDetent = .medium
+                    router.showConversationStartedElsewhere()
+                }
             }
         }
     }

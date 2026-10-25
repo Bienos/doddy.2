@@ -139,10 +139,13 @@ final class FocusController {
             status = await center.notificationSettings().authorizationStatus
         }
         guard status == .authorized || status == .provisional || status == .ephemeral else { return false }
+        let language = NotificationLanguage.current
         let content = UNMutableNotificationContent()
-        content.title = "Focus done"
-        content.body = session.label ?? "Your \(Int((session.duration / 60).rounded()))-minute focus is over."
+        content.title = TimerCopy.focusTitle(language)
+        content.body = TimerCopy.focusBody(label: session.label, minutes: Int((session.duration / 60).rounded()), language)
         content.sound = .default
+        // The end of a time the user chose: through a Focus where allowed (ADR-650).
+        content.interruptionLevel = DoddyNotificationKind.focusDone.interruptionLevel
         let id = Self.notificationID(session)
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: max(1, end.timeIntervalSinceNow), repeats: false)
         do {

@@ -61,6 +61,12 @@ struct DoddyVoiceAttributes: ActivityAttributes {
             /// their language is not known yet), never anything said. `bothWays` is face to face;
             /// listen only translates one way, `from` the room `to` the owner.
             case translating(from: String, to: String, bothWays: Bool)
+            /// Any other card waits for the user's tap, or Doddy asks for access or a sign-in
+            /// (ADR-616). Only the kind: never who a text is to, what it says or which event.
+            case actionWaiting(IslandAction)
+            /// Something Doddy made or found is on the conversation's screen (ADR-616), shown
+            /// for a few seconds. Only the kind, and "ready" only for a file that is ready.
+            case resultReady(IslandResult)
         }
         /// "Hey Pat, what's up?" from a Talk to Doddy shortcut or Talk in the Island (ADR-254,
         /// ADR-577), shown instead of "Connecting…" / "Listening" / "Speaking" until the user first
@@ -69,15 +75,61 @@ struct DoddyVoiceAttributes: ActivityAttributes {
         /// When this conversation started, if the activity began earlier as "Hey Doddy"
         /// listening (one activity carries both, because iOS can't start one in the background).
         var conversationStartedAt: Date?
+        /// The language Doddy's screens are in ("pl", "en", …), so the island and the Lock Screen
+        /// use it too (ADR-617); the widget extension can't see the app's own setting. Nil: the
+        /// iPhone's language.
+        var language: String?
     }
 
     /// When the activity started: the conversation, or "Hey Doddy" listening (ADR-254).
     var startedAt: Date
 }
 
+/// The kind of card that waits for the user in a conversation, for the island (ADR-616). Each
+/// is a fixed word: the island and the Lock Screen are visible to anyone, so nothing the card
+/// says (a name, a number, a message, an amount) is carried here.
+enum IslandAction: String, Codable, Hashable, Sendable, CaseIterable {
+    /// A text Doddy drafted; the user sends it in Messages.
+    case text
+    /// An email: a draft for Mail, or Gmail or Outlook through Doddy's server.
+    case email
+    /// A BLIK transfer the user sends in their bank app.
+    case transfer
+    case calendar
+    /// A change to a reminder that exists (adding one has its own Reminder Knot moment).
+    case reminder
+    /// A timer or an alarm to set, or an alarm to turn off.
+    case alarm
+    case map
+    case shortcut
+    case camera
+    case presentation
+    case list
+    /// A change in another online app (Todoist, Notion, Google, …).
+    case onlineApp
+    /// "Doddy wants to …" before a lookup: a spoken yes is enough for a read (ASK-01).
+    case askFirst
+    /// Doddy needs an iPhone permission or a function that is off.
+    case access
+    /// An online account isn't connected.
+    case signIn
+    /// Anything else with a card (undo, parking, when to leave, several changes).
+    case other
+}
+
+/// The kind of thing Doddy made or found that the conversation's screen now shows (ADR-616).
+enum IslandResult: String, Codable, Hashable, Sendable, CaseIterable {
+    /// A file Claude made that Doddy's server reports ready.
+    case document
+    /// A file Claude is still making; its button is on the screen.
+    case documentStarted
+    case presentation
+    case photos
+}
+
 extension DoddyVoiceAttributes.ContentState {
     private enum CodingKeys: String, CodingKey {
-        case status, isMuted, savedCount, endedAt, moment, islandStyle, greeting, conversationStartedAt
+        case status, isMuted, savedCount, endedAt, moment, islandStyle, greeting, conversationStartedAt, language
     }
 
     /// Content written by an older build (without `savedCount`, `endedAt`, `moment`,
@@ -93,6 +145,7 @@ extension DoddyVoiceAttributes.ContentState {
         islandStyle = (try? container.decodeIfPresent(IslandStyle.self, forKey: .islandStyle)) ?? .leanIn
         greeting = try container.decodeIfPresent(String.self, forKey: .greeting)
         conversationStartedAt = try container.decodeIfPresent(Date.self, forKey: .conversationStartedAt)
+        language = try? container.decodeIfPresent(String.self, forKey: .language)
     }
 
     /// "Hey Doddy" listening (ADR-254): the iPhone waits for the wake word; no conversation.
@@ -125,45 +178,46 @@ extension DoddyVoiceAttributes.ContentState {
     /// Short label for the island and Lock Screen.
     var title: String {
         #if DEBUG
-        if status == .testFixture { return isMuted ? "Test muted" : "Test activity" }
+        if status == .testFixture { return isMuted ? islandWord("Test muted") : islandWord("Test activity") }
         #endif
-        if showsMuted { return "Muted" }
+        if showsMuted { return islandWord("Muted") }
         if showsGreeting, let greeting { return greeting }
         switch status {
-        case .connecting: return "Connecting…"
-        case .listening: return "Listening"
-        case .wakeListening: return "Say “Hey Doddy”"
-        case .wakePaused: return "“Hey Doddy” paused"
-        case .thinking: return "Working on it…"
-        case .speaking: return "Speaking"
-        case .needsConfirmation: return "Confirm in Doddy"
-        case .ended: return "Conversation ended"
-        case .failed: return "Conversation stopped"
+        case .connecting: return islandWord("Connecting…")
+        case .listening: return islandWord("Listening")
+        case .wakeListening: return islandWord("Say “Hey Doddy”")
+        case .wakePaused: return islandWord("“Hey Doddy” paused")
+        case .thinking: return islandWord("Working on it…")
+        case .speaking: return islandWord("Speaking")
+        case .needsConfirmation: return islandWord("Confirm in Doddy")
+        case .ended: return islandWord("Conversation ended")
+        case .failed: return islandWord("Conversation stopped")
         #if DEBUG
-        case .testFixture: return "Test activity"
+        case .testFixture: return islandWord("Test activity")
         #endif
         }
     }
 
     /// Second line on the Lock Screen, when there is something true to add.
     var detail: String? {
-        if showsMuted { return "Doddy can't hear you" }
+        if showsMuted { return islandWord("Doddy can't hear you") }
         switch status {
         case .ended:
             switch savedCount {
-            case 0: return "Doddy isn't listening · nothing saved"
-            case 1: return "Doddy isn't listening · 1 note saved"
+            case 0: return islandWord("Doddy isn't listening · nothing saved")
+            case 1: return islandWord("Doddy isn't listening · 1 note saved")
             default: return "Doddy isn't listening · \(savedCount) notes saved"
             }
         case .failed:
             switch savedCount {
-            case 0: return "Doddy isn't listening · open Doddy to try again"
-            case 1: return "Doddy isn't listening · 1 note saved"
+            case 0: return islandWord("Doddy isn't listening · open Doddy to try again")
+            case 1: return islandWord("Doddy isn't listening · 1 note saved")
             default: return "Doddy isn't listening · \(savedCount) notes saved"
             }
-        case .needsConfirmation: return "Open Doddy to Save or Don't save"
-        case .wakeListening: return "Listening on this iPhone for “Hey Doddy” only"
-        case .wakePaused: return "Not listening right now"
+        // Every card, not only a note's (ADR-616: a text or a transfer said "Save or Don't save").
+        case .needsConfirmation: return islandWord("Open Doddy to see it and say yes or no")
+        case .wakeListening: return islandWord("Listening on this iPhone for “Hey Doddy” only")
+        case .wakePaused: return islandWord("Not listening right now")
         default: return nil
         }
     }
@@ -196,3 +250,9 @@ extension DoddyVoiceAttributes.ContentState {
         return !showsMuted && !isEnded && status != .needsConfirmation && !isWakeMode
     }
 }
+
+/// An English word of the island or the Lock Screen that the string catalogs translate (ADR-617):
+/// `tools/build_strings_catalog.py` collects every `islandWord("…")`, and the island's views look
+/// it up in Doddy's language (`IslandLanguage`). It returns the English as it is, so the scene
+/// logic and its checks stay in English.
+func islandWord(_ english: String) -> String { english }

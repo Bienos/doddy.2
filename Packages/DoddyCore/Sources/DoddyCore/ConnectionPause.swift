@@ -13,7 +13,9 @@ public enum ConnectionPause {
         switch request {
         case .searchMemories, .saveMemory, .unsupported, .invalid, .needsClarification, .startTranslator, .stopTranslator,
              .calculate, .convertUnits, .parkingSpot, .addIngredients,
-             .addToList, .readList, .checkOff, .removeFromList, .createList, .noteCapabilityGap:
+             .addToList, .readList, .checkOff, .removeFromList, .createList, .noteCapabilityGap,
+             .startStopwatch, .stopStopwatch, .checkStopwatch:
+            // The stopwatch is Doddy's own tool on this iPhone (ADR-652): no other app or account.
             false
         case .checkErrands:
             // Reads the tasks Doddy keeps for the user (ADR-570); no other app or account.

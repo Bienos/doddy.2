@@ -1,7 +1,7 @@
 {
   "NSAlarmKitUsageDescription": {
-    "de": "Doddy stellt einen Wecker nur, wenn du darum bittest und auf Wecker stellen tippst. Seine Wecker klingeln auch im Lautlos-Modus oder in einem Fokus. Schalte sie in den Doddy-Einstellungen unter Wecker aus.",
-    "en": "Doddy sets an alarm only when you ask and tap Set alarm. Its alarms ring even in Silent mode or a Focus. Turn them off in Doddy's Settings, Alarms."
+    "de": "Doddy stellt einen Wecker oder Timer nur, wenn du darum bittest und auf Wecker stellen oder Starten tippst. Sie klingeln auch im Lautlos-Modus oder in einem Fokus. Wecker schaltest du in den Doddy-Einstellungen unter Wecker aus.",
+    "en": "Doddy sets an alarm or a timer only when you ask and tap Set alarm or Start. They ring even in Silent mode or a Focus. Turn alarms off in Doddy's Settings, Alarms."
   },
   "NSCalendarsFullAccessUsageDescription": {
     "de": "Doddy liest deine Termine für die Tage, nach denen du fragst, und fügt einen Termin erst hinzu, ändert oder löscht ihn erst, nachdem du auf Hinzufügen, Ändern oder Löschen getippt hast. Schalte das unter Einstellungen, Verbindungen aus.",

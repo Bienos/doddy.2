@@ -24,8 +24,8 @@
   "pl": "Doddy wyszukuje kontakt po imieniu albo sprawdza, czyje urodziny się zbliżają, gdy o to poprosisz, i odczytuje urodziny osób, o których ma Ci przypominać. W rozmowie głosowej znalezione imiona oraz dzień i miesiąc urodzin trafiają do ElevenLabs, które obsługuje głos Doddy'ego; numery, adresy e-mail i lata urodzenia zostają na tym iPhonie. Wyłączysz to w Ustawieniach, w sekcji Połączenia."
  },
  "NSAlarmKitUsageDescription": {
-  "en": "Doddy sets an alarm only when you ask and tap Set alarm. Its alarms ring even in Silent mode or a Focus. Turn them off in Doddy's Settings, Alarms.",
-  "pl": "Doddy ustawia budzik tylko wtedy, gdy o to poprosisz i stukniesz Ustaw budzik. Jego budziki dzwonią nawet w trybie cichym i przy włączonym skupieniu. Wyłączysz je w Ustawieniach Doddy'ego, w sekcji Budziki."
+  "en": "Doddy sets an alarm or a timer only when you ask and tap Set alarm or Start. They ring even in Silent mode or a Focus. Turn alarms off in Doddy's Settings, Alarms.",
+  "pl": "Doddy ustawia budzik albo minutnik tylko wtedy, gdy o to poprosisz i stukniesz Ustaw budzik albo Zacznij. Dzwonią nawet w trybie cichym i przy włączonym skupieniu. Budziki wyłączysz w Ustawieniach Doddy'ego, w sekcji Budziki."
  },
  "NSFaceIDUsageDescription": {
   "en": "Doddy uses Face ID to open the app or a private note when you turn the lock on. iOS checks your face; Doddy only learns whether it matched.",

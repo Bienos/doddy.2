@@ -24,6 +24,8 @@ final class ShortcutRouter {
     var isWrapUpPresented = false
     /// The weekly look-back (ADR-306).
     var isLookBackPresented = false
+    /// The weekly plan (ADR-651), from its notification or Settings.
+    var isWeeklyPlanPresented = false
     /// "Talk it through": the conversation that opens next starts with this briefing.
     private var checkInBriefing: MorningBriefing?
     /// "Ask me about it" on a recently saved note (ADR-403), for the conversation that is starting.
@@ -88,7 +90,7 @@ final class ShortcutRouter {
     /// Opens the conversation unless one is already open or something else is on screen; it
     /// never starts a second conversation and never pushes a sheet aside.
     func startListeningOnOpen() {
-        guard !isVoicePresented, !isSetupPresented, !isCheckInPresented, !isTidyUpPresented, !isWrapUpPresented, !isLookBackPresented, !isOnboardingShown, drafts.shown == nil else { return }
+        guard !isVoicePresented, !isSetupPresented, !isCheckInPresented, !isTidyUpPresented, !isWrapUpPresented, !isLookBackPresented, !isWeeklyPlanPresented, !isOnboardingShown, drafts.shown == nil else { return }
         isVoicePresented = true
     }
 
@@ -99,7 +101,7 @@ final class ShortcutRouter {
     /// of starting another. Never over another sheet or the introduction.
     func showConversationStartedElsewhere() {
         guard !isVoicePresented, !isCheckInPresented, !isTidyUpPresented, !isWrapUpPresented,
-              !isLookBackPresented, !isOnboardingShown, drafts.shown == nil else { return }
+              !isLookBackPresented, !isWeeklyPlanPresented, !isOnboardingShown, drafts.shown == nil else { return }
         isSetupPresented = false
         isVoicePresented = true
     }
@@ -115,35 +117,44 @@ final class ShortcutRouter {
     /// The check-in notification was tapped: show the check-in screen, unless a conversation or
     /// a shared draft is already up (the user is busy; the notification stays in history).
     func morningCheckInOpened() {
-        guard !isVoicePresented, !isWrapUpPresented, drafts.shown == nil else { return }
+        guard !isVoicePresented, !isWrapUpPresented, !isWeeklyPlanPresented, drafts.shown == nil else { return }
         isSetupPresented = false
         isCheckInPresented = true
     }
 
     /// The weekly "Open Doddy faster" reminder was tapped: show the ways, unless something else is up.
     func openWaysOpened() {
-        guard !isVoicePresented, !isCheckInPresented, !isTidyUpPresented, !isWrapUpPresented, !isLookBackPresented,
+        guard !isVoicePresented, !isCheckInPresented, !isTidyUpPresented, !isWrapUpPresented, !isLookBackPresented, !isWeeklyPlanPresented,
               !isOnboardingShown, drafts.shown == nil else { return }
         isSetupPresented = true
     }
 
     /// The tidy-up notification was tapped, or Settings asked for it.
     func tidyUpOpened() {
-        guard !isVoicePresented, !isCheckInPresented, !isWrapUpPresented, drafts.shown == nil else { return }
+        guard !isVoicePresented, !isCheckInPresented, !isWrapUpPresented, !isWeeklyPlanPresented, drafts.shown == nil else { return }
         isSetupPresented = false
         isTidyUpPresented = true
     }
 
     /// The wrap-up notification was tapped, or Settings asked for it.
     func eveningWrapUpOpened() {
-        guard !isVoicePresented, !isCheckInPresented, !isTidyUpPresented, drafts.shown == nil else { return }
+        guard !isVoicePresented, !isCheckInPresented, !isTidyUpPresented, !isWeeklyPlanPresented, drafts.shown == nil else { return }
         isSetupPresented = false
         isWrapUpPresented = true
     }
 
+    /// The weekly plan's notification was tapped, or Settings asked for it (ADR-651).
+    func weeklyPlanOpened() {
+        guard !isVoicePresented, !isCheckInPresented, !isTidyUpPresented, !isWrapUpPresented, !isLookBackPresented,
+              drafts.shown == nil else { return }
+        isSetupPresented = false
+        isWeeklyPlanPresented = true
+    }
+
     /// The look-back notification was tapped, or Settings asked for it (ADR-306).
     func weeklyLookBackOpened() {
-        guard !isVoicePresented, !isCheckInPresented, !isTidyUpPresented, !isWrapUpPresented, drafts.shown == nil else { return }
+        guard !isVoicePresented, !isCheckInPresented, !isTidyUpPresented, !isWrapUpPresented, !isWeeklyPlanPresented,
+              drafts.shown == nil else { return }
         isSetupPresented = false
         isLookBackPresented = true
     }

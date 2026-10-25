@@ -40,6 +40,14 @@ public final class SQLiteNoteReminderRepository: NoteReminderRepository {
         }) == MemoryCategory.list.rawValue
     }
 
+    public func openItemCount(listID: UUID) async -> Int? {
+        try? await dbQueue.read { db in
+            try Int.fetchOne(
+                db, sql: "SELECT COUNT(*) FROM list_items WHERE list_id = ? AND done_at_ms IS NULL",
+                arguments: [listID.uuidString])
+        }
+    }
+
     public func currentText(ofMemory memoryID: UUID) async throws -> String? {
         try await dbQueue.read { db in
             guard let row = try Row.fetchOne(

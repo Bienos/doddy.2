@@ -105,6 +105,8 @@ final class ToolLiveActivity {
         switch kind {
         case .focus, .breathing: return state.endsAt
         case .readAloud: return Date().addingTimeInterval(Self.heartbeatStaleAfter)
+        // Nothing ends it, so it is never stale (ADR-652).
+        case .stopwatch: return nil
         }
     }
 
