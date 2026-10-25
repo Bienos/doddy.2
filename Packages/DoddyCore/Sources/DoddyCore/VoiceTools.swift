@@ -232,6 +232,9 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case readSteps(StepDay)
     /// The last 7 days from Apple Health as a short summary, after a consent of its own (ADR-623).
     case readHealthWeek
+    /// Opens the training plan screen with a goal chosen, after a tap (ADR-626). The person answers the
+    /// safety questions there; the agent never sees them or the plan.
+    case openTrainingPlan(PlanAsk)
     /// Counts of the photos in the library for a span of days; pictures on screen only (ADR-569).
     case findPhotos(PhotoSearchRequest)
     /// Doddy's camera, after a card (ADR-569). A kept photo goes into a new note the user saves.
@@ -362,6 +365,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return parseSteps(args, name: name, now: now, calendar: calendar)
         case VoiceToolName.readHealthWeek:
             return .readHealthWeek
+        case VoiceToolName.openTrainingPlan:
+            return parseTrainingPlan(args, name: name)
         case VoiceToolName.findPhotos:
             return parsePhotoSearch(args, name: name, now: now, calendar: calendar)
         case VoiceToolName.openCamera:

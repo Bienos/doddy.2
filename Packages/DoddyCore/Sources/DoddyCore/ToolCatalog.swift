@@ -112,6 +112,8 @@ public enum ToolCatalog {
         .init(VoiceToolName.readSteps, .lookup, .askFirst),
         // Apple Health, the week as a summary, after its own consent (ADR-623).
         .init(VoiceToolName.readHealthWeek, .lookup, .askFirst),
+        // Opens the plan screen on a tap; the safety questions are asked there, never by the agent (ADR-626).
+        .init(VoiceToolName.openTrainingPlan, .handoff, .card),
         // Counts and times from the photo library; the pictures stay on screen (ADR-569).
         .init(VoiceToolName.findPhotos, .lookup, .askFirst),
         .init(VoiceToolName.setTimer, .localChange, .card),

@@ -2323,5 +2323,9 @@
   "Your goal": "Twój cel",
   "Your plan": "Twój plan",
   "Your week": "Twój tydzień",
-  "Running workout": "Bieg"
+  "Running workout": "Bieg",
+  "Doddy can set up a training plan": "Doddy może ułożyć plan treningowy",
+  "You answer the safety questions yourself on the next screen. No plan is made before that.": "Na pytania o bezpieczeństwo odpowiadasz na następnym ekranie. Wcześniej nie powstaje żaden plan.",
+  "Open the plan": "Otwórz plan",
+  "Your goal is filled in from what you asked. Answer the questions yourself: they stay on this iPhone.": "Cel jest wpisany na podstawie Twojej prośby. Na pytania odpowiadasz Ty: odpowiedzi zostają na tym iPhonie."
 }

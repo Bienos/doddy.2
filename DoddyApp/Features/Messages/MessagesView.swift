@@ -21,6 +21,8 @@ struct MessagesView: View {
     @AppStorage(PreferenceKey.assistantUseNotes) private var useNotes = true
     @State private var model: MessagesModel
     @State private var confirmingDelete = false
+    /// The plan screen opened from a plan offer (ADR-626).
+    @State private var planRequest: PlanAskRequest?
     @FocusState private var inputFocused: Bool
 
     /// - Parameter draft: text already in the box, for the person to read, change and send
@@ -74,6 +76,17 @@ struct MessagesView: View {
                 }
             } message: {
                 Text("It is removed from this iPhone. Your saved notes are not affected.")
+            }
+            .sheet(item: $planRequest) { request in
+                NavigationStack {
+                    TrainingPlanView(prefill: request.ask)
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("Close") { planRequest = nil }
+                                    .accessibilityIdentifier("plan.close")
+                            }
+                        }
+                }
             }
             .alert("Couldn't delete the conversation", isPresented: Binding(
                 get: { model.deleteFailed },
@@ -320,7 +333,47 @@ struct MessagesView: View {
             if let proposal = model.proposals[message.id] {
                 proposalCard(proposal, answerID: message.id)
             }
+            if let planAsk = model.planAsks[message.id] {
+                planCard(planAsk, answerID: message.id)
+            }
         }
+    }
+
+    /// The training plan Doddy offered with an answer (ADR-626): the goal, and the days and minutes if they were said. Nothing
+    /// is made and no question is asked until the person taps Open the plan; the safety questions are on that screen.
+    private func planCard(_ ask: PlanAsk, answerID: UUID) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label("Doddy can set up a training plan", systemImage: "figure.run")
+                .font(.subheadline.bold())
+            Text(PlanText.goal(ask.goal))
+                .font(.headline)
+            if let days = ask.daysPerWeek {
+                Text(verbatim: String(format: NSLocalizedString("Days a week: %lld", comment: ""), days))
+                    .font(.callout)
+                    .foregroundStyle(Theme.secondaryText)
+            }
+            if let minutes = ask.minutesPerSession {
+                Text(verbatim: String(format: NSLocalizedString("Minutes a session: %lld", comment: ""), minutes))
+                    .font(.callout)
+                    .foregroundStyle(Theme.secondaryText)
+            }
+            Text("You answer the safety questions yourself on the next screen. No plan is made before that.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+            HStack(spacing: 10) {
+                Button("Open the plan") { planRequest = PlanAskRequest(ask: ask) }
+                    .buttonStyle(PrimaryButtonStyle())
+                    .accessibilityIdentifier("messages.openPlan")
+                Button("Not now") { model.dismissPlanAsk(answerID) }
+                    .buttonStyle(SecondaryButtonStyle())
+                    .accessibilityIdentifier("messages.dismissPlan")
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .padding(.trailing, 24)
+        .accessibilityElement(children: .contain)
     }
 
     /// The file Doddy offered with an answer (ADR-606): the exact words that will be made, and nothing runs until

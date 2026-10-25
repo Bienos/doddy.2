@@ -114,7 +114,10 @@ public struct GatewayAssistantClient: AssistantClient {
         }
         // A proposal that does not fit the limits is dropped; the answer is still shown.
         let proposal = wire.proposal.flatMap { AssistantProposal.make(kind: $0.kind, title: $0.title, request: $0.request) }
-        return AssistantReply(text: wire.text, citedMemoryIDs: cited, proposal: proposal)
+        // A plan offer that is not one of the five goals is dropped the same way; days and minutes the screen
+        // doesn't offer become the screen's own defaults (ADR-626).
+        let planAsk = wire.plan.flatMap { PlanAsk.make(goalName: $0.goal, daysPerWeek: $0.daysPerWeek, minutesPerSession: $0.minutesPerSession) }
+        return AssistantReply(text: wire.text, citedMemoryIDs: cited, proposal: proposal, planAsk: planAsk)
     }
 
     static func error(from response: GatewayHTTPResponse) -> AssistantError {

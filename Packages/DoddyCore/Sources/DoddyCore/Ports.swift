@@ -146,11 +146,15 @@ public struct AssistantReply: Equatable, Sendable {
     public let citedMemoryIDs: [UUID]
     /// A file the person asked for (ADR-606), already checked against the limits; nil when none was asked for.
     public let proposal: AssistantProposal?
+    /// A training plan the person asked for (ADR-626): a goal and maybe days and minutes, checked here. The plan screen
+    /// opens only on a tap, and asks the safety questions itself. nil when none was asked for.
+    public let planAsk: PlanAsk?
 
-    public init(text: String, citedMemoryIDs: [UUID] = [], proposal: AssistantProposal? = nil) {
+    public init(text: String, citedMemoryIDs: [UUID] = [], proposal: AssistantProposal? = nil, planAsk: PlanAsk? = nil) {
         self.text = text
         self.citedMemoryIDs = citedMemoryIDs
         self.proposal = proposal
+        self.planAsk = planAsk
     }
 }
 

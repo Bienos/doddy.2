@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import http from "node:http";
 import { after, before, beforeEach, describe, test } from "node:test";
-import { answerSchema, buildInput, buildInstructions, readProposal } from "../src/assistant/prompt.js";
+import { answerJsonSchema, answerSchema, buildInput, buildInstructions, readPlanOffer, readProposal } from "../src/assistant/prompt.js";
 import { AssistRequest, LIMITS } from "../src/assistant/request.js";
 import { ClaudeAssistantResponder, type AssistantResponder, type AssistOutcome } from "../src/assistant/responder.js";
 import { reserve } from "../src/assistant/usage.js";
@@ -84,6 +84,19 @@ describe("Messages route against real Postgres", { skip: dbSkip }, () => {
     const plain = await w.ask(a.h, wire());
     assert.equal(plain.statusCode, 200);
     assert.ok(!("proposal" in plain.json()), "an ordinary answer has no proposal key");
+  });
+
+  test("a plan the model offers is passed on as `plan`; with none asked for the key is absent", async () => {
+    const w = await world();
+    const a = await w.account();
+    const plan = { goal: "half_marathon", daysPerWeek: 4, minutesPerSession: 60 };
+    w.responder!.steps.push(async () => ({ kind: "ok", answer: "Mogę to ustawić.", sources: [], usage: { inputTokens: 100, outputTokens: 30 }, plan: plan as never }));
+    const offered = await w.ask(a.h, wire());
+    assert.equal(offered.statusCode, 200);
+    assert.deepEqual(offered.json().plan, plan);
+    const plain = await w.ask(a.h, wire());
+    assert.equal(plain.statusCode, 200);
+    assert.ok(!("plan" in plain.json()), "an ordinary answer has no plan key");
   });
 
   test("a device is needed", async () => {
@@ -267,6 +280,37 @@ describe("the request and the prompt", () => {
     assert.equal(readProposal("deck"), undefined);
   });
 
+  test("a plan offer is shown only for one of the five goals; days and minutes the screen doesn't offer are left out (ADR-626)", () => {
+    assert.deepEqual(readPlanOffer({ goal: "10k", days_per_week: 3, minutes_per_session: 45 }), { goal: "10k", daysPerWeek: 3, minutesPerSession: 45 });
+    for (const goal of ["first_5k", "half_marathon", "strength_home", "strength_gym"]) assert.ok(readPlanOffer({ goal, days_per_week: 0, minutes_per_session: 0 }), goal);
+    assert.deepEqual(readPlanOffer({ goal: "10k", days_per_week: 0, minutes_per_session: 0 }), { goal: "10k" }, "0 means the user didn't say");
+    assert.equal(readPlanOffer({ goal: "none", days_per_week: 0, minutes_per_session: 0 }), undefined, "none means no plan was asked for");
+    assert.equal(readPlanOffer({ goal: "marathon", days_per_week: 3, minutes_per_session: 45 }), undefined, "only the five goals");
+    assert.equal(readPlanOffer("10k"), undefined);
+    assert.equal(readPlanOffer(undefined), undefined);
+    // Strength allows 2 to 4 days, running 2 to 5; minutes 20 to 150 rounded to 5.
+    assert.deepEqual(readPlanOffer({ goal: "strength_gym", days_per_week: 5, minutes_per_session: 47 }), { goal: "strength_gym", minutesPerSession: 45 });
+    assert.deepEqual(readPlanOffer({ goal: "10k", days_per_week: 5, minutes_per_session: 12 }), { goal: "10k", daysPerWeek: 5 });
+    assert.deepEqual(readPlanOffer({ goal: "10k", days_per_week: 1, minutes_per_session: 200 }), { goal: "10k" });
+    assert.deepEqual(readPlanOffer({ goal: "10k", days_per_week: 2.5 }), { goal: "10k" }, "a half day is not a number of days");
+  });
+
+  test("a plan offer carries no safety answer, age or level: the schema the model fills has only the goal, days and minutes", () => {
+    const schema = answerJsonSchema(false) as { properties: { plan: { properties: Record<string, unknown>; additionalProperties: boolean } } };
+    assert.deepEqual(Object.keys(schema.properties.plan.properties).sort(), ["days_per_week", "goal", "minutes_per_session"]);
+    assert.equal(schema.properties.plan.additionalProperties, false);
+    assert.deepEqual(Object.keys(readPlanOffer({ goal: "10k", days_per_week: 3, minutes_per_session: 45, age: 30, injury: true, level: "regular" })!).sort(),
+      ["daysPerWeek", "goal", "minutesPerSession"], "anything else the model adds is dropped");
+  });
+
+  test("the instructions let the model offer a plan but not make one, and keep the safety questions off the model", () => {
+    const text = buildInstructions("pl");
+    assert.match(text, /PLAN:/);
+    assert.match(text, /You do not make the plan/);
+    assert.match(text, /never asks about their health, injuries, age or medicines/);
+    assert.match(text, /ask a doctor or physiotherapist first/);
+  });
+
   test("the instructions let the model offer a file but not make one, and say it never claims it is made", () => {
     const text = buildInstructions("pl");
     assert.match(text, /FILE:/);
@@ -321,7 +365,7 @@ describe("the Claude responder (local stand-in for the API)", () => {
       assert.equal(sent.body.model, "claude-haiku-5-5");
       assert.equal(sent.body.output_config.effort, "medium");
       assert.equal(sent.body.output_config.format.type, "json_schema");
-      assert.deepEqual(sent.body.output_config.format.schema.required, ["answer", "sources", "proposal"]);
+      assert.deepEqual(sent.body.output_config.format.schema.required, ["answer", "sources", "proposal", "plan"]);
       assert.equal(sent.body.tools, undefined, "no tools: nothing can be searched, sent or changed");
       for (const banned of ["temperature", "top_p", "top_k"]) assert.equal(sent.body[banned], undefined, banned);
       assert.match(sent.body.system, /You have no tools/);
@@ -364,6 +408,27 @@ describe("the Claude responder (local stand-in for the API)", () => {
       next = message(JSON.stringify({ answer: "Cześć.", sources: [] }));
       const missing = await responder.answer(req(), new AbortController().signal);
       assert.ok(missing.kind === "ok" && !("proposal" in missing), "an older reply without the key still works");
+    } finally {
+      api.close();
+    }
+  });
+
+  test("a plan the model offers comes back as `plan`; a bad one is dropped and the answer stays (ADR-626)", async () => {
+    let next = message(JSON.stringify({ answer: "Mogę to ustawić.", sources: [], plan: { goal: "10k", days_per_week: 3, minutes_per_session: 45 } }));
+    const api = await standIn(() => ({ status: 200, body: next }));
+    try {
+      const responder = new ClaudeAssistantResponder("test-key", { baseURL: api.baseURL });
+      const offered = await responder.answer(req(), new AbortController().signal);
+      assert.deepEqual(offered.kind === "ok" && offered.plan, { goal: "10k", daysPerWeek: 3, minutesPerSession: 45 });
+      for (const plan of [{ goal: "none", days_per_week: 0, minutes_per_session: 0 }, { goal: "marathon", days_per_week: 3, minutes_per_session: 45 }, "10k", null]) {
+        next = message(JSON.stringify({ answer: "Cześć.", sources: [], plan }));
+        const out = await responder.answer(req(), new AbortController().signal);
+        assert.equal(out.kind, "ok");
+        assert.ok(out.kind === "ok" && !("plan" in out), JSON.stringify(plan));
+      }
+      next = message(JSON.stringify({ answer: "Cześć.", sources: [] }));
+      const missing = await responder.answer(req(), new AbortController().signal);
+      assert.ok(missing.kind === "ok" && !("plan" in missing), "an older reply without the key still works");
     } finally {
       api.close();
     }

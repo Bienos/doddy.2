@@ -66,7 +66,7 @@ Owner, 24 Oct 2026: "1 tak" (Doddy's voice may hear the summary). Same branch.
 
 ## Step 4: running and strength plans, the engine (ADR-624)
 
-Owner, 24 Oct 2026: "2" (plans next). Same branch. The engine (DoddyCore, tested on Linux), then the screens on the iPhone (ADR-625, below). No voice tool or Messages way to ask for a plan yet.
+Owner, 24 Oct 2026: "2" (plans next). Same branch. The engine (DoddyCore, tested on Linux), then the screens on the iPhone (ADR-625, below). The voice and Messages way to ask for a plan is step 5 below.
 
 **What it does.** `PlanEngine.make(request)` turns the person's answers (goal, level, days a week, minutes a session, longest recent run, the screening questions, age) into a plan or a refusal. Deterministic: the same answers give the same plan; a model may later explain a plan, never change its numbers.
 
@@ -104,7 +104,32 @@ The hosted Mac build of steps 1 to 3 compiled the app (run 40106746382 on `d7349
 | Store and text compile | `scripts/typecheck_app_logic.sh` now includes `TrainingPlanStore.swift` and `PlanText.swift` (Swift 6, Linux): 29 files pass |
 | The flow | `TrainingPlanUITests`: a "yes" gets "Talk to a doctor first" and nothing to keep; all "no" gets a plan, kept, shown, deleted. **Passes** on the hosted Mac (run 40128474881 on `53777ef`, iPhone simulator). Its first run (40122886800) found that the number pad covered "Make the plan" and had no key to close it; the sheet now has Done above the keyboard |
 
-**Not built:** the voice and Messages way to ask for a plan, logging what was done and the next load from it (`StrengthProgression` is ready, no screen), the exercise descriptions and pictures (wger), and adjusting the plan from what Apple Health shows was actually done.
+**Not built:** logging what was done and the next load from it (`StrengthProgression` is ready, no screen), the exercise descriptions and pictures (wger), and adjusting the plan from what Apple Health shows was actually done.
+
+## Step 5: ask for a plan by voice or in Messages (ADR-626)
+
+Owner, 25 Oct 2026: "okej" to "Plan zamawiany głosem albo w Wiadomościach". Branch `claude/sport-mode-health`, restarted from the default branch after #137 merged.
+
+**What it does.** Two ways to the same screen, with the goal already chosen. The safety questions are never asked by a model and their answers never reach one: they are on the plan screen, asked of the person, as before.
+- **By voice:** the tool `open_training_plan` (goal; days a week and minutes a session only if said). A card "Make a training plan?" and a tap (ASK-01; a spoken yes is not enough). The plan screen opens over the conversation. The agent hears "opened" with what was filled in and the rules for answering: don't ask about health, injuries, age or medicines; don't describe or invent a plan; mention of pain, injury, pregnancy, a condition or chest symptoms means "ask a doctor or physiotherapist first".
+- **In Messages:** Claude's answer may carry a plan offer (the server's `plan`: a goal, days, minutes). A card, "Doddy can set up a training plan", with **Open the plan** and **Not now**. The offer isn't saved. Claude's one line offers it and says nothing is made.
+- **`PlanAsk`** (DoddyCore) is the one checked request: a goal, and days and minutes only inside what the screen offers (otherwise left out, not clamped). It has no field for a safety answer, an age, a level or an injury; a test fails if one is added.
+- **The screen** opens its questions sheet filled in with a note that the questions are theirs to answer. Any yes still means no plan.
+
+| What | Where | Checked |
+|---|---|---|
+| `PlanAsk`, the tool's parse, the ask card, catalog row, What Doddy did row (app "Training plan", Polish "Plan treningowy"), not under Pause all, refused in the car, what the agent hears, the Messages wire and the verified answer | `Sport/PlanAsk.swift`, `VoiceTools.swift`, `AskFirst.swift`, `ToolCatalog.swift`, `ActivityLog.swift`, `ActivityText.swift`, `ConnectionPause.swift`, `CarProfile.swift`, `Assistant/*` | `PlanAskTests` 12; `ActivityTextTests` now counts 45 kinds |
+| The server: `plan` in the structured reply, `readPlanOffer`, the PLAN rule in the instructions | `server/messaging/src/assistant/prompt.ts`, `responder.ts`, `routes/assistant.ts` | `assistant.test.ts` 28 pass with a real Postgres (the route tests are skipped without `TEST_DATABASE_URL`) |
+| The offer in Messages | `MessagesModel.planAsks`, `MessagesView.planCard` | `MessagesModelTests` 17 pass on Linux; the view is **NOT COMPILED** here |
+| The handler, the sheet over the conversation, the screen with a prefill | `VoiceSessionController`, `VoiceView`, `TrainingPlanView`, `PlanAskRequest` | **NOT COMPILED** here; the hosted Mac job compiles them |
+| Agent spec and prompt line | `voice-agent/tools.json` (`not_synced`), `instructions.md`; `backend/src/web/logbook.ts` | `voice_agent_spec.py check` PASS, 100 tools |
+| Polish for the four new lines | `l10n/pl.json`; other languages show English | catalogs up to date |
+
+**Not done on purpose.**
+- **The live ElevenLabs agent has not been changed.** It has neither the tool nor the prompt line. That needs the owner's separate instruction, with the exact text shown first (`voice-agent/README.md`).
+- **The Messages server must be deployed** for a card to appear; an older server sends no `plan`, and nothing breaks.
+- No UI test drives the new doors: nothing in the UI tests can make Messages or the voice answer with an offer. The model tests and the wire tests cover them; the screen with a prefill is not seen.
+- **Gap:** the "ask a doctor first" lines to the model are text only. A model could ignore them, but it still cannot skip the screen's questions or answer them. Code that checks the person's own words for red flags is not built.
 
 ## Not checked
 
@@ -129,5 +154,5 @@ The hosted Mac build of steps 1 to 3 compiled the app (run 40106746382 on `d7349
 ## Next (each needs the owner's go-ahead)
 
 1. A first real conversation with `read_health_week` on an app build from this branch, then the ElevenLabs log.
-2. Asking for a plan by voice or in Messages; logging a session and the next load from it.
+2. Logging a session and the next load from it. (Asking for a plan by voice or in Messages is step 5; its live-agent change waits for the owner.)
 3. Voice gym log and the wger exercise base.

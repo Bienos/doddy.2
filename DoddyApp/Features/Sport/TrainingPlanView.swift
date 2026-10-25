@@ -6,9 +6,20 @@ import SwiftUI
 /// this iPhone and see where they are in it. No model writes or changes a plan, and nothing here
 /// leaves the phone.
 struct TrainingPlanView: View {
+    /// A goal, and maybe days and minutes, chosen by voice or in Messages (ADR-626). The questions sheet opens with them
+    /// filled in; the safety questions and the age stay empty, for the person to answer here.
+    var prefill: PlanAsk?
+
     @State private var store = TrainingPlanStore.shared
     @State private var makingPlan = false
     @State private var confirmDelete = false
+    /// The prefill while its sheet is open, so a later "Make a plan" starts from the defaults.
+    @State private var asked: PlanAsk?
+    @State private var openedPrefill = false
+
+    init(prefill: PlanAsk? = nil) {
+        self.prefill = prefill
+    }
 
     var body: some View {
         ScrollView {
@@ -51,10 +62,18 @@ struct TrainingPlanView: View {
         .background(Theme.canvas)
         .navigationTitle("Training plan")
         .navigationBarTitleDisplayMode(.inline)
-        .onAppear { store.load() }
-        .sheet(isPresented: $makingPlan) {
+        .onAppear {
+            store.load()
+            // After the load, so the sheet knows whether a plan is kept already.
+            if let prefill, !openedPrefill {
+                openedPrefill = true
+                asked = prefill
+                makingPlan = true
+            }
+        }
+        .sheet(isPresented: $makingPlan, onDismiss: { asked = nil }) {
             NavigationStack {
-                PlanQuestionsView(replaces: store.state != .nothingKept) { makingPlan = false }
+                PlanQuestionsView(replaces: store.state != .nothingKept, prefill: asked) { makingPlan = false }
             }
         }
     }
@@ -258,19 +277,30 @@ enum PlanScreeningQuestion: CaseIterable, Identifiable {
 struct PlanQuestionsView: View {
     /// A plan is kept already; keeping a new one replaces it.
     let replaces: Bool
+    /// The goal, days and minutes from a request by voice or in Messages (ADR-626). Nothing else is ever filled in.
+    let prefill: PlanAsk?
     let onKept: () -> Void
 
     @Environment(\.dismiss) private var dismiss
-    @State private var goal: PlanGoal = .firstFiveK
+    @State private var goal: PlanGoal
     @State private var level: PlanLevel = .beginner
-    @State private var days = 3
-    @State private var minutes = 45
+    @State private var days: Int
+    @State private var minutes: Int
     @State private var knowsLongest = false
     @State private var longest = 30
     @State private var answers: [PlanScreeningQuestion: Bool] = [:]
     @State private var ageText = ""
     @State private var decision: PlanDecision?
     @FocusState private var ageFocused: Bool
+
+    init(replaces: Bool, prefill: PlanAsk? = nil, onKept: @escaping () -> Void) {
+        self.replaces = replaces
+        self.prefill = prefill
+        self.onKept = onKept
+        _goal = State(initialValue: prefill?.goal ?? .firstFiveK)
+        _days = State(initialValue: prefill?.daysPerWeek ?? 3)
+        _minutes = State(initialValue: prefill?.minutesPerSession ?? 45)
+    }
 
     private var isDistance: Bool { goal == .tenK || goal == .halfMarathon }
     private var maxDays: Int { goal.isRunning ? 5 : 4 }
@@ -284,6 +314,13 @@ struct PlanQuestionsView: View {
 
     var body: some View {
         Form {
+            if prefill != nil {
+                Section {
+                    Text("Your goal is filled in from what you asked. Answer the questions yourself: they stay on this iPhone.")
+                        .accessibilityIdentifier("plan.prefillNote")
+                }
+            }
+
             Section {
                 Picker("Goal", selection: $goal) {
                     ForEach(PlanGoal.allCases, id: \.self) { goal in

@@ -309,6 +309,9 @@ final class VoiceSessionController {
     private(set) var photoResults: PhotoResults?
     /// Set when the user tapped Open camera (ADR-569); the screen shows the camera while it is set.
     private(set) var cameraRequest: UUID?
+    /// Set when the user tapped Open on the training plan card (ADR-626); the screen shows the plan screen while it is
+    /// set. It holds a goal and maybe days and minutes, never a safety answer: those are asked on that screen.
+    private(set) var planRequest: PlanAskRequest?
     /// ADR-563: an online account (Gmail, Notion, …) the agent needed that isn't connected. The
     /// screen offers Connect right here; the sign-in sheet opens over the conversation.
     struct AccountNeeded: Equatable {
@@ -587,6 +590,7 @@ final class VoiceSessionController {
         presentationReady = nil
         photoResults = nil
         cameraRequest = nil
+        planRequest = nil
         accountNeeded = nil
         accountMessage = nil
         isMuted = false
@@ -2718,6 +2722,11 @@ final class VoiceSessionController {
             } catch {
                 await reply(call.toolCallId, VoiceToolReply.stepsFailed(UserFacingError.message(for: error)), isError: true)
             }
+        case .openTrainingPlan(let ask):
+            // ADR-626: the user already tapped Open on the ask card. The screen asks the safety questions and makes the
+            // plan; the agent hears only that it is open, never the answers or the plan.
+            if isCurrent(call.toolCallId) { planRequest = PlanAskRequest(ask: ask) }
+            await reply(call.toolCallId, VoiceToolReply.trainingPlanOpened(ask))
         case .readHealthWeek:
             // ADR-623: the week from Apple Health as a summary worked out on the iPhone. Only with
             // Apple Health on and the voice's own consent; the ask before it is ASK-01's.
@@ -3991,6 +4000,11 @@ final class VoiceSessionController {
     /// The camera screen went away, with or without a photo.
     func cameraClosed() {
         cameraRequest = nil
+    }
+
+    /// The training plan screen went away, with or without a kept plan.
+    func planClosed() {
+        planRequest = nil
     }
 
     // MARK: Access card (ADR-578)
