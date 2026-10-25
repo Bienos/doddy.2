@@ -173,7 +173,7 @@ enum TalkInIsland {
             stored: UserDefaults.standard.string(forKey: VoiceProvider.preferenceKey), tokenServerSet: true)
         let auth = VoiceAuthSession.shared
         await auth.restore()
-        guard auth.isSignedIn || VoiceConfig.directVoiceEnabled, VoiceProviderConsent.isGranted(for: provider) else {
+        guard auth.isSignedIn || VoiceConfig.usesDirectAgent(for: provider), VoiceProviderConsent.isGranted(for: provider) else {
             throw refused("voice not set up", needsApp: NSLocalizedString("Open Doddy and start a conversation once to set up his voice. After that this works without opening him.", comment: ""))
         }
 

@@ -265,13 +265,14 @@ struct MemoryLinkCard: View {
     }
 }
 
+/// Home and Settings (ADR-633). Notes and lists are reached from Settings › Doddy's memory, so while
+/// they are open Settings is the selected tab, and tapping it goes back to Settings' first page.
 struct DoddyTabBar: View {
     @Binding var selectedTab: AppTab
 
     var body: some View {
         HStack(spacing: 4) {
             tab(.home, title: "Home", icon: "house", id: "tab.home")
-            tab(.memories, title: "Memories", icon: "book.closed", id: "tab.memories")
             tab(.settings, title: "Settings", icon: "slider.horizontal.3", id: "tab.settings")
         }
         .padding(8).background(Theme.quietSurface, in: Capsule())
@@ -288,6 +289,11 @@ struct DoddyTabBar: View {
         .accessibilityLabel("App navigation")
     }
 
+    /// Doddy's memory belongs to Settings (ADR-633).
+    private func isSelected(_ tab: AppTab) -> Bool {
+        selectedTab == tab || (tab == .settings && selectedTab == .memories)
+    }
+
     private func tab(_ tab: AppTab, title: String, icon: String, id: String) -> some View {
         Button {
             // Motion v2 (MV3): Doddy hears of the tap in the same transaction as the tab change, so
@@ -298,14 +304,14 @@ struct DoddyTabBar: View {
         } label: {
             VStack(spacing: 5) {
                 Image(systemName: icon).font(.body).accessibilityHidden(true)
-                Text(title).font(.caption2).lineLimit(1).minimumScaleFactor(0.8)
+                Text(LocalizedStringKey(title)).font(.caption2).lineLimit(1).minimumScaleFactor(0.8)
             }
             .frame(maxWidth: .infinity, minHeight: 44)
-            .foregroundStyle(selectedTab == tab ? Theme.ink : Theme.secondaryText)
+            .foregroundStyle(isSelected(tab) ? Theme.ink : Theme.secondaryText)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain).accessibilityIdentifier(id).accessibilityLabel(title)
-        .accessibilityAddTraits(selectedTab == tab ? .isSelected : [])
+        .buttonStyle(.plain).accessibilityIdentifier(id).accessibilityLabel(Text(LocalizedStringKey(title)))
+        .accessibilityAddTraits(isSelected(tab) ? .isSelected : [])
         // Where the rail spot under this tab is, and where his eyes go when he looks at it.
         .motionMark(id)
     }
