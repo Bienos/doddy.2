@@ -49,14 +49,29 @@ test("doddy-decks: brand style only, no character and no pictures in the folder"
 });
 
 // Owner, 25 Oct 2026: "it should give skills and then the model decides what to build based on the
-// research and how to use colours … make it creative". So the skill teaches a process and a
-// vocabulary, and hands the design to the model; it is not a set of layouts.
-test("doddy-decks: creative direction, not templates: a process, a concept, a vocabulary", () => {
-  assert.match(skill, /does not give you layouts to copy/);
+// research and how to use colours … make it creative". Owner, the same week: premium work, at the
+// level of a top studio or an Apple keynote. So the skill teaches a bar, a process, copy, a system and
+// a scored review, and hands the design to the model; it is not a set of layouts.
+test("doddy-decks: premium direction: the bar, an arc, copy, a system, a scored review", () => {
+  assert.match(skill, /This skill gives no layouts to copy/);
   assert.match(skill, /The request always wins/);
-  for (const part of ["## 1. Think before you draw", "**Research.**", "**The concept.**", "signature move", "colour arc", "## 4. A vocabulary of moves", "Could this slide belong to a deck on any other topic?"]) {
+  for (const part of [
+    "**The bar**", "## 2. Research deeply, then edit hard", "## 3. Give the deck an arc", "## 4. Write the words",
+    "No judging adjectives.", "**Speaker notes carry the story**", "## 5. Build the system before the slides",
+    "**Grid and spacing.**", "**Type scale.**", "**Optical alignment: the box is not the letter.**", "**Restraint.**",
+    "## 7. Score the deck, fix it, stop", "Could any other deck have this slide?", "at most three rounds",
+  ]) {
     assert.ok(skill.includes(part), part);
   }
+});
+
+// Typography for the language is part of the craft, so the skill must name the marks and the
+// non-breaking space it expects, not leave them to chance.
+test("doddy-decks: the language's typography: quotes, non-breaking spaces, no orphans", () => {
+  assert.ok(skill.includes("„…”"), "Polish quotes are named");
+  assert.ok(skill.includes("U+00A0"), "the non-breaking space is named");
+  assert.ok(skill.includes("1,8 mln"), "a number and its unit are kept together");
+  assert.match(skill, /No orphans or widows\./);
 });
 
 // Measured contrast (WCAG): orange FF6A00 on paper FFF7E9 is 2.7:1, below even the 3:1 for large text.
