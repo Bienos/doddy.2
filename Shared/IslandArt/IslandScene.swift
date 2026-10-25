@@ -141,6 +141,9 @@ struct IslandScene: Equatable, Sendable {
     var pose: IslandPose?
     /// Whole Doddy's waves (ADR-596).
     var waves: IslandWaveState = .none
+    /// Something waits for the user in the conversation, or is ready there: the expanded island's
+    /// main button is Show (`doddy://conversation`), which opens it (ADR-616). Opening approves nothing.
+    var showsInDoddy = false
 
     func art(_ presentation: IslandPresentation) -> IslandArt {
         IslandBoardArt.art(board, scenario: scenario, presentation)
@@ -186,6 +189,9 @@ extension DoddyVoiceAttributes.ContentState {
             case .noteSaved, .reminderSet: return .fistpump
             case .planWaiting, .planRunning: return .tiptoe
             case .translating: return nil
+            // ADR-616: a card waits (he reaches for it), or what he made is ready (fist pump).
+            case .actionWaiting: return .reachingHigh
+            case .resultReady(let result): return result == .documentStarted ? .tiptoe : .fistpump
             }
         }
         // A failure is the facepalm, as on the voice screen; a normal end the fist pump.
@@ -240,7 +246,7 @@ extension DoddyVoiceAttributes.ContentState {
         let compact: IslandSign = style == .hereWithYou && (status == .listening || status == .speaking) && !showsMuted && !stale
             ? .elapsed : sign
         let minimal: IslandSign = (sign == .bars || sign == .dots) ? sign : .none
-        return IslandScene(
+        var scene = IslandScene(
             board: style.board,
             // Here With You draws thinking on its second board (dots under Doddy).
             scenario: style == .hereWithYou && status == .thinking && !stale ? 1 : 0,
@@ -249,26 +255,29 @@ extension DoddyVoiceAttributes.ContentState {
             // Lean In's hand at his ear means "listening", so it goes when he can't hear you.
             showsHands: style == .leanIn ? live : true,
             // "Hey Doddy" waiting (ADR-254) is not a conversation: no timer, its own label.
-            label: isWakeMode ? "HEY DODDY" : "VOICE",
+            label: isWakeMode ? islandWord("HEY DODDY") : islandWord("VOICE"),
             time: isWakeMode ? .text("") : .elapsed,
-            title: stale ? (isWakeMode ? "Not listening — open Doddy" : "Lost Doddy — open the app") : title,
+            title: stale ? (isWakeMode ? islandWord("Not listening — open Doddy") : islandWord("Lost Doddy — open the app")) : title,
             bigTitle: nil,
-            subtitle: stale ? "The app stopped in the background" : islandLine,
+            subtitle: stale ? islandWord("The app stopped in the background") : islandLine,
             subtitleIsWarning: stale,
             expandedSign: style == .leanIn ? sign : .none,
             compactSign: compact,
             minimalSign: minimal)
+        // A card waits in Doddy (ADR-616): Show opens it. Not when stale: there is no card to show.
+        scene.showsInDoddy = !stale && status == .needsConfirmation
+        return scene
     }
 
     /// Second line under the status. Never words from the conversation.
     private var islandLine: String {
         if let detail { return detail }
         switch status {
-        case .connecting: return "Getting ready"
-        case .listening: return "Talk it through"
-        case .thinking: return "One moment"
-        case .speaking: return "One step at a time"
-        default: return "Doddy"
+        case .connecting: return islandWord("Getting ready")
+        case .listening: return islandWord("Talk it through")
+        case .thinking: return islandWord("One moment")
+        case .speaking: return islandWord("One step at a time")
+        default: return islandWord("Doddy")
         }
     }
 
@@ -284,38 +293,100 @@ extension DoddyVoiceAttributes.ContentState {
         let waiting = IslandSign.symbol("hand.tap.fill", .accent)
         switch moment {
         case .noteWaiting:
-            return scene(.thoughtPocket, 0, label: "NOTE", time: .elapsed, title: "Save this note?",
-                         subtitle: "Open Doddy to Save or Don't save", compact: waiting, minimal: .none)
+            var s = scene(.thoughtPocket, 0, label: islandWord("NOTE"), time: .elapsed, title: "Save this note?",
+                          subtitle: "Open Doddy to Save or Don't save", compact: waiting, minimal: .none)
+            s.showsInDoddy = true
+            return s
         case .noteSaved:
-            return scene(.thoughtPocket, 1, label: "NOTE", time: .text("Saved"), title: "Note saved",
+            return scene(.thoughtPocket, 1, label: islandWord("NOTE"), time: .text(islandWord("Saved")), title: "Note saved",
                          subtitle: "Kept in Doddy on this iPhone", compact: .check, minimal: .none)
         case .planWaiting(let steps):
-            return scene(.stepStones, 1, label: "PLAN", time: .text(steps == 1 ? "1 step" : "\(steps) steps"),
-                         title: "Plan ready", subtitle: "Open Doddy to check the steps", compact: waiting, minimal: .none)
+            var s = scene(.stepStones, 1, label: islandWord("PLAN"), time: .text(steps == 1 ? islandWord("1 step") : "\(steps) steps"),
+                          title: "Plan ready", subtitle: "Open Doddy to check the steps", compact: waiting, minimal: .none)
+            s.showsInDoddy = true
+            return s
         case .planRunning(let step, let steps):
-            return scene(.stepStones, 1, label: "PLAN", time: .text("\(step) / \(steps)"), title: "Doing the plan",
+            return scene(.stepStones, 1, label: islandWord("PLAN"), time: .text("\(step) / \(steps)"), title: "Doing the plan",
                          subtitle: "Step \(step) of \(steps)", compact: .text("\(step)/\(steps)"), minimal: .text("\(step)"))
         case .reminderWaiting:
-            return scene(.reminderKnot, 0, label: "REMINDER", time: .elapsed, title: "Add this reminder?",
-                         subtitle: "Open Doddy to confirm it", compact: waiting, minimal: .none)
+            var s = scene(.reminderKnot, 0, label: islandWord("REMINDER"), time: .elapsed, title: "Add this reminder?",
+                          subtitle: "Open Doddy to confirm it", compact: waiting, minimal: .none)
+            s.showsInDoddy = true
+            return s
         case .reminderAdding:
-            return scene(.reminderKnot, 0, label: "REMINDER", time: .elapsed, title: "Adding reminder",
+            return scene(.reminderKnot, 0, label: islandWord("REMINDER"), time: .elapsed, title: "Adding reminder",
                          subtitle: "Waiting for Reminders to confirm", compact: .dots, minimal: .none)
         case .reminderSet:
-            return scene(.reminderKnot, 1, label: "REMINDER", time: .text("Set"), title: "Reminder set",
+            return scene(.reminderKnot, 1, label: islandWord("REMINDER"), time: .text(islandWord("Set")), title: "Reminder set",
                          subtitle: "Reminders confirmed it", compact: .check, minimal: .none)
         case .translating(let from, let to, let bothWays):
             // Language Bridge, first board only (ADR-244): the board's second one, "Translation
             // ready / Hear it", has no step in a live conversation. Translator mode is private,
             // so only the pair is drawn, and only as codes (`IslandLanguageCode`).
             let a = IslandLanguageCode.shown(from), b = IslandLanguageCode.shown(to)
-            var s = scene(.languageBridge, 0, label: "TRANSLATE", time: .elapsed, title: "Translating",
+            var s = scene(.languageBridge, 0, label: islandWord("TRANSLATE"), time: .elapsed, title: "Translating",
                           subtitle: "\(a) \(bothWays ? "⇄" : "→") \(b)",
                           compact: .text(bothWays ? "⇄ \(b)" : "→ \(b)"), minimal: .text(b))
             // The two bubbles' centres on board H (language-bridge-0-expanded.svg).
             s.artLabels = [IslandArtLabel(text: a, x: 34, y: 96, size: 10),
                            IslandArtLabel(text: b, x: 71.5, y: 96, size: 10)]
             return s
+        case .actionWaiting(let action):
+            // ADR-616: the kind of card only, in fixed words; the card itself is in Doddy.
+            let words = action.island
+            var s = scene(.thoughtPocket, 0, label: words.label, time: .elapsed, title: words.title,
+                          subtitle: words.subtitle, compact: waiting, minimal: .none)
+            s.showsInDoddy = true
+            return s
+        case .resultReady(let result):
+            let words = result.island
+            var s = scene(.thoughtPocket, result == .documentStarted ? 0 : 1, label: words.label,
+                          time: result == .documentStarted ? .elapsed : .text(islandWord("Ready")), title: words.title,
+                          subtitle: words.subtitle, compact: result == .documentStarted ? .dots : .check, minimal: .none)
+            s.showsInDoddy = true
+            return s
+        }
+    }
+}
+
+/// What the island says for each kind of card (ADR-616): a label beside the camera, a title and
+/// a second line, all fixed words. A change never happens from the island: Show opens the card.
+struct IslandWords: Equatable, Sendable {
+    let label: String
+    let title: String
+    let subtitle: String
+}
+
+extension IslandAction {
+    var island: IslandWords {
+        switch self {
+        case .text: IslandWords(label: islandWord("MESSAGE"), title: "A text to check", subtitle: "You send it yourself, in Messages")
+        case .email: IslandWords(label: islandWord("EMAIL"), title: "An email to check", subtitle: "Nothing is sent until you tap yes")
+        case .transfer: IslandWords(label: islandWord("BLIK"), title: "A transfer to check", subtitle: "You send it in your bank app")
+        case .calendar: IslandWords(label: islandWord("CALENDAR"), title: "A calendar change", subtitle: "Nothing changes until you tap yes")
+        case .reminder: IslandWords(label: islandWord("REMINDER"), title: "A reminder change", subtitle: "Nothing changes until you tap yes")
+        case .alarm: IslandWords(label: islandWord("ALARM"), title: "An alarm to check", subtitle: "Nothing is set until you tap yes")
+        case .map: IslandWords(label: islandWord("MAPS"), title: "Open Maps?", subtitle: "Show the place in Doddy first")
+        case .shortcut: IslandWords(label: islandWord("SHORTCUT"), title: "Run a shortcut?", subtitle: "Nothing runs until you tap yes")
+        case .camera: IslandWords(label: islandWord("CAMERA"), title: "Open the camera?", subtitle: "It opens only on your tap")
+        case .presentation: IslandWords(label: islandWord("SLIDES"), title: "Slides to check", subtitle: "Nothing is made until you tap yes")
+        case .list: IslandWords(label: islandWord("LIST"), title: "A list change", subtitle: "Nothing changes until you tap yes")
+        case .onlineApp: IslandWords(label: islandWord("ONLINE"), title: "A change in an online app", subtitle: "Nothing is sent until you tap yes")
+        case .askFirst: IslandWords(label: islandWord("ASK"), title: "Doddy asks first", subtitle: "Say yes, or tap it in Doddy")
+        case .access: IslandWords(label: islandWord("ACCESS"), title: "Doddy needs your OK", subtitle: "Allow it or say Not now, in Doddy")
+        case .signIn: IslandWords(label: islandWord("ACCOUNT"), title: "Connect an account?", subtitle: "Sign in from Doddy")
+        case .other: IslandWords(label: islandWord("DODDY"), title: "Something to check", subtitle: "Nothing happens until you tap yes")
+        }
+    }
+}
+
+extension IslandResult {
+    var island: IslandWords {
+        switch self {
+        case .document: IslandWords(label: islandWord("READY"), title: "Your document is ready", subtitle: "Show opens it in Doddy")
+        case .documentStarted: IslandWords(label: islandWord("DOCUMENT"), title: "Making your document", subtitle: "Its button is in Doddy")
+        case .presentation: IslandWords(label: islandWord("READY"), title: "Your slides are ready", subtitle: "Show opens them in Doddy")
+        case .photos: IslandWords(label: islandWord("PHOTOS"), title: "Photos to look at", subtitle: "Show opens them in Doddy")
         }
     }
 }
@@ -374,41 +445,41 @@ extension DoddyToolAttributes {
         case .focus:
             let minutes = "\(Int((duration / 60).rounded())) min"
             if over {
-                return scene(.tinyPromise, 0, label: "FOCUS", time: .text("Done"), title: "Time's up",
-                             subtitle: state.label ?? "Focus finished", compact: .check, minimal: .check, centred: true)
+                return scene(.tinyPromise, 0, label: islandWord("FOCUS"), time: .text(islandWord("Done")), title: "Time's up",
+                             subtitle: state.label ?? islandWord("Focus finished"), compact: .check, minimal: .check, centred: true)
             }
             if state.isPaused {
                 let left = Self.clock(state.remaining)
-                return scene(.tinyPromise, 1, label: "FOCUS", time: .text("Paused"), title: "Paused, \(left) left",
-                             bigTitle: .bigText(left), subtitle: state.label ?? "Ready when you are",
+                return scene(.tinyPromise, 1, label: islandWord("FOCUS"), time: .text(islandWord("Paused")), title: "Paused, \(left) left",
+                             bigTitle: .bigText(left), subtitle: state.label ?? islandWord("Ready when you are"),
                              compact: .text(left), minimal: .text("\(Int((state.remaining / 60).rounded(.up)))m"), centred: true)
             }
             let end = state.endsAt ?? now
-            return scene(.tinyPromise, 0, label: "FOCUS", time: .text(minutes), title: "Focusing",
-                         bigTitle: .countdown(end), subtitle: state.label ?? "One thing at a time",
+            return scene(.tinyPromise, 0, label: islandWord("FOCUS"), time: .text(minutes), title: "Focusing",
+                         bigTitle: .countdown(end), subtitle: state.label ?? islandWord("One thing at a time"),
                          compact: .countdown(end), minimal: .countdown(end), centred: true)
         case .breathing:
             if over {
-                return scene(.calmTide, 1, label: "BREATHE", time: .text("Done"), title: "Breathing done",
+                return scene(.calmTide, 1, label: islandWord("BREATHE"), time: .text(islandWord("Done")), title: "Breathing done",
                              subtitle: "Nicely done", compact: .check, minimal: .none)
             }
             let end = state.endsAt ?? now
-            return scene(.calmTide, 0, label: "BREATHE", time: .countdown(end), title: "Breathing",
+            return scene(.calmTide, 0, label: islandWord("BREATHE"), time: .countdown(end), title: "Breathing",
                          subtitle: "Open Doddy to follow along", compact: .countdown(end), minimal: .none)
         case .readAloud:
             var shown: IslandScene
             if lost {
-                shown = scene(.storySpool, 1, label: "READ ALOUD", time: .text(""), title: "Stopped",
+                shown = scene(.storySpool, 1, label: islandWord("READ ALOUD"), time: .text(""), title: "Stopped",
                               subtitle: "Open Doddy to read it again", warning: true,
                               compact: .symbol("exclamationmark.triangle.fill", .warning), minimal: .none)
             } else if over {
-                shown = scene(.storySpool, 1, label: "READ ALOUD", time: .text("Done"), title: "Finished reading",
+                shown = scene(.storySpool, 1, label: islandWord("READ ALOUD"), time: .text(islandWord("Done")), title: "Finished reading",
                               subtitle: "Your note", compact: .check, minimal: .none)
             } else if state.isPaused {
-                shown = scene(.storySpool, 1, label: "READ ALOUD", time: .text("Paused"), title: "Paused",
+                shown = scene(.storySpool, 1, label: islandWord("READ ALOUD"), time: .text(islandWord("Paused")), title: "Paused",
                               subtitle: "Pick up where you left off", compact: .symbol("pause.fill", .secondary), minimal: .none)
             } else {
-                shown = scene(.storySpool, 0, label: "READ ALOUD", time: .text("Note"), title: "Reading aloud",
+                shown = scene(.storySpool, 0, label: islandWord("READ ALOUD"), time: .text(islandWord("Note")), title: "Reading aloud",
                               subtitle: "Your note", compact: .bars, minimal: .bars)
             }
             return shown
@@ -416,16 +487,16 @@ extension DoddyToolAttributes {
             // Counts up (ADR-652): the Tiny Promise board with a ticking time, no end and no alert.
             let total = Self.elapsedClock(state.elapsed ?? 0)
             if state.isFinished {
-                return scene(.tinyPromise, 0, label: "STOPWATCH", time: .text("Stopped"), title: "Stopped at \(total)",
+                return scene(.tinyPromise, 0, label: islandWord("STOPWATCH"), time: .text(islandWord("Stopped")), title: "Stopped at \(total)",
                              bigTitle: .bigText(total), subtitle: state.label ?? "Nicely timed",
                              compact: .check, minimal: .check, centred: true)
             }
             if state.isPaused {
-                return scene(.tinyPromise, 1, label: "STOPWATCH", time: .text("Paused"), title: "Paused at \(total)",
+                return scene(.tinyPromise, 1, label: islandWord("STOPWATCH"), time: .text(islandWord("Paused")), title: "Paused at \(total)",
                              bigTitle: .bigText(total), subtitle: state.label ?? "Ready when you are",
                              compact: .text(total), minimal: .symbol("pause.fill", .secondary), centred: true)
             }
-            return scene(.tinyPromise, 0, label: "STOPWATCH", time: .text("Running"), title: "Stopwatch",
+            return scene(.tinyPromise, 0, label: islandWord("STOPWATCH"), time: .text(islandWord("Running")), title: "Stopwatch",
                          bigTitle: .elapsed, subtitle: state.label ?? "Counting up",
                          compact: .elapsed, minimal: .symbol("stopwatch.fill", .orange), centred: true)
         }
