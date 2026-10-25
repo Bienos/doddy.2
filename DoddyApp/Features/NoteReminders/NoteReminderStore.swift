@@ -20,6 +20,10 @@ final class NoteReminderStore {
     private(set) var authorization: NotificationAuthorization = .notDetermined
     private(set) var locationReadiness: LocationReadiness = .unavailable
     private(set) var receipts: [UUID: NoteReminderReceipt] = [:]
+    /// Notes whose reminder rings like an alarm right now (ADR-651), read back from AlarmKit.
+    private(set) var ringing: Set<UUID> = []
+    /// A note's current text, for the ringing screen's title (set at launch from MemoryStore).
+    @ObservationIgnored var noteText: (@MainActor (UUID) -> String?)?
     /// Set by a notification tap; RootView opens that memory and clears it.
     var pendingOpenMemoryID: UUID?
 
@@ -42,6 +46,33 @@ final class NoteReminderStore {
         if let stored = try? await coordinator.reminders() { reminders = stored }
         authorization = await coordinator.authorization()
         locationReadiness = await coordinator.locationReadiness()
+        await syncRinging()
+    }
+
+    /// Whether the note's reminder should ring like an alarm (ADR-651). Set before `set(…)`, which
+    /// then sets the alarm; turning it off cancels the alarm at once.
+    func setRinging(memoryID: UUID, _ rings: Bool) async {
+        ReminderRinger.setWish(memoryID, rings: rings)
+        await reload()
+    }
+
+    func wantsToRing(memoryID: UUID) -> Bool { ReminderRinger.wantsToRing(memoryID) }
+
+    /// Makes the alarms match the reminders: every reload, so a snooze, Done or a new time moves
+    /// or ends the alarm too.
+    private func syncRinging() async {
+        guard ReminderRinger.hasWishes else {
+            ringing = []
+            return
+        }
+        let showText = UserDefaults.standard.bool(forKey: PreferenceKey.showNoteTextInNotifications)
+        let language = NotificationLanguage.current
+        var titles: [UUID: String] = [:]
+        for reminder in reminders where ReminderRinger.wantsToRing(reminder.memoryID) {
+            let text = noteText?(reminder.memoryID) ?? ""
+            titles[reminder.memoryID] = ReminderRing.title(noteText: text, showNoteText: showText, language: language)
+        }
+        ringing = await ReminderRinger.sync(reminders, title: { titles[$0] ?? NoteReminderCopy.title(language) })
     }
 
     /// On launch and every return to the foreground: repair iOS requests, refresh status. If the

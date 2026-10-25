@@ -327,11 +327,11 @@ struct ConnectionInfo {
                 examples: ["Set a timer for ten minutes", "Forty-five seconds for the eggs"],
                 canDo: [
                     "Start a countdown, after you tap Start",
-                    "Ring with a notification when it's done, even if the app is closed",
+                    "Ring it like the Clock app's timer, even in Silent mode or a Focus, with the time left, Pause and Stop on the Lock Screen (iOS 26 and later; before that, a notification)",
                     "Set an alarm that rings even in Silent mode, after you tap Set alarm (iOS 26 and later)",
                 ],
                 leavesPhone: "The length and label of a timer, or the time and label of an alarm, when Doddy sets one.",
-                staysHere: "iPhone asks once for notification permission. Doddy doesn't keep track of the timer after it starts.")
+                staysHere: "iPhone asks once to allow alarms and timers (on iOS before 26, notifications). Doddy keeps each timer's ring time and label on this iPhone, only to find it again.")
         case .contacts:
             ConnectionInfo(
                 symbol: "person.crop.circle",
