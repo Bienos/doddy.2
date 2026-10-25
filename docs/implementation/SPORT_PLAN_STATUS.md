@@ -48,7 +48,7 @@ DoddyCore `make test-core` (Swift 6.1.2, Linux): **1,926 tests, 0 failures** (46
 
 ## Stage 3: the screens (SwiftUI; **NOT COMPILED, NOT RUN**)
 
-Settings › Connections › Sport and health › **Training log** (a second card under the training plan).
+Settings › Connections › Sport and health › **Training log** (a row under Training plan).
 
 | What | File | Checked |
 |---|---|---|

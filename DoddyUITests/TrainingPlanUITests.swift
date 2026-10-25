@@ -1,6 +1,6 @@
 import XCTest
 
-/// Sport mode step 4 (ADR-625): Settings › Connections › Training plan. A "yes" to a safety question
+/// Sport mode step 4 (ADR-625): Settings › Connections › Sport and health › Training plan. A "yes" to a safety question
 /// gets no plan and says who to ask; all "no" gets a plan that is kept on the iPhone, shown, and
 /// deleted. Every launch uses an in-memory store, so the plan file is new each time.
 final class TrainingPlanUITests: XCTestCase {
@@ -16,10 +16,8 @@ final class TrainingPlanUITests: XCTestCase {
         app.launch()
         XCTAssertTrue(app.waitForTab("home", timeout: 5))
         app.goToTab("settings")
-        app.openSettingsPage("settings.connections")
-        let card = app.buttons["connections.trainingPlan"]
-        XCTAssertTrue(app.reveal(card), "the Training plan card in Connections")
-        card.tap()
+        // Settings › Connections › Sport and health › Training plan (ADR-633's hub).
+        app.openSettingsPage("connections.trainingPlan", under: "settings.connectionsHub")
 
         let make = app.buttons["plan.make"]
         XCTAssertTrue(make.waitForExistence(timeout: 5))

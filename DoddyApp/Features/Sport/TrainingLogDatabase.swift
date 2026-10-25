@@ -40,7 +40,7 @@ enum TrainingLogDatabase {
 }
 
 extension TrainingLogModel {
-    /// The one model of the screen and its Connections card.
+    /// The one model of the screen and its Connections row.
     static let shared = TrainingLogModel(
         open: { try TrainingLogDatabase.open() }, storeExists: { TrainingLogDatabase.exists },
         plan: { TrainingPlanStore.shared.saved?.plan })

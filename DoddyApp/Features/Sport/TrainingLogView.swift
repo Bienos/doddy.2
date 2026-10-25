@@ -357,34 +357,3 @@ struct LogSessionView: View {
         return line
     }
 }
-
-/// The Connections card that opens the training log.
-struct TrainingLogCard: View {
-    var body: some View {
-        HStack(alignment: .center, spacing: 14) {
-            Image(systemName: "checklist")
-                .font(.title3)
-                .foregroundStyle(Theme.ink)
-                .frame(width: 48, height: 48)
-                .background(Theme.quietSurface, in: Circle())
-                .accessibilityHidden(true)
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Training log")
-                    .font(.headline)
-                    .foregroundStyle(Theme.ink)
-                Text("Sets, weight and how it felt, kept on this iPhone if you say yes")
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.secondaryText)
-                    .multilineTextAlignment(.leading)
-            }
-            Spacer(minLength: 8)
-        }
-        .padding(16)
-        .background(Theme.canvas, in: RoundedRectangle(cornerRadius: 20))
-        .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(Theme.separator, lineWidth: 1))
-        .contentShape(RoundedRectangle(cornerRadius: 20))
-        .accessibilityElement(children: .combine)
-        .accessibilityHint("Opens your training log.")
-    }
-}

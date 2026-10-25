@@ -219,7 +219,9 @@ private struct RecallResultsView: View {
                                     .font(.caption.weight(.semibold))
                                     .foregroundStyle(Theme.accentText)
                             }
-                            MemoryLinkCard(record: candidate.record, matchedTerms: candidate.matchedTerms)
+                            // A private note's words only after Face ID (ADR-310), as in the meaning results above.
+                            MemoryLinkCard(record: candidate.record, matchedTerms: candidate.matchedTerms,
+                                           hidesText: PrivateNotesStore.current().contains(candidate.memoryID) && !AppLock.shared.privateUnlocked)
                         }
                     }
                 }

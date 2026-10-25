@@ -1,7 +1,7 @@
 import DoddyCore
 import SwiftUI
 
-/// Settings › Connections › Training plan (sport mode step 4, ADR-625). Doddy's plan engine makes a
+/// Settings › Connections › Sport and health › Training plan (sport mode step 4, ADR-625). Doddy's plan engine makes a
 /// running or strength plan from a few answers, after the safety questions; the person can keep it on
 /// this iPhone and see where they are in it. No model writes or changes a plan, and nothing here
 /// leaves the phone.
@@ -520,45 +520,5 @@ struct PlanBullet: View {
                 .accessibilityHidden(true)
             line
         }
-    }
-}
-
-/// The Connections card that opens the training plan.
-struct TrainingPlanCard: View {
-    @State private var store = TrainingPlanStore.shared
-
-    var body: some View {
-        HStack(alignment: .center, spacing: 14) {
-            Image(systemName: "figure.run")
-                .font(.title3)
-                .foregroundStyle(Theme.ink)
-                .frame(width: 48, height: 48)
-                .background(Theme.quietSurface, in: Circle())
-                .accessibilityHidden(true)
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Training plan")
-                    .font(.headline)
-                    .foregroundStyle(Theme.ink)
-                if let saved = store.saved {
-                    Text(PlanText.position(PlanCalendar.position(of: saved.plan, start: saved.start, now: .now, calendar: .current), plan: saved.plan))
-                        .font(.subheadline)
-                        .foregroundStyle(Theme.secondaryText)
-                        .multilineTextAlignment(.leading)
-                } else {
-                    Text("Running and strength plans, kept on this iPhone")
-                        .font(.subheadline)
-                        .foregroundStyle(Theme.secondaryText)
-                        .multilineTextAlignment(.leading)
-                }
-            }
-            Spacer(minLength: 8)
-        }
-        .padding(16)
-        .background(Theme.canvas, in: RoundedRectangle(cornerRadius: 20))
-        .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(Theme.separator, lineWidth: 1))
-        .contentShape(RoundedRectangle(cornerRadius: 20))
-        .accessibilityElement(children: .combine)
-        .accessibilityHint("Opens your training plan.")
     }
 }
