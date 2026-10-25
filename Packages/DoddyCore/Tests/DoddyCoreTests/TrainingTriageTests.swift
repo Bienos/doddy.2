@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// ADR-632: red flags in free text get one fixed message that code owns (research rules 1, 4, 5, 6).
+/// ADR-642: red flags in free text get one fixed message that code owns (research rules 1, 4, 5, 6).
 final class TrainingTriageTests: XCTestCase {
     private func flags(_ text: String) -> Set<TriageFlag> { TrainingTriage.assess(text).flags }
 

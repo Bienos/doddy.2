@@ -1,6 +1,6 @@
 import Foundation
 
-// The training logbook (ADR-632; research docs/research/2026-10-24/research_expert_modes_PL.md
+// The training logbook (ADR-642; research docs/research/2026-10-24/research_expert_modes_PL.md
 // section 2.4): what the person did in a session — sets, reps, load, how many reps were left, and how
 // it felt — kept on this iPhone so the next session can be judged on what really happened and not on
 // what the plan said. Training notes are health data, so the rules are tighter than for a note:

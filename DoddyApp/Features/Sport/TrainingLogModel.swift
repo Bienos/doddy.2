@@ -2,7 +2,7 @@ import DoddyCore
 import Foundation
 import Observation
 
-/// The state behind Settings › Connections › Training log (sport plan stage 3, ADR-632): whether the
+/// The state behind Settings › Connections › Training log (sport plan stage 3, ADR-642): whether the
 /// person said yes to keeping a log, the sessions kept, the weekly review of them and a file to take
 /// away. All rules live in DoddyCore (`TrainingLogRepository`, `TrainingReview`); this class only asks
 /// the store and keeps what it answered. It does not open the store until the person needs it, so

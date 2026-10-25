@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// ADR-632: ask only what is missing, never more than five questions, never assume the safety answers.
+/// ADR-642: ask only what is missing, never more than five questions, never assume the safety answers.
 final class TrainingInterviewTests: XCTestCase {
     func testTheDaysAreTakenFromTheWords() {
         XCTAssertEqual(TrainingInterview.extract(from: "Trenuję 3 dni").daysPerWeek, 3)

@@ -143,7 +143,7 @@ files=(
   # The kept training plan (ADR-625), without the screens.
   DoddyApp/Features/Sport/TrainingPlanStore.swift
   DoddyApp/Features/Sport/PlanText.swift
-  # The training log's state (sport plan stage 3, ADR-632), without the screens or the file it lives in.
+  # The training log's state (sport plan stage 3, ADR-642), without the screens or the file it lives in.
   DoddyApp/Features/Sport/TrainingLogModel.swift
   # TrainingLogDatabase.swift (the file it lives in) imports DoddyPersistence, which this script cannot link.
 )

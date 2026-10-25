@@ -1,7 +1,7 @@
 import Foundation
 
 // The training mode's decisions, in the order the research gives them (section 2.2) and the owner's
-// rules require (ADR-620, ADR-632): safety first, then a goal about weight, then only the questions
+// rules require (ADR-620, ADR-642): safety first, then a goal about weight, then only the questions
 // still missing, then the plan from `PlanEngine`. All of it is code. A model may later put the answer
 // into friendlier words; it cannot change a stop message, a refusal, a pace or a number of a plan.
 // Nothing here is saved, sent or written anywhere: the result is a value, and `verifiedExternalAction`

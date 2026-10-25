@@ -1,6 +1,6 @@
 import Foundation
 
-// Exercise cards (ADR-632; research section 2.3). One text-only card for each exercise the plan
+// Exercise cards (ADR-642; research section 2.3). One text-only card for each exercise the plan
 // engine can prescribe, so a plan can say how to do it without a picture or a video. The cards are
 // written for Doddy in Doddy's own words; no atlas, picture or video is copied (research: "do not use
 // commercial atlases without a licence"; pictures wait for wger's licensed set, ADR-624). Each card

@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// ADR-632: the weekly review. One priority, one variable, nothing raised without "reps left",
+/// ADR-642: the weekly review. One priority, one variable, nothing raised without "reps left",
 /// nothing raised on pain or two hard sessions, no shaming and no promises.
 final class TrainingReviewTests: XCTestCase {
     private let now = Date(timeIntervalSince1970: 1_800_000_000)

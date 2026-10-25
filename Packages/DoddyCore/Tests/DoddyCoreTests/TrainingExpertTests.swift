@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// The research's acceptance tests 1, 2, 3, 11 and 12, at the level of the logic (ADR-632).
+/// The research's acceptance tests 1, 2, 3, 11 and 12, at the level of the logic (ADR-642).
 final class TrainingExpertTests: XCTestCase {
     private let clear30 = PlanScreening.clear(age: 30)
 

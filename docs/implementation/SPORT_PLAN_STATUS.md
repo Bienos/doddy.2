@@ -1,4 +1,4 @@
-# Sport plan: interview, safety, cards, logbook, review (ADR-632)
+# Sport plan: interview, safety, cards, logbook, review (ADR-642)
 
 Owner, 24 Oct 2026: "dalszy plan sportowy" (after the expert-modes research, `docs/research/2026-10-24/research_expert_modes_PL.md` section 2, ADR-630). Branch `claude/sport-plan`, built on `claude/sport-mode-health` (PR #137). **Not merged, nothing seen on a device.**
 

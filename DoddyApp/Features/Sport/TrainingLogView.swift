@@ -1,7 +1,7 @@
 import DoddyCore
 import SwiftUI
 
-/// Settings › Connections › Training log (sport plan stage 3, ADR-632). The person says yes to keeping
+/// Settings › Connections › Training log (sport plan stage 3, ADR-642). The person says yes to keeping
 /// a log of their sessions on this iPhone, writes down sets, weight, reps, reps left and how it felt,
 /// and gets one thing to change before the next session. The rules and the words come from DoddyCore
 /// (`TrainingLogRepository`, `TrainingReview`); no model writes or changes anything here, and nothing

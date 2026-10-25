@@ -1,6 +1,6 @@
 import Foundation
 
-// The typed result of an expert mode (ADR-632; research docs/research/2026-10-24/research_expert_modes_PL.md
+// The typed result of an expert mode (ADR-642; research docs/research/2026-10-24/research_expert_modes_PL.md
 // section 7.2). A mode answers in this shape, so every answer carries its sources, its caveats and how
 // risky it is, and so "done" can only ever be said with a receipt: `verifiedExternalAction` is false
 // for everything that only reads, explains or proposes. Nothing in this file talks to a model or to the

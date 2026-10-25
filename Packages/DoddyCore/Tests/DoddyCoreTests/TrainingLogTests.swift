@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// ADR-632: the rules of a logged set and a logged session, and the export file. The store itself is
+/// ADR-642: the rules of a logged set and a logged session, and the export file. The store itself is
 /// tested on real SQLite in DoddyPersistenceTests.
 final class TrainingLogTests: XCTestCase {
     private let t0 = Date(timeIntervalSince1970: 1_800_000_000)

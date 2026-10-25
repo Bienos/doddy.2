@@ -1,6 +1,6 @@
 import Foundation
 
-// The weekly review (ADR-632; research section 2.4): what to change before the next session, judged
+// The weekly review (ADR-642; research section 2.4): what to change before the next session, judged
 // on the last two weeks of the person's own log. It is code, not a model: the same log gives the same
 // answer, and the words below are fixed. The rules:
 //   - one priority, not a list of homework;

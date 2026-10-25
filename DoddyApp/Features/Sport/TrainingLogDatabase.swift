@@ -2,7 +2,7 @@ import DoddyCore
 import DoddyPersistence
 import Foundation
 
-/// Where the training log is kept (sport plan stage 3, ADR-632): its own SQLite file,
+/// Where the training log is kept (sport plan stage 3, ADR-642): its own SQLite file,
 /// `Application Support/Sport/training-log.sqlite`, not the notes' file. The notes' folder is in
 /// device backups; training notes are health data, so this folder is left out of iCloud and computer
 /// backups like the training plan's (ADR-625; App Review 5.1.3). The folder is created and the file

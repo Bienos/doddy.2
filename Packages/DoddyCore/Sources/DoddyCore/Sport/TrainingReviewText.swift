@@ -1,6 +1,6 @@
 import Foundation
 
-// The words of the weekly review (ADR-632). Fixed, in Polish and English, chosen by the priority that
+// The words of the weekly review (ADR-642). Fixed, in Polish and English, chosen by the priority that
 // `TrainingReview` worked out: a model may later say them more warmly, it cannot change which one
 // applies or any number in it. The text names one thing to change and never counts missed sessions,
 // never praises a streak and never says where the person will end up.

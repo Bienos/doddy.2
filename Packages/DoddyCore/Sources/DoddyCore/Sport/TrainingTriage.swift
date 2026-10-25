@@ -1,6 +1,6 @@
 import Foundation
 
-// Triage of what the person writes or says (ADR-632; research_sport_mode.md "Rules to enforce in code"
+// Triage of what the person writes or says (ADR-642; research_sport_mode.md "Rules to enforce in code"
 // 1, 4, 5 and 6; ADR-623's named gap: "a fixed, code-enforced reply for red-flag words is not built").
 // This is code, not a prompt: a red flag gets one fixed message, in Polish or English, that no model
 // output can change, and no plan above light intensity. It is a safety net with a deliberately wide

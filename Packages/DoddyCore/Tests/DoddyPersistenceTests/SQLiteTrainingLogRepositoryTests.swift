@@ -4,7 +4,7 @@ import Foundation
 import GRDB
 import XCTest
 
-/// The training logbook on real SQLite (ADR-632): consent first, every write read back, delete for
+/// The training logbook on real SQLite (ADR-642): consent first, every write read back, delete for
 /// good, export always possible.
 final class SQLiteTrainingLogRepositoryTests: XCTestCase {
     private let t0 = Date(timeIntervalSince1970: 1_800_000_000)

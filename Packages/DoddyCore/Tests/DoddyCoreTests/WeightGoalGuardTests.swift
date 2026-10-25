@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// ADR-632 / ADR-620: a weight goal is judged by pace, with no calorie number in any answer.
+/// ADR-642 / ADR-620: a weight goal is judged by pace, with no calorie number in any answer.
 final class WeightGoalGuardTests: XCTestCase {
     func testTheGoalIsReadFromTheWords() throws {
         let week = try XCTUnwrap(WeightGoalRequest.parse("Chcę schudnąć 10 kg w tydzień"))

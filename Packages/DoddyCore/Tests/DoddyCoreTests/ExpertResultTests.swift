@@ -6,7 +6,7 @@ extension ExpertMode {
     static let invoicesForTest: ExpertMode = "invoices"
 }
 
-/// ADR-632: the typed result every expert mode answers in (research section 7.2).
+/// ADR-642: the typed result every expert mode answers in (research section 7.2).
 final class ExpertResultTests: XCTestCase {
     private func sample() -> ExpertResult {
         ExpertResult(mode: .personalTraining, answer: "Zrób dziś 20 minut treningu całego ciała.",

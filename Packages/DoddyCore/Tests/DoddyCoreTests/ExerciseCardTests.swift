@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// ADR-632: a text card for every exercise the plan engine can prescribe.
+/// ADR-642: a text card for every exercise the plan engine can prescribe.
 final class ExerciseCardTests: XCTestCase {
     /// Every exercise key any strength plan can contain, over the answers the screens allow.
     private func prescribedKeys() -> Set<String> {

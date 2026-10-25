@@ -63,7 +63,7 @@ if command -v swift >/dev/null 2>&1; then
     run_step "Unfinished notes on real files" scripts/check_unfinished_note_store.sh
     # The kept training plan (ADR-625): read back, edited and unreadable files, delete.
     run_step "Training plan on real files" scripts/check_training_plan_store.sh
-    # The training log's state (ADR-632), run with a fake store.
+    # The training log's state (ADR-642), run with a fake store.
     run_step "Training log screen's state tests" scripts/test_training_log_model.sh
   else
     run_step "Swift package tests (DoddyCore)" swift test --package-path Packages/DoddyCore

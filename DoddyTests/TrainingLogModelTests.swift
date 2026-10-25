@@ -5,7 +5,7 @@ import XCTest
 @testable import Doddy
 #endif
 
-// The training log's state behind its screen (sport plan stage 3, ADR-632): nothing is opened or
+// The training log's state behind its screen (sport plan stage 3, ADR-642): nothing is opened or
 // created while the log was never turned on, nothing is saved without the person's yes, taking the
 // yes back keeps what was saved, a failure is shown in words and changes nothing, and the export
 // file is read back and removed. A fake stands in for the store; the real one is tested on SQLite in

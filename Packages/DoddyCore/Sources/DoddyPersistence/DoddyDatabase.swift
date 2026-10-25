@@ -429,7 +429,7 @@ public final class DoddyDatabase: Sendable {
         migrator.registerMigration("v18_thread_document") { db in
             try db.execute(sql: "ALTER TABLE thread_messages ADD COLUMN document_json TEXT")
         }
-        // The training logbook (ADR-632): what the person did in a session, kept only with their yes.
+        // The training logbook (ADR-642): what the person did in a session, kept only with their yes.
         // The checks sit in the table as well as in `LoggedSession`, so a row that breaks a rule cannot
         // be written by any other path. Load is in grams so 2.5 kg compares exactly.
         migrator.registerMigration("v19_training_log") { db in
