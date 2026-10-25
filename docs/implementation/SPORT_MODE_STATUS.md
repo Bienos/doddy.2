@@ -120,8 +120,8 @@ Owner, 25 Oct 2026: "okej" to "Plan zamawiany głosem albo w Wiadomościach". Br
 |---|---|---|
 | `PlanAsk`, the tool's parse, the ask card, catalog row, What Doddy did row (app "Training plan", Polish "Plan treningowy"), not under Pause all, refused in the car, what the agent hears, the Messages wire and the verified answer | `Sport/PlanAsk.swift`, `VoiceTools.swift`, `AskFirst.swift`, `ToolCatalog.swift`, `ActivityLog.swift`, `ActivityText.swift`, `ConnectionPause.swift`, `CarProfile.swift`, `Assistant/*` | `PlanAskTests` 12; `ActivityTextTests` now counts 45 kinds |
 | The server: `plan` in the structured reply, `readPlanOffer`, the PLAN rule in the instructions | `server/messaging/src/assistant/prompt.ts`, `responder.ts`, `routes/assistant.ts` | `assistant.test.ts` 28 pass with a real Postgres (the route tests are skipped without `TEST_DATABASE_URL`) |
-| The offer in Messages | `MessagesModel.planAsks`, `MessagesView.planCard` | `MessagesModelTests` 17 pass on Linux; the view is **NOT COMPILED** here |
-| The handler, the sheet over the conversation, the screen with a prefill | `VoiceSessionController`, `VoiceView`, `TrainingPlanView`, `PlanAskRequest` | **NOT COMPILED** here; the hosted Mac job compiles them |
+| The offer in Messages | `MessagesModel.planAsks`, `MessagesView.planCard` | `MessagesModelTests` 17 pass on Linux; the view compiled on the hosted Mac (run 40166588339); not seen on a device |
+| The handler, the sheet over the conversation, the screen with a prefill | `VoiceSessionController`, `VoiceView`, `TrainingPlanView`, `PlanAskRequest` | Compiled and built on the hosted Mac (run 40166588339 on `6ab2960`, job `ci` green); no UI test drives them; not seen on a device |
 | Agent spec and prompt line | `voice-agent/tools.json` (`not_synced`), `instructions.md`; `backend/src/web/logbook.ts` | `voice_agent_spec.py check` PASS, 100 tools |
 | Polish for the four new lines | `l10n/pl.json`; other languages show English | catalogs up to date |
 
