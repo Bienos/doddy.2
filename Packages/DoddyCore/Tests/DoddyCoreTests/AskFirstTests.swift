@@ -49,6 +49,7 @@ final class AskFirstTests: XCTestCase {
             (.readList(name: "Shopping"), false),
             (.parkingSpot(.find), false),
             (.stopTranslator, false),
+            (.startTranslator(TranslatorProposal(kind: .faceToFace, yours: nil, theirs: nil)), false),
             (checkEmail, false),
             (addMilk, true),
             (.checkOff(ListVoiceRequest(list: "Shopping", items: ["milk"])), true),
@@ -236,5 +237,12 @@ final class AskFirstReplyTests: XCTestCase {
         let reply = VoiceToolReply.cloudFailed(.server(code: "capability_disabled", message: "x", retryAfterSeconds: nil, receipt: receipt), tool: CloudToolName.checkEmail)
         XCTAssertTrue(reply.hasPrefix("declined:"), reply)
         XCTAssertTrue(reply.contains("nothing was looked at"), reply)
+    }
+
+    /// ADR-619 (owner, 24 Oct 2026: "nie pytaj, od razu działaj"): translator mode starts and stops
+    /// the moment the user asks, with no question first (ADR-542 had it ask).
+    func testTranslatorStartsAndStopsWithoutAsking() {
+        XCTAssertEqual(AskFirst.need(for: .startTranslator(TranslatorProposal(kind: .faceToFace, yours: nil, theirs: nil))), .runsNow)
+        XCTAssertEqual(AskFirst.need(for: .stopTranslator), .runsNow)
     }
 }
