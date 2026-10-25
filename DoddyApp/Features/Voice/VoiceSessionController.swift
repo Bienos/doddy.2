@@ -240,7 +240,13 @@ final class VoiceSessionController {
         return current.isMuted ? .muted : .listening
     }
     private(set) var lines: [Line] = []
-    private(set) var pendingAction: PendingAction? { didSet { syncIsland() } }
+    private(set) var pendingAction: PendingAction? {
+        didSet {
+            syncIsland()
+            // ADR-616: a new card opens the island up while Doddy isn't on screen.
+            if oldValue == nil, pendingAction != nil { expandIslandForCard() }
+        }
+    }
     /// ASK-01 (ADR-483): which calls the user said yes to. Checked right before a tool runs.
     private var askLedger = AskLedger()
     /// The type the user picks on the "Save this note?" card. Starts as Other for every proposal;
@@ -275,7 +281,7 @@ final class VoiceSessionController {
     private(set) var selectedPlaceIndex = 0
     /// The access card (ADR-578): a function the agent asked for is off, or iOS hasn't allowed it.
     /// The screen asks "Allow Doddy to use …?"; nothing turns on without the user's tap there.
-    private(set) var accessRequest: ConnectionApprovalCard?
+    private(set) var accessRequest: ConnectionApprovalCard? { didSet { syncIsland() } }
     /// The function the access card is about. The paths that find one off or blocked set it; a
     /// card already up for the same function is kept as it is (it may be waiting for iOS).
     private(set) var connectionNeeded: VoiceConnection? {
@@ -286,7 +292,7 @@ final class VoiceSessionController {
         }
     }
     /// "Let Doddy use Calendar?" (ADR-566): a call held while the sheet asks the user.
-    private(set) var permissionRequest: PermissionRequest?
+    private(set) var permissionRequest: PermissionRequest? { didSet { syncIsland() } }
     /// Connections the user said Not now to in this conversation: not asked for again.
     private var declinedPermissions: Set<VoiceConnection> = []
     /// Each call as it came, until it is answered, so one held for the permission sheet can be
@@ -306,7 +312,7 @@ final class VoiceSessionController {
         /// "Gmail"
         let title: String
     }
-    private(set) var accountNeeded: AccountNeeded?
+    private(set) var accountNeeded: AccountNeeded? { didSet { syncIsland() } }
     private(set) var isConnectingAccount = false
     /// What went wrong the last time Connect was tapped, for the card.
     private(set) var accountMessage: String?
@@ -1380,6 +1386,8 @@ final class VoiceSessionController {
                 let url = try PresentationFiles.write(draft, created: Date())
                 if onScreen(attempt) {
                     presentationReady = PresentationReady(url: url, title: draft.title, slideCount: draft.slideCount)
+                    // ADR-616: written and read back, so it is ready; Show opens its card.
+                    flashIsland(.resultReady(.presentation))
                 }
                 await reply(id, VoiceToolReply.presentationMade(draft))
             } catch {
@@ -2040,6 +2048,9 @@ final class VoiceSessionController {
             greeting: wakeGreeting, conversationStartedAt: startedAt)
         state.moment = islandMoment
         state.islandStyle = IslandStyle.stored(UserDefaults.standard.string(forKey: PreferenceKey.islandStyle))
+        // ADR-617: the island speaks the language of Doddy's screens (Polish by default), which the
+        // widget extension can't read for itself.
+        state.language = Bundle.main.preferredLocalizations.first
         return state
     }
 
@@ -2052,9 +2063,13 @@ final class VoiceSessionController {
         case .memory: return .noteWaiting
         case .plan(_, let steps, _): return .planWaiting(steps: steps.count)
         case .reminder, .noteReminder: return .reminderWaiting
-        case .some: return nil
+        // ADR-616: every other card has its kind on the island (it was the bare "Confirm in Doddy").
+        case .some(let action): return .actionWaiting(Self.islandAction(action))
         case nil: break
         }
+        // ADR-616: an iPhone permission, a function that is off, or an account to connect.
+        if permissionRequest != nil || accessRequest != nil { return .actionWaiting(.access) }
+        if accountNeeded != nil { return .actionWaiting(.signIn) }
         // Translating (ADR-244): the language codes only, never a phrase. No tool runs in this
         // mode, so no plan, reminder or "saved" moment can be hidden by it.
         if let setup = translator?.setup {
@@ -2070,6 +2085,27 @@ final class VoiceSessionController {
         if case .adding = reminderStatus { return .reminderAdding }
         if let flash = islandFlash, flash.until > Date() { return flash.moment }
         return nil
+    }
+
+    /// The island's word for a card (ADR-616): its kind only, never what it says.
+    private static func islandAction(_ action: PendingAction) -> IslandAction {
+        switch action {
+        case .message(_, let draft, _): return draft.channel == .email ? .email : .text
+        case .blik: return .transfer
+        case .event, .changeEvent, .deleteEvent: return .calendar
+        case .reminder, .noteReminder, .changeReminder, .deleteReminder: return .reminder
+        case .timer, .alarm, .cancelAlarm: return .alarm
+        case .map, .leaveBy: return .map
+        case .shortcut: return .shortcut
+        case .camera: return .camera
+        case .presentation: return .presentation
+        case .createList, .ingredients: return .list
+        case .cloud(_, let call, _, _, _):
+            let name = call.name.lowercased()
+            return name.contains("gmail") || name.contains("outlook") || name.contains("mail") ? .email : .onlineApp
+        case .ask, .cloudRead: return .askFirst
+        case .memory, .plan, .bulk, .undo, .parking: return .other
+        }
     }
 
     private func flashIsland(_ moment: DoddyVoiceAttributes.ContentState.Moment) {
@@ -2089,6 +2125,13 @@ final class VoiceSessionController {
         guard ownsIsland, translator == nil else { return }
         let onScreen = UIApplication.shared.applicationState == .active
         if islandExpansion.doddyStartedSpeaking(at: Date(), appOnScreen: onScreen) { island.expand() }
+    }
+
+    /// ADR-616: a card arrived; `IslandExpansion` says whether the island opens up for it.
+    private func expandIslandForCard() {
+        guard ownsIsland, translator == nil else { return }
+        let onScreen = UIApplication.shared.applicationState == .active
+        if islandExpansion.cardArrived(at: Date(), appOnScreen: onScreen) { island.expand() }
     }
 
     private func syncIsland() {
@@ -2644,6 +2687,8 @@ final class VoiceSessionController {
             let found = devices.findPhotos(request, now: Date())
             if isCurrent(call.toolCallId) {
                 photoResults = PhotoResults(request: request, summary: found.summary, identifiers: found.identifiers)
+                // ADR-616: the pictures are on the conversation's screen; the island says so.
+                if !found.identifiers.isEmpty { flashIsland(.resultReady(.photos)) }
             }
             await reply(call.toolCallId, VoiceToolReply.photosFound(found.summary, request: request, calendar: .current))
         case .openCamera:
@@ -3049,7 +3094,15 @@ final class VoiceSessionController {
         do {
             let result = try await client.run(cloud, timeZone: TimeZone.current.identifier, approvalId: approvalID)
             // ADR-564: a file Claude is making gets a button on screen; the agent never gets its link.
-            if let document = result.document { documents.insert(document, at: 0) }
+            if let document = result.document {
+                documents.insert(document, at: 0)
+                // ADR-616: "ready" only when the server says the file is ready.
+                switch document.status {
+                case .ready: flashIsland(.resultReady(.document))
+                case .working: flashIsland(.resultReady(.documentStarted))
+                case .failed: break
+                }
+            }
             await reply(toolCallID, VoiceToolReply.cloudResult(result))
         } catch {
             await reply(toolCallID, await cloudFailureReply(error, tool: cloud.name), isError: true)
