@@ -1,7 +1,7 @@
 import DoddyCore
 import SwiftUI
 
-/// Home → Stopwatch (ADR-642): counts up until you stop it. While it runs the Lock Screen and the
+/// Home → Stopwatch (ADR-652): counts up until you stop it. While it runs the Lock Screen and the
 /// Dynamic Island show the same time, ticking by themselves, with Pause and Stop. No alert and no
 /// score: it only measures time.
 struct StopwatchView: View {

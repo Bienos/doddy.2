@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// ADR-641: routines stay out of 22:00–07:00, and Doddy's own tip never lands on a day a routine
+/// ADR-651: routines stay out of 22:00–07:00, and Doddy's own tip never lands on a day a routine
 /// already comes. Action items (timers, reminders) are not touched by any of this.
 final class QuietHoursTests: XCTestCase {
     private var calendar: Calendar { ReminderSchedule.calendar("Europe/Warsaw") }

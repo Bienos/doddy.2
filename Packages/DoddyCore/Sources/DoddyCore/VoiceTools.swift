@@ -216,7 +216,7 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case listAlarms
     /// Turn one of Doddy's alarms off, after a card.
     case cancelAlarm(clock: String, label: String?)
-    /// A stopwatch that counts up (ADR-642): started and stopped after a card, read after a "yes".
+    /// A stopwatch that counts up (ADR-652): started and stopped after a card, read after a "yes".
     case startStopwatch(label: String?)
     case stopStopwatch
     case checkStopwatch
@@ -822,7 +822,7 @@ public enum VoiceToolReply {
 
     /// The timer is scheduled and confirmed. The user hears it ring at `endsAt`. A label is the
     /// agent's words, so it follows as data (ToolData).
-    /// `ring` (ADR-640) adds how it will ring, so the agent never promises a sound the iPhone
+    /// `ring` (ADR-650) adds how it will ring, so the agent never promises a sound the iPhone
     /// won't make; nil leaves the line as it was.
     public static func timerAdded(_ draft: TimerDraft, endsAt: Date, calendar: Calendar, ring: TimerRing? = nil) -> String {
         var text = "added: timer \(durationText(draft.seconds)), rings at \(localText(endsAt, hasTime: true, calendar: calendar))."

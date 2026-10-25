@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// ADR-642: a stopwatch that counts up. Time is only what the clock says; a pause stops the count,
+/// ADR-652: a stopwatch that counts up. Time is only what the clock says; a pause stops the count,
 /// a clock set back counts nothing, and a stored copy comes back exactly.
 final class StopwatchTests: XCTestCase {
     private let t0 = Date(timeIntervalSince1970: 1_792_000_000)

@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// ADR-641: the weekly plan's notification names nothing, and its screen is the next seven days
+/// ADR-651: the weekly plan's notification names nothing, and its screen is the next seven days
 /// from what this iPhone already has.
 final class WeeklyPlanTests: XCTestCase {
     private let zone = "Europe/Warsaw"

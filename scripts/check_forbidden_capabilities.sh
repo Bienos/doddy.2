@@ -40,7 +40,7 @@
 #  - no accounts, analytics or crash SDKs, no secrets (server/messaging and
 #    render.yaml are checked for key values only: the server legitimately names key headers),
 #  - AlarmKit only inside DoddyApp/Features/Alarms, plus Shared/Alarms (the shared alarm metadata and
-#    the timer card's Pause, Resume and Stop buttons) and the countdown widget (ADR-260, ADR-283, ADR-640),
+#    the timer card's Pause, Resume and Stop buttons) and the countdown widget (ADR-260, ADR-283, ADR-650),
 #  - CloudKit (shared lists through the user's iCloud) only inside DoddyApp/Features/Sharing (ADR-263),
 #  - permission keys only for alarms (AlarmKit, iOS 26), the microphone, speech recognition (on-device, voice memos), calendar,
 #    reminders, contacts, Motion & Fitness (steps, ADR-568), the camera and reading the photo library (ADR-569)

@@ -1,6 +1,6 @@
 import Foundation
 
-/// A stopwatch that counts up (ADR-642; owner, 24 Oct 2026: "stoper"). Doddy's timers count down
+/// A stopwatch that counts up (ADR-652; owner, 24 Oct 2026: "stoper"). Doddy's timers count down
 /// (`set_timer`, `FocusSession`); this one has no end. Pure timing rules, so they are tested on
 /// Linux; the app keeps one on this iPhone, shows it on the Lock Screen and in the island, and
 /// never sends a notification for it (nothing ends). It measures time and claims nothing else.

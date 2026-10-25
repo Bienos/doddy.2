@@ -1,6 +1,6 @@
 import Foundation
 
-// Voice tools for the stopwatch (ADR-642; owner, 24 Oct 2026: "stoper"). Doddy's own tool on this
+// Voice tools for the stopwatch (ADR-652; owner, 24 Oct 2026: "stoper"). Doddy's own tool on this
 // iPhone, no other app or account, so it sits outside Pause all and the Connections switches, like
 // the parking spot. ASK-01: starting and stopping show a card and run on a tap; reading the time
 // asks "yes" first. The reading is whatever the clock says; Doddy claims nothing else.

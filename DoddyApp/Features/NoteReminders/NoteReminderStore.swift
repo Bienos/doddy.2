@@ -20,7 +20,7 @@ final class NoteReminderStore {
     private(set) var authorization: NotificationAuthorization = .notDetermined
     private(set) var locationReadiness: LocationReadiness = .unavailable
     private(set) var receipts: [UUID: NoteReminderReceipt] = [:]
-    /// Notes whose reminder rings like an alarm right now (ADR-641), read back from AlarmKit.
+    /// Notes whose reminder rings like an alarm right now (ADR-651), read back from AlarmKit.
     private(set) var ringing: Set<UUID> = []
     /// A note's current text, for the ringing screen's title (set at launch from MemoryStore).
     @ObservationIgnored var noteText: (@MainActor (UUID) -> String?)?
@@ -49,7 +49,7 @@ final class NoteReminderStore {
         await syncRinging()
     }
 
-    /// Whether the note's reminder should ring like an alarm (ADR-641). Set before `set(…)`, which
+    /// Whether the note's reminder should ring like an alarm (ADR-651). Set before `set(…)`, which
     /// then sets the alarm; turning it off cancels the alarm at once.
     func setRinging(memoryID: UUID, _ rings: Bool) async {
         ReminderRinger.setWish(memoryID, rings: rings)

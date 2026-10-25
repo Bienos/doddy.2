@@ -213,7 +213,7 @@ struct HomeView: View {
                 // Tasks handed to Doddy's background worker (ADR-570).
                 Button { showErrands = true } label: { Label("Tasks", systemImage: "checklist") }
                     .accessibilityIdentifier("home.tasks")
-                // Focus counts down, the stopwatch counts up (ADR-642). One row for both: the menu
+                // Focus counts down, the stopwatch counts up (ADR-652). One row for both: the menu
                 // fits eleven rows on an iPhone at the default text size, and a twelfth put "What I
                 // can do" and "What leaves this iPhone" out of reach (the hosted UI tests caught it).
                 Menu {

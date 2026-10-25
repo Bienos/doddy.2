@@ -50,7 +50,7 @@ final class ActivityTextTests: XCTestCase {
             // ADR-570.
             .handOverErrand(ErrandDraft(words: "sprawdź loty do Rzymu", brief: "Loty do Rzymu w listopadzie.", title: "Rzym")),
             .checkErrands(about: nil),
-            // ADR-642.
+            // ADR-652.
             .startStopwatch(label: "Bieg"), .stopStopwatch, .checkStopwatch,
             // SHOPPING.md.
             .findDeals(DealsRequest(items: ["masło"], chains: [.biedronka])),

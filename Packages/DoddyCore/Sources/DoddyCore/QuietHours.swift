@@ -1,6 +1,6 @@
 import Foundation
 
-// Quiet hours and one of Doddy's own notifications a day (ADR-641; owner, 24 Oct 2026: quiet
+// Quiet hours and one of Doddy's own notifications a day (ADR-651; owner, 24 Oct 2026: quiet
 // hours yes; a notification "out of nowhere" is limited, but a timer or anything that is an
 // action item always shows).
 //  - Action items always come, at any hour: timers, alarms, reminders, time to leave, before an

@@ -144,7 +144,7 @@ final class FocusController {
         content.title = TimerCopy.focusTitle(language)
         content.body = TimerCopy.focusBody(label: session.label, minutes: Int((session.duration / 60).rounded()), language)
         content.sound = .default
-        // The end of a time the user chose: through a Focus where allowed (ADR-640).
+        // The end of a time the user chose: through a Focus where allowed (ADR-650).
         content.interruptionLevel = DoddyNotificationKind.focusDone.interruptionLevel
         let id = Self.notificationID(session)
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: max(1, end.timeIntervalSinceNow), repeats: false)

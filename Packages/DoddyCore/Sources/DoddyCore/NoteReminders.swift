@@ -358,7 +358,7 @@ public enum NoteReminderCopy {
     /// Long-press buttons, in the order the categories use them.
     public enum Action: Sendable {
         case openNote, inAnHour, tomorrowMorning, done, doneThisTime
-        /// A list's place reminder (ADR-642).
+        /// A list's place reminder (ADR-652).
         case openList
     }
 
@@ -379,7 +379,7 @@ public enum NoteReminderCopy {
         }
     }
 
-    /// What a list's place reminder says (ADR-642): how many things are still open, read when the
+    /// What a list's place reminder says (ADR-652): how many things are still open, read when the
     /// notification is set and again whenever the list changes (`refreshContent`). The list's name
     /// only with "Show note text in notifications" on; the place's name never (see `ReminderPlace`).
     /// Nil when the count isn't known: the caller keeps the plain private text.
@@ -424,7 +424,7 @@ public enum NoteReminderCategory: String, Sendable {
     case repeating
     /// Open note, Done: a place comes back on the next arrival anyway.
     case place
-    /// The same for a list: "Open list" instead of "Open note" (ADR-642).
+    /// The same for a list: "Open list" instead of "Open note" (ADR-652).
     case placeList
 }
 
@@ -469,7 +469,7 @@ public struct NoteReminderNotification: Equatable, Sendable {
         let plainTitle = NoteReminderCopy.title(language)
         switch reminder.trigger {
         case .place where isList:
-            // A list at a place (ADR-642): how many things are left, and "Open list".
+            // A list at a place (ADR-652): how many things are left, and "Open list".
             let listBody = NoteReminderCopy.listPlaceBody(
                 listName: showNoteText ? noteText : nil, openItems: openItems, language: language)
             return [NoteReminderNotification(
@@ -549,7 +549,7 @@ public protocol NoteReminderRepository: Sendable {
     func currentText(ofMemory memoryID: UUID) async throws -> String?
     /// True when the memory is a list (ADR-216), so its private notification says "a list".
     func isList(memoryID: UUID) async -> Bool
-    /// Things still open on a list (not ticked), for its place reminder's text (ADR-642). Nil when
+    /// Things still open on a list (not ticked), for its place reminder's text (ADR-652). Nil when
     /// not known; the default knows nothing.
     func openItemCount(listID: UUID) async -> Int?
     /// Stores the memory's one reminder, replacing any earlier one; returns it read back.

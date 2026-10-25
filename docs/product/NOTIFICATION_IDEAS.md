@@ -1,6 +1,6 @@
 # Notification ideas: what Doddy could send, and what it says (proposal)
 
-Date: 2026-10-24. Owner (24 Oct, in Polish): think up other notifications, for example a reminder once a week; how they would look and what they would say, with examples. **A proposal: nothing below is built**, except where a row says "exists". The sound and Lock Screen fixes that come first are ADR-640 (`docs/implementation/NOTIFICATIONS_AND_TIMERS.md`). Polish is the default; English follows each line.
+Date: 2026-10-24. Owner (24 Oct, in Polish): think up other notifications, for example a reminder once a week; how they would look and what they would say, with examples. **A proposal: nothing below is built**, except where a row says "exists". The sound and Lock Screen fixes that come first are ADR-650 (`docs/implementation/NOTIFICATIONS_AND_TIMERS.md`). Polish is the default; English follows each line.
 
 ## The rules every Doddy notification follows
 
@@ -17,10 +17,10 @@ Date: 2026-10-24. Owner (24 Oct, in Polish): think up other notifications, for e
 
 | # | When | Lock Screen (Polish) | English | State |
 |---|---|---|---|---|
-| A1 | Timer ends | Ringing screen **Makaron** · Zatrzymaj · Powtórz. While it runs: **MINUTNIK** · Makaron · 7:42 · Pauza · Zatrzymaj | **Pasta** · Stop · Repeat; **TIMER** · Pasta · 7:42 · Pause · Stop | ADR-640 (iOS 26) |
+| A1 | Timer ends | Ringing screen **Makaron** · Zatrzymaj · Powtórz. While it runs: **MINUTNIK** · Makaron · 7:42 · Pauza · Zatrzymaj | **Pasta** · Stop · Repeat; **TIMER** · Pasta · 7:42 · Pause · Stop | ADR-650 (iOS 26) |
 | A2 | Alarm | **Siłownia** · Zatrzymaj · Drzemka | **Gym** · Stop · Snooze | exists (ADR-260, 283) |
-| A3 | Apple Reminders reminder | **Zadzwonić do mamy** (Reminders' own banner, 15:30) | **Call Mum** | alerts again since ADR-640 |
-| A4 | Doddy's reminder on a note | **Przypomnienie** · Kod do paczkomatu: 4471 / with text hidden: **Przypomnienie** · Notatka, którą chciałeś zobaczyć. Actions: Otwórz notatkę · Za godzinę · Jutro 9:00 · Zrobione | **Reminder** · Parcel locker code: 4471 / A note you asked to see again | exists (ADR-190), Time Sensitive since ADR-640 |
+| A3 | Apple Reminders reminder | **Zadzwonić do mamy** (Reminders' own banner, 15:30) | **Call Mum** | alerts again since ADR-650 |
+| A4 | Doddy's reminder on a note | **Przypomnienie** · Kod do paczkomatu: 4471 / with text hidden: **Przypomnienie** · Notatka, którą chciałeś zobaczyć. Actions: Otwórz notatkę · Za godzinę · Jutro 9:00 · Zrobione | **Reminder** · Parcel locker code: 4471 / A note you asked to see again | exists (ADR-190), Time Sensitive since ADR-650 |
 | A5 | **New: "Important: ring like an alarm".** For what mustn't be missed (medicine, picking up a child, a deadline) | Ringing screen **Leki** · Zrobione · Za 10 min | **Medicine** · Done · In 10 min | idea |
 
 A5 by voice: "Przypomnij mi codziennie o 8 o lekach, i niech zadzwoni" → the card says "Zadzwoni jak budzik, także w trybie cichym". Needs an option on Doddy's reminders (an AlarmKit alarm with the note's label), a `ring` choice on `remind_me_about_note`, and the owner's yes on the live agent.
@@ -68,7 +68,7 @@ B1's counts are read on the iPhone. iOS doesn't promise the app time on Sunday n
 
 ## Order I'd build them in
 
-1. ADR-640 on a device first (its checklist), so what exists rings.
+1. ADR-650 on a device first (its checklist), so what exists rings.
 2. **A5** "ring like an alarm" for important reminders: the most direct answer to "no sound"; small (AlarmKit is in place).
 3. **B1** the Monday plan: the weekly reminder the owner asked for, made useful.
 4. **C2** the shop list: the place trigger exists for notes.
@@ -77,10 +77,10 @@ B1's counts are read on the iPhone. iOS doesn't promise the app time on Sunday n
 
 ## Owner's answers (24 Oct 2026)
 
-- **Build A5, then B1:** both are in code on `claude/notifications-sound-timers` (ADR-641, `docs/implementation/RINGING_REMINDERS_AND_WEEKLY_PLAN.md`); not compiled or seen on a device yet.
+- **Build A5, then B1:** both are in code on `claude/notifications-sound-timers` (ADR-651, `docs/implementation/RINGING_REMINDERS_AND_WEEKLY_PLAN.md`); not compiled or seen on a device yet.
 - **Quiet hours:** yes, 22:00 to 07:00, for Doddy's routines.
 - **One a day:** for notifications "out of nowhere" only. Timers and anything that is an action item always show. Built as: Doddy's own tip never comes on a day a routine already did.
-- **"1 i 3" (next):** a list's place reminder says how many things are left, and a real count-up stopwatch; both are in code on `claude/stopwatch-and-shop-list` (ADR-642, `docs/implementation/STOPWATCH_AND_SHOP_LIST.md`), not compiled or seen on a device.
+- **"1 i 3" (next):** a list's place reminder says how many things are left, and a real count-up stopwatch; both are in code on `claude/stopwatch-and-shop-list` (ADR-652, `docs/implementation/STOPWATCH_AND_SHOP_LIST.md`), not compiled or seen on a device.
 - **Sound (5), owner: "systemowy":** the system's own sounds. Notifications keep iOS's default sound, and timers and ringing reminders ring with the system alarm sound through AlarmKit. No custom sound is made or bundled.
 - **An errand's title on the Lock Screen (4), owner: "zrób jak trzeba" (left to me):** it stays out. The done push carries no words from the errand ("Gotowe. Wynik sprawy czeka w aplikacji."). Showing the title would mean putting it in the push payload, which the server and Apple's push service would then read, or building a notification service extension that fills it in on the phone; neither fits a change that can't be compiled or tried on a device here, and the current text already says where the result is. Open it again if the title becomes worth that cost.
 - **Live agent (24 Oct, owner: "2 tak"):** A5's `ring` and the three stopwatch tools are on the live agent (`voice-agent/README.md`). Not tried in a real conversation yet.

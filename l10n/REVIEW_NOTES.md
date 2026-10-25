@@ -114,17 +114,17 @@ Check first:
 - App labels quoted in English because the Polish app still shows them in English: "What leaves this iPhone", "Delete Doddy voice account", "Sign out of voice", "Ask again before sharing voice". Once the app translates them, the pages should use the Polish labels.
 - The Siri phrase is quoted from `l10n/pl_shortcuts.json` ("Zapytaj aplikację Doddy, co mam zapisane").
 
-## Timers ring through AlarmKit (ADR-640, 24 Oct 2026)
+## Timers ring through AlarmKit (ADR-650, 24 Oct 2026)
 
 - **The alarm permission prompt** (`NSAlarmKitUsageDescription`) now names timers: "Doddy sets an alarm or a timer only when you ask and tap Set alarm or Start…". The nine translations in `l10n/*_infoplist.json` were rewritten by the agent from the earlier ones, reusing each table's words for Set alarm, Start and Alarms. Not reviewed by a native speaker.
 - **Four Polish lines in `l10n/pl.json`:** the Start card's "It rings even in Silent mode or a Focus…" and the three timer button intents. Agent-written.
 - **Timer and focus notification text** is in DoddyCore (`TimerCopy`, Polish and English only, like the other notifications): "Czas minął", "Minutnik na 10 min skończył odliczanie.", "Koniec skupienia", "Minęło 25 min skupienia.", buttons "Zatrzymaj", "Powtórz", "Pauza", "Wznów". Agent-written; a Polish speaker should read them.
 
-## Ringing reminders, the weekly plan, quiet hours (ADR-641, 24 Oct 2026)
+## Ringing reminders, the weekly plan, quiet hours (ADR-651, 24 Oct 2026)
 
 Twenty-one new Polish lines in `l10n/pl.json`, agent-written: the "Ring like an alarm" switch and its notes ("Dzwoń jak budzik", "Dzwoni jak budzik, także w trybie cichym"), the weekly plan's screen and Settings section ("Plan na tydzień", "Twój tydzień\nprzed Tobą", "Nic zaplanowanego", "Prywatna notatka"), the quiet-hours sentence in Settings › Check-ins and reminders, and "Jutro". Notification and alarm words are in DoddyCore: "Nowy tydzień · Zerknąć, co Cię czeka?", "Za 10 min", "Zatrzymaj", "Przypomnienie Doddy'ego". The other eight languages show these in English until translated.
 
-## The stopwatch and a list's reminder at a place (ADR-642, 24 Oct 2026)
+## The stopwatch and a list's reminder at a place (ADR-652, 24 Oct 2026)
 
 Eleven new Polish lines in `l10n/pl.json`, agent-written: "Skupienie i stoper" (the ••• menu row that holds Focus and the stopwatch), "Stoper", "Stoper · włączony", "Liczy w górę, dopóki go nie zatrzymasz.", the label field's help line, "Włącz stoper", "Liczy w górę", "Gotowy, kiedy Ty", "Zatrzymany na %@", "Pauza", "Wznów". The other nine languages show these in English until reviewed.
 
