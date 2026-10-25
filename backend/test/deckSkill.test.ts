@@ -43,16 +43,38 @@ test("doddy-decks: the skill folder is one the Skills API takes (ADR-654)", () =
 test("doddy-decks: brand style only, no character and no pictures in the folder", () => {
   const everything = files(skillDir).map((file) => file.pathname.slice(skillDir.pathname.length));
   assert.deepEqual(everything, ["SKILL.md"]);
-  assert.match(skill, /Brand style only/);
+  assert.match(skill, /never carries Doddy the character/);
   assert.match(skill, /no stick figure, no mascot/);
   assert.ok(!/doddy_[a-z_]+\.png/.test(skill), "no art file is named");
 });
 
-// The skill is a default and a toolkit, not a fence: the request wins, and it offers slide shapes.
-test("doddy-decks: it says it is a default, that the request wins, and it offers a toolkit", () => {
+// Owner, 25 Oct 2026: "it should give skills and then the model decides what to build based on the
+// research and how to use colours … make it creative". So the skill teaches a process and a
+// vocabulary, and hands the design to the model; it is not a set of layouts.
+test("doddy-decks: creative direction, not templates: a process, a concept, a vocabulary", () => {
+  assert.match(skill, /does not give you layouts to copy/);
   assert.match(skill, /The request always wins/);
-  assert.match(skill, /## 4\. The toolkit/);
-  for (const shape of ["Panel row", "Timeline", "One big number", "A native chart", "statement slide"]) assert.ok(skill.includes(shape), shape);
+  for (const part of ["## 1. Think before you draw", "**Research.**", "**The concept.**", "signature move", "colour arc", "## 4. A vocabulary of moves", "Could this slide belong to a deck on any other topic?"]) {
+    assert.ok(skill.includes(part), part);
+  }
+});
+
+// Measured contrast (WCAG): orange FF6A00 on paper FFF7E9 is 2.7:1, below even the 3:1 for large text.
+// The skill must say it's for shapes only, and the ratios it states must be the real ones.
+test("doddy-decks: the contrast it states is measured, and orange on paper is never text", () => {
+  const lum = (hex: string) => {
+    const c = [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+    return 0.2126 * c[0]! + 0.7152 * c[1]! + 0.0722 * c[2]!;
+  };
+  const ratio = (a: string, b: string) => {
+    const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
+    return Math.round(((hi! + 0.05) / (lo! + 0.05)) * 10) / 10;
+  };
+  const stated: [string, string, string][] = [
+    ["171715", "FFF7E9", "16.9"], ["171715", "FF6A00", "6.3"], ["FF6A00", "171F29", "5.8"], ["655F56", "FFF7E9", "5.9"], ["A64B00", "FFF7E9", "5.4"], ["FF6A00", "FFF7E9", "2.7"],
+  ];
+  for (const [a, b, text] of stated) assert.equal(ratio(a, b).toFixed(1), text, `${a} on ${b}`);
+  assert.match(skill, /\*\*Orange on paper\*\* \| \*\*2\.7\*\* \| \*\*shapes only, never text/);
 });
 
 // The colours in the skill are Brand V2.2's (`CandidateColorRole`, light and dark), so a deck and
