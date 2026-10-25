@@ -60443,6 +60443,17 @@
         "pl": {
           "stringUnit": {
             "state": "translated",
+            "value": "Liczy"
+          }
+        }
+      }
+    },
+    "Running workout": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
             "value": "Bieg"
           }
         }

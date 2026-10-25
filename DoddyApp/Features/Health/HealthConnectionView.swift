@@ -341,7 +341,8 @@ enum HealthText {
 
     static func name(_ activity: WorkoutActivity) -> String {
         switch activity {
-        case .running: NSLocalizedString("Running", comment: "Workout kind")
+        // "Running" alone is the stopwatch's state ("Liczy" in Polish, ADR-652); a workout needs its own key.
+        case .running: NSLocalizedString("Running workout", comment: "Workout kind")
         case .walking: NSLocalizedString("Walking", comment: "Workout kind")
         case .hiking: NSLocalizedString("Hiking", comment: "Workout kind")
         case .cycling: NSLocalizedString("Cycling", comment: "Workout kind")

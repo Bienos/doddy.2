@@ -2132,7 +2132,7 @@
   "That's a lot of barcodes in a minute. Wait a moment and try again.": "To dużo kodów w minutę. Poczekaj chwilę i spróbuj ponownie.",
   "Open Food Facts couldn't be reached, so nothing was added. You can type the item instead.": "Nie udało się połączyć z Open Food Facts, więc nic nie zostało dodane. Możesz wpisać rzecz ręcznie.",
   "STOPWATCH": "STOPER",
-  "Running": "Bieg",
+  "Running": "Liczy",
   "Doddy can read": "Doddy może czytać",
   "Workouts from the last 7 days: kind, time, distance, pace, calories and average heart rate": "Treningi z ostatnich 7 dni: rodzaj, czas, dystans, tempo, kalorie i średnie tętno",
   "Last night's sleep: time asleep and its stages": "Sen z ostatniej nocy: czas snu i jego fazy",
@@ -2322,5 +2322,6 @@
   "Your body weight and a backpack": "Masa Twojego ciała i plecak",
   "Your goal": "Twój cel",
   "Your plan": "Twój plan",
-  "Your week": "Twój tydzień"
+  "Your week": "Twój tydzień",
+  "Running workout": "Bieg"
 }
