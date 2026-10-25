@@ -115,7 +115,7 @@ The hosted Mac build of steps 1 to 3 compiled the app (run 40106746382 on `d7349
   - The base's price watch also left two settings out of `secrets/manifest.json`, which this branch adds (`695b525`).
 - Messages opened from Settings over the Apple Health screen (not from Home) has not been seen; the persistent Doddy rides Home's Messages cover, and may not appear here.
 - **Nothing has run on a device:** the Health sheet, the reads, the numbers against the Health app's own, a night recorded by both a watch and the iPhone, an iPhone that is locked while the screen reads (it should say so), iPad.
-- **Signing the free-team project with HealthKit.** Apple's capability table lists HealthKit for the free Apple Developer account (read 24 Oct 2026). If Xcode still refuses, set `DODDY_APP_ENTITLEMENTS: ""` in `project-iphone.yml`; the screen then says this build can't use Health.
+- **The free-team project has no HealthKit** (owner, 25 Oct 2026, before merging): `make project-iphone` is back to no entitlements, and its Apple Health screen says this build can't use Health. The shipping project (`make project`) has HealthKit. To try Health on a free team, set `DODDY_APP_ENTITLEMENTS` to `Config/DoddyiPhone-HealthKit.entitlements` in `project-iphone.yml`: Apple's capability table lists HealthKit for the free Apple Developer account (read 24 Oct 2026), but signing it has not been tried.
 - No UI test for the Apple Health screen. The training plan's UI test passes on the simulator; nobody has used the screens on a device.
 
 ## Privacy and safety
