@@ -1,4 +1,5 @@
 import DoddyCore
+import QuickLook
 import SwiftUI
 import UIKit
 
@@ -21,6 +22,8 @@ struct MessagesView: View {
     @AppStorage(PreferenceKey.assistantUseNotes) private var useNotes = true
     @State private var model: MessagesModel
     @State private var confirmingDelete = false
+    /// Opens a file bubble in Quick Look (ADR-654).
+    @State private var files = ThreadFileOpener()
     @FocusState private var inputFocused: Bool
 
     init(repository: any MessageThreadRepository, openSettings: @escaping () -> Void = {}) {
@@ -64,6 +67,7 @@ struct MessagesView: View {
                     }
                 }
             }
+            .quickLookPreview($files.preview)
             .confirmationDialog("Delete this conversation?", isPresented: $confirmingDelete, titleVisibility: .visible) {
                 Button("Delete conversation", role: .destructive) {
                     Task { await model.deleteConversation() }
@@ -369,11 +373,12 @@ struct MessagesView: View {
         .accessibilityElement(children: .contain)
     }
 
-    /// The file bubble. Its link opens the file in Safari (Quick Look and Share); until the file is ready its page
-    /// says so and checks again by itself, so the thread holds no status.
+    /// The file bubble. A tap downloads the file and shows it in Quick Look, whose Share button opens it in Keynote
+    /// or saves it to Files (ADR-654). When that can't be done, its link opens in Safari instead; until the file is
+    /// ready that page says so and checks again by itself, so the thread holds no status.
     private func fileBubble(_ document: ThreadDocument) -> some View {
         Button {
-            UIApplication.shared.open(document.url)
+            Task { await files.open(document) }
         } label: {
             HStack(spacing: 12) {
                 Image(systemName: Self.icon(forKind: document.kind))
@@ -392,6 +397,7 @@ struct MessagesView: View {
                     .foregroundStyle(Theme.secondaryText)
                 }
                 Spacer(minLength: 0)
+                if files.opening == document.url { ProgressView() }
             }
             .padding(12)
             .frame(maxWidth: .infinity, alignment: .leading)

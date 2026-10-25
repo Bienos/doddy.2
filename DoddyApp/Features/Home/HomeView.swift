@@ -175,8 +175,7 @@ struct HomeView: View {
             }
         }
         .frame(minHeight: 44)
-        // Below the island's strip while he talks (ADR-596, ADR-653).
-        .padding(.top, conversation.live == nil ? 8 : IslandExtension.headerClearance)
+        .padding(.top, 8)
     }
 
     /// One of Home's sheets or covers is up, so Home's own Mute and End are out of sight.

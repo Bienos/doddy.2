@@ -112,6 +112,48 @@ enum IslandSceneChecks {
         expect(waves(.ended) == .none, "no waves once ended")
         expect(waves(.speaking, style: .orbit) == .none, "waves are Whole Doddy's only")
 
+        // ADR-653: his waves slide on the island only while he speaks, with the beat the app sent.
+        func beatScene(_ status: State.Status, muted: Bool = false, stale: Bool = false,
+                       style: IslandStyle = .wholeDoddy, beat: Int? = 7) -> IslandScene {
+            var s = State(status: status, isMuted: muted)
+            s.islandStyle = style
+            s.voiceBeat = beat
+            return s.islandScene(isStale: stale)
+        }
+        expect(beatScene(.speaking).wavesBeat == 7, "speaking waves carry the beat")
+        expect(beatScene(.listening).wavesBeat == nil, "listening waves stand still")
+        expect(beatScene(.speaking, muted: true).wavesBeat == nil, "muted: still")
+        expect(beatScene(.speaking, stale: true).wavesBeat == nil, "stale: still")
+        expect(beatScene(.speaking, style: .orbit).wavesBeat == nil, "other styles: no beat")
+        expect(beatScene(.speaking, beat: nil).wavesBeat == nil, "no beat sent: still")
+        var speaking = State(status: .speaking, isMuted: false)
+        speaking.islandStyle = .wholeDoddy
+        expect(speaking.wavesMove, "the app beats while he speaks")
+        var listening = speaking
+        listening.status = .listening
+        expect(!listening.wavesMove, "no beats while he listens")
+        var orbit = speaking
+        orbit.islandStyle = .orbit
+        expect(!orbit.wavesMove, "no beats for a style without waves")
+        var withMoment = speaking
+        withMoment.moment = .noteWaiting
+        expect(!withMoment.wavesMove, "no beats while a moment is on the island")
+        // Content from a build before the beat still decodes, with no beat.
+        if let old = #"{"status":"speaking","isMuted":false}"#.data(using: .utf8),
+           let decoded = try? JSONDecoder().decode(State.self, from: old) {
+            expect(decoded.voiceBeat == nil, "old content: no beat")
+        } else {
+            expect(false, "old content decodes")
+        }
+        var beating = speaking
+        beating.voiceBeat = 3
+        if let encoded = try? JSONEncoder().encode(beating),
+           let back = try? JSONDecoder().decode(State.self, from: encoded) {
+            expect(back.voiceBeat == 3, "the beat survives encoding")
+        } else {
+            expect(false, "beat round trip")
+        }
+
         // Connecting is not live (no orange before the conversation is up).
         expect(!State(status: .connecting, isMuted: false).islandScene(isStale: false).live, "connecting not live")
 

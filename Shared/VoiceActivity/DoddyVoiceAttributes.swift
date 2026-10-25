@@ -79,6 +79,11 @@ struct DoddyVoiceAttributes: ActivityAttributes {
         /// use it too (ADR-617); the widget extension can't see the app's own setting. Nil: the
         /// iPhone's language.
         var language: String?
+        /// While Doddy speaks, a count the app raises about once a second, so the island's waves
+        /// slide on one stretch per beat (owner, 25 Oct 2026, ADR-653): a Live Activity can't
+        /// animate on its own, only from one update to the next. Nil when his waves stand still.
+        /// A counter only: nothing about what is said, and nothing from the microphone.
+        var voiceBeat: Int?
     }
 
     /// When the activity started: the conversation, or "Hey Doddy" listening (ADR-254).
@@ -129,7 +134,7 @@ enum IslandResult: String, Codable, Hashable, Sendable, CaseIterable {
 
 extension DoddyVoiceAttributes.ContentState {
     private enum CodingKeys: String, CodingKey {
-        case status, isMuted, savedCount, endedAt, moment, islandStyle, greeting, conversationStartedAt, language
+        case status, isMuted, savedCount, endedAt, moment, islandStyle, greeting, conversationStartedAt, language, voiceBeat
     }
 
     /// Content written by an older build (without `savedCount`, `endedAt`, `moment`,
@@ -146,6 +151,7 @@ extension DoddyVoiceAttributes.ContentState {
         greeting = try container.decodeIfPresent(String.self, forKey: .greeting)
         conversationStartedAt = try container.decodeIfPresent(Date.self, forKey: .conversationStartedAt)
         language = try? container.decodeIfPresent(String.self, forKey: .language)
+        voiceBeat = try? container.decodeIfPresent(Int.self, forKey: .voiceBeat)
     }
 
     /// "Hey Doddy" listening (ADR-254): the iPhone waits for the wake word; no conversation.

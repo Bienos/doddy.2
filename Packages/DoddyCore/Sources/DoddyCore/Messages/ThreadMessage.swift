@@ -27,6 +27,19 @@ public struct ThreadDocument: Equatable, Sendable, Codable {
         self.init(url: document.url, name: document.name, kind: document.kind)
     }
 
+    /// The file as Doddy's server knows it, for opening it inside the app (ADR-654): the 24-character
+    /// ID from the link's path (`/v1/documents/<id>`), which the app's own session can ask for at
+    /// `/v1/web/documents/<id>/file`. Nil when the link isn't one of those, so the caller opens the
+    /// link itself. The dates are not the server's: they are not used to download.
+    public func madeDocument(now: Date) -> MadeDocument? {
+        let parts = url.path.split(separator: "/", omittingEmptySubsequences: true).map(String.init)
+        guard url.scheme?.lowercased() == "https", parts.count == 3, parts[0] == "v1", parts[1] == "documents",
+              MadeDocument.isID(parts[2]) else { return nil }
+        return MadeDocument(
+            id: parts[2], name: name, kind: MadeDocument.Kind(rawValue: kind) ?? .file, status: .ready,
+            createdAt: now, deleteAfter: now, sizeBytes: nil)
+    }
+
     /// For the bubble: "Deck", "Document", …
     public var label: String {
         switch kind {

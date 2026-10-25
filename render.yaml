@@ -113,6 +113,10 @@ services:
         sync: false
       - key: DODDY_CLAUDE_MODEL
         value: claude-sonnet-5-5
+      # ADR-654: the id `POST /v1/skills` returned for backend/skills/doddy-decks (see docs/implementation/DECKS.md).
+      # Empty: decks use Anthropic's pptx skill alone.
+      - key: DODDY_DECK_SKILL_ID
+        sync: false
       # ADR-587: Ask Doddy questions per user and for the whole server per UTC day (Doddy pays).
       - key: DODDY_LIMIT_USER_DAILY_ASK
         value: "50"

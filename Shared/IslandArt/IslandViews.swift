@@ -463,9 +463,27 @@ struct IslandCompactTrailingView: View {
     let scene: IslandScene
     let startedAt: Date
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// One beat's slide: a little under the app's beat (`VoiceLiveActivity.speakingBeatEvery`),
+    /// and inside the two seconds iOS gives a Live Activity animation.
+    static let beatSlide: Double = 0.9
+
     var body: some View {
         // ADR-596: his waves while he hears you or talks; the sign otherwise.
-        if scene.waves != .none {
+        if let beat = scene.wavesBeat, !reduceMotion {
+            // ADR-653: while he talks they travel away from his head (he is on the leading side), one
+            // stretch per beat the app sends, as the waves in Home's pill do. The two stretches meet
+            // on the middle line, so the slide has no seam.
+            ZStack {
+                IslandWavesView(kind: .line, live: scene.live)
+                    .id(beat)
+                    .transition(.push(from: .leading))
+            }
+            .frame(width: 42, height: 22)
+            .clipped()
+            .animation(.linear(duration: Self.beatSlide), value: beat)
+        } else if scene.waves != .none {
             IslandWavesView(kind: .line, live: scene.live)
                 .frame(width: 42, height: 22)
         } else {

@@ -42,4 +42,30 @@ final class ThreadDocumentTests: XCTestCase {
         let older = #"{"id":"\#(UUID().uuidString)","sender":"doddy","text":"x","createdAt":0,"delivery":"sent","basis":"general","noteIDs":[],"notesSent":0,"notesSearchFailed":false}"#
         XCTAssertNil(try JSONDecoder().decode(ThreadMessage.self, from: Data(older.utf8)).document)
     }
+
+    /// ADR-654: a file bubble opens inside the app (downloaded with the app's own session, shown with
+    /// Quick Look and its Share button) when its link names a document; anything else opens the link.
+    func testAFileBubbleKnowsWhichServerDocumentItIs() throws {
+        let id = "AbCdEfGhIjKlMnOpQrStUvWx"
+        let link = try XCTUnwrap(URL(string: "https://doddy.example/v1/documents/\(id)?exp=1792000000&sig=abc"))
+        let made = try XCTUnwrap(ThreadDocument(url: link, name: "Warszawa.pptx", kind: "deck").madeDocument(now: t0))
+        XCTAssertEqual(made.id, id)
+        XCTAssertEqual(made.kind, .deck)
+        XCTAssertEqual(made.safeFileName, "Warszawa.pptx")
+        XCTAssertTrue(made.canOpen)
+        XCTAssertEqual(ThreadDocument(url: link, name: "x", kind: "text").madeDocument(now: t0)?.kind, .text)
+        XCTAssertEqual(ThreadDocument(url: link, name: "x", kind: "odd").madeDocument(now: t0)?.kind, .file, "an unknown kind is just a file")
+
+        for bad in [
+            "http://doddy.example/v1/documents/\(id)",
+            "https://doddy.example/v1/documents/short",
+            "https://doddy.example/v1/documents/\(id)/extra",
+            "https://doddy.example/v1/web/documents/\(id)",
+            "https://doddy.example/documents/\(id)",
+            "https://doddy.example/v1/documents/AbCdEfGhIjKlMnOpQrSt..x",
+        ] {
+            let url = try XCTUnwrap(URL(string: bad))
+            XCTAssertNil(ThreadDocument(url: url, name: "x", kind: "deck").madeDocument(now: t0), bad)
+        }
+    }
 }

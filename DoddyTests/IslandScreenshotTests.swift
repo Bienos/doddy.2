@@ -99,7 +99,7 @@ final class IslandScreenshotTests: XCTestCase {
     /// The waves are 2 pt or more (owner: the 1.3 pt lines were too thin), and a thick line on the
     /// narrow compact island keeps at least six line widths per wave.
     func testTheWavesAreBoldAndStayWavesWhenNarrow() {
-        for kind in [IslandWavesView.Kind.line, .full, .speech, .across] {
+        for kind in [IslandWavesView.Kind.line, .across, .speech] {
             for wave in IslandWavesView.waves(kind) {
                 XCTAssertGreaterThanOrEqual(wave.width, 2, "\(kind)")
             }
@@ -110,32 +110,46 @@ final class IslandScreenshotTests: XCTestCase {
         XCTAssertEqual(IslandWaveLine.waveCount(main, width: 12), 12 / 18, accuracy: 0.001, "fewer, never a zigzag")
     }
 
-    /// ADR-653: on Home the island pushes out to both sides. The strip starts as the neck around
-    /// the camera and spreads to 12 pt from each edge without leaving its drawing, and its waves
-    /// stay inside the strip and keep every wave across it.
-    func testHomeStripPushesOutToBothSidesWithWavesAcrossIt() {
-        XCTAssertEqual(IslandStripShape.halfWidth(393, spread: 0), 75, "the neck around the camera")
-        XCTAssertEqual(IslandStripShape.halfWidth(393, spread: 1), 393 / 2 - 12, "almost to both edges")
-        XCTAssertEqual(IslandStripShape.halfWidth(100, spread: 1), 50, "never narrower than the neck, never wider than the screen")
-        let top: CGFloat = 59
-        for depth in [IslandExtension.depth(.listening), IslandExtension.depth(.speaking)] {
-            XCTAssertLessThan(depth, IslandExtension.headerClearance, "the header stays below the strip")
-            for step in 0...10 {
-                let spread = CGFloat(step) / 10
-                let rect = CGRect(x: 0, y: 0, width: 393, height: top + depth)
-                let bounds = IslandStripShape(top: top, depth: depth, spread: spread).path(in: rect).boundingRect
-                XCTAssertGreaterThanOrEqual(bounds.minX, -0.01, "spread \(spread)")
-                XCTAssertLessThanOrEqual(bounds.maxX, 393.01, "spread \(spread)")
-                XCTAssertLessThanOrEqual(bounds.maxY, top + depth + 0.01, "spread \(spread)")
-                XCTAssertEqual(bounds.width, 2 * IslandStripShape.halfWidth(393, spread: spread), accuracy: 0.5)
+    /// ADR-653: while he talks the compact island slides its waves on one stretch per beat. Both
+    /// ends of every line sit on the middle line, so one stretch meets the next with no seam.
+    func testTheCompactWavesMeetOnTheMiddleLineSoTheSlideHasNoSeam() {
+        for wave in IslandWavesView.waves(.line) {
+            for phase in stride(from: 0.0, through: 6.0, by: 0.5) {
+                let line = IslandWaveLine(wave: wave, shape: .envelope(floor: 0), phase: phase)
+                XCTAssertEqual(line.y(at: 0, waves: wave.frequency), 0.5, accuracy: 0.0001)
+                XCTAssertEqual(line.y(at: 1, waves: wave.frequency), 0.5, accuracy: 0.0001)
             }
         }
-        for wave in IslandWavesView.waves(.across) {
-            let line = IslandWaveLine(wave: wave, shape: .envelope(floor: 0.35), phase: 0)
-            XCTAssertEqual(IslandWaveLine.waveCount(wave, width: 347), wave.frequency, "every wave across the strip")
-            for step in 0...200 {
-                XCTAssertTrue((0...1).contains(line.y(at: Double(step) / 200, waves: wave.frequency)), "inside the strip at \(step)")
-            }
+        XCTAssertLessThan(IslandCompactTrailingView.beatSlide, VoiceLiveActivity.speakingBeatEvery, "a slide ends before the next beat")
+        XCTAssertLessThanOrEqual(IslandCompactTrailingView.beatSlide, 2, "iOS animates a Live Activity change for at most two seconds")
+    }
+
+    /// ADR-653: on Home the island pushes out to both sides at the island's own height, as iPhones
+    /// draw it for a call: from the camera's width to the compact island's, a little wider while he
+    /// speaks, never covering the clock or the battery and never below the status bar.
+    func testHomeIslandPushesOutToBothSidesAtItsOwnHeight() {
+        for screen in [375.0, 393, 402, 430, 440] as [CGFloat] {
+            let atRest = IslandPillGeometry.width(screen: screen, spread: 0, speaking: false)
+            let listening = IslandPillGeometry.width(screen: screen, spread: 1, speaking: false)
+            let speaking = IslandPillGeometry.width(screen: screen, spread: 1, speaking: true)
+            XCTAssertEqual(atRest, IslandPillGeometry.camera, "starts as the camera's own island")
+            XCTAssertGreaterThan(listening, atRest, "\(screen) pushes out")
+            XCTAssertGreaterThan(speaking, listening, "\(screen) a little wider while he speaks")
+            XCTAssertLessThanOrEqual((screen - speaking) / 2, screen / 2 - IslandPillGeometry.camera / 2)
+            XCTAssertGreaterThanOrEqual((screen - speaking) / 2, 66, "\(screen) the clock and the battery stay clear")
+            XCTAssertEqual(IslandPillGeometry.width(screen: screen, spread: 2, speaking: true), speaking, "spread is clamped")
+        }
+        XCTAssertEqual(IslandPillGeometry.top + IslandPillGeometry.height, 48, "it ends above the status bar's bottom, so Home's header needs no extra room")
+        XCTAssertEqual(IslandPillGeometry.width(screen: 100, spread: 1, speaking: true), IslandPillGeometry.camera, "never narrower than the camera")
+        // His waves are the compact island's own two lines, at the same density (about one wave in 21 pt),
+        // so what you see inside Doddy is what the island shows outside it.
+        let inside = IslandWavesView.waves(.across), outside = IslandWavesView.waves(.line)
+        XCTAssertEqual(inside.count, outside.count)
+        let pillWaves = IslandPillGeometry.width(screen: 393, spread: 1, speaking: false) - IslandPillGeometry.height
+        for (a, b) in zip(inside, outside) {
+            XCTAssertEqual(a.frequency / pillWaves, b.frequency / 42, accuracy: 0.0015, "the same waves per point")
+            XCTAssertEqual(a.width, b.width)
+            XCTAssertEqual(a.amplitude, b.amplitude)
         }
     }
 

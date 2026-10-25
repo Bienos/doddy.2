@@ -231,7 +231,7 @@ enum MadeDocumentsClientFactory {
     static func make() -> (any MadeDocumentsClient)? {
         // The token is used only with the server that issued it (`BoundSessionToken`).
         guard let url = DeviceSession.serverURL(), KeychainSessionStore.read()?.token(for: url) != nil else { return nil }
-        return BackendMadeDocumentsClient(baseURL: url, boundToken: { KeychainSessionStore.read() }, transport: URLSessionTransport.shared)
+        return BackendMadeDocumentsClient(baseURL: url, boundToken: { KeychainSessionStore.read() }, transport: URLSessionTransport.documents)
     }
 
     /// After the server said `unauthenticated`: a fresh device session, then the client again.

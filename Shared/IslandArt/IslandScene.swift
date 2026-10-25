@@ -141,6 +141,9 @@ struct IslandScene: Equatable, Sendable {
     var pose: IslandPose?
     /// Whole Doddy's waves (ADR-596).
     var waves: IslandWaveState = .none
+    /// While he speaks, the beat the app last sent: the compact island slides his waves on by one
+    /// stretch each time it changes (ADR-653). Nil: they stand still.
+    var wavesBeat: Int?
     /// Something waits for the user in the conversation, or is ready there: the expanded island's
     /// main button is Show (`doddy://conversation`), which opens it (ADR-616). Opening approves nothing.
     var showsInDoddy = false
@@ -164,8 +167,15 @@ extension DoddyVoiceAttributes.ContentState {
         if islandStyle == .wholeDoddy {
             scene.pose = wholeDoddyPose(stale: stale)
             scene.waves = wholeDoddyWaves(stale: stale)
+            scene.wavesBeat = scene.waves == .speaking ? voiceBeat : nil
         }
         return scene
+    }
+
+    /// The island's waves slide while this state shows (ADR-653): only Whole Doddy's waves while
+    /// he speaks. The app sends beats only then, so it doesn't update the island for nothing.
+    var wavesMove: Bool {
+        islandStyle == .wholeDoddy && wholeDoddyWaves(stale: false) == .speaking
     }
 
     /// Whole Doddy's waves for this state (ADR-596): only from real provider states, only while

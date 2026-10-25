@@ -2,9 +2,10 @@ import SwiftUI
 
 /// Doddy's orange waves (owner, 22 Oct 2026, ADR-596; Figma file `yqoQlkN6BpevFGW3ySnNJU`, page
 /// "Wyspa i wiadomości"): sine lines that say he hears you (`.line`, beside his status) or that he
-/// is talking (`.speech` on the expanded island, `.across` in Home's strip, ADR-653). `phase` moves
-/// them along. The island draws them still, because a Live Activity can't run an animation of
-/// its own between updates; the app's island extension on Home moves them (`IslandExtension`).
+/// is talking (`.speech` on the expanded island). `phase` moves them along. A Live Activity can't
+/// run an animation of its own between updates, so while he talks the compact island slides them
+/// on one stretch per beat the app sends (ADR-653), and Home moves them under him
+/// (`HomeVoiceWaves`).
 ///
 /// Bolder since 24 Oct (owner: the lines were too thin and rendered poorly, ADR-615): fewer lines,
 /// 2 to 3 pt wide instead of 1.3 to 2.2, and drawn from a point every half point instead of every
@@ -15,16 +16,13 @@ struct IslandWavesView: View {
     enum Kind: Sendable {
         /// A band of two lines.
         case line
-        /// Lines across the whole drawing (Home's tall extension until ADR-653 made it a strip).
-        case full
+        /// The same two lines, with as many waves per point as the compact island's (about one in
+        /// 21 pt), for the pill Home pushes out from the camera while he talks (ADR-653): what you
+        /// see inside Doddy is what the island shows outside it.
+        case across
         /// A livelier band: five lines that start together at the leading edge, fade in and
         /// spread out to the right, his voice coming out of him on the expanded island.
         case speech
-        /// Three lines along the short strip the island pushes out to both sides on Home while he
-        /// talks (owner, 25 Oct 2026, ADR-653: "waves across the whole thing"). Many short waves,
-        /// so a strip almost as wide as the screen still reads as a voice, with height right to
-        /// its ends.
-        case across
     }
 
     let kind: Kind
@@ -63,22 +61,18 @@ struct IslandWavesView: View {
 
     private var shape: IslandWaveLine.Spread {
         switch kind {
-        case .line: .envelope(floor: 0)
-        case .full: .envelope(floor: 0.45)
+        case .line, .across: .envelope(floor: 0)
         case .speech: .fromLeading(centre: Self.speechCentre)
-        case .across: .envelope(floor: 0.35)
         }
     }
 
-    /// The lines, in fractions of the drawing's height: two for `.line`, five for `.speech`,
-    /// seven for `.full`, three for `.across`. Built once: the animated version asks for them on
-    /// every frame (ADR-604).
+    /// The lines, in fractions of the drawing's height: two for `.line` and `.across`, five for `.speech`.
+    /// Built once: the animated version asks for them on every frame (ADR-604).
     static func waves(_ kind: Kind) -> [IslandWave] {
         switch kind {
         case .line: lineWaves
-        case .full: fullWaves
-        case .speech: speechWaves
         case .across: acrossWaves
+        case .speech: speechWaves
         }
     }
 
@@ -87,20 +81,12 @@ struct IslandWavesView: View {
         IslandWave(amplitude: 0.18, frequency: 3, offset: 1.9, rise: 0, width: 2, opacity: 0.5),
     ]
 
-    /// Lighter at the top; strongest at the bottom.
-    private static let fullWaves: [IslandWave] = (0..<7).map { i in
-        let n = Double(i)
-        return IslandWave(amplitude: 0.10 + 0.012 * n, frequency: 1.4 + 0.3 * n, offset: 0.9 * n,
-                          rise: (n - 3) * 0.10, width: 2.2, opacity: 0.3 + 0.1 * n)
+    /// `lineWaves` with 4.5 times the waves: 2 and 3 in 42 pt become 9 and 13 in about 190 pt.
+    private static let acrossWaves: [IslandWave] = lineWaves.map { wave in
+        var wave = wave
+        wave.frequency *= 4.5
+        return wave
     }
-
-    /// One strong line and two lighter ones that cross it, about one wave every 60 pt on a
-    /// 370 pt strip.
-    private static let acrossWaves: [IslandWave] = [
-        IslandWave(amplitude: 0.30, frequency: 6, offset: 0, rise: 0, width: 3, opacity: 1),
-        IslandWave(amplitude: 0.22, frequency: 8, offset: 1.7, rise: 0, width: 2, opacity: 0.55),
-        IslandWave(amplitude: 0.16, frequency: 5, offset: 3.4, rise: 0, width: 2, opacity: 0.35),
-    ]
 
     /// The strongest in the middle; each ends up a little above or below it.
     private static let speechWaves: [IslandWave] = [

@@ -219,7 +219,9 @@ export class AnthropicClaudeProvider implements ClaudeProvider {
       return { name: fileName(args.title, info.ext), mime: info.mime, bytes: Buffer.from(text, "utf8"), summary: "" };
     }
 
-    const skills = [{ type: "anthropic", skill_id: info.skill, version: "latest" }];
+    // Decks also get Doddy's own skill (ADR-654): his colours, type and the one place his art may appear.
+    const skills: { type: string; skill_id: string; version: string }[] = [{ type: "anthropic", skill_id: info.skill, version: "latest" }];
+    if (args.kind === "deck" && this.settings.deckSkillId) skills.push({ type: "custom", skill_id: this.settings.deckSkillId, version: "latest" });
     const tools = [{ type: "code_execution_20250825", name: "code_execution" }];
     const messages: { role: "user" | "assistant"; content: unknown }[] = [
       {

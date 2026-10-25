@@ -1,17 +1,21 @@
 import SwiftUI
 import UIKit
 
-/// While Doddy talks on Home (ADR-596, reshaped by ADR-653): iOS doesn't show Doddy's own island
-/// while Doddy is on screen, so Home draws one. Black around the camera, then a short strip under
-/// the status bar that the island pushes out to both sides, almost to the edges of the screen, with
-/// his orange waves across the whole of it (owner, 25 Oct 2026: "a small push to the sides with
-/// waves across the whole thing", replacing ADR-596's tall black drop). The strip is a little
-/// deeper while he talks than while he hears you; a still grey line while he connects or is muted.
-/// On iPhones without a notch or island (a top inset under 44 pt) it isn't drawn: it would hang
-/// from nothing.
+/// While Doddy talks on Home (ADR-596, redone by ADR-653): iOS doesn't show Doddy's own island
+/// while Doddy is on screen, so Home draws the island's own footprint and moves it the way the
+/// iPhone does for a call or a recording: the same black pill, the camera's height (37 pt, from
+/// 11 pt below the top), pushed out to both sides with a spring, with his orange waves across the
+/// whole of it. They pass behind the camera, so what you see is a wave on each side that is one
+/// wave. It does not drop below the status bar and does not cover the clock or the battery.
+///
+/// While he speaks the waves move; while he hears you they are one still orange line; while he
+/// connects, works or is muted a still grey one. On iPhones without an island (a top inset under
+/// 51 pt) it isn't drawn: it would hang from nothing. Apple's guidance is to add nothing to an app
+/// that draws attention to the Dynamic Island; this is the owner's decision (25 Oct 2026), kept
+/// decorative: no hit testing, hidden from VoiceOver.
 ///
 /// The waves move with the clock only (`TimelineView`), not with sound: nothing here reads the
-/// microphone. Under Reduce Motion they stand still and the strip doesn't spread out.
+/// microphone. Under Reduce Motion they stand still and the pill doesn't spring.
 struct IslandExtension: View {
     enum Look: Equatable {
         case listening, speaking, quiet
@@ -19,13 +23,8 @@ struct IslandExtension: View {
 
     let look: Look
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    /// 0 when it appears (a drop under the camera), 1 once it has pushed out to both sides.
+    /// 0 when it appears (the island as it is), 1 once it has pushed out to both sides.
     @State private var spread: CGFloat = 0
-
-    /// How far the strip reaches below the status bar.
-    static func depth(_ look: Look) -> CGFloat { look == .speaking ? 28 : 22 }
-    /// What Home leaves above its header while he talks: the deepest strip and a little air.
-    static let headerClearance: CGFloat = 38
 
     private static var topInset: CGFloat {
         let scene = UIApplication.shared.connectedScenes.first { $0.activationState == .foregroundActive } as? UIWindowScene
@@ -33,114 +32,65 @@ struct IslandExtension: View {
     }
 
     var body: some View {
-        let top = Self.topInset
-        if top >= 44 {
-            let depth = Self.depth(look)
+        if Self.topInset >= IslandPillGeometry.minimumTopInset {
             GeometryReader { geometry in
-                let width = geometry.size.width
-                let half = IslandStripShape.halfWidth(width, spread: spread)
-                ZStack(alignment: .topLeading) {
-                    IslandStripShape(top: top, depth: depth, spread: spread)
+                let width = IslandPillGeometry.width(screen: geometry.size.width, spread: spread, speaking: look == .speaking)
+                ZStack {
+                    Capsule(style: .continuous)
                         .fill(Color.black)
                     waves
-                        // Inside the rounded ends, with room above and below the lines.
-                        .frame(width: max(0, 2 * half - depth), height: max(0, depth - 6))
-                        .position(x: width / 2, y: top + depth / 2)
+                        // Clear of the rounded ends; the middle is the camera, which is black too.
+                        .padding(.horizontal, IslandPillGeometry.height / 2)
+                        .padding(.vertical, 6)
                 }
+                .frame(width: width, height: IslandPillGeometry.height)
+                .position(x: geometry.size.width / 2, y: IslandPillGeometry.top + IslandPillGeometry.height / 2)
+                .animation(reduceMotion ? nil : .spring(response: 0.45, dampingFraction: 0.82), value: width)
             }
-            .frame(height: top + depth)
+            .frame(height: IslandPillGeometry.top + IslandPillGeometry.height)
             .frame(maxWidth: .infinity)
-            .animation(reduceMotion ? nil : .spring(response: 0.4, dampingFraction: 0.8), value: look)
             .ignoresSafeArea(edges: .top)
             .allowsHitTesting(false)
             .accessibilityHidden(true)
-            .onAppear {
-                if reduceMotion {
-                    spread = 1
-                } else {
-                    withAnimation(.spring(response: 0.55, dampingFraction: 0.78)) { spread = 1 }
-                }
-            }
+            .onAppear { spread = 1 }
         }
     }
 
     @ViewBuilder
     private var waves: some View {
         let live = look != .quiet
-        if reduceMotion || !live {
+        if reduceMotion || look != .speaking {
             IslandWavesView(kind: .across, live: live)
         } else {
             // One trip of the waves every 1.2 s (Figma "Jak ruszają się fale"). Capped at 30
             // frames a second like Doddy's breathing (ADR-604).
             TimelineView(.animation(minimumInterval: 1.0 / 30)) { context in
                 let seconds = context.date.timeIntervalSinceReferenceDate
-                IslandWavesView(kind: .across, phase: -seconds * 2 * .pi / 1.2, live: live)
+                IslandWavesView(kind: .across, phase: -seconds * 2 * .pi / 1.2, live: true)
             }
         }
     }
 }
 
-/// The island pushed out to both sides (ADR-653): black from the top of the screen around the
-/// camera (the neck, narrow enough to leave the clock and the battery uncovered), then a strip from
-/// the bottom of the status bar, `depth` deep, rounded at both ends, joined to the neck by two
-/// small inward curves. `spread` 0 is the neck alone with a rounded bottom; 1 is the whole strip.
-struct IslandStripShape: Shape {
-    /// The status bar's height: the strip starts under it.
-    var top: CGFloat
-    var depth: CGFloat
-    var spread: CGFloat
+/// The island's footprint, in points, as iPhones with a Dynamic Island draw it. The width is the
+/// compact island's: about 230 pt on a 393 pt screen, with the clock and the battery clear on both
+/// sides, and a little wider while he speaks.
+enum IslandPillGeometry {
+    /// From the top of the screen to the island (iPhone 15 Pro: 11 pt).
+    static let top: CGFloat = 11
+    static let height: CGFloat = 37
+    /// The camera's own width (iPhone 15 Pro: about 126 pt): the pill never gets narrower.
+    static let camera: CGFloat = 126
+    /// Smaller than this, a phone has a notch or no island, and nothing is drawn.
+    static let minimumTopInset: CGFloat = 51
+    /// Each side of the pill, as a share of the screen's width, while he hears you and while he
+    /// speaks. The clock and the battery sit in the rest.
+    static let listeningShare: CGFloat = 0.585
+    static let speakingShare: CGFloat = 0.62
 
-    /// Around the camera (the island is about 126 pt wide), clear of the clock and the battery.
-    static let neck: CGFloat = 150
-    /// From each edge of the screen to the end of the strip.
-    static let margin: CGFloat = 12
-    /// The inward curve where the neck meets the strip.
-    static let shoulder: CGFloat = 10
-
-    var animatableData: AnimatablePair<CGFloat, CGFloat> {
-        get { AnimatablePair(depth, spread) }
-        set {
-            depth = newValue.first
-            spread = newValue.second
-        }
-    }
-
-    /// Half the strip's width in a drawing `width` wide: half the neck at `spread` 0, reaching to
-    /// `margin` from each edge at 1. Never narrower than the neck.
-    static func halfWidth(_ width: CGFloat, spread: CGFloat) -> CGFloat {
-        let neckHalf = min(neck, width) / 2
-        let full = max(neckHalf, width / 2 - margin)
-        return neckHalf + (full - neckHalf) * min(1, max(0, spread))
-    }
-
-    func path(in rect: CGRect) -> Path {
-        let centre = rect.midX
-        let neckHalf = min(Self.neck, rect.width) / 2
-        let half = Self.halfWidth(rect.width, spread: spread)
-        let radius = max(0, min(depth / 2, half))
-        // The shoulders and the strip's upper corners grow only as the strip gets wider than the
-        // neck, so the outline never folds back on itself while it spreads.
-        let shoulder = min(Self.shoulder, max(0, half - neckHalf - radius))
-        let upper = max(0, min(radius, half - neckHalf - shoulder))
-        let strip = rect.minY + top
-        let bottom = strip + depth
-        let left = centre - half
-        let right = centre + half
-
-        var path = Path()
-        path.move(to: CGPoint(x: centre - neckHalf, y: rect.minY))
-        path.addLine(to: CGPoint(x: centre + neckHalf, y: rect.minY))
-        path.addLine(to: CGPoint(x: centre + neckHalf, y: strip - shoulder))
-        path.addQuadCurve(to: CGPoint(x: centre + neckHalf + shoulder, y: strip),
-                          control: CGPoint(x: centre + neckHalf, y: strip))
-        path.addArc(tangent1End: CGPoint(x: right, y: strip), tangent2End: CGPoint(x: right, y: bottom), radius: upper)
-        path.addArc(tangent1End: CGPoint(x: right, y: bottom), tangent2End: CGPoint(x: left, y: bottom), radius: radius)
-        path.addArc(tangent1End: CGPoint(x: left, y: bottom), tangent2End: CGPoint(x: left, y: strip), radius: radius)
-        path.addArc(tangent1End: CGPoint(x: left, y: strip), tangent2End: CGPoint(x: centre, y: strip), radius: upper)
-        path.addLine(to: CGPoint(x: centre - neckHalf - shoulder, y: strip))
-        path.addQuadCurve(to: CGPoint(x: centre - neckHalf, y: strip - shoulder),
-                          control: CGPoint(x: centre - neckHalf, y: strip))
-        path.closeSubpath()
-        return path
+    /// The pill's width: the camera's at `spread` 0, its full width at 1.
+    static func width(screen: CGFloat, spread: CGFloat, speaking: Bool) -> CGFloat {
+        let full = max(camera, screen * (speaking ? speakingShare : listeningShare))
+        return camera + (full - camera) * min(1, max(0, spread))
     }
 }

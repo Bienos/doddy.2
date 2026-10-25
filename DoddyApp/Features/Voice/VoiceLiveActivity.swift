@@ -1,6 +1,7 @@
 @preconcurrency import ActivityKit
 import DoddyCore
 import Foundation
+import UIKit
 
 /// Starts, updates and ends the conversation's Live Activity (Dynamic Island / Lock Screen).
 /// It is optional: if the user turned Live Activities off for Doddy, or the request fails, the
@@ -27,6 +28,12 @@ final class VoiceLiveActivity {
     static let heartbeatEvery: TimeInterval = 40
     /// The shortest time between two content updates (ADR-604).
     static let minimumUpdateGap: TimeInterval = 0.5
+    /// While Doddy speaks, how often the island's waves slide on (owner, 25 Oct 2026, ADR-653:
+    /// "jak on mówi, to u góry widać, że się coś rusza na tych falach"). A Live Activity draws only
+    /// what the app sends and animates each change for at most two seconds, so the app counts a
+    /// beat and the widget slides the waves on by one stretch per beat. Only while he speaks
+    /// (`wavesMove`), never from the microphone, and not under Reduce Motion.
+    static let speakingBeatEvery: TimeInterval = 1.0
 
     private var activity: Activity<DoddyVoiceAttributes>?
     /// What the app wants shown, and what iOS was last given (ADR-604).
@@ -44,6 +51,9 @@ final class VoiceLiveActivity {
     private var wantsRefresh = false
     /// The last `finish`/`end` request, so callers can wait until iOS has it.
     private var ending: Task<Void, Never>?
+    /// Counts beats while he speaks (ADR-653); `beat` is the newest count.
+    private var beating: Task<Void, Never>?
+    private var beat = 0
 
     /// True while the conversation's activity is up (iOS accepted the request and it hasn't ended).
     var isShowing: Bool { activity != nil }
@@ -52,6 +62,7 @@ final class VoiceLiveActivity {
     /// in the foreground, or from a `LiveActivityIntent` running without it ("Talk in the Island",
     /// ADR-577).
     func show(_ state: DoddyVoiceAttributes.ContentState, startedAt: Date) {
+        let state = withBeat(state)
         if activity != nil {
             if pacer.want(state) { sendSoon() }
             return
@@ -89,6 +100,7 @@ final class VoiceLiveActivity {
     /// short "Conversation ended" card with the number of notes saved, then it goes away.
     /// It carries no stale date: it claims nothing that can go out of date.
     func finish(savedCount: Int) {
+        stopBeating()
         let beat = heartbeat
         beat?.cancel()
         heartbeat = nil
@@ -114,6 +126,7 @@ final class VoiceLiveActivity {
     /// "Conversation stopped" with Open Doddy for a minute, never a live status. The Dynamic
     /// Island drops it at once; the reason is said by the app or the intent that started it.
     func finishFailed(savedCount: Int) {
+        stopBeating()
         let beat = heartbeat
         beat?.cancel()
         heartbeat = nil
@@ -140,6 +153,7 @@ final class VoiceLiveActivity {
     /// Removes the island at once, so it never claims Doddy is listening after he stopped.
     /// Used when the conversation failed or never really started.
     func end() {
+        stopBeating()
         let beat = heartbeat
         beat?.cancel()
         heartbeat = nil
@@ -176,6 +190,46 @@ final class VoiceLiveActivity {
             title: LocalizedStringResource(stringLiteral: "Doddy"),
             body: LocalizedStringResource(stringLiteral: state.title),
             sound: .default)
+    }
+
+    // MARK: Waves that move while he speaks (ADR-653)
+
+    /// `state` with the current beat while his waves move, without one otherwise; starts or stops
+    /// the beat to match.
+    private func withBeat(_ state: DoddyVoiceAttributes.ContentState) -> DoddyVoiceAttributes.ContentState {
+        var state = state
+        if state.wavesMove && !UIAccessibility.isReduceMotionEnabled {
+            state.voiceBeat = beat
+            startBeating()
+        } else {
+            state.voiceBeat = nil
+            stopBeating()
+        }
+        return state
+    }
+
+    /// About once a second, the state iOS should show again with the next beat. It stops by itself
+    /// as soon as the newest state is no longer one whose waves move.
+    private func startBeating() {
+        guard beating == nil else { return }
+        beating = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(Self.speakingBeatEvery))
+                guard !Task.isCancelled, let self else { return }
+                guard self.activity != nil, var next = self.pacer.latest, next.voiceBeat != nil else {
+                    self.beating = nil
+                    return
+                }
+                self.beat &+= 1
+                next.voiceBeat = self.beat
+                if self.pacer.want(next) { self.sendSoon() }
+            }
+        }
+    }
+
+    private func stopBeating() {
+        beating?.cancel()
+        beating = nil
     }
 
     // MARK: Sending
