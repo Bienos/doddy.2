@@ -122,7 +122,7 @@ The hosted Mac build of steps 1 to 3 compiled the app (run 40106746382 on `d7349
 
 - Health data is special-category data (GDPR Art. 9). Reading it stays on the iPhone. Sending the week's summary (step 2) has its own explicit consent, versioned and recorded on the iPhone, and every send is the person's own tap on Send with the text in front of them (App Review 5.1.2(i), ADR-620).
 - Withdrawing the consent stops new summaries; what was sent stays in Messages until the person deletes it, and the screen says so. Anthropic's own retention of API requests is not covered by this page; the legal pages must state it.
-- The legal pages (`site/privacy/`) don't mention Health or the summary yet; they must before this ships.
+- **Privacy Policy, version 2026-10-25** (`site/privacy/`, `site/pl/privacy/`, still drafts for the owner and a lawyer): an "Apple Health and training plans" section (`#health`), rows in the at-a-glance, permissions, processors, retention and deletion tables, the voice summary in "What is sent", explicit consent (Art. 9(2)(a)) proposed as the basis (placeholders B5, B6), and no plans under 16. The voice's model is corrected from Gemini to OpenAI. `LegalDocuments.privacyVersion` is `2026-10-25`; the minimum stays `2026-10-22` (owner to decide, `docs/legal/LEGAL_PAGES_OWNER_CHECKLIST.md`).
 - App Review 5.1.3: no Health data for ads, none in iCloud, nothing written to Health.
 - The training plan and the answers it was made from (every safety answer "no", and the age) stay on the iPhone in a protected file left out of backups; nothing about it is sent. **Delete this plan** removes it. Settings' "Delete all memories" doesn't touch it: a plan isn't a memory.
 
