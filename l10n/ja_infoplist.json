@@ -1,7 +1,7 @@
 {
   "NSAlarmKitUsageDescription": {
-    "en": "Doddy sets an alarm only when you ask and tap Set alarm. Its alarms ring even in Silent mode or a Focus. Turn them off in Doddy's Settings, Alarms.",
-    "ja": "Doddyがアラームを設定するのは、あなたが頼んで「アラームを設定」をタップしたときだけです。Doddyのアラームは消音モードや集中モード中でも鳴ります。オフにするには、Doddyの設定の「アラーム」を使ってください。"
+    "en": "Doddy sets an alarm or a timer only when you ask and tap Set alarm or Start. They ring even in Silent mode or a Focus. Turn alarms off in Doddy's Settings, Alarms.",
+    "ja": "Doddyがアラームやタイマーを設定するのは、あなたが頼んで「アラームを設定」または「開始」をタップしたときだけです。消音モードや集中モード中でも鳴ります。アラームをオフにするには、Doddyの設定の「アラーム」を使ってください。"
   },
   "NSCalendarsFullAccessUsageDescription": {
     "en": "Doddy reads your events for the days you ask about, and adds, changes or deletes an event only after you tap Add, Change or Delete. Turn this off in Settings, Connections.",

@@ -20,10 +20,14 @@ enum TidyUpScheduler {
         let content = UNMutableNotificationContent()
         content.title = TidyUp.title(language)
         content.body = TidyUp.body(language)
+        // A routine: no sound, never through a Focus (ADR-650).
+        content.interruptionLevel = DoddyNotificationKind.tidyUp.interruptionLevel
         var when = DateComponents()
         when.weekday = settings.weekday
-        when.hour = settings.hour
-        when.minute = settings.minute
+        // Never in quiet hours (ADR-651).
+        let time = QuietHours.adjusted(hour: settings.hour, minute: settings.minute)
+        when.hour = time.hour
+        when.minute = time.minute
         let request = UNNotificationRequest(
             identifier: TidyUp.notificationID, content: content,
             trigger: UNCalendarNotificationTrigger(dateMatching: when, repeats: true))
@@ -245,8 +249,10 @@ struct TidyUpSettingsSection: View {
             get: { Calendar.current.date(from: DateComponents(hour: settings.hour, minute: settings.minute)) ?? .now },
             set: { date in
                 let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
-                settings.hour = parts.hour ?? 18
-                settings.minute = parts.minute ?? 0
+                // Quiet hours (ADR-651): the picker shows where the time really goes.
+                let time = QuietHours.adjusted(hour: parts.hour ?? 18, minute: parts.minute ?? 0)
+                settings.hour = time.hour
+                settings.minute = time.minute
             })
     }
 

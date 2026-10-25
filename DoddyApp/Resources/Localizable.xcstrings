@@ -1681,6 +1681,17 @@
         }
       }
     },
+    "A private note": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prywatna notatka"
+          }
+        }
+      }
+    },
     "A private note stays on this iPhone and isn't given to Doddy's voice, Siri, Ask Doddy, widgets, the watch or the call copy. Its words show after Face ID.": {
       "extractionState": "manual",
       "localizations": {
@@ -8616,6 +8627,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "意思相近"
+          }
+        }
+      }
+    },
+    "Calendar is off in Connections, so events aren't shown.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kalendarz jest wyłączony w Połączeniach, więc wydarzeń tu nie ma."
           }
         }
       }
@@ -26828,6 +26850,17 @@
         }
       }
     },
+    "For what you mustn't miss: it rings even in Silent mode or a Focus, with Stop and In 10 min. The notification with Done still comes too.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na to, czego nie możesz przegapić: zadzwoni nawet w trybie cichym i przy włączonym skupieniu, z przyciskami Zatrzymaj i Za 10 min. Powiadomienie z przyciskiem Gotowe też przyjdzie."
+          }
+        }
+      }
+    },
     "Forget": {
       "extractionState": "manual",
       "localizations": {
@@ -30944,6 +30977,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "即使在静音模式或专注模式下也会响，可稍后提醒 9 分钟。在设置的“闹钟”中关闭，或者让 Doddy 关闭。"
+          }
+        }
+      }
+    },
+    "It rings even in Silent mode or a Focus, with the time left on the Lock Screen.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zadzwoni nawet w trybie cichym i przy włączonym skupieniu, a na ekranie blokady zobaczysz, ile czasu zostało."
           }
         }
       }
@@ -36531,6 +36575,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zrobione tylko z zapisu na żywo; zapis od dostawcy głosu nie dotarł."
+          }
+        }
+      }
+    },
+    "Made on this iPhone from your calendar, reminders, Doddy's reminders and the birthdays you picked. Nothing is sent anywhere.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Made on this iPad from your calendar, reminders, Doddy's reminders and the birthdays you picked. Nothing is sent anywhere."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Made on this iPhone from your calendar, reminders, Doddy's reminders and the birthdays you picked. Nothing is sent anywhere."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zrobione na tym iPadzie z Twojego kalendarza, przypomnień, przypomnień Doddy'ego i urodzin wybranych osób. Nic nie jest nigdzie wysyłane."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zrobione na tym iPhonie z Twojego kalendarza, przypomnień, przypomnień Doddy'ego i urodzin wybranych osób. Nic nie jest nigdzie wysyłane."
+                }
+              }
+            }
           }
         }
       }
@@ -44552,6 +44637,17 @@
         }
       }
     },
+    "Nothing on your calendar, no reminders and no birthdays in the next seven days that Doddy can see.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W najbliższych siedmiu dniach Doddy nie widzi niczego w kalendarzu, żadnych przypomnień ani urodzin."
+          }
+        }
+      }
+    },
     "Nothing open that I know of.": {
       "extractionState": "manual",
       "localizations": {
@@ -44559,6 +44655,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nie widzę otwartych pytań."
+          }
+        }
+      }
+    },
+    "Nothing planned": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nic zaplanowanego"
           }
         }
       }
@@ -45688,6 +45795,17 @@
         }
       }
     },
+    "Notifications are off for Doddy, so the plan can't arrive. Turn them on in iOS Settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powiadomienia dla Doddy'ego są wyłączone, więc plan nie może przyjść. Włącz je w Ustawieniach iOS."
+          }
+        }
+      }
+    },
     "Notifications are off for Doddy, so the tidy-up can't ring. Turn them on in iOS Settings.": {
       "extractionState": "manual",
       "localizations": {
@@ -46769,6 +46887,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "每周一次，Doddy 会建议处理重复保存的笔记、已过期的提醒和全部勾选完毕的清单。除非你轻点，否则什么都不会删除。"
+          }
+        }
+      }
+    },
+    "Once a week a notification says only \"New week\". Its screen shows the next seven days from your calendar, reminders, Doddy's reminders and the birthdays you picked. It comes quietly, never between 22:00 and 7:00.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raz w tygodniu powiadomienie mówi tylko „Nowy tydzień”. Jego ekran pokazuje najbliższe siedem dni z Twojego kalendarza, przypomnień, przypomnień Doddy'ego i urodzin wybranych osób. Przychodzi po cichu, nigdy między 22:00 a 7:00."
           }
         }
       }
@@ -49572,6 +49701,17 @@
         }
       }
     },
+    "Open the plan now": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz plan teraz"
+          }
+        }
+      }
+    },
     "Open the tidy-up now": {
       "extractionState": "manual",
       "localizations": {
@@ -51150,6 +51290,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "暂停或继续"
+          }
+        }
+      }
+    },
+    "Pause timer": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wstrzymaj minutnik"
           }
         }
       }
@@ -56449,6 +56600,17 @@
         }
       }
     },
+    "Reminders is off in Connections, so Apple Reminders aren't shown.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnienia są wyłączone w Połączeniach, więc przypomnień Apple tu nie ma."
+          }
+        }
+      }
+    },
     "Reminders on notes": {
       "extractionState": "manual",
       "localizations": {
@@ -58308,6 +58470,17 @@
         }
       }
     },
+    "Resume timer": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wznów minutnik"
+          }
+        }
+      }
+    },
     "Review and finish": {
       "extractionState": "manual",
       "localizations": {
@@ -58378,6 +58551,17 @@
         }
       }
     },
+    "Ring like an alarm": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dzwoń jak budzik"
+          }
+        }
+      }
+    },
     "Ringing": {
       "extractionState": "manual",
       "localizations": {
@@ -58407,6 +58591,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dzwoni…"
+          }
+        }
+      }
+    },
+    "Rings even in Silent mode or a Focus, with Stop and In 10 min.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zadzwoni nawet w trybie cichym i przy włączonym skupieniu, z przyciskami Zatrzymaj i Za 10 min."
+          }
+        }
+      }
+    },
+    "Rings like an alarm, even in Silent mode": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dzwoni jak budzik, także w trybie cichym"
           }
         }
       }
@@ -63517,6 +63723,17 @@
         }
       }
     },
+    "Set to ring like an alarm, but the iPhone hasn't confirmed the alarm. Check that Doddy may set alarms in iPhone Settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ma dzwonić jak budzik, ale iPhone nie potwierdził budzika. Sprawdź w Ustawieniach iPhone’a, czy Doddy może ustawiać budziki."
+          }
+        }
+      }
+    },
     "Set up later": {
       "extractionState": "manual",
       "localizations": {
@@ -63631,6 +63848,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "已设置。每周回顾每周一次。"
+          }
+        }
+      }
+    },
+    "Set. The plan comes once a week.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ustawione. Plan przychodzi raz w tygodniu."
           }
         }
       }
@@ -68506,6 +68734,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zatrzymaj tę sprawę"
+          }
+        }
+      }
+    },
+    "Stop timer": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zatrzymaj minutnik"
           }
         }
       }
@@ -74796,6 +75035,17 @@
         }
       }
     },
+    "The plan couldn't be set. Try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się ustawić planu. Spróbuj ponownie."
+          }
+        }
+      }
+    },
     "The pose SVGs are not in the bundle.": {
       "extractionState": "manual",
       "localizations": {
@@ -80289,6 +80539,17 @@
         }
       }
     },
+    "Timers, alarms and reminders you set always come, at any hour. Doddy's own check-ins and plans stay quiet from 22:00 to 7:00: a time in those hours moves to 7:00 or 21:30. A tip from Doddy never comes on a day a check-in already did.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minutniki, budziki i przypomnienia, które ustawisz, przychodzą zawsze, o każdej porze. Rutyny i plany Doddy'ego milczą od 22:00 do 7:00: godzina z tego zakresu przesuwa się na 7:00 albo 21:30. Podpowiedź od Doddy'ego nigdy nie przychodzi w dniu, w którym przyszła już rutyna."
+          }
+        }
+      }
+    },
     "Times are in this iPhone's time zone. Doddy checks the change the same way as its own suggestion.": {
       "extractionState": "manual",
       "localizations": {
@@ -80854,6 +81115,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "今天"
+          }
+        }
+      }
+    },
+    "Tomorrow": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jutro"
           }
         }
       }
@@ -85873,6 +86145,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "每周回顾"
+          }
+        }
+      }
+    },
+    "Weekly plan": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plan na tydzień"
           }
         }
       }
@@ -92615,6 +92898,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "你的语音笔记"
+          }
+        }
+      }
+    },
+    "Your week\nahead": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twój tydzień\\nprzed Tobą"
           }
         }
       }
