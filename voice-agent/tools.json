@@ -1172,7 +1172,7 @@
     {
       "type": "function",
       "name": "start_translator",
-      "description": "Start translator mode immediately when the user asks you to translate or to help them talk with someone who speaks another language. face_to_face: Doddy translates both ways between the user and the other person, with the phone between them. listen: Doddy translates what is said around the user (a guide, a talk, an announcement) into the user's language, for the user only. their_language is the other person's language as a two-letter code, or detect if the user doesn't know it. Give your_language only if the user wants to speak a different language from the one you are speaking now. The app asks the user first (a spoken yes or a tap) before it starts. The result starts with 'started' (then follow the Translator mode rules and the result's instructions) or 'failed'. Never for an emergency: tell the user to call their local emergency number. ASK-01: before this tool runs, say in one short line exactly what you will look at and ask, for example 'Shall I check your inbox?' (Polish: 'Mam sprawdzić twoją skrzynkę?'). The app shows the same question on screen and runs it only after the user says yes or taps Yes; if the result starts with 'declined', nothing was looked at: say so in one short sentence.",
+      "description": "Start translator mode the moment the user asks you to translate or to help them talk with someone who speaks another language. Don't ask first: the app starts it at once (the owner's rule of 24 October 2026). face_to_face: Doddy translates both ways between the user and the other person, with the phone between them. listen: Doddy translates what is said around the user (a guide, a talk, an announcement) into the user's language, for the user only. their_language is the other person's language as a two-letter code, or detect if the user doesn't know it. Give your_language only if the user wants to speak a different language from the one you are speaking now. The result starts with 'started' (then follow the Translator mode rules and the result's instructions; if the user hasn't said what to translate, ask them once what to translate) or 'failed'. Never for an emergency: tell the user to call their local emergency number.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -1182,7 +1182,7 @@
         },
         "required": ["their_language"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_6601m4krz5tqe0paj9jxza6vnjgp"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "timeout_secs": 90, "elevenlabs_tool_id": "tool_6601m4krz5tqe0paj9jxza6vnjgp"}
     },
     {
       "type": "function",
@@ -1193,7 +1193,7 @@
         "properties": {},
         "required": []
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 60, "elevenlabs_tool_id": "tool_4601m4krz73zeb1a9edtsxmn6c5s"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "force", "timeout_secs": 60, "elevenlabs_tool_id": "tool_4601m4krz73zeb1a9edtsxmn6c5s"}
     },
     {
       "type": "function",
