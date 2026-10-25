@@ -7,61 +7,61 @@
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy stellt einen Wecker nur, wenn du darum bittest und auf Wecker stellen tippst. Seine Wecker klingeln auch im Lautlos-Modus oder in einem Fokus. Schalte sie in den Doddy-Einstellungen unter Wecker aus."
+            "value": "Doddy stellt einen Wecker oder Timer nur, wenn du darum bittest und auf Wecker stellen oder Starten tippst. Sie klingeln auch im Lautlos-Modus oder in einem Fokus. Wecker schaltest du in den Doddy-Einstellungen unter Wecker aus."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy sets an alarm only when you ask and tap Set alarm. Its alarms ring even in Silent mode or a Focus. Turn them off in Doddy's Settings, Alarms."
+            "value": "Doddy sets an alarm or a timer only when you ask and tap Set alarm or Start. They ring even in Silent mode or a Focus. Turn alarms off in Doddy's Settings, Alarms."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy pone una alarma solo cuando se lo pides y tocas Poner alarma. Sus alarmas suenan incluso en modo Silencio o en un modo de concentración. Desactívalas en los Ajustes de Doddy, Alarmas."
+            "value": "Doddy pone una alarma o un temporizador solo cuando se lo pides y tocas Poner alarma o Empezar. Suenan incluso en modo Silencio o en un modo de concentración. Desactiva las alarmas en los Ajustes de Doddy, Alarmas."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy ne règle une alarme que si tu le demandes et touches Régler l’alarme. Ses alarmes sonnent même en mode Silence ou en mode Concentration. Désactive-les dans les Réglages de Doddy, Alarmes."
+            "value": "Doddy ne règle une alarme ou un minuteur que si tu le demandes et touches Régler l’alarme ou Commencer. Ils sonnent même en mode Silence ou en mode Concentration. Désactive les alarmes dans les Réglages de Doddy, Alarmes."
           }
         },
         "hr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy postavlja alarm samo kad to zatražiš i dodirneš Postavi alarm. Njegovi alarmi zvone čak i u tihom načinu ili tijekom Fokusa. Isključi ih u Doddyjevim Postavkama, Alarmi."
+            "value": "Doddy postavlja alarm ili mjerač vremena samo kad to zatražiš i dodirneš Postavi alarm ili Počni. Zvone čak i u tihom načinu ili tijekom Fokusa. Alarme isključi u Doddyjevim Postavkama, Alarmi."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy imposta una sveglia solo quando lo chiedi e tocchi Imposta sveglia. Le sue sveglie suonano anche in modalità Silenzioso o con una Full Immersion attiva. Disattivale nelle Impostazioni di Doddy, Sveglie."
+            "value": "Doddy imposta una sveglia o un timer solo quando lo chiedi e tocchi Imposta sveglia o Inizia. Suonano anche in modalità Silenzioso o con una Full Immersion attiva. Disattiva le sveglie nelle Impostazioni di Doddy, Sveglie."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddyがアラームを設定するのは、あなたが頼んで「アラームを設定」をタップしたときだけです。Doddyのアラームは消音モードや集中モード中でも鳴ります。オフにするには、Doddyの設定の「アラーム」を使ってください。"
+            "value": "Doddyがアラームやタイマーを設定するのは、あなたが頼んで「アラームを設定」または「開始」をタップしたときだけです。消音モードや集中モード中でも鳴ります。アラームをオフにするには、Doddyの設定の「アラーム」を使ってください。"
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy ustawia budzik tylko wtedy, gdy o to poprosisz i stukniesz Ustaw budzik. Jego budziki dzwonią nawet w trybie cichym i przy włączonym skupieniu. Wyłączysz je w Ustawieniach Doddy'ego, w sekcji Budziki."
+            "value": "Doddy ustawia budzik albo minutnik tylko wtedy, gdy o to poprosisz i stukniesz Ustaw budzik albo Zacznij. Dzwonią nawet w trybie cichym i przy włączonym skupieniu. Budziki wyłączysz w Ustawieniach Doddy'ego, w sekcji Budziki."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "O Doddy só define um alarme quando você pede e toca em Definir alarme. Os alarmes dele tocam mesmo no modo Silencioso ou em um Foco. Desative nos Ajustes do Doddy, em Alarmes."
+            "value": "O Doddy só define um alarme ou um timer quando você pede e toca em Definir alarme ou Começar. Eles tocam mesmo no modo Silencioso ou em um Foco. Desative os alarmes nos Ajustes do Doddy, em Alarmes."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "只有在你提出请求并轻点“设置闹钟”时，Doddy 才会设置闹钟。它的闹钟在静音模式或专注模式下也会响。可在 Doddy 设置的“闹钟”中关闭。"
+            "value": "只有在你提出请求并轻点“设置闹钟”或“开始”时，Doddy 才会设置闹钟或计时器。它们在静音模式或专注模式下也会响。可在 Doddy 设置的“闹钟”中关闭闹钟。"
           }
         }
       }
@@ -326,6 +326,71 @@
         }
       }
     },
+    "NSHealthShareUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy liest deine Trainings, Herzfrequenz, Ruheherzfrequenz, Herzfrequenzvariabilität (HRV), deinen Schlaf und VO2max aus Health, um sie dir auf seinem Apple-Health-Bildschirm zu zeigen. Nur eine kurze Wochenzusammenfassung verlässt dieses iPhone, und nur wenn du es erlaubst: in „Nachrichten“, wenn du sie selbst sendest, oder an Doddys Stimme, wenn du fragst und zustimmst. Doddy speichert nichts davon und schreibt nichts in Health. Schalte das unter Einstellungen, Verbindungen, Apple Health oder in der Health-App aus."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy reads your workouts, heart rate, resting heart rate, heart rate variability, sleep and VO2 max from Health to show them to you on its Apple Health screen. Only a short summary of the week leaves this iPhone, and only when you allow it: in Messages when you send it yourself, or to Doddy's voice when you ask and say yes. Doddy keeps none of it and writes nothing to Health. Turn this off in Settings, Connections, Apple Health, or in the Health app."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy lee tus entrenamientos, frecuencia cardiaca, frecuencia cardiaca en reposo, variabilidad de la frecuencia cardiaca (VFC), sueño y VO2 máx. de Salud para mostrártelos en su pantalla de Apple Health. Solo un breve resumen de la semana sale de este iPhone, y solo si lo permites: en Mensajes cuando tú mismo lo envías, o a la voz de Doddy cuando preguntas y dices que sí. Doddy no guarda nada y no escribe nada en Salud. Desactívalo en Ajustes, Conexiones, Apple Health, o en la app Salud."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy lit tes entraînements, ta fréquence cardiaque, ta fréquence cardiaque au repos, ta variabilité de la fréquence cardiaque (VFC), ton sommeil et ta VO2 max dans Santé pour te les montrer sur son écran Apple Health. Seul un court résumé de la semaine quitte cet iPhone, et seulement si tu le permets : dans Messages quand tu l’envoies toi-même, ou à la voix de Doddy quand tu demandes et dis oui. Doddy n’en garde rien et n’écrit rien dans Santé. Désactive ceci dans Réglages, Connexions, Apple Health, ou dans l’app Santé."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy čita tvoje treninge, puls, puls u mirovanju, varijabilnost srčanog ritma (HRV), san i VO2 max iz aplikacije Zdravlje da ti ih prikaže na svom zaslonu Apple Health. S ovog iPhonea izlazi samo kratak tjedni sažetak, i to samo kad to dopustiš: u Porukama kad ga sam pošalješ ili Doddyjevu glasu kad pitaš i pristaneš. Doddy ništa ne čuva i ništa ne upisuje u Zdravlje. Isključi to u Postavkama, Veze, Apple Health, ili u aplikaciji Zdravlje."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy legge i tuoi allenamenti, la frequenza cardiaca, la frequenza cardiaca a riposo, la variabilità della frequenza cardiaca (HRV), il sonno e il VO2 max da Salute per mostrarteli nella sua schermata Apple Health. Da questo iPhone esce solo un breve riepilogo della settimana, e solo se lo permetti: in Messaggi quando lo invii tu, o alla voce di Doddy quando chiedi e dici di sì. Doddy non conserva nulla e non scrive nulla in Salute. Disattivalo in Impostazioni, Collegamenti, Apple Health, o nell’app Salute."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddyは、ワークアウト、心拍数、安静時心拍数、心拍変動（HRV）、睡眠、VO2最大値をヘルスケアから読み取り、Doddyの「Apple Health」画面に表示します。このiPhoneの外に出るのは週の短いまとめだけで、それもあなたが許可したときだけです。メッセージであなた自身が送るとき、またはあなたが尋ねて「はい」と答えたときにDoddyの音声に渡されます。Doddyは何も保存せず、ヘルスケアに何も書き込みません。オフにするには、設定の「連携」の「Apple Health」か、ヘルスケアAppを使ってください。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy odczytuje z aplikacji Zdrowie Twoje treningi, tętno, tętno spoczynkowe, zmienność rytmu serca (HRV), sen i VO2 max, żeby pokazać je na swoim ekranie Apple Health. Z tego iPhone’a wychodzi tylko krótkie podsumowanie tygodnia i tylko za Twoją zgodą: w Wiadomościach, gdy sam je wyślesz, albo do głosu Doddy’ego, gdy zapytasz i się zgodzisz. Doddy niczego nie zachowuje i nic nie zapisuje w Zdrowiu. Wyłączysz to w Ustawieniach, w sekcji Połączenia, Apple Health, albo w aplikacji Zdrowie."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Doddy lê seus treinos, frequência cardíaca, frequência cardíaca em repouso, variabilidade da frequência cardíaca (VFC), sono e VO2 máx. do app Saúde para mostrá-los na tela Apple Health dele. Só um breve resumo da semana sai deste iPhone, e só se você permitir: em Mensagens quando você mesmo o envia, ou para a voz do Doddy quando você pergunta e diz sim. O Doddy não guarda nada e não escreve nada no Saúde. Desative em Ajustes, Conexões, Apple Health, ou no app Saúde."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy 从“健康”读取你的体能训练、心率、静息心率、心率变异性（HRV）、睡眠和最大摄氧量，并在它的“Apple Health”页面上显示给你看。只有本周的简短摘要会离开这部 iPhone，而且只在你允许时：你在“信息”中自己发送时，或你询问并同意后交给 Doddy 的语音。Doddy 不保存任何数据，也不会向“健康”写入任何内容。可在设置的“连接”中的“Apple Health”或在“健康”App 中关闭。"
+          }
+        }
+      }
+    },
     "NSLocationWhenInUseUsageDescription": {
       "extractionState": "manual",
       "localizations": {
@@ -462,61 +527,61 @@
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy liest deine Schritte, die Gehstrecke und die gestiegenen Etagen aus „Bewegung & Fitness“ nur, wenn du danach fragst, für einen Tag der letzten sieben. In einem Sprachgespräch gehen diese Zahlen an ElevenLabs, das die Stimme von Doddy betreibt, oder an OpenAI, wenn du die Stimme auf dem Startbildschirm darauf umstellst. Doddy speichert nichts davon und liest nichts aus Health. Schalte das unter Einstellungen, Verbindungen aus."
+            "value": "Doddy liest deine Schritte, die Gehstrecke und die gestiegenen Etagen aus „Bewegung & Fitness“ nur, wenn du danach fragst, für einen Tag der letzten sieben. In einem Sprachgespräch gehen diese Zahlen an ElevenLabs, das die Stimme von Doddy betreibt, oder an OpenAI, wenn du die Stimme auf dem Startbildschirm darauf umstellst. Doddy speichert nichts davon. Schalte das unter Einstellungen, Verbindungen aus."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy reads your steps, walking distance and floors climbed from Motion & Fitness only when you ask, for one day of the last seven. In a voice conversation those numbers go to ElevenLabs, which runs Doddy's voice, or to OpenAI if you switch Home's voice to it. Doddy keeps none of them and reads nothing from Health. Turn this off in Settings, Connections."
+            "value": "Doddy reads your steps, walking distance and floors climbed from Motion & Fitness only when you ask, for one day of the last seven. In a voice conversation those numbers go to ElevenLabs, which runs Doddy's voice, or to OpenAI if you switch Home's voice to it. Doddy keeps none of them. Turn this off in Settings, Connections."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy lee tus pasos, la distancia caminada y los pisos subidos de Movimiento y forma física solo cuando se lo pides, de un día de los últimos siete. En una conversación de voz, esas cifras van a ElevenLabs, que ejecuta la voz de Doddy, o a OpenAI si cambias a ella la voz de Inicio. Doddy no guarda nada de esto y no lee nada de Salud. Desactívalo en Ajustes, Conexiones."
+            "value": "Doddy lee tus pasos, la distancia caminada y los pisos subidos de Movimiento y forma física solo cuando se lo pides, de un día de los últimos siete. En una conversación de voz, esas cifras van a ElevenLabs, que ejecuta la voz de Doddy, o a OpenAI si cambias a ella la voz de Inicio. Doddy no guarda nada de esto. Desactívalo en Ajustes, Conexiones."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy lit tes pas, la distance parcourue à pied et les étages montés dans Mouvements et forme uniquement quand tu le demandes, pour un jour parmi les sept derniers. Dans une conversation vocale, ces chiffres vont à ElevenLabs, qui fait tourner la voix de Doddy, ou à OpenAI si tu choisis cette voix sur l’écran d’accueil. Doddy n’en garde rien et ne lit rien dans Santé. Désactive ceci dans Réglages, Connexions."
+            "value": "Doddy lit tes pas, la distance parcourue à pied et les étages montés dans Mouvements et forme uniquement quand tu le demandes, pour un jour parmi les sept derniers. Dans une conversation vocale, ces chiffres vont à ElevenLabs, qui fait tourner la voix de Doddy, ou à OpenAI si tu choisis cette voix sur l’écran d’accueil. Doddy n’en garde rien. Désactive ceci dans Réglages, Connexions."
           }
         },
         "hr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy čita tvoje korake, prijeđenu udaljenost i popete katove iz podataka Kretanje i kondicija samo kad to zatražiš, za jedan dan od zadnjih sedam. U glasovnom razgovoru ti brojevi idu u ElevenLabs, koji pokreće Doddyjev glas, ili u OpenAI ako na početnom zaslonu prebaciš glas na njega. Doddy ništa od toga ne čuva i ništa ne čita iz aplikacije Zdravlje. Isključi to u Postavkama, Veze."
+            "value": "Doddy čita tvoje korake, prijeđenu udaljenost i popete katove iz podataka Kretanje i kondicija samo kad to zatražiš, za jedan dan od zadnjih sedam. U glasovnom razgovoru ti brojevi idu u ElevenLabs, koji pokreće Doddyjev glas, ili u OpenAI ako na početnom zaslonu prebaciš glas na njega. Doddy ništa od toga ne čuva. Isključi to u Postavkama, Veze."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy legge i tuoi passi, la distanza percorsa a piedi e i piani saliti da Movimento e fitness solo quando lo chiedi, per un giorno degli ultimi sette. In una conversazione vocale questi numeri vanno a ElevenLabs, che fa funzionare la voce di Doddy, o a OpenAI se scegli quella voce nella schermata Home. Doddy non conserva nulla e non legge nulla da Salute. Disattivalo in Impostazioni, Collegamenti."
+            "value": "Doddy legge i tuoi passi, la distanza percorsa a piedi e i piani saliti da Movimento e fitness solo quando lo chiedi, per un giorno degli ultimi sette. In una conversazione vocale questi numeri vanno a ElevenLabs, che fa funzionare la voce di Doddy, o a OpenAI se scegli quella voce nella schermata Home. Doddy non conserva nulla. Disattivalo in Impostazioni, Collegamenti."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddyは、あなたが頼んだときだけ、過去7日間のうち1日分の歩数、歩行距離、上った階数を「モーションとフィットネス」から読み取ります。音声会話では、その数値がDoddyの声を動かすElevenLabsに送られます。ホームの音声をOpenAIに切り替えた場合はOpenAIに送られます。Doddyはこれらを保存せず、ヘルスケアからは何も読み取りません。オフにするには、設定の「連携」を使ってください。"
+            "value": "Doddyは、あなたが頼んだときだけ、過去7日間のうち1日分の歩数、歩行距離、上った階数を「モーションとフィットネス」から読み取ります。音声会話では、その数値がDoddyの声を動かすElevenLabsに送られます。ホームの音声をOpenAIに切り替えた場合はOpenAIに送られます。Doddyはこれらを保存しません。オフにするには、設定の「連携」を使ってください。"
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy odczytuje Twoje kroki, przebyty dystans i pokonane piętra z danych Ruch i fitness tylko wtedy, gdy o to poprosisz, dla jednego dnia z ostatnich siedmiu. W rozmowie głosowej te liczby trafiają do ElevenLabs, które obsługuje głos Doddy'ego, albo do OpenAI, jeśli przełączysz na nie głos na ekranie głównym. Doddy niczego z tego nie zachowuje i nie czyta nic z aplikacji Zdrowie. Wyłączysz to w Ustawieniach, w sekcji Połączenia."
+            "value": "Doddy odczytuje Twoje kroki, przebyty dystans i pokonane piętra z danych Ruch i fitness tylko wtedy, gdy o to poprosisz, dla jednego dnia z ostatnich siedmiu. W rozmowie głosowej te liczby trafiają do ElevenLabs, które obsługuje głos Doddy'ego, albo do OpenAI, jeśli przełączysz na nie głos na ekranie głównym. Doddy niczego z tego nie zachowuje. Wyłączysz to w Ustawieniach, w sekcji Połączenia."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "O Doddy lê seus passos, a distância caminhada e os andares subidos em Movimento e Condicionamento só quando você pede, de um dia entre os últimos sete. Em uma conversa por voz, esses números vão para a ElevenLabs, que executa a voz do Doddy, ou para a OpenAI se você mudar a voz da tela inicial para ela. O Doddy não guarda nada disso e não lê nada do app Saúde. Desative em Ajustes, Conexões."
+            "value": "O Doddy lê seus passos, a distância caminhada e os andares subidos em Movimento e Condicionamento só quando você pede, de um dia entre os últimos sete. Em uma conversa por voz, esses números vão para a ElevenLabs, que executa a voz do Doddy, ou para a OpenAI se você mudar a voz da tela inicial para ela. O Doddy não guarda nada disso. Desative em Ajustes, Conexões."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "只有在你提出请求时，Doddy 才会从“运动与健身”读取最近七天中某一天的步数、步行距离和爬楼层数。在语音对话中，这些数字会发送给运行 Doddy 语音的 ElevenLabs；如果你在主屏幕把语音切换为 OpenAI，则发送给 OpenAI。Doddy 不保存这些数据，也不读取“健康”中的任何内容。可在设置的“连接”中关闭。"
+            "value": "只有在你提出请求时，Doddy 才会从“运动与健身”读取最近七天中某一天的步数、步行距离和爬楼层数。在语音对话中，这些数字会发送给运行 Doddy 语音的 ElevenLabs；如果你在主屏幕把语音切换为 OpenAI，则发送给 OpenAI。Doddy 不保存这些数据。可在设置的“连接”中关闭。"
           }
         }
       }

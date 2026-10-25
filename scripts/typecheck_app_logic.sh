@@ -123,6 +123,10 @@ files=(
   DoddyApp/Features/Photos/PhotoFiles.swift
   # Only the part outside `#if canImport(AlarmKit)`: the AlarmKit code itself needs Xcode 26.
   DoddyApp/Features/Alarms/AlarmScheduler.swift
+  # Timers through AlarmKit (ADR-650): the same, only the part outside `#if canImport(AlarmKit)`.
+  DoddyApp/Features/Alarms/TimerRinger.swift
+  # Reminders that ring like an alarm (ADR-651): NoteReminderStore calls it.
+  DoddyApp/Features/Alarms/ReminderRinger.swift
   DoddyApp/Features/VoiceMemos/AudioFiles.swift
   DoddyApp/Features/Parking/ParkingStore.swift
   DoddyApp/Features/Lists/ListTemplateStore.swift
@@ -142,6 +146,9 @@ files=(
   DoddyApp/Features/Shopping/WatchModel.swift
   # The parcel list (ADR-641): its state and the look-up flow, without the views or the InPost client.
   DoddyApp/Features/Parcels/ParcelsModel.swift
+  # The kept training plan (ADR-625), without the screens.
+  DoddyApp/Features/Sport/TrainingPlanStore.swift
+  DoddyApp/Features/Sport/PlanText.swift
 )
 for f in "${files[@]}"; do [ -f "$f" ] || { echo "FAIL: $f is missing; update scripts/typecheck_app_logic.sh"; exit 1; }; done
 

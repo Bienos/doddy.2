@@ -3490,6 +3490,17 @@
         }
       }
     },
+    "Pause timer": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wstrzymaj minutnik"
+          }
+        }
+      }
+    },
     "Paused": {
       "extractionState": "manual",
       "localizations": {
@@ -4002,6 +4013,17 @@
         }
       }
     },
+    "Resume timer": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wznów minutnik"
+          }
+        }
+      }
+    },
     "Run a shortcut?": {
       "extractionState": "manual",
       "localizations": {
@@ -4009,6 +4031,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Uruchomić skrót?"
+          }
+        }
+      }
+    },
+    "Running": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liczy"
           }
         }
       }
@@ -4031,6 +4064,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "SLAJDY"
+          }
+        }
+      }
+    },
+    "STOPWATCH": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "STOPER"
           }
         }
       }
@@ -4761,6 +4805,17 @@
         }
       }
     },
+    "Stop timer": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zatrzymaj minutnik"
+          }
+        }
+      }
+    },
     "Stopped": {
       "extractionState": "manual",
       "localizations": {
@@ -4827,6 +4882,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zatrzymuje nagrywanie i zapisuje je w Nagraniach."
+          }
+        }
+      }
+    },
+    "Stopwatch": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stoper"
           }
         }
       }
@@ -5162,6 +5228,65 @@
           "stringUnit": {
             "state": "translated",
             "value": "时间到"
+          }
+        }
+      }
+    },
+    "Timer": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Timer"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temporizador"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minuteur"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Timer"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Timer"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "タイマー"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minutnik"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Timer"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "计时器"
           }
         }
       }

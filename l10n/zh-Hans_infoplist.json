@@ -1,7 +1,7 @@
 {
   "NSAlarmKitUsageDescription": {
-    "en": "Doddy sets an alarm only when you ask and tap Set alarm. Its alarms ring even in Silent mode or a Focus. Turn them off in Doddy's Settings, Alarms.",
-    "zh-Hans": "只有在你提出请求并轻点“设置闹钟”时，Doddy 才会设置闹钟。它的闹钟在静音模式或专注模式下也会响。可在 Doddy 设置的“闹钟”中关闭。"
+    "en": "Doddy sets an alarm or a timer only when you ask and tap Set alarm or Start. They ring even in Silent mode or a Focus. Turn alarms off in Doddy's Settings, Alarms.",
+    "zh-Hans": "只有在你提出请求并轻点“设置闹钟”或“开始”时，Doddy 才会设置闹钟或计时器。它们在静音模式或专注模式下也会响。可在 Doddy 设置的“闹钟”中关闭闹钟。"
   },
   "NSCalendarsFullAccessUsageDescription": {
     "en": "Doddy reads your events for the days you ask about, and adds, changes or deletes an event only after you tap Add, Change or Delete. Turn this off in Settings, Connections.",
@@ -32,8 +32,12 @@
     "zh-Hans": "Doddy 会在这台 iPhone 上将语音备忘录和录音转写成文字，以便你检查和搜索其中的内容。音频及其文字不会发送到任何地方。"
   },
   "NSMotionUsageDescription": {
-    "en": "Doddy reads your steps, walking distance and floors climbed from Motion & Fitness only when you ask, for one day of the last seven. In a voice conversation those numbers go to ElevenLabs, which runs Doddy's voice, or to OpenAI if you switch Home's voice to it. Doddy keeps none of them and reads nothing from Health. Turn this off in Settings, Connections.",
-    "zh-Hans": "只有在你提出请求时，Doddy 才会从“运动与健身”读取最近七天中某一天的步数、步行距离和爬楼层数。在语音对话中，这些数字会发送给运行 Doddy 语音的 ElevenLabs；如果你在主屏幕把语音切换为 OpenAI，则发送给 OpenAI。Doddy 不保存这些数据，也不读取“健康”中的任何内容。可在设置的“连接”中关闭。"
+    "en": "Doddy reads your steps, walking distance and floors climbed from Motion & Fitness only when you ask, for one day of the last seven. In a voice conversation those numbers go to ElevenLabs, which runs Doddy's voice, or to OpenAI if you switch Home's voice to it. Doddy keeps none of them. Turn this off in Settings, Connections.",
+    "zh-Hans": "只有在你提出请求时，Doddy 才会从“运动与健身”读取最近七天中某一天的步数、步行距离和爬楼层数。在语音对话中，这些数字会发送给运行 Doddy 语音的 ElevenLabs；如果你在主屏幕把语音切换为 OpenAI，则发送给 OpenAI。Doddy 不保存这些数据。可在设置的“连接”中关闭。"
+  },
+  "NSHealthShareUsageDescription": {
+    "en": "Doddy reads your workouts, heart rate, resting heart rate, heart rate variability, sleep and VO2 max from Health to show them to you on its Apple Health screen. Only a short summary of the week leaves this iPhone, and only when you allow it: in Messages when you send it yourself, or to Doddy's voice when you ask and say yes. Doddy keeps none of it and writes nothing to Health. Turn this off in Settings, Connections, Apple Health, or in the Health app.",
+    "zh-Hans": "Doddy 从“健康”读取你的体能训练、心率、静息心率、心率变异性（HRV）、睡眠和最大摄氧量，并在它的“Apple Health”页面上显示给你看。只有本周的简短摘要会离开这部 iPhone，而且只在你允许时：你在“信息”中自己发送时，或你询问并同意后交给 Doddy 的语音。Doddy 不保存任何数据，也不会向“健康”写入任何内容。可在设置的“连接”中的“Apple Health”或在“健康”App 中关闭。"
   },
   "NSCameraUsageDescription": {
     "en": "Doddy opens the camera only when you tap Take a photo or Open camera. The photo you keep goes into a note on this iPhone and its text is read here; it is never sent anywhere or saved to your photo library.",

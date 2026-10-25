@@ -1,7 +1,7 @@
 {
   "NSAlarmKitUsageDescription": {
-    "en": "Doddy sets an alarm only when you ask and tap Set alarm. Its alarms ring even in Silent mode or a Focus. Turn them off in Doddy's Settings, Alarms.",
-    "pt-BR": "O Doddy só define um alarme quando você pede e toca em Definir alarme. Os alarmes dele tocam mesmo no modo Silencioso ou em um Foco. Desative nos Ajustes do Doddy, em Alarmes."
+    "en": "Doddy sets an alarm or a timer only when you ask and tap Set alarm or Start. They ring even in Silent mode or a Focus. Turn alarms off in Doddy's Settings, Alarms.",
+    "pt-BR": "O Doddy só define um alarme ou um timer quando você pede e toca em Definir alarme ou Começar. Eles tocam mesmo no modo Silencioso ou em um Foco. Desative os alarmes nos Ajustes do Doddy, em Alarmes."
   },
   "NSCalendarsFullAccessUsageDescription": {
     "en": "Doddy reads your events for the days you ask about, and adds, changes or deletes an event only after you tap Add, Change or Delete. Turn this off in Settings, Connections.",
@@ -32,8 +32,12 @@
     "pt-BR": "O Doddy transcreve neste iPhone as gravações de voz das notas e as gravações de reuniões e conversas, para você conferir e pesquisar as palavras. O áudio e as palavras dele não são enviados a lugar nenhum."
   },
   "NSMotionUsageDescription": {
-    "en": "Doddy reads your steps, walking distance and floors climbed from Motion & Fitness only when you ask, for one day of the last seven. In a voice conversation those numbers go to ElevenLabs, which runs Doddy's voice, or to OpenAI if you switch Home's voice to it. Doddy keeps none of them and reads nothing from Health. Turn this off in Settings, Connections.",
-    "pt-BR": "O Doddy lê seus passos, a distância caminhada e os andares subidos em Movimento e Condicionamento só quando você pede, de um dia entre os últimos sete. Em uma conversa por voz, esses números vão para a ElevenLabs, que executa a voz do Doddy, ou para a OpenAI se você mudar a voz da tela inicial para ela. O Doddy não guarda nada disso e não lê nada do app Saúde. Desative em Ajustes, Conexões."
+    "en": "Doddy reads your steps, walking distance and floors climbed from Motion & Fitness only when you ask, for one day of the last seven. In a voice conversation those numbers go to ElevenLabs, which runs Doddy's voice, or to OpenAI if you switch Home's voice to it. Doddy keeps none of them. Turn this off in Settings, Connections.",
+    "pt-BR": "O Doddy lê seus passos, a distância caminhada e os andares subidos em Movimento e Condicionamento só quando você pede, de um dia entre os últimos sete. Em uma conversa por voz, esses números vão para a ElevenLabs, que executa a voz do Doddy, ou para a OpenAI se você mudar a voz da tela inicial para ela. O Doddy não guarda nada disso. Desative em Ajustes, Conexões."
+  },
+  "NSHealthShareUsageDescription": {
+    "en": "Doddy reads your workouts, heart rate, resting heart rate, heart rate variability, sleep and VO2 max from Health to show them to you on its Apple Health screen. Only a short summary of the week leaves this iPhone, and only when you allow it: in Messages when you send it yourself, or to Doddy's voice when you ask and say yes. Doddy keeps none of it and writes nothing to Health. Turn this off in Settings, Connections, Apple Health, or in the Health app.",
+    "pt-BR": "O Doddy lê seus treinos, frequência cardíaca, frequência cardíaca em repouso, variabilidade da frequência cardíaca (VFC), sono e VO2 máx. do app Saúde para mostrá-los na tela Apple Health dele. Só um breve resumo da semana sai deste iPhone, e só se você permitir: em Mensagens quando você mesmo o envia, ou para a voz do Doddy quando você pergunta e diz sim. O Doddy não guarda nada e não escreve nada no Saúde. Desative em Ajustes, Conexões, Apple Health, ou no app Saúde."
   },
   "NSCameraUsageDescription": {
     "en": "Doddy opens the camera only when you tap Take a photo or Open camera. The photo you keep goes into a note on this iPhone and its text is read here; it is never sent anywhere or saved to your photo library.",

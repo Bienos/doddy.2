@@ -328,6 +328,13 @@ struct IslandBottomView<Controls: View>: View {
                 .foregroundStyle(Color.islandCream)
                 .lineLimit(1)
                 .accessibilityLabel(Text(verbatim: IslandLanguage.text(scene.title, language)))
+        case .elapsed:
+            // The stopwatch (ADR-652): counting up, ticking with no app updates.
+            IslandElapsedText(startedAt: startedAt)
+                .font(.system(size: 32, weight: .medium))
+                .foregroundStyle(Color.islandCream)
+                .lineLimit(1)
+                .accessibilityLabel(Text(verbatim: IslandLanguage.text(scene.title, language)))
         case .text(let text):
             IslandText(text).font(.system(size: 21, weight: .medium)).foregroundStyle(Color.islandCream).lineLimit(1)
         case nil:

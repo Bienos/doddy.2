@@ -110,12 +110,18 @@ public enum ToolCatalog {
         .init(VoiceToolName.upcomingBirthdays, .lookup, .askFirst),
         // Motion & Fitness, read only (ADR-568).
         .init(VoiceToolName.readSteps, .lookup, .askFirst),
+        // Apple Health, the week as a summary, after its own consent (ADR-623).
+        .init(VoiceToolName.readHealthWeek, .lookup, .askFirst),
         // Counts and times from the photo library; the pictures stay on screen (ADR-569).
         .init(VoiceToolName.findPhotos, .lookup, .askFirst),
         .init(VoiceToolName.setTimer, .localChange, .card),
         .init(VoiceToolName.setAlarm, .localChange, .card),
         .init(VoiceToolName.listAlarms, .lookup, .askFirst),
         .init(VoiceToolName.cancelAlarm, .localChange, .card),
+        // A stopwatch that counts up (ADR-652): Doddy's own tool, no other app.
+        .init(VoiceToolName.startStopwatch, .localChange, .card),
+        .init(VoiceToolName.stopStopwatch, .localChange, .card),
+        .init(VoiceToolName.checkStopwatch, .lookup, .askFirst),
         // Saving or clearing a spot shows a card; "find" asks first (ADR-301, ASK-01). The card is
         // the strictest of its three actions.
         .init(VoiceToolName.parkingSpot, .localChange, .card),

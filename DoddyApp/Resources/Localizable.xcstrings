@@ -119,6 +119,28 @@
         }
       }
     },
+    "%@ asleep": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ snu"
+          }
+        }
+      }
+    },
+    "%@ bpm": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ ud./min"
+          }
+        }
+      }
+    },
     "%@ over your budget": {
       "extractionState": "manual",
       "localizations": {
@@ -185,6 +207,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ 共享了一条在“%@”的提醒。"
+          }
+        }
+      }
+    },
+    "%@: %lld × %lld–%lld s, stop before your form slips": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: %lld × %lld–%lld s, przerwij, zanim technika zacznie się psuć"
+          }
+        }
+      }
+    },
+    "%@: %lld × %lld–%lld, stop with %lld reps left": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: %lld × %lld–%lld, kończ serię z zapasem %lld powtórzeń"
           }
         }
       }
@@ -329,6 +373,72 @@
         }
       }
     },
+    "%lld min %lld s": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld min %lld s"
+          }
+        }
+      }
+    },
+    "%lld min at an easy pace: you can talk in full sentences.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld min w spokojnym tempie: możesz mówić pełnymi zdaniami."
+          }
+        }
+      }
+    },
+    "%lld min, easy. The longest run of the week.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld min, spokojnie. Najdłuższy bieg tygodnia."
+          }
+        }
+      }
+    },
+    "%lld min, easy. Your goal run.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld min, spokojnie. Twój bieg docelowy."
+          }
+        }
+      }
+    },
+    "%lld min: start easy, run %lld min comfortably hard (a few words at a time), finish easy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld min: zacznij spokojnie, przebiegnij %lld min mocno, ale równo (mówisz po kilka słów), skończ spokojnie."
+          }
+        }
+      }
+    },
+    "%lld min: start easy, then %lld × %@ hard with %@ easy between, finish easy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld min: zacznij spokojnie, potem %lld × %@ mocno, z %@ spokojnie pomiędzy, skończ spokojnie."
+          }
+        }
+      }
+    },
     "%lld more unfinished notes; each opens when you start a new note.": {
       "extractionState": "manual",
       "localizations": {
@@ -444,6 +554,17 @@
         }
       }
     },
+    "%lld s": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld s"
+          }
+        }
+      }
+    },
     "%lld steps": {
       "extractionState": "manual",
       "localizations": {
@@ -451,6 +572,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Kroki: %lld"
+          }
+        }
+      }
+    },
+    "%lld weeks, %lld days a week": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tygodnie: %lld, dni w tygodniu: %lld"
+          }
+        }
+      }
+    },
+    "(%@ older workouts left out)": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "(pominięte starsze treningi: %@)"
           }
         }
       }
@@ -536,6 +679,17 @@
         }
       }
     },
+    "10 km": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "10 km"
+          }
+        }
+      }
+    },
     "3 done": {
       "extractionState": "manual",
       "localizations": {
@@ -543,6 +697,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zrobione: 3"
+          }
+        }
+      }
+    },
+    "7-day average %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "średnia z 7 dni %@"
           }
         }
       }
@@ -897,6 +1062,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "A lighter week, so your body catches up.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lżejszy tydzień, żeby organizm nadążył."
           }
         }
       }
@@ -1677,6 +1853,28 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "A plan for a first 5 km, a 10 km, a half marathon, or strength at home or at the gym. Answer a few questions; Doddy works the plan out with fixed rules.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plan na pierwsze 5 km, na 10 km, na półmaraton albo na siłę w domu lub na siłowni. Odpowiedz na kilka pytań; Doddy ułoży plan według stałych zasad."
+          }
+        }
+      }
+    },
+    "A private note": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prywatna notatka"
           }
         }
       }
@@ -2865,6 +3063,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "路程约 %lld 分钟，另加 %lld 分钟余量"
+          }
+        }
+      }
+    },
+    "About %lld min with a 10-minute warm-up.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Około %lld min, z 10-minutową rozgrzewką."
           }
         }
       }
@@ -4546,6 +4755,17 @@
         }
       }
     },
+    "After research in the British Journal of Sports Medicine (2025), ACSM's 2026 guidance on strength training and WHO's 2020 guidelines.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na podstawie badań z British Journal of Sports Medicine (2025), wytycznych ACSM z 2026 r. o treningu siłowym i zaleceń WHO z 2020 r."
+          }
+        }
+      }
+    },
     "Agree to anything, book, order or confirm": {
       "extractionState": "manual",
       "localizations": {
@@ -6198,6 +6418,17 @@
         }
       }
     },
+    "Any yes means no plan from Doddy, and Doddy says who to ask instead. Only your age is kept, with the plan.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Każde „tak” oznacza, że Doddy nie ułoży planu i powie, kogo zapytać. Zachowany zostaje tylko Twój wiek, razem z planem."
+          }
+        }
+      }
+    },
     "Anything for\ntomorrow?": {
       "extractionState": "manual",
       "localizations": {
@@ -6939,6 +7170,17 @@
         }
       }
     },
+    "Are you pregnant, or did you give birth in the last 12 months?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czy jesteś w ciąży albo urodziłaś dziecko w ciągu ostatnich 12 miesięcy?"
+          }
+        }
+      }
+    },
     "Arrive by %@": {
       "extractionState": "manual",
       "localizations": {
@@ -7064,6 +7306,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "问 Doddy（文字提问）"
+          }
+        }
+      }
+    },
+    "Ask Doddy about this week": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapytaj Doddy’ego o ten tydzień"
           }
         }
       }
@@ -7333,6 +7586,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "问我存了什么"
+          }
+        }
+      }
+    },
+    "Ask your doctor or midwife": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapytaj lekarza lub położną"
           }
         }
       }
@@ -7794,6 +8058,17 @@
         }
       }
     },
+    "Back squat": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przysiad ze sztangą na plecach"
+          }
+        }
+      }
+    },
     "Back to the questions": {
       "extractionState": "manual",
       "localizations": {
@@ -7849,6 +8124,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "回到问题"
+          }
+        }
+      }
+    },
+    "Backpack row": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wiosłowanie z plecakiem"
           }
         }
       }
@@ -7982,6 +8268,28 @@
         }
       }
     },
+    "Because of your answers, a doctor should say which training suits you. Doddy doesn't make a plan when any of these answers is yes.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przy takich odpowiedziach to lekarz powinien powiedzieć, jaki trening jest dla Ciebie. Doddy nie układa planu, gdy którakolwiek z tych odpowiedzi brzmi „tak”."
+          }
+        }
+      }
+    },
+    "Before a plan": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zanim powstanie plan"
+          }
+        }
+      }
+    },
     "Before it slips away": {
       "extractionState": "manual",
       "localizations": {
@@ -8059,6 +8367,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zanim zaczniemy"
+          }
+        }
+      }
+    },
+    "Bench press": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyciskanie sztangi na ławce"
           }
         }
       }
@@ -8686,6 +9005,17 @@
         }
       }
     },
+    "Calendar is off in Connections, so events aren't shown.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kalendarz jest wyłączony w Połączeniach, więc wydarzeń tu nie ma."
+          }
+        }
+      }
+    },
     "Calendar · Thu 13:00": {
       "extractionState": "manual",
       "localizations": {
@@ -8752,6 +9082,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "日历、提醒事项、通讯录"
+          }
+        }
+      }
+    },
+    "Calf raise": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wspięcia na palce"
           }
         }
       }
@@ -13856,6 +14197,28 @@
         }
       }
     },
+    "Counting up": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liczy w górę"
+          }
+        }
+      }
+    },
+    "Counts up until you stop it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liczy w górę, dopóki go nie zatrzymasz."
+          }
+        }
+      }
+    },
     "Create": {
       "extractionState": "manual",
       "localizations": {
@@ -14040,6 +14403,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "自定义"
+          }
+        }
+      }
+    },
+    "Cycling": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rower"
           }
         }
       }
@@ -14357,6 +14731,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "日"
+          }
+        }
+      }
+    },
+    "Days a week: %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dni w tygodniu: %lld"
+          }
+        }
+      }
+    },
+    "Dead bug": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dead bug (martwy robak)"
           }
         }
       }
@@ -15533,6 +15929,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "删除这条记忆？"
+          }
+        }
+      }
+    },
+    "Delete this plan": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuń ten plan"
+          }
+        }
+      }
+    },
+    "Delete this plan?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usunąć ten plan?"
           }
         }
       }
@@ -16809,6 +17227,28 @@
         }
       }
     },
+    "Do you get chest pain, fainting, dizziness, unusual shortness of breath or a racing heart, at rest or with effort?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czy miewasz ból w klatce piersiowej, omdlenia, zawroty głowy, nietypową duszność albo kołatanie serca, w spoczynku lub przy wysiłku?"
+          }
+        }
+      }
+    },
+    "Do you have an injury, or pain in a joint, muscle or bone, that training could make worse?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czy masz uraz albo ból stawu, mięśnia lub kości, który trening mógłby pogorszyć?"
+          }
+        }
+      }
+    },
     "Document": {
       "extractionState": "manual",
       "localizations": {
@@ -17173,6 +17613,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy 只能找到你告诉过他的东西。他看不到你的家，也不会追踪你的物品。"
+          }
+        }
+      }
+    },
+    "Doddy can read": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy może czytać"
           }
         }
       }
@@ -17905,6 +18356,47 @@
         }
       }
     },
+    "Doddy couldn't confirm the plan was kept on this iPhone (%@). Check below what is kept now.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy couldn't confirm the plan was kept on this iPad (%@). Check below what is kept now."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy couldn't confirm the plan was kept on this iPhone (%@). Check below what is kept now."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy nie mógł potwierdzić, że plan został zachowany na tym iPadzie (%@). Sprawdź poniżej, co jest teraz zachowane."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy nie mógł potwierdzić, że plan został zachowany na tym iPhonie (%@). Sprawdź poniżej, co jest teraz zachowane."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Doddy couldn't confirm this one. Check the leaflet.": {
       "extractionState": "manual",
       "localizations": {
@@ -17934,6 +18426,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy nie mógł usunąć tego nagrania. Nic nie zostało zmienione."
+          }
+        }
+      }
+    },
+    "Doddy couldn't delete the plan from this iPhone (%@). It is still kept.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy couldn't delete the plan from this iPad (%@). It is still kept."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy couldn't delete the plan from this iPhone (%@). It is still kept."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy nie mógł usunąć planu z tego iPada (%@). Plan nadal jest zachowany."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy nie mógł usunąć planu z tego iPhone’a (%@). Plan nadal jest zachowany."
+                }
+              }
+            }
           }
         }
       }
@@ -18171,6 +18704,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy nie mógł przygotować zapisu słów do udostępnienia."
+          }
+        }
+      }
+    },
+    "Doddy couldn't read Health (%@).": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie mógł odczytać Zdrowia (%@)."
           }
         }
       }
@@ -18695,6 +19239,47 @@
         }
       }
     },
+    "Doddy has no place on this iPhone to keep a plan. Nothing was kept.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy has no place on this iPad to keep a plan. Nothing was kept."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy has no place on this iPhone to keep a plan. Nothing was kept."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy nie ma na tym iPadzie miejsca, żeby zachować plan. Nic nie zostało zachowane."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy nie ma na tym iPhonie miejsca, żeby zachować plan. Nic nie zostało zachowane."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Doddy has no place on this iPhone to keep unfinished notes. Save this one before you leave.": {
       "extractionState": "manual",
       "localizations": {
@@ -18935,6 +19520,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy 是个务实、好奇的伙伴，能发现小麻烦，先回答问题，出错时会承认。选一选他给人的感觉。"
+          }
+        }
+      }
+    },
+    "Doddy is an AI, not a doctor or a coach, and this plan isn't medical advice. Stop at once if you get pain in your chest, neck, jaw or arm, feel faint or dizzy, are unusually short of breath, or your heart races. In an emergency call 112.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy to AI, nie lekarz ani trener, a ten plan nie jest poradą medyczną. Przerwij od razu, jeśli poczujesz ból w klatce piersiowej, szyi, szczęce lub ramieniu, zrobi Ci się słabo albo zakręci Ci się w głowie, masz nietypową duszność lub serce kołacze. W nagłym wypadku dzwoń pod 112."
+          }
+        }
+      }
+    },
+    "Doddy is an AI, not a doctor or a coach. For pain, dizziness or anything that worries you, see a doctor.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy to AI, a nie lekarz ani trener. Przy bólu, zawrotach głowy albo czymkolwiek, co Cię niepokoi, idź do lekarza."
           }
         }
       }
@@ -22015,6 +22622,17 @@
         }
       }
     },
+    "Doddy's voice": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Głos Doddy’ego"
+          }
+        }
+      }
+    },
     "Doddy's voice (ElevenLabs)": {
       "extractionState": "manual",
       "localizations": {
@@ -22022,6 +22640,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Głos Doddy’ego (ElevenLabs)"
+          }
+        }
+      }
+    },
+    "Doddy's voice doesn't hear Health data. You can let it hear the week's summary when you ask how your week went.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Głos Doddy’ego nie słyszy danych ze Zdrowia. Możesz pozwolić mu usłyszeć podsumowanie tygodnia, gdy zapytasz, jak Ci poszło."
           }
         }
       }
@@ -22218,6 +22847,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Doddy's voice runs on ElevenLabs, which answers with an OpenAI model, or on OpenAI directly if you chose it on Home. Both get the summary as part of the conversation.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Głos Doddy’ego działa na ElevenLabs, które odpowiada modelem OpenAI, albo bezpośrednio na OpenAI, jeśli wybrałeś je na ekranie głównym. Oba dostają podsumowanie jako część rozmowy."
           }
         }
       }
@@ -23752,6 +24392,39 @@
         }
       }
     },
+    "Dumbbell bench press": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyciskanie hantli na ławce"
+          }
+        }
+      }
+    },
+    "Dumbbell shoulder press": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyciskanie hantli nad głowę"
+          }
+        }
+      }
+    },
+    "During pregnancy and after giving birth, your doctor or midwife can say which activity suits you now. Doddy doesn't make a plan for this time.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W ciąży i po porodzie to lekarz lub położna powie, jaka aktywność jest teraz dla Ciebie. Doddy nie układa planu na ten czas."
+          }
+        }
+      }
+    },
     "Dynamic Island": {
       "extractionState": "manual",
       "localizations": {
@@ -23840,6 +24513,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "E-MAIL"
+          }
+        }
+      }
+    },
+    "Easy run": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spokojny bieg"
           }
         }
       }
@@ -23958,6 +24642,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "编辑这条笔记"
+          }
+        }
+      }
+    },
+    "ElevenLabs keeps each conversation's recording and transcript. Doddy's settings there keep them with no time limit for now.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ElevenLabs przechowuje nagranie i zapis każdej rozmowy. Ustawienia Doddy’ego w ElevenLabs trzymają je na razie bez limitu czasu."
           }
         }
       }
@@ -24603,6 +25298,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "每天"
+          }
+        }
+      }
+    },
+    "Every fourth week lighter": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co czwarty tydzień lżejszy"
           }
         }
       }
@@ -26304,6 +27010,17 @@
         }
       }
     },
+    "First 5 km": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pierwsze 5 km"
+          }
+        }
+      }
+    },
     "First items, one per line": {
       "extractionState": "manual",
       "localizations": {
@@ -26606,6 +27323,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "专注"
+          }
+        }
+      }
+    },
+    "Focus and stopwatch": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skupienie i stoper"
           }
         }
       }
@@ -26923,6 +27651,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Na ekranie blokady: przytrzymaj go, stuknij Dostosuj, wybierz ekran blokady, stuknij element sterujący na dole i wyszukaj Doddy."
+          }
+        }
+      }
+    },
+    "For what you mustn't miss: it rings even in Silent mode or a Focus, with Stop and In 10 min. The notification with Done still comes too.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na to, czego nie możesz przegapić: zadzwoni nawet w trybie cichym i przy włączonym skupieniu, z przyciskami Zatrzymaj i Za 10 min. Powiadomienie z przyciskiem Gotowe też przyjdzie."
           }
         }
       }
@@ -27617,6 +28356,17 @@
         }
       }
     },
+    "From walking to 30 minutes of running without stopping": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Od marszu do 30 minut biegu bez zatrzymywania się"
+          }
+        }
+      }
+    },
     "From your saved notes": {
       "extractionState": "manual",
       "localizations": {
@@ -27812,6 +28562,17 @@
         }
       }
     },
+    "Glute bridge": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostek biodrowy"
+          }
+        }
+      }
+    },
     "Go through the steps again": {
       "extractionState": "manual",
       "localizations": {
@@ -27959,6 +28720,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cel, jednym zdaniem"
+          }
+        }
+      }
+    },
+    "Goblet squat": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przysiad z hantlą przy klatce (goblet)"
           }
         }
       }
@@ -28151,6 +28923,17 @@
         }
       }
     },
+    "Half marathon": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Półmaraton"
+          }
+        }
+      }
+    },
     "Hand Doddy a task in a conversation, like \"compare flights to Rome next month under 2000 zł\". One yes lets Doddy search the web and read pages as often as the task needs, in the background. You get a notification when it's done. Nothing is booked, bought or sent.": {
       "extractionState": "manual",
       "localizations": {
@@ -28158,6 +28941,113 @@
           "stringUnit": {
             "state": "translated",
             "value": "Przekaż Doddy’emu sprawę w rozmowie, np. „porównaj loty do Rzymu w przyszłym miesiącu do 2000 zł”. Jedno „tak” pozwala Doddy’emu szukać w sieci i czytać strony w tle tyle razy, ile sprawa wymaga. Gdy skończy, dostaniesz powiadomienie. Nic nie jest rezerwowane, kupowane ani wysyłane."
+          }
+        }
+      }
+    },
+    "Has a doctor told you that you have a heart, lung, kidney or metabolic condition, such as diabetes?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czy lekarz stwierdził u Ciebie chorobę serca, płuc, nerek albo przemiany materii, na przykład cukrzycę?"
+          }
+        }
+      }
+    },
+    "Has a doctor told you to limit exercise?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czy lekarz zalecił Ci ograniczenie wysiłku?"
+          }
+        }
+      }
+    },
+    "Health can't be read while this iPhone is locked. Unlock it and try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Health can't be read while this iPad is locked. Unlock it and try again."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Health can't be read while this iPhone is locked. Unlock it and try again."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zdrowia nie da się odczytać, gdy iPad jest zablokowany. Odblokuj go i spróbuj ponownie."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zdrowia nie da się odczytać, gdy iPhone jest zablokowany. Odblokuj go i spróbuj ponownie."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Health data is sensitive. Here is what happens if you allow it:": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dane o zdrowiu są wrażliwe. Oto co się stanie, jeśli się zgodzisz:"
+          }
+        }
+      }
+    },
+    "Health isn't available on this device.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zdrowie nie jest dostępne na tym urządzeniu."
+          }
+        }
+      }
+    },
+    "Health keeps your data. Doddy reads it only while this screen is open, keeps none of it and writes nothing to Health.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoje dane trzyma aplikacja Zdrowie. Doddy czyta je tylko wtedy, gdy ten ekran jest otwarty, niczego nie zachowuje i nic nie zapisuje w Zdrowiu."
+          }
+        }
+      }
+    },
+    "Heart rate variability": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zmienność rytmu serca"
           }
         }
       }
@@ -28501,6 +29391,28 @@
         }
       }
     },
+    "Hiking": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wędrówka"
+          }
+        }
+      }
+    },
+    "Hip thrust": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hip thrust (wypychanie bioder)"
+          }
+        }
+      }
+    },
     "History": {
       "extractionState": "manual",
       "localizations": {
@@ -28567,6 +29479,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "首页"
+          }
+        }
+      }
+    },
+    "How Doddy makes it": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jak Doddy go układa"
           }
         }
       }
@@ -28700,6 +29623,17 @@
         }
       }
     },
+    "How did my week go? Rate it briefly, compare it with the week before and suggest one thing to change. No medical advice, please.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jak mi poszedł ten tydzień? Oceń go krótko, porównaj z poprzednim i podpowiedz jedną rzecz do zmiany. Bez porad medycznych, proszę."
+          }
+        }
+      }
+    },
     "How do you want\nto open me?": {
       "extractionState": "manual",
       "localizations": {
@@ -28707,6 +29641,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Jak chcesz\nmnie otwierać?"
+          }
+        }
+      }
+    },
+    "How much you train now": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ile teraz trenujesz"
           }
         }
       }
@@ -28840,6 +29785,17 @@
         }
       }
     },
+    "I don't train now": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Teraz nie trenuję"
+          }
+        }
+      }
+    },
     "I haven't\nfound that.": {
       "extractionState": "manual",
       "localizations": {
@@ -28899,6 +29855,17 @@
         }
       }
     },
+    "I know my longest run of the last 30 days": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Znam swój najdłuższy bieg z ostatnich 30 dni"
+          }
+        }
+      }
+    },
     "I ran it another way": {
       "extractionState": "manual",
       "localizations": {
@@ -28954,6 +29921,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "我换了一种方式运行"
+          }
+        }
+      }
+    },
+    "I train most weeks": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trenuję prawie co tydzień"
+          }
+        }
+      }
+    },
+    "I train now and then": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trenuję od czasu do czasu"
           }
         }
       }
@@ -29256,6 +30245,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Jeśli rozmówca poprosi o coś spoza karty, Doddy powie zdanie powyżej i uprzejmie zakończy."
+          }
+        }
+      }
+    },
+    "If you don't know it, Doddy starts from 30 minutes, or 45 if you train most weeks.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jeśli go nie znasz, Doddy zaczyna od 30 minut, a od 45, jeśli trenujesz prawie co tydzień."
           }
         }
       }
@@ -29754,6 +30754,17 @@
         }
       }
     },
+    "In the Health app, tap your picture, then Apps, then Doddy, and turn off what Doddy may read. Doddy can't change that for you.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W aplikacji Zdrowie stuknij swoje zdjęcie, potem Aplikacje, potem Doddy, i wyłącz to, czego Doddy ma nie czytać. Doddy nie może zmienić tego za Ciebie."
+          }
+        }
+      }
+    },
     "InPost parcel number (24 digits)": {
       "extractionState": "manual",
       "localizations": {
@@ -29761,6 +30772,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Numer przesyłki InPost (24 cyfry)"
+          }
+        }
+      }
+    },
+    "Incline push-up": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pompka z rękami na podwyższeniu"
           }
         }
       }
@@ -29942,6 +30964,28 @@
         }
       }
     },
+    "Intervals": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Interwały"
+          }
+        }
+      }
+    },
+    "Intervals (HIIT)": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Interwały (HIIT)"
+          }
+        }
+      }
+    },
     "Invoice card example": {
       "extractionState": "manual",
       "localizations": {
@@ -30089,6 +31133,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Trafi na listę „%@” jako: %@"
+          }
+        }
+      }
+    },
+    "It goes to Doddy's server and to Claude (Anthropic), which writes the answer. Doddy's server doesn't keep or log what you write, only how many questions you asked.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trafia na serwer Doddy’ego i do Claude (Anthropic), który pisze odpowiedź. Serwer Doddy’ego nie zapisuje ani nie loguje tego, co piszesz, tylko liczbę pytań."
           }
         }
       }
@@ -31087,6 +32142,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "即使在静音模式或专注模式下也会响，可稍后提醒 9 分钟。在设置的“闹钟”中关闭，或者让 Doddy 关闭。"
+          }
+        }
+      }
+    },
+    "It rings even in Silent mode or a Focus, with the time left on the Lock Screen.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zadzwoni nawet w trybie cichym i przy włączonym skupieniu, a na ekranie blokady zobaczysz, ile czasu zostało."
           }
         }
       }
@@ -32545,6 +33611,47 @@
         }
       }
     },
+    "Keep this plan on this iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Keep this plan on this iPad"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Keep this plan on this iPhone"
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zachowaj ten plan na tym iPadzie"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zachowaj ten plan na tym iPhonie"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Keep your conversations on Doddy's server?": {
       "extractionState": "manual",
       "localizations": {
@@ -32563,6 +33670,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Przechowywać Twoje notatki na serwerze Doddy’ego?"
+          }
+        }
+      }
+    },
+    "Keeping this plan replaces the one you have.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zachowanie tego planu zastąpi ten, który masz."
           }
         }
       }
@@ -33663,6 +34781,17 @@
         }
       }
     },
+    "Knee push-up": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pompka na kolanach"
+          }
+        }
+      }
+    },
     "Known cost, all calls": {
       "extractionState": "manual",
       "localizations": {
@@ -33921,6 +35050,17 @@
         }
       }
     },
+    "Last 7 days": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ostatnie 7 dni"
+          }
+        }
+      }
+    },
     "Last action": {
       "extractionState": "manual",
       "localizations": {
@@ -33987,6 +35127,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ostatnio sprawdzono: %@"
+          }
+        }
+      }
+    },
+    "Last night": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ostatnia noc"
+          }
+        }
+      }
+    },
+    "Last night's sleep: time asleep and its stages": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sen z ostatniej nocy: czas snu i jego fazy"
           }
         }
       }
@@ -34175,6 +35337,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ostatnio użyta"
+          }
+        }
+      }
+    },
+    "Lat pulldown": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ściąganie drążka wyciągu górnego"
           }
         }
       }
@@ -34588,6 +35761,17 @@
         }
       }
     },
+    "Leg press": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wypychanie nogami na suwnicy"
+          }
+        }
+      }
+    },
     "Length": {
       "extractionState": "manual",
       "localizations": {
@@ -34713,6 +35897,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "允许 Doddy 在通话中使用我的记忆"
+          }
+        }
+      }
+    },
+    "Let Doddy's voice hear the week": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pozwól głosowi Doddy’ego usłyszeć tydzień"
+          }
+        }
+      }
+    },
+    "Let Doddy's voice hear your week?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pozwolić głosowi Doddy’ego usłyszeć Twój tydzień?"
           }
         }
       }
@@ -36495,6 +37701,17 @@
         }
       }
     },
+    "Long run": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Długi bieg"
+          }
+        }
+      }
+    },
     "Longest call": {
       "extractionState": "manual",
       "localizations": {
@@ -36502,6 +37719,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Najdłuższa rozmowa"
+          }
+        }
+      }
+    },
+    "Longest run: %lld min": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najdłuższy bieg: %lld min"
           }
         }
       }
@@ -36760,6 +37988,17 @@
         }
       }
     },
+    "Machines, dumbbells and a barbell": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maszyny, hantle i sztanga"
+          }
+        }
+      }
+    },
     "Made by Doddy": {
       "extractionState": "manual",
       "localizations": {
@@ -36778,6 +38017,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zrobione tylko z zapisu na żywo; zapis od dostawcy głosu nie dotarł."
+          }
+        }
+      }
+    },
+    "Made on this iPhone from your calendar, reminders, Doddy's reminders and the birthdays you picked. Nothing is sent anywhere.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Made on this iPad from your calendar, reminders, Doddy's reminders and the birthdays you picked. Nothing is sent anywhere."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Made on this iPhone from your calendar, reminders, Doddy's reminders and the birthdays you picked. Nothing is sent anywhere."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zrobione na tym iPadzie z Twojego kalendarza, przypomnień, przypomnień Doddy'ego i urodzin wybranych osób. Nic nie jest nigdzie wysyłane."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zrobione na tym iPhonie z Twojego kalendarza, przypomnień, przypomnień Doddy'ego i urodzin wybranych osób. Nic nie jest nigdzie wysyłane."
+                }
+              }
+            }
           }
         }
       }
@@ -37037,6 +38317,28 @@
         }
       }
     },
+    "Make a new plan": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ułóż nowy plan"
+          }
+        }
+      }
+    },
+    "Make a plan": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ułóż plan"
+          }
+        }
+      }
+    },
     "Make it": {
       "extractionState": "manual",
       "localizations": {
@@ -37240,6 +38542,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Przygotuj prezentację"
+          }
+        }
+      }
+    },
+    "Make the plan": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ułóż plan"
           }
         }
       }
@@ -37845,6 +39158,17 @@
         }
       }
     },
+    "Messages you already sent stay in Messages until you delete them.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wiadomości, które już wysłałeś, zostają w Wiadomościach, dopóki ich nie usuniesz."
+          }
+        }
+      }
+    },
     "Microphone": {
       "extractionState": "manual",
       "localizations": {
@@ -38018,6 +39342,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "分钟"
+          }
+        }
+      }
+    },
+    "Minutes a session: %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minuty na trening: %lld"
           }
         }
       }
@@ -38575,6 +39910,17 @@
         }
       }
     },
+    "Most running easy, and never two hard days in a row": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Większość biegania spokojnie i nigdy dwa mocne dni pod rząd"
+          }
+        }
+      }
+    },
     "Move %lld": {
       "extractionState": "manual",
       "localizations": {
@@ -39076,6 +40422,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "我的订阅源"
+          }
+        }
+      }
+    },
+    "My numbers from Apple Health:": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moje liczby z Apple Health:"
           }
         }
       }
@@ -40134,6 +41491,17 @@
         }
       }
     },
+    "New plan": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nowy plan"
+          }
+        }
+      }
+    },
     "Newest first": {
       "extractionState": "manual",
       "localizations": {
@@ -40248,6 +41616,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "下一步"
+          }
+        }
+      }
+    },
+    "Next Monday": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Od następnego poniedziałku"
           }
         }
       }
@@ -41325,6 +42704,17 @@
         }
       }
     },
+    "No run more than 10 percent longer than your longest in the four weeks before": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Żaden bieg nie dłuższy o więcej niż 10 procent od Twojego najdłuższego z poprzednich czterech tygodni"
+          }
+        }
+      }
+    },
     "No speech was found in this recording.": {
       "extractionState": "manual",
       "localizations": {
@@ -41506,6 +42896,17 @@
         }
       }
     },
+    "No training today. Rest is part of the plan.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dziś bez treningu. Odpoczynek też jest częścią planu."
+          }
+        }
+      }
+    },
     "No words were heard. Add a few words so you can find the note later.": {
       "extractionState": "manual",
       "localizations": {
@@ -41679,6 +43080,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "无"
+          }
+        }
+      }
+    },
+    "None in the last 7 days": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brak w ostatnich 7 dniach"
           }
         }
       }
@@ -44094,6 +45506,17 @@
         }
       }
     },
+    "Nothing is sent by itself: each time, Messages opens with the text and you tap Send.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nic nie wysyła się samo: za każdym razem Wiadomości otwierają się z tekstem, a Ty stukasz Wyślij."
+          }
+        }
+      }
+    },
     "Nothing is sent until you tap yes": {
       "extractionState": "manual",
       "localizations": {
@@ -44843,6 +46266,17 @@
         }
       }
     },
+    "Nothing on your calendar, no reminders and no birthdays in the next seven days that Doddy can see.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W najbliższych siedmiu dniach Doddy nie widzi niczego w kalendarzu, żadnych przypomnień ani urodzin."
+          }
+        }
+      }
+    },
     "Nothing open that I know of.": {
       "extractionState": "manual",
       "localizations": {
@@ -44850,6 +46284,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nie widzę otwartych pytań."
+          }
+        }
+      }
+    },
+    "Nothing planned": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nic zaplanowanego"
           }
         }
       }
@@ -45038,6 +46483,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "没有要保留的内容。没关系：不需要这些你也能使用 Doddy。"
+          }
+        }
+      }
+    },
+    "Nothing to show. Either Health has nothing from the last 7 days, or Doddy isn't allowed to read it. iPhone doesn't tell apps which.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie ma nic do pokazania. Albo w Zdrowiu nie ma nic z ostatnich 7 dni, albo Doddy nie ma pozwolenia, żeby to czytać. iPhone nie mówi aplikacjom, które z nich."
           }
         }
       }
@@ -45975,6 +47431,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy 的通知已关闭，所以每周回顾无法送达。请在 iOS 设置中开启。"
+          }
+        }
+      }
+    },
+    "Notifications are off for Doddy, so the plan can't arrive. Turn them on in iOS Settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powiadomienia dla Doddy'ego są wyłączone, więc plan nie może przyjść. Włącz je w Ustawieniach iOS."
           }
         }
       }
@@ -47075,6 +48542,17 @@
         }
       }
     },
+    "Once a week a notification says only \"New week\". Its screen shows the next seven days from your calendar, reminders, Doddy's reminders and the birthdays you picked. It comes quietly, never between 22:00 and 7:00.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raz w tygodniu powiadomienie mówi tylko „Nowy tydzień”. Jego ekran pokazuje najbliższe siedem dni z Twojego kalendarza, przypomnień, przypomnień Doddy'ego i urodzin wybranych osób. Przychodzi po cichu, nigdy między 22:00 a 7:00."
+          }
+        }
+      }
+    },
     "Once a week a notification says only \"Your week with Doddy\". Its screen shows what you saved, ticked off and asked Doddy to do, and what's coming up. No streaks or scores.": {
       "extractionState": "manual",
       "localizations": {
@@ -47561,6 +49039,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "在线账户需要一台 Doddy 服务器。请在设置 › 已连接的应用服务器中设置其地址和会话令牌。"
+          }
+        }
+      }
+    },
+    "Only a short summary of the week, and only when you allow it: in Messages when you send it yourself (to Doddy's server and Claude), or to Doddy's voice when you ask and say yes (ElevenLabs with an OpenAI model, or OpenAI directly). Never the raw data.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tylko krótkie podsumowanie tygodnia i tylko za Twoją zgodą: w Wiadomościach, gdy sam je wyślesz (na serwer Doddy’ego i do Claude), albo do głosu Doddy’ego, gdy zapytasz i się zgodzisz (ElevenLabs z modelem OpenAI albo bezpośrednio OpenAI). Nigdy surowe dane."
           }
         }
       }
@@ -48063,6 +49552,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "只有按住按钮一方的话会被听到并翻译。"
+          }
+        }
+      }
+    },
+    "Only the summary you see goes: the week's numbers, no raw data from Health.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wysyłane jest tylko podsumowanie, które widzisz: liczby z tygodnia, bez surowych danych ze Zdrowia."
           }
         }
       }
@@ -49874,6 +51374,17 @@
         }
       }
     },
+    "Open the plan now": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz plan teraz"
+          }
+        }
+      }
+    },
     "Open the tidy-up now": {
       "extractionState": "manual",
       "localizations": {
@@ -51371,6 +52882,17 @@
         }
       }
     },
+    "Pause": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pauza"
+          }
+        }
+      }
+    },
     "Pause DODDY Recording": {
       "extractionState": "manual",
       "localizations": {
@@ -51496,6 +53018,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "暂停或继续"
+          }
+        }
+      }
+    },
+    "Pause timer": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wstrzymaj minutnik"
           }
         }
       }
@@ -52573,6 +54106,17 @@
         }
       }
     },
+    "Pike push-up": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pompka w pozycji pike (biodra w górze)"
+          }
+        }
+      }
+    },
     "Pin limit reached": {
       "extractionState": "manual",
       "localizations": {
@@ -52868,6 +54412,28 @@
         }
       }
     },
+    "Plan at least %lld days a week for this goal.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przy tym celu zaplanuj co najmniej tyle dni w tygodniu: %lld."
+          }
+        }
+      }
+    },
+    "Plan it with an adult": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaplanuj to z dorosłym"
+          }
+        }
+      }
+    },
     "Plan ready": {
       "extractionState": "manual",
       "localizations": {
@@ -52923,6 +54489,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "计划已就绪"
+          }
+        }
+      }
+    },
+    "Plank": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deska"
           }
         }
       }
@@ -54075,6 +55652,17 @@
         }
       }
     },
+    "Push-up": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pompka"
+          }
+        }
+      }
+    },
     "Put Talk to Doddy one tap away, even from the Lock Screen.": {
       "extractionState": "manual",
       "localizations": {
@@ -54738,6 +56326,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "读 Doddy 中的清单"
+          }
+        }
+      }
+    },
+    "Read again": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odczytaj ponownie"
           }
         }
       }
@@ -56806,6 +58405,17 @@
         }
       }
     },
+    "Reminders is off in Connections, so Apple Reminders aren't shown.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnienia są wyłączone w Połączeniach, więc przypomnień Apple tu nie ma."
+          }
+        }
+      }
+    },
     "Reminders on notes": {
       "extractionState": "manual",
       "localizations": {
@@ -58510,6 +60120,28 @@
         }
       }
     },
+    "Resting heart rate": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tętno spoczynkowe"
+          }
+        }
+      }
+    },
+    "Resting heart rate and heart rate variability (HRV)": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tętno spoczynkowe i zmienność rytmu serca (HRV)"
+          }
+        }
+      }
+    },
     "Restore a backup": {
       "extractionState": "manual",
       "localizations": {
@@ -58687,6 +60319,17 @@
         }
       }
     },
+    "Resume": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wznów"
+          }
+        }
+      }
+    },
     "Resume DODDY Recording": {
       "extractionState": "manual",
       "localizations": {
@@ -58694,6 +60337,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wznów nagrywanie DODDY"
+          }
+        }
+      }
+    },
+    "Resume timer": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wznów minutnik"
+          }
+        }
+      }
+    },
+    "Reverse lunge": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wykrok w tył"
           }
         }
       }
@@ -58768,6 +60433,17 @@
         }
       }
     },
+    "Ring like an alarm": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dzwoń jak budzik"
+          }
+        }
+      }
+    },
     "Ringing": {
       "extractionState": "manual",
       "localizations": {
@@ -58797,6 +60473,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dzwoni…"
+          }
+        }
+      }
+    },
+    "Rings even in Silent mode or a Focus, with Stop and In 10 min.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zadzwoni nawet w trybie cichym i przy włączonym skupieniu, z przyciskami Zatrzymaj i Za 10 min."
+          }
+        }
+      }
+    },
+    "Rings like an alarm, even in Silent mode": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dzwoni jak budzik, także w trybie cichym"
+          }
+        }
+      }
+    },
+    "Romanian deadlift": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Martwy ciąg rumuński"
           }
         }
       }
@@ -59048,6 +60757,17 @@
         }
       }
     },
+    "Run and walk": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bieg i marsz"
+          }
+        }
+      }
+    },
     "Run this Shortcut?": {
       "extractionState": "manual",
       "localizations": {
@@ -59107,6 +60827,28 @@
         }
       }
     },
+    "Running": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liczy"
+          }
+        }
+      }
+    },
+    "Running workout": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bieg"
+          }
+        }
+      }
+    },
     "SHOP": {
       "extractionState": "manual",
       "localizations": {
@@ -59147,6 +60889,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "SLAJDY"
+          }
+        }
+      }
+    },
+    "STOPWATCH": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "STOPER"
+          }
+        }
+      }
+    },
+    "Safety": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bezpieczeństwo"
           }
         }
       }
@@ -62535,6 +64299,28 @@
         }
       }
     },
+    "Seated cable row": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wiosłowanie na wyciągu siedząc"
+          }
+        }
+      }
+    },
+    "See a physiotherapist or doctor first": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najpierw fizjoterapeuta lub lekarz"
+          }
+        }
+      }
+    },
     "See how an invoice card looks": {
       "extractionState": "manual",
       "localizations": {
@@ -62878,6 +64664,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "发送"
+          }
+        }
+      }
+    },
+    "Send Health summaries to Doddy?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wysyłać Doddy’emu podsumowania ze Zdrowia?"
           }
         }
       }
@@ -63634,6 +65431,17 @@
         }
       }
     },
+    "Sessions for this goal take at least %lld minutes. Choose more minutes, or another goal.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Treningi przy tym celu trwają co najmniej %lld min. Wybierz więcej minut albo inny cel."
+          }
+        }
+      }
+    },
     "Set": {
       "extractionState": "manual",
       "localizations": {
@@ -63940,6 +65748,17 @@
         }
       }
     },
+    "Set to ring like an alarm, but the iPhone hasn't confirmed the alarm. Check that Doddy may set alarms in iPhone Settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ma dzwonić jak budzik, ale iPhone nie potwierdził budzika. Sprawdź w Ustawieniach iPhone’a, czy Doddy może ustawiać budziki."
+          }
+        }
+      }
+    },
     "Set up later": {
       "extractionState": "manual",
       "localizations": {
@@ -64054,6 +65873,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "已设置。每周回顾每周一次。"
+          }
+        }
+      }
+    },
+    "Set. The plan comes once a week.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ustawione. Plan przychodzi raz w tygodniu."
           }
         }
       }
@@ -66079,6 +67909,17 @@
         }
       }
     },
+    "Side plank": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deska bokiem"
+          }
+        }
+      }
+    },
     "Sign in from Doddy": {
       "extractionState": "manual",
       "localizations": {
@@ -66271,6 +68112,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zalogowane przeglądarki"
+          }
+        }
+      }
+    },
+    "Single-leg glute bridge": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostek biodrowy na jednej nodze"
           }
         }
       }
@@ -67159,6 +69011,17 @@
         }
       }
     },
+    "Sport and health": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sport i zdrowie"
+          }
+        }
+      }
+    },
     "Spreadsheet": {
       "extractionState": "manual",
       "localizations": {
@@ -67166,6 +69029,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Arkusz"
+          }
+        }
+      }
+    },
+    "Squat": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przysiad"
           }
         }
       }
@@ -67605,6 +69479,17 @@
         }
       }
     },
+    "Start stopwatch": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Włącz stoper"
+          }
+        }
+      }
+    },
     "Start talking when Doddy opens.": {
       "extractionState": "manual",
       "localizations": {
@@ -67863,6 +69748,17 @@
         }
       }
     },
+    "Start with “%@”": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zacznij od „%@”"
+          }
+        }
+      }
+    },
     "Started": {
       "extractionState": "manual",
       "localizations": {
@@ -68058,6 +69954,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "起始语言"
+          }
+        }
+      }
+    },
+    "Starts on Monday. Days to go: %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start w poniedziałek. Dni do startu: %lld"
           }
         }
       }
@@ -68675,6 +70582,17 @@
         }
       }
     },
+    "Stop Doddy's voice hearing Health": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyłącz Zdrowie dla głosu Doddy’ego"
+          }
+        }
+      }
+    },
     "Stop listening": {
       "extractionState": "manual",
       "localizations": {
@@ -68800,6 +70718,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "停止重复"
+          }
+        }
+      }
+    },
+    "Stop sending Health summaries": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przestań wysyłać podsumowania ze Zdrowia"
           }
         }
       }
@@ -68933,6 +70862,17 @@
         }
       }
     },
+    "Stop timer": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zatrzymaj minutnik"
+          }
+        }
+      }
+    },
     "Stopped": {
       "extractionState": "manual",
       "localizations": {
@@ -68992,6 +70932,17 @@
         }
       }
     },
+    "Stopped at %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zatrzymany na %@"
+          }
+        }
+      }
+    },
     "Stopped before it was finished. Ask Doddy to try again.": {
       "extractionState": "manual",
       "localizations": {
@@ -69010,6 +70961,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zatrzymuje nagrywanie i zapisuje je w Nagraniach."
+          }
+        }
+      }
+    },
+    "Stopwatch": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stoper"
+          }
+        }
+      }
+    },
+    "Stopwatch · on": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stoper · włączony"
           }
         }
       }
@@ -69069,6 +71042,61 @@
           "stringUnit": {
             "state": "translated",
             "value": "直接来自你的笔记"
+          }
+        }
+      }
+    },
+    "Strength": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Siła"
+          }
+        }
+      }
+    },
+    "Strength at home": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Siła w domu"
+          }
+        }
+      }
+    },
+    "Strength at the gym": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Siła na siłowni"
+          }
+        }
+      }
+    },
+    "Strength sets stop with 2 to 3 reps left, never at failure": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serie siłowe kończysz z zapasem 2–3 powtórzeń, nigdy do upadku mięśniowego"
+          }
+        }
+      }
+    },
+    "Strength training": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trening siłowy"
           }
         }
       }
@@ -69301,6 +71329,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Podsumowanie napisane przez Claude na podstawie zapisu."
+          }
+        }
+      }
+    },
+    "Swimming": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pływanie"
           }
         }
       }
@@ -69913,6 +71952,17 @@
         }
       }
     },
+    "Talk to a doctor first": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najpierw porozmawiaj z lekarzem"
+          }
+        }
+      }
+    },
     "Talking isn't available right now. You can type instead.": {
       "extractionState": "manual",
       "localizations": {
@@ -70211,6 +72261,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sprawy"
+          }
+        }
+      }
+    },
+    "Tempo run": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bieg w tempie"
           }
         }
       }
@@ -72700,6 +74761,17 @@
         }
       }
     },
+    "The 7 days before": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "7 dni wcześniej"
+          }
+        }
+      }
+    },
     "The Doddy list this widget shows.": {
       "extractionState": "manual",
       "localizations": {
@@ -73727,6 +75799,58 @@
         }
       }
     },
+    "The kept plan couldn't be read. It is still on this iPhone; delete it, or make a new plan.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The kept plan couldn't be read. It is still on this iPad; delete it, or make a new plan."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The kept plan couldn't be read. It is still on this iPhone; delete it, or make a new plan."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zachowanego planu nie da się odczytać. Nadal jest na tym iPadzie; usuń go albo ułóż nowy plan."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zachowanego planu nie da się odczytać. Nadal jest na tym iPhonie; usuń go albo ułóż nowy plan."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "The kept plan isn't the one this version of Doddy makes for its answers, so it isn't shown. Delete it, or make a new plan.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zachowany plan nie jest tym, który ta wersja Doddy’ego układa dla tych odpowiedzi, więc nie jest pokazywany. Usuń go albo ułóż nowy plan."
+          }
+        }
+      }
+    },
     "The key couldn't be removed: the Keychain still has it.": {
       "extractionState": "manual",
       "localizations": {
@@ -73890,6 +76014,28 @@
         }
       }
     },
+    "The last week: lighter on weekdays, so you arrive fresh for the goal run.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ostatni tydzień: lżej w dni powszednie, żebyś na bieg docelowy przyszedł wypoczęty."
+          }
+        }
+      }
+    },
+    "The last week: lighter on weekdays, so you arrive fresh for the long run.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ostatni tydzień: lżej w dni powszednie, żebyś na długi bieg przyszedł wypoczęty."
+          }
+        }
+      }
+    },
     "The leaflet couldn't be read this time.": {
       "extractionState": "manual",
       "localizations": {
@@ -73967,6 +76113,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "清单的名称和项目会拷贝到你的 iCloud，由你选择邀请谁。你邀请的每个人都可以查看、添加和勾选项目；他们的更改会同步回这里。你的笔记和其他清单不会被共享。"
+          }
+        }
+      }
+    },
+    "The long run, on the weekend, can be longer.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Długi bieg, w weekend, może trwać dłużej."
           }
         }
       }
@@ -75404,6 +77561,99 @@
           "stringUnit": {
             "state": "translated",
             "value": "照片中的文字已添加到下方。读取照片会出错，保存前请检查。"
+          }
+        }
+      }
+    },
+    "The plan and its answers are removed from this iPhone. This can't be undone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The plan and its answers are removed from this iPad. This can't be undone."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The plan and its answers are removed from this iPhone. This can't be undone."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Plan i odpowiedzi, z których powstał, zostaną usunięte z tego iPada. Tego nie da się cofnąć."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Plan i odpowiedzi, z których powstał, zostaną usunięte z tego iPhone’a. Tego nie da się cofnąć."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "The plan couldn't be set. Try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się ustawić planu. Spróbuj ponownie."
+          }
+        }
+      }
+    },
+    "The plan, and the answers it was made from, stay on this iPhone, outside iCloud and backups. Nothing is sent to Doddy's server or to an AI.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The plan, and the answers it was made from, stay on this iPad, outside iCloud and backups. Nothing is sent to Doddy's server or to an AI."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The plan, and the answers it was made from, stay on this iPhone, outside iCloud and backups. Nothing is sent to Doddy's server or to an AI."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Plan i odpowiedzi, z których powstał, zostają na tym iPadzie, poza iCloud i kopiami zapasowymi. Nic nie trafia na serwer Doddy’ego ani do AI."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Plan i odpowiedzi, z których powstał, zostają na tym iPhonie, poza iCloud i kopiami zapasowymi. Nic nie trafia na serwer Doddy’ego ani do AI."
+                }
+              }
+            }
           }
         }
       }
@@ -77650,6 +79900,17 @@
         }
       }
     },
+    "This build of Doddy can't use Health (%@).": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ta wersja Doddy’ego nie może korzystać ze Zdrowia (%@)."
+          }
+        }
+      }
+    },
     "This call": {
       "extractionState": "manual",
       "localizations": {
@@ -78140,6 +80401,39 @@
         }
       }
     },
+    "This goal is a big step from where you are now. Start with “%@”; when you've finished it, come back for “%@”.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten cel to duży krok od miejsca, w którym jesteś. Zacznij od „%@”; gdy go skończysz, wróć do „%@”."
+          }
+        }
+      }
+    },
+    "This goal needs longer sessions": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten cel wymaga dłuższych treningów"
+          }
+        }
+      }
+    },
+    "This goal needs more days": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten cel wymaga więcej dni"
+          }
+        }
+      }
+    },
     "This iPhone": {
       "extractionState": "manual",
       "localizations": {
@@ -78339,6 +80633,17 @@
         }
       }
     },
+    "This is exactly what goes to Doddy if you send it. Messages opens with it in the box; you can change it, and nothing is sent until you tap Send.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dokładnie to trafi do Doddy’ego, jeśli to wyślesz. Wiadomości otworzą się z tym tekstem w polu; możesz go zmienić, a nic nie zostanie wysłane, dopóki nie stukniesz Wyślij."
+          }
+        }
+      }
+    },
     "This is my At home list": {
       "extractionState": "manual",
       "localizations": {
@@ -78475,6 +80780,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "这不是 Google Keep 笔记。"
+          }
+        }
+      }
+    },
+    "This line shows on your Lock Screen and in the Dynamic Island while the stopwatch runs. Leave it empty to show only the time.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ta linijka pokazuje się na ekranie blokady i w Dynamic Island, gdy stoper działa. Zostaw puste, żeby pokazać tylko czas."
           }
         }
       }
@@ -79361,6 +81677,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ta przesyłka jest już na liście."
+          }
+        }
+      }
+    },
+    "This plan builds your long run to %lld min. “%@” at an easy pace takes about %lld min, and runs grow at most 10 percent at a time, so when this plan ends, make the next one from there.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten plan wydłuża Twój długi bieg do %lld min. „%@” w spokojnym tempie to około %lld min, a biegi rosną najwyżej o 10 procent naraz, więc gdy ten plan się skończy, ułóż kolejny od tego miejsca."
+          }
+        }
+      }
+    },
+    "This plan is finished. Make a new one when you're ready.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten plan jest zakończony. Ułóż nowy, kiedy zechcesz."
           }
         }
       }
@@ -80912,6 +83250,17 @@
         }
       }
     },
+    "Timers, alarms and reminders you set always come, at any hour. Doddy's own check-ins and plans stay quiet from 22:00 to 7:00: a time in those hours moves to 7:00 or 21:30. A tip from Doddy never comes on a day a check-in already did.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minutniki, budziki i przypomnienia, które ustawisz, przychodzą zawsze, o każdej porze. Rutyny i plany Doddy'ego milczą od 22:00 do 7:00: godzina z tego zakresu przesuwa się na 7:00 albo 21:30. Podpowiedź od Doddy'ego nigdy nie przychodzi w dniu, w którym przyszła już rutyna."
+          }
+        }
+      }
+    },
     "Times are in this iPhone's time zone. Doddy checks the change the same way as its own suggestion.": {
       "extractionState": "manual",
       "localizations": {
@@ -81422,6 +83771,17 @@
         }
       }
     },
+    "To stop it completely": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jak całkiem to wyłączyć"
+          }
+        }
+      }
+    },
     "Today": {
       "extractionState": "manual",
       "localizations": {
@@ -81477,6 +83837,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "今天"
+          }
+        }
+      }
+    },
+    "Tomorrow": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jutro"
           }
         }
       }
@@ -81938,6 +84309,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Training plan": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plan treningowy"
           }
         }
       }
@@ -82853,6 +85235,17 @@
         }
       }
     },
+    "Turn on Apple Health": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Włącz Apple Health"
+          }
+        }
+      }
+    },
     "Turn on Ask Doddy": {
       "extractionState": "manual",
       "localizations": {
@@ -83564,6 +85957,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wpisany ręcznie"
+          }
+        }
+      }
+    },
+    "Under 16, plan training with a parent, a PE teacher or a coach. Doddy doesn't make plans for people under 16.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przed 16. rokiem życia planuj trening z rodzicem, nauczycielem WF-u albo trenerem. Doddy nie układa planów dla osób poniżej 16 lat."
           }
         }
       }
@@ -84494,6 +86898,28 @@
         }
       }
     },
+    "Up to a long run of about 2 hours, easy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do długiego biegu około 2 godzin, spokojnie"
+          }
+        }
+      }
+    },
+    "Up to a long run of about 70 minutes, easy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do długiego biegu około 70 minut, spokojnie"
+          }
+        }
+      }
+    },
     "Up to three things you said, offered when a conversation ends. Nothing is saved unless you tap Save.": {
       "extractionState": "manual",
       "localizations": {
@@ -85306,6 +87732,17 @@
         }
       }
     },
+    "VO₂ max, the newest one": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VO₂ max, najnowszy pomiar"
+          }
+        }
+      }
+    },
     "Verify my number": {
       "extractionState": "manual",
       "localizations": {
@@ -86043,6 +88480,39 @@
         }
       }
     },
+    "Walk %lld min, run %@ without stopping, then walk %lld min.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marsz %lld min, bieg %@ bez zatrzymywania się, potem marsz %lld min."
+          }
+        }
+      }
+    },
+    "Walk %lld min. Then run %@ and walk %@, %lld times. Walk %lld min to finish.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Marsz %lld min. Potem bieg %@ i marsz %@, razy %lld. Na koniec marsz %lld min."
+          }
+        }
+      }
+    },
+    "Walking": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spacer"
+          }
+        }
+      }
+    },
     "Want to wait? Ask Doddy to look again later: prices change.": {
       "extractionState": "manual",
       "localizations": {
@@ -86367,6 +88837,28 @@
         }
       }
     },
+    "Week %lld of %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tydzień %lld z %lld"
+          }
+        }
+      }
+    },
+    "Week by week": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tydzień po tygodniu"
+          }
+        }
+      }
+    },
     "Weekdays": {
       "extractionState": "manual",
       "localizations": {
@@ -86540,6 +89032,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "每周回顾"
+          }
+        }
+      }
+    },
+    "Weekly plan": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plan na tydzień"
           }
         }
       }
@@ -86857,6 +89360,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Co Doddy może powiedzieć"
+          }
+        }
+      }
+    },
+    "What Doddy sees now": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co Doddy widzi teraz"
           }
         }
       }
@@ -87256,6 +89770,17 @@
         }
       }
     },
+    "What leaves your phone": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co opuszcza telefon"
+          }
+        }
+      }
+    },
     "What next": {
       "extractionState": "manual",
       "localizations": {
@@ -87322,6 +89847,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "我该怎么称呼你？"
+          }
+        }
+      }
+    },
+    "What stays here": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co zostaje tutaj"
           }
         }
       }
@@ -88411,6 +90947,17 @@
         }
       }
     },
+    "When you ask \"How did my week go?\", Doddy asks first, then his voice hears this week's summary. It runs on ElevenLabs with an OpenAI model, or on OpenAI directly if you chose it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gdy zapytasz „Jak mi poszedł tydzień?”, Doddy najpierw zapyta o zgodę, a potem jego głos usłyszy podsumowanie tego tygodnia. Głos działa na ElevenLabs z modelem OpenAI albo bezpośrednio na OpenAI, jeśli go wybrałeś."
+          }
+        }
+      }
+    },
     "When you ask a question, it is sent with your last few messages to Doddy's server, which passes it to Anthropic to write the answer. If \"Use relevant saved notes\" is on, notes that match your question are sent too, and the answer shows which ones. Doddy's server does not store them and logs no text. Anthropic, which runs the model, keeps requests under its own rules; we can't verify for how long. Voice conversations are separate. You can turn this off at any time.": {
       "extractionState": "manual",
       "localizations": {
@@ -88466,6 +91013,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "当你提问时，问题会和你最近几条消息一起发送到 Doddy 的服务器，再由它转给 Anthropic 来撰写回答。如果“使用相关的已保存笔记”已开启，与你问题匹配的笔记也会一并发送，回答中会显示用了哪些。Doddy 的服务器不会存储它们，也不会记录任何文字。运行模型的 Anthropic 会按其自身规则保留请求；我们无法验证保留多久。语音对话是分开的。你可以随时关闭此项。"
+          }
+        }
+      }
+    },
+    "When you ask something like \"How did my week go?\", Doddy asks first, and only after your yes does his voice hear the same summary: the week's numbers, no raw data from Health.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gdy zapytasz na przykład „Jak mi poszedł tydzień?”, Doddy najpierw zapyta, a dopiero po Twoim „tak” jego głos usłyszy to samo podsumowanie: liczby z tygodnia, bez surowych danych ze Zdrowia."
           }
         }
       }
@@ -89008,6 +91566,17 @@
         }
       }
     },
+    "With an injury or pain that training could make worse, have a physiotherapist or doctor look at it first. Doddy doesn't treat injuries or make rehab plans.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przy urazie albo bólu, który trening mógłby pogorszyć, niech najpierw obejrzy to fizjoterapeuta lub lekarz. Doddy nie leczy urazów i nie układa planów rehabilitacji."
+          }
+        }
+      }
+    },
     "Withdraw the card": {
       "extractionState": "manual",
       "localizations": {
@@ -89273,6 +91842,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在处理…"
+          }
+        }
+      }
+    },
+    "Workout": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trening"
+          }
+        }
+      }
+    },
+    "Workouts": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Treningi"
+          }
+        }
+      }
+    },
+    "Workouts from the last 7 days: kind, time, distance, pace, calories and average heart rate": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Treningi z ostatnich 7 dni: rodzaj, czas, dystans, tempo, kalorie i średnie tętno"
           }
         }
       }
@@ -89716,6 +92318,17 @@
         }
       }
     },
+    "Yes": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tak"
+          }
+        }
+      }
+    },
     "Yes, I used Double Back Tap": {
       "extractionState": "manual",
       "localizations": {
@@ -89900,6 +92513,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "昨天"
+          }
+        }
+      }
+    },
+    "Yoga": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Joga"
           }
         }
       }
@@ -90099,6 +92723,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dzwonisz ze swojego telefonu. Doddy’ego nie ma na linii i nic nie jest zapisywane."
+          }
+        }
+      }
+    },
+    "You can take this back on the Apple Health screen at any time.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Możesz to w każdej chwili cofnąć na ekranie Apple Health."
           }
         }
       }
@@ -91370,6 +94005,28 @@
         }
       }
     },
+    "Your age": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twój wiek"
+          }
+        }
+      }
+    },
+    "Your body weight and a backpack": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Masa Twojego ciała i plecak"
+          }
+        }
+      }
+    },
     "Your budget: %@": {
       "extractionState": "manual",
       "localizations": {
@@ -91539,6 +94196,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Twoje imię"
+          }
+        }
+      }
+    },
+    "Your goal": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twój cel"
           }
         }
       }
@@ -91827,6 +94495,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "你的记忆。"
+          }
+        }
+      }
+    },
+    "Your message and the answer are saved in Messages on this iPhone until you delete them.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your message and the answer are saved in Messages on this iPad until you delete them."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your message and the answer are saved in Messages on this iPhone until you delete them."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Twoja wiadomość i odpowiedź są zapisane w Wiadomościach na tym iPadzie, dopóki ich nie usuniesz."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Twoja wiadomość i odpowiedź są zapisane w Wiadomościach na tym iPhonie, dopóki ich nie usuniesz."
+                }
+              }
+            }
           }
         }
       }
@@ -92977,6 +95686,17 @@
         }
       }
     },
+    "Your plan": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twój plan"
+          }
+        }
+      }
+    },
     "Your preferences changed somewhere else while you were editing. Nothing was saved; your edits are still here. Check them and save again.": {
       "extractionState": "manual",
       "localizations": {
@@ -93349,6 +96069,28 @@
         }
       }
     },
+    "Your week": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twój tydzień"
+          }
+        }
+      }
+    },
+    "Your week\nahead": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twój tydzień\\nprzed Tobą"
+          }
+        }
+      }
+    },
     "Your week\nwith Doddy": {
       "extractionState": "manual",
       "localizations": {
@@ -93618,6 +96360,17 @@
         }
       }
     },
+    "average %@ /km": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "średnio %@ /km"
+          }
+        }
+      }
+    },
     "confirmed %@": {
       "extractionState": "manual",
       "localizations": {
@@ -93673,6 +96426,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "已确认 %@"
+          }
+        }
+      }
+    },
+    "deep %@, REM %@, core %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "głęboki %@, REM %@, podstawowy %@"
           }
         }
       }
@@ -94215,6 +96979,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "w toku"
+          }
+        }
+      }
+    },
+    "running %@ km": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "bieg %@ km"
           }
         }
       }
@@ -94938,6 +97713,17 @@
         }
       }
     },
+    "total time %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "łączny czas %@"
+          }
+        }
+      }
+    },
     "until %@": {
       "extractionState": "manual",
       "localizations": {
@@ -95004,6 +97790,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "gdziekolwiek jesteś"
+          }
+        }
+      }
+    },
+    "workouts %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "treningi: %@"
           }
         }
       }

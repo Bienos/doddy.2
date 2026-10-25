@@ -9,7 +9,7 @@
 | Regulamin (PL) | `site/pl/terms/index.html` | https://www.doddy.lol/pl/terms/ |
 | Polityka prywatności (PL) | `site/pl/privacy/index.html` | https://www.doddy.lol/pl/privacy/ (`#voice-and-ai`) |
 
-Both documents are **version `2026-10-22`**, the same strings as `LegalDocuments` in `Packages/DoddyCore/Sources/DoddyCore/LegalAcceptance.swift`. How to change a version: `site/README.md`, "Legal pages".
+The Terms are **version `2026-10-22`** and the Privacy Policy **`2026-10-25`** (Apple Health and training plans added, and the voice's model corrected to OpenAI), the same strings as `LegalDocuments` in `Packages/DoddyCore/Sources/DoddyCore/LegalAcceptance.swift`. `minimumPrivacyVersion` stays `2026-10-22`, so nobody is asked to accept again: each Health flow has its own consent in the app. **[ ] Decide** whether this change is material enough to raise it. How to change a version: `site/README.md`, "Legal pages".
 
 Every gap is a visible `<span class="ph" data-ph="ID">` on the page: `[OWNER: …]` in English, `[WŁAŚCICIEL: …]` in Polish. The same ID is used in both languages. To list them: `grep -o 'data-ph="[A-Z0-9]*"' site/terms/index.html site/privacy/index.html site/pl/*/index.html | sort | uniq -c`. When a gap is filled, replace the whole `<span class="ph" …>…</span>` with plain text in **both** languages.
 
@@ -57,8 +57,8 @@ Every gap is a visible `<span class="ph" data-ph="ID">` on the page: `[OWNER: �
 - [ ] **R6** Retention of account and connection records on Doddy's server (`backend/`), and how a user deletes them. P `#retention`. There is no account-delete route in `backend/src/http.ts`; the page says "write to us" (C2) instead.
 
 ### Processors, agreements, providers
-- [ ] **D1** Which data processing agreements exist, and each company's role (processor, sub-processor, independent controller). P `#processors`. The page lists: ElevenLabs, Google (Gemini via ElevenLabs), OpenAI, Anthropic, Composio, Monid / Search1API / LiteScrape, Open-Meteo, Wikipedia, Apple, ECB, Vercel, Upstash, Render, Supabase, Google Analytics / Fonts. Twilio and GNews are mentioned only under the messaging server, which no shipped build reaches.
-- [ ] **D2** Which model the live ElevenLabs agent uses at release. P `#voice-provider`. `voice-agent/session.json` says `gemini-3.5-flash` (values "as read on 2026-10-09"); the unmerged `claude/ecstatic-allen-ptjm3u` says the live agent runs Eleven Realtime Max. The page names Gemini from the file on main and flags it.
+- [ ] **D1** Which data processing agreements exist, and each company's role (processor, sub-processor, independent controller). P `#processors`. The page lists: ElevenLabs, OpenAI (the model behind ElevenLabs, and the Realtime voice), Anthropic, Composio, Monid / Search1API / LiteScrape, Open-Meteo, Wikipedia, Apple, ECB, Vercel, Upstash, Render, Supabase, Google Analytics / Fonts. Twilio and GNews are mentioned only under the messaging server, which no shipped build reaches.
+- [ ] **D2** Which model the live ElevenLabs agent uses at release. P `#voice-provider`. Read from the live agent on 24 Oct 2026: an OpenAI model (`gpt-6-luna`); `voice-agent/session.json` still says `gemini-3.5-flash` (values "as read on 2026-10-09") and is out of date. Since version 2026-10-25 the page names OpenAI and still flags it.
 - [ ] **D3** Each provider's training and retention terms (ElevenLabs, Google, OpenAI, Anthropic). P `#ai-training`. The page says *we* don't train on user data (no training code exists in the repo); it makes no claim for the providers.
 
 ### International transfers
@@ -69,6 +69,8 @@ Every gap is a visible `<span class="ph" data-ph="ID">` on the page: `[OWNER: �
 - [ ] **B2** Analytics cookies: Google Analytics runs on every page with no consent step (`site/analytics.js`, owner's choice of 15 Oct). P `#website` and `#legal-bases`. For EU visitors this very likely needs prior consent (ePrivacy rules); decide with the lawyer.
 - [ ] **B3** Special-category data users put in notes or say aloud (health etc.): explicit consent as proposed?
 - [ ] **B4** Other people's voices in translator mode (and people near the phone): basis and how they are told.
+- [ ] **B5** Apple Health (sport mode, ADR-621 to 623): reading Health and sending the week summary in Messages or to the voice, each with its own in-app consent (`HealthShareConsent`, `HealthVoiceConsent`, versioned and withdrawable on the Apple Health screen): explicit consent under Art. 9(2)(a) as proposed? P `#health` and `#legal-bases`.
+- [ ] **B6** The five health questions before a training plan (ADR-624, ADR-625): answered and kept only on the iPhone (the kept plan holds the age and the all-"no" answers; a refusal keeps nothing). Which basis, if any, given that nothing reaches us? P `#legal-bases`.
 
 ## 2. Open questions that are not a single placeholder
 - [ ] **App Store:** privacy label answers (draft in `PRIVACY_POLICY_DRAFT.md` Appendix C, now out of date for camera, photos, motion, Claude and device sign-in), privacy policy URL and support URL in App Store Connect, account deletion rule 5.1.1(v): the app has Delete Doddy voice account and Delete my Doddy messaging data, but nothing for the device account on Doddy's server (R6).

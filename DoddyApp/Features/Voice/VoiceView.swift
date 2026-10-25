@@ -576,6 +576,12 @@ struct VoiceView: View {
                 Text(label)
                     .foregroundStyle(Theme.secondaryText)
             }
+            // Said only when it is true: AlarmKit rings it (ADR-650); a notification may be silent.
+            if TimerRinger.canRing {
+                Text("It rings even in Silent mode or a Focus, with the time left on the Lock Screen.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+            }
         case .map(_, let place):
             Text("Open this in Maps?")
                 .font(.headline)
@@ -1131,6 +1137,17 @@ struct VoiceView: View {
                 Button("Change time") { editingNoteReminderTime = true }
                     .buttonStyle(SecondaryButtonStyle())
                     .accessibilityIdentifier("voice.noteReminder.changeTime")
+            }
+            // ADR-651: only where it can ring; a monthly repeat says why it can't.
+            if ReminderRinger.isAvailable {
+                let reason = ReminderRing.unsupportedReason(
+                    ReminderRing.support(repeats: repeats, isPlace: false), NotificationLanguage.current)
+                Toggle("Ring like an alarm", isOn: Binding(get: { controller.noteReminderRings }, set: { controller.setNoteReminderRings($0) }))
+                    .disabled(reason != nil)
+                    .accessibilityIdentifier("voice.noteReminder.rings")
+                Text(reason ?? NSLocalizedString("Rings even in Silent mode or a Focus, with Stop and In 10 min.", comment: ""))
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
             }
         case .place(let results, let onArrival):
             Picker("When", selection: Binding(get: { onArrival }, set: { controller.setNoteReminderOnArrival($0) })) {

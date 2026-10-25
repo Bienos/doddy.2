@@ -23,9 +23,13 @@ struct MessagesView: View {
     @State private var confirmingDelete = false
     @FocusState private var inputFocused: Bool
 
-    init(repository: any MessageThreadRepository, openSettings: @escaping () -> Void = {}) {
+    /// - Parameter draft: text already in the box, for the person to read, change and send
+    ///   themselves (the Apple Health week summary, ADR-622). Nothing is sent without their tap.
+    init(repository: any MessageThreadRepository, draft: String = "", openSettings: @escaping () -> Void = {}) {
         self.openSettings = openSettings
-        _model = State(initialValue: MessagesModel(repository: repository))
+        let model = MessagesModel(repository: repository)
+        model.draft = draft
+        _model = State(initialValue: model)
     }
 
     private var policy: AssistantPolicy { AssistantPolicy(consentGranted: consent, includeNotes: useNotes) }

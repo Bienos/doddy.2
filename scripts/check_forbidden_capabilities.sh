@@ -45,11 +45,14 @@
 #    `node tools/secrets/sync.mjs check`),
 #  - no accounts, analytics or crash SDKs, no secrets (server/messaging and
 #    render.yaml are checked for key values only: the server legitimately names key headers),
-#  - AlarmKit only inside DoddyApp/Features/Alarms, plus the shared alarm metadata and the snooze
-#    countdown widget (ADR-260, ADR-283),
+#  - AlarmKit only inside DoddyApp/Features/Alarms, plus Shared/Alarms (the shared alarm metadata and
+#    the timer card's Pause, Resume and Stop buttons) and the countdown widget (ADR-260, ADR-283, ADR-650),
 #  - CloudKit (shared lists through the user's iCloud) only inside DoddyApp/Features/Sharing (ADR-263),
+#  - Apple Health (HealthKit, sport mode step 1, ADR-621) only in DoddyApp/Infrastructure/Health/HealthReader.swift,
+#    read only: no write access asked for, no save or delete, no clinical records, no background delivery,
 #  - permission keys only for alarms (AlarmKit, iOS 26), the microphone, speech recognition (on-device, voice memos), calendar,
-#    reminders, contacts, Motion & Fitness (steps, ADR-568), the camera and reading the photo library (ADR-569)
+#    reminders, contacts, Motion & Fitness (steps, ADR-568), the camera and reading the photo library (ADR-569),
+#    reading Apple Health (ADR-621)
 #    and "While Using" location,
 #  - backend: Composio tool slugs only in the adapters and the tool catalog (and the mock that mimics
 #    their answers), no write tools beyond the reviewed ones (Gmail draft and reply draft; Todoist add, complete and move,
@@ -119,12 +122,17 @@ photo_library='import Photos($|[^A-Za-z])|PHPhotoLibrary|PHAsset|PHImageManager|
 camera_ui_file=DoddyApp/Features/Photos/CameraCapture.swift
 camera_ui='UIImagePickerController'
 camera_access_file=DoddyApp/Infrastructure/Connections/CameraAccess.swift
+# ADR-621: Apple Health is read in one file, and never written.
+health_file=DoddyApp/Infrastructure/Health/HealthReader.swift
+health_only='import HealthKit|HKHealthStore|HKSampleQueryDescriptor|HKQuantityType|HKCategoryType|HKObjectType|HKWorkout'
+health_never='NSHealthUpdateUsageDescription|NSHealthClinicalHealthRecordsShareUsageDescription|NSHealthRequiredReadAuthorizationTypeIdentifiers|HKClinicalType|healthkit\.background-delivery|enableBackgroundDelivery|HKObserverQuery|HKWorkoutSession|HKWorkoutBuilder'
+health_writes='\.save\(|\.delete\(|deleteObjects|toShare:[[:space:]]*\[[^]]'
 # Never, anywhere: a camera session of Doddy's own, or a write to the user's photo library.
 camera_and_library_never='AVCaptureSession|AVCapturePhotoOutput|AVCaptureVideoDataOutput|AVCaptureMovieFileOutput|PHAssetChangeRequest|PHAssetCreationRequest|UIImageWriteToSavedPhotosAlbum|NSPhotoLibraryAddUsageDescription|performChanges'
 location_tracking='requestAlwaysAuthorization|NSLocationAlways|allowsBackgroundLocationUpdates|startMonitoringSignificantLocationChanges|startMonitoringVisits|CLBackgroundActivitySession|UIBackgroundModes.*location'
 messaging_secrets='(sk-[A-Za-z0-9]{20,}|sk_[A-Za-z0-9]{20,}|AC[0-9a-f]{32}|SK[0-9a-f]{32}|BEGIN (RSA |EC )?PRIVATE KEY|(KEY|TOKEN|SECRET)=[^[:space:]]{8,})'
 secrets='(sk-[A-Za-z0-9]{20,}|sk_[A-Za-z0-9]{20,}|ak_[A-Za-z0-9_-]{20,}|monid_(live|test)_[A-Za-z0-9_-]{16,}|xi-api-key|api[_-]?key[[:space:]]*[:=][[:space:]]*"[^"]+"|BEGIN (RSA |EC )?PRIVATE KEY)'
-allowed_permissions='NSAlarmKitUsageDescription|NSMicrophoneUsageDescription|NSSpeechRecognitionUsageDescription|NSCalendarsFullAccessUsageDescription|NSRemindersFullAccessUsageDescription|NSContactsUsageDescription|NSMotionUsageDescription|NSCameraUsageDescription|NSPhotoLibraryUsageDescription|NSLocationWhenInUseUsageDescription|NSFaceIDUsageDescription'
+allowed_permissions='NSHealthShareUsageDescription|NSAlarmKitUsageDescription|NSMicrophoneUsageDescription|NSSpeechRecognitionUsageDescription|NSCalendarsFullAccessUsageDescription|NSRemindersFullAccessUsageDescription|NSContactsUsageDescription|NSMotionUsageDescription|NSCameraUsageDescription|NSPhotoLibraryUsageDescription|NSLocationWhenInUseUsageDescription|NSFaceIDUsageDescription'
 backend_src=backend/src
 # Drops comment-only lines from `grep -n` output (file:line:   // …, /// …, * …).
 code_only() { grep -vE '^[^:]+:[0-9]+:[[:space:]]*(//|\*|/\*)'; }
@@ -288,6 +296,15 @@ fi
 if grep -RInE --include='*.swift' 'AVCaptureDevice' "${dirs[@]}" | code_only | grep -v "^$camera_access_file:"; then
   echo "FAIL: camera permission code outside $camera_access_file (ADR-569)." >&2; status=1
 fi
+if grep -RInE --include='*.swift' "$health_only" "${dirs[@]}" | code_only | grep -v "^$health_file:"; then
+  echo "FAIL: Apple Health code outside $health_file (ADR-621)." >&2; status=1
+fi
+if grep -RInE "$health_never" "${dirs[@]}" project.yml Config | code_only; then
+  echo "FAIL: Apple Health is read only: no write prompt, clinical records, background delivery or workout sessions (ADR-621)." >&2; status=1
+fi
+if [ -f "$health_file" ] && grep -HnE "$health_writes" "$health_file" | code_only; then
+  echo "FAIL: $health_file may not write to or delete from Apple Health (ADR-621)." >&2; status=1
+fi
 if grep -RInE "$camera_and_library_never" "${dirs[@]}" project.yml Config | code_only; then
   echo "FAIL: a capture session or a write to the photo library; Doddy only reads the library and uses iOS's camera screen (ADR-569)." >&2; status=1
 fi
@@ -392,11 +409,11 @@ fi
 if grep -RInE --include='*.swift' "$sharing_only" "${dirs[@]}" | code_only | grep -v "^$sharing_dir/"; then
   echo "FAIL: CloudKit outside $sharing_dir." >&2; status=1
 fi
-if grep -RInE --include='*.swift' "$alarms_only" "${dirs[@]}" | code_only | grep -v -e "^$alarms_dir/" -e "^Shared/Alarms/DoddyAlarmMetadata.swift:" -e "^DoddyWidgets/AlarmLiveActivity.swift:"; then
+if grep -RInE --include='*.swift' "$alarms_only" "${dirs[@]}" | code_only | grep -v -e "^$alarms_dir/" -e "^Shared/Alarms/DoddyAlarmMetadata.swift:" -e "^Shared/Alarms/DoddyTimerIntents.swift:" -e "^DoddyWidgets/AlarmLiveActivity.swift:"; then
   echo "FAIL: AlarmKit outside $alarms_dir." >&2; status=1
 fi
 if grep -RnoE 'NS[A-Za-z]+UsageDescription' project.yml DoddyApp DoddyWidgets DoddyShare Config | grep -vE "$allowed_permissions"; then
-  echo "FAIL: only the alarms, microphone, speech recognition, calendar, reminders, contacts, Motion & Fitness, camera, photo library (read), While Using location and Face ID permissions are allowed." >&2; status=1
+  echo "FAIL: only the alarms, microphone, speech recognition, calendar, reminders, contacts, Motion & Fitness, Apple Health (read), camera, photo library (read), While Using location and Face ID permissions are allowed." >&2; status=1
 fi
-[ "$status" -eq 0 ] && echo "PASS: ASK-01: every voice tool and every server tool asks first through one gate; networking only in the token client, the voice account sign-in, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice, the ECB rates client, the Open Food Facts client and the InPost client (one address each) and nothing that talks to inFakt, the Keychain only in the files that hold a token or key (a key the person pasted in is read only by the inFakt client, which isn't built), web auth only in Connected Apps, Sign in with Apple only in the voice account sign-in and no password or passkey APIs, ElevenLabs only in Voice, audio only in Voice, Voice memos and Recordings, on-device speech recognition only in Voice memos and Recordings (nothing in Recordings sends anything), calendar, contacts, location and Motion & Fitness only in Connections, photo reading and the photo picker only in Photos, the photo library read only in PhotoLibrarySearch and the camera only through iOS's camera screen (no capture session, no library writes), no Always/background location, no analytics, no secrets, no 1Password code in the app or SDK in the servers, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts, Motion & Fitness, camera, photo library (read), While Using location and Face ID (LocalAuthentication only in the app lock); backend has no write tools beyond the reviewed Gmail draft and reply draft, the Outlook draft and Todoist add, complete and move, and no proxy execution."
+[ "$status" -eq 0 ] && echo "PASS: ASK-01: every voice tool and every server tool asks first through one gate; networking only in the token client, the voice account sign-in, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice, the ECB rates client, the Open Food Facts client and the InPost client (one address each) and nothing that talks to inFakt, the Keychain only in the files that hold a token or key (a key the person pasted in is read only by the inFakt client, which isn't built), web auth only in Connected Apps, Sign in with Apple only in the voice account sign-in and no password or passkey APIs, ElevenLabs only in Voice, audio only in Voice, Voice memos and Recordings, on-device speech recognition only in Voice memos and Recordings (nothing in Recordings sends anything), calendar, contacts, location and Motion & Fitness only in Connections, Apple Health read only and only in HealthReader, photo reading and the photo picker only in Photos, the photo library read only in PhotoLibrarySearch and the camera only through iOS's camera screen (no capture session, no library writes), no Always/background location, no analytics, no secrets, no 1Password code in the app or SDK in the servers, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts, Motion & Fitness, Apple Health (read), camera, photo library (read), While Using location and Face ID (LocalAuthentication only in the app lock); backend has no write tools beyond the reviewed Gmail draft and reply draft, the Outlook draft and Todoist add, complete and move, and no proxy execution."
 exit "$status"

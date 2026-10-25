@@ -111,6 +111,12 @@ final class DeviceConnections {
         }
     }
 
+    /// What a timer needs (ADR-650): nothing more on iOS 26 with alarms not refused, since it rings
+    /// through AlarmKit (asked at the Start tap); otherwise notifications, as before.
+    func timerAccess() async -> Access {
+        TimerRinger.canRing ? .granted : await notificationAccess()
+    }
+
     func notificationAccess() async -> Access {
         let settings = await UNUserNotificationCenter.current().notificationSettings()
         switch settings.authorizationStatus {
@@ -482,6 +488,8 @@ final class DeviceConnections {
         if let due = write.due {
             reminder.dueDateComponents = Self.components(due)
         }
+        // The alert itself (ADR-650): without an alarm Reminders lists it but never rings.
+        if let alertAt = write.alertDate(local: .current) { reminder.addAlarm(EKAlarm(absoluteDate: alertAt)) }
         if let repeats = write.repeats { reminder.recurrenceRules = [Self.rule(repeats, calendar: .current)] }
         try eventStore.save(reminder, commit: true)
         return reminder.calendarItemIdentifier
@@ -549,12 +557,17 @@ final class DeviceConnections {
     }
 
     /// A new due; an alarm set for the old due moves with it, or goes when the due is cleared.
+    /// A reminder with no alarm at all (one an older Doddy wrote, ADR-650) gets one at a new timed due.
     private func moveDue(of reminder: EKReminder, from oldDue: ReminderDue?, to newDue: ReminderDue?) {
         let oldDate = oldDue.flatMap { EventChange.moment($0, local: .current) }
+        let hadAlarms = !(reminder.alarms ?? []).isEmpty
         reminder.dueDateComponents = newDue.map(Self.components)
         let newDate = newDue.flatMap { EventChange.moment($0, local: .current) }
         for alarm in reminder.alarms ?? [] where oldDate != nil && alarm.absoluteDate == oldDate {
             if let newDate { alarm.absoluteDate = newDate } else { reminder.removeAlarm(alarm) }
+        }
+        if let alertAt = ReminderAlert.addOnMove(hasAlarms: hadAlarms, newDue: newDue, local: .current) {
+            reminder.addAlarm(EKAlarm(absoluteDate: alertAt))
         }
     }
 
@@ -660,6 +673,7 @@ final class DeviceConnections {
         content.title = "Doddy"
         content.body = plan.body(time: time)
         content.sound = .default
+        content.interruptionLevel = DoddyNotificationKind.eventNudge.interruptionLevel
         let components = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second], from: plan.fireAt)
         let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
         try await center.add(UNNotificationRequest(identifier: plan.identifier, content: content, trigger: trigger))
@@ -681,28 +695,43 @@ final class DeviceConnections {
 
     // MARK: Timers
 
-    /// Schedules a local notification for the timer and reads it back from iOS to confirm.
-    /// Doddy's timers still waiting to ring (TimerWriter, ADR-320). The ring time is the one
-    /// written into the notification when it was set, not recomputed from its trigger.
+    /// Doddy's timers still waiting to ring (TimerWriter, ADR-320): those AlarmKit runs (ADR-650)
+    /// and those left as notifications. A notification's ring time is the one written into it
+    /// when it was set, not recomputed from its trigger.
     func pendingTimers() async -> [PendingTimer] {
-        await UNUserNotificationCenter.current().pendingNotificationRequests().compactMap { request in
+        let ringing = TimerRinger.pending()
+        let notified: [PendingTimer] = await UNUserNotificationCenter.current().pendingNotificationRequests().compactMap { request in
             guard request.identifier.hasPrefix("doddy.timer.") else { return nil }
             if let seconds = request.content.userInfo["firesAt"] as? Double {
-                return PendingTimer(identifier: request.identifier, firesAt: Date(timeIntervalSince1970: seconds))
+                return PendingTimer(identifier: request.identifier, firesAt: Date(timeIntervalSince1970: seconds), ring: .notification)
             }
             guard let date = (request.trigger as? UNTimeIntervalNotificationTrigger)?.nextTriggerDate() else { return nil }
-            return PendingTimer(identifier: request.identifier, firesAt: date)
+            return PendingTimer(identifier: request.identifier, firesAt: date, ring: .notification)
         }
+        return ringing + notified
     }
 
-    /// Schedules one timer notification under `identifier` (TimerStartAction reads it back).
+    /// Starts one timer under `identifier` (TimerStartAction reads it back). AlarmKit first, so it
+    /// rings like the Clock app's timer (ADR-650); a notification when AlarmKit can't be used, or
+    /// failed and doesn't list it (so a timer is never set twice).
     func scheduleTimer(_ draft: TimerDraft, identifier: String) async throws {
+        if TimerRinger.canRing {
+            do {
+                if try await TimerRinger.start(draft, identifier: identifier) == .ringing { return }
+            } catch {
+                if TimerRinger.isListed(identifier) { return }
+            }
+        }
         let center = UNUserNotificationCenter.current()
         center.delegate = TimerBanners.shared
+        let language = NotificationLanguage.current
         let content = UNMutableNotificationContent()
-        content.title = "Timer done"
-        content.body = draft.label ?? "Your timer is done."
+        content.title = TimerCopy.notificationTitle(language)
+        content.body = TimerCopy.notificationBody(label: draft.label, seconds: draft.seconds, language)
         content.sound = .default
+        // Through a Focus where the user allows Time Sensitive, and never held for the summary.
+        content.interruptionLevel = DoddyNotificationKind.timer.interruptionLevel
+        content.relevanceScore = 1
         content.userInfo = ["firesAt": Date().addingTimeInterval(TimeInterval(draft.seconds)).timeIntervalSince1970]
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: TimeInterval(draft.seconds), repeats: false)
         try await center.add(UNNotificationRequest(identifier: identifier, content: content, trigger: trigger))
@@ -809,6 +838,8 @@ protocol DeviceConnecting: ReminderStore, CalendarEventWriter, TimerWriter, Send
     /// Asks iOS when it never has (the permission sheet's Allow, ADR-566).
     func request(_ connection: VoiceConnection) async -> DeviceConnections.Access
     func notificationAccess() async -> DeviceConnections.Access
+    /// What a timer needs: AlarmKit on iOS 26, notifications otherwise (ADR-650).
+    func timerAccess() async -> DeviceConnections.Access
     var stepCountingAvailable: Bool { get }
     func steps(on day: StepDay, now: Date) async throws -> StepTotals
     var cameraAvailable: Bool { get }
@@ -835,6 +866,8 @@ extension DeviceConnections: DeviceConnecting {}
 /// Fakes that don't model them answer like a device without the permission (tests).
 extension DeviceConnecting {
     func request(_ connection: VoiceConnection) async -> DeviceConnections.Access { access(for: connection) }
+    /// A fake's timers need notifications, as every timer did before ADR-650.
+    func timerAccess() async -> DeviceConnections.Access { await notificationAccess() }
     var stepCountingAvailable: Bool { false }
     func steps(on day: StepDay, now: Date) async throws -> StepTotals { throw DeviceConnections.Failure.stepsNotAllowed }
     var cameraAvailable: Bool { false }
@@ -863,11 +896,22 @@ private final class OnceContinuation<Value: Sendable>: @unchecked Sendable {
 }
 
 /// iOS hides notification banners for the app that is in front. This shows timer and nudge
-/// banners anyway, so they still ring while Doddy is open.
+/// banners anyway, so they still ring while Doddy is open, and keeps them in Notification Center
+/// and on the Lock Screen afterwards (`.list`, ADR-650), as when Doddy was closed.
 final class TimerBanners: NSObject, UNUserNotificationCenterDelegate, @unchecked Sendable {
     static let shared = TimerBanners()
 
     func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
-        [.banner, .sound]
+        [.banner, .list, .sound]
+    }
+}
+
+/// How each Doddy notification comes through (DoddyCore `DoddyNotificationKind`, ADR-650).
+extension DoddyNotificationKind {
+    var interruptionLevel: UNNotificationInterruptionLevel {
+        switch urgency {
+        case .timeSensitive: .timeSensitive
+        case .active: .active
+        }
     }
 }

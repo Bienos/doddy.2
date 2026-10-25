@@ -121,6 +121,8 @@ final class VoiceSessionController {
         let memoryID: UUID
         let noteText: String
         let when: When
+        /// "Ring like an alarm" as the card showed it at the tap (ADR-651).
+        var rings = false
     }
 
     /// The receipt after Set reminder on a note-reminder card (ADR-198), read back from the store.
@@ -279,6 +281,9 @@ final class VoiceSessionController {
     private(set) var planStatus: PlanStatus? { didSet { syncIsland() } }
     /// Which Apple Maps result the user picked on a place card (the first until they tap another).
     private(set) var selectedPlaceIndex = 0
+    /// The note-reminder card's "Ring like an alarm" switch (ADR-651): the agent's proposal, or what
+    /// the note had; the user can flip it before the tap.
+    private(set) var noteReminderRings = false
     /// The access card (ADR-578): a function the agent asked for is off, or iOS hasn't allowed it.
     /// The screen asks "Allow Doddy to use …?"; nothing turns on without the user's tap there.
     private(set) var accessRequest: ConnectionApprovalCard? { didSet { syncIsland() } }
@@ -1423,7 +1428,13 @@ final class VoiceSessionController {
             // setting; the card showed it, and the reply names it to the agent.
             let previous = store.noteReminders?.reminder(forMemory: memoryID)
             let receipt = await setNoteReminder(confirmed, attempt: attempt)
-            await reply(id, Self.noteReminderReply(receipt, note: noteText, replacing: previous))
+            var text = Self.noteReminderReply(receipt, note: noteText, replacing: previous)
+            if confirmed.rings, text.hasPrefix("added") {
+                // Inserted before the data block, so the note's words stay last.
+                let ring = VoiceToolReply.noteReminderRingLine(confirmed: store.noteReminders?.ringing.contains(memoryID) == true)
+                if let newline = text.firstIndex(of: "\n") { text.insert(contentsOf: ring, at: newline) } else { text += ring }
+            }
+            await reply(id, text)
         case .changeEvent(let id, let plan):
             // Kept only if the reply says the change was checked (ActivityEntry).
             await reply(id, changeEvent(plan), undo: .changedEvent(plan))
@@ -1523,6 +1534,12 @@ final class VoiceSessionController {
             toolCallID: id, memoryID: memoryID, noteText: text, savedAt: savedAt, target: .time(date, timeZoneID: zone, repeats: repeats))
     }
 
+    /// The card's "Ring like an alarm" switch (ADR-651).
+    func setNoteReminderRings(_ rings: Bool) {
+        guard case .noteReminder(_, _, _, _, .time) = pendingAction else { return }
+        noteReminderRings = rings
+    }
+
     /// The user switched arriving/leaving on the card (the agent may have misheard).
     func setNoteReminderOnArrival(_ onArrival: Bool) {
         guard case .noteReminder(let id, let memoryID, let text, let savedAt, .place(let results, _)) = pendingAction else { return }
@@ -1533,7 +1550,10 @@ final class VoiceSessionController {
     private func confirmedNoteReminder(memoryID: UUID, noteText: String, target: NoteReminderCardTarget) -> ConfirmedNoteReminder? {
         switch target {
         case .time(let date, let zone, let repeats):
-            return ConfirmedNoteReminder(memoryID: memoryID, noteText: noteText, when: .time(date, timeZoneID: zone, repeats: repeats))
+            let canRing = ReminderRinger.isAvailable && ReminderRing.support(repeats: repeats, isPlace: false) == .supported
+            return ConfirmedNoteReminder(
+                memoryID: memoryID, noteText: noteText, when: .time(date, timeZoneID: zone, repeats: repeats),
+                rings: noteReminderRings && canRing)
         case .place(let results, let onArrival):
             guard !results.isEmpty else { return nil }
             let choice = results[min(selectedPlaceIndex, results.count - 1)]
@@ -1559,6 +1579,8 @@ final class VoiceSessionController {
         if reminders.authorization == .notDetermined { await reminders.requestAuthorization() }
         switch confirmed.when {
         case .time(let date, let zone, let repeats):
+            // The card's switch, exactly as shown: on sets the alarm with the reminder, off ends one.
+            ReminderRinger.setWish(confirmed.memoryID, rings: confirmed.rings)
             await reminders.set(
                 memoryID: confirmed.memoryID, at: date, timeZone: TimeZone(identifier: zone) ?? .autoupdatingCurrent, repeats: repeats)
         case .place(let place):
@@ -2579,12 +2601,35 @@ final class VoiceSessionController {
                 await reply(call.toolCallId, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
             }
         case .setTimer(let draft):
-            guard await devices.notificationAccess() == .granted else {
+            // AlarmKit on iOS 26 needs no notification permission (ADR-650).
+            guard await devices.timerAccess() == .granted else {
                 await notConnected(call.toolCallId, .timers)
                 return
             }
             guard await mayTryAgain(call.toolCallId, app: .timers) else { return }
             propose(.timer(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
+        case .startStopwatch(let label):
+            // The user already tapped Start on the ask card (ASK-01). One stopwatch at a time: a
+            // second start reports the one running and changes nothing (ADR-652).
+            switch StopwatchController.shared.start(label: label) {
+            case .started(let watch):
+                await reply(call.toolCallId, VoiceToolReply.stopwatchStarted(label: watch.label))
+            case .alreadyThere(let watch):
+                await reply(call.toolCallId, VoiceToolReply.stopwatchAlreadyThere(elapsed: watch.elapsed(at: Date()), paused: watch.isPaused))
+            }
+        case .stopStopwatch:
+            // Said from the stored stopwatch, never from a guess: none, or one already stopped,
+            // is a failure the voice reads out as it is.
+            let before = StopwatchController.shared.watch
+            if let elapsed = StopwatchController.shared.stop() {
+                await reply(call.toolCallId, VoiceToolReply.stopwatchStopped(elapsed: elapsed))
+            } else {
+                let stoppedAt = before.flatMap { $0.isOver ? $0.elapsed(at: $0.stoppedAt ?? Date()) : nil }
+                await reply(call.toolCallId, VoiceToolReply.noStopwatchToStop(stoppedAt: stoppedAt))
+            }
+        case .checkStopwatch:
+            StopwatchController.shared.refresh()
+            await reply(call.toolCallId, VoiceToolReply.stopwatchReading(StopwatchController.shared.watch, now: Date()))
         case .listAlarms:
             // Read on the phone (ADR-283): times and labels Doddy set, nothing else. An unreadable
             // list is said as such, never as "none" (voice-agent review 2).
@@ -2672,6 +2717,21 @@ final class VoiceSessionController {
                 await reply(call.toolCallId, VoiceToolReply.steps(totals, day: day, until: day.daysAgo == 0 ? now : nil, calendar: .current))
             } catch {
                 await reply(call.toolCallId, VoiceToolReply.stepsFailed(UserFacingError.message(for: error)), isError: true)
+            }
+        case .readHealthWeek:
+            // ADR-623: the week from Apple Health as a summary worked out on the iPhone. Only with
+            // Apple Health on and the voice's own consent; the ask before it is ASK-01's.
+            let defaults = UserDefaults.standard
+            guard defaults.bool(forKey: HealthConnectionView.preferenceKey),
+                  HealthVoiceConsent.isGranted(storedVersion: defaults.integer(forKey: HealthConnectionView.voiceConsentVersionKey)) else {
+                await reply(call.toolCallId, VoiceToolReply.healthWeekNotAllowed)
+                return
+            }
+            do {
+                let glance = try await HealthReader.shared.glance(now: Date())
+                await reply(call.toolCallId, glance.isEmpty ? VoiceToolReply.healthWeekEmpty : VoiceToolReply.healthWeek(glance, calendar: .current))
+            } catch {
+                await reply(call.toolCallId, VoiceToolReply.healthWeekFailed(UserFacingError.message(for: error)), isError: true)
             }
         case .findPhotos(let request):
             // ADR-569: counts and times to the agent; the pictures stay on this screen.
@@ -3008,7 +3068,8 @@ final class VoiceSessionController {
         guard isOn(connection) else { return .notConnected(connection) }
         let access: DeviceConnections.Access
         if connection == .timers {
-            access = await devices.notificationAccess()
+            // Plan steps on Timers are timers (alarms aren't in plans): AlarmKit or notifications.
+            access = await devices.timerAccess()
         } else {
             access = devices.access(for: connection)
         }
@@ -3201,6 +3262,7 @@ final class VoiceSessionController {
         }
         switch draft.target {
         case .time(let date, let zone):
+            noteReminderRings = draft.rings || store.noteReminders?.wantsToRing(memoryID: record.id) == true
             propose(.noteReminder(toolCallID: toolCallID, memoryID: record.id, noteText: record.currentText,
                                   savedAt: record.capturedAt, target: .time(date, timeZoneID: zone, repeats: draft.repeats)),
                     toolCallID: toolCallID)
@@ -3787,7 +3849,7 @@ final class VoiceSessionController {
     /// Looks for a running copy only after an unconfirmed try of the same timer (ADR-320); "started"
     /// only when the iPhone lists it, with the ring time it lists.
     private func timerResult(_ draft: TimerDraft, retry: ActionRetryDecision?) async -> WriteResult {
-        guard await devices.notificationAccess() == .granted else {
+        guard await devices.timerAccess() == .granted else {
             return WriteResult(reply: VoiceToolReply.notAdded("Notifications are off for Doddy."), attempted: false)
         }
         let outcome = await TimerStartAction.start(draft, with: devices, uncheckedSince: retry?.uncheckedSince)
