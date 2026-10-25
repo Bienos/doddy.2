@@ -553,6 +553,16 @@ struct RootView: View {
             // DODDY Capture (ADR-588): the island's Open button. Navigation only.
             case .recordings:
                 router.openRecordings()
+            // The voice island's Show (ADR-616): the conversation's sheet, on the card that waits or
+            // what Doddy made. Navigation only: the card still needs its own tap. With no
+            // conversation left (an island from before the app stopped) it is just Home, so
+            // opening the sheet never starts a new one.
+            case .conversation:
+                selectedTab = .home
+                if HomeConversation.shared.forTranscript != nil || VoiceSessionController.runningConversation != nil {
+                    voiceDetent = .medium
+                    router.showConversationStartedElsewhere()
+                }
             }
         }
     }

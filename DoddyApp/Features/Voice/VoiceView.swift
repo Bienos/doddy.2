@@ -773,6 +773,8 @@ struct VoiceView: View {
                             Text(item)
                             if alreadyOpen.contains(index) {
                                 Text("Already on the list").font(.caption).foregroundStyle(Theme.secondaryText)
+                            } else if controller.ingredientsAtHome.contains(index) {
+                                Text("On your At home list").font(.caption).foregroundStyle(Theme.secondaryText)
                             }
                         }
                         Spacer()
