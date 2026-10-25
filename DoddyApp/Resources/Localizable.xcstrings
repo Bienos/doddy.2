@@ -3985,6 +3985,28 @@
         }
       }
     },
+    "Add ticked to a list": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj odhaczone do listy"
+          }
+        }
+      }
+    },
+    "Add ticked to “%@”": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj odhaczone do „%@”"
+          }
+        }
+      }
+    },
     "Add to": {
       "extractionState": "manual",
       "localizations": {
@@ -4162,6 +4184,17 @@
         }
       }
     },
+    "Add to “%@”": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj do „%@”"
+          }
+        }
+      }
+    },
     "Add your first name, as Doddy says it: \"on behalf of …\".": {
       "extractionState": "manual",
       "localizations": {
@@ -4228,6 +4261,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "已将 %lld 项添加到“%@”。"
+          }
+        }
+      }
+    },
+    "Added %lld to “%@”.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodano %lld do listy „%@”."
           }
         }
       }
@@ -5397,6 +5441,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "清单上已经有了"
+          }
+        }
+      }
+    },
+    "Already there: %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Już tam są: %@."
+          }
+        }
+      }
+    },
+    "Also on “%@”: %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na liście „%@” jest też: %@."
           }
         }
       }
@@ -12455,6 +12521,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "连接已暂停"
+          }
+        }
+      }
+    },
+    "Connections are paused, so Doddy didn't look the barcode up. You can type the item instead.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Połączenia są wstrzymane, więc Doddy nie sprawdził kodu. Możesz wpisać rzecz ręcznie."
           }
         }
       }
@@ -30840,6 +30917,17 @@
         }
       }
     },
+    "It goes on “%@” as: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trafi na listę „%@” jako: %@"
+          }
+        }
+      }
+    },
     "It goes to Doddy's server and to Claude (Anthropic), which writes the answer. Doddy's server doesn't keep or log what you write, only how many questions you asked.": {
       "extractionState": "manual",
       "localizations": {
@@ -42107,6 +42195,17 @@
         }
       }
     },
+    "No product barcode was found in the photo. Try again with the barcode filling more of the picture, or type the item.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na zdjęciu nie ma kodu kreskowego produktu. Spróbuj jeszcze raz tak, żeby kod zajmował więcej kadru, albo wpisz rzecz ręcznie."
+          }
+        }
+      }
+    },
     "No recordings yet. Tap Record to capture a meeting or a conversation. Doddy writes out the words on this iPhone, and you can search them.": {
       "extractionState": "manual",
       "localizations": {
@@ -42203,6 +42302,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "没有即将到来的提醒。"
+          }
+        }
+      }
+    },
+    "No room for %lld: “%@” is full.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie zmieściło się: %lld, lista „%@” jest pełna."
           }
         }
       }
@@ -43460,6 +43570,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nie słucham — otwórz Doddy’ego"
+          }
+        }
+      }
+    },
+    "Not my At home list": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To już nie jest lista domowa"
           }
         }
       }
@@ -46005,6 +46126,17 @@
         }
       }
     },
+    "Nothing was added.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nic nie zostało dodane."
+          }
+        }
+      }
+    },
     "Nothing was kept, so nothing was deleted.": {
       "extractionState": "manual",
       "localizations": {
@@ -47842,6 +47974,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "W czyim imieniu"
+          }
+        }
+      }
+    },
+    "On your At home list": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jest na Twojej liście domowej"
           }
         }
       }
@@ -50089,6 +50232,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Otwórz adres Doddy’ego w przeglądarce i wpisz tam kod. Działa raz, przez pięć minut. Doddy nigdy nie poprosi, żeby go komuś przeczytać ani wysłać."
+          }
+        }
+      }
+    },
+    "Open Food Facts couldn't be reached, so nothing was added. You can type the item instead.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się połączyć z Open Food Facts, więc nic nie zostało dodane. Możesz wpisać rzecz ręcznie."
+          }
+        }
+      }
+    },
+    "Open Food Facts doesn't know the product %@. You can type it instead.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Food Facts nie zna produktu %@. Możesz go wpisać ręcznie."
           }
         }
       }
@@ -54901,6 +55066,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "私密笔记"
+          }
+        }
+      }
+    },
+    "Product data from Open Food Facts (ODbL). Only the barcode number was sent to them; the photo stayed on this iPhone and wasn't kept.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Product data from Open Food Facts (ODbL). Only the barcode number was sent to them; the photo stayed on this iPad and wasn't kept."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Product data from Open Food Facts (ODbL). Only the barcode number was sent to them; the photo stayed on this iPhone and wasn't kept."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Dane produktu z Open Food Facts (ODbL). Wysłany został tylko numer kodu kreskowego; zdjęcie zostało na tym iPadzie i nie zostało zachowane."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Dane produktu z Open Food Facts (ODbL). Wysłany został tylko numer kodu kreskowego; zdjęcie zostało na tym iPhonie i nie zostało zachowane."
+                }
+              }
+            }
           }
         }
       }
@@ -62881,6 +63087,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "说出你某个 Doddy 清单上还剩什么。"
+          }
+        }
+      }
+    },
+    "Scan a barcode": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zeskanuj kod kreskowy"
           }
         }
       }
@@ -73072,6 +73289,17 @@
         }
       }
     },
+    "That photo couldn't be read. Try again, close to the barcode.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się odczytać zdjęcia. Spróbuj jeszcze raz, bliżej kodu."
+          }
+        }
+      }
+    },
     "That photo is too large to add. Nothing was added.": {
       "extractionState": "manual",
       "localizations": {
@@ -73573,6 +73801,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "To numer samego Doddy’ego."
+          }
+        }
+      }
+    },
+    "That's a lot of barcodes in a minute. Wait a moment and try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To dużo kodów w minutę. Poczekaj chwilę i spróbuj ponownie."
           }
         }
       }
@@ -79418,6 +79657,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dokładnie to trafi do Doddy’ego, jeśli to wyślesz. Wiadomości otworzą się z tym tekstem w polu; możesz go zmienić, a nic nie zostanie wysłane, dopóki nie stukniesz Wyślij."
+          }
+        }
+      }
+    },
+    "This is my At home list": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ustaw jako listę domową (co mam w domu)"
           }
         }
       }
@@ -92391,6 +92641,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dzisiejsze sprawdzenia gazetek się skończyły. Jutro możesz sprawdzić znowu."
+          }
+        }
+      }
+    },
+    "Your At home list": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoja lista domowa (co masz w domu)"
           }
         }
       }
