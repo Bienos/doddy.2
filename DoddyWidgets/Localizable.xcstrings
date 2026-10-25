@@ -4035,6 +4035,17 @@
         }
       }
     },
+    "Running": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liczy"
+          }
+        }
+      }
+    },
     "SHORTCUT": {
       "extractionState": "manual",
       "localizations": {
@@ -4053,6 +4064,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "SLAJDY"
+          }
+        }
+      }
+    },
+    "STOPWATCH": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "STOPER"
           }
         }
       }
@@ -4860,6 +4882,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zatrzymuje nagrywanie i zapisuje je w Nagraniach."
+          }
+        }
+      }
+    },
+    "Stopwatch": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stoper"
           }
         }
       }

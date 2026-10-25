@@ -216,6 +216,10 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case listAlarms
     /// Turn one of Doddy's alarms off, after a card.
     case cancelAlarm(clock: String, label: String?)
+    /// A stopwatch that counts up (ADR-652): started and stopped after a card, read after a "yes".
+    case startStopwatch(label: String?)
+    case stopStopwatch
+    case checkStopwatch
     case openMap(place: String)
     case runShortcut(name: String)
     case draftMessage(MessageDraft)
@@ -334,6 +338,12 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return .listAlarms
         case VoiceToolName.cancelAlarm:
             return parseCancelAlarm(args, name: name)
+        case VoiceToolName.startStopwatch:
+            return .startStopwatch(label: Stopwatch.cleanLabel(args.text("label")))
+        case VoiceToolName.stopStopwatch:
+            return .stopStopwatch
+        case VoiceToolName.checkStopwatch:
+            return .checkStopwatch
         case VoiceToolName.openMap:
             guard let place = args.text("place") else { return .invalid(name: name, reason: "missing place") }
             return .openMap(place: place)

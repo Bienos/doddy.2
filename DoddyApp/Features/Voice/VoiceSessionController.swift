@@ -2608,6 +2608,28 @@ final class VoiceSessionController {
             }
             guard await mayTryAgain(call.toolCallId, app: .timers) else { return }
             propose(.timer(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
+        case .startStopwatch(let label):
+            // The user already tapped Start on the ask card (ASK-01). One stopwatch at a time: a
+            // second start reports the one running and changes nothing (ADR-652).
+            switch StopwatchController.shared.start(label: label) {
+            case .started(let watch):
+                await reply(call.toolCallId, VoiceToolReply.stopwatchStarted(label: watch.label))
+            case .alreadyThere(let watch):
+                await reply(call.toolCallId, VoiceToolReply.stopwatchAlreadyThere(elapsed: watch.elapsed(at: Date()), paused: watch.isPaused))
+            }
+        case .stopStopwatch:
+            // Said from the stored stopwatch, never from a guess: none, or one already stopped,
+            // is a failure the voice reads out as it is.
+            let before = StopwatchController.shared.watch
+            if let elapsed = StopwatchController.shared.stop() {
+                await reply(call.toolCallId, VoiceToolReply.stopwatchStopped(elapsed: elapsed))
+            } else {
+                let stoppedAt = before.flatMap { $0.isOver ? $0.elapsed(at: $0.stoppedAt ?? Date()) : nil }
+                await reply(call.toolCallId, VoiceToolReply.noStopwatchToStop(stoppedAt: stoppedAt))
+            }
+        case .checkStopwatch:
+            StopwatchController.shared.refresh()
+            await reply(call.toolCallId, VoiceToolReply.stopwatchReading(StopwatchController.shared.watch, now: Date()))
         case .listAlarms:
             // Read on the phone (ADR-283): times and labels Doddy set, nothing else. An unreadable
             // list is said as such, never as "none" (voice-agent review 2).

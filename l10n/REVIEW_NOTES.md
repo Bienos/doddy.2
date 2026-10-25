@@ -124,6 +124,15 @@ Check first:
 
 Twenty-one new Polish lines in `l10n/pl.json`, agent-written: the "Ring like an alarm" switch and its notes ("Dzwoń jak budzik", "Dzwoni jak budzik, także w trybie cichym"), the weekly plan's screen and Settings section ("Plan na tydzień", "Twój tydzień\nprzed Tobą", "Nic zaplanowanego", "Prywatna notatka"), the quiet-hours sentence in Settings › Check-ins and reminders, and "Jutro". Notification and alarm words are in DoddyCore: "Nowy tydzień · Zerknąć, co Cię czeka?", "Za 10 min", "Zatrzymaj", "Przypomnienie Doddy'ego". The other eight languages show these in English until translated.
 
+## The stopwatch and a list's reminder at a place (ADR-652, 24 Oct 2026)
+
+At the merge with the island's Polish (ADR-617, 25 Oct): the stopwatch's island label and state are now looked up like the others, with two new agent-written lines, "STOPWATCH" → "STOPER" and "Running" → "Liczy". "Nicely timed" and "Paused at …" still show in English on the island: the catalog tool doesn't pick them up from where the scene builds them.
+
+Eleven new Polish lines in `l10n/pl.json`, agent-written: "Skupienie i stoper" (the ••• menu row that holds Focus and the stopwatch), "Stoper", "Stoper · włączony", "Liczy w górę, dopóki go nie zatrzymasz.", the label field's help line, "Włącz stoper", "Liczy w górę", "Gotowy, kiedy Ty", "Zatrzymany na %@", "Pauza", "Wznów". The other nine languages show these in English until reviewed.
+
+- **Notification text is in DoddyCore** (`NoteReminderCopy.itemsOnList`, Polish and English only, like the other notifications): "4 rzeczy na liście", "1 rzecz na liście", "wszystko odhaczone". "rzecz" has one plural form, "rzeczy", from 2 up; a native check of the three phrases is wanted.
+- **Voice replies** for the stopwatch (`VoiceToolReply`) are English instructions to the agent, like every other tool reply; the activity-log rows have a Polish form in `ActivityText` ("Włącz stoper", "Zatrzymaj stoper", "Odczytano stoper").
+
 ## Dynamic Island and Lock Screen, Polish (24 Oct 2026, ADR-617)
 
 92 lines in `l10n/pl.json` for the island's words: labels (GŁOS, SMS, PRZYPOMNIENIE, …), titles ("SMS do sprawdzenia", "Twój dokument jest gotowy"), second lines and the Lock Screen. Written in a coding session, not read by another Polish speaker. Check on a device first: whether PRZYPOMNIENIE fits beside the camera with LIVE, and whether "Wysyłasz go Ty, w Wiadomościach" reads naturally.

@@ -13779,6 +13779,28 @@
         }
       }
     },
+    "Counting up": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liczy w górę"
+          }
+        }
+      }
+    },
+    "Counts up until you stop it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liczy w górę, dopóki go nie zatrzymasz."
+          }
+        }
+      }
+    },
     "Create": {
       "extractionState": "manual",
       "localizations": {
@@ -26529,6 +26551,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "专注"
+          }
+        }
+      }
+    },
+    "Focus and stopwatch": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skupienie i stoper"
           }
         }
       }
@@ -51165,6 +51198,17 @@
         }
       }
     },
+    "Pause": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pauza"
+          }
+        }
+      }
+    },
     "Pause DODDY Recording": {
       "extractionState": "manual",
       "localizations": {
@@ -58459,6 +58503,17 @@
         }
       }
     },
+    "Resume": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wznów"
+          }
+        }
+      }
+    },
     "Resume DODDY Recording": {
       "extractionState": "manual",
       "localizations": {
@@ -58923,6 +58978,17 @@
         }
       }
     },
+    "Running": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liczy"
+          }
+        }
+      }
+    },
     "SHOP": {
       "extractionState": "manual",
       "localizations": {
@@ -58963,6 +59029,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "SLAJDY"
+          }
+        }
+      }
+    },
+    "STOPWATCH": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "STOPER"
           }
         }
       }
@@ -67410,6 +67487,17 @@
         }
       }
     },
+    "Start stopwatch": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Włącz stoper"
+          }
+        }
+      }
+    },
     "Start talking when Doddy opens.": {
       "extractionState": "manual",
       "localizations": {
@@ -68808,6 +68896,17 @@
         }
       }
     },
+    "Stopped at %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zatrzymany na %@"
+          }
+        }
+      }
+    },
     "Stopped before it was finished. Ask Doddy to try again.": {
       "extractionState": "manual",
       "localizations": {
@@ -68826,6 +68925,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zatrzymuje nagrywanie i zapisuje je w Nagraniach."
+          }
+        }
+      }
+    },
+    "Stopwatch": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stoper"
+          }
+        }
+      }
+    },
+    "Stopwatch · on": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stoper · włączony"
           }
         }
       }
@@ -78113,6 +78234,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "这不是 Google Keep 笔记。"
+          }
+        }
+      }
+    },
+    "This line shows on your Lock Screen and in the Dynamic Island while the stopwatch runs. Leave it empty to show only the time.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ta linijka pokazuje się na ekranie blokady i w Dynamic Island, gdy stoper działa. Zostaw puste, żeby pokazać tylko czas."
           }
         }
       }

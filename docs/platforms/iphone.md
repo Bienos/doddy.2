@@ -35,7 +35,7 @@ Code lives under `DoddyApp/Features/<Folder>/`. Status docs are in `docs/impleme
 | Files | Home's Files sheet (ADR-633): files Doddy made on his server (`GET /v1/web/documents` with the phone's session, `MadeDocumentsClient` in DoddyCore), opened in Quick Look; and Recordings | 564, 607 | SETTINGS_SIMPLIFIED |
 | Capture | New-note editor, "Save to Doddy" | 179 | M1_STATUS |
 | Lists | Lists, templates, share card, shopping mode; quantities, the At home list and barcodes (Shopping list+, on `claude/expert-modes-research`) | 216, 257, 334, 631 | LISTS_STATUS, SHOPPING_MODE_STATUS, SHOPPING_LIST_PLUS |
-| NoteReminders | Time and place reminders on notes; "Ring like an alarm" through AlarmKit (`Alarms/ReminderRinger`, ADR-651) | 196, 211, 651 | M4A_NOTE_REMINDERS_STATUS, PLACE_REMINDERS_STATUS, RINGING_REMINDERS_AND_WEEKLY_PLAN |
+| NoteReminders | Time and place reminders on notes; "Ring like an alarm" through AlarmKit (`Alarms/ReminderRinger`, ADR-651) | 196, 211, 651, 652 | M4A_NOTE_REMINDERS_STATUS, PLACE_REMINDERS_STATUS, RINGING_REMINDERS_AND_WEEKLY_PLAN, STOPWATCH_AND_SHOP_LIST |
 | Settings | Settings, island style, personality, what Doddy learned ("Hey Doddy" was removed, ADR-549) | 254, 440, 549 | HEY_DODDY_STATUS (history), M6_LEARNING_LOOP_STATUS |
 | Messages (was Ask) | The typed conversation with Doddy: bubbles saved on this iPhone until deleted; answers from Claude through the messaging server (`POST /v1/assistant/ask`) | 585, 586 (115) | MESSAGES_STATUS, M2_STATUS |
 | Web (`Features/Web`, `Infrastructure/WebMemoryClientFactory.swift`, DoddyCore `OnlineAccounts/WebMemory*`) | Sign in to Doddy Web; **Keep on Doddy's server** (ADR-603): two switches for notes and conversations, a consent screen, "Delete everything on Doddy's server". Rules and the HTTP client are in DoddyCore and tested on Linux. **The SwiftUI screens and the call from the voice controller are NOT COMPILED** (no Xcode in the sessions that wrote them); needs the hosted Mac build and a run on a device | 603 | CLOUD_MEMORY |
@@ -49,6 +49,7 @@ Code lives under `DoddyApp/Features/<Folder>/`. Status docs are in `docs/impleme
 | Presentations | Slides by voice: the card, the .pptx file Keynote opens (`PresentationFile` in DoddyCore), the share sheet | 567 | APPLE_CONNECTIONS |
 | Errands | Tasks handed to Doddy's background worker: the Tasks list and result card (Home's ••• menu), Home's "Done" card, `hand_over_errand` and `check_errands` in Voice | 570 | ERRANDS |
 | Focus, Tools | Focus timer and its Live Activity (the breathing exercise was removed, ADR-550) | 241, 242, 550 | - |
+| Stopwatch | A stopwatch that counts up: Home › Stopwatch, Lock Screen and island, three voice tools (`Features/Stopwatch`) | 652 | STOPWATCH_AND_SHOP_LIST |
 | Import | Google Keep and text import | 231 | NOTE_IMPORT_STATUS |
 | LeaveBy, Parking, Today | Time to leave, parking spot, Today card | 335, 301 | TODAY_STATUS |
 | Meaning | Find by meaning (on-device) | 227 | MEANING_SEARCH_STATUS |
