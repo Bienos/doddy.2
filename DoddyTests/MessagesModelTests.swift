@@ -296,6 +296,40 @@ final class MessagesModelTests: XCTestCase {
         XCTAssertNil(model.proposals[answer])
         XCTAssertTrue(model.messages.isEmpty)
     }
+
+    // MARK: A training plan from Doddy (ADR-626)
+
+    private let tenK = PlanAsk.make(goalName: "10k", daysPerWeek: 3, minutesPerSession: 45)!
+
+    @MainActor
+    private func askedForAPlan() async -> (MessagesModel, FakeThread, UUID) {
+        let (model, repository, _, service) = await loaded(client: ScriptedClient([.offerPlan("Mogę to ustawić.", tenK)]))
+        model.draft = "Zrób mi plan na 10 km"
+        model.send(using: service, policy: on, locale: "pl")
+        await settle(model)
+        return (model, repository, model.messages.last!.id)
+    }
+
+    @MainActor
+    func testAPlanOfferIsOnlyAnOfferNothingIsAskedOrMade() async {
+        let (model, repository, answer) = await askedForAPlan()
+        XCTAssertEqual(model.planAsks[answer], tenK)
+        XCTAssertNil(model.proposals[answer], "a plan is not a file")
+        XCTAssertEqual(model.messages.map(\.sender), [.user, .doddy])
+        let saved = await repository.all()
+        XCTAssertEqual(saved.count, 2, "only the question and the answer are saved; the offer is not")
+    }
+
+    @MainActor
+    func testNotNowRemovesAPlanOfferAndTheDeleteDropsTheRest() async {
+        let (model, _, answer) = await askedForAPlan()
+        model.dismissPlanAsk(answer)
+        XCTAssertNil(model.planAsks[answer])
+        let (second, _, another) = await askedForAPlan()
+        await second.deleteConversation()
+        XCTAssertNil(second.planAsks[another])
+        XCTAssertTrue(second.messages.isEmpty)
+    }
 }
 
 // MARK: Fakes
@@ -347,6 +381,8 @@ private actor ScriptedClient: AssistantClient {
         case reply(String)
         /// An answer that also offers a file (ADR-606).
         case offer(String, AssistantProposal)
+        /// An answer that also offers a training plan (ADR-626).
+        case offerPlan(String, PlanAsk)
         case fail(AssistantError)
         /// Waits until the request is cancelled.
         case hang
@@ -363,6 +399,7 @@ private actor ScriptedClient: AssistantClient {
         switch steps.removeFirst() {
         case .reply(let text): return AssistantReply(text: text)
         case .offer(let text, let proposal): return AssistantReply(text: text, proposal: proposal)
+        case .offerPlan(let text, let ask): return AssistantReply(text: text, planAsk: ask)
         case .fail(let error): throw error
         case .hang:
             try await Task.sleep(for: .seconds(60))

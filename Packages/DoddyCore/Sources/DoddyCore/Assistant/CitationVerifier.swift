@@ -15,6 +15,8 @@ public struct VerifiedAnswer: Equatable, Sendable {
     public let sources: [MemoryRecord]
     /// A file the person asked for, offered as a card (ADR-606). Nothing is made until they tap it.
     public var proposal: AssistantProposal? = nil
+    /// A training plan the person asked for, offered as a card (ADR-626). The plan screen opens only on a tap.
+    public var planAsk: PlanAsk? = nil
 
     public var basis: AnswerBasis { sources.isEmpty ? .general : .savedNotes }
 }
@@ -34,6 +36,6 @@ public enum CitationVerifier {
             guard let record = allowed[id], seen.insert(id).inserted else { throw .invalidCitations }
             sources.append(record)
         }
-        return VerifiedAnswer(text: reply.text, sources: sources, proposal: reply.proposal)
+        return VerifiedAnswer(text: reply.text, sources: sources, proposal: reply.proposal, planAsk: reply.planAsk)
     }
 }

@@ -38,12 +38,21 @@ struct AssistWireResponse: Codable, Equatable {
         let request: String
     }
 
+    /// A training plan the person asked for, offered as a card (ADR-626). Only a goal and, if said, the days and
+    /// minutes: never a safety answer. Absent from older servers and when none was asked for.
+    struct PlanOffer: Codable, Equatable {
+        let goal: String
+        let daysPerWeek: Int?
+        let minutesPerSession: Int?
+    }
+
     let schemaVersion: Int
     let requestId: String
     let text: String
     let citedMemoryIDs: [String]
     let usage: Usage?
     var proposal: Proposal? = nil
+    var plan: PlanOffer? = nil
 }
 
 struct AssistWireError: Codable, Equatable {

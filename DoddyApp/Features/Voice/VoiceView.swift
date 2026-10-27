@@ -364,6 +364,18 @@ struct VoiceView: View {
             .sheet(item: $photoNote) { taken in
                 CaptureView(takenPhoto: taken.data)
             }
+            // ADR-626: the training plan screen after the user tapped Open on its card. It asks its own safety questions.
+            .sheet(item: planBinding(controller)) { request in
+                NavigationStack {
+                    TrainingPlanView(prefill: request.ask)
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("Close") { controller.planClosed() }
+                                    .accessibilityIdentifier("plan.close")
+                            }
+                        }
+                }
+            }
             controls(controller)
                 // ADR-567: the share sheet opens by itself once the file is made, and again from its card.
                 .sheet(item: $sharingPresentation) { ready in
@@ -383,6 +395,12 @@ struct VoiceView: View {
         .onChange(of: controller.presentationReady) { _, ready in
             if let ready { sharingPresentation = ready }
         }
+    }
+
+    private func planBinding(_ controller: VoiceSessionController) -> Binding<PlanAskRequest?> {
+        Binding(
+            get: { controller.planRequest },
+            set: { value in if value == nil { controller.planClosed() } })
     }
 
     private func cameraBinding(_ controller: VoiceSessionController) -> Binding<Bool> {

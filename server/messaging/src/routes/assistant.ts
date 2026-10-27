@@ -2,7 +2,8 @@
 // gateway's, so the app reads the reply the same way: { schemaVersion, requestId, text, citedMemoryIDs,
 // usage } on success, { schemaVersion, requestId?, error: { code, message, retryAfterSeconds? } } on failure.
 // Claude answers in text only: no tools, so nothing here can search, fetch, send or change anything (ASK-01). It may
-// offer a file as `proposal` (ADR-606); nothing is made until the app asks the person and runs the document tool.
+// offer a file as `proposal` (ADR-606) or a training plan as `plan` (ADR-626); nothing is made until the person taps, and a plan's
+// safety questions are asked on the app's screen, never here.
 // Nothing the person wrote is stored or logged: the database holds counts per account and day, the log
 // holds ids, counts and codes.
 import Anthropic from "@anthropic-ai/sdk";
@@ -56,13 +57,14 @@ export const assistantRoutes = (deps: Deps): FastifyPluginAsync => async (app) =
       }
       await addTokens(deps.db, principal(req).accountId, outcome.usage).catch(() => {});
       req.log.info({
-        model: responder.model, notes: body.memories.length, turns: body.turns.length, cited: outcome.sources.length, proposed: outcome.proposal?.kind,
+        model: responder.model, notes: body.memories.length, turns: body.turns.length, cited: outcome.sources.length, proposed: outcome.proposal?.kind, planned: outcome.plan?.goal,
         inputTokens: outcome.usage.inputTokens, outputTokens: outcome.usage.outputTokens,
       }, "assistant answered");
       return {
         schemaVersion: 1, requestId: body.requestId, text: outcome.answer,
         citedMemoryIDs: outcome.sources.map((id) => id.toLowerCase()), usage: outcome.usage,
         ...(outcome.proposal ? { proposal: outcome.proposal } : {}),
+        ...(outcome.plan ? { plan: outcome.plan } : {}),
       };
     } catch (err) {
       if (timedOut) return fail("timeout", body.requestId);
