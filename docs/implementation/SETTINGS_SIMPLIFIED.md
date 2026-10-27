@@ -33,7 +33,7 @@ Owner, 24 Oct 2026: fewer places for memories, Files instead of Memories at the 
 | | Appearance | Light/Dark/System, Hide character artwork |
 | **Voice and interaction** | Voice | Provider picker, Auto-start voice, voice account (sign out, delete, ask again), connection; Debug: developer voice switch |
 | | Action Button | Picker: Dynamic Island / Open App / Automatic (ADR-579); footer: what it does + where to assign it |
-| | Dynamic Island style | unchanged (`IslandStyleView`, with previews) |
+| | Dynamic Island style | removed on 27 Oct (ADR-653): Whole Doddy is the only look |
 | | Expand when Doddy speaks | switch (was Back Tap's "Small island") |
 | | Siri and Back Tap (Siri on iPad) | Back Tap status, Ways to open Doddy guide, weekly reminder, "When Siri or Back Tap opens Doddy", Siri can read my notes |
 | **Memory and privacy** | Memories | Count, export JSON/text/Markdown, restore, Delete all, encrypted backup, import |

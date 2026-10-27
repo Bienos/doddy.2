@@ -1,4 +1,6 @@
 # V3 status — Doddy in the Dynamic Island
+
+> **27 Oct 2026 (ADR-653): the style picker and the seven old looks (Lean In, Orbit, Ink Ripple, Negative Space, Editorial, Abstract Horizon, Here With You) are gone; Whole Doddy is the only voice island.** Everything below that talks about choosing a style, or about Lean In's hand and bars, is history. The islands for notes, plans, reminders, focus and translating are unchanged.
 Date: 2026-10-09. Owner request: "it opens app [with] double back tap, now live island". ADRs 053–054 in `DECISIONS.md`.
 
 ## What it does

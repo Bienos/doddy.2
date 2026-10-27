@@ -1,11 +1,12 @@
 import Foundation
 
-/// The sixteen boards of the owner's Doddy-Dynamic-Island-v4 pack (design/dynamic-island-v4).
-/// Raw values are the pack's file prefixes.
+/// The boards of the owner's Doddy-Dynamic-Island-v4 pack (design/dynamic-island-v4) that the app
+/// still draws. Raw values are the pack's file prefixes. The voice board backs Whole Doddy's signs
+/// and sizes; the others are the islands for a note, plan, reminder, focus, breathing, reading
+/// aloud and translating. The pack's other eight boards (the seven voice looks and Pocket Radio
+/// and Kinetic Ribbon, which were never used) were removed with the style picker.
 enum IslandBoard: String, CaseIterable, Sendable {
-    case leanIn = "voice", tinyPromise = "focus", pocketRadio = "music", hereWithYou = "companion"
-    case orbit, inkRipple = "ink-ripple", negativeSpace = "negative-space"
-    case kineticRibbon = "kinetic-ribbon", editorial, abstractHorizon = "abstract-landscape"
+    case leanIn = "voice", tinyPromise = "focus"
     case thoughtPocket = "thought-drop", languageBridge = "language-bridge"
     case reminderKnot = "reminder-pin", stepStones = "step-path", storySpool = "spoken-mark"
     case calmTide = "calm-pulse"

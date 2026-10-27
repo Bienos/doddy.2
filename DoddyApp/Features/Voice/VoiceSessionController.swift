@@ -2080,7 +2080,6 @@ final class VoiceSessionController {
             status: pendingAction == nil ? status : .needsConfirmation, isMuted: isMuted,
             greeting: wakeGreeting, conversationStartedAt: startedAt)
         state.moment = islandMoment
-        state.islandStyle = IslandStyle.stored(UserDefaults.standard.string(forKey: PreferenceKey.islandStyle))
         // ADR-617: the island speaks the language of Doddy's screens (Polish by default), which the
         // widget extension can't read for itself.
         state.language = Bundle.main.preferredLocalizations.first

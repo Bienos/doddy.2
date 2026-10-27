@@ -39,8 +39,8 @@ struct DoddyVoiceAttributes: ActivityAttributes {
         /// Something happening inside the conversation that has its own island (ADR-240).
         /// Only its kind and counts, never what a note or reminder says.
         var moment: Moment?
-        /// The look the user picked in Settings (ADR-239).
-        var islandStyle: IslandStyle = .leanIn
+        /// The island's look: Whole Doddy, the only one left.
+        var islandStyle: IslandStyle = .wholeDoddy
 
         enum Moment: Codable, Hashable {
             /// "Save this note?" waits for the user's tap in the app.
@@ -134,7 +134,7 @@ extension DoddyVoiceAttributes.ContentState {
 
     /// Content written by an older build (without `savedCount`, `endedAt`, `moment`,
     /// `islandStyle`, `greeting` or `conversationStartedAt`) still decodes. An unknown style or
-    /// moment from a newer build falls back to Lean In and no moment rather than failing.
+    /// moment from a newer build falls back to Whole Doddy and no moment rather than failing.
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         status = try container.decode(Status.self, forKey: .status)
@@ -142,7 +142,7 @@ extension DoddyVoiceAttributes.ContentState {
         savedCount = try container.decodeIfPresent(Int.self, forKey: .savedCount) ?? 0
         endedAt = try container.decodeIfPresent(Date.self, forKey: .endedAt)
         moment = (try? container.decodeIfPresent(Moment.self, forKey: .moment)) ?? nil
-        islandStyle = (try? container.decodeIfPresent(IslandStyle.self, forKey: .islandStyle)) ?? .leanIn
+        islandStyle = (try? container.decodeIfPresent(IslandStyle.self, forKey: .islandStyle)) ?? .wholeDoddy
         greeting = try container.decodeIfPresent(String.self, forKey: .greeting)
         conversationStartedAt = try container.decodeIfPresent(Date.self, forKey: .conversationStartedAt)
         language = try? container.decodeIfPresent(String.self, forKey: .language)

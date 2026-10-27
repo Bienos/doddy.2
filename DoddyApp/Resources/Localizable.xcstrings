@@ -16534,65 +16534,6 @@
         }
       }
     },
-    "Designs: the owner's Dynamic Island pack (V4); Whole Doddy uses the owner's pose pack. While a note, plan or reminder waits for you, or while Doddy translates, the island switches to its own design whatever you pick here. In Whole Doddy, Doddy's pose changes instead, except while translating.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Designs: das Dynamic-Island-Paket des Eigentümers (V4); Whole Doddy nutzt das Posen-Paket des Eigentümers. Während eine Notiz, ein Plan oder eine Erinnerung auf dich wartet oder während Doddy übersetzt, wechselt die Island zu ihrem eigenen Design, egal was du hier auswählst. Bei Whole Doddy ändert sich stattdessen die Pose von Doddy, außer beim Übersetzen."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Diseños: el pack de Isla Dinámica del propietario (V4); Whole Doddy usa el pack de poses del propietario. Mientras una nota, un plan o un recordatorio te espera, o mientras Doddy traduce, la isla cambia a su propio diseño, elijas lo que elijas aquí. En Whole Doddy cambia en su lugar la pose de Doddy, salvo mientras traduce."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Designs : le pack Dynamic Island du propriétaire (V4) ; Whole Doddy utilise le pack de poses du propriétaire. Quand une note, un plan ou un rappel t’attend, ou quand Doddy traduit, l’île passe à son propre design quel que soit ton choix ici. En Whole Doddy, c’est la pose de Doddy qui change, sauf pendant la traduction."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dizajni: vlasnikov paket za Dynamic Island (V4); Whole Doddy koristi vlasnikov paket poza. Dok bilješka, plan ili podsjetnik čeka na tebe ili dok Doddy prevodi, otok prelazi na vlastiti dizajn, što god ovdje odabereš. U Whole Doddy umjesto toga mijenja se Doddyjeva poza, osim tijekom prevođenja."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Design: il pacchetto Dynamic Island del proprietario (V4); Whole Doddy usa il pacchetto di pose del proprietario. Mentre una nota, un piano o un promemoria aspetta la tua risposta, o mentre Doddy traduce, l'isola passa al proprio design, qualunque cosa tu scelga qui. In Whole Doddy cambia invece la posa di Doddy, tranne durante la traduzione."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "デザイン：オーナーのDynamic Islandパック（V4）。Whole Doddyはオーナーのポーズパックを使います。メモ、プラン、リマインダーがあなたを待っている間や、Doddyが翻訳している間は、ここで何を選んでいてもアイランドは専用のデザインに切り替わります。Whole Doddyでは、翻訳中を除き、代わりにDoddyのポーズが変わります。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Projekty: pakiet Dynamic Island właściciela (V4); Whole Doddy korzysta z pakietu póz właściciela. Gdy notatka, plan lub przypomnienie czeka na Ciebie albo gdy Doddy tłumaczy, wyspa przełącza się na własny wygląd, niezależnie od tego, co tu wybierzesz. W stylu Whole Doddy zmienia się wtedy poza Doddy’ego, z wyjątkiem tłumaczenia."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Designs: o pacote Dynamic Island do proprietário (V4); Whole Doddy usa o pacote de poses do proprietário. Enquanto uma nota, plano ou lembrete espera por você, ou enquanto o Doddy traduz, a ilha troca para o próprio design, seja o que for que você escolher aqui. Em Whole Doddy, a pose do Doddy muda no lugar disso, exceto durante a tradução."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "设计：所有者的灵动岛素材包（V4）；Whole Doddy 使用所有者的姿势素材包。当有笔记、计划或提醒等待你处理，或 Doddy 正在翻译时，无论你在这里选什么，灵动岛都会切换为它自己的设计。在 Whole Doddy 样式中，改变的是 Doddy 的姿势，翻译时除外。"
-          }
-        }
-      }
-    },
     "Detailed": {
       "extractionState": "manual",
       "localizations": {
@@ -17532,17 +17473,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy 给你打电话"
-          }
-        }
-      }
-    },
-    "Doddy can hear you": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy Cię słyszy"
           }
         }
       }
@@ -24436,76 +24366,6 @@
         }
       }
     },
-    "Dynamic Island": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dynamic Island"
-          }
-        }
-      }
-    },
-    "Dynamic Island style": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dynamic-Island-Stil"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Estilo de la Isla Dinámica"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Style de la Dynamic Island"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Stil za Dynamic Island"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Stile Dynamic Island"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dynamic Islandのスタイル"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wygląd Dynamic Island"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Estilo da Dynamic Island"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "灵动岛样式"
-          }
-        }
-      }
-    },
     "Dynamic Island, Action Button, or a tap on the back.": {
       "extractionState": "manual",
       "localizations": {
@@ -29663,65 +29523,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ile teraz trenujesz"
-          }
-        }
-      }
-    },
-    "How the island looks while you talk to Doddy from another app. These are previews, not a running conversation.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "So sieht die Island aus, während du aus einer anderen App mit Doddy redest. Das sind Vorschauen, kein laufendes Gespräch."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cómo se ve la isla mientras hablas con Doddy desde otra app. Son vistas previas, no una conversación en curso."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "L’aspect de l’île quand tu parles à Doddy depuis une autre app. Ce sont des aperçus, pas une conversation en cours."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kako otok izgleda dok razgovaraš s Doddyjem iz druge aplikacije. Ovo su pregledi, ne razgovor u tijeku."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Come appare l'isola mentre parli con Doddy da un'altra app. Sono anteprime, non una conversazione in corso."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "別のアプリからDoddyと話しているときのアイランドの見え方です。これはプレビューで、実際の会話ではありません。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Jak wygląda wyspa, gdy rozmawiasz z Doddym z innej aplikacji. To podglądy, a nie trwająca rozmowa."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Como a ilha fica enquanto você fala com o Doddy a partir de outro app. São prévias, não uma conversa em andamento."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "当你在其他应用中和 Doddy 聊天时，灵动岛的样子。这些是预览，不是正在进行的对话。"
           }
         }
       }
@@ -55164,65 +54965,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Naciśnij przycisk czynności"
-          }
-        }
-      }
-    },
-    "Preview": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vorschau"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vista previa"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aperçu"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pregled"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Anteprima"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "プレビュー"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Podgląd"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prévia"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "预览"
           }
         }
       }
