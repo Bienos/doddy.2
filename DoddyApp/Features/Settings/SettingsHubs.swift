@@ -147,6 +147,13 @@ struct ConnectionsSettingsView: View {
                     StatusRow(title: NSLocalizedString("Training plan", comment: ""), value: trainingPlanSummary)
                 }
                 .accessibilityIdentifier("connections.trainingPlan")
+                // ADR-642: sets, weight and how it felt, kept on this iPhone only if you say yes.
+                NavigationLink {
+                    TrainingLogView()
+                } label: {
+                    Text("Training log")
+                }
+                .accessibilityIdentifier("connections.trainingLog")
             } header: {
                 Text("Sport and health")
             }
