@@ -127,7 +127,7 @@ Owner, 25 Oct 2026: "okej" to "Plan zamawiany głosem albo w Wiadomościach". Br
 
 **Not done on purpose.**
 - **The live ElevenLabs agent was changed on the owner's yes** (25 Oct, "ok zmien", then a yes to the exact tool text shown): `open_training_plan` is `tool_3101m5ry8754fmfb0ne7nf4nzhfd`, saved as `agtvrsn_8001m5ry9by6feyajtpxbdt3xrxp` (tool list only: 99 + 1), rollback `agtvrsn_2301m5rpzz0aeh7aymyth609bgpd`. The prompt was not changed. Until an app build with step 5 is installed, the voice may offer a plan the app cannot open (it answers that it doesn't support the tool). No conversation has used the tool (`voice-agent/README.md`).
-- **The Messages server must be deployed** for a card to appear; an older server sends no `plan`, and nothing breaks.
+- **The Messages server was deployed 27 Oct** (owner: "Wdroż", then a yes to PR, merge after green, deploy): #144 merged as `100e337`, Render `doddy-messaging` deploy `dep-dbg4csfbhrrc73cos2cg` live 06:37 UTC; `/healthz` 200 and `/v1/assistant/ask` without a token 401. Rollback: `dep-dbg4ca2fngtc738ldk3g` (the #141 build). **Not seen:** Claude offering a plan from the real server, or the card on a device. The `doddy` backend (the Logbook's tool list, a different Render branch) was not touched.
 - No UI test drives the new doors: nothing in the UI tests can make Messages or the voice answer with an offer. The model tests and the wire tests cover them; the screen with a prefill is not seen.
 - **Gap:** the "ask a doctor first" lines to the model are text only. A model could ignore them, but it still cannot skip the screen's questions or answer them. Code that checks the person's own words for red flags is not built.
 
