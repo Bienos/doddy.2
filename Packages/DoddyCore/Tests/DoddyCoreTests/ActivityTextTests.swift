@@ -54,6 +54,8 @@ final class ActivityTextTests: XCTestCase {
             .checkErrands(about: nil),
             // ADR-652.
             .startStopwatch(label: "Bieg"), .stopStopwatch, .checkStopwatch,
+            // ADR-626.
+            .openTrainingPlan(PlanAsk(goal: .tenK, daysPerWeek: 3, minutesPerSession: 45)),
             // SHOPPING.md.
             .findDeals(DealsRequest(items: ["masło"], chains: [.biedronka])),
         ]
@@ -70,7 +72,7 @@ final class ActivityTextTests: XCTestCase {
              .draftMessage, .draftBlikTransfer, .makePresentation, .readSteps, .readHealthWeek, .findPhotos, .openCamera, .cloudTool, .addToList, .readList, .checkOff, .removeFromList, .createList,
              .changeCalendarEvent, .changeReminder, .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders,
              .convertCurrency, .parkingSpot, .addIngredients, .findFreeTime, .leaveBy, .handOverErrand, .checkErrands, .findDeals,
-             .startStopwatch, .stopStopwatch, .checkStopwatch:
+             .startStopwatch, .stopStopwatch, .checkStopwatch, .openTrainingPlan:
             true
         case .needsClarification, .calculate, .convertUnits, .undoLast, .startTranslator, .stopTranslator, .unsupported, .invalid,
              .noteCapabilityGap:
@@ -83,7 +85,7 @@ final class ActivityTextTests: XCTestCase {
         XCTAssertTrue(everyKind.allSatisfy(getsARow))
         // One of each kind that gets a row (cloud tools count once each, drafts twice).
         let kinds = Set(everyKind.map { String(describing: $0).prefix { $0 != "(" } })
-        XCTAssertEqual(kinds.count, 44, "read_health_week since ADR-623")
+        XCTAssertEqual(kinds.count, 45, "open_training_plan since ADR-626")
         XCTAssertNil(ActivityRequest.describe(.undoLast, calendar: calendar))
         XCTAssertNil(ActivityRequest.describe(.calculate(expression: "1+1"), calendar: calendar))
     }

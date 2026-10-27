@@ -17628,6 +17628,17 @@
         }
       }
     },
+    "Doddy can set up a training plan": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy może ułożyć plan treningowy"
+          }
+        }
+      }
+    },
     "Doddy can use these only when you say so. Each one starts off. Nothing is added, started, sent or opened until you tap.": {
       "extractionState": "manual",
       "localizations": {
@@ -51370,6 +51381,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "打开笔记"
+          }
+        }
+      }
+    },
+    "Open the plan": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz plan"
           }
         }
       }
@@ -92598,6 +92620,17 @@
         }
       }
     },
+    "You answer the safety questions yourself on the next screen. No plan is made before that.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na pytania o bezpieczeństwo odpowiadasz na następnym ekranie. Wcześniej nie powstaje żaden plan."
+          }
+        }
+      }
+    },
     "You ask Doddy where they are.": {
       "extractionState": "manual",
       "localizations": {
@@ -94207,6 +94240,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "Twój cel"
+          }
+        }
+      }
+    },
+    "Your goal is filled in from what you asked. Answer the questions yourself: they stay on this iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your goal is filled in from what you asked. Answer the questions yourself: they stay on this iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your goal is filled in from what you asked. Answer the questions yourself: they stay on this iPhone."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Cel jest wpisany na podstawie Twojej prośby. Na pytania odpowiadasz Ty: odpowiedzi zostają na tym iPadzie."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Cel jest wpisany na podstawie Twojej prośby. Na pytania odpowiadasz Ty: odpowiedzi zostają na tym iPhonie."
+                }
+              }
+            }
           }
         }
       }

@@ -2373,5 +2373,9 @@
   "Totals": "Podsumowanie",
   "Suggested by the model, not confirmed": "Podpowiedź modelu, niepotwierdzona",
   "Your parcel list and your inFakt key are removed too.": "Lista przesyłek i Twój klucz inFakt też zostaną usunięte.",
-  "Your inFakt key couldn't be removed from this iPhone's Keychain. Remove it in Settings › Invoices (inFakt).": "Nie udało się usunąć Twojego klucza inFakt z pęku kluczy tego iPhone’a. Usuń go w Ustawieniach › Faktury (inFakt)."
+  "Your inFakt key couldn't be removed from this iPhone's Keychain. Remove it in Settings › Invoices (inFakt).": "Nie udało się usunąć Twojego klucza inFakt z pęku kluczy tego iPhone’a. Usuń go w Ustawieniach › Faktury (inFakt).",
+  "Doddy can set up a training plan": "Doddy może ułożyć plan treningowy",
+  "You answer the safety questions yourself on the next screen. No plan is made before that.": "Na pytania o bezpieczeństwo odpowiadasz na następnym ekranie. Wcześniej nie powstaje żaden plan.",
+  "Open the plan": "Otwórz plan",
+  "Your goal is filled in from what you asked. Answer the questions yourself: they stay on this iPhone.": "Cel jest wpisany na podstawie Twojej prośby. Na pytania odpowiadasz Ty: odpowiedzi zostają na tym iPhonie."
 }

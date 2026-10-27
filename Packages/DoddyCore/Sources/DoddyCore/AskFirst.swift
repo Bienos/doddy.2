@@ -91,6 +91,9 @@ public enum AskFirst {
             return .yesFirst(AskCard(title: "Read your steps?", lines: ["\(day.text), from Motion & Fitness"], confirmLabel: "Yes, read them"))
         case .readHealthWeek:
             return .yesFirst(AskCard(title: "Read your week from Apple Health?", lines: ["Workouts, sleep and heart, the last 7 days", "A short summary goes to Doddy's voice"], confirmLabel: "Yes, read it"))
+        case .openTrainingPlan(let ask):
+            // ADR-626: opens a screen and makes nothing; a tap, because it changes what the person sees.
+            return .tapFirst(AskCard(title: "Make a training plan?", lines: ask.cardLines, confirmLabel: "Open"))
         case .listAlarms:
             return .yesFirst(AskCard(title: "Check Doddy's alarms?", lines: ["The alarms Doddy set on this iPhone"], confirmLabel: "Yes, check"))
         case .startStopwatch(let label):

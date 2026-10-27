@@ -21,6 +21,8 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
     case photos, camera
     /// Apple Health, read only (ADR-621, ADR-623).
     case health
+    /// The training plan screen (ADR-626).
+    case training
 
     public var title: String {
         switch self {
@@ -45,6 +47,7 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
         case .photos: "Photos"
         case .camera: "Camera"
         case .health: "Apple Health"
+        case .training: "Training plan"
         }
     }
 }
@@ -222,6 +225,8 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(app: .steps, title: "Read steps", detail: day.text, isLookup: true)
         case .readHealthWeek:
             return ActivityRequest(app: .health, title: "Read the week from Apple Health", detail: "Last 7 days", isLookup: true)
+        case .openTrainingPlan(let ask):
+            return ActivityRequest(app: .training, title: "Open the training plan", detail: PlanAsk.goalTitle(ask.goal), isLookup: false)
         case .findPhotos(let request):
             return ActivityRequest(app: .photos, title: "Looked through photos", detail: request.text(calendar: calendar), isLookup: true)
         case .openCamera:

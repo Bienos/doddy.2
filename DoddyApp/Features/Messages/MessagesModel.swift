@@ -28,6 +28,9 @@ final class MessagesModel {
     /// A file Doddy offered with an answer (ADR-606), by the id of that answer. Kept for this session only: the card
     /// is an offer, not a record, so after the app closes the offer is gone and nothing was made.
     private(set) var proposals: [UUID: AssistantProposal] = [:]
+    /// A training plan Doddy offered with an answer (ADR-626), by the id of that answer. An offer, not a record: kept for this
+    /// session only. It holds a goal and maybe days and minutes; the safety questions are asked on the plan screen.
+    private(set) var planAsks: [UUID: PlanAsk] = [:]
     /// The answer whose file is being made now. One at a time, so a double tap makes one file.
     private(set) var making: UUID?
     /// Why the last file was not made. The offer stays so the person can try again or decline.
@@ -127,6 +130,7 @@ final class MessagesModel {
             setDelivery(of: message.id, .sent)
             messages.append(reply)
             if let proposal = answer.answer.proposal { proposals[reply.id] = proposal }
+            if let planAsk = answer.answer.planAsk { planAsks[reply.id] = planAsk }
             await persist {
                 try await $0.setDelivery(id: message.id, .sent)
                 try await $0.append(reply)
@@ -198,6 +202,11 @@ final class MessagesModel {
 
     func clearMakeFailure() { makeFailure = nil }
 
+    /// "Not now" on a plan offer: it goes. Nothing was made and nothing was asked.
+    func dismissPlanAsk(_ id: UUID) {
+        planAsks[id] = nil
+    }
+
     // MARK: Deleting
 
     /// Removes the whole conversation from this iPhone. The screen is emptied only after the store read
@@ -209,6 +218,7 @@ final class MessagesModel {
             try await repository.deleteAll()
             messages = []
             proposals = [:]
+            planAsks = [:]
             error = nil
             makeFailure = nil
             storage = .saving
