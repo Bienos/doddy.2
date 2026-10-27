@@ -42,6 +42,13 @@ struct InFaktSettingsView: View {
                     Label("The Keychain couldn't be read, so Doddy can't tell whether a key is saved.", systemImage: "exclamationmark.triangle")
                         .foregroundStyle(Theme.error)
                 }
+                NavigationLink("How to make the key") {
+                    InFaktKeyGuideView { text in
+                        pasted = text
+                        message = nil
+                    }
+                }
+                .accessibilityIdentifier("infakt.guide")
                 SecureField("Paste your inFakt key", text: $pasted)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
