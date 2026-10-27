@@ -10,8 +10,9 @@ import UIKit
 /// he is muted it is narrow and grey and still. On iPhones without a notch or island (a top
 /// inset under 44 pt) it isn't drawn: it would hang from nothing.
 ///
-/// The rhythm is made up from a clock (`SpeechPulse`), not read from his voice: the app has no
-/// loudness for it. Under Reduce Motion nothing moves. Apple's guidance asks apps not to add
+/// The pulse follows how loud his voice really is (`AgentVoiceMeter`, ADR-655, from the audio he
+/// plays); where there is no such audio track it falls back to a rhythm made up from a clock
+/// (`SpeechPulse`). Under Reduce Motion nothing moves. Apple's guidance asks apps not to add
 /// elements that draw attention to the Dynamic Island; this is the owner's choice (ADR-654).
 struct IslandExtension: View {
     enum Look: Equatable {
@@ -87,7 +88,16 @@ struct IslandExtension: View {
             widening = min(1.25, max(-0.1, raw))
             time = reduceMotion ? 0 : date.timeIntervalSinceReferenceDate
             switch look {
-            case .speaking: level = reduceMotion ? 0.4 : SpeechPulse.level(at: sinceChange)
+            case .speaking:
+                if reduceMotion {
+                    level = 0.4
+                } else if AgentVoiceMeter.shared.hasSource {
+                    // His real voice (ADR-655): the loudness of the audio he is playing.
+                    level = min(1, max(0.08, AgentVoiceMeter.shared.current() * 1.1))
+                } else {
+                    // No audio track to listen to (another voice provider, or before it exists).
+                    level = SpeechPulse.level(at: sinceChange)
+                }
             case .listening: level = reduceMotion ? 0.16 : 0.16 + 0.05 * sin(date.timeIntervalSinceReferenceDate * 2)
             case .quiet: level = 0.06
             }
