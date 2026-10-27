@@ -30,6 +30,8 @@ struct DoddyApp: App {
         VoiceSessionKeychain.removeLegacySetup()
         // Before anything reads them: a fresh install doesn't pick up an earlier install's server tokens.
         ServerKeychainStore.clearLeftoversOnFreshInstall()
+        // The same for the keys a person pasted in for their own accounts (ADR-640).
+        AccountKeyStore.clearLeftoversOnFreshInstall()
         let environment = AppEnvironment.shared
         let store = MemoryStore(environment: environment)
         let noteReminders = NoteReminderStore(coordinator: environment.noteReminders)
