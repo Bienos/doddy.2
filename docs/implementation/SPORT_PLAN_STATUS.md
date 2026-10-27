@@ -1,6 +1,6 @@
 # Sport plan: interview, safety, cards, logbook, review (ADR-642)
 
-Owner, 24 Oct 2026: "dalszy plan sportowy" (after the expert-modes research, `docs/research/2026-10-24/research_expert_modes_PL.md` section 2, ADR-630). Branch `claude/sport-plan`, built on #137 (`claude/sport-mode-health`, now merged into the default branch). **Not merged, nothing seen on a device.**
+Owner, 24 Oct 2026: "dalszy plan sportowy" (after the expert-modes research, `docs/research/2026-10-24/research_expert_modes_PL.md` section 2, ADR-630). On the default branch since 27 Oct (#142, branch `claude/sport-plan`, built on #137). **Nothing seen on a device.**
 
 ## What was already there (ADR-624, 625, in `SPORT_MODE_STATUS.md`)
 

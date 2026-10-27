@@ -3657,6 +3657,17 @@
         }
       }
     },
+    "Add a parcel": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj przesyłkę"
+          }
+        }
+      }
+    },
     "Add a preference": {
       "extractionState": "manual",
       "localizations": {
@@ -3782,6 +3793,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "添加项目"
+          }
+        }
+      }
+    },
+    "Add and check": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj i sprawdź"
           }
         }
       }
@@ -5703,6 +5725,17 @@
         }
       }
     },
+    "An InPost parcel number has %lld digits. Check that none is missing.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Numer przesyłki InPost ma %lld cyfry. Sprawdź, czy żadnej nie brakuje."
+          }
+        }
+      }
+    },
     "An address can only be sent as a fact marked Address.": {
       "extractionState": "manual",
       "localizations": {
@@ -5802,6 +5835,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "E-mail do sprawdzenia"
+          }
+        }
+      }
+    },
+    "An example with gaps on purpose. It isn't your invoice.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przykład z celowymi brakami. To nie jest Twoja faktura."
+          }
+        }
+      }
+    },
+    "An example, not your invoice. The VAT rate is marked as the model's suggestion, so you would have to confirm it, and the payment due date is missing, so the card could not be confirmed yet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przykład, nie Twoja faktura. Stawka VAT jest oznaczona jako podpowiedź modelu, więc musiałbyś ją potwierdzić, a brakuje terminu płatności, więc karty nie dałoby się jeszcze potwierdzić."
           }
         }
       }
@@ -8954,6 +9009,17 @@
         }
       }
     },
+    "Buyer": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nabywca"
+          }
+        }
+      }
+    },
     "Buying? Tap “Buy at %@” in the app. The shop's page opens and you pay there: Apple Pay, BLIK or a card. Doddy doesn't see the payment.": {
       "extractionState": "manual",
       "localizations": {
@@ -10895,6 +10961,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Podsumowania i przypomnienia"
+          }
+        }
+      }
+    },
+    "Checked %@ · status from InPost": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdzono: %@ · status z InPost"
           }
         }
       }
@@ -12849,6 +12926,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "连接已暂停，所以不会交出任何例行流程，Doddy 也不会提出新的询问。"
+          }
+        }
+      }
+    },
+    "Connections are paused, so parcels aren't checked.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Połączenia są wstrzymane, więc przesyłki nie są sprawdzane."
+          }
+        }
+      }
+    },
+    "Connections are paused, so this parcel isn't checked.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Połączenia są wstrzymane, więc ta przesyłka nie jest sprawdzana."
           }
         }
       }
@@ -29591,6 +29690,17 @@
         }
       }
     },
+    "History": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Historia"
+          }
+        }
+      }
+    },
     "Home": {
       "extractionState": "manual",
       "localizations": {
@@ -30943,6 +31053,17 @@
         }
       }
     },
+    "InPost parcel number (24 digits)": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Numer przesyłki InPost (24 cyfry)"
+          }
+        }
+      }
+    },
     "Incline push-up": {
       "extractionState": "manual",
       "localizations": {
@@ -31149,6 +31270,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Interwały (HIIT)"
+          }
+        }
+      }
+    },
+    "Invoice card example": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przykład karty faktury"
+          }
+        }
+      }
+    },
+    "Invoices (inFakt)": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Faktury (inFakt)"
           }
         }
       }
@@ -34815,6 +34958,99 @@
         }
       }
     },
+    "Key": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klucz"
+          }
+        }
+      }
+    },
+    "Key removed from this iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Key removed from this iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Key removed from this iPhone."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Klucz usunięty z tego iPada."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Klucz usunięty z tego iPhone’a."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Key saved in this iPhone's Keychain (%@).": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Key saved in this iPad's Keychain (%@)."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Key saved in this iPhone's Keychain (%@)."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Klucz zapisany w pęku kluczy tego iPada (%@)."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Klucz zapisany w pęku kluczy tego iPhone’a (%@)."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Keywords, comma separated": {
       "extractionState": "manual",
       "localizations": {
@@ -36152,6 +36388,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Przejdźmy się."
+          }
+        }
+      }
+    },
+    "Lines": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pozycje"
           }
         }
       }
@@ -40703,6 +40950,17 @@
         }
       }
     },
+    "Name (optional), e.g. shoes": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nazwa (opcjonalnie), np. buty"
+          }
+        }
+      }
+    },
     "Name the shortcut Open Doddy, tap Done, then run it once. Then choose it under Back Tap instead.": {
       "extractionState": "manual",
       "localizations": {
@@ -42653,6 +42911,17 @@
         }
       }
     },
+    "No parcels yet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na razie brak przesyłek."
+          }
+        }
+      }
+    },
     "No phone number in Contacts. Pick them in your bank app's BLIK phone transfer.": {
       "extractionState": "manual",
       "localizations": {
@@ -43719,6 +43988,17 @@
         }
       }
     },
+    "Not checked yet": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jeszcze nie sprawdzono"
+          }
+        }
+      }
+    },
     "Not checked.": {
       "extractionState": "manual",
       "localizations": {
@@ -44227,6 +44507,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "暂不，留在 Doddy 里"
+          }
+        }
+      }
+    },
+    "Not saved": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niezapisany"
           }
         }
       }
@@ -48288,6 +48579,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Off until you turn it on. Doddy checks a parcel with InPost only when you add it or tap Refresh. A number in a message or an email is never looked up by itself. Only the number goes to InPost, which needs no account or key.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyłączona, dopóki jej nie włączysz. Doddy sprawdza przesyłkę w InPost tylko wtedy, gdy ją dodasz albo stukniesz Odśwież. Numer z wiadomości czy maila nigdy nie jest sprawdzany sam z siebie. Do InPost trafia tylko numer; nie potrzeba konta ani klucza."
           }
         }
       }
@@ -52732,6 +53034,39 @@
         }
       }
     },
+    "Parcel list": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lista przesyłek"
+          }
+        }
+      }
+    },
+    "Parcels": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przesyłki"
+          }
+        }
+      }
+    },
+    "Parcels (InPost)": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przesyłki (InPost)"
+          }
+        }
+      }
+    },
     "Parked": {
       "extractionState": "manual",
       "localizations": {
@@ -52938,6 +53273,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "再次输入密码"
+          }
+        }
+      }
+    },
+    "Paste your inFakt key": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wklej swój klucz inFakt"
           }
         }
       }
@@ -57315,6 +57661,17 @@
         }
       }
     },
+    "Refresh": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odśwież"
+          }
+        }
+      }
+    },
     "Regular price %@": {
       "extractionState": "manual",
       "localizations": {
@@ -58701,6 +59058,17 @@
         }
       }
     },
+    "Remove key": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuń klucz"
+          }
+        }
+      }
+    },
     "Remove nudge": {
       "extractionState": "manual",
       "localizations": {
@@ -59287,6 +59655,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "移除本次导入添加的内容？"
+          }
+        }
+      }
+    },
+    "Remove your inFakt key?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usunąć Twój klucz inFakt?"
           }
         }
       }
@@ -60073,6 +60452,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "每年重复"
+          }
+        }
+      }
+    },
+    "Replace key": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zastąp klucz"
           }
         }
       }
@@ -61698,6 +62088,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "仍然再次保存"
+          }
+        }
+      }
+    },
+    "Save key": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisz klucz"
           }
         }
       }
@@ -64381,6 +64782,17 @@
         }
       }
     },
+    "See how an invoice card looks": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zobacz, jak wygląda karta faktury"
+          }
+        }
+      }
+    },
     "See the other ways": {
       "extractionState": "manual",
       "localizations": {
@@ -65089,6 +65501,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "发送到 Doddy"
+          }
+        }
+      }
+    },
+    "Sending invoices to inFakt isn't switched on in this build. Until a test with a real inFakt test account has shown exactly how inFakt takes an invoice, nothing is sent and no invoice is issued. You can already save your key and see how an invoice card looks.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wysyłka faktur do inFakt nie jest włączona w tej wersji. Dopóki test na prawdziwym koncie testowym inFakt nie pokaże dokładnie, jak inFakt przyjmuje fakturę, nic nie jest wysyłane i żadna faktura nie jest wystawiana. Możesz już zapisać swój klucz i zobaczyć, jak wygląda karta faktury."
           }
         }
       }
@@ -71301,6 +71724,17 @@
         }
       }
     },
+    "Suggested by the model, not confirmed": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podpowiedź modelu, niepotwierdzona"
+          }
+        }
+      }
+    },
     "Suggestions only. Nothing changes until you tap it.": {
       "extractionState": "manual",
       "localizations": {
@@ -73306,6 +73740,17 @@
         }
       }
     },
+    "That doesn't look like a key. Paste it again without extra lines or spaces.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To nie wygląda na klucz. Wklej go jeszcze raz, bez dodatkowych wierszy i spacji."
+          }
+        }
+      }
+    },
     "That doesn't look like a phone number.": {
       "extractionState": "manual",
       "localizations": {
@@ -74950,6 +75395,17 @@
         }
       }
     },
+    "The Keychain couldn't be read, so Doddy can't tell whether a key is saved.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się odczytać pęku kluczy, więc Doddy nie wie, czy klucz jest zapisany."
+          }
+        }
+      }
+    },
     "The Shortcuts app opens for a moment.": {
       "extractionState": "manual",
       "localizations": {
@@ -75911,6 +76367,110 @@
         }
       }
     },
+    "The key couldn't be removed: the Keychain still has it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się usunąć klucza: pęk kluczy wciąż go ma."
+          }
+        }
+      }
+    },
+    "The key couldn't be saved: the Keychain didn't keep it. Nothing is saved.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się zapisać klucza: pęk kluczy go nie zachował. Nic nie zostało zapisane."
+          }
+        }
+      }
+    },
+    "The key is deleted from this iPhone's Keychain. Your inFakt account and its invoices are not touched.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The key is deleted from this iPad's Keychain. Your inFakt account and its invoices are not touched."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The key is deleted from this iPhone's Keychain. Your inFakt account and its invoices are not touched."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Klucz zostanie usunięty z pęku kluczy tego iPada. Twoje konto inFakt i jego faktury pozostają bez zmian."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Klucz zostanie usunięty z pęku kluczy tego iPhone’a. Twoje konto inFakt i jego faktury pozostają bez zmian."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "The key stays in this iPhone's Keychain: it isn't synced to iCloud or moved to another iPhone, never goes to Doddy's server and is never put in a message. Make it in inFakt under Settings › API and give it only the rights it needs.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The key stays in this iPad's Keychain: it isn't synced to iCloud or moved to another iPad, never goes to Doddy's server and is never put in a message. Make it in inFakt under Settings › API and give it only the rights it needs."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The key stays in this iPhone's Keychain: it isn't synced to iCloud or moved to another iPhone, never goes to Doddy's server and is never put in a message. Make it in inFakt under Settings › API and give it only the rights it needs."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Klucz zostaje w pęku kluczy tego iPada: nie jest synchronizowany z iCloud ani przenoszony na inny iPad, nigdy nie trafia na serwer Doddy’ego ani do żadnej wiadomości. Utwórz go w inFakt w Ustawieniach › API i nadaj mu tylko potrzebne uprawnienia."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Klucz zostaje w pęku kluczy tego iPhone’a: nie jest synchronizowany z iCloud ani przenoszony na inny iPhone, nigdy nie trafia na serwer Doddy’ego ani do żadnej wiadomości. Utwórz go w inFakt w Ustawieniach › API i nadaj mu tylko potrzebne uprawnienia."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "The keys aren't on the hook.": {
       "extractionState": "manual",
       "localizations": {
@@ -75999,6 +76559,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tym razem nie udało się przeczytać gazetki."
+          }
+        }
+      }
+    },
+    "The list holds at most %lld parcels. Remove one to add another.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na liście może być najwyżej %lld przesyłek. Usuń jedną, żeby dodać nową."
           }
         }
       }
@@ -77170,6 +77741,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "原始记录保持原样，并且仍可查看。"
+          }
+        }
+      }
+    },
+    "The parcel numbers on this list are removed from this iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The parcel numbers on this list are removed from this iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The parcel numbers on this list are removed from this iPhone."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Numery przesyłek z tej listy zostaną usunięte z tego iPada."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Numery przesyłek z tej listy zostaną usunięte z tego iPhone’a."
+                }
+              }
+            }
           }
         }
       }
@@ -81667,6 +82279,17 @@
         }
       }
     },
+    "This parcel is already on the list.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ta przesyłka jest już na liście."
+          }
+        }
+      }
+    },
     "This plan builds your long run to %lld min. “%@” at an easy pace takes about %lld min, and runs grow at most 10 percent at a time, so when this plan ends, make the next one from there.": {
       "extractionState": "manual",
       "localizations": {
@@ -84247,6 +84870,17 @@
         }
       }
     },
+    "Totals": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podsumowanie"
+          }
+        }
+      }
+    },
     "Touch ID opens Doddy on this iPhone. Doddy only learns that it matched.": {
       "extractionState": "manual",
       "localizations": {
@@ -84974,6 +85608,17 @@
         }
       }
     },
+    "Turn off and forget the numbers": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyłącz i zapomnij numery"
+          }
+        }
+      }
+    },
     "Turn off notifications": {
       "extractionState": "manual",
       "localizations": {
@@ -85582,6 +86227,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Najpierw włącz dziennik treningowy. Nic nie zapisano."
+          }
+        }
+      }
+    },
+    "Turn the parcel list off?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyłączyć listę przesyłek?"
+          }
+        }
+      }
+    },
+    "Turn the parcel list on first.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najpierw włącz listę przesyłek."
           }
         }
       }
@@ -94289,6 +94956,58 @@
         }
       }
     },
+    "Your inFakt key": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twój klucz inFakt"
+          }
+        }
+      }
+    },
+    "Your inFakt key couldn't be removed from this iPhone's Keychain. Remove it in Settings › Invoices (inFakt).": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your inFakt key couldn't be removed from this iPad's Keychain. Remove it in Settings › Invoices (inFakt)."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your inFakt key couldn't be removed from this iPhone's Keychain. Remove it in Settings › Invoices (inFakt)."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Nie udało się usunąć Twojego klucza inFakt z pęku kluczy tego iPada. Usuń go w Ustawieniach › Faktury (inFakt)."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Nie udało się usunąć Twojego klucza inFakt z pęku kluczy tego iPhone’a. Usuń go w Ustawieniach › Faktury (inFakt)."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Your list in Doddy. The notification doesn't name it or its items.": {
       "extractionState": "manual",
       "localizations": {
@@ -95557,6 +96276,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Twoja kolejność: %@"
+          }
+        }
+      }
+    },
+    "Your parcel list and your inFakt key are removed too.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lista przesyłek i Twój klucz inFakt też zostaną usunięte."
           }
         }
       }

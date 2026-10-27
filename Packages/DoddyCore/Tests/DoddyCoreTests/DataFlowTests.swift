@@ -308,3 +308,60 @@ final class DataFlowSummaryTests: XCTestCase {
         XCTAssertEqual(row.note, "No Doddy server is set, so nothing goes there.")
     }
 }
+
+/// Invoices and parcels (ADR-640, ADR-641): what the screen says matches what the build can do.
+final class DataFlowInvoiceAndParcelTests: XCTestCase {
+    private let base = DataFlowState(
+        rememberConversations: false, shareProfileWithVoice: false, tokenServerSet: false,
+        connectionsOn: [], pauseAll: false, doddyServerSet: false, askDoddyOn: false, askDoddyUsesNotes: true)
+
+    private func row(_ id: String, _ state: DataFlowState) throws -> DataFlowRow {
+        try XCTUnwrap(DataFlow.rows(state).first { $0.id == id })
+    }
+
+    func testInFaktIsNotSentWhileSendingIsNotVerified() throws {
+        XCTAssertFalse(InFaktAPI.createVerified, "this test describes the build before a sandbox call has settled the wire format")
+        var state = base
+        state.inFaktKeySaved = true
+        let saved = try row("inFakt", state)
+        XCTAssertFalse(saved.isActive, "a saved key alone sends nothing")
+        XCTAssertTrue(saved.note?.contains("isn't switched on in this build") ?? false)
+        XCTAssertTrue(saved.note?.contains("Keychain") ?? false)
+        XCTAssertFalse(DataFlow.networkSummary(state).contains("inFakt"))
+        XCTAssertFalse(try row("inFakt", base).isActive)
+    }
+
+    func testInFaktRowSaysOnlyAConfirmedInvoiceAndNeverDoddysServer() throws {
+        let inFakt = try row("inFakt", base)
+        XCTAssertTrue(inFakt.what.hasPrefix("Only an invoice you confirmed"))
+        XCTAssertTrue(inFakt.what.contains("Doddy's server sees neither"))
+        XCTAssertEqual(inFakt.when, "Only when you tap Confirm on an invoice card.")
+    }
+
+    func testInPostIsOnWhenConnectionsAreNotPausedAndNamesWhatGoes() throws {
+        let on = try row("inPost", base)
+        XCTAssertTrue(on.isActive)
+        XCTAssertTrue(on.what.contains("parcel number"))
+        XCTAssertTrue(on.what.contains("No account, no key"))
+        XCTAssertTrue(on.note?.contains("internet address") ?? false, "it does not claim InPost sees nothing")
+        XCTAssertTrue(DataFlow.networkSummary(base).contains("InPost"))
+
+        var paused = base
+        paused.pauseAll = true
+        let off = try row("inPost", paused)
+        XCTAssertFalse(off.isActive)
+        XCTAssertEqual(off.note, "Connections are paused, so parcels aren't looked up.")
+        XCTAssertFalse(DataFlow.networkSummary(paused).contains("InPost"))
+    }
+
+    func testTheKeyAndTheParcelListStayOnThePhone() {
+        XCTAssertTrue(DataFlow.staysOnPhone(base).contains { $0.hasPrefix("Your inFakt key") && $0.contains("never on Doddy's server") })
+    }
+
+    func testNeitherRowIsAnAIService() {
+        var state = base
+        state.inFaktKeySaved = true
+        XCTAssertFalse(DataFlow.cloudAISummary(state).contains("InPost"))
+        XCTAssertFalse(DataFlow.cloudAISummary(state).contains("inFakt"))
+    }
+}
