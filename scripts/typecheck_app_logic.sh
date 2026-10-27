@@ -144,6 +144,8 @@ files=(
   DoddyApp/Features/Shopping/DealsModel.swift
   # Price watch (SHOPPING_WATCH.md): the card's flow and the list's state, without the views.
   DoddyApp/Features/Shopping/WatchModel.swift
+  # The parcel list (ADR-641): its state and the look-up flow, without the views or the InPost client.
+  DoddyApp/Features/Parcels/ParcelsModel.swift
   # The kept training plan (ADR-625), without the screens.
   DoddyApp/Features/Sport/TrainingPlanStore.swift
   DoddyApp/Features/Sport/PlanText.swift
