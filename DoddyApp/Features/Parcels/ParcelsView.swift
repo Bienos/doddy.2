@@ -1,8 +1,11 @@
 import DoddyCore
 import SwiftUI
+import UIKit
 
 /// Settings › Parcels (InPost) (ADR-641). Off until the person turns it on. A parcel is checked with
 /// InPost only when they add it or tap Refresh; the list stays on this iPhone and "Delete all" removes it.
+/// "Paste a number from the clipboard" only fills the number field (from `ParcelNumber.candidates`, which
+/// takes a run of exactly 24 digits); the look-up still starts with "Add and check".
 /// Not seen on a device in this build (docs/implementation/INPOST_STATUS.md).
 struct ParcelsView: View {
     @State private var model = ParcelsModel(
@@ -11,6 +14,7 @@ struct ParcelsView: View {
     @AppStorage(ConnectionPause.preferenceKey) private var pauseAll = false
     @State private var number = ""
     @State private var label = ""
+    @State private var pasteMessage: String?
     @State private var confirmTurnOff = false
 
     var body: some View {
@@ -48,6 +52,11 @@ struct ParcelsView: View {
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .accessibilityIdentifier("parcels.number")
+                    Button("Paste a number from the clipboard") { pasteNumber() }
+                        .accessibilityIdentifier("parcels.paste")
+                    if let pasteMessage {
+                        Label(pasteMessage, systemImage: "exclamationmark.triangle").foregroundStyle(Theme.error)
+                    }
                     TextField("Name (optional), e.g. shoes", text: $label)
                         .accessibilityIdentifier("parcels.label")
                     Button("Add and check") { Task { await add() } }
@@ -81,6 +90,22 @@ struct ParcelsView: View {
         if model.message == nil {
             number = ""
             label = ""
+            pasteMessage = nil
+        }
+    }
+
+    /// Fills the number field from the clipboard when it holds exactly one 24-digit number (an SMS or an
+    /// email from InPost has the number among other text). Nothing is looked up here.
+    private func pasteNumber() {
+        let found = ParcelNumber.candidates(in: UIPasteboard.general.string ?? "")
+        switch found.count {
+        case 1:
+            number = found[0].digits
+            pasteMessage = nil
+        case 0:
+            pasteMessage = NSLocalizedString("No 24-digit InPost number on the clipboard.", comment: "")
+        default:
+            pasteMessage = NSLocalizedString("The clipboard has more than one number. Copy just the one you want.", comment: "")
         }
     }
 

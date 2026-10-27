@@ -1,5 +1,6 @@
 import DoddyCore
 import SwiftUI
+import UIKit
 
 /// Settings › Invoices (inFakt) (ADR-640): the person's own inFakt key, kept in this iPhone's Keychain,
 /// and a look at how an invoice card is laid out. Saving a key sends nothing anywhere, and while
@@ -45,6 +46,8 @@ struct InFaktSettingsView: View {
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                     .accessibilityIdentifier("infakt.paste")
+                Button("Paste the key from the clipboard") { pasteKey() }
+                    .accessibilityIdentifier("infakt.pasteButton")
                 Button(state.isSaved ? NSLocalizedString("Replace key", comment: "") : NSLocalizedString("Save key", comment: "")) { save() }
                     .disabled(pasted.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     .accessibilityIdentifier("infakt.save")
@@ -74,6 +77,17 @@ struct InFaktSettingsView: View {
         .settingsPage()
         .navigationTitle("Invoices (inFakt)")
         .onAppear { state = keys.state() }
+    }
+
+    /// Puts the clipboard into the key field and nothing more: the field is secure, so the key is not
+    /// shown, and it is checked and kept only when the person taps Save.
+    private func pasteKey() {
+        guard let text = UIPasteboard.general.string, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            show(NSLocalizedString("The clipboard has no text.", comment: ""), error: true)
+            return
+        }
+        pasted = text
+        message = nil
     }
 
     private func save() {

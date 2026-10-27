@@ -19,6 +19,23 @@ Tags: **[V]** read on inFakt's own documentation (`docs.infakt.pl`) or its help 
 | VAT rates `23`, `8`, `5`, `0`, `np`, `zw`; payment methods `transfer`, `cash`, `card`, `paypal`, `barter`, `cod`; currencies PLN, EUR, USD, GBP; `zw` needs an exemption reason id. These are the fields of inFakt's Zapier action, which is its own help page. | [V] for the Zapier action; [U] whether the raw API takes exactly these | help article "Jak automatycznie tworzyć faktury przez Zapier" |
 | A third-party wrapper uses `client_tax_code` for the buyer's NIP and `client_street`, `client_street_number`, `client_city`, `client_post_code`. | [S] | github.com/kapicaoskar/infakt |
 
+## What inFakt's own documentation says (27 Oct 2026)
+
+Read from the Postman collection behind `docs.infakt.pl` (`https://docs.infakt.pl/api/collections/4951438/2s8ZDa31yd`, 203 requests). **[V] means it is written there; no call with a key has been made**, so none of this is yet seen in a real answer. Without a key, `GET` on both `api.sandbox-infakt.pl/api/v3/invoices.json` and `api.infakt.pl/api/v3/invoices.json` answers **401** `{"error":"Musisz podać klucz API."}` (observed 27 Oct 2026), and the collection's auth is the header `X-inFakt-ApiKey`.
+
+| Fact | Tag |
+|---|---|
+| Creating an invoice is asynchronous: `POST /async/invoices.json` answers **201** with `invoice_task_reference_number`, `processing_code` 100 ("Zlecenie przyjęte") and `timestamps.task_created_at`. | [V] |
+| The result is read with `GET /async/invoices/status/{invoice_task_reference_number}.json` (needs `api:invoices:read`): `processing_code` **100/120/140** = accepted / waiting / being processed, **201** = created (the answer then carries `invoice_uuid`), **422** = not created (the answer carries `invoice_errors`, a map from field to messages, e.g. `payment_method`). | [V] |
+| An invoice is read with `GET /invoices/{invoice_uuid}.json`. Its dates are `invoice_date`, `sale_date`, `payment_date` (the due date), `paid_date`; also `continuous_service_start_on` / `_end_on` and `invoice_date_kind`. | [V] |
+| In every example `net_price` and `unit_net_price` are integers: net 6623, tax 1523, gross 8146 at 23%. That fits **grosze** (6623 × 1.23 = 8146.29), but no sentence says the unit. | [U], inferred |
+| Services take `name`, `quantity` (decimals such as 0.5 are in an example), `unit_net_price` / `net_price` or `gross_price` (not both), `tax_symbol` (a number in requests, a string in answers), `pkwiu`. The buyer is `client_company_name` (a saved client) or `client_*` fields with `client_tax_code` for the NIP. | [V] |
+| The create body also takes `status` (`draft` by default, `paid`, `printed`) and, next to `invoice`, `send_to_ksef` (boolean). There is also `POST /invoices/{invoice_uuid}/send_to_ksef.json`, and the older `ksef2/documents/{uuid}/send.json` still appears. | [V] |
+| **No idempotency key and no field for the caller's own id** appears anywhere in the create request. If the answer to a create is lost, the invoice cannot be found again by Doddy's operation id; the rule stays: an unknown outcome is not a success and is not resent, and the person checks inFakt. | [V] that none is documented |
+| Not in any example: the name of the **due-date field in a create request** (the read answer says `payment_date`), and the names of `invoice_date` / `sale_date` in a create. | [U] |
+
+So the **units** (grosze, inferred) and the **due-date field name in a create** are still settled only by one real create call in the sandbox. `InFaktAPI.createVerified` stays `false` until then.
+
 ## What this means: what is real and what is a stub
 
 - **Real (DoddyCore, tested on Linux):** the invoice draft, the NIP check, the VAT math in integer grosze, the missing-data report, the payload digest, the confirmation state machine, the "unknown outcome → check status, never resend" rule, a provider protocol and a fake provider.
@@ -37,7 +54,7 @@ As of the last commit of branch `claude/infakt-inpost` (24 Oct 2026). "Tested" m
 | Invoice card wording, sums and problems in Polish and English (`InvoiceCard.swift`) | Real, tested. The Confirm button is not offered while `InFaktAPI.createVerified` is false. |
 | inFakt key: format check, masked display, save/remove confirmed by reading back (`AccountKey.swift`) | Real, tested against a fake store that refuses, forgets, stores something else or cannot be read. |
 | Keychain store, wipe on Delete all, clear on a fresh install (`AccountKeyStore.swift`) | Written, **BLOCKED / NOT RUN** (Keychain, no Xcode). The guard allows `SecItem` only in the files that already hold a token or key. |
-| Settings › Invoices (inFakt): save, replace, remove the key; the example card (`InFaktSettingsView.swift`, `InvoiceCardView.swift`) | Written, **BLOCKED / NOT RUN** (SwiftUI). The example is labelled as one and has gaps on purpose. |
+| Settings › Invoices (inFakt): save, replace, remove the key; the example card (`InFaktSettingsView.swift`, `InvoiceCardView.swift`) | Written, **BLOCKED / NOT RUN** (SwiftUI). The example is labelled as one and has gaps on purpose. From 27 Oct 2026 a "Paste the key from the clipboard" button fills the secure field from the clipboard (UIPasteboard, so iOS may ask to allow the paste); the key is checked and kept only on Save. |
 | What leaves this iPhone row for inFakt | Real, tested. Not active while `createVerified` is false; says so. |
 | `UnverifiedInFaktProvider` and the create/find calls | Stub. Refuses to run. |
 | inFakt client in the app, the real create call, reading its answer, finding an invoice by operation id after an unknown outcome | **Not built.** Needs a sandbox call (see above). |

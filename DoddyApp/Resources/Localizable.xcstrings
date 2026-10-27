@@ -42133,6 +42133,17 @@
         }
       }
     },
+    "No 24-digit InPost number on the clipboard.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W schowku nie ma 24-cyfrowego numeru InPost."
+          }
+        }
+      }
+    },
     "No alarms from Doddy. Ask Doddy, for example “Wake me at seven”.": {
       "extractionState": "manual",
       "localizations": {
@@ -53295,6 +53306,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "再次输入密码"
+          }
+        }
+      }
+    },
+    "Paste a number from the clipboard": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wklej numer ze schowka"
+          }
+        }
+      }
+    },
+    "Paste the key from the clipboard": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wklej klucz ze schowka"
           }
         }
       }
@@ -76063,6 +76096,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "无法设置早间概览。请重试。"
+          }
+        }
+      }
+    },
+    "The clipboard has more than one number. Copy just the one you want.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W schowku jest więcej niż jeden numer. Skopiuj tylko ten, który chcesz."
+          }
+        }
+      }
+    },
+    "The clipboard has no text.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W schowku nie ma tekstu."
           }
         }
       }
