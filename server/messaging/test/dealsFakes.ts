@@ -190,15 +190,19 @@ export const OfferSchema = z.strictObject({
   ean: z.string().regex(/^\d{8,14}$/).optional(),
   check: z.boolean(),
 });
+/** Fewer pages read than were worth reading: read is below of. */
+const pagesRead = z.strictObject({ read: z.number().int().min(0), of: z.number().int().positive() }).refine((p) => p.read < p.of);
 export const ResponseSchema = z.strictObject({
   checkedAt: z.string().datetime(),
   chains: z.array(z.union([
     z.strictObject({
       chain: anyChain, status: z.literal("checked"),
       leaflet: z.strictObject({ title: z.string().optional(), url: z.string().url(), validFrom: day.optional(), validTo: day.optional() }),
+      pages: pagesRead.optional(),
     }),
     z.strictObject({ chain: anyChain, status: z.literal("link_only"), leafletUrl: z.string().url() }),
-    z.strictObject({ chain: anyChain, status: z.enum(["no_match", "no_leaflet", "blocked", "failed"]) }),
+    z.strictObject({ chain: anyChain, status: z.literal("failed"), pages: pagesRead.optional() }),
+    z.strictObject({ chain: anyChain, status: z.enum(["no_match", "no_leaflet", "blocked"]) }),
   ])),
   items: z.array(z.strictObject({ query: z.string(), offers: z.array(OfferSchema).max(6) })),
 });

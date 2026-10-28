@@ -2,10 +2,11 @@ import DoddyCore
 import SwiftUI
 
 // "Cheapest this week" (docs/implementation/SHOPPING.md 2, design/shopping-mode-v0.1): the user's
-// items, then for each one the cheapest offer in the leaflets with what it takes to get that price
+// items, then for each one the best value offer in the leaflets (the lowest price per kg, l or piece
+// where the sizes are known, `BasketSolver.bestValue`) with what it takes to get that price
 // (the shop's app, a card, a minimum quantity, the last day), the other chains in a line below, and
-// the chains that weren't read with a link to their leaflet. An offer Doddy's code couldn't confirm
-// says so. Every price is the leaflet's, read on this request; nothing here is kept after it closes.
+// the chains that weren't read with a link to their leaflet, and the ones read only in part. An offer
+// Doddy's code couldn't confirm says so. Every price is the leaflet's, read on this request; nothing here is kept after it closes.
 
 struct DealsView: View {
     @Environment(\.dismiss) private var dismiss
@@ -101,17 +102,30 @@ struct DealsView: View {
             .disabled(!result.items.contains { !$0.offers.isEmpty })
             .accessibilityIdentifier("deals.basket")
         }
+        let chainOrder = BasketSolver.chainOrder(result)
         ForEach(Array(result.items.enumerated()), id: \.offset) { _, item in
             Section(item.query) {
-                if let best = item.offers.first {
+                if let best = BasketSolver.bestValue(item.offers, chainOrder: chainOrder) ?? item.offers.first {
                     DealRow(offer: best, language: language)
-                    let others = item.offers.dropFirst().prefix(3)
+                    let others = item.offers.filter { $0 != best }.prefix(3)
                     if !others.isEmpty {
                         Text(others.map { "\($0.chain.name) \($0.price.text(language))" }.joined(separator: " · "))
                             .font(.footnote).foregroundStyle(Theme.secondaryText)
                     }
                 } else {
                     Text("Not in the leaflets that were read.").foregroundStyle(Theme.secondaryText)
+                }
+            }
+        }
+        let inPart = result.chains.filter { $0.status == .checked && $0.pages != nil }
+        if !inPart.isEmpty {
+            Section("Read in part") {
+                ForEach(Array(inPart.enumerated()), id: \.offset) { _, report in
+                    if let pages = report.pages {
+                        Text(String(format: NSLocalizedString("%@: Doddy read %lld of %lld pages. A cheaper offer may be on the others.", comment: "a leaflet read in part"),
+                                    report.chain.name, pages.read, pages.of))
+                            .font(.footnote).foregroundStyle(Theme.secondaryText)
+                    }
                 }
             }
         }
@@ -189,7 +203,12 @@ private struct ChainNotReadRow: View {
         case .linkOnly: NSLocalizedString("Doddy doesn't read this chain's leaflet yet.", comment: "")
         case .blocked: NSLocalizedString("Its site doesn't let automated readers in, and Doddy doesn't get around that.", comment: "")
         case .noLeaflet: NSLocalizedString("No leaflet for this week was found.", comment: "")
-        case .failed: NSLocalizedString("The leaflet couldn't be read this time.", comment: "")
+        case .failed:
+            if let pages = report.pages, pages.read > 0 {
+                String(format: NSLocalizedString("Doddy read %lld of %lld pages and found nothing in them.", comment: "a leaflet read in part"), pages.read, pages.of)
+            } else {
+                NSLocalizedString("The leaflet couldn't be read this time.", comment: "")
+            }
         default: NSLocalizedString("Not checked.", comment: "")
         }
     }

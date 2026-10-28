@@ -39,6 +39,8 @@ final class DealsClientTests: XCTestCase {
         XCTAssertEqual(biedronka.validTo, DealDay(rawValue: "2026-10-29"))
         XCTAssertEqual(result.report(for: .kaufland)?.leafletUrl, "https://www.kaufland.pl/gazetka-promocyjna.html")
         XCTAssertNil(result.report(for: .rossmann)?.leaflet)
+        XCTAssertEqual(result.report(for: .biedronka)?.pages, DealsChainReport.Pages(read: 40, of: 97))
+        XCTAssertNil(result.report(for: .lidl)?.pages, "a leaflet read whole has no pages")
 
         XCTAssertEqual(result.items.map(\.query), ["masło", "pieluchy rozmiar 4", "kawa mielona"])
         let butter = result.items[0].offers[0]
@@ -272,10 +274,11 @@ final class DealsClientTests: XCTestCase {
         XCTAssertTrue(text.hasPrefix("found: "))
         let block = try XCTUnwrap(text.components(separatedBy: ToolData.begin).last?.components(separatedBy: ToolData.end).first)
         let nbsp = "\u{00A0}"
-        XCTAssertTrue(block.contains("- \"masło\": cheapest at Biedronka · \"Masło Extra 82% 200 g\" · 4,99\(nbsp)zł (24,95\(nbsp)zł/kg), regular 6,49\(nbsp)zł · conditions: z aplikacją Moja Biedronka; max 4 szt. · until 2026-10-29 · also: Lidl 5,49\(nbsp)zł (needs checking)"), block)
-        XCTAssertTrue(block.contains("- \"pieluchy rozmiar 4\": cheapest at Lidl · \"Pieluchy rozmiar 4, 50 szt.\" · 44,99\(nbsp)zł (0,90\(nbsp)zł/szt) · conditions: z Lidl Plus · until 2026-10-25"))
-        XCTAssertTrue(block.contains("- \"kawa mielona\": cheapest at Dino · \"Kawa mielona 500 g\" · 19,99\(nbsp)zł (39,98\(nbsp)zł/kg) · until 2026-10-28"))
+        XCTAssertTrue(block.contains("- \"masło\": lowest price per kg at Biedronka · \"Masło Extra 82% 200 g\" · 4,99\(nbsp)zł (24,95\(nbsp)zł/kg), regular 6,49\(nbsp)zł · conditions: z aplikacją Moja Biedronka; max 4 szt. · until 2026-10-29 · also: Lidl 5,49\(nbsp)zł (needs checking)"), block)
+        XCTAssertTrue(block.contains("- \"pieluchy rozmiar 4\": lowest price per szt at Lidl · \"Pieluchy rozmiar 4, 50 szt.\" · 44,99\(nbsp)zł (0,90\(nbsp)zł/szt) · conditions: z Lidl Plus · until 2026-10-25"))
+        XCTAssertTrue(block.contains("- \"kawa mielona\": lowest price per kg at Dino · \"Kawa mielona 500 g\" · 19,99\(nbsp)zł (39,98\(nbsp)zł/kg) · until 2026-10-28"))
         XCTAssertTrue(block.contains("Leaflets read: Biedronka (2026-10-23 to 2026-10-29), Lidl (2026-10-20 to 2026-10-25), Dino (2026-10-22 to 2026-10-28)"))
+        XCTAssertTrue(block.contains("Read only in part, so a cheaper offer may be on the pages not read: Biedronka 40 of 97 pages"))
         XCTAssertTrue(block.contains("Read, nothing matched: Rossmann"))
         XCTAssertTrue(block.contains("Not checked: Kaufland: not read, only a link to its leaflet (on screen)"))
         XCTAssertTrue(block.contains("Basket (summed by Doddy's code): one shop: Lidl, 2 of 3 items, 50,48\(nbsp)zł (some need checking); two shops: Lidl + Dino, 3 of 3 items, 70,47\(nbsp)zł (some need checking)"))
@@ -291,6 +294,27 @@ final class DealsClientTests: XCTestCase {
         let text = DealsResultText.forAgent(leaflets, language: "en")
         XCTAssertTrue(text.contains("- \"masło\": cheapest at Lidl · \"Masło\" · PLN 5.49 · needs checking"))
         XCTAssertTrue(text.contains("one shop: Lidl, 1 of 1 items, PLN 5.49 (some need checking)"))
+    }
+
+    func testPagesReadInPartDecodeOnlyWhenTheyMakeSense() throws {
+        func pages(_ json: String) throws -> DealsChainReport.Pages? {
+            try JSONDecoder().decode(DealsChainReport.self, from: Data("{\"chain\":\"biedronka\",\"status\":\"failed\",\"pages\":\(json)}".utf8)).pages
+        }
+        XCTAssertEqual(try pages("{\"read\":3,\"of\":5}"), DealsChainReport.Pages(read: 3, of: 5))
+        XCTAssertNil(try pages("{\"read\":5,\"of\":5}"), "all read is not 'in part'")
+        XCTAssertNil(try pages("{\"read\":-1,\"of\":5}"))
+        XCTAssertNil(try pages("\"40 of 97\""), "a wrong shape is dropped, not a failed answer")
+        let report = try JSONDecoder().decode(DealsChainReport.self, from: Data("{\"chain\":\"lidl\",\"status\":\"checked\",\"leaflet\":{\"url\":\"https://www.lidl.pl/\"}}".utf8))
+        XCTAssertNil(report.pages, "an older server sends none")
+    }
+
+    func testALeafletReadInPartWithNothingFoundSaysHowMuchWasRead() {
+        let leaflets = DealsResult(checkedAt: "2026-10-28T06:10:00Z", chains: [
+            DealsChainReport(chain: .biedronka, status: .failed, pages: .init(read: 40, of: 97)),
+            DealsChainReport(chain: .lidl, status: .failed, pages: .init(read: 0, of: 20)),
+        ], items: [DealsItemResult(query: "masło", offers: [])])
+        let text = DealsResultText.forAgent(leaflets)
+        XCTAssertTrue(text.contains("Not checked: Biedronka: only 40 of 97 pages could be read, and nothing matched in them; Lidl: couldn't be read"), text)
     }
 
     func testNothingFoundNeverInventsAnOffer() {

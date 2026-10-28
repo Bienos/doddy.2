@@ -137,10 +137,40 @@ public enum BasketSolver {
     }
 
     static func cheapestIndex(_ offers: [DealOffer], chainOrder: [DealsChain] = [], currency: String = defaultCurrency) -> Int? {
-        let candidates = offers.indices.filter { counts(offers[$0], currency: currency) }.map { index in
+        candidates(offers, chainOrder: chainOrder, currency: currency).min { $0.isBetter(than: $1) }?.serverIndex
+    }
+
+    /// The offer to show first for one item: the lowest price per kg, l or piece, in the unit most
+    /// of its offers are priced in (kg, then l, then piece on a tie), so a kilo pack can beat a
+    /// small one; when none has a unit price, the cheapest pack. A pack whose size wasn't read
+    /// can't be called cheaper per kg, so it is never the pick while one with a size is there.
+    /// The same rule as the server's order (SHOPPING.md section 2), worked out here too so an
+    /// answer from an older server, sorted by pack price, shows the same pick. The basket keeps
+    /// buying the cheapest pack (`cheapest`): it sums one pack of each item.
+    public static func bestValue(_ offers: [DealOffer], chainOrder: [DealsChain] = [], currency: String = defaultCurrency) -> DealOffer? {
+        bestValueIndex(offers, chainOrder: chainOrder, currency: currency).map { offers[$0.index] }
+    }
+
+    /// `bestValue`'s index, with the unit it was compared in (nil when it was the cheapest pack).
+    static func bestValueIndex(_ offers: [DealOffer], chainOrder: [DealsChain] = [], currency: String = defaultCurrency) -> (index: Int, per: DealOffer.UnitPer?)? {
+        let all = candidates(offers, chainOrder: chainOrder, currency: currency)
+        let units: [DealOffer.UnitPer] = [.kg, .l, .szt]
+        let counted = units.map { per in all.filter { $0.offer.unitPrice?.per == per && ($0.offer.unitPrice?.minor ?? 0) > 0 }.count }
+        guard let most = counted.max(), most > 0, let unit = counted.firstIndex(of: most) else {
+            return cheapestIndex(offers, chainOrder: chainOrder, currency: currency).map { ($0, nil) }
+        }
+        let per = units[unit]
+        let best = all.filter { $0.offer.unitPrice?.per == per && ($0.offer.unitPrice?.minor ?? 0) > 0 }.min { a, b in
+            let (ua, ub) = (a.offer.unitPrice!.minor, b.offer.unitPrice!.minor)
+            return ua != ub ? ua < ub : a.isBetter(than: b)
+        }
+        return best.map { ($0.serverIndex, per) }
+    }
+
+    static func candidates(_ offers: [DealOffer], chainOrder: [DealsChain], currency: String) -> [Candidate] {
+        offers.indices.filter { counts(offers[$0], currency: currency) }.map { index in
             Candidate(offer: offers[index], serverIndex: index, chainRank: chainOrder.firstIndex(of: offers[index].chain) ?? chainOrder.count)
         }
-        return candidates.min { $0.isBetter(than: $1) }?.serverIndex
     }
 
     // MARK: Plumbing
@@ -161,7 +191,7 @@ public enum BasketSolver {
     }
 
     /// The answer's chain rows first, then chains seen only in offers, by identifier.
-    static func chainOrder(_ result: DealsResult) -> [DealsChain] {
+    public static func chainOrder(_ result: DealsResult) -> [DealsChain] {
         var order: [DealsChain] = []
         for chain in result.chains.map(\.chain) where !order.contains(chain) { order.append(chain) }
         let extra = Set(result.items.flatMap { $0.offers.map(\.chain) }).subtracting(order)

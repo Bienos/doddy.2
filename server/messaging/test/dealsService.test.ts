@@ -8,8 +8,8 @@ import { parseFlyer } from "../src/deals/chains/lidl.js";
 import { parsePromotions } from "../src/deals/chains/rossmann.js";
 import { PoliteFetcher } from "../src/deals/fetcher.js";
 import { parsePrice } from "../src/deals/vision.js";
-import { searchDeals, type DealsDeps } from "../src/deals/service.js";
-import { DEFAULT_DEALS_SETTINGS, type Chain, type DealsResponse, type Offer } from "../src/deals/types.js";
+import { buildOffer, mainUnit, searchDeals, selectOffers, type DealsDeps } from "../src/deals/service.js";
+import { DEFAULT_DEALS_SETTINGS, type Chain, type DealsResponse, type Offer, type ReadChain } from "../src/deals/types.js";
 import {
   BIEDRONKA_PRESS, chainsWeb, contractFixture, DINO_LISTING, FakeModel, FakeWeb, fixtureJson, fixtureText, LIDL_LISTING, read, ResponseSchema,
 } from "./dealsFakes.js";
@@ -61,7 +61,7 @@ describe("the leaflet search", () => {
     assert.deepEqual(Object.keys(response), Object.keys(contractFixture().response as object));
   });
 
-  test("four chains read, Kaufland a link; offers per item cheapest first, with what each chain gave", async () => {
+  test("four chains read, Kaufland a link; offers per item best value first (per kg, l or piece), with what each chain gave", async () => {
     const { response, stats, model } = await search();
     assert.deepEqual(response.chains, [
       { chain: "biedronka", status: "checked", leaflet: { title: "Codziennie niskie ceny P - oferta od 22.10", url: BIEDRONKA_PRESS, validFrom: "2026-10-22" } },
@@ -97,13 +97,13 @@ describe("the leaflet search", () => {
     ], "size 5 and size S nappies are left out; the unit price agrees with Rossmann's own");
 
     const coffee = offers(response, "kawa mielona");
-    assert.deepEqual(coffee.map((o) => [...brief(o), o.check]), [
-      ["dino", "Kawa mielona Reich Rosten Swisso 250g", 1299, false],
-      ["lidl", "Kawa mielona Lavazza Crema e Gusto", 1599, false],
-      ["dino", "Kawa mielona MK Cafe Premium 2x500g", 4995, true],
-    ]);
-    assert.deepEqual(coffee[0]!.conditions, ["przy zakupie 2 szt."], "the condition Dino's data doesn't carry, read from the page");
-    assert.deepEqual(coffee[2]!.size, { value: 1000, unit: "g" });
+    assert.deepEqual(coffee.map((o) => [...brief(o), o.unitPrice?.minor, o.check]), [
+      ["dino", "Kawa mielona MK Cafe Premium 2x500g", 4995, 4995, true],
+      ["dino", "Kawa mielona Reich Rosten Swisso 250g", 1299, 5196, false],
+      ["lidl", "Kawa mielona Lavazza Crema e Gusto", 1599, 6396, false],
+    ], "the kilo pack is the best value although its pack price is the highest");
+    assert.deepEqual(coffee[1]!.conditions, ["przy zakupie 2 szt."], "the condition Dino's data doesn't carry, read from the page");
+    assert.deepEqual(coffee[0]!.size, { value: 1000, unit: "g" });
 
     // What was read: every Biedronka page (5, under the 40-page cap), Lidl's pages whose own text names an item
     // (1, 6, 30), Dino's pages holding a matched product (13, 51).
@@ -176,6 +176,8 @@ describe("the leaflet search", () => {
     assert.equal(row(response, "biedronka").status, "failed");
     assert.equal(row(response, "lidl").status, "failed");
     assert.equal(row(response, "dino").status, "checked");
+    assert.ok(!("pages" in row(response, "dino")), "Dino's unread pages hide no offers: its offers say check instead");
+    assert.deepEqual(row(response, "lidl"), { chain: "lidl", status: "failed", pages: { read: 0, of: 3 } });
     assert.equal(row(response, "rossmann").status, "checked");
     const dino = response.items.flatMap((i) => i.offers).filter((o) => o.chain === "dino");
     assert.ok(dino.length >= 3 && dino.every((o) => o.check && o.readBy === "leaflet_data"), "conditions not confirmed on the page");
@@ -185,7 +187,42 @@ describe("the leaflet search", () => {
   test("pages over DEALS_MAX_PAGES are not read, and then 'nothing matched' is not claimed", async () => {
     const { response, model } = await search({ deps: { settings: { ...DEFAULT_DEALS_SETTINGS, maxPages: 1 } }, items: ["masło"], chains: ["biedronka"] });
     assert.deepEqual(model!.reads.map((r) => r.marker), ["biedronka:1"]);
-    assert.deepEqual(response.chains, [{ chain: "biedronka", status: "failed" }]);
+    assert.deepEqual(response.chains, [{ chain: "biedronka", status: "failed", pages: { read: 1, of: 5 } }],
+      "the row says how much of the leaflet was read");
+  });
+
+  test("a leaflet read in part still shows what it found, and says how much of it was read", async () => {
+    // Biedronka's leaflet of 26 Oct 2026 had 97 image pages against the cap of 40; here 5 pages and a cap of 3.
+    const { response } = await search({ deps: { settings: { ...DEFAULT_DEALS_SETTINGS, maxPages: 3 } }, items: ["masło"], chains: ["biedronka", "dino"] });
+    assert.deepEqual(row(response, "biedronka"), {
+      chain: "biedronka", status: "checked", pages: { read: 3, of: 5 },
+      leaflet: { title: "Codziennie niskie ceny P - oferta od 22.10", url: BIEDRONKA_PRESS, validFrom: "2026-10-22" },
+    });
+    assert.deepEqual(row(response, "dino"), {
+      chain: "dino", status: "checked", leaflet: { title: "Gazetka 43 / 2026", url: DINO_LISTING, validFrom: "2026-10-21", validTo: "2026-10-27" },
+    }, "a leaflet read in full has no pages field");
+    assert.ok(offers(response, "masło").some((o) => o.chain === "biedronka"));
+  });
+
+  test("best value first: per kg where the sizes are known, then the packs without a size; each chain's cheapest pack stays", () => {
+    let n = 0;
+    const cand = (chain: ReadChain, name: string, minor: number) => ({
+      id: `t${++n}`, chain, doubts: [], scores: [1],
+      offer: buildOffer({ chain, name, price: { minor, currency: "PLN" }, conditions: [], source: { url: "https://example.pl/" }, readBy: "page_image", doubts: [] }, "pl").offer,
+    });
+    const butter = [
+      cand("biedronka", "Masło 200 g", 499), cand("biedronka", "Masło 1 kg", 1999), cand("lidl", "Masło ekstra", 449), cand("dino", "Masło 250 g", 549),
+    ];
+    assert.equal(mainUnit(butter.map((c) => c.offer)), "kg");
+    assert.deepEqual(selectOffers(butter).map((o) => [o.product, o.unitPrice?.minor]), [
+      ["Masło 1 kg", 1999], ["Masło 250 g", 2196], ["Masło 200 g", 2495], ["Masło ekstra", undefined],
+    ], "the pack without a size can't be called cheaper per kg, so it comes last although its price is the lowest");
+    // Six better-value Lidl packs: Biedronka's cheapest pack still makes the six, for the basket.
+    const many = [...Array.from({ length: 6 }, (_, i) => cand("lidl", `Masło 1 kg nr ${i + 1}`, 1500 + i)), cand("biedronka", "Masło 200 g", 499)];
+    const kept = selectOffers(many);
+    assert.equal(kept.length, 6);
+    assert.ok(kept.some((o) => o.chain === "biedronka"));
+    assert.deepEqual(kept.map((o) => o.chain), ["lidl", "lidl", "lidl", "lidl", "lidl", "biedronka"]);
   });
 
   test("a chain read fully with nothing that fits is no_match", async () => {
@@ -212,7 +249,7 @@ describe("the leaflet search", () => {
     const { response, model } = await search({ web, items: ["masło"], chains: ["biedronka"] });
     assert.equal(model!.reads.length, 0);
     assert.equal(web.hits("https://images.biedronka.cloud/api/"), 0);
-    assert.deepEqual(response.chains, [{ chain: "biedronka", status: "failed" }]);
+    assert.deepEqual(response.chains, [{ chain: "biedronka", status: "failed", pages: { read: 0, of: 5 } }]);
   });
 
   test("the time budget: pages aren't started when too little time is left; data chains still answer", async () => {
@@ -233,7 +270,7 @@ describe("the leaflet search", () => {
   test("a reader that refuses or fails for a page leaves that page unread, not a guess", async () => {
     const model = reader().page("biedronka:2", "refuse").page("biedronka:4", "throw");
     const { response } = await search({ model, items: ["masło"], chains: ["biedronka"] });
-    assert.deepEqual(response.chains, [{ chain: "biedronka", status: "failed" }]);
+    assert.deepEqual(response.chains, [{ chain: "biedronka", status: "failed", pages: { read: 3, of: 5 } }]);
     assert.deepEqual(response.items[0]!.offers, []);
   });
 

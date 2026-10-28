@@ -31,6 +31,8 @@ describe("Polish-aware matching", () => {
       ["pieluchy rozmiar 4", "Pampers Premium Care pieluchy, 9-14 kg, rozmiar 4, 52 szt."],
       ["pieluchy rozmiar 4", "Babydream EKO pieluchy, 4 Maxi, 8-14 kg, 30 szt."],
       ["sok jabłkowy", "Sok jabłkowy Tymbark 1l"],
+      ["ser", "Serek wiejski Piątnica 200 g"],
+      ["pomidory", "Pomidorki koktajlowe 250 g"],
     ];
     for (const [q, name] of yes) assert.ok(score(q, name) >= MATCH_THRESHOLD, `${q} ~ ${name}: ${score(q, name)}`);
     const no: [string, string][] = [
@@ -38,6 +40,12 @@ describe("Polish-aware matching", () => {
       ["kawa mielona", "Mięso mielone wieprzowe 500 g"],
       ["kawa", "Kawior z łososia"],
       ["masło", "Maślanka naturalna 1 l"],
+      // Seen in Dino's leaflet 44/2026 (28 Oct): a stem with one more letter is another word, not a form of it.
+      ["masło", "Masa makowa z białego maku Helio 400g"],
+      ["masło", "Masa krówkowa kajmak tradycyjny Delecta 460g"],
+      ["kawa", "Napój kawowy Mokate 3w1"],
+      ["mięso", "Pasztet mięsny 160 g"],
+      ["jogurt", "Baton jogurtowy 25 g"],
       ["pieluchy rozmiar 4", "Babydream Premium pieluchy, 5 Junior, 10-16 kg, 68 szt."],
       ["pieluchy rozmiar 4", "Pampers Premium Care pieluchy, 3, 6-10 kg, 60 szt."],
       ["4", "Masło 4 kostki"],
