@@ -4,11 +4,13 @@
 // products, computes unit prices and decides `check`; the model may then pick among the code's candidates
 // by id. Every price comes from the chain's data or the reader's read of a page, parsed by the code.
 // Nothing is stored: no page, image or offer outlives the request. Logs carry counts, codes and timings only.
+import { aldi } from "./chains/aldi.js";
 import { biedronka } from "./chains/biedronka.js";
 import { dayMonth, mapLimit, warsawDay } from "./chains/common.js";
 import { dino } from "./chains/dino.js";
 import { lidl } from "./chains/lidl.js";
 import { rossmann } from "./chains/rossmann.js";
+import { zabka } from "./chains/zabka.js";
 import { PoliteFetcher, type PageFetcher } from "./fetcher.js";
 import {
   headMention, MATCH_THRESHOLD, MAX_PICK_CANDIDATES, matchScore, normalize, parsePrintedUnitPrice, parseSize, pickWithModel, terms,
@@ -21,7 +23,7 @@ import {
   type LinkChain, type ModelUsage, type Money, type Offer, type PagesRead, type ReadChain, type UnitPrice,
 } from "./types.js";
 
-export const ADAPTERS: Record<ReadChain, ChainAdapter> = { biedronka, lidl, dino, rossmann };
+export const ADAPTERS: Record<ReadChain, ChainAdapter> = { biedronka, lidl, dino, rossmann, aldi, zabka };
 
 /** What the leaflet search needs. Without `model` (no Anthropic key) chains that publish product data still
  * answer; image pages can't be read, so those chains come back `failed`. */
@@ -65,8 +67,8 @@ export const MAX_OFFERS_PER_ITEM = 6;
 // ---------- words for conditions (written by the code, never by the model) ----------
 
 const APP: Record<"pl" | "en", Partial<Record<ReadChain, string>> & { default: string }> = {
-  pl: { biedronka: "z aplikacją Moja Biedronka", lidl: "z Lidl Plus", rossmann: "z aplikacją Rossmann", default: "z aplikacją sieci" },
-  en: { biedronka: "with the Moja Biedronka app", lidl: "with Lidl Plus", rossmann: "with the Rossmann app", default: "with the chain's app" },
+  pl: { biedronka: "z aplikacją Moja Biedronka", lidl: "z Lidl Plus", rossmann: "z aplikacją Rossmann", zabka: "z aplikacją Żappka", default: "z aplikacją sieci" },
+  en: { biedronka: "with the Moja Biedronka app", lidl: "with Lidl Plus", rossmann: "with the Rossmann app", zabka: "with the Żappka app", default: "with the chain's app" },
 };
 const CARD: Record<"pl" | "en", Partial<Record<ReadChain, string>> & { default: string }> = {
   pl: { biedronka: "z kartą Moja Biedronka", default: "z kartą lojalnościową" },

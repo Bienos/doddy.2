@@ -225,6 +225,22 @@ describe("the leaflet search", () => {
     assert.deepEqual(kept.map((o) => o.chain), ["lidl", "lidl", "lidl", "lidl", "lidl", "biedronka"]);
   });
 
+  test("Aldi's own data and Żabka's pages: no model for Aldi, Żabka's page chosen by its text, the Żappka condition", async () => {
+    const model = new FakeModel().page("zabka:48", { products: [read({
+      name: "Jogurt pitny Skyr Jogobella Mango", size: "250 g", price: "4,50", lowest30d: "6,50", conditions: [{ kind: "app", quantity: null, text: null }],
+    })] });
+    const { response } = await search({ model, items: ["kawa mielona", "jogurt pitny"], chains: ["aldi", "zabka"] });
+    assert.deepEqual(response.chains.map((c) => [c.chain, c.status]), [["aldi", "checked"], ["zabka", "checked"]]);
+    assert.deepEqual(offers(response, "kawa mielona").map((o) => [...brief(o), o.readBy, o.conditions, o.check]), [
+      ["aldi", "Kawa mielona Premium", 2599, "leaflet_data", ["przy zakupie 2 szt."], false],
+    ]);
+    assert.deepEqual(offers(response, "jogurt pitny").map((o) => [...brief(o), o.readBy, o.conditions, o.source]), [
+      ["zabka", "Jogurt pitny Skyr Jogobella Mango", 450, "page_image", ["z aplikacją Żappka"],
+        { url: "https://gazetka.zabka.pl/gazetka-promocyjna-43-44-2026/page/48", page: 48 }],
+    ]);
+    assert.deepEqual(model.reads.map((r) => r.marker).sort(), ["zabka:44", "zabka:48"], "the pages whose own text names kawa or jogurt; never the beer page");
+  });
+
   test("a chain read fully with nothing that fits is no_match", async () => {
     const { response } = await search({ items: ["szampon"], chains: ["biedronka", "dino"] });
     assert.deepEqual(response.chains, [{ chain: "biedronka", status: "no_match" }, { chain: "dino", status: "no_match" }]);

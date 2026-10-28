@@ -1,8 +1,8 @@
 import Foundation
 
 // Leaflets ("Gazetki", docs/implementation/SHOPPING.md section 2): `POST /v1/deals/search` on
-// Doddy's messaging server reads this week's official leaflets of Biedronka, Lidl, Dino and
-// Rossmann on request; other chains come back as a link. The server keeps nothing but daily counts.
+// Doddy's messaging server reads this week's official leaflets of Biedronka, Lidl, Dino, Rossmann,
+// Aldi and Żabka on request (Aldi and Żabka since ADR-658); other chains come back as a link. The server keeps nothing but daily counts.
 // The item names go to Doddy's server; nothing about the user goes to the chains.
 //
 // Days in a leaflet ("2026-10-23") are calendar days in Poland with no time of day, so they are
@@ -24,6 +24,7 @@ public struct DealsChain: RawRepresentable, Codable, Hashable, Sendable, CustomS
     public static let lidl = DealsChain(rawValue: "lidl")
     public static let dino = DealsChain(rawValue: "dino")
     public static let rossmann = DealsChain(rawValue: "rossmann")
+    public static let aldi = DealsChain(rawValue: "aldi")
     public static let kaufland = DealsChain(rawValue: "kaufland")
     public static let carrefour = DealsChain(rawValue: "carrefour")
     public static let auchan = DealsChain(rawValue: "auchan")
@@ -31,9 +32,9 @@ public struct DealsChain: RawRepresentable, Codable, Hashable, Sendable, CustomS
     public static let zabka = DealsChain(rawValue: "zabka")
 
     /// Read on request (the server's default when no chains are asked for).
-    public static let read: [DealsChain] = [.biedronka, .lidl, .dino, .rossmann]
+    public static let read: [DealsChain] = [.biedronka, .lidl, .dino, .rossmann, .aldi, .zabka]
     /// Answered with a link to the chain's leaflet page only.
-    public static let linkOnly: [DealsChain] = [.kaufland, .carrefour, .auchan, .netto, .zabka]
+    public static let linkOnly: [DealsChain] = [.kaufland, .carrefour, .auchan, .netto]
     /// Every chain a request may name, in the contract's order.
     public static let all: [DealsChain] = read + linkOnly
 
@@ -48,6 +49,7 @@ public struct DealsChain: RawRepresentable, Codable, Hashable, Sendable, CustomS
         case "lidl": "Lidl"
         case "dino": "Dino"
         case "rossmann": "Rossmann"
+        case "aldi": "Aldi"
         case "kaufland": "Kaufland"
         case "carrefour": "Carrefour"
         case "auchan": "Auchan"

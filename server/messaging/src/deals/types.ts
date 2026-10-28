@@ -6,10 +6,10 @@ import type { PageFetcher } from "./fetcher.js";
 import type { PageOutput } from "./vision.js";
 import type { PickOutput } from "./match.js";
 
-/** Chains whose leaflets Doddy reads on request. */
-export const READ_CHAINS = ["biedronka", "lidl", "dino", "rossmann"] as const;
+/** Chains whose leaflets Doddy reads on request (Aldi and Żabka since ADR-658). */
+export const READ_CHAINS = ["biedronka", "lidl", "dino", "rossmann", "aldi", "zabka"] as const;
 /** Chains that only get a link to their official leaflet page (bot walls, or no published data). */
-export const LINK_CHAINS = ["kaufland", "carrefour", "auchan", "netto", "zabka"] as const;
+export const LINK_CHAINS = ["kaufland", "carrefour", "auchan", "netto"] as const;
 export const CHAINS = [...READ_CHAINS, ...LINK_CHAINS] as const;
 export type ReadChain = (typeof READ_CHAINS)[number];
 export type LinkChain = (typeof LINK_CHAINS)[number];
@@ -17,18 +17,17 @@ export type Chain = (typeof CHAINS)[number];
 
 export const isReadChain = (c: string): c is ReadChain => (READ_CHAINS as readonly string[]).includes(c);
 
-/** Official leaflet pages for the link-only chains (Netto and Żabka checked 2026-10-24; Kaufland and
- * Carrefour answer bots with 403, so their addresses come from the research note, not a fetch). */
+/** Official leaflet pages for the link-only chains (Netto checked 2026-10-24; Kaufland and Carrefour answer
+ * bots with a challenge, so their addresses come from the research note, not a fetch). */
 export const LINK_ONLY_URLS: Record<LinkChain, string> = {
   kaufland: "https://www.kaufland.pl/gazetka-promocyjna.html",
   carrefour: "https://www.carrefour.pl/gazetki",
   auchan: "https://www.auchan.pl/pl/gazetki",
   netto: "https://netto.pl/gazetka-netto/",
-  zabka: "https://www.zabka.pl/gazetka-promocyjna/",
 };
 
 export const CHAIN_NAMES: Record<Chain, string> = {
-  biedronka: "Biedronka", lidl: "Lidl", dino: "Dino", rossmann: "Rossmann",
+  biedronka: "Biedronka", lidl: "Lidl", dino: "Dino", rossmann: "Rossmann", aldi: "Aldi",
   kaufland: "Kaufland", carrefour: "Carrefour", auchan: "Auchan", netto: "Netto", zabka: "Żabka",
 };
 
