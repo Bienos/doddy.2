@@ -1,5 +1,5 @@
-// The four chain adapters against trimmed copies of what the chains served on 2026-10-24
-// (test/fixtures/deals). The fixtures' prices are the chains' published prices on that day.
+// The chain adapters against trimmed copies of what the chains served on 2026-10-24 (Aldi and Żabka on 2026-10-28;
+// test/fixtures/deals). The fixtures' prices are the chains' published prices on those days.
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import { biedronka, datesFromTitle, findThisWeekOnListing, parseLeafletApi, parsePressPage } from "../src/deals/chains/biedronka.js";
@@ -7,9 +7,14 @@ import { currentWeek, dayMonth, officialUrl, warsawDay } from "../src/deals/chai
 import { dino, dinoLeaflets, nuxtLeaflets, unflatten } from "../src/deals/chains/dino.js";
 import { lidl, parseFlyer, parseOverview } from "../src/deals/chains/lidl.js";
 import { parsePromotions, rossmann, searchTerms } from "../src/deals/chains/rossmann.js";
+import { aldi } from "../src/deals/chains/aldi.js";
+import { parseListing, parseSpreads, zabka } from "../src/deals/chains/zabka.js";
 import { PoliteFetcher } from "../src/deals/fetcher.js";
 import type { ChainContext, ChainRead, LeafletRead } from "../src/deals/types.js";
-import { BIEDRONKA_API, BIEDRONKA_PRESS, chainsWeb, DINO_LISTING, FakeWeb, fixtureJson, fixtureText, LIDL_LISTING, rossmannSearch } from "./dealsFakes.js";
+import {
+  ALDI_OFFERS, BIEDRONKA_API, BIEDRONKA_PRESS, chainsWeb, DINO_LISTING, FakeWeb, fixtureJson, fixtureText, LIDL_LISTING, rossmannSearch,
+  ZABKA_LISTING, ZABKA_SPREADS,
+} from "./dealsFakes.js";
 
 const TODAY = "2026-10-24";
 const ctx = (web: FakeWeb, queries: string[] = ["masło"]): ChainContext => ({
@@ -195,5 +200,87 @@ describe("Rossmann", () => {
     const r = await rossmann.read(ctx(blocked, ["a1", "b2", "c3", "d4", "e5"]));
     assert.equal(r.kind, "blocked");
     assert.ok(blocked.hits("https://www.rossmann.pl/promocje?Search=") <= 2, "at most the requests already in flight");
+  });
+});
+
+describe("Aldi", () => {
+  const at = (web: FakeWeb) => ({ ...ctx(web), today: "2026-10-28" });
+  const products = async (web = chainsWeb()) => ok(await aldi.read(at(web)))[0]!;
+
+  test("this week's offers from the page's own data, each mechanic as the shopper pays it", async () => {
+    const web = chainsWeb();
+    const l = await products(web);
+    assert.deepEqual(l.leaflet, { title: "Oferty ALDI", url: ALDI_OFFERS, validFrom: "2026-10-26", validTo: "2026-10-31" });
+    assert.equal(l.strategy, "none");
+    assert.deepEqual(l.pages, []);
+    const by = (name: string) => l.products.find((p) => p.name === name);
+    assert.deepEqual(by("Filety z makreli w oleju"), {
+      name: "Filety z makreli w oleju", price: { minor: 559, currency: "PLN" }, url: ALDI_OFFERS,
+      conditions: [{ kind: "min_quantity", quantity: 2 }], sizeText: "Puszka 170 g", printedUnitPrice: "32,88 zł/kg",
+      regularPrice: { minor: 699, currency: "PLN" }, lowest30d: { minor: 699, currency: "PLN" }, validFrom: "2026-10-26", validTo: "2026-10-31",
+    }, "'-20% przy zakupie 2 szt.': the price of one when buying two, the regular price of one");
+    const instant = by("Kawa rozpuszczalna Classic")!;
+    assert.deepEqual(instant.price, { minor: 1999, currency: "PLN" }, "'co druga -91%': (36,99 + 2,99) / 2, not the 2,99 zł of the second jar");
+    assert.deepEqual(instant.conditions, [{ kind: "min_quantity", quantity: 2 }, { kind: "other", text: "druga sztuka 2,99 zł" }]);
+    assert.equal(instant.printedUnitPrice, undefined, "Aldi's unit price for it is the second jar's");
+    assert.deepEqual(by("Jaja z wolnego wybiegu L")!.price, { minor: 999, currency: "PLN" }, "(12,99 + 6,99) / 2");
+    assert.deepEqual(by("Papier toaletowy 3-warstwowy")!.conditions, [{ kind: "multi_buy", text: "1+1" }]);
+    assert.equal(by("Papier toaletowy 3-warstwowy")!.regularPrice, undefined, "1+1: the price shown is the regular one");
+    assert.deepEqual(by("Banany"), {
+      name: "Banany", price: { minor: 349, currency: "PLN" }, url: ALDI_OFFERS, conditions: [], sizeText: "1 kg",
+      regularPrice: { minor: 699, currency: "PLN" }, validFrom: "2026-10-26", validTo: "2026-10-31",
+    }, "'Cena za kg', and the price before the first cut (perishables) as the regular price");
+    assert.equal(by("Gęś owsiana")!.sizeText, "100 g", "'Cena za 100 g'");
+    assert.deepEqual(by("Rogal z białym makiem")!.conditions, [{ kind: "min_quantity", quantity: 2 }]);
+    assert.equal(by("Rogal z białym makiem")!.printedUnitPrice, undefined, "no pack size: Aldi's unit price can't be checked, so it isn't kept");
+    assert.equal(by("Miód wielokwiatowy nektarowy"), undefined, "'co druga' without the price of the first: left out, not guessed");
+    assert.equal(l.products.length, 8);
+    assert.deepEqual([...web.hosts()], ["www.aldi.pl"]);
+    assert.equal(web.hits("https://www.aldi.pl/"), 2, "robots.txt and the one page");
+  });
+
+  test("alcohol is left out; a page without the payload is failed; a block is blocked", async () => {
+    const html = fixtureText("aldi_oferty.html").replace("Filety z makreli w oleju", "Piwo jasne pełne");
+    const beer = chainsWeb().on(ALDI_OFFERS, { headers: { "content-type": "text/html" }, body: html });
+    assert.ok(!(await products(beer)).products.some((p) => /piwo/i.test(p.name)));
+    const empty = chainsWeb().on(ALDI_OFFERS, { headers: { "content-type": "text/html" }, body: "<html></html>" });
+    assert.deepEqual(await aldi.read(at(empty)), { kind: "failed", reason: "no_payload" });
+    const blocked = chainsWeb().on(ALDI_OFFERS, { status: 403 });
+    assert.deepEqual(await aldi.read(at(blocked)), { kind: "blocked", reason: "blocked:http_403" });
+  });
+});
+
+describe("Żabka", () => {
+  const at = (web: FakeWeb, queries = ["jogurt pitny"]) => ({ ...ctx(web, queries), today: "2026-10-28" });
+
+  test("the list's leaflets with their dates; pages with Żabka's own text, beer pages left out", () => {
+    assert.deepEqual(parseListing(fixtureText("zabka_gazetka.html")), [
+      { slug: "gazetka-promocyjna-45-46-2026", validFrom: "2026-11-04", validTo: "2026-11-17" },
+      { slug: "gazetka-promocyjna-43-44-2026", validFrom: "2026-10-21", validTo: "2026-11-03" },
+    ]);
+    const pages = parseSpreads(fixtureJson("zabka_spreads.json"), "gazetka-promocyjna-43-44-2026");
+    assert.deepEqual(pages.map((p) => p.number), [3, 44, 48, 69], "page 18 carries the beer warning");
+    assert.equal(pages[2]!.url, "https://gazetka.zabka.pl/gazetka-promocyjna-43-44-2026/page/48");
+    assert.ok(pages[2]!.imageUrl.startsWith("https://view.publitas.com/resize/") && pages[2]!.imageUrl.includes("/fit-in/1565x2555/"));
+    assert.ok(/Jogurt pitny Skyr/.test(pages[2]!.text ?? ""));
+  });
+
+  test("the adapter reads only this week's leaflet; its pages are read from the image, chosen by their text", async () => {
+    const web = chainsWeb();
+    const [l, ...rest] = ok(await zabka.read(at(web)));
+    assert.equal(rest.length, 0, "45-46 starts on 4 Nov, after this week");
+    assert.deepEqual(l!.leaflet, {
+      title: "Gazetka promocyjna Żabka", url: "https://gazetka.zabka.pl/gazetka-promocyjna-43-44-2026/", validFrom: "2026-10-21", validTo: "2026-11-03",
+    });
+    assert.equal(l!.strategy, "text");
+    assert.deepEqual(l!.products, []);
+    assert.equal(web.hits(ZABKA_SPREADS), 1);
+    assert.equal(web.hits("https://gazetka.zabka.pl/gazetka-promocyjna-45-46-2026/"), 0);
+  });
+
+  test("a blocked list is blocked; a list with no current leaflet is no_leaflet", async () => {
+    assert.deepEqual(await zabka.read(at(chainsWeb().on(ZABKA_LISTING, { status: 403 }))), { kind: "blocked", reason: "blocked:http_403" });
+    const old = fixtureText("zabka_gazetka.html").replace(/2026-11-03/g, "2026-10-25").replace(/2026-11-04/g, "2026-12-04");
+    assert.deepEqual(await zabka.read(at(chainsWeb().on(ZABKA_LISTING, { headers: { "content-type": "text/html" }, body: old }))), { kind: "no_leaflet" });
   });
 });

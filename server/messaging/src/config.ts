@@ -103,7 +103,7 @@ const schema = z.object({
     try { return parseAffiliateRules(v); } catch (err) { ctx.addIssue({ code: "custom", message: (err as Error).message }); return z.NEVER; }
   }),
   // Leaflets (ADR-609, SHOPPING.md section 2): POST /v1/deals/search reads the official leaflets of
-  // Biedronka, Lidl, Dino and Rossmann on request and keeps only counts. "0" answers 503 deals_disabled.
+  // Biedronka, Lidl, Dino, Rossmann, Aldi and Żabka on request (ADR-660) and keeps only counts. "0" answers 503 deals_disabled.
   // Image pages need ANTHROPIC_API_KEY (Claude Haiku reads them); the caps count requests per UTC day.
   DEALS_ENABLED: z.enum(["0", "1"]).default("0"),
   DEALS_VISION_MODEL: z.string().regex(/^[a-z0-9][a-z0-9.\-]{1,63}$/).default("claude-haiku-5-5"),

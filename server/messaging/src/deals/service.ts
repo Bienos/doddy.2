@@ -4,11 +4,13 @@
 // products, computes unit prices and decides `check`; the model may then pick among the code's candidates
 // by id. Every price comes from the chain's data or the reader's read of a page, parsed by the code.
 // Nothing is stored: no page, image or offer outlives the request. Logs carry counts, codes and timings only.
+import { aldi } from "./chains/aldi.js";
 import { biedronka } from "./chains/biedronka.js";
 import { dayMonth, mapLimit, warsawDay } from "./chains/common.js";
 import { dino } from "./chains/dino.js";
 import { lidl } from "./chains/lidl.js";
 import { rossmann } from "./chains/rossmann.js";
+import { zabka } from "./chains/zabka.js";
 import { PoliteFetcher, type PageFetcher } from "./fetcher.js";
 import {
   headMention, MATCH_THRESHOLD, MAX_PICK_CANDIDATES, matchScore, normalize, parsePrintedUnitPrice, parseSize, pickWithModel, terms,
@@ -18,10 +20,10 @@ import { prepareImage, readPage, type ReadDate, type ReadProduct } from "./visio
 import {
   CHAIN_NAMES, isReadChain, LINK_ONLY_URLS, READ_CHAINS, type Chain, type ChainAdapter, type ChainRow, type ChainStatus,
   type Condition, type DataProduct, type DealsModelApi, type DealsResponse, type DealsSettings, type LeafletInfo, type LeafletPage,
-  type LinkChain, type ModelUsage, type Money, type Offer, type ReadChain,
+  type LinkChain, type ModelUsage, type Money, type Offer, type PagesRead, type ReadChain, type UnitPrice,
 } from "./types.js";
 
-export const ADAPTERS: Record<ReadChain, ChainAdapter> = { biedronka, lidl, dino, rossmann };
+export const ADAPTERS: Record<ReadChain, ChainAdapter> = { biedronka, lidl, dino, rossmann, aldi, zabka };
 
 /** What the leaflet search needs. Without `model` (no Anthropic key) chains that publish product data still
  * answer; image pages can't be read, so those chains come back `failed`. */
@@ -65,8 +67,8 @@ export const MAX_OFFERS_PER_ITEM = 6;
 // ---------- words for conditions (written by the code, never by the model) ----------
 
 const APP: Record<"pl" | "en", Partial<Record<ReadChain, string>> & { default: string }> = {
-  pl: { biedronka: "z aplikacją Moja Biedronka", lidl: "z Lidl Plus", rossmann: "z aplikacją Rossmann", default: "z aplikacją sieci" },
-  en: { biedronka: "with the Moja Biedronka app", lidl: "with Lidl Plus", rossmann: "with the Rossmann app", default: "with the chain's app" },
+  pl: { biedronka: "z aplikacją Moja Biedronka", lidl: "z Lidl Plus", rossmann: "z aplikacją Rossmann", zabka: "z aplikacją Żappka", default: "z aplikacją sieci" },
+  en: { biedronka: "with the Moja Biedronka app", lidl: "with Lidl Plus", rossmann: "with the Rossmann app", zabka: "with the Żappka app", default: "with the chain's app" },
 };
 const CARD: Record<"pl" | "en", Partial<Record<ReadChain, string>> & { default: string }> = {
   pl: { biedronka: "z kartą Moja Biedronka", default: "z kartą lojalnościową" },
@@ -164,6 +166,8 @@ interface ChainResult {
   reason?: string;
   /** Every page and search that should have been read was read. */
   complete: boolean;
+  /** Fewer pages read than were worth reading. */
+  pages?: PagesRead;
 }
 
 interface Env {
@@ -195,7 +199,7 @@ async function runChain(chain: ReadChain, adapter: ChainAdapter, env: Env): Prom
   let pagesRead = 0;
   const done = (r: Omit<ChainResult, "chain" | "pagesRead" | "usage" | "complete">, complete = false): ChainResult => {
     env.log("deals chain read", {
-      chain, status: r.status, reason: r.reason, candidates: r.candidates.length, pagesRead,
+      chain, status: r.status, reason: r.reason, candidates: r.candidates.length, pagesRead, pagesWanted: r.pages?.of,
       inputTokens: usage.inputTokens, outputTokens: usage.outputTokens, ms: Date.now() - started,
     });
     return { chain, pagesRead, usage, complete, ...r };
@@ -327,11 +331,17 @@ async function runChain(chain: ReadChain, adapter: ChainAdapter, env: Env): Prom
     });
 
     const complete = unread === 0 && !read.incomplete;
+    // Pages whose offers only an image read can find (all of Biedronka's, Lidl's that name an item): when some
+    // weren't read, the row says how many were (Biedronka's leaflet of 26 Oct had 97 against the cap of 40).
+    // Dino's pages only confirm offers its data already gave, which say `check` until then, so they don't count.
+    const hiding = allJobs.filter((j) => read.leaflets[j.li]!.strategy !== "confirm");
+    const got = hiding.filter((j) => reads.has(key(j.li, j.page.number))).length;
+    const pages = got < hiding.length ? { pages: { read: got, of: hiding.length } } : {};
     if (candidates.length === 0) {
       // "Nothing matched" only when everything that should have been read was read.
       return complete
         ? done({ status: "no_match", candidates }, true)
-        : done({ status: "failed", reason: [...reasons].join(",") || "incomplete", candidates });
+        : done({ status: "failed", reason: [...reasons].join(",") || "incomplete", candidates, ...pages });
     }
     // The chain's row names the leaflet most of its offers came from.
     const counts = new Map<number, number>();
@@ -339,7 +349,7 @@ async function runChain(chain: ReadChain, adapter: ChainAdapter, env: Env): Prom
     const main = [...counts].sort((a, b) => b[1] - a[1] || a[0] - b[0])[0]![0];
     return done({
       status: "checked", leaflet: read.leaflets[main]!.leaflet, candidates,
-      ...(reasons.size ? { reason: [...reasons].join(",") } : {}),
+      ...(reasons.size ? { reason: [...reasons].join(",") } : {}), ...pages,
     }, complete);
   } finally {
     clearTimeout(timer);
@@ -354,17 +364,41 @@ const byPrice = (a: Candidate, b: Candidate) =>
   || (a.offer.unitPrice?.minor ?? Number.MAX_SAFE_INTEGER) - (b.offer.unitPrice?.minor ?? Number.MAX_SAFE_INTEGER)
   || a.chain.localeCompare(b.chain) || a.offer.product.localeCompare(b.offer.product);
 
-/** Up to six offers, cheapest first, with every chain's cheapest among them (the basket needs one per chain). */
+const UNIT_ORDER: UnitPrice["per"][] = ["kg", "l", "szt"];
+
+/** The unit most of an item's offers have a unit price in (kg before l before szt on a tie), if any. */
+export function mainUnit(offers: readonly Offer[]): UnitPrice["per"] | undefined {
+  const counts = new Map<UnitPrice["per"], number>();
+  for (const o of offers) if (o.unitPrice) counts.set(o.unitPrice.per, (counts.get(o.unitPrice.per) ?? 0) + 1);
+  let best: UnitPrice["per"] | undefined;
+  for (const per of UNIT_ORDER) if ((counts.get(per) ?? 0) > (best ? counts.get(best)! : 0)) best = per;
+  return best;
+}
+
+/** Best value first: offers with a unit price in `per`, lowest first; then the rest, by price. A pack of a
+ * size Doddy couldn't read can't be called cheaper per kg, so it comes after the ones it can compare. */
+const byValue = (per: UnitPrice["per"] | undefined) => (a: Candidate, b: Candidate) => {
+  const ua = per && a.offer.unitPrice?.per === per ? a.offer.unitPrice.minor : undefined;
+  const ub = per && b.offer.unitPrice?.per === per ? b.offer.unitPrice.minor : undefined;
+  if (ua !== undefined && ub !== undefined) return ua - ub || byPrice(a, b);
+  if (ua !== undefined) return -1;
+  if (ub !== undefined) return 1;
+  return byPrice(a, b);
+};
+
+/** Up to six offers, best value first (price per kg, l or piece), with every chain's lowest price among them:
+ * the basket buys one pack of each item, so it needs each chain's cheapest pack. */
 export function selectOffers(cands: Candidate[]): Offer[] {
-  const sorted = [...cands].sort(byPrice);
+  const cheapest = [...cands].sort(byPrice);
   const picked: Candidate[] = [];
   const chains = new Set<ReadChain>();
-  for (const c of sorted) if (!chains.has(c.chain)) { chains.add(c.chain); picked.push(c); }
-  for (const c of sorted) {
+  for (const c of cheapest) if (!chains.has(c.chain)) { chains.add(c.chain); picked.push(c); }
+  const value = byValue(mainUnit(cands.map((c) => c.offer)));
+  for (const c of [...cands].sort(value)) {
     if (picked.length >= MAX_OFFERS_PER_ITEM) break;
     if (!picked.includes(c)) picked.push(c);
   }
-  return picked.slice(0, MAX_OFFERS_PER_ITEM).sort(byPrice).map((c) => c.offer);
+  return picked.slice(0, MAX_OFFERS_PER_ITEM).sort(value).map((c) => c.offer);
 }
 
 // ---------- the search ----------
@@ -430,10 +464,12 @@ export async function searchDeals(deps: DealsDeps, input: SearchInput, signal: A
   const chains: ChainRow[] = requested.map((chain): ChainRow => {
     if (!isReadChain(chain)) return { chain, status: "link_only", leafletUrl: LINK_ONLY_URLS[chain as LinkChain] };
     const r = byChain.get(chain)!;
-    if (r.status !== "checked" || !r.leaflet) return { chain, status: r.status === "checked" ? "failed" : r.status };
+    const pages = r.pages ? { pages: r.pages } : {};
+    if (r.status === "failed" || (r.status === "checked" && !r.leaflet)) return { chain, status: "failed", ...pages };
+    if (r.status !== "checked") return { chain, status: r.status };
     // Read, but the pick kept none of its products: nothing matched (if it was all read).
-    if (!offered.has(chain)) return { chain, status: r.complete ? "no_match" : "failed" };
-    return { chain, status: "checked", leaflet: r.leaflet };
+    if (!offered.has(chain)) return r.complete ? { chain, status: "no_match" } : { chain, status: "failed", ...pages };
+    return { chain, status: "checked", leaflet: r.leaflet!, ...pages };
   });
   const statuses: SearchStats["statuses"] = {};
   for (const c of chains) statuses[c.status] = (statuses[c.status] ?? 0) + 1;

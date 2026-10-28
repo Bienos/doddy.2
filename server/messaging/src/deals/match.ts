@@ -57,12 +57,16 @@ function commonPrefix(a: string, b: string): number {
   return i;
 }
 
-/** How alike two words are, 0 to 1: equal, same stem, an inflection away, or a diminutive (pieluchy/pieluszki). */
+/** What a diminutive adds to a stem once its last vowel is gone: ser → serek, jaja → jajka, pomidor → pomidorki. */
+const DIMINUTIVE_TAILS = new Set(["k", "ek", "ik", "yk"]);
+
+/** How alike two words are, 0 to 1: equal, same stem, a diminutive (ser/serek, pieluchy/pieluszki) or a long
+ * shared start. One stem plus other letters is not enough: masło/masa, kawa/kawowy, mięso/mięsny differ. */
 export function wordSimilarity(a: { raw: string; stem: string }, b: { raw: string; stem: string }): number {
   if (a.raw === b.raw) return 1;
   if (a.stem === b.stem) return 0.9;
   const [short, long] = a.stem.length <= b.stem.length ? [a.stem, b.stem] : [b.stem, a.stem];
-  if (short.length >= 3 && long.startsWith(short) && long.length - short.length <= 2) return 0.75;
+  if (long.startsWith(short)) return short.length >= 3 && DIMINUTIVE_TAILS.has(long.slice(short.length)) ? 0.75 : 0;
   const p = commonPrefix(a.stem, b.stem);
   if (p >= 5 && p >= 0.7 * short.length) return 0.6;
   return 0;

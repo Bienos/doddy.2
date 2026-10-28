@@ -84,7 +84,7 @@ describe("leaflet search route against real Postgres", { skip: dbSkip }, () => {
       [{ items: Array.from({ length: 13 }, (_, i) => `x${i}`), language: "pl" }, ["items"]],
       [{ items: ["x".repeat(61)], language: "pl" }, ["items.0"]],
       [{ items: ["   "], language: "pl" }, ["items.0"]],
-      [{ items: ["masło"], chains: ["aldi"], language: "pl" }, ["chains.0"]],
+      [{ items: ["masło"], chains: ["spar"], language: "pl" }, ["chains.0"]],
       [{ items: ["masło"], chains: [], language: "pl" }, ["chains"]],
       [{ items: ["masło"], language: "pol" }, ["language"]],
       [{ items: ["masło"], language: "pl", extra: 1 }, [""]],
@@ -99,18 +99,18 @@ describe("leaflet search route against real Postgres", { skip: dbSkip }, () => {
     assert.deepEqual(await usageRow(a.accountId), [], "an invalid request isn't counted");
   });
 
-  test("items are trimmed; default chains are the four read chains; a link-only chain alone fetches nothing", async () => {
+  test("items are trimmed; default chains are the six read chains; a link-only chain alone fetches nothing", async () => {
     const w = await world();
     const a = await w.account();
     const res = await w.ask(a.h, { items: ["  masło  "], language: "pl" });
     assert.equal(res.statusCode, 200);
     assert.equal(res.json().items[0].query, "masło");
-    assert.deepEqual(res.json().chains.map((c: { chain: string }) => c.chain), ["biedronka", "lidl", "dino", "rossmann"]);
+    assert.deepEqual(res.json().chains.map((c: { chain: string }) => c.chain), ["biedronka", "lidl", "dino", "rossmann", "aldi", "zabka"]);
     const before = w.web.requests.length;
-    const link = await w.ask(a.h, { items: ["masło"], chains: ["netto", "zabka", "netto"], language: "pl" });
+    const link = await w.ask(a.h, { items: ["masło"], chains: ["netto", "kaufland", "netto"], language: "pl" });
     assert.deepEqual(link.json().chains, [
       { chain: "netto", status: "link_only", leafletUrl: "https://netto.pl/gazetka-netto/" },
-      { chain: "zabka", status: "link_only", leafletUrl: "https://www.zabka.pl/gazetka-promocyjna/" },
+      { chain: "kaufland", status: "link_only", leafletUrl: "https://www.kaufland.pl/gazetka-promocyjna.html" },
     ]);
     assert.equal(w.web.requests.length, before);
   });

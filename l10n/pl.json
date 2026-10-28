@@ -2457,5 +2457,8 @@
   "Couldn't delete the copy on the web": "Nie udało się usunąć kopii w sieci",
   "The conversation is gone from this iPhone, but Doddy's server didn't confirm its copy for Doddy Web is deleted. It may still show on the web until it is.": "Rozmowy nie ma już na tym iPhonie, ale serwer Doddy’ego nie potwierdził, że jej kopia dla Doddy Web została usunięta. Do tego czasu może być jeszcze widoczna w sieci.",
   "Text with Doddy": "Pisz z Doddym SMS-em",
-  "Doddy's number isn't set up on the server yet, so there is nowhere to text.": "Numer Doddy’ego nie jest jeszcze ustawiony na serwerze, więc nie ma dokąd pisać."
+  "Doddy's number isn't set up on the server yet, so there is nowhere to text.": "Numer Doddy’ego nie jest jeszcze ustawiony na serwerze, więc nie ma dokąd pisać.",
+  "Read in part": "Przeczytane w części",
+  "%@: Doddy read %lld of %lld pages. A cheaper offer may be on the others.": "%@: przeczytano %lld z %lld stron. Tańsza oferta może być na pozostałych.",
+  "Doddy read %lld of %lld pages and found nothing in them.": "Przeczytano %lld z %lld stron i nic w nich nie pasowało."
 }
