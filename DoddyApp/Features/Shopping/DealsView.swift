@@ -13,6 +13,9 @@ import SwiftUI
 // against the 30-day low or that it isn't one, the deposit, "while stocks last", "in some shops", a
 // price that isn't on yet and a last day on a closed day; promotions printed without a price are
 // listed as such; and an item whose offers are of different kinds can be narrowed to one.
+// Since ADR-662 and 663: products of another kind in the item's family are listed as "similar, not the same"
+// (never picked, never in the basket); "My shops" sets the chains a check asks for and names the user's shop
+// when an offer is only in some shops.
 
 struct DealsView: View {
     @Environment(\.dismiss) private var dismiss
@@ -24,9 +27,11 @@ struct DealsView: View {
     /// The kind picked per item (by its place in the answer); absent: all kinds.
     @State private var kinds: [Int: String] = [:]
     @AppStorage(PreferenceKey.dealsProgramsNotUsed) private var programsStored = ""
+    @AppStorage(PreferenceKey.dealsMyShops) private var myShopsStored = "[]"
     private let language = NotificationLanguage.current
 
     private var programs: DealsPrograms { DealsPrograms(stored: programsStored) }
+    private var myShops: MyShops { MyShops(stored: myShopsStored) }
     private var today: DealDay? { ShoppingCalendar.today() }
 
     var body: some View {
@@ -37,6 +42,21 @@ struct DealsView: View {
                         .lineLimit(1...6)
                         .accessibilityIdentifier("deals.items")
                     fromListButton
+                    NavigationLink {
+                        MyShopsView()
+                    } label: {
+                        LabeledContent("My shops", value: myShops.shops.isEmpty
+                            ? NSLocalizedString("None yet", comment: "no shops picked")
+                            : myShops.chains.map(\.name).joined(separator: ", "))
+                    }
+                    .accessibilityIdentifier("deals.myShops")
+                    if !myShops.shops.isEmpty, Set(myShops.chains) != chains {
+                        Button {
+                            chains = Set(myShops.chains)
+                        } label: {
+                            Label("Only my shops' chains", systemImage: "storefront")
+                        }
+                    }
                     ForEach(DealsChain.read + DealsChain.linkOnly, id: \.rawValue) { chain in
                         Toggle(isOn: binding(for: chain)) {
                             VStack(alignment: .leading, spacing: 2) {
@@ -96,6 +116,8 @@ struct DealsView: View {
                 if itemsText.isEmpty, let last = model.lastRequest {
                     itemsText = last.items.joined(separator: ", ")
                     chains = Set(last.chainsAsked)
+                } else if model.lastRequest == nil, !myShops.shops.isEmpty {
+                    chains = Set(myShops.chains)
                 }
             }
         }
@@ -233,7 +255,7 @@ struct DealsView: View {
         }
         let shown = shownOffers(item, variants: variants, index: index)
         if let best = BasketSolver.bestValue(shown, chainOrder: chainOrder, programs: programs) {
-            DealRow(offer: best, language: language, today: today, missingProgram: nil)
+            DealRow(offer: best, language: language, today: today, missingProgram: nil, myShops: myShops.shops(of: best.chain))
             let others = shown.filter { $0 != best }.prefix(3)
             if !others.isEmpty {
                 Text(others.map { otherText($0) }.joined(separator: " · "))
@@ -241,9 +263,20 @@ struct DealsView: View {
             }
         } else if let first = shown.first {
             // Only prices the user can't get (or none Doddy could compare): shown, and said why.
-            DealRow(offer: first, language: language, today: today, missingProgram: programs.missing(for: first))
+            DealRow(offer: first, language: language, today: today, missingProgram: programs.missing(for: first), myShops: myShops.shops(of: first.chain))
         } else if item.promotions.isEmpty {
             Text("Not in the leaflets that were read.").foregroundStyle(Theme.secondaryText)
+        }
+        if !item.similar.isEmpty {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Similar, not the same").font(.footnote.weight(.semibold)).foregroundStyle(Theme.ink)
+                ForEach(Array(item.similar.enumerated()), id: \.offset) { _, offer in
+                    Text(verbatim: "\(offer.product) · \(offer.chain.name) \(offer.price.text(language))")
+                        .font(.footnote).foregroundStyle(Theme.secondaryText)
+                }
+                Text("Another kind of product: not counted for this item.").font(.footnote).foregroundStyle(Theme.secondaryText)
+            }
+            .accessibilityElement(children: .combine)
         }
         ForEach(Array(item.promotions.enumerated()), id: \.offset) { _, promotion in
             PromotionRow(promotion: promotion)
@@ -276,6 +309,8 @@ private struct DealRow: View {
     let today: DealDay?
     /// The program the price needs that the user said they don't use.
     let missingProgram: DealsProgram?
+    /// The user's own shops of this chain (My shops), for "only in some shops".
+    var myShops: [MyShop] = []
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -354,7 +389,11 @@ private struct DealRow: View {
             case .whileStocksLast:
                 lines.append(NSLocalizedString("While stocks last.", comment: ""))
             case .selectedStores:
-                lines.append(NSLocalizedString("Only in some shops: check yours.", comment: ""))
+                if let shop = myShops.first {
+                    lines.append(String(format: NSLocalizedString("Only in some shops: check yours (%@).", comment: "the user's shop's address"), shop.address))
+                } else {
+                    lines.append(NSLocalizedString("Only in some shops: check yours.", comment: ""))
+                }
             default:
                 break
             }

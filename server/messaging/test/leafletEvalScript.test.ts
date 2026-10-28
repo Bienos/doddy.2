@@ -9,7 +9,7 @@ import { after, describe, test } from "node:test";
 import { PoliteFetcher } from "../src/deals/fetcher.js";
 import type { PageOutput } from "../src/deals/vision.js";
 import type { ModelReply } from "../src/deals/types.js";
-import { BIEDRONKA_API, chainsWeb, fakePng, FakeModel, FakeWeb, read } from "./dealsFakes.js";
+import { BIEDRONKA_API, chainsWeb, fakePng, FakeModel, FakeWeb, read, ScreeningFakeModel } from "./dealsFakes.js";
 
 interface Money { minor: number; currency: "PLN" }
 interface Product {
@@ -17,7 +17,7 @@ interface Product {
   conditions: string[]; validFrom: string | null; validTo: string | null; unitPrice: { minor: number; per: string } | null;
   check: boolean; doubts: string[]; matchedItems: string[]; conditionKinds?: string[];
 }
-interface Page { leaflet: number; number: number; url: string; imageUrl: string; status: string; reason?: string; products: Product[] }
+interface Page { leaflet: number; number: number; url: string; imageUrl: string; status: string; reason?: string; products: Product[]; screen?: string; screenItems?: string[] }
 interface Result {
   notice?: string; startedAt: string; chain: string; items: string[]; model: string; maxPages: number; status: string; reason?: string;
   leaflets: { title?: string; url: string; validFrom?: string; validTo?: string; strategy: string; pagesAvailable: number }[];
@@ -25,6 +25,7 @@ interface Result {
   totals: {
     pagesPlanned: number; pagesSent: number; pagesRead: number; pagesNotRead: number; byStatus: Record<string, number>; products: number; flagged: number;
     inputTokens: number; outputTokens: number; estimatedCostUsd: number; worstCaseCostUsd?: number; elapsedMs: number;
+    screenCalls?: number; screenMissedReads?: number;
   };
   pricing: { model: string; inputPerMillionUsd: number; outputPerMillionUsd: number; promptTokensUpTo: number; appliesToRunModel: boolean };
 }
@@ -76,7 +77,7 @@ describe("options", () => {
   test("the defaults: Biedronka, 50 pages, masło / mleko / kawa, a real run", () => {
     const r = script.parseArgs([]);
     assert.ok(r.ok);
-    assert.deepEqual(r.options, { chain: "biedronka", maxPages: 50, items: ["masło", "mleko", "kawa"], out: undefined, dryRun: false, help: false });
+    assert.deepEqual(r.options, { chain: "biedronka", maxPages: 50, items: ["masło", "mleko", "kawa"], out: undefined, dryRun: false, screen: false, help: false });
     assert.equal(script.DEFAULT_MAX_PAGES, 50);
     assert.equal(script.HARD_MAX_PAGES, 60);
   });
@@ -84,10 +85,10 @@ describe("options", () => {
   test("every option, spelled with a space or with =; items trimmed, empties and repeats dropped", () => {
     const a = script.parseArgs(["--chain", "lidl", "--max-pages", "30", "--items", "masło, mleko ,, kawa,MLEKO", "--out", "/tmp/review", "--dry-run"]);
     assert.ok(a.ok);
-    assert.deepEqual(a.options, { chain: "lidl", maxPages: 30, items: ["masło", "mleko", "kawa"], out: "/tmp/review", dryRun: true, help: false });
+    assert.deepEqual(a.options, { chain: "lidl", maxPages: 30, items: ["masło", "mleko", "kawa"], out: "/tmp/review", dryRun: true, screen: false, help: false });
     const b = script.parseArgs(["--chain=dino", "--max-pages=1", "--items=pieluchy rozmiar 4", "--out=/tmp/x"]);
     assert.ok(b.ok);
-    assert.deepEqual(b.options, { chain: "dino", maxPages: 1, items: ["pieluchy rozmiar 4"], out: "/tmp/x", dryRun: false, help: false });
+    assert.deepEqual(b.options, { chain: "dino", maxPages: 1, items: ["pieluchy rozmiar 4"], out: "/tmp/x", dryRun: false, screen: false, help: false });
     for (const chain of ["biedronka", "lidl", "dino", "rossmann"]) assert.ok(script.parseArgs(["--chain", chain]).ok, chain);
     const h = script.parseArgs(["-h"]);
     assert.ok(h.ok && h.options.help);
@@ -397,6 +398,26 @@ describe("a run against the fakes", () => {
     assert.match(md, /Not read: error \(Error\)\./);
     assert.match(io.out, /Review sheet: .*\.md/);
     assert.match(io.out, /delete them afterwards/);
+  });
+
+  test("--screen: the pages read are also screened, and each says whether the screen flagged it", async () => {
+    const modules = await script.loadDealsModules();
+    const { io, fetcher, sinks } = harness();
+    const model = new ScreeningFakeModel()
+      .page("biedronka:2", { products: [read({ name: "Masło Polskie 200 g", price: "5,99" })] })
+      .page("biedronka:4", { products: [read({ name: "Mleko UHT 3,2% 1 l", price: "3,29" })] });
+    model.misses.add("biedronka:4");
+    const out = fresh("screen");
+    const code = await script.main(["--max-pages", "5", "--items", "masło,mleko", "--screen", "--out", out], { ...sinks, env: { ANTHROPIC_API_KEY: KEY }, modules, fetcher, model });
+    assert.equal(code, 0, io.err);
+    assert.equal(model.screens.length, 1);
+    const r = jsonIn(out);
+    assert.deepEqual(r.pages.map((p) => p.screen), ["not_flagged", "flagged", "not_flagged", "not_flagged", "not_flagged"]);
+    assert.deepEqual(r.pages[1]!.screenItems, ["masło", "mleko"]);
+    assert.equal(r.totals.screenCalls, 1);
+    assert.equal(r.totals.screenMissedReads, 1, "page 4's milk was read but not flagged");
+    for (const f of filesIn(out)) assert.doesNotMatch(readFileSync(path.join(out, f), "latin1"), /DODDYTEST|PNG/, `${f} holds no page image`);
+    assert.equal(script.parseArgs(["--screen=yes"]).ok, false);
   });
 
   test("never more than the hard cap, even when asked for more through the function itself", async () => {

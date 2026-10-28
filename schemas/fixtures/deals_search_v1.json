@@ -1,5 +1,5 @@
 {
-  "_comment": "POST /v1/deals/search (docs/implementation/SHOPPING.md, 'Leaflets'). Example data, not real prices. Offers per item best value first (price per kg, l or piece). `pages` only when a chain's leaflet was read in part. Since ADR-661: flags, limit, effective (price per piece under a multi-buy mechanic), cut (against the 30-day low) and promotions without a price.",
+  "_comment": "POST /v1/deals/search (docs/implementation/SHOPPING.md, 'Leaflets'). Example data, not real prices. Offers per item best value first (price per kg, l or piece). `pages` only when a chain's leaflet was read in part. Since ADR-661: flags, limit, effective (price per piece under a multi-buy mechanic), cut (against the 30-day low) and promotions without a price. Since ADR-662: similar (products of another kind in the item's family, never the item).",
   "request": {
     "items": [
       "masło",
@@ -126,6 +126,33 @@
             },
             "readBy": "page_image",
             "check": true
+          }
+        ],
+        "similar": [
+          {
+            "chain": "dino",
+            "product": "Masło roślinne 250 g",
+            "price": {
+              "minor": 399,
+              "currency": "PLN"
+            },
+            "size": {
+              "value": 250,
+              "unit": "g"
+            },
+            "unitPrice": {
+              "minor": 1596,
+              "per": "kg"
+            },
+            "conditions": [],
+            "validFrom": "2026-10-22",
+            "validTo": "2026-10-28",
+            "source": {
+              "url": "https://marketdino.pl/gazetki/lista/standard",
+              "page": 4
+            },
+            "readBy": "leaflet_data",
+            "check": false
           }
         ]
       },

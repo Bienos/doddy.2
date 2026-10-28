@@ -4,7 +4,7 @@
 import { readFileSync } from "node:fs";
 import { z } from "zod";
 import type { FetchFn } from "../src/deals/fetcher.js";
-import type { PageOutput } from "../src/deals/vision.js";
+import type { PageOutput, ScreenOutput } from "../src/deals/vision.js";
 import type { PickOutput } from "../src/deals/match.js";
 import type { DealsModelApi, ModelReply, PageImage, PickCandidate, ReadChain } from "../src/deals/types.js";
 
@@ -114,6 +114,32 @@ export class FakeModel implements DealsModelApi {
     this.picks.push(req);
     if (this.pickImpl) return this.pickImpl(req);
     return { kind: "ok", output: { matches: req.candidates.map((l, i) => ({ item: i, ids: l.map((c) => c.id) })) }, usage: { inputTokens: 300, outputTokens: 20 } };
+  }
+}
+
+/** A fake model that also screens pages (ADR-662): an image is flagged, for every item, when its marker has a
+ * page step with products or promotions, unless it is in `misses`. `screenSteps` answers the n-th screening call
+ * differently ("refuse", "unparsed", "throw"). */
+export class ScreeningFakeModel extends FakeModel {
+  readonly screens: { markers: string[]; queries: readonly string[] }[] = [];
+  readonly misses = new Set<string>();
+  readonly screenSteps = new Map<number, "refuse" | "unparsed" | "throw">();
+
+  async screenPages(req: { images: readonly PageImage[]; chain: ReadChain; queries: readonly string[] }): Promise<ModelReply<ScreenOutput>> {
+    const call = this.screens.length;
+    const markers = req.images.map((i) => markerOf(i.data));
+    this.screens.push({ markers, queries: req.queries });
+    const usage = { inputTokens: 2665 * req.images.length, outputTokens: 40 };
+    const step = this.screenSteps.get(call);
+    if (step === "refuse") return { kind: "refused", usage };
+    if (step === "unparsed") return { kind: "unparsed", usage };
+    if (step === "throw") throw new Error("api down");
+    const images = markers.flatMap((m, i) => {
+      const page = this.pages.get(m);
+      const shows = typeof page === "object" && (page.products.length > 0 || (page.promotions?.length ?? 0) > 0);
+      return shows && !this.misses.has(m) ? [{ image: i + 1, items: req.queries.map((_, q) => q) }] : [];
+    });
+    return { kind: "ok", output: { images }, usage };
   }
 }
 
@@ -244,7 +270,7 @@ export const ResponseSchema = z.strictObject({
     z.strictObject({ chain: anyChain, status: z.literal("failed"), pages: pagesRead.optional() }),
     z.strictObject({ chain: anyChain, status: z.enum(["no_match", "no_leaflet", "blocked"]) }),
   ])),
-  items: z.array(z.strictObject({ query: z.string(), offers: z.array(OfferSchema).max(6), promotions: z.array(PromotionSchema).min(1).max(3).optional() })),
+  items: z.array(z.strictObject({ query: z.string(), offers: z.array(OfferSchema).max(6), promotions: z.array(PromotionSchema).min(1).max(3).optional(), similar: z.array(OfferSchema).min(1).max(3).optional() })),
 });
 /** The fixture's example request and response (the contract the app builds against). */
 export const contractFixture = (): { request: unknown; response: unknown; errors: Record<string, { status: number; body: unknown }> } =>

@@ -1151,6 +1151,47 @@
         }
       }
     },
+    "A leaflet check asks for these shops' chains. They stay on this iPhone; Doddy's server never gets them.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "A leaflet check asks for these shops' chains. They stay on this iPad; Doddy's server never gets them."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "A leaflet check asks for these shops' chains. They stay on this iPhone; Doddy's server never gets them."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Sprawdzanie gazetek pyta o sieci tych sklepów. Zostają na tym iPadzie; serwer Doddy’ego ich nie dostaje."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Sprawdzanie gazetek pyta o sieci tych sklepów. Zostają na tym iPhonie; serwer Doddy’ego ich nie dostaje."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "A lighter week, so your body catches up.": {
       "extractionState": "manual",
       "localizations": {
@@ -3650,6 +3691,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "添加"
+          }
+        }
+      }
+    },
+    "Add %@, %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj %@, %@"
           }
         }
       }
@@ -6489,6 +6541,17 @@
         }
       }
     },
+    "Another kind of product: not counted for this item.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inny rodzaj produktu: nie liczę go jako tej rzeczy."
+          }
+        }
+      }
+    },
     "Answer": {
       "extractionState": "manual",
       "localizations": {
@@ -7086,6 +7149,28 @@
         }
       }
     },
+    "Apple Maps couldn't be reached. Try again when you're online.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się połączyć z Mapami Apple. Spróbuj, gdy będziesz online."
+          }
+        }
+      }
+    },
+    "Apple Maps didn't find that place.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mapy Apple nie znalazły tego miejsca."
+          }
+        }
+      }
+    },
     "Apple Maps found these. Pick one:": {
       "extractionState": "manual",
       "localizations": {
@@ -7141,6 +7226,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Apple 地图找到了这些。选一个："
+          }
+        }
+      }
+    },
+    "Apple Maps gets the shops' names and roughly where you are, as for a place reminder. Doddy reads your location once, only when you tap.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mapy Apple dostają nazwy sieci i Twoje przybliżone położenie, jak przy przypomnieniu o miejscu. Doddy odczytuje lokalizację raz, tylko gdy stukniesz."
           }
         }
       }
@@ -27361,6 +27457,17 @@
         }
       }
     },
+    "Find shops near me": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Znajdź sklepy w pobliżu"
+          }
+        }
+      }
+    },
     "Find something": {
       "extractionState": "manual",
       "localizations": {
@@ -38428,6 +38535,17 @@
         }
       }
     },
+    "Location is off for Doddy. Type a town or street instead.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lokalizacja jest wyłączona dla Doddy’ego. Wpisz miasto lub ulicę."
+          }
+        }
+      }
+    },
     "Lock Doddy with Face ID": {
       "extractionState": "manual",
       "localizations": {
@@ -38645,6 +38763,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "正在查找"
+          }
+        }
+      }
+    },
+    "Looking in Apple Maps…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szukam w Mapach Apple…"
           }
         }
       }
@@ -41429,6 +41558,17 @@
         }
       }
     },
+    "My shops": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moje sklepy"
+          }
+        }
+      }
+    },
     "NOTE": {
       "extractionState": "manual",
       "localizations": {
@@ -41775,6 +41915,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "自然"
+          }
+        }
+      }
+    },
+    "Near you": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W pobliżu"
           }
         }
       }
@@ -43707,6 +43858,28 @@
         }
       }
     },
+    "No shops of these chains within 15 km.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brak sklepów tych sieci w promieniu 15 km."
+          }
+        }
+      }
+    },
+    "No shops yet. Find the ones near you below.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie ma jeszcze sklepów. Znajdź te w pobliżu poniżej."
+          }
+        }
+      }
+    },
     "No speech was found in this recording.": {
       "extractionState": "manual",
       "localizations": {
@@ -44201,6 +44374,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "今天没有设置。"
+          }
+        }
+      }
+    },
+    "None yet": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jeszcze żadnych"
           }
         }
       }
@@ -50241,6 +50425,17 @@
         }
       }
     },
+    "Only in some shops: check yours (%@).": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tylko w wybranych sklepach: sprawdź swój (%@)."
+          }
+        }
+      }
+    },
     "Only in some shops: check yours.": {
       "extractionState": "manual",
       "localizations": {
@@ -50248,6 +50443,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tylko w wybranych sklepach: sprawdź swój."
+          }
+        }
+      }
+    },
+    "Only my shops' chains": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tylko sieci moich sklepów"
           }
         }
       }
@@ -52056,6 +52262,17 @@
         }
       }
     },
+    "Open in Apple Maps": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz w Mapach Apple"
+          }
+        }
+      }
+    },
     "Open in Keynote or share": {
       "extractionState": "manual",
       "localizations": {
@@ -53269,6 +53486,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Opcjonalnie. Gdy jest ustawione, trafia do ElevenLabs albo OpenAI, jeśli przełączysz na niego głos na ekranie głównym z każdą rozmową głosową, żeby Doddy mógł czasem go użyć. Zostaw puste, aby nic nie wysyłać."
+          }
+        }
+      }
+    },
+    "Or a town or street": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Albo miasto lub ulica"
           }
         }
       }
@@ -59853,6 +60081,17 @@
         }
       }
     },
+    "Remove %@, %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuń %@, %@"
+          }
+        }
+      }
+    },
     "Remove PIN": {
       "extractionState": "manual",
       "localizations": {
@@ -65418,6 +65657,17 @@
         }
       }
     },
+    "Search there": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szukaj tam"
+          }
+        }
+      }
+    },
     "Search words go to Apple Maps to find the place.": {
       "extractionState": "manual",
       "localizations": {
@@ -69563,6 +69813,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zalogowane przeglądarki"
+          }
+        }
+      }
+    },
+    "Similar, not the same": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podobne, nie to samo"
           }
         }
       }
@@ -96702,6 +96963,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "你的 iCloud 储存空间已满。"
+          }
+        }
+      }
+    },
+    "Your iPhone couldn't tell where you are just now. Type a town or street instead.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iPhone nie mógł teraz ustalić, gdzie jesteś. Wpisz miasto lub ulicę."
           }
         }
       }

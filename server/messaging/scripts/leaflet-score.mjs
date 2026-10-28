@@ -14,8 +14,9 @@
 // the same page matches its name (the service's own matcher, either way round).
 //
 // Measures: offers found; price exact (grosze); regular and 30-day price exact where labelled; condition kinds
-// recall and precision; products with no labelled match; prices not printed on the page; and how often `check`
-// was set on a found offer whose price was wrong.
+// recall and precision; products with no labelled match; prices not printed on the page; how often `check`
+// was set on a found offer whose price was wrong; and, for a run made with --screen (ADR-662), the screen's recall:
+// of the labelled pages with an offer that were screened, how many it flagged (the target is at least 95%).
 
 import { readFileSync } from "node:fs";
 import path from "node:path";
@@ -39,11 +40,16 @@ export function score(run, labels, match) {
     regularLabelled: 0, regularExact: 0, lowestLabelled: 0, lowestExact: 0,
     conditionsLabelled: 0, conditionsRead: 0, conditionsRight: 0,
     readProducts: 0, unmatchedProducts: 0, pricesChecked: 0, pricesNotPrinted: 0, wrongPrices: 0, wrongPricesChecked: 0,
+    screenedWithOffers: 0, screenFlagged: 0,
   };
   for (const lp of labels.pages ?? []) {
     const rp = read.get(lp.number);
     if (!rp) continue;
     c.pagesScored++;
+    if ((lp.offers ?? []).length > 0 && (rp.screen === "flagged" || rp.screen === "not_flagged")) {
+      c.screenedWithOffers++;
+      if (rp.screen === "flagged") c.screenFlagged++;
+    }
     const products = rp.products ?? [];
     c.readProducts += products.length;
     const used = new Set();
@@ -86,6 +92,7 @@ export function score(run, labels, match) {
       unmatchedProducts: ratio(c.unmatchedProducts, c.readProducts),
       pricesNotPrinted: ratio(c.pricesNotPrinted, c.pricesChecked),
       wrongPricesFlagged: ratio(c.wrongPricesChecked, c.wrongPrices),
+      screenRecall: ratio(c.screenFlagged, c.screenedWithOffers),
     },
   };
 }
@@ -111,6 +118,7 @@ export function renderScore(result, run) {
     `| Products with no labelled match | ${pct(r.unmatchedProducts)} | ${c.readProducts} read |`,
     `| Prices not printed on the page | ${pct(r.pricesNotPrinted)} | ${c.pricesChecked} checked |`,
     `| Wrong prices flagged \`check\` | ${pct(r.wrongPricesFlagged)} | ${c.wrongPrices} wrong |`,
+    `| Screen recall (pages with an offer) | ${pct(r.screenRecall)} | ${c.screenedWithOffers} screened |`,
     "",
   ].join("\n");
 }
