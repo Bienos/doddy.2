@@ -72,7 +72,7 @@ iPhone: NewsFeedSections.group (Today / Yesterday / Earlier) ─▶ FollowingVie
 
 ## Decisions for the owner
 
-1. Is Home › ••• the right door, or should Following be a card on Home, or a tab? (Home's menu fits eleven rows at the default size; this is the fourth row of its second section.)
+1. ~~Is Home › ••• the right door?~~ **Decided, owner, 28 Oct 2026: "W menu".** Following stays in Home's ••• menu, the fourth row of its second section; no Home card, no tab.
 2. Should a follow by voice exist ("śledź CPK")? Not built; it would be a small `follow_news` tool plus a card.
 3. The privacy policy page (`site/`) needs one line about Following; not changed here.
 
