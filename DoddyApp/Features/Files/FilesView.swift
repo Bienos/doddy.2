@@ -95,7 +95,7 @@ struct FilesSheet: View {
 }
 
 /// One file Doddy made: what it is, and its state as the server reports it.
-private struct MadeDocumentRow: View {
+struct MadeDocumentRow: View {
     let document: MadeDocument
     let downloading: Bool
 

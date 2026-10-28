@@ -62,7 +62,7 @@ public struct MadeDocument: Equatable, Sendable, Identifiable {
         return ext.isEmpty || ext.count > 10 ? base : "\(base).\(ext)"
     }
 
-    static func isID(_ text: String) -> Bool {
+    public static func isID(_ text: String) -> Bool {
         text.range(of: "^[A-Za-z0-9_-]{24}$", options: .regularExpression) != nil
     }
 }

@@ -1,4 +1,5 @@
 import DoddyCore
+import QuickLook
 import SwiftUI
 import UIKit
 
@@ -24,6 +25,9 @@ struct MessagesView: View {
     /// The plan screen opened from a plan offer (ADR-626).
     @State private var planRequest: PlanAskRequest?
     @FocusState private var inputFocused: Bool
+    /// Files Doddy made elsewhere (a voice conversation, a task), offered under the thread. Read from his server each time.
+    @State private var files = MadeDocumentsModel()
+    @State private var preview: URL?
 
     /// - Parameter draft: text already in the box, for the person to read, change and send
     ///   themselves (the Apple Health week summary, ADR-622). Nothing is sent without their tap.
@@ -99,6 +103,9 @@ struct MessagesView: View {
         }
         .foregroundStyle(Theme.ink)
         .task { await model.load() }
+        // Only once Ask Doddy is on: opening Messages with it off makes no call to Doddy's server.
+        .task(id: consent) { if consent { await files.refresh() } }
+        .quickLookPreview($preview)
         // Motion v2 (MV4, Q2): he comes up with this cover, on its composer, and is back on
         // Home's stage as it goes.
         .onAppear { DoddyDirector.shared.askOpened() }
@@ -139,6 +146,7 @@ struct MessagesView: View {
                         messageBlock(at: index, message)
                             .id(message.id)
                     }
+                    attachments
                     if model.isSending {
                         TypingBubble()
                             .padding(.top, 8)
@@ -176,6 +184,44 @@ struct MessagesView: View {
             .contentMargins(.bottom, DoddyDirector.shared.isActive ? CGFloat(MotionLayout.listBottomInset) : 0, for: .scrollContent)
             .onChange(of: model.messages.count) { _, _ in
                 if let last = model.messages.last { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo(last.id, anchor: .bottom) } }
+            }
+        }
+    }
+
+    /// Ready files Doddy made that are not already bubbles above. A tap downloads one and opens it in Quick Look,
+    /// whose Share button saves or sends it; nothing is added to the saved thread.
+    @ViewBuilder
+    private var attachments: some View {
+        if case .ready(let list) = files.load {
+            let shown = ThreadAttachments.shown(documents: list.documents, thread: model.messages, now: Date())
+            if !shown.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Files Doddy made for you")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                        .accessibilityAddTraits(.isHeader)
+                    ForEach(shown) { document in
+                        Button {
+                            Task { preview = await files.download(document) }
+                        } label: {
+                            MadeDocumentRow(document: document, downloading: files.downloading == document.id)
+                                .padding(.horizontal, 12)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(files.downloading != nil)
+                        .accessibilityIdentifier("messages.attachment")
+                    }
+                    if let problem = files.downloadProblem {
+                        Label(problem, systemImage: "exclamationmark.triangle")
+                            .font(.footnote)
+                            .foregroundStyle(Theme.error)
+                            .accessibilityIdentifier("messages.attachmentProblem")
+                    }
+                }
+                .padding(.top, 14)
+                .padding(.trailing, 40)
             }
         }
     }
