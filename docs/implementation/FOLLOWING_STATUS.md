@@ -103,10 +103,10 @@ An HTML mock-up of the three screens (Following, the "śledź CPK" card, the Fol
 
 Also: What Doddy did gets a row ("Follow in Following" / "Śledź w Śledzonych", app "Following" / "Śledzone"); it stays outside Pause all, like the stopwatch; in the car it is refused (it needs a tap); Doddy Web's logbook knows the tool.
 
-**The live ElevenLabs agent doesn't have the tool yet** (`elevenlabs_tool_id: "not_synced"`). The live agent is changed only on the owner's word: syncing it means creating the tool from `tools.json` and adding the one line in `instructions.md`. Until then, asking by voice gets no card.
+**On the live ElevenLabs agent since 28 Oct 2026** (owner: "Dodaj"): `tool_5201m626991zfjgrw2b4mhsyqzcb`, saved as `agtvrsn_7301m626bt8mfm1bw7qav8gtqyzx`, rollback `agtvrsn_4401m5y51ygzfbdbapvpnfb6vfnh`; the record is in `voice-agent/README.md`. The prompt was not changed. **Until an app build with this branch is on the iPhone, the voice may offer it and the app answers that it isn't supported.**
 
 The ask card is in English only, like every other ask card (the cards' words are not in the string catalogs yet).
 
 ## Next
 
-The hosted Mac build (ADR-497) to compile the SwiftUI, then one run on a device with the real server to see how many publishers carry pictures. Then, on the owner's word, sync `follow_news` to the live agent and say "śledź CPK".
+The hosted Mac build (ADR-497) to compile the SwiftUI, then one run on a device with the real server to see how many publishers carry pictures. Then say "śledź CPK" to the live agent with that build.
