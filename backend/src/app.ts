@@ -11,6 +11,7 @@ import { MemoryChat } from "./memory/chat.js";
 import { MemoryCipher } from "./memory/crypto.js";
 import { MEMORY_KEPT_DAYS } from "./memory/contract.js";
 import { MemoryService } from "./memory/service.js";
+import { ThreadService } from "./messages/service.js";
 import { ComposioCalendarProvider } from "./providers/composio.js";
 import { MockCalendarProvider } from "./providers/mock.js";
 import { UnconfiguredCalendarProvider, UnconfiguredToolsProvider } from "./providers/unconfigured.js";
@@ -111,11 +112,13 @@ export async function buildApp(
   const chatClaude =
     overrides.chatClaude !== undefined ? overrides.chatClaude : config.mode === "live" ? (config.chatClaude ? new AnthropicClaudeProvider(config.chatClaude) : null) : claude;
   const memoryChat = new MemoryChat({ memory, store, claude: chatClaude, limits: config.limits, log });
+  // The Messages copy for the web, with the same key; without it the routes answer "not set up".
+  const thread = new ThreadService({ store, cipher: config.memoryKey ? new MemoryCipher(config.memoryKey) : null, log });
   const web =
     config.web && webAuth
       ? {
           auth: webAuth,
-          routes: new WebRoutes(webAuth, store, verifier, config.limits.maxBodyBytes, { service: memory, chat: memoryChat }),
+          routes: new WebRoutes(webAuth, store, verifier, config.limits.maxBodyBytes, { service: memory, chat: memoryChat }, thread),
           pages: new WebStatic(config.web.distDir, config.web.origin),
         }
       : null;
@@ -154,6 +157,7 @@ export async function buildApp(
     for (const [step, sweep] of [
       ["conversations", () => store.pruneMemoryConversations(cutoff)],
       ["notes", () => store.pruneMemoryNotes(cutoff)],
+      ["messages", () => store.pruneMessageThreads(cutoff)],
     ] as const) {
       sweep().catch(() => log({ level: "warn", event: "memory_sweep_failed", step }));
     }

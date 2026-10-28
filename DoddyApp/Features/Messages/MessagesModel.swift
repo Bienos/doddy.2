@@ -39,15 +39,23 @@ final class MessagesModel {
     /// A photo to send with the next message, already made smaller on this iPhone. Sent once, then dropped; never saved.
     var photo: AssistantImage?
 
+    /// The copy on Doddy's server for Doddy Web could not be confirmed deleted. This iPhone's copy is gone; the screen says
+    /// what is left and offers to try again.
+    private(set) var webDeleteFailed = false
+
     private let repository: any MessageThreadRepository
+    /// Sends the thread to Doddy's server for the web after every change; nil in tests and builds without a server.
+    private let sync: (any ThreadSyncClient)?
+    private var syncTask: Task<Void, Never>?
     private let now: @Sendable () -> Date
     private let sessionID = UUID()
     private var task: Task<Void, Never>?
     private var makeTask: Task<Void, Never>?
     private var didLoad = false
 
-    init(repository: any MessageThreadRepository, now: @escaping @Sendable () -> Date = { Date() }) {
+    init(repository: any MessageThreadRepository, sync: (any ThreadSyncClient)? = nil, now: @escaping @Sendable () -> Date = { Date() }) {
         self.repository = repository
+        self.sync = sync
         self.now = now
     }
 
@@ -63,6 +71,8 @@ final class MessagesModel {
             _ = try await repository.failUnfinished()
             messages = try await repository.recent(limit: ThreadRules.displayLimit)
             storage = .saving
+            // Catches the web copy up with anything that changed while it couldn't be sent.
+            syncToWeb()
         } catch {
             storage = .notSaved
         }
@@ -161,6 +171,21 @@ final class MessagesModel {
         let repository = self.repository
         let saved = await Task.detached { (try? await work(repository)) != nil }.value
         if !saved { storage = .notSaved }
+        syncToWeb()
+    }
+
+    /// Sends what is saved on this iPhone to the web copy. Only the latest send matters, so an earlier one still on its way
+    /// is cancelled; a failure is left for the next change or the next time Messages opens. Nothing is shown for it: the
+    /// conversation itself is on this iPhone either way.
+    private func syncToWeb() {
+        guard let sync, storage == .saving else { return }
+        let snapshot = ThreadSync.snapshot(of: messages)
+        syncTask?.cancel()
+        syncTask = Task {
+            try? await Task.sleep(for: .milliseconds(400))
+            guard !Task.isCancelled else { return }
+            try? await sync.send(snapshot)
+        }
     }
 
     // MARK: Files
@@ -215,8 +240,8 @@ final class MessagesModel {
 
     // MARK: Deleting
 
-    /// Removes the whole conversation from this iPhone. The screen is emptied only after the store read
-    /// back as empty.
+    /// Removes the whole conversation from this iPhone, then the copy on Doddy's server for the web. The screen is emptied
+    /// only after the store read back as empty; the web copy is called deleted only when the server said so.
     func deleteConversation() async {
         guard !isSending, storage != .loading else { return }
         deleteFailed = false
@@ -230,8 +255,26 @@ final class MessagesModel {
             storage = .saving
         } catch {
             deleteFailed = true
+            return
+        }
+        await deleteWebCopy()
+    }
+
+    /// Deletes the web copy. No session for the server means there is no copy to delete.
+    func deleteWebCopy() async {
+        guard let sync else { return }
+        syncTask?.cancel()
+        webDeleteFailed = false
+        do {
+            try await sync.deleteAll()
+        } catch .notConfigured {
+            return
+        } catch {
+            webDeleteFailed = true
         }
     }
 
     func clearDeleteFailure() { deleteFailed = false }
+
+    func clearWebDeleteFailure() { webDeleteFailed = false }
 }

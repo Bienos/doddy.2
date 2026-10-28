@@ -1239,7 +1239,6 @@
   "Web search is on, and an account's tools come on when you connect it. Doddy still asks before every look, and anything that sends, adds or changes something shows you a card first and waits for your tap. Switch any tool off here.": "ウェブ検索はオンです。アカウントのツールは、接続するとオンになります。それでもDoddyは確認のたびに尋ね、何かを送信・追加・変更するものは、まずカードを表示してあなたのタップを待ちます。ここでどのツールもオフにできます。",
   "Messages": "メッセージ",
   "Delete conversation": "会話を削除",
-  "It is removed from this iPhone. Your saved notes are not affected.": "この iPhone から削除されます。保存したメモには影響ありません。",
   "Couldn't delete the conversation": "会話を削除できませんでした",
   "Doddy couldn't confirm it was removed from this iPhone. Try again.": "この iPhone から削除されたことを確認できませんでした。もう一度お試しください。",
   "Sending…": "送信中…",
@@ -1267,5 +1266,8 @@
   "Photo goes with your next message": "写真は次のメッセージと一緒に送られます",
   "Remove the photo": "写真を外す",
   "What's in this photo?": "この写真には何が写っていますか？",
-  "Doddy is an AI, not a person. This conversation is saved on this iPhone until you delete it. Your question, a photo you add to it, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply. A photo is not kept on this iPhone or the server.": "DoddyはAIであり、人ではありません。この会話は、あなたが削除するまでこの iPhone に保存されます。あなたの質問、添付した写真、直近の数件のメッセージ、回答の下に表示されるメモは、Doddyのサーバーに送られ、さらに返答を書くためにAnthropicに送られます。写真はこのiPhoneにもサーバーにも保存されません。"
+  "Doddy is an AI, not a person. This conversation is saved on this iPhone until you delete it. Your question, a photo you add to it, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply. A photo is not kept on this iPhone or the server. A copy of this conversation, without photos, is kept encrypted on Doddy's server so you can read it in Doddy Web.": "DoddyはAIであり、人ではありません。この会話は、あなたが削除するまでこの iPhone に保存されます。あなたの質問、添付した写真、直近の数件のメッセージ、回答の下に表示されるメモは、Doddyのサーバーに送られ、さらに返答を書くためにAnthropicに送られます。写真はこのiPhoneにもサーバーにも保存されません。この会話のコピー（写真を除く）は、Doddy Webで読めるよう、暗号化してDoddyのサーバーに保存されます。",
+  "It is removed from this iPhone and from its copy on Doddy's server for Doddy Web. Your saved notes are not affected.": "このiPhoneと、Doddy Web用にDoddyのサーバーにあるコピーから削除されます。保存したメモには影響ありません。",
+  "Couldn't delete the copy on the web": "Web上のコピーを削除できませんでした",
+  "The conversation is gone from this iPhone, but Doddy's server didn't confirm its copy for Doddy Web is deleted. It may still show on the web until it is.": "会話はこのiPhoneから削除されましたが、Doddy Web用のコピーが削除されたことをDoddyのサーバーが確認していません。確認されるまでWebにまだ表示されることがあります。"
 }

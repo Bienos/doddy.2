@@ -1239,7 +1239,6 @@
   "Web search is on, and an account's tools come on when you connect it. Doddy still asks before every look, and anything that sends, adds or changes something shows you a card first and waits for your tap. Switch any tool off here.": "网页搜索已开启，账户的工具会在你连接账户后开启。Doddy 每次查看前仍会询问，任何会发送、添加或更改内容的操作都会先显示一张卡片，等你轻点确认。你可以在这里关闭任何工具。",
   "Messages": "信息",
   "Delete conversation": "删除对话",
-  "It is removed from this iPhone. Your saved notes are not affected.": "将从这部 iPhone 中删除。你保存的笔记不受影响。",
   "Couldn't delete the conversation": "无法删除对话",
   "Doddy couldn't confirm it was removed from this iPhone. Try again.": "Doddy 无法确认对话已从这部 iPhone 中删除。请重试。",
   "Sending…": "正在发送…",
@@ -1267,5 +1266,8 @@
   "Photo goes with your next message": "照片会随你的下一条消息发送",
   "Remove the photo": "移除照片",
   "What's in this photo?": "这张照片里有什么？",
-  "Doddy is an AI, not a person. This conversation is saved on this iPhone until you delete it. Your question, a photo you add to it, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply. A photo is not kept on this iPhone or the server.": "Doddy 是 AI，不是真人。这段对话会保存在这部 iPhone 上，直到你删除它。你的问题、你添加的照片、最近几条消息以及回答下方显示的笔记，会发送到 Doddy 的服务器，再转给 Anthropic 来撰写回复。照片不会保存在这部 iPhone 或服务器上。"
+  "Doddy is an AI, not a person. This conversation is saved on this iPhone until you delete it. Your question, a photo you add to it, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply. A photo is not kept on this iPhone or the server. A copy of this conversation, without photos, is kept encrypted on Doddy's server so you can read it in Doddy Web.": "Doddy 是 AI，不是真人。这段对话会保存在这部 iPhone 上，直到你删除它。你的问题、你添加的照片、最近几条消息以及回答下方显示的笔记，会发送到 Doddy 的服务器，再转给 Anthropic 来撰写回复。照片不会保存在这部 iPhone 或服务器上。这段对话的副本（不含照片）会加密保存在 Doddy 的服务器上，方便你在 Doddy Web 中阅读。",
+  "It is removed from this iPhone and from its copy on Doddy's server for Doddy Web. Your saved notes are not affected.": "将从这部 iPhone 以及 Doddy 服务器上供 Doddy Web 使用的副本中删除。你保存的笔记不受影响。",
+  "Couldn't delete the copy on the web": "无法删除网页上的副本",
+  "The conversation is gone from this iPhone, but Doddy's server didn't confirm its copy for Doddy Web is deleted. It may still show on the web until it is.": "这段对话已从这部 iPhone 中删除，但 Doddy 的服务器尚未确认其 Doddy Web 副本已删除。在确认之前，它可能仍会显示在网页上。"
 }

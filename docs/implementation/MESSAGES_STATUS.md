@@ -4,7 +4,7 @@ Branch `claude/gifted-pascal-3e117c-messages`, off main at `8aa42c59`. No pull r
 
 ## What it is, in one paragraph
 
-Ask Doddy (typed questions, ADR-115) is now a thread. Home's bottom-left button, which said **Type**, says **Messages** and opens it. Your messages and Doddy's answers are bubbles with a date heading after an hour of silence, saved **on this iPhone** until you delete them (the ••• menu → Delete conversation, or Settings → Delete all). It is not Apple's iMessage and not SMS, and the conversation is not stored on a server. **Replies now come from Claude through Doddy's messaging server** (ADR-586, owner: "4. B"), not from the Ask gateway. Same consent, same Settings switch, off by default.
+Ask Doddy (typed questions, ADR-115) is now a thread. Home's bottom-left button, which said **Type**, says **Messages** and opens it. Your messages and Doddy's answers are bubbles with a date heading after an hour of silence, saved **on this iPhone** until you delete them (the ••• menu → Delete conversation, or Settings → Delete all). It is not Apple's iMessage and not SMS. **Since 28 Oct 2026 a copy (without photos) is kept encrypted on Doddy's server for Doddy Web** (owner: sync always on; `MESSAGES_WEB_SYNC.md`). **Replies now come from Claude through Doddy's messaging server** (ADR-586, owner: "4. B"), not from the Ask gateway. Same consent, same Settings switch, off by default.
 
 ## Decisions the owner made (22 Oct)
 

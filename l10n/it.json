@@ -1239,7 +1239,6 @@
   "Web search is on, and an account's tools come on when you connect it. Doddy still asks before every look, and anything that sends, adds or changes something shows you a card first and waits for your tap. Switch any tool off here.": "La ricerca web è attiva, e gli strumenti di un account si attivano quando lo colleghi. Doddy chiede comunque prima di ogni controllo, e tutto ciò che invia, aggiunge o modifica qualcosa ti mostra prima una scheda e aspetta il tuo tocco. Qui puoi disattivare qualsiasi strumento.",
   "Messages": "Messaggi",
   "Delete conversation": "Elimina conversazione",
-  "It is removed from this iPhone. Your saved notes are not affected.": "Viene rimossa da questo iPhone. Le tue note salvate non vengono toccate.",
   "Couldn't delete the conversation": "Impossibile eliminare la conversazione",
   "Doddy couldn't confirm it was removed from this iPhone. Try again.": "Doddy non è riuscito a confermare che è stata rimossa da questo iPhone. Riprova.",
   "Sending…": "Invio…",
@@ -1267,5 +1266,8 @@
   "Photo goes with your next message": "La foto parte con il tuo prossimo messaggio",
   "Remove the photo": "Rimuovi la foto",
   "What's in this photo?": "Cosa c’è in questa foto?",
-  "Doddy is an AI, not a person. This conversation is saved on this iPhone until you delete it. Your question, a photo you add to it, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply. A photo is not kept on this iPhone or the server.": "Doddy è un'IA, non una persona. Questa conversazione è salvata su questo iPhone finché non la elimini. La tua domanda, una foto che aggiungi, gli ultimi messaggi e le note mostrate sotto una risposta vengono inviati al server di Doddy e poi ad Anthropic per scrivere la risposta. Una foto non viene conservata né su questo iPhone né sul server."
+  "Doddy is an AI, not a person. This conversation is saved on this iPhone until you delete it. Your question, a photo you add to it, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply. A photo is not kept on this iPhone or the server. A copy of this conversation, without photos, is kept encrypted on Doddy's server so you can read it in Doddy Web.": "Doddy è un'IA, non una persona. Questa conversazione è salvata su questo iPhone finché non la elimini. La tua domanda, una foto che aggiungi, gli ultimi messaggi e le note mostrate sotto una risposta vengono inviati al server di Doddy e poi ad Anthropic per scrivere la risposta. Una foto non viene conservata né su questo iPhone né sul server. Una copia di questa conversazione, senza foto, è conservata cifrata sul server di Doddy così puoi leggerla in Doddy Web.",
+  "It is removed from this iPhone and from its copy on Doddy's server for Doddy Web. Your saved notes are not affected.": "Viene rimossa da questo iPhone e dalla sua copia per Doddy Web sul server di Doddy. Le tue note salvate non vengono toccate.",
+  "Couldn't delete the copy on the web": "Impossibile eliminare la copia sul web",
+  "The conversation is gone from this iPhone, but Doddy's server didn't confirm its copy for Doddy Web is deleted. It may still show on the web until it is.": "La conversazione non è più su questo iPhone, ma il server di Doddy non ha confermato che la sua copia per Doddy Web sia eliminata. Fino ad allora potrebbe ancora vedersi sul web."
 }

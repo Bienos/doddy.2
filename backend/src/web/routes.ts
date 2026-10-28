@@ -17,6 +17,8 @@ import {
 import type { MemoryChat } from "../memory/chat.js";
 import { memoryRoutes } from "../memory/routes.js";
 import type { MemoryService } from "../memory/service.js";
+import { threadRoutes } from "../messages/routes.js";
+import type { ThreadService } from "../messages/service.js";
 import type { WebAuth, WebSessionContext } from "./sessions.js";
 
 /**
@@ -73,6 +75,8 @@ export class WebRoutes {
     private readonly maxBodyBytes: number,
     /** Notes and conversations kept on request, and chat over them (ADR-603). Without it those routes don't exist. */
     memory?: { service: MemoryService; chat: MemoryChat },
+    /** The Messages copy for the web. Without it those routes don't exist. */
+    thread?: ThreadService,
   ) {
     this.routes = [
       {
@@ -204,6 +208,7 @@ export class WebRoutes {
         },
       },
       ...(memory ? memoryRoutes(memory) : []),
+      ...(thread ? threadRoutes(thread) : []),
     ];
   }
 

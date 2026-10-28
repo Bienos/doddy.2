@@ -20,6 +20,7 @@ import { MemoryChat } from "../src/memory/chat.js";
 import { MemoryCipher } from "../src/memory/crypto.js";
 import { MemoryService } from "../src/memory/service.js";
 import { WebRoutes } from "../src/web/routes.js";
+import { ThreadService } from "../src/messages/service.js";
 import { type RedeemLimits, WebAuth } from "../src/web/sessions.js";
 import { WebStatic } from "../src/web/static.js";
 import { Clock, USER_A } from "./helpers.js";
@@ -113,12 +114,18 @@ export async function startWeb(
     now: clock.now,
     log: (line) => logs.push(JSON.stringify(line)),
   });
+  const thread = new ThreadService({
+    store,
+    cipher: o.memoryKey === null ? null : new MemoryCipher(o.memoryKey ?? Buffer.alloc(32, 5)),
+    now: clock.now,
+    log: (line) => logs.push(JSON.stringify(line)),
+  });
   const auth = new WebAuth(store, origin, o.trustProxy ?? false, o.limits);
   const handler = createHandler({
     service,
     tools,
     verifier,
-    web: { auth, routes: new WebRoutes(auth, store, verifier, 8 * 1024, { service: memory, chat }), pages: new WebStatic(o.withDist === false ? join(distDir, "missing") : distDir, origin) },
+    web: { auth, routes: new WebRoutes(auth, store, verifier, 8 * 1024, { service: memory, chat }, thread), pages: new WebStatic(o.withDist === false ? join(distDir, "missing") : distDir, origin) },
     documents: { links: documentLinks, store },
     appReturnUrl: common.appReturnUrl,
     maxBodyBytes: 8 * 1024,

@@ -223,6 +223,14 @@ export const SCHEMA_SQL = `
   CREATE INDEX IF NOT EXISTS memory_conversations_started ON memory_conversations(user_id, started_at);
   CREATE INDEX IF NOT EXISTS memory_conversations_age ON memory_conversations(started_at);
   CREATE INDEX IF NOT EXISTS memory_notes_age ON memory_notes(received_at);
+  CREATE TABLE IF NOT EXISTS message_threads (
+    user_id TEXT PRIMARY KEY,
+    key_version SMALLINT NOT NULL,
+    ciphertext BYTEA NOT NULL,
+    message_count INTEGER NOT NULL CHECK (message_count BETWEEN 1 AND 200),
+    received_at BIGINT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS message_threads_age ON message_threads(received_at);
 `;
 
 /** A browser signed in to Doddy Web (ADR-600). The cookie's token is stored only as a hash. */
@@ -263,6 +271,14 @@ export interface MemoryConversationRow {
   turn_count: number;
   key_version: number;
   ciphertext: Buffer;
+  received_at: number;
+}
+
+/** The Messages copy for Doddy Web: the thread as one encrypted snapshot per user. */
+export interface MessageThreadRow {
+  key_version: number;
+  ciphertext: Buffer;
+  message_count: number;
   received_at: number;
 }
 
@@ -927,6 +943,31 @@ export class Store {
    */
   async pruneMemoryNotes(oldest: number): Promise<number> {
     return (await this.db.query("DELETE FROM memory_notes WHERE received_at < $1", [oldest])).rowCount;
+  }
+
+  // ------------------------------------------------------------ Messages on the web (28 Oct 2026)
+
+  async putMessageThread(userId: string, row: MessageThreadRow): Promise<void> {
+    await this.db.query(
+      `INSERT INTO message_threads (user_id, key_version, ciphertext, message_count, received_at) VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT (user_id) DO UPDATE SET key_version = EXCLUDED.key_version, ciphertext = EXCLUDED.ciphertext,
+         message_count = EXCLUDED.message_count, received_at = EXCLUDED.received_at`,
+      [userId, row.key_version, row.ciphertext, row.message_count, row.received_at],
+    );
+  }
+
+  async messageThread(userId: string): Promise<MessageThreadRow | null> {
+    const row = await this.one<MessageThreadRow>(this.db, "SELECT key_version, ciphertext, message_count, received_at FROM message_threads WHERE user_id = $1", [userId]);
+    return row ? { ...row, ciphertext: Buffer.from(row.ciphertext as unknown as Uint8Array) } : null;
+  }
+
+  async deleteMessageThread(userId: string): Promise<number> {
+    return (await this.db.query("DELETE FROM message_threads WHERE user_id = $1", [userId])).rowCount;
+  }
+
+  /** Copies an iPhone has not sent since `oldest` (epoch ms) go: an abandoned account's thread doesn't stay. */
+  async pruneMessageThreads(oldest: number): Promise<number> {
+    return (await this.db.query("DELETE FROM message_threads WHERE received_at < $1", [oldest])).rowCount;
   }
 
   // ------------------------------------------------------------ Doddy Web (ADR-600)

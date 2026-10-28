@@ -4,16 +4,19 @@ import { useSession } from "../auth/session.js";
 import { useI18n } from "../i18n/i18n.js";
 import { IPHONE_SENDS_LOGBOOK, LOGBOOK_ENABLED } from "../logbook/config.js";
 import { IPHONE_SYNCS_MEMORY, MEMORY_ENABLED } from "../memory/config.js";
+import { IPHONE_SENDS_MESSAGES } from "../messages/config.js";
 import type { MessageKey } from "../i18n/messages.js";
 import { Wordmark } from "./Brand.js";
 
 /**
  * Only sections that work today are in the menu (ADR-600). Chat, memory and tasks come later.
  * Logbook is there too (ADR-602), marked Example until the iPhone can send it; Memory and Ask Doddy (ADR-603)
- * are marked Soon until the iPhone can send notes and conversations.
+ * are marked Soon until the iPhone can send notes and conversations. Messages is marked Soon until the iPhone can
+ * send its thread.
  */
 export const SECTIONS: { path: string; label: MessageKey; example?: boolean; soon?: boolean }[] = [
   { path: "/", label: "nav.home" },
+  { path: "/messages", label: "nav.messages", soon: !IPHONE_SENDS_MESSAGES },
   { path: "/documents", label: "nav.documents" },
   { path: "/apps", label: "nav.apps" },
   { path: "/activity", label: "nav.activity" },

@@ -8,6 +8,7 @@ import { ActivityPage } from "./pages/ActivityPage.js";
 import { AppsPage } from "./pages/AppsPage.js";
 import { DocumentsPage } from "./pages/DocumentsPage.js";
 import { HomePage } from "./pages/HomePage.js";
+import { MessagesPage } from "./pages/MessagesPage.js";
 import { LOGBOOK_ENABLED } from "./logbook/config.js";
 import { MEMORY_ENABLED } from "./memory/config.js";
 import { AskPage } from "./pages/AskPage.js";
@@ -45,6 +46,7 @@ export function App() {
     <AppShell>
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/messages" element={<MessagesPage />} />
         <Route path="/documents" element={<DocumentsPage />} />
         <Route path="/apps" element={<AppsPage />} />
         <Route path="/activity" element={<ActivityPage />} />

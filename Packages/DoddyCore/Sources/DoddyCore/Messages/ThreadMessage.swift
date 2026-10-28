@@ -2,8 +2,9 @@ import Foundation
 
 // The thread with Doddy (ADR-585): typed messages, in bubbles, saved on this iPhone until the user
 // deletes them. It grows out of "Ask Doddy" (ADR-115), whose chat lived in memory only, so the same
-// consent applies and nothing here is sent anywhere new: what goes to the server on a send is still
-// the question, the last few messages and any notes shown under an answer.
+// consent applies. What goes to the server on a send is
+// the question (and a photo, if one was added: sent once, never stored), the last few messages and any notes
+// shown under an answer. A copy of the thread, without photos, goes to Doddy's server for Doddy Web (ThreadSync).
 // Plain Swift for the Linux tests; the screen follows these rules.
 
 /// A file Doddy made for the person from a message (ADR-606), kept in the thread as a bubble that opens it. The

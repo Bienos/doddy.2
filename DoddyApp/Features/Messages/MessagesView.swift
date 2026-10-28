@@ -35,7 +35,8 @@ struct MessagesView: View {
     ///   themselves (the Apple Health week summary, ADR-622). Nothing is sent without their tap.
     init(repository: any MessageThreadRepository, draft: String = "", openSettings: @escaping () -> Void = {}) {
         self.openSettings = openSettings
-        let model = MessagesModel(repository: repository)
+        // Messages on the web (owner, 28 Oct 2026: always on): the thread is copied to Doddy's server after every change.
+        let model = MessagesModel(repository: repository, sync: ServerThreadSync())
         model.draft = draft
         _model = State(initialValue: model)
     }
@@ -81,7 +82,7 @@ struct MessagesView: View {
                     Task { await model.deleteConversation() }
                 }
             } message: {
-                Text("It is removed from this iPhone. Your saved notes are not affected.")
+                Text("It is removed from this iPhone and from its copy on Doddy's server for Doddy Web. Your saved notes are not affected.")
             }
             .sheet(item: $planRequest) { request in
                 NavigationStack {
@@ -101,6 +102,15 @@ struct MessagesView: View {
                 Button("OK") { model.clearDeleteFailure() }
             } message: {
                 Text("Doddy couldn't confirm it was removed from this iPhone. Try again.")
+            }
+            .alert("Couldn't delete the copy on the web", isPresented: Binding(
+                get: { model.webDeleteFailed },
+                set: { if !$0 { model.clearWebDeleteFailure() } }
+            )) {
+                Button("Try again") { Task { await model.deleteWebCopy() } }
+                Button("Later", role: .cancel) { model.clearWebDeleteFailure() }
+            } message: {
+                Text("The conversation is gone from this iPhone, but Doddy's server didn't confirm its copy for Doddy Web is deleted. It may still show on the web until it is.")
             }
         }
         .foregroundStyle(Theme.ink)
@@ -171,7 +181,7 @@ struct MessagesView: View {
                                 .foregroundStyle(Theme.error)
                                 .accessibilityIdentifier("messages.notSaved")
                         }
-                        Text("Doddy is an AI, not a person. This conversation is saved on this iPhone until you delete it. Your question, a photo you add to it, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply. A photo is not kept on this iPhone or the server.")
+                        Text("Doddy is an AI, not a person. This conversation is saved on this iPhone until you delete it. Your question, a photo you add to it, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply. A photo is not kept on this iPhone or the server. A copy of this conversation, without photos, is kept encrypted on Doddy's server so you can read it in Doddy Web.")
                             .font(.footnote)
                             .foregroundStyle(Theme.secondaryText)
                             .multilineTextAlignment(.center)

@@ -917,3 +917,40 @@ a {
     outline: 2px solid Highlight;
   }
 }
+
+/* Messages from the iPhone: bubbles like the app's, yours on the right in Doddy's orange with dark ink. */
+.thread {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.thread-message {
+  max-width: min(80%, 560px);
+  padding: 10px 14px;
+  border-radius: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-wrap: anywhere;
+}
+.thread-message.from-you {
+  align-self: flex-end;
+  background: var(--orange-cue);
+  color: #080808;
+}
+.thread-message.from-doddy {
+  align-self: flex-start;
+  background: var(--quiet-surface);
+}
+.thread-text {
+  margin: 0;
+  white-space: pre-wrap;
+}
+.thread-note,
+.thread-time {
+  font-size: 0.8125rem;
+  opacity: 0.75;
+}

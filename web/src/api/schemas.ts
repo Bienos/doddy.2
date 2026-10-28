@@ -44,6 +44,20 @@ export type DocumentList = z.infer<typeof DocumentList>;
 
 export const SignedOut = z.object({ signedOut: z.literal(true) });
 
+// ---- Messages from the iPhone (GET /v1/web/messages)
+
+export const ThreadMessage = z.object({
+  id: z.string(),
+  sender: z.enum(["user", "doddy"]),
+  text: z.string(),
+  createdAt: z.string(),
+  delivery: z.enum(["sending", "sent", "failed"]).optional(),
+  hasPhoto: z.boolean().optional(),
+  file: z.object({ name: z.string(), kind: z.string() }).optional(),
+});
+export const ThreadView = z.object({ messages: z.array(ThreadMessage), syncedAt: z.string().nullable() });
+export type ThreadView = z.infer<typeof ThreadView>;
+
 // ---- connected apps (GET /v1/tools) and what Doddy did (GET /v1/tools/receipts)
 
 export const ToolStatus = z.enum(["unavailable", "disconnected", "connecting", "connected", "permission_insufficient", "expired", "error"]);

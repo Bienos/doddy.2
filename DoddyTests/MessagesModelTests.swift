@@ -330,6 +330,48 @@ final class MessagesModelTests: XCTestCase {
         XCTAssertNil(second.planAsks[another])
         XCTAssertTrue(second.messages.isEmpty)
     }
+
+    // MARK: Messages on the web (owner, 28 Oct 2026: "sync always on")
+
+    @MainActor
+    func testEveryChangeIsSentToTheWebCopyWithoutThePhoto() async throws {
+        let sync = FakeSync()
+        let model = MessagesModel(repository: FakeThread(), sync: sync)
+        await model.load()
+        let service = AssistantService(recall: NoNotes(), client: ScriptedClient([.reply("Paragon.")]), backoff: [], sleep: { _ in })
+        model.photo = AssistantImage(jpeg: Data([0xFF, 0xD8, 0xFF, 0xE0, 0, 0]))
+        model.draft = "Co to?"
+        model.send(using: service, policy: on, locale: "pl")
+        await settle(model)
+        for _ in 0..<100 {
+            if await sync.sent.last?.messages.count == 2 { break }
+            try? await Task.sleep(for: .milliseconds(20))
+        }
+        let last = try XCTUnwrap(await sync.sent.last)
+        XCTAssertEqual(last.messages.map(\.text), ["Co to?", "Paragon."])
+        XCTAssertEqual(last.messages.first?.hasPhoto, true, "only that it had a photo")
+    }
+
+    @MainActor
+    func testDeletingAlsoDeletesTheWebCopyAndSaysSoOnlyWhenTheServerConfirms() async throws {
+        let sync = FakeSync()
+        let model = MessagesModel(repository: FakeThread(), sync: sync)
+        await model.load()
+        await model.deleteConversation()
+        XCTAssertEqual(await sync.deletes, 1)
+        XCTAssertFalse(model.webDeleteFailed)
+
+        await sync.setDeleteError(.transport)
+        await model.deleteConversation()
+        XCTAssertTrue(model.webDeleteFailed, "offline: the web copy is not called deleted")
+        await sync.setDeleteError(nil)
+        await model.deleteWebCopy()
+        XCTAssertFalse(model.webDeleteFailed)
+
+        await sync.setDeleteError(.notConfigured)
+        await model.deleteConversation()
+        XCTAssertFalse(model.webDeleteFailed, "no session for the server: there is no copy to delete")
+    }
 }
 
 // MARK: Fakes
@@ -454,4 +496,19 @@ private actor FakeThread: MessageThreadRepository {
     }
 
     func export() async throws -> Data { Data() }
+}
+
+private actor FakeSync: ThreadSyncClient {
+    private(set) var sent: [ThreadSync.Snapshot] = []
+    private(set) var deletes = 0
+    private var deleteError: WebLinkError?
+
+    func setDeleteError(_ error: WebLinkError?) { deleteError = error }
+
+    func send(_ snapshot: ThreadSync.Snapshot) async throws(WebLinkError) { sent.append(snapshot) }
+
+    func deleteAll() async throws(WebLinkError) {
+        if let deleteError { throw deleteError }
+        deletes += 1
+    }
 }

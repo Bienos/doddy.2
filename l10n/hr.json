@@ -1239,7 +1239,6 @@
   "Web search is on, and an account's tools come on when you connect it. Doddy still asks before every look, and anything that sends, adds or changes something shows you a card first and waits for your tap. Switch any tool off here.": "Pretraživanje weba je uključeno, a alati računa uključuju se kad ga povežeš. Doddy ipak pita prije svakog pregleda, a sve što nešto šalje, dodaje ili mijenja najprije ti pokaže karticu i čeka tvoj dodir. Ovdje možeš isključiti bilo koji alat.",
   "Messages": "Poruke",
   "Delete conversation": "Izbriši razgovor",
-  "It is removed from this iPhone. Your saved notes are not affected.": "Uklanja se s ovog iPhonea. Tvoje spremljene bilješke nisu zahvaćene.",
   "Couldn't delete the conversation": "Razgovor nije moguće izbrisati",
   "Doddy couldn't confirm it was removed from this iPhone. Try again.": "Doddy nije mogao potvrditi da je razgovor uklonjen s ovog iPhonea. Pokušaj ponovno.",
   "Sending…": "Šalje se…",
@@ -1267,5 +1266,8 @@
   "Photo goes with your next message": "Fotografija ide uz tvoju sljedeću poruku",
   "Remove the photo": "Ukloni fotografiju",
   "What's in this photo?": "Što je na ovoj fotografiji?",
-  "Doddy is an AI, not a person. This conversation is saved on this iPhone until you delete it. Your question, a photo you add to it, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply. A photo is not kept on this iPhone or the server.": "Doddy je AI, ne osoba. Ovaj se razgovor sprema na ovaj iPhone dok ga ne izbrišeš. Tvoje pitanje, fotografija koju dodaš, nekoliko zadnjih poruka i sve bilješke prikazane ispod odgovora šalju se na Doddyjev poslužitelj i dalje u Anthropic radi pisanja odgovora. Fotografija se ne čuva ni na ovom iPhoneu ni na poslužitelju."
+  "Doddy is an AI, not a person. This conversation is saved on this iPhone until you delete it. Your question, a photo you add to it, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply. A photo is not kept on this iPhone or the server. A copy of this conversation, without photos, is kept encrypted on Doddy's server so you can read it in Doddy Web.": "Doddy je AI, ne osoba. Ovaj se razgovor sprema na ovaj iPhone dok ga ne izbrišeš. Tvoje pitanje, fotografija koju dodaš, nekoliko zadnjih poruka i sve bilješke prikazane ispod odgovora šalju se na Doddyjev poslužitelj i dalje u Anthropic radi pisanja odgovora. Fotografija se ne čuva ni na ovom iPhoneu ni na poslužitelju. Kopija ovog razgovora, bez fotografija, čuva se šifrirana na Doddyjevu poslužitelju da je možeš čitati u Doddy Webu.",
+  "It is removed from this iPhone and from its copy on Doddy's server for Doddy Web. Your saved notes are not affected.": "Uklanja se s ovog iPhonea i iz njegove kopije za Doddy Web na Doddyjevu poslužitelju. Tvoje spremljene bilješke nisu zahvaćene.",
+  "Couldn't delete the copy on the web": "Kopija na webu nije se mogla izbrisati",
+  "The conversation is gone from this iPhone, but Doddy's server didn't confirm its copy for Doddy Web is deleted. It may still show on the web until it is.": "Razgovora više nema na ovom iPhoneu, ali Doddyjev poslužitelj nije potvrdio da je njegova kopija za Doddy Web izbrisana. Do tada se još može vidjeti na webu."
 }

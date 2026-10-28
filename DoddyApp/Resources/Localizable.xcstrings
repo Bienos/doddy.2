@@ -13991,6 +13991,65 @@
         }
       }
     },
+    "Couldn't delete the copy on the web": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Kopie im Web konnte nicht gelöscht werden"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo eliminar la copia en la web"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossible de supprimer la copie sur le web"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kopija na webu nije se mogla izbrisati"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile eliminare la copia sul web"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Web上のコピーを削除できませんでした"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się usunąć kopii w sieci"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível apagar a cópia na web"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法删除网页上的副本"
+          }
+        }
+      }
+    },
     "Couldn't find where you are right now. Try again in a moment, or search for the place.": {
       "extractionState": "manual",
       "localizations": {
@@ -20270,7 +20329,7 @@
         }
       }
     },
-    "Doddy is an AI, not a person. This conversation is saved on this iPhone until you delete it. Your question, a photo you add to it, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply. A photo is not kept on this iPhone or the server.": {
+    "Doddy is an AI, not a person. This conversation is saved on this iPhone until you delete it. Your question, a photo you add to it, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply. A photo is not kept on this iPhone or the server. A copy of this conversation, without photos, is kept encrypted on Doddy's server so you can read it in Doddy Web.": {
       "extractionState": "manual",
       "localizations": {
         "de": {
@@ -20279,13 +20338,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Doddy ist eine KI, kein Mensch. Dieses Gespräch wird auf diesem iPad gespeichert, bis du es löschst. Deine Frage, ein Foto, das du hinzufügst, die letzten paar Nachrichten und alle Notizen, die unter einer Antwort angezeigt werden, gehen an den Doddy-Server und weiter an Anthropic, um die Antwort zu schreiben. Ein Foto wird weder auf diesem iPad noch auf dem Server behalten."
+                  "value": "Doddy ist eine KI, kein Mensch. Dieses Gespräch wird auf diesem iPad gespeichert, bis du es löschst. Deine Frage, ein Foto, das du hinzufügst, die letzten paar Nachrichten und alle Notizen, die unter einer Antwort angezeigt werden, gehen an den Doddy-Server und weiter an Anthropic, um die Antwort zu schreiben. Ein Foto wird weder auf diesem iPad noch auf dem Server behalten. Eine Kopie dieses Gesprächs, ohne Fotos, wird verschlüsselt auf dem Doddy-Server aufbewahrt, damit du es in Doddy Web lesen kannst."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Doddy ist eine KI, kein Mensch. Dieses Gespräch wird auf diesem iPhone gespeichert, bis du es löschst. Deine Frage, ein Foto, das du hinzufügst, die letzten paar Nachrichten und alle Notizen, die unter einer Antwort angezeigt werden, gehen an den Doddy-Server und weiter an Anthropic, um die Antwort zu schreiben. Ein Foto wird weder auf diesem iPhone noch auf dem Server behalten."
+                  "value": "Doddy ist eine KI, kein Mensch. Dieses Gespräch wird auf diesem iPhone gespeichert, bis du es löschst. Deine Frage, ein Foto, das du hinzufügst, die letzten paar Nachrichten und alle Notizen, die unter einer Antwort angezeigt werden, gehen an den Doddy-Server und weiter an Anthropic, um die Antwort zu schreiben. Ein Foto wird weder auf diesem iPhone noch auf dem Server behalten. Eine Kopie dieses Gesprächs, ohne Fotos, wird verschlüsselt auf dem Doddy-Server aufbewahrt, damit du es in Doddy Web lesen kannst."
                 }
               }
             }
@@ -20297,13 +20356,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Doddy is an AI, not a person. This conversation is saved on this iPad until you delete it. Your question, a photo you add to it, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply. A photo is not kept on this iPad or the server."
+                  "value": "Doddy is an AI, not a person. This conversation is saved on this iPad until you delete it. Your question, a photo you add to it, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply. A photo is not kept on this iPad or the server. A copy of this conversation, without photos, is kept encrypted on Doddy's server so you can read it in Doddy Web."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Doddy is an AI, not a person. This conversation is saved on this iPhone until you delete it. Your question, a photo you add to it, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply. A photo is not kept on this iPhone or the server."
+                  "value": "Doddy is an AI, not a person. This conversation is saved on this iPhone until you delete it. Your question, a photo you add to it, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply. A photo is not kept on this iPhone or the server. A copy of this conversation, without photos, is kept encrypted on Doddy's server so you can read it in Doddy Web."
                 }
               }
             }
@@ -20315,13 +20374,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Doddy es una IA, no una persona. Esta conversación se guarda en este iPad hasta que la elimines. Tu pregunta, una foto que añadas, los últimos mensajes y las notas que aparezcan bajo una respuesta se envían al servidor de Doddy y de ahí a Anthropic para redactar la respuesta. Las fotos no se guardan ni en este iPad ni en el servidor."
+                  "value": "Doddy es una IA, no una persona. Esta conversación se guarda en este iPad hasta que la elimines. Tu pregunta, una foto que añadas, los últimos mensajes y las notas que aparezcan bajo una respuesta se envían al servidor de Doddy y de ahí a Anthropic para redactar la respuesta. Las fotos no se guardan ni en este iPad ni en el servidor. Una copia de esta conversación, sin fotos, se guarda cifrada en el servidor de Doddy para que puedas leerla en Doddy Web."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Doddy es una IA, no una persona. Esta conversación se guarda en este iPhone hasta que la elimines. Tu pregunta, una foto que añadas, los últimos mensajes y las notas que aparezcan bajo una respuesta se envían al servidor de Doddy y de ahí a Anthropic para redactar la respuesta. Las fotos no se guardan ni en este iPhone ni en el servidor."
+                  "value": "Doddy es una IA, no una persona. Esta conversación se guarda en este iPhone hasta que la elimines. Tu pregunta, una foto que añadas, los últimos mensajes y las notas que aparezcan bajo una respuesta se envían al servidor de Doddy y de ahí a Anthropic para redactar la respuesta. Las fotos no se guardan ni en este iPhone ni en el servidor. Una copia de esta conversación, sin fotos, se guarda cifrada en el servidor de Doddy para que puedas leerla en Doddy Web."
                 }
               }
             }
@@ -20333,13 +20392,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Doddy est une IA, pas une personne. Cette conversation est enregistrée sur cet iPad jusqu’à ce que tu la supprimes. Ta question, une photo que tu y ajoutes, les derniers messages et les notes affichées sous une réponse sont envoyés au serveur de Doddy, puis à Anthropic pour rédiger la réponse. Une photo n’est gardée ni sur cet iPad ni sur le serveur."
+                  "value": "Doddy est une IA, pas une personne. Cette conversation est enregistrée sur cet iPad jusqu’à ce que tu la supprimes. Ta question, une photo que tu y ajoutes, les derniers messages et les notes affichées sous une réponse sont envoyés au serveur de Doddy, puis à Anthropic pour rédiger la réponse. Une photo n’est gardée ni sur cet iPad ni sur le serveur. Une copie de cette conversation, sans les photos, est gardée chiffrée sur le serveur de Doddy pour que tu puisses la lire dans Doddy Web."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Doddy est une IA, pas une personne. Cette conversation est enregistrée sur cet iPhone jusqu’à ce que tu la supprimes. Ta question, une photo que tu y ajoutes, les derniers messages et les notes affichées sous une réponse sont envoyés au serveur de Doddy, puis à Anthropic pour rédiger la réponse. Une photo n’est gardée ni sur cet iPhone ni sur le serveur."
+                  "value": "Doddy est une IA, pas une personne. Cette conversation est enregistrée sur cet iPhone jusqu’à ce que tu la supprimes. Ta question, une photo que tu y ajoutes, les derniers messages et les notes affichées sous une réponse sont envoyés au serveur de Doddy, puis à Anthropic pour rédiger la réponse. Une photo n’est gardée ni sur cet iPhone ni sur le serveur. Une copie de cette conversation, sans les photos, est gardée chiffrée sur le serveur de Doddy pour que tu puisses la lire dans Doddy Web."
                 }
               }
             }
@@ -20351,13 +20410,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Doddy je AI, ne osoba. Ovaj se razgovor sprema na ovaj iPad dok ga ne izbrišeš. Tvoje pitanje, fotografija koju dodaš, nekoliko zadnjih poruka i sve bilješke prikazane ispod odgovora šalju se na Doddyjev poslužitelj i dalje u Anthropic radi pisanja odgovora. Fotografija se ne čuva ni na ovom iPadu ni na poslužitelju."
+                  "value": "Doddy je AI, ne osoba. Ovaj se razgovor sprema na ovaj iPad dok ga ne izbrišeš. Tvoje pitanje, fotografija koju dodaš, nekoliko zadnjih poruka i sve bilješke prikazane ispod odgovora šalju se na Doddyjev poslužitelj i dalje u Anthropic radi pisanja odgovora. Fotografija se ne čuva ni na ovom iPadu ni na poslužitelju. Kopija ovog razgovora, bez fotografija, čuva se šifrirana na Doddyjevu poslužitelju da je možeš čitati u Doddy Webu."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Doddy je AI, ne osoba. Ovaj se razgovor sprema na ovaj iPhone dok ga ne izbrišeš. Tvoje pitanje, fotografija koju dodaš, nekoliko zadnjih poruka i sve bilješke prikazane ispod odgovora šalju se na Doddyjev poslužitelj i dalje u Anthropic radi pisanja odgovora. Fotografija se ne čuva ni na ovom iPhoneu ni na poslužitelju."
+                  "value": "Doddy je AI, ne osoba. Ovaj se razgovor sprema na ovaj iPhone dok ga ne izbrišeš. Tvoje pitanje, fotografija koju dodaš, nekoliko zadnjih poruka i sve bilješke prikazane ispod odgovora šalju se na Doddyjev poslužitelj i dalje u Anthropic radi pisanja odgovora. Fotografija se ne čuva ni na ovom iPhoneu ni na poslužitelju. Kopija ovog razgovora, bez fotografija, čuva se šifrirana na Doddyjevu poslužitelju da je možeš čitati u Doddy Webu."
                 }
               }
             }
@@ -20369,13 +20428,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Doddy è un'IA, non una persona. Questa conversazione è salvata su questo iPad finché non la elimini. La tua domanda, una foto che aggiungi, gli ultimi messaggi e le note mostrate sotto una risposta vengono inviati al server di Doddy e poi ad Anthropic per scrivere la risposta. Una foto non viene conservata né su questo iPad né sul server."
+                  "value": "Doddy è un'IA, non una persona. Questa conversazione è salvata su questo iPad finché non la elimini. La tua domanda, una foto che aggiungi, gli ultimi messaggi e le note mostrate sotto una risposta vengono inviati al server di Doddy e poi ad Anthropic per scrivere la risposta. Una foto non viene conservata né su questo iPad né sul server. Una copia di questa conversazione, senza foto, è conservata cifrata sul server di Doddy così puoi leggerla in Doddy Web."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Doddy è un'IA, non una persona. Questa conversazione è salvata su questo iPhone finché non la elimini. La tua domanda, una foto che aggiungi, gli ultimi messaggi e le note mostrate sotto una risposta vengono inviati al server di Doddy e poi ad Anthropic per scrivere la risposta. Una foto non viene conservata né su questo iPhone né sul server."
+                  "value": "Doddy è un'IA, non una persona. Questa conversazione è salvata su questo iPhone finché non la elimini. La tua domanda, una foto che aggiungi, gli ultimi messaggi e le note mostrate sotto una risposta vengono inviati al server di Doddy e poi ad Anthropic per scrivere la risposta. Una foto non viene conservata né su questo iPhone né sul server. Una copia di questa conversazione, senza foto, è conservata cifrata sul server di Doddy così puoi leggerla in Doddy Web."
                 }
               }
             }
@@ -20387,13 +20446,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "DoddyはAIであり、人ではありません。この会話は、あなたが削除するまでこの iPad に保存されます。あなたの質問、添付した写真、直近の数件のメッセージ、回答の下に表示されるメモは、Doddyのサーバーに送られ、さらに返答を書くためにAnthropicに送られます。写真はこのiPadにもサーバーにも保存されません。"
+                  "value": "DoddyはAIであり、人ではありません。この会話は、あなたが削除するまでこの iPad に保存されます。あなたの質問、添付した写真、直近の数件のメッセージ、回答の下に表示されるメモは、Doddyのサーバーに送られ、さらに返答を書くためにAnthropicに送られます。写真はこのiPadにもサーバーにも保存されません。この会話のコピー（写真を除く）は、Doddy Webで読めるよう、暗号化してDoddyのサーバーに保存されます。"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "DoddyはAIであり、人ではありません。この会話は、あなたが削除するまでこの iPhone に保存されます。あなたの質問、添付した写真、直近の数件のメッセージ、回答の下に表示されるメモは、Doddyのサーバーに送られ、さらに返答を書くためにAnthropicに送られます。写真はこのiPhoneにもサーバーにも保存されません。"
+                  "value": "DoddyはAIであり、人ではありません。この会話は、あなたが削除するまでこの iPhone に保存されます。あなたの質問、添付した写真、直近の数件のメッセージ、回答の下に表示されるメモは、Doddyのサーバーに送られ、さらに返答を書くためにAnthropicに送られます。写真はこのiPhoneにもサーバーにも保存されません。この会話のコピー（写真を除く）は、Doddy Webで読めるよう、暗号化してDoddyのサーバーに保存されます。"
                 }
               }
             }
@@ -20405,13 +20464,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Doddy to SI, nie człowiek. Ta rozmowa jest zapisana na tym iPadzie, dopóki jej nie usuniesz. Twoje pytanie, dodane do niego zdjęcie, kilka ostatnich wiadomości i notatki pokazane pod odpowiedzią trafiają na serwer Doddy’ego i dalej do Anthropic, aby napisać odpowiedź. Zdjęcie nie jest przechowywane ani na tym iPadzie, ani na serwerze."
+                  "value": "Doddy to SI, nie człowiek. Ta rozmowa jest zapisana na tym iPadzie, dopóki jej nie usuniesz. Twoje pytanie, dodane do niego zdjęcie, kilka ostatnich wiadomości i notatki pokazane pod odpowiedzią trafiają na serwer Doddy’ego i dalej do Anthropic, aby napisać odpowiedź. Zdjęcie nie jest przechowywane ani na tym iPadzie, ani na serwerze. Kopia tej rozmowy, bez zdjęć, jest przechowywana w postaci zaszyfrowanej na serwerze Doddy’ego, żebyś mógł ją czytać w Doddy Web."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Doddy to SI, nie człowiek. Ta rozmowa jest zapisana na tym iPhonie, dopóki jej nie usuniesz. Twoje pytanie, dodane do niego zdjęcie, kilka ostatnich wiadomości i notatki pokazane pod odpowiedzią trafiają na serwer Doddy’ego i dalej do Anthropic, aby napisać odpowiedź. Zdjęcie nie jest przechowywane ani na tym iPhonie, ani na serwerze."
+                  "value": "Doddy to SI, nie człowiek. Ta rozmowa jest zapisana na tym iPhonie, dopóki jej nie usuniesz. Twoje pytanie, dodane do niego zdjęcie, kilka ostatnich wiadomości i notatki pokazane pod odpowiedzią trafiają na serwer Doddy’ego i dalej do Anthropic, aby napisać odpowiedź. Zdjęcie nie jest przechowywane ani na tym iPhonie, ani na serwerze. Kopia tej rozmowy, bez zdjęć, jest przechowywana w postaci zaszyfrowanej na serwerze Doddy’ego, żebyś mógł ją czytać w Doddy Web."
                 }
               }
             }
@@ -20423,13 +20482,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "O Doddy é uma IA, não uma pessoa. Esta conversa fica salva neste iPad até você apagá-la. Sua pergunta, uma foto que você adicionar, as últimas mensagens e as notas mostradas abaixo de uma resposta são enviadas ao servidor do Doddy e dali à Anthropic para escrever a resposta. A foto não fica guardada neste iPad nem no servidor."
+                  "value": "O Doddy é uma IA, não uma pessoa. Esta conversa fica salva neste iPad até você apagá-la. Sua pergunta, uma foto que você adicionar, as últimas mensagens e as notas mostradas abaixo de uma resposta são enviadas ao servidor do Doddy e dali à Anthropic para escrever a resposta. A foto não fica guardada neste iPad nem no servidor. Uma cópia desta conversa, sem fotos, fica guardada criptografada no servidor do Doddy para você ler no Doddy Web."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "O Doddy é uma IA, não uma pessoa. Esta conversa fica salva neste iPhone até você apagá-la. Sua pergunta, uma foto que você adicionar, as últimas mensagens e as notas mostradas abaixo de uma resposta são enviadas ao servidor do Doddy e dali à Anthropic para escrever a resposta. A foto não fica guardada neste iPhone nem no servidor."
+                  "value": "O Doddy é uma IA, não uma pessoa. Esta conversa fica salva neste iPhone até você apagá-la. Sua pergunta, uma foto que você adicionar, as últimas mensagens e as notas mostradas abaixo de uma resposta são enviadas ao servidor do Doddy e dali à Anthropic para escrever a resposta. A foto não fica guardada neste iPhone nem no servidor. Uma cópia desta conversa, sem fotos, fica guardada criptografada no servidor do Doddy para você ler no Doddy Web."
                 }
               }
             }
@@ -20441,13 +20500,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Doddy 是 AI，不是真人。这段对话会保存在这部 iPad 上，直到你删除它。你的问题、你添加的照片、最近几条消息以及回答下方显示的笔记，会发送到 Doddy 的服务器，再转给 Anthropic 来撰写回复。照片不会保存在这部 iPad 或服务器上。"
+                  "value": "Doddy 是 AI，不是真人。这段对话会保存在这部 iPad 上，直到你删除它。你的问题、你添加的照片、最近几条消息以及回答下方显示的笔记，会发送到 Doddy 的服务器，再转给 Anthropic 来撰写回复。照片不会保存在这部 iPad 或服务器上。这段对话的副本（不含照片）会加密保存在 Doddy 的服务器上，方便你在 Doddy Web 中阅读。"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Doddy 是 AI，不是真人。这段对话会保存在这部 iPhone 上，直到你删除它。你的问题、你添加的照片、最近几条消息以及回答下方显示的笔记，会发送到 Doddy 的服务器，再转给 Anthropic 来撰写回复。照片不会保存在这部 iPhone 或服务器上。"
+                  "value": "Doddy 是 AI，不是真人。这段对话会保存在这部 iPhone 上，直到你删除它。你的问题、你添加的照片、最近几条消息以及回答下方显示的笔记，会发送到 Doddy 的服务器，再转给 Anthropic 来撰写回复。照片不会保存在这部 iPhone 或服务器上。这段对话的副本（不含照片）会加密保存在 Doddy 的服务器上，方便你在 Doddy Web 中阅读。"
                 }
               }
             }
@@ -32015,6 +32074,191 @@
         }
       }
     },
+    "It is removed from this iPhone and from its copy on Doddy's server for Doddy Web. Your saved notes are not affected.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Es wird von diesem iPad und aus seiner Kopie für Doddy Web auf dem Doddy-Server entfernt. Deine gespeicherten Notizen sind nicht betroffen."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Es wird von diesem iPhone und aus seiner Kopie für Doddy Web auf dem Doddy-Server entfernt. Deine gespeicherten Notizen sind nicht betroffen."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It is removed from this iPad and from its copy on Doddy's server for Doddy Web. Your saved notes are not affected."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It is removed from this iPhone and from its copy on Doddy's server for Doddy Web. Your saved notes are not affected."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Se elimina de este iPad y de su copia para Doddy Web en el servidor de Doddy. Tus notas guardadas no se ven afectadas."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Se elimina de este iPhone y de su copia para Doddy Web en el servidor de Doddy. Tus notas guardadas no se ven afectadas."
+                }
+              }
+            }
+          }
+        },
+        "fr": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Elle est supprimée de cet iPad et de sa copie pour Doddy Web sur le serveur de Doddy. Tes notes enregistrées ne sont pas affectées."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Elle est supprimée de cet iPhone et de sa copie pour Doddy Web sur le serveur de Doddy. Tes notes enregistrées ne sont pas affectées."
+                }
+              }
+            }
+          }
+        },
+        "hr": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Uklanja se s ovog iPada i iz njegove kopije za Doddy Web na Doddyjevu poslužitelju. Tvoje spremljene bilješke nisu zahvaćene."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Uklanja se s ovog iPhonea i iz njegove kopije za Doddy Web na Doddyjevu poslužitelju. Tvoje spremljene bilješke nisu zahvaćene."
+                }
+              }
+            }
+          }
+        },
+        "it": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Viene rimossa da questo iPad e dalla sua copia per Doddy Web sul server di Doddy. Le tue note salvate non vengono toccate."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Viene rimossa da questo iPhone e dalla sua copia per Doddy Web sul server di Doddy. Le tue note salvate non vengono toccate."
+                }
+              }
+            }
+          }
+        },
+        "ja": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "このiPadと、Doddy Web用にDoddyのサーバーにあるコピーから削除されます。保存したメモには影響ありません。"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "このiPhoneと、Doddy Web用にDoddyのサーバーにあるコピーから削除されます。保存したメモには影響ありません。"
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zostanie usunięta z tego iPada i z jej kopii dla Doddy Web na serwerze Doddy’ego. Zapisane notatki pozostają bez zmian."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zostanie usunięta z tego iPhone’a i z jej kopii dla Doddy Web na serwerze Doddy’ego. Zapisane notatki pozostają bez zmian."
+                }
+              }
+            }
+          }
+        },
+        "pt-BR": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Ela é removida deste iPad e da cópia dela para o Doddy Web no servidor do Doddy. Suas notas salvas não são afetadas."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Ela é removida deste iPhone e da cópia dela para o Doddy Web no servidor do Doddy. Suas notas salvas não são afetadas."
+                }
+              }
+            }
+          }
+        },
+        "zh-Hans": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "将从这部 iPad 以及 Doddy 服务器上供 Doddy Web 使用的副本中删除。你保存的笔记不受影响。"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "将从这部 iPhone 以及 Doddy 服务器上供 Doddy Web 使用的副本中删除。你保存的笔记不受影响。"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "It is removed from this iPhone and from what Doddy can use. This can't be undone.": {
       "extractionState": "manual",
       "localizations": {
@@ -32563,191 +32807,6 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "它会从这台 iPhone 中移除。它已经做过的事保持不变。"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "It is removed from this iPhone. Your saved notes are not affected.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Es wird von diesem iPad entfernt. Deine gespeicherten Notizen sind nicht betroffen."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Es wird von diesem iPhone entfernt. Deine gespeicherten Notizen sind nicht betroffen."
-                }
-              }
-            }
-          }
-        },
-        "en": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "It is removed from this iPad. Your saved notes are not affected."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "It is removed from this iPhone. Your saved notes are not affected."
-                }
-              }
-            }
-          }
-        },
-        "es": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Se elimina de este iPad. Tus notas guardadas no se ven afectadas."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Se elimina de este iPhone. Tus notas guardadas no se ven afectadas."
-                }
-              }
-            }
-          }
-        },
-        "fr": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Elle est supprimée de cet iPad. Tes notes enregistrées ne sont pas affectées."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Elle est supprimée de cet iPhone. Tes notes enregistrées ne sont pas affectées."
-                }
-              }
-            }
-          }
-        },
-        "hr": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Uklanja se s ovog iPada. Tvoje spremljene bilješke nisu zahvaćene."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Uklanja se s ovog iPhonea. Tvoje spremljene bilješke nisu zahvaćene."
-                }
-              }
-            }
-          }
-        },
-        "it": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Viene rimossa da questo iPad. Le tue note salvate non vengono toccate."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Viene rimossa da questo iPhone. Le tue note salvate non vengono toccate."
-                }
-              }
-            }
-          }
-        },
-        "ja": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "この iPad から削除されます。保存したメモには影響ありません。"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "この iPhone から削除されます。保存したメモには影響ありません。"
-                }
-              }
-            }
-          }
-        },
-        "pl": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Zostanie usunięta z tego iPada. Zapisane notatki pozostają bez zmian."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Zostanie usunięta z tego iPhone’a. Zapisane notatki pozostają bez zmian."
-                }
-              }
-            }
-          }
-        },
-        "pt-BR": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Ela é removida deste iPad. Suas notas salvas não são afetadas."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Ela é removida deste iPhone. Suas notas salvas não são afetadas."
-                }
-              }
-            }
-          }
-        },
-        "zh-Hans": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "将从这部 iPad 中删除。你保存的笔记不受影响。"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "将从这部 iPhone 中删除。你保存的笔记不受影响。"
                 }
               }
             }
@@ -77025,6 +77084,191 @@
           "stringUnit": {
             "state": "translated",
             "value": "W schowku nie ma tekstu."
+          }
+        }
+      }
+    },
+    "The conversation is gone from this iPhone, but Doddy's server didn't confirm its copy for Doddy Web is deleted. It may still show on the web until it is.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Das Gespräch ist von diesem iPad weg, aber der Doddy-Server hat nicht bestätigt, dass die Kopie für Doddy Web gelöscht ist. Bis dahin kann es im Web noch zu sehen sein."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Das Gespräch ist von diesem iPhone weg, aber der Doddy-Server hat nicht bestätigt, dass die Kopie für Doddy Web gelöscht ist. Bis dahin kann es im Web noch zu sehen sein."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The conversation is gone from this iPad, but Doddy's server didn't confirm its copy for Doddy Web is deleted. It may still show on the web until it is."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The conversation is gone from this iPhone, but Doddy's server didn't confirm its copy for Doddy Web is deleted. It may still show on the web until it is."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "La conversación ya no está en este iPad, pero el servidor de Doddy no confirmó que su copia para Doddy Web esté eliminada. Puede seguir viéndose en la web hasta que lo esté."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "La conversación ya no está en este iPhone, pero el servidor de Doddy no confirmó que su copia para Doddy Web esté eliminada. Puede seguir viéndose en la web hasta que lo esté."
+                }
+              }
+            }
+          }
+        },
+        "fr": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "La conversation n’est plus sur cet iPad, mais le serveur de Doddy n’a pas confirmé que sa copie pour Doddy Web est supprimée. Elle peut encore apparaître sur le web d’ici là."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "La conversation n’est plus sur cet iPhone, mais le serveur de Doddy n’a pas confirmé que sa copie pour Doddy Web est supprimée. Elle peut encore apparaître sur le web d’ici là."
+                }
+              }
+            }
+          }
+        },
+        "hr": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Razgovora više nema na ovom iPadu, ali Doddyjev poslužitelj nije potvrdio da je njegova kopija za Doddy Web izbrisana. Do tada se još može vidjeti na webu."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Razgovora više nema na ovom iPhoneu, ali Doddyjev poslužitelj nije potvrdio da je njegova kopija za Doddy Web izbrisana. Do tada se još može vidjeti na webu."
+                }
+              }
+            }
+          }
+        },
+        "it": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "La conversazione non è più su questo iPad, ma il server di Doddy non ha confermato che la sua copia per Doddy Web sia eliminata. Fino ad allora potrebbe ancora vedersi sul web."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "La conversazione non è più su questo iPhone, ma il server di Doddy non ha confermato che la sua copia per Doddy Web sia eliminata. Fino ad allora potrebbe ancora vedersi sul web."
+                }
+              }
+            }
+          }
+        },
+        "ja": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "会話はこのiPadから削除されましたが、Doddy Web用のコピーが削除されたことをDoddyのサーバーが確認していません。確認されるまでWebにまだ表示されることがあります。"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "会話はこのiPhoneから削除されましたが、Doddy Web用のコピーが削除されたことをDoddyのサーバーが確認していません。確認されるまでWebにまだ表示されることがあります。"
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Rozmowy nie ma już na tym iPadzie, ale serwer Doddy’ego nie potwierdził, że jej kopia dla Doddy Web została usunięta. Do tego czasu może być jeszcze widoczna w sieci."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Rozmowy nie ma już na tym iPhonie, ale serwer Doddy’ego nie potwierdził, że jej kopia dla Doddy Web została usunięta. Do tego czasu może być jeszcze widoczna w sieci."
+                }
+              }
+            }
+          }
+        },
+        "pt-BR": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "A conversa saiu deste iPad, mas o servidor do Doddy não confirmou que a cópia dela para o Doddy Web foi apagada. Ela ainda pode aparecer na web até que seja."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "A conversa saiu deste iPhone, mas o servidor do Doddy não confirmou que a cópia dela para o Doddy Web foi apagada. Ela ainda pode aparecer na web até que seja."
+                }
+              }
+            }
+          }
+        },
+        "zh-Hans": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "这段对话已从这部 iPad 中删除，但 Doddy 的服务器尚未确认其 Doddy Web 副本已删除。在确认之前，它可能仍会显示在网页上。"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "这段对话已从这部 iPhone 中删除，但 Doddy 的服务器尚未确认其 Doddy Web 副本已删除。在确认之前，它可能仍会显示在网页上。"
+                }
+              }
+            }
           }
         }
       }
