@@ -271,21 +271,38 @@ public struct DealsChainReport: Codable, Equatable, Sendable {
         }
     }
 
+    /// Fewer pages read than were worth reading (the server's page cap, its time limit, a page it
+    /// couldn't fetch or read). The rest weren't checked, so a cheaper offer may be on them.
+    public struct Pages: Codable, Equatable, Sendable {
+        public let read: Int
+        /// Every page worth reading: all of an image-only leaflet such as Biedronka's.
+        public let of: Int
+
+        public init(read: Int, of: Int) {
+            self.read = read
+            self.of = of
+        }
+    }
+
     public let chain: DealsChain
     public let status: Status
     /// The leaflet read, for `checked` (and when the server gives it for others).
     public let leaflet: Leaflet?
     /// The chain's leaflet page, for `link_only`.
     public let leafletUrl: String?
+    /// Only when the leaflet was read in part (`checked` or `failed`); nil when it was read whole or
+    /// the server is older. A value that doesn't make sense (read not below of) is dropped.
+    public let pages: Pages?
 
-    public init(chain: DealsChain, status: Status, leaflet: Leaflet? = nil, leafletUrl: String? = nil) {
+    public init(chain: DealsChain, status: Status, leaflet: Leaflet? = nil, leafletUrl: String? = nil, pages: Pages? = nil) {
         self.chain = chain
         self.status = status
         self.leaflet = leaflet
         self.leafletUrl = leafletUrl
+        self.pages = pages
     }
 
-    private enum CodingKeys: String, CodingKey { case chain, status, leaflet, leafletUrl }
+    private enum CodingKeys: String, CodingKey { case chain, status, leaflet, leafletUrl, pages }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -293,6 +310,8 @@ public struct DealsChainReport: Codable, Equatable, Sendable {
         status = try c.decodeIfPresent(Status.self, forKey: .status) ?? .unknown
         leaflet = try c.decodeIfPresent(Leaflet.self, forKey: .leaflet)
         leafletUrl = try c.decodeIfPresent(String.self, forKey: .leafletUrl)
+        let pages = try? c.decodeIfPresent(Pages.self, forKey: .pages)
+        self.pages = pages.flatMap { $0.read >= 0 && $0.read < $0.of ? $0 : nil }
     }
 }
 
@@ -493,7 +512,8 @@ public enum DealsAsk {
     }
 }
 
-/// What `find_deals` returns to the agent: per item the cheapest offer with its chain, price,
+/// What `find_deals` returns to the agent: per item the best value offer (the lowest price per kg,
+/// l or piece where the sizes are known, else the cheapest pack) with its chain, price,
 /// conditions and last day, "needs checking" where the server's code couldn't confirm it; the
 /// chains that weren't read and why; and one line on the basket from `BasketSolver`. Everything
 /// from the leaflets is between the data markers, with the markers removed from inside. Nothing
@@ -518,14 +538,16 @@ public enum DealsResultText {
         let order = BasketSolver.chainOrder(result)
         for item in result.items {
             let query = "\"\(clip(item.query, DealsRequest.maxItemLength))\""
-            guard let index = BasketSolver.cheapestIndex(item.offers, chainOrder: order) else {
+            guard let best = BasketSolver.bestValueIndex(item.offers, chainOrder: order) else {
                 data.append(item.offers.isEmpty
                     ? "- \(query): nothing in the leaflets read"
                     : "- \(query): \(item.offers.count) offer\(item.offers.count == 1 ? "" : "s") without a price in \(BasketSolver.defaultCurrency) Doddy's code could compare; the user can see them on screen")
                 continue
             }
+            let index = best.index
             let cheapest = item.offers[index]
-            var parts = ["- \(query): cheapest at \(name(cheapest.chain))", "\"\(clip(cheapest.product, 160))\"", offerPrice(cheapest, money)]
+            let label = best.per.map { "lowest price per \($0.rawValue) at" } ?? "cheapest at"
+            var parts = ["- \(query): \(label) \(name(cheapest.chain))", "\"\(clip(cheapest.product, 160))\"", offerPrice(cheapest, money)]
             if !cheapest.conditions.isEmpty {
                 parts.append("conditions: " + cheapest.conditions.prefix(4).map { clip($0, 80) }.joined(separator: "; "))
             }
@@ -560,6 +582,7 @@ public enum DealsResultText {
 
     static func chainLines(_ result: DealsResult) -> [String] {
         var read: [String] = []
+        var partial: [String] = []
         var nothing: [String] = []
         var notRead: [String] = []
         for report in result.chains {
@@ -572,16 +595,25 @@ public enum DealsResultText {
                     if !days.isEmpty { text += " (\(days.joined(separator: " to ")))" }
                 }
                 read.append(text)
+                if let pages = report.pages { partial.append("\(name) \(pages.read) of \(pages.of) pages") }
             case .noMatch: nothing.append(name)
             case .noLeaflet: notRead.append("\(name): no leaflet found for this week")
             case .blocked: notRead.append("\(name): its site blocked Doddy's reader")
-            case .failed: notRead.append("\(name): couldn't be read")
+            case .failed:
+                if let pages = report.pages, pages.read > 0 {
+                    notRead.append("\(name): only \(pages.read) of \(pages.of) pages could be read, and nothing matched in them")
+                } else {
+                    notRead.append("\(name): couldn't be read")
+                }
             case .linkOnly: notRead.append("\(name): not read, only a link to its leaflet (on screen)")
             case .unknown: notRead.append("\(name): not known whether it was read")
             }
         }
         var out: [String] = []
         if !read.isEmpty { out.append("Leaflets read: " + read.joined(separator: ", ")) }
+        if !partial.isEmpty {
+            out.append("Read only in part, so a cheaper offer may be on the pages not read: " + partial.joined(separator: ", "))
+        }
         if !nothing.isEmpty { out.append("Read, nothing matched: " + nothing.joined(separator: ", ")) }
         if !notRead.isEmpty { out.append("Not checked: " + notRead.joined(separator: "; ")) }
         return out

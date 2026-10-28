@@ -49,6 +49,9 @@ export interface FetcherOptions {
 
 export const DEFAULT_TIMEOUT_MS = 10_000;
 export const DEFAULT_MAX_BYTES = 3 * 1024 * 1024;
+/** Response headers accepted per request. Node's default is 16 KiB; lidl.pl's leaflet list answered with
+ * about 20.5 KiB of headers on 2026-10-28, so every Lidl read failed as "network" until this was raised. */
+export const MAX_HEADER_BYTES = 64 * 1024;
 const ROBOTS_MAX_BYTES = 512 * 1024;
 const ROBOTS_RETRY_MS = 5 * 60_000;
 const ROBOTS_MAX_ORIGINS = 256;
@@ -153,7 +156,7 @@ export const safeHttpsFetch: FetchFn = (url, init) => new Promise<Response>((res
   if (u.protocol !== "https:") return reject(new UnsafeUrlError("scheme"));
   const headers: Record<string, string> = { "accept-encoding": "gzip, deflate, br" };
   new Headers(init.headers).forEach((v, k) => { headers[k] = v; });
-  const req = https.request(u, { method: "GET", headers, lookup: safeLookup, signal: init.signal ?? undefined }, (res) => {
+  const req = https.request(u, { method: "GET", headers, lookup: safeLookup, maxHeaderSize: MAX_HEADER_BYTES, signal: init.signal ?? undefined }, (res) => {
     const status = res.statusCode ?? 0;
     const h = new Headers();
     for (const [k, v] of Object.entries(res.headers)) {

@@ -1,5 +1,5 @@
 {
-  "_comment": "POST /v1/deals/search (docs/implementation/SHOPPING.md, 'Leaflets'). Example data, not real prices.",
+  "_comment": "POST /v1/deals/search (docs/implementation/SHOPPING.md, 'Leaflets'). Example data, not real prices. Offers per item best value first (price per kg, l or piece). `pages` only when a chain's leaflet was read in part.",
   "request": {
     "items": ["masło", "pieluchy rozmiar 4", "kawa mielona"],
     "chains": ["biedronka", "lidl", "dino", "rossmann", "kaufland"],
@@ -8,7 +8,7 @@
   "response": {
     "checkedAt": "2026-10-24T06:10:00.000Z",
     "chains": [
-      { "chain": "biedronka", "status": "checked", "leaflet": { "title": "Gazetka od czwartku", "url": "https://www.biedronka.pl/pl/press,id,example,title,gazetka-od-czwartku", "validFrom": "2026-10-23", "validTo": "2026-10-29" } },
+      { "chain": "biedronka", "status": "checked", "leaflet": { "title": "Gazetka od czwartku", "url": "https://www.biedronka.pl/pl/press,id,example,title,gazetka-od-czwartku", "validFrom": "2026-10-23", "validTo": "2026-10-29" }, "pages": { "read": 40, "of": 97 } },
       { "chain": "lidl", "status": "checked", "leaflet": { "title": "Oferta od poniedziałku", "url": "https://www.lidl.pl/l/pl/gazetki/example/ar/0", "validFrom": "2026-10-20", "validTo": "2026-10-25" } },
       { "chain": "dino", "status": "checked", "leaflet": { "title": "Gazetka Dino", "url": "https://marketdino.pl/gazetki/lista/standard", "validFrom": "2026-10-22", "validTo": "2026-10-28" } },
       { "chain": "rossmann", "status": "no_match" },

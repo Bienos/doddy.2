@@ -24,6 +24,40 @@ final class BasketSolverTests: XCTestCase {
             items: items.map { DealsItemResult(query: $0.0, offers: $0.1) })
     }
 
+    // MARK: Best value per item
+
+    private func sized(_ chain: DealsChain, _ minor: Int, perUnit: Int?, _ per: DealOffer.UnitPer = .kg, check: Bool = false) -> DealOffer {
+        DealOffer(chain: chain, product: "\(chain.rawValue) \(minor)", price: Money(minor: minor),
+                  unitPrice: perUnit.map { DealOffer.UnitPrice(minor: $0, per: per) }, source: .init(url: "https://\(chain.rawValue).example"), check: check)
+    }
+
+    func testBestValueIsTheLowestPricePerKgNotTheCheapestPack() {
+        let offers = [sized(.biedronka, 499, perUnit: 2_495), sized(.lidl, 1_999, perUnit: 1_999), sized(.dino, 449, perUnit: nil)]
+        XCTAssertEqual(BasketSolver.bestValue(offers)?.chain, .lidl, "the kilo pack at 19,99 zł/kg beats 200 g at 24,95 zł/kg")
+        XCTAssertEqual(BasketSolver.bestValueIndex(offers)?.per, .kg)
+        XCTAssertEqual(BasketSolver.cheapest(offers)?.chain, .dino, "the basket still buys the cheapest pack")
+    }
+
+    func testAPackWithoutASizeIsNeverTheBestValueWhileOneWithASizeIsThere() {
+        let offers = [sized(.dino, 199, perUnit: nil), sized(.lidl, 549, perUnit: 2_745)]
+        XCTAssertEqual(BasketSolver.bestValue(offers)?.chain, .lidl)
+    }
+
+    func testWithoutUnitPricesBestValueIsTheCheapestPack() {
+        let offers = [sized(.biedronka, 599, perUnit: nil), sized(.lidl, 549, perUnit: nil)]
+        XCTAssertEqual(BasketSolver.bestValue(offers)?.chain, .lidl)
+        XCTAssertNil(BasketSolver.bestValueIndex(offers)?.per, "no unit was compared")
+    }
+
+    func testBestValueComparesInTheUnitMostOffersHaveAndBreaksTiesLikeTheBasket() {
+        let mixed = [sized(.biedronka, 999, perUnit: 90, .szt), sized(.lidl, 1_200, perUnit: 2_000), sized(.dino, 1_100, perUnit: 2_200)]
+        XCTAssertEqual(BasketSolver.bestValue(mixed)?.chain, .lidl, "two offers per kg, one per piece: compared per kg")
+        let tie = [sized(.lidl, 500, perUnit: 2_500, check: true), sized(.dino, 500, perUnit: 2_500)]
+        XCTAssertEqual(BasketSolver.bestValue(tie)?.chain, .dino, "same price per kg and pack: the confirmed one")
+        XCTAssertNil(BasketSolver.bestValue([]))
+        XCTAssertNil(BasketSolver.bestValue([offer(.lidl, 500, currency: "EUR")]), "only PLN counts")
+    }
+
     // MARK: The fixture
 
     func testTheFixturesBasket() throws {

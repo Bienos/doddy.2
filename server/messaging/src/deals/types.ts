@@ -58,10 +58,17 @@ export interface Offer {
   check: boolean;
 }
 
+/** Sent only when fewer pages were read than were worth reading (the page cap, time, an image that
+ * couldn't be fetched or read): `of` is every page where only an image read can find offers (all of an
+ * image-only leaflet such as Biedronka's, Lidl's pages that name an item; not Dino's, which only confirm
+ * offers its data gave), `read` those the reader read. A cheaper offer may be on the rest. */
+export interface PagesRead { read: number; of: number }
+
 export type ChainRow =
-  | { chain: Chain; status: "checked"; leaflet: LeafletInfo }
+  | { chain: Chain; status: "checked"; leaflet: LeafletInfo; pages?: PagesRead }
   | { chain: Chain; status: "link_only"; leafletUrl: string }
-  | { chain: Chain; status: "no_match" | "no_leaflet" | "blocked" | "failed" };
+  | { chain: Chain; status: "failed"; pages?: PagesRead }
+  | { chain: Chain; status: "no_match" | "no_leaflet" | "blocked" };
 
 export interface DealsResponse {
   checkedAt: string;

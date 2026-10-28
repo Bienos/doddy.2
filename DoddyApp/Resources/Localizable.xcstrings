@@ -233,6 +233,17 @@
         }
       }
     },
+    "%@: Doddy read %lld of %lld pages. A cheaper offer may be on the others.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@: przeczytano %lld z %lld stron. Tańsza oferta może być na pozostałych."
+          }
+        }
+      }
+    },
     "%lld calls still have a part of their cost unknown or pending, so no average is shown for them.": {
       "extractionState": "manual",
       "localizations": {
@@ -21790,6 +21801,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Doddy read %lld of %lld pages and found nothing in them.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przeczytano %lld z %lld stron i nic w nich nie pasowało."
           }
         }
       }
@@ -57399,6 +57421,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "由你 iPhone 自带的语音朗读。不会发送到任何地方。"
+          }
+        }
+      }
+    },
+    "Read in part": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przeczytane w części"
           }
         }
       }
