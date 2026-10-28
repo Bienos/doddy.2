@@ -14,7 +14,7 @@ struct ErrandsView: View {
         NavigationStack {
             Form {
                 Section {
-                    Text("Hand Doddy a task in a conversation, like \"compare flights to Rome next month under 2000 zł\". One yes lets Doddy search the web and read pages as often as the task needs, in the background. You get a notification when it's done. Nothing is booked, bought or sent.")
+                    Text("Hand Doddy a task in a conversation, like \"compare flights to Rome next month under 2000 zł\". One yes lets Doddy search the web and read pages as often as the task needs, in the background. The result waits here when it's done. Nothing is booked, bought or sent.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                     if !model.isServerConfigured {

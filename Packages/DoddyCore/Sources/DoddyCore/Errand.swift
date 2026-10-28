@@ -231,7 +231,7 @@ public enum ErrandAsk {
                 lines: [
                     "\u{201C}\(draft.words)\u{201D}",
                     "Doddy's note: \(draft.brief)",
-                    "Doddy searches the web and reads pages as often as this needs, in the background, and sends you a notification when it's done.",
+                    "Doddy searches the web and reads pages as often as this needs, in the background. The result waits in Tasks in the app when it's done.",
                     "Nothing is booked, bought or sent.",
                 ],
                 confirmLabel: "Yes, go")
@@ -244,7 +244,7 @@ public enum ErrandAsk {
                     "\u{201C}\(draft.words)\u{201D}",
                     "Doddy's note: \(draft.brief)",
                 ] + (draft.priorities.isEmpty ? [] : ["What matters most: " + draft.priorities.joined(separator: ", ")]) + [
-                    "Doddy looks for offers in shops in Poland and reads their pages, in the background, and sends you a notification when it's done.",
+                    "Doddy looks for offers in shops in Poland and reads their pages, in the background. The result waits in Tasks in the app when it's done.",
                     "Nothing is bought, ordered or sent.",
                 ],
                 confirmLabel: "Yes, go")

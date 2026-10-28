@@ -395,7 +395,7 @@ final class ErrandTests: XCTestCase {
             lines: [
                 "“\(rome)”",
                 "Doddy's note: \(draft.brief)",
-                "Doddy searches the web and reads pages as often as this needs, in the background, and sends you a notification when it's done.",
+                "Doddy searches the web and reads pages as often as this needs, in the background. The result waits in Tasks in the app when it's done.",
                 "Nothing is booked, bought or sent.",
             ],
             confirmLabel: "Yes, go")))

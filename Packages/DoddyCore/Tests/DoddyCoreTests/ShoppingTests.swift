@@ -144,7 +144,7 @@ final class ShoppingTests: XCTestCase {
                 "\u{201C}\(draft.words)\u{201D}",
                 "Doddy's note: \(draft.brief)",
                 "What matters most: Cisza, Cena, Gwarancja",
-                "Doddy looks for offers in shops in Poland and reads their pages, in the background, and sends you a notification when it's done.",
+                "Doddy looks for offers in shops in Poland and reads their pages, in the background. The result waits in Tasks in the app when it's done.",
                 "Nothing is bought, ordered or sent.",
             ],
             confirmLabel: "Yes, go")))
