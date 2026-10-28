@@ -2796,6 +2796,17 @@
         }
       }
     },
+    "A second shop only when it saves at least": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drugi sklep tylko, gdy oszczędza co najmniej"
+          }
+        }
+      }
+    },
     "A session can have up to 40 sets.": {
       "extractionState": "manual",
       "localizations": {
@@ -6780,6 +6791,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "任何 RSS 或 Atom 订阅源，例如博客或本地报纸。"
+          }
+        }
+      }
+    },
+    "Any saving": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Każda oszczędność"
           }
         }
       }
@@ -41860,6 +41882,17 @@
         }
       }
     },
+    "Narrow an item with “tylko” and a brand (masło tylko Łaciate) or with “bez” (mleko bez laktozy).": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zawęź rzecz słowem „tylko” i marką (masło tylko Łaciate) albo słowem „bez” (mleko bez laktozy)."
+          }
+        }
+      }
+    },
     "Natural": {
       "extractionState": "manual",
       "localizations": {
@@ -48548,6 +48581,17 @@
         }
       }
     },
+    "Notifications are off for Doddy, so no reminder was set. You can turn them on in Settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powiadomienia Doddy’ego są wyłączone, więc nie ustawiłem przypomnienia. Możesz je włączyć w Ustawieniach."
+          }
+        }
+      }
+    },
     "Notifications are off for Doddy, so the check-in can't ring. Turn them on in iOS Settings.": {
       "extractionState": "manual",
       "localizations": {
@@ -49610,6 +49654,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wł."
+          }
+        }
+      }
+    },
+    "On %@ at 8:00 this iPhone will show: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "On %@ at 8:00 this iPad will show: %@"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "On %@ at 8:00 this iPhone will show: %@"
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%@ o 8:00 ten iPad pokaże: %@"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%@ o 8:00 ten iPhone pokaże: %@"
+                }
+              }
+            }
           }
         }
       }
@@ -59281,6 +59366,17 @@
         }
       }
     },
+    "Remind me on %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnij mi %@"
+          }
+        }
+      }
+    },
     "Remind me there too": {
       "extractionState": "manual",
       "localizations": {
@@ -59701,6 +59797,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "提醒已设置"
+          }
+        }
+      }
+    },
+    "Reminder set for %@ at 8:00.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnienie ustawione na %@, 8:00."
           }
         }
       }
@@ -67250,6 +67357,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "设置提醒"
+          }
+        }
+      }
+    },
+    "Set the reminder": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ustaw przypomnienie"
           }
         }
       }
@@ -80193,6 +80311,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nie udało się przygotować próby z tej karty."
+          }
+        }
+      }
+    },
+    "The reminder couldn't be set. Nothing was scheduled.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się ustawić przypomnienia. Nic nie zostało zaplanowane."
           }
         }
       }
@@ -94008,6 +94137,61 @@
           "stringUnit": {
             "state": "translated",
             "value": "Do kogo dzwoni Doddy"
+          }
+        }
+      }
+    },
+    "Why this one: the cheapest pack (no sizes to compare).": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dlaczego ta: najtańsze opakowanie (brak rozmiarów do porównania)."
+          }
+        }
+      }
+    },
+    "Why this one: the cheapest pack (no sizes to compare); next, %@ at %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dlaczego ta: najtańsze opakowanie (brak rozmiarów do porównania); następne: %@, %@."
+          }
+        }
+      }
+    },
+    "Why this one: the lowest price per %@ (%@).": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dlaczego ta: najniższa cena za %@ (%@)."
+          }
+        }
+      }
+    },
+    "Why this one: the lowest price per %@ (%@); next, %@ at %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dlaczego ta: najniższa cena za %@ (%@); następna: %@, %@."
+          }
+        }
+      }
+    },
+    "Why this one: the only offer found for this item.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dlaczego ta: to jedyna oferta znaleziona dla tej rzeczy."
           }
         }
       }

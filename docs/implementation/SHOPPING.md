@@ -65,7 +65,7 @@ One fetcher for both parts: `User-Agent: DoddyBot/1.0 (+https://doddy.lol/bot)`,
 
 Bearer: the account's device token, like errands. Off unless `DEALS_ENABLED=1`.
 
-**Request:** `items`: 1 to 12 strings of 1 to 60 characters; `chains`: optional, any of `biedronka`, `lidl`, `dino`, `rossmann`, `aldi`, `zabka` (read) and `kaufland`, `carrefour`, `auchan`, `netto` (link only); default the six read chains (an older server refuses `aldi`, so the server is deployed before an app that sends it); `language`: two letters.
+**Request:** `items`: 1 to 12 strings of 1 to 60 characters (since ADR-664 an item can carry the person's own rules: "masło tylko Łaciate" keeps only products naming the word after "tylko", "mleko bez laktozy" only products saying "bez laktozy"; Rossmann's search gets the item without the word "tylko"; the answer keeps the item as written); `chains`: optional, any of `biedronka`, `lidl`, `dino`, `rossmann`, `aldi`, `zabka` (read) and `kaufland`, `carrefour`, `auchan`, `netto` (link only); default the six read chains (an older server refuses `aldi`, so the server is deployed before an app that sends it); `language`: two letters.
 
 **Response:** fixture `deals_search_v1.json`.
 
@@ -107,6 +107,8 @@ Designed and its safety rules built, nothing connected: `docs/implementation/SHO
 - **The report** is made on the iPhone from what is already there.
 
 ## Built and checked
+
+**28 Oct 2026 (ADR-664, the rest that waits on no decision):** the item rules on the server; in DoddyCore and the app, "Dlaczego to?" (`DealsWhy`: the lowest price per kg, l or piece, or the cheapest pack, and the next one), a second shop only when it saves the user's own minimum (`BasketSolver.solve(minimumSaving:)`, stored as `deals.minimumSaving`), and "Remind me on …" for a price that starts later (one local notification at 8:00 in Poland on its first day, the exact words shown before the yes, read back from iOS before the screen says it's set; `DoddyNotificationKind.dealStart`). Checked on Linux: messaging server 445/445 with Postgres, DoddyCore 2,198/2,198. **Not checked:** `DealReminders.swift` and the screen changes compile only on the Mac job; no notification was seen on a device.
 
 **28 Oct 2026 (ADR-662, 663, stage 2):** checked on Linux: the server's deals tests (screening, categories, similar, the eval's `--screen`, the scorer's screen recall) and the full suite with Postgres, DoddyCore (`MyShops`, similar), the app-logic type-check, catalogs, the guard and the voice agent spec; messaging server 443/443 with Postgres, DoddyCore 2,195/2,195. **Not checked here:** a real screening call (cost, time, recall), `MyShopsView.swift` and the `DealsView` changes compile only on the Mac job, nothing on a device, no real Apple Maps search.
 

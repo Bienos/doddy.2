@@ -50,7 +50,8 @@ final class DealsModel {
         case .success(let result):
             // The voice tool's items are already within the limits (`parseFindDeals`), so nothing is left out here.
             return DealsResultText.forAgent(result, language: request.language, programs: programs,
-                                            quantities: read.quantities, today: ShoppingCalendar.today())
+                                            quantities: read.quantities, today: ShoppingCalendar.today(),
+                                            minimumSaving: UserDefaults.standard.integer(forKey: PreferenceKey.dealsMinimumSaving))
         case .failure(let error):
             return VoiceToolReply.dealsNotChecked(error)
         }

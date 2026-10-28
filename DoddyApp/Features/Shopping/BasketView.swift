@@ -15,10 +15,13 @@ struct BasketView: View {
     let result: DealsResult
     var quantities: [ListQuantity?] = []
     var programs: DealsPrograms = .all
+    /// The user's own minimum for a second shop, in grosze (ADR-664), stored on this iPhone.
+    @AppStorage(PreferenceKey.dealsMinimumSaving) private var storedMinimum = 0
     private let language = NotificationLanguage.current
+    private static let minimums = [0, 500, 1_000, 2_000, 3_000]
 
     var body: some View {
-        let basket = BasketSolver.solve(result, quantities: quantities, programs: programs)
+        let basket = BasketSolver.solve(result, quantities: quantities, programs: programs, minimumSaving: storedMinimum)
         let today = ShoppingCalendar.today()
         Form {
             if let single = basket.bestSingleChain {
@@ -46,6 +49,14 @@ struct BasketView: View {
             }
             if let all = basket.everythingCheapest, all.chains.count > 2 {
                 Section("Everything at its cheapest") { PlanRow(plan: all, language: language) }
+            }
+            Section {
+                Picker("A second shop only when it saves at least", selection: $storedMinimum) {
+                    ForEach(Self.minimums, id: \.self) { minor in
+                        Text(minor == 0 ? NSLocalizedString("Any saving", comment: "") : Money(minor: minor).text(language)).tag(minor)
+                    }
+                }
+                .accessibilityIdentifier("basket.minimumSaving")
             }
             Section {
                 Text("The sums are added up by the app from the leaflet prices, not by an AI. Conditions such as the shop's app or a minimum quantity are listed with each item.")

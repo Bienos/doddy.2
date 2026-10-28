@@ -75,7 +75,10 @@ struct DealsView: View {
                     .disabled(entries.isEmpty || chains.isEmpty || model.phase == .checking)
                     .accessibilityIdentifier("deals.search")
                 } footer: {
-                    Text("Separate items with commas. Doddy's server reads the shops' own leaflets for this request and keeps nothing. Nothing that identifies you goes to the shops; Rossmann gets the item names as a search.")
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Separate items with commas. Doddy's server reads the shops' own leaflets for this request and keeps nothing. Nothing that identifies you goes to the shops; Rossmann gets the item names as a search.")
+                        Text("Narrow an item with “tylko” and a brand (masło tylko Łaciate) or with “bez” (mleko bez laktozy).")
+                    }
                 }
 
                 Section {
@@ -256,6 +259,9 @@ struct DealsView: View {
         let shown = shownOffers(item, variants: variants, index: index)
         if let best = BasketSolver.bestValue(shown, chainOrder: chainOrder, programs: programs) {
             DealRow(offer: best, language: language, today: today, missingProgram: nil, myShops: myShops.shops(of: best.chain))
+            if let why = DealsWhy.reason(shown, chainOrder: chainOrder, programs: programs) {
+                Text(whyText(why)).font(.footnote).foregroundStyle(Theme.secondaryText)
+            }
             let others = shown.filter { $0 != best }.prefix(3)
             if !others.isEmpty {
                 Text(others.map { otherText($0) }.joined(separator: " · "))
@@ -292,6 +298,23 @@ struct DealsView: View {
         Binding(get: { kinds[index] ?? "" }, set: { kinds[index] = $0 })
     }
 
+    /// "Why this one", in a line: the code's reason, never a model's.
+    private func whyText(_ why: DealsWhy) -> String {
+        switch why {
+        case .only:
+            return NSLocalizedString("Why this one: the only offer found for this item.", comment: "")
+        case .lowestPerUnit(let per, let value, let next):
+            let unit = "\(value.text(language))/\(per.rawValue)"
+            guard let next else { return String(format: NSLocalizedString("Why this one: the lowest price per %@ (%@).", comment: "a unit, a price per unit"), per.rawValue, unit) }
+            return String(format: NSLocalizedString("Why this one: the lowest price per %@ (%@); next, %@ at %@.", comment: "unit, price per unit, chain, its price per unit"),
+                          per.rawValue, unit, next.chain.name, "\(next.value.text(language))/\(per.rawValue)")
+        case .cheapestPack(let next):
+            guard let next else { return NSLocalizedString("Why this one: the cheapest pack (no sizes to compare).", comment: "") }
+            return String(format: NSLocalizedString("Why this one: the cheapest pack (no sizes to compare); next, %@ at %@.", comment: "chain, price"),
+                          next.chain.name, next.price.text(language))
+        }
+    }
+
     /// "Lidl 5,49 zł", "Dino 25,99 zł (3 for 17,33 zł each)", "Lidl 4,49 zł (app you don't use)".
     private func otherText(_ offer: DealOffer) -> String {
         var text = "\(offer.chain.name) \(offer.price.text(language))"
@@ -311,6 +334,8 @@ private struct DealRow: View {
     let missingProgram: DealsProgram?
     /// The user's own shops of this chain (My shops), for "only in some shops".
     var myShops: [MyShop] = []
+    @State private var askReminder = false
+    @State private var reminderNote: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -361,6 +386,25 @@ private struct DealRow: View {
                 Label("Doddy couldn't confirm this one. Check the leaflet.", systemImage: "exclamationmark.circle")
                     .font(.footnote).foregroundStyle(Theme.error)
             }
+            if DealStartReminder.canRemind(offer, today: today), let from = offer.validFrom {
+                Button {
+                    askReminder = true
+                } label: {
+                    Label(String(format: NSLocalizedString("Remind me on %@", comment: "the day a leaflet price starts"), DealDayText.text(from)), systemImage: "bell")
+                }
+                .font(.footnote)
+                .buttonStyle(.borderless)
+                .confirmationDialog(DealStartReminder.title(language), isPresented: $askReminder, titleVisibility: .visible) {
+                    Button("Set the reminder") { Task { await setReminder() } }
+                    Button("Cancel", role: .cancel) {}
+                } message: {
+                    Text(String(format: NSLocalizedString("On %@ at 8:00 this iPhone will show: %@", comment: "a day, the notification's words"),
+                                DealDayText.text(from), DealStartReminder.body(offer, language)))
+                }
+            }
+            if let reminderNote {
+                Text(reminderNote).font(.footnote).foregroundStyle(Theme.secondaryText)
+            }
             if let url = ShopPage.url(offer.source.url) {
                 Link(destination: url) {
                     Text(offer.source.page.map { String(format: NSLocalizedString("Leaflet, page %lld", comment: ""), $0) }
@@ -370,6 +414,17 @@ private struct DealRow: View {
             }
         }
         .accessibilityElement(children: .combine)
+    }
+
+    private func setReminder() async {
+        switch await DealReminders.schedule(offer) {
+        case .scheduled(let day):
+            reminderNote = String(format: NSLocalizedString("Reminder set for %@ at 8:00.", comment: "a day"), DealDayText.text(day))
+        case .needsPermission:
+            reminderNote = NSLocalizedString("Notifications are off for Doddy, so no reminder was set. You can turn them on in Settings.", comment: "")
+        case .failed:
+            reminderNote = NSLocalizedString("The reminder couldn't be set. Nothing was scheduled.", comment: "")
+        }
     }
 
     /// The days and the shop notes: not on yet, the last day (or the last open day before it), the
