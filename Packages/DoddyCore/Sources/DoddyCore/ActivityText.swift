@@ -73,6 +73,7 @@ public enum ActivityText {
         "Read the week from Apple Health": "Odczytano tydzień z Apple Health",
         "Looked through photos": "Przejrzano zdjęcia",
         "Open the camera": "Otwórz aparat",
+        "Control the home": "Steruj domem",
         "Open the training plan": "Otwórz plan treningowy",
         "Draft an email": "Szkic e-maila",
         // Written before ADR-275 fixed the article; old rows still say it.

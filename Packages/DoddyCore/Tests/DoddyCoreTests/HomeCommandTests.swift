@@ -51,7 +51,7 @@ final class HomeCommandTests: XCTestCase {
 
     func testOnlyConfirmedCountsAsDone() {
         let command = HomeCommand.runScene(sceneID: "s1", sceneName: "Good night")
-        XCTAssertTrue(VoiceToolReply.home(command, outcome: .confirmed).hasPrefix("done"))
+        XCTAssertTrue(VoiceToolReply.home(command, outcome: .confirmed).hasPrefix("changed:"))
         XCTAssertTrue(VoiceToolReply.home(command, outcome: .unknown).hasPrefix("unknown"))
         XCTAssertTrue(VoiceToolReply.home(command, outcome: .unknown).contains("don't try again"))
         XCTAssertTrue(VoiceToolReply.home(command, outcome: .failed("timeout")).hasPrefix("failed"))
@@ -60,6 +60,19 @@ final class HomeCommandTests: XCTestCase {
     func testCardTextUsesHomeKitNames() {
         XCTAssertEqual(HomeCommand.power(on: false, accessoryID: "a1", accessoryName: "Lamp", room: "Bedroom").cardText,
                        "Turn off Lamp in Bedroom?")
+    }
+
+    func testRepliesReadBackAsTheRightActivityOutcome() {
+        let command = HomeCommand.runScene(sceneID: "s1", sceneName: "Good night")
+        func outcome(_ reply: String) -> ActivityOutcome { ActivityLog.outcome(of: reply, isLookup: false).0 }
+        XCTAssertEqual(outcome(VoiceToolReply.home(command, outcome: .confirmed)), .done)
+        XCTAssertEqual(outcome(VoiceToolReply.home(command, outcome: .unknown)), .notSure)
+        XCTAssertEqual(outcome(VoiceToolReply.home(command, outcome: .failed("x"))), .notDone)
+        XCTAssertEqual(outcome(VoiceToolReply.homeDeclined), .declined)
+        XCTAssertEqual(outcome(VoiceToolReply.homeNotFound), .notDone)
+        XCTAssertEqual(outcome(VoiceToolReply.homeAmbiguous(["a", "b"])), .notDone)
+        XCTAssertEqual(outcome(VoiceToolReply.homeRefused("no")), .notDone)
+        XCTAssertEqual(outcome(VoiceToolReply.homeUnreachable("Lamp")), .notDone)
     }
 
     // MARK: The voice tool

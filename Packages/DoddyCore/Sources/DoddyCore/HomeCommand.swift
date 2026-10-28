@@ -176,7 +176,7 @@ extension VoiceToolReply {
     public static func home(_ command: HomeCommand, outcome: HomeOutcome) -> String {
         switch outcome {
         case .confirmed:
-            "done: HomeKit confirmed it. \(command.cardText.replacingOccurrences(of: "?", with: "")). Say it in one short sentence."
+            "changed: HomeKit confirmed it. \(command.cardText.replacingOccurrences(of: "?", with: "")). Say it in one short sentence."
         case let .failed(reason):
             "failed: HomeKit didn't do it (\(reason)). Nothing changed that you know of; don't say it worked."
         case .unknown:
@@ -185,14 +185,13 @@ extension VoiceToolReply {
     }
 
     public static let homeDeclined = "declined: the user said no. Nothing was changed. Say so in one short sentence."
-    public static let homeUnavailable = "unavailable: controlling the home isn't in this version of Doddy yet. Nothing was changed. Tell the user in one short sentence and point them to the Home app."
     public static let homeNotAllowed = "not allowed: the user hasn't let Doddy use Home. Say so and don't ask again."
     public static let homeNotFound = "not found: no accessory or scene has that name. Don't guess one; ask the user for the name."
     public static func homeAmbiguous(_ names: [String]) -> String {
-        "ambiguous: more than one matches (\(names.joined(separator: ", "))). Ask the user which one."
+        "not changed: more than one matches (\(names.joined(separator: ", "))). Ask the user which one."
     }
-    public static func homeRefused(_ reason: String) -> String { "refused: \(reason) Say so in one short sentence." }
+    public static func homeRefused(_ reason: String) -> String { "not changed: \(reason) Say so in one short sentence." }
     public static func homeUnreachable(_ name: String) -> String {
-        "unreachable: \(name) isn't responding in HomeKit. Nothing was changed; don't say it worked."
+        "not changed: \(name) isn't responding in HomeKit. Nothing was changed; don't say it worked."
     }
 }

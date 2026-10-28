@@ -633,6 +633,13 @@ struct VoiceView: View {
             blikDetails(draft, contactName: contactName, numbers: numbers, controller: controller)
         case .presentation(_, let draft):
             PresentationCardContent(draft: draft)
+        case .home(_, let command):
+            // HomeKit's own names, never the words the model used.
+            Text(command.cardText)
+                .font(.headline)
+            Text("Doddy tells HomeKit to do this now. It says it worked only if HomeKit confirms.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
         case .camera:
             Text("Open the camera?")
                 .font(.headline)
@@ -1062,6 +1069,7 @@ struct VoiceView: View {
         case .blik: (NSLocalizedString("I'll send it myself", comment: "BLIK card: the user sends it in their bank app"), NSLocalizedString("Not now", comment: ""))
         case .presentation: (NSLocalizedString("Make presentation", comment: ""), NSLocalizedString("Not now", comment: ""))
         case .camera: (NSLocalizedString("Open camera", comment: ""), NSLocalizedString("Not now", comment: ""))
+        case .home: (NSLocalizedString("Yes", comment: ""), NSLocalizedString("No", comment: ""))
         case .cloud(_, _, let preview, _, _): (preview.confirmLabel, NSLocalizedString("Don't do this", comment: ""))
         case .ask(_, let card, _, _, _): (card.confirmLabel, NSLocalizedString("No", comment: ""))
         case .cloudRead(_, _, let preview, _, _): (preview.confirmLabel, NSLocalizedString("No", comment: ""))

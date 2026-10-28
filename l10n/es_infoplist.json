@@ -46,5 +46,9 @@
   "NSPhotoLibraryUsageDescription": {
     "en": "Doddy counts the photos and videos you took on the days you ask about and shows them on your screen. Only how many there are and when they were taken go to Doddy's voice in that conversation (ElevenLabs, or OpenAI if you switch Home's voice to it); the pictures never leave this iPhone. Doddy never changes your library. Turn this off in Settings, Connections.",
     "es": "Doddy cuenta las fotos y vídeos que hiciste los días que preguntas y los muestra en tu pantalla. Solo cuántos hay y cuándo se hicieron van a la voz de Doddy en esa conversación (ElevenLabs, u OpenAI si cambias a ella la voz de Inicio); las imágenes nunca salen de este iPhone. Doddy nunca cambia tu fototeca. Desactívalo en Ajustes, Conexiones."
+  },
+  "NSHomeKitUsageDescription": {
+    "en": "Doddy turns a light, outlet or fan on or off, or runs a scene, in your Home only when you ask and after you tap Yes on a card that names it. It never controls locks, garage doors, alarms or cameras. The name of what you asked for and whether it worked go to Doddy's voice in that conversation; Doddy keeps none of it.",
+    "es": "Doddy enciende o apaga una luz, un enchufe o un ventilador, o ejecuta una escena, en tu Casa solo cuando lo pides y después de que toques Sí en una tarjeta que lo nombra. Nunca controla cerraduras, puertas de garaje, alarmas ni cámaras. El nombre de lo que pediste y si funcionó van a la voz de Doddy en esa conversación; Doddy no guarda nada de ello."
   }
 }
