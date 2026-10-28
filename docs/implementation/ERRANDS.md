@@ -10,7 +10,7 @@
 2. **One ask.** Doddy calls `hand_over_errand` with the user's exact words, its one-line brief (with any assumption it said out loud) and a short title. The app shows one card:
    > **Hand this to Doddy?**
    > "chcę jechać do Rzymu w przyszłym miesiącu na 7 dni, sprawdź loty i hotele do 2000 zł"
-   > Doddy searches the web and reads pages as often as this needs, in the background, and sends you a notification when it's done. Nothing is booked, bought or sent.
+   > Doddy searches the web and reads pages as often as this needs, in the background. The result waits in Tasks in the app when it's done. Nothing is booked, bought or sent.
    > **Yes, go**
 
    A spoken yes or a tap starts it (it reads the web and changes nothing; ASK-01's read rule). **That one yes covers every look-up of this errand, with no limit on how many** (owner, 21 Oct). It covers nothing else: no booking, no message, no other errand.

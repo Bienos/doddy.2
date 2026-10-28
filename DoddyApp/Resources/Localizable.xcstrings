@@ -29285,13 +29285,13 @@
         }
       }
     },
-    "Hand Doddy a task in a conversation, like \"compare flights to Rome next month under 2000 zł\". One yes lets Doddy search the web and read pages as often as the task needs, in the background. You get a notification when it's done. Nothing is booked, bought or sent.": {
+    "Hand Doddy a task in a conversation, like \"compare flights to Rome next month under 2000 zł\". One yes lets Doddy search the web and read pages as often as the task needs, in the background. The result waits here when it's done. Nothing is booked, bought or sent.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Przekaż Doddy’emu sprawę w rozmowie, np. „porównaj loty do Rzymu w przyszłym miesiącu do 2000 zł”. Jedno „tak” pozwala Doddy’emu szukać w sieci i czytać strony w tle tyle razy, ile sprawa wymaga. Gdy skończy, dostaniesz powiadomienie. Nic nie jest rezerwowane, kupowane ani wysyłane."
+            "value": "Przekaż Doddy’emu sprawę w rozmowie, np. „porównaj loty do Rzymu w przyszłym miesiącu do 2000 zł”. Jedno „tak” pozwala Doddy’emu szukać w sieci i czytać strony w tle tyle razy, ile sprawa wymaga. Gdy skończy, wynik będzie tu czekać. Nic nie jest rezerwowane, kupowane ani wysyłane."
           }
         }
       }
