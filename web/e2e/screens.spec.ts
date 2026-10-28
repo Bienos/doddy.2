@@ -90,12 +90,24 @@ for (const scheme of ["light", "dark"] as const) {
     await page.getByRole("button", { name: "Czytaj" }).click();
     await expect(page.getByText("Urodziny Anny są 14 marca.")).toBeVisible();
     await page.screenshot({ path: `${out}/${project}-${scheme}-8-memory-conversation.png`, fullPage: true });
-    await page.goto("/ask");
-    await page.getByRole("textbox", { name: "Twoje pytanie" }).fill("Kiedy są urodziny Anny?");
-    await page.getByRole("button", { name: "Zapytaj", exact: true }).click();
+    // The chat (ADR-604): empty, then "What I can see", then an answer with its sources.
+    await page.goto("/chat");
+    await expect(page.getByRole("heading", { level: 2, name: "W czym mogę pomóc?" })).toBeVisible();
+    await page.waitForLoadState("networkidle");
+    await page.screenshot({ path: `${out}/${project}-${scheme}-8-chat-empty.png` });
+    await page.getByRole("button", { name: "Co widzę" }).click();
+    await expect(page.locator(".chat-sees")).toBeVisible();
+    await page.screenshot({ path: `${out}/${project}-${scheme}-8-chat-sees.png` });
+    await page.keyboard.press("Escape");
+    await page.getByRole("textbox", { name: "Napisz do Doddy’ego" }).fill("Kiedy są urodziny Anny?");
+    await page.getByRole("button", { name: "Wyślij", exact: true }).click();
     await expect(page.getByText(/^DEMO:/)).toBeVisible();
-    await page.getByText(/Z Twoich notatek i rozmów \(/).click();
-    await page.screenshot({ path: `${out}/${project}-${scheme}-8-ask.png`, fullPage: true });
+    await page.getByText(/Źródła \(/).click();
+    await page.getByRole("textbox", { name: "Napisz do Doddy’ego" }).fill("Jakie aplikacje mam połączone?");
+    await page.getByRole("button", { name: "Wyślij", exact: true }).click();
+    await expect(page.getByText(/^DEMO:/)).toHaveCount(2);
+    await page.waitForTimeout(1000);
+    await page.screenshot({ path: `${out}/${project}-${scheme}-8-chat.png` });
     await request.put("/v1/web/memory/state", { headers, data: { notes: false, conversations: false } });
     // On a small screen the links are in a sheet under the header.
     if ((page.viewportSize()?.width ?? 1280) < 800) {

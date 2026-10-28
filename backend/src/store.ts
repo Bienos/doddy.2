@@ -926,6 +926,34 @@ export class Store {
     return { notes: Number(notes?.n ?? 0), conversations: Number(conversations?.n ?? 0), lastReceivedAt: last > 0 ? last : null };
   }
 
+  /**
+   * Counts over one user's kept conversations (ADR-604), from the plain columns only (start, end,
+   * number of turns): nothing is decrypted, so it works without the memory key and reads no words.
+   */
+  async memoryConversationStats(
+    userId: string,
+    since: number,
+    now: number,
+  ): Promise<{ count: number; turns: number; seconds: number; first: number | null; last: number | null; last7Days: number; last30Days: number }> {
+    const row = await this.one<{ n: string; turns: string | null; ms: string | null; first: string | null; last: string | null; w: string; m: string }>(
+      this.db,
+      `SELECT count(*) AS n, sum(turn_count) AS turns, sum(ended_at - started_at) AS ms, min(started_at) AS first, max(started_at) AS last,
+              count(*) FILTER (WHERE started_at >= $3) AS w, count(*) FILTER (WHERE started_at >= $4) AS m
+       FROM memory_conversations WHERE user_id = $1 AND started_at >= $2`,
+      [userId, since, now - 7 * 86_400_000, now - 30 * 86_400_000],
+    );
+    const count = Number(row?.n ?? 0);
+    return {
+      count,
+      turns: Number(row?.turns ?? 0),
+      seconds: Math.round(Number(row?.ms ?? 0) / 1000),
+      first: count > 0 && row?.first != null ? Number(row.first) : null,
+      last: count > 0 && row?.last != null ? Number(row.last) : null,
+      last7Days: Number(row?.w ?? 0),
+      last30Days: Number(row?.m ?? 0),
+    };
+  }
+
   /** Deletes everything kept for one user and switches both off, so the iPhone's next send is refused and it stops. */
   async deleteAllMemory(userId: string, now: number): Promise<{ deletedNotes: number; deletedConversations: number }> {
     return this.setMemoryState(userId, { notes: false, conversations: false }, now);

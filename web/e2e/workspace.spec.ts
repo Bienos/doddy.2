@@ -312,13 +312,13 @@ test("Memory and Ask Doddy: what the iPhone keeps on the server is read, searche
   });
   expect(refused).toBe(401);
 
-  // Ask Doddy (the demo model answers and cites the first note it was given).
-  await page.goto("/ask");
-  await page.getByRole("textbox", { name: "Twoje pytanie" }).fill("Kiedy są urodziny Anny?");
-  await page.getByRole("button", { name: "Zapytaj", exact: true }).click();
+  // The chat (ADR-604; the demo model answers and cites the first thing it was given: a note here).
+  await page.goto("/chat");
+  await page.getByRole("textbox", { name: "Napisz do Doddy’ego" }).fill("Kiedy są urodziny Anny?");
+  await page.getByRole("button", { name: "Wyślij", exact: true }).click();
   await expect(page.getByText(/^DEMO:/)).toBeVisible();
-  await page.getByText(/Z Twoich notatek i rozmów \(/).click();
-  await expect(page.locator(".ask-sources li").first()).toBeVisible();
+  await page.getByText(/Źródła \(/).click();
+  await expect(page.locator(".chat-sources li").first()).toBeVisible();
 
   // Download everything: the server's own file, with the switches, notes and conversations.
   await page.goto("/memory");
@@ -339,4 +339,47 @@ test("Memory and Ask Doddy: what the iPhone keeps on the server is read, searche
   const sideways = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(sideways).toBeLessThanOrEqual(0);
   expect(problems).toEqual([]);
+});
+
+test("the chat: with nothing kept it answers from the account, keeps the chat in the list, and fits a phone", async ({ page, request }) => {
+  const problems = watchConsole(page);
+  const token = await phone(request);
+  await request.put("/v1/web/memory/state", { headers: { authorization: `Bearer ${token}` }, data: { notes: false, conversations: false } });
+  await logbookSwitch(request, token, true);
+  for (const day of [daysAgo(0), daysAgo(1)]) {
+    expect((await request.put(`/v1/web/logbook/days/${day}`, { headers: { authorization: `Bearer ${token}` }, data: logbookDay(day, 2) })).status()).toBe(200);
+  }
+  await signIn(page, await code(request, token));
+  await page.getByRole("link", { name: "Napisz do Doddy’ego" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: "Czat z Doddym" })).toBeFocused();
+  await expect(page.getByRole("heading", { level: 2, name: "W czym mogę pomóc?" })).toBeVisible();
+
+  // What it can see: Logbook's two days, nothing kept, nothing connected.
+  await page.getByRole("button", { name: "Co widzę" }).click();
+  const panel = page.locator(".chat-sees");
+  await expect(panel).toContainText("Liczniki z 2 dni");
+  await expect(panel).toContainText("Nic nie jest połączone");
+  const box = (await panel.boundingBox())!;
+  expect(box.x).toBeGreaterThanOrEqual(0);
+  expect(box.x + box.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+  await page.keyboard.press("Escape");
+
+  // A usage question is offered because Logbook has days; the demo model cites Logbook, and the source links there.
+  await page.getByRole("button", { name: "Ile rozmawialiśmy w tym tygodniu?" }).click();
+  await expect(page.getByText("DEMO: here is what your account's logbook shows.")).toBeVisible(); // the demo model's own English
+  await page.getByText(/Źródła \(1\)/).click();
+  await expect(page.locator(".chat-sources").getByRole("link", { name: "Otwórz" })).toHaveAttribute("href", "/logbook");
+
+  // The chat is in the list, and it is still there after a reload (this browser only).
+  if (await page.getByRole("button", { name: "Pokaż czaty" }).isVisible()) await page.getByRole("button", { name: "Pokaż czaty" }).click();
+  await expect(page.getByRole("complementary", { name: "Twoje czaty" }).getByRole("button", { name: "Ile rozmawialiśmy w tym tygodniu?", exact: true })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole("heading", { level: 1, name: "Czat z Doddym" })).toBeVisible();
+  if (await page.getByRole("button", { name: "Pokaż czaty" }).isVisible()) await page.getByRole("button", { name: "Pokaż czaty" }).click();
+  await expect(page.getByRole("complementary", { name: "Twoje czaty" }).getByRole("button", { name: "Ile rozmawialiśmy w tym tygodniu?", exact: true })).toBeVisible();
+
+  const sideways = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  expect(sideways).toBeLessThanOrEqual(0);
+  expect(problems).toEqual([]);
+  await logbookSwitch(request, token, false);
 });

@@ -112,10 +112,13 @@ write("memory-conversations", (await rig.call("GET", "/v1/web/memory/conversatio
 write("memory-conversation", (await rig.call("GET", `/v1/web/memory/conversations/${talk}`, { cookie })).body);
 write("memory-export", JSON.parse((await rig.call("GET", "/v1/web/memory/export", { cookie })).text));
 write("chat-reply", (await rig.call("POST", "/v1/web/chat", { cookie, browser: true, body: { message: "When is Anna's birthday?", locale: "en" } })).body);
+// What the chat can read (ADR-604): both kinds kept, Logbook on with no days, nothing connected yet.
+write("chat-context", (await rig.call("GET", "/v1/web/chat/context", { cookie })).body);
 write("error-chat-invalid", (await rig.call("POST", "/v1/web/chat", { cookie, browser: true, body: { message: "  " } })).body);
 write("memory-conversation-deleted", (await rig.call("DELETE", `/v1/web/memory/conversations/${talk}`, { cookie, browser: true })).body);
 write("memory-deleted", (await rig.call("DELETE", "/v1/web/memory", { cookie, browser: true })).body);
-write("error-chat-off", (await rig.call("POST", "/v1/web/chat", { cookie, browser: true, body: { message: "When is Anna's birthday?" } })).body);
+// Nothing kept any more: the chat answers from the account (ADR-604); the demo cites its first part.
+write("chat-reply-account", (await rig.call("POST", "/v1/web/chat", { cookie, browser: true, body: { message: "How much did we talk this week?", timeZone: "Europe/Warsaw" } })).body);
 
 write("documents-empty", (await rig.call("GET", "/v1/web/documents", { cookie })).body);
 await make("deck", "Laptops for university");
