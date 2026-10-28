@@ -15,7 +15,7 @@ Owner, 28 Oct 2026: "connection to Apple HomeKit so someone can set up Doddy by 
 - In the app, only honest stubs so it still compiles: the Home connection is never allowed, it is in no Settings group, and the tool answers "unavailable: controlling the home isn't in this version yet".
 
 ## NOT built
-- The HomeKit client (`HMHomeManager`), the Connections › Home switch and the permission sheet row, the approval card, the voice tool `control_home` in `voice-agent/tools.json`, and `VoiceConnection` / `VoiceToolRequest` wiring.
+- The HomeKit client (`HMHomeManager`) that reads the snapshot and runs the command, the Connections › Home row and its place in a group, the permission sheet, and the approval card.
 - Needs the HomeKit entitlement, so a paid Apple team (not the free `project-iphone` build) and the `NSHomeKitUsageDescription` text in all ten languages.
 - The live ElevenLabs agent is unchanged and needs the owner's yes to the exact tool text.
 
