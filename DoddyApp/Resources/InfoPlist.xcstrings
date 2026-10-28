@@ -728,7 +728,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy writes out voice memos and recordings on this iPhone, so you can check and search their words. The audio and its words are not sent anywhere."
+            "value": "Doddy writes out voice memos and recordings on this iPhone, so you can check and search their words. It also writes out what you say when you tap the mic in Messages. The audio and its words are not sent anywhere; words you dictate into Messages leave this iPhone only if you then send them as a message."
           }
         },
         "es": {

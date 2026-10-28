@@ -565,6 +565,9 @@ private struct MessagesComposer: View {
     @Binding var useNotes: Bool
     var focus: FocusState<Bool>.Binding
     let send: () -> Void
+    @State private var dictation = MessageDictation()
+    /// What was in the box when the mic was tapped; the words heard are added after it.
+    @State private var dictationBase = ""
 
     var body: some View {
         HStack(alignment: .bottom, spacing: 8) {
@@ -591,6 +594,8 @@ private struct MessagesComposer: View {
                     .disabled(model.isSending)
                     .padding(.vertical, 8)
                     .accessibilityIdentifier("ask.input")
+                micButton
+                    .padding(.bottom, 3)
                 trailingButton
                     .padding(.bottom, 3)
             }
@@ -609,6 +614,50 @@ private struct MessagesComposer: View {
         // Motion v2 (Q2): the composer is "the composer" he stands on, left of Send, and rides
         // with the keyboard.
         .motionSurface(.composer)
+        .onChange(of: model.isSending) { _, sending in if sending { dictation.stop() } }
+        .onDisappear { dictation.stop() }
+    }
+
+    /// Dictation: tap to talk, tap again to stop. The words land in the box to check; Send is still the person's tap.
+    @ViewBuilder
+    private var micButton: some View {
+        if !model.isSending {
+            VStack(alignment: .trailing, spacing: 2) {
+                Button(action: toggleDictation) {
+                    Image(systemName: dictation.isListening ? "stop.circle.fill" : "mic")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(dictation.isListening ? Theme.orangeCue : Theme.secondaryText)
+                        .frame(width: 30, height: 30)
+                        .contentShape(Circle().inset(by: -6))
+                }
+                .accessibilityLabel(dictation.isListening ? "Stop dictating" : "Dictate")
+                .accessibilityIdentifier("messages.mic")
+                if case .failed(let reason) = dictation.state {
+                    Text(reason)
+                        .font(.caption2)
+                        .foregroundStyle(Theme.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .onTapGesture { dictation.clearFailure() }
+                        .accessibilityIdentifier("messages.mic.error")
+                }
+            }
+        }
+    }
+
+    private func toggleDictation() {
+        if dictation.isListening {
+            dictation.stop()
+            return
+        }
+        dictationBase = model.draft
+        let busy = VoiceSessionController.current?.isLive == true
+            || MicrophoneHolders.shared.isRecording
+            || RecordingCoordinator.shared.isActive
+        Task {
+            await dictation.start(isOtherMicrophoneBusy: busy) { spoken in
+                model.draft = DictationRules.merged(base: dictationBase, spoken: spoken)
+            }
+        }
     }
 
     @ViewBuilder
