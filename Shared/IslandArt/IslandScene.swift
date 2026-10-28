@@ -1,62 +1,21 @@
 import Foundation
 
-/// The looks the voice island can take (ADR-239): the owner's V4 boards that have a voice
-/// conversation state, and Whole Doddy (ADR-264), his whole body from the owner's pose pack.
-/// Chosen in Settings → Voice → Dynamic Island style; Whole Doddy until the user picks one
-/// (ADR-267). Settings lists them in this order.
+/// The look of the voice island: Whole Doddy (ADR-264), his whole body from the owner's pose
+/// pack. It is the only one: the seven other looks from the V4 pack (Lean In, Orbit, Ink Ripple,
+/// Negative Space, Editorial, Abstract Horizon, Here With You) and their Settings picker were
+/// removed on the owner's say-so, so the island is never a mix of two designs. A style stored by
+/// an older build is ignored and decodes as Whole Doddy.
 enum IslandStyle: String, Codable, CaseIterable, Hashable, Sendable {
-    case wholeDoddy, leanIn, orbit, inkRipple, negativeSpace, editorial, abstractHorizon, hereWithYou
+    case wholeDoddy
 
-    /// The style used until the user picks one in Settings (owner: "make whole doddy the default
-    /// style", ADR-267). A style the user picked is stored and kept.
-    static let preferredDefault: IslandStyle = .wholeDoddy
-
-    /// The style stored in Settings, or the default when none is (or an unknown one is) stored.
-    static func stored(_ raw: String?) -> IslandStyle {
-        raw.flatMap(IslandStyle.init(rawValue:)) ?? preferredDefault
+    /// Any stored value, such as a look an older build wrote ("leanIn", "orbit"), reads as Whole
+    /// Doddy: a running island from before the others were removed keeps updating.
+    init(from decoder: any Decoder) throws {
+        self = .wholeDoddy
     }
 
-    var board: IslandBoard {
-        switch self {
-        case .leanIn: .leanIn
-        case .orbit: .orbit
-        case .inkRipple: .inkRipple
-        case .negativeSpace: .negativeSpace
-        case .editorial: .editorial
-        case .abstractHorizon: .abstractHorizon
-        case .hereWithYou: .hereWithYou
-        // Drawn from `IslandPose`; Lean In's board only backs its signs and sizes.
-        case .wholeDoddy: .leanIn
-        }
-    }
-
-    /// The pack's names (Design-notes.md).
-    var displayName: String {
-        switch self {
-        case .leanIn: "Lean In"
-        case .orbit: "Orbit"
-        case .inkRipple: "Ink Ripple"
-        case .negativeSpace: "Negative Space"
-        case .editorial: "Editorial"
-        case .abstractHorizon: "Abstract Horizon"
-        case .hereWithYou: "Here With You"
-        case .wholeDoddy: "Whole Doddy"
-        }
-    }
-
-    /// The pack's one-line rationale for each (Design-notes.md, "Rationale for all sixteen").
-    var summary: String {
-        switch self {
-        case .leanIn: "A cupped hand and short voice bars: Doddy leaning in to listen."
-        case .orbit: "A quiet dial around Doddy; one orange segment while he can hear you."
-        case .inkRipple: "A cream ink shape with an orange energy line under it."
-        case .negativeSpace: "A cream crescent holds Doddy's face and an offered hand."
-        case .editorial: "Big type does the work, with a small Doddy in the corner."
-        case .abstractHorizon: "Doddy above two soft horizon lines, with an orange marker."
-        case .hereWithYou: "Two small hands and a conversation loop: here, without taking over."
-        case .wholeDoddy: "Doddy's whole body from your pose pack: his pose shows what he's doing."
-        }
-    }
+    /// Drawn from `IslandPose`; the voice board's art only backs its signs and sizes.
+    var board: IslandBoard { .leanIn }
 }
 
 /// Doddy's orange waves on the Whole Doddy island (ADR-596): a line beside his status while he
@@ -241,19 +200,15 @@ extension DoddyVoiceAttributes.ContentState {
     }
 
     private func voiceScene(stale: Bool, live: Bool) -> IslandScene {
-        let style = islandStyle
         let sign = voiceSign(stale: stale)
-        let compact: IslandSign = style == .hereWithYou && (status == .listening || status == .speaking) && !showsMuted && !stale
-            ? .elapsed : sign
+        let compact: IslandSign = sign
         let minimal: IslandSign = (sign == .bars || sign == .dots) ? sign : .none
         var scene = IslandScene(
-            board: style.board,
-            // Here With You draws thinking on its second board (dots under Doddy).
-            scenario: style == .hereWithYou && status == .thinking && !stale ? 1 : 0,
+            board: islandStyle.board,
+            scenario: 0,
             face: stale ? .calm : face,
             live: live,
-            // Lean In's hand at his ear means "listening", so it goes when he can't hear you.
-            showsHands: style == .leanIn ? live : true,
+            showsHands: true,
             // "Hey Doddy" waiting (ADR-254) is not a conversation: no timer, its own label.
             label: isWakeMode ? islandWord("HEY DODDY") : islandWord("VOICE"),
             time: isWakeMode ? .text("") : .elapsed,
@@ -261,7 +216,7 @@ extension DoddyVoiceAttributes.ContentState {
             bigTitle: nil,
             subtitle: stale ? islandWord("The app stopped in the background") : islandLine,
             subtitleIsWarning: stale,
-            expandedSign: style == .leanIn ? sign : .none,
+            expandedSign: .none,
             compactSign: compact,
             minimalSign: minimal)
         // A card waits in Doddy (ADR-616): Show opens it. Not when stale: there is no card to show.

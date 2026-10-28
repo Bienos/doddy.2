@@ -16,6 +16,16 @@ protocol LiveVoiceLink: AnyObject {
     /// Doddy's playback volume on this iPhone only (0 = silent; the provider still makes the
     /// audio). Returns the volume now in effect, or nil when there is no voice to set yet.
     func setAgentVolume(_ volume: Double) -> Double?
+    /// Starts reading the loudness of Doddy's voice into `meter`, for Home's island extension
+    /// (ADR-655). True when there was a voice to listen to; false from a provider that doesn't
+    /// give one, and the extension falls back to a clock-made rhythm.
+    func attachAgentLevelMeter(_ meter: AgentVoiceMeter) -> Bool
+    func detachAgentLevelMeter(_ meter: AgentVoiceMeter)
+}
+
+extension LiveVoiceLink {
+    func attachAgentLevelMeter(_ meter: AgentVoiceMeter) -> Bool { false }
+    func detachAgentLevelMeter(_ meter: AgentVoiceMeter) {}
 }
 
 extension Conversation: LiveVoiceLink {
@@ -29,5 +39,16 @@ extension Conversation: LiveVoiceLink {
         guard let track = agentAudioTrack else { return nil }
         track.volume = volume
         return track.volume
+    }
+
+    /// The agent's audio track, for its loudness only (ADR-655).
+    func attachAgentLevelMeter(_ meter: AgentVoiceMeter) -> Bool {
+        guard let track = agentAudioTrack else { return false }
+        track.add(audioRenderer: meter)
+        return true
+    }
+
+    func detachAgentLevelMeter(_ meter: AgentVoiceMeter) {
+        agentAudioTrack?.remove(audioRenderer: meter)
     }
 }

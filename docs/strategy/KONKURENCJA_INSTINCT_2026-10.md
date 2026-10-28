@@ -47,7 +47,7 @@ Doddy ma już kawałki tego kanału, tylko nieuruchomione:
 - **Telefon do Doddy'ego (S2, `docs/implementation/S2_CALLS_STATUS.md`):** numer Twilio, agent ElevenLabs „Doddy (phone)”, PIN, odpowiedzi z kopii pamięci za zgodą, „Zadzwoń do mnie”. Nigdy nie było prawdziwej rozmowy.
 - **SMS (S1, `docs/implementation/S1_SERVER_STATUS.md`):** tylko w jedną stronę (powiadomienia), ze zgodą `sms-v1` i STOP.
 
-**Aktualizacja 28 paź (właściciel: „zrób też sms i dzwonienie”):** SMS w obie strony jest w kodzie (ADR-653, `docs/implementation/SMS_CHAT.md`): odpowiedź tekstem, bez narzędzi i bez notatek, tylko z twojego numeru, po osobnej zgodzie. Dzwonienie czeka na kroki właściciela opisane tam. Pytania poniżej zostały tak rozstrzygnięte: SMS tylko pytania, bez akcji; WhatsApp nie.
+**Aktualizacja 28 paź (właściciel: „zrób też sms i dzwonienie”):** SMS w obie strony jest w kodzie (ADR-656, `docs/implementation/SMS_CHAT.md`): odpowiedź tekstem, bez narzędzi i bez notatek, tylko z twojego numeru, po osobnej zgodzie. Dzwonienie czeka na kroki właściciela opisane tam. Pytania poniżej zostały tak rozstrzygnięte: SMS tylko pytania, bez akcji; WhatsApp nie.
 
 Pytania, które były otwarte:
 

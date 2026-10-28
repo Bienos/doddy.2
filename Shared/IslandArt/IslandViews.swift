@@ -290,7 +290,6 @@ struct IslandPillLabel: View {
 }
 
 /// The expanded island under the camera: the board's drawing, status, buttons and sign.
-/// Editorial is typography-led: big status on the left, small Doddy and buttons on the right.
 struct IslandBottomView<Controls: View>: View {
     let scene: IslandScene
     let startedAt: Date
@@ -304,11 +303,7 @@ struct IslandBottomView<Controls: View>: View {
     static var waveBand: CGFloat { 24 }
 
     var body: some View {
-        if scene.board == .editorial {
-            editorial
-        } else {
-            standard
-        }
+        standard
     }
 
     @ViewBuilder
@@ -397,44 +392,6 @@ struct IslandBottomView<Controls: View>: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-    }
-
-    /// Board E: 29 pt status, an orange caret line while live, Doddy at 25 pt top right.
-    private var editorial: some View {
-        HStack(alignment: .top, spacing: 8) {
-            VStack(alignment: .leading, spacing: 4) {
-                VStack(alignment: .leading, spacing: 2) {
-                    IslandText(scene.title)
-                        .font(.system(size: 29, weight: .medium))
-                        .tracking(-1.2)
-                        .foregroundStyle(Color.islandCream)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.6)
-                    subtitle
-                }
-                .accessibilityElement(children: .combine)
-                HStack(spacing: 8) {
-                    Capsule()
-                        .fill(scene.live ? Color.islandOrange : Color.islandSecondary)
-                        .frame(width: 1.7, height: 14)
-                    IslandText(scene.live ? islandWord("Doddy can hear you") : " ")
-                        .font(.system(size: 10.5, weight: .medium))
-                        .foregroundStyle(Color.islandSecondary)
-                }
-                .accessibilityHidden(true)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            VStack(alignment: .trailing, spacing: 10) {
-                IslandArtView(art: Self.editorialFace, face: scene.face ?? .listening, live: scene.live)
-                controls()
-            }
-        }
-    }
-
-    /// The editorial board's face: translate(330 74) scale(0.625), drawn on its own.
-    private static var editorialFace: IslandArt {
-        IslandArt(viewBox: IslandRect(x: -13.5, y: -13.5, width: 27, height: 27),
-                  elements: [.face(x: 0, y: 0, scale: 0.625, .listening)])
     }
 }
 

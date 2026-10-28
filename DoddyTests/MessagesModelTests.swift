@@ -347,7 +347,8 @@ final class MessagesModelTests: XCTestCase {
             if await sync.sent.last?.messages.count == 2 { break }
             try? await Task.sleep(for: .milliseconds(20))
         }
-        let last = try XCTUnwrap(await sync.sent.last)
+        let sentSnapshots = await sync.sent
+        let last = try XCTUnwrap(sentSnapshots.last)
         XCTAssertEqual(last.messages.map(\.text), ["Co to?", "Paragon."])
         XCTAssertEqual(last.messages.first?.hasPhoto, true, "only that it had a photo")
     }
@@ -358,7 +359,8 @@ final class MessagesModelTests: XCTestCase {
         let model = MessagesModel(repository: FakeThread(), sync: sync)
         await model.load()
         await model.deleteConversation()
-        XCTAssertEqual(await sync.deletes, 1)
+        let deletes = await sync.deletes
+        XCTAssertEqual(deletes, 1)
         XCTAssertFalse(model.webDeleteFailed)
 
         await sync.setDeleteError(.transport)

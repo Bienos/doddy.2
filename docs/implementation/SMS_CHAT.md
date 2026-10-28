@@ -1,4 +1,4 @@
-# Texting Doddy, and calling him (ADR-653)
+# Texting Doddy, and calling him (ADR-656)
 
 Owner, 28 Oct 2026, after the Instinct comparison (`docs/strategy/KONKURENCJA_INSTINCT_2026-10.md`): "zrób też sms i dzwonienie". Instinct is reached by text or a call, with no app. Doddy can now answer a text; calling him was already built (S2) and needs the owner's setup.
 

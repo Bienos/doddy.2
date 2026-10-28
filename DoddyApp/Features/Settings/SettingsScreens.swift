@@ -154,9 +154,8 @@ struct VoiceSettingsView: View {
                 Text("Your voice and the conversation go to the voice service only after you agree, the first time you talk. iOS shows its orange dot while Doddy listens.")
             }
             Section {
-                // The island and its styles: iPhone only (ADR-432, ADR-453).
+                // The island's expansion: iPhone only (ADR-432, ADR-453).
                 if DeviceSupport.hasDynamicIsland {
-                    IslandStyleLinkRow()
                     Toggle("Expand when Doddy speaks", isOn: $islandExpands)
                         .accessibilityIdentifier("settings.islandExpands")
                 }

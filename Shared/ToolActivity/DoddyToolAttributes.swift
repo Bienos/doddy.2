@@ -23,7 +23,7 @@ struct DoddyToolAttributes: ActivityAttributes {
         var label: String?
         /// The time ran out, the exercise ended or the note was read to the end.
         var isFinished = false
-        /// The island style picked in Settings when this was sent (ADR-299): with Whole Doddy the
+        /// The island's look when this was sent (ADR-299): with Whole Doddy the
         /// read-aloud island shows his reading pose. Nil from older builds: the board's art.
         var islandStyle: IslandStyle?
         /// Stopwatch only (ADR-652): when a clock that counts up from zero would have started to

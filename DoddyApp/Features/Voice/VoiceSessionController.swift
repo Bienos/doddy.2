@@ -209,6 +209,7 @@ final class VoiceSessionController {
             default: break
             }
             syncIsland()
+            updateVoiceMeter()
             // Doddy started speaking: the island may open up for a moment (ADR-577).
             if phase == .speaking, oldValue != .speaking { expandIslandIfDue() }
             // Listening comes only from the provider's own event: this conversation really
@@ -421,6 +422,9 @@ final class VoiceSessionController {
     private let alarmWriter = AlarmKitWriter()
     private let leaveByWriter = LeaveByScheduler()
     private var conversation: (any LiveVoiceLink)?
+    /// Home's island extension is reading the loudness of his voice from this conversation
+    /// (ADR-655).
+    @ObservationIgnored private var voiceMeterAttached = false
     /// Who runs the conversation now (Home's voice switch, read when it starts; ADR-265, ADR-442).
     private(set) var provider: VoiceProvider = .elevenLabs
     /// The OpenAI model of the conversation being started or open (only meaningful when `provider` is OpenAI).
@@ -2080,7 +2084,6 @@ final class VoiceSessionController {
             status: pendingAction == nil ? status : .needsConfirmation, isMuted: isMuted,
             greeting: wakeGreeting, conversationStartedAt: startedAt)
         state.moment = islandMoment
-        state.islandStyle = IslandStyle.stored(UserDefaults.standard.string(forKey: PreferenceKey.islandStyle))
         // ADR-617: the island speaks the language of Doddy's screens (Polish by default), which the
         // widget extension can't read for itself.
         state.language = Bundle.main.preferredLocalizations.first
@@ -2165,6 +2168,20 @@ final class VoiceSessionController {
         guard ownsIsland, translator == nil else { return }
         let onScreen = UIApplication.shared.applicationState == .active
         if islandExpansion.cardArrived(at: Date(), appOnScreen: onScreen) { island.expand() }
+    }
+
+    /// Listens to how loud Doddy's voice is while he talks, for Home's island extension (ADR-655):
+    /// attached the first time he speaks (that is when his audio track exists), let go when the
+    /// conversation is over. A provider without such a track attaches nothing.
+    private func updateVoiceMeter() {
+        if phase == .speaking, !voiceMeterAttached, let conversation {
+            voiceMeterAttached = conversation.attachAgentLevelMeter(AgentVoiceMeter.shared)
+            AgentVoiceMeter.shared.markAttached(voiceMeterAttached)
+        } else if !isLive, voiceMeterAttached {
+            conversation?.detachAgentLevelMeter(AgentVoiceMeter.shared)
+            voiceMeterAttached = false
+            AgentVoiceMeter.shared.reset()
+        }
     }
 
     private func syncIsland() {
