@@ -42,7 +42,10 @@ export class ClaudeAssistantResponder implements AssistantResponder {
       max_tokens: MAX_OUTPUT_TOKENS,
       output_config: { effort: this.effort, format: { type: "json_schema", schema: answerJsonSchema(aliasToId.size > 0) } },
       system: buildInstructions(req.locale),
-      messages: [{ role: "user", content: input }],
+      messages: [{ role: "user", content: req.image
+        // The photo first, then the text that says what it is for; it goes to this call only.
+        ? [{ type: "image", source: { type: "base64", media_type: req.image.mediaType, data: req.image.data } }, { type: "text", text: input }]
+        : input }],
     }, { signal });
     const usage: AssistUsage = {
       inputTokens: response.usage?.input_tokens ?? 0,

@@ -23,6 +23,14 @@ struct AssistWireRequest: Codable, Equatable {
     let userText: String
     let turns: [Turn]
     let memories: [Memory]
+    /// Messages only (the messaging server); absent otherwise, so the gateway never sees the field.
+    var image: Image? = nil
+
+    struct Image: Codable, Equatable {
+        let mediaType: String
+        /// Base64 of the JPEG.
+        let data: String
+    }
 }
 
 struct AssistWireResponse: Codable, Equatable {
@@ -108,6 +116,7 @@ enum WireCoding {
                     text: $0.record.currentText,
                     source: $0.record.source.rawValue,
                     capturedAt: $0.record.capturedAt.map(isoDate))
-            })
+            },
+            image: request.image.map { .init(mediaType: AssistantImage.mediaType, data: $0.jpeg.base64EncodedString()) })
     }
 }

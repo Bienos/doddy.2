@@ -36,6 +36,8 @@ final class MessagesModel {
     /// Why the last file was not made. The offer stays so the person can try again or decline.
     private(set) var makeFailure: ThreadDocumentError?
     var draft = ""
+    /// A photo to send with the next message, already made smaller on this iPhone. Sent once, then dropped; never saved.
+    var photo: AssistantImage?
 
     private let repository: any MessageThreadRepository
     private let now: @Sendable () -> Date
@@ -49,7 +51,7 @@ final class MessagesModel {
         self.now = now
     }
 
-    var canSend: Bool { storage != .loading && ThreadRules.canSend(draft: draft, isSending: isSending) }
+    var canSend: Bool { storage != .loading && ThreadRules.canSend(draft: draft, isSending: isSending, hasPhoto: photo != nil) }
 
     // MARK: Loading
 
@@ -71,10 +73,14 @@ final class MessagesModel {
     /// - Parameter service: nil when Ask Doddy isn't set up.
     func send(using service: AssistantService?, policy: AssistantPolicy, locale: String) {
         guard canSend else { return }
-        let question = draft.trimmingCharacters(in: .whitespacesAndNewlines)
+        let image = photo
+        let question = image == nil
+            ? draft.trimmingCharacters(in: .whitespacesAndNewlines)
+            : ThreadRules.photoQuestion(draft: draft, fallback: NSLocalizedString("What's in this photo?", comment: "Messages: the question sent with a photo when nothing was typed"))
         guard preflight(question, service: service, policy: policy) else { return }
         draft = ""
-        deliver(ThreadMessage.user(question, now: now()), replacing: nil, using: service, policy: policy, locale: locale)
+        photo = nil
+        deliver(ThreadMessage.user(question, now: now(), hasPhoto: image != nil), image: image, replacing: nil, using: service, policy: policy, locale: locale)
     }
 
     /// Sends a message that got no answer once more, as a new message at the end of the thread.
@@ -103,7 +109,7 @@ final class MessagesModel {
         return true
     }
 
-    private func deliver(_ message: ThreadMessage, replacing old: UUID?, using service: AssistantService?, policy: AssistantPolicy, locale: String) {
+    private func deliver(_ message: ThreadMessage, image: AssistantImage? = nil, replacing old: UUID?, using service: AssistantService?, policy: AssistantPolicy, locale: String) {
         guard let service else { return }
         let history = ThreadRules.history(from: messages, before: message.createdAt)
         messages.append(message)
@@ -115,7 +121,7 @@ final class MessagesModel {
             await self.persist { try await $0.append(message) }
             let result: Result<AssistantAnswer, AssistantError>
             do throws(AssistantError) {
-                result = .success(try await service.ask(message.text, sessionID: sessionID, history: history, locale: locale, policy: policy))
+                result = .success(try await service.ask(message.text, sessionID: sessionID, history: history, locale: locale, image: image, policy: policy))
             } catch {
                 result = .failure(error)
             }

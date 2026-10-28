@@ -36,25 +36,34 @@ public enum ThreadRules {
     }
 
     /// What the box can send: not while another is on its way, and not blank.
-    public static func canSend(draft: String, isSending: Bool) -> Bool {
-        !isSending && !draft.allSatisfy(\.isWhitespace)
+    public static func canSend(draft: String, isSending: Bool, hasPhoto: Bool = false) -> Bool {
+        !isSending && (hasPhoto || !draft.allSatisfy(\.isWhitespace))
     }
 
-    /// A message that did not get through can be sent again; one that is answered or on its way cannot.
+    /// The words sent with a photo when the box is empty, so the question is never blank.
+    public static func photoQuestion(draft: String, fallback: String) -> String {
+        let words = draft.trimmingCharacters(in: .whitespacesAndNewlines)
+        return words.isEmpty ? fallback : words
+    }
+
+    /// A message that did not get through can be sent again; one that is answered or on its way cannot. One sent with a
+    /// photo cannot: the photo was not kept, and sending the words alone would ask a different question.
     public static func canRetry(_ message: ThreadMessage) -> Bool {
-        message.sender == .user && message.delivery == .failed
+        message.sender == .user && message.delivery == .failed && !message.hasPhoto
     }
 
     /// The line under a user bubble, or nil when there is nothing to say (answered).
     public enum DeliveryLine: Equatable, Sendable {
         case sending, notDelivered
+        /// Not delivered, and it had a photo that was not kept: add the photo again to ask.
+        case notDeliveredPhoto
     }
 
     public static func deliveryLine(for message: ThreadMessage) -> DeliveryLine? {
         guard message.sender == .user else { return nil }
         switch message.delivery {
         case .sending: return .sending
-        case .failed: return .notDelivered
+        case .failed: return message.hasPhoto ? .notDeliveredPhoto : .notDelivered
         case .sent: return nil
         }
     }

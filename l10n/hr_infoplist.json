@@ -28,8 +28,8 @@
     "hr": "Doddy dodaje, mijenja, dovršava ili briše podsjetnik tek nakon što dodirneš Dodaj, Promijeni, Označi kao obavljeno ili Izbriši. Isključi to u Postavkama, Veze."
   },
   "NSSpeechRecognitionUsageDescription": {
-    "en": "Doddy writes out voice memos and recordings on this iPhone, so you can check and search their words. The audio and its words are not sent anywhere.",
-    "hr": "Doddy pretvara glasovne bilješke i snimke u tekst na ovom iPhoneu, da možeš provjeravati i pretraživati njihove riječi. Zvuk i njegove riječi ne šalju se nikamo."
+    "en": "Doddy writes out voice memos and recordings on this iPhone, so you can check and search their words. It also writes out what you say when you tap the mic in Messages. The audio and its words are not sent anywhere; words you dictate into Messages leave this iPhone only if you then send them as a message.",
+    "hr": "Doddy pretvara glasovne bilješke i snimke u tekst na ovom iPhoneu, da možeš provjeravati i pretraživati njihove riječi. Zapisuje i ono što kažeš kad dodirneš mikrofon u Porukama. Zvuk i njegove riječi ne šalju se nikamo; riječi koje izdiktiraš u Poruke napuštaju ovaj iPhone samo ako ih zatim pošalješ kao poruku."
   },
   "NSMotionUsageDescription": {
     "en": "Doddy reads your steps, walking distance and floors climbed from Motion & Fitness only when you ask, for one day of the last seven. In a voice conversation those numbers go to ElevenLabs, which runs Doddy's voice, or to OpenAI if you switch Home's voice to it. Doddy keeps none of them. Turn this off in Settings, Connections.",

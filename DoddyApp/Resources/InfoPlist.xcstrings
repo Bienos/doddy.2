@@ -722,7 +722,7 @@
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy verschriftlicht Sprachmemos und Aufnahmen auf diesem iPhone, damit du den Text prüfen und durchsuchen kannst. Das Audio und sein Text werden nirgendwohin gesendet."
+            "value": "Doddy verschriftlicht Sprachmemos und Aufnahmen auf diesem iPhone, damit du den Text prüfen und durchsuchen kannst. Außerdem schreibt er auf, was du sagst, wenn du in Nachrichten auf das Mikrofon tippst. Das Audio und sein Text werden nirgendwohin gesendet; Wörter, die du in Nachrichten diktierst, verlassen dieses iPhone nur, wenn du sie danach als Nachricht sendest."
           }
         },
         "en": {
@@ -734,49 +734,49 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy transcribe notas de voz y grabaciones en este iPhone, para que puedas revisar y buscar sus palabras. El audio y su texto no se envían a ningún sitio."
+            "value": "Doddy transcribe notas de voz y grabaciones en este iPhone, para que puedas revisar y buscar sus palabras. También escribe lo que dices cuando tocas el micrófono en Mensajes. El audio y su texto no se envían a ningún sitio; las palabras que dictas en Mensajes solo salen de este iPhone si luego las envías como mensaje."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy transcrit les mémos vocaux et les enregistrements sur cet iPhone, pour que tu puisses vérifier et rechercher leurs mots. L’audio et ses mots ne sont envoyés nulle part."
+            "value": "Doddy transcrit les mémos vocaux et les enregistrements sur cet iPhone, pour que tu puisses vérifier et rechercher leurs mots. Il écrit aussi ce que tu dis quand tu touches le micro dans Messages. L’audio et ses mots ne sont envoyés nulle part ; les mots que tu dictes dans Messages ne quittent cet iPhone que si tu les envoies ensuite comme message."
           }
         },
         "hr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy pretvara glasovne bilješke i snimke u tekst na ovom iPhoneu, da možeš provjeravati i pretraživati njihove riječi. Zvuk i njegove riječi ne šalju se nikamo."
+            "value": "Doddy pretvara glasovne bilješke i snimke u tekst na ovom iPhoneu, da možeš provjeravati i pretraživati njihove riječi. Zapisuje i ono što kažeš kad dodirneš mikrofon u Porukama. Zvuk i njegove riječi ne šalju se nikamo; riječi koje izdiktiraš u Poruke napuštaju ovaj iPhone samo ako ih zatim pošalješ kao poruku."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy trascrive memo vocali e registrazioni su questo iPhone, così puoi controllarne e cercarne il testo. L’audio e il suo testo non vengono inviati da nessuna parte."
+            "value": "Doddy trascrive memo vocali e registrazioni su questo iPhone, così puoi controllarne e cercarne il testo. Trascrive anche quello che dici quando tocchi il microfono in Messaggi. L’audio e il suo testo non vengono inviati da nessuna parte; le parole che detti in Messaggi lasciano questo iPhone solo se poi le invii come messaggio."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddyは、ボイスメモや録音をこのiPhone上で文字に書き起こし、言葉を確認したり検索したりできるようにします。音声とその文字はどこにも送られません。"
+            "value": "Doddyは、ボイスメモや録音をこのiPhone上で文字に書き起こし、言葉を確認したり検索したりできるようにします。メッセージでマイクをタップしたときに話した内容も文字にします。音声とその文字はどこにも送られません。メッセージに音声入力した言葉は、メッセージとして送信したときだけこのiPhoneの外に出ます。"
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy zapisuje notatki głosowe i nagrania jako tekst na tym iPhonie, żeby można było sprawdzać i przeszukiwać ich słowa. Dźwięk i jego słowa nie są nigdzie wysyłane."
+            "value": "Doddy zapisuje notatki głosowe i nagrania jako tekst na tym iPhonie, żeby można było sprawdzać i przeszukiwać ich słowa. Zapisuje też to, co mówisz po dotknięciu mikrofonu w Wiadomościach. Dźwięk i jego słowa nie są nigdzie wysyłane; słowa podyktowane w Wiadomościach opuszczają tego iPhone’a tylko wtedy, gdy wyślesz je potem jako wiadomość."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "O Doddy transcreve neste iPhone as gravações de voz das notas e as gravações de reuniões e conversas, para você conferir e pesquisar as palavras. O áudio e as palavras dele não são enviados a lugar nenhum."
+            "value": "O Doddy transcreve neste iPhone as gravações de voz das notas e as gravações de reuniões e conversas, para você conferir e pesquisar as palavras. Ele também escreve o que você fala ao tocar no microfone em Mensagens. O áudio e as palavras dele não são enviados a lugar nenhum; as palavras que você dita em Mensagens só saem deste iPhone se você as enviar depois como mensagem."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy 会在这台 iPhone 上将语音备忘录和录音转写成文字，以便你检查和搜索其中的内容。音频及其文字不会发送到任何地方。"
+            "value": "Doddy 会在这台 iPhone 上将语音备忘录和录音转写成文字，以便你检查和搜索其中的内容。你在“信息”中轻点麦克风时说的话，它也会转写成文字。音频及其文字不会发送到任何地方；你在“信息”中听写的文字，只有在你随后将其作为消息发送时才会离开这台 iPhone。"
           }
         }
       }

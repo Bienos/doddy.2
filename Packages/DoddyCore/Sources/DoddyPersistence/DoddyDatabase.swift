@@ -462,6 +462,11 @@ public final class DoddyDatabase: Sendable {
                 )
                 """)
         }
+        // A message the person sent with a photo (Messages, 28 Oct 2026): only that it had one. The photo itself goes
+        // with the question to Doddy's server and on to Anthropic, and is kept neither on this iPhone nor on the server.
+        migrator.registerMigration("v20_thread_photo") { db in
+            try db.execute(sql: "ALTER TABLE thread_messages ADD COLUMN has_photo INTEGER NOT NULL DEFAULT 0 CHECK (has_photo IN (0, 1))")
+        }
         return migrator
     }
 

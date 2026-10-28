@@ -171,7 +171,7 @@ struct MessagesView: View {
                                 .foregroundStyle(Theme.error)
                                 .accessibilityIdentifier("messages.notSaved")
                         }
-                        Text("Doddy is an AI, not a person. This conversation is saved on this iPhone until you delete it. Your question, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply.")
+                        Text("Doddy is an AI, not a person. This conversation is saved on this iPhone until you delete it. Your question, a photo you add to it, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply. A photo is not kept on this iPhone or the server.")
                             .font(.footnote)
                             .foregroundStyle(Theme.secondaryText)
                             .multilineTextAlignment(.center)
@@ -329,6 +329,14 @@ struct MessagesView: View {
 
     private func userRow(_ message: ThreadMessage, tail: Bool) -> some View {
         VStack(alignment: .trailing, spacing: 4) {
+            if message.hasPhoto {
+                // The photo itself was not kept (on this iPhone or the server); the thread only says one was sent.
+                Label("Photo", systemImage: "photo")
+                    .font(.caption)
+                    .foregroundStyle(Theme.secondaryText)
+                    .padding(.trailing, 6)
+                    .accessibilityIdentifier("messages.photoSent")
+            }
             HStack(spacing: 0) {
                 Spacer(minLength: 56)
                 MessageBubble(text: message.text, fromUser: true, tail: tail)
@@ -355,6 +363,12 @@ struct MessagesView: View {
                 .buttonStyle(.plain)
                 .disabled(model.isSending || model.error?.canRetryNow == false)
                 .accessibilityIdentifier("messages.retry")
+            case .notDeliveredPhoto:
+                Text("No answer. The photo wasn't kept, so add it again to ask.")
+                    .font(.caption)
+                    .foregroundStyle(Theme.error)
+                    .padding(.trailing, 6)
+                    .accessibilityIdentifier("messages.photoNotDelivered")
             case nil:
                 EmptyView()
             }
@@ -671,43 +685,50 @@ private struct MessagesComposer: View {
     @State private var dictationBase = ""
 
     var body: some View {
-        HStack(alignment: .bottom, spacing: 8) {
-            Menu {
-                Toggle("Use relevant saved notes", isOn: $useNotes)
-            } label: {
-                Image(systemName: "plus")
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(Theme.secondaryText)
-                    .frame(width: 34, height: 34)
-                    .background(Theme.quietSurface, in: Circle())
-                    .frame(minWidth: 44, minHeight: 44)
-                    .contentShape(Rectangle())
+        VStack(spacing: 0) {
+            if let photo = model.photo {
+                MessagePhotoChip(photo: photo) { model.photo = nil }
             }
-            .accessibilityLabel("More")
-            .accessibilityIdentifier("messages.plus")
+            HStack(alignment: .bottom, spacing: 8) {
+                Menu {
+                    Toggle("Use relevant saved notes", isOn: $useNotes)
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(Theme.secondaryText)
+                        .frame(width: 34, height: 34)
+                        .background(Theme.quietSurface, in: Circle())
+                        .frame(minWidth: 44, minHeight: 44)
+                        .contentShape(Rectangle())
+                }
+                .accessibilityLabel("More")
+                .accessibilityIdentifier("messages.plus")
 
-            HStack(alignment: .bottom, spacing: 6) {
-                TextField("Ask a question", text: $model.draft, axis: .vertical)
-                    .lineLimit(1...5)
-                    .focused(focus)
-                    .submitLabel(.send)
-                    .onSubmit { send() }
-                    .disabled(model.isSending)
-                    .padding(.vertical, 8)
-                    .accessibilityIdentifier("ask.input")
-                micButton
-                    .padding(.bottom, 3)
-                trailingButton
-                    .padding(.bottom, 3)
+                MessagePhotoButton(photo: $model.photo, isDisabled: model.isSending)
+
+                HStack(alignment: .bottom, spacing: 6) {
+                    TextField("Ask a question", text: $model.draft, axis: .vertical)
+                        .lineLimit(1...5)
+                        .focused(focus)
+                        .submitLabel(.send)
+                        .onSubmit { send() }
+                        .disabled(model.isSending)
+                        .padding(.vertical, 8)
+                        .accessibilityIdentifier("ask.input")
+                    micButton
+                        .padding(.bottom, 3)
+                    trailingButton
+                        .padding(.bottom, 3)
+                }
+                .padding(.leading, 14)
+                .padding(.trailing, 4)
+                .padding(.vertical, 1)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 19, style: .continuous)
+                        .strokeBorder(Theme.separator, lineWidth: 1)
+                )
+                .padding(.bottom, 5)
             }
-            .padding(.leading, 14)
-            .padding(.trailing, 4)
-            .padding(.vertical, 1)
-            .overlay(
-                RoundedRectangle(cornerRadius: 19, style: .continuous)
-                    .strokeBorder(Theme.separator, lineWidth: 1)
-            )
-            .padding(.bottom, 5)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
@@ -731,7 +752,7 @@ private struct MessagesComposer: View {
                         .frame(width: 30, height: 30)
                         .contentShape(Circle().inset(by: -6))
                 }
-                .accessibilityLabel(dictation.isListening ? "Stop dictating" : "Dictate")
+                .accessibilityLabel(dictation.isListening ? Text("Stop dictating") : Text("Dictate"))
                 .accessibilityIdentifier("messages.mic")
                 if case .failed(let reason) = dictation.state {
                     Text(reason)

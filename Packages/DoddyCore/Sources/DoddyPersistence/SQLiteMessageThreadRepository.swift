@@ -31,18 +31,18 @@ public final class SQLiteMessageThreadRepository: MessageThreadRepository {
             id: message.id, sender: message.sender, text: message.text,
             createdAt: DoddyDatabase.truncatedToMilliseconds(message.createdAt), delivery: message.delivery,
             basis: message.basis, noteIDs: message.noteIDs, notesSent: message.notesSent,
-            notesSearchFailed: message.notesSearchFailed, document: message.document)
+            notesSearchFailed: message.notesSearchFailed, document: message.document, hasPhoto: message.hasPhoto)
         let documentJSON = try toStore.document.map { try LearningRows.json($0) }
         try await dbQueue.write { db in
             try db.execute(
                 sql: """
-                INSERT INTO thread_messages (id, sender, text, created_at_ms, delivery, basis, note_ids, notes_sent, notes_search_failed, document_json)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO thread_messages (id, sender, text, created_at_ms, delivery, basis, note_ids, notes_sent, notes_search_failed, document_json, has_photo)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 arguments: [
                     toStore.id.uuidString, toStore.sender.rawValue, toStore.text, DoddyDatabase.milliseconds(toStore.createdAt),
                     toStore.delivery.rawValue, toStore.basis?.rawValue, try LearningRows.json(toStore.noteIDs.map(\.uuidString)),
-                    toStore.notesSent, toStore.notesSearchFailed ? 1 : 0, documentJSON,
+                    toStore.notesSent, toStore.notesSearchFailed ? 1 : 0, documentJSON, toStore.hasPhoto ? 1 : 0,
                 ])
             guard let stored = try Row.fetchOne(db, sql: "SELECT * FROM thread_messages WHERE id = ?", arguments: [toStore.id.uuidString])
                 .map(Self.message(from:)), stored == toStore else { throw MessageThreadError.verificationFailed }
@@ -118,6 +118,7 @@ public final class SQLiteMessageThreadRepository: MessageThreadRepository {
         return ThreadMessage(
             id: id, sender: sender, text: row["text"], createdAt: DoddyDatabase.date(milliseconds: row["created_at_ms"]),
             delivery: delivery, basis: basis, noteIDs: noteIDs, notesSent: row["notes_sent"],
-            notesSearchFailed: (row["notes_search_failed"] as Int) == 1, document: document)
+            notesSearchFailed: (row["notes_search_failed"] as Int) == 1, document: document,
+            hasPhoto: (row["has_photo"] as Int) == 1)
     }
 }

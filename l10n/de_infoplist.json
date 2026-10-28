@@ -28,8 +28,8 @@
     "en": "Doddy adds, changes, completes or deletes a reminder only after you tap Add, Change, Mark done or Delete. Turn this off in Settings, Connections."
   },
   "NSSpeechRecognitionUsageDescription": {
-    "de": "Doddy verschriftlicht Sprachmemos und Aufnahmen auf diesem iPhone, damit du den Text prüfen und durchsuchen kannst. Das Audio und sein Text werden nirgendwohin gesendet.",
-    "en": "Doddy writes out voice memos and recordings on this iPhone, so you can check and search their words. The audio and its words are not sent anywhere."
+    "en": "Doddy writes out voice memos and recordings on this iPhone, so you can check and search their words. It also writes out what you say when you tap the mic in Messages. The audio and its words are not sent anywhere; words you dictate into Messages leave this iPhone only if you then send them as a message.",
+    "de": "Doddy verschriftlicht Sprachmemos und Aufnahmen auf diesem iPhone, damit du den Text prüfen und durchsuchen kannst. Außerdem schreibt er auf, was du sagst, wenn du in Nachrichten auf das Mikrofon tippst. Das Audio und sein Text werden nirgendwohin gesendet; Wörter, die du in Nachrichten diktierst, verlassen dieses iPhone nur, wenn du sie danach als Nachricht sendest."
   },
   "NSMotionUsageDescription": {
     "en": "Doddy reads your steps, walking distance and floors climbed from Motion & Fitness only when you ask, for one day of the last seven. In a voice conversation those numbers go to ElevenLabs, which runs Doddy's voice, or to OpenAI if you switch Home's voice to it. Doddy keeps none of them. Turn this off in Settings, Connections.",

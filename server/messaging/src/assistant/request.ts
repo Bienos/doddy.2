@@ -6,7 +6,9 @@ import { z } from "zod";
 
 export const LIMITS = Object.freeze({
   /** Above the worst case the scalar limits allow, so a request within every field limit is never refused as too large. */
-  bodyBytes: 128 * 1024,
+  bodyBytes: 128 * 1024 + 1_400_000,
+  /** One photo's base64, from a JPEG of at most 1,000,000 bytes (the app's `AssistantImage.maxBytes`). */
+  imageBase64: 1_340_000,
   userText: 2_000,
   turns: 6,
   turnText: 2_000,
@@ -34,6 +36,12 @@ export const AssistRequest = z.strictObject({
   userText: text(LIMITS.userText),
   turns: z.array(z.strictObject({ role: z.enum(["user", "assistant"]), text: text(LIMITS.turnText) })).max(LIMITS.turns).default([]),
   memories: z.array(memory).max(LIMITS.memories).default([]),
+  /** A photo sent with this question only (Messages, 28 Oct 2026). Passed to the model and never stored or logged. */
+  image: z.strictObject({
+    mediaType: z.literal("image/jpeg"),
+    data: z.string().max(LIMITS.imageBase64).regex(/^[A-Za-z0-9+/]+={0,2}$/)
+      .refine((d) => d.length % 4 === 0 && d.startsWith("/9j/"), "not a JPEG in base64"),
+  }).optional(),
 }).superRefine((req, ctx) => {
   // A note may be sent once, and all notes together stay under the total.
   const ids = new Set<string>();

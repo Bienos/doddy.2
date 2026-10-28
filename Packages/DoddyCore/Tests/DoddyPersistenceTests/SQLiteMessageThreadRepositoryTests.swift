@@ -172,4 +172,13 @@ final class SQLiteMessageThreadRepositoryTests: XCTestCase {
             XCTAssertNil(bytes.range(of: Data(secret.utf8)), "\(name) still holds a deleted message")
         }
     }
+
+    func testAPhotoMessageKeepsOnlyThatItHadAPhoto() async throws {
+        let repo = SQLiteMessageThreadRepository(database: try DoddyDatabase.inMemory())
+        let withPhoto = ThreadMessage(id: UUID(), sender: .user, text: "Co to?", createdAt: t0, delivery: .sent, hasPhoto: true)
+        try await repo.append(withPhoto)
+        try await repo.append(user("bez zdjęcia", at: 1))
+        let stored = try await repo.recent(limit: 10)
+        XCTAssertEqual(stored.map(\.hasPhoto), [true, false])
+    }
 }

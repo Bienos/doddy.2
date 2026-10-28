@@ -57,7 +57,7 @@ export const assistantRoutes = (deps: Deps): FastifyPluginAsync => async (app) =
       }
       await addTokens(deps.db, principal(req).accountId, outcome.usage).catch(() => {});
       req.log.info({
-        model: responder.model, notes: body.memories.length, turns: body.turns.length, cited: outcome.sources.length, proposed: outcome.proposal?.kind, planned: outcome.plan?.goal,
+        model: responder.model, notes: body.memories.length, turns: body.turns.length, photo: body.image !== undefined, cited: outcome.sources.length, proposed: outcome.proposal?.kind, planned: outcome.plan?.goal,
         inputTokens: outcome.usage.inputTokens, outputTokens: outcome.usage.outputTokens,
       }, "assistant answered");
       return {

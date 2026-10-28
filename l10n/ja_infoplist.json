@@ -28,8 +28,8 @@
     "ja": "Doddyがリマインダーの追加・変更・完了・削除を行うのは、「追加」「変更」「完了にする」「削除」をタップした後だけです。オフにするには、設定の「連携」を使ってください。"
   },
   "NSSpeechRecognitionUsageDescription": {
-    "en": "Doddy writes out voice memos and recordings on this iPhone, so you can check and search their words. The audio and its words are not sent anywhere.",
-    "ja": "Doddyは、ボイスメモや録音をこのiPhone上で文字に書き起こし、言葉を確認したり検索したりできるようにします。音声とその文字はどこにも送られません。"
+    "en": "Doddy writes out voice memos and recordings on this iPhone, so you can check and search their words. It also writes out what you say when you tap the mic in Messages. The audio and its words are not sent anywhere; words you dictate into Messages leave this iPhone only if you then send them as a message.",
+    "ja": "Doddyは、ボイスメモや録音をこのiPhone上で文字に書き起こし、言葉を確認したり検索したりできるようにします。メッセージでマイクをタップしたときに話した内容も文字にします。音声とその文字はどこにも送られません。メッセージに音声入力した言葉は、メッセージとして送信したときだけこのiPhoneの外に出ます。"
   },
   "NSMotionUsageDescription": {
     "en": "Doddy reads your steps, walking distance and floors climbed from Motion & Fitness only when you ask, for one day of the last seven. In a voice conversation those numbers go to ElevenLabs, which runs Doddy's voice, or to OpenAI if you switch Home's voice to it. Doddy keeps none of them. Turn this off in Settings, Connections.",

@@ -51,6 +51,7 @@ public struct AssistantService: Sendable {
         sessionID: UUID,
         history: [ConversationTurn] = [],
         locale: String = "en",
+        image: AssistantImage? = nil,
         policy: AssistantPolicy
     ) async throws(AssistantError) -> AssistantAnswer {
         guard policy.consentGranted else { throw .consentRequired }
@@ -78,7 +79,8 @@ public struct AssistantService: Sendable {
             userText: question,
             groundingMemories: selected,
             recentTurns: Self.prepare(history),
-            locale: Self.safeLocale(locale))
+            locale: Self.safeLocale(locale),
+            image: image)
 
         let reply = try await send(request)
         let verified = try CitationVerifier.verify(reply, for: request)

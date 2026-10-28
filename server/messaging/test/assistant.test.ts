@@ -318,6 +318,23 @@ describe("the request and the prompt", () => {
     assert.match(text, /never says it is made, started, sent or saved/);
   });
 
+  test("a photo is a JPEG in base64 within the limit, and anything else is refused", () => {
+    const jpeg = "/9j/" + "A".repeat(96);
+    assert.ok(AssistRequest.safeParse(wire({ image: { mediaType: "image/jpeg", data: jpeg } })).success);
+    assert.ok(AssistRequest.safeParse(wire()).success, "no photo is fine");
+    assert.ok(!AssistRequest.safeParse(wire({ image: { mediaType: "image/png", data: jpeg } })).success, "JPEG only");
+    assert.ok(!AssistRequest.safeParse(wire({ image: { mediaType: "image/jpeg", data: "iVBO" + "A".repeat(96) } })).success, "must start like a JPEG");
+    assert.ok(!AssistRequest.safeParse(wire({ image: { mediaType: "image/jpeg", data: jpeg + "!" } })).success, "base64 only");
+    assert.ok(!AssistRequest.safeParse(wire({ image: { mediaType: "image/jpeg", data: "/9j/" + "A".repeat(LIMITS.imageBase64) } })).success, "too large");
+    assert.ok(!AssistRequest.safeParse(wire({ image: { mediaType: "image/jpeg", data: jpeg, url: "https://x" } })).success, "no other fields");
+    assert.ok(LIMITS.bodyBytes > LIMITS.imageBase64 + 128 * 1024, "a full photo with full text still fits the body limit");
+    const input = buildInput(AssistRequest.parse(wire({ image: { mediaType: "image/jpeg", data: jpeg } }))).input;
+    assert.match(input, /PHOTO: the user attached/);
+    assert.ok(!input.includes(jpeg), "the photo is not pasted into the text");
+    assert.doesNotMatch(buildInput(AssistRequest.parse(wire())).input, /PHOTO/);
+    assert.match(buildInstructions("pl"), /Never say who a person in it is from their face/);
+  });
+
   test("the instructions say it is an AI with no tools and that notes are data", () => {
     const text = buildInstructions("pl");
     assert.match(text, /AI, not a person/);
@@ -387,6 +404,25 @@ describe("the Claude responder (local stand-in for the API)", () => {
       assert.equal((await responder.answer(req(), new AbortController().signal)).kind, "unparsed");
       next = message(JSON.stringify({ answer: "cut off", sources: [] }), "max_tokens");
       assert.equal((await responder.answer(req(), new AbortController().signal)).kind, "unparsed");
+    } finally {
+      api.close();
+    }
+  });
+
+  test("a photo goes to the API as an image block before the text, for that call only", async () => {
+    const api = await standIn(() => ({ status: 200, body: message(JSON.stringify({ answer: "Paragon z Biedronki.", sources: [] })) }));
+    try {
+      const responder = new ClaudeAssistantResponder("test-key", { baseURL: api.baseURL });
+      const data = "/9j/" + "A".repeat(96);
+      const out = await responder.answer(AssistRequest.parse(wire({ image: { mediaType: "image/jpeg", data } })), new AbortController().signal);
+      assert.equal(out.kind, "ok");
+      const content = api.seen[0]!.body.messages[0].content;
+      assert.deepEqual(content[0], { type: "image", source: { type: "base64", media_type: "image/jpeg", data } });
+      assert.equal(content[1].type, "text");
+      assert.match(content[1].text, /PHOTO:/);
+      assert.equal(api.seen[0]!.body.tools, undefined, "still no tools");
+      await responder.answer(req(), new AbortController().signal);
+      assert.equal(typeof api.seen[1]!.body.messages[0].content, "string", "without a photo the text is sent as before");
     } finally {
       api.close();
     }

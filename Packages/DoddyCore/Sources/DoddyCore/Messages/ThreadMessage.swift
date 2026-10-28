@@ -73,11 +73,13 @@ public struct ThreadMessage: Equatable, Sendable, Identifiable, Codable {
     public let notesSearchFailed: Bool
     /// A file Doddy made after the person tapped Make (Doddy's messages only, ADR-606).
     public let document: ThreadDocument?
+    /// A message the person sent with a photo. Only this flag is kept: the photo went with the question and is not stored.
+    public let hasPhoto: Bool
 
     public init(
         id: UUID = UUID(), sender: Sender, text: String, createdAt: Date, delivery: Delivery,
         basis: Basis? = nil, noteIDs: [UUID] = [], notesSent: Int = 0, notesSearchFailed: Bool = false,
-        document: ThreadDocument? = nil
+        document: ThreadDocument? = nil, hasPhoto: Bool = false
     ) {
         self.id = id
         self.sender = sender
@@ -89,11 +91,29 @@ public struct ThreadMessage: Equatable, Sendable, Identifiable, Codable {
         self.notesSent = notesSent
         self.notesSearchFailed = notesSearchFailed
         self.document = document
+        self.hasPhoto = hasPhoto
     }
 
     /// A message the user is sending now.
-    public static func user(_ text: String, now: Date = Date(), id: UUID = UUID()) -> ThreadMessage {
-        ThreadMessage(id: id, sender: .user, text: text, createdAt: now, delivery: .sending)
+    public static func user(_ text: String, now: Date = Date(), id: UUID = UUID(), hasPhoto: Bool = false) -> ThreadMessage {
+        ThreadMessage(id: id, sender: .user, text: text, createdAt: now, delivery: .sending, hasPhoto: hasPhoto)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, sender, text, createdAt, delivery, basis, noteIDs, notesSent, notesSearchFailed, document, hasPhoto
+    }
+
+    /// An export written before photos existed has no `hasPhoto`; it reads as false.
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(
+            id: try c.decode(UUID.self, forKey: .id), sender: try c.decode(Sender.self, forKey: .sender),
+            text: try c.decode(String.self, forKey: .text), createdAt: try c.decode(Date.self, forKey: .createdAt),
+            delivery: try c.decode(Delivery.self, forKey: .delivery), basis: try c.decodeIfPresent(Basis.self, forKey: .basis),
+            noteIDs: try c.decode([UUID].self, forKey: .noteIDs), notesSent: try c.decode(Int.self, forKey: .notesSent),
+            notesSearchFailed: try c.decode(Bool.self, forKey: .notesSearchFailed),
+            document: try c.decodeIfPresent(ThreadDocument.self, forKey: .document),
+            hasPhoto: try c.decodeIfPresent(Bool.self, forKey: .hasPhoto) ?? false)
     }
 
     /// Doddy's answer, from what the assistant returned.

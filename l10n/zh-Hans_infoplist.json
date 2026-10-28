@@ -28,8 +28,8 @@
     "zh-Hans": "只有在你轻点“添加”、“更改”、“标记为完成”或“删除”后，Doddy 才会添加、更改、完成或删除提醒。可在设置的“连接”中关闭。"
   },
   "NSSpeechRecognitionUsageDescription": {
-    "en": "Doddy writes out voice memos and recordings on this iPhone, so you can check and search their words. The audio and its words are not sent anywhere.",
-    "zh-Hans": "Doddy 会在这台 iPhone 上将语音备忘录和录音转写成文字，以便你检查和搜索其中的内容。音频及其文字不会发送到任何地方。"
+    "en": "Doddy writes out voice memos and recordings on this iPhone, so you can check and search their words. It also writes out what you say when you tap the mic in Messages. The audio and its words are not sent anywhere; words you dictate into Messages leave this iPhone only if you then send them as a message.",
+    "zh-Hans": "Doddy 会在这台 iPhone 上将语音备忘录和录音转写成文字，以便你检查和搜索其中的内容。你在“信息”中轻点麦克风时说的话，它也会转写成文字。音频及其文字不会发送到任何地方；你在“信息”中听写的文字，只有在你随后将其作为消息发送时才会离开这台 iPhone。"
   },
   "NSMotionUsageDescription": {
     "en": "Doddy reads your steps, walking distance and floors climbed from Motion & Fitness only when you ask, for one day of the last seven. In a voice conversation those numbers go to ElevenLabs, which runs Doddy's voice, or to OpenAI if you switch Home's voice to it. Doddy keeps none of them. Turn this off in Settings, Connections.",

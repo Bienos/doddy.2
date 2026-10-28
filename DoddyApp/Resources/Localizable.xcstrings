@@ -3709,6 +3709,65 @@
         }
       }
     },
+    "Add a photo": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto hinzufügen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Añadir una foto"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajouter une photo"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj fotografiju"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiungi una foto"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "写真を追加"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj zdjęcie"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adicionar uma foto"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加照片"
+          }
+        }
+      }
+    },
     "Add a preference": {
       "extractionState": "manual",
       "localizations": {
@@ -14002,6 +14061,65 @@
         }
       }
     },
+    "Couldn't finish. See why.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nicht fertig geworden. Sieh dir an, warum."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo terminar. Mira por qué."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pas pu terminer. Voir pourquoi."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nije završeno. Pogledaj zašto."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non completata. Scopri perché."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "終えられませんでした。理由を見る。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się skończyć. Zobacz dlaczego."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não deu para terminar. Veja por quê."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未能完成。查看原因。"
+          }
+        }
+      }
+    },
     "Couldn't finish: %@": {
       "extractionState": "manual",
       "localizations": {
@@ -16969,6 +17087,124 @@
         }
       }
     },
+    "Dictate": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diktieren"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dictar"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dicter"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diktiraj"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detta"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "音声入力"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dyktuj"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ditar"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "听写"
+          }
+        }
+      }
+    },
+    "Dictation couldn't start. If you're talking to Doddy or on a call, finish that first.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das Diktieren konnte nicht starten. Wenn du mit Doddy sprichst oder telefonierst, beende das zuerst."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo empezar a dictar. Si estás hablando con Doddy o en una llamada, termina eso primero."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La dictée n’a pas pu démarrer. Si tu parles à Doddy ou si tu es en appel, termine d’abord."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diktiranje se nije moglo pokrenuti. Ako razgovaraš s Doddyjem ili si u pozivu, najprije to završi."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non è stato possibile avviare la dettatura. Se stai parlando con Doddy o sei in chiamata, finisci prima quello."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "音声入力を開始できませんでした。Doddyと話している場合や通話中の場合は、先にそちらを終えてください。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się zacząć dyktowania. Jeśli rozmawiasz z Doddym albo przez telefon, najpierw to zakończ."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível começar a ditar. Se você estiver falando com o Doddy ou numa ligação, termine isso primeiro."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法开始听写。如果你正在和 Doddy 对话或通话，请先结束。"
+          }
+        }
+      }
+    },
     "Discard": {
       "extractionState": "manual",
       "localizations": {
@@ -19801,6 +20037,65 @@
         }
       }
     },
+    "Doddy is already listening or recording. Finish that first.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy hört schon zu oder nimmt auf. Beende das zuerst."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy ya está escuchando o grabando. Termina eso primero."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy écoute ou enregistre déjà. Termine d’abord."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy već sluša ili snima. Najprije to završi."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy sta già ascoltando o registrando. Finisci prima quello."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddyはすでに聞き取り中か録音中です。先にそちらを終えてください。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy już słucha albo nagrywa. Najpierw to zakończ."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Doddy já está ouvindo ou gravando. Termine isso primeiro."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy 正在聆听或录音。请先结束那个。"
+          }
+        }
+      }
+    },
     "Doddy is an AI, not a doctor or a coach, and this plan isn't medical advice. Stop at once if you get pain in your chest, neck, jaw or arm, feel faint or dizzy, are unusually short of breath, or your heart races. In an emergency call 112.": {
       "extractionState": "manual",
       "localizations": {
@@ -19975,7 +20270,7 @@
         }
       }
     },
-    "Doddy is an AI, not a person. This conversation is saved on this iPhone until you delete it. Your question, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply.": {
+    "Doddy is an AI, not a person. This conversation is saved on this iPhone until you delete it. Your question, a photo you add to it, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply. A photo is not kept on this iPhone or the server.": {
       "extractionState": "manual",
       "localizations": {
         "de": {
@@ -19984,13 +20279,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Doddy ist eine KI, kein Mensch. Dieses Gespräch wird auf diesem iPad gespeichert, bis du es löschst. Deine Frage, die letzten paar Nachrichten und alle Notizen, die unter einer Antwort angezeigt werden, gehen an den Doddy-Server und weiter an Anthropic, um die Antwort zu schreiben."
+                  "value": "Doddy ist eine KI, kein Mensch. Dieses Gespräch wird auf diesem iPad gespeichert, bis du es löschst. Deine Frage, ein Foto, das du hinzufügst, die letzten paar Nachrichten und alle Notizen, die unter einer Antwort angezeigt werden, gehen an den Doddy-Server und weiter an Anthropic, um die Antwort zu schreiben. Ein Foto wird weder auf diesem iPad noch auf dem Server behalten."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Doddy ist eine KI, kein Mensch. Dieses Gespräch wird auf diesem iPhone gespeichert, bis du es löschst. Deine Frage, die letzten paar Nachrichten und alle Notizen, die unter einer Antwort angezeigt werden, gehen an den Doddy-Server und weiter an Anthropic, um die Antwort zu schreiben."
+                  "value": "Doddy ist eine KI, kein Mensch. Dieses Gespräch wird auf diesem iPhone gespeichert, bis du es löschst. Deine Frage, ein Foto, das du hinzufügst, die letzten paar Nachrichten und alle Notizen, die unter einer Antwort angezeigt werden, gehen an den Doddy-Server und weiter an Anthropic, um die Antwort zu schreiben. Ein Foto wird weder auf diesem iPhone noch auf dem Server behalten."
                 }
               }
             }
@@ -20002,13 +20297,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Doddy is an AI, not a person. This conversation is saved on this iPad until you delete it. Your question, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply."
+                  "value": "Doddy is an AI, not a person. This conversation is saved on this iPad until you delete it. Your question, a photo you add to it, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply. A photo is not kept on this iPad or the server."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Doddy is an AI, not a person. This conversation is saved on this iPhone until you delete it. Your question, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply."
+                  "value": "Doddy is an AI, not a person. This conversation is saved on this iPhone until you delete it. Your question, a photo you add to it, the last few messages and any notes shown under an answer are sent to Doddy's server and on to Anthropic to write the reply. A photo is not kept on this iPhone or the server."
                 }
               }
             }
@@ -20020,13 +20315,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Doddy es una IA, no una persona. Esta conversación se guarda en este iPad hasta que la elimines. Tu pregunta, los últimos mensajes y las notas que aparezcan bajo una respuesta se envían al servidor de Doddy y de ahí a Anthropic para redactar la respuesta."
+                  "value": "Doddy es una IA, no una persona. Esta conversación se guarda en este iPad hasta que la elimines. Tu pregunta, una foto que añadas, los últimos mensajes y las notas que aparezcan bajo una respuesta se envían al servidor de Doddy y de ahí a Anthropic para redactar la respuesta. Las fotos no se guardan ni en este iPad ni en el servidor."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Doddy es una IA, no una persona. Esta conversación se guarda en este iPhone hasta que la elimines. Tu pregunta, los últimos mensajes y las notas que aparezcan bajo una respuesta se envían al servidor de Doddy y de ahí a Anthropic para redactar la respuesta."
+                  "value": "Doddy es una IA, no una persona. Esta conversación se guarda en este iPhone hasta que la elimines. Tu pregunta, una foto que añadas, los últimos mensajes y las notas que aparezcan bajo una respuesta se envían al servidor de Doddy y de ahí a Anthropic para redactar la respuesta. Las fotos no se guardan ni en este iPhone ni en el servidor."
                 }
               }
             }
@@ -20038,13 +20333,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Doddy est une IA, pas une personne. Cette conversation est enregistrée sur cet iPad jusqu’à ce que tu la supprimes. Ta question, les derniers messages et les notes affichées sous une réponse sont envoyés au serveur de Doddy, puis à Anthropic pour rédiger la réponse."
+                  "value": "Doddy est une IA, pas une personne. Cette conversation est enregistrée sur cet iPad jusqu’à ce que tu la supprimes. Ta question, une photo que tu y ajoutes, les derniers messages et les notes affichées sous une réponse sont envoyés au serveur de Doddy, puis à Anthropic pour rédiger la réponse. Une photo n’est gardée ni sur cet iPad ni sur le serveur."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Doddy est une IA, pas une personne. Cette conversation est enregistrée sur cet iPhone jusqu’à ce que tu la supprimes. Ta question, les derniers messages et les notes affichées sous une réponse sont envoyés au serveur de Doddy, puis à Anthropic pour rédiger la réponse."
+                  "value": "Doddy est une IA, pas une personne. Cette conversation est enregistrée sur cet iPhone jusqu’à ce que tu la supprimes. Ta question, une photo que tu y ajoutes, les derniers messages et les notes affichées sous une réponse sont envoyés au serveur de Doddy, puis à Anthropic pour rédiger la réponse. Une photo n’est gardée ni sur cet iPhone ni sur le serveur."
                 }
               }
             }
@@ -20056,13 +20351,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Doddy je AI, ne osoba. Ovaj se razgovor sprema na ovaj iPad dok ga ne izbrišeš. Tvoje pitanje, nekoliko zadnjih poruka i sve bilješke prikazane ispod odgovora šalju se na Doddyjev poslužitelj i dalje u Anthropic radi pisanja odgovora."
+                  "value": "Doddy je AI, ne osoba. Ovaj se razgovor sprema na ovaj iPad dok ga ne izbrišeš. Tvoje pitanje, fotografija koju dodaš, nekoliko zadnjih poruka i sve bilješke prikazane ispod odgovora šalju se na Doddyjev poslužitelj i dalje u Anthropic radi pisanja odgovora. Fotografija se ne čuva ni na ovom iPadu ni na poslužitelju."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Doddy je AI, ne osoba. Ovaj se razgovor sprema na ovaj iPhone dok ga ne izbrišeš. Tvoje pitanje, nekoliko zadnjih poruka i sve bilješke prikazane ispod odgovora šalju se na Doddyjev poslužitelj i dalje u Anthropic radi pisanja odgovora."
+                  "value": "Doddy je AI, ne osoba. Ovaj se razgovor sprema na ovaj iPhone dok ga ne izbrišeš. Tvoje pitanje, fotografija koju dodaš, nekoliko zadnjih poruka i sve bilješke prikazane ispod odgovora šalju se na Doddyjev poslužitelj i dalje u Anthropic radi pisanja odgovora. Fotografija se ne čuva ni na ovom iPhoneu ni na poslužitelju."
                 }
               }
             }
@@ -20074,13 +20369,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Doddy è un'IA, non una persona. Questa conversazione è salvata su questo iPad finché non la elimini. La tua domanda, gli ultimi messaggi e le note mostrate sotto una risposta vengono inviati al server di Doddy e poi ad Anthropic per scrivere la risposta."
+                  "value": "Doddy è un'IA, non una persona. Questa conversazione è salvata su questo iPad finché non la elimini. La tua domanda, una foto che aggiungi, gli ultimi messaggi e le note mostrate sotto una risposta vengono inviati al server di Doddy e poi ad Anthropic per scrivere la risposta. Una foto non viene conservata né su questo iPad né sul server."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Doddy è un'IA, non una persona. Questa conversazione è salvata su questo iPhone finché non la elimini. La tua domanda, gli ultimi messaggi e le note mostrate sotto una risposta vengono inviati al server di Doddy e poi ad Anthropic per scrivere la risposta."
+                  "value": "Doddy è un'IA, non una persona. Questa conversazione è salvata su questo iPhone finché non la elimini. La tua domanda, una foto che aggiungi, gli ultimi messaggi e le note mostrate sotto una risposta vengono inviati al server di Doddy e poi ad Anthropic per scrivere la risposta. Una foto non viene conservata né su questo iPhone né sul server."
                 }
               }
             }
@@ -20092,13 +20387,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "DoddyはAIであり、人ではありません。この会話は、あなたが削除するまでこの iPad に保存されます。あなたの質問、直近の数件のメッセージ、回答の下に表示されるメモは、Doddyのサーバーに送られ、さらに返答を書くためにAnthropicに送られます。"
+                  "value": "DoddyはAIであり、人ではありません。この会話は、あなたが削除するまでこの iPad に保存されます。あなたの質問、添付した写真、直近の数件のメッセージ、回答の下に表示されるメモは、Doddyのサーバーに送られ、さらに返答を書くためにAnthropicに送られます。写真はこのiPadにもサーバーにも保存されません。"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "DoddyはAIであり、人ではありません。この会話は、あなたが削除するまでこの iPhone に保存されます。あなたの質問、直近の数件のメッセージ、回答の下に表示されるメモは、Doddyのサーバーに送られ、さらに返答を書くためにAnthropicに送られます。"
+                  "value": "DoddyはAIであり、人ではありません。この会話は、あなたが削除するまでこの iPhone に保存されます。あなたの質問、添付した写真、直近の数件のメッセージ、回答の下に表示されるメモは、Doddyのサーバーに送られ、さらに返答を書くためにAnthropicに送られます。写真はこのiPhoneにもサーバーにも保存されません。"
                 }
               }
             }
@@ -20110,13 +20405,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Doddy to SI, nie człowiek. Ta rozmowa jest zapisana na tym iPadzie, dopóki jej nie usuniesz. Twoje pytanie, kilka ostatnich wiadomości i notatki pokazane pod odpowiedzią trafiają na serwer Doddy’ego i dalej do Anthropic, aby napisać odpowiedź."
+                  "value": "Doddy to SI, nie człowiek. Ta rozmowa jest zapisana na tym iPadzie, dopóki jej nie usuniesz. Twoje pytanie, dodane do niego zdjęcie, kilka ostatnich wiadomości i notatki pokazane pod odpowiedzią trafiają na serwer Doddy’ego i dalej do Anthropic, aby napisać odpowiedź. Zdjęcie nie jest przechowywane ani na tym iPadzie, ani na serwerze."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Doddy to SI, nie człowiek. Ta rozmowa jest zapisana na tym iPhonie, dopóki jej nie usuniesz. Twoje pytanie, kilka ostatnich wiadomości i notatki pokazane pod odpowiedzią trafiają na serwer Doddy’ego i dalej do Anthropic, aby napisać odpowiedź."
+                  "value": "Doddy to SI, nie człowiek. Ta rozmowa jest zapisana na tym iPhonie, dopóki jej nie usuniesz. Twoje pytanie, dodane do niego zdjęcie, kilka ostatnich wiadomości i notatki pokazane pod odpowiedzią trafiają na serwer Doddy’ego i dalej do Anthropic, aby napisać odpowiedź. Zdjęcie nie jest przechowywane ani na tym iPhonie, ani na serwerze."
                 }
               }
             }
@@ -20128,13 +20423,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "O Doddy é uma IA, não uma pessoa. Esta conversa fica salva neste iPad até você apagá-la. Sua pergunta, as últimas mensagens e as notas mostradas abaixo de uma resposta são enviadas ao servidor do Doddy e dali à Anthropic para escrever a resposta."
+                  "value": "O Doddy é uma IA, não uma pessoa. Esta conversa fica salva neste iPad até você apagá-la. Sua pergunta, uma foto que você adicionar, as últimas mensagens e as notas mostradas abaixo de uma resposta são enviadas ao servidor do Doddy e dali à Anthropic para escrever a resposta. A foto não fica guardada neste iPad nem no servidor."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "O Doddy é uma IA, não uma pessoa. Esta conversa fica salva neste iPhone até você apagá-la. Sua pergunta, as últimas mensagens e as notas mostradas abaixo de uma resposta são enviadas ao servidor do Doddy e dali à Anthropic para escrever a resposta."
+                  "value": "O Doddy é uma IA, não uma pessoa. Esta conversa fica salva neste iPhone até você apagá-la. Sua pergunta, uma foto que você adicionar, as últimas mensagens e as notas mostradas abaixo de uma resposta são enviadas ao servidor do Doddy e dali à Anthropic para escrever a resposta. A foto não fica guardada neste iPhone nem no servidor."
                 }
               }
             }
@@ -20146,13 +20441,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Doddy 是 AI，不是真人。这段对话会保存在这部 iPad 上，直到你删除它。你的问题、最近几条消息以及回答下方显示的笔记，会发送到 Doddy 的服务器，再转给 Anthropic 来撰写回复。"
+                  "value": "Doddy 是 AI，不是真人。这段对话会保存在这部 iPad 上，直到你删除它。你的问题、你添加的照片、最近几条消息以及回答下方显示的笔记，会发送到 Doddy 的服务器，再转给 Anthropic 来撰写回复。照片不会保存在这部 iPad 或服务器上。"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Doddy 是 AI，不是真人。这段对话会保存在这部 iPhone 上，直到你删除它。你的问题、最近几条消息以及回答下方显示的笔记，会发送到 Doddy 的服务器，再转给 Anthropic 来撰写回复。"
+                  "value": "Doddy 是 AI，不是真人。这段对话会保存在这部 iPhone 上，直到你删除它。你的问题、你添加的照片、最近几条消息以及回答下方显示的笔记，会发送到 Doddy 的服务器，再转给 Anthropic 来撰写回复。照片不会保存在这部 iPhone 或服务器上。"
                 }
               }
             }
@@ -26863,6 +27158,65 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pliki"
+          }
+        }
+      }
+    },
+    "Files Doddy made for you": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dateien, die Doddy für dich erstellt hat"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archivos que Doddy hizo para ti"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fichiers que Doddy a créés pour toi"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Datoteke koje je Doddy napravio za tebe"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "File che Doddy ha creato per te"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddyが作ったファイル"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pliki, które Doddy dla ciebie zrobił"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arquivos que o Doddy fez para você"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy 为你制作的文件"
           }
         }
       }
@@ -42424,6 +42778,65 @@
         }
       }
     },
+    "No answer. The photo wasn't kept, so add it again to ask.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine Antwort. Das Foto wurde nicht behalten, füge es also erneut hinzu, um zu fragen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin respuesta. La foto no se guardó, así que añádela de nuevo para preguntar."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pas de réponse. La photo n’a pas été gardée : ajoute-la à nouveau pour demander."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nema odgovora. Fotografija nije sačuvana, pa je ponovno dodaj da pitaš."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessuna risposta. La foto non è stata conservata, quindi aggiungila di nuovo per chiedere."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "返答がありません。写真は保存されていないので、もう一度追加して聞いてください。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brak odpowiedzi. Zdjęcie nie zostało zachowane, więc dodaj je jeszcze raz, żeby zapytać."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sem resposta. A foto não foi guardada, então adicione-a de novo para perguntar."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "没有回答。照片没有保存，请重新添加后再问。"
+          }
+        }
+      }
+    },
     "No audio is recorded. A text transcript is made; after the call it is kept on this iPhone and the server's copies are deleted.": {
       "extractionState": "manual",
       "localizations": {
@@ -54113,6 +54526,124 @@
         }
       }
     },
+    "Photo": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photo"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotografija"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "写真"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zdjęcie"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "照片"
+          }
+        }
+      }
+    },
+    "Photo goes with your next message": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das Foto geht mit deiner nächsten Nachricht mit"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La foto va con tu próximo mensaje"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La photo part avec ton prochain message"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotografija ide uz tvoju sljedeću poruku"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La foto parte con il tuo prossimo messaggio"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "写真は次のメッセージと一緒に送られます"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zdjęcie pójdzie z twoją następną wiadomością"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A foto vai com sua próxima mensagem"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "照片会随你的下一条消息发送"
+          }
+        }
+      }
+    },
     "Photos and camera": {
       "extractionState": "manual",
       "localizations": {
@@ -59555,6 +60086,65 @@
           "stringUnit": {
             "state": "translated",
             "value": "移除模板"
+          }
+        }
+      }
+    },
+    "Remove the photo": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto entfernen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quitar la foto"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retirer la photo"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ukloni fotografiju"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rimuovi la foto"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "写真を外す"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuń zdjęcie"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remover a foto"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移除照片"
           }
         }
       }
@@ -69630,6 +70220,65 @@
         }
       }
     },
+    "Speech recognition is off for Doddy. Turn it on in the Settings app to dictate.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Spracherkennung ist für Doddy aus. Schalte sie in der Einstellungen-App ein, um zu diktieren."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El reconocimiento de voz está desactivado para Doddy. Actívalo en la app Ajustes para dictar."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La reconnaissance vocale est désactivée pour Doddy. Active-la dans l’app Réglages pour dicter."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prepoznavanje govora isključeno je za Doddyja. Uključi ga u aplikaciji Postavke za diktiranje."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il riconoscimento vocale è disattivato per Doddy. Attivalo nell’app Impostazioni per dettare."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddyの音声認識がオフです。音声入力するには設定アプリでオンにしてください。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rozpoznawanie mowy jest wyłączone dla Doddy’ego. Włącz je w aplikacji Ustawienia, żeby dyktować."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O reconhecimento de fala está desativado para o Doddy. Ative-o no app Ajustes para ditar."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy 的语音识别已关闭。请在“设置”App 中打开它以进行听写。"
+          }
+        }
+      }
+    },
     "Speech recognition is off for Doddy. Turn it on in the iPhone Settings.": {
       "extractionState": "manual",
       "localizations": {
@@ -71278,6 +71927,65 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wyłącz Zdrowie dla głosu Doddy’ego"
+          }
+        }
+      }
+    },
+    "Stop dictating": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diktieren beenden"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dejar de dictar"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arrêter la dictée"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaustavi diktiranje"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Interrompi la dettatura"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "音声入力を止める"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przestań dyktować"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parar de ditar"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "停止听写"
           }
         }
       }
@@ -72950,6 +73658,65 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sprawy"
+          }
+        }
+      }
+    },
+    "Tasks Doddy finished": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aufgaben, die Doddy erledigt hat"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tareas que Doddy terminó"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tâches terminées par Doddy"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zadaci koje je Doddy završio"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Attività completate da Doddy"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddyが終えたタスク"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zadania, które Doddy skończył"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tarefas que o Doddy terminou"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy 完成的任务"
           }
         }
       }
@@ -77142,6 +77909,65 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "The microphone is off for Doddy. Turn it on in the Settings app to dictate.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das Mikrofon ist für Doddy aus. Schalte es in der Einstellungen-App ein, um zu diktieren."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El micrófono está desactivado para Doddy. Actívalo en la app Ajustes para dictar."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le micro est désactivé pour Doddy. Active-le dans l’app Réglages pour dicter."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mikrofon je isključen za Doddyja. Uključi ga u aplikaciji Postavke za diktiranje."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il microfono è disattivato per Doddy. Attivalo nell’app Impostazioni per dettare."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddyのマイクがオフです。音声入力するには設定アプリでオンにしてください。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mikrofon jest wyłączony dla Doddy’ego. Włącz go w aplikacji Ustawienia, żeby dyktować."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O microfone está desativado para o Doddy. Ative-o no app Ajustes para ditar."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy 的麦克风已关闭。请在“设置”App 中打开它以进行听写。"
           }
         }
       }
@@ -81363,6 +82189,65 @@
         }
       }
     },
+    "This iPhone can't write your language out on the device, so Doddy didn't listen. Nothing was sent anywhere.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieses iPhone kann deine Sprache nicht auf dem Gerät verschriftlichen, deshalb hat Doddy nicht zugehört. Es wurde nichts gesendet."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este iPhone no puede transcribir tu idioma en el dispositivo, así que Doddy no escuchó. No se envió nada."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cet iPhone ne peut pas transcrire ta langue sur l’appareil, donc Doddy n’a pas écouté. Rien n’a été envoyé."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ovaj iPhone ne može na uređaju pretvoriti tvoj jezik u tekst, pa Doddy nije slušao. Ništa nije poslano."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questo iPhone non può trascrivere la tua lingua sul dispositivo, quindi Doddy non ha ascoltato. Non è stato inviato nulla."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "このiPhoneはお使いの言語を端末上で文字にできないため、Doddyは聞き取りませんでした。何も送信されていません。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten iPhone nie umie zapisać twojego języka na urządzeniu, więc Doddy nie słuchał. Nic nie zostało wysłane."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este iPhone não consegue transcrever seu idioma no aparelho, então o Doddy não ouviu. Nada foi enviado."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这部 iPhone 无法在设备上转写你的语言，所以 Doddy 没有聆听。没有发送任何内容。"
+          }
+        }
+      }
+    },
     "This iPhone has no passcode or Face ID set up, so Doddy can't lock.": {
       "extractionState": "manual",
       "localizations": {
@@ -82525,6 +83410,65 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ta przesyłka jest już na liście."
+          }
+        }
+      }
+    },
+    "This photo couldn't be read. Try another one.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieses Foto konnte nicht gelesen werden. Versuch ein anderes."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo leer esta foto. Prueba con otra."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossible de lire cette photo. Essaie une autre."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ova se fotografija nije mogla pročitati. Pokušaj s drugom."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non è stato possibile leggere questa foto. Provane un’altra."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "この写真を読み込めませんでした。別の写真を試してください。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się odczytać tego zdjęcia. Spróbuj innego."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível ler esta foto. Tente outra."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法读取这张照片。请换一张试试。"
           }
         }
       }
@@ -91325,6 +92269,65 @@
           "stringUnit": {
             "state": "translated",
             "value": "已构建的功能"
+          }
+        }
+      }
+    },
+    "What's in this photo?": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Was ist auf diesem Foto?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Qué hay en esta foto?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Qu’y a-t-il sur cette photo ?"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Što je na ovoj fotografiji?"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cosa c’è in questa foto?"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "この写真には何が写っていますか？"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co jest na tym zdjęciu?"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O que tem nesta foto?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这张照片里有什么？"
           }
         }
       }
