@@ -11,7 +11,7 @@ Owner, 28 Oct 2026: "connection to Apple HomeKit so someone can set up Doddy by 
 
 ## Voice tool `control_home` (28 Oct 2026)
 - In DoddyCore: `VoiceToolRequest.controlHome`, its parsing (`action` on, off or scene; `name`; `room`), `VoiceConnection.home`, the catalog row (card, approval `.card`), `AskFirst` (`.ownPayloadCard`: the app shows the exact resolved accessory), the activity line, the Polish names, and refusal while driving.
-- In `voice-agent/tools.json` and `instructions.md`, with `elevenlabs_tool_id: "not_synced"`. `scripts/voice_agent_spec.py check` passes (101 tools). **The live agent is unchanged**; it needs the owner's yes to the exact text.
+- In `voice-agent/tools.json` and `instructions.md`, `scripts/voice_agent_spec.py check` passes (101 tools). **On the live ElevenLabs agent since 28 Oct 2026** (owner: "Tak dodaj"; tool `tool_9101m626b83yfsyr5d68zckqjnqd`, version `agtvrsn_6201m626c2wyf72v4nrr3xtpfszk`, rollback `agtvrsn_4401m5y51ygzfbdbapvpnfb6vfnh`; log in `voice-agent/README.md`). The tool list only: the live prompt has no `control_home` line yet.
 - The app side is below.
 
 ## The app side (ADR-658)
@@ -20,7 +20,7 @@ Owner, 28 Oct 2026: "connection to Apple HomeKit so someone can set up Doddy by 
 - Settings › Connections › Home, with its description; the `NSHomeKitUsageDescription` prompt (English, Polish and eight machine drafts); the HomeKit entitlement in the four shipping entitlements files; the guard.
 
 ## Still to do
-- **Owner:** a paid Apple team (the free-team build has no HomeKit); a yes to the exact `control_home` text before it goes on the live ElevenLabs agent; a native read of the nine-language prompt.
+- **Owner:** a paid Apple team (the free-team build has no HomeKit); a native read of the nine-language prompt.
 - **Device checks:** the prompt after Allow; a light switched and read back; a scene; an ambiguous name; an unreachable accessory; a scene containing a lock being absent; the multi-home case (only the primary home is used).
 - No app unit test with a fake `HomeControlling` yet.
 
