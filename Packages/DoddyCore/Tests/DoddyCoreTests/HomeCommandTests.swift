@@ -64,7 +64,7 @@ final class HomeCommandTests: XCTestCase {
 
     func testRepliesReadBackAsTheRightActivityOutcome() {
         let command = HomeCommand.runScene(sceneID: "s1", sceneName: "Good night")
-        func outcome(_ reply: String) -> ActivityOutcome { ActivityLog.outcome(of: reply, isLookup: false).0 }
+        func outcome(_ reply: String) -> ActivityOutcome { ActivityEntry.outcome(of: reply, isLookup: false).0 }
         XCTAssertEqual(outcome(VoiceToolReply.home(command, outcome: .confirmed)), .done)
         XCTAssertEqual(outcome(VoiceToolReply.home(command, outcome: .unknown)), .notSure)
         XCTAssertEqual(outcome(VoiceToolReply.home(command, outcome: .failed("x"))), .notDone)
