@@ -19,6 +19,8 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
     case steps
     /// The photo library and Doddy's camera (ADR-569).
     case photos, camera
+    /// Lights, outlets, fans and scenes in HomeKit.
+    case home
     /// Apple Health, read only (ADR-621, ADR-623).
     case health
     /// The training plan screen (ADR-626).
@@ -46,6 +48,7 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
         case .steps: "Steps"
         case .photos: "Photos"
         case .camera: "Camera"
+        case .home: "Home"
         case .health: "Apple Health"
         case .training: "Training plan"
         }
@@ -231,6 +234,9 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(app: .photos, title: "Looked through photos", detail: request.text(calendar: calendar), isLookup: true)
         case .openCamera:
             return ActivityRequest(app: .camera, title: "Open the camera", detail: nil, isLookup: false)
+        case .controlHome(let proposal):
+            // The log keeps what was done, not the room or accessory words.
+            return ActivityRequest(app: .home, title: "Control the home", detail: proposal.summary, logDetail: nil, isLookup: false)
         case .cloudTool(let call):
             // Writes carry a key (ADR-322): a hash of the tool and its arguments, never the words.
             guard let request = describe(cloud: call.name), let key = CloudIdempotency.key(call) else { return describe(cloud: call.name) }

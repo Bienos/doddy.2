@@ -26,6 +26,7 @@ extension ActivityApp {
         case .steps: return "Kroki"
         case .photos: return "Zdjęcia"
         case .camera: return "Aparat"
+        case .home: return "Dom"
         case .health: return "Zdrowie"
         case .training: return "Plan treningowy"
         }
@@ -213,6 +214,7 @@ public enum ActivityText {
         case .steps: "Kroki"
         case .photos: "Zdjęcia"
         case .camera: "Aparat"
+        case .home: "Dom"
         }
     }
 

@@ -61,4 +61,30 @@ final class HomeCommandTests: XCTestCase {
         XCTAssertEqual(HomeCommand.power(on: false, accessoryID: "a1", accessoryName: "Lamp", room: "Bedroom").cardText,
                        "Turn off Lamp in Bedroom?")
     }
+
+    // MARK: The voice tool
+
+    private func parse(_ json: String) -> VoiceToolRequest {
+        VoiceToolRequest.parse(name: VoiceToolName.controlHome, parametersJSON: Data(json.utf8), now: Date(), calendar: .current)
+    }
+
+    func testParsesPowerAndSceneRequests() {
+        XCTAssertEqual(parse(#"{"action":"off","name":"lamp","room":"Bedroom"}"#), .controlHome(.power(on: false, name: "lamp", room: "Bedroom")))
+        XCTAssertEqual(parse(#"{"action":"ON","name":"Fan"}"#), .controlHome(.power(on: true, name: "Fan", room: nil)))
+        XCTAssertEqual(parse(#"{"action":"scene","name":"Good night"}"#), .controlHome(.scene(name: "Good night")))
+    }
+
+    func testBadArgumentsRunNothing() {
+        for json in ["{}", #"{"action":"on"}"#, #"{"action":"unlock","name":"Front door"}"#, #"{"action":"on","name":"  "}"#] {
+            guard case .invalid = parse(json) else { return XCTFail("expected invalid for \(json)") }
+        }
+    }
+
+    func testTheToolNeedsAnExactCardAndTheHomeConnection() {
+        let request = VoiceToolRequest.controlHome(.scene(name: "Good night"))
+        XCTAssertEqual(VoiceConnection.serving(VoiceToolName.controlHome), .home)
+        XCTAssertEqual(AskFirst.need(for: request), .ownPayloadCard)
+        XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.controlHome)?.approval, .card)
+        XCTAssertEqual(ActivityRequest.describe(request, calendar: .current)?.app, .home)
+    }
 }

@@ -386,7 +386,7 @@ final class VoiceToolsTests: XCTestCase {
         XCTAssertEqual(VoiceConnection.calendar.preferenceKey, "voiceConnection.calendar")
         XCTAssertEqual(VoiceConnection.blik.preferenceKey, "voiceConnection.blik")
         // ADR-567 and ADR-568 added Presentations and Steps; ADR-569 Photos and Camera.
-        XCTAssertEqual(VoiceConnection.allCases.count, 12)
+        XCTAssertEqual(VoiceConnection.allCases.count, 13)
     }
 
     // MARK: Replies

@@ -2782,6 +2782,9 @@ final class VoiceSessionController {
                 return
             }
             propose(.camera(toolCallID: call.toolCallId), toolCallID: call.toolCallId)
+        case .controlHome:
+            // The HomeKit client isn't built yet; the gate above normally answers first.
+            await reply(call.toolCallId, VoiceToolReply.homeUnavailable)
         case .cloudTool(let cloud):
             await handleCloud(cloud, toolCallID: call.toolCallId)
         case .startTranslator(let proposal):
@@ -3922,6 +3925,10 @@ final class VoiceSessionController {
         }
         if connection == .camera, !devices.cameraAvailable {
             await reply(toolCallID, VoiceToolReply.cameraUnavailable)
+            return
+        }
+        if connection == .home {
+            await reply(toolCallID, VoiceToolReply.homeUnavailable)
             return
         }
         // ADR-566: hold the call and slide the permission sheet up, instead of answering "not

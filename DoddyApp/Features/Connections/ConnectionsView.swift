@@ -416,6 +416,14 @@ struct ConnectionInfo {
                 ],
                 leavesPhone: "Nothing from the camera. Only the words you save in the note can reach Doddy's voice, like any note.",
                 staysHere: "The photo is kept with the note on this iPhone, never sent anywhere and never saved to your photo library. You can also tap Take a photo when writing a note.")
+        case .home:
+            // Not in any group yet: the HomeKit client isn't built (HOME_COMMANDS_STATUS.md).
+            ConnectionInfo(
+                symbol: "house",
+                examples: ["Turn off the living room lamp", "Run Good night"],
+                canDo: ["Turn a light, outlet or fan on or off, or run a scene, after you tap Yes on a card naming it"],
+                leavesPhone: "Nothing leaves your iPhone: HomeKit talks to your home from here.",
+                staysHere: "Doddy never controls locks, garage doors, alarms, cameras or doorbells.")
         case .blik:
             // ADR-510: BLIK has no way for an app to send money, so Doddy only shows the details.
             ConnectionInfo(

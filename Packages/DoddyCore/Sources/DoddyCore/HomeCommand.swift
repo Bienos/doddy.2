@@ -91,6 +91,40 @@ public enum HomeResolution: Equatable, Sendable {
     case unreachable(name: String)
 }
 
+extension VoiceToolName {
+    public static let controlHome = "control_home"
+}
+
+extension HomeProposal {
+    /// The model's words, for the activity line only. The card shows HomeKit's names instead.
+    public var summary: String {
+        switch self {
+        case let .power(on, name, room): "Turn \(on ? "on" : "off") \(name)\(room.map { " in \($0)" } ?? "")"
+        case let .scene(name): "Run \u{201C}\(name)\u{201D}"
+        }
+    }
+}
+
+extension VoiceToolRequest {
+    /// `action`: "on", "off" or "scene". `name` is the accessory or scene; `room` only narrows an accessory.
+    static func parseControlHome(_ args: Arguments, name: String) -> VoiceToolRequest {
+        guard let action = args.text("action")?.trimmingCharacters(in: .whitespaces).lowercased() else {
+            return .invalid(name: name, reason: "action must be on, off or scene")
+        }
+        guard let target = args.text("name")?.trimmingCharacters(in: .whitespacesAndNewlines) else {
+            return .invalid(name: name, reason: "name is required: the light, outlet, fan or scene the user named; ask them which")
+        }
+        switch action {
+        case "on", "off":
+            return .controlHome(.power(on: action == "on", name: target, room: args.text("room")?.trimmingCharacters(in: .whitespacesAndNewlines)))
+        case "scene":
+            return .controlHome(.scene(name: target))
+        default:
+            return .invalid(name: name, reason: "action must be on, off or scene")
+        }
+    }
+}
+
 public enum HomeCommandRules {
     public static func resolve(_ proposal: HomeProposal, in home: HomeSnapshot) -> HomeResolution {
         switch proposal {
@@ -151,6 +185,7 @@ extension VoiceToolReply {
     }
 
     public static let homeDeclined = "declined: the user said no. Nothing was changed. Say so in one short sentence."
+    public static let homeUnavailable = "unavailable: controlling the home isn't in this version of Doddy yet. Nothing was changed. Tell the user in one short sentence and point them to the Home app."
     public static let homeNotAllowed = "not allowed: the user hasn't let Doddy use Home. Say so and don't ask again."
     public static let homeNotFound = "not found: no accessory or scene has that name. Don't guess one; ask the user for the name."
     public static func homeAmbiguous(_ names: [String]) -> String {
