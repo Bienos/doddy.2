@@ -1,5 +1,9 @@
 import Foundation
+#if canImport(CryptoKit)
 import CryptoKit
+#else
+import Crypto
+#endif
 
 // "Turn off the living room lights" / "Run Good night" (HomeKit, owner 28 Oct 2026).
 // A model only proposes a `HomeCommand`. This file decides whether it is allowed, which exact
