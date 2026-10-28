@@ -47,7 +47,9 @@ Doddy ma już kawałki tego kanału, tylko nieuruchomione:
 - **Telefon do Doddy'ego (S2, `docs/implementation/S2_CALLS_STATUS.md`):** numer Twilio, agent ElevenLabs „Doddy (phone)”, PIN, odpowiedzi z kopii pamięci za zgodą, „Zadzwoń do mnie”. Nigdy nie było prawdziwej rozmowy.
 - **SMS (S1, `docs/implementation/S1_SERVER_STATUS.md`):** tylko w jedną stronę (powiadomienia), ze zgodą `sms-v1` i STOP.
 
-Brakuje rozmowy SMS w obie strony (albo WhatsApp). To byłby nowy kamień milowy i potrzebuje decyzji właściciela przed jakimkolwiek kodem:
+**Aktualizacja 28 paź (właściciel: „zrób też sms i dzwonienie”):** SMS w obie strony jest w kodzie (ADR-653, `docs/implementation/SMS_CHAT.md`): odpowiedź tekstem, bez narzędzi i bez notatek, tylko z twojego numeru, po osobnej zgodzie. Dzwonienie czeka na kroki właściciela opisane tam. Pytania poniżej zostały tak rozstrzygnięte: SMS tylko pytania, bez akcji; WhatsApp nie.
+
+Pytania, które były otwarte:
 
 1. Czy w ogóle chcemy kanał poza aplikacją? (SMS w Polsce kosztuje, WhatsApp wymaga konta Business i szablonów Meta.)
 2. Co przez SMS wolno: tylko pytania i notatki do skrzynki (jak w S2), czy też akcje? Akcje tylko z kartą do zatwierdzenia w aplikacji, nigdy „tak” SMS-em bez powiązania z dokładną treścią.

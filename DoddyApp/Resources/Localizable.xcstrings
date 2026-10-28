@@ -22763,6 +22763,17 @@
         }
       }
     },
+    "Doddy's number isn't set up on the server yet, so there is nowhere to text.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Numer Doddy’ego nie jest jeszcze ustawiony na serwerze, więc nie ma dokąd pisać."
+          }
+        }
+      }
+    },
     "Doddy's opening. Doddy scores a basket.": {
       "extractionState": "manual",
       "localizations": {
@@ -74089,6 +74100,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Rozmiar tekstu zgodny z ustawieniami iPhone’a. Przy włączonym Ograniczeniu ruchu Doddy się nie rusza."
+          }
+        }
+      }
+    },
+    "Text with Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pisz z Doddym SMS-em"
           }
         }
       }

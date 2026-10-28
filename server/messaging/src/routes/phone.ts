@@ -91,6 +91,8 @@ export const phoneRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
            sms_consent_at = CASE WHEN phone_numbers.e164 = EXCLUDED.e164 THEN phone_numbers.sms_consent_at END,
            sms_consent_text_version = CASE WHEN phone_numbers.e164 = EXCLUDED.e164 THEN phone_numbers.sms_consent_text_version END,
            sms_opted_out_at = CASE WHEN phone_numbers.e164 = EXCLUDED.e164 THEN phone_numbers.sms_opted_out_at END,
+           sms_chat_consent_at = CASE WHEN phone_numbers.e164 = EXCLUDED.e164 THEN phone_numbers.sms_chat_consent_at END,
+           sms_chat_consent_text_version = CASE WHEN phone_numbers.e164 = EXCLUDED.e164 THEN phone_numbers.sms_chat_consent_text_version END,
            e164 = EXCLUDED.e164`,
         [accountId, body.phone]);
     });
@@ -98,13 +100,18 @@ export const phoneRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
   });
 
   app.get("/v1/phone", { preHandler: auth }, async (req) => {
-    const { rows } = await db.query<{ e164: string; sms_consent_at: Date | null; sms_opted_out_at: Date | null }>(
-      "SELECT e164, sms_consent_at, sms_opted_out_at FROM phone_numbers WHERE account_id = $1", [principal(req).accountId]);
+    const { rows } = await db.query<{ e164: string; sms_consent_at: Date | null; sms_opted_out_at: Date | null; sms_chat_consent_at: Date | null }>(
+      "SELECT e164, sms_consent_at, sms_opted_out_at, sms_chat_consent_at FROM phone_numbers WHERE account_id = $1", [principal(req).accountId]);
     const p = rows[0];
-    if (!p) return { phone: null, smsEnabled: false, optedOut: false };
+    const doddyNumber = deps.doddyPhoneNumber ?? null;
+    if (!p) return { phone: null, smsEnabled: false, smsChatEnabled: false, doddyNumber, optedOut: false };
+    const smsEnabled = p.sms_consent_at !== null && p.sms_opted_out_at === null;
     return {
       phone: p.e164,
-      smsEnabled: p.sms_consent_at !== null && p.sms_opted_out_at === null,
+      smsEnabled,
+      // Texting Doddy needs texts on too; turning texts off turns it off.
+      smsChatEnabled: smsEnabled && p.sms_chat_consent_at !== null,
+      doddyNumber,
       // After a STOP the carrier blocks us until the user texts START.
       optedOut: p.sms_opted_out_at !== null,
     };
@@ -118,13 +125,31 @@ export const phoneRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
       const u = await c.query(
         `UPDATE phone_numbers SET updated_at = now(),
            sms_consent_at = CASE WHEN $2 THEN now() END,
-           sms_consent_text_version = CASE WHEN $2 THEN $3 END
+           sms_consent_text_version = CASE WHEN $2 THEN $3 END,
+           sms_chat_consent_at = CASE WHEN $2 THEN sms_chat_consent_at END,
+           sms_chat_consent_text_version = CASE WHEN $2 THEN sms_chat_consent_text_version END
          WHERE account_id = $1`,
         [accountId, body.consent, body.textVersion ?? null]);
       if (!body.consent) await cancelQueuedSms(c, accountId);
       return u.rowCount ?? 0;
     });
     if (r === 0) return reply.code(404).send({ error: "no_verified_phone" });
+    return reply.code(204).send();
+  });
+
+  // Texting Doddy (SMS_CHAT.md): a consent of its own, on top of texts. Off clears it; on needs texts on.
+  app.put("/v1/phone/sms-chat", { preHandler: auth }, async (req, reply) => {
+    const body = parse(consentBody, req.body, reply);
+    if (!body) return;
+    const { rows } = await db.query<{ sms_on: boolean }>(
+      `UPDATE phone_numbers SET updated_at = now(),
+         sms_chat_consent_at = CASE WHEN $2 AND sms_consent_at IS NOT NULL AND sms_opted_out_at IS NULL THEN now() END,
+         sms_chat_consent_text_version = CASE WHEN $2 AND sms_consent_at IS NOT NULL AND sms_opted_out_at IS NULL THEN $3 END
+       WHERE account_id = $1
+       RETURNING sms_consent_at IS NOT NULL AND sms_opted_out_at IS NULL AS sms_on`,
+      [principal(req).accountId, body.consent, body.textVersion ?? null]);
+    if (!rows[0]) return reply.code(404).send({ error: "no_verified_phone" });
+    if (body.consent && !rows[0].sms_on) return reply.code(409).send({ error: "sms_not_enabled" });
     return reply.code(204).send();
   });
 

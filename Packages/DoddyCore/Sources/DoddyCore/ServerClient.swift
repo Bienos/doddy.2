@@ -109,15 +109,34 @@ public enum UpdateChannel: String, Sendable, Codable, CaseIterable {
 public struct PhoneStatus: Equatable, Sendable, Decodable {
     public let phone: String?
     public let smsEnabled: Bool
+    /// Texting Doddy (SMS_CHAT.md): a text from this number gets an answer by text. Needs `smsEnabled` too.
+    public let smsChatEnabled: Bool
+    /// The number to text; nil until the owner set it on the server.
+    public let doddyNumber: String?
     /// The user replied STOP; only texting START re-opens SMS (carrier rule).
     public let optedOut: Bool
 
     public static let none = PhoneStatus(phone: nil, smsEnabled: false, optedOut: false)
 
-    public init(phone: String?, smsEnabled: Bool, optedOut: Bool) {
+    public init(phone: String?, smsEnabled: Bool, smsChatEnabled: Bool = false, doddyNumber: String? = nil, optedOut: Bool) {
         self.phone = phone
         self.smsEnabled = smsEnabled
+        self.smsChatEnabled = smsChatEnabled
+        self.doddyNumber = doddyNumber
         self.optedOut = optedOut
+    }
+
+    private enum CodingKeys: String, CodingKey { case phone, smsEnabled, smsChatEnabled, doddyNumber, optedOut }
+
+    /// A server from before texting Doddy sends neither new field: it reads as off, with no number.
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(
+            phone: try c.decodeIfPresent(String.self, forKey: .phone),
+            smsEnabled: try c.decode(Bool.self, forKey: .smsEnabled),
+            smsChatEnabled: try c.decodeIfPresent(Bool.self, forKey: .smsChatEnabled) ?? false,
+            doddyNumber: try c.decodeIfPresent(String.self, forKey: .doddyNumber),
+            optedOut: try c.decode(Bool.self, forKey: .optedOut))
     }
 }
 
@@ -168,6 +187,13 @@ public struct UpdateStatus: Equatable, Sendable, Decodable {
 public enum SMSConsent {
     public static let textVersion = "sms-v1"
     public static let text = "Doddy may text this number with the updates you turn on. Message frequency varies. Message and data rates may apply. Reply STOP to stop or HELP for help."
+}
+
+/// The exact wording for texting Doddy, stored with its version like `SMSConsent`. Any change to
+/// `text` must come with a new version.
+public enum SMSChatConsent {
+    public static let textVersion = "sms-chat-v1"
+    public static let text = "Text Doddy from this number and he answers by text. Your message goes to Doddy's server and to Anthropic, whose Claude writes the answer; neither keeps the words after the answer is sent. By text Doddy can't read your notes and can't send, buy or change anything. Other numbers get no answer. The daily limit is the same as in Messages. Message and data rates may apply. Reply STOP to stop all texts."
 }
 
 public enum PhoneNumberInput {
@@ -249,6 +275,13 @@ public actor DoddyServerClient {
     public func setSMSConsent(_ consent: Bool) async throws {
         try await expect(204, .put, "/v1/phone/sms-consent",
                          ConsentBody(consent: consent, textVersion: consent ? SMSConsent.textVersion : nil))
+    }
+
+    /// Records consent to `SMSChatConsent.text` (with its version), or withdraws it. The server refuses
+    /// a yes while texts are off (`smsNotEnabled`-style 409).
+    public func setSMSChatConsent(_ consent: Bool) async throws {
+        try await expect(204, .put, "/v1/phone/sms-chat",
+                         ConsentBody(consent: consent, textVersion: consent ? SMSChatConsent.textVersion : nil))
     }
 
     public func removePhone() async throws {

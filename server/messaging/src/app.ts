@@ -74,6 +74,10 @@ export interface Deps {
   watches?: WatchDeps;
   /** Where price-watch log lines go (tests capture them); default: the request logger. */
   watchLog?: (msg: string, extra?: object) => void;
+  /** Where texting-Doddy log lines go (tests capture them); default: the request logger. */
+  smsChatLog?: (msg: string, extra?: object) => void;
+  /** Called with each inbound text's answer in flight (tests await it). */
+  onSmsChat?: (done: Promise<import("./smsChat.js").SmsChatOutcome>) => void;
 }
 
 export async function buildApp(deps: Deps): Promise<FastifyInstance> {

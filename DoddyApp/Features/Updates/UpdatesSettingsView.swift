@@ -119,6 +119,21 @@ struct UpdatesSettingsView: View {
                         .foregroundStyle(Theme.secondaryText)
                     if model.phone.smsEnabled {
                         Button("Send a test text") { Task { await model.sendTest(.sms) } }
+                        Toggle("Text with Doddy", isOn: Binding(
+                            get: { model.phone.smsChatEnabled },
+                            set: { on in Task { await model.setTextChat(on: on) } }))
+                            .accessibilityIdentifier("updates.smsChatToggle")
+                        Text(SMSChatConsent.text)
+                            .font(.footnote)
+                            .foregroundStyle(Theme.secondaryText)
+                        if model.phone.smsChatEnabled {
+                            if let doddy = model.phone.doddyNumber {
+                                StatusRow(title: "Doddy's number", value: doddy)
+                            } else {
+                                Text("Doddy's number isn't set up on the server yet, so there is nowhere to text.")
+                                    .font(.footnote)
+                            }
+                        }
                     }
                 }
                 Button("Remove this number", role: .destructive) { Task { await model.removePhone() } }

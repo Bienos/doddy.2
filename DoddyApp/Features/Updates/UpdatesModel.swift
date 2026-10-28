@@ -122,6 +122,14 @@ final class UpdatesModel {
         }
     }
 
+    func setTextChat(on: Bool) async {
+        guard let client else { return }
+        await run {
+            try await client.setSMSChatConsent(on)
+            await self.readBackPhone(client)
+        }
+    }
+
     /// After a write the server accepted: shows the server's state, or says the change was made
     /// but couldn't be read back, never "nothing was changed" (DOD-08).
     private func readBackPhone(_ client: DoddyServerClient) async {

@@ -47,6 +47,37 @@ final class ServerClientTests: XCTestCase {
                        ["token": "0aff10", "environment": "sandbox"])
     }
 
+    func testTextingDoddyConsentGoesToItsOwnRouteWithItsOwnVersion() async throws {
+        let transport = ScriptedTransport([ServerResponse(status: 204), ServerResponse(status: 204), ServerResponse(status: 409)])
+        let client = DoddyServerClient(transport: transport, credentials: MemoryCredentials(token: "t"))
+        try await client.setSMSChatConsent(true)
+        try await client.setSMSChatConsent(false)
+        do {
+            try await client.setSMSChatConsent(true)
+            XCTFail("a 409 (texts off) must not read as done")
+        } catch {}
+        let sent = await transport.sent
+        XCTAssertEqual(sent.map(\.path), ["/v1/phone/sms-chat", "/v1/phone/sms-chat", "/v1/phone/sms-chat"])
+        let bodies = try sent.map { try JSONSerialization.jsonObject(with: $0.body!) as! NSDictionary }
+        XCTAssertEqual(bodies[0], ["consent": true, "textVersion": SMSChatConsent.textVersion])
+        XCTAssertEqual(bodies[1], ["consent": false])
+        XCTAssertNotEqual(SMSChatConsent.textVersion, SMSConsent.textVersion)
+    }
+
+    func testPhoneStatusReadsTextingDoddyAndAnOlderServerAsOff() async throws {
+        let transport = ScriptedTransport([
+            ServerResponse(status: 200, body: json(#"{"phone":"+48500100200","smsEnabled":true,"smsChatEnabled":true,"doddyNumber":"+48221234567","optedOut":false}"#)),
+            ServerResponse(status: 200, body: json(#"{"phone":"+48500100200","smsEnabled":true,"optedOut":false}"#)),
+        ])
+        let client = DoddyServerClient(transport: transport, credentials: MemoryCredentials(token: "t"))
+        let now = try await client.phoneStatus()
+        XCTAssertTrue(now.smsChatEnabled)
+        XCTAssertEqual(now.doddyNumber, "+48221234567")
+        let older = try await client.phoneStatus()
+        XCTAssertFalse(older.smsChatEnabled)
+        XCTAssertNil(older.doddyNumber)
+    }
+
     func testConsentCarriesTheWordingVersionAndWithdrawalDoesNot() async throws {
         let transport = ScriptedTransport([ServerResponse(status: 204), ServerResponse(status: 204)])
         let client = DoddyServerClient(transport: transport, credentials: MemoryCredentials(token: "t"))

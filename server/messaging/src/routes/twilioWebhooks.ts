@@ -4,6 +4,7 @@ import { inTransaction } from "../db.js";
 import { cancelQueuedSms } from "../outbox.js";
 import { isValidTwilioSignature } from "../providers/twilio.js";
 import { classifySms } from "../sms.js";
+import { handleSmsChat, type SmsChatOutcome } from "../smsChat.js";
 
 type Form = Record<string, string | string[] | undefined>;
 const EMPTY_TWIML = '<?xml version="1.0" encoding="UTF-8"?><Response/>';
@@ -12,6 +13,7 @@ const str = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) 
 
 export const twilioWebhookRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
   const { db } = deps;
+  const smsChatLog = deps.smsChatLog ?? ((msg: string, extra: object = {}) => app.log.info(extra, msg));
 
   /** Rejects anything not signed by Twilio. Returns the form fields when valid. */
   function verified(req: FastifyRequest, reply: FastifyReply): Form | undefined {
@@ -29,8 +31,9 @@ export const twilioWebhookRoutes = (deps: Deps): FastifyPluginAsync => async (ap
     return form;
   }
 
-  // Inbound SMS. Only opt-out / opt-in keywords change state; message text is not stored.
-  // Twilio's Advanced Opt-Out sends the confirmation replies, so we answer with empty TwiML.
+  // Inbound SMS. Opt-out / opt-in keywords change state; any other text goes to Doddy when its sender
+  // turned texting on (smsChat.ts), answered after this webhook returns, as a queued text. The message
+  // text is not stored. Twilio's Advanced Opt-Out sends the keyword replies, so we answer with empty TwiML.
   app.post("/webhooks/twilio/sms", async (req, reply) => {
     const form = verified(req, reply);
     if (!form) return;
@@ -46,6 +49,14 @@ export const twilioWebhookRoutes = (deps: Deps): FastifyPluginAsync => async (ap
     } else if (kind === "opt_in") {
       await db.query(
         "UPDATE phone_numbers SET sms_opted_out_at = NULL, updated_at = now() WHERE e164 = $1", [from]);
+    } else if (kind === "other") {
+      // Twilio waits at most 15 s for this answer and a model call can take longer, so it runs after.
+      const done = handleSmsChat({ db, cipher: deps.cipher, assistant: deps.assistant, log: smsChatLog }, from, str(form.Body), str(form.MessageSid))
+        .catch((err: unknown): SmsChatOutcome => {
+          smsChatLog("sms chat failed", { kind: String((err as { name?: unknown }).name) });
+          return "unavailable";
+        });
+      deps.onSmsChat?.(done);
     }
     return reply.type("text/xml").send(EMPTY_TWIML);
   });
