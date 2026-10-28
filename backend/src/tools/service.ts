@@ -937,6 +937,7 @@ export class CloudToolsService {
         return { mode: this.mode, tool, text, count: 1, truncated: false, receipt };
       } catch (error) {
         const appError = toAppError(error, "Claude");
+        this.deps.log?.({ level: "info", event: "ask_claude_failed", code: appError.code, ...providerLog(error) });
         const message = appError.code === "provider_timeout" ? "Claude took too long. For something long, ask Doddy to make it as a document." : appError.code === "rate_limited" ? "Claude is busy right now. Try again shortly." : "Claude couldn't be reached. Nothing is shown instead.";
         const receipt = await this.receipt(userId, CLAUDE_SECTION_ID, "read", tool, "failed", message, appError.code, null);
         throw new AppError(appError.code, { ...appError.options, message, receipt });
@@ -972,7 +973,7 @@ export class CloudToolsService {
     } catch (error) {
       await this.store.failDocument(id).catch(() => {});
       // Content-free: the kind and the error class only.
-      this.deps.log?.({ level: "error", event: "document_failed", kind: args.kind, code: error instanceof ProviderError ? error.code : "internal" });
+      this.deps.log?.({ level: "error", event: "document_failed", kind: args.kind, code: error instanceof ProviderError ? error.code : "internal", ...providerLog(error) });
     }
   }
 
@@ -1169,4 +1170,11 @@ function providerMessage(code: ProviderError["code"], title: string): string {
     case "provider_unavailable":
       return `${title} couldn't be reached. Nothing was changed.`;
   }
+}
+
+/** A provider's status, error type and hint for the log (content-free); nothing for any other error. */
+function providerLog(error: unknown): Record<string, unknown> {
+  return error instanceof ProviderError && error.detail
+    ? { providerStatus: error.detail.status, providerError: error.detail.type, providerHint: error.detail.hint }
+    : {};
 }

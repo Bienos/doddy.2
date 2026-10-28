@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router";
+import { Navigate, Route, Routes } from "react-router";
 import { useSession } from "./auth/session.js";
 import { AppShell } from "./components/AppShell.js";
 import { DoddyFigure } from "./components/Brand.js";
@@ -11,7 +11,8 @@ import { HomePage } from "./pages/HomePage.js";
 import { MessagesPage } from "./pages/MessagesPage.js";
 import { LOGBOOK_ENABLED } from "./logbook/config.js";
 import { MEMORY_ENABLED } from "./memory/config.js";
-import { AskPage } from "./pages/AskPage.js";
+import { CHAT_ENABLED } from "./chat/suggestions.js";
+import { ChatPage } from "./pages/ChatPage.js";
 import { LogbookPage } from "./pages/LogbookPage.js";
 import { MemoryPage } from "./pages/MemoryPage.js";
 import { NotFoundPage } from "./pages/NotFoundPage.js";
@@ -52,7 +53,9 @@ export function App() {
         <Route path="/activity" element={<ActivityPage />} />
         {LOGBOOK_ENABLED ? <Route path="/logbook" element={<LogbookPage />} /> : null}
         {MEMORY_ENABLED ? <Route path="/memory" element={<MemoryPage />} /> : null}
-        {MEMORY_ENABLED ? <Route path="/ask" element={<AskPage />} /> : null}
+        {CHAT_ENABLED ? <Route path="/chat" element={<ChatPage />} /> : null}
+        {/* Ask Doddy became the chat (ADR-604); old links still land there. */}
+        {CHAT_ENABLED ? <Route path="/ask" element={<Navigate to="/chat" replace />} /> : null}
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

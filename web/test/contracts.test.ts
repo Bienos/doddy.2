@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import { CurrentSession, DocumentList, ErrorBody, ReceiptList, SessionList, ToolsCatalog } from "../src/api/schemas.js";
 import { LogbookDeleted, LogbookView } from "../src/logbook/schema.js";
-import { ChatReply, ConversationDeleted, ConversationDetail, ConversationList, MemoryDeleted, MemoryOverview, NotesList } from "../src/memory/schema.js";
+import { ChatContext, ChatReply, ConversationDeleted, ConversationDetail, ConversationList, MemoryDeleted, MemoryOverview, NotesList } from "../src/memory/schema.js";
 import { fixture } from "./fakeServer.js";
 
 /** The server writes these files from its own replies (backend: npm run fixtures:web / fixtures). */
@@ -65,7 +65,10 @@ describe("the page reads what the server actually sends", () => {
     const reply = ChatReply.parse(fixture("web/chat-reply"));
     expect(reply.sources[0]).toMatchObject({ kind: "note", text: "Anna's birthday is 14 March" });
     expect(ErrorBody.parse(fixture("web/error-memory-off")).error.code).toBe("capability_disabled");
-    expect(ErrorBody.parse(fixture("web/error-chat-off")).error.code).toBe("capability_disabled");
+    // With nothing kept the chat still answers from the account, and cites a part of it (ADR-604).
+    expect(ChatReply.parse(fixture("web/chat-reply-account")).sources).toEqual([{ kind: "account", part: "logbook" }]);
+    const context = ChatContext.parse(fixture("web/chat-context"));
+    expect(context).toMatchObject({ ready: true, memory: { notes: true, conversations: true, noteCount: 3, conversationCount: 1 }, logbook: { enabled: true, days: 0 } });
     expect(ErrorBody.parse(fixture("web/error-chat-invalid")).error.code).toBe("invalid_request");
   });
 });

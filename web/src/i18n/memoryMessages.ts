@@ -7,7 +7,6 @@
 
 export const memoryEn = {
   "nav.memory": "Memory",
-  "nav.ask": "Ask Doddy",
   "common.soon": "Soon",
   "common.error.quota": "Today's question limit was reached. Try again tomorrow.",
   "common.error.slow": "That took too long. Try again.",
@@ -61,27 +60,10 @@ export const memoryEn = {
   "memory.deletedAll": "Deleted. {notes} notes and {conversations} conversations removed. Your iPhone will stop sending.",
   "memory.deletedNone": "Nothing was kept, so nothing was deleted.",
 
-  "ask.title": "Ask Doddy",
-  "ask.lead": "Ask about your notes and conversations. Claude writes the answers from what Doddy's server keeps for you.",
-  "ask.off.title": "Doddy has nothing to read yet",
-  "ask.input": "Your question",
-  "ask.hint": "Try “When is Anna's birthday?” or “What did I tell you about the passport?”",
-  "ask.send": "Ask",
-  "ask.sending": "Reading…",
-  "ask.clear": "Start over",
-  "ask.you": "You",
-  "ask.doddy": "Doddy",
-  "ask.thinking": "Doddy is reading what you kept…",
-  "ask.sources": "From your notes and conversations ({n})",
-  "ask.source.note": "Note",
-  "ask.source.conversation": "Conversation",
-  "ask.disclaimer": "Answers can be wrong: check anything that matters against the sources under it. Questions asked here aren't saved.",
-  "ask.retry": "Try again",
 } as const;
 
 export const memoryPl: Record<keyof typeof memoryEn, string> = {
   "nav.memory": "Pamięć",
-  "nav.ask": "Zapytaj Doddy’ego",
   "common.soon": "Wkrótce",
   "common.error.quota": "Dzisiejszy limit pytań został wykorzystany. Spróbuj jutro.",
   "common.error.slow": "To trwało za długo. Spróbuj ponownie.",
@@ -135,20 +117,4 @@ export const memoryPl: Record<keyof typeof memoryEn, string> = {
   "memory.deletedAll": "Usunięto. Notatki: {notes}, rozmowy: {conversations}. iPhone przestanie wysyłać dane.",
   "memory.deletedNone": "Nic nie było przechowywane, więc nic nie usunięto.",
 
-  "ask.title": "Zapytaj Doddy’ego",
-  "ask.lead": "Pytaj o swoje notatki i rozmowy. Odpowiedzi pisze Claude na podstawie tego, co serwer Doddy’ego dla Ciebie przechowuje.",
-  "ask.off.title": "Doddy nie ma jeszcze czego czytać",
-  "ask.input": "Twoje pytanie",
-  "ask.hint": "Spróbuj: „Kiedy są urodziny Anny?” albo „Co jest zapisane o paszporcie?”",
-  "ask.send": "Zapytaj",
-  "ask.sending": "Czytam…",
-  "ask.clear": "Zacznij od nowa",
-  "ask.you": "Ty",
-  "ask.doddy": "Doddy",
-  "ask.thinking": "Doddy czyta to, co zostało zapisane…",
-  "ask.sources": "Z Twoich notatek i rozmów ({n})",
-  "ask.source.note": "Notatka",
-  "ask.source.conversation": "Rozmowa",
-  "ask.disclaimer": "Odpowiedzi mogą być błędne: sprawdź to, co ważne, w źródłach pod odpowiedzią. Pytania zadawane tutaj nie są zapisywane.",
-  "ask.retry": "Spróbuj ponownie",
 };
