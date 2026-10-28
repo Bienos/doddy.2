@@ -208,12 +208,12 @@ final class BasketSolverTests: XCTestCase {
     }
 
     func testAChainSeenOnlyInOffersComesAfterTheListedOnes() {
-        let aldi = DealsChain(rawValue: "aldi")
+        let spar = DealsChain(rawValue: "spar")
         let leaflets = DealsResult(checkedAt: "x", chains: [DealsChainReport(chain: .lidl, status: .checked)],
-                                   items: [DealsItemResult(query: "a", offers: [offer(aldi, 100), offer(.lidl, 100)])])
-        XCTAssertEqual(BasketSolver.chainOrder(leaflets), [.lidl, aldi])
+                                   items: [DealsItemResult(query: "a", offers: [offer(spar, 100), offer(.lidl, 100)])])
+        XCTAssertEqual(BasketSolver.chainOrder(leaflets), [.lidl, spar])
         XCTAssertEqual(BasketSolver.solve(leaflets).bestSingleChain?.chains, [.lidl])
-        XCTAssertEqual(aldi.name, "aldi", "a chain this app doesn't know keeps its own name")
+        XCTAssertEqual(spar.name, "spar", "a chain this app doesn't know keeps its own name")
     }
 
     // MARK: Integer sums

@@ -109,7 +109,7 @@ export class FakeModel implements DealsModelApi {
   }
 }
 
-// ---------- the four chains as they answered on 2026-10-24 (trimmed) ----------
+// ---------- the chains as they answered on 2026-10-24 (Aldi and Żabka on 2026-10-28), trimmed ----------
 
 export const ROBOTS = {
   biedronka: "User-agent: *\nDisallow: /front/search*\nDisallow: /pl/search*\n",
@@ -118,6 +118,8 @@ export const ROBOTS = {
   dinoApi: "# As a condition of accessing this website, you agree to abide by the following\n# content signals:\n# ai-input: inputting content into one or more AI models\n",
   rossmann: "User-agent: *\nDisallow: /logowanie\nDisallow: /zamowienie\nDisallow: /?q=\nDisallow: /*?utm_source=\n\nUser-agent: MJ12bot\nDisallow: /\n",
   rossmannGazetka: "User-agent: *\nDisallow: /\n",
+  aldi: "User-agent: * \n\nSitemap: https://www.aldi.pl/.aldi-nord-sitemap.xml\n\nDisallow: /reg-cat.html\nDisallow: /can/\nDisallow: /bal/\nDisallow: /mds/\nDisallow: /*?*filters\nDisallow: /*?*jobId=\n",
+  zabka: "User-agent: *\nDisallow: /app/\nAllow: /wp-admin/\n\nAllow: /\n\nSitemap: https://www.zabka.pl/sitemap_index.xml\n",
 };
 
 export const BIEDRONKA_PRESS = "https://www.biedronka.pl/pl/press,id,1wmtizrux,title,codziennie-niskie-ceny-p-oferta-od-22-10";
@@ -126,6 +128,9 @@ export const LIDL_LISTING = "https://www.lidl.pl/c/nasze-gazetki/s10008614";
 export const lidlFlyerUrl = (slug: string) => `https://endpoints.leaflets.schwarz/v4/flyer?flyer_identifier=${slug}&region_id=0`;
 export const DINO_LISTING = "https://marketdino.pl/gazetki/lista/standard";
 export const rossmannSearch = (words: string) => `https://www.rossmann.pl/promocje?Search=${encodeURIComponent(words)}`;
+export const ALDI_OFFERS = "https://www.aldi.pl/oferty.html";
+export const ZABKA_LISTING = "https://www.zabka.pl/gazetka-promocyjna/";
+export const ZABKA_SPREADS = "https://gazetka.zabka.pl/gazetka-promocyjna-43-44-2026/spreads.json";
 
 /** A /promocje page with no products (what a search that finds nothing returns, in shape). */
 export function rossmannEmpty(): string {
@@ -133,7 +138,7 @@ export function rossmannEmpty(): string {
   return html.replace(/("items":\s*)\[[\s\S]*?\](,\s*"totalPages")/, "$1[]$2");
 }
 
-/** The fake web with all four chains answering as their fixtures do, page images included. */
+/** The fake web with every read chain answering as its fixtures do, page images included. */
 export function chainsWeb(): FakeWeb {
   const web = new FakeWeb()
     .robots("https://www.biedronka.pl", ROBOTS.biedronka)
@@ -141,7 +146,9 @@ export function chainsWeb(): FakeWeb {
     .robots("https://marketdino.pl", ROBOTS.dino)
     .robots("https://api.marketdino.pl", ROBOTS.dinoApi)
     .robots("https://www.rossmann.pl", ROBOTS.rossmann)
-    .robots("https://gazetka.rossmann.pl", ROBOTS.rossmannGazetka);
+    .robots("https://gazetka.rossmann.pl", ROBOTS.rossmannGazetka)
+    .robots("https://www.aldi.pl", ROBOTS.aldi)
+    .robots("https://www.zabka.pl", ROBOTS.zabka);
   // Biedronka: "this week" redirects twice to the press page; the leaflet API lists page images.
   web.on("https://www.biedronka.pl/pl/w-tym-tygodniu", { status: 307, headers: { location: "https://www.biedronka.pl/pl/codziennie-niskie-ceny-22-10" } });
   web.on("https://www.biedronka.pl/pl/codziennie-niskie-ceny-22-10", { status: 301, headers: { location: BIEDRONKA_PRESS } });
@@ -165,6 +172,14 @@ export function chainsWeb(): FakeWeb {
   // Rossmann: "pieluchy rozmiar 4" finds the fixture's products; any other search finds none.
   web.on(rossmannSearch("pieluchy rozmiar 4"), { headers: { "content-type": "text/html; charset=utf-8" }, body: fixture("rossmann_promocje_pieluchy.html") });
   web.onPrefix("https://www.rossmann.pl/promocje?Search=", { headers: { "content-type": "text/html; charset=utf-8" }, body: rossmannEmpty() });
+  // Aldi: one Next.js page with the week's offers. Żabka: the list, the 43-44 leaflet's spreads.json (the next
+  // leaflet, 45-46, isn't this week yet on 2026-10-24) and page images on Publitas's host (no robots.txt: 404).
+  web.on(ALDI_OFFERS, { headers: { "content-type": "text/html; charset=utf-8" }, body: fixture("aldi_oferty.html") });
+  web.on(ZABKA_LISTING, { headers: { "content-type": "text/html; charset=UTF-8" }, body: fixture("zabka_gazetka.html") });
+  web.on(ZABKA_SPREADS, { headers: { "content-type": "application/json" }, body: fixture("zabka_spreads.json") });
+  for (const s of fixtureJson<{ pages: { number: number; images: { at2000: string } }[] }[]>("zabka_spreads.json")) {
+    for (const p of s.pages) web.on(`https://view.publitas.com${p.images.at2000}`, { headers: { "content-type": "image/jpeg" }, body: fakeJpeg(1565, 2555, `zabka:${p.number}`) });
+  }
   return web;
 }
 
@@ -172,8 +187,8 @@ export function chainsWeb(): FakeWeb {
 
 const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const money = z.strictObject({ minor: z.number().int().positive(), currency: z.literal("PLN") });
-const readChain = z.enum(["biedronka", "lidl", "dino", "rossmann"]);
-const anyChain = z.enum(["biedronka", "lidl", "dino", "rossmann", "kaufland", "carrefour", "auchan", "netto", "zabka"]);
+const readChain = z.enum(["biedronka", "lidl", "dino", "rossmann", "aldi", "zabka"]);
+const anyChain = z.enum(["biedronka", "lidl", "dino", "rossmann", "aldi", "zabka", "kaufland", "carrefour", "auchan", "netto"]);
 export const OfferSchema = z.strictObject({
   chain: readChain,
   product: z.string().min(1).max(160),

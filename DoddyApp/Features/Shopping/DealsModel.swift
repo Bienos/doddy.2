@@ -3,7 +3,7 @@ import Foundation
 import Observation
 
 // This week's leaflets (docs/implementation/SHOPPING.md 2): one request to Doddy's server, which reads
-// the official leaflets of Biedronka, Lidl, Dino and Rossmann on this request and keeps nothing but
+// the official leaflets of Biedronka, Lidl, Dino, Rossmann, Aldi and Żabka on this request and keeps nothing but
 // counts. The voice tool (`find_deals`, after its ask card) and the "Cheapest this week" screen both
 // come here, so they show the same answer. Nothing is retried by itself: each try counts against the
 // day's leaflet checks. The last answer stays in memory only, for the screen; it is never saved.
