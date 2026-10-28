@@ -1066,6 +1066,47 @@
         }
       }
     },
+    "A key lets Doddy work in your inFakt account. You make it once, in inFakt, and it stays on this iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "A key lets Doddy work in your inFakt account. You make it once, in inFakt, and it stays on this iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "A key lets Doddy work in your inFakt account. You make it once, in inFakt, and it stays on this iPhone."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Klucz pozwala Doddy’emu pracować na Twoim koncie inFakt. Robisz go raz, w inFakt, a potem zostaje na tym iPadzie."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Klucz pozwala Doddy’emu pracować na Twoim koncie inFakt. Robisz go raz, w inFakt, a potem zostaje na tym iPhonie."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "A lighter week, so your body catches up.": {
       "extractionState": "manual",
       "localizations": {
@@ -1771,6 +1812,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "A number is out of range. Reps 0 to 200, weight 0 to 500 kg, reps left 0 to 10, minutes 1 to 600.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liczba jest poza zakresem. Powtórzenia 0–200, ciężar 0–500 kg, zapas 0–10, minuty 1–600."
           }
         }
       }
@@ -2573,6 +2625,69 @@
           "stringUnit": {
             "state": "translated",
             "value": "无法读取一项已保存的偏好。没有删除任何内容。"
+          }
+        }
+      }
+    },
+    "A saved session couldn't be read. It is still on this iPhone; delete the log to start again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "A saved session couldn't be read. It is still on this iPad; delete the log to start again."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "A saved session couldn't be read. It is still on this iPhone; delete the log to start again."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Nie udało się odczytać zapisanego treningu. Nadal jest na tym iPadzie; usuń dziennik, żeby zacząć od nowa."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Nie udało się odczytać zapisanego treningu. Nadal jest na tym iPhonie; usuń dziennik, żeby zacząć od nowa."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "A session can have up to 40 sets.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trening może mieć do 40 serii."
+          }
+        }
+      }
+    },
+    "A set": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seria"
           }
         }
       }
@@ -3653,6 +3768,17 @@
         }
       }
     },
+    "Add a session": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj trening"
+          }
+        }
+      }
+    },
     "Add an item": {
       "extractionState": "manual",
       "localizations": {
@@ -3719,6 +3845,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dodaj i sprawdź"
+          }
+        }
+      }
+    },
+    "Add at least one set, or the minutes you ran.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj co najmniej jedną serię albo minuty biegu."
           }
         }
       }
@@ -4014,6 +4151,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "添加这条提醒？"
+          }
+        }
+      }
+    },
+    "Add this set": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj tę serię"
           }
         }
       }
@@ -8367,6 +8515,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zanim zaczniemy"
+          }
+        }
+      }
+    },
+    "Before your next session": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przed następnym treningiem"
           }
         }
       }
@@ -13390,6 +13549,28 @@
         }
       }
     },
+    "Copy the key before you leave that page.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skopiuj klucz, zanim opuścisz tę stronę."
+          }
+        }
+      }
+    },
+    "Copy the key in inFakt and come back: the paste button appears when there is text on the clipboard.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skopiuj klucz w inFakt i wróć: przycisk wklejania pojawi się, gdy w schowku będzie tekst."
+          }
+        }
+      }
+    },
     "Copy title": {
       "extractionState": "manual",
       "localizations": {
@@ -15579,6 +15760,17 @@
         }
       }
     },
+    "Delete my training log": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuń mój dziennik treningowy"
+          }
+        }
+      }
+    },
     "Delete the list": {
       "extractionState": "manual",
       "localizations": {
@@ -15634,6 +15826,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "删除这个清单"
+          }
+        }
+      }
+    },
+    "Delete the whole training log?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usunąć cały dziennik treningowy?"
           }
         }
       }
@@ -16091,6 +16294,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "删除这个例行流程？"
+          }
+        }
+      }
+    },
+    "Delete this session": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuń ten trening"
+          }
+        }
+      }
+    },
+    "Delete this session?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usunąć ten trening?"
           }
         }
       }
@@ -18290,6 +18515,47 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "Doddy 无法确认对话已从这部 iPhone 中删除。请重试。"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Doddy couldn't confirm that was saved on this iPhone. Nothing was kept.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy couldn't confirm that was saved on this iPad. Nothing was kept."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy couldn't confirm that was saved on this iPhone. Nothing was kept."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy nie mógł potwierdzić, że to zapisano na tym iPadzie. Nic nie zostało."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Doddy nie mógł potwierdzić, że to zapisano na tym iPhonie. Nic nie zostało."
                 }
               }
             }
@@ -24388,6 +24654,17 @@
         }
       }
     },
+    "Easy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lekko"
+          }
+        }
+      }
+    },
     "Easy run": {
       "extractionState": "manual",
       "localizations": {
@@ -25295,6 +25572,47 @@
         }
       }
     },
+    "Every saved session is removed from this iPhone. This can't be undone. The switch above stays as it is.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Every saved session is removed from this iPad. This can't be undone. The switch above stays as it is."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Every saved session is removed from this iPhone. This can't be undone. The switch above stays as it is."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Każdy zapisany trening zostanie usunięty z tego iPada. Tego nie można cofnąć. Przełącznik powyżej zostaje bez zmian."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Każdy zapisany trening zostanie usunięty z tego iPhone’a. Tego nie można cofnąć. Przełącznik powyżej zostaje bez zmian."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Everyone on the list can be reminded at “%@”.": {
       "extractionState": "manual",
       "localizations": {
@@ -25579,6 +25897,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Przykład"
+          }
+        }
+      }
+    },
+    "Exercise": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ćwiczenie"
           }
         }
       }
@@ -28503,6 +28832,17 @@
         }
       }
     },
+    "Go to Settings › API. inFakt asks for your password.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wejdź w Ustawienia › API. inFakt poprosi o Twoje hasło."
+          }
+        }
+      }
+    },
     "Go to your Home Screen, then double-tap the back of your iPhone. The shortcut should bring you back to Doddy.": {
       "extractionState": "manual",
       "localizations": {
@@ -28812,6 +29152,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Przekaż Doddy’emu sprawę w rozmowie, np. „porównaj loty do Rzymu w przyszłym miesiącu do 2000 zł”. Jedno „tak” pozwala Doddy’emu szukać w sieci i czytać strony w tle tyle razy, ile sprawa wymaga. Gdy skończy, dostaniesz powiadomienie. Nic nie jest rezerwowane, kupowane ani wysyłane."
+          }
+        }
+      }
+    },
+    "Hard": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ciężko"
           }
         }
       }
@@ -29516,6 +29867,17 @@
         }
       }
     },
+    "How it felt": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jak poszło"
+          }
+        }
+      }
+    },
     "How much you train now": {
       "extractionState": "manual",
       "localizations": {
@@ -29523,6 +29885,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ile teraz trenujesz"
+          }
+        }
+      }
+    },
+    "How to make the key": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jak zrobić klucz"
           }
         }
       }
@@ -30503,6 +30876,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "在对话中按名称提出请求，Doddy 就会显示一张包含这些步骤的卡片。每一步每次都仍需要你轻点。90 天未使用的例行流程会被停用并移到下方。"
+          }
+        }
+      }
+    },
+    "In inFakt": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W inFakt"
           }
         }
       }
@@ -33113,6 +33497,58 @@
           "stringUnit": {
             "state": "translated",
             "value": "请保持“精确位置”开启，否则 iOS 无法判断你何时到达。"
+          }
+        }
+      }
+    },
+    "Keep a log": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prowadź dziennik"
+          }
+        }
+      }
+    },
+    "Keep a training log on this iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Keep a training log on this iPad"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Keep a training log on this iPhone"
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Prowadź dziennik treningowy na tym iPadzie"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Prowadź dziennik treningowy na tym iPhonie"
+                }
+              }
+            }
           }
         }
       }
@@ -38129,6 +38565,17 @@
         }
       }
     },
+    "Make a new key and tick only these rights:": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Utwórz nowy klucz i zaznacz tylko te uprawnienia:"
+          }
+        }
+      }
+    },
     "Make a new plan": {
       "extractionState": "manual",
       "localizations": {
@@ -38147,6 +38594,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ułóż plan"
+          }
+        }
+      }
+    },
+    "Make an export file": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Utwórz plik eksportu"
+          }
+        }
+      }
+    },
+    "Make an inFakt key": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klucz inFakt: jak go zrobić"
           }
         }
       }
@@ -41583,6 +42052,17 @@
         }
       }
     },
+    "No 24-digit InPost number on the clipboard.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W schowku nie ma 24-cyfrowego numeru InPost."
+          }
+        }
+      }
+    },
     "No alarms from Doddy. Ask Doddy, for example “Wake me at seven”.": {
       "extractionState": "manual",
       "localizations": {
@@ -44226,6 +44706,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "未设置"
+          }
+        }
+      }
+    },
+    "Not sure": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie wiem"
           }
         }
       }
@@ -48103,6 +48594,28 @@
         }
       }
     },
+    "Okay": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W porządku"
+          }
+        }
+      }
+    },
+    "Older sessions are in the export file.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Starsze treningi są w pliku eksportu."
+          }
+        }
+      }
+    },
     "Oldest first": {
       "extractionState": "manual",
       "localizations": {
@@ -50965,6 +51478,28 @@
         }
       }
     },
+    "Open inFakt": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz inFakt"
+          }
+        }
+      }
+    },
+    "Open inFakt and sign in.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz inFakt i zaloguj się."
+          }
+        }
+      }
+    },
     "Open sign-in options": {
       "extractionState": "manual",
       "localizations": {
@@ -52392,6 +52927,28 @@
         }
       }
     },
+    "Pain": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ból"
+          }
+        }
+      }
+    },
+    "Pain means pain, not just tiredness. While it is in your log from the last two weeks, Doddy raises nothing.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ból to ból, a nie samo zmęczenie. Dopóki jest w dzienniku z ostatnich dwóch tygodni, Doddy niczego nie podnosi."
+          }
+        }
+      }
+    },
     "Palette": {
       "extractionState": "manual",
       "localizations": {
@@ -52690,6 +53247,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "再次输入密码"
+          }
+        }
+      }
+    },
+    "Paste a number from the clipboard": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wklej numer ze schowka"
+          }
+        }
+      }
+    },
+    "Paste the key from the clipboard": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wklej klucz ze schowka"
           }
         }
       }
@@ -59884,6 +60463,39 @@
         }
       }
     },
+    "Reps": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powtórzenia"
+          }
+        }
+      }
+    },
+    "Reps left": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powtórzeń w zapasie"
+          }
+        }
+      }
+    },
+    "Reps left is how many more you could have done. Without it Doddy raises nothing.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powtórzenia w zapasie to ile jeszcze dałoby się zrobić. Bez tego Doddy niczego nie podnosi."
+          }
+        }
+      }
+    },
     "Resting heart rate": {
       "extractionState": "manual",
       "localizations": {
@@ -60587,6 +61199,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "运行这个快捷指令？"
+          }
+        }
+      }
+    },
+    "Run: %lld min": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bieg: %lld min"
           }
         }
       }
@@ -64074,6 +64697,17 @@
         }
       }
     },
+    "Seconds": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sekundy"
+          }
+        }
+      }
+    },
     "See a physiotherapist or doctor first": {
       "extractionState": "manual",
       "localizations": {
@@ -65770,6 +66404,28 @@
         }
       }
     },
+    "Sets in this session": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serie w tym treningu"
+          }
+        }
+      }
+    },
+    "Sets: %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serie: %lld"
+          }
+        }
+      }
+    },
     "Setting the reminder…": {
       "extractionState": "manual",
       "localizations": {
@@ -66142,6 +66798,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Udostępnij eksport"
+          }
+        }
+      }
+    },
+    "Share the export file": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Udostępnij plik eksportu"
           }
         }
       }
@@ -74105,6 +74772,17 @@
         }
       }
     },
+    "That session is already gone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tego treningu już nie ma."
+          }
+        }
+      }
+    },
     "That time has already passed, so no nudge was set.": {
       "extractionState": "manual",
       "localizations": {
@@ -75304,6 +75982,28 @@
         }
       }
     },
+    "The clipboard has more than one number. Copy just the one you want.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W schowku jest więcej niż jeden numer. Skopiuj tylko ten, który chcesz."
+          }
+        }
+      }
+    },
+    "The clipboard has no text.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W schowku nie ma tekstu."
+          }
+        }
+      }
+    },
     "The copy on your Doddy messaging server (Memory on calls) couldn't be emptied yet: %@ Doddy tries again the next time you open it.": {
       "extractionState": "manual",
       "localizations": {
@@ -75311,6 +76011,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nie udało się jeszcze opróżnić kopii na twoim serwerze wiadomości Doddy’ego (Pamięć w rozmowach): %@ Doddy spróbuje ponownie, gdy go następnym razem otworzysz."
+          }
+        }
+      }
+    },
+    "The day can't be more than one day ahead.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten dzień jest za daleko w przyszłości (najwyżej jutro)."
           }
         }
       }
@@ -75877,6 +76588,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "清单的名称和项目会拷贝到你的 iCloud，由你选择邀请谁。你邀请的每个人都可以查看、添加和勾选项目；他们的更改会同步回这里。你的笔记和其他清单不会被共享。"
+          }
+        }
+      }
+    },
+    "The log stays on this iPhone, in its own file outside iCloud and backups. Nothing is sent to Doddy's server or to an AI. The notes' Delete all doesn't touch it; use Delete my training log below.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The log stays on this iPad, in its own file outside iCloud and backups. Nothing is sent to Doddy's server or to an AI. The notes' Delete all doesn't touch it; use Delete my training log below."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The log stays on this iPhone, in its own file outside iCloud and backups. Nothing is sent to Doddy's server or to an AI. The notes' Delete all doesn't touch it; use Delete my training log below."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Dziennik zostaje na tym iPadzie, we własnym pliku poza iCloud i kopiami zapasowymi. Nic nie jest wysyłane na serwer Doddy’ego ani do AI. „Usuń wszystko” w notatkach go nie rusza; użyj poniżej „Usuń mój dziennik treningowy”."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Dziennik zostaje na tym iPhonie, we własnym pliku poza iCloud i kopiami zapasowymi. Nic nie jest wysyłane na serwer Doddy’ego ani do AI. „Usuń wszystko” w notatkach go nie rusza; użyj poniżej „Usuń mój dziennik treningowy”."
+                }
+              }
+            }
           }
         }
       }
@@ -77969,6 +78721,17 @@
         }
       }
     },
+    "The second right also lets a key change and delete invoices in inFakt. Doddy makes an invoice only after you confirm its card.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drugie uprawnienie pozwala też zmieniać i usuwać faktury w inFakt. Doddy tworzy fakturę dopiero po tym, jak potwierdzisz jej kartę."
+          }
+        }
+      }
+    },
     "The server didn't accept that right now.": {
       "extractionState": "manual",
       "localizations": {
@@ -77998,6 +78761,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "Serwer nie wyśle tej karty (%@)."
+          }
+        }
+      }
+    },
+    "The session is removed from this iPhone. This can't be undone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The session is removed from this iPad. This can't be undone."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The session is removed from this iPhone. This can't be undone."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Trening zostanie usunięty z tego iPada. Tego nie można cofnąć."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Trening zostanie usunięty z tego iPhone’a. Tego nie można cofnąć."
+                }
+              }
+            }
           }
         }
       }
@@ -78238,6 +79042,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "无法设置每周整理。请重试。"
+          }
+        }
+      }
+    },
+    "The training log couldn't be opened (%@).": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się otworzyć dziennika treningowego (%@)."
           }
         }
       }
@@ -78851,6 +79666,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Potem Doddy słucha, może raz krótko dopytać, dziękuje i kończy rozmowę."
+          }
+        }
+      }
+    },
+    "Then come back here": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Potem wróć tutaj"
           }
         }
       }
@@ -83535,6 +84361,17 @@
         }
       }
     },
+    "To stop Doddy reaching your account, delete the key in inFakt (Settings › API) or remove it here.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Żeby odciąć Doddy’ego od konta, usuń klucz w inFakt (Ustawienia › API) albo tutaj."
+          }
+        }
+      }
+    },
     "To stop it completely": {
       "extractionState": "manual",
       "localizations": {
@@ -84073,6 +84910,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Training log": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dziennik treningowy"
           }
         }
       }
@@ -85364,6 +86212,17 @@
         }
       }
     },
+    "Turn on the training log first. Nothing was saved.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najpierw włącz dziennik treningowy. Nic nie zapisano."
+          }
+        }
+      }
+    },
     "Turn the parcel list off?": {
       "extractionState": "manual",
       "localizations": {
@@ -85441,6 +86300,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "已在 Doddy 的设置中关闭。"
+          }
+        }
+      }
+    },
+    "Turning this off stops saving. What is already saved stays until you delete it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyłączenie zatrzymuje zapisywanie. To, co już zapisano, zostaje, dopóki tego nie usuniesz."
           }
         }
       }
@@ -88870,6 +89740,28 @@
         }
       }
     },
+    "Weight in kg (empty for bodyweight)": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ciężar w kg (puste przy masie ciała)"
+          }
+        }
+      }
+    },
+    "Weight must be a number, such as 12.5.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ciężar musi być liczbą, na przykład 12,5."
+          }
+        }
+      }
+    },
     "What Doddy calls you": {
       "extractionState": "manual",
       "localizations": {
@@ -91654,6 +92546,17 @@
         }
       }
     },
+    "Write down what you did: sets, weight, reps, how many more reps you could have done, and how it felt. Doddy then says what to change before the next session.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisuj, co było na treningu: serie, ciężar, powtórzenia, ile powtórzeń jeszcze by się udało i jak poszło. Doddy powie wtedy, co zmienić przed następnym treningiem."
+          }
+        }
+      }
+    },
     "Write it out in another language": {
       "extractionState": "manual",
       "localizations": {
@@ -93824,6 +94727,17 @@
         }
       }
     },
+    "Your data": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoje dane"
+          }
+        }
+      }
+    },
     "Your data and account": {
       "extractionState": "manual",
       "localizations": {
@@ -95660,6 +96574,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "你的问题还在输入框里。你保存的笔记不受影响。"
+          }
+        }
+      }
+    },
+    "Your sessions": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoje treningi"
           }
         }
       }

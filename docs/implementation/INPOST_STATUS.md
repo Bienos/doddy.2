@@ -18,6 +18,10 @@ Tags: **[V]** read on InPost's own documentation (`dokumentacja-inpost.atlassian
 | Rate limits for the tracking endpoint are not documented. | [U] | none found |
 | The new "InPost Developers Portal" (`developers.inpost-group.com/tracking`) describes a Tracking API "for merchants"; its details did not load. Not used. | [U] | the page |
 
+## Live check, 27 Oct 2026
+
+From this session's shell, no token: `GET /v1/statuses?lang=pl_PL&shipment_type=inpost_locker_standard` answered **200** with the Polish titles. `GET /v1/tracking/{number}` for two numbers that appear as examples in InPost's documentation (`630000328531876219900746`, `523000015611700083038270`) answered **404** `{"trackingNumber":"…","message":"Tracking information about … shipment has not been found."}`, the same shape the client already reads. So the endpoint is open and the 404 is confirmed again; **a 200 for a real parcel has still not been seen**, because no real number was available. No public API for a recipient's InPost Mobile account was found (a web search found only third-party tracking services); the Parcel Manager token covers a business's own shipments.
+
 ## What this means for the owner's choice ("Z tokenem użytkownika")
 
 The token is **not needed for what this slice does** (read a parcel's status by its number). InPost documents that endpoint as open. So this slice **builds no token store for InPost** and asks for no key. A user's own ShipX token would only matter for listing a business account's own shipments (`GET /v1/organizations/{id}/shipments`), which needs a Parcel Manager account with company data; that is a separate, later slice and stays the owner's call.
@@ -44,7 +48,7 @@ As of the last commit of branch `claude/infakt-inpost` (24 Oct 2026). "Tested" m
 | `ParcelBook`: off until turned on, 30 parcels, label cleaned, `apply` keeps only a parcel InPost answered for | Real, tested. |
 | `ParcelsModel`: add, refresh, remove, turn off; honours "Pause all connections" | Written; compiled by `typecheck_app_logic.sh` on Linux (Swift 6 mode); not run. |
 | `InPostTrackingClient` (URLSession, one address) | Written, **BLOCKED / NOT RUN** (URLSession is not type-checked on Linux; no device). The guard allows networking in this file only. |
-| Settings › Parcels (InPost) (`ParcelsView.swift`) | Written, **BLOCKED / NOT RUN** (SwiftUI). |
+| Settings › Parcels (InPost) (`ParcelsView.swift`) | Written, **BLOCKED / NOT RUN** (SwiftUI). From 27 Oct 2026 a "Paste a number from the clipboard" button fills the number field from the clipboard with `ParcelNumber.candidates(in:)` (tested): exactly one 24-digit number fills it, none or several say so. It starts no look-up; "Add and check" still does. UIPasteboard, so iOS may ask to allow the paste. |
 | What leaves this iPhone row for InPost; Delete all removes the list | Real in DoddyCore (tested); the Delete all call is **BLOCKED / NOT RUN**. |
 | InPost token, the person's own shipments list (`/v1/organizations/{id}/shipments`) | **Not built**, and not needed for status by number. It needs a Parcel Manager account with company data: the owner's call. |
 | Reading numbers from email or messages | **Not built.** If it is ever added, a number found there stays a suggestion the person adds. |

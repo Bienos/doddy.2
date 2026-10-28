@@ -9,7 +9,9 @@ command -v swiftc >/dev/null 2>&1 || { echo "NOT RUN: swiftc not found on PATH";
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT
 sed 's/^import DoddyCore$//' DoddyApp/Features/Sport/TrainingPlanStore.swift > "$work/Store.swift"
-cp Packages/DoddyCore/Sources/DoddyCore/Sport/*.swift "$work/"
+# Only the plan engine's own files. The rest of Sport/ (the triage, the interview, the log, the
+# review) needs more of DoddyCore than this check compiles, and the store does not use it.
+for f in TrainingPlan PlanEngine PlanRules SavedPlan; do cp "Packages/DoddyCore/Sources/DoddyCore/Sport/$f.swift" "$work/"; done
 cp scripts/checks/training_plan_store_main.swift "$work/main.swift"
 swiftc -swift-version 6 -parse-as-library -o "$work/run" "$work"/*.swift
 "$work/run"
