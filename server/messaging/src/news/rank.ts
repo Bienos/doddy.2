@@ -43,10 +43,22 @@ function matches(text: string, keyword: string): boolean {
  * and title, scored by topic fit and freshness, at most 3 per source. The AI only ever picks
  * from this list, and links always come from it.
  */
-export function shortlist(topics: TopicItems[], alreadySent: Set<string>, now: Date, limit = 25): Candidate[] {
+export interface ShortlistOptions {
+  /** How many stories at most (digest: 25). */
+  limit?: number;
+  /** Stories per publisher at most (digest: 3). */
+  perSource?: number;
+  /** How old a story may be, in hours (digest: 36). */
+  windowHours?: number;
+}
+
+export function shortlist(topics: TopicItems[], alreadySent: Set<string>, now: Date, options: number | ShortlistOptions = {}): Candidate[] {
+  const opts = typeof options === "number" ? { limit: options } : options;
+  const limit = opts.limit ?? 25;
+  const perSourceMax = opts.perSource ?? 3;
   const byUrl = new Map<string, Candidate>();
   const seenTitles = new Set<string>();
-  const windowMs = 36 * 3_600_000;
+  const windowMs = (opts.windowHours ?? 36) * 3_600_000;
   for (const topic of topics) {
     for (const item of topic.items) {
       if (!item.publishedAt) continue;
@@ -76,7 +88,7 @@ export function shortlist(topics: TopicItems[], alreadySent: Set<string>, now: D
     .filter((c) => {
       const n = perSource.get(c.source) ?? 0;
       perSource.set(c.source, n + 1);
-      return n < 3;
+      return n < perSourceMax;
     })
     .slice(0, limit)
     .map((c, i) => ({ ...c, id: `s${i + 1}` }));

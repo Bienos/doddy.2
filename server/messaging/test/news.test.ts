@@ -4,7 +4,8 @@ import type { FastifyInstance } from "fastify";
 import type { Db } from "../src/db.js";
 import { pushBody, smsBody } from "../src/news/compose.js";
 import { runDueDigests, buildDigest, type NewsDeps } from "../src/news/digest.js";
-import { parseFeed, type NewsItem } from "../src/news/feeds.js";
+import { itemImage, parseFeed, type NewsItem } from "../src/news/feeds.js";
+import { buildFeed } from "../src/news/feed.js";
 import { shortlist } from "../src/news/rank.js";
 import { checkUrl, isPublicAddress, requestOnce, safeFetchText } from "../src/news/safeFetch.js";
 import { nextRunAt } from "../src/news/schedule.js";
@@ -103,6 +104,57 @@ test("shortlist: fresh, unsent, deduplicated, keyword-matched, max 3 per source"
   const again = shortlist([curated], new Set(list.map((c) => c.urlHash.toString("hex"))), NOW);
   // Only the story held back by the per-source cap remains; everything sent is gone.
   assert.deepEqual(again.map((c) => c.url), ["https://b.com/4"], "already-sent stories never come back");
+});
+
+test("a story's picture comes from the enclosure, media tags or the first <img>, https only", () => {
+  const rss = `<?xml version="1.0"?><rss version="2.0" xmlns:media="http://search.yahoo.com/mrss/"><channel><title>TVN24</title>
+    <item><title>One</title><link>https://tvn24.pl/1</link><pubDate>Fri, 09 Oct 2026 20:00:00 GMT</pubDate>
+      <enclosure url="https://cdn.tvn24.pl/1.jpg" type="image/jpeg" length="1"/></item>
+    <item><title>Two</title><link>https://tvn24.pl/2</link><pubDate>Fri, 09 Oct 2026 20:00:00 GMT</pubDate>
+      <media:content url="https://cdn.tvn24.pl/2.jpg" medium="image"/></item>
+    <item><title>Three</title><link>https://tvn24.pl/3</link><pubDate>Fri, 09 Oct 2026 20:00:00 GMT</pubDate>
+      <description>&lt;p&gt;&lt;img src="https://cdn.tvn24.pl/3.jpg" alt=""&gt;Opis&lt;/p&gt;</description></item>
+    <item><title>Four</title><link>https://tvn24.pl/4</link><pubDate>Fri, 09 Oct 2026 20:00:00 GMT</pubDate>
+      <enclosure url="https://cdn.tvn24.pl/4.mp3" type="audio/mpeg"/><media:thumbnail url="http://cdn.tvn24.pl/4.jpg"/></item>
+    </channel></rss>`;
+  const r = parseFeed(rss, "x");
+  assert.deepEqual(r.items.map((i) => i.imageUrl), ["https://cdn.tvn24.pl/1.jpg", "https://cdn.tvn24.pl/2.jpg", "https://cdn.tvn24.pl/3.jpg", undefined]);
+  assert.equal(r.items[2]!.summary, "Opis", "the <img> never reaches the summary text");
+  assert.equal("imageUrl" in r.items[3]!, false, "an audio enclosure and an http picture give no imageUrl key at all");
+  const atom = `<feed xmlns="http://www.w3.org/2005/Atom"><title>Verge</title><entry><title>AI news</title>
+    <link rel="alternate" href="https://theverge.com/x"/><link rel="enclosure" type="image/png" href="https://cdn.verge.com/x.png"/>
+    <updated>2026-10-09T10:00:00Z</updated></entry></feed>`;
+  assert.equal(parseFeed(atom, "x").items[0]!.imageUrl, "https://cdn.verge.com/x.png");
+  assert.equal(itemImage({ enclosure: { "@url": "javascript:alert(1)", "@type": "image/png" } }, undefined), undefined);
+});
+
+test("feed cards: two days, newest first, up to six per publisher, keyword follows only where the words appear, no AI", () => {
+  const poland = { label: "Polska", keywords: [], curated: true, items: [
+    item("Sejm uchwalił budżet", "https://tvn24.pl/1?utm_source=rss", "TVN24", 1, "", ),
+    item("Sejm uchwalił budżet", "https://tvn24.pl/1", "TVN24", 1),
+    item("Pogoda na weekend", "https://tvn24.pl/2", "TVN24", 40),
+    item("Sprzed trzech dni", "https://tvn24.pl/3", "TVN24", 60),
+    ...[1, 2, 3, 4, 5, 6, 7].map((n) => item(`Polsat ${n}`, `https://polsatnews.pl/${n}`, "Polsat News", 2 + n)),
+  ] };
+  const kw = { label: "CPK", keywords: ["CPK", "lotnisko"], curated: false, items: [
+    item("Rusza budowa CPK", "https://rp.pl/1", "Rzeczpospolita", 5), item("Mecz Legii", "https://rp.pl/2", "Rzeczpospolita", 4),
+  ] };
+  const undated: NewsItem = { title: "Bez daty", url: "https://x.pl/1", source: "X", summary: "", publishedAt: null };
+  const cards = buildFeed([poland, kw, { label: "X", keywords: [], curated: true, items: [undated] }], NOW);
+  const urls = cards.map((c) => c.url);
+  assert.ok(urls.includes("https://tvn24.pl/2"), "40 hours old is still in a feed (48 h window)");
+  assert.ok(!urls.includes("https://tvn24.pl/3"), "older than two days is out");
+  assert.equal(urls.filter((u) => u.startsWith("https://tvn24.pl/1")).length, 1, "one card per story");
+  assert.equal(cards.filter((c) => c.source === "Polsat News").length, 6);
+  assert.ok(urls.includes("https://rp.pl/1") && !urls.includes("https://rp.pl/2"), "a keyword follow shows only matching stories");
+  assert.ok(!urls.includes("https://x.pl/1"), "a story without a date is never a card");
+  const times = cards.map((c) => Date.parse(c.publishedAt));
+  assert.deepEqual(times, [...times].sort((a, b) => b - a), "newest first");
+  const cpk = cards.find((c) => c.url === "https://rp.pl/1")!;
+  assert.deepEqual(cpk.follows, ["CPK"]);
+  assert.match(cpk.id, /^[0-9a-f]{64}$/);
+  assert.equal(cpk.title, "Rusza budowa CPK", "the headline is the publisher's, word for word");
+  assert.equal(buildFeed([poland], NOW, 3).length, 3, "the limit holds");
 });
 
 test("AI lines are checked against the shortlist; messages fit their limits", () => {
@@ -402,6 +454,37 @@ describe("news digests against real Postgres", { skip: dbSkip }, () => {
       assert.equal(sent.status, "queued");
     } finally {
       feeds.feeds.set("https://my.blog/feed", fixed);
+      await db.query("DELETE FROM news_cache");
+    }
+  });
+
+  test("the feed endpoint: follows travel with the request, nothing of them is stored, cards carry pictures", async () => {
+    const { h, accountId } = await user(false);
+    const post = (payload: object) => app.inject({ method: "POST", url: "/v1/news/feed", headers: h, payload });
+    assert.equal((await post({ follows: [] })).statusCode, 400);
+    assert.equal((await post({ follows: [{ catalogId: "nope" }] })).statusCode, 400);
+    const fixed = feeds.feeds.get("https://feeds.bbci.co.uk/news/technology/rss.xml")!;
+    const fresh = (title: string, url: string, hoursAgo: number, extra: Partial<NewsItem> = {}): NewsItem =>
+      ({ title, url, source: "BBC", summary: "", publishedAt: new Date(Date.now() - hoursAgo * 3_600_000).toISOString(), ...extra });
+    feeds.feeds.set("https://feeds.bbci.co.uk/news/technology/rss.xml", [
+      fresh("Chip export rules tighten", "https://bbc.co.uk/t1", 1, { imageUrl: "https://ichef.bbci.co.uk/t1.jpg" }),
+      fresh("Espresso machines get smarter", "https://bbc.co.uk/t2", 3)]);
+    await db.query("DELETE FROM news_cache");
+    try {
+      const r = await post({ language: "pl", follows: [{ catalogId: "technology" }, { label: "Kawa", keywords: ["espresso"] }] });
+      assert.equal(r.statusCode, 200);
+      const body = r.json() as { cards: { url: string; follows: string[]; imageUrl?: string }[]; keywordSearch: boolean; fetchedAt: string };
+      assert.equal(body.keywordSearch, true);
+      assert.deepEqual(body.cards.map((c) => c.url), ["https://bbc.co.uk/t1", "https://bbc.co.uk/t2"]);
+      assert.equal(body.cards[0]!.imageUrl, "https://ichef.bbci.co.uk/t1.jpg");
+      assert.deepEqual(body.cards[0]!.follows, ["Technologia"], "a catalog follow is labelled in the asked language");
+      assert.deepEqual(body.cards[1]!.follows, ["Technologia", "Kawa"], "a story in a catalog follow that also matches a keyword follow says both");
+      const stored = await db.query("SELECT count(*)::int AS n FROM news_topics WHERE account_id = $1", [accountId]);
+      assert.equal(stored.rows[0].n, 0, "the feed never writes follows to the database");
+      const kept = await db.query("SELECT count(*)::int AS n FROM news_settings WHERE account_id = $1", [accountId]);
+      assert.equal(kept.rows[0].n, 0);
+    } finally {
+      feeds.feeds.set("https://feeds.bbci.co.uk/news/technology/rss.xml", fixed);
       await db.query("DELETE FROM news_cache");
     }
   });

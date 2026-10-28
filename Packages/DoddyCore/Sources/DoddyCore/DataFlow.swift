@@ -105,6 +105,8 @@ public enum DataFlow {
         if state.pushOn { messaging.append("this iPhone's notification token") }
         messaging.append("your phone number, only if you confirm it with a code for texts or calls")
         messaging.append("the news topics and feeds you pick, if you turn on daily news")
+        // ADR-656: the follows go with each request to the feed and are not stored there.
+        messaging.append("the topics and words you follow, each time you open or refresh Following (the server keeps none of them)")
         if state.memoryCopyOn { messaging.append("a copy of your saved notes, for phone calls with Doddy") }
 
         // The server can use either provider (ADR-197); name one only when the server said which.
@@ -236,10 +238,10 @@ public enum DataFlow {
             DataFlowRow(
                 id: "messagingServer", destination: "Your Doddy messaging server (Apple, Twilio, ElevenLabs, \(writer), GNews)",
                 what: sentence(messaging),
-                when: "When you turn on notifications, texts, phone calls or daily news, and while they are on.",
+                when: "When you turn on notifications, texts, phone calls or daily news, and while they are on; and each time you open or refresh Following.",
                 isActive: state.messagingServerSet,
                 note: state.messagingServerSet
-                    ? "It sends notifications through Apple and texts and calls through Twilio; calls run on ElevenLabs. Daily news sends your topics and public headlines to \(writer), and your own keywords to GNews."
+                    ? "It sends notifications through Apple and texts and calls through Twilio; calls run on ElevenLabs. Daily news sends your topics and public headlines to \(writer), and your own keywords to GNews. Following fetches the publishers' public feeds for what you follow and sends your own words to GNews when the server has a key; no AI sees them."
                     : "No messaging server is set, so nothing goes there."),
             // ADR-570: a task handed to Doddy's background worker.
             DataFlowRow(
