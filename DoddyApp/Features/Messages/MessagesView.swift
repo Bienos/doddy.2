@@ -28,6 +28,8 @@ struct MessagesView: View {
     /// Files Doddy made elsewhere (a voice conversation, a task), offered under the thread. Read from his server each time.
     @State private var files = MadeDocumentsModel()
     @State private var preview: URL?
+    /// A finished task opened from its card.
+    @State private var openedTask: OpenedTask?
 
     /// - Parameter draft: text already in the box, for the person to read, change and send
     ///   themselves (the Apple Health week summary, ADR-622). Nothing is sent without their tap.
@@ -106,6 +108,10 @@ struct MessagesView: View {
         // Only once Ask Doddy is on: opening Messages with it off makes no call to Doddy's server.
         .task(id: consent) { if consent { await files.refresh() } }
         .quickLookPreview($preview)
+        .task { await ErrandsModel.shared.load() }
+        .sheet(item: $openedTask) { opened in
+            NavigationStack { ErrandDetailView(id: opened.id) }
+        }
         // Motion v2 (MV4, Q2): he comes up with this cover, on its composer, and is back on
         // Home's stage as it goes.
         .onAppear { DoddyDirector.shared.askOpened() }
@@ -146,6 +152,7 @@ struct MessagesView: View {
                         messageBlock(at: index, message)
                             .id(message.id)
                     }
+                    taskResults
                     attachments
                     if model.isSending {
                         TypingBubble()
@@ -185,6 +192,49 @@ struct MessagesView: View {
             .onChange(of: model.messages.count) { _, _ in
                 if let last = model.messages.last { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo(last.id, anchor: .bottom) } }
             }
+        }
+    }
+
+    /// Tasks Doddy finished in the background this week (ADR-570), read from this iPhone's own copy of them. A tap
+    /// opens the task's result; nothing is added to the saved thread and nothing is sent.
+    @ViewBuilder
+    private var taskResults: some View {
+        let shown = ThreadTaskResults.shown(ErrandsModel.shared.errands, now: Date())
+        if !shown.isEmpty {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Tasks Doddy finished")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+                    .accessibilityAddTraits(.isHeader)
+                ForEach(shown) { errand in
+                    Button { openedTask = OpenedTask(id: errand.id) } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: errand.state == .done ? "checkmark.circle" : "exclamationmark.circle")
+                                .font(.title3)
+                                .foregroundStyle(errand.state == .done ? Theme.accentText : Theme.error)
+                                .accessibilityHidden(true)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(verbatim: errand.title)
+                                    .font(.body.bold())
+                                    .multilineTextAlignment(.leading)
+                                if errand.state == .done { Text("See what Doddy found.") } else { Text("Couldn't finish. See why.") }
+                            }
+                            .font(.footnote)
+                            .foregroundStyle(Theme.ink)
+                            Spacer(minLength: 0)
+                        }
+                        .padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityIdentifier("messages.taskResult")
+                }
+            }
+            .padding(.top, 14)
+            .padding(.trailing, 40)
         }
     }
 
@@ -602,6 +652,11 @@ struct MessagesView: View {
 }
 
 // MARK: - Composer
+
+/// A finished task opened from Messages, for `.sheet(item:)`.
+private struct OpenedTask: Identifiable {
+    let id: UUID
+}
 
 /// The box at the bottom: a plus button, a capsule with the text and a round send button inside it.
 /// Plus holds the one real choice there is (use saved notes or not); photos, files and voice notes are not
