@@ -357,6 +357,21 @@
     },
     {
       "type": "function",
+      "name": "follow_news",
+      "description": "Propose following something in Following, Doddy's feed of news stories on the user's iPhone (Home's menu, then Following): a topic, or the user's own words such as a company, a place or a person. Use it when the user asks to follow, track or keep an eye on news about something ('śledź CPK', 'chcę śledzić wiadomości o Orlenie', 'follow sport'). For one of these topics pass topic and nothing else: world, poland (what's happening in Poland), europe, technology, ai, business, science, health, sport, crypto. Otherwise pass name, a short name in the user's words, and words only if the words to look for in stories differ from the name (for 'śledź CPK' pass name 'CPK' and leave words out). Never pass more than the user asked for. The app shows a card and the user must tap Follow; the result starts with 'added', 'declined' or 'failed' (already followed, or ten things followed already). Before this tool runs, say only one short line, for example 'Tap Follow on screen if I should follow it.' (Polish: 'Stuknij Śledź na ekranie, jeśli mam to śledzić.'). Never say it is followed unless the result starts with added, and never tell the user any news from this tool: it returns no stories.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "topic": {"type": "string", "description": "One of world, poland, europe, technology, ai, business, science, health, sport, crypto, only when the user asked for that whole topic. Leave out otherwise."},
+          "name": {"type": "string", "description": "A short name for what to follow, in the user's words, such as 'CPK' or 'Orlen'. Leave out when topic is given."},
+          "words": {"type": "array", "items": {"type": "string", "description": "One word or phrase to look for, e.g. 'lotnisko'."}, "description": "The words to look for in stories, only if they differ from the name, such as ['CPK', 'lotnisko']. Each 2 to 40 characters, at most 10. Leave out otherwise."}
+        },
+        "required": []
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "not_synced"}
+    },
+    {
+      "type": "function",
       "name": "list_alarms",
       "description": "Read the alarms Doddy set on this iPhone: their times and labels. Use it when the user asks what alarms they have, or before turning one off if you aren't sure of its time. Alarms from the Clock app aren't visible to Doddy; say so if it matters. Only mention alarms the result lists. ASK-01: before this tool runs, say in one short line exactly what you will look at and ask, for example 'Shall I check your inbox?' (Polish: 'Mam sprawdzić twoją skrzynkę?'). The app shows the same question on screen and runs it only after the user says yes or taps Yes; if the result starts with 'declined', nothing was looked at: say so in one short sentence.",
       "parameters": {

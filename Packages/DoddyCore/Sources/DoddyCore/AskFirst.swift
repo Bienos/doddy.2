@@ -96,6 +96,9 @@ public enum AskFirst {
             return .tapFirst(AskCard(title: "Make a training plan?", lines: ask.cardLines, confirmLabel: "Open"))
         case .listAlarms:
             return .yesFirst(AskCard(title: "Check Doddy's alarms?", lines: ["The alarms Doddy set on this iPhone"], confirmLabel: "Yes, check"))
+        case .followNews(let ask):
+            // ADR-657: a change to what the person follows, so a tap.
+            return .tapFirst(AskCard(title: "Follow this?", lines: ask.cardLines, confirmLabel: "Follow"))
         case .startStopwatch(let label):
             return .tapFirst(AskCard(
                 title: "Start a stopwatch?", lines: [label.map { "“\($0)”" } ?? "It counts up until you stop it"], confirmLabel: "Start"))

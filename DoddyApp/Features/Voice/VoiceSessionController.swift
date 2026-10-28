@@ -2629,6 +2629,10 @@ final class VoiceSessionController {
             }
             guard await mayTryAgain(call.toolCallId, app: .timers) else { return }
             propose(.timer(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
+        case .followNews(let ask):
+            // The user already tapped Follow on the ask card (ASK-01). Said from the list as it is
+            // kept on this iPhone after the write, never assumed (ADR-657).
+            await reply(call.toolCallId, VoiceToolReply.newsFollow(FollowingModel.shared.follow(ask)))
         case .startStopwatch(let label):
             // The user already tapped Start on the ask card (ASK-01). One stopwatch at a time: a
             // second start reports the one running and changes nothing (ADR-652).

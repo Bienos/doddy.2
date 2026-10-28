@@ -77,9 +77,30 @@ final class FollowingModel {
         persist()
     }
 
-    private func persist() {
+    @discardableResult
+    private func persist() -> Bool {
         // A write that fails leaves the previous list in place; the next launch shows that one.
-        if let data = try? follows.encoded() { defaults.set(data, forKey: Self.storageKey) }
+        guard let data = try? follows.encoded() else { return false }
+        defaults.set(data, forKey: Self.storageKey)
+        return defaults.data(forKey: Self.storageKey) == data
+    }
+
+    /// A follow asked for by voice (ADR-657), after the person tapped Follow on the card. Said as
+    /// added only when the list kept on this iPhone reads it back; otherwise nothing changes.
+    func follow(_ ask: NewsFollowAsk) -> NewsFollowOutcome {
+        var list = follows
+        let outcome = NewsFollowOutcome.apply(ask.follow(polish: Self.polish), to: &list)
+        guard case .added(let follow) = outcome else { return outcome }
+        let before = follows
+        follows = list
+        guard persist(),
+              NewsFollowList.decode(defaults.data(forKey: Self.storageKey), polish: Self.polish).follows.contains(where: { $0.id == follow.id })
+        else {
+            follows = before
+            persist()
+            return .notKept
+        }
+        return outcome
     }
 
     // MARK: The feed
