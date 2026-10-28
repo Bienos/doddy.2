@@ -57,6 +57,16 @@ export class AppError extends Error {
 }
 
 /** A provider failure translated into a safe code. `detail` stays server-side and content-free. */
+/**
+ * Why a provider said no, for the server's own log only (never shown, never content): the HTTP
+ * status, the provider's own error type when it is a plain word, and a hint from a fixed list.
+ */
+export interface ProviderDetail {
+  status: number;
+  type: string | null;
+  hint: string | null;
+}
+
 export class ProviderError extends Error {
   constructor(
     readonly code: Extract<
@@ -64,6 +74,7 @@ export class ProviderError extends Error {
       "rate_limited" | "provider_unavailable" | "provider_timeout" | "malformed_provider_result" | "connection_expired" | "permission_insufficient"
     >,
     readonly retryAfterSeconds?: number,
+    readonly detail?: ProviderDetail,
   ) {
     super(code);
     this.name = "ProviderError";

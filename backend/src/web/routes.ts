@@ -3,17 +3,7 @@ import { type AuthenticatedUser, requireFullAccess, type SessionVerifier } from 
 import { AppError } from "../errors.js";
 import type { DocumentRow, DocumentSummaryRow, Store } from "../store.js";
 import type { DocumentView } from "./contracts.js";
-import {
-  type DaySummary,
-  DaySummarySchema,
-  isoDay,
-  LOGBOOK_KEPT_DAYS,
-  LOGBOOK_MAX_BODY_BYTES,
-  type LogbookView,
-  LogbookStateSchema,
-  oldestKeptDay,
-  parseDaySummary,
-} from "./logbook.js";
+import { isoDay, LOGBOOK_MAX_BODY_BYTES, type LogbookView, LogbookStateSchema, parseDaySummary, readLogbookView } from "./logbook.js";
 import type { MemoryChat } from "../memory/chat.js";
 import { memoryRoutes } from "../memory/routes.js";
 import type { MemoryService } from "../memory/service.js";
@@ -212,21 +202,9 @@ export class WebRoutes {
     ];
   }
 
-  /** What the page reads. A row that no longer parses is left out, never shown half-read. */
-  private async logbookView(userId: string, now: Date): Promise<LogbookView> {
-    const enabled = await this.store.logbookEnabled(userId);
-    const rows = enabled ? await this.store.logbookDays(userId, oldestKeptDay(now.getTime())) : [];
-    const days: DaySummary[] = [];
-    for (const row of rows) {
-      try {
-        const parsed = DaySummarySchema.safeParse(JSON.parse(row.summary));
-        if (parsed.success) days.push(parsed.data);
-      } catch {
-        // Not JSON: skipped like any unreadable row.
-      }
-    }
-    const latest = rows.reduce((max, row) => Math.max(max, row.received_at), 0);
-    return { enabled, keptDays: LOGBOOK_KEPT_DAYS, updatedAt: latest > 0 ? new Date(latest).toISOString() : null, days };
+  /** What the page reads (shared with the chat, ADR-604). */
+  private logbookView(userId: string, now: Date): Promise<LogbookView> {
+    return readLogbookView(this.store, userId, now);
   }
 
   /** The route for this request, or null when the path isn't a web route. */

@@ -1,13 +1,13 @@
 # More leaflets, other promotions and student discounts (28 Oct 2026)
 
-The owner asked (in Polish): which other leaflets, promotions and student promotions can Doddy connect? Checked on 2026-10-28 from a cloud session: the chains through Doddy's own fetcher (`server/messaging/src/deals/fetcher.ts`: User-Agent `DoddyBot/1.0`, robots.txt, block and challenge detection), the rest by two research agents with `curl -A "DoddyBot/1.0 (+https://doddy.lol/bot)"`, web search and spot checks. No block was worked around. Tags: **[V]** seen on the source that day, **[S]** secondary source, **[I]** inference. Not legal advice. What was built from it: ADR-658 (Aldi and Żabka). The rules that still apply: `research_shopping_leaflets.md` (24 Oct) and ADR-609 (read on request, nothing stored, no shared index without a licence).
+The owner asked (in Polish): which other leaflets, promotions and student promotions can Doddy connect? Checked on 2026-10-28 from a cloud session: the chains through Doddy's own fetcher (`server/messaging/src/deals/fetcher.ts`: User-Agent `DoddyBot/1.0`, robots.txt, block and challenge detection), the rest by two research agents with `curl -A "DoddyBot/1.0 (+https://doddy.lol/bot)"`, web search and spot checks. No block was worked around. Tags: **[V]** seen on the source that day, **[S]** secondary source, **[I]** inference. Not legal advice. What was built from it: ADR-660 (Aldi and Żabka). The rules that still apply: `research_shopping_leaflets.md` (24 Oct) and ADR-609 (read on request, nothing stored, no shared index without a licence).
 
 ## 1. Leaflets of other chains
 
 | Chain | What Doddy's fetcher got | Data | Verdict |
 |---|---|---|---|
-| **Aldi** | `www.aldi.pl/oferty.html` 200, robots.txt allows it [V] | Next.js `__NEXT_DATA__` with 66 offers: name, pack, price, price per kg, conditions ("PRZY ZAKUPIE 2 SZT.", "CO DRUGA SZT.", "1+1 GRATIS"), regular price, the 30-day text, dates [V] | **Built (ADR-658)**: code only, no model |
-| **Żabka** | `www.zabka.pl/gazetka-promocyjna/` 200; `gazetka.zabka.pl/{slug}/spreads.json` 200; page images on `view.publitas.com`; no robots.txt on either Publitas host (404) [V] | Żabka's own text for each of 72 pages; 12 pages carry the legal beer warning [V] | **Built (ADR-658)**: text picks pages, the reader reads prices; beer pages skipped |
+| **Aldi** | `www.aldi.pl/oferty.html` 200, robots.txt allows it [V] | Next.js `__NEXT_DATA__` with 66 offers: name, pack, price, price per kg, conditions ("PRZY ZAKUPIE 2 SZT.", "CO DRUGA SZT.", "1+1 GRATIS"), regular price, the 30-day text, dates [V] | **Built (ADR-660)**: code only, no model |
+| **Żabka** | `www.zabka.pl/gazetka-promocyjna/` 200; `gazetka.zabka.pl/{slug}/spreads.json` 200; page images on `view.publitas.com`; no robots.txt on either Publitas host (404) [V] | Żabka's own text for each of 72 pages; 12 pages carry the legal beer warning [V] | **Built (ADR-660)**: text picks pages, the reader reads prices; beer pages skipped |
 | Stokrotka | `stokrotka.pl/oferta/gazetki-promocyjne/` and a link to mojagazetka.com [V] | not looked into | later |
 | Intermarché | `intermarche.pl/gazetki-promocyjne/` 200, robots.txt allows [V] | no product data in the HTML [V]; probably images [I] | later |
 | Delikatesy Centrum | `www.delikatesy.pl/gazetki` 200 [V] | PDFs of 18 MB on `static.delikatesy.pl` [V], over the fetcher's 3 MB cap | later, costly |
@@ -61,7 +61,7 @@ Platforms: ISIC Polska (website, an SDK on request, info@isic.pl) [V]; Uniperks 
 
 ## 4. What to connect, in order (proposal)
 
-1. **Aldi and Żabka** as leaflet chains: built, ADR-658.
+1. **Aldi and Żabka** as leaflet chains: built, ADR-660.
 2. **Student discounts as a short list kept in code**: the legal discounts (rail, city transport, museums) and the brand student plans, each with its official address and the day it was checked; a price is read from the brand's own page when the user asks, and when it can't be, Doddy says it couldn't confirm the price and gives the link. Doddy never checks student status itself: the user says they are a student, and Doddy says where to verify (SheerID, UNiDAYS, ISIC, the university email). Kept as a memory only with consent and a confirmed write.
 3. **IKEA, Action, Auchan online** as on-request promotion pages (code reads their data, as Rossmann).
 4. **Codes from Webepartners and Convertiser**, if the owner opens publisher accounts: licensed, so a cache is allowed within the licence; a code nobody tested is said as untested; ranking before any affiliate link (ADR-612).

@@ -1,6 +1,6 @@
 # Doddy Web (browser)
 
-**State (22 Oct 2026):** built and tested on branch `claude/exciting-carson-08x2pk`, which is also what the Render service `doddy` serves at https://doddy-yaci.onrender.com (its page and asset file names match that branch's build; checked 22 Oct). Not merged to the default branch. Since 22 Oct 21:39 UTC the service runs commit `d03562ae` from `claude/friendly-faraday-8juosh` (the live branch was fast-forwarded to it with the owner's say-so), so it is restyled in the website's design (ADR-594) and has Logbook (ADR-602) with its server routes. Decisions: ADR-600 (sign-in and sessions), ADR-601 (stack and hosting). Why and what's next: `docs/architecture/WEB_AND_SHARED_PLATFORM.md`.
+**State (22 Oct 2026):** built and tested on branch `claude/exciting-carson-08x2pk`, which is also what the Render service `doddy` serves at https://doddy-yaci.onrender.com (its page and asset file names match that branch's build; checked 22 Oct). Not merged to the default branch. Since 24 Oct 11:08 UTC it runs commit `69762f6` (the chat, ADR-604) from `claude/exciting-carson-08x2pk`. Before that, since 22 Oct 21:39 UTC, the service ran commit `d03562ae` from `claude/friendly-faraday-8juosh` (the live branch was fast-forwarded to it with the owner's say-so), so it is restyled in the website's design (ADR-594) and has Logbook (ADR-602) with its server routes. Decisions: ADR-600 (sign-in and sessions), ADR-601 (stack and hosting). Why and what's next: `docs/architecture/WEB_AND_SHARED_PLATFORM.md`.
 
 ## What it is
 A signed-in workspace in the browser for the same account the iPhone uses on Doddy's server (`backend/`). Today it shows:
@@ -12,6 +12,8 @@ A signed-in workspace in the browser for the same account the iPhone uses on Dod
 - **Logbook** (ADR-602, `docs/product/WEB_LOGBOOK.md`): how a person uses Doddy, in two tabs, At a glance (the week as a receipt) and Closer look (7, 30, 90 days or a year; kept 1 year). The server keeps and serves the days the iPhone sends (`backend/src/web/logbook.ts`, `/v1/web/logbook*`, off until the iPhone turns it on), but **the iPhone can't send any yet** (not built), so the page opens on "Logbook is off" and shows made-up example numbers only when asked, marked Example; the menu keeps its Example marker until `IPHONE_SENDS_LOGBOOK` is flipped. `LOGBOOK_ENABLED` in `web/src/logbook/config.ts` hides the page.
 
 - **Memory** and **Ask Doddy** (ADR-603, `docs/product/CLOUD_MEMORY.md`): the notes and conversations a person chose to keep on Doddy's server, as text, kept for a year, encrypted with a server-held key; read, searched, downloaded and deleted from the browser, and a chat where Claude (`DODDY_CHAT_MODEL`, default `claude-haiku-5-5`) answers from them and cites its sources. **The iPhone's sending is written but its screens are not compiled or run on a device**, so the pages open on "nothing is kept" and are marked Soon in the menu (`IPHONE_SYNCS_MEMORY` in `web/src/memory/config.ts`). The server needs `DODDY_MEMORY_KEY`, or it says "not set up".
+
+- **Chat** (ADR-604, `docs/product/WEB_CHAT.md`, branch `claude/doddy-web-chat`): `/chat`, laid out like ChatGPT in Doddy's colours (the list of chats, the conversation, a round message box, suggested questions, sources under each answer, "What I can see"). It replaces Ask Doddy (`/ask` opens it). Claude answers from the kept notes and conversations **and the account**: Logbook's counts added up per period, counts over kept conversations, connected apps, the documents Doddy made and his receipts, all as cited data. So it already answers about apps, documents and activity; notes, conversations and usage counts follow when the iPhone sends them. The list of chats is kept **in this browser only** and deleted at Sign out. Tested with the demo model only. **Live on Render since 24 Oct 11:08 UTC** (commit `69762f6`; signed-in use with the real model not checked yet).
 
 It does not have tasks or projects. Home says so instead of showing empty versions of them.
 
@@ -37,7 +39,9 @@ The phone can list and sign out every browser. A browser can sign itself or othe
 | `Packages/DoddyCore/.../WebLinkClient.swift`, `WebSignInModel.swift` | The iPhone's client and screen state (tested on Linux) |
 | `DoddyApp/Features/Web/WebSignInView.swift` | The iPhone screen (compiled only by the hosted Mac build) |
 | `web/src/logbook/`, `web/src/pages/LogbookPage.tsx` | Logbook: the summary contract (`schema.ts`, zod), the catalog of tools and categories, seeded example days, adding days up and filling gaps, CSV, formats, and the hand-built SVG charts |
-| `web/src/memory/`, `web/src/pages/MemoryPage.tsx`, `AskPage.tsx` | Memory and Ask Doddy: the schemas of what the server answers, the flags, the two pages |
+| `web/src/memory/`, `web/src/pages/MemoryPage.tsx` | Memory: the schemas of what the server answers (chat's too), the flags, the page |
+| `web/src/pages/ChatPage.tsx`, `web/src/chat/`, `src/styles/chat.css` | The chat (ADR-604): the page, the list of chats kept in this browser (`threads.ts`), the answer's light formatting (`RichText.tsx`), the suggested questions |
+| `backend/src/web/chatContext.ts`, `logbookDigest.ts` | What the chat reads about the account, and Logbook's days added up for it |
 | `backend/src/memory/` | Kept notes and conversations: the cipher, the contract, search, the service, chat and its routes |
 | `tools/gen_web_assets.py` | Copies the website's colours (`CandidateTokens.swift`, light and dark), the app's metrics, wordmark, five `WholeDoddy_*` poses and the favicon into `web/`; `--check` runs in CI |
 
@@ -61,7 +65,7 @@ curl -s -X POST localhost:8787/v1/web/link-codes -H "authorization: Bearer $TOKE
 | Command | What |
 |---|---|
 | `npm test` in `backend/` | All backend tests; `test/web.test.ts` is the web part (sign-in, isolation, CSRF, expiry, revocation, documents, pages, logs) |
-| `npm run typecheck && npm test` in `web/` | Type-check and unit tests (Vitest, jsdom) against the server's fixtures; 76 tests, about 50 of them for Logbook |
+| `npm run typecheck && npm test` in `web/` | Type-check and unit tests (Vitest, jsdom) against the server's fixtures; 117 tests (24 Oct), about 50 for Logbook and 25 for the chat |
 | `npm run build` in `backend/` and `web/`, then `npm run e2e` in `web/` | Playwright: the real backend (mock providers, in-memory database) serving the built app, Chromium at desktop and phone width |
 | `DODDY_SCREENS=<folder> npx playwright test e2e/screens.spec.ts` in `web/` | Screenshots in light and dark, for a person to look at |
 | `scripts/ci.sh --core-only` | All of the above. The end-to-end run is SKIPPED (not PASS) where there's no Playwright Chromium, as in the hosted Linux job |

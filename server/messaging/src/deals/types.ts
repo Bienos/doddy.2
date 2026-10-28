@@ -6,7 +6,7 @@ import type { PageFetcher } from "./fetcher.js";
 import type { PageOutput } from "./vision.js";
 import type { PickOutput } from "./match.js";
 
-/** Chains whose leaflets Doddy reads on request (Aldi and Żabka since ADR-658). */
+/** Chains whose leaflets Doddy reads on request (Aldi and Żabka since ADR-660). */
 export const READ_CHAINS = ["biedronka", "lidl", "dino", "rossmann", "aldi", "zabka"] as const;
 /** Chains that only get a link to their official leaflet page (bot walls, or no published data). */
 export const LINK_CHAINS = ["kaufland", "carrefour", "auchan", "netto"] as const;

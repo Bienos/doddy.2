@@ -119,7 +119,7 @@ final class DealsClientTests: XCTestCase {
         XCTAssertEqual(DealsChain.named(" Żabka "), .zabka)
         XCTAssertEqual(DealsChain.named("ALDI"), .aldi)
         XCTAssertEqual(DealsChain.aldi.name, "Aldi")
-        XCTAssertTrue(DealsChain.zabka.isRead, "Żabka's leaflet is read since ADR-658, no longer a link")
+        XCTAssertTrue(DealsChain.zabka.isRead, "Żabka's leaflet is read since ADR-660, no longer a link")
         XCTAssertEqual(DealsChain.named("LIDL"), .lidl)
         XCTAssertNil(DealsChain.named("spar"))
     }

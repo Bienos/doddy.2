@@ -2,7 +2,7 @@ import Foundation
 
 // Leaflets ("Gazetki", docs/implementation/SHOPPING.md section 2): `POST /v1/deals/search` on
 // Doddy's messaging server reads this week's official leaflets of Biedronka, Lidl, Dino, Rossmann,
-// Aldi and Żabka on request (Aldi and Żabka since ADR-658); other chains come back as a link. The server keeps nothing but daily counts.
+// Aldi and Żabka on request (Aldi and Żabka since ADR-660); other chains come back as a link. The server keeps nothing but daily counts.
 // The item names go to Doddy's server; nothing about the user goes to the chains.
 //
 // Days in a leaflet ("2026-10-23") are calendar days in Poland with no time of day, so they are

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { AppError } from "../errors.js";
+import type { Store } from "../store.js";
 
 /**
  * Logbook, the server's half (ADR-602, docs/product/WEB_LOGBOOK.md): one day's summary of how a
@@ -126,6 +127,30 @@ export const isoDay = (ms: number) => new Date(ms).toISOString().slice(0, 10);
 
 /** The oldest day kept at `now` (UTC calendar days, like the sweep). */
 export const oldestKeptDay = (now: number) => isoDay(now - LOGBOOK_KEPT_DAYS * DAY_MS);
+
+/**
+ * What the page reads, and what the chat adds up (ADR-604). A row that no longer parses is left
+ * out, never shown half-read.
+ */
+export async function readLogbookView(
+  store: Pick<Store, "logbookEnabled" | "logbookDays">,
+  userId: string,
+  now: Date,
+): Promise<LogbookView> {
+  const enabled = await store.logbookEnabled(userId);
+  const rows = enabled ? await store.logbookDays(userId, oldestKeptDay(now.getTime())) : [];
+  const days: DaySummary[] = [];
+  for (const row of rows) {
+    try {
+      const parsed = DaySummarySchema.safeParse(JSON.parse(row.summary));
+      if (parsed.success) days.push(parsed.data);
+    } catch {
+      // Not JSON: skipped like any unreadable row.
+    }
+  }
+  const latest = rows.reduce((max, row) => Math.max(max, row.received_at), 0);
+  return { enabled, keptDays: LOGBOOK_KEPT_DAYS, updatedAt: latest > 0 ? new Date(latest).toISOString() : null, days };
+}
 
 /**
  * A day the iPhone may send: a real calendar day inside the kept window, no further ahead than

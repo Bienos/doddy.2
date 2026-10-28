@@ -54,11 +54,13 @@ A browser can read, search, download, delete and ask, and can **never put anythi
 
 ## Chat (`backend/src/memory/chat.ts`)
 
+**Widened by ADR-604 (24 Oct):** the chat now also reads the account (Logbook's counts, counts over kept conversations, connected apps, documents, receipts), answers when nothing is kept, takes ten earlier turns and lives at `/chat` with a ChatGPT-like page. See `docs/product/WEB_CHAT.md`. What follows is the memory half, unchanged.
+
 A question goes in; Claude answers from the best-matching notes (up to 6) and conversation excerpts (up to 3) of that person, and cites only what it was given.
 
 - **Retrieval** is lexical and loose (`search.ts`): case and diacritics don't matter, a term matches the start of a word minus its last letter, so inflected names match (Anna finds Anny, Łukasz finds Łukasza). A wider net than the app's own search on purpose: a miss costs more than an extra note. Only the 150 newest conversations are searched per question, which bounds the work.
 - **Data, not instructions:** notes and excerpts go to the model as JSON under short aliases (`n1`, `c1`), the answer's schema lets it cite only those aliases, there are no tools, and nothing is stored (the page sends the last six turns). A note that says "ignore previous instructions" stays inside a JSON string (tested). The page renders the answer as plain text, never markup or links (tested).
-- **Cost control:** the same per-person and per-service daily caps as Ask Doddy (50 and 500), taken before anything is decrypted, and not spent when nothing is kept or no key is set.
+- **Cost control:** the same per-person and per-service daily caps as Ask Doddy (50 and 500), taken before anything is decrypted. Before ADR-604 a question wasn't spent when nothing was kept or no key was set; now the account is still there to answer from, so it is.
 - **One Doddy, many doors:** `MemoryChat.answer(userId, …)` knows nothing about the web. A text-message channel would call the same function for the same person.
 
 ## iMessage and other text channels: not built (designed in `docs/architecture/TEXT_CHANNELS.md`)
