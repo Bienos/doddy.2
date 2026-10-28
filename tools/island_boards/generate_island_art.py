@@ -41,10 +41,7 @@ SIGN_X = {"expanded": 200.0, "compact": 177.0, "minimal": 27.0}
 FIXED_VIEWBOX = {"compact": (0.0, 0.0, 52.33, 36.67), "minimal": (0.0, 0.0, 45.0, 36.67)}
 
 BOARDS = [
-    ("voice", "leanIn"), ("focus", "tinyPromise"), ("music", "pocketRadio"),
-    ("companion", "hereWithYou"), ("orbit", "orbit"), ("ink-ripple", "inkRipple"),
-    ("negative-space", "negativeSpace"), ("kinetic-ribbon", "kineticRibbon"),
-    ("editorial", "editorial"), ("abstract-landscape", "abstractHorizon"),
+    ("voice", "leanIn"), ("focus", "tinyPromise"),
     ("thought-drop", "thoughtPocket"), ("language-bridge", "languageBridge"),
     ("reminder-pin", "reminderKnot"), ("step-path", "stepStones"),
     ("spoken-mark", "storySpool"), ("calm-pulse", "calmTide"),

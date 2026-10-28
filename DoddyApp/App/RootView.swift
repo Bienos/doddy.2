@@ -20,8 +20,6 @@ enum PreferenceKey {
     /// The Apple Watch app shows pinned notes, reminders and lists (ADR-232); on unless turned off.
     static let watchShowContent = "watchShowContent"
     static let hideCharacterArt = "hideCharacterArt"
-    /// Settings → Voice → Dynamic Island style (`IslandStyle` raw value); display only (ADR-239).
-    static let islandStyle = "islandStyle"
     /// Settings → Appearance: the basketball opening each time the app is opened (ADR-225). On unless turned off.
     static let openingScene = "openingScene"
     /// The one-time basketball introduction has been shown or skipped on this installation.

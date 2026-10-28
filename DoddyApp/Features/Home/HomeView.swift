@@ -142,6 +142,8 @@ struct HomeView: View {
             }) { TranslatorStartView(chosen: $translatorChoice) }
         }
         .foregroundStyle(Theme.ink)
+        // ADR-654: while he talks the island extension is wider than the gap in the status bar.
+        .statusBarHidden(conversation.live != nil)
         // Motion v2: each sheet and cover from Home hides him in the frame it starts. Ask isn't
         // one of them (MV4: its cover carries him up on its composer), and the Files sheet
         // isn't either: the calm Home lifts him above it (ADR-545), and he rides with the box.
@@ -166,8 +168,8 @@ struct HomeView: View {
             }
         }
         .frame(minHeight: 44)
-        // Below the island's extension while he talks (ADR-596).
-        .padding(.top, conversation.live == nil ? 8 : 48)
+        // Below the island's extension while he talks (ADR-596, ADR-654).
+        .padding(.top, conversation.live == nil ? 8 : 66)
     }
 
     private func islandLook(_ live: VoiceSessionController) -> IslandExtension.Look {
