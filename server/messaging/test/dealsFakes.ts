@@ -78,7 +78,15 @@ export const read = (p: Partial<Product> & Pick<Product, "name" | "price">): Pro
   size: null, regularPrice: null, lowest30d: null, unitPrice: null, conditions: [], validFrom: null, validTo: null, confidence: "high", ...p,
 });
 
-type PageStep = PageOutput | "refuse" | "unparsed" | "throw" | ((signal: AbortSignal) => Promise<ModelReply<PageOutput>>);
+/** A page's output as a test writes it: promotions default to none. */
+export type PageInput = Omit<PageOutput, "promotions"> & { promotions?: PageOutput["promotions"] };
+type PageStep = PageInput | "refuse" | "unparsed" | "throw" | ((signal: AbortSignal) => Promise<ModelReply<PageOutput>>);
+type Cond = PageOutput["products"][number]["conditions"][number];
+/** A reader condition with the fields a kind doesn't use left null. */
+export const cond = (c: Partial<Cond> & Pick<Cond, "kind">): Cond => ({ quantity: null, text: null, price: null, percent: null, ...c });
+type Promo = PageOutput["promotions"][number];
+/** A reader promotion with defaults. */
+export const promo = (p: Partial<Promo> & Pick<Promo, "range" | "mechanic">): Promo => ({ conditions: [], validFrom: null, validTo: null, confidence: "high", ...p });
 
 /** Stands in for Claude Haiku: page outputs by the page image's marker, and a pick that keeps every id unless told otherwise. */
 export class FakeModel implements DealsModelApi {
@@ -99,7 +107,7 @@ export class FakeModel implements DealsModelApi {
     if (step === "refuse") return { kind: "refused", usage };
     if (step === "unparsed") return { kind: "unparsed", usage };
     if (step === "throw") throw new Error("api down");
-    return { kind: "ok", output: step, usage };
+    return { kind: "ok", output: { ...step, promotions: step.promotions ?? [] }, usage };
   }
 
   async pick(req: { queries: readonly string[]; candidates: PickCandidate[][] }): Promise<ModelReply<PickOutput>> {
@@ -204,6 +212,23 @@ export const OfferSchema = z.strictObject({
   readBy: z.enum(["leaflet_data", "page_image"]),
   ean: z.string().regex(/^\d{8,14}$/).optional(),
   check: z.boolean(),
+  flags: z.array(z.enum(["app", "card", "deposit", "stock", "selected_stores", "not_a_cut"])).min(1).optional(),
+  effective: z.strictObject({
+    price: money, quantity: z.number().int().min(2),
+    unitPrice: z.strictObject({ minor: z.number().int().positive(), per: z.enum(["kg", "l", "szt"]) }).optional(),
+  }).optional(),
+  cut: z.strictObject({ percent: z.number().int().min(1).max(99) }).optional(),
+  limit: z.number().int().positive().optional(),
+});
+export const PromotionSchema = z.strictObject({
+  chain: readChain,
+  text: z.string().min(1).max(120),
+  mechanic: z.string().min(1).max(80),
+  conditions: z.array(z.string().min(1).max(80)).max(4),
+  flags: z.array(z.enum(["app", "card", "deposit", "stock", "selected_stores", "not_a_cut"])).min(1).optional(),
+  validFrom: day.optional(),
+  validTo: day.optional(),
+  source: z.strictObject({ url: z.string().url().startsWith("https://"), page: z.number().int().positive().optional() }),
 });
 /** Fewer pages read than were worth reading: read is below of. */
 const pagesRead = z.strictObject({ read: z.number().int().min(0), of: z.number().int().positive() }).refine((p) => p.read < p.of);
@@ -219,7 +244,7 @@ export const ResponseSchema = z.strictObject({
     z.strictObject({ chain: anyChain, status: z.literal("failed"), pages: pagesRead.optional() }),
     z.strictObject({ chain: anyChain, status: z.enum(["no_match", "no_leaflet", "blocked"]) }),
   ])),
-  items: z.array(z.strictObject({ query: z.string(), offers: z.array(OfferSchema).max(6) })),
+  items: z.array(z.strictObject({ query: z.string(), offers: z.array(OfferSchema).max(6), promotions: z.array(PromotionSchema).min(1).max(3).optional() })),
 });
 /** The fixture's example request and response (the contract the app builds against). */
 export const contractFixture = (): { request: unknown; response: unknown; errors: Record<string, { status: number; body: unknown }> } =>

@@ -7,6 +7,9 @@ import Observation
 // counts. The voice tool (`find_deals`, after its ask card) and the "Cheapest this week" screen both
 // come here, so they show the same answer. Nothing is retried by itself: each try counts against the
 // day's leaflet checks. The last answer stays in memory only, for the screen; it is never saved.
+// Since ADR-661 the request goes with the quantities read from the user's words (kept here, never
+// sent) and the agent's answer is costed for them and for the loyalty apps the user said they don't
+// use (Settings stored on this iPhone, `PreferenceKey.dealsProgramsNotUsed`).
 
 @MainActor
 @Observable
@@ -23,6 +26,15 @@ final class DealsModel {
     private(set) var phase: Phase = .idle
     private(set) var lastRequest: DealsRequest?
     private(set) var lastResult: DealsResult?
+    /// The quantity read for each of the last request's items (nil: none said).
+    private(set) var lastQuantities: [ListQuantity?] = []
+    /// The entries of the last request that didn't fit (over 12 items, or too long).
+    private(set) var lastLeftOut: [String] = []
+
+    /// The loyalty apps the user said they don't use, as stored on this iPhone.
+    var programs: DealsPrograms {
+        DealsPrograms(stored: UserDefaults.standard.string(forKey: PreferenceKey.dealsProgramsNotUsed) ?? "")
+    }
 
     init(client: @escaping @MainActor () -> DoddyServerClient?) {
         self.clientProvider = client
@@ -32,9 +44,13 @@ final class DealsModel {
 
     /// For the voice agent: the answer as the agent's data, or why nothing was looked up.
     func searchForAgent(_ request: DealsRequest) async -> String {
-        switch await search(request) {
+        let read = DealsListItems.read(request.items)
+        let products = read.items.isEmpty ? request : DealsRequest(items: read.items, chains: request.chains, language: request.language)
+        switch await search(products, quantities: read.quantities, leftOut: read.leftOut) {
         case .success(let result):
-            return DealsResultText.forAgent(result, language: request.language)
+            // The voice tool's items are already within the limits (`parseFindDeals`), so nothing is left out here.
+            return DealsResultText.forAgent(result, language: request.language, programs: programs,
+                                            quantities: read.quantities, today: ShoppingCalendar.today())
         case .failure(let error):
             return VoiceToolReply.dealsNotChecked(error)
         }
@@ -42,13 +58,15 @@ final class DealsModel {
 
     /// One request. On success the answer is kept for the screen; on failure the screen says why.
     @discardableResult
-    func search(_ request: DealsRequest) async -> Result<DealsResult, any Error> {
+    func search(_ request: DealsRequest, quantities: [ListQuantity?] = [], leftOut: [String] = []) async -> Result<DealsResult, any Error> {
         guard let client = clientProvider() else {
             phase = .failed(NSLocalizedString("Doddy's server isn't set up in this build, so leaflets can't be checked yet.", comment: ""))
             return .failure(DealsError.dealsDisabled)
         }
         phase = .checking
         lastRequest = request
+        lastQuantities = quantities
+        lastLeftOut = leftOut
         do {
             let result = try await client.searchDeals(request)
             lastResult = result

@@ -7,9 +7,9 @@
 // 66 offers that day. robots.txt (User-agent: *) allows /oferty.html.
 // The mechanics, as Aldi's data writes them:
 //   "-20% PRZY ZAKUPIE 2 SZT.": priceValue is the price of one when buying two; "Cena regularna: 6,99 zł/szt." of one.
-//   "-91% CO DRUGA SZT.": priceValue is the second item's price (2,99 zł for a 36,99 zł jar). Shown as the price of one
-//     when buying two (the code's average, rounded up to the grosz) with "przy zakupie 2 szt." and the second item's
-//     price as conditions, so it compares with the other offers. Without the regular price it can't be, so it's left out.
+//   "-91% CO DRUGA SZT.": priceValue is the second item's price (2,99 zł for a 36,99 zł jar). The offer's price is
+//     the price of one (the regular 36,99 zł) with "druga sztuka za 2,99 zł" as a condition, and the service works out
+//     the price per piece when buying two (ADR-661). Without the regular price it can't be stated, so it's left out.
 //   "1+1 GRATIS": priceValue is the price of one; "1+1" is a condition.
 //   "Cena za kg", "Cena za 100 g": the price is per that weight.
 //   "… to najniższa cena z 30 dni przed obniżką" is the 30-day price; "… sprzed pierwszej obniżki" (perishables) is the
@@ -24,8 +24,6 @@ export const ALDI_HOSTS = ["www.aldi.pl"] as const;
 export const ALDI_OFFERS = "https://www.aldi.pl/oferty.html";
 
 const ALCOHOL = /alkohol|\bpiw[ao]?\b|\bwin[ao]?\b|w[oó]dk|whisk|likier|\bgin\b|\brum\b|szampan|prosecco/i;
-
-const zl = (m: Money) => `${Math.floor(m.minor / 100)},${String(m.minor % 100).padStart(2, "0")} zł`;
 
 /** The offers object in the page's payload, or undefined when it isn't there. */
 function offerPayload(html: string): Record<string, unknown> | undefined {
@@ -99,8 +97,8 @@ export function aldiOffers(res: Record<string, unknown>, today: string): { produ
     if (/co\s+druga/i.test(promoText)) {
       // The data's price is the second item's: without the price of the first, the offer can't be stated honestly.
       if (!regular || regular.minor <= value.minor) continue;
-      price = { minor: Math.ceil((regular.minor + value.minor) / 2), currency: "PLN" };
-      conditions.push({ kind: "min_quantity", quantity: 2 }, { kind: "other", text: `druga sztuka ${zl(value)}` });
+      price = regular;
+      conditions.push({ kind: "second_for", price: value });
       unitText = undefined; // Aldi's unit price is the second item's
     } else {
       const qty = /przy\s+zakupie\s+(\d{1,2})\s*szt/i.exec(`${promoText} ${info ?? ""}`);
@@ -117,6 +115,7 @@ export function aldiOffers(res: Record<string, unknown>, today: string): { produ
       ...(size ? { sizeText: size } : {}),
       ...(known && unitText ? { printedUnitPrice: unitText } : {}),
       ...(regular && regular.minor > price.minor ? { regularPrice: regular } : {}),
+      // For "co druga" the 30-day text is about the price of one, which is now the offer's price.
       ...(lowest30d ? { lowest30d } : {}),
       ...(validFrom ? { validFrom } : {}),
       ...(validTo ? { validTo } : {}),

@@ -255,6 +255,28 @@
         }
       }
     },
+    "%lld for %@ each": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld szt. po %@"
+          }
+        }
+      }
+    },
+    "%lld for %@ each (one alone: %@)": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przy %lld szt.: %@ za sztukę (jedna osobno: %@)"
+          }
+        }
+      }
+    },
     "%lld items": {
       "extractionState": "manual",
       "localizations": {
@@ -594,6 +616,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tygodnie: %lld, dni w tygodniu: %lld"
+          }
+        }
+      }
+    },
+    "%lld%% below its lowest price in the last 30 days": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld%% taniej niż najniższa cena z ostatnich 30 dni"
           }
         }
       }
@@ -1927,6 +1960,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "Plan na pierwsze 5 km, na 10 km, na półmaraton albo na siłę w domu lub na siłowni. Odpowiedz na kilka pytań; Doddy ułoży plan według stałych zasad."
+          }
+        }
+      }
+    },
+    "A price that needs an app you don't use isn't picked or counted in the basket. This choice stays on this iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "A price that needs an app you don't use isn't picked or counted in the basket. This choice stays on this iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "A price that needs an app you don't use isn't picked or counted in the basket. This choice stays on this iPhone."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Cena, która wymaga aplikacji, której nie używasz, nie jest wybierana ani liczona w koszyku. Ten wybór zostaje na tym iPadzie."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Cena, która wymaga aplikacji, której nie używasz, nie jest wybierana ani liczona w koszyku. Ten wybór zostaje na tym iPhonie."
+                }
+              }
+            }
           }
         }
       }
@@ -5298,6 +5372,17 @@
         }
       }
     },
+    "All kinds": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wszystkie rodzaje"
+          }
+        }
+      }
+    },
     "All ticked": {
       "extractionState": "manual",
       "localizations": {
@@ -8055,6 +8140,28 @@
         }
       }
     },
+    "At most %lld at this price, and the leaflet doesn't say what the rest cost.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najwyżej %lld szt. w tej cenie, a gazetka nie podaje ceny pozostałych."
+          }
+        }
+      }
+    },
+    "At most %lld at this price; the rest at the regular price.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najwyżej %lld szt. w tej cenie; reszta w cenie regularnej."
+          }
+        }
+      }
+    },
     "At most %lld min": {
       "extractionState": "manual",
       "localizations": {
@@ -8585,6 +8692,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zanim zaczniemy"
+          }
+        }
+      }
+    },
+    "Before you go": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przed wyjściem"
           }
         }
       }
@@ -29002,6 +29120,28 @@
         }
       }
     },
+    "From my list": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Z mojej listy"
+          }
+        }
+      }
+    },
+    "From my list: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Z mojej listy: %@"
+          }
+        }
+      }
+    },
     "From walking to 30 minutes of running without stopping": {
       "extractionState": "manual",
       "localizations": {
@@ -30574,6 +30714,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Trenuję od czasu do czasu"
+          }
+        }
+      }
+    },
+    "I use %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Używam: %@"
           }
         }
       }
@@ -33422,6 +33573,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "它的照片或录音没有随它一起保留。如有需要，请重新添加。"
+          }
+        }
+      }
+    },
+    "Its shops close at %lld:00 today.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dziś jego sklepy zamykają się o %lld:00."
           }
         }
       }
@@ -40637,6 +40799,17 @@
         }
       }
     },
+    "Most of its shops are closed today.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dziś większość jego sklepów jest zamknięta."
+          }
+        }
+      }
+    },
     "Most running easy, and never two hard days in a row": {
       "extractionState": "manual",
       "localizations": {
@@ -41153,6 +41326,17 @@
         }
       }
     },
+    "My loyalty apps": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moje aplikacje lojalnościowe"
+          }
+        }
+      }
+    },
     "My numbers from Apple Health:": {
       "extractionState": "manual",
       "localizations": {
@@ -41591,6 +41775,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "自然"
+          }
+        }
+      }
+    },
+    "Needs %@, which you said you don't use.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wymaga programu %@, którego nie używasz."
           }
         }
       }
@@ -44128,6 +44323,17 @@
         }
       }
     },
+    "Not a real cut: it cost this little or less in the last 30 days.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To nie jest prawdziwa obniżka: w ostatnich 30 dniach kosztowało tyle samo lub mniej."
+          }
+        }
+      }
+    },
     "Not asked yet": {
       "extractionState": "manual",
       "localizations": {
@@ -44574,6 +44780,17 @@
         }
       }
     },
+    "Not counted: prices that need %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie liczę cen, które wymagają: %@."
+          }
+        }
+      }
+    },
     "Not dialled": {
       "extractionState": "manual",
       "localizations": {
@@ -44769,6 +44986,17 @@
         }
       }
     },
+    "Not looked up": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie wyszukano"
+          }
+        }
+      }
+    },
     "Not my At home list": {
       "extractionState": "manual",
       "localizations": {
@@ -44953,6 +45181,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "暂不，留在 Doddy 里"
+          }
+        }
+      }
+    },
+    "Not on yet: from %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jeszcze nie obowiązuje: od %@"
           }
         }
       }
@@ -50002,6 +50241,17 @@
         }
       }
     },
+    "Only in some shops: check yours.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tylko w wybranych sklepach: sprawdź swój."
+          }
+        }
+      }
+    },
     "Only open Doddy": {
       "extractionState": "manual",
       "localizations": {
@@ -50741,6 +50991,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Otwórz"
+          }
+        }
+      }
+    },
+    "Open %@: activate its coupons and scan it at the till.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz %@: aktywuj kupony i zeskanuj aplikację przy kasie."
           }
         }
       }
@@ -52244,6 +52505,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Otwórz plan teraz"
+          }
+        }
+      }
+    },
+    "Open the shop's app: activate its coupons and scan it at the till.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz aplikację sklepu: aktywuj kupony i zeskanuj ją przy kasie."
           }
         }
       }
@@ -55643,6 +55915,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "俏皮"
+          }
+        }
+      }
+    },
+    "Plus a deposit for the bottle or can.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do ceny dochodzi kaucja za butelkę lub puszkę."
           }
         }
       }
@@ -67506,6 +67789,17 @@
         }
       }
     },
+    "Share the list": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Udostępnij listę"
+          }
+        }
+      }
+    },
     "Share the two lists": {
       "extractionState": "manual",
       "localizations": {
@@ -68189,6 +68483,17 @@
         }
       }
     },
+    "Shops are closed on its last day: buy by %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W ostatni dzień promocji sklepy są zamknięte: kup do %@."
+          }
+        }
+      }
+    },
     "Shortcut and Back Tap": {
       "extractionState": "manual",
       "localizations": {
@@ -68716,6 +69021,17 @@
         }
       }
     },
+    "Show the %@ card.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pokaż kartę %@."
+          }
+        }
+      }
+    },
     "Show the place in Doddy first": {
       "extractionState": "manual",
       "localizations": {
@@ -68723,6 +69039,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Najpierw zobacz miejsce w Doddym"
+          }
+        }
+      }
+    },
+    "Show the shop's loyalty card.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pokaż kartę lojalnościową sklepu."
           }
         }
       }
@@ -72840,6 +73167,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "标签 %@，%lld 条笔记"
+          }
+        }
+      }
+    },
+    "Take %lld: it costs no more.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weź %lld szt.: nie zapłacisz więcej."
           }
         }
       }
@@ -77588,6 +77926,17 @@
         }
       }
     },
+    "The leaflet prints no price for this; the price is on the shelf.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gazetka nie podaje tu ceny; cena jest na półce."
+          }
+        }
+      }
+    },
     "The list holds at most %lld parcels. Remove one to add another.": {
       "extractionState": "manual",
       "localizations": {
@@ -79365,6 +79714,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cena w wyniku to %@. Wpisz coś niższego."
+          }
+        }
+      }
+    },
+    "The price is for at least %lld, so %lld are counted.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cena jest za co najmniej %lld szt., więc liczę %lld."
           }
         }
       }
@@ -83536,6 +83896,17 @@
         }
       }
     },
+    "This price only when buying at least %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ta cena tylko przy zakupie co najmniej %lld szt."
+          }
+        }
+      }
+    },
     "This recording couldn't be played.": {
       "extractionState": "manual",
       "localizations": {
@@ -85681,6 +86052,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "今天"
+          }
+        }
+      }
+    },
+    "Today is the last day.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dziś ostatni dzień."
           }
         }
       }
@@ -88527,6 +88909,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Do %@"
+          }
+        }
+      }
+    },
+    "Up to %lld items of up to %lld characters are checked at once. Not checked: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Naraz sprawdzam do %lld rzeczy, każdą do %lld znaków. Nie sprawdzono: %@"
           }
         }
       }
@@ -93310,6 +93703,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "使用期间，精确"
+          }
+        }
+      }
+    },
+    "While stocks last.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do wyczerpania zapasów."
           }
         }
       }
@@ -98381,6 +98785,17 @@
         }
       }
     },
+    "a deposit is added at the till": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "przy kasie dojdzie kaucja"
+          }
+        }
+      }
+    },
     "already gone": {
       "extractionState": "manual",
       "localizations": {
@@ -98392,6 +98807,17 @@
         }
       }
     },
+    "an app you don't use": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "aplikacja, której nie używasz"
+          }
+        }
+      }
+    },
     "another system": {
       "extractionState": "manual",
       "localizations": {
@@ -98399,6 +98825,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "inny system"
+          }
+        }
+      }
+    },
+    "at least %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "co najmniej %@"
+          }
+        }
+      }
+    },
+    "at most %lld per customer": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "najwyżej %lld szt. na klienta"
           }
         }
       }
@@ -99004,6 +99452,17 @@
         }
       }
     },
+    "not on until %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "obowiązuje dopiero od %@"
+          }
+        }
+      }
+    },
     "not sure": {
       "extractionState": "manual",
       "localizations": {
@@ -99011,6 +99470,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "nie wiadomo"
+          }
+        }
+      }
+    },
+    "only in some shops: check yours": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "tylko w wybranych sklepach: sprawdź swój"
           }
         }
       }
@@ -99033,6 +99503,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "bieg %@ km"
+          }
+        }
+      }
+    },
+    "shops are closed on its last day: buy by %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "w ostatni dzień sklepy są zamknięte: kup do %@"
           }
         }
       }
@@ -99092,6 +99573,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "其他人"
+          }
+        }
+      }
+    },
+    "take %lld to get the offer": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "weź %lld szt., żeby skorzystać z promocji"
           }
         }
       }
@@ -99745,6 +100237,17 @@
         }
       }
     },
+    "today is the last day": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "dziś ostatni dzień"
+          }
+        }
+      }
+    },
     "total": {
       "extractionState": "manual",
       "localizations": {
@@ -99833,6 +100336,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "gdziekolwiek jesteś"
+          }
+        }
+      }
+    },
+    "while stocks last": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "do wyczerpania zapasów"
           }
         }
       }

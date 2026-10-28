@@ -1,18 +1,66 @@
 {
-  "_comment": "POST /v1/deals/search (docs/implementation/SHOPPING.md, 'Leaflets'). Example data, not real prices. Offers per item best value first (price per kg, l or piece). `pages` only when a chain's leaflet was read in part.",
+  "_comment": "POST /v1/deals/search (docs/implementation/SHOPPING.md, 'Leaflets'). Example data, not real prices. Offers per item best value first (price per kg, l or piece). `pages` only when a chain's leaflet was read in part. Since ADR-661: flags, limit, effective (price per piece under a multi-buy mechanic), cut (against the 30-day low) and promotions without a price.",
   "request": {
-    "items": ["masło", "pieluchy rozmiar 4", "kawa mielona"],
-    "chains": ["biedronka", "lidl", "dino", "rossmann", "kaufland"],
+    "items": [
+      "masło",
+      "pieluchy rozmiar 4",
+      "kawa mielona"
+    ],
+    "chains": [
+      "biedronka",
+      "lidl",
+      "dino",
+      "rossmann",
+      "kaufland"
+    ],
     "language": "pl"
   },
   "response": {
     "checkedAt": "2026-10-24T06:10:00.000Z",
     "chains": [
-      { "chain": "biedronka", "status": "checked", "leaflet": { "title": "Gazetka od czwartku", "url": "https://www.biedronka.pl/pl/press,id,example,title,gazetka-od-czwartku", "validFrom": "2026-10-23", "validTo": "2026-10-29" }, "pages": { "read": 40, "of": 97 } },
-      { "chain": "lidl", "status": "checked", "leaflet": { "title": "Oferta od poniedziałku", "url": "https://www.lidl.pl/l/pl/gazetki/example/ar/0", "validFrom": "2026-10-20", "validTo": "2026-10-25" } },
-      { "chain": "dino", "status": "checked", "leaflet": { "title": "Gazetka Dino", "url": "https://marketdino.pl/gazetki/lista/standard", "validFrom": "2026-10-22", "validTo": "2026-10-28" } },
-      { "chain": "rossmann", "status": "no_match" },
-      { "chain": "kaufland", "status": "link_only", "leafletUrl": "https://www.kaufland.pl/gazetka-promocyjna.html" }
+      {
+        "chain": "biedronka",
+        "status": "checked",
+        "leaflet": {
+          "title": "Gazetka od czwartku",
+          "url": "https://www.biedronka.pl/pl/press,id,example,title,gazetka-od-czwartku",
+          "validFrom": "2026-10-23",
+          "validTo": "2026-10-29"
+        },
+        "pages": {
+          "read": 40,
+          "of": 97
+        }
+      },
+      {
+        "chain": "lidl",
+        "status": "checked",
+        "leaflet": {
+          "title": "Oferta od poniedziałku",
+          "url": "https://www.lidl.pl/l/pl/gazetki/example/ar/0",
+          "validFrom": "2026-10-20",
+          "validTo": "2026-10-25"
+        }
+      },
+      {
+        "chain": "dino",
+        "status": "checked",
+        "leaflet": {
+          "title": "Gazetka Dino",
+          "url": "https://marketdino.pl/gazetki/lista/standard",
+          "validFrom": "2026-10-22",
+          "validTo": "2026-10-28"
+        }
+      },
+      {
+        "chain": "rossmann",
+        "status": "no_match"
+      },
+      {
+        "chain": "kaufland",
+        "status": "link_only",
+        "leafletUrl": "https://www.kaufland.pl/gazetka-promocyjna.html"
+      }
     ],
     "items": [
       {
@@ -21,27 +69,61 @@
           {
             "chain": "biedronka",
             "product": "Masło Extra 82% 200 g",
-            "price": { "minor": 499, "currency": "PLN" },
-            "size": { "value": 200, "unit": "g" },
-            "unitPrice": { "minor": 2495, "per": "kg" },
-            "regularPrice": { "minor": 649, "currency": "PLN" },
-            "conditions": ["z aplikacją Moja Biedronka", "max 4 szt."],
+            "price": {
+              "minor": 499,
+              "currency": "PLN"
+            },
+            "size": {
+              "value": 200,
+              "unit": "g"
+            },
+            "unitPrice": {
+              "minor": 2495,
+              "per": "kg"
+            },
+            "regularPrice": {
+              "minor": 649,
+              "currency": "PLN"
+            },
+            "conditions": [
+              "z aplikacją Moja Biedronka",
+              "max 4 szt."
+            ],
             "validFrom": "2026-10-23",
             "validTo": "2026-10-29",
-            "source": { "url": "https://www.biedronka.pl/pl/press,id,example,title,gazetka-od-czwartku", "page": 4 },
+            "source": {
+              "url": "https://www.biedronka.pl/pl/press,id,example,title,gazetka-od-czwartku",
+              "page": 4
+            },
             "readBy": "page_image",
-            "check": false
+            "check": false,
+            "flags": [
+              "app"
+            ],
+            "limit": 4
           },
           {
             "chain": "lidl",
             "product": "Masło ekstra 82% 200 g",
-            "price": { "minor": 549, "currency": "PLN" },
-            "size": { "value": 200, "unit": "g" },
-            "unitPrice": { "minor": 2745, "per": "kg" },
+            "price": {
+              "minor": 549,
+              "currency": "PLN"
+            },
+            "size": {
+              "value": 200,
+              "unit": "g"
+            },
+            "unitPrice": {
+              "minor": 2745,
+              "per": "kg"
+            },
             "conditions": [],
             "validFrom": "2026-10-20",
             "validTo": "2026-10-25",
-            "source": { "url": "https://www.lidl.pl/l/pl/gazetki/example/ar/3", "page": 3 },
+            "source": {
+              "url": "https://www.lidl.pl/l/pl/gazetki/example/ar/3",
+              "page": 3
+            },
             "readBy": "page_image",
             "check": true
           }
@@ -53,15 +135,32 @@
           {
             "chain": "lidl",
             "product": "Pieluchy rozmiar 4, 50 szt.",
-            "price": { "minor": 4499, "currency": "PLN" },
-            "size": { "value": 50, "unit": "szt" },
-            "unitPrice": { "minor": 90, "per": "szt" },
-            "conditions": ["z Lidl Plus"],
+            "price": {
+              "minor": 4499,
+              "currency": "PLN"
+            },
+            "size": {
+              "value": 50,
+              "unit": "szt"
+            },
+            "unitPrice": {
+              "minor": 90,
+              "per": "szt"
+            },
+            "conditions": [
+              "z Lidl Plus"
+            ],
             "validFrom": "2026-10-20",
             "validTo": "2026-10-25",
-            "source": { "url": "https://www.lidl.pl/l/pl/gazetki/example/ar/7", "page": 7 },
+            "source": {
+              "url": "https://www.lidl.pl/l/pl/gazetki/example/ar/7",
+              "page": 7
+            },
             "readBy": "page_image",
-            "check": false
+            "check": false,
+            "flags": [
+              "app"
+            ]
           }
         ]
       },
@@ -71,24 +170,119 @@
           {
             "chain": "dino",
             "product": "Kawa mielona 500 g",
-            "price": { "minor": 1999, "currency": "PLN" },
-            "size": { "value": 500, "unit": "g" },
-            "unitPrice": { "minor": 3998, "per": "kg" },
+            "price": {
+              "minor": 1999,
+              "currency": "PLN"
+            },
+            "size": {
+              "value": 500,
+              "unit": "g"
+            },
+            "unitPrice": {
+              "minor": 3998,
+              "per": "kg"
+            },
             "conditions": [],
             "validFrom": "2026-10-22",
             "validTo": "2026-10-28",
-            "source": { "url": "https://marketdino.pl/gazetki/lista/standard", "page": 2 },
+            "source": {
+              "url": "https://marketdino.pl/gazetki/lista/standard",
+              "page": 2
+            },
             "readBy": "leaflet_data",
             "ean": "5900000000001",
-            "check": false
+            "check": false,
+            "lowest30d": {
+              "minor": 2299,
+              "currency": "PLN"
+            },
+            "cut": {
+              "percent": 13
+            }
+          },
+          {
+            "chain": "dino",
+            "product": "Kawa mielona Lavazza Crema e Gusto 250 g",
+            "price": {
+              "minor": 2599,
+              "currency": "PLN"
+            },
+            "size": {
+              "value": 250,
+              "unit": "g"
+            },
+            "unitPrice": {
+              "minor": 10396,
+              "per": "kg"
+            },
+            "conditions": [
+              "2+1"
+            ],
+            "validFrom": "2026-10-22",
+            "validTo": "2026-10-28",
+            "source": {
+              "url": "https://marketdino.pl/gazetki/lista/standard",
+              "page": 3
+            },
+            "readBy": "leaflet_data",
+            "check": false,
+            "effective": {
+              "price": {
+                "minor": 1733,
+                "currency": "PLN"
+              },
+              "quantity": 3,
+              "unitPrice": {
+                "minor": 6932,
+                "per": "kg"
+              }
+            }
+          }
+        ],
+        "promotions": [
+          {
+            "chain": "biedronka",
+            "text": "Wszystkie kawy mielone Jacobs",
+            "mechanic": "1+1",
+            "conditions": [
+              "z aplikacją Moja Biedronka",
+              "max 2 szt."
+            ],
+            "flags": [
+              "app"
+            ],
+            "validFrom": "2026-10-23",
+            "validTo": "2026-10-29",
+            "source": {
+              "url": "https://www.biedronka.pl/pl/press,id,example,title,gazetka-od-czwartku",
+              "page": 9
+            }
           }
         ]
       }
     ]
   },
   "errors": {
-    "disabled": { "status": 503, "body": { "error": "deals_disabled" } },
-    "dailyLimit": { "status": 429, "body": { "error": "daily_limit" } },
-    "invalid": { "status": 400, "body": { "error": "invalid_request", "fields": ["items"] } }
+    "disabled": {
+      "status": 503,
+      "body": {
+        "error": "deals_disabled"
+      }
+    },
+    "dailyLimit": {
+      "status": 429,
+      "body": {
+        "error": "daily_limit"
+      }
+    },
+    "invalid": {
+      "status": 400,
+      "body": {
+        "error": "invalid_request",
+        "fields": [
+          "items"
+        ]
+      }
+    }
   }
 }

@@ -97,6 +97,9 @@ enum PreferenceKey {
     static let welcomeSeen = "welcomeSeen"
     /// Settings › "Show the welcome again": the welcome shows once more, then clears this.
     static let welcomeReplay = "welcomeReplay"
+    /// Cheapest this week › My loyalty apps (ADR-661): the programs the user said they don't use
+    /// (`DealsPrograms.stored`). Empty means every leaflet price counts. Stays on this iPhone.
+    static let dealsProgramsNotUsed = "deals.programsNotUsed"
 }
 
 enum AppTab: Hashable {

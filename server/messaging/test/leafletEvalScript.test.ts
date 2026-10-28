@@ -15,7 +15,7 @@ interface Money { minor: number; currency: "PLN" }
 interface Product {
   name: string; size: string | null; price: Money; regularPrice: Money | null; lowest30d: Money | null; printedUnitPrice: string | null;
   conditions: string[]; validFrom: string | null; validTo: string | null; unitPrice: { minor: number; per: string } | null;
-  check: boolean; doubts: string[]; matchedItems: string[];
+  check: boolean; doubts: string[]; matchedItems: string[]; conditionKinds?: string[];
 }
 interface Page { leaflet: number; number: number; url: string; imageUrl: string; status: string; reason?: string; products: Product[] }
 interface Result {
@@ -104,7 +104,7 @@ describe("options", () => {
 
   test("the other refusals: chain, items, missing values, stray words; nothing typed is echoed back", () => {
     const refused = (argv: string[]) => { const r = script.parseArgs(argv); assert.ok(!r.ok, argv.join(" ")); return r.error; };
-    assert.match(refused(["--chain", "kaufland"]), /one of: biedronka, lidl, dino, rossmann/);
+    assert.match(refused(["--chain", "kaufland"]), /one of: biedronka, lidl, dino, rossmann, zabka/);
     assert.match(refused(["--chain"]), /--chain needs a value/);
     assert.match(refused(["--items", "--dry-run"]), /--items needs a value/);
     assert.match(refused(["--items", ", ,"]), /1 to 12 items/);
@@ -341,7 +341,7 @@ describe("a run against the fakes", () => {
     const { web, io, fetcher, sinks } = harness();
     const model = new FakeModel()
       .page("biedronka:1", { products: [read({ name: "Masło Extra 82%", size: "200 g", price: "4,99", regularPrice: "6,49", unitPrice: "24,95 zł/kg",
-        conditions: [{ kind: "app", quantity: null, text: null }, { kind: "limit", quantity: 4, text: null }], validFrom: "22.10", validTo: "26.10" })] })
+        conditions: [{ kind: "app", quantity: null, text: null, price: null, percent: null }, { kind: "limit", quantity: 4, text: null, price: null, percent: null }], validFrom: "22.10", validTo: "26.10" })] })
       .page("biedronka:2", { products: [read({ name: "Masło Polskie 200 g", price: "5,99", unitPrice: "19,99 zł/kg" })] })
       .page("biedronka:3", "refuse")
       .page("biedronka:4", "throw")
@@ -380,7 +380,7 @@ describe("a run against the fakes", () => {
     assert.deepEqual(butter, {
       name: "Masło Extra 82%", size: "200 g", price: { minor: 499, currency: "PLN" }, regularPrice: { minor: 649, currency: "PLN" }, lowest30d: null,
       printedUnitPrice: "24,95 zł/kg", conditions: ["z aplikacją Moja Biedronka", "max 4 szt."], validFrom: "22.10", validTo: "26.10",
-      unitPrice: { minor: 2495, per: "kg" }, check: false, doubts: [], matchedItems: ["masło"],
+      unitPrice: { minor: 2495, per: "kg" }, check: false, doubts: [], matchedItems: ["masło"], conditionKinds: ["app", "limit"],
     });
     const [wrongUnit] = r.pages[1]!.products;
     assert.deepEqual(wrongUnit!.unitPrice, { minor: 2995, per: "kg" }, "the unit price is the code's, not the printed 19,99");
