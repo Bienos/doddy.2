@@ -59,6 +59,9 @@ iPhone: NewsFeedSections.group (Today / Yesterday / Earlier) ─▶ FollowingVie
 | `swift test` DoddyCore (Swift 6.2.3 downloaded into this session) | **2,175 tests, 0 failures** (9 new in `NewsFollowingTests`) |
 | `scripts/typecheck_app_logic.sh` | PASS, 34 files (the new app files are SwiftUI and not among them) |
 | `tools/build_strings_catalog.py --check` | PASS; Polish 2,477 of 2,559 strings |
+| `scripts/ci.sh --core-only` after ADR-657 (28 Oct) | 35 of 37 steps PASS on the first run, iOS app NOT RUN (no Xcode). The two failures were this session's environment, both run again and passed: the messaging server's tests found its local Postgres stopped (restarted: **403 of 403 pass**), and the web end-to-end run looked for a Chromium build this container doesn't have (with `PLAYWRIGHT_CHROMIUM=/opt/pw-browsers/chromium`: **16 passed, 4 skipped**, the Logbook tests included) |
+| Voice agent spec check | PASS, 101 tools (`follow_news` `not_synced`) |
+| Backend `npm test`, web `npm test` and type-check | 435 of 435; 101 of 101; PASS |
 
 ## Not run
 
@@ -73,6 +76,14 @@ iPhone: NewsFeedSections.group (Today / Yesterday / Earlier) ─▶ FollowingVie
 - Sent to publishers: a request for each picture shown, from the iPhone, as any browser would.
 - Model output: none. Tool content (the feeds) is data and is shown as the publisher's, never as Doddy's words (R-TOOLS).
 - "Saved" is said only after `MemoryRepository.save` returned (R-MEM).
+
+## Preview (28 Oct 2026)
+
+An HTML mock-up of the three screens (Following, the "śledź CPK" card, the Follow sheet), built from the SwiftUI layout and the colour tokens, with the cards made by `buildFeed` from the four live Poland feeds that day. **A mock-up, not a screenshot of the app.** What the live feeds showed:
+
+- 24 cards, all of them with a picture (the four feeds carry one on every item).
+- The publisher's name is the feed's own title ("Najnowsze wiadomości - TVN24", "Polsat News - Wiadomości", "www.rp.pl"), so it is long and gets cut. A fixed short name per catalog feed would fix it; not done yet.
+- "Poland" carries world stories too (TVN24's "najnowsze" feed has everything).
 
 ## Decisions for the owner
 
