@@ -63,9 +63,11 @@ describe("signing in", () => {
     expect(seen.find((s) => s.method === "POST")?.body).toEqual({ code: "K7QM-4XPA" });
     const nav = screen.getByRole("navigation", { name: "Workspace" });
     // Logbook is there with example numbers only, and the menu says so (ADR-602).
-    expect(within(nav).getAllByRole("link").map((a) => a.textContent)).toEqual(["Home", "Messages Soon", "Documents", "Connected apps", "Activity", "Logbook Example", "Memory Soon", "Ask Doddy Soon", "Settings"]);
-    // Nothing pretends: no chat box, no memories, no tasks.
+    // The chat answers from the account today, so it has no marker (ADR-604).
+    expect(within(nav).getAllByRole("link").map((a) => a.textContent)).toEqual(["Home", "Messages Soon", "Chat", "Documents", "Connected apps", "Activity", "Logbook Example", "Memory Soon", "Settings"]);
+    // Nothing pretends: Home has no chat box of its own, only the way to the chat; no memories, no tasks.
     expect(screen.queryByRole("textbox")).toBeNull();
+    expect(screen.getByRole("link", { name: "Message Doddy" })).toHaveAttribute("href", "/chat");
     expect(screen.getByRole("heading", { name: "Not on the web yet" })).toBeInTheDocument();
   });
 
@@ -211,7 +213,7 @@ describe("the workspace", () => {
 
   test("an unknown address shows a page, not a blank screen", async () => {
     fakeServer(signedInRoutes);
-    renderApp("/chat", "en");
+    renderApp("/tasks", "en");
     expect(await screen.findByRole("heading", { name: "This page doesn't exist" })).toBeInTheDocument();
   });
 });

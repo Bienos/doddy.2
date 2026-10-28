@@ -78,11 +78,27 @@ export const MemoryDeleted = z.object({
   deletedConversations: z.number().int().nonnegative(),
 });
 
+/** The parts of the account the chat reads besides kept memory (ADR-604, backend/src/web/chatContext.ts). */
+export const ACCOUNT_PARTS = ["logbook", "talk", "apps", "documents", "activity"] as const;
+export type AccountPart = (typeof ACCOUNT_PARTS)[number];
+
 export const ChatSource = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("note"), id: z.string(), text: z.string(), capturedAt: z.string().nullable() }),
   z.object({ kind: z.literal("conversation"), id: z.string(), startedAt: z.string(), turns: z.array(Turn) }),
+  z.object({ kind: z.literal("account"), part: z.enum(ACCOUNT_PARTS) }),
 ]);
 export type ChatSource = z.infer<typeof ChatSource>;
 
 export const ChatReply = z.object({ text: z.string(), sources: z.array(ChatSource) });
 export type ChatReply = z.infer<typeof ChatReply>;
+
+/** What GET /v1/web/chat/context answers (ADR-604): which parts the chat can read now. Counts and names only. */
+export const ChatContext = z.object({
+  ready: z.boolean(),
+  memory: z.object({ configured: z.boolean(), notes: z.boolean(), conversations: z.boolean(), noteCount: z.number().int().nonnegative(), conversationCount: z.number().int().nonnegative() }),
+  logbook: z.object({ enabled: z.boolean(), days: z.number().int().nonnegative(), updatedAt: z.string().nullable() }),
+  apps: z.object({ connected: z.array(z.string()), available: z.number().int().nonnegative() }),
+  documents: z.object({ count: z.number().int().nonnegative() }),
+  activity: z.object({ count: z.number().int().nonnegative(), lastAt: z.string().nullable() }),
+});
+export type ChatContext = z.infer<typeof ChatContext>;

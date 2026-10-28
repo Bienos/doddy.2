@@ -1,0 +1,26 @@
+{
+  "ready": true,
+  "memory": {
+    "configured": true,
+    "notes": true,
+    "conversations": true,
+    "noteCount": 3,
+    "conversationCount": 1
+  },
+  "logbook": {
+    "enabled": true,
+    "days": 0,
+    "updatedAt": null
+  },
+  "apps": {
+    "connected": [],
+    "available": 6
+  },
+  "documents": {
+    "count": 0
+  },
+  "activity": {
+    "count": 0,
+    "lastAt": null
+  }
+}

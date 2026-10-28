@@ -14,7 +14,7 @@ Owner, 28 Oct 2026: "connection to Apple HomeKit so someone can set up Doddy by 
 - In `voice-agent/tools.json` and `instructions.md`, with `elevenlabs_tool_id: "not_synced"`. `scripts/voice_agent_spec.py check` passes (101 tools). **The live agent is unchanged**; it needs the owner's yes to the exact text.
 - The app side is below.
 
-## The app side (ADR-657)
+## The app side (ADR-658)
 - `Infrastructure/Connections/HomeKitClient.swift`, the only file that imports HomeKit: reads the primary home's lights, outlets, fans and user-made scenes; writes one power characteristic then reads it back; runs one scene. Scenes that touch anything but a light, outlet or fan are left out. `access()` and `request()` create the `HMHomeManager` (which is what makes iOS ask) only after Allow has been tapped once.
 - The controller resolves the proposal, shows a `.home` card with HomeKit's own name, and runs it on the tap. Decline answers `declined:`. The reply prefixes (`changed:`, `not changed:`, `failed:`, `unknown:`) are the ones the activity log already reads.
 - Settings › Connections › Home, with its description; the `NSHomeKitUsageDescription` prompt (English, Polish and eight machine drafts); the HomeKit entitlement in the four shipping entitlements files; the guard.

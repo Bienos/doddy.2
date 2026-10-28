@@ -19,6 +19,7 @@ import { MockWebSearchProvider } from "../src/tools/websearch.js";
 import { MemoryChat } from "../src/memory/chat.js";
 import { MemoryCipher } from "../src/memory/crypto.js";
 import { MemoryService } from "../src/memory/service.js";
+import { AccountContext } from "../src/web/chatContext.js";
 import { WebRoutes } from "../src/web/routes.js";
 import { ThreadService } from "../src/messages/service.js";
 import { type RedeemLimits, WebAuth } from "../src/web/sessions.js";
@@ -67,6 +68,8 @@ export async function startWeb(
     memoryLimits?: { conversations: number; bytes: number };
     /** Chat's daily caps (the same counters as Ask Doddy). Default: the test limits. */
     askLimits?: { userDailyAsk: number; serviceDailyAsk: number };
+    /** `false`: the chat reads kept notes and conversations only, as before ADR-604. Default: it reads the account too, as the server does. */
+    chatAccount?: boolean;
     origin?: string;
     withDist?: boolean;
     trustProxy?: boolean;
@@ -111,6 +114,7 @@ export async function startWeb(
     store,
     claude: o.chatClaude === undefined ? new MockClaudeProvider() : o.chatClaude,
     limits: o.askLimits ?? testLimits(),
+    ...(o.chatAccount === false ? {} : { account: new AccountContext({ store, memory, tools }) }),
     now: clock.now,
     log: (line) => logs.push(JSON.stringify(line)),
   });

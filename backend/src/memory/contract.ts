@@ -81,14 +81,36 @@ export const NotesSearchBody = z
   })
   .strict();
 
-/** What the browser's chat asks. The page sends the earlier turns it shows; nothing is stored. */
+/** How many earlier turns a chat question may carry (ADR-604: ten, so a longer thread keeps its thread). */
+export const CHAT_HISTORY_MAX = 10;
+
+/** What the browser's chat asks. The page sends the earlier turns it shows; nothing is stored on the server. */
 export const ChatBody = z
   .object({
     message: words(2_000),
-    history: z.array(z.object({ role: z.enum(["user", "assistant"]), text: words(2_000) }).strict()).max(6).optional(),
+    history: z.array(z.object({ role: z.enum(["user", "assistant"]), text: words(2_000) }).strict()).max(CHAT_HISTORY_MAX).optional(),
     locale: locale.optional(),
+    /** The browser's IANA time zone, so "today" and "this week" are the person's (ADR-604). */
+    timeZone: z.string().max(64).regex(/^[A-Za-z][A-Za-z0-9_+-]*(\/[A-Za-z0-9_+-]+){0,2}$/).refine(isTimeZone, "not a time zone").optional(),
   })
   .strict();
+
+/** The person's local date and weekday in `timeZone` (UTC when there is none). */
+export function localDay(now: Date, timeZone?: string): { day: string; weekday: string } {
+  const zone = timeZone ?? "UTC";
+  const day = new Intl.DateTimeFormat("en-CA", { timeZone: zone, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+  const weekday = new Intl.DateTimeFormat("en-GB", { timeZone: zone, weekday: "long" }).format(now);
+  return { day, weekday };
+}
+
+function isTimeZone(value: string): boolean {
+  try {
+    new Intl.DateTimeFormat("en-GB", { timeZone: value });
+    return true;
+  } catch {
+    return false;
+  }
+}
 export type ChatBody = z.output<typeof ChatBody>;
 
 // ---- what the page reads

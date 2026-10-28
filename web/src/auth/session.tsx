@@ -1,6 +1,7 @@
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { api, ApiError } from "../api/client.js";
 import type { WebSessionView } from "../api/schemas.js";
+import { clearThreads } from "../chat/threads.js";
 
 /**
  * Whether this browser is signed in (ADR-600). The page learns it only by asking the server:
@@ -53,10 +54,15 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       // Already signed out on the server: that's the outcome asked for.
       if (!(error instanceof ApiError && error.code === "unauthenticated")) throw error;
     }
+    // The chats kept in this browser belong to this sign-in (ADR-604): they go with it.
+    clearThreads();
     setState({ status: "signedOut", notice: null });
   }, []);
 
-  const expired = useCallback(() => setState({ status: "signedOut", notice: "expired" }), []);
+  const expired = useCallback(() => {
+    clearThreads();
+    setState({ status: "signedOut", notice: "expired" });
+  }, []);
   const recheck = useCallback(() => {
     setState({ status: "checking" });
     setAttempt((n) => n + 1);
