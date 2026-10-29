@@ -110,6 +110,17 @@ test("affiliate links (ADR-612): none by default; a rule is a shop host and an h
   }
 });
 
+test("search further (ADR-666): Allegro then Ceneo by default, {} for none, a bad setting stops the start", () => {
+  assert.deepEqual(loadConfig({ DATABASE_URL: "postgres://x/y" }).dealsSearchShops.map((s) => s.name), ["Allegro", "Ceneo"]);
+  assert.deepEqual(loadConfig({ DATABASE_URL: "postgres://x/y", DEALS_SEARCH_SHOPS: "{}" }).dealsSearchShops, []);
+  const shop = { name: "Sklep", template: "https://shop.example/search?q={q}" };
+  assert.deepEqual(loadConfig({ DATABASE_URL: "postgres://x/y", DEALS_SEARCH_SHOPS: JSON.stringify({ Sklep: shop.template }) }).dealsSearchShops, [shop]);
+  for (const bad of ["not json", "[]", '{"A": "https://a.example/"}', '{"A": "https://a.example/?q={q}&r={q}"}', '{"A": "http://a.example/?q={q}"}',
+    '{"A": 5}', '{"": "https://a.example/?q={q}"}', JSON.stringify(Object.fromEntries(["A", "B", "C", "D", "E"].map((n) => [n, "https://a.example/?q={q}"])))]) {
+    assert.throws(() => loadConfig({ DATABASE_URL: "postgres://x/y", DEALS_SEARCH_SHOPS: bad }), bad);
+  }
+});
+
 test("leaflets (ADR-609, 662): off by default, Haiku 5.5 reads pages, 40 pages per chain, 120 screened, 30 a day per account, 1000 per server", () => {
   const c = loadConfig({ DATABASE_URL: "postgres://x/y", DEALS_ENABLED: "" });
   assert.deepEqual(c.dealsSettings, { enabled: false, visionModel: "claude-haiku-5-5", maxPages: 40, screenPages: 120, dailyPerAccount: 30, dailyPerServer: 1000 });

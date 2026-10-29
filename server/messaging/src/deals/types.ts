@@ -99,12 +99,24 @@ export type ChainRow =
   | { chain: Chain; status: "failed"; pages?: PagesRead }
   | { chain: Chain; status: "no_match" | "no_leaflet" | "blocked" };
 
+/** "Search further" (ADR-666): addresses for the person to open, never fetched. `buyUrl` is the same search
+ * page through an affiliate network, only where a programme covers the shop (ADR-612). */
+export interface SearchLink { shop: string; url: string; buyUrl?: string }
+export interface Further {
+  /** Chains Doddy doesn't read that weren't asked for, with their leaflet page. */
+  leaflets: { chain: LinkChain; url: string }[];
+  /** Per item, in the request's order: its search page at each shop set, in the setting's order. */
+  searches: { item: string; links: SearchLink[] }[];
+}
+
 export interface DealsResponse {
   checkedAt: string;
   chains: ChainRow[];
   /** `similar` (ADR-662): products of another kind in the same family ("masło roślinne" for "masło"), at most
    * three, labelled as not the item; the basket never counts them. */
   items: { query: string; offers: Offer[]; promotions?: Promotion[]; similar?: Offer[] }[];
+  /** Absent when there is nothing to suggest, and from a server older than ADR-666. */
+  further?: Further;
 }
 
 /** What the shopper must do for a price. Turned into words by the code, never by the model. */

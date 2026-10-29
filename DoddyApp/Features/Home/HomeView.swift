@@ -290,6 +290,10 @@ struct HomeView: View {
             if let finished = ErrandsModel.shared.newestUnseen {
                 errandFinishedCard(finished)
             }
+            // Leaflets looked up by voice (ADR-666): the list waits on its screen, one tap away.
+            if DealsModel.shared.homeCardDue, let result = DealsModel.shared.lastResult {
+                dealsCard(result)
+            }
             if profiles.shouldOfferIntroduction {
                 getToKnowCard
             }
@@ -629,6 +633,48 @@ struct HomeView: View {
             .accessibilityIdentifier("home.errandFinished")
 
             Button { ErrandsModel.shared.markSeen(errand.id) } label: {
+                Image(systemName: "xmark")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Theme.secondaryText)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Not now")
+        }
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+    }
+
+    /// "Leaflet offers": the items, how many leaflets were read, and Show, which opens "Cheapest this week"
+    /// on that answer. The cross puts it away; opening the screen any other way does too.
+    private func dealsCard(_ result: DealsResult) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Button {
+                DealsModel.shared.homeCardSeen()
+                showDeals = true
+            } label: {
+                VStack(alignment: .leading, spacing: 6) {
+                    Label("Leaflet offers", systemImage: "cart")
+                        .font(.headline)
+                    Text(result.items.map(\.query).joined(separator: ", "))
+                        .font(.subheadline)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                    Text(String(format: NSLocalizedString("Leaflets read: %lld", comment: "on the Home card after a leaflet search"), result.readChainCount))
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.secondaryText)
+                    Text("Show")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Theme.accentText)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("home.dealsFound")
+
+            Button { DealsModel.shared.homeCardSeen() } label: {
                 Image(systemName: "xmark")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(Theme.secondaryText)

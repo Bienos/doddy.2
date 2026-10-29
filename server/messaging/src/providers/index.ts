@@ -68,6 +68,8 @@ export function providersFrom(config: Config) {
     fetcher,
     model: ds.enabled && config.anthropicApiKey ? new AnthropicDealsModel(config.anthropicApiKey, { model: ds.visionModel }) : undefined,
     log,
+    // ADR-666: the same partner rules as shopping errands (ADR-612), added after the picks.
+    further: { shops: config.dealsSearchShops, affiliate: new AffiliateLinks(ss.affiliateRules) },
   };
   // Price watches (shopping stage 2): the same polite fetcher reads the pages; no model and no other key is
   // involved. Without MEMORY_ENCRYPTION_KEY or WATCHES_ENABLED=1 the routes answer 503 watches_disabled.

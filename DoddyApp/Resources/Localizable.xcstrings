@@ -36477,6 +36477,17 @@
         }
       }
     },
+    "Leaflet offers": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Promocje z gazetek"
+          }
+        }
+      }
+    },
     "Leaflet, page %lld": {
       "extractionState": "manual",
       "localizations": {
@@ -36484,6 +36495,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Gazetka, strona %lld"
+          }
+        }
+      }
+    },
+    "Leaflets Doddy doesn't read": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gazetki, których Doddy nie czyta"
+          }
+        }
+      }
+    },
+    "Leaflets read: %lld": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przeczytane gazetki: %lld"
           }
         }
       }
@@ -54212,6 +54245,17 @@
         }
       }
     },
+    "Partner link": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Link partnerski"
+          }
+        }
+      }
+    },
     "Partner link: the page goes through an affiliate network on its way to the shop, and Doddy may earn a commission if you buy. Prices and the order of the picks don't change.": {
       "extractionState": "manual",
       "localizations": {
@@ -65690,6 +65734,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "搜索地点"
+          }
+        }
+      }
+    },
+    "Search for “%@” at %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szukaj „%@” w %@"
+          }
+        }
+      }
+    },
+    "Search further online": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szukaj dalej w internecie"
           }
         }
       }
@@ -81740,6 +81806,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "这里没有 Doddy 可以保留的文字或网页链接。没有保存任何内容。"
+          }
+        }
+      }
+    },
+    "These open the shops' own pages in Safari. Doddy doesn't read them.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Te linki otwierają strony sklepów w Safari. Doddy ich nie czyta."
           }
         }
       }

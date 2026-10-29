@@ -271,6 +271,14 @@ export const ResponseSchema = z.strictObject({
     z.strictObject({ chain: anyChain, status: z.enum(["no_match", "no_leaflet", "blocked"]) }),
   ])),
   items: z.array(z.strictObject({ query: z.string(), offers: z.array(OfferSchema).max(6), promotions: z.array(PromotionSchema).min(1).max(3).optional(), similar: z.array(OfferSchema).min(1).max(3).optional() })),
+  // ADR-666: addresses only. `buyUrl` only from an affiliate rule.
+  further: z.strictObject({
+    leaflets: z.array(z.strictObject({ chain: z.enum(["kaufland", "carrefour", "auchan", "netto"]), url: z.string().url().startsWith("https://") })).max(4),
+    searches: z.array(z.strictObject({
+      item: z.string(),
+      links: z.array(z.strictObject({ shop: z.string().min(1).max(40), url: z.string().url().startsWith("https://"), buyUrl: z.string().url().startsWith("https://").optional() })).min(1).max(4),
+    })).max(12),
+  }).optional(),
 });
 /** The fixture's example request and response (the contract the app builds against). */
 export const contractFixture = (): { request: unknown; response: unknown; errors: Record<string, { status: number; body: unknown }> } =>

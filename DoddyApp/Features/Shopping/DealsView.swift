@@ -116,6 +116,8 @@ struct DealsView: View {
                 }
             }
             .onAppear {
+                // Seen here, so Home's card for a voice search goes (ADR-666).
+                model.homeCardSeen()
                 if itemsText.isEmpty, let last = model.lastRequest {
                     itemsText = last.items.joined(separator: ", ")
                     chains = Set(last.chainsAsked)
@@ -234,6 +236,9 @@ struct DealsView: View {
                     ChainNotReadRow(report: report)
                 }
             }
+        }
+        if let further = result.further?.openable {
+            SearchFurtherSections(further: further)
         }
     }
 
@@ -497,6 +502,63 @@ enum DealDayText {
         var style = Date.FormatStyle().weekday(.abbreviated).day().month(.abbreviated)
         style.timeZone = calendar.timeZone
         return date.formatted(style)
+    }
+}
+
+/// "Search further" (ADR-666): the leaflets of the chains Doddy doesn't read that weren't asked for, then each
+/// item's search page at the online shops Doddy's server names, in its order. Addresses only: Safari opens the
+/// shop's page and Doddy reads none of them. A partner link is marked on its row and explained below, before
+/// any tap (ADR-612); it opens the same search page through the network.
+private struct SearchFurtherSections: View {
+    let further: DealsFurther
+
+    var body: some View {
+        if !further.leaflets.isEmpty {
+            Section("Leaflets Doddy doesn't read") {
+                ForEach(Array(further.leaflets.enumerated()), id: \.offset) { _, leaflet in
+                    if let url = URL(string: leaflet.url) {
+                        Link(destination: url) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(leaflet.chain.name).foregroundStyle(Theme.ink)
+                                Text("Open the leaflet").font(.footnote)
+                            }
+                        }
+                        .accessibilityIdentifier("deals.further.leaflet")
+                    }
+                }
+            }
+        }
+        if !further.searches.isEmpty {
+            Section {
+                ForEach(Array(further.searches.enumerated()), id: \.offset) { _, search in
+                    ForEach(Array(search.links.enumerated()), id: \.offset) { _, link in
+                        if let url = URL(string: link.openURL) {
+                            Link(destination: url) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(String(format: NSLocalizedString("Search for “%@” at %@", comment: "an item in the user's words, an online shop"),
+                                                search.item, link.shop))
+                                        .foregroundStyle(Theme.ink)
+                                    if link.isPartner {
+                                        Text("Partner link").font(.caption.weight(.semibold)).foregroundStyle(Theme.accentText)
+                                    }
+                                }
+                            }
+                            .accessibilityIdentifier("deals.further.search")
+                        }
+                    }
+                }
+            } header: {
+                Text("Search further online")
+            } footer: {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("These open the shops' own pages in Safari. Doddy doesn't read them.")
+                    if further.hasPartnerLink {
+                        Text("Partner link: the page goes through an affiliate network on its way to the shop, and Doddy may earn a commission if you buy. Prices and the order of the picks don't change.")
+                            .accessibilityIdentifier("deals.further.partnerNote")
+                    }
+                }
+            }
+        }
     }
 }
 

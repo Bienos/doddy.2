@@ -1,5 +1,6 @@
 import type { DealsSettings } from "./deals/types.js";
 import { parseAffiliateRules, type AffiliateRule } from "./shopping/affiliate.js";
+import { parseSearchShops, type SearchShop } from "./deals/further.js";
 import { z } from "zod";
 
 // Every provider block is optional: a missing block switches that feature off and the API
@@ -111,6 +112,11 @@ const schema = z.object({
   DEALS_SCREEN_PAGES: z.coerce.number().int().min(0).max(200).default(120),
   DEALS_DAILY_PER_ACCOUNT: z.coerce.number().int().min(1).max(1000).default(30),
   DEALS_DAILY_PER_SERVER: z.coerce.number().int().min(1).max(100000).default(1000),
+  // "Search further" (ADR-666): {"shop name": "https search page with one {q}"}, shown in this order under every
+  // leaflet answer. Empty: Allegro and Ceneo; {}: none. Links only, never fetched; AFFILIATE_LINKS wraps them.
+  DEALS_SEARCH_SHOPS: z.string().default("").transform((v, ctx) => {
+    try { return parseSearchShops(v); } catch (err) { ctx.addIssue({ code: "custom", message: (err as Error).message }); return z.NEVER; }
+  }),
 
   // Price watches (shopping stage 2, docs/implementation/SHOPPING_WATCH.md): after one yes, the worker reads one shop
   // page about four times a day for 30 days and sends one push when the confirmed price is at or below the user's
@@ -202,6 +208,8 @@ export interface Config {
   errandSettings: ErrandSettings;
   shoppingSettings: ShoppingSettings;
   dealsSettings: DealsSettings;
+  /** "Search further" under a leaflet answer (ADR-666). */
+  dealsSearchShops: SearchShop[];
   watchSettings: WatchSettings;
   assistantSettings: AssistantSettings;
 }
@@ -285,6 +293,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       enabled: e.DEALS_ENABLED === "1", visionModel: e.DEALS_VISION_MODEL, maxPages: e.DEALS_MAX_PAGES, screenPages: e.DEALS_SCREEN_PAGES,
       dailyPerAccount: e.DEALS_DAILY_PER_ACCOUNT, dailyPerServer: e.DEALS_DAILY_PER_SERVER,
     },
+    dealsSearchShops: e.DEALS_SEARCH_SHOPS,
     watchSettings: { enabled: e.WATCHES_ENABLED === "1", maxOpen: e.WATCHES_MAX_OPEN, checkHours: e.WATCHES_CHECK_HOURS },
     assistantSettings: {
       enabled: e.ASSISTANT_ENABLED === "1",
