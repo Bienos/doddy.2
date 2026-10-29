@@ -132,6 +132,9 @@ the conversation, "Small island" is Settings › "Expand when Doddy speaks", and
 
 ## Talk in the Island, and an island that opens up (ADR-577, 2026-10-20)
 
+> **Changed back 24 Oct (ADR-632):** both controls run `TalkButtonIntent` again, so the Action Button talks in the
+> island without opening Doddy, and a second press ends it (`ACTION_BUTTON_ISLAND.md`). The note below is history.
+>
 > **Changed 22 Oct (ADR-593):** the Action Button opens Doddy again. Owner: "make it so when I press
 > the Action Button the Doddy app opens, not the Dynamic Island alone with Doddy." The control below
 > (`TalkInIslandControl`, kind `com.bienos.doddy2.talk-island`) now runs `TalkToDoddyIntent` and is

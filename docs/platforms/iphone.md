@@ -62,7 +62,7 @@ Code lives under `DoddyApp/Features/<Folder>/`. Status docs are in `docs/impleme
 | Settings | Fourteen rows in four groups and their pages (`SettingsView`, `SettingsHubs`, `SettingsScreens`); the Action Button choice | 580, 579, 607 | SETTINGS_SIMPLIFIED, ACTION_BUTTON_ISLAND |
 | Onboarding | "Before we start": Terms acceptance (`LegalAcceptanceView`, `LegalAcceptanceStore`), then the optional introduction | 581 | LEGAL_PAGES_OWNER_CHECKLIST |
 | QuickActions, Spotlight | Icon menu, iPhone search | 339, 330 | - |
-| Setup | Ways to open Doddy: Back Tap guide, Action Button, control, Siri | 380, 558, 579 | V2_SHORTCUT_SETUP_STATUS, ACTION_BUTTON_ISLAND |
+| Setup | Ways to open Doddy: Back Tap guide, Action Button (talks in the island, ADR-632), control, Siri | 380, 558, 579, 632 | V2_SHORTCUT_SETUP_STATUS, ACTION_BUTTON_ISLAND |
 | Sharing | Shared lists through iCloud | 263 | SHARED_LISTS_STATUS |
 | Translator | Translator mode | 215 | TRANSLATOR_STATUS |
 | Watch | iPhone side of the Watch app | 232 | APPLE_WATCH_STATUS |

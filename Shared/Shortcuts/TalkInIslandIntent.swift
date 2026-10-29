@@ -2,10 +2,10 @@ import AppIntents
 
 /// "Talk in the Island" (ADR-577): starts a voice conversation without opening Doddy. Doddy says
 /// "Hey Pat, what's up?", the Dynamic Island opens up while he talks, and Mute and Stop are on the
-/// island and the Lock Screen. Listed in the Shortcuts app only: since ADR-593 no control runs it,
-/// and the control that did (`TalkInIslandControl`, which the Action Button can run) opens Doddy
-/// with `TalkToDoddyIntent` instead. `TalkToDoddyIntent` is the one that opens the app (Siri,
-/// Back Tap, both controls).
+/// island and the Lock Screen. Listed in the Shortcuts app only. The controls (Action Button,
+/// Control Center, Lock Screen) run `TalkButtonIntent`, which starts the same way and also ends a
+/// running conversation on a second press (ADR-632). `TalkToDoddyIntent` is the one that opens
+/// the app (Siri, Back Tap, the App Shortcut).
 ///
 /// An `AudioRecordingIntent`, so iOS lets the recording run with Doddy in the background while
 /// its Live Activity is up, and a `LiveActivityIntent`, so iOS runs it in the app's process
