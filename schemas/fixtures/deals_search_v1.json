@@ -1,5 +1,5 @@
 {
-  "_comment": "POST /v1/deals/search (docs/implementation/SHOPPING.md, 'Leaflets'). Example data, not real prices. Offers per item best value first (price per kg, l or piece). `pages` only when a chain's leaflet was read in part. Since ADR-661: flags, limit, effective (price per piece under a multi-buy mechanic), cut (against the 30-day low) and promotions without a price. Since ADR-662: similar (products of another kind in the item's family, never the item).",
+  "_comment": "POST /v1/deals/search (docs/implementation/SHOPPING.md, 'Leaflets'). Example data, not real prices. Offers per item best value first (price per kg, l or piece). `pages` only when a chain's leaflet was read in part. Since ADR-661: flags, limit, effective (price per piece under a multi-buy mechanic), cut (against the 30-day low) and promotions without a price. Since ADR-662: similar (products of another kind in the item's family, never the item). Since ADR-666: further (links for the person to open, never fetched: the leaflets of chains Doddy doesn't read that weren't asked for, and each item's search page at the shops set; buyUrl only where an affiliate programme covers the shop).",
   "request": {
     "items": [
       "masło",
@@ -287,7 +287,65 @@
           }
         ]
       }
-    ]
+    ],
+    "further": {
+      "leaflets": [
+        {
+          "chain": "carrefour",
+          "url": "https://www.carrefour.pl/gazetki"
+        },
+        {
+          "chain": "auchan",
+          "url": "https://www.auchan.pl/pl/gazetki"
+        },
+        {
+          "chain": "netto",
+          "url": "https://netto.pl/gazetka-netto/"
+        }
+      ],
+      "searches": [
+        {
+          "item": "masło",
+          "links": [
+            {
+              "shop": "Allegro",
+              "url": "https://allegro.pl/listing?string=mas%C5%82o",
+              "buyUrl": "https://network.example/click?id=7&to=https%3A%2F%2Fallegro.pl%2Flisting%3Fstring%3Dmas%25C5%2582o"
+            },
+            {
+              "shop": "Ceneo",
+              "url": "https://www.ceneo.pl/;szukaj-mas%C5%82o"
+            }
+          ]
+        },
+        {
+          "item": "pieluchy rozmiar 4",
+          "links": [
+            {
+              "shop": "Allegro",
+              "url": "https://allegro.pl/listing?string=pieluchy+rozmiar+4"
+            },
+            {
+              "shop": "Ceneo",
+              "url": "https://www.ceneo.pl/;szukaj-pieluchy+rozmiar+4"
+            }
+          ]
+        },
+        {
+          "item": "kawa mielona",
+          "links": [
+            {
+              "shop": "Allegro",
+              "url": "https://allegro.pl/listing?string=kawa+mielona"
+            },
+            {
+              "shop": "Ceneo",
+              "url": "https://www.ceneo.pl/;szukaj-kawa+mielona"
+            }
+          ]
+        }
+      ]
+    }
   },
   "errors": {
     "disabled": {

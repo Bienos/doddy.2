@@ -24,6 +24,7 @@ app.log.info({
   errands: !!(providers.errands.researcher && providers.cipher), errandsModel: config.errandSettings.model,
   assistant: !!providers.assistant.responder, assistantModel: config.assistantSettings.model,
   deals: config.dealsSettings.enabled, dealsReader: !!providers.deals.model, shoppingOffers: !!config.shoppingSettings.serperApiKey,
+  dealsSearchShops: config.dealsSearchShops.length, affiliateRules: config.shoppingSettings.affiliateRules.length,
   watches: config.watchSettings.enabled && !!providers.cipher,
 }, "configured features");
 

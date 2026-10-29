@@ -2488,7 +2488,7 @@ final class VoiceSessionController {
         }
         // ASK-01 (ADR-483): nothing below runs before the user's yes for exactly this call. Tools
         // with a payload card of their own (and the server's tools) ask through that card.
-        switch AskFirst.need(for: request) {
+        switch AskFirst.need(for: request, polish: Self.cardsInPolish) {
         case .yesFirst(let card), .tapFirst(let card):
             guard askLedger.mayRun(call.toolCallId, request: request, at: Date()) else {
                 let needsTap = AskFirst.needsTap(AskFirst.need(for: request))
@@ -2853,6 +2853,9 @@ final class VoiceSessionController {
             await reply(call.toolCallId, VoiceToolReply.failed("The request was incomplete (\(reason))."), isError: true)
         }
     }
+
+    /// The ask cards whose words DoddyCore chooses (ADR-666: leaflets) follow the language the app is shown in.
+    private static var cardsInPolish: Bool { NotificationLanguage.preferred(Bundle.main.preferredLocalizations) == .polish }
 
     // MARK: Plan card (ADR-204)
 
@@ -3938,7 +3941,7 @@ final class VoiceSessionController {
             if isCurrent(toolCallID), permissionRequest == nil {
                 let request = VoiceToolRequest.parse(name: call.toolName, parametersJSON: call.parameters)
                 var askCard: AskCard?
-                if case .yesFirst(let card) = AskFirst.need(for: request) { askCard = card }
+                if case .yesFirst(let card) = AskFirst.need(for: request, polish: Self.cardsInPolish) { askCard = card }
                 permissionRequest = PermissionRequest(
                     toolCallID: toolCallID, connection: connection, kind: PermissionAsk.kind(iosRefused: refused),
                     reason: PermissionAsk.reason(request), askCard: askCard, toolName: call.toolName, parameters: call.parameters)

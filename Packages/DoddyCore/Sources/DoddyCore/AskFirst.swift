@@ -65,7 +65,8 @@ public enum AskFirst {
 
     /// Every request has an answer here; the switch has no default, so a new tool doesn't compile
     /// until it says how it asks.
-    public static func need(for request: VoiceToolRequest, calendar: Calendar = .current) -> Need {
+    /// `polish`: the app is shown in Polish, for the cards whose words are chosen here (ADR-666: leaflets).
+    public static func need(for request: VoiceToolRequest, calendar: Calendar = .current, polish: Bool = false) -> Need {
         switch request {
         case .unsupported, .invalid, .needsClarification:
             return .nothingRuns
@@ -121,7 +122,7 @@ public enum AskFirst {
         case .findDeals(let request):
             // Public leaflets read on Doddy's server, changing nothing (SHOPPING.md). Not one of
             // `publicLookups`: whether leaflet look-ups run at once is an open owner decision.
-            return .yesFirst(DealsAsk.card(request))
+            return .yesFirst(DealsAsk.card(request, polish: polish))
         case .addToList(let request):
             return .tapFirst(AskCard(title: "Add to \(request.list)?", lines: request.items, confirmLabel: "Add"))
         case .checkOff(let request):

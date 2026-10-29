@@ -30,6 +30,9 @@ final class DealsModel {
     private(set) var lastQuantities: [ListQuantity?] = []
     /// The entries of the last request that didn't fit (over 12 items, or too long).
     private(set) var lastLeftOut: [String] = []
+    /// A voice search answered and the leaflet screen hasn't been open since (ADR-666): Home shows a card
+    /// that opens it. In memory only, like the answer.
+    private(set) var homeCardDue = false
 
     /// The loyalty apps the user said they don't use, as stored on this iPhone.
     var programs: DealsPrograms {
@@ -48,6 +51,7 @@ final class DealsModel {
         let products = read.items.isEmpty ? request : DealsRequest(items: read.items, chains: request.chains, language: request.language)
         switch await search(products, quantities: read.quantities, leftOut: read.leftOut) {
         case .success(let result):
+            homeCardDue = true
             // The voice tool's items are already within the limits (`parseFindDeals`), so nothing is left out here.
             return DealsResultText.forAgent(result, language: request.language, programs: programs,
                                             quantities: read.quantities, today: ShoppingCalendar.today(),
@@ -55,6 +59,11 @@ final class DealsModel {
         case .failure(let error):
             return VoiceToolReply.dealsNotChecked(error)
         }
+    }
+
+    /// The leaflet screen was opened, or the card on Home was put away.
+    func homeCardSeen() {
+        homeCardDue = false
     }
 
     /// One request. On success the answer is kept for the screen; on failure the screen says why.

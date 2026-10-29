@@ -102,7 +102,7 @@ struct HomeView: View {
                     .modifier(SlideIn(shown: buttonsShown, delay: 0))
             }
             .background(Theme.canvas.ignoresSafeArea())
-            // ADR-596: the island grows down with his waves while he talks on Home.
+            // ADR-596, ADR-665: the island grows to the sides with his waves while he talks on Home.
             .overlay(alignment: .top) {
                 if let live = conversation.live {
                     IslandExtension(look: islandLook(live))
@@ -142,7 +142,7 @@ struct HomeView: View {
             }) { TranslatorStartView(chosen: $translatorChoice) }
         }
         .foregroundStyle(Theme.ink)
-        // ADR-654: while he talks the island extension is wider than the gap in the status bar.
+        // ADR-654, ADR-665: while he talks the island's strip is wider than the gap in the status bar.
         .statusBarHidden(conversation.live != nil)
         // Motion v2: each sheet and cover from Home hides him in the frame it starts. Ask isn't
         // one of them (MV4: its cover carries him up on its composer), and the Files sheet
@@ -168,8 +168,8 @@ struct HomeView: View {
             }
         }
         .frame(minHeight: 44)
-        // Below the island's extension while he talks (ADR-596, ADR-654).
-        .padding(.top, conversation.live == nil ? 8 : 66)
+        // The island's strip hangs nothing below the island (ADR-665), so the header stays put.
+        .padding(.top, 8)
     }
 
     private func islandLook(_ live: VoiceSessionController) -> IslandExtension.Look {
@@ -289,6 +289,10 @@ struct HomeView: View {
             // A task Doddy finished in the background since the user last looked (ADR-570).
             if let finished = ErrandsModel.shared.newestUnseen {
                 errandFinishedCard(finished)
+            }
+            // Leaflets looked up by voice (ADR-666): the list waits on its screen, one tap away.
+            if DealsModel.shared.homeCardDue, let result = DealsModel.shared.lastResult {
+                dealsCard(result)
             }
             if profiles.shouldOfferIntroduction {
                 getToKnowCard
@@ -629,6 +633,48 @@ struct HomeView: View {
             .accessibilityIdentifier("home.errandFinished")
 
             Button { ErrandsModel.shared.markSeen(errand.id) } label: {
+                Image(systemName: "xmark")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Theme.secondaryText)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Not now")
+        }
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+    }
+
+    /// "Leaflet offers": the items, how many leaflets were read, and Show, which opens "Cheapest this week"
+    /// on that answer. The cross puts it away; opening the screen any other way does too.
+    private func dealsCard(_ result: DealsResult) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Button {
+                DealsModel.shared.homeCardSeen()
+                showDeals = true
+            } label: {
+                VStack(alignment: .leading, spacing: 6) {
+                    Label("Leaflet offers", systemImage: "cart")
+                        .font(.headline)
+                    Text(result.items.map(\.query).joined(separator: ", "))
+                        .font(.subheadline)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                    Text(String(format: NSLocalizedString("Leaflets read: %lld", comment: "on the Home card after a leaflet search"), result.readChainCount))
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.secondaryText)
+                    Text("Show")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Theme.accentText)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("home.dealsFound")
+
+            Button { DealsModel.shared.homeCardSeen() } label: {
                 Image(systemName: "xmark")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(Theme.secondaryText)

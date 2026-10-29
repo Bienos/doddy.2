@@ -11,6 +11,7 @@ import { dino } from "./chains/dino.js";
 import { lidl } from "./chains/lidl.js";
 import { rossmann } from "./chains/rossmann.js";
 import { zabka } from "./chains/zabka.js";
+import { furtherSearch, type FurtherDeps } from "./further.js";
 import { PoliteFetcher, type PageFetcher } from "./fetcher.js";
 import {
   headMention, itemRules, MATCH_THRESHOLD, MAX_PICK_CANDIDATES, matchScore, meetsRules, normalize, parsePrintedUnitPrice, parseSize,
@@ -42,6 +43,8 @@ export interface DealsDeps {
   adapters?: Partial<Record<ReadChain, ChainAdapter>>;
   /** Where per-chain log lines go (codes and counts only). */
   log?: (msg: string, extra?: object) => void;
+  /** "Search further" (ADR-666): the shops' search pages and partner links. Absent: no `further` in the answer. */
+  further?: FurtherDeps;
 }
 
 export interface SearchInput { items: string[]; chains?: Chain[]; language: string }
@@ -736,8 +739,10 @@ export async function searchDeals(deps: DealsDeps, input: SearchInput, signal: A
   const statuses: SearchStats["statuses"] = {};
   for (const c of chains) statuses[c.status] = (statuses[c.status] ?? 0) + 1;
   const offers = items.flatMap((i) => i.offers);
+  // Built last, from the request alone: nothing above depends on it (ADR-666).
+  const further = deps.further ? furtherSearch(queries, requested, deps.further) : undefined;
   return {
-    response: { checkedAt: now().toISOString(), chains, items },
+    response: { checkedAt: now().toISOString(), chains, items, ...(further ? { further } : {}) },
     stats: {
       chains: chains.length, statuses, offers: offers.length, checks: offers.filter((o) => o.check).length,
       pagesRead: results.reduce((s, r) => s + r.pagesRead, 0), ...usage, picked, ms: Date.now() - started,

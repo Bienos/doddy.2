@@ -219,12 +219,18 @@ public struct DealsResult: Codable, Equatable, Sendable {
     public let chains: [DealsChainReport]
     /// One row per item asked for, in the request's order.
     public let items: [DealsItemResult]
+    /// "Search further" (ADR-666); absent from a server older than it, or with nothing to suggest.
+    public let further: DealsFurther?
 
-    public init(checkedAt: String, chains: [DealsChainReport], items: [DealsItemResult]) {
+    public init(checkedAt: String, chains: [DealsChainReport], items: [DealsItemResult], further: DealsFurther? = nil) {
         self.checkedAt = checkedAt
         self.chains = chains
         self.items = items
+        self.further = further
     }
+
+    /// How many chains were read for this answer (for the card on Home).
+    public var readChainCount: Int { chains.filter { $0.status.wasRead }.count }
 
     public var checkedDate: Date? { ServerDates.parse(checkedAt) }
 
@@ -232,6 +238,83 @@ public struct DealsResult: Codable, Equatable, Sendable {
     public func report(for chain: DealsChain) -> DealsChainReport? {
         chains.first { $0.chain == chain }
     }
+}
+
+/// "Search further" under the answer (ADR-666): addresses for the person to open, which Doddy never fetches.
+/// The server builds them from the request alone, after the offers are picked, so they change no pick or order.
+public struct DealsFurther: Codable, Equatable, Sendable {
+    /// Chains Doddy doesn't read that weren't asked for, with their leaflet page.
+    public let leaflets: [DealsLeafletLink]
+    /// Per item, in the request's order: its search page at each shop, in the server's order.
+    public let searches: [DealsItemSearch]
+
+    public init(leaflets: [DealsLeafletLink], searches: [DealsItemSearch]) {
+        self.leaflets = leaflets
+        self.searches = searches
+    }
+
+    /// Only https addresses with a host; nothing when none is left.
+    public var openable: DealsFurther? {
+        let leaflets = leaflets.filter { Self.isOpenable($0.url) }
+        let searches = searches.compactMap { search -> DealsItemSearch? in
+            let links = search.links.filter { Self.isOpenable($0.openURL) }
+            return links.isEmpty ? nil : DealsItemSearch(item: search.item, links: links)
+        }
+        return leaflets.isEmpty && searches.isEmpty ? nil : DealsFurther(leaflets: leaflets, searches: searches)
+    }
+
+    /// The shops named in the searches, in order, once each.
+    public var shopNames: [String] {
+        var seen: [String] = []
+        for link in searches.flatMap(\.links) where !seen.contains(link.shop) { seen.append(link.shop) }
+        return seen
+    }
+
+    public var hasPartnerLink: Bool { searches.contains { $0.links.contains(where: \.isPartner) } }
+
+    public static func isOpenable(_ text: String) -> Bool {
+        guard let url = URL(string: text), url.scheme == "https", let host = url.host, !host.isEmpty else { return false }
+        return true
+    }
+}
+
+public struct DealsLeafletLink: Codable, Equatable, Sendable {
+    public let chain: DealsChain
+    public let url: String
+
+    public init(chain: DealsChain, url: String) {
+        self.chain = chain
+        self.url = url
+    }
+}
+
+public struct DealsItemSearch: Codable, Equatable, Sendable {
+    /// The item in the user's words.
+    public let item: String
+    public let links: [DealsSearchLink]
+
+    public init(item: String, links: [DealsSearchLink]) {
+        self.item = item
+        self.links = links
+    }
+}
+
+public struct DealsSearchLink: Codable, Equatable, Sendable {
+    public let shop: String
+    /// The shop's own search page.
+    public let url: String
+    /// The same page through an affiliate network (ADR-612), only where a programme covers the shop.
+    public let buyUrl: String?
+
+    public init(shop: String, url: String, buyUrl: String? = nil) {
+        self.shop = shop
+        self.url = url
+        self.buyUrl = buyUrl
+    }
+
+    public var isPartner: Bool { buyUrl != nil }
+    /// What a tap opens: the partner link when there is one, said under it before the tap.
+    public var openURL: String { buyUrl ?? url }
 }
 
 /// What happened at one chain.
@@ -660,7 +743,20 @@ extension VoiceToolRequest {
 /// spoken yes or a tap answers it. Whether leaflet look-ups join the public look-ups that run at
 /// once (`AskFirst.publicLookups`) is an open owner decision (SHOPPING.md), so for now it asks.
 public enum DealsAsk {
-    public static func card(_ request: DealsRequest) -> AskCard {
+    /// `polish`: the app is shown in Polish (`NotificationLanguage`). The card is drawn as it is, so its
+    /// words are chosen here (ADR-666); other languages get the English card.
+    public static func card(_ request: DealsRequest, polish: Bool = false) -> AskCard {
+        if polish {
+            let chains = request.chainsAsked.map { $0.isRead ? $0.name : "\($0.name) (tylko link do gazetki)" }
+            return AskCard(
+                title: "Sprawdzić tegotygodniowe gazetki?",
+                lines: [
+                    "Produkty: " + request.items.joined(separator: ", "),
+                    "Sklepy: " + chains.joined(separator: ", "),
+                    "Doddy czyta gazetki na swoim serwerze. Do sklepów nie trafia nic, co cię identyfikuje; Rossmann dostaje nazwy produktów jako wyszukiwanie.",
+                ],
+                confirmLabel: "Tak, sprawdź")
+        }
         let chains = request.chainsAsked.map { $0.isRead ? $0.name : "\($0.name) (leaflet link only)" }
         return AskCard(
             title: "Check this week's leaflets?",
@@ -747,13 +843,21 @@ public enum DealsResultText {
             data.append(parts.joined(separator: " · "))
         }
         data.append("Read at: \(clip(result.checkedAt, 40))")
-        return ErrandResultText.bounded(header: header, data: data, footer: footer, maxCharacters: maxCharacters, cutNote: cutNote)
+        return ErrandResultText.bounded(header: header, data: data, footer: footer(result), maxCharacters: maxCharacters, cutNote: cutNote)
     }
 
     /// A chain's name, cleaned: one this app doesn't know is named by the server's identifier.
     static func name(_ chain: DealsChain) -> String { ErrandsPrompt.clip(chain.name, 40) }
 
-    static let footer = "Links to the leaflets are on the user's screen; don't read them out."
+    /// Outside the data markers: the app's own words. Since ADR-666 the app puts a card on Home that opens this
+    /// list, so the agent may say once that it's on the screen, and names the shops of "search further".
+    static func footer(_ result: DealsResult) -> String {
+        var text = "This list is in the app now: a card on Home opens it. You may tell them so once, in a few words."
+        if let further = result.further?.openable, !further.shopNames.isEmpty {
+            text += " It also has links to search for the items at " + further.shopNames.joined(separator: ", ") + "."
+        }
+        return text + " Links to the leaflets are on the user's screen; don't read them out."
+    }
     static let cutNote = "(Cut short: the rest is on the user's screen.)"
 
     static func offerPrice(_ offer: DealOffer, _ money: (Money) -> String) -> String {

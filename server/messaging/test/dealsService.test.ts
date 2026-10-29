@@ -8,6 +8,7 @@ import { parseFlyer } from "../src/deals/chains/lidl.js";
 import { parsePromotions } from "../src/deals/chains/rossmann.js";
 import { PoliteFetcher } from "../src/deals/fetcher.js";
 import { parsePrice } from "../src/deals/vision.js";
+import { DEFAULT_SEARCH_SHOPS } from "../src/deals/further.js";
 import { buildOffer, mainUnit, searchDeals, selectOffers, type DealsDeps } from "../src/deals/service.js";
 import { DEFAULT_DEALS_SETTINGS, type Chain, type DealsResponse, type Offer, type ReadChain } from "../src/deals/types.js";
 import {
@@ -53,7 +54,8 @@ const brief = (o: Offer) => [o.chain, o.product, o.price.minor];
 describe("the leaflet search", () => {
   test("the contract's shape (the fixture itself passes the same strict schema)", async () => {
     assert.ok(ResponseSchema.safeParse(contractFixture().response).success, "the schema describes the contract fixture");
-    const { response } = await search();
+    // With "search further" set, as the server runs (ADR-666); without it the answer has no `further`.
+    const { response } = await search({ deps: { further: { shops: DEFAULT_SEARCH_SHOPS } } });
     const parsed = ResponseSchema.safeParse(response);
     assert.ok(parsed.success, JSON.stringify(parsed.error?.issues));
     assert.equal(response.checkedAt, "2026-10-24T06:10:00.000Z");
