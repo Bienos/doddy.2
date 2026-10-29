@@ -279,7 +279,8 @@ final class DealsClientTests: XCTestCase {
         let nbsp = "\u{00A0}"
         XCTAssertTrue(block.contains("- \"masło\": lowest price per kg at Biedronka · \"Masło Extra 82% 200 g\" · 4,99\(nbsp)zł (24,95\(nbsp)zł/kg), regular 6,49\(nbsp)zł · conditions: z aplikacją Moja Biedronka; max 4 szt. · until 2026-10-29 · also: Lidl 5,49\(nbsp)zł (needs checking)"), block)
         XCTAssertTrue(block.contains("- \"pieluchy rozmiar 4\": lowest price per szt at Lidl · \"Pieluchy rozmiar 4, 50 szt.\" · 44,99\(nbsp)zł (0,90\(nbsp)zł/szt) · conditions: z Lidl Plus · until 2026-10-25"))
-        XCTAssertTrue(block.contains("- \"kawa mielona\": lowest price per kg at Dino · \"Kawa mielona 500 g\" · 19,99\(nbsp)zł (39,98\(nbsp)zł/kg) · until 2026-10-28"))
+        XCTAssertTrue(block.contains("- \"kawa mielona\": lowest price per kg at Dino · \"Kawa mielona 500 g\" · 19,99\(nbsp)zł (39,98\(nbsp)zł/kg), lowest in 30 days 22,99\(nbsp)zł · a real cut of 13% against its lowest price in the last 30 days · until 2026-10-28 · also: Dino 25,99\(nbsp)zł (3 for 17,33\(nbsp)zł each) · promotions printed without a price, so the price is on the shelf: Biedronka \"Wszystkie kawy mielone Jacobs\" 1+1 (z aplikacją Moja Biedronka; max 2 szt.) until 2026-10-29"), block)
+        XCTAssertTrue(block.contains("Before going (one-shop basket): Lidl: open the Lidl Plus app, activate its coupons and scan it at the till"))
         XCTAssertTrue(block.contains("Leaflets read: Biedronka (2026-10-23 to 2026-10-29), Lidl (2026-10-20 to 2026-10-25), Dino (2026-10-22 to 2026-10-28)"))
         XCTAssertTrue(block.contains("Read only in part, so a cheaper offer may be on the pages not read: Biedronka 40 of 97 pages"))
         XCTAssertTrue(block.contains("Read, nothing matched: Rossmann"))

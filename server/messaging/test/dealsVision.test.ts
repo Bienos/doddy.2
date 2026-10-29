@@ -47,11 +47,11 @@ describe("what the code keeps of a read", () => {
   });
 
   test("a product whose price can't be parsed is dropped; conditions become kinds the code words; doubts are kept", () => {
-    const products = readProducts({ products: [
+    const products = readProducts({ promotions: [], products: [
       read({ name: "Masło Extra 82%", size: "200 g", price: "4,99", regularPrice: "6,49", conditions: [
-        { kind: "app", quantity: null, text: null }, { kind: "limit", quantity: 4, text: null }, { kind: "min_quantity", quantity: 0, text: null },
-        { kind: "multi_buy", quantity: null, text: " 2 + 1 " }, { kind: "other", quantity: null, text: "druga sztuka za 1 zł" },
-        { kind: "other", quantity: null, text: "tylko w sobotę" }, { kind: "app", quantity: null, text: null },
+        { kind: "app", quantity: null, text: null, price: null, percent: null }, { kind: "limit", quantity: 4, text: null, price: null, percent: null }, { kind: "min_quantity", quantity: 0, text: null, price: null, percent: null },
+        { kind: "multi_buy", quantity: null, text: " 2 + 1 ", price: null, percent: null }, { kind: "other", quantity: null, text: "druga sztuka za 1 zł", price: null, percent: null },
+        { kind: "other", quantity: null, text: "tylko w sobotę", price: null, percent: null }, { kind: "app", quantity: null, text: null, price: null, percent: null },
       ] }),
       read({ name: "Masło Roślinne", price: "ok. 5 zł" }),
       read({ name: "   ", price: "3,99" }),
@@ -106,7 +106,7 @@ describe("AnthropicDealsModel against a local stand-in for the API", () => {
   });
 
   test("one base64 image, the items as data, structured output, Haiku at low effort, no tools", async () => {
-    const out = { products: [read({ name: "Masło Extra 82%", price: "4,99" })] };
+    const out = { products: [read({ name: "Masło Extra 82%", price: "4,99" })], promotions: [] };
     const api = await standIn(() => message(JSON.stringify(out)));
     try {
       const model = new AnthropicDealsModel("test-key", { baseURL: api.baseURL });
@@ -127,7 +127,9 @@ describe("AnthropicDealsModel against a local stand-in for the API", () => {
       assert.equal(content[0]!.source!.media_type, "image/png");
       assert.equal(Buffer.from(content[0]!.source!.data, "base64").equals(img.data), true);
       assert.deepEqual(JSON.parse(content[1]!.text!), { chain: "Biedronka", items: ["masło"] });
-      assert.match(sent.body.system as string, /Never guess/);
+      const system = sent.body.system as { type: string; text: string; cache_control?: { type: string } }[];
+      assert.match(system[0]!.text, /Never guess/);
+      assert.deepEqual(system[0]!.cache_control, { type: "ephemeral" }, "the same system prompt on every page read is cached");
     } finally {
       api.close();
     }

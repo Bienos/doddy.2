@@ -9,7 +9,8 @@
 //   node scripts/leaflet-eval.mjs --dry-run                         # no key needed: the pages it would read, worst-case cost
 //   node scripts/leaflet-eval.mjs                                   # Biedronka, 50 pages, masło / mleko / kawa
 //   node scripts/leaflet-eval.mjs --chain lidl --max-pages 30 --items "masło,mleko,kawa" --out ~/leaflet-review
-//   (options: --chain biedronka|lidl|dino|rossmann, --max-pages 1..60, --items "a,b,c", --out DIR, --dry-run)
+//   (options: --chain biedronka|lidl|dino|rossmann|zabka, --max-pages 1..60, --items "a,b,c", --out DIR, --dry-run)
+//   Then score the JSON against pages labelled by hand: node scripts/leaflet-score.mjs RESULT.json LABELS.json (ADR-661).
 //
 // Cost: Claude Haiku 5.5 at $0.10 per million input and $0.50 per million output tokens (up to 100K-token
 // prompts). A page is about 4,800 image tokens plus the instructions, and the reply is usually a few hundred
@@ -40,7 +41,7 @@ import { fileURLToPath } from "node:url";
 /** server/messaging/scripts is three levels below the repository root. */
 export const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 
-export const CHAINS = ["biedronka", "lidl", "dino", "rossmann"];
+export const CHAINS = ["biedronka", "lidl", "dino", "rossmann", "zabka"];
 export const DEFAULT_CHAIN = "biedronka";
 export const DEFAULT_MAX_PAGES = 50;
 export const HARD_MAX_PAGES = 60;
@@ -311,7 +312,7 @@ export async function loadDealsModules() {
     import("../dist/src/deals/chains/common.js"),
   ]);
   return {
-    ADAPTERS: service.ADAPTERS, buildOffer: service.buildOffer,
+    ADAPTERS: service.ADAPTERS, buildOffer: service.buildOffer, mechanicText: service.mechanicText,
     readPage: vision.readPage, prepareImage: vision.prepareImage, AnthropicDealsModel: vision.AnthropicDealsModel,
     IMAGE_MAX_VISUAL_TOKENS: vision.IMAGE_MAX_VISUAL_TOKENS,
     PoliteFetcher: fetcher.PoliteFetcher,
@@ -402,7 +403,7 @@ export async function evaluate(options, deps) {
     return {
       name: p.name, size: p.sizeText ?? null, price: p.price, regularPrice: p.regularPrice ?? null, lowest30d: p.lowest30d ?? null,
       printedUnitPrice: p.printedUnitPrice ?? null, conditions: offer.conditions, validFrom: dateText(p.validFrom), validTo: dateText(p.validTo),
-      unitPrice: offer.unitPrice ?? null, check: offer.check, doubts,
+      unitPrice: offer.unitPrice ?? null, check: offer.check, doubts, conditionKinds: p.conditions.map((c) => c.kind),
       matchedItems: options.items.filter((item) => m.matchScore(m.terms(item), m.terms(p.name)) >= m.MATCH_THRESHOLD),
     };
   };
@@ -420,7 +421,10 @@ export async function evaluate(options, deps) {
       const r = await m.readPage(model, image, { chain: options.chain, queries: options.items, signal });
       if (r.usage) { t.inputTokens += r.usage.inputTokens; t.outputTokens += r.usage.outputTokens; }
       entry.status = r.kind === "ok" ? "read" : r.kind;
-      if (r.kind === "ok") entry.products = r.products.map((p) => describe(job, p));
+      if (r.kind === "ok") {
+        entry.products = r.products.map((p) => describe(job, p));
+        entry.promotions = (r.promotions ?? []).map((p) => ({ range: p.range, mechanic: m.mechanicText(p.mechanic, "pl"), conditionKinds: p.conditions.map((c) => c.kind) }));
+      }
     } catch (e) {
       entry.status = signal.aborted ? "not_run" : "error";
       if (!signal.aborted) entry.reason = errorCode(e);

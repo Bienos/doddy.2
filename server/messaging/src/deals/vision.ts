@@ -78,7 +78,18 @@ export function prepareImage(data: Buffer): PageImage | { error: "not_an_image" 
 
 // ---------- what the model returns, and what the code keeps ----------
 
-export const CONDITION_KINDS = ["app", "card", "min_quantity", "multi_buy", "limit", "other"] as const;
+export const CONDITION_KINDS = [
+  "app", "card", "min_quantity", "multi_buy", "limit", "other", "second_for", "nth_discount", "deposit", "stock", "selected_stores",
+] as const;
+export const MECHANIC_KINDS = ["multi_buy", "second_for", "nth_discount", "percent_off"] as const;
+
+const ConditionOutput = z.object({
+  kind: z.enum(CONDITION_KINDS),
+  quantity: z.number().int().nullable(),
+  text: z.string().nullable(),
+  price: z.string().nullable(),
+  percent: z.number().int().nullable(),
+});
 
 export const PageOutput = z.object({
   products: z.array(z.object({
@@ -88,11 +99,23 @@ export const PageOutput = z.object({
     regularPrice: z.string().nullable(),
     lowest30d: z.string().nullable(),
     unitPrice: z.string().nullable(),
-    conditions: z.array(z.object({
-      kind: z.enum(CONDITION_KINDS),
-      quantity: z.number().int().nullable(),
-      text: z.string().nullable(),
-    })),
+    conditions: z.array(ConditionOutput),
+    validFrom: z.string().nullable(),
+    validTo: z.string().nullable(),
+    confidence: z.enum(["high", "low"]),
+  })),
+  // ADR-661: offers printed without a price, for a whole range ("1+1 na wszystkie proszki Persil").
+  promotions: z.array(z.object({
+    range: z.string(),
+    mechanic: z.object({
+      kind: z.enum(MECHANIC_KINDS),
+      buy: z.number().int().nullable(),
+      free: z.number().int().nullable(),
+      n: z.number().int().nullable(),
+      percent: z.number().int().nullable(),
+      price: z.string().nullable(),
+    }),
+    conditions: z.array(ConditionOutput),
     validFrom: z.string().nullable(),
     validTo: z.string().nullable(),
     confidence: z.enum(["high", "low"]),
@@ -111,11 +134,13 @@ For each product:
 - regularPrice: the crossed-out or regular price, the "cena poza promocją", or the price for one item when the promotion needs more than one; null if none is printed.
 - lowest30d: the printed lowest price of the last 30 days ("najniższa cena z 30 dni"), or null.
 - unitPrice: the printed price per kg, l or piece, as printed ("24,95 zł/kg"), or null.
-- conditions: what the shopper must do to get the price. app: only with the chain's app or an app coupon. card: only with a loyalty card. min_quantity: only when buying at least that many (quantity). multi_buy: offers like "2+1" (text "2+1"). limit: at most that many per customer or receipt (quantity). other: anything else, in a few words as printed. An empty list when there are none.
+- conditions: what the shopper must do to get the price, and what comes with it. app: only with the chain's app or an app coupon. card: only with a loyalty card. min_quantity: only when buying at least that many (quantity). multi_buy: offers like "2+1" or "1+1 gratis" (text "2+1"). second_for: the second piece costs a printed amount ("drugi za 5 zł": price "5,00"). nth_discount: every n-th piece is k% off ("co druga −50%": quantity 2, percent 50). limit: at most that many per customer or receipt (quantity). deposit: a container deposit ("kaucja") is added at the till. stock: "do wyczerpania zapasów". selected_stores: only in some shops ("w wybranych sklepach"). other: anything else, in a few words as printed. Leave quantity, text, price and percent null when a kind doesn't use them. An empty list when there are none.
 - validFrom, validTo: the dates this price applies, only if printed on the page, as "DD.MM" or "DD.MM.YYYY"; otherwise null.
 - confidence: "low" if any number you give is hard to read or partly hidden, or you are unsure which price belongs to which product; otherwise "high".
 
-Never guess. If you can't read a product's price clearly, leave the product out. Copy numbers exactly as printed and don't compute anything.`;
+Never guess. If you can't read a product's price clearly, leave the product out. Copy numbers exactly as printed and don't compute anything.
+
+Separately, list in promotions the offers on this page that print no price but a mechanic for a whole range that could include one of the items (for example "1+1 na wszystkie proszki Persil z aplikacją", "drugi produkt za 5 zł", "-30% na całą kawę Lavazza"): range as printed (brand and products), and the mechanic: multi_buy (buy and free, "1+1" is buy 1 free 1), second_for (price of the second, as printed), nth_discount (n and percent), percent_off (percent). Put the conditions as above and the dates if printed. Never put a price you would have to compute. An empty list when there are none.`;
 
 export interface ReadDate { day: number; month: number; year?: number }
 
@@ -162,7 +187,14 @@ function readConditions(raw: PageOutput["products"][number]["conditions"]): Cond
   const out: Condition[] = [];
   for (const c of raw) {
     const q = c.quantity;
-    if (c.kind === "app" || c.kind === "card") out.push({ kind: c.kind });
+    if (c.kind === "app" || c.kind === "card" || c.kind === "deposit" || c.kind === "stock" || c.kind === "selected_stores") out.push({ kind: c.kind });
+    else if (c.kind === "second_for") {
+      const price = parsePrice(c.price);
+      if (price) out.push({ kind: "second_for", price });
+    } else if (c.kind === "nth_discount" && typeof q === "number" && Number.isInteger(q) && q >= 2 && q <= 10
+      && typeof c.percent === "number" && Number.isInteger(c.percent) && c.percent >= 1 && c.percent <= 100) {
+      out.push({ kind: "nth_discount", quantity: q, percent: c.percent });
+    }
     else if ((c.kind === "min_quantity" || c.kind === "limit") && typeof q === "number" && Number.isInteger(q) && q >= 1 && q <= 99) {
       out.push({ kind: c.kind, quantity: q });
     } else if (c.kind === "multi_buy") {
@@ -176,11 +208,11 @@ function readConditions(raw: PageOutput["products"][number]["conditions"]): Cond
   }
   const seen = new Set<string>();
   return out.filter((c) => {
-    const key = `${c.kind}:${c.quantity ?? ""}:${c.text ?? ""}`;
+    const key = `${c.kind}:${c.quantity ?? ""}:${c.text ?? ""}:${c.price?.minor ?? ""}:${c.percent ?? ""}`;
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
-  }).slice(0, 4);
+  }).slice(0, 8); // the wire carries at most 4 condition texts; the flags come from all of them
 }
 
 /** Keeps what the code can stand behind: a parseable price and a name. At most 40 products a page. */
@@ -210,15 +242,61 @@ export function readProducts(output: PageOutput): ReadProduct[] {
   return out;
 }
 
+/** A mechanic the code checked: whole numbers in range, a parseable price. */
+export type Mechanic =
+  | { kind: "multi_buy"; buy: number; free: number }
+  | { kind: "second_for"; price: Money }
+  | { kind: "nth_discount"; n: number; percent: number }
+  | { kind: "percent_off"; percent: number };
+
+/** A promotion printed without a price, after the code's checks (ADR-661). */
+export interface ReadPromotion {
+  range: string;
+  mechanic: Mechanic;
+  conditions: Condition[];
+  validFrom?: ReadDate;
+  validTo?: ReadDate;
+  lowConfidence: boolean;
+}
+
+const whole = (v: number | null, min: number, max: number): v is number => typeof v === "number" && Number.isInteger(v) && v >= min && v <= max;
+
+export function readMechanic(m: PageOutput["promotions"][number]["mechanic"]): Mechanic | undefined {
+  switch (m.kind) {
+    case "multi_buy": return whole(m.buy, 1, 10) && whole(m.free, 1, 10) ? { kind: "multi_buy", buy: m.buy, free: m.free } : undefined;
+    case "second_for": { const price = parsePrice(m.price); return price ? { kind: "second_for", price } : undefined; }
+    case "nth_discount": return whole(m.n, 2, 10) && whole(m.percent, 1, 100) ? { kind: "nth_discount", n: m.n, percent: m.percent } : undefined;
+    case "percent_off": return whole(m.percent, 1, 90) ? { kind: "percent_off", percent: m.percent } : undefined;
+  }
+}
+
+/** Keeps promotions with a range and a mechanic the code can state. At most 10 a page. */
+export function readPromotions(output: PageOutput): ReadPromotion[] {
+  const out: ReadPromotion[] = [];
+  for (const p of (output.promotions ?? []).slice(0, 10)) {
+    const range = clean(p.range, 120);
+    const mechanic = readMechanic(p.mechanic);
+    if (!range || !mechanic || MONEY_IN_TEXT.test(range)) continue;
+    const validFrom = parseReadDate(p.validFrom);
+    const validTo = parseReadDate(p.validTo);
+    out.push({
+      range, mechanic, conditions: readConditions(p.conditions),
+      ...(validFrom ? { validFrom } : {}), ...(validTo ? { validTo } : {}),
+      lowConfidence: p.confidence === "low" || (p.mechanic.kind === "second_for" && !mechanic),
+    });
+  }
+  return out;
+}
+
 export type PageReadOutcome =
-  | { kind: "ok"; products: ReadProduct[]; usage: ModelUsage }
+  | { kind: "ok"; products: ReadProduct[]; promotions: ReadPromotion[]; usage: ModelUsage }
   | { kind: "refused" | "unparsed"; usage?: ModelUsage };
 
 /** Reads one page through the model. Throws on API errors (network, HTTP, abort). */
 export async function readPage(api: DealsModelApi, image: PageImage, opts: { chain: ReadChain; queries: readonly string[]; signal: AbortSignal }): Promise<PageReadOutcome> {
   const reply = await api.readPage({ image, chain: opts.chain, queries: opts.queries }, opts.signal);
   if (reply.kind !== "ok") return { kind: reply.kind, usage: reply.usage };
-  return { kind: "ok", products: readProducts(reply.output), usage: reply.usage };
+  return { kind: "ok", products: readProducts(reply.output), promotions: readPromotions(reply.output), usage: reply.usage };
 }
 
 // ---------- the real API ----------
@@ -257,7 +335,8 @@ export class AnthropicDealsModel implements DealsModelApi {
         max_tokens: maxTokens,
         // Reading prices off a page and sorting candidates are narrow jobs: low effort keeps it quick.
         output_config: { effort: "low", format: zodOutputFormat(schema) },
-        system,
+        // The same system prompt on every page read: cached (Haiku caches from 512 tokens), so repeats cost a tenth.
+        system: [{ type: "text", text: system, cache_control: { type: "ephemeral" } }],
         messages: [{ role: "user", content: content as never }],
       }, { signal });
     } catch (err) {

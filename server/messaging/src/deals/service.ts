@@ -16,11 +16,11 @@ import {
   headMention, MATCH_THRESHOLD, MAX_PICK_CANDIDATES, matchScore, normalize, parsePrintedUnitPrice, parseSize, pickWithModel, terms,
   unitPrice, unitPricesAgree, type Terms,
 } from "./match.js";
-import { prepareImage, readPage, type ReadDate, type ReadProduct } from "./vision.js";
+import { prepareImage, readPage, type Mechanic, type ReadDate, type ReadProduct, type ReadPromotion } from "./vision.js";
 import {
   CHAIN_NAMES, isReadChain, LINK_ONLY_URLS, READ_CHAINS, type Chain, type ChainAdapter, type ChainRow, type ChainStatus,
   type Condition, type DataProduct, type DealsModelApi, type DealsResponse, type DealsSettings, type LeafletInfo, type LeafletPage,
-  type LinkChain, type ModelUsage, type Money, type Offer, type PagesRead, type ReadChain, type UnitPrice,
+  type LinkChain, type ModelUsage, type Money, type Offer, type OfferFlag, type PagesRead, type Promotion, type ReadChain, type UnitPrice,
 } from "./types.js";
 
 export const ADAPTERS: Record<ReadChain, ChainAdapter> = { biedronka, lidl, dino, rossmann, aldi, zabka };
@@ -62,6 +62,9 @@ export const DEFAULT_BUDGET_MS = 25_000;
 const PICK_RESERVE_MS = 3_000;
 /** A page read isn't started with less time than this left: it would be paid for and thrown away. */
 const MIN_READ_TIME_MS = 2_500;
+/** How long to wait before asking once more for a page image that came over the size cap. */
+const RETRY_WAIT_MS = 2_000;
+export const MAX_PROMOTIONS_PER_ITEM = 3;
 export const MAX_OFFERS_PER_ITEM = 6;
 
 // ---------- words for conditions (written by the code, never by the model) ----------
@@ -84,8 +87,69 @@ export function conditionText(c: Condition, chain: ReadChain, language: string):
     case "limit": return c.quantity ? (l === "pl" ? `max ${c.quantity} szt.` : `max ${c.quantity} per customer`) : undefined;
     case "multi_buy": return c.text;
     case "other": return c.text?.slice(0, 80);
+    case "second_for": return c.price ? (l === "pl" ? `druga sztuka za ${zl(c.price)}` : `the second for ${zl(c.price)}`) : undefined;
+    case "nth_discount": return c.quantity && c.percent ? everyNth(c.quantity, c.percent, l) : undefined;
+    case "deposit": return l === "pl" ? "plus kaucja za opakowanie" : "plus a container deposit";
+    case "stock": return l === "pl" ? "do wyczerpania zapasów" : "while stocks last";
+    case "selected_stores": return l === "pl" ? "w wybranych sklepach" : "in selected stores";
   }
 }
+
+/** "4,99 zł", from grosze. */
+export const zl = (m: Money) => `${Math.floor(m.minor / 100)},${String(m.minor % 100).padStart(2, "0")} zł`;
+
+const ORDINAL_PL: Record<number, string> = { 2: "druga", 3: "trzecia", 4: "czwarta", 5: "piąta", 6: "szósta" };
+function everyNth(n: number, percent: number, l: "pl" | "en"): string {
+  if (l === "pl") return `co ${ORDINAL_PL[n] ?? `${n}.`} sztuka −${percent}%`;
+  const ordinal = n === 2 ? "second" : n === 3 ? "third" : `${n}th`;
+  return `every ${ordinal} one −${percent}%`;
+}
+
+/** A promotion's mechanic in the code's words. */
+export function mechanicText(m: Mechanic, language: string): string {
+  const l = language === "pl" ? "pl" : "en";
+  switch (m.kind) {
+    case "multi_buy": return `${m.buy}+${m.free}`;
+    case "second_for": return l === "pl" ? `druga sztuka za ${zl(m.price)}` : `the second for ${zl(m.price)}`;
+    case "nth_discount": return everyNth(m.n, m.percent, l);
+    case "percent_off": return `−${m.percent}%`;
+  }
+}
+
+const FLAG_OF: Partial<Record<Condition["kind"], OfferFlag>> = { app: "app", card: "card", deposit: "deposit", stock: "stock", selected_stores: "selected_stores" };
+
+/** The flags a list of conditions carries, in a fixed order. */
+export function flagsOf(conditions: readonly Condition[]): OfferFlag[] {
+  const set = new Set(conditions.map((c) => FLAG_OF[c.kind]).filter((f): f is OfferFlag => !!f));
+  return (["app", "card", "deposit", "stock", "selected_stores"] as const).filter((f) => set.has(f));
+}
+
+/**
+ * The price of one piece when buying the quantity the mechanic needs, rounded up to the grosz (ADR-661):
+ * "a+b" → p·a/(a+b) for a+b; "drugi za X" → (p+X)/2 for 2; "co n-ta −k%" → p·(1−k/(100n)) for n;
+ * "przy zakupie N szt." → p for N (the leaflet's price already is the price at N).
+ */
+export function effectivePrice(price: Money, conditions: readonly Condition[]): { price: Money; quantity: number } | undefined {
+  const per = (minor: number, quantity: number) => ({ price: { minor: Math.ceil(minor), currency: price.currency }, quantity });
+  for (const c of conditions) {
+    if (c.kind === "multi_buy") {
+      const m = /^(\d{1,2})\+(\d{1,2})$/.exec(c.text ?? "");
+      const a = m ? Number(m[1]) : 0;
+      const b = m ? Number(m[2]) : 0;
+      if (a >= 1 && b >= 1) return per((price.minor * a) / (a + b), a + b);
+    }
+  }
+  for (const c of conditions) if (c.kind === "second_for" && c.price && c.price.minor < price.minor) return per((price.minor + c.price.minor) / 2, 2);
+  for (const c of conditions) {
+    if (c.kind === "nth_discount" && c.quantity && c.percent) return per((price.minor * (100 * c.quantity - c.percent)) / (100 * c.quantity), c.quantity);
+  }
+  for (const c of conditions) if (c.kind === "min_quantity" && c.quantity && c.quantity >= 2) return per(price.minor, c.quantity);
+  return undefined;
+}
+
+/** Offers whose price comes from buying several ("2+1", "drugi za", "co druga"): Omnibus' 30-day rule
+ * doesn't apply to them (UOKiK), so no "cut" is stated. */
+const isMultiBuy = (conditions: readonly Condition[]) => conditions.some((c) => c.kind === "multi_buy" || c.kind === "second_for" || c.kind === "nth_discount");
 
 // ---------- building one offer, with the code's checks ----------
 
@@ -113,11 +177,25 @@ export function buildOffer(o: OfferInput, language: string): { offer: Offer; dou
   const size = parseSize(o.sizeText) ?? parseSize(o.name);
   const unit = unitPrice(o.price, size);
   if (o.regularPrice && o.regularPrice.minor <= o.price.minor) doubts.push("regular_not_above_price");
-  if (o.lowest30d && o.lowest30d.minor < o.price.minor) doubts.push("lowest30d_below_price");
+  // Under "the second for X" the price is the price of one bought alone (Aldi's regular price), which may well be
+  // above the 30-day low; under every other price a 30-day low below it is a misread.
+  const secondFor = o.conditions.some((c) => c.kind === "second_for");
+  if (o.lowest30d && o.lowest30d.minor < o.price.minor && !secondFor) doubts.push("lowest30d_below_price");
   const printed = parsePrintedUnitPrice(o.printedUnitPrice);
   if (printed && (!unit || !unitPricesAgree(unit, printed))) doubts.push("unit_price_disagrees");
   const conditions = [...new Set(o.conditions.map((c) => conditionText(c, o.chain, language)).filter((t): t is string => !!t))]
     .map((t) => t.slice(0, 80)).slice(0, 4);
+  const flags = flagsOf(o.conditions);
+  let cut: Offer["cut"];
+  if (o.lowest30d && !isMultiBuy(o.conditions)) {
+    if (o.lowest30d.minor > o.price.minor) {
+      const percent = Math.round((1 - o.price.minor / o.lowest30d.minor) * 100);
+      if (percent >= 1) cut = { percent };
+    } else flags.push("not_a_cut");
+  }
+  const eff = effectivePrice(o.price, o.conditions);
+  const effUnit = eff ? unitPrice(eff.price, size) : undefined;
+  const limit = o.conditions.find((c) => c.kind === "limit" && c.quantity)?.quantity;
   const offer: Offer = {
     chain: o.chain,
     product: o.name.slice(0, 160),
@@ -133,12 +211,16 @@ export function buildOffer(o: OfferInput, language: string): { offer: Offer; dou
     readBy: o.readBy,
     ...(o.ean ? { ean: o.ean } : {}),
     check: doubts.length > 0,
+    ...(flags.length ? { flags } : {}),
+    ...(eff ? { effective: { ...eff, ...(effUnit ? { unitPrice: effUnit } : {}) } } : {}),
+    ...(cut ? { cut } : {}),
+    ...(limit ? { limit } : {}),
   };
   return { offer, doubts };
 }
 
 /** Dates the reader read, as days: inside the leaflet's dates they are used, outside they make the offer doubtful. */
-function readDates(p: ReadProduct, leaflet: LeafletInfo, today: string): { validFrom?: string; validTo?: string; outside: boolean } {
+function readDates(p: Pick<ReadProduct, "validFrom" | "validTo">, leaflet: LeafletInfo, today: string): { validFrom?: string; validTo?: string; outside: boolean } {
   const anchor = leaflet.validFrom ?? today;
   const day = (d: ReadDate | undefined) => (d ? dayMonth(d.day, d.month, anchor, d.year) : undefined);
   const from = day(p.validFrom);
@@ -155,12 +237,15 @@ function readDates(p: ReadProduct, leaflet: LeafletInfo, today: string): { valid
 // ---------- one chain ----------
 
 interface Candidate { id: string; chain: ReadChain; offer: Offer; doubts: string[]; scores: number[] }
+interface PromotionCandidate { promotion: Promotion; scores: number[] }
 
 interface ChainResult {
   chain: ReadChain;
   status: Exclude<ChainStatus, "link_only">;
   leaflet?: LeafletInfo;
   candidates: Candidate[];
+  /** Promotions printed without a price that fit an item (ADR-661). */
+  promotions: PromotionCandidate[];
   pagesRead: number;
   usage: ModelUsage;
   reason?: string;
@@ -197,12 +282,12 @@ async function runChain(chain: ReadChain, adapter: ChainAdapter, env: Env): Prom
   env.signal.addEventListener("abort", onAbort);
   const signal = controller.signal;
   let pagesRead = 0;
-  const done = (r: Omit<ChainResult, "chain" | "pagesRead" | "usage" | "complete">, complete = false): ChainResult => {
+  const done = (r: Omit<ChainResult, "chain" | "pagesRead" | "usage" | "complete" | "promotions"> & { promotions?: PromotionCandidate[] }, complete = false): ChainResult => {
     env.log("deals chain read", {
       chain, status: r.status, reason: r.reason, candidates: r.candidates.length, pagesRead, pagesWanted: r.pages?.of,
       inputTokens: usage.inputTokens, outputTokens: usage.outputTokens, ms: Date.now() - started,
     });
-    return { chain, pagesRead, usage, complete, ...r };
+    return { chain, pagesRead, usage, complete, ...r, promotions: r.promotions ?? [] };
   };
   try {
     let read;
@@ -246,10 +331,18 @@ async function runChain(chain: ReadChain, adapter: ChainAdapter, env: Env): Prom
     // Read the pages: fetch the image (the fetcher checks robots.txt and its content signals), hand it to
     // the reader, forget it.
     const reads = new Map<string, ReadProduct[]>();
+    const promos = new Map<string, ReadPromotion[]>();
     const key = (li: number, page: number) => `${li}:${page}`;
     await mapLimit(jobs, env.readConcurrency, async (job) => {
       if (signal.aborted || env.chainDeadline - Date.now() < MIN_READ_TIME_MS) { unread++; reasons.add("time"); return; }
-      const f = await env.fetcher.fetchPage(job.page.imageUrl, { accept: "image/avif;q=0,image/webp,image/png,image/jpeg,image/*;q=0.8", aiInput: true, signal });
+      const accept = "image/avif;q=0,image/webp,image/png,image/jpeg,image/*;q=0.8";
+      let f = await env.fetcher.fetchPage(job.page.imageUrl, { accept, aiInput: true, signal });
+      // A page not yet in the image host's cache can come as a full-size PNG over the size cap (Biedronka's
+      // were 6.19 MB cold, 0.3 MB as WebP once cached): asked for once more, a moment later.
+      if (f.kind === "failed" && f.reason === "too_large" && env.chainDeadline - Date.now() > MIN_READ_TIME_MS + RETRY_WAIT_MS && !signal.aborted) {
+        await new Promise((r) => setTimeout(r, RETRY_WAIT_MS));
+        f = await env.fetcher.fetchPage(job.page.imageUrl, { accept, aiInput: true, signal });
+      }
       if (f.kind !== "ok") { unread++; reasons.add(`image_${f.kind}`); return; }
       const image = prepareImage(f.body);
       if ("error" in image) { unread++; reasons.add(`image_${image.error}`); return; }
@@ -257,7 +350,7 @@ async function runChain(chain: ReadChain, adapter: ChainAdapter, env: Env): Prom
       try {
         const r = await readPage(env.model!, image, { chain, queries: env.queries, signal });
         if (r.usage) { usage.inputTokens += r.usage.inputTokens; usage.outputTokens += r.usage.outputTokens; }
-        if (r.kind === "ok") reads.set(key(job.li, job.page.number), r.products);
+        if (r.kind === "ok") { reads.set(key(job.li, job.page.number), r.products); promos.set(key(job.li, job.page.number), r.promotions); }
         else { unread++; reasons.add(`read_${r.kind}`); }
       } catch {
         unread++;
@@ -330,6 +423,33 @@ async function runChain(chain: ReadChain, adapter: ChainAdapter, env: Env): Prom
       }
     });
 
+    // Promotions printed without a price whose range fits an item: said as a mechanic, never as a price.
+    const promotions: PromotionCandidate[] = [];
+    const seenPromo = new Set<string>();
+    leaflets.forEach(({ l }, li) => {
+      for (const page of l.pages) {
+        for (const p of promos.get(key(li, page.number)) ?? []) {
+          const scores = score(p.range);
+          if (best(scores) < MATCH_THRESHOLD) continue;
+          const mechanic = mechanicText(p.mechanic, env.language);
+          const dedupe = `${normalize(p.range)}|${mechanic}`;
+          if (seenPromo.has(dedupe)) continue;
+          seenPromo.add(dedupe);
+          const dates = readDates(p, l.leaflet, env.today);
+          const conditions = [...new Set(p.conditions.map((c) => conditionText(c, chain, env.language)).filter((t): t is string => !!t))].slice(0, 4);
+          const flags = flagsOf(p.conditions);
+          promotions.push({
+            scores,
+            promotion: {
+              chain, text: p.range, mechanic, conditions, ...(flags.length ? { flags } : {}),
+              ...(dates.validFrom ? { validFrom: dates.validFrom } : {}), ...(dates.validTo ? { validTo: dates.validTo } : {}),
+              source: { url: page.url, page: page.number },
+            },
+          });
+        }
+      }
+    });
+
     const complete = unread === 0 && !read.incomplete;
     // Pages whose offers only an image read can find (all of Biedronka's, Lidl's that name an item): when some
     // weren't read, the row says how many were (Biedronka's leaflet of 26 Oct had 97 against the cap of 40).
@@ -337,7 +457,7 @@ async function runChain(chain: ReadChain, adapter: ChainAdapter, env: Env): Prom
     const hiding = allJobs.filter((j) => read.leaflets[j.li]!.strategy !== "confirm");
     const got = hiding.filter((j) => reads.has(key(j.li, j.page.number))).length;
     const pages = got < hiding.length ? { pages: { read: got, of: hiding.length } } : {};
-    if (candidates.length === 0) {
+    if (candidates.length === 0 && promotions.length === 0) {
       // "Nothing matched" only when everything that should have been read was read.
       return complete
         ? done({ status: "no_match", candidates }, true)
@@ -346,9 +466,9 @@ async function runChain(chain: ReadChain, adapter: ChainAdapter, env: Env): Prom
     // The chain's row names the leaflet most of its offers came from.
     const counts = new Map<number, number>();
     for (const c of candidates) { const li = leafletOf.get(c.id) ?? 0; counts.set(li, (counts.get(li) ?? 0) + 1); }
-    const main = [...counts].sort((a, b) => b[1] - a[1] || a[0] - b[0])[0]![0];
+    const main = [...counts].sort((a, b) => b[1] - a[1] || a[0] - b[0])[0]?.[0] ?? 0;
     return done({
-      status: "checked", leaflet: read.leaflets[main]!.leaflet, candidates,
+      status: "checked", leaflet: read.leaflets[main]!.leaflet, candidates, promotions,
       ...(reasons.size ? { reason: [...reasons].join(",") } : {}), ...pages,
     }, complete);
   } finally {
@@ -366,20 +486,35 @@ const byPrice = (a: Candidate, b: Candidate) =>
 
 const UNIT_ORDER: UnitPrice["per"][] = ["kg", "l", "szt"];
 
+/** The unit price an offer is ranked by: the price per piece under its mechanic when it has one ("2+1"),
+ * else its own. */
+const rankUnit = (o: Offer): UnitPrice | undefined => o.effective?.unitPrice ?? o.unitPrice;
+
 /** The unit most of an item's offers have a unit price in (kg before l before szt on a tie), if any. */
 export function mainUnit(offers: readonly Offer[]): UnitPrice["per"] | undefined {
   const counts = new Map<UnitPrice["per"], number>();
-  for (const o of offers) if (o.unitPrice) counts.set(o.unitPrice.per, (counts.get(o.unitPrice.per) ?? 0) + 1);
+  for (const o of offers) { const u = rankUnit(o); if (u) counts.set(u.per, (counts.get(u.per) ?? 0) + 1); }
   let best: UnitPrice["per"] | undefined;
   for (const per of UNIT_ORDER) if ((counts.get(per) ?? 0) > (best ? counts.get(best)! : 0)) best = per;
   return best;
 }
 
-/** Best value first: offers with a unit price in `per`, lowest first; then the rest, by price. A pack of a
- * size Doddy couldn't read can't be called cheaper per kg, so it comes after the ones it can compare. */
+/** What an offer asks of the shopper, each 5% on its unit price for ranking only (ADR-661): the chain's app
+ * or card, and buying more than one. A price anyone can get wins a near tie; a clearly better deal still wins. */
+export const CONDITION_PENALTY = 0.05;
+export function rankValue(o: Offer, per: UnitPrice["per"]): number | undefined {
+  const u = rankUnit(o);
+  if (!u || u.per !== per) return undefined;
+  const asks = (o.flags?.some((f) => f === "app" || f === "card") ? 1 : 0) + ((o.effective?.quantity ?? 1) > 1 ? 1 : 0);
+  return u.minor * (1 + CONDITION_PENALTY * asks);
+}
+
+/** Best value first: offers with a unit price in `per` (under their mechanic, with the condition penalty),
+ * lowest first; then the rest, by price. A pack of a size Doddy couldn't read can't be called cheaper per kg,
+ * so it comes after the ones it can compare. */
 const byValue = (per: UnitPrice["per"] | undefined) => (a: Candidate, b: Candidate) => {
-  const ua = per && a.offer.unitPrice?.per === per ? a.offer.unitPrice.minor : undefined;
-  const ub = per && b.offer.unitPrice?.per === per ? b.offer.unitPrice.minor : undefined;
+  const ua = per ? rankValue(a.offer, per) : undefined;
+  const ub = per ? rankValue(b.offer, per) : undefined;
   if (ua !== undefined && ub !== undefined) return ua - ub || byPrice(a, b);
   if (ua !== undefined) return -1;
   if (ub !== undefined) return 1;
@@ -422,7 +557,7 @@ export async function searchDeals(deps: DealsDeps, input: SearchInput, signal: A
   const results = await Promise.all(requested.filter(isReadChain).map((chain) => {
     const adapter = deps.adapters?.[chain] ?? ADAPTERS[chain];
     return runChain(chain, adapter, env).catch((): ChainResult => ({
-      chain, status: "failed", reason: "error", candidates: [], pagesRead: 0, usage: { inputTokens: 0, outputTokens: 0 }, complete: false,
+      chain, status: "failed", reason: "error", candidates: [], promotions: [], pagesRead: 0, usage: { inputTokens: 0, outputTokens: 0 }, complete: false,
     }));
   }));
   const usage: ModelUsage = { inputTokens: 0, outputTokens: 0 };
@@ -458,8 +593,13 @@ export async function searchDeals(deps: DealsDeps, input: SearchInput, signal: A
     }
   }
 
-  const items = queries.map((query, i) => ({ query, offers: selectOffers(chosen[i] ?? []) }));
-  const offered = new Set(items.flatMap((i) => i.offers.map((o) => o.chain)));
+  const allPromotions = results.flatMap((r) => r.promotions);
+  const items = queries.map((query, i) => {
+    const promotions = allPromotions.filter((p) => (p.scores[i] ?? 0) >= MATCH_THRESHOLD)
+      .sort((a, b) => (b.scores[i] ?? 0) - (a.scores[i] ?? 0)).slice(0, MAX_PROMOTIONS_PER_ITEM).map((p) => p.promotion);
+    return { query, offers: selectOffers(chosen[i] ?? []), ...(promotions.length ? { promotions } : {}) };
+  });
+  const offered = new Set(items.flatMap((i) => [...i.offers.map((o) => o.chain), ...(i.promotions ?? []).map((p) => p.chain)]));
   const byChain = new Map(results.map((r) => [r.chain, r]));
   const chains: ChainRow[] = requested.map((chain): ChainRow => {
     if (!isReadChain(chain)) return { chain, status: "link_only", leafletUrl: LINK_ONLY_URLS[chain as LinkChain] };
