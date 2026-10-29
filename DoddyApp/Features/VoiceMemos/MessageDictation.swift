@@ -77,10 +77,7 @@ final class MessageDictation {
             let session = AVAudioSession.sharedInstance()
             try session.setCategory(.playAndRecord, mode: .default, options: [.defaultToSpeaker])
             try session.setActive(true)
-            let input = engine.inputNode
-            input.installTap(onBus: 0, bufferSize: 1024, format: input.outputFormat(forBus: 0)) { buffer, _ in
-                sink.append(buffer)
-            }
+            Self.installTap(on: engine.inputNode, feeding: sink)
             engine.prepare()
             try engine.start()
         } catch {
@@ -132,14 +129,27 @@ final class MessageDictation {
         if case .failed = state { state = .idle }
     }
 
-    private static func authorizeSpeech() async -> Bool {
+    // The next two are nonisolated on purpose. iOS calls their callbacks on a background thread, and a
+    // callback written inside this @MainActor class is checked for the main thread at run time and stops
+    // the app (seen on a device on 29 Oct: `_dispatch_assert_queue_fail` when asking for speech access).
+
+    nonisolated private static func authorizeSpeech() async -> Bool {
         switch SFSpeechRecognizer.authorizationStatus() {
         case .authorized: return true
         case .notDetermined:
             return await withCheckedContinuation { continuation in
-                SFSpeechRecognizer.requestAuthorization { continuation.resume(returning: $0 == .authorized) }
+                SFSpeechRecognizer.requestAuthorization { @Sendable status in
+                    continuation.resume(returning: status == .authorized)
+                }
             }
         default: return false
+        }
+    }
+
+    /// The tap's block runs on the audio thread.
+    nonisolated private static func installTap(on input: AVAudioInputNode, feeding sink: BufferSink) {
+        input.installTap(onBus: 0, bufferSize: 1024, format: input.outputFormat(forBus: 0)) { @Sendable buffer, _ in
+            sink.append(buffer)
         }
     }
 }
