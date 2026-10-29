@@ -220,10 +220,11 @@ describe("Aldi", () => {
       regularPrice: { minor: 699, currency: "PLN" }, lowest30d: { minor: 699, currency: "PLN" }, validFrom: "2026-10-26", validTo: "2026-10-31",
     }, "'-20% przy zakupie 2 szt.': the price of one when buying two, the regular price of one");
     const instant = by("Kawa rozpuszczalna Classic")!;
-    assert.deepEqual(instant.price, { minor: 1999, currency: "PLN" }, "'co druga -91%': (36,99 + 2,99) / 2, not the 2,99 zł of the second jar");
-    assert.deepEqual(instant.conditions, [{ kind: "min_quantity", quantity: 2 }, { kind: "other", text: "druga sztuka 2,99 zł" }]);
+    assert.deepEqual(instant.price, { minor: 3699, currency: "PLN" }, "'co druga -91%': the price of one jar, not the 2,99 zł of the second");
+    assert.deepEqual(instant.conditions, [{ kind: "second_for", price: { minor: 299, currency: "PLN" } }],
+      "the second jar's price as a condition; the service works out (36,99 + 2,99) / 2 per jar when buying two");
     assert.equal(instant.printedUnitPrice, undefined, "Aldi's unit price for it is the second jar's");
-    assert.deepEqual(by("Jaja z wolnego wybiegu L")!.price, { minor: 999, currency: "PLN" }, "(12,99 + 6,99) / 2");
+    assert.deepEqual(by("Jaja z wolnego wybiegu L")!.conditions, [{ kind: "second_for", price: { minor: 699, currency: "PLN" } }]);
     assert.deepEqual(by("Papier toaletowy 3-warstwowy")!.conditions, [{ kind: "multi_buy", text: "1+1" }]);
     assert.equal(by("Papier toaletowy 3-warstwowy")!.regularPrice, undefined, "1+1: the price shown is the regular one");
     assert.deepEqual(by("Banany"), {

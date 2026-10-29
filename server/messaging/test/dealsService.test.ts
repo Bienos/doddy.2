@@ -23,15 +23,15 @@ function reader(): FakeModel {
   return new FakeModel()
     .page("biedronka:2", { products: [read({
       name: "Masło Extra 82%", size: "200 g", price: "4,99", regularPrice: "6,49",
-      conditions: [{ kind: "app", quantity: null, text: null }, { kind: "limit", quantity: 4, text: null }],
+      conditions: [{ kind: "app", quantity: null, text: null, price: null, percent: null }, { kind: "limit", quantity: 4, text: null, price: null, percent: null }],
     })] })
     // An unreadable price: the code must drop the product, never guess one.
     .page("biedronka:3", { products: [read({ name: "Masło Polskie 200 g", price: "ok. 3 zł" })] })
-    .page("lidl:6", { products: [read({ name: "Pilos Masło Ekstra 83%", size: "200 g", price: "2,49", regularPrice: "4,99", conditions: [{ kind: "app", quantity: null, text: null }] })] })
+    .page("lidl:6", { products: [read({ name: "Pilos Masło Ekstra 83%", size: "200 g", price: "2,49", regularPrice: "4,99", conditions: [{ kind: "app", quantity: null, text: null, price: null, percent: null }] })] })
     .page("lidl:30", { products: [read({ name: "Kawa mielona Lavazza Crema e Gusto", size: "250 g", price: "15,99" })] })
     .page("dino:51", { products: [read({ name: "Masło ekstra Łowickie 82%", size: "250 g", price: "4,49", lowest30d: "4,99" })] })
     .page("dino:13", { products: [read({
-      name: "Kawa mielona Swisso Reich Rösten", size: "250 g", price: "12,99", conditions: [{ kind: "min_quantity", quantity: 2, text: null }],
+      name: "Kawa mielona Swisso Reich Rösten", size: "250 g", price: "12,99", conditions: [{ kind: "min_quantity", quantity: 2, text: null, price: null, percent: null }],
     })] });
 }
 
@@ -79,8 +79,8 @@ describe("the leaflet search", () => {
       chain: "biedronka", product: "Masło Extra 82%", price: { minor: 499, currency: "PLN" }, size: { value: 200, unit: "g" },
       unitPrice: { minor: 2495, per: "kg" }, regularPrice: { minor: 649, currency: "PLN" },
       conditions: ["z aplikacją Moja Biedronka", "max 4 szt."], validFrom: "2026-10-22",
-      source: { url: BIEDRONKA_PRESS, page: 2 }, readBy: "page_image", check: false,
-    });
+      source: { url: BIEDRONKA_PRESS, page: 2 }, readBy: "page_image", check: false, flags: ["app"], limit: 4,
+    }, "the app and the limit as data for the app's checklist (ADR-661)");
     assert.deepEqual(lidlButter!.conditions, ["z Lidl Plus"]);
     assert.deepEqual(lidlButter!.source, { url: "https://www.lidl.pl/l/pl/gazetki/gazetka-22-10-czw-kw43/view/flyer/page/6", page: 6 });
     assert.deepEqual(lidlButter!.unitPrice, { minor: 1245, per: "kg" });
@@ -88,8 +88,8 @@ describe("the leaflet search", () => {
       chain: "dino", product: "Masło ekstra 82% Łowickie 250g", price: { minor: 449, currency: "PLN" }, size: { value: 250, unit: "g" },
       unitPrice: { minor: 1796, per: "kg" }, lowest30d: { minor: 499, currency: "PLN" }, conditions: [],
       validFrom: "2026-10-21", validTo: "2026-10-27", source: { url: DINO_LISTING, page: 51 }, readBy: "leaflet_data",
-      ean: "5900120025967", check: false,
-    }, "Dino's own name, price and EAN; the page read confirmed it and added the 30-day price");
+      ean: "5900120025967", check: false, cut: { percent: 10 },
+    }, "Dino's own name, price and EAN; the page read confirmed it and added the 30-day price: 4,49 is 10% below 4,99");
 
     assert.deepEqual(offers(response, "pieluchy rozmiar 4").map((o) => [...brief(o), o.unitPrice?.minor, o.check]), [
       ["rossmann", "Babydream EKO pieluchy, 4 Maxi, 8-14 kg, 30 szt.", 2399, 80, false],
@@ -227,7 +227,7 @@ describe("the leaflet search", () => {
 
   test("Aldi's own data and Żabka's pages: no model for Aldi, Żabka's page chosen by its text, the Żappka condition", async () => {
     const model = new FakeModel().page("zabka:48", { products: [read({
-      name: "Jogurt pitny Skyr Jogobella Mango", size: "250 g", price: "4,50", lowest30d: "6,50", conditions: [{ kind: "app", quantity: null, text: null }],
+      name: "Jogurt pitny Skyr Jogobella Mango", size: "250 g", price: "4,50", lowest30d: "6,50", conditions: [{ kind: "app", quantity: null, text: null, price: null, percent: null }],
     })] });
     const { response } = await search({ model, items: ["kawa mielona", "jogurt pitny"], chains: ["aldi", "zabka"] });
     assert.deepEqual(response.chains.map((c) => [c.chain, c.status]), [["aldi", "checked"], ["zabka", "checked"]]);

@@ -321,18 +321,86 @@ public struct DealsChainReport: Codable, Equatable, Sendable {
 public struct DealsItemResult: Codable, Equatable, Sendable {
     public let query: String
     public let offers: [DealOffer]
+    /// Promotions printed without a price that fit the item (ADR-661): a mechanic for a range, never a price.
+    public let promotions: [DealPromotion]
+    /// Products of another kind in the item's family (ADR-662: "masło roślinne" for "masło"), at most three:
+    /// shown apart as "similar, not the same", never picked for the item or counted in the basket.
+    public let similar: [DealOffer]
 
-    public init(query: String, offers: [DealOffer]) {
+    public init(query: String, offers: [DealOffer], promotions: [DealPromotion] = [], similar: [DealOffer] = []) {
         self.query = query
         self.offers = offers
+        self.promotions = promotions
+        self.similar = similar
     }
 
-    private enum CodingKeys: String, CodingKey { case query, offers }
+    private enum CodingKeys: String, CodingKey { case query, offers, promotions, similar }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         query = try c.decode(String.self, forKey: .query)
         offers = try c.decodeIfPresent([DealOffer].self, forKey: .offers) ?? []
+        promotions = (try? c.decodeIfPresent([DealPromotion].self, forKey: .promotions)) ?? []
+        similar = Array(((try? c.decodeIfPresent([DealOffer].self, forKey: .similar)) ?? []).prefix(3))
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(query, forKey: .query)
+        try c.encode(offers, forKey: .offers)
+        if !promotions.isEmpty { try c.encode(promotions, forKey: .promotions) }
+        if !similar.isEmpty { try c.encode(similar, forKey: .similar) }
+    }
+}
+
+/// A promotion the leaflet prints without a price: its range ("Wszystkie kawy mielone Jacobs") and its
+/// mechanic in the server's code words ("1+1", "druga sztuka za 5,00 zł", "−30%"). The price is on the shelf.
+public struct DealPromotion: Codable, Equatable, Sendable {
+    public let chain: DealsChain
+    public let text: String
+    public let mechanic: String
+    public let conditions: [String]
+    public let flags: [DealOffer.Flag]
+    public let validFrom: DealDay?
+    public let validTo: DealDay?
+    public let source: DealOffer.Source
+
+    public init(chain: DealsChain, text: String, mechanic: String, conditions: [String] = [], flags: [DealOffer.Flag] = [],
+                validFrom: DealDay? = nil, validTo: DealDay? = nil, source: DealOffer.Source) {
+        self.chain = chain
+        self.text = text
+        self.mechanic = mechanic
+        self.conditions = conditions
+        self.flags = flags
+        self.validFrom = validFrom
+        self.validTo = validTo
+        self.source = source
+    }
+
+    private enum CodingKeys: String, CodingKey { case chain, text, mechanic, conditions, flags, validFrom, validTo, source }
+
+    public init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        chain = try c.decode(DealsChain.self, forKey: .chain)
+        text = try c.decode(String.self, forKey: .text)
+        mechanic = try c.decode(String.self, forKey: .mechanic)
+        conditions = try c.decodeIfPresent([String].self, forKey: .conditions) ?? []
+        flags = ((try? c.decodeIfPresent([DealOffer.Flag].self, forKey: .flags)) ?? []).filter { $0 != .unknown }
+        validFrom = try c.decodeIfPresent(DealDay.self, forKey: .validFrom)
+        validTo = try c.decodeIfPresent(DealDay.self, forKey: .validTo)
+        source = try c.decode(DealOffer.Source.self, forKey: .source)
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(chain, forKey: .chain)
+        try c.encode(text, forKey: .text)
+        try c.encode(mechanic, forKey: .mechanic)
+        try c.encode(conditions, forKey: .conditions)
+        if !flags.isEmpty { try c.encode(flags, forKey: .flags) }
+        try c.encodeIfPresent(validFrom, forKey: .validFrom)
+        try c.encodeIfPresent(validTo, forKey: .validTo)
+        try c.encode(source, forKey: .source)
     }
 }
 
@@ -420,9 +488,56 @@ public struct DealOffer: Codable, Equatable, Sendable {
     /// low-confidence read). Missing reads as true: unconfirmed is never shown as confirmed.
     public let check: Bool
 
+    /// What the price needs or carries (ADR-661), as the server's code read it from the conditions.
+    public enum Flag: String, Codable, Sendable, CaseIterable {
+        /// The chain's app or an app coupon.
+        case app
+        /// The chain's loyalty card.
+        case card
+        /// A container deposit is added at the till.
+        case deposit
+        /// While stocks last.
+        case stock
+        /// Only in some of the chain's shops.
+        case selectedStores = "selected_stores"
+        /// The leaflet's own lowest price of the last 30 days is not above this price: not a real reduction.
+        case notACut = "not_a_cut"
+        case unknown
+
+        public init(from decoder: any Decoder) throws {
+            self = Flag(rawValue: try decoder.singleValueContainer().decode(String.self)) ?? .unknown
+        }
+    }
+
+    /// The price of one piece when buying `quantity` under the offer's mechanic ("2+1", "drugi za 5 zł",
+    /// "co druga −50%", or a minimum quantity, when it equals the price), worked out by the server's code.
+    public struct Effective: Codable, Equatable, Sendable {
+        public let price: Money
+        public let quantity: Int
+        public let unitPrice: UnitPrice?
+
+        public init(price: Money, quantity: Int, unitPrice: UnitPrice? = nil) {
+            self.price = price
+            self.quantity = quantity
+            self.unitPrice = unitPrice
+        }
+    }
+
+    public let flags: [Flag]
+    public let effective: Effective?
+    /// The real reduction in percent against the leaflet's own 30-day lowest price, when that is above.
+    public let cut: Int?
+    /// At most this many per customer.
+    public let limit: Int?
+
     public init(chain: DealsChain, product: String, price: Money, size: Size? = nil, unitPrice: UnitPrice? = nil,
                 regularPrice: Money? = nil, lowest30d: Money? = nil, conditions: [String] = [], validFrom: DealDay? = nil,
-                validTo: DealDay? = nil, source: Source, readBy: ReadBy = .leafletData, ean: String? = nil, check: Bool = false) {
+                validTo: DealDay? = nil, source: Source, readBy: ReadBy = .leafletData, ean: String? = nil, check: Bool = false,
+                flags: [Flag] = [], effective: Effective? = nil, cut: Int? = nil, limit: Int? = nil) {
+        self.flags = flags
+        self.effective = effective
+        self.cut = cut
+        self.limit = limit
         self.chain = chain
         self.product = product
         self.price = price
@@ -441,6 +556,31 @@ public struct DealOffer: Codable, Equatable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case chain, product, price, size, unitPrice, regularPrice, lowest30d, conditions, validFrom, validTo, source, readBy, ean, check
+        case flags, effective, cut, limit
+    }
+
+    private struct CutValue: Codable { let percent: Int }
+
+    public func encode(to encoder: any Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(chain, forKey: .chain)
+        try c.encode(product, forKey: .product)
+        try c.encode(price, forKey: .price)
+        try c.encodeIfPresent(size, forKey: .size)
+        try c.encodeIfPresent(unitPrice, forKey: .unitPrice)
+        try c.encodeIfPresent(regularPrice, forKey: .regularPrice)
+        try c.encodeIfPresent(lowest30d, forKey: .lowest30d)
+        try c.encode(conditions, forKey: .conditions)
+        try c.encodeIfPresent(validFrom, forKey: .validFrom)
+        try c.encodeIfPresent(validTo, forKey: .validTo)
+        try c.encode(source, forKey: .source)
+        try c.encode(readBy, forKey: .readBy)
+        try c.encodeIfPresent(ean, forKey: .ean)
+        try c.encode(check, forKey: .check)
+        if !flags.isEmpty { try c.encode(flags, forKey: .flags) }
+        try c.encodeIfPresent(effective, forKey: .effective)
+        try c.encodeIfPresent(cut.map { CutValue(percent: $0) }, forKey: .cut)
+        try c.encodeIfPresent(limit, forKey: .limit)
     }
 
     public init(from decoder: any Decoder) throws {
@@ -459,7 +599,26 @@ public struct DealOffer: Codable, Equatable, Sendable {
         readBy = try c.decodeIfPresent(ReadBy.self, forKey: .readBy) ?? .unknown
         ean = try c.decodeIfPresent(String.self, forKey: .ean)
         check = try c.decodeIfPresent(Bool.self, forKey: .check) ?? true
+        // ADR-661 fields: an older server sends none; a value that doesn't make sense is dropped, never trusted.
+        flags = ((try? c.decodeIfPresent([Flag].self, forKey: .flags)) ?? []).filter { $0 != .unknown }
+        let one = price
+        let effective = (try? c.decodeIfPresent(Effective.self, forKey: .effective)) ?? nil
+        self.effective = effective.flatMap { e in
+            e.quantity >= 2 && e.quantity <= 99 && e.price.minor > 0 && e.price.minor <= one.minor && e.price.currency == one.currency ? e : nil
+        }
+        let cut = (try? c.decodeIfPresent(CutValue.self, forKey: .cut)) ?? nil
+        self.cut = cut.flatMap { (1...99).contains($0.percent) ? $0.percent : nil }
+        let limit = (try? c.decodeIfPresent(Int.self, forKey: .limit)) ?? nil
+        self.limit = limit.flatMap { $0 >= 1 && $0 <= 999 ? $0 : nil }
     }
+
+    /// The price is for a mechanic over several pieces ("2+1", "drugi za"), not for one bought alone.
+    public var isMultiBuy: Bool { effective.map { $0.price.minor < price.minor } ?? false }
+    /// The price needs buying at least `effective.quantity` (the leaflet's price is the price at that
+    /// quantity, so one bought alone costs the regular price).
+    public var needsMinimumQuantity: Bool { effective.map { $0.price.minor == price.minor } ?? false }
+    /// The price needs the chain's app or card.
+    public var needsProgram: Bool { flags.contains(.app) || flags.contains(.card) }
 
     /// The unit price as money, in the price's currency.
     public var unitPriceMoney: Money? { unitPrice.map { Money(minor: $0.minor, currency: price.currency) } }
@@ -520,13 +679,20 @@ public enum DealsAsk {
 /// chains that weren't read and why; and one line on the basket from `BasketSolver`. Everything
 /// from the leaflets is between the data markers, with the markers removed from inside. Nothing
 /// is added that the answer doesn't hold. Bounded: never longer than `maxCharacters`.
+/// Since ADR-661 also: the price per piece under a multi-buy, a real cut or "not a real cut"
+/// against the 30-day low, a price that isn't on yet, a last day on a closed day, the promotions
+/// printed without a price, the kinds an item's offers span (one question the agent may ask), the
+/// offers left out for an app the user doesn't use, and the "before you go" notes of the one-shop basket.
 public enum DealsResultText {
     public static let maxCharacters = 4_000
     /// Other chains' prices shown after an item's cheapest offer.
     static let othersShown = 3
+    static let promotionsShown = 2
+    static let checklistShown = 6
 
     public static func forAgent(_ result: DealsResult, language: String = ErrandDraft.defaultLanguage,
-                                maxCharacters: Int = maxCharacters) -> String {
+                                maxCharacters: Int = maxCharacters, programs: DealsPrograms = .all,
+                                quantities: [ListQuantity?] = [], today: DealDay? = nil, minimumSaving: Int = 0) -> String {
         let clip = ErrandsPrompt.clip
         let money = { (amount: Money) in amount.text(language: language) }
         let found = result.items.contains { !$0.offers.isEmpty }
@@ -535,15 +701,29 @@ public enum DealsResultText {
             : "nothing found: none of the items is in the leaflets Doddy's server read just now. Say so plainly; never suggest a price or an offer that isn't below."
         // The basket and what wasn't read come first, so a long answer is cut in the items, not there.
         var data: [String] = []
-        if let line = basketLine(BasketSolver.solve(result), money) { data.append(line) }
+        let basket = BasketSolver.solve(result, quantities: quantities, programs: programs, minimumSaving: minimumSaving)
+        if let line = basketLine(basket, money) { data.append(line) }
+        if let single = basket.bestSingleChain, let line = checklistLine(single, today: today) { data.append(line) }
         data += chainLines(result)
+        if let line = variantsLine(result) { data.append(line) }
         let order = BasketSolver.chainOrder(result)
         for item in result.items {
             let query = "\"\(clip(item.query, DealsRequest.maxItemLength))\""
-            guard let best = BasketSolver.bestValueIndex(item.offers, chainOrder: order) else {
-                data.append(item.offers.isEmpty
+            let promotions = promotionsText(item, money)
+            let similar = similarText(item, money)
+            let leftOut = item.offers.filter { !programs.canGet($0) }.compactMap { DealsProgram.of($0.chain)?.name }
+            let leftOutText = leftOut.isEmpty ? nil
+                : "left out: \(leftOut.count) offer\(leftOut.count == 1 ? "" : "s") needing \(Array(Set(leftOut)).sorted().joined(separator: ", ")), which the user said they don't use"
+            guard let best = BasketSolver.bestValueIndex(item.offers, chainOrder: order, programs: programs) else {
+                var text = item.offers.isEmpty
                     ? "- \(query): nothing in the leaflets read"
-                    : "- \(query): \(item.offers.count) offer\(item.offers.count == 1 ? "" : "s") without a price in \(BasketSolver.defaultCurrency) Doddy's code could compare; the user can see them on screen")
+                    : leftOut.count == item.offers.count
+                        ? "- \(query): only offers the user can't get"
+                        : "- \(query): \(item.offers.count) offer\(item.offers.count == 1 ? "" : "s") without a price in \(BasketSolver.defaultCurrency) Doddy's code could compare; the user can see them on screen"
+                if let leftOutText { text += " · " + leftOutText }
+                if let promotions { text += " · " + promotions }
+                if let similar { text += " · " + similar }
+                data.append(text)
                 continue
             }
             let index = best.index
@@ -553,13 +733,17 @@ public enum DealsResultText {
             if !cheapest.conditions.isEmpty {
                 parts.append("conditions: " + cheapest.conditions.prefix(4).map { clip($0, 80) }.joined(separator: "; "))
             }
-            if let to = cheapest.validTo { parts.append("until \(to.rawValue)") }
+            parts += offerNotes(cheapest, money, today: today)
             if cheapest.check { parts.append("needs checking") }
-            let others = item.offers.indices.filter { $0 != index }.prefix(othersShown).map { other in
+            let others = item.offers.indices.filter { $0 != index && programs.canGet(item.offers[$0]) }.prefix(othersShown).map { other in
                 let offer = item.offers[other]
-                return "\(name(offer.chain)) \(money(offer.price))" + (offer.check ? " (needs checking)" : "")
+                let each = offer.isMultiBuy ? offer.effective.map { " (\($0.quantity) for \(money($0.price)) each)" } ?? "" : ""
+                return "\(name(offer.chain)) \(money(offer.price))" + each + (offer.check ? " (needs checking)" : "")
             }
             if !others.isEmpty { parts.append("also: " + others.joined(separator: ", ")) }
+            if let leftOutText { parts.append(leftOutText) }
+            if let promotions { parts.append(promotions) }
+            if let similar { parts.append(similar) }
             data.append(parts.joined(separator: " · "))
         }
         data.append("Read at: \(clip(result.checkedAt, 40))")
@@ -580,6 +764,91 @@ public enum DealsResultText {
         if let regular = offer.regularPrice { text += ", regular \(money(regular))" }
         if let lowest = offer.lowest30d { text += ", lowest in 30 days \(money(lowest))" }
         return text
+    }
+
+    /// What the price line holds beyond the price: the per-piece price under a multi-buy, the real
+    /// cut (or that it isn't one), the limit, and the days.
+    static func offerNotes(_ offer: DealOffer, _ money: (Money) -> String, today: DealDay?) -> [String] {
+        var notes: [String] = []
+        if let e = offer.effective {
+            notes.append(offer.isMultiBuy
+                ? "when buying \(e.quantity): \(money(e.price)) each (one alone: \(money(offer.price)))"
+                : "this price only when buying at least \(e.quantity)")
+        }
+        if let cut = offer.cut {
+            notes.append("a real cut of \(cut)% against its lowest price in the last 30 days")
+        } else if offer.flags.contains(.notACut) {
+            notes.append("not lower than its lowest price in the last 30 days, so not a real cut")
+        }
+        if let today, let from = offer.validFrom, from > today { notes.append("not on yet: from \(from.rawValue)") }
+        if let to = offer.validTo {
+            var text = "until \(to.rawValue)"
+            if let today, to > today, ShoppingCalendar.isClosed(to, for: offer.chain),
+               let open = ShoppingCalendar.lastOpenDay(from: max(today, offer.validFrom ?? today), through: to, for: offer.chain), open != to {
+                text += " (shops are closed that day; the last day to shop is \(open.rawValue))"
+            }
+            notes.append(text)
+        }
+        return notes
+    }
+
+    /// The promotions printed without a price that fit the item, as the server worded them.
+    static func promotionsText(_ item: DealsItemResult, _ money: (Money) -> String) -> String? {
+        guard !item.promotions.isEmpty else { return nil }
+        let clip = ErrandsPrompt.clip
+        let parts = item.promotions.prefix(promotionsShown).map { p in
+            var text = "\(name(p.chain)) \"\(clip(p.text, 120))\" \(clip(p.mechanic, 40))"
+            if !p.conditions.isEmpty { text += " (\(p.conditions.prefix(3).map { clip($0, 60) }.joined(separator: "; ")))" }
+            if let to = p.validTo { text += " until \(to.rawValue)" }
+            return text
+        }
+        return "promotions printed without a price, so the price is on the shelf: " + parts.joined(separator: "; ")
+    }
+
+    /// Products of another kind in the item's family, said as such.
+    static func similarText(_ item: DealsItemResult, _ money: (Money) -> String) -> String? {
+        guard !item.similar.isEmpty else { return nil }
+        let parts = item.similar.prefix(2).map { "\(name($0.chain)) \"\(ErrandsPrompt.clip($0.product, 120))\" \(money($0.price))" + ($0.check ? " (needs checking)" : "") }
+        return "similar, not the same (never call it the item): " + parts.joined(separator: "; ")
+    }
+
+    /// The first item whose offers span different kinds the user didn't say, as one question the agent may ask.
+    static func variantsLine(_ result: DealsResult) -> String? {
+        for item in result.items {
+            guard let variants = DealsVariants.split(item) else { continue }
+            let kinds = variants.map { "\($0.label) (\($0.offerIndices.count))" }.joined(separator: ", ")
+            return "The offers for \"\(ErrandsPrompt.clip(item.query, DealsRequest.maxItemLength))\" are of different kinds: \(kinds). If it matters, ask the user once which they mean; ask nothing else."
+        }
+        return nil
+    }
+
+    /// The one-shop basket's "before you go" notes, in a line.
+    static func checklistLine(_ plan: BasketPlan, today: DealDay?) -> String? {
+        let clip = ErrandsPrompt.clip
+        let entries = DealsChecklist.sections(plan, today: today).flatMap(\.entries)
+        guard !entries.isEmpty else { return nil }
+        let texts = entries.prefix(checklistShown).map { entry -> String in
+            let product = entry.product.map { "\"\(clip($0, 60))\": " } ?? ""
+            return "\(name(entry.chain)): \(product)\(agentText(entry.kind))"
+        }
+        return "Before going (one-shop basket): " + texts.joined(separator: "; ")
+    }
+
+    static func agentText(_ kind: DealsChecklistEntry.Kind) -> String {
+        switch kind {
+        case .openApp(let program): "open the \(program?.name ?? "chain's") app, activate its coupons and scan it at the till"
+        case .showCard(let program): "show the \(program?.name ?? "loyalty") card"
+        case .take(let n): "take \(n) to get the offer"
+        case .atMost(let n): "at most \(n) per customer"
+        case .deposit: "a deposit is added at the till"
+        case .whileStocksLast: "while stocks last"
+        case .selectedStores: "only in some shops"
+        case .startsOn(let day): "not on until \(day.rawValue)"
+        case .lastDay: "today is the last day"
+        case .lastOpenDay(let day): "the last day to shop for it is \(day.rawValue)"
+        case .closedToday: "most shops are closed today"
+        case .closesEarlyToday(let hour): "shops close at \(hour):00 today"
+        }
     }
 
     static func chainLines(_ result: DealsResult) -> [String] {
@@ -625,7 +894,9 @@ public enum DealsResultText {
         guard let single = basket.bestSingleChain else { return nil }
         func plan(_ plan: BasketPlan) -> String {
             let names = plan.chains.map(name).joined(separator: " + ")
-            return "\(names), \(plan.covered) of \(plan.itemCount) items, \(money(plan.total))"
+            return "\(names), \(plan.covered) of \(plan.itemCount) items, "
+                + (plan.lines.contains { $0.cost.isLowerBound } ? "at least " : "") + money(plan.total)
+                + (plan.lines.contains { $0.quantity > 1 } ? " for the quantities on the list" : "")
                 + (plan.needsChecking ? " (some need checking)" : "")
         }
         var text = "Basket (summed by Doddy's code): one shop: " + plan(single)

@@ -3,7 +3,7 @@
 // (grosze) with its currency; every price on the wire comes from a chain's own data or from a page the
 // reader read, never from anything else.
 import type { PageFetcher } from "./fetcher.js";
-import type { PageOutput } from "./vision.js";
+import type { PageOutput, ScreenOutput } from "./vision.js";
 import type { PickOutput } from "./match.js";
 
 /** Chains whose leaflets Doddy reads on request (Aldi and Żabka since ADR-660). */
@@ -55,6 +55,36 @@ export interface Offer {
   readBy: "leaflet_data" | "page_image";
   ean?: string;
   check: boolean;
+  /** What the price needs or carries, for the app's checklist and filters (ADR-661). */
+  flags?: OfferFlag[];
+  /** The price of one piece when buying `quantity` under the offer's mechanic ("2+1", "drugi za 5 zł",
+   * "co druga −50%", "przy zakupie 2 szt."), worked out by the code and rounded up to the grosz. */
+  effective?: { price: Money; quantity: number; unitPrice?: UnitPrice };
+  /** The real reduction against the leaflet's own lowest price of the last 30 days (Omnibus), when that is
+   * above the price. Never computed from a "regular" price. Not for multi-buy offers. */
+  cut?: { percent: number };
+  /** At most this many per customer, as the leaflet says. */
+  limit?: number;
+}
+
+/** app/card: the price needs the chain's app or loyalty card; deposit: a container deposit is added at the
+ * till; stock: while stocks last; selected_stores: only in some shops; not_a_cut: the leaflet's own 30-day
+ * lowest price is not above this price, so it isn't a real reduction. */
+export type OfferFlag = "app" | "card" | "deposit" | "stock" | "selected_stores" | "not_a_cut";
+
+/** A promotion printed without a price ("1+1 na wszystkie proszki Persil z aplikacją"): its range and
+ * mechanic, as the code wrote them from the reader's read. Never a price for a product (ADR-661). */
+export interface Promotion {
+  chain: ReadChain;
+  /** The range as printed, at most 120 characters. */
+  text: string;
+  /** The mechanic in the code's words: "1+1", "druga sztuka za 5,00 zł", "co druga sztuka −50%", "−30%". */
+  mechanic: string;
+  conditions: string[];
+  flags?: OfferFlag[];
+  validFrom?: string;
+  validTo?: string;
+  source: { url: string; page?: number };
 }
 
 /** Sent only when fewer pages were read than were worth reading (the page cap, time, an image that
@@ -72,12 +102,19 @@ export type ChainRow =
 export interface DealsResponse {
   checkedAt: string;
   chains: ChainRow[];
-  items: { query: string; offers: Offer[] }[];
+  /** `similar` (ADR-662): products of another kind in the same family ("masło roślinne" for "masło"), at most
+   * three, labelled as not the item; the basket never counts them. */
+  items: { query: string; offers: Offer[]; promotions?: Promotion[]; similar?: Offer[] }[];
 }
 
 /** What the shopper must do for a price. Turned into words by the code, never by the model. */
-export type ConditionKind = "app" | "card" | "min_quantity" | "multi_buy" | "limit" | "other";
-export interface Condition { kind: ConditionKind; quantity?: number; text?: string }
+export type ConditionKind =
+  | "app" | "card" | "min_quantity" | "multi_buy" | "limit" | "other"
+  // ADR-661: "drugi za 5 zł", "co n-ta −k%", a container deposit, while stocks last, only some shops.
+  | "second_for" | "nth_discount" | "deposit" | "stock" | "selected_stores";
+/** multi_buy: text "a+b"; min_quantity/limit: quantity; second_for: price (the second piece's);
+ * nth_discount: quantity n and percent k (every n-th piece k% off). */
+export interface Condition { kind: ConditionKind; quantity?: number; text?: string; price?: Money; percent?: number }
 
 /** A product as the chain's own data gives it (name and price published by the chain). */
 export interface DataProduct {
@@ -153,6 +190,9 @@ export interface DealsModelApi {
   readPage(req: { image: PageImage; chain: ReadChain; queries: readonly string[] }, signal: AbortSignal): Promise<ModelReply<PageOutput>>;
   /** Says which candidates are each item, by id only. Throws on API errors. */
   pick(req: { queries: readonly string[]; candidates: PickCandidate[][] }, signal: AbortSignal): Promise<ModelReply<PickOutput>>;
+  /** Says which of several page images could hold each item (ADR-662), without reading them. Throws on API
+   * errors. A model without it reads image-only leaflets page by page, as before. */
+  screenPages?(req: { images: readonly PageImage[]; chain: ReadChain; queries: readonly string[] }, signal: AbortSignal): Promise<ModelReply<ScreenOutput>>;
 }
 
 /** Leaflet switches and caps (SHOPPING.md §2). `enabled` is the env switch only. */
@@ -161,11 +201,14 @@ export interface DealsSettings {
   visionModel: string;
   /** Pages sent to the reader per chain per request. */
   maxPages: number;
+  /** Pages of an image-only leaflet screened per chain per request before the full reads (ADR-662); 0: no
+   * screening, every page read in order up to `maxPages`. */
+  screenPages: number;
   dailyPerAccount: number;
   dailyPerServer: number;
 }
 
 /** Settings for an injected DealsDeps without its own (tests). The environment's DEALS_ENABLED defaults to "0". */
 export const DEFAULT_DEALS_SETTINGS: DealsSettings = {
-  enabled: true, visionModel: "claude-haiku-5-5", maxPages: 40, dailyPerAccount: 30, dailyPerServer: 1000,
+  enabled: true, visionModel: "claude-haiku-5-5", maxPages: 40, screenPages: 120, dailyPerAccount: 30, dailyPerServer: 1000,
 };

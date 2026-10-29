@@ -21,7 +21,7 @@ export function normalize(text: string): string {
 }
 
 const STOPWORDS = new Set([
-  "z", "ze", "w", "we", "na", "do", "i", "oraz", "dla", "bez", "od", "po", "o", "a", "lub", "u", "za", "przy",
+  "z", "ze", "w", "we", "na", "do", "i", "oraz", "dla", "bez", "od", "po", "o", "a", "lub", "u", "za", "przy", "tylko", "only",
   "the", "and", "of", "with", "szt", "sztuk", "sztuki", "g", "kg", "dag", "ml", "l", "x", "op", "opak", "cm", "mm", "nr",
 ]);
 
@@ -96,6 +96,63 @@ export function matchScore(query: Terms, text: Terms): number {
   const nums = new Set(text.numbers);
   for (const n of query.numbers) if (nums.has(n)) got += 0.5;
   return got / (query.words.length + 0.5 * query.numbers.length);
+}
+
+// ---------- the person's own rules in an item (ADR-664) ----------
+
+/** "masło tylko Łaciate": only products naming Łaciate (the one word after "tylko"); "mleko bez laktozy": only
+ * products that say "bez laktozy".
+ * `words` is the item without its "tylko …" part, for matching; `search` is what a chain's own search gets. */
+export interface ItemRules {
+  words: string;
+  search: string;
+  /** Each a phrase a product name must hold, word by word. */
+  required: { raw: string; stem: string }[][];
+}
+
+const RULE_WORDS = new Set(["tylko", "only", "bez", "without"]);
+
+export function itemRules(query: string): ItemRules {
+  const tokens = normalize(query).split(" ").filter(Boolean);
+  const original = query.trim().split(/\s+/);
+  const required: { raw: string; stem: string }[][] = [];
+  const keep: string[] = [];
+  const extra: string[] = [];
+  const word = (raw: string) => ({ raw, stem: stem(raw) });
+  // The normalised tokens line up with the original words only when no word splits (digits glued to letters);
+  // otherwise the item's own words are used as they are and only the rules are read from the tokens.
+  const aligned = tokens.length === original.length;
+  for (let i = 0; i < tokens.length; i++) {
+    const t = tokens[i]!;
+    if ((t === "tylko" || t === "only") && i + 1 < tokens.length && !RULE_WORDS.has(tokens[i + 1]!)) {
+      // The word after "tylko" (a brand, usually) must be in the name; the words after it are the item again
+      // ("pieluchy tylko Pampers rozmiar 4").
+      required.push([word(tokens[i + 1]!)]);
+      if (aligned) extra.push(original[i + 1]!);
+      i++;
+      continue;
+    }
+    if ((t === "bez" || t === "without") && i + 1 < tokens.length && !RULE_WORDS.has(tokens[i + 1]!)) {
+      // "bez laktozy" is said on the pack: the phrase must be in the name, and it stays part of the item.
+      required.push([word("bez"), word(tokens[i + 1]!)]);
+    }
+    if (aligned) keep.push(original[i]!);
+  }
+  if (!aligned) return { words: query.trim(), search: query.trim(), required };
+  const words = keep.join(" ");
+  return { words: words || query.trim(), search: [...keep, ...extra].join(" ") || query.trim(), required };
+}
+
+/** Whether a product name holds every phrase the item's rules ask for. */
+export function meetsRules(rules: ItemRules, name: string): boolean {
+  if (rules.required.length === 0) return true;
+  const words = normalize(name).split(" ").filter(Boolean).map((raw) => ({ raw, stem: stem(raw) }));
+  return rules.required.every((phrase) => {
+    for (let i = 0; i + phrase.length <= words.length; i++) {
+      if (phrase.every((w, j) => wordSimilarity(w, words[i + j]!) >= WORD_HIT)) return true;
+    }
+    return false;
+  });
 }
 
 /** How clearly `text` mentions the query's first word (0 to 1). Enough to make a leaflet page worth reading:

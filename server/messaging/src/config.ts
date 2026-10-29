@@ -108,6 +108,7 @@ const schema = z.object({
   DEALS_ENABLED: z.enum(["0", "1"]).default("0"),
   DEALS_VISION_MODEL: z.string().regex(/^[a-z0-9][a-z0-9.\-]{1,63}$/).default("claude-haiku-5-5"),
   DEALS_MAX_PAGES: z.coerce.number().int().min(0).max(100).default(40),
+  DEALS_SCREEN_PAGES: z.coerce.number().int().min(0).max(200).default(120),
   DEALS_DAILY_PER_ACCOUNT: z.coerce.number().int().min(1).max(1000).default(30),
   DEALS_DAILY_PER_SERVER: z.coerce.number().int().min(1).max(100000).default(1000),
 
@@ -281,7 +282,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       affiliateRules: e.AFFILIATE_LINKS,
     },
     dealsSettings: {
-      enabled: e.DEALS_ENABLED === "1", visionModel: e.DEALS_VISION_MODEL, maxPages: e.DEALS_MAX_PAGES,
+      enabled: e.DEALS_ENABLED === "1", visionModel: e.DEALS_VISION_MODEL, maxPages: e.DEALS_MAX_PAGES, screenPages: e.DEALS_SCREEN_PAGES,
       dailyPerAccount: e.DEALS_DAILY_PER_ACCOUNT, dailyPerServer: e.DEALS_DAILY_PER_SERVER,
     },
     watchSettings: { enabled: e.WATCHES_ENABLED === "1", maxOpen: e.WATCHES_MAX_OPEN, checkHours: e.WATCHES_CHECK_HOURS },

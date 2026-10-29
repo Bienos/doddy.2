@@ -11,6 +11,12 @@ adding one adapter, not rewriting the app or the agent.
 | `session.json` | First message, languages, variables, turn-taking, per-provider settings | Agent settings | `session.update` body |
 
 **OpenAI Realtime voice (ADR-265; a choice in the voice picker, not the default: ElevenLabs is, ADR-546):** the picker runs these same files on OpenAI Realtime (`gpt-realtime-2.1` or `gpt-realtime-2.1-mini`, picked in the picker).
+**Applied to the live agent 29 Oct 2026, about 04:10 UTC (ADR-660, `find_deals`'s wording: Aldi and Żabka are read chains; owner: "zaplikuj bez czekania", then "Tekst find_deals do agenta" to the question of what to apply).**
+- **Read first:** `tool_9201m5rpyjhfe2kv0yd5xbbfk6k3` with the text created on 25 Oct (`tools.json` as of `3e678c8`): Biedronka, Lidl, Dino and Rossmann read, Żabka a link, no Aldi. **Rollback:** re-send that text (`git show 3e678c8:voice-agent/tools.json`, the `find_deals` entry, rendered with `voice_agent_spec.py elevenlabs`).
+- **Saved:** the tool only, exactly as `voice_agent_spec.py elevenlabs` renders it from the default branch at `ef3ff50`. Only the three descriptions changed (the tool's, `chains`', and a chain's); every other field was re-sent as read (client tool, 90 s, speak first, expects a response, interruptions allowed). The agent itself, its prompt and its `tool_ids` were not touched.
+- **Checked, by script, on a read-back:** the description, the parameter descriptions, the timeout, the pre-tool speech, the type and expects-response equal the spec.
+- **Not waited for (the owner chose not to wait):** an app build from before 28 Oct (ADR-660) doesn't know `aldi`: if the agent names Aldi, that app refuses the request ("chains must be some of ...") and nothing is checked; with no shop named it works as before. The server (deployed `ef3ff50`) reads all six. **Not checked:** a real conversation.
+
 **Applied to the live agent 28 Oct 2026, about 18:10 UTC (ADR-658, voice control of the home through HomeKit: `control_home`; owner: "Ty dodaj", then "Tak dodaj" to the exact tool text and prompt line shown in the session).**
 - **Read first:** live version `agtvrsn_4401m5y51ygzfbdbapvpnfb6vfnh` (the rollback point), 100 tools.
 - **Tool:** `control_home` created as client tool `tool_9101m626b83yfsyr5d68zckqjnqd`, exactly as `voice_agent_spec.py elevenlabs` renders it (response timeout 90 s, pre-tool speech forced, expects a response), and attached as the 101st tool. The other 100 ids are unchanged and in the same order. The Polish example in its description is correct ("jeśli mam to zrobić"); `tools.json` briefly held it double-escaped and was fixed before the sync.
@@ -20,6 +26,7 @@ adding one adapter, not rewriting the app or the agent.
 - **Not checked:** a real conversation. No app build with the Home flow is on a device yet, so on today's builds the agent can call the tool and the app will answer `unsupported`/not connected. Rollback: restore `agtvrsn_4401m5y51ygzfbdbapvpnfb6vfnh`.
 
 **Not yet on the live agent (ADR-660, 28 Oct 2026): `find_deals`'s new wording.** `tools.json` now says Aldi and Żabka are read and lists `aldi` and `zabka` among the chains; the live tool (`tool_9201m5rpyjhfe2kv0yd5xbbfk6k3`) still says Żabka is a link and doesn't name Aldi. The live tool keeps working: when the user names no shop, the server reads all six. **Order:** deploy the server first (an older server refuses `aldi`), then ship the app (an older app refuses `aldi` from the agent), then sync this text, and only with the owner's yes to it.
+
 
 
 **Applied to the live agent 27 Oct 2026, about 07:44 UTC (ADR-570, voice errands: `hand_over_errand` and `check_errands`; owner: "wariant B, zapisz po PR", after PR #145 was open and its `core` job green).**

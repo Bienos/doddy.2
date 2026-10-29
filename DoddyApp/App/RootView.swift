@@ -97,6 +97,13 @@ enum PreferenceKey {
     static let welcomeSeen = "welcomeSeen"
     /// Settings › "Show the welcome again": the welcome shows once more, then clears this.
     static let welcomeReplay = "welcomeReplay"
+    /// Cheapest this week › My loyalty apps (ADR-661): the programs the user said they don't use
+    /// (`DealsPrograms.stored`). Empty means every leaflet price counts. Stays on this iPhone.
+    static let dealsProgramsNotUsed = "deals.programsNotUsed"
+    /// Cheapest this week › My shops (ADR-663): the shops the user picked (`MyShops.stored`, JSON). Stays on this iPhone.
+    static let dealsMyShops = "deals.myShops"
+    /// Basket › a second shop only when it saves at least this much, in grosze (ADR-664). 0 means any saving.
+    static let dealsMinimumSaving = "deals.minimumSaving"
 }
 
 enum AppTab: Hashable {
