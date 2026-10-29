@@ -104,7 +104,7 @@ struct HomeView: View {
                     .modifier(SlideIn(shown: buttonsShown, delay: 0))
             }
             .background(Theme.canvas.ignoresSafeArea())
-            // ADR-596: the island grows down with his waves while he talks on Home.
+            // ADR-596, ADR-665: the island grows to the sides with his waves while he talks on Home.
             .overlay(alignment: .top) {
                 if let live = conversation.live {
                     IslandExtension(look: islandLook(live))
@@ -145,7 +145,7 @@ struct HomeView: View {
             }) { TranslatorStartView(chosen: $translatorChoice) }
         }
         .foregroundStyle(Theme.ink)
-        // ADR-654: while he talks the island extension is wider than the gap in the status bar.
+        // ADR-654, ADR-665: while he talks the island's strip is wider than the gap in the status bar.
         .statusBarHidden(conversation.live != nil)
         // Motion v2: each sheet and cover from Home hides him in the frame it starts. Ask isn't
         // one of them (MV4: its cover carries him up on its composer), and the Files sheet
@@ -171,8 +171,8 @@ struct HomeView: View {
             }
         }
         .frame(minHeight: 44)
-        // Below the island's extension while he talks (ADR-596, ADR-654).
-        .padding(.top, conversation.live == nil ? 8 : 66)
+        // The island's strip hangs nothing below the island (ADR-665), so the header stays put.
+        .padding(.top, 8)
     }
 
     private func islandLook(_ live: VoiceSessionController) -> IslandExtension.Look {

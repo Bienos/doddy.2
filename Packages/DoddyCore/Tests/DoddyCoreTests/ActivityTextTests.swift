@@ -87,7 +87,7 @@ final class ActivityTextTests: XCTestCase {
         XCTAssertTrue(everyKind.allSatisfy(getsARow))
         // One of each kind that gets a row (cloud tools count once each, drafts twice).
         let kinds = Set(everyKind.map { String(describing: $0).prefix { $0 != "(" } })
-        XCTAssertEqual(kinds.count, 47, "follow_news (ADR-657 on its branch, 666 here) and control_home (ADR-658)")
+        XCTAssertEqual(kinds.count, 47, "follow_news (ADR-657 on its branch, 669 here) and control_home (ADR-658)")
         XCTAssertNil(ActivityRequest.describe(.undoLast, calendar: calendar))
         XCTAssertNil(ActivityRequest.describe(.calculate(expression: "1+1"), calendar: calendar))
     }
