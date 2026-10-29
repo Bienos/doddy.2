@@ -46,7 +46,7 @@ public enum CarProfile {
         case .addToList(let request):
             return .askAloud(readBack: CarConfirmation.readBack(adding: request.items, to: request.list))
         case .leaveBy, .createCalendarEvent, .createReminder, .remindAboutNote, .lookupContact, .addIngredients, .undoLast,
-             .setTimer, .setAlarm, .cancelAlarm, .startStopwatch, .stopStopwatch, .openTrainingPlan, .openMap, .runShortcut, .draftMessage, .makePresentation, .openCamera, .startTranslator,
+             .setTimer, .setAlarm, .cancelAlarm, .startStopwatch, .stopStopwatch, .openTrainingPlan, .openMap, .runShortcut, .draftMessage, .makePresentation, .openCamera, .controlHome, .startTranslator,
              .stopTranslator, .checkOff, .removeFromList, .createList, .changeCalendarEvent, .changeReminder,
              .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders:
             return .refuse(reason: "This needs a tap on a card on the iPhone, so it waits until the user isn't driving.")

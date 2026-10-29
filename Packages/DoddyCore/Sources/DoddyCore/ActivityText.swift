@@ -26,6 +26,7 @@ extension ActivityApp {
         case .steps: return "Kroki"
         case .photos: return "Zdjęcia"
         case .camera: return "Aparat"
+        case .home: return "Dom"
         case .health: return "Zdrowie"
         case .training: return "Plan treningowy"
         }
@@ -72,6 +73,7 @@ public enum ActivityText {
         "Read the week from Apple Health": "Odczytano tydzień z Apple Health",
         "Looked through photos": "Przejrzano zdjęcia",
         "Open the camera": "Otwórz aparat",
+        "Control the home": "Steruj domem",
         "Open the training plan": "Otwórz plan treningowy",
         "Draft an email": "Szkic e-maila",
         // Written before ADR-275 fixed the article; old rows still say it.
@@ -213,6 +215,7 @@ public enum ActivityText {
         case .steps: "Kroki"
         case .photos: "Zdjęcia"
         case .camera: "Aparat"
+        case .home: "Dom"
         }
     }
 
