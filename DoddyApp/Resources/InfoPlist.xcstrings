@@ -391,6 +391,71 @@
         }
       }
     },
+    "NSHomeKitUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy schaltet in deinem Zuhause nur dann ein Licht, eine Steckdose oder einen Ventilator ein oder aus oder startet eine Szene, wenn du darum bittest und auf einer Karte mit ihrem Namen auf Ja tippst. Schlösser, Garagentore, Alarmanlagen und Kameras steuert Doddy nie. Der Name dessen, worum du gebeten hast, und ob es geklappt hat, gehen in diesem Gespräch an Doddys Stimme; Doddy speichert nichts davon."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy turns a light, outlet or fan on or off, or runs a scene, in your Home only when you ask and after you tap Yes on a card that names it. It never controls locks, garage doors, alarms or cameras. The name of what you asked for and whether it worked go to Doddy's voice in that conversation; Doddy keeps none of it."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy enciende o apaga una luz, un enchufe o un ventilador, o ejecuta una escena, en tu Casa solo cuando lo pides y después de que toques Sí en una tarjeta que lo nombra. Nunca controla cerraduras, puertas de garaje, alarmas ni cámaras. El nombre de lo que pediste y si funcionó van a la voz de Doddy en esa conversación; Doddy no guarda nada de ello."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy allume ou éteint une lumière, une prise ou un ventilateur, ou lance une scène, dans ta Maison uniquement quand tu le demandes et après que tu as touché Oui sur une carte qui la nomme. Il ne commande jamais les serrures, les portes de garage, les alarmes ni les caméras. Le nom de ce que tu as demandé et le fait que cela ait marché vont à la voix de Doddy dans cette conversation ; Doddy n'en garde rien."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy uključuje ili isključuje svjetlo, utičnicu ili ventilator, ili pokreće scenu, u tvom Domu samo kad to zatražiš i nakon što dodirneš Da na kartici koja je imenuje. Nikad ne upravlja bravama, garažnim vratima, alarmima ni kamerama. Naziv onoga što si zatražio i je li uspjelo idu Doddyjevu glasu u tom razgovoru; Doddy ništa od toga ne pohranjuje."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy accende o spegne una luce, una presa o un ventilatore, o avvia una scena, nella tua Casa solo quando lo chiedi e dopo che hai toccato Sì su una scheda che lo nomina. Non controlla mai serrature, porte del garage, allarmi o telecamere. Il nome di ciò che hai chiesto e se ha funzionato vanno alla voce di Doddy in quella conversazione; Doddy non conserva nulla."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy は、あなたが頼んだとき、そしてその名前が書かれたカードで「はい」をタップしたあとにだけ、ホームのライト、コンセント、扇風機をオン・オフしたり、シーンを実行したりします。鍵、ガレージドア、アラーム、カメラは操作しません。頼んだものの名前と成功したかどうかは、その会話の Doddy の声にだけ送られ、Doddy は何も保存しません。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy włącza lub wyłącza światło, gniazdko albo wentylator, albo uruchamia scenę w Twoim Domu tylko wtedy, gdy o to poprosisz i stukniesz Tak na karcie z jej nazwą. Nigdy nie steruje zamkami, bramami garażowymi, alarmami ani kamerami. Nazwa tego, o co prosisz, i informacja, czy się udało, trafiają do głosu Doddy w tej rozmowie; Doddy nic z tego nie zachowuje."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Doddy liga ou desliga uma luz, uma tomada ou um ventilador, ou executa uma cena, na sua Casa somente quando você pede e depois de tocar em Sim em um cartão que a nomeia. Ele nunca controla fechaduras, portões de garagem, alarmes ou câmeras. O nome do que você pediu e se funcionou vão para a voz do Doddy nessa conversa; o Doddy não guarda nada disso."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "只有在你提出要求、并在写有其名称的卡片上点按“是”之后，Doddy 才会在你的“家庭”中打开或关闭灯、插座或风扇，或运行场景。它从不控制门锁、车库门、警报器或摄像头。你所要求事项的名称以及是否成功，只会在该次对话中发送给 Doddy 的语音；Doddy 不会保存其中任何内容。"
+          }
+        }
+      }
+    },
     "NSLocationWhenInUseUsageDescription": {
       "extractionState": "manual",
       "localizations": {

@@ -571,6 +571,21 @@
     },
     {
       "type": "function",
+      "name": "control_home",
+      "description": "Turn a light, outlet or fan on or off, or run a scene, in the user's Apple Home (HomeKit), when they ask for it, for example 'turn off the living room lamp' or 'run Good night'. Pass the action, the name the user said and, for an accessory, the room if they said one. You cannot see their home: the app finds the one accessory or scene that matches and shows a card with HomeKit's own name for it; nothing happens until the user taps Yes there. Doddy never controls locks, garage doors, alarms, cameras or doorbells: if asked, say so and point to the Home app; never try this tool for them. Never guess a name; if the user hasn't said which light or scene, ask. Before this tool runs, say only one short line, for example 'Tap Yes on the card if I should do it.' (Polish: 'Stuknij Tak na karcie, je\u015bli mam to zrobi\u0107.'). The result starts with 'changed' (HomeKit confirmed it), 'declined', 'failed', 'unknown', 'not found', 'not changed' (more than one match, not allowed for that accessory, or not responding: the reply says which) or 'not allowed'. Say it worked only for 'changed'. For 'unknown' the home may or may not have changed: say so, don't try again and tell the user to look at the Home app. If more than one matches, ask which one. If it starts with 'not allowed', the user hasn't let Doddy use Home: say they can allow it in Settings, Connections, Home, and don't ask again.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "action": {"type": "string", "description": "'on' or 'off' for a light, outlet or fan; 'scene' to run a scene."},
+          "name": {"type": "string", "description": "The accessory or scene name as the user said it, for example 'lamp' or 'Good night'."},
+          "room": {"type": "string", "description": "The room, only if the user said one. Not for scenes."}
+        },
+        "required": ["action", "name"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_9101m626b83yfsyr5d68zckqjnqd"}
+    },
+    {
+      "type": "function",
       "name": "open_camera",
       "description": "Open Doddy's camera on the user's screen, when they ask to take a photo or open the camera. The app shows a card and the camera opens only after the user taps Open camera. A photo the user keeps goes into a new note that they check and save themselves; you never see it. The result starts with 'opened' (the camera is open), 'declined' or 'unavailable'. Before this tool runs, say only one short line, for example 'Tap the card to open the camera.' (Polish: 'Stuknij kartę, żeby otworzyć aparat.'). Never say a photo was taken or saved. If the app doesn't know this tool, use run_shortcut with \"Doddy Camera\" as before.",
       "parameters": {"type": "object", "properties": {}},

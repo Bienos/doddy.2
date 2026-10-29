@@ -30,7 +30,7 @@ export const LOGBOOK_TOOL_IDS = [
   "calculate", "convert_units", "convert_currency", "set_timer", "set_alarm", "start_stopwatch", "stop_stopwatch",
   "check_stopwatch", "follow_news", "list_alarms", "cancel_alarm",
   "propose_plan", "open_map", "parking_spot", "remind_when_to_leave", "run_shortcut", "draft_message",
-  "draft_blik_transfer", "make_presentation", "read_steps", "read_health_week", "open_training_plan", "find_photos", "open_camera", "check_email",
+  "draft_blik_transfer", "make_presentation", "read_steps", "read_health_week", "open_training_plan", "find_photos", "control_home", "open_camera", "check_email",
   "read_email", "draft_email", "draft_email_reply", "send_email", "reply_to_email", "forward_email", "change_email",
   "trash_email", "find_drive_file", "create_drive_doc", "search_notion", "read_notion_page", "create_notion_page",
   "append_notion_page", "trash_notion_page", "check_outlook_email", "read_outlook_email", "draft_outlook_email",

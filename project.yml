@@ -127,6 +127,8 @@ targets:
         # Photos and camera (ADR-569): library counts for days asked about; the camera on a tap. No library writes.
         INFOPLIST_KEY_NSCameraUsageDescription: "Doddy opens the camera only when you tap Take a photo or Open camera. The photo you keep goes into a note on this iPhone and its text is read here; it is never sent anywhere or saved to your photo library."
         INFOPLIST_KEY_NSPhotoLibraryUsageDescription: "Doddy counts the photos and videos you took on the days you ask about and shows them on your screen. Only how many there are and when they were taken go to Doddy's voice in that conversation (ElevenLabs, or OpenAI if you switch Home's voice to it); the pictures never leave this iPhone. Doddy never changes your library. Turn this off in Settings, Connections."
+        # Home control by voice (HomeKit): a light, outlet, fan or scene, after a tap on a card. Never locks, garage doors, alarms or cameras.
+        INFOPLIST_KEY_NSHomeKitUsageDescription: "Doddy turns a light, outlet or fan on or off, or runs a scene, in your Home only when you ask and after you tap Yes on a card that names it. It never controls locks, garage doors, alarms or cameras. The name of what you asked for and whether it worked go to Doddy's voice in that conversation; Doddy keeps none of it."
         # Background audio + Live Activities for the conversation's Dynamic Island (ADR-053).
         INFOPLIST_FILE: Config/Doddy-Info.plist
   DoddyWidgets:

@@ -91,6 +91,9 @@ final class VoiceSessionController {
         case presentation(toolCallID: String, draft: PresentationDraft)
         /// "Open the camera?" (ADR-569). The camera opens only on the tap.
         case camera(toolCallID: String)
+        /// "Turn off Lamp in Bedroom?" (HomeCommand.swift): the one accessory or scene HomeKit
+        /// matched, named in HomeKit's words. It runs only on the tap.
+        case home(toolCallID: String, command: HomeCommand)
 
         var toolCallID: String {
             switch self {
@@ -100,7 +103,7 @@ final class VoiceSessionController {
                  .changeEvent(let id, _), .changeReminder(let id, _, _), .deleteEvent(let id, _), .deleteReminder(let id, _),
                  .undo(let id, _), .bulk(let id, _, _, _), .parking(let id, _), .leaveBy(let id, _),
                  .ingredients(let id, _, _, _, _, _), .ask(let id, _, _, _, _), .cloudRead(let id, _, _, _, _),
-                 .presentation(let id, _), .camera(let id):
+                 .presentation(let id, _), .camera(let id), .home(let id, _):
                 id
             }
         }
@@ -419,6 +422,8 @@ final class VoiceSessionController {
     private static let toolLog = Logger(subsystem: "com.bienos.doddy2.dev", category: "voice-tools")
     /// Calendar, Reminders, Contacts and timers; a fake in tests (AppTests review finding 2).
     private let devices: any DeviceConnecting
+    /// HomeKit for `control_home`; a fake in tests.
+    private let homeKit: any HomeControlling
     private let alarmWriter = AlarmKitWriter()
     private let leaveByWriter = LeaveByScheduler()
     private var conversation: (any LiveVoiceLink)?
@@ -466,12 +471,13 @@ final class VoiceSessionController {
 
     init(
         store: MemoryStore, logs: ConversationLogStore = .shared, activity: ActivityLogStore = .shared,
-        devices: any DeviceConnecting = DeviceConnections()
+        devices: any DeviceConnecting = DeviceConnections(), homeKit: any HomeControlling = HomeKitClient.shared
     ) {
         self.store = store
         self.logs = logs
         self.activity = activity
         self.devices = devices
+        self.homeKit = homeKit
     }
 
     #if DEBUG
@@ -1406,6 +1412,13 @@ final class VoiceSessionController {
             } catch {
                 await reply(id, VoiceToolReply.presentationFailed(UserFacingError.message(for: error)), isError: true)
             }
+        case .home(let id, let command):
+            // The tap approved exactly this command (it is the card's own value). Only what HomeKit
+            // confirmed is reported as changed; no answer is `unknown` and is never retried here.
+            let outcome = await homeKit.run(command)
+            let text = VoiceToolReply.home(command, outcome: outcome)
+            writeResults[id] = WriteResult(reply: text, attempted: true)
+            await reply(id, text, isError: outcome != .confirmed)
         case .camera(let id):
             // ADR-569: the camera opens on this screen; a kept photo goes into a new note.
             if onScreen(attempt) { cameraRequest = UUID() }
@@ -1641,6 +1654,7 @@ final class VoiceSessionController {
         case .blik(let id, _, _, _): await reply(id, VoiceToolReply.blikDeclined)
         case .presentation(let id, _): await reply(id, VoiceToolReply.presentationDeclined)
         case .camera(let id): await reply(id, VoiceToolReply.cameraDeclined)
+        case .home(let id, _): await reply(id, VoiceToolReply.homeDeclined)
         case .cloud(let id, let call, _, _, _): await reply(id, VoiceToolReply.cloudDeclined(call.name))
         case .ask(let id, _, _, let toolName, _):
             _ = askLedger.answer(.declined, for: id, at: Date())
@@ -2140,7 +2154,7 @@ final class VoiceSessionController {
             let name = call.name.lowercased()
             return name.contains("gmail") || name.contains("outlook") || name.contains("mail") ? .email : .onlineApp
         case .ask, .cloudRead: return .askFirst
-        case .memory, .plan, .bulk, .undo, .parking: return .other
+        case .memory, .plan, .bulk, .undo, .parking, .home: return .other
         }
     }
 
@@ -2786,6 +2800,23 @@ final class VoiceSessionController {
                 return
             }
             propose(.camera(toolCallID: call.toolCallId), toolCallID: call.toolCallId)
+        case .controlHome(let proposal):
+            guard devices.access(for: .home) == .granted else {
+                await notConnected(call.toolCallId, .home)
+                return
+            }
+            guard let snapshot = await homeKit.snapshot() else {
+                await reply(call.toolCallId, VoiceToolReply.failed("Home didn't load, so nothing was changed. Tell the user in one short sentence."), isError: true)
+                return
+            }
+            // The words are matched to one exact accessory or scene by code; the card shows HomeKit's own name for it.
+            switch HomeCommandRules.resolve(proposal, in: snapshot) {
+            case .ready(let command): propose(.home(toolCallID: call.toolCallId, command: command), toolCallID: call.toolCallId)
+            case .ambiguous(let names): await reply(call.toolCallId, VoiceToolReply.homeAmbiguous(names))
+            case .notFound: await reply(call.toolCallId, VoiceToolReply.homeNotFound)
+            case .refused(let reason): await reply(call.toolCallId, VoiceToolReply.homeRefused(reason))
+            case .unreachable(let name): await reply(call.toolCallId, VoiceToolReply.homeUnreachable(name))
+            }
         case .cloudTool(let cloud):
             await handleCloud(cloud, toolCallID: call.toolCallId)
         case .startTranslator(let proposal):
@@ -4301,7 +4332,7 @@ private extension VoiceSessionController.PendingAction {
     var changesSomething: Bool {
         switch self {
         case .memory, .event, .reminder, .timer, .alarm, .cancelAlarm, .cloud, .noteReminder, .createList, .changeEvent, .changeReminder,
-             .deleteEvent, .deleteReminder, .bulk, .parking, .ingredients, .leaveBy, .presentation: true
+             .deleteEvent, .deleteReminder, .bulk, .parking, .ingredients, .leaveBy, .presentation, .home: true
         // Each step of a plan is logged on its own (runPlan), not the plan as a whole. An undo
         // is recorded on the row it undoes (ADR-271).
         // ASK-01 asks: the change itself (a list item) is logged by the flow it runs. A BLIK card only

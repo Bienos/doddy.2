@@ -69,6 +69,8 @@ struct ConnectionGroup: Identifiable {
         ConnectionGroup(title: "Places and apps", items: [.maps, .shortcuts, .presentations]),
         // ADR-569: the photo library (counts, pictures on screen only) and Doddy's camera.
         ConnectionGroup(title: "Photos and camera", items: [.photos, .camera]),
+        // Lights, outlets, fans and scenes through HomeKit, after a tap on a card.
+        ConnectionGroup(title: "Home", items: [.home]),
         // ADR-510: shown, never sent; the user sends it in their bank app.
         ConnectionGroup(title: "Money", items: [.blik]),
     ]
@@ -416,6 +418,14 @@ struct ConnectionInfo {
                 ],
                 leavesPhone: "Nothing from the camera. Only the words you save in the note can reach Doddy's voice, like any note.",
                 staysHere: "The photo is kept with the note on this iPhone, never sent anywhere and never saved to your photo library. You can also tap Take a photo when writing a note.")
+        case .home:
+            // Needs the HomeKit entitlement (a paid Apple team): HOME_COMMANDS_STATUS.md.
+            ConnectionInfo(
+                symbol: "house",
+                examples: ["Turn off the living room lamp", "Run Good night"],
+                canDo: ["Turn a light, outlet or fan on or off, or run a scene, after you tap Yes on a card naming it"],
+                leavesPhone: "Nothing leaves your iPhone: HomeKit talks to your home from here.",
+                staysHere: "Doddy never controls locks, garage doors, alarms, cameras or doorbells.")
         case .blik:
             // ADR-510: BLIK has no way for an app to send money, so Doddy only shows the details.
             ConnectionInfo(

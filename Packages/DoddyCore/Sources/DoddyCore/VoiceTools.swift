@@ -41,6 +41,8 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
     case photos
     /// Doddy's own camera, for a photo note (ADR-569).
     case camera
+    /// Lights, outlets, fans and scenes in HomeKit (HomeCommand.swift). Needs the HomeKit entitlement.
+    case home
 
     /// The name shown in Settings and in the agent's replies.
     public var title: String {
@@ -57,6 +59,7 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
         case .steps: "Steps"
         case .photos: "Photos"
         case .camera: "Camera"
+        case .home: "Home"
         }
     }
 
@@ -80,6 +83,7 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
         case VoiceToolName.readSteps: .steps
         case VoiceToolName.findPhotos: .photos
         case VoiceToolName.openCamera: .camera
+        case VoiceToolName.controlHome: .home
         default: nil
         }
     }
@@ -241,6 +245,9 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case findPhotos(PhotoSearchRequest)
     /// Doddy's camera, after a card (ADR-569). A kept photo goes into a new note the user saves.
     case openCamera
+    /// Turn a light, outlet or fan on or off, or run a scene, in HomeKit (HomeCommand.swift). The
+    /// app resolves the words to one exact accessory and shows a card with it before anything runs.
+    case controlHome(HomeProposal)
     /// Gmail, Google Drive, Notion or Todoist through the Doddy server (see OnlineAccounts).
     case cloudTool(CloudToolCall)
     /// Translator mode (ADR-215): proposed on a card; the conversation switches on Start.
@@ -378,6 +385,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return parsePhotoSearch(args, name: name, now: now, calendar: calendar)
         case VoiceToolName.openCamera:
             return .openCamera
+        case VoiceToolName.controlHome:
+            return parseControlHome(args, name: name)
         case VoiceToolName.startTranslator:
             return parseStartTranslator(args, name: name)
         case VoiceToolName.stopTranslator:
