@@ -88,11 +88,13 @@ public enum DoddyNotificationKind: String, CaseIterable, Sendable {
     case morningCheckIn, eveningWrapUp, weeklyLookBack, tidyUp, birthday, openWays
     /// The Monday plan (ADR-651).
     case weeklyPlan
+    /// A leaflet price the user asked to hear about on its first day (ADR-664).
+    case dealStart
 
     public var urgency: NotificationUrgency {
         switch self {
         case .timer, .focusDone, .noteReminder, .leaveBy, .eventNudge: .timeSensitive
-        case .morningCheckIn, .eveningWrapUp, .weeklyLookBack, .tidyUp, .birthday, .openWays, .weeklyPlan: .active
+        case .morningCheckIn, .eveningWrapUp, .weeklyLookBack, .tidyUp, .birthday, .openWays, .weeklyPlan, .dealStart: .active
         }
     }
 

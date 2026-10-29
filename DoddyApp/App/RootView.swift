@@ -102,6 +102,8 @@ enum PreferenceKey {
     static let dealsProgramsNotUsed = "deals.programsNotUsed"
     /// Cheapest this week › My shops (ADR-663): the shops the user picked (`MyShops.stored`, JSON). Stays on this iPhone.
     static let dealsMyShops = "deals.myShops"
+    /// Basket › a second shop only when it saves at least this much, in grosze (ADR-664). 0 means any saving.
+    static let dealsMinimumSaving = "deals.minimumSaving"
 }
 
 enum AppTab: Hashable {

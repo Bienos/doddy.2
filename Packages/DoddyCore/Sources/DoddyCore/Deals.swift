@@ -692,7 +692,7 @@ public enum DealsResultText {
 
     public static func forAgent(_ result: DealsResult, language: String = ErrandDraft.defaultLanguage,
                                 maxCharacters: Int = maxCharacters, programs: DealsPrograms = .all,
-                                quantities: [ListQuantity?] = [], today: DealDay? = nil) -> String {
+                                quantities: [ListQuantity?] = [], today: DealDay? = nil, minimumSaving: Int = 0) -> String {
         let clip = ErrandsPrompt.clip
         let money = { (amount: Money) in amount.text(language: language) }
         let found = result.items.contains { !$0.offers.isEmpty }
@@ -701,7 +701,7 @@ public enum DealsResultText {
             : "nothing found: none of the items is in the leaflets Doddy's server read just now. Say so plainly; never suggest a price or an offer that isn't below."
         // The basket and what wasn't read come first, so a long answer is cut in the items, not there.
         var data: [String] = []
-        let basket = BasketSolver.solve(result, quantities: quantities, programs: programs)
+        let basket = BasketSolver.solve(result, quantities: quantities, programs: programs, minimumSaving: minimumSaving)
         if let line = basketLine(basket, money) { data.append(line) }
         if let single = basket.bestSingleChain, let line = checklistLine(single, today: today) { data.append(line) }
         data += chainLines(result)

@@ -132,9 +132,11 @@ public enum BasketSolver {
     /// `quantities[i]` is how much of item `i` the user needs, from the list's words (missing or
     /// nil: one pack; see `pieces(for:size:)`); offers whose app or card the user doesn't use
     /// (`programs`) aren't counted.
+    /// `minimumSaving` (ADR-664, the user's own setting): a second shop is offered only when it saves at least this
+    /// much for the same items (more items is always worth saying).
     public static func solve(_ result: DealsResult, chains allowed: Set<DealsChain>? = nil,
                              currency: String = defaultCurrency, quantities: [ListQuantity?] = [],
-                             programs: DealsPrograms = .all) -> Basket {
+                             programs: DealsPrograms = .all, minimumSaving: Int = 0) -> Basket {
         let order = chainOrder(result)
         let rank = Dictionary(uniqueKeysWithValues: order.enumerated().map { ($0.element, $0.offset) })
         // Per item, per chain: the offer whose line costs least there.
@@ -179,6 +181,8 @@ public enum BasketSolver {
         // much for the same items, is a second trip for nothing.
         var pair = pairs.min { better($0, $1, rank: rank) }
         if let candidate = pair, let single, !beats(candidate, single) { pair = nil }
+        if let candidate = pair, let single, candidate.covered == single.covered,
+           single.total.minor - candidate.total.minor < max(minimumSaving, 1) { pair = nil }
         let everything = usable.isEmpty ? nil : plan(usable)
 
         var savings: Money?

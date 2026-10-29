@@ -2526,5 +2526,19 @@
   "Apple Maps didn't find that place.": "Mapy Apple nie znalazły tego miejsca.",
   "Apple Maps couldn't be reached. Try again when you're online.": "Nie udało się połączyć z Mapami Apple. Spróbuj, gdy będziesz online.",
   "No shops of these chains within 15 km.": "Brak sklepów tych sieci w promieniu 15 km.",
-  "Open in Apple Maps": "Otwórz w Mapach Apple"
+  "Open in Apple Maps": "Otwórz w Mapach Apple",
+  "Narrow an item with “tylko” and a brand (masło tylko Łaciate) or with “bez” (mleko bez laktozy).": "Zawęź rzecz słowem „tylko” i marką (masło tylko Łaciate) albo słowem „bez” (mleko bez laktozy).",
+  "Why this one: the only offer found for this item.": "Dlaczego ta: to jedyna oferta znaleziona dla tej rzeczy.",
+  "Why this one: the lowest price per %@ (%@).": "Dlaczego ta: najniższa cena za %@ (%@).",
+  "Why this one: the lowest price per %@ (%@); next, %@ at %@.": "Dlaczego ta: najniższa cena za %@ (%@); następna: %@, %@.",
+  "Why this one: the cheapest pack (no sizes to compare).": "Dlaczego ta: najtańsze opakowanie (brak rozmiarów do porównania).",
+  "Why this one: the cheapest pack (no sizes to compare); next, %@ at %@.": "Dlaczego ta: najtańsze opakowanie (brak rozmiarów do porównania); następne: %@, %@.",
+  "Remind me on %@": "Przypomnij mi %@",
+  "Set the reminder": "Ustaw przypomnienie",
+  "On %@ at 8:00 this iPhone will show: %@": "%@ o 8:00 ten iPhone pokaże: %@",
+  "Reminder set for %@ at 8:00.": "Przypomnienie ustawione na %@, 8:00.",
+  "Notifications are off for Doddy, so no reminder was set. You can turn them on in Settings.": "Powiadomienia Doddy’ego są wyłączone, więc nie ustawiłem przypomnienia. Możesz je włączyć w Ustawieniach.",
+  "The reminder couldn't be set. Nothing was scheduled.": "Nie udało się ustawić przypomnienia. Nic nie zostało zaplanowane.",
+  "A second shop only when it saves at least": "Drugi sklep tylko, gdy oszczędza co najmniej",
+  "Any saving": "Każda oszczędność"
 }

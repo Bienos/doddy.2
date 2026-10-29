@@ -13,8 +13,8 @@ import { rossmann } from "./chains/rossmann.js";
 import { zabka } from "./chains/zabka.js";
 import { PoliteFetcher, type PageFetcher } from "./fetcher.js";
 import {
-  headMention, MATCH_THRESHOLD, MAX_PICK_CANDIDATES, matchScore, normalize, parsePrintedUnitPrice, parseSize, pickWithModel, terms,
-  unitPrice, unitPricesAgree, type Terms,
+  headMention, itemRules, MATCH_THRESHOLD, MAX_PICK_CANDIDATES, matchScore, meetsRules, normalize, parsePrintedUnitPrice, parseSize,
+  pickWithModel, terms, unitPrice, unitPricesAgree, type ItemRules, type Terms,
 } from "./match.js";
 import { categoryOf, relation, type Category } from "./categories.js";
 import { prepareImage, readPage, readScreen, screenBatches, type Mechanic, type ReadDate, type ReadProduct, type ReadPromotion } from "./vision.js";
@@ -269,6 +269,8 @@ interface Env {
   queryTerms: Terms[];
   /** Each item's category (ADR-662), when the code knows one. */
   queryCats: (Category | undefined)[];
+  /** Each item's own rules, "tylko Łaciate", "bez laktozy" (ADR-664). */
+  queryRules: ItemRules[];
   today: string;
   language: string;
   maxPages: number;
@@ -302,7 +304,8 @@ async function runChain(chain: ReadChain, adapter: ChainAdapter, env: Env): Prom
   try {
     let read;
     try {
-      read = await adapter.read({ fetcher: env.fetcher, queries: env.queries, today: env.today, signal });
+      // A chain's own search (Rossmann's) gets the item with its "tylko" words but without the word "tylko".
+      read = await adapter.read({ fetcher: env.fetcher, queries: env.queryRules.map((r) => r.search), today: env.today, signal });
     } catch {
       return done({ status: "failed", reason: "adapter_error", candidates: [] });
     }
@@ -318,7 +321,12 @@ async function runChain(chain: ReadChain, adapter: ChainAdapter, env: Env): Prom
       const t = terms(text);
       const cat = categoryOf(text);
       const rel = env.queryCats.map((q) => relation(q, cat));
-      return { scores: env.queryTerms.map((q, i) => (rel[i] === "other" ? 0 : matchScore(q, t))), similar: rel.map((r) => r === "similar") };
+      // The person's own rules hold for similar products too: "tylko Łaciate" wants Łaciate, whatever the kind.
+      const meets = env.queryRules.map((r) => meetsRules(r, text));
+      return {
+        scores: env.queryTerms.map((q, i) => (rel[i] === "other" || !meets[i] ? 0 : matchScore(q, t))),
+        similar: rel.map((r, i) => r === "similar" && meets[i]!),
+      };
     };
     const score = (text: string) => judge(text).scores;
 
@@ -654,10 +662,11 @@ export async function searchDeals(deps: DealsDeps, input: SearchInput, signal: A
   const budget = deps.budgetMs ?? DEFAULT_BUDGET_MS;
   const fetcher = deps.fetcher ?? new PoliteFetcher();
   const queries = input.items.map((q) => q.trim());
+  const rules = queries.map((q) => itemRules(q));
   const requested = [...new Set(input.chains ?? READ_CHAINS)];
   let n = 0;
   const env: Env = {
-    fetcher, model: deps.model, queries, queryTerms: queries.map((q) => terms(q)), queryCats: queries.map((q) => categoryOf(q)),
+    fetcher, model: deps.model, queries, queryTerms: rules.map((r) => terms(r.words)), queryCats: rules.map((r) => categoryOf(r.words)), queryRules: rules,
     today: warsawDay(now()), language: input.language,
     maxPages: deps.settings.maxPages, screenPages: deps.settings.screenPages ?? 0, readConcurrency: deps.readConcurrency ?? 10,
     chainDeadline: started + budget - (deps.model ? PICK_RESERVE_MS : 500), signal, nextId: () => `c${++n}`, log,
