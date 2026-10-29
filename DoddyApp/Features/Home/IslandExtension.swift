@@ -2,13 +2,15 @@ import DoddyCore
 import SwiftUI
 import UIKit
 
-/// While Doddy talks on Home (owner, 22 Oct 2026, ADR-596; redrawn 27 Oct, ADR-654): iOS doesn't
-/// show Doddy's own island while Doddy is on screen, so Home draws a black shape that hangs from
-/// the top of the screen under the camera and grows on both sides, with his voice drawn in it as
-/// a dense aurora of orange lines (mock-up "G1 Gęsta"). While he hears you it is narrow, with a
-/// calm line; while he talks it springs out to the sides, pulses in his rhythm and glows; while
-/// he is muted it is narrow and grey and still. On iPhones without a notch or island (a top
-/// inset under 44 pt) it isn't drawn: it would hang from nothing.
+/// While Doddy talks on Home (owner, 22 Oct 2026, ADR-596; redrawn 27 Oct, ADR-654; a thin strip
+/// since 29 Oct, ADR-665): iOS doesn't show Doddy's own island while Doddy is on screen, so Home
+/// draws a black strip over the Dynamic Island, the island's own height, that grows out to both
+/// sides, with his voice drawn in it as a dense aurora of orange lines (mock-up "G1 Gęsta") on
+/// each side of the camera. While he hears you it is 260 pt wide with a clear, calm line and a
+/// faint glow; while he talks it springs out to 330 pt, pulses in his rhythm and glows; while he
+/// is muted it is 260 pt, grey and still. It hangs nothing below the island (ADR-665: the 56 pt
+/// block of ADR-654 was not what the owner meant). Drawn only on iPhones with a Dynamic Island
+/// (a top inset of 55 pt or more): a notch can't grow to the sides.
 ///
 /// The pulse follows how loud his voice really is (`AgentVoiceMeter`, ADR-655, from the audio he
 /// plays); where there is no such audio track it falls back to a rhythm made up from a clock
@@ -19,12 +21,18 @@ struct IslandExtension: View {
         case listening, speaking, quiet
     }
 
-    /// The shape's width in points while he hears you and while he talks. While he talks it is
-    /// wider than the gap in the status bar, so Home hides the status bar for the conversation
-    /// (`HomeView.hidesStatusBar`). For a width that keeps the clock and battery, make
-    /// `speakingWidth` 190 and take `.statusBarHidden` off Home.
-    private static let listeningWidth: CGFloat = 176
+    /// The strip's width in points while he hears you and while he talks. Both are wider than the
+    /// gap in the status bar, so Home hides the status bar for the conversation
+    /// (`.statusBarHidden` on Home). For a strip that keeps the clock and battery, make both 190
+    /// and take `.statusBarHidden` off Home: the lines then have little room beside the camera.
+    private static let listeningWidth: CGFloat = 260
     private static let speakingWidth: CGFloat = 330
+    /// The Dynamic Island's own height. Its top is 48 pt above the bottom of the top inset
+    /// (11 pt from the top of the screen at a 59 pt inset, 14 at 62).
+    private static let stripHeight: CGFloat = 37
+    private static let islandTopAboveInset: CGFloat = 48
+    /// The island's camera and sensors in the middle of the strip: nothing drawn there would show.
+    private static let cameraWidth: CGFloat = 126
 
     let look: Look
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -44,14 +52,14 @@ struct IslandExtension: View {
 
     var body: some View {
         let top = Self.topInset
-        if top >= 44 {
+        if top >= 55 {
             TimelineView(.animation(minimumInterval: 1.0 / 30, paused: reduceMotion)) { timeline in
                 let frame = Frame(look: look, motion: motion, date: timeline.date, reduceMotion: reduceMotion)
                 Canvas { context, size in
-                    Self.draw(&context, size: size, top: top, frame: frame)
+                    Self.draw(&context, size: size, stripTop: top - Self.islandTopAboveInset, frame: frame)
                 }
-                // Wider than the widest shape, and tall enough for its glow.
-                .frame(width: 420, height: top + 130)
+                // Wider than the widest strip, and tall enough for its glow.
+                .frame(width: 420, height: top + 40)
             }
             .frame(maxWidth: .infinity)
             .ignoresSafeArea(edges: .top)
@@ -98,7 +106,8 @@ struct IslandExtension: View {
                     // No audio track to listen to (another voice provider, or before it exists).
                     level = SpeechPulse.level(at: sinceChange)
                 }
-            case .listening: level = reduceMotion ? 0.16 : 0.16 + 0.05 * sin(date.timeIntervalSinceReferenceDate * 2)
+            // Clear enough to see at a glance that he is listening (owner, 29 Oct, ADR-665).
+            case .listening: level = reduceMotion ? 0.5 : 0.5 + 0.06 * sin(date.timeIntervalSinceReferenceDate * 2)
             case .quiet: level = 0.06
             }
         }
@@ -108,33 +117,31 @@ struct IslandExtension: View {
     private static let amber = (r: 255.0, g: 176.0, b: 102.0)
     private static let rose = (r: 229.0, g: 82.0, b: 107.0)
 
-    private static func draw(_ context: inout GraphicsContext, size: CGSize, top: CGFloat, frame f: Frame) {
+    private static func draw(_ context: inout GraphicsContext, size: CGSize, stripTop: CGFloat, frame f: Frame) {
         let p = CGFloat(f.widening)
-        let width = listeningWidth + (speakingWidth - listeningWidth) * p
         let level = CGFloat(f.level)
-        // Below the camera: 30 pt of black while he listens, 56 while he talks, and a little more
-        // on each burst.
-        let below = 30 + 26 * p + (f.look == .speaking ? 6 * level : 0)
-        let rect = CGRect(x: (size.width - width) / 2, y: 0, width: width, height: top + below)
-        let shape = UnevenRoundedRectangle(bottomLeadingRadius: 28, bottomTrailingRadius: 28, style: .continuous)
-            .path(in: rect)
+        // A little wider on each burst while he talks.
+        let width = listeningWidth + (speakingWidth - listeningWidth) * p + (f.look == .speaking ? 8 * level : 0)
+        let rect = CGRect(x: (size.width - width) / 2, y: stripTop, width: width, height: stripHeight)
+        let shape = Capsule(style: .continuous).path(in: rect)
         let glow = Color(red: orange.r / 255, green: orange.g / 255, blue: orange.b / 255)
 
-        // The black shape and its glow.
+        // The black strip and its glow.
         context.drawLayer { layer in
             if f.look != .quiet {
-                layer.addFilter(.shadow(color: glow.opacity(0.18 + 0.5 * f.level), radius: 8 + 26 * level, x: 0, y: 0))
+                layer.addFilter(.shadow(color: glow.opacity(0.18 + 0.5 * f.level), radius: 6 + 18 * level, x: 0, y: 0))
             }
             layer.fill(shape, with: .color(.black))
         }
 
-        // His voice: a dense row of thin orange columns, brightest in the middle, added together.
-        let bandTop: CGFloat = 50   // just under the camera
-        let bandBottom = rect.maxY - 8
-        let bandHeight = max(0, bandBottom - bandTop)
-        let centreY = (bandTop + bandBottom) / 2
-        let bandWidth = max(0, width - 40)
-        let columns = max(24, Int(bandWidth / 3.6))
+        // His voice: a dense row of thin orange columns on each side of the camera, strongest a
+        // little way out from it and fading to nothing at the strip's ends.
+        let inset: CGFloat = 12
+        let cameraHalf = cameraWidth / 2 + 4
+        let wing = width / 2 - inset - cameraHalf
+        guard wing > 0 else { return }
+        let bandHeight = stripHeight - 10
+        let columns = Int((width - 2 * inset) / 3.6)
         let columnWidth: CGFloat = 2.6
         context.drawLayer { layer in
             layer.clip(to: shape)
@@ -142,14 +149,17 @@ struct IslandExtension: View {
             if f.look != .quiet {
                 layer.addFilter(.shadow(color: glow.opacity(0.55), radius: 4, x: 0, y: 0))
             }
-            for i in 0..<columns {
-                let u = Double(i) / Double(columns - 1)
+            for i in 0...columns {
+                let x = rect.minX + inset + CGFloat(i) * 3.6
+                let fromCamera = abs(x - rect.midX) - cameraHalf
+                guard fromCamera >= 0 else { continue }
+                let d = Double(min(1, fromCamera / wing))
+                let envelope = pow(max(0, sin(Double.pi * (0.25 + 0.75 * d))), 1.1)
+                let u = Double((x - rect.minX) / width)
                 let noise = 0.5 + 0.25 * sin(u * 49 + f.time * 3.1) + 0.25 * sin(u * 116 - f.time * 4.3)
-                let window = pow(sin(Double.pi * u), 1.1)
-                let height = bandHeight * CGFloat((0.12 + 0.88 * f.level) * window * noise)
-                guard height > 0.5 else { continue }
-                let x = rect.minX + 20 + CGFloat(u) * bandWidth
-                let column = CGRect(x: x - columnWidth / 2, y: centreY - height / 2, width: columnWidth, height: height)
+                let columnHeight = bandHeight * CGFloat((0.12 + 0.88 * f.level) * envelope * noise)
+                guard columnHeight > 0.5 else { continue }
+                let column = CGRect(x: x - columnWidth / 2, y: rect.midY - columnHeight / 2, width: columnWidth, height: columnHeight)
                 let colour = f.look == .quiet ? Color(white: 0.62) : warm(u)
                 layer.fill(
                     Path(column),
