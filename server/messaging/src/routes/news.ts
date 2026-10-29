@@ -6,7 +6,8 @@ import { principal, requireDevice } from "../auth.js";
 import { inTransaction } from "../db.js";
 import { usableChannels } from "../outbox.js";
 import { CATALOG, catalogById } from "../news/catalog.js";
-import { buildDigest, MAX_FEEDS, MAX_TOPICS } from "../news/digest.js";
+import { buildDigest, gatherItems, MAX_FEEDS, MAX_TOPICS } from "../news/digest.js";
+import { buildFeed, FEED_LIMIT } from "../news/feed.js";
 import { parseFeed } from "../news/feeds.js";
 import { checkUrl, safeFetchText, UnsafeUrlError } from "../news/safeFetch.js";
 import { isValidTimeZone, nextRunAt } from "../news/schedule.js";
@@ -27,6 +28,12 @@ const settingsBody = z.object({
   feeds: z.array(z.string().url().max(500)).max(MAX_FEEDS),
 });
 const feedCheckBody = z.object({ url: z.string().max(500) });
+// The feed's follows (ADR-656): the same shape as the digest's topics, sent with the request, never saved.
+const feedBody = z.object({
+  language: z.enum(["en", "pl"]).default("en"),
+  follows: z.array(topic).min(1).max(MAX_TOPICS),
+  limit: z.number().int().min(1).max(FEED_LIMIT).default(FEED_LIMIT),
+});
 
 export const newsRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
   const { db } = deps;
@@ -126,6 +133,29 @@ export const newsRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
     if (!has.rowCount) return reply.code(409).send({ error: "no_topics" });
     const r = await buildDigest(db, news, accountId, "manual");
     return { digestId: r.digestId ?? null, status: r.status, aiWritten: r.aiWritten ?? false, errorCode: r.errorCode ?? null };
+  });
+
+  // The stories behind what the person follows, right now, as cards (ADR-656). The follows travel
+  // with the request and are not stored; the feeds and searches behind them use the shared cache,
+  // which is not linked to any account. No AI touches a card.
+  app.post("/v1/news/feed", { preHandler: auth, config: { rateLimit: { max: 60, timeWindow: "1 hour" } } }, async (req, reply) => {
+    const body = parse(feedBody, req.body, reply);
+    if (!body) return;
+    if (!news) return reply.code(503).send({ error: "not_configured" });
+    const now = new Date();
+    const topics = body.follows.map((t) => {
+      const cat = "catalogId" in t ? catalogById.get(t.catalogId)! : undefined;
+      return cat
+        ? { catalog_id: cat.id, label: cat.label[body.language], keywords: [] }
+        : { catalog_id: null, label: (t as { label: string }).label, keywords: (t as { keywords: string[] }).keywords };
+    });
+    const gathered = await gatherItems(db, news, topics, [], body.language, now);
+    const cards = buildFeed(gathered, now, body.limit);
+    return {
+      fetchedAt: now.toISOString(),
+      keywordSearch: !!news.search,
+      cards,
+    };
   });
 
   app.get("/v1/news/digests", { preHandler: auth }, async (req) => {

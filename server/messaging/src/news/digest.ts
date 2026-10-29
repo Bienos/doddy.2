@@ -114,9 +114,22 @@ export async function buildDigest(db: Db, news: NewsDeps, accountId: string, kin
 }
 
 async function gatherTopics(db: Db, news: NewsDeps, accountId: string, language: "en" | "pl", now: Date): Promise<TopicItems[]> {
-  const { rows: topics } = await db.query<{ catalog_id: string | null; label: string; keywords: string[] }>(
+  const { rows: topics } = await db.query<FollowedTopic>(
     "SELECT catalog_id, label, keywords FROM news_topics WHERE account_id = $1 ORDER BY position", [accountId]);
   const { rows: feeds } = await db.query<{ url: string }>("SELECT url FROM news_feeds WHERE account_id = $1", [accountId]);
+  return gatherItems(db, news, topics, feeds.map((f) => f.url), language, now);
+}
+
+export interface FollowedTopic { catalog_id: string | null; label: string; keywords: string[] }
+
+/**
+ * Fetches (through the shared cache) what the given topics and feeds carry right now. Used by the
+ * daily digest with the account's saved topics, and by the feed (ADR-656) with the follows the
+ * iPhone sends along, which are never stored.
+ */
+export async function gatherItems(
+  db: Db, news: NewsDeps, topics: FollowedTopic[], feedUrls: string[], language: "en" | "pl", now: Date,
+): Promise<TopicItems[]> {
   const feed = async (url: string) => (await cached(db, `feed:${url}`, 30, () => news.feeds.fetchFeed(url))).items;
 
   const out: TopicItems[] = [];
@@ -128,8 +141,8 @@ async function gatherTopics(db: Db, news: NewsDeps, accountId: string, language:
     pool.push(...items);
     out.push({ label: t.label, keywords: t.keywords, curated: true, items });
   }
-  if (feeds.length) {
-    const items = (await Promise.all(feeds.map((f) => feed(f.url)))).flat();
+  if (feedUrls.length) {
+    const items = (await Promise.all(feedUrls.map(feed))).flat();
     pool.push(...items);
     out.push({ label: language === "pl" ? "Twoje źródła" : "Your feeds", keywords: [], curated: true, items });
   }

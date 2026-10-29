@@ -28,6 +28,7 @@ extension ActivityApp {
         case .camera: return "Aparat"
         case .health: return "Zdrowie"
         case .training: return "Plan treningowy"
+        case .news: return "Śledzone"
         }
     }
 }
@@ -102,6 +103,7 @@ public enum ActivityText {
         // Round 3 (ADR-280, ADR-283), joined in the PR #34 merge.
         "Read alarms": "Odczytano budziki",
         "Turn off alarm": "Wyłącz budzik",
+        "Follow in Following": "Śledź w Śledzonych",
         "Start stopwatch": "Włącz stoper",
         "Stop stopwatch": "Zatrzymaj stoper",
         "Read stopwatch": "Odczytano stoper",

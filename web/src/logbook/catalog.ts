@@ -47,6 +47,7 @@ export const TOOLS = {
   start_stopwatch: { app: "clock", job: "plan", ask: true, weight: 0 },
   stop_stopwatch: { app: "clock", job: "plan", ask: true, weight: 0 },
   check_stopwatch: { app: "clock", job: "plan", ask: false, weight: 0 },
+  follow_news: { app: "web", job: "find", ask: true, weight: 0 },
   remind_when_to_leave: { app: "maps", job: "plan", ask: false, weight: 1 },
   add_to_list: { app: "lists", job: "lists", ask: false, weight: 7 },
   read_list: { app: "lists", job: "lists", ask: false, weight: 3 },

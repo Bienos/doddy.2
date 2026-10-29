@@ -216,6 +216,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case listAlarms
     /// Turn one of Doddy's alarms off, after a card.
     case cancelAlarm(clock: String, label: String?)
+    /// Follow something in Following (ADR-657): a catalog topic or the person's own words, after a card.
+    case followNews(NewsFollowAsk)
     /// A stopwatch that counts up (ADR-652): started and stopped after a card, read after a "yes".
     case startStopwatch(label: String?)
     case stopStopwatch
@@ -343,6 +345,11 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return .listAlarms
         case VoiceToolName.cancelAlarm:
             return parseCancelAlarm(args, name: name)
+        case VoiceToolName.followNews:
+            switch NewsFollowAsk.parse(topic: args.text("topic"), name: args.text("name"), words: args.texts("words")) {
+            case .success(let ask): return .followNews(ask)
+            case .failure(let refusal): return .invalid(name: name, reason: refusal.reason)
+            }
         case VoiceToolName.startStopwatch:
             return .startStopwatch(label: Stopwatch.cleanLabel(args.text("label")))
         case VoiceToolName.stopStopwatch:

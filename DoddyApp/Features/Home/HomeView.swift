@@ -49,6 +49,8 @@ struct HomeView: View {
     @State private var showToday = false
     /// Tasks handed to Doddy (ADR-570): the list and each result card.
     @State private var showErrands = false
+    /// The stories behind what the person follows (ADR-656).
+    @State private var showFollowing = false
     /// This week's leaflets and the basket (SHOPPING.md 2).
     @State private var showDeals = false
     @State private var showVoicePicker = false
@@ -116,6 +118,7 @@ struct HomeView: View {
             .sheet(item: $modal) { _ in CaptureView() }
             .sheet(isPresented: $showDataFlow) { DataFlowSheet() }
             .sheet(isPresented: $showErrands) { ErrandsView() }
+            .sheet(isPresented: $showFollowing) { FollowingView() }
             .sheet(isPresented: $showDeals) { DealsView() }
             .sheet(isPresented: Binding(get: { router.isRecordingsPresented }, set: { router.isRecordingsPresented = $0 })) { RecordingsView() }
             .sheet(isPresented: $showCapabilities) { CapabilitiesSheet() }
@@ -258,6 +261,9 @@ struct HomeView: View {
                 // MemoryJourneyTests). Settings, which leads to Doddy's memory too (ADR-633), heads the menu.
                 Button { showDeals = true } label: { Label("Cheapest this week", systemImage: "cart") }
                     .accessibilityIdentifier("home.deals")
+                // The feed of what the person follows (ADR-656): the publishers' stories, no AI line.
+                Button { showFollowing = true } label: { Label("Following", systemImage: "newspaper") }
+                    .accessibilityIdentifier("home.following")
                 // What is built and what isn't, from the capability catalog (T35/T42, ADR-195, ADR-548).
                 Button { showCapabilities = true } label: { Label("What I can do", systemImage: "sparkles") }
                     .accessibilityIdentifier("home.capabilities")

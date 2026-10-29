@@ -56,7 +56,7 @@ Code lives under `DoddyApp/Features/<Folder>/`. Status docs are in `docs/impleme
 | LeaveBy, Parking, Today | Time to leave, parking spot, Today card | 335, 301 | TODAY_STATUS |
 | Meaning | Find by meaning (on-device) | 227 | MEANING_SEARCH_STATUS |
 | MorningCheckIn, EveningWrapUp, WeeklyLookBack, WeeklyPlan, TidyUp | Daily and weekly routines; quiet hours 22:00–07:00 for all of them (ADR-651) | 220, 261, 306, 228, 651 | MORNING_CHECKIN_STATUS, EVENING_WRAPUP_STATUS, TIDY_UP_STATUS, RINGING_REMINDERS_AND_WEEKLY_PLAN |
-| News, Updates | Daily news, server notifications and texts | 174, 175 | N1_NEWS_STATUS, S1_SERVER_STATUS |
+| News, Updates | Daily news, server notifications and texts; **Following** (`News/FollowingView.swift`, Home › •••): the publishers' stories behind what the person follows, as a feed of cards, Poland by default; "śledź CPK" by voice (`follow_news`, on the live agent since 28 Oct); on `claude/message-tracking-plugin-rd0cbn`, **SwiftUI NOT COMPILED** | 174, 175, 656, 657 | N1_NEWS_STATUS, S1_SERVER_STATUS, FOLLOWING_STATUS |
 | Photos, VoiceMemos | Photo notes (picker and, since ADR-569, Doddy's camera), the photo search card, voice memos | 218, 230, 569 | PHOTO_NOTES_STATUS, VOICE_MEMOS_STATUS, APPLE_CONNECTIONS |
 | Privacy | Face ID lock, "What leaves this iPhone" | 310 | - |
 | Settings | Fourteen rows in four groups and their pages (`SettingsView`, `SettingsHubs`, `SettingsScreens`); the Action Button choice | 580, 579, 607 | SETTINGS_SIMPLIFIED, ACTION_BUTTON_ISLAND |

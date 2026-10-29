@@ -23,6 +23,8 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
     case health
     /// The training plan screen (ADR-626).
     case training
+    /// Following, the feed of what the person follows (ADR-656, ADR-657).
+    case news
 
     public var title: String {
         switch self {
@@ -48,6 +50,7 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
         case .camera: "Camera"
         case .health: "Apple Health"
         case .training: "Training plan"
+        case .news: "Following"
         }
     }
 }
@@ -285,6 +288,8 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(app: .timers, title: "Read alarms", detail: "Doddy's alarms", isLookup: true)
         case .cancelAlarm(let clock, let label):
             return ActivityRequest(app: .timers, title: "Turn off alarm", detail: [clock, label.map { "“\($0)”" }].compactMap { $0 }.joined(separator: " · "), isLookup: false)
+        case .followNews(let ask):
+            return ActivityRequest(app: .news, title: "Follow in Following", detail: "“\(ask.name)”", isLookup: false)
         case .startStopwatch(let label):
             return ActivityRequest(app: .timers, title: "Start stopwatch", detail: label.map { "“\($0)”" } ?? "Counts up", isLookup: false)
         case .stopStopwatch:
