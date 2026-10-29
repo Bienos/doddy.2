@@ -45,6 +45,15 @@
 		<key>UIApplicationSupportsMultipleScenes</key>
 		<false/>
 	</dict>
+	<!-- Light by default (ADR-667): the launch screen is the light canvas in both appearances, so the
+	     first thing on a phone in dark mode isn't a black screen. The app then follows Settings ›
+	     Appearance (light until the person picks otherwise). The generated launch screen is off in
+	     project.yml so this one is used. -->
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIColorName</key>
+		<string>LaunchBackground</string>
+	</dict>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>

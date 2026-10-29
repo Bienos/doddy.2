@@ -102,7 +102,9 @@ targets:
         # Candidate icon (owner request 2026-10-09, DECISIONS.md ADR-050); light + dark variants.
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         INFOPLIST_KEY_CFBundleDisplayName: Doddy
-        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        # The launch screen is written out in Config/Doddy-Info.plist (light canvas, ADR-667), so it
+        # is not generated here.
+        INFOPLIST_KEY_UILaunchScreen_Generation: NO
         # One Doddy window at a time (ADR-436): the scene manifest is written out in
         # Config/Doddy-Info.plist with multiple scenes off, so it is not generated here.
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: NO
