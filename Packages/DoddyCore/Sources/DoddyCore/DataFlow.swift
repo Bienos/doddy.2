@@ -198,9 +198,9 @@ public enum DataFlow {
                         : state.pauseAll ? "Connections are paused, so invoices aren't sent." : nil),
             DataFlowRow(
                 id: "placeSearch", destination: "Apple Maps (place search and travel time)",
-                what: "The words you type to find a place, and roughly where you are if Doddy already knows. For a leave reminder: where your iPhone is and the place you're going.",
-                when: "Only when you search for a place for a reminder, or ask when to leave.", isActive: true,
-                note: "Doddy keeps only the place you pick. iOS watches it on this iPhone; Doddy doesn't follow where you go."),
+                what: "The words you type to find a place, and roughly where you are if Doddy already knows. For a leave reminder: where your iPhone is and the place you're going. For My shops: the shops' chain names and roughly where you are.",
+                when: "Only when you search for a place for a reminder, ask when to leave, or look for your shops in Cheapest this week.", isActive: true,
+                note: "Doddy keeps only the place you pick, and only on this iPhone. iOS watches a reminder's place itself; Doddy doesn't follow where you go."),
             DataFlowRow(
                 id: "tokenServer", destination: "Voice token server",
                 what: "A short-lived DODDY session credential and the selected voice provider/model. Apple sign-in is verified here to create your account; the session authorizes voice access. No voice, transcript, notes or profile details are sent to this server for token requests.",

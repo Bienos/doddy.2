@@ -75,6 +75,9 @@ const USAGE = `Usage: node scripts/leaflet-eval.mjs [options]
   --out DIR                              where the two files go (default: a new folder under the system temp directory;
                                          never inside the repository)
   --dry-run                              find the leaflet and list the pages; no model call, no key needed, nothing written
+  --screen                               also screen the pages read, twenty to a call, as the service does for image-only
+                                         leaflets (ADR-662): each page then says whether the screen flagged it, so a run
+                                         scored against labels gives the screen's recall
   -h, --help
 Needs ANTHROPIC_API_KEY in the environment (not for --dry-run). The model is DEALS_VISION_MODEL (default ${DEFAULT_MODEL}).
 Run \`npm run build\` in server/messaging first: this uses the built code in dist/.`;
@@ -104,7 +107,7 @@ function parseItems(text) {
 /** The command line as options, or the reason it is refused. Nothing from an unknown argument is echoed (it
  * could be a key). Pure. */
 export function parseArgs(argv) {
-  const options = { chain: DEFAULT_CHAIN, maxPages: DEFAULT_MAX_PAGES, items: [...DEFAULT_ITEMS], out: undefined, dryRun: false, help: false };
+  const options = { chain: DEFAULT_CHAIN, maxPages: DEFAULT_MAX_PAGES, items: [...DEFAULT_ITEMS], out: undefined, dryRun: false, screen: false, help: false };
   const fail = (error) => ({ ok: false, error });
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
@@ -116,6 +119,11 @@ export function parseArgs(argv) {
     if (name === "--dry-run") {
       if (inline !== undefined) return fail("--dry-run takes no value.");
       options.dryRun = true;
+      continue;
+    }
+    if (name === "--screen") {
+      if (inline !== undefined) return fail("--screen takes no value.");
+      options.screen = true;
       continue;
     }
     if (!VALUE_OPTIONS.includes(name)) return fail(/^--[a-z-]{1,24}$/.test(name) ? `Unknown option ${name}.` : "Unknown option.");
@@ -314,6 +322,7 @@ export async function loadDealsModules() {
   return {
     ADAPTERS: service.ADAPTERS, buildOffer: service.buildOffer, mechanicText: service.mechanicText,
     readPage: vision.readPage, prepareImage: vision.prepareImage, AnthropicDealsModel: vision.AnthropicDealsModel,
+    screenBatches: vision.screenBatches, readScreen: vision.readScreen,
     IMAGE_MAX_VISUAL_TOKENS: vision.IMAGE_MAX_VISUAL_TOKENS,
     PoliteFetcher: fetcher.PoliteFetcher,
     terms: match.terms, matchScore: match.matchScore, MATCH_THRESHOLD: match.MATCH_THRESHOLD,
@@ -408,7 +417,9 @@ export async function evaluate(options, deps) {
     };
   };
 
-  // The page image is fetched, handed to the reader and dropped: nothing here writes it anywhere.
+  // The page image is fetched, handed to the reader and dropped: nothing here writes it anywhere. With --screen it
+  // is held in memory until the screening calls below, then dropped too.
+  const held = new Map();
   await m.mapLimit(chosen, READ_CONCURRENCY, async (job, index) => {
     const entry = result.pages[index];
     if (signal.aborted) return;
@@ -416,6 +427,7 @@ export async function evaluate(options, deps) {
     if (f.kind !== "ok") { entry.status = f.kind; entry.reason = f.reason; return; }
     const image = m.prepareImage(f.body);
     if ("error" in image) { entry.status = image.error; return; }
+    if (options.screen) held.set(index, image);
     t.pagesSent++;
     try {
       const r = await m.readPage(model, image, { chain: options.chain, queries: options.items, signal });
@@ -431,6 +443,30 @@ export async function evaluate(options, deps) {
       if (e?.status === 401 || e?.status === 403) { result.reason = "the API refused the key; stopped"; stop.abort(); }
     }
   });
+
+  if (options.screen && model.screenPages && !signal.aborted) {
+    t.screenCalls = 0;
+    const pages = [...held].sort((a, b) => a[0] - b[0]).map(([index, image]) => ({ index, image }));
+    await m.mapLimit(m.screenBatches(pages), 4, async (batch) => {
+      if (signal.aborted) return;
+      t.screenCalls++;
+      try {
+        const r = await model.screenPages({ images: batch.map((b) => b.image), chain: options.chain, queries: options.items }, signal);
+        if (r.usage) { t.inputTokens += r.usage.inputTokens; t.outputTokens += r.usage.outputTokens; }
+        if (r.kind !== "ok") { for (const b of batch) result.pages[b.index].screen = r.kind; return; }
+        const hits = m.readScreen(r.output, batch.length, options.items.length);
+        batch.forEach((b, i) => {
+          result.pages[b.index].screen = hits.has(i) ? "flagged" : "not_flagged";
+          if (hits.has(i)) result.pages[b.index].screenItems = hits.get(i).map((n) => options.items[n]);
+        });
+      } catch (e) {
+        for (const b of batch) result.pages[b.index].screen = signal.aborted ? "not_run" : "error";
+      }
+    });
+    // Without labels, a cheap check: pages where the full read found an item the screen didn't flag.
+    t.screenMissedReads = result.pages.filter((p) => p.screen === "not_flagged" && p.products.some((x) => x.matchedItems.length > 0)).length;
+  }
+  held.clear();
 
   for (const p of result.pages) {
     if (p.status === "read") t.pagesRead++;

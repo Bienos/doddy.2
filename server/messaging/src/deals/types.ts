@@ -3,7 +3,7 @@
 // (grosze) with its currency; every price on the wire comes from a chain's own data or from a page the
 // reader read, never from anything else.
 import type { PageFetcher } from "./fetcher.js";
-import type { PageOutput } from "./vision.js";
+import type { PageOutput, ScreenOutput } from "./vision.js";
 import type { PickOutput } from "./match.js";
 
 /** Chains whose leaflets Doddy reads on request (Aldi and Żabka since ADR-660). */
@@ -102,7 +102,9 @@ export type ChainRow =
 export interface DealsResponse {
   checkedAt: string;
   chains: ChainRow[];
-  items: { query: string; offers: Offer[]; promotions?: Promotion[] }[];
+  /** `similar` (ADR-662): products of another kind in the same family ("masło roślinne" for "masło"), at most
+   * three, labelled as not the item; the basket never counts them. */
+  items: { query: string; offers: Offer[]; promotions?: Promotion[]; similar?: Offer[] }[];
 }
 
 /** What the shopper must do for a price. Turned into words by the code, never by the model. */
@@ -188,6 +190,9 @@ export interface DealsModelApi {
   readPage(req: { image: PageImage; chain: ReadChain; queries: readonly string[] }, signal: AbortSignal): Promise<ModelReply<PageOutput>>;
   /** Says which candidates are each item, by id only. Throws on API errors. */
   pick(req: { queries: readonly string[]; candidates: PickCandidate[][] }, signal: AbortSignal): Promise<ModelReply<PickOutput>>;
+  /** Says which of several page images could hold each item (ADR-662), without reading them. Throws on API
+   * errors. A model without it reads image-only leaflets page by page, as before. */
+  screenPages?(req: { images: readonly PageImage[]; chain: ReadChain; queries: readonly string[] }, signal: AbortSignal): Promise<ModelReply<ScreenOutput>>;
 }
 
 /** Leaflet switches and caps (SHOPPING.md §2). `enabled` is the env switch only. */
@@ -196,11 +201,14 @@ export interface DealsSettings {
   visionModel: string;
   /** Pages sent to the reader per chain per request. */
   maxPages: number;
+  /** Pages of an image-only leaflet screened per chain per request before the full reads (ADR-662); 0: no
+   * screening, every page read in order up to `maxPages`. */
+  screenPages: number;
   dailyPerAccount: number;
   dailyPerServer: number;
 }
 
 /** Settings for an injected DealsDeps without its own (tests). The environment's DEALS_ENABLED defaults to "0". */
 export const DEFAULT_DEALS_SETTINGS: DealsSettings = {
-  enabled: true, visionModel: "claude-haiku-5-5", maxPages: 40, dailyPerAccount: 30, dailyPerServer: 1000,
+  enabled: true, visionModel: "claude-haiku-5-5", maxPages: 40, screenPages: 120, dailyPerAccount: 30, dailyPerServer: 1000,
 };

@@ -110,11 +110,12 @@ test("affiliate links (ADR-612): none by default; a rule is a shop host and an h
   }
 });
 
-test("leaflets (ADR-609): off by default, Haiku 5.5 reads pages, 40 pages per chain, 30 a day per account, 1000 per server", () => {
+test("leaflets (ADR-609, 662): off by default, Haiku 5.5 reads pages, 40 pages per chain, 120 screened, 30 a day per account, 1000 per server", () => {
   const c = loadConfig({ DATABASE_URL: "postgres://x/y", DEALS_ENABLED: "" });
-  assert.deepEqual(c.dealsSettings, { enabled: false, visionModel: "claude-haiku-5-5", maxPages: 40, dailyPerAccount: 30, dailyPerServer: 1000 });
+  assert.deepEqual(c.dealsSettings, { enabled: false, visionModel: "claude-haiku-5-5", maxPages: 40, screenPages: 120, dailyPerAccount: 30, dailyPerServer: 1000 });
   assert.equal(loadConfig({ DATABASE_URL: "postgres://x/y", DEALS_ENABLED: "1" }).dealsSettings.enabled, true);
-  for (const bad of [{ DEALS_ENABLED: "yes" }, { DEALS_MAX_PAGES: "101" }, { DEALS_DAILY_PER_ACCOUNT: "0" }, { DEALS_VISION_MODEL: "Claude Haiku" }]) {
+  assert.equal(loadConfig({ DATABASE_URL: "postgres://x/y", DEALS_SCREEN_PAGES: "0" }).dealsSettings.screenPages, 0, "0 turns screening off");
+  for (const bad of [{ DEALS_ENABLED: "yes" }, { DEALS_MAX_PAGES: "101" }, { DEALS_SCREEN_PAGES: "201" }, { DEALS_DAILY_PER_ACCOUNT: "0" }, { DEALS_VISION_MODEL: "Claude Haiku" }]) {
     assert.throws(() => loadConfig({ DATABASE_URL: "postgres://x/y", ...bad }), JSON.stringify(bad));
   }
 });

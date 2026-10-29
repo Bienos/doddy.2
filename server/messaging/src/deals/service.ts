@@ -16,10 +16,11 @@ import {
   headMention, MATCH_THRESHOLD, MAX_PICK_CANDIDATES, matchScore, normalize, parsePrintedUnitPrice, parseSize, pickWithModel, terms,
   unitPrice, unitPricesAgree, type Terms,
 } from "./match.js";
-import { prepareImage, readPage, type Mechanic, type ReadDate, type ReadProduct, type ReadPromotion } from "./vision.js";
+import { categoryOf, relation, type Category } from "./categories.js";
+import { prepareImage, readPage, readScreen, screenBatches, type Mechanic, type ReadDate, type ReadProduct, type ReadPromotion } from "./vision.js";
 import {
   CHAIN_NAMES, isReadChain, LINK_ONLY_URLS, READ_CHAINS, type Chain, type ChainAdapter, type ChainRow, type ChainStatus,
-  type Condition, type DataProduct, type DealsModelApi, type DealsResponse, type DealsSettings, type LeafletInfo, type LeafletPage,
+  type Condition, type DataProduct, type DealsModelApi, type DealsResponse, type DealsSettings, type LeafletInfo, type LeafletPage, type PageImage,
   type LinkChain, type ModelUsage, type Money, type Offer, type OfferFlag, type PagesRead, type Promotion, type ReadChain, type UnitPrice,
 } from "./types.js";
 
@@ -64,7 +65,11 @@ const PICK_RESERVE_MS = 3_000;
 const MIN_READ_TIME_MS = 2_500;
 /** How long to wait before asking once more for a page image that came over the size cap. */
 const RETRY_WAIT_MS = 2_000;
+/** Screening calls in flight per chain (ADR-662): a 97-page leaflet is five calls of up to twenty images. */
+const SCREEN_CONCURRENCY = 6;
 export const MAX_PROMOTIONS_PER_ITEM = 3;
+/** Similar products shown per item (ADR-662). */
+export const MAX_SIMILAR_PER_ITEM = 3;
 export const MAX_OFFERS_PER_ITEM = 6;
 
 // ---------- words for conditions (written by the code, never by the model) ----------
@@ -236,7 +241,9 @@ function readDates(p: Pick<ReadProduct, "validFrom" | "validTo">, leaflet: Leafl
 
 // ---------- one chain ----------
 
-interface Candidate { id: string; chain: ReadChain; offer: Offer; doubts: string[]; scores: number[] }
+/** `similar[i]`: the product is of another kind in item i's family (ADR-662), so it's a substitute for item i, never
+ * the item. */
+interface Candidate { id: string; chain: ReadChain; offer: Offer; doubts: string[]; scores: number[]; similar?: boolean[] }
 interface PromotionCandidate { promotion: Promotion; scores: number[] }
 
 interface ChainResult {
@@ -260,9 +267,12 @@ interface Env {
   model?: DealsModelApi;
   queries: string[];
   queryTerms: Terms[];
+  /** Each item's category (ADR-662), when the code knows one. */
+  queryCats: (Category | undefined)[];
   today: string;
   language: string;
   maxPages: number;
+  screenPages: number;
   readConcurrency: number;
   chainDeadline: number;
   signal: AbortSignal;
@@ -302,11 +312,21 @@ async function runChain(chain: ReadChain, adapter: ChainAdapter, env: Env): Prom
 
     let unread = 0;
     const reasons = new Set<string>(read.incomplete ? [read.incomplete] : []);
-    const score = (text: string) => { const t = terms(text); return env.queryTerms.map((q) => matchScore(q, t)); };
+    // Words first, then the categories (ADR-662): another kind of thing altogether is no match ("masło shea" for
+    // "masło"); another kind in the same family is a similar product, kept apart ("masło roślinne").
+    const judge = (text: string) => {
+      const t = terms(text);
+      const cat = categoryOf(text);
+      const rel = env.queryCats.map((q) => relation(q, cat));
+      return { scores: env.queryTerms.map((q, i) => (rel[i] === "other" ? 0 : matchScore(q, t))), similar: rel.map((r) => r === "similar") };
+    };
+    const score = (text: string) => judge(text).scores;
 
     // The data products that fit an item, and the pages worth reading.
     const leaflets = read.leaflets.map((l, li) => {
-      const data = l.products.map((p) => ({ p, scores: score(p.name) })).filter((x) => best(x.scores) >= MATCH_THRESHOLD);
+      // A data product of the same family as an item counts too, as a similar one, even when its words don't match
+      // ("Margaryna" for "masło"); the rest are left out.
+      const data = l.products.map((p) => ({ p, ...judge(p.name) })).filter((x) => best(x.scores) >= MATCH_THRESHOLD || x.similar.some(Boolean));
       let jobs: { li: number; page: LeafletPage; score: number }[] = [];
       if (l.strategy === "all") jobs = l.pages.map((page) => ({ li, page, score: 0 }));
       else if (l.strategy === "text") {
@@ -317,24 +337,27 @@ async function runChain(chain: ReadChain, adapter: ChainAdapter, env: Env): Prom
           return mention > 0 ? [{ li, page, score: mention + best(env.queryTerms.map((q) => matchScore(q, t))) }] : [];
         });
       } else if (l.strategy === "confirm") {
+        // Only the item's own products send a page to be confirmed: a similar one isn't worth a read.
         const byPage = new Map<number, number>();
-        for (const d of data) if (d.p.confirmOnPage && d.p.page) byPage.set(d.p.page, Math.max(byPage.get(d.p.page) ?? 0, best(d.scores)));
+        for (const d of data) {
+          if (d.p.confirmOnPage && d.p.page && best(d.scores) >= MATCH_THRESHOLD) byPage.set(d.p.page, Math.max(byPage.get(d.p.page) ?? 0, best(d.scores)));
+        }
         jobs = l.pages.filter((page) => byPage.has(page.number)).map((page) => ({ li, page, score: byPage.get(page.number)! }));
       }
       return { l, data, jobs };
     });
     const allJobs = leaflets.flatMap((x) => x.jobs).sort((a, b) => b.score - a.score || a.li - b.li || a.page.number - b.page.number);
-    let jobs = allJobs.slice(0, env.maxPages);
-    if (allJobs.length > jobs.length) { unread += allJobs.length - jobs.length; reasons.add("pages_over_cap"); }
-    if (jobs.length && !env.model) { unread += jobs.length; reasons.add("no_reader"); jobs = []; }
-
-    // Read the pages: fetch the image (the fetcher checks robots.txt and its content signals), hand it to
-    // the reader, forget it.
-    const reads = new Map<string, ReadProduct[]>();
-    const promos = new Map<string, ReadPromotion[]>();
     const key = (li: number, page: number) => `${li}:${page}`;
-    await mapLimit(jobs, env.readConcurrency, async (job) => {
-      if (signal.aborted || env.chainDeadline - Date.now() < MIN_READ_TIME_MS) { unread++; reasons.add("time"); return; }
+    type Job = (typeof allJobs)[number];
+
+    // Page images: fetched once (the fetcher checks robots.txt and its content signals), held for this request
+    // only, and forgotten with it.
+    const images = new Map<string, PageImage>();
+    const sent = new Set<string>(); // pages that went to the model, for the day's count
+    const fetchImage = async (job: Job): Promise<PageImage | undefined> => {
+      const k = key(job.li, job.page.number);
+      const held = images.get(k);
+      if (held) return held;
       const accept = "image/avif;q=0,image/webp,image/png,image/jpeg,image/*;q=0.8";
       let f = await env.fetcher.fetchPage(job.page.imageUrl, { accept, aiInput: true, signal });
       // A page not yet in the image host's cache can come as a full-size PNG over the size cap (Biedronka's
@@ -343,10 +366,88 @@ async function runChain(chain: ReadChain, adapter: ChainAdapter, env: Env): Prom
         await new Promise((r) => setTimeout(r, RETRY_WAIT_MS));
         f = await env.fetcher.fetchPage(job.page.imageUrl, { accept, aiInput: true, signal });
       }
-      if (f.kind !== "ok") { unread++; reasons.add(`image_${f.kind}`); return; }
+      if (f.kind !== "ok") { reasons.add(`image_${f.kind}`); return undefined; }
       const image = prepareImage(f.body);
-      if ("error" in image) { unread++; reasons.add(`image_${image.error}`); return; }
-      pagesRead++;
+      if ("error" in image) { reasons.add(`image_${image.error}`); return undefined; }
+      images.set(k, image);
+      return image;
+    };
+
+    // Screening (ADR-662): an image-only leaflet's pages go to the model twenty at a time, which says which
+    // could hold an item; only those and their neighbours are read in full. A batch that couldn't be screened
+    // is read page by page instead, as before.
+    const screening = !!env.model?.screenPages && env.screenPages > 0;
+    const screenable = screening ? allJobs.filter((j) => leaflets[j.li]!.l.strategy === "all").sort((a, b) => a.li - b.li || a.page.number - b.page.number) : [];
+    const screened = new Set<string>(); // pages whose screening answered
+    const flagged = new Set<string>();
+    let fallback: Job[] = [];
+    if (screenable.length) {
+      const toScreen = screenable.slice(0, env.screenPages);
+      if (screenable.length > toScreen.length) { unread += screenable.length - toScreen.length; reasons.add("pages_over_cap"); }
+      const got: { job: Job; image: PageImage }[] = [];
+      await mapLimit(toScreen, env.readConcurrency, async (job) => {
+        if (signal.aborted || env.chainDeadline - Date.now() < MIN_READ_TIME_MS) { unread++; reasons.add("time"); return; }
+        const image = await fetchImage(job);
+        if (image) got.push({ job, image }); else unread++;
+      });
+      got.sort((a, b) => a.job.li - b.job.li || a.job.page.number - b.job.page.number);
+      const batches = [...new Set(got.map((g) => g.job.li))].flatMap((li) => screenBatches(got.filter((g) => g.job.li === li)));
+      await mapLimit(batches, SCREEN_CONCURRENCY, async (batch) => {
+        if (signal.aborted || env.chainDeadline - Date.now() < MIN_READ_TIME_MS) { fallback.push(...batch.map((b) => b.job)); return; }
+        for (const b of batch) sent.add(key(b.job.li, b.job.page.number));
+        try {
+          const r = await env.model!.screenPages!({ images: batch.map((b) => b.image), chain, queries: env.queries }, signal);
+          if (r.usage) { usage.inputTokens += r.usage.inputTokens; usage.outputTokens += r.usage.outputTokens; }
+          if (r.kind !== "ok") { reasons.add(`screen_${r.kind}`); fallback.push(...batch.map((b) => b.job)); return; }
+          const hits = readScreen(r.output, batch.length, env.queries.length);
+          batch.forEach((b, i) => {
+            const k = key(b.job.li, b.job.page.number);
+            screened.add(k);
+            if (hits.has(i)) flagged.add(k);
+          });
+        } catch {
+          reasons.add(signal.aborted ? "time" : "screen_error");
+          fallback.push(...batch.map((b) => b.job));
+        }
+      });
+      fallback = fallback.sort((a, b) => a.li - b.li || a.page.number - b.page.number);
+    }
+
+    // The full reads: the flagged pages, then their neighbours (an offer can run across a spread), then pages
+    // whose screening failed, then the pages chosen by text or by data; at most `maxPages`.
+    const byKey = new Map(allJobs.map((j) => [key(j.li, j.page.number), j]));
+    const order: Job[] = [];
+    const queued = new Set<string>();
+    const queue = (j: Job | undefined) => {
+      if (!j) return;
+      const k = key(j.li, j.page.number);
+      if (queued.has(k)) return;
+      queued.add(k);
+      order.push(j);
+    };
+    const flaggedJobs = screenable.filter((j) => flagged.has(key(j.li, j.page.number)));
+    for (const j of flaggedJobs) queue(j);
+    // Neighbours the screen didn't flag are read only when there's room: left out, they still count as checked.
+    const neighbours = new Set<string>();
+    for (const j of flaggedJobs) for (const n of [j.page.number - 1, j.page.number + 1]) {
+      const k = key(j.li, n);
+      if (screened.has(k) && !queued.has(k)) { neighbours.add(k); queue(byKey.get(k)); }
+    }
+    for (const j of fallback) queue(j);
+    for (const j of allJobs) if (!screening || leaflets[j.li]!.l.strategy !== "all") queue(j);
+    let jobs = order.slice(0, env.maxPages);
+    const overCap = order.slice(env.maxPages).filter((j) => !neighbours.has(key(j.li, j.page.number))).length;
+    if (overCap) { unread += overCap; reasons.add("pages_over_cap"); }
+    if (jobs.length && !env.model) { unread += jobs.length; reasons.add("no_reader"); jobs = []; }
+
+    // Read the pages: hand each image to the reader, then forget it.
+    const reads = new Map<string, ReadProduct[]>();
+    const promos = new Map<string, ReadPromotion[]>();
+    await mapLimit(jobs, env.readConcurrency, async (job) => {
+      if (signal.aborted || env.chainDeadline - Date.now() < MIN_READ_TIME_MS) { unread++; reasons.add("time"); return; }
+      const image = await fetchImage(job);
+      if (!image) { unread++; return; }
+      sent.add(key(job.li, job.page.number));
       try {
         const r = await readPage(env.model!, image, { chain, queries: env.queries, signal });
         if (r.usage) { usage.inputTokens += r.usage.inputTokens; usage.outputTokens += r.usage.outputTokens; }
@@ -357,23 +458,25 @@ async function runChain(chain: ReadChain, adapter: ChainAdapter, env: Env): Prom
         reasons.add(signal.aborted ? "time" : "read_error");
       }
     });
+    images.clear();
+    pagesRead = sent.size;
 
     // Offers: data products (confirmed against their page where needed), then what the reader found.
     const candidates: Candidate[] = [];
     const seen = new Set<string>();
     const leafletOf = new Map<string, number>();
-    const add = (input: OfferInput, scores: number[], li: number) => {
+    const add = (input: OfferInput, scores: number[], li: number, similar?: boolean[]) => {
       const dedupe = `${normalize(input.name)}|${input.price.minor}|${input.validFrom ?? ""}`;
       if (seen.has(dedupe)) return;
       seen.add(dedupe);
       const { offer, doubts } = buildOffer(input, env.language);
       const id = env.nextId();
-      candidates.push({ id, chain, offer, doubts, scores });
+      candidates.push({ id, chain, offer, doubts, scores, ...(similar?.some(Boolean) ? { similar } : {}) });
       leafletOf.set(id, li);
     };
     leaflets.forEach(({ l, data }, li) => {
       const used = new Set<ReadProduct>();
-      for (const { p, scores } of data) {
+      for (const { p, scores, similar } of data) {
         const doubts: string[] = [];
         let extra: Partial<DataProduct> & { lowConfidence?: boolean } = {};
         if (p.confirmOnPage) {
@@ -405,20 +508,20 @@ async function runChain(chain: ReadChain, adapter: ChainAdapter, env: Env): Prom
           chain, name: merged.name, price: p.price, sizeText: merged.sizeText, regularPrice: merged.regularPrice, lowest30d: merged.lowest30d,
           printedUnitPrice: merged.printedUnitPrice, conditions: merged.conditions, validFrom: p.validFrom, validTo: p.validTo,
           source: { url: p.url, ...(p.page ? { page: p.page } : {}) }, readBy: "leaflet_data", ean: p.ean, doubts,
-        }, scores, li);
+        }, scores, li, similar);
       }
       for (const page of l.pages) {
         for (const v of reads.get(key(li, page.number)) ?? []) {
           if (used.has(v)) continue;
-          const scores = score(v.name);
-          if (best(scores) < MATCH_THRESHOLD) continue;
+          const { scores, similar } = judge(v.name);
+          if (best(scores) < MATCH_THRESHOLD && !similar.some(Boolean)) continue;
           const dates = readDates(v, l.leaflet, env.today);
           add({
             chain, name: v.name, price: v.price, sizeText: v.sizeText, regularPrice: v.regularPrice, lowest30d: v.lowest30d,
             printedUnitPrice: v.printedUnitPrice, conditions: v.conditions, validFrom: dates.validFrom, validTo: dates.validTo,
             source: { url: page.url, page: page.number }, readBy: "page_image",
             doubts: [...(v.lowConfidence ? ["low_confidence_read"] : []), ...(dates.outside ? ["dates_outside_leaflet"] : [])],
-          }, scores, li);
+          }, scores, li, similar);
         }
       }
     });
@@ -429,6 +532,7 @@ async function runChain(chain: ReadChain, adapter: ChainAdapter, env: Env): Prom
     leaflets.forEach(({ l }, li) => {
       for (const page of l.pages) {
         for (const p of promos.get(key(li, page.number)) ?? []) {
+          // A range often names several kinds ("proszki i kapsułki"): only another family altogether is left out.
           const scores = score(p.range);
           if (best(scores) < MATCH_THRESHOLD) continue;
           const mechanic = mechanicText(p.mechanic, env.language);
@@ -455,7 +559,11 @@ async function runChain(chain: ReadChain, adapter: ChainAdapter, env: Env): Prom
     // weren't read, the row says how many were (Biedronka's leaflet of 26 Oct had 97 against the cap of 40).
     // Dino's pages only confirm offers its data already gave, which say `check` until then, so they don't count.
     const hiding = allJobs.filter((j) => read.leaflets[j.li]!.strategy !== "confirm");
-    const got = hiding.filter((j) => reads.has(key(j.li, j.page.number))).length;
+    // A page counts as checked when it was read, or screened and not flagged (the screen found nothing there).
+    const got = hiding.filter((j) => {
+      const k = key(j.li, j.page.number);
+      return reads.has(k) || (screened.has(k) && !flagged.has(k));
+    }).length;
     const pages = got < hiding.length ? { pages: { read: got, of: hiding.length } } : {};
     if (candidates.length === 0 && promotions.length === 0) {
       // "Nothing matched" only when everything that should have been read was read.
@@ -549,8 +657,9 @@ export async function searchDeals(deps: DealsDeps, input: SearchInput, signal: A
   const requested = [...new Set(input.chains ?? READ_CHAINS)];
   let n = 0;
   const env: Env = {
-    fetcher, model: deps.model, queries, queryTerms: queries.map((q) => terms(q)), today: warsawDay(now()), language: input.language,
-    maxPages: deps.settings.maxPages, readConcurrency: deps.readConcurrency ?? 10,
+    fetcher, model: deps.model, queries, queryTerms: queries.map((q) => terms(q)), queryCats: queries.map((q) => categoryOf(q)),
+    today: warsawDay(now()), language: input.language,
+    maxPages: deps.settings.maxPages, screenPages: deps.settings.screenPages ?? 0, readConcurrency: deps.readConcurrency ?? 10,
     chainDeadline: started + budget - (deps.model ? PICK_RESERVE_MS : 500), signal, nextId: () => `c${++n}`, log,
   };
 
@@ -565,7 +674,7 @@ export async function searchDeals(deps: DealsDeps, input: SearchInput, signal: A
 
   // The code's candidates per item, best first; then the model may say which of the top ones are the item.
   const all = results.flatMap((r) => r.candidates);
-  const perItem = queries.map((_, qi) => all.filter((c) => (c.scores[qi] ?? 0) >= MATCH_THRESHOLD)
+  const perItem = queries.map((_, qi) => all.filter((c) => (c.scores[qi] ?? 0) >= MATCH_THRESHOLD && !c.similar?.[qi])
     .sort((a, b) => (b.scores[qi] ?? 0) - (a.scores[qi] ?? 0) || byPrice(a, b)));
   let chosen = perItem;
   let picked: SearchStats["picked"] = "code";
@@ -597,9 +706,13 @@ export async function searchDeals(deps: DealsDeps, input: SearchInput, signal: A
   const items = queries.map((query, i) => {
     const promotions = allPromotions.filter((p) => (p.scores[i] ?? 0) >= MATCH_THRESHOLD)
       .sort((a, b) => (b.scores[i] ?? 0) - (a.scores[i] ?? 0)).slice(0, MAX_PROMOTIONS_PER_ITEM).map((p) => p.promotion);
-    return { query, offers: selectOffers(chosen[i] ?? []), ...(promotions.length ? { promotions } : {}) };
+    // Similar products: by how well their words fit, then best value; never the item, so never in `offers`.
+    const similar = selectOffers(all.filter((c) => c.similar?.[i])).slice(0, MAX_SIMILAR_PER_ITEM);
+    return { query, offers: selectOffers(chosen[i] ?? []), ...(promotions.length ? { promotions } : {}), ...(similar.length ? { similar } : {}) };
   });
-  const offered = new Set(items.flatMap((i) => [...i.offers.map((o) => o.chain), ...(i.promotions ?? []).map((p) => p.chain)]));
+  const offered = new Set(items.flatMap((i) => [
+    ...i.offers.map((o) => o.chain), ...(i.promotions ?? []).map((p) => p.chain), ...(i.similar ?? []).map((o) => o.chain),
+  ]));
   const byChain = new Map(results.map((r) => [r.chain, r]));
   const chains: ChainRow[] = requested.map((chain): ChainRow => {
     if (!isReadChain(chain)) return { chain, status: "link_only", leafletUrl: LINK_ONLY_URLS[chain as LinkChain] };

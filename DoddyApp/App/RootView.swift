@@ -100,6 +100,8 @@ enum PreferenceKey {
     /// Cheapest this week › My loyalty apps (ADR-661): the programs the user said they don't use
     /// (`DealsPrograms.stored`). Empty means every leaflet price counts. Stays on this iPhone.
     static let dealsProgramsNotUsed = "deals.programsNotUsed"
+    /// Cheapest this week › My shops (ADR-663): the shops the user picked (`MyShops.stored`, JSON). Stays on this iPhone.
+    static let dealsMyShops = "deals.myShops"
 }
 
 enum AppTab: Hashable {

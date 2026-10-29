@@ -53,5 +53,16 @@ describe("scoring a run against labels", () => {
     assert.equal(r.counts.pricesNotPrinted, 1, "4,50 isn't printed on the page");
     assert.equal(r.rates.wrongPricesFlagged, 1, "the wrong coffee price was flagged check");
     assert.match(script.renderScore(r, run), /\| Price exact \| 50% \| 2 found \|/);
+    assert.equal(r.rates.screenRecall, null, "a run without --screen has no screen recall");
+  });
+
+  test("screen recall: of the labelled pages with an offer that were screened, the share flagged", () => {
+    const page = (number: number, screen?: string) => ({ number, status: "read", products: [], ...(screen ? { screen } : {}) });
+    const run = { chain: "biedronka", pages: [page(1, "flagged"), page(2, "not_flagged"), page(3, "flagged"), page(4), page(5, "error")] };
+    const labels = { pages: [1, 2, 3, 4, 5].map((number) => ({ number, offers: number === 3 ? [] : [{ name: "Masło", price: "4,99" }] })) };
+    const r = script.score(run, labels, match);
+    assert.equal(r.counts.screenedWithOffers, 2, "pages 1 and 2: page 3 has no offer, 4 wasn't screened, 5's screen failed");
+    assert.equal(r.rates.screenRecall, 0.5);
+    assert.match(script.renderScore(r, run), /\| Screen recall \(pages with an offer\) \| 50% \| 2 screened \|/);
   });
 });

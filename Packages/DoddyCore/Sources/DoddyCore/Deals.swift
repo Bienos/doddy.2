@@ -323,20 +323,25 @@ public struct DealsItemResult: Codable, Equatable, Sendable {
     public let offers: [DealOffer]
     /// Promotions printed without a price that fit the item (ADR-661): a mechanic for a range, never a price.
     public let promotions: [DealPromotion]
+    /// Products of another kind in the item's family (ADR-662: "masło roślinne" for "masło"), at most three:
+    /// shown apart as "similar, not the same", never picked for the item or counted in the basket.
+    public let similar: [DealOffer]
 
-    public init(query: String, offers: [DealOffer], promotions: [DealPromotion] = []) {
+    public init(query: String, offers: [DealOffer], promotions: [DealPromotion] = [], similar: [DealOffer] = []) {
         self.query = query
         self.offers = offers
         self.promotions = promotions
+        self.similar = similar
     }
 
-    private enum CodingKeys: String, CodingKey { case query, offers, promotions }
+    private enum CodingKeys: String, CodingKey { case query, offers, promotions, similar }
 
     public init(from decoder: any Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         query = try c.decode(String.self, forKey: .query)
         offers = try c.decodeIfPresent([DealOffer].self, forKey: .offers) ?? []
         promotions = (try? c.decodeIfPresent([DealPromotion].self, forKey: .promotions)) ?? []
+        similar = Array(((try? c.decodeIfPresent([DealOffer].self, forKey: .similar)) ?? []).prefix(3))
     }
 
     public func encode(to encoder: any Encoder) throws {
@@ -344,6 +349,7 @@ public struct DealsItemResult: Codable, Equatable, Sendable {
         try c.encode(query, forKey: .query)
         try c.encode(offers, forKey: .offers)
         if !promotions.isEmpty { try c.encode(promotions, forKey: .promotions) }
+        if !similar.isEmpty { try c.encode(similar, forKey: .similar) }
     }
 }
 
@@ -704,6 +710,7 @@ public enum DealsResultText {
         for item in result.items {
             let query = "\"\(clip(item.query, DealsRequest.maxItemLength))\""
             let promotions = promotionsText(item, money)
+            let similar = similarText(item, money)
             let leftOut = item.offers.filter { !programs.canGet($0) }.compactMap { DealsProgram.of($0.chain)?.name }
             let leftOutText = leftOut.isEmpty ? nil
                 : "left out: \(leftOut.count) offer\(leftOut.count == 1 ? "" : "s") needing \(Array(Set(leftOut)).sorted().joined(separator: ", ")), which the user said they don't use"
@@ -715,6 +722,7 @@ public enum DealsResultText {
                         : "- \(query): \(item.offers.count) offer\(item.offers.count == 1 ? "" : "s") without a price in \(BasketSolver.defaultCurrency) Doddy's code could compare; the user can see them on screen"
                 if let leftOutText { text += " · " + leftOutText }
                 if let promotions { text += " · " + promotions }
+                if let similar { text += " · " + similar }
                 data.append(text)
                 continue
             }
@@ -735,6 +743,7 @@ public enum DealsResultText {
             if !others.isEmpty { parts.append("also: " + others.joined(separator: ", ")) }
             if let leftOutText { parts.append(leftOutText) }
             if let promotions { parts.append(promotions) }
+            if let similar { parts.append(similar) }
             data.append(parts.joined(separator: " · "))
         }
         data.append("Read at: \(clip(result.checkedAt, 40))")
@@ -794,6 +803,13 @@ public enum DealsResultText {
             return text
         }
         return "promotions printed without a price, so the price is on the shelf: " + parts.joined(separator: "; ")
+    }
+
+    /// Products of another kind in the item's family, said as such.
+    static func similarText(_ item: DealsItemResult, _ money: (Money) -> String) -> String? {
+        guard !item.similar.isEmpty else { return nil }
+        let parts = item.similar.prefix(2).map { "\(name($0.chain)) \"\(ErrandsPrompt.clip($0.product, 120))\" \(money($0.price))" + ($0.check ? " (needs checking)" : "") }
+        return "similar, not the same (never call it the item): " + parts.joined(separator: "; ")
     }
 
     /// The first item whose offers span different kinds the user didn't say, as one question the agent may ask.
