@@ -16,6 +16,7 @@ Owner, 28 Oct 2026: "for 2 just add mic option to dictate what someone wants to 
 - Speech-recognition permission text (`project.yml`, English in `InfoPlist.xcstrings`) now mentions Messages.
 
 ## Not done / not checked
+- **Fixed 29 Oct, after the first run on a device:** tapping the mic stopped the app (`EXC_BREAKPOINT` in `_dispatch_assert_queue_fail`, from `MessageDictation.authorizeSpeech()`). iOS answers the speech permission prompt on a background thread, and the callback, written inside the `@MainActor` class, was checked for the main thread. `authorizeSpeech()` and the microphone tap (which runs on the audio thread, same problem) are now `nonisolated` with `@Sendable` callbacks. Not compiled here (no Xcode); the owner's next device run is the check.
 - **Not compiled and not run.** This session has no Swift or Xcode (Linux). `DictationRulesTests`, the app-logic type-check and the Mac CI job have not run. First compile is the pull request's hosted Mac job.
 - **Not seen on a device:** recognition quality, Polish on-device support, interruption by a call, the system microphone indicator.
 - The listening indicator (`MicrophoneHolders`, ADR-361) knows only conversations, voice memos and Capture; **dictation is not in it yet**, so "Stop listening" from outside the screen will not stop a dictation. iOS's own orange microphone dot does show.
