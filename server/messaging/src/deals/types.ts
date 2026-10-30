@@ -57,7 +57,10 @@ export interface Offer {
   source: { url: string; page?: number };
   readBy: "leaflet_data" | "page_image";
   ean?: string;
-  check: boolean;
+check: boolean;
+  /** The offer's own page through an affiliate network (ADR-612, ADR-668), only where a programme covers its host;
+   * added after the picks, so it never changes an offer, its order or its price. */
+  buyUrl?: string;
   /** What the price needs or carries, for the app's checklist and filters (ADR-661). */
   flags?: OfferFlag[];
   /** The price of one piece when buying `quantity` under the offer's mechanic ("2+1", "drugi za 5 zł",

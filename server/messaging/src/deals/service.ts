@@ -51,6 +51,8 @@ export interface DealsDeps {
   log?: (msg: string, extra?: object) => void;
   /** "Search further" (ADR-666): the shops' search pages and partner links. Absent: no `further` in the answer. */
   further?: FurtherDeps;
+  /** Partner links for the offers' own pages (ADR-668): the AFFILIATE_LINKS rules, applied after the picks. */
+  affiliate?: { link(pageUrl: string): string | undefined };
 }
 
 export interface SearchInput { items: string[]; chains?: Chain[]; language: string }
@@ -732,6 +734,14 @@ export async function searchDeals(deps: DealsDeps, input: SearchInput, signal: A
     const similar = selectOffers(all.filter((c) => c.similar?.[i])).slice(0, MAX_SIMILAR_PER_ITEM);
     return { query, offers: selectOffers(chosen[i] ?? []), ...(promotions.length ? { promotions } : {}), ...(similar.length ? { similar } : {}) };
   });
+  // ADR-668: the partner link goes on last, after the picks, so it never changes an offer, its place or its price.
+  if (deps.affiliate) {
+    const partner = (o: Offer): Offer => { const buyUrl = deps.affiliate!.link(o.source.url); return buyUrl ? { ...o, buyUrl } : o; };
+    for (const item of items) {
+      item.offers = item.offers.map(partner);
+      if (item.similar) item.similar = item.similar.map(partner);
+    }
+  }
   const offered = new Set(items.flatMap((i) => [
     ...i.offers.map((o) => o.chain), ...(i.promotions ?? []).map((p) => p.chain), ...(i.similar ?? []).map((o) => o.chain),
   ]));

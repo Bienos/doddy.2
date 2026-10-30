@@ -633,7 +633,8 @@ public struct DealOffer: Codable, Equatable, Sendable {
     public init(chain: DealsChain, product: String, price: Money, size: Size? = nil, unitPrice: UnitPrice? = nil,
                 regularPrice: Money? = nil, lowest30d: Money? = nil, conditions: [String] = [], validFrom: DealDay? = nil,
                 validTo: DealDay? = nil, source: Source, readBy: ReadBy = .leafletData, ean: String? = nil, check: Bool = false,
-                flags: [Flag] = [], effective: Effective? = nil, cut: Int? = nil, limit: Int? = nil) {
+                flags: [Flag] = [], effective: Effective? = nil, cut: Int? = nil, limit: Int? = nil, buyUrl: String? = nil) {
+        self.buyUrl = buyUrl
         self.flags = flags
         self.effective = effective
         self.cut = cut
@@ -656,10 +657,15 @@ public struct DealOffer: Codable, Equatable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case chain, product, price, size, unitPrice, regularPrice, lowest30d, conditions, validFrom, validTo, source, readBy, ean, check
-        case flags, effective, cut, limit
+        case flags, effective, cut, limit, buyUrl
     }
 
     private struct CutValue: Codable { let percent: Int }
+
+    /// The offer's own page through an affiliate network (ADR-612, ADR-668), only where a programme covers the shop.
+    /// Added by the server after the picks, so it never changes an offer, its order or its price; said before the tap.
+    public let buyUrl: String?
+    public var isPartner: Bool { buyUrl.map(DealsFurther.isOpenable) ?? false }
 
     public func encode(to encoder: any Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
@@ -681,6 +687,7 @@ public struct DealOffer: Codable, Equatable, Sendable {
         try c.encodeIfPresent(effective, forKey: .effective)
         try c.encodeIfPresent(cut.map { CutValue(percent: $0) }, forKey: .cut)
         try c.encodeIfPresent(limit, forKey: .limit)
+        try c.encodeIfPresent(buyUrl, forKey: .buyUrl)
     }
 
     public init(from decoder: any Decoder) throws {
@@ -698,6 +705,7 @@ public struct DealOffer: Codable, Equatable, Sendable {
         source = try c.decode(Source.self, forKey: .source)
         readBy = try c.decodeIfPresent(ReadBy.self, forKey: .readBy) ?? .unknown
         ean = try c.decodeIfPresent(String.self, forKey: .ean)
+        buyUrl = try? c.decodeIfPresent(String.self, forKey: .buyUrl)
         check = try c.decodeIfPresent(Bool.self, forKey: .check) ?? true
         // ADR-661 fields: an older server sends none; a value that doesn't make sense is dropped, never trusted.
         flags = ((try? c.decodeIfPresent([Flag].self, forKey: .flags)) ?? []).filter { $0 != .unknown }

@@ -244,6 +244,7 @@ export const OfferSchema = z.strictObject({
     unitPrice: z.strictObject({ minor: z.number().int().positive(), per: z.enum(["kg", "l", "szt"]) }).optional(),
   }).optional(),
   cut: z.strictObject({ percent: z.number().int().min(1).max(99) }).optional(),
+  buyUrl: z.string().url().startsWith("https://").optional(),
   limit: z.number().int().positive().optional(),
 });
 export const PromotionSchema = z.strictObject({
