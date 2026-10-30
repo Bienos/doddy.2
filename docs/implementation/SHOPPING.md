@@ -99,6 +99,28 @@ The owner said "Go ahead" (29 Oct 2026) to the proposal page that showed it. Eve
 
 **App:** "Cheapest this week" shows two sections under the answer, "Leaflets Doddy doesn't read" and "Search further online" (each row "Search for “masło” at Allegro"; a partner row says "Partner link", and the ADR-612 note sits under the section before any tap). Only https links are shown (`DealsFurther.openable`). **Home:** after a voice search the card "Leaflet offers" (the items, "Leaflets read: N", Show) opens the screen on that answer; the cross, or opening the screen any other way, puts it away (`DealsModel.homeCardDue`, in memory only). **Voice:** the tool's reply now ends by telling the agent the list is in the app and naming the shops of "search further" (`DealsResultText.footer`), so Doddy may say once that it's in the app; the live agent's own text is unchanged. **The ask card** before `find_deals` is in Polish when the app is (`DealsAsk.card(_:polish:)`; the other ask cards are still drawn in English, a known gap).
 
+### Cost per search, measured inputs (30 Oct 2026)
+
+No real leaflet search had run on the server yet (its logs from 25 to 29 Oct hold only unsigned checks), so the cost was measured as far as it can be without calling a model: this week's real pages for "masło, kawa", fetched once each through the service's own adapters and polite fetcher (nothing saved), with the service's own `visualTokens` rule (at most 4,784 per page) and its page choice. Prices: Claude Haiku 5.5, $0.10 per million input and $0.50 per million output tokens; $1 = 3.96 zł (the monetisation model's rates).
+
+| Chain | Pages in the leaflets | Pages sent to the model for "masło, kawa" | Image tokens a page |
+|---|---|---|---|
+| Biedronka (image-only, screened whole) | 98 (96 fetched; 2 too large twice) | all 96 screened in 5 calls of 20, then the flagged pages and their neighbours read in full (at most 40) | 2,642 (1146×1800) |
+| Lidl (pages whose text names an item) | 118 + 59 + 67 + 38 in four leaflets | 12 | 4,386 (1420×2400) |
+| Żabka (same) | 60 | 2 | 4,752 (1565×2555) |
+| Dino (pages that confirm a matched data product) | 75 + 7 + 7 | 6 | not measured; ~4,400 assumed |
+| Aldi, Rossmann | — | none (their own data, no model) | — |
+
+Instructions: about 870 tokens for a page read, 260 for a screening call (characters ÷ 3.5, cached). **Screening Biedronka alone is about 256,000 input tokens, $0.026 or 0,10 zł, on every search**, whatever was asked.
+
+| Case | Assumption | Input | Output | Cost |
+|---|---|---|---|---|
+| Light (1 item) | Biedronka 3 full reads, Lidl 4, Żabka 1, Dino 3; 400 output tokens a page | ~311,000 | ~5,500 | ~$0.034, **~0,13 zł** |
+| Typical ("masło, kawa") | Biedronka 4 flagged + neighbours = 12 reads; 700 output tokens a page | ~408,000 | ~23,700 | ~$0.053, **~0,21 zł** |
+| Heavy (5 items) | Biedronka 40 reads, Lidl 30, Żabka 6, Dino 15; 1,200 output tokens a page | ~675,000 | ~112,000 | ~$0.12, **~0,49 zł** |
+
+**Still unknown:** the output tokens of a real page read (assumed 400 to 1,200), how many Biedronka pages the screen flags, and the cache's effect on the instructions. One real search, or `scripts/leaflet-eval.mjs` with a key on about 10 pages (about 5 cents), settles them; the server's "deals searched" log line has the real input and output tokens.
+
 ## 3. Shared core and app
 
 - **`ErrandDraft`** gains `kind` and `priorities` with the digest rule above; `ErrandResult` gains the optional `shopping` block (older servers send none).
