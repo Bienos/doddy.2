@@ -78145,6 +78145,47 @@
         }
       }
     },
+    "The invoice draft couldn't be removed from this iPhone. Close it on the voice screen to try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The invoice draft couldn't be removed from this iPad. Close it on the voice screen to try again."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The invoice draft couldn't be removed from this iPhone. Close it on the voice screen to try again."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Nie udało się usunąć szkicu faktury z tego iPada. Zamknij go na ekranie rozmowy, żeby spróbować ponownie."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Nie udało się usunąć szkicu faktury z tego iPhone’a. Zamknij go na ekranie rozmowy, żeby spróbować ponownie."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "The kept plan couldn't be read. It is still on this iPhone; delete it, or make a new plan.": {
       "extractionState": "manual",
       "localizations": {

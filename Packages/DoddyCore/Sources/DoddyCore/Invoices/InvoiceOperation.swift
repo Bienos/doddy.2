@@ -71,6 +71,9 @@ public struct InvoiceOperation: Equatable, Sendable, Codable {
     /// Where the invoice stands in KSeF once inFakt has it (ADR-667). Only `.accepted`, with a KSeF
     /// number, means it is issued in KSeF; it is never set before a receipt exists.
     public private(set) var ksef: KsefStatus = .notSent
+    /// The person tapped Send to KSeF for this invoice, after the card said it can't be undone
+    /// (ADR-668). Used up by the one send it allows.
+    public private(set) var ksefSendConfirmed = false
 
     public init(draft: InvoiceDraft, operationId: UUID = UUID()) {
         self.operationId = operationId
@@ -166,6 +169,44 @@ public struct InvoiceOperation: Equatable, Sendable, Codable {
         guard state == .verifiedSucceeded, receipt != nil else { return }
         if case .accepted = ksef { return }
         ksef = status
+    }
+
+    // MARK: KSeF (ADR-668)
+
+    /// Sending to KSeF may be offered: the invoice exists in inFakt and isn't in KSeF, on its way, or
+    /// of unknown state there. After a refusal it may be offered again (a fresh yes).
+    public var mayAskToSendToKsef: Bool {
+        guard state == .verifiedSucceeded, receipt != nil else { return false }
+        switch ksef {
+        case .notSent, .rejected: return true
+        case .pending, .accepted, .unknown: return false
+        }
+    }
+
+    /// The person tapped Send to KSeF on a card that showed this invoice (`shownExternalId`).
+    public mutating func confirmKsefSend(shownExternalId: String) throws {
+        guard mayAskToSendToKsef else { throw InvoiceOperationError.wrongState(state) }
+        guard shownExternalId == receipt?.externalId else { throw InvoiceOperationError.stale }
+        ksefSendConfirmed = true
+    }
+
+    /// Uses up the yes and marks the invoice as on its way, BEFORE the request goes out: if the
+    /// answer is lost, the state is "pending" or "unknown", never "not sent", so nothing sends it twice.
+    /// Returns inFakt's id of the invoice to send.
+    public mutating func beginKsefSend() throws -> String {
+        guard ksefSendConfirmed, mayAskToSendToKsef, let id = receipt?.externalId else {
+            throw InvoiceOperationError.wrongState(state)
+        }
+        ksefSendConfirmed = false
+        ksef = .pending
+        return id
+    }
+
+    /// Nothing left the iPhone (no key, or sending isn't switched on): back to not sent.
+    public mutating func recordKsefNotSent(_ reason: String) {
+        guard ksef == .pending else { return }
+        ksef = .notSent
+        note = reason
     }
 
     /// After a definite failure the person may confirm again (a fresh yes).

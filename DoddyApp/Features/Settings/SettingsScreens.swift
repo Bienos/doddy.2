@@ -408,6 +408,10 @@ struct MemoriesSettingsView: View {
         if !AccountKeyStore.removeAll() {
             problems.append(NSLocalizedString("Your inFakt key couldn't be removed from this iPhone's Keychain. Remove it in Settings › Invoices (inFakt).", comment: ""))
         }
+        // The invoice draft kept between conversations (ADR-668) is a file of its own.
+        if VoiceSessionController.invoiceDraftFile?.remove() == false {
+            problems.append(NSLocalizedString("The invoice draft couldn't be removed from this iPhone. Close it on the voice screen to try again.", comment: ""))
+        }
         if !stillShared.isEmpty {
             problems.append(String(
                 format: NSLocalizedString("Deleted on this iPhone, but sharing couldn't be stopped for %lld shared lists (%@). Their copy stays in iCloud and with the people you invited.", comment: ""),

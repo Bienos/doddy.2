@@ -23,7 +23,7 @@ extension VoiceToolName {
 }
 
 /// A price as the person said it, per unit, in grosze (or cents).
-public enum InvoiceVoicePrice: Equatable, Sendable {
+public enum InvoiceVoicePrice: Equatable, Sendable, Codable {
     case net(Int)
     case gross(Int)
 }
@@ -91,10 +91,11 @@ public enum InvoiceVoiceNote: Equatable, Sendable {
     case issueDateInPast(CalendarDate)
 }
 
-/// The invoice being drafted in one conversation: what the person said, field by field, and the
-/// operation made from it. Held by the voice screen; not saved anywhere.
-public struct InvoiceVoiceSession: Equatable, Sendable {
-    struct LineInput: Equatable, Sendable {
+/// The invoice being drafted: what the person said, field by field, and the operation made from it.
+/// Held by the voice screen and kept on this iPhone between conversations in `InvoiceDraftFile`
+/// (ADR-668) until the person closes the card.
+public struct InvoiceVoiceSession: Equatable, Sendable, Codable {
+    struct LineInput: Equatable, Sendable, Codable {
         var name: Sourced<String>?
         var quantityMilli: Int?
         var unit: String?
@@ -109,6 +110,9 @@ public struct InvoiceVoiceSession: Equatable, Sendable {
     private var lines: [LineInput] = []
     private var currency: Sourced<InvoiceCurrency>?
     private var issueDate: CalendarDate?
+    /// The issue date is today's because none was said: it moves to the new day when the draft is
+    /// opened again on a later one (ADR-668), so a kept draft never turns into a back-dated invoice.
+    private var issueDateIsDefault = false
     private var saleDate: CalendarDate?
     private var payment: Sourced<InvoicePayment>?
     private var dueDate: CalendarDate?
@@ -198,10 +202,12 @@ public struct InvoiceVoiceSession: Equatable, Sendable {
                     + "Ask the user for today's date or an earlier one.")
             }
             next.issueDate = v
+            next.issueDateIsDefault = false
             if v < today { notes.append(.issueDateInPast(v)) }
         }
         if next.issueDate == nil {
             next.issueDate = today
+            next.issueDateIsDefault = true
             notes.append(.issueDateIsToday(today))
         }
         if let v = update.saleDate { next.saleDate = v }
@@ -259,6 +265,19 @@ public struct InvoiceVoiceSession: Equatable, Sendable {
     /// The person closed the card: the draft is gone.
     public mutating func close() {
         self = InvoiceVoiceSession()
+    }
+
+    /// A kept draft opened again (ADR-668): an issue date that was only today's by default becomes
+    /// the new today. A date the person said stays, and the reply warns about it as usual. True when
+    /// something changed.
+    @discardableResult
+    public mutating func refreshDefaults(today: CalendarDate) -> Bool {
+        guard issueDateIsDefault, let issue = issueDate, issue != today, let operation, !Self.isLocked(operation.state) else { return false }
+        issueDate = today
+        var updated = operation
+        guard (try? updated.update(makeDraft().0)) != nil else { return false }
+        self.operation = updated
+        return true
     }
 
     private static func isLocked(_ state: InvoiceState) -> Bool {
@@ -538,7 +557,8 @@ extension VoiceToolRequest {
 extension VoiceToolReply {
     /// What the agent hears after a `draft_invoice` call. Sums and dates are Doddy's; names, the item
     /// text and the NIP are data (ToolData). Never says issued: sending is not built into this reply.
-    public static func invoiceDraft(_ operation: InvoiceOperation, notes: [InvoiceVoiceNote]) -> String {
+    /// `kept`: the draft was written to this iPhone and read back (ADR-668); false says it wasn't.
+    public static func invoiceDraft(_ operation: InvoiceOperation, notes: [InvoiceVoiceNote], kept: Bool = false) -> String {
         let draft = operation.draft
         let currency = draft.currency?.value ?? .pln
         func money(_ minor: Int) -> String { MoneyText.format(minor, currency: currency, polish: false) }
@@ -546,13 +566,13 @@ extension VoiceToolReply {
 
         var parts: [String] = []
         let ready = operation.state == .readyForConfirmation
-        if ready {
-            parts.append("ready: the invoice draft on the user's screen is complete. It is kept on this iPhone for this conversation only, "
-                + "not saved. Nothing was sent to inFakt or KSeF and no invoice exists.")
-        } else {
-            parts.append("drafted: the invoice draft is on the user's screen, kept on this iPhone for this conversation only, not saved. "
-                + "Nothing was sent to inFakt or KSeF and no invoice exists.")
-        }
+        let keeping = kept
+            ? "It is kept on this iPhone until the user closes the card, so they can carry on in another conversation."
+            : "It couldn't be kept on this iPhone, so it lasts this conversation only; if asked, say so."
+        parts.append(ready
+            ? "ready: the invoice draft on the user's screen is complete. \(keeping)"
+            : "drafted: the invoice draft is on the user's screen. \(keeping)")
+        parts.append("Nothing was sent to inFakt or KSeF and no invoice exists.")
         if InFaktAPI.createVerified {
             parts.append(ready
                 ? "The user issues it by tapping Issue in inFakt on the card; you can't issue it."

@@ -49,6 +49,10 @@ public struct InvoiceCard: Equatable, Sendable {
     public let canConfirm: Bool
     /// Why Confirm is not offered although the card is complete: sending is not switched on.
     public let sendingNote: String?
+    /// Send to KSeF is offered (ADR-668): the invoice is in inFakt, not in KSeF, and sending is on.
+    public let canSendToKsef: Bool
+    /// Said next to Send to KSeF: it can't be undone, only corrected.
+    public let ksefWarning: String?
 
     public init(_ operation: InvoiceOperation, polish: Bool) {
         let text = Words(polish: polish)
@@ -126,6 +130,8 @@ public struct InvoiceCard: Equatable, Sendable {
             self.sendingNote = text.notSwitchedOn
             self.canConfirm = false
         }
+        self.canSendToKsef = InFaktAPI.createVerified && operation.mayAskToSendToKsef
+        self.ksefWarning = operation.mayAskToSendToKsef ? text.ksefIsFinal : nil
     }
 
     /// A field's name in a sentence ("buyer's NIP"), for the voice agent's replies too (ADR-667).
@@ -191,6 +197,10 @@ public struct InvoiceCard: Equatable, Sendable {
         var dueDate: String { pick("Termin płatności", "Due date") }
         var sameAsIssue: String { pick("taka jak data wystawienia", "same as the issue date") }
         var splitPayment: String { pick("Mechanizm podzielonej płatności", "Split payment (MPP)") }
+        var ksefIsFinal: String {
+            pick("Wysłania do KSeF nie da się cofnąć: fakturę przyjętą przez KSeF można tylko skorygować fakturą korygującą.",
+                 "Sending to KSeF can't be undone: an invoice KSeF accepted can only be corrected with a correction invoice.")
+        }
         var yes: String { pick("tak", "yes") }
         var no: String { pick("nie", "no") }
         var exemptionReason: String { pick("Podstawa zwolnienia z VAT", "VAT exemption reason") }
