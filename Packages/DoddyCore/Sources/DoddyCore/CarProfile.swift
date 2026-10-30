@@ -38,6 +38,9 @@ public enum CarProfile {
             return CloudToolName.isWrite(call.name)
                 ? .refuse(reason: "Drafts and tasks in online accounts need a tap on the iPhone, so not while driving.")
                 : .run
+        case .draftInvoice:
+            // An invoice is checked line by line on the screen (ADR-667), so not while driving.
+            return .refuse(reason: "An invoice draft is checked on the iPhone's screen, so it waits until the user isn't driving.")
         case .draftBlikTransfer:
             // Money (ADR-510): a card to check and a bank app to send from, so never while driving.
             return .refuse(reason: "A BLIK transfer is shown on the iPhone for the user to check and send in their bank app, so it waits until they aren't driving.")

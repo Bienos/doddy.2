@@ -68,6 +68,9 @@ public struct InvoiceOperation: Equatable, Sendable, Codable {
     public private(set) var receipt: InvoiceReceipt?
     /// Why it failed or was set aside, in words for the person.
     public private(set) var note: String?
+    /// Where the invoice stands in KSeF once inFakt has it (ADR-667). Only `.accepted`, with a KSeF
+    /// number, means it is issued in KSeF; it is never set before a receipt exists.
+    public private(set) var ksef: KsefStatus = .notSent
 
     public init(draft: InvoiceDraft, operationId: UUID = UUID()) {
         self.operationId = operationId
@@ -156,6 +159,15 @@ public struct InvoiceOperation: Equatable, Sendable, Codable {
         }
     }
 
+    /// inFakt's answer about sending this invoice to KSeF (ADR-667). Only after a receipt: an invoice
+    /// that isn't known to exist can't be in KSeF. An accepted invoice stays accepted: KSeF never
+    /// deletes or changes one (only a correction invoice can), so a later answer can't take it back.
+    public mutating func recordKsef(_ status: KsefStatus) {
+        guard state == .verifiedSucceeded, receipt != nil else { return }
+        if case .accepted = ksef { return }
+        ksef = status
+    }
+
     /// After a definite failure the person may confirm again (a fresh yes).
     public mutating func reopenAfterFailure() {
         guard state == .verifiedFailed else { return }
@@ -194,7 +206,8 @@ public struct InvoiceOperation: Equatable, Sendable, Codable {
         return "{\"buyer\":\(buyer),\"currency\":\(s(draft.currency?.value.rawValue)),\"dueDate\":\(s(draft.paymentDueDate?.iso)),"
             + "\"exemptionReason\":\(s(draft.vatExemptionReason)),\"issueDate\":\(s(draft.issueDate?.iso)),"
             + "\"lines\":[\(lines.joined(separator: ","))],\"payment\":\(s(draft.paymentMethod?.value.rawValue)),"
-            + "\"saleDate\":\(s(draft.saleDate?.iso)),\"totals\":{\"grossMinor\":\(totals.grossMinor),"
+            + "\"saleDate\":\(s(draft.saleDate?.iso)),\"splitPayment\":\(draft.splitPayment.map { $0.value ? "true" : "false" } ?? "null"),"
+            + "\"totals\":{\"grossMinor\":\(totals.grossMinor),"
             + "\"groups\":[\(groups.joined(separator: ","))],\"netMinor\":\(totals.netMinor),\"vatMinor\":\(totals.vatMinor)}}"
     }
 

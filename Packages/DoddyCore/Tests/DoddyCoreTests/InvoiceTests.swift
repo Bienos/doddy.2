@@ -186,9 +186,10 @@ final class InvoiceTests: XCTestCase {
         XCTAssertFalse(draft.isReadyForConfirmation)
         let missing = Set(draft.missingData)
         for key in ["contractor.kind", "contractor.nip", "contractor.address", "lines.1.quantity", "lines.1.vat_rate",
-                    "currency", "issue_date", "sale_date", "payment_method"] {
+                    "currency", "issue_date", "payment_method"] {
             XCTAssertTrue(missing.contains(key), "\(key) should be missing: \(missing)")
         }
+        XCTAssertFalse(missing.contains("sale_date"), "no sale date means the issue date (art. 106e ust. 1 pkt 6, ADR-667)")
         XCTAssertNil(draft.totals, "no VAT rate was given, so no sum is shown")
         let operation = InvoiceOperation(draft: draft)
         XCTAssertEqual(operation.state, .needsClarification)
@@ -231,8 +232,12 @@ final class InvoiceTests: XCTestCase {
 
     func testAPrivatePersonNeedsNoNipButAFirmDoes() {
         var draft = readyDraft()
-        draft.contractor = InvoiceContractor(kind: said(.privatePerson), name: said("Jan Kowalski"))
+        let address = InvoiceAddress(street: "Polna", buildingNumber: "1", city: "Gdańsk", postCode: "80-001")
+        draft.contractor = InvoiceContractor(kind: said(.privatePerson), name: said("Jan Kowalski"), address: said(address))
         XCTAssertEqual(draft.issues(), [])
+        // ADR-667: the VAT act asks for every buyer's address (art. 106e ust. 1 pkt 3), a private person's too.
+        draft.contractor.address = nil
+        XCTAssertEqual(draft.issues(), [.missing(.contractorAddress)])
         draft.contractor.kind = said(.company)
         XCTAssertTrue(draft.issues().contains(.missing(.contractorNip)))
         XCTAssertTrue(draft.issues().contains(.missing(.contractorAddress)))

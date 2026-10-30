@@ -212,6 +212,9 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(
                 app: .messages, title: draft.channel == .text ? "Draft a text" : "Draft an email",
                 detail: "to \(draft.recipientName)", isLookup: false)
+        case .draftInvoice:
+            // A draft on screen changes nothing and reads nothing (ADR-667); issuing will log itself.
+            return nil
         case .draftBlikTransfer(let draft):
             // The amount and title are on the card; the 30-day log keeps only who it was for.
             return ActivityRequest(

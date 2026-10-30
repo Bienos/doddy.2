@@ -7,6 +7,8 @@ import SwiftUI
 /// settled how inFakt takes an invoice (`InFaktAPI.createVerified`). Not seen on a device in this build.
 struct InvoiceCardView: View {
     let card: InvoiceCard
+    /// Confirms a value only the model suggested (ADR-667). Nil on the example card, which has no Confirm.
+    var onConfirm: ((InvoiceField) -> Void)? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -35,6 +37,7 @@ struct InvoiceCardView: View {
                             Text(verbatim: line.net).font(.body.monospacedDigit())
                         }
                         Text(verbatim: line.detail).font(.footnote).foregroundStyle(Theme.secondaryText)
+                        if let field = line.confirmField { confirmButton(field) }
                     }
                 }
             }
@@ -66,8 +69,22 @@ struct InvoiceCardView: View {
                     }
                     .font(.subheadline)
                     .accessibilityElement(children: .combine)
+                    if let field = row.confirmField { confirmButton(field) }
                 }
             }
+        }
+    }
+
+    /// "That's right" for one suggested value, exactly as shown above it.
+    @ViewBuilder
+    private func confirmButton(_ field: InvoiceField) -> some View {
+        if let onConfirm {
+            Button { onConfirm(field) } label: {
+                Text(verbatim: InvoiceCard.confirmLabel(field, polish: NotificationLanguage.preferred(Bundle.main.preferredLocalizations) == .polish))
+            }
+            .font(.footnote.weight(.semibold))
+            .buttonStyle(.bordered)
+            .accessibilityIdentifier("invoice.confirm.\(field.key)")
         }
     }
 

@@ -2,6 +2,36 @@
 
 Owner, 24 Oct 2026: "inFakt" as the invoice provider (ADR-630) and, answering where the key lives, "W iPhonie, w Keychain": invoices go from the phone straight to inFakt; Doddy's server never sees them or the key. Branch `claude/infakt-inpost`, stacked on `claude/expert-modes-research` (PR #140). Research: `docs/research/2026-10-24/research_expert_modes_PL.md` section 5 and acceptance tests 8 and 9. **Status of each part is at the end; nothing here has been seen on a device and no request has ever been sent to inFakt.**
 
+## 30 Oct 2026: invoices by voice, and getting ready for KSeF (ADR-667)
+
+Owner, 30 Oct 2026: "Make sure invoicing works properly now by talking and how to improve it so it's ready for ksef". Research of the same day, every fact tagged and sourced: `docs/research/2026-10-30/ksef_infakt_research.md` (inFakt's field tables from the Postman collection behind docs.infakt.pl, the FA(3) brochure of August 2026 and its XSD, MF's KSeF pages and API docs).
+
+**What the field tables settle (read, not yet seen in a real answer):** prices are integer **grosze** (`unit_net_price` "Cena netto za sztukę (grosze)", `net_price`, `gross_price`, `tax_price`); the create request takes **`invoice_date`, `sale_date` and `payment_date`** (the due date), all optional. The two [U] rows below about units and date fields are now [V] from inFakt's own docs. Still no idempotency key or field for the caller's own id. `InFaktAPI.createVerified` stays `false`: the repo's rule is one real create call in the sandbox before anything is sent, and none has been made.
+
+**What the research says KSeF needs (each tied to a row there):**
+- KSeF issuing is mandatory since 1 Apr 2026 (1 Feb for the largest firms); the ≤10,000 PLN a month exception ends **31 Dec 2026**. Penalties start 1 Jan 2027 under current law; a draft law of 20 Oct 2026 would move them to the end of 2027 (not law yet). B2C invoices in KSeF are optional. (A1–A6)
+- An invoice accepted by KSeF can't be edited, cancelled or deleted, only corrected. A wrong buyer NIP sends the invoice to that other firm. (A11)
+- KSeF refuses an issue date (P_1) after the day it is sent; a past one counts as offline24 and must reach KSeF by the next business day. (A13–A15)
+- inFakt sends to KSeF only when asked (`send_to_ksef`, or `POST /api/v3/ksef2/documents/{uuid}/send.json`), answers `pending`, `sent`, `success` (with `ksef_number`), `error` or `rejected`, and needs the KSeF 2.0 connection set up **in the inFakt web app** (not through the API); without it every send is 422. (C6, C9, C10, C12)
+- `zw` needs an exemption id from `/vat_exemptions.json`; split payment is `split_payment` + `split_payment_type`; the bank account must be verified in inFakt first; inFakt refuses `&`, `<`, `>` and double spaces in item names. (C16–C19)
+
+**Built on 30 Oct 2026 (DoddyCore, tested on Linux; app screens written, not compiled):**
+- **`draft_invoice`, a voice tool** (`Invoices/InvoiceVoice.swift`): the person dictates, the agent sends only what changed, and the draft on the voice screen grows call by call (one line per call). A **NIP counts as said only if its ten digits are in the person's own transcribed words** (digits or digit words, across turns); a **VAT rate only if the rate is in their words**. Anything else stays the model's suggestion: shown with a question mark, counted as missing, settled by saying it or by the person's tap on **Confirm** next to it on the card. Net from a gross price, the sums and the due date from "14 dni" are worked out by code. No issue date said means today; a future one is refused (KSeF would reject it); a past one is accepted with the offline24 warning. Nothing leaves the iPhone and the draft isn't saved: it lasts the conversation. The agent hears what is missing, the sums and that nothing was sent; never "issued".
+- **Draft rules for KSeF** (`InvoiceDraft.swift`): no sale date means the issue date (art. 106e ust. 1 pkt 6; FA(3) P_6), so it is no longer "missing"; **every buyer's address is required**, a private person's too (art. 106e ust. 1 pkt 3); above **15,000 PLN gross** the draft asks whether **split payment (MPP)** applies (annex 15, P_18A); `&`, `<`, `>` in an item's name are refused; **another currency than PLN, or a buyer abroad, is marked not ready** (KSeF needs the VAT in PLN and an exchange rate; foreign buyers need an EU VAT number and 0 WDT / 0 EX / np rates, whose mapping in inFakt is undocumented).
+- **KSeF status** (`Invoices/KsefStatus.swift`, `InvoiceOperation.ksef`): inFakt's answers mapped to `notSent`, `pending`, `accepted(KsefNumber)`, `rejected(reason)` and `unknown`. **Only `success` with a KSeF number in the right shape** (35 characters, the seller's NIP, the date, 12 hex, 2 check) is in KSeF; `success` without one is still pending; an unreadable answer is unknown, never success and never a reason to resend. Recorded only after inFakt's receipt; accepted is final. The card no longer says "issued in inFakt": it says "created in inFakt, not sent to KSeF yet" until a KSeF number exists.
+
+**Next, in order (each a separate step):**
+1. **Owner:** an inFakt **sandbox** account and key (`api:invoices:read` + `api:invoices:write` only), then one create call to see the real answer; only then `createVerified = true`. The sandbox is connected to KSeF's test environment, and data sent there "may be visible to others": use made-up buyers.
+2. The inFakt client in the app: async create in grosze with `invoice_date` / `sale_date` / `payment_date`, the `client_*` fields, `split_payment`, reading `/async/invoices/status/{ref}.json`; the capability guard opened for exactly that one address.
+3. **Send to KSeF as its own tap**, after the invoice exists, with a card that says it can't be undone (only corrected); then poll `ksef2/documents/{uuid}/status.json` and record `KsefStatus`. Never `DELETE` an invoice that has a KSeF number.
+4. `zw`: replace the free-text reason with inFakt's exemption list (`/vat_exemptions.json`), picked by the person.
+5. Keep a draft across conversations, with verified storage (today it is gone when the conversation ends).
+6. Foreign buyers and currencies, after the sandbox shows how inFakt maps `0` and `np` to 0 WDT / 0 EX / np I / np II.
+7. For a consumer or foreign buyer, a copy with KSeF's QR code (KOD I); check whether inFakt's PDF carries it before saying so.
+8. From 1 Jan 2027 the KSeF number must be on B2B transfers: show it with Copy on the card.
+
+**For the person using it:** the inFakt account needs its **KSeF 2.0 connection set up in the inFakt web app** and the bank account verified there; Doddy can't do either.
+
 ## What step 0 found (24 Oct 2026)
 
 Tags: **[V]** read on inFakt's own documentation (`docs.infakt.pl`) or its help center (`pomoc.infakt.pl`); **[S]** third party (wrappers, plugins); **[U]** not confirmed.
@@ -58,7 +88,7 @@ As of the last commit of branch `claude/infakt-inpost` (24 Oct 2026). "Tested" m
 | What leaves this iPhone row for inFakt | Real, tested. Not active while `createVerified` is false; says so. |
 | `UnverifiedInFaktProvider` and the create/find calls | Stub. Refuses to run. |
 | inFakt client in the app, the real create call, reading its answer, finding an invoice by operation id after an unknown outcome | **Not built.** Needs a sandbox call (see above). |
-| Drafting by voice or Messages (a tool that proposes an invoice) | **Not built.** A new tool needs its own approval and the ElevenLabs agent is not touched. |
-| Send to KSeF | **Not built.** A separate confirmed operation after the invoice exists. |
+| Drafting by voice (`draft_invoice`, `Invoices/InvoiceVoice.swift`; 30 Oct 2026, ADR-667) | Real, tested on Linux (`InvoiceVoiceTests`). The voice screen's card and the controller's handler are written, **NOT COMPILED** (no Xcode). In `voice-agent/tools.json` as `not_synced`: **not on the live ElevenLabs agent**. Messages: not built. |
+| Send to KSeF | **Not built.** The status rules are (`KsefStatus`, tested); the call is a separate confirmed operation after the invoice exists (step 3 above). |
 
 **For the owner:** (1) a free inFakt sandbox account and an API key with `api:invoices:read` and `api:invoices:write` only, to settle the [U] rows with one create call; (2) whether drafts may come from a voice tool once that is settled; (3) whether KSeF send follows.

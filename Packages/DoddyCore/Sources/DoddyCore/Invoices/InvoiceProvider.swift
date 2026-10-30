@@ -72,9 +72,10 @@ public enum InvoiceSender {
 }
 
 /// What is confirmed about inFakt's API, from inFakt's own documentation on 24 Oct 2026
-/// (docs/implementation/INFAKT_STATUS.md). The request format for creating an invoice is NOT
-/// confirmed (the unit of the price fields, the date fields, the answer of the asynchronous create),
-/// so `createVerified` is false and the provider below refuses to run.
+/// (docs/implementation/INFAKT_STATUS.md). Since 30 Oct 2026 its field tables also say prices are
+/// grosze and the create dates are `invoice_date`, `sale_date` and `payment_date`
+/// (docs/research/2026-10-30/ksef_infakt_research.md, C1 and C2), but no real answer has been seen:
+/// `createVerified` stays false until one create call in the sandbox, and the provider below refuses to run.
 public enum InFaktAPI {
     public static let productionBase = "https://api.infakt.pl/api/v3"
     public static let sandboxBase = "https://api.sandbox-infakt.pl/api/v3"

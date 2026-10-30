@@ -12064,6 +12064,17 @@
         }
       }
     },
+    "Close the draft": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zamknij szkic"
+          }
+        }
+      }
+    },
     "Cloud AI": {
       "extractionState": "manual",
       "localizations": {
@@ -31915,6 +31926,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Przykład karty faktury"
+          }
+        }
+      }
+    },
+    "Invoice draft": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szkic faktury"
           }
         }
       }

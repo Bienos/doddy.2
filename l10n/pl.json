@@ -2381,6 +2381,8 @@
   "Buyer": "Nabywca",
   "Lines": "Pozycje",
   "Totals": "Podsumowanie",
+  "Invoice draft": "Szkic faktury",
+  "Close the draft": "Zamknij szkic",
   "Suggested by the model, not confirmed": "Podpowiedź modelu, niepotwierdzona",
   "Your parcel list and your inFakt key are removed too.": "Lista przesyłek i Twój klucz inFakt też zostaną usunięte.",
   "Your inFakt key couldn't be removed from this iPhone's Keychain. Remove it in Settings › Invoices (inFakt).": "Nie udało się usunąć Twojego klucza inFakt z pęku kluczy tego iPhone’a. Usuń go w Ustawieniach › Faktury (inFakt).",

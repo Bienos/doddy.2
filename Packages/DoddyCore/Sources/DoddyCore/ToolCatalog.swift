@@ -154,6 +154,8 @@ public enum ToolCatalog {
         .init(VoiceToolName.startTranslator, .session, .runsNow),
         .init(VoiceToolName.stopTranslator, .session, .runsNow),
         .init(VoiceToolName.proposePlan, .session, .card),
+        // An invoice draft on the card (ADR-667): nothing leaves the iPhone; issuing is the card's tap.
+        .init(VoiceToolName.draftInvoice, .session, .card),
     ]
 
     /// From `CloudToolName`: a write is an account write behind the server's approval, the rest are reads.

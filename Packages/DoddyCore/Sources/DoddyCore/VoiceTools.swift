@@ -277,6 +277,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
     /// This week's leaflets from the chains asked (SHOPPING.md): a read of public data on Doddy's
     /// server, after the user's yes. Nothing about the user goes to the shops.
     case findDeals(DealsRequest)
+    /// Builds or changes the invoice draft on screen (ADR-667, InvoiceVoice.swift). Nothing is sent.
+    case draftInvoice(InvoiceVoiceUpdate)
     case unsupported(name: String)
     case invalid(name: String, reason: String)
 
@@ -387,6 +389,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return parseCheckErrands(args)
         case VoiceToolName.findDeals:
             return parseFindDeals(args, name: name)
+        case VoiceToolName.draftInvoice:
+            return parseDraftInvoice(args, name: name)
         default:
             return parseCloud(name: name, parametersJSON: parametersJSON) ?? .unsupported(name: name)
         }

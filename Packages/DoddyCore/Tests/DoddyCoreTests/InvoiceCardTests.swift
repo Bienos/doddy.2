@@ -71,13 +71,20 @@ final class InvoiceCardTests: XCTestCase {
 
     func testEnglishCard() throws {
         var draft = readyDraft()
-        draft.saleDate = nil
+        draft.paymentMethod = nil
         let card = InvoiceCard(InvoiceOperation(draft: draft), polish: false)
-        XCTAssertEqual(card.problems, ["Missing: sale date."])
+        XCTAssertEqual(card.problems, ["Missing: payment method."])
         XCTAssertEqual(card.lines[0].detail, "2 godz. × 500.00 PLN net · VAT 23%")
         XCTAssertEqual(card.totals.last?.label, "Total gross")
         XCTAssertEqual(card.totals.last?.value, "1,230.00 PLN")
-        XCTAssertEqual(card.facts.map(\.value).prefix(3), ["PLN", "2026-10-24", "bank transfer"])
+        XCTAssertEqual(card.facts.map(\.value).prefix(3), ["PLN", "2026-10-24", "2026-10-23"])
+
+        // ADR-667: no sale date is no problem; the card says it is the issue date.
+        draft = readyDraft()
+        draft.saleDate = nil
+        let noSaleDate = InvoiceCard(InvoiceOperation(draft: draft), polish: true)
+        XCTAssertEqual(noSaleDate.problems, [])
+        XCTAssertEqual(noSaleDate.facts.first { $0.label == "Data sprzedaży" }?.value, "taka jak data wystawienia")
     }
 
     func testQuantitiesKeepTheirFractions() {
@@ -120,9 +127,17 @@ final class InvoiceCardTests: XCTestCase {
         operation.record(receipt: InvoiceReceipt(operationId: UUID(), externalId: "someone-else", number: "9/9", verifiedAt: Date()))
         XCTAssertFalse(InvoiceCard(operation, polish: true).stateLine.contains("Wystawiona"), "another operation's receipt is not ours")
 
+        // ADR-667: under KSeF, created in inFakt is not issued; only a KSeF number is.
         operation.record(receipt: InvoiceReceipt(operationId: operation.operationId, externalId: "inv-1", number: "FV 1/10/2026", verifiedAt: Date()))
-        XCTAssertEqual(InvoiceCard(operation, polish: true).stateLine, "Wystawiona w inFakt FV 1/10/2026")
-        XCTAssertEqual(InvoiceCard(operation, polish: false).stateLine, "Issued in inFakt FV 1/10/2026")
+        XCTAssertEqual(InvoiceCard(operation, polish: true).stateLine, "Utworzona w inFakt FV 1/10/2026, jeszcze nie wysłana do KSeF")
+        XCTAssertEqual(InvoiceCard(operation, polish: false).stateLine, "Created in inFakt FV 1/10/2026, not sent to KSeF yet")
+        operation.recordKsef(.fromInFakt(status: "success", ksefNumber: nil, description: nil))
+        XCTAssertEqual(InvoiceCard(operation, polish: true).stateLine, "Wysłana do KSeF FV 1/10/2026, czekam na numer KSeF")
+        operation.recordKsef(.fromInFakt(status: "success", ksefNumber: "5265877635-20251030-0100001AF629-AF", description: nil))
+        XCTAssertEqual(InvoiceCard(operation, polish: true).stateLine,
+                       "Wystawiona w KSeF FV 1/10/2026, numer KSeF 5265877635-20251030-0100001AF629-AF")
+        XCTAssertEqual(InvoiceCard(operation, polish: false).stateLine,
+                       "Issued in KSeF FV 1/10/2026, KSeF number 5265877635-20251030-0100001AF629-AF")
     }
 
     func testAFailureSaysNotIssuedAndGivesTheReason() throws {

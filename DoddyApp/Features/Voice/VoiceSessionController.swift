@@ -342,6 +342,10 @@ final class VoiceSessionController {
     /// or the next conversation, so the amount and number are there while they use their bank
     /// app. In memory only; Doddy never sends it.
     private(set) var blikCard: BlikCard?
+    /// The invoice being dictated in this conversation (ADR-667): what the person said and the draft
+    /// made from it. On screen only, never saved or sent; it goes when the card is closed or the next
+    /// conversation starts. Issuing in inFakt is the card's own tap (ADR-640), not offered yet.
+    private(set) var invoiceSession = InvoiceVoiceSession()
     /// Translator mode (ADR-215), in memory only. While it is set the app runs no tool and the
     /// conversation is private.
     private(set) var translator: TranslatorSession? {
@@ -573,6 +577,7 @@ final class VoiceSessionController {
         listReceipt = nil
         changeReceipt = nil
         blikCard = nil
+        invoiceSession.close()
         translatorSummary = nil
         translatorFactsSaved = nil
         holdToTalk = false
@@ -1840,6 +1845,17 @@ final class VoiceSessionController {
         blikCard = nil
     }
 
+    /// The user tapped Confirm next to a value only the model suggested (ADR-667): the NIP or a
+    /// line's VAT rate, exactly as the card showed it.
+    func confirmInvoiceSuggestion(_ field: InvoiceField) {
+        invoiceSession.confirmSuggested(field)
+    }
+
+    /// The user closed the invoice card: the draft is gone; nothing was sent anywhere.
+    func dismissInvoiceDraft() {
+        invoiceSession.close()
+    }
+
     /// The user fixed the name on the "Start a new list?" card.
     func changeNewListName(_ name: String) {
         guard case .createList(let id, _, let items) = pendingAction else { return }
@@ -2718,6 +2734,24 @@ final class VoiceSessionController {
                 propose(.blik(toolCallID: call.toolCallId, draft: draft, contactName: nil, numbers: []), toolCallID: call.toolCallId)
             case .contact(let name, let numbers):
                 propose(.blik(toolCallID: call.toolCallId, draft: draft, contactName: name, numbers: numbers), toolCallID: call.toolCallId)
+            }
+        case .draftInvoice(let update):
+            // ADR-667: the draft on the card changes with each detail the user dictates. Only the
+            // user's own transcribed words count as having said a NIP or a VAT rate; nothing leaves
+            // this iPhone, and issuing is the card's own tap (not offered while
+            // InFaktAPI.createVerified is false).
+            guard let today = CalendarDate.day(of: Date(), in: .current) else {
+                await reply(call.toolCallId, VoiceToolReply.invoiceRefused("the iPhone's date couldn't be read."), isError: true)
+                return
+            }
+            let userWords = lines.filter(\.fromUser).map(\.text)
+            var session = invoiceSession
+            switch session.apply(update, userWords: userWords, today: today) {
+            case .drafted(let operation, let notes):
+                if onScreen(attempt) { invoiceSession = session }
+                await reply(call.toolCallId, VoiceToolReply.invoiceDraft(operation, notes: notes))
+            case .refused(let reason):
+                await reply(call.toolCallId, VoiceToolReply.invoiceRefused(reason))
             }
         case .makePresentation(let draft):
             // ADR-567: every slide on a card; the file is made only on the tap.

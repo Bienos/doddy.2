@@ -80,6 +80,16 @@ public struct CalendarDate: Equatable, Hashable, Comparable, Sendable, Codable {
 
     public var iso: String { String(format: "%04d-%02d-%02d", year, month, day) }
 
+    /// The day `date` falls on in `calendar`'s time zone, as a Gregorian date (the iPhone's
+    /// calendar may be another one).
+    public static func day(of date: Date, in calendar: Calendar) -> CalendarDate? {
+        var gregorian = Calendar(identifier: .gregorian)
+        gregorian.timeZone = calendar.timeZone
+        let parts = gregorian.dateComponents([.year, .month, .day], from: date)
+        guard let year = parts.year, let month = parts.month, let day = parts.day else { return nil }
+        return CalendarDate(year: year, month: month, day: day)
+    }
+
     public static func < (a: CalendarDate, b: CalendarDate) -> Bool { a.serial < b.serial }
 
     /// The day `days` after this one (before it when negative); nil outside 2000 to 2100.

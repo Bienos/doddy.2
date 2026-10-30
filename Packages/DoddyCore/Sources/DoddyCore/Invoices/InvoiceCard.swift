@@ -15,11 +15,14 @@ public struct InvoiceCard: Equatable, Sendable {
         public let value: String
         /// Only the model suggested this value: shown so it can be confirmed, marked so it is not mistaken for said.
         public let proposed: Bool
+        /// The field a tap on Confirm settles, when this row is a suggestion the person can confirm (ADR-667).
+        public let confirmField: InvoiceField?
 
-        init(_ label: String, _ value: String, proposed: Bool = false) {
+        init(_ label: String, _ value: String, proposed: Bool = false, confirmField: InvoiceField? = nil) {
             self.label = label
             self.value = value
             self.proposed = proposed
+            self.confirmField = proposed ? confirmField : nil
         }
     }
 
@@ -29,6 +32,8 @@ public struct InvoiceCard: Equatable, Sendable {
         public let detail: String
         public let net: String
         public let proposed: Bool
+        /// The field a tap on Confirm settles: the line's VAT rate when only the model suggested it (ADR-667).
+        public let confirmField: InvoiceField?
     }
 
     public let buyer: [Row]
@@ -55,7 +60,9 @@ public struct InvoiceCard: Equatable, Sendable {
         let c = draft.contractor
         if let kind = c.kind { buyer.append(Row(text.kind, text.kindName(kind.value), proposed: !kind.isConfirmed)) }
         if let name = c.name { buyer.append(Row(text.name, name.value, proposed: !name.isConfirmed)) }
-        if let nip = c.nip { buyer.append(Row("NIP", Nip(nip.value)?.display ?? nip.value, proposed: !nip.isConfirmed)) }
+        if let nip = c.nip {
+            buyer.append(Row("NIP", Nip(nip.value)?.display ?? nip.value, proposed: !nip.isConfirmed, confirmField: .contractorNip))
+        }
         if let address = c.address {
             buyer.append(Row(text.address, Self.oneLine(address.value), proposed: !address.isConfirmed))
         }
@@ -71,19 +78,27 @@ public struct InvoiceCard: Equatable, Sendable {
                 name: line.name?.value ?? "?",
                 detail: "\(quantity)\(unit.isEmpty ? "" : " " + unit) × \(price) \(text.netWord) · \(vat)",
                 net: net.map { MoneyText.format($0, currency: currency, polish: polish) } ?? "",
-                proposed: !(line.name?.isConfirmed ?? true) || !(line.vat?.isConfirmed ?? true))
+                proposed: !(line.name?.isConfirmed ?? true) || !(line.vat?.isConfirmed ?? true),
+                confirmField: line.vat?.isConfirmed == false ? .lineVat(index) : nil)
         }
 
         var facts: [Row] = []
         if let value = draft.currency { facts.append(Row(text.currency, value.value.rawValue, proposed: !value.isConfirmed)) }
         if let date = draft.issueDate { facts.append(Row(text.issueDate, Self.date(date, polish: polish))) }
-        if let date = draft.saleDate { facts.append(Row(text.saleDate, Self.date(date, polish: polish))) }
+        if let date = draft.saleDate {
+            facts.append(Row(text.saleDate, Self.date(date, polish: polish)))
+        } else if draft.issueDate != nil {
+            facts.append(Row(text.saleDate, text.sameAsIssue))
+        }
         if let payment = draft.paymentMethod {
             facts.append(Row(text.payment, text.paymentName(payment.value), proposed: !payment.isConfirmed))
         }
         if let date = draft.paymentDueDate { facts.append(Row(text.dueDate, Self.date(date, polish: polish))) }
         if let reason = draft.vatExemptionReason, !reason.trimmingCharacters(in: .whitespaces).isEmpty {
             facts.append(Row(text.exemptionReason, reason))
+        }
+        if let split = draft.splitPayment {
+            facts.append(Row(text.splitPayment, split.value ? text.yes : text.no, proposed: !split.isConfirmed))
         }
         self.facts = facts
 
@@ -111,6 +126,18 @@ public struct InvoiceCard: Equatable, Sendable {
             self.sendingNote = text.notSwitchedOn
             self.canConfirm = false
         }
+    }
+
+    /// A field's name in a sentence ("buyer's NIP"), for the voice agent's replies too (ADR-667).
+    public static func fieldName(_ field: InvoiceField, polish: Bool) -> String { Words(polish: polish).field(field) }
+
+    /// What is wrong with a value ("the NIP's check digit is wrong").
+    public static func problemText(_ problem: InvoiceProblem, polish: Bool) -> String { Words(polish: polish).problem(problem) }
+
+    /// The Confirm button next to one suggested value ("Confirm the NIP").
+    public static func confirmLabel(_ field: InvoiceField, polish: Bool) -> String {
+        let words = Words(polish: polish)
+        return words.pick("Potwierdź: \(words.field(field))", "Confirm the \(words.field(field))")
     }
 
     // MARK: Formatting
@@ -162,6 +189,10 @@ public struct InvoiceCard: Equatable, Sendable {
         var saleDate: String { pick("Data sprzedaży", "Sale date") }
         var payment: String { pick("Płatność", "Payment") }
         var dueDate: String { pick("Termin płatności", "Due date") }
+        var sameAsIssue: String { pick("taka jak data wystawienia", "same as the issue date") }
+        var splitPayment: String { pick("Mechanizm podzielonej płatności", "Split payment (MPP)") }
+        var yes: String { pick("tak", "yes") }
+        var no: String { pick("nie", "no") }
         var exemptionReason: String { pick("Podstawa zwolnienia z VAT", "VAT exemption reason") }
         var net: String { pick("Netto", "Net") }
         var netWord: String { pick("netto", "net") }
@@ -207,7 +238,11 @@ public struct InvoiceCard: Equatable, Sendable {
             case .saleDate: pick("data sprzedaży", "sale date")
             case .paymentMethod: pick("sposób płatności", "payment method")
             case .paymentDueDate: pick("termin płatności", "payment due date")
-            case .vatExemptionReason: pick("podstawa zwolnienia z VAT", "VAT exemption reason")
+            case .vatExemptionReason: pick("podstawa prawna zwolnienia z VAT (np. art. 113 ust. 1 ustawy o VAT)",
+                                           "legal basis of the VAT exemption (e.g. art. 113 ust. 1 of the VAT act)")
+            case .splitPayment:
+                pick("czy obowiązuje mechanizm podzielonej płatności (towary lub usługi z załącznika nr 15 ustawy o VAT)",
+                     "whether split payment (MPP) applies (goods or services from annex 15 of the VAT act)")
             }
         }
 
@@ -221,6 +256,12 @@ public struct InvoiceCard: Equatable, Sendable {
             case .tooManyLines: pick("pozycji jest za dużo (najwyżej \(InvoiceDraft.maxLines))", "too many lines (at most \(InvoiceDraft.maxLines))")
             case .textTooLong: pick("tekst jest za długi (najwyżej \(InvoiceDraft.maxText) znaków)", "the text is too long (at most \(InvoiceDraft.maxText) characters)")
             case .dueBeforeIssue: pick("termin płatności jest przed datą wystawienia", "the due date is before the issue date")
+            case .characterNotAllowed: pick("nazwa nie może zawierać znaków &, < ani >", "the name can't contain &, < or >")
+            case .foreignCurrencyNotReady:
+                pick("faktury w innej walucie niż PLN Doddy jeszcze nie przygotowuje (KSeF wymaga VAT w złotych i kursu)",
+                     "Doddy can't draft an invoice in another currency than PLN yet (KSeF needs the VAT in PLN and a rate)")
+            case .foreignBuyerNotReady:
+                pick("faktur dla nabywcy z zagranicy Doddy jeszcze nie przygotowuje", "Doddy can't draft an invoice for a buyer abroad yet")
             }
         }
 
@@ -245,7 +286,20 @@ public struct InvoiceCard: Equatable, Sendable {
             case .verifiedSucceeded:
                 guard let receipt = operation.receipt else { return pick("Nie wiadomo, czy faktura powstała", "Not known whether the invoice was created") }
                 let number = receipt.number.map { " " + $0 } ?? ""
-                return pick("Wystawiona w inFakt\(number)", "Issued in inFakt\(number)")
+                // Under KSeF an invoice is issued when KSeF accepts it (ADR-667): created in inFakt is not issued.
+                switch operation.ksef {
+                case .accepted(let ksef):
+                    return pick("Wystawiona w KSeF\(number), numer KSeF \(ksef.value)", "Issued in KSeF\(number), KSeF number \(ksef.value)")
+                case .notSent:
+                    return pick("Utworzona w inFakt\(number), jeszcze nie wysłana do KSeF", "Created in inFakt\(number), not sent to KSeF yet")
+                case .pending:
+                    return pick("Wysłana do KSeF\(number), czekam na numer KSeF", "Sent to KSeF\(number), waiting for its KSeF number")
+                case .rejected(let reason):
+                    return pick("KSeF nie przyjął faktury\(number): \(reason)", "KSeF didn't accept the invoice\(number): \(reason)")
+                case .unknown:
+                    return pick("Nie wiadomo, czy faktura\(number) jest w KSeF. Sprawdź w inFakt, zanim wyślesz ponownie.",
+                                "Not known whether the invoice\(number) is in KSeF. Check inFakt before sending again.")
+                }
             case .verifiedFailed: return pick("Nie wystawiona: \(operation.note ?? "inFakt odmówił")", "Not issued: \(operation.note ?? "inFakt refused it")")
             case .unknownOutcome: return pick("Nie wiadomo, czy faktura powstała. Sprawdź w inFakt, zanim wyślesz ponownie.", "Not known whether the invoice was created. Check inFakt before sending again.")
             }

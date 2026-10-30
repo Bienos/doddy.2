@@ -27,6 +27,9 @@ public enum ConnectionPause {
         case .findDeals:
             // Doddy's server fetches the chains' leaflet pages for it (SHOPPING.md).
             true
+        case .draftInvoice:
+            // A draft on this iPhone's screen (ADR-667); no other app or account is used.
+            false
         case .readCalendar, .findFreeTime, .leaveBy, .createCalendarEvent, .createReminder, .lookupContact, .upcomingBirthdays, .setTimer,
              .openMap, .runShortcut, .draftMessage, .draftBlikTransfer, .makePresentation, .readSteps, .readHealthWeek, .findPhotos, .openCamera, .cloudTool, .changeCalendarEvent, .changeReminder,
              .deleteCalendarEvent, .deleteReminder, .setAlarm, .undoLast,

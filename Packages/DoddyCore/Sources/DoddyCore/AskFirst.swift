@@ -140,6 +140,10 @@ public enum AskFirst {
              .openMap, .runShortcut, .draftMessage, .draftBlikTransfer, .makePresentation, .openCamera, .addIngredients, .createList, .changeCalendarEvent, .changeReminder,
              .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders, .leaveBy, .parkingSpot(.save):
             return .ownPayloadCard
+        case .draftInvoice:
+            // ADR-667: the draft card shows the exact invoice and changes nothing anywhere; issuing in
+            // inFakt is the card's own tap, bound to the digest of what it shows (ADR-640).
+            return .ownPayloadCard
         case .cloudTool(let call):
             return !call.isWrite && publicLookups.contains(call.name) ? .runsNow : .serverCard(isWrite: call.isWrite)
         }
