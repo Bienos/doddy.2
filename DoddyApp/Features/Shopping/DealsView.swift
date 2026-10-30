@@ -22,7 +22,8 @@ struct DealsView: View {
     @Environment(MemoryStore.self) private var store
     private let model = DealsModel.shared
     @State private var itemsText = ""
-    @State private var chains: Set<DealsChain> = Set(DealsChain.read)
+    // E.Leclerc starts off: its leaflets cost a screening on every search (ADR-667).
+    @State private var chains: Set<DealsChain> = Set(DealsChain.defaultRead)
     @State private var showBasket = false
     /// The kind picked per item (by its place in the answer); absent: all kinds.
     @State private var kinds: [Int: String] = [:]
@@ -63,6 +64,9 @@ struct DealsView: View {
                                 Text(chain.name)
                                 if !chain.isRead {
                                     Text("Link to the leaflet only").font(.footnote).foregroundStyle(Theme.secondaryText)
+                                } else if DealsChain.specialty.contains(chain) {
+                                    // ADR-667: the server asks it only when an item is its kind of thing.
+                                    Text("Only for items it sells").font(.footnote).foregroundStyle(Theme.secondaryText)
                                 }
                             }
                         }

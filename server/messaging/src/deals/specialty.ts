@@ -1,16 +1,15 @@
 // Which shops a leaflet search asks (ADR-667). Grocery chains are asked for everything. A shop that sells one kind
-// of thing (pets, shoes, books, home) is asked only when an item is that kind of thing, so "masło" never sends a
+// of thing (pets, shoes, home) is asked only when an item is that kind of thing, so "masło" never sends a
 // request to a shoe shop. E.Leclerc (about 45 hypermarkets) is asked only when the person picks it, because its
 // image leaflets cost a screening on every search. All of this is code: no model decides which shop is asked.
 import type { Chain } from "./types.js";
 
-export type ShopKind = "pets" | "shoes" | "books" | "home";
+export type ShopKind = "pets" | "shoes" | "home";
 
 /** The kind each specialty shop sells. */
 export const SPECIALTY: Readonly<Partial<Record<Chain, ShopKind>>> = {
   maxizoo: "pets",
   ccc: "shoes",
-  taniaksiazka: "books",
   komfort: "home",
 };
 
@@ -27,7 +26,6 @@ export function fold(text: string): string {
 const WORDS: Record<ShopKind, RegExp> = {
   pets: /\b(karm(a|y|e|ie|ami)?\b|przysmak|zwirek|zwirk|kuwet|smycz|obroz|legowisk|drapak|akwari|terrari|klatk[aie] dla|dla (psa|psow|szczeniat|kota|kotow|kociat|chomik|krolik|swink|papug|ptak|rybek|gryzoni)|pies\b|psa\b|kot\b|kota\b|chomik|papug)/,
   shoes: /\b(but\b|buty|butow|obuwi|sneakers|trampk|tenisowk|kozak|kozaki|botk|sandal|klapk|japonk|kapc|polbut|czolenk|szpilk|mokasyn|balerin|sniegow|kalosz|glan|workery|espadryl|adidasy)/,
-  books: /\b(ksiazk|ksiazek|powiesc|powiesci|kryminal|thriller|komiks|mang[aiy]\b|poradnik|lektur|bajk|kolorowank|audiobook|ebook|slownik|atlas|reportaz|biografi|fantasy|romans)/,
   home: /\b(panel|podlog|wykladzin|dywan|chodnik|drzwi|plytk|kafelk|tapet|firan|zaslon|rolet|karnisz|listw|wycieraczk|laminat|wylozyn|klamk|oscieznic)/,
 };
 

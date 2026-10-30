@@ -114,8 +114,9 @@ final class DealsClientTests: XCTestCase {
         XCTAssertEqual(DealsRequest(items: ["  masło "]).items, ["masło"])
         XCTAssertNil(DealsRequest(items: ["a"], chains: []).chains, "no chains is the server's default")
         XCTAssertEqual(DealsRequest(items: ["a"], chains: [.lidl, .dino, .lidl]).chains, [.lidl, .dino])
-        XCTAssertEqual(DealsRequest(items: ["a"]).chainsAsked, [.biedronka, .lidl, .dino, .rossmann, .aldi, .zabka])
-        XCTAssertEqual(DealsChain.all.map(\.rawValue), ["biedronka", "lidl", "dino", "rossmann", "aldi", "zabka", "kaufland", "carrefour", "auchan", "netto"])
+        XCTAssertEqual(DealsRequest(items: ["a"]).chainsAsked, [.biedronka, .lidl, .dino, .rossmann, .aldi, .zabka, .delikatesy, .maxizoo, .komfort, .ccc],
+                       "E.Leclerc only when picked; the server asks the specialty shops only for their kind (ADR-667)")
+        XCTAssertEqual(DealsChain.all.map(\.rawValue), ["biedronka", "lidl", "dino", "rossmann", "aldi", "zabka", "delikatesy", "leclerc", "maxizoo", "komfort", "ccc", "kaufland", "carrefour", "auchan", "netto"])
         XCTAssertEqual(DealsChain.named(" Żabka "), .zabka)
         XCTAssertEqual(DealsChain.named("ALDI"), .aldi)
         XCTAssertEqual(DealsChain.aldi.name, "Aldi")
@@ -225,7 +226,7 @@ final class DealsClientTests: XCTestCase {
         XCTAssertEqual(parse(#"{"items":[]}"#), .invalid(name: name, reason: "missing items"))
         XCTAssertEqual(parse(#"{"items":["masło",2]}"#), .invalid(name: name, reason: "items must be a list of short texts"))
         XCTAssertEqual(parse(#"{"items":["masło"],"chains":["spar"]}"#),
-                       .invalid(name: name, reason: "chains must be some of biedronka, lidl, dino, rossmann, aldi, zabka, kaufland, carrefour, auchan, netto"))
+                       .invalid(name: name, reason: "chains must be some of biedronka, lidl, dino, rossmann, aldi, zabka, delikatesy, leclerc, maxizoo, komfort, ccc, kaufland, carrefour, auchan, netto"))
         XCTAssertEqual(parse(#"{"items":["\#(String(repeating: "a", count: 61))"]}"#), .invalid(name: name, reason: "an item is longer than 60 characters"))
         let thirteen = (0..<13).map { "\"i\($0)\"" }.joined(separator: ",")
         XCTAssertEqual(parse(#"{"items":[\#(thirteen)]}"#), .invalid(name: name, reason: "items has more than 12 entries"))
@@ -244,7 +245,7 @@ final class DealsClientTests: XCTestCase {
             ],
             confirmLabel: "Yes, check")))
         XCTAssertFalse(AskFirst.needsTap(need), "a read: a spoken yes or a tap")
-        XCTAssertEqual(DealsAsk.card(DealsRequest(items: ["masło"])).lines[1], "Shops: Biedronka, Lidl, Dino, Rossmann, Aldi, Żabka")
+        XCTAssertEqual(DealsAsk.card(DealsRequest(items: ["masło"])).lines[1], "Shops: Biedronka, Lidl, Dino, Rossmann, Aldi, Żabka, Delikatesy Centrum, pet, shoe and home shops when an item fits")
         // Whether leaflets run at once is the owner's open decision: until then they ask.
         XCTAssertFalse(AskFirst.publicLookups.contains(VoiceToolName.findDeals))
         XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.findDeals)?.effect, .lookup)
