@@ -30,9 +30,21 @@ public struct DealsChain: RawRepresentable, Codable, Hashable, Sendable, CustomS
     public static let auchan = DealsChain(rawValue: "auchan")
     public static let netto = DealsChain(rawValue: "netto")
     public static let zabka = DealsChain(rawValue: "zabka")
+    // ADR-667
+    public static let delikatesy = DealsChain(rawValue: "delikatesy")
+    public static let leclerc = DealsChain(rawValue: "leclerc")
+    public static let maxizoo = DealsChain(rawValue: "maxizoo")
+    public static let komfort = DealsChain(rawValue: "komfort")
+    public static let ccc = DealsChain(rawValue: "ccc")
 
-    /// Read on request (the server's default when no chains are asked for).
-    public static let read: [DealsChain] = [.biedronka, .lidl, .dino, .rossmann, .aldi, .zabka]
+    /// Read on request.
+    public static let read: [DealsChain] = [.biedronka, .lidl, .dino, .rossmann, .aldi, .zabka, .delikatesy, .leclerc, .maxizoo, .komfort, .ccc]
+    /// Read only when picked (E.Leclerc: its leaflets are screened on every search, ADR-667).
+    public static let onRequest: [DealsChain] = [.leclerc]
+    /// Shops that sell one kind of thing (pets, home, shoes): the server asks them only when an item is that kind.
+    public static let specialty: [DealsChain] = [.maxizoo, .komfort, .ccc]
+    /// What a search asks when nobody picks: every read chain but the on-request ones (the server's default too).
+    public static let defaultRead: [DealsChain] = read.filter { !onRequest.contains($0) }
     /// Answered with a link to the chain's leaflet page only.
     public static let linkOnly: [DealsChain] = [.kaufland, .carrefour, .auchan, .netto]
     /// Every chain a request may name, in the contract's order.
@@ -55,6 +67,11 @@ public struct DealsChain: RawRepresentable, Codable, Hashable, Sendable, CustomS
         case "auchan": "Auchan"
         case "netto": "Netto"
         case "zabka": "Żabka"
+        case "delikatesy": "Delikatesy Centrum"
+        case "leclerc": "E.Leclerc"
+        case "maxizoo": "Maxi Zoo"
+        case "komfort": "Komfort"
+        case "ccc": "CCC"
         default: rawValue
         }
     }
@@ -104,7 +121,7 @@ public struct DealsRequest: Codable, Equatable, Hashable, Sendable {
     }
 
     /// The chains the server will check: those asked, or its default.
-    public var chainsAsked: [DealsChain] { chains ?? DealsChain.read }
+    public var chainsAsked: [DealsChain] { chains ?? DealsChain.defaultRead }
 
     /// Hints before sending, in a fixed order; the server checks the same limits again and
     /// decides. Lengths count UTF-16 units, as the server's schema does.
@@ -746,8 +763,12 @@ public enum DealsAsk {
     /// `polish`: the app is shown in Polish (`NotificationLanguage`). The card is drawn as it is, so its
     /// words are chosen here (ADR-666); other languages get the English card.
     public static func card(_ request: DealsRequest, polish: Bool = false) -> AskCard {
+        // With no shops picked the specialty shops are asked only for their kind of item, so they are named as a group.
+        let picked = request.chains != nil
+        let shown = request.chainsAsked.filter { picked || !DealsChain.specialty.contains($0) }
         if polish {
-            let chains = request.chainsAsked.map { $0.isRead ? $0.name : "\($0.name) (tylko link do gazetki)" }
+            let chains = shown.map { $0.isRead ? $0.name : "\($0.name) (tylko link do gazetki)" }
+                + (picked ? [] : ["sklepy zoologiczne, obuwnicze i dla domu, gdy produkt pasuje"])
             return AskCard(
                 title: "Sprawdzić tegotygodniowe gazetki?",
                 lines: [
@@ -757,7 +778,8 @@ public enum DealsAsk {
                 ],
                 confirmLabel: "Tak, sprawdź")
         }
-        let chains = request.chainsAsked.map { $0.isRead ? $0.name : "\($0.name) (leaflet link only)" }
+        let chains = shown.map { $0.isRead ? $0.name : "\($0.name) (leaflet link only)" }
+            + (picked ? [] : ["pet, shoe and home shops when an item fits"])
         return AskCard(
             title: "Check this week's leaflets?",
             lines: [

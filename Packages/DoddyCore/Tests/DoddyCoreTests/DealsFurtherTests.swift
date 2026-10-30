@@ -64,7 +64,7 @@ final class DealsFurtherTests: XCTestCase {
             confirmLabel: "Tak, sprawdź")))
         XCTAssertEqual(AskFirst.need(for: .findDeals(deals)), .yesFirst(DealsAsk.card(deals)), "other languages: the English card, as before")
         XCTAssertEqual(DealsAsk.card(deals).title, "Check this week's leaflets?")
-        XCTAssertEqual(DealsAsk.card(DealsRequest(items: ["masło"]), polish: true).lines[1], "Sklepy: Biedronka, Lidl, Dino, Rossmann, Aldi, Żabka")
+        XCTAssertEqual(DealsAsk.card(DealsRequest(items: ["masło"]), polish: true).lines[1], "Sklepy: Biedronka, Lidl, Dino, Rossmann, Aldi, Żabka, Delikatesy Centrum, sklepy zoologiczne, obuwnicze i dla domu, gdy produkt pasuje")
     }
 
     func testTheAgentHearsTheListIsOnTheScreenAndWhereToSearchFurther() throws {

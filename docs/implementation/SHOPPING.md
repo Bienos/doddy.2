@@ -87,6 +87,24 @@ Bearer: the account's device token, like errands. Off unless `DEALS_ENABLED=1`.
 
 The owner said yes (24 Oct 2026). `AFFILIATE_LINKS` is a JSON object of a shop's host to an https template with exactly one `{url}`, for example `{"mediaexpert.pl": "https://network.example/click?id=123&to={url}"}`; empty by default, so nothing is tracked until a programme exists. The code wraps the shop's own page address (percent-encoded) for that host and its subdomains and writes it as `offers[].buyUrl` **last, into the finished result**. It never reaches the model or the card writer, so it can't change a pick, an order or a sentence (a test compares the result with and without it). `url` stays the shop's own page, used by the card's sources, the activity log and the PDF's source list. The app says it before the tap (caption under the button, a note in the PDF, and a line in what the voice agent reads). A bad setting stops the server at start with a message that names the problem, not the template.
 
+### More shops, and which a search asks (ADR-667, 30 Oct 2026)
+
+The owner chose "More shops in Doddy" after two research rounds (`docs/research/2026-10-29/`). Five readers were added, each written against its live site on 30 Oct with the service's own `PoliteFetcher` and tested on synthetic pages only:
+
+| Chain | How it's read | When it's asked | Cost |
+|---|---|---|---|
+| **Delikatesy Centrum** (`delikatesy`, ~1,367 shops) | `www.delikatesy.pl/gazetki`'s `__NEXT_DATA__` lists each leaflet's page JPGs on static.delikatesy.pl; image-only, so screened like Biedronka; the age-flagged alcohol leaflet ("Delibarek") is skipped, and a leaflet without the age flag at all is not read | by default | 50 pages × 792 image tokens, about 0,016 zł a search |
+| **E.Leclerc** (`leclerc`, ~45 hypermarkets) | `leclerc.pl/gazetki/`: the chain-wide leaflets' flipbook pages (1047–1132 × 1600), image-only, screened; capped at 120 pages (133 on 30 Oct, so a search finding nothing there says "read in part"); per-shop leaflets on `{city}.leclerc.pl` are not read | only when picked (the screen's toggle starts off) or named | 120 pages, about 271,000 image tokens, about 0,11 zł a search |
+| **Maxi Zoo** (`maxizoo`, pets) | `/c/pies|kot|male-zwierzeta/promocje/`'s Nuxt data: name, price, struck price as the regular price (unlabelled, so never the 30-day price), size, unit price, EAN; the shop's category path and the page's animal go to the matcher as `matchText` (never shown), because its names leave out "karma"; first page of 48 per listing, so "nothing found" says read in part | only for pet items | no model |
+| **CCC** (`ccc`, shoes) | sale category pages chosen by shoe and gender words (`{damskie|meskie|dzieciece}/wyprzedaz/{sneakersy|trampki|klapki|…}`), 100 a page, at most 3 requests (each gender's first page first); price, "Najniższa cena z 30 dni", "Cena pierwsza" as the regular price, "−30% w koszyku" and codes as conditions; nothing of the person's words reaches CCC; no sale category for kozaki, botki and others yet | only for shoe items | no model |
+| **Komfort** (`komfort`, home) | its Publitas leaflet: the text layer picks pages (`strategy: "text"`), the model reads prices, because the text drops the decimal point (49,99 and 1 099 both read "4999"/"1099"); every page says the crossed-out price is the 30-day lowest, so a crossed-out price read from Komfort is kept as the 30-day price | only for home items (floors, carpets, doors, curtains…) | about 4 pages for "panele" |
+
+**Which shops a search asks** (`src/deals/specialty.ts`): with no chains named, every read chain but E.Leclerc; a specialty shop (Maxi Zoo: pets, CCC: shoes, Komfort: home) only when an item's words are its kind (folded Polish word starts, e.g. "karma", "żwirek", "sneakersy", "panele"), or when only specialty shops are asked. A shop not asked gets no row and no request, so "masło" never reaches a shoe shop. The app's screen sends its toggles (E.Leclerc off by default; the specialty shops labelled "Only for items it sells"); the voice card names the grocery chains and "pet, shoe and home shops when an item fits".
+
+**Left out:** Lidl's `/c/promocje` (its product data held only six one-day online-shop deals, no food; the food offers are text inside banner images), and Tania Książka (its robots.txt has `User-Agent: .*bot/1.0.*` / `Disallow: /`; not an RFC 9309 product token, but its intent covers "DoddyBot/1.0", so it isn't read; its sale lists also rarely matched book requests). The finished readers stay on the helpers' branches.
+
+**robots.txt, to be exact:** the fetcher treats a 4xx robots.txt (except 429) as no file, as RFC 9309 says; a 429 or a challenge page counts as blocked. Delikatesy Centrum's image host answers 403 to robots.txt (S3's answer for any missing file), so it is read.
+
 ### Search further (ADR-666)
 
 The owner said "Go ahead" (29 Oct 2026) to the proposal page that showed it. Every leaflet answer from a server with this change ends with `further` (contract: `schemas/fixtures/deals_search_v1.json`), built by `server/messaging/src/deals/further.ts` **after the picks, from the request alone**: a test compares the answer with and without it.
@@ -98,6 +116,28 @@ The owner said "Go ahead" (29 Oct 2026) to the proposal page that showed it. Eve
 **Nothing is fetched:** these are addresses for the person to open in Safari. Allegro (DataDome) and Ceneo answer this server with a block or a page without results, so the search addresses were not seen working from here; they are each shop's documented search format, to check on a phone.
 
 **App:** "Cheapest this week" shows two sections under the answer, "Leaflets Doddy doesn't read" and "Search further online" (each row "Search for “masło” at Allegro"; a partner row says "Partner link", and the ADR-612 note sits under the section before any tap). Only https links are shown (`DealsFurther.openable`). **Home:** after a voice search the card "Leaflet offers" (the items, "Leaflets read: N", Show) opens the screen on that answer; the cross, or opening the screen any other way, puts it away (`DealsModel.homeCardDue`, in memory only). **Voice:** the tool's reply now ends by telling the agent the list is in the app and naming the shops of "search further" (`DealsResultText.footer`), so Doddy may say once that it's in the app; the live agent's own text is unchanged. **The ask card** before `find_deals` is in Polish when the app is (`DealsAsk.card(_:polish:)`; the other ask cards are still drawn in English, a known gap).
+
+### Cost per search, measured inputs (30 Oct 2026)
+
+No real leaflet search had run on the server yet (its logs from 25 to 29 Oct hold only unsigned checks), so the cost was measured as far as it can be without calling a model: this week's real pages for "masło, kawa", fetched once each through the service's own adapters and polite fetcher (nothing saved), with the service's own `visualTokens` rule (at most 4,784 per page) and its page choice. Prices: Claude Haiku 5.5, $0.10 per million input and $0.50 per million output tokens; $1 = 3.96 zł (the monetisation model's rates).
+
+| Chain | Pages in the leaflets | Pages sent to the model for "masło, kawa" | Image tokens a page |
+|---|---|---|---|
+| Biedronka (image-only, screened whole) | 98 (96 fetched; 2 too large twice) | all 96 screened in 5 calls of 20, then the flagged pages and their neighbours read in full (at most 40) | 2,642 (1146×1800) |
+| Lidl (pages whose text names an item) | 118 + 59 + 67 + 38 in four leaflets | 12 | 4,386 (1420×2400) |
+| Żabka (same) | 60 | 2 | 4,752 (1565×2555) |
+| Dino (pages that confirm a matched data product) | 75 + 7 + 7 | 6 | not measured; ~4,400 assumed |
+| Aldi, Rossmann | — | none (their own data, no model) | — |
+
+Instructions: about 870 tokens for a page read, 260 for a screening call (characters ÷ 3.5, cached). **Screening Biedronka alone is about 256,000 input tokens, $0.026 or 0,10 zł, on every search**, whatever was asked.
+
+| Case | Assumption | Input | Output | Cost |
+|---|---|---|---|---|
+| Light (1 item) | Biedronka 3 full reads, Lidl 4, Żabka 1, Dino 3; 400 output tokens a page | ~311,000 | ~5,500 | ~$0.034, **~0,13 zł** |
+| Typical ("masło, kawa") | Biedronka 4 flagged + neighbours = 12 reads; 700 output tokens a page | ~408,000 | ~23,700 | ~$0.053, **~0,21 zł** |
+| Heavy (5 items) | Biedronka 40 reads, Lidl 30, Żabka 6, Dino 15; 1,200 output tokens a page | ~675,000 | ~112,000 | ~$0.12, **~0,49 zł** |
+
+**Still unknown:** the output tokens of a real page read (assumed 400 to 1,200), how many Biedronka pages the screen flags, and the cache's effect on the instructions. One real search, or `scripts/leaflet-eval.mjs` with a key on about 10 pages (about 5 cents), settles them; the server's "deals searched" log line has the real input and output tokens.
 
 ## 3. Shared core and app
 

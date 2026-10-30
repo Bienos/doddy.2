@@ -221,8 +221,8 @@ export function chainsWeb(): FakeWeb {
 
 const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const money = z.strictObject({ minor: z.number().int().positive(), currency: z.literal("PLN") });
-const readChain = z.enum(["biedronka", "lidl", "dino", "rossmann", "aldi", "zabka"]);
-const anyChain = z.enum(["biedronka", "lidl", "dino", "rossmann", "aldi", "zabka", "kaufland", "carrefour", "auchan", "netto"]);
+const readChain = z.enum(["biedronka", "lidl", "dino", "rossmann", "aldi", "zabka", "delikatesy", "leclerc", "maxizoo", "komfort", "ccc"]);
+const anyChain = z.enum(["biedronka", "lidl", "dino", "rossmann", "aldi", "zabka", "delikatesy", "leclerc", "maxizoo", "komfort", "ccc", "kaufland", "carrefour", "auchan", "netto"]);
 export const OfferSchema = z.strictObject({
   chain: readChain,
   product: z.string().min(1).max(160),
