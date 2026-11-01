@@ -114,13 +114,22 @@ final class VoiceAuthSession {
     }
 
     func deleteAccount() async {
+        // ADR-674: Doddy's server first (online accounts and what it keeps). If that didn't go through,
+        // stop here: this button goes with the voice account, so it must stay to try again.
+        let server = await ServerAccountErasure.run()
+        let serverLine = ServerAccountErasure.message(for: server)
+        guard server.mayDeleteVoiceAccount else {
+            message = serverLine
+            return
+        }
         do {
             let token = try await bearerToken()
             try await VoiceAuthAPI.shared.deleteAccount(token)
             clearLocalSession()
-            message = nil
+            message = serverLine
         } catch {
-            message = (error as? VoiceAuthFailure)?.message ?? "Couldn’t delete the Doddy voice account. Check your connection and retry."
+            let voiceLine = (error as? VoiceAuthFailure)?.message ?? "Couldn’t delete the Doddy voice account. Check your connection and retry."
+            message = [serverLine, voiceLine].compactMap { $0 }.joined(separator: " ")
         }
     }
 
