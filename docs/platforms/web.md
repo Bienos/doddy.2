@@ -1,6 +1,8 @@
 # Doddy Web (browser)
 
-**State (22 Oct 2026):** built and tested on branch `claude/exciting-carson-08x2pk`, which is also what the Render service `doddy` serves at https://doddy-yaci.onrender.com (its page and asset file names match that branch's build; checked 22 Oct). Not merged to the default branch. Since 24 Oct 11:08 UTC it runs commit `69762f6` (the chat, ADR-604) from `claude/exciting-carson-08x2pk`. Before that, since 22 Oct 21:39 UTC, the service ran commit `d03562ae` from `claude/friendly-faraday-8juosh` (the live branch was fast-forwarded to it with the owner's say-so), so it is restyled in the website's design (ADR-594) and has Logbook (ADR-602) with its server routes. Decisions: ADR-600 (sign-in and sessions), ADR-601 (stack and hosting). Why and what's next: `docs/architecture/WEB_AND_SHARED_PLATFORM.md`.
+**State (1 Nov 2026):** on the default branch since 23 Oct (the web line's merge, #133); the chat since 28 Oct (ADR-657; ADR-604 on its branch). **Live** on the Render service `doddy` at https://doddy-yaci.onrender.com, recorded on 29 Oct running `d4a3e24`. Since then only #165 has changed `backend/` (`undici` 7.30.1 in `package-lock.json`, 1 Nov), and it isn't deployed yet. Tested in Chromium against the real backend in mock mode. Signed-in use of the live site and the chat with the real model aren't recorded as tried. Decisions: ADR-600 (sign-in and sessions), ADR-601 (stack and hosting), ADR-602 (Logbook), ADR-603 (kept memory), ADR-594 (the website's design), ADR-657 (the chat). Why and what's next: `docs/architecture/WEB_AND_SHARED_PLATFORM.md`.
+
+History: built on `claude/exciting-carson-08x2pk`; the service ran `d03562ae` from `claude/friendly-faraday-8juosh` from 22 Oct 21:39 UTC (the website's design and Logbook), then `69762f6` (the chat) from 24 Oct 11:08 UTC, then the default branch.
 
 ## What it is
 A signed-in workspace in the browser for the same account the iPhone uses on Doddy's server (`backend/`). Today it shows:
@@ -11,9 +13,11 @@ A signed-in workspace in the browser for the same account the iPhone uses on Dod
 - A **language** switch: Polish by default, or English.
 - **Logbook** (ADR-602, `docs/product/WEB_LOGBOOK.md`): how a person uses Doddy, in two tabs, At a glance (the week as a receipt) and Closer look (7, 30, 90 days or a year; kept 1 year). The server keeps and serves the days the iPhone sends (`backend/src/web/logbook.ts`, `/v1/web/logbook*`, off until the iPhone turns it on), but **the iPhone can't send any yet** (not built), so the page opens on "Logbook is off" and shows made-up example numbers only when asked, marked Example; the menu keeps its Example marker until `IPHONE_SENDS_LOGBOOK` is flipped. `LOGBOOK_ENABLED` in `web/src/logbook/config.ts` hides the page.
 
-- **Memory** and **Ask Doddy** (ADR-603, `docs/product/CLOUD_MEMORY.md`): the notes and conversations a person chose to keep on Doddy's server, as text, kept for a year, encrypted with a server-held key; read, searched, downloaded and deleted from the browser, and a chat where Claude (`DODDY_CHAT_MODEL`, default `claude-haiku-5-5`) answers from them and cites its sources. **The iPhone's sending is written but its screens are not compiled or run on a device**, so the pages open on "nothing is kept" and are marked Soon in the menu (`IPHONE_SYNCS_MEMORY` in `web/src/memory/config.ts`). The server needs `DODDY_MEMORY_KEY`, or it says "not set up".
+- **Memory** and **Ask Doddy** (ADR-603, `docs/product/CLOUD_MEMORY.md`): the notes and conversations a person chose to keep on Doddy's server, as text, kept for a year, encrypted with a server-held key; read, searched, downloaded and deleted from the browser, and a chat where Claude (`DODDY_CHAT_MODEL`, default `claude-haiku-5-5`) answers from them and cites its sources. **The iPhone's sending is written and compiles in the hosted Mac job, but hasn't run on a device**, so the pages open on "nothing is kept" and are marked Soon in the menu (`IPHONE_SYNCS_MEMORY` in `web/src/memory/config.ts`). The server needs `DODDY_MEMORY_KEY`, or it says "not set up".
 
-- **Chat** (ADR-604, `docs/product/WEB_CHAT.md`, branch `claude/doddy-web-chat`): `/chat`, laid out like ChatGPT in Doddy's colours (the list of chats, the conversation, a round message box, suggested questions, sources under each answer, "What I can see"). It replaces Ask Doddy (`/ask` opens it). Claude answers from the kept notes and conversations **and the account**: Logbook's counts added up per period, counts over kept conversations, connected apps, the documents Doddy made and his receipts, all as cited data. So it already answers about apps, documents and activity; notes, conversations and usage counts follow when the iPhone sends them. The list of chats is kept **in this browser only** and deleted at Sign out. Tested with the demo model only. **Live on Render since 24 Oct 11:08 UTC** (commit `69762f6`; signed-in use with the real model not checked yet).
+- **Chat** (ADR-657, numbered 604 on its branch; `docs/product/WEB_CHAT.md`): `/chat`, laid out like ChatGPT in Doddy's colours (the list of chats, the conversation, a round message box, suggested questions, sources under each answer, "What I can see"). It replaces Ask Doddy (`/ask` opens it). Claude answers from the kept notes and conversations **and the account**: Logbook's counts added up per period, counts over kept conversations, connected apps, the documents Doddy made and his receipts, all as cited data. So it already answers about apps, documents and activity; notes, conversations and usage counts follow when the iPhone sends them. The list of chats is kept **in this browser only** and deleted at Sign out. Tested with the demo model only. **Live on Render since 24 Oct 11:08 UTC** (first `69762f6`, now the default branch's `d4a3e24`; signed-in use with the real model not checked yet).
+
+- **Messages** (`docs/implementation/MESSAGES_WEB_SYNC.md`, `web/src/pages/MessagesPage.tsx`): a read-only copy of the iPhone's Messages thread, which the iPhone sends encrypted and without photos to `PUT /v1/web/messages` (table `message_threads`, needs `DODDY_MEMORY_KEY`). The menu says Soon (`IPHONE_SENDS_MESSAGES = false`) until an iPhone build that sends it is installed.
 
 It does not have tasks or projects. Home says so instead of showing empty versions of them.
 
@@ -70,8 +74,8 @@ curl -s -X POST localhost:8787/v1/web/link-codes -H "authorization: Bearer $TOKE
 | `DODDY_SCREENS=<folder> npx playwright test e2e/screens.spec.ts` in `web/` | Screenshots in light and dark, for a person to look at |
 | `scripts/ci.sh --core-only` | All of the above. The end-to-end run is SKIPPED (not PASS) where there's no Playwright Chromium, as in the hosted Linux job |
 
-## Deploy (owner steps; nothing here has been done)
-The web app is served by the existing Render service `doddy`, so there's no new host and no new monthly cost.
+## Deploy
+The web app is served by the existing Render service `doddy`, so there's no new host and no new monthly cost. **This has been done** (live since 22 Oct, see State); the steps below are for a rebuild or a new service. Whether `DODDY_WEB_ORIGIN` is `https://app.doddy.lol` or the Render address isn't recorded here.
 1. **Build command** of the hand-made Render service `doddy` (Settings › Build & Deploy): `npm ci && npm run build && npm ci --prefix ../web && npm run build --prefix ../web`. The same line is in `render.yaml`. Render runs it in `backend/` (the root directory). That the rest of the repository is checked out next to it is expected, but unverified; if not, set the root directory to the repository and prefix the backend commands with `--prefix backend`.
 2. **Environment** of `doddy`:
    - `DODDY_WEB_ORIGIN=https://app.doddy.lol`, once that name points at the service as a Render custom domain (owner decision 8). This is recommended: the phone's signed document links stay on `DODDY_PUBLIC_BASE_URL` (the Render address), a different origin from the web session. `https://doddy-yaci.onrender.com` also works for a first try; then those links share the web app's origin (see the audit's security section).
@@ -90,8 +94,8 @@ UPDATE doddy_backend.web_sessions SET revoked_at = (extract(epoch from now()) * 
 ```
 
 ## Not verified
-- Never deployed, never run against the live server, never opened on a real phone.
-- The SwiftUI screen is uncompiled here; the PR's hosted Mac job compiles it.
+- Signed-in use of the live site, and the chat with the real model, aren't recorded as tried. Never opened on a real phone.
+- The iPhone's sign-in screen compiles in the hosted Mac job; it hasn't been run on a device.
 - Whether Render's proxy appends exactly one `X-Forwarded-For` hop (the per-client sign-in limit depends on it; the server-wide one doesn't).
 - The Polish was written by the agent, not a native speaker. The other eight app languages show the new phone strings in English (`l10n/REVIEW_NOTES.md`).
 - Screen readers were not tried. The structure (landmarks, one `h1` per page, labels, focus moving to the heading after navigation, a skip link) is tested in the e2e run; contrast follows the app's tokens.

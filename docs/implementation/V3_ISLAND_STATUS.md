@@ -125,7 +125,7 @@ is unknown until step 3.
 
 ## Since 30 Oct: the island pulses with his voice outside the app (ADR-670)
 Owner: "Can it also pulse around Dynamic Island outside app like it is [now] on home inside app when
-talking to Doddy". Branch `claude/island-pulse-outside-app`, not merged.
+talking to Doddy". Merged in #158 on 1 Nov (branch `claude/island-pulse-outside-app`).
 
 **Why it can't be Home's strip.** A Live Activity has no animation of its own: iOS draws it again only
 when the app sends an update, and nothing of an app's is drawn outside the island's black shape. Home's
