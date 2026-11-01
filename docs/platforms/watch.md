@@ -6,14 +6,14 @@
 1. **Try it first, no other change:** `make project-watch ENABLE_WATCH=1`, then open `DoddyWithWatch.xcodeproj` (schemes `Doddy` and `DoddyWatch`).
 2. **Ship it again:** move `DoddyWatch` and `DoddyWatchWidgets` from `project-watch.yml` into `project.yml`'s `targets`; add `- target: DoddyWatch` back to the `Doddy` app's `dependencies` (and to `project-iphone.yml`'s list); move the `DoddyWatch` scheme, `DODDY_WATCH_ENTITLEMENTS` and `deploymentTarget.watchOS` across; delete `project-watch.yml` and its `make` target.
 3. **Update the checks:** `scripts/check_platform_specs.py` (it now fails if a Watch target is in `project.yml`) and `scripts/ci_needs_mac.sh` plus its test (take the Watch paths out of the "no Mac build" list so Watch changes run the hosted build again).
-4. **Then:** run `scripts/ci.sh` on a Mac. The app has never been compiled (below), so expect compile errors.
+4. **Then:** run `scripts/ci.sh` on a Mac. The app hasn't been built since 21 Oct (below), so expect compile errors from `DoddyCore` changes made since.
 
-**Build:**
-- `make project`, scheme `DoddyWatch`: Watch only, for a quick compile.
-- `make project`, scheme `Doddy`: builds the iPhone app with the Watch app embedded.
+**Build** (while paused, only through `project-watch.yml`):
+- `make project-watch ENABLE_WATCH=1`, scheme `DoddyWatch`: Watch only, for a quick compile.
+- `make project-watch ENABLE_WATCH=1`, scheme `Doddy`: builds the iPhone app with the Watch app embedded.
 - To run it you need a paired iPhone + Watch simulator with the iPhone app installed. The Watch app only shows what the iPhone sends.
 
-**State:** the code exists (ADR-232, 262, 287, 434, 454). It has **never been compiled or run.** Logic tests pass on Linux.
+**State:** the code exists (ADR-232, 262, 287, 434, 454). It compiled in the hosted Mac job while it was embedded in the iPhone app (from #69, 13 Oct, until ADR-572 on 21 Oct) and hasn't been built since. It has **never been run**, on a watch or a simulator. Logic tests pass on Linux.
 
 ## What it does
 - **Watch app** (`DoddyWatch/`):
