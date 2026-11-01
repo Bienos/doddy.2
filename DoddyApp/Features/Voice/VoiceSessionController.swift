@@ -769,8 +769,15 @@ final class VoiceSessionController {
         }
         config.onError = { error in
             let offline = Offline.isNoConnection(error)
+            let slow = Offline.isServerSlow(error)
             Task { @MainActor in
-                if offline { ref.value?.failOffline() } else { ref.value?.fail(error.errorDescription ?? "Something went wrong.") }
+                if offline {
+                    ref.value?.failOffline()
+                } else if slow {
+                    ref.value?.fail(Offline.slowServerMessage)
+                } else {
+                    ref.value?.fail(error.errorDescription ?? "Something went wrong.")
+                }
             }
         }
 
@@ -836,6 +843,10 @@ final class VoiceSessionController {
             guard attempt == startAttempt else { return }
             if Offline.isNoConnection(error) {
                 failOffline()
+                return
+            }
+            if Offline.isServerSlow(error) {
+                fail(Offline.slowServerMessage)
                 return
             }
             // An agent that doesn't allow the voice overrides refuses the conversation.

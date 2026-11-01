@@ -28,6 +28,8 @@ public enum VoiceTokenError: Error, Equatable, Sendable {
     case serverProblem(status: Int)
     case badResponse
     case offline
+    /// The request timed out: the iPhone is online but the server didn't answer in time (ADR-670).
+    case serverSlow
 }
 
 /// Contract with `server/voice-token`: POST with a short-lived DODDY access session.
@@ -81,6 +83,8 @@ public enum VoiceTokenServer {
             "Doddy's voice service sent an unexpected reply, so voice didn't start."
         case .offline:
             "Couldn't reach Doddy's voice service. Check your internet connection and try again."
+        case .serverSlow:
+            "Doddy's voice service is slow to answer. It may be waking up; try again in a moment."
         }
     }
 }

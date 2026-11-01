@@ -45,7 +45,8 @@ struct VoiceTokenClient: Sendable {
         do {
             (data, response) = try await session.data(for: request)
         } catch {
-            throw .offline
+            // A timeout means the server was slow, not that the iPhone is offline (ADR-670).
+            throw Offline.isServerSlow(error) ? .serverSlow : .offline
         }
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
         if status == 401 { await VoiceAuthSession.shared.serverRejectedSession() }

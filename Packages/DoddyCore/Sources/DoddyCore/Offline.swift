@@ -8,14 +8,15 @@ import Foundation
 // recognises the errors it already gets.
 
 public enum Offline {
-    /// URL loading errors that mean "no connection", not "the server said no".
+    /// URL loading errors that mean "no connection", not "the server said no". A timeout isn't one
+    /// of them: the iPhone reached the network and the server was slow, which Doddy's free server
+    /// is while it wakes up (ADR-670, `isServerSlow`).
     static let networkCodes: Set<Int> = [
         URLError.notConnectedToInternet.rawValue,
         URLError.networkConnectionLost.rawValue,
         URLError.cannotFindHost.rawValue,
         URLError.cannotConnectToHost.rawValue,
         URLError.dnsLookupFailed.rawValue,
-        URLError.timedOut.rawValue,
         URLError.dataNotAllowed.rawValue,
         URLError.internationalRoamingOff.rawValue,
         URLError.callIsActive.rawValue,
@@ -24,10 +25,21 @@ public enum Offline {
     /// True when the error, or an error inside it, is a lost or missing connection.
     public static func isNoConnection(_ error: any Error) -> Bool {
         if let token = error as? VoiceTokenError { return token == .offline }
+        return containsURLError(error, codes: networkCodes)
+    }
+
+    /// True when the error, or an error inside it, is a request that timed out: the connection
+    /// works but the server took too long, so "You're offline" would be wrong (ADR-670).
+    public static func isServerSlow(_ error: any Error) -> Bool {
+        if let token = error as? VoiceTokenError { return token == .serverSlow }
+        return containsURLError(error, codes: [URLError.timedOut.rawValue])
+    }
+
+    private static func containsURLError(_ error: any Error, codes: Set<Int>) -> Bool {
         var current: NSError? = error as NSError
         var depth = 0
         while let ns = current, depth < 5 {
-            if ns.domain == NSURLErrorDomain, networkCodes.contains(ns.code) { return true }
+            if ns.domain == NSURLErrorDomain, codes.contains(ns.code) { return true }
             current = ns.userInfo[NSUnderlyingErrorKey] as? NSError
             depth += 1
         }
@@ -36,4 +48,6 @@ public enum Offline {
 
     public static let title = "You're offline"
     public static let explanation = "Doddy's voice needs the internet. You can still write or dictate a note here; it's saved on this iPhone."
+    /// Said instead of "You're offline" when the server was only slow to answer.
+    public static let slowServerMessage = "Doddy's server is slow to answer. It may be waking up; try again in a moment."
 }
