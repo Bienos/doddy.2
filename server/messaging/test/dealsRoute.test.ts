@@ -99,13 +99,13 @@ describe("leaflet search route against real Postgres", { skip: dbSkip }, () => {
     assert.deepEqual(await usageRow(a.accountId), [], "an invalid request isn't counted");
   });
 
-  test("items are trimmed; default chains are the six read chains; a link-only chain alone fetches nothing", async () => {
+  test("items are trimmed; default chains are the grocery chains (ADR-667: E.Leclerc and the specialty shops aren't asked for masło); a link-only chain alone fetches nothing", async () => {
     const w = await world();
     const a = await w.account();
     const res = await w.ask(a.h, { items: ["  masło  "], language: "pl" });
     assert.equal(res.statusCode, 200);
     assert.equal(res.json().items[0].query, "masło");
-    assert.deepEqual(res.json().chains.map((c: { chain: string }) => c.chain), ["biedronka", "lidl", "dino", "rossmann", "aldi", "zabka"]);
+    assert.deepEqual(res.json().chains.map((c: { chain: string }) => c.chain), ["biedronka", "lidl", "dino", "rossmann", "aldi", "zabka", "delikatesy"]);
     const before = w.web.requests.length;
     const link = await w.ask(a.h, { items: ["masło"], chains: ["netto", "kaufland", "netto"], language: "pl" });
     assert.deepEqual(link.json().chains, [
