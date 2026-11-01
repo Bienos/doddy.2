@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
 import { CLOUD_TOOLS, evaluateToolkitGrant, TOOLKITS } from "../src/tools/catalog.js";
+import type { ExecuteCall } from "../src/tools/provider.js";
 import { LOOKUP_FAILED } from "../src/tools/service.js";
 import { USER_A } from "./helpers.js";
 import { connect, on, type Rig, runRaw, start } from "./toolsRig.js";
@@ -142,7 +143,7 @@ test("Outlook mail: send, reply, forward, move and mark each send exactly the ca
   assert.deepEqual(writes(rig).at(-1)!.arguments, { user_id: "me", to: "marta@demo.example", subject: "Hi", body: "Thanks.", is_html: false, save_to_sent_items: true });
 
   const reply = await tap(rig, "reply_outlook_email", { query: "budget", body: "Thanks, Marta." });
-  assert.deepEqual(reply.card.preview.lines.slice(0, 3), ["To: Marta Demo <marta@demo.example>", "Re: Demo: budget for Q4", "Thanks, Marta."]);
+  assert.deepEqual(reply.card.preview.lines.slice(0, 3), ["To: marta@demo.example", "Re: Demo: budget for Q4", "Thanks, Marta."]);
   assert.deepEqual(writes(rig).at(-1)!.arguments, { user_id: "me", message_id: "om2", comment: "Thanks, Marta.", is_html: false });
 
   const forward = await tap(rig, "forward_outlook_email", { query: "budget", to: "bob@example.com", note: "FYI" });
@@ -159,4 +160,60 @@ test("Outlook mail: send, reply, forward, move and mark each send exactly the ca
 
   assert.equal((await prepare(rig, "move_outlook_email", { query: "budget", to_folder: "recoverableitemspurges" })).status, 400);
   assert.equal((await prepare(rig, "send_outlook_email", { to: "a@b.example", subject: "s", body: "b", cc_emails: ["x@evil.example"] })).status, 400);
+});
+
+/** Changes om2 in Outlook's answer to a message lookup; `replyTo` comes back only when selected, as with Graph's $select. */
+function editOm2(r: Rig): { name?: string; replyTo?: unknown } {
+  const change: { name?: string; replyTo?: unknown } = {};
+  const execute = r.provider.execute.bind(r.provider);
+  r.provider.execute = async (call: ExecuteCall) => {
+    const result = await execute(call);
+    if (call.slug !== "OUTLOOK_LIST_MESSAGES") return result;
+    const raw = structuredClone(result.raw) as { data: { value: Record<string, unknown>[] } };
+    for (const m of raw.data.value) {
+      if (m.id !== "om2") continue;
+      if (change.name !== undefined) m.from = { emailAddress: { name: change.name, address: "marta@demo.example" } };
+      if (change.replyTo !== undefined && (call.arguments.select as string[]).includes("replyTo")) m.replyTo = change.replyTo;
+    }
+    return { ...result, raw };
+  };
+  return change;
+}
+
+test("Outlook reply: the card's To line is the whole address the reply goes to, however long the sender's name", async () => {
+  rig = await start();
+  await ready(rig, "outlook");
+  editOm2(rig).name = "M".repeat(120);
+  const reply = await tap(rig, "reply_outlook_email", { query: "budget", body: "Thanks, Marta." });
+  assert.equal(reply.card.preview.lines[0], "To: marta@demo.example");
+  assert.equal(reply.done.status, 200, reply.done.text);
+  assert.match(reply.done.body.text, /reply to marta@demo\.example/);
+});
+
+test("Outlook reply: a Reply-To other than the sender is refused, naming both, and nothing is sent", async () => {
+  rig = await start();
+  await ready(rig, "outlook");
+  const change = editOm2(rig);
+  const args = { query: "budget", body: "Thanks, Marta." };
+
+  change.replyTo = [{ emailAddress: { name: "Marta Demo", address: "other@elsewhere.example" } }];
+  const refused = await prepare(rig, "reply_outlook_email", args);
+  assert.equal(refused.status, 404, refused.text);
+  assert.match(refused.body.error.message, /from marta@demo\.example but asks for replies to go to other@elsewhere\.example/);
+  assert.match(refused.body.error.message, /Nothing was sent\.$/);
+  assert.ok((rig.provider.executed.at(-1)!.arguments.select as string[]).includes("replyTo"), "the reply lookup asks for Reply-To");
+  // Even a run with no card stops at the lookup.
+  assert.notEqual((await runRaw(rig, "reply_outlook_email", args)).status, 200);
+
+  change.replyTo = [{ emailAddress: { address: "not an address" } }];
+  const unreadable = await prepare(rig, "reply_outlook_email", args);
+  assert.equal(unreadable.status, 404);
+  assert.match(unreadable.body.error.message, /an address Doddy can't read/);
+  assert.deepEqual(writes(rig), [], "no reply was sent");
+
+  // The sender's own address as Reply-To (in any case) is the same recipient.
+  change.replyTo = [{ emailAddress: { address: "Marta@Demo.example" } }];
+  const same = await tap(rig, "reply_outlook_email", args);
+  assert.equal(same.done.status, 200, same.done.text);
+  assert.deepEqual(writes(rig).map((w) => w.slug), ["OUTLOOK_REPLY_EMAIL"]);
 });
