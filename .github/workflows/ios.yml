@@ -5,9 +5,13 @@
 # No signing team or secrets are used; nothing is deployed.
 # Builds the iPhone/iPad app only: the Apple Watch and Mac apps are paused (ADR-572) and are in no
 # target of project.yml. The "macOS" below is the runner Xcode needs, not an app being built.
-# The macOS job is the expensive one (about 52 minutes at $0.062 a minute), so it runs only after
-# the Linux checks pass, and on a pull request only when the change can reach the app build or its
-# tests (ADR-497, scripts/ci_needs_mac.sh). Run by hand, it always runs.
+# The macOS job is the slow one. Since ADR-680 (owner, 1 Nov 2026: "why these builds take so long")
+# it starts at the same time as the Linux job instead of after it, runs only what needs a Mac
+# (`scripts/ci.sh --app-only`: the Swift package tests on Apple's Foundation, the app build, the
+# unit tests and the UI tests on two simulators at once), and leaves the other checks to the Linux
+# job. The repository is public, so hosted runners cost nothing (ADR-543). On a pull request it
+# still runs only when the change can reach the app build or its tests (ADR-497,
+# scripts/ci_needs_mac.sh). Run by hand, it always runs.
 name: iOS build and tests
 
 on:
@@ -59,10 +63,10 @@ jobs:
           fi
 
   ci:
-    # Only after the Linux checks pass (most of them run first in scripts/ci.sh on the Mac too, so
-    # a red one usually fails this job anyway), and only when `changes` says the app can be
-    # affected. A Linux-only failure (the app logic type-check) now holds the Mac build back too.
-    needs: [changes, core]
+    # Side by side with `core` (ADR-680), only when `changes` says the app can be affected. A pull
+    # request needs both green; a red Linux check no longer holds the Mac build back, so one run
+    # shows every failure.
+    needs: [changes]
     if: needs.changes.outputs.mac == 'true' && inputs.only != 'island'
     runs-on: macos-latest
     timeout-minutes: 75
@@ -93,8 +97,11 @@ jobs:
           xcodegen --version
           node --version
 
-      - name: scripts/ci.sh
-        run: scripts/ci.sh
+      - name: scripts/ci.sh --app-only
+        # Two simulator clones for the UI tests (ADR-680); every test still runs once.
+        env:
+          DODDY_UI_TEST_WORKERS: "2"
+        run: scripts/ci.sh --app-only
 
       - name: Keep the test results
         if: always()

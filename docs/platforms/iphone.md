@@ -81,3 +81,6 @@ Code lives under `DoddyApp/Features/<Folder>/`. Status docs are in `docs/impleme
 
 ## Checks that run without a Mac
 `scripts/ci.sh --core-only`: DoddyCore tests, the capability guard, the strings catalog, the voice agent spec and the platform specs. SwiftUI code compiles only in Xcode.
+
+## The hosted build on a pull request (ADR-680)
+Two jobs start together: `core` on Linux (`scripts/ci.sh --core-only`, about 15 minutes) and `ci` on a Mac (`scripts/ci.sh --app-only`: DoddyCore on Apple's Foundation, the app build, the unit tests, and the UI tests on two simulator clones at once, `DODDY_UI_TEST_WORKERS=2`). Both must be green. The Mac skips only what `core` runs and lists it as SKIPPED. Locally, `scripts/ci.sh` with no flag still runs everything, on one simulator unless you set `DODDY_UI_TEST_WORKERS`. For a design change to the Dynamic Island, the quick island-only run (ADR-618, Actions › iOS build and tests › Run workflow, `only: island`) gives pictures in 15 to 20 minutes.

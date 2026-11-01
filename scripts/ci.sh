@@ -7,11 +7,21 @@
 #                              (on Linux also a type-check of the non-UI app files);
 #                              the iOS app build and tests are reported NOT RUN (exit 0
 #                              only if everything that was requested passed)
+#   scripts/ci.sh --app-only   for the hosted Mac job (ADR-680): the Swift package tests (on
+#                              Apple's own Foundation) and the iOS app build and tests only. The
+#                              checks the Linux job runs with --core-only are listed as SKIPPED,
+#                              never PASS; run without a flag to have every step here.
+#
+#   DODDY_UI_TEST_WORKERS=N    run the UI tests on N simulator clones at once (default 1: one
+#                              simulator, as before). Every test still runs exactly once.
 set -uo pipefail
 cd "$(dirname "$0")/.."
 
-core_only=0
-[ "${1:-}" = "--core-only" ] && core_only=1
+core_only=0 app_only=0
+case "${1:-}" in
+  --core-only) core_only=1 ;;
+  --app-only) app_only=1 ;;
+esac
 
 declare -a results=()
 failed=0 blocked=0
@@ -28,6 +38,11 @@ restart_simulator() {
   xcrun simctl bootstatus "$1" -b                 # -b boots it first, then waits for the boot
 }
 
+# --app-only (ADR-680): the Linux job runs these; on the Mac they would only repeat it.
+skipped_for_linux() { record "$1" "SKIPPED" "--app-only: the Linux job (core) runs it"; }
+if [ "$app_only" -eq 1 ]; then
+  skipped_for_linux "Pack, guard, agent spec, page and catalog checks"
+else
 run_step "Imported pack integrity" python3 -I scripts/verify_imported_pack.py
 run_step "Forbidden-capability guard" scripts/check_forbidden_capabilities.sh
 run_step "Voice agent spec" python3 -I scripts/voice_agent_spec.py check
@@ -43,6 +58,7 @@ if python3 -I -c "import yaml" 2>/dev/null; then
   run_step "Per-platform Xcode specs in step" python3 -I scripts/check_platform_specs.py
 else
   not_run "Per-platform Xcode specs in step" "PyYAML not installed (apt install python3-yaml or pip install pyyaml)"
+fi
 fi
 
 if command -v swift >/dev/null 2>&1; then
@@ -71,11 +87,18 @@ if command -v swift >/dev/null 2>&1; then
     run_step "Swift package tests (DoddyCore)" swift test --package-path Packages/DoddyCore
   fi
   # Island drawing data matches the owner's SVGs, parses, and maps states correctly (ADR-239).
-  run_step "Dynamic Island art and scenes" scripts/check_island_art.sh
+  if [ "$app_only" -eq 1 ]; then
+    skipped_for_linux "Dynamic Island art and scenes"
+  else
+    run_step "Dynamic Island art and scenes" scripts/check_island_art.sh
+  fi
 else
   not_run "Swift package tests (DoddyCore)" "swift not found on PATH"
 fi
 
+if [ "$app_only" -eq 1 ]; then
+  skipped_for_linux "Token server, backend, gateway, web, messaging, site and secrets checks"
+else
 if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
   run_step "Voice token server tests" npm test --prefix server/voice-token
 else
@@ -141,6 +164,7 @@ if command -v node >/dev/null 2>&1; then
 else
   not_run "Secrets manifest and sync tool" "node not found on PATH"
 fi
+fi
 
 if [ "$core_only" -eq 1 ]; then
   record "iOS app build + tests" "NOT RUN" "--core-only requested"
@@ -176,8 +200,18 @@ else
       if [ -n "${sim_id:-}" ]; then
         run_step "Restart the simulator before the UI tests" restart_simulator "$sim_id"
       fi
-      run_step "xcodebuild test: UI tests" xcodebuild test-without-building -project Doddy.xcodeproj -scheme Doddy \
-        -destination "$dest" -only-testing:DoddyUITests
+      # DODDY_UI_TEST_WORKERS > 1 (ADR-680): xcodebuild clones the simulator and hands each clone
+      # whole test classes, so the UI tests (40 of the Mac job's 64 minutes on 1 Nov) run side by
+      # side. Each clone starts fresh, as ADR-561 wants. Every test still runs once.
+      ui_workers=${DODDY_UI_TEST_WORKERS:-1}
+      if [ "$ui_workers" -gt 1 ] 2>/dev/null; then
+        run_step "xcodebuild test: UI tests ($ui_workers simulators)" xcodebuild test-without-building \
+          -project Doddy.xcodeproj -scheme Doddy -destination "$dest" -only-testing:DoddyUITests \
+          -parallel-testing-enabled YES -parallel-testing-worker-count "$ui_workers"
+      else
+        run_step "xcodebuild test: UI tests" xcodebuild test-without-building -project Doddy.xcodeproj -scheme Doddy \
+          -destination "$dest" -only-testing:DoddyUITests
+      fi
     else
       not_run "xcodebuild test (unit + UI)" "the build for testing failed"
     fi
@@ -189,4 +223,5 @@ for r in "${results[@]}"; do IFS='|' read -r n s d <<<"$r"; printf '%-8s %s %s\n
 if [ "$failed" -ne 0 ]; then echo "RESULT: FAIL"; exit 1; fi
 if [ "$blocked" -ne 0 ]; then echo "RESULT: BLOCKED (a required step could not run)"; exit 2; fi
 if [ "$core_only" -eq 1 ]; then echo "RESULT: PASS for core-only scope; iOS app NOT verified"; exit 0; fi
+if [ "$app_only" -eq 1 ]; then echo "RESULT: PASS for app-only scope; the Linux job (core) runs the other checks"; exit 0; fi
 echo "RESULT: PASS"
