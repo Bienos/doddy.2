@@ -1,5 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type pg from "pg";
+import { hasAllowedCallingCode } from "./callingCodes.js";
+import { DEFAULT_SMS_SETTINGS, type SmsSettings } from "./config.js";
 import { sha256, type TextCipher } from "./crypto.js";
 import { log } from "./log.js";
 import type { Db } from "./db.js";
@@ -96,7 +98,11 @@ export async function cancelQueuedSms(db: Queryable, accountId: string): Promise
 interface Claimed { id: string; account_id: string; channel: Channel; body: string; attempts: number }
 interface ClaimedRow extends Omit<Claimed, "body"> { body: string | null; body_ciphertext: Buffer | null }
 
-export interface Senders { push?: PushSender; sms?: SmsSender; cipher?: TextCipher }
+export interface Senders {
+  push?: PushSender; sms?: SmsSender; cipher?: TextCipher;
+  /** The countries texts may go to (SMS_ALLOWED_CALLING_CODES). Default DEFAULT_SMS_SETTINGS. */
+  smsSettings?: SmsSettings;
+}
 
 export interface DispatchResult { reaped: number; processed: number }
 
@@ -136,7 +142,8 @@ export async function dispatchDue(db: Db, senders: Senders, batch = 20): Promise
     }
     let outcome: SendOutcome | { kind: "cancelled"; code: string };
     try {
-      outcome = msg.channel === "push" ? await sendPush(db, senders.push, msg) : await sendSms(db, senders.sms, msg);
+      outcome = msg.channel === "push" ? await sendPush(db, senders.push, msg)
+        : await sendSms(db, senders.sms, msg, senders.smsSettings ?? DEFAULT_SMS_SETTINGS);
     } catch {
       outcome = { kind: "unknown", code: "dispatch_error" };
     }
@@ -179,11 +186,15 @@ async function sendPush(db: Db, sender: PushSender | undefined, msg: Claimed): P
     ?? results[0]!;
 }
 
-async function sendSms(db: Db, sender: SmsSender | undefined, msg: Claimed): Promise<SendOutcome | { kind: "cancelled"; code: string }> {
+async function sendSms(
+  db: Db, sender: SmsSender | undefined, msg: Claimed, settings: SmsSettings,
+): Promise<SendOutcome | { kind: "cancelled"; code: string }> {
   if (!sender) return { kind: "transient", code: "sms_not_configured" };
   // Re-checked at send time: consent may have been withdrawn after the message was queued.
   const to = await smsNumber(db, msg.account_id);
   if (!to) return { kind: "cancelled", code: "sms_not_enabled" };
+  // Never handed to Twilio, so a definite failure (not unknown).
+  if (!hasAllowedCallingCode(to, settings.allowedCallingCodes)) return { kind: "rejected", code: "sms_country_not_supported" };
   const r = await sender.send(to, msg.body);
   if (r.kind === "rejected" && r.unsubscribed) {
     await db.query("UPDATE phone_numbers SET sms_opted_out_at = now(), updated_at = now() WHERE account_id = $1",

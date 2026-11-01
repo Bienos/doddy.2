@@ -88,6 +88,7 @@ export function providersFrom(config: Config) {
   return {
     push,
     sms: twilio,
+    smsSettings: config.smsSettings,
     verifier: twilio,
     outbound: config.phoneAgent ? new ElevenLabsOutboundCaller(config.phoneAgent) : undefined,
     cipher,

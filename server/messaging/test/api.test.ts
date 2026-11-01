@@ -5,7 +5,7 @@ import type { Db } from "../src/db.js";
 import { TextCipher } from "../src/crypto.js";
 import { dispatchDue, MAX_ATTEMPTS } from "../src/outbox.js";
 import { twilioSignature } from "../src/providers/twilio.js";
-import { BASE_URL, dbSkip, FakePush, FakeSms, freshDb, testApp, testCipher, TWILIO_TOKEN } from "./helpers.js";
+import { BASE_URL, dbSkip, FakeOutbound, FakePush, FakeSms, freshDb, testApp, testCipher, TWILIO_TOKEN } from "./helpers.js";
 
 const APNS_TOKEN = "ab".repeat(32);
 const PHONE = "+48500100200";
@@ -15,10 +15,11 @@ describe("server against real Postgres", { skip: dbSkip }, () => {
   let app: FastifyInstance;
   let push: FakePush;
   let sms: FakeSms;
+  let outbound: FakeOutbound;
 
   before(async () => {
     db = await freshDb();
-    ({ app, push, sms } = await testApp(db));
+    ({ app, push, sms, outbound } = await testApp(db));
   });
   after(async () => {
     await app?.close();
@@ -284,6 +285,50 @@ describe("server against real Postgres", { skip: dbSkip }, () => {
     } finally {
       await own.app.close();
     }
+  });
+
+  test("verify codes go only to numbers in the allowed countries", async () => {
+    const own = await testApp(db);
+    try {
+      const acc = (await own.app.inject({ method: "POST", url: "/v1/accounts" })).json() as { deviceToken: string };
+      const start = (phone: string) => own.app.inject({
+        method: "POST", url: "/v1/phone/verification", headers: { authorization: `Bearer ${acc.deviceToken}` }, payload: { phone },
+      });
+      for (const phone of ["+12025550123", "+79161234567", "+2348012345678", "+8801712345678"]) {
+        const r = await start(phone);
+        assert.equal(r.statusCode, 400, phone);
+        assert.deepEqual(r.json(), { error: "phone_country_not_supported" });
+      }
+      assert.deepEqual(own.verifier.started, [], "Verify is never asked");
+      assert.equal((await start("+48500999002")).statusCode, 202);
+      assert.deepEqual(own.verifier.started, ["+48500999002"]);
+    } finally {
+      await own.app.close();
+    }
+  });
+
+  test("a number verified outside the allowed countries is never texted or called", async () => {
+    const a = await newAccount();
+    const phone = "+12025550123";
+    // As if verified before the list applied: the check takes any number Verify approved.
+    assert.equal((await call("POST", "/v1/phone/verification/check", a.headers, { phone, code: "123456" })).statusCode, 200);
+    assert.equal((await call("PUT", "/v1/phone/sms-consent", a.headers, { consent: true, textVersion: "sms-v1" })).statusCode, 204);
+    const r = await call("POST", "/v1/updates", a.headers, { text: "Hello", channels: ["sms"], idempotencyKey: "country-1" });
+    assert.equal(r.statusCode, 202);
+    const id = (r.json() as { messages: { id: string }[] }).messages[0]!.id;
+    await dispatchDue(db, { push, sms, cipher: testCipher });
+    assert.equal(sms.sent.filter((s) => s.to === phone).length, 0, "never handed to Twilio");
+    const m = (await call("GET", `/v1/updates/${id}`, a.headers)).json();
+    assert.equal(m.state, "failed", "definitely not sent, not unknown");
+    assert.equal(m.errorCode, "sms_country_not_supported");
+
+    assert.equal((await call("PUT", "/v1/calls/settings", a.headers, { outboundConsent: true, outboundConsentTextVersion: "calls-v1" })).statusCode, 204);
+    const placed = outbound.calls.length;
+    const c = await call("POST", "/v1/calls/outbound", a.headers);
+    assert.equal(c.statusCode, 409);
+    assert.equal(c.json().error, "phone_country_not_supported");
+    assert.equal(outbound.calls.length, placed, "never dialled");
+    assert.equal((await db.query("SELECT 1 FROM calls WHERE account_id = $1", [a.accountId])).rowCount, 0);
   });
 
   test("features without provider credentials answer 503, not a fake success", async () => {

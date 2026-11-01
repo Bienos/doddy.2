@@ -155,3 +155,21 @@ test("price watches read pages through the one shared polite fetcher, with the c
   assert.equal(p.watches.fetcher, p.deals.fetcher, "the same instance as the leaflets (one robots.txt cache, one user agent)");
   assert.deepEqual(p.watches.settings, { enabled: true, maxOpen: 3, checkHours: 12 });
 });
+
+test("texts and calls: the EU/EEA, UK and Switzerland by default; a number matches only a whole listed calling code", async () => {
+  const { hasAllowedCallingCode } = await import("../src/callingCodes.js");
+  const codes = loadConfig({ DATABASE_URL: "postgres://x/y", SMS_ALLOWED_CALLING_CODES: "" }).smsSettings.allowedCallingCodes;
+  assert.equal(codes.length, 32);
+  for (const ok of ["+48500100200", "+4420712345678", "+41441234567", "+420601123456", "+421901123456", "+35312345678", "+3541234567", "+4791234567"]) {
+    assert.equal(hasAllowedCallingCode(ok, codes), true, ok);
+  }
+  for (const no of ["+12025550123", "+79161234567", "+2348012345678", "+8801712345678", "+4221234567", "+3501234567", "+380501234567", "+905321234567", "48500100200"]) {
+    assert.equal(hasAllowedCallingCode(no, codes), false, no);
+  }
+  const set = loadConfig({ DATABASE_URL: "postgres://x/y", SMS_ALLOWED_CALLING_CODES: " 48, 1 " }).smsSettings.allowedCallingCodes;
+  assert.deepEqual(set, ["48", "1"]);
+  assert.equal(hasAllowedCallingCode("+12025550123", set), true);
+  for (const bad of ["+48", "48;49", "0048", "4800", "48,x", ","]) {
+    assert.throws(() => loadConfig({ DATABASE_URL: "postgres://x/y", SMS_ALLOWED_CALLING_CODES: bad }), bad);
+  }
+});

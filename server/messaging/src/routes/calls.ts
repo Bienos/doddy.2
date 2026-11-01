@@ -5,6 +5,8 @@ import { z } from "zod";
 import { parse, type Deps } from "../app.js";
 import { principal, requireDevice } from "../auth.js";
 import { OUTBOUND_CONSENT_VERSIONS, OUTBOUND_DAILY_LIMIT, openSession } from "../calls.js";
+import { hasAllowedCallingCode } from "../callingCodes.js";
+import { DEFAULT_SMS_SETTINGS } from "../config.js";
 import { hashPin, isAcceptablePin } from "../crypto.js";
 import { inTransaction } from "../db.js";
 
@@ -118,6 +120,10 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
     const target = rows[0];
     if (!target) return reply.code(409).send({ error: "no_verified_phone" });
     if (!target.consent) return reply.code(409).send({ error: "outbound_not_enabled" });
+    // A number verified before its country left the list is not dialled.
+    if (!hasAllowedCallingCode(target.e164, (deps.smsSettings ?? DEFAULT_SMS_SETTINGS).allowedCallingCodes)) {
+      return reply.code(409).send({ error: "phone_country_not_supported" });
+    }
     const callId = randomUUID();
     const underLimit = await inTransaction(db, async (c) => {
       // Count and insert under one per-account lock, so parallel taps can't pass the limit together.

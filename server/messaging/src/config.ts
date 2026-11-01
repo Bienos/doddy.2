@@ -7,6 +7,12 @@ import { z } from "zod";
 // answers 503 "not_configured". Nothing is faked.
 const optional = z.string().min(1).optional();
 
+/** Where texts, verify codes and "call me now" may go by default: the EU/EEA, the UK and Switzerland. */
+export const DEFAULT_SMS_CALLING_CODES: readonly string[] = [
+  "30", "31", "32", "33", "34", "351", "352", "353", "354", "356", "357", "358", "359", "36", "370", "371", "372",
+  "385", "386", "39", "40", "41", "420", "421", "423", "43", "44", "45", "46", "47", "48", "49",
+];
+
 const schema = z.object({
   DATABASE_URL: z.string().min(1),
   PORT: z.coerce.number().int().positive().default(3000),
@@ -34,6 +40,12 @@ const schema = z.object({
   TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(1),
   // Verify codes the whole server may start per UTC day (SMS cost cap).
   VERIFY_DAILY_CAP: z.coerce.number().int().positive().default(200),
+  // Countries a number may be verified in, texted and called ("call me now"): E.164 country calling codes,
+  // digits only, comma-separated. Default: the EU/EEA, the UK and Switzerland.
+  SMS_ALLOWED_CALLING_CODES: z.string().default(DEFAULT_SMS_CALLING_CODES.join(","))
+    .transform((v) => v.split(",").map((x) => x.trim()).filter(Boolean))
+    .refine((codes) => codes.length > 0 && codes.every((c) => /^[1-9][0-9]{0,2}$/.test(c)),
+      "country calling codes (1 to 3 digits), comma-separated"),
   // "1": run the worker loop inside the web process (one service; e.g. Render free/starter).
   RUN_WORKER_IN_WEB: z.enum(["0", "1"]).default("0"),
   ELEVENLABS_PHONE_AGENT_ID: optional,
@@ -181,6 +193,9 @@ export interface ShoppingSettings {
 /** Price watches: `enabled` is the env switch only; the cipher and the fetcher are checked where wired. */
 export interface WatchSettings { enabled: boolean; maxOpen: number; checkHours: number }
 
+/** Where texts and calls to the user's own number may go. */
+export interface SmsSettings { allowedCallingCodes: readonly string[] }
+
 /** Messages switches and caps (ADR-586). `enabled` is the env switch only; the key is checked where wired. */
 export interface AssistantSettings {
   enabled: boolean; model: string; effort: "low" | "medium" | "high"; dailyPerAccount: number; dailyPerServer: number;
@@ -191,6 +206,7 @@ export interface Config {
   port: number;
   trustProxyHops: number;
   verifyDailyCap: number;
+  smsSettings: SmsSettings;
   runWorkerInWeb: boolean;
   publicBaseUrl?: string;
   apns?: ApnsConfig;
@@ -224,6 +240,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     port: e.PORT,
     trustProxyHops: e.TRUST_PROXY_HOPS,
     verifyDailyCap: e.VERIFY_DAILY_CAP,
+    smsSettings: { allowedCallingCodes: e.SMS_ALLOWED_CALLING_CODES },
     runWorkerInWeb: e.RUN_WORKER_IN_WEB === "1",
     publicBaseUrl: e.PUBLIC_BASE_URL?.replace(/\/$/, ""),
     apns: all<ApnsConfig>({
@@ -316,6 +333,9 @@ export const DEFAULT_TASK_CALL_SETTINGS: TaskCallSettings = {
   prices: {},
   sayVoice: "Polly.Ewa",
 };
+
+/** Settings for a server or test that passes none: the default countries. */
+export const DEFAULT_SMS_SETTINGS: SmsSettings = { allowedCallingCodes: DEFAULT_SMS_CALLING_CODES };
 
 /** Settings for an injected ErrandDeps without its own (tests): on, Opus 5.5 at high effort, 30 min, 5 open.
  * The environment's ERRANDS_ENABLED defaults to "0": errands start only when the owner turns them on. */
