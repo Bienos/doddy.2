@@ -30,4 +30,17 @@ final class DealsNewShopsTests: XCTestCase {
         XCTAssertEqual(result.items.first?.offers.first?.chain, .ccc)
         XCTAssertEqual(result.readChainCount, 2)
     }
+
+    /// ADR-669: Lewiatan, Natura and Action are asked by default; Deichmann (shoes) and zooplus (pets) only for their kind.
+    func testTheSecondBatchOfShops() {
+        let batch: [DealsChain] = [.lewiatan, .natura, .action, .deichmann, .zooplus]
+        XCTAssertEqual(batch.map(\.name), ["Lewiatan", "Natura", "Action", "Deichmann", "zooplus"])
+        XCTAssertTrue(batch.allSatisfy { $0.isKnown && $0.isRead })
+        XCTAssertTrue([DealsChain.lewiatan, .natura, .action].allSatisfy { DealsChain.defaultRead.contains($0) && !DealsChain.specialty.contains($0) })
+        XCTAssertTrue(DealsChain.specialty.contains(.deichmann) && DealsChain.specialty.contains(.zooplus))
+        let card = DealsAsk.card(DealsRequest(items: ["karma dla kota"]))
+        XCTAssertFalse(card.lines[1].contains("zooplus") || card.lines[1].contains("Deichmann"), "specialty shops are in the group line")
+        XCTAssertTrue(card.lines[1].contains("Lewiatan, Natura, Action"))
+        XCTAssertEqual(DealsAsk.card(DealsRequest(items: ["kozaki"], chains: [.deichmann, .zooplus])).lines[1], "Shops: Deichmann, zooplus")
+    }
 }

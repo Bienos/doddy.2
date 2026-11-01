@@ -70,6 +70,8 @@ export function providersFrom(config: Config) {
     log,
     // ADR-666: the same partner rules as shopping errands (ADR-612), added after the picks.
     further: { shops: config.dealsSearchShops, affiliate: new AffiliateLinks(ss.affiliateRules) },
+    // ADR-668: the same rules for the offers' own pages (a shop's product page), after the picks.
+    affiliate: new AffiliateLinks(ss.affiliateRules),
   };
   // Price watches (shopping stage 2): the same polite fetcher reads the pages; no model and no other key is
   // involved. Without MEMORY_ENCRYPTION_KEY or WATCHES_ENABLED=1 the routes answer 503 watches_disabled.
