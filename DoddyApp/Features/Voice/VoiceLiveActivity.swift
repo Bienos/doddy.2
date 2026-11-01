@@ -1,6 +1,7 @@
 @preconcurrency import ActivityKit
 import DoddyCore
 import Foundation
+import UIKit
 
 /// Starts, updates and ends the conversation's Live Activity (Dynamic Island / Lock Screen).
 /// It is optional: if the user turned Live Activities off for Doddy, or the request fails, the
@@ -16,6 +17,12 @@ import Foundation
 /// flight, and two go at least `minimumUpdateGap` apart. Before this, every change was queued
 /// behind the one before it, so a status that flipped quickly (speaking, listening, speaking)
 /// reached the island one step at a time, seconds late, and it looked stuck.
+///
+/// While Doddy talks and Doddy is not the app on screen, it also sends his beat (ADR-670): every
+/// `IslandVoiceBeat.interval` a step for how loud his voice was, so the island swells and eases
+/// with him as Home's strip does. iOS can't animate a Live Activity between updates, so this is
+/// the only way it moves. Nothing is sent for it while Doddy is on screen (iOS shows no island
+/// then), under Reduce Motion, or while he listens, works, is muted or a card waits.
 @MainActor
 final class VoiceLiveActivity {
     /// The one island the voice conversation uses. (Until ADR-549 "Hey Doddy" listening shared it.)
@@ -44,6 +51,13 @@ final class VoiceLiveActivity {
     private var wantsRefresh = false
     /// The last `finish`/`end` request, so callers can wait until iOS has it.
     private var ending: Task<Void, Never>?
+    /// The state the conversation asked for, before his beat is put in (ADR-670).
+    private var asked: DoddyVoiceAttributes.ContentState?
+    /// Sends his beat while he talks (ADR-670); nil while he doesn't.
+    private var beating: Task<Void, Never>?
+    private var beat = IslandVoiceBeat()
+    /// The step the island was last asked to show, or nil for none.
+    private var beatStep: Int?
 
     /// True while the conversation's activity is up (iOS accepted the request and it hasn't ended).
     var isShowing: Bool { activity != nil }
@@ -52,8 +66,10 @@ final class VoiceLiveActivity {
     /// in the foreground, or from a `LiveActivityIntent` running without it ("Talk in the Island",
     /// ADR-577).
     func show(_ state: DoddyVoiceAttributes.ContentState, startedAt: Date) {
+        asked = state
         if activity != nil {
-            if pacer.want(state) { sendSoon() }
+            updateBeating()
+            if pacer.want(withBeat(state)) { sendSoon() }
             return
         }
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
@@ -64,6 +80,7 @@ final class VoiceLiveActivity {
                 pushType: nil)
             pacer.started(with: state, at: Date())
             startHeartbeat()
+            updateBeating()
         } catch {
             // Not fatal: the conversation works without the island.
         }
@@ -216,8 +233,10 @@ final class VoiceLiveActivity {
     }
 
     /// Stops the sender for good and gives back its task, so an update already in flight can
-    /// finish before the activity ends. Forgets what was shown.
+    /// finish before the activity ends. Forgets what was shown, and stops his beat.
     private func stopUpdating() -> Task<Void, Never>? {
+        stopBeating()
+        asked = nil
         let pending = updating
         pending?.cancel()
         updating = nil
@@ -226,6 +245,68 @@ final class VoiceLiveActivity {
         wantsRefresh = false
         pacer.reset()
         return pending
+    }
+
+    // MARK: His beat (ADR-670)
+
+    /// `state` with the step the island shows now; none unless he is talking.
+    private func withBeat(_ state: DoddyVoiceAttributes.ContentState) -> DoddyVoiceAttributes.ContentState {
+        var shown = state
+        shown.voiceBeat = state.wantsVoiceBeat ? beatStep : nil
+        return shown
+    }
+
+    /// Starts his beat when he starts talking, and stops it when he stops.
+    private func updateBeating() {
+        let talking = activity != nil && asked?.wantsVoiceBeat == true
+        if talking, beating == nil {
+            let since = Date()
+            // Start from this answer: the loudest level left over from the last one is dropped.
+            _ = AgentVoiceMeter.shared.takePeak()
+            beating = Task { [weak self] in
+                while !Task.isCancelled {
+                    try? await Task.sleep(for: .seconds(IslandVoiceBeat.interval))
+                    guard !Task.isCancelled, let self else { return }
+                    self.beatTick(speakingSince: since)
+                }
+            }
+        } else if !talking {
+            stopBeating()
+        }
+    }
+
+    /// One beat: how loud he was since the last one, as a step, sent only when it changed.
+    private func beatTick(speakingSince: Date) {
+        guard let asked, asked.wantsVoiceBeat, activity != nil else { return }
+        let step: Int?
+        if UIApplication.shared.applicationState != .active, !UIAccessibility.isReduceMotionEnabled {
+            let meter = AgentVoiceMeter.shared
+            let peak: Double
+            if meter.hasSource {
+                // His real voice (ADR-655): the loudest it was since the last beat.
+                peak = meter.takePeak()
+            } else {
+                // No audio track to listen to (another voice provider): Home's made-up rhythm.
+                let now = Date().timeIntervalSince(speakingSince)
+                peak = SpeechPulse.peak(from: now - IslandVoiceBeat.interval, to: now)
+            }
+            step = beat.next(peak: peak)
+        } else {
+            // Doddy is on screen, where iOS shows no island and Home draws its own strip; or
+            // Reduce Motion is on. Nothing moves, so nothing more is sent.
+            step = nil
+            beat.reset()
+        }
+        guard step != beatStep else { return }
+        beatStep = step
+        if pacer.want(withBeat(asked)) { sendSoon() }
+    }
+
+    private func stopBeating() {
+        beating?.cancel()
+        beating = nil
+        beatStep = nil
+        beat.reset()
     }
 
     /// Proves the app is still there by pushing the stale date forward. Stops with `end()`.

@@ -65,7 +65,9 @@ struct DoddyVoiceLiveActivity: Widget {
                 IslandMinimalView(scene: scene, startedAt: startedAt)
                     .environment(\.islandLanguage, language)
             }
-            .keylineTint(scene.live ? Color.islandOrange : Color.islandSecondary)
+            // ADR-670: while he talks outside the app the orange outline brightens with his voice
+            // (if iOS shows it: it draws the keyline only against some backgrounds).
+            .keylineTint(scene.live ? Color.islandOrange.opacity(scene.beatKeyline) : Color.islandSecondary)
             // ADR-616: a tap anywhere on the island goes to the card that waits, not only Home.
             .widgetURL(scene.showsInDoddy ? Self.conversationLink : nil)
         }

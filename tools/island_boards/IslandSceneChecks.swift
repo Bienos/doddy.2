@@ -407,6 +407,69 @@ enum IslandSceneChecks {
         return failures
     }
 
+    /// ADR-670: his beat outside the app shows only over his talking waves, and swells the island
+    /// with his voice within fixed bounds.
+    static func voiceBeat() -> Int {
+        var failures = 0
+        func expect(_ ok: Bool, _ message: String) {
+            if !ok { print("FAIL: voice beat: \(message)"); failures += 1 }
+        }
+        func state(_ status: State.Status, beat: Int?, muted: Bool = false, moment: State.Moment? = nil) -> State {
+            var s = State(status: status, isMuted: muted)
+            s.moment = moment
+            s.voiceBeat = beat
+            return s
+        }
+        let talking = state(.speaking, beat: 3).islandScene(isStale: false)
+        expect(talking.waves == .speaking && talking.voiceBeat == 3, "the beat reaches the island while he talks")
+        expect(state(.speaking, beat: 3).islandScene(isStale: true).voiceBeat == nil, "a stale island never pulses")
+        expect(state(.speaking, beat: 3, muted: true).islandScene(isStale: false).voiceBeat == nil, "no beat while muted")
+        expect(state(.listening, beat: 3).islandScene(isStale: false).voiceBeat == nil, "no beat while he listens")
+        expect(state(.thinking, beat: 3).islandScene(isStale: false).voiceBeat == nil, "no beat while working")
+        expect(state(.speaking, beat: 3, moment: .resultReady(.document)).islandScene(isStale: false).voiceBeat == nil,
+               "a moment keeps its own island")
+        expect(state(.speaking, beat: 99).islandScene(isStale: false).voiceBeat == IslandScene.maxBeat
+               && state(.speaking, beat: -2).islandScene(isStale: false).voiceBeat == 0, "a beat out of range is clamped")
+
+        // Only when the island draws his talking waves does the app send a beat.
+        expect(state(.speaking, beat: nil).wantsVoiceBeat, "talking wants a beat")
+        expect(!state(.speaking, beat: nil, muted: true).wantsVoiceBeat, "muted wants none")
+        expect(!state(.listening, beat: nil).wantsVoiceBeat && !state(.thinking, beat: nil).wantsVoiceBeat,
+               "listening and working want none")
+        expect(!state(.speaking, beat: nil, moment: .noteSaved).wantsVoiceBeat, "a moment wants none")
+        expect(!state(.ended, beat: nil).wantsVoiceBeat, "an ended island wants none")
+
+        // With no beat the island looks exactly as before ADR-670.
+        let still = state(.speaking, beat: nil).islandScene(isStale: false)
+        expect(still.beatWaveScale == 1 && still.beatGlow == 0 && still.beatHalo == 0 && still.beatKeyline == 1,
+               "no beat draws the island as it was")
+        // Louder is never smaller, and every look stays in its bounds.
+        var previous: IslandScene?
+        for beat in 0...IslandScene.maxBeat {
+            let scene = state(.speaking, beat: beat).islandScene(isStale: false)
+            expect(scene.beatWaveScale >= 0.75 && scene.beatWaveScale <= 1.2, "wave height \(beat)")
+            expect(scene.beatGlow >= 0 && scene.beatGlow <= 0.8, "glow \(beat)")
+            expect(scene.beatHalo >= 0.2 && scene.beatHalo <= 1, "halo \(beat): faint in a pause, never off mid-answer")
+            expect(scene.beatKeyline >= 0.45 && scene.beatKeyline <= 1, "outline \(beat)")
+            if let previous {
+                expect(scene.beatWaveScale > previous.beatWaveScale && scene.beatGlow > previous.beatGlow
+                       && scene.beatHalo > previous.beatHalo && scene.beatKeyline > previous.beatKeyline,
+                       "beat \(beat) swells more than \(beat - 1)")
+            }
+            previous = scene
+        }
+
+        // The beat survives the trip to the widget, and older content without it still decodes.
+        let encoded = try? JSONEncoder().encode(state(.speaking, beat: 2))
+        let back = encoded.flatMap { try? JSONDecoder().decode(State.self, from: $0) }
+        expect(back?.voiceBeat == 2, "the beat encodes and decodes")
+        let old = #"{"status":"speaking","isMuted":false}"#.data(using: .utf8)!
+        expect((try? JSONDecoder().decode(State.self, from: old))?.voiceBeat == nil, "content from an older build decodes")
+        let noBeat = (try? JSONEncoder().encode(state(.speaking, beat: nil))).flatMap { String(data: $0, encoding: .utf8) } ?? ""
+        expect(!noBeat.contains("voiceBeat"), "no beat adds nothing to the content")
+        return failures
+    }
+
     /// The strips (ADR-313): loops loop, once-only strips rest on their last frame, every box fits.
     static func motions() -> Int {
         var failures = 0

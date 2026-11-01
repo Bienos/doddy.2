@@ -381,6 +381,8 @@ struct IslandBottomView<Controls: View>: View {
                 } else if scene.waves == .speaking {
                     IslandWavesView(kind: .speech, live: scene.live)
                         .frame(height: Self.waveBand)
+                        // ADR-670: they swell with his voice while Doddy isn't on screen.
+                        .islandBeat(scene, upTo: 1)
                         .padding(.leading, -6)
                 }
                 HStack(spacing: 8) {
@@ -405,6 +407,8 @@ struct IslandCompactLeadingView: View {
                 // Only his head (owner, 24 Oct, ADR-615): the whole of him at 30 pt was a few
                 // hairlines. The expanded island shows all of him.
                 IslandPoseFaceView(pose: pose, size: 26)
+                    // ADR-670: while he talks outside the app, a halo pulses behind his head.
+                    .background { IslandBeatHalo(scene: scene) }
             } else {
                 IslandArtView(art: scene.art(.compact), face: scene.face, live: scene.live, showsHands: scene.showsHands)
             }
@@ -425,9 +429,47 @@ struct IslandCompactTrailingView: View {
         if scene.waves != .none {
             IslandWavesView(kind: .line, live: scene.live)
                 .frame(width: 42, height: 22)
+                // ADR-670: taller and brighter with his voice while Doddy isn't on screen.
+                .islandBeat(scene)
         } else {
             IslandSignView(sign: scene.compactSign, presentation: .compact, live: scene.live, startedAt: startedAt)
         }
+    }
+}
+
+/// His beat while he talks outside the app (owner, 30 Oct 2026, ADR-670). iOS draws the island
+/// again only when the app sends an update (about every 0.6 s while he talks), so each beat sets
+/// a height and a glow and iOS moves from one to the next with its own short animation; the
+/// animation asked for here is a request iOS may replace with its own timing. Nothing changes
+/// with no beat (`scene.voiceBeat == nil`), so every other state draws as before.
+extension View {
+    /// `upTo`: the tallest they may get. The expanded island's waves stay in their band under his
+    /// status (ADR-615), so there they only ever ease below their usual height.
+    func islandBeat(_ scene: IslandScene, upTo maxScale: Double = .infinity) -> some View {
+        self
+            .scaleEffect(x: 1, y: CGFloat(min(maxScale, scene.beatWaveScale)), anchor: .center)
+            .shadow(color: Color.islandOrange.opacity(scene.beatGlow), radius: 4)
+            .animation(.easeOut(duration: 0.45), value: scene.voiceBeat)
+    }
+}
+
+/// A soft orange light behind his head on the small island while he talks outside the app
+/// (ADR-670): brighter and a little wider when he is loud, faint between his words. Inside the
+/// island's black shape: iOS draws nothing of an app's outside it.
+struct IslandBeatHalo: View {
+    let scene: IslandScene
+
+    var body: some View {
+        let strength = scene.beatHalo
+        Circle()
+            .fill(RadialGradient(
+                colors: [Color.islandOrange.opacity(0.7), Color.islandOrange.opacity(0)],
+                center: .center, startRadius: 11, endRadius: 17))
+            .frame(width: 34, height: 34)
+            .scaleEffect(0.82 + 0.18 * strength)
+            .opacity(strength)
+            .animation(.easeOut(duration: 0.45), value: scene.voiceBeat)
+            .accessibilityHidden(true)
     }
 }
 

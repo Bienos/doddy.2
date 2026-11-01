@@ -16,12 +16,20 @@ final class IslandScreenshotTests: XCTestCase {
     private typealias State = DoddyVoiceAttributes.ContentState
 
     private static func scene(_ status: State.Status, muted: Bool = false, moment: State.Moment? = nil,
-                              style: IslandStyle = .wholeDoddy) -> IslandScene {
+                              style: IslandStyle = .wholeDoddy, beat: Int? = nil) -> IslandScene {
         var state = State(status: status, isMuted: muted)
         state.moment = moment
         state.islandStyle = style
+        state.voiceBeat = beat
         return state.islandScene(isStale: false)
     }
+
+    /// ADR-670: his beat while he talks outside the app, in a pause and at his loudest. Two
+    /// moments of it: on the iPhone it moves between them about every 0.6 s.
+    private static let beatSamples: [(file: String, name: String, beat: Int)] = [
+        ("3a-speaking-pause", "Speaking outside the app: a pause between words (beat 0)", 0),
+        ("3b-speaking-loud", "Speaking outside the app: his loudest (beat 4)", 4),
+    ]
 
     /// The states shown, in a conversation's order, then cards and results (ADR-616).
     private static let samples: [(file: String, name: String, status: State.Status, muted: Bool, moment: State.Moment?)] = [
@@ -43,6 +51,24 @@ final class IslandScreenshotTests: XCTestCase {
     ]
 
     // MARK: What the owner asked for
+
+    /// ADR-670: outside the app his beat lights the small island around his head at his loudest;
+    /// with no beat (on screen, Reduce Motion, any other state) there is no light at all.
+    @MainActor
+    func testHisBeatLightsTheSmallIslandAroundHisHead() throws {
+        var rings: [Double] = []
+        for beat in [nil, 4] as [Int?] {
+            let view = IslandCompactLeadingView(scene: Self.scene(.speaking, beat: beat))
+                .frame(width: 40, height: 36)
+                .background(Color.islandBlack)
+            let p = try XCTUnwrap(pixels(view), "beat \(String(describing: beat)) renders")
+            // 15 pt left of his head's centre: past the 13 pt of his face, inside the halo.
+            rings.append(p.brightness(x: p.width / 2 - 45, y: p.height / 2, radius: 2))
+        }
+        let none = rings[0], loud = rings[1]
+        XCTAssertLessThan(none, 8, "no beat: black around his head, as before")
+        XCTAssertGreaterThan(loud, none + 12, "his loudest beat lights the ring around his head")
+    }
 
     /// Small island: his head only, a 26 pt circle, never the whole of him at 30 pt (ADR-615).
     @MainActor
@@ -168,6 +194,14 @@ final class IslandScreenshotTests: XCTestCase {
             let board = IslandBoardPicture(name: (language.map { "\($0.uppercased()) · " } ?? "") + sample.name,
                                            scene: Self.scene(sample.status, muted: sample.muted, moment: sample.moment),
                                            muted: sample.muted, startedAt: startedAt)
+            _ = try keep(board.padding(16).background(Self.backdrop).environment(\.islandLanguage, language),
+                         name: prefix + sample.file)
+            boards.append(board)
+        }
+        for sample in Self.beatSamples {
+            let board = IslandBoardPicture(name: (language.map { "\($0.uppercased()) · " } ?? "") + sample.name,
+                                           scene: Self.scene(.speaking, beat: sample.beat),
+                                           muted: false, startedAt: startedAt)
             _ = try keep(board.padding(16).background(Self.backdrop).environment(\.islandLanguage, language),
                          name: prefix + sample.file)
             boards.append(board)

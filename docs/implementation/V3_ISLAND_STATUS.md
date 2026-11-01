@@ -123,6 +123,55 @@ is unknown until step 3.
 | DOD-11 observable_privacy | No conversation text in the activity; the new log holds a bundle identifier and a yes/no only (`privacy: .public` on those two values, nothing else) | Guard PASS | Logs are readable in Console on a connected Mac; that is the point, and they contain nothing personal |
 | Honest capability claims (T35/T42) | This document and the ADR rows keep "unbuilt / not run"; the user-facing text in `VoiceView` already says iOS may stop Doddy in the background | — | Do not describe the island as working until step 3 above is recorded |
 
+## Since 30 Oct: the island pulses with his voice outside the app (ADR-670)
+Owner: "Can it also pulse around Dynamic Island outside app like it is [now] on home inside app when
+talking to Doddy". Branch `claude/island-pulse-outside-app`, not merged.
+
+**Why it can't be Home's strip.** A Live Activity has no animation of its own: iOS draws it again only
+when the app sends an update, and nothing of an app's is drawn outside the island's black shape. Home's
+strip (ADR-665) moves 30 times a second and glows around the island; the island outside the app can't.
+
+**What it does.** While Doddy talks and Doddy is not on screen, the app sends a beat every 0.6 s: how
+loud his voice was since the last one, as a step from 0 (a pause) to 4 (his loudest). iOS moves the
+island from one beat to the next with its own short animation.
+
+| Where | What swells |
+|---|---|
+| Small island, right | His waves: 0.75 to 1.2 of their height, with an orange glow |
+| Small island, left | A soft orange halo behind his head, faint in a pause |
+| Big island | His talking waves ease between 0.75 and 1 of their height (they stay under "Speaking") |
+| Around the island | The orange keyline iOS draws, 45 % to full (iOS shows it only against some backgrounds) |
+
+Nothing changes while he listens or works, while muted, while a card or result is on the island,
+under Reduce Motion, on the minimal island or on the Lock Screen. The number comes from the loudness
+of the audio he plays (ADR-655), never the microphone, and the island is updated on the iPhone.
+
+| Piece | Where |
+|---|---|
+| The steps, the alternation, the made-up rhythm's peak | `Packages/DoddyCore/Sources/DoddyCore/IslandVoiceBeat.swift`, tests in `IslandVoiceBeatTests` |
+| The beat in the content, and when it is wanted | `Shared/VoiceActivity/DoddyVoiceAttributes.swift` (`voiceBeat`, `wantsVoiceBeat`) |
+| How each beat looks | `Shared/IslandArt/IslandScene.swift` (`beatWaveScale`, `beatGlow`, `beatHalo`, `beatKeyline`), `IslandViews.swift` (`islandBeat`, `IslandBeatHalo`), `DoddyWidgets/DoddyVoiceLiveActivity.swift` (keyline) |
+| Sending it | `DoddyApp/Features/Voice/VoiceLiveActivity.swift` (`updateBeating`, `beatTick`), `AgentVoiceMeter.takePeak` |
+| Pictures | `DoddyTests/IslandScreenshotTests`: `3a-speaking-pause`, `3b-speaking-loud` in the `island-screenshots` artifact |
+
+**Device checks, not run** (iPhone 14 Pro or later):
+1. Start a conversation, ask something with a long answer, go to the Home Screen. Pass: while he
+   answers, the small island's waves and the halo behind his head swell and ease about twice a
+   second; between his sentences they settle; when he stops and listens they stop.
+2. Does iOS animate between beats, or jump? If it jumps, try a longer `IslandVoiceBeat.interval`
+   (0.8 to 1 s) so each animation has time to finish.
+3. Keep it up through a two-minute answer: the island keeps pulsing and doesn't stall or lag
+   behind his voice. If it stalls, iOS is limiting the updates: lengthen the interval.
+4. Mute from the island: the pulse stops at once, the island turns grey.
+5. Reduce Motion on (Settings › Accessibility › Motion): no pulse, the island draws still.
+6. Open Doddy while he talks: Home's strip takes over; no pulse is sent (Console shows no updates).
+7. Dark wallpaper: the orange outline around the island brightens and dims with him (if iOS shows it).
+8. Battery: a 10-minute conversation from another app, compared with the build before.
+
+**Checked here (Linux, Swift 6.1.2):** DoddyCore 2,215 tests, 0 failures (12 new); island checks
+PASS (new `voiceBeat` checks); `swiftc -parse` on every edited Swift file. **Not compiled** (no Xcode):
+the app, the widget and the new screenshot test; the hosted Mac job is the first compile.
+
 ## Since 22 Oct: one "Talk to Doddy" control that follows Settings (ADR-579)
 The section below is ADR-577's. Since ADR-579 the "Talk to Doddy" control itself starts in the Dynamic
 Island by default (Settings › Action Button: Dynamic Island, Open App or Automatic), a second press ends

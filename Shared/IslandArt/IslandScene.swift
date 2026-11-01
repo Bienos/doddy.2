@@ -100,12 +100,58 @@ struct IslandScene: Equatable, Sendable {
     var pose: IslandPose?
     /// Whole Doddy's waves (ADR-596).
     var waves: IslandWaveState = .none
+    /// His beat while he talks and Doddy is not on screen (ADR-670), 0 to `IslandScene.maxBeat`;
+    /// nil when the app sends none, and always nil unless `waves` is `.speaking`.
+    var voiceBeat: Int?
     /// Something waits for the user in the conversation, or is ready there: the expanded island's
     /// main button is Show (`doddy://conversation`), which opens it (ADR-616). Opening approves nothing.
     var showsInDoddy = false
 
     func art(_ presentation: IslandPresentation) -> IslandArt {
         IslandBoardArt.art(board, scenario: scenario, presentation)
+    }
+}
+
+/// How the island swells with his beat (ADR-670). Outside the app the island can't run Home's
+/// moving strip (`IslandExtension`): iOS draws a Live Activity again only when the app sends an
+/// update, and keeps everything inside the island's black shape. So each beat sets how tall his
+/// waves are, how strongly they glow, how bright a soft orange halo behind his head is, and how
+/// bright the island's orange outline is; iOS moves between two beats with its own short animation.
+/// Plain numbers here so they are checked on Linux (`IslandSceneChecks`).
+extension IslandScene {
+    /// The loudest beat (`IslandVoiceBeat.maxStep` in DoddyCore, which the widget can't import).
+    static let maxBeat = 4
+
+    /// 0 for a pause between his words, 1 for his loudest; nil with no beat.
+    var beatStrength: Double? {
+        voiceBeat.map { Double($0) / Double(Self.maxBeat) }
+    }
+
+    /// How tall his talking waves are drawn: as they always were with no beat, a little lower in a
+    /// pause and a little higher at his loudest. Not so low that the line looks thin (ADR-615).
+    var beatWaveScale: Double {
+        guard let strength = beatStrength else { return 1 }
+        return 0.75 + 0.45 * strength
+    }
+
+    /// The orange glow around his waves, 0 to 0.8 (none with no beat).
+    var beatGlow: Double {
+        guard let strength = beatStrength else { return 0 }
+        return 0.8 * strength
+    }
+
+    /// The halo behind his head on the small island, 0 to 1 (none with no beat); a faint one in a
+    /// pause, so the island still says he is mid-answer.
+    var beatHalo: Double {
+        guard let strength = beatStrength else { return 0 }
+        return 0.2 + 0.8 * strength
+    }
+
+    /// The orange outline iOS draws around the island (its keyline): full with no beat; dimmer in
+    /// a pause and full at his loudest while he talks.
+    var beatKeyline: Double {
+        guard let strength = beatStrength else { return 1 }
+        return 0.45 + 0.55 * strength
     }
 }
 
@@ -123,6 +169,10 @@ extension DoddyVoiceAttributes.ContentState {
         if islandStyle == .wholeDoddy {
             scene.pose = wholeDoddyPose(stale: stale)
             scene.waves = wholeDoddyWaves(stale: stale)
+        }
+        // ADR-670: only over his talking waves; a stale island never pulses.
+        if scene.waves == .speaking, let voiceBeat {
+            scene.voiceBeat = min(IslandScene.maxBeat, max(0, voiceBeat))
         }
         return scene
     }
