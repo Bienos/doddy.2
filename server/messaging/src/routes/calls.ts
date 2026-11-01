@@ -24,6 +24,7 @@ const settingsBody = z.object({
 }).refine((b) => b.outboundConsent !== true || OUTBOUND_CONSENT_VERSIONS.has(b.outboundConsentTextVersion ?? ""),
   { path: ["outboundConsentTextVersion"] });
 const pinBody = z.object({ pin: z.string() });
+const MAX_SNAPSHOT_ITEMS = 5000;
 const snapshotBody = z.object({
   items: z.array(z.object({
     // Postgres returns uuids in lowercase; the encryption binding must use the same spelling
@@ -31,7 +32,7 @@ const snapshotBody = z.object({
     id: z.uuid().transform((id) => id.toLowerCase()),
     text: z.string().min(1).max(5000),
     capturedAt: z.iso.datetime({ offset: true }).nullable().optional(),
-  })).max(5000),
+  })).max(MAX_SNAPSHOT_ITEMS),
 }).refine((b) => new Set(b.items.map((i) => i.id)).size === b.items.length, "duplicate ids");
 const idParam = z.object({ id: z.uuid() });
 
@@ -241,6 +242,11 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
     preHandler: auth, bodyLimit: 8 * 1024 * 1024, config: { rateLimit: { max: 60, timeWindow: "1 hour" } },
   }, async (req, reply) => {
     if (!deps.cipher) return reply.code(503).send({ error: "not_configured" });
+    // Checked before parsing, so an over-long list is refused without validating each element.
+    const rawItems = (req.body as { items?: unknown } | null)?.items;
+    if (!Array.isArray(rawItems) || rawItems.length > MAX_SNAPSHOT_ITEMS) {
+      return reply.code(400).send({ error: "invalid_request", fields: ["items"] });
+    }
     const body = parse(snapshotBody, req.body, reply);
     if (!body) return;
     const { accountId } = principal(req);
