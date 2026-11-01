@@ -232,6 +232,35 @@ describe("phone calls against real Postgres", { skip: dbSkip }, () => {
     assert.equal((await call("PUT", "/v1/memory-copy/snapshot", h, { items: [] })).statusCode, 409);
   });
 
+  test("memory copy: a list over 5000 items is refused before its items are validated", async () => {
+    // Its own app: the shared one has used up this hour's account sign-ups for the test address.
+    const own = await testApp(db);
+    const r = await own.app.inject({ method: "POST", url: "/v1/accounts" });
+    const { accountId, deviceToken } = r.json() as { accountId: string; deviceToken: string };
+    const snapshot = (payload: object) => own.app.inject({
+      method: "PUT", url: "/v1/memory-copy/snapshot", headers: { authorization: `Bearer ${deviceToken}` }, payload,
+    });
+    const count = async () => (await db.query("SELECT 1 FROM memory_copies WHERE account_id = $1", [accountId])).rowCount;
+    assert.equal((await own.app.inject({
+      method: "PUT", url: "/v1/memory-copy", headers: { authorization: `Bearer ${deviceToken}` }, payload: { enabled: true },
+    })).statusCode, 204);
+    assert.equal((await snapshot({ items: [{ id: randomUUID(), text: "kept" }] })).statusCode, 200);
+
+    const tooMany = await snapshot({ items: Array.from({ length: 5001 }, () => ({})) });
+    assert.equal(tooMany.statusCode, 400);
+    // Only the list itself is named: no per-item issues, so the items were never parsed.
+    assert.deepEqual(tooMany.json(), { error: "invalid_request", fields: ["items"] });
+    assert.equal((await snapshot({ items: "x" })).statusCode, 400);
+    assert.equal(await count(), 1);
+
+    const full = Array.from({ length: 5000 }, (_, n) => ({ id: randomUUID(), text: `memory ${n}` }));
+    const ok = await snapshot({ items: full });
+    assert.equal(ok.statusCode, 200);
+    assert.equal(ok.json().count, 5000);
+    assert.equal(await count(), 5000);
+    await own.app.close();
+  });
+
   test("outbound: needs consent, calls only the verified number, passes a session", async () => {
     const { h } = await user("+48500000007", { pin: "258025" });
     assert.equal((await call("POST", "/v1/calls/outbound", h)).json().error, "outbound_not_enabled");
