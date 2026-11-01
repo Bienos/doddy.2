@@ -849,8 +849,17 @@ final class VoiceSessionController {
         Self.allowOtherAppsAudio()
         let connectNote = "connecting to ElevenLabs: attempt \(attempt)"
         Self.audioLog.notice("\(connectNote, privacy: .public)")
+        let startConfig = config
         do {
-            let started = try await ElevenLabs.startConversation(auth: auth, config: config)
+            // At most `StartLimit.seconds` (ADR-670). One that connects after the limit anyway is
+            // ended here, so nothing keeps listening.
+            let started = try await StartLimit.run {
+                try await ElevenLabs.startConversation(auth: auth, config: startConfig)
+            } lateResult: { late in
+                let lateNote = "a start that connected after the limit was ended: attempt \(attempt)"
+                Self.audioLog.notice("\(lateNote, privacy: .public)")
+                await late.endConversation()
+            }
             guard attempt == startAttempt, isLive else {
                 // Closed (or closed and started again) while connecting: end it so nothing keeps
                 // listening and its tool calls stop (review H1).
@@ -867,6 +876,10 @@ final class VoiceSessionController {
             Self.audioLog.notice("\(failedNote, privacy: .public)")
             // A replaced start's failure isn't the new conversation's.
             guard attempt == startAttempt else { return }
+            if error is StartLimit.TimedOut {
+                fail(StartLimit.message)
+                return
+            }
             if Offline.isNoConnection(error) {
                 failOffline()
                 return
