@@ -50469,6 +50469,17 @@
         }
       }
     },
+    "Only for items it sells": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tylko dla produktów, które sprzedaje"
+          }
+        }
+      }
+    },
     "Only for you": {
       "extractionState": "manual",
       "localizations": {
