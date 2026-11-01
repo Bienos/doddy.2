@@ -169,8 +169,9 @@ of the audio he plays (ADR-655), never the microphone, and the island is updated
 8. Battery: a 10-minute conversation from another app, compared with the build before.
 
 **Checked here (Linux, Swift 6.1.2):** DoddyCore 2,215 tests, 0 failures (12 new); island checks
-PASS (new `voiceBeat` checks); `swiftc -parse` on every edited Swift file. **Not compiled** (no Xcode):
-the app, the widget and the new screenshot test; the hosted Mac job is the first compile.
+PASS (new `voiceBeat` checks); `swiftc -parse` on every edited Swift file. **Hosted Mac job** (PR #158,
+run 41317196636): the app and widget build, the UI tests pass, and every island unit test passed but the
+new halo test, whose own threshold was wrong (the island's black `#080808` reads as 8); corrected after it.
 
 ## Since 22 Oct: one "Talk to Doddy" control that follows Settings (ADR-579)
 The section below is ADR-577's. Since ADR-579 the "Talk to Doddy" control itself starts in the Dynamic

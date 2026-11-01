@@ -66,7 +66,8 @@ final class IslandScreenshotTests: XCTestCase {
             rings.append(p.brightness(x: p.width / 2 - 45, y: p.height / 2, radius: 2))
         }
         let none = rings[0], loud = rings[1]
-        XCTAssertLessThan(none, 8, "no beat: black around his head, as before")
+        // The island's black is #080808: a brightness of 8.
+        XCTAssertEqual(none, 8, accuracy: 1.5, "no beat: only the island's black around his head, as before")
         XCTAssertGreaterThan(loud, none + 12, "his loudest beat lights the ring around his head")
     }
 
