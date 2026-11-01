@@ -48,8 +48,9 @@ services:
       - key: DODDY_SESSION_SIGNING_KEY
         generateValue: true
       # Hosted Postgres (ADR-525): postgres://… URL, and the CA's PEM when it isn't a public one
-      # (Supabase: its root CA). Without DATABASE_URL the server uses PGlite at DODDY_DB_PATH, which
-      # the free plan loses on every restart.
+      # (Supabase: its root CA). Required here: with DODDY_MODE=live and a non-loopback DODDY_HOST
+      # the server refuses to start without it (ADR-670), instead of using PGlite at DODDY_DB_PATH,
+      # which the free plan loses on every restart.
       - key: DATABASE_URL
         sync: false
       - key: DATABASE_CA_CERT
@@ -113,11 +114,15 @@ services:
         sync: false
       - key: DODDY_CLAUDE_MODEL
         value: claude-sonnet-5-5
-      # ADR-587: Ask Doddy questions per user and for the whole server per UTC day (Doddy pays).
+      # ADR-587: Ask Doddy questions per user and per UTC day (Doddy pays). ADR-670: the service
+      # cap covers full-access users (the owner and invited iPhones: Ask and the web chat); guest
+      # iPhones have a smaller pool of their own, so they can't use up the owner's questions.
       - key: DODDY_LIMIT_USER_DAILY_ASK
         value: "50"
       - key: DODDY_LIMIT_SERVICE_DAILY_ASK
         value: "500"
+      - key: DODDY_LIMIT_SERVICE_DAILY_GUEST_ASK
+        value: "100"
       # Doddy Web (ADR-600): the https origin people open it at, e.g. this service's own
       # https://doddy-yaci.onrender.com, or https://app.doddy.lol once the owner points that name
       # here. Empty: the web app and its routes are off.

@@ -135,7 +135,8 @@ export function createHandler(deps: HttpDeps) {
         const user = await deps.verifier.verify(header(req, "authorization"), now());
         if (!user) throw new AppError("unauthenticated");
         const body = await readJson(req, ASSIST_MAX_BODY_BYTES);
-        const reply = await deps.assist.answer(user.userId, body);
+        // A guest's question counts in the guests' own daily pool (ADR-670).
+        const reply = await deps.assist.answer(user, body);
         status = 200;
         return send(res, 200, reply);
       }

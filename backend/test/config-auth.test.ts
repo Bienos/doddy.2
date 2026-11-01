@@ -55,6 +55,30 @@ test("production live mode is blocked until real sign-in exists", () => {
   assert.ok(problems({ ...live, DODDY_ENV: "production" }).some((x) => x.includes("production")));
 });
 
+test("live mode outside loopback needs DATABASE_URL, even in development (ADR-670)", () => {
+  // As the live Render service runs: DODDY_MODE=live, DODDY_ENV=development, DODDY_HOST=0.0.0.0.
+  const hosted = { ...live, DODDY_HOST: "0.0.0.0", DODDY_PORT: "10000" };
+  const p = problems(hosted);
+  assert.ok(p.some((x) => x.includes("DATABASE_URL") && x.includes("DODDY_MODE=live")), p.join("; "));
+  assert.ok(problems({ ...hosted, DODDY_HOST: "::" }).some((x) => x.includes("DATABASE_URL")));
+  assert.ok(problems({ ...hosted, DATABASE_URL: "   " }).some((x) => x.includes("DATABASE_URL")));
+  const withDatabase = loadConfig({ ...hosted, DATABASE_URL: "postgres://doddy:pw@db.example.com:5432/doddy" });
+  assert.equal(withDatabase.databaseUrl, "postgres://doddy:pw@db.example.com:5432/doddy");
+  // Loopback (local runs, tests) and mock mode keep PGlite.
+  assert.equal(loadConfig(live).databaseUrl, null);
+  assert.equal(loadConfig({ ...live, DODDY_HOST: "localhost" }).databaseUrl, null);
+  assert.equal(loadConfig({ DODDY_MODE: "mock", DODDY_AUTH_MODE: "signed", DODDY_SESSION_SIGNING_KEY: KEY, DODDY_HOST: "0.0.0.0", DODDY_PUBLIC_BASE_URL: "https://doddy-dev.example.com" }).databaseUrl, null);
+  // Production says it once, as before.
+  assert.equal(problems({ ...hosted, DODDY_ENV: "production", DODDY_AUTH_MODE: "supabase", SUPABASE_URL: "https://abc.supabase.co" }).filter((x) => x.includes("DATABASE_URL")).length, 1);
+});
+
+test("the guests' Ask pool is its own setting, 100 a day unless set (ADR-670)", () => {
+  assert.equal(loadConfig({}).limits.serviceDailyGuestAsk, 100);
+  assert.equal(loadConfig({}).limits.serviceDailyAsk, 500);
+  assert.equal(loadConfig({ DODDY_LIMIT_SERVICE_DAILY_GUEST_ASK: "20" }).limits.serviceDailyGuestAsk, 20);
+  assert.ok(problems({ DODDY_LIMIT_SERVICE_DAILY_GUEST_ASK: "0" }).some((x) => x.includes("DODDY_LIMIT_SERVICE_DAILY_GUEST_ASK")));
+});
+
 test("toolkit version must be pinned and callback completion is development-only", () => {
   assert.ok(problems({ ...live, COMPOSIO_GOOGLECALENDAR_TOOLKIT_VERSION: "latest" }).length > 0);
   assert.ok(problems({ ...live, DODDY_ENV: "test", COMPOSIO_COMPLETION_MODE: "callback" }).some((x) => x.includes("callback")));

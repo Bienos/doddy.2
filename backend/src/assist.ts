@@ -1,3 +1,4 @@
+import type { AuthenticatedUser } from "./auth.js";
 import type { Limits } from "./config.js";
 import { AppError, ProviderError } from "./errors.js";
 import type { Store } from "./store.js";
@@ -15,8 +16,13 @@ import { type ClaudeProvider, ClaudeRefusal } from "./tools/claude.js";
  *    it cite only those aliases, so it can't cite a note it wasn't given. The app checks again.
  *  - Notes and earlier turns are data, never instructions.
  *  - Nothing is stored. Logs say how many notes and tokens, never any text.
- * Each question counts against a daily cap per user and for the whole service, before Claude runs.
+ * Each question counts against a daily cap per user and a daily pool, before Claude runs. Guests
+ * (ADR-587) draw from a smaller pool of their own, so minted guest sessions can't use up the
+ * owner's questions; full-access users never draw from it (ADR-670).
  */
+
+/** The guests' own daily pool of questions (ADR-670). Full-access users count against `service:ask`. */
+export const GUEST_ASK_POOL = "service:ask:guest";
 
 export const ASSIST_MAX_BODY_BYTES = 128 * 1024;
 /** Under the app's 35 s request timeout, so the app hears an honest timeout instead of nothing. */
@@ -141,26 +147,26 @@ export class AssistService {
     private readonly deps: {
       store: Store;
       claude: ClaudeProvider | null;
-      limits: Pick<Limits, "userDailyAsk" | "serviceDailyAsk">;
+      limits: Pick<Limits, "userDailyAsk" | "serviceDailyAsk" | "serviceDailyGuestAsk">;
       log?: (line: Record<string, unknown>) => void;
       now?: () => number;
     },
   ) {}
 
-  async answer(userId: string, body: unknown): Promise<AssistReply> {
+  /** `caller.scope === "ask"`: a guest iPhone (ADR-587), counted in the guests' own pool. */
+  async answer(caller: Pick<AuthenticatedUser, "userId" | "scope">, body: unknown): Promise<AssistReply> {
+    const { userId } = caller;
     const req = validateAssistRequest(body);
     if (!req) throw new AppError("invalid_request", { message: "That question can't be sent as written." });
     const claude = this.deps.claude;
     if (!claude || !claude.isConfigured()) throw new AppError("live_not_configured", { message: "Ask Doddy isn't set up on this server." });
 
     const day = `day:${new Date(this.deps.now?.() ?? Date.now()).toISOString().slice(0, 10)}`;
-    const allowed = await this.deps.store.reserveUsage(
-      [
-        { counter: `user:${userId}:ask`, period: day, limit: this.deps.limits.userDailyAsk },
-        { counter: "service:ask", period: day, limit: this.deps.limits.serviceDailyAsk },
-      ],
-      1,
-    );
+    const pool =
+      caller.scope === "ask"
+        ? { counter: GUEST_ASK_POOL, period: day, limit: this.deps.limits.serviceDailyGuestAsk }
+        : { counter: "service:ask", period: day, limit: this.deps.limits.serviceDailyAsk };
+    const allowed = await this.deps.store.reserveUsage([{ counter: `user:${userId}:ask`, period: day, limit: this.deps.limits.userDailyAsk }, pool], 1);
     if (!allowed) throw new AppError("quota_exceeded", { message: "Today's Ask Doddy limit was reached. Try again tomorrow." });
 
     const { user, aliasToId } = buildInput(req);

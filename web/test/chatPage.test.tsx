@@ -10,7 +10,7 @@ import { dayGroup, loadThreads, MAX_THREADS, saveThreads, type Thread, titleFor 
 import { I18nProvider } from "../src/i18n/i18n.js";
 import type { Language } from "../src/i18n/messages.js";
 import { ChatContext } from "../src/memory/schema.js";
-import { fakeServer, fixture } from "./fakeServer.js";
+import { fakeServer, fixture, signedOut } from "./fakeServer.js";
 
 /**
  * The chat (ADR-604): ChatGPT's layout in Doddy's colours, wired to POST /v1/web/chat. Every
@@ -298,6 +298,23 @@ describe("the list of chats", () => {
     await userEvent.click(screen.getByRole("button", { name: "Sign out" }));
     expect(await screen.findByRole("button", { name: "Sign in" })).toBeInTheDocument();
     expect(window.localStorage.getItem(STORAGE_KEY)).toBeNull();
+  });
+
+  test("a session that ended between visits (signed out from the phone) deletes the chats kept here (ADR-670)", async () => {
+    // Saved on the last visit, under the session that has since ended.
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ owner: SESSION_ID, threads: [{ id: "t1", title: "Something private", createdAt: 1, updatedAt: 1, turns: [{ role: "user", text: "Something private", at: 1 }] }] }));
+    renderAt("/chat", { "GET /v1/web/session": signedOut });
+    expect(await screen.findByRole("button", { name: "Sign in" })).toBeInTheDocument();
+    expect(screen.queryByText("Something private")).toBeNull();
+    expect(window.localStorage.getItem(STORAGE_KEY)).toBeNull();
+  });
+
+  test("a server that can't be reached keeps the chats: nothing says the session ended", async () => {
+    const saved = JSON.stringify({ owner: SESSION_ID, threads: [{ id: "t1", title: "Kept", createdAt: 1, updatedAt: 1, turns: [{ role: "user", text: "Kept", at: 1 }] }] });
+    window.localStorage.setItem(STORAGE_KEY, saved);
+    renderAt("/chat", { "GET /v1/web/session": new TypeError("Failed to fetch") });
+    expect(await screen.findByRole("button", { name: "Try again" })).toBeInTheDocument();
+    expect(window.localStorage.getItem(STORAGE_KEY)).toBe(saved);
   });
 });
 

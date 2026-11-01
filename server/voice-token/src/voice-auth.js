@@ -24,8 +24,21 @@ const NONCE_TTL_SECONDS = 600;
 const MAX_BODY_BYTES = 24_000;
 const STORE_TIMEOUT_MS = 2_000;
 const STORE_PREFIX = "doddy:voice:v1:";
+/** Apple's keys are used for an hour after a good fetch. */
+const APPLE_KEYS_TTL_MS = 60 * 60 * 1_000;
+/** An unknown key id fetches Apple's keys again, but not more than once in this long (ADR-670). */
+export const APPLE_KEYS_REFETCH_MIN_MS = 30_000;
 
-let appleKeysCache;
+/**
+ * Apple's public keys for one warm instance. A sign-in naming a key id that isn't here fetches
+ * them again at most once per APPLE_KEYS_REFETCH_MIN_MS, as the backend's SupabaseSessionVerifier
+ * does, so junk tokens from anyone can't make this server call Apple on every request.
+ */
+export function createAppleKeyCache() {
+  return { keys: [], fetchedAt: Number.NEGATIVE_INFINITY, lastAttempt: Number.NEGATIVE_INFINITY, inFlight: null };
+}
+
+const appleKeysCache = createAppleKeyCache();
 
 export class VoiceAuthStoreUnavailable extends Error {
   constructor() {
@@ -131,20 +144,27 @@ export function createVoiceAuthStore({ url, token, fetch: fetchImpl = fetch, tim
       const ttl = windowSeconds + 60;
       const perUserKey = key("limit-user", `${userId}:${window}`);
       const globalKey = key("limit-global", String(window));
+      // All or nothing, like the backend's reserveUsage (ADR-670): the account's own limit is
+      // checked first, and neither counter moves unless both have room. So an account over its
+      // limit can't use up the shared hourly allowance for everyone else.
       const script = `
-        local per = redis.call('INCR', KEYS[1])
+        local per = tonumber(redis.call('GET', KEYS[1]) or '0')
+        local global = tonumber(redis.call('GET', KEYS[2]) or '0')
+        if per >= tonumber(ARGV[2]) then return {per, global, 0} end
+        if global >= tonumber(ARGV[3]) then return {per, global, 0} end
+        per = redis.call('INCR', KEYS[1])
         if per == 1 then redis.call('EXPIRE', KEYS[1], ARGV[1]) end
-        local global = redis.call('INCR', KEYS[2])
+        global = redis.call('INCR', KEYS[2])
         if global == 1 then redis.call('EXPIRE', KEYS[2], ARGV[1]) end
-        return {per, global}
+        return {per, global, 1}
       `;
-      const counts = await evalScript(script, [perUserKey, globalKey], [ttl]);
-      if (!Array.isArray(counts) || counts.length !== 2) throw new VoiceAuthStoreUnavailable();
-      const [perUserCount, globalCount] = counts;
-      const per = Number(perUserCount);
-      const global = Number(globalCount);
-      if (!Number.isSafeInteger(per) || !Number.isSafeInteger(global)) throw new VoiceAuthStoreUnavailable();
-      return { allowed: per <= perUserLimit && global <= globalLimit, perUserCount: per, globalCount: global,
+      const counts = await evalScript(script, [perUserKey, globalKey], [ttl, perUserLimit, globalLimit]);
+      if (!Array.isArray(counts) || counts.length !== 3) throw new VoiceAuthStoreUnavailable();
+      const [per, global, granted] = counts.map(Number);
+      if (!Number.isSafeInteger(per) || !Number.isSafeInteger(global) || (granted !== 0 && granted !== 1)) {
+        throw new VoiceAuthStoreUnavailable();
+      }
+      return { allowed: granted === 1 && per <= perUserLimit && global <= globalLimit, perUserCount: per, globalCount: global,
         retryAfterSeconds: Math.max(1, Math.ceil(((window + 1) * windowSeconds * 1_000 - nowMs) / 1_000)) };
     },
 
@@ -352,14 +372,14 @@ export function verifyAccessToken(token, secret, nowMs = Date.now()) {
   }
 }
 
-export async function verifyAppleIdentityToken(token, rawNonce, audience, { fetch: fetchImpl, now }) {
+export async function verifyAppleIdentityToken(token, rawNonce, audience, { fetch: fetchImpl, now, appleKeys = appleKeysCache }) {
   const parts = token.split(".");
   if (parts.length !== 3 || token.length > 18_000) return null;
   const [headerText, claimsText, signatureText] = parts;
   const header = parseJSON(Buffer.from(headerText, "base64url").toString("utf8"));
   const claims = parseJSON(Buffer.from(claimsText, "base64url").toString("utf8"));
   if (header?.alg !== "RS256" || typeof header.kid !== "string" || !claims) return null;
-  const keys = await appleSigningKeys(fetchImpl, header.kid);
+  const keys = await appleSigningKeys(fetchImpl, header.kid, now, appleKeys);
   const jwk = keys.find((item) => item.kid === header.kid && item.kty === "RSA" && item.use === "sig");
   if (!jwk) return null;
   const key = createPublicKey({ key: jwk, format: "jwk" });
@@ -469,21 +489,31 @@ export function openAppleToken(value, signingKey) {
   }
 }
 
-async function appleSigningKeys(fetchImpl, requiredKid) {
-  const now = Date.now();
-  if (appleKeysCache && appleKeysCache.expiresAt > now
-      && appleKeysCache.keys.some((item) => item.kid === requiredKid)) return appleKeysCache.keys;
+async function appleSigningKeys(fetchImpl, requiredKid, nowMs, cache) {
+  const fresh = nowMs - cache.fetchedAt < APPLE_KEYS_TTL_MS;
+  if (fresh && cache.keys.some((item) => item.kid === requiredKid)) return cache.keys;
+  // Unknown key id or stale keys: fetch again, but not more than once per APPLE_KEYS_REFETCH_MIN_MS,
+  // and only one fetch at a time.
+  if (nowMs - cache.lastAttempt >= APPLE_KEYS_REFETCH_MIN_MS) {
+    cache.lastAttempt = nowMs;
+    cache.inFlight ??= fetchAppleKeys(fetchImpl, nowMs, cache).finally(() => { cache.inFlight = null; });
+  }
+  if (cache.inFlight) await cache.inFlight;
+  return cache.keys;
+}
+
+async function fetchAppleKeys(fetchImpl, nowMs, cache) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 5_000);
   try {
     const response = await fetchImpl(APPLE_KEYS_URL, { signal: controller.signal });
-    if (!response.ok) return [];
+    if (!response.ok) return;
     const body = await response.json();
-    if (!Array.isArray(body?.keys)) return [];
-    appleKeysCache = { keys: body.keys, expiresAt: now + 60 * 60 * 1_000 };
-    return body.keys;
+    if (!Array.isArray(body?.keys) || body.keys.length === 0) return;
+    cache.keys = body.keys;
+    cache.fetchedAt = nowMs;
   } catch {
-    return [];
+    // Keep the keys we had; a later sign-in tries again after the interval.
   } finally {
     clearTimeout(timer);
   }

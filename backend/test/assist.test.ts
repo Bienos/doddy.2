@@ -5,7 +5,7 @@ import type { AddressInfo } from "node:net";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, test } from "node:test";
-import { ASSIST_SYSTEM, AssistService, buildInput, buildSchema, validateAssistRequest } from "../src/assist.js";
+import { ASSIST_SYSTEM, AssistService, buildInput, buildSchema, GUEST_ASK_POOL, validateAssistRequest } from "../src/assist.js";
 import { DevSessionVerifier, SignedSessionVerifier } from "../src/auth.js";
 import { defaultRegistry } from "../src/capabilities.js";
 import { type Limits, testLimits } from "../src/config.js";
@@ -463,6 +463,62 @@ test("open sign-up: the first iPhone owns the server, every other one gets Ask D
     // The owner reaches the route itself (an empty body is then judged on its fields).
     assert.ok([200, 400].includes((await rig.call(method, path, { token: owner.body.token, ...(body ? { body } : {}) })).status));
   }
+});
+
+test("guests draw from a pool of their own: they can't use up the owner's questions, and the owner never draws from theirs (ADR-670)", async () => {
+  const claude = new ScriptedClaude(() => ({ value: { answer: "ok" }, usage: { inputTokens: 1, outputTokens: 1 } }));
+  rig = await start({
+    claude,
+    signed: true,
+    limits: { userDailyAsk: 50, serviceDailyAsk: 3, serviceDailyGuestAsk: 2 },
+    devices: (store) => new Issuer(KEY, { signup: "open", inviteCodes: ["second-phone-code"], store }),
+  });
+  const session = async (n: number, inviteCode?: string) => {
+    const res = await rig!.call("POST", "/v1/session/device", { body: { deviceId: PHONE(n), ...(inviteCode ? { inviteCode } : {}) } });
+    assert.equal(res.status, 200, res.text);
+    return res.body as { token: string; access: string };
+  };
+  const owner = await session(1);
+  const invited = await session(2, "second-phone-code");
+  const [guest1, guest2, guest3] = [await session(3), await session(4), await session(5)];
+  assert.deepEqual([owner.access, invited.access, guest1.access, guest2.access, guest3.access], ["full", "full", "ask", "ask", "ask"]);
+  const day = "day:2026-10-22";
+  const status = async (token: string) => {
+    const res = await rig!.post(ask(), { token });
+    if (res.status !== 200) assert.equal(res.body.error.code, "quota_exceeded");
+    return res.status;
+  };
+
+  // A guest asks first: the guests' pool, never the owner's.
+  assert.equal(await status(guest1.token), 200);
+  assert.equal(await rig.store.usage(GUEST_ASK_POOL, day), 1);
+  assert.equal(await rig.store.usage("service:ask", day), 0);
+  // The full-access users use up their own pool; guests still have theirs.
+  assert.deepEqual([await status(owner.token), await status(invited.token), await status(owner.token)], [200, 200, 200]);
+  assert.equal(await status(owner.token), 429);
+  assert.equal(await status(guest2.token), 200);
+  // The guests' pool is used up now: every guest is refused, and nothing more was counted anywhere.
+  assert.equal(await status(guest3.token), 429);
+  assert.equal(await status(guest1.token), 429);
+  assert.equal(await rig.store.usage("service:ask", day), 3);
+  assert.equal(await rig.store.usage(GUEST_ASK_POOL, day), 2);
+  assert.equal(claude.calls.length, 5);
+});
+
+test("with the default limits, ten guests asking all day leave the owner's questions untouched (ADR-670)", async () => {
+  const claude = new ScriptedClaude(() => ({ value: { answer: "ok" }, usage: { inputTokens: 1, outputTokens: 1 } }));
+  // The server's defaults: 50 a user, 500 for full-access users, 100 for guests.
+  rig = await start({ claude, signed: true, limits: {}, devices: (store) => new Issuer(KEY, { signup: "open", inviteCodes: [], store }) });
+  const token = async (n: number) => ((await rig!.call("POST", "/v1/session/device", { body: { deviceId: PHONE(n) } })).body as { token: string }).token;
+  const owner = await token(1);
+  const guests = await Promise.all(Array.from({ length: 10 }, (_, i) => token(10 + i)));
+  let answered = 0;
+  for (const guest of guests) {
+    for (let i = 0; i < 50; i += 1) if ((await rig.post(ask(), { token: guest })).status === 200) answered += 1;
+  }
+  assert.equal(answered, 100, "guests stop at their own pool");
+  assert.equal((await rig.post(ask(), { token: owner })).status, 200, "the owner can still ask");
+  assert.equal(await rig.store.usage("service:ask", "day:2026-10-22"), 1);
 });
 
 test("a guest token can't be turned into a full one: the scope is signed", async () => {

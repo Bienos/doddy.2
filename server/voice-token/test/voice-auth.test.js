@@ -14,6 +14,8 @@ import {
   revokeAppleToken,
   sealAppleToken,
   openAppleToken,
+  createAppleKeyCache,
+  APPLE_KEYS_REFETCH_MIN_MS,
 } from "../src/voice-auth.js";
 
 const NOW = Date.parse("2026-10-16T12:00:00Z");
@@ -63,13 +65,15 @@ function fakeStore() {
       sessions.set(prior.sessionId, { ...session, refreshHash: newHash });
       return sessions.get(prior.sessionId);
     },
+    // Like the real store (ADR-670): nothing is counted unless both limits have room.
     async hitLimits(userId, perLimit, globalLimit) {
       const key = `${userId}:per`;
-      const per = (limits.get(key) ?? 0) + 1;
-      const global = (limits.get("global") ?? 0) + 1;
-      limits.set(key, per);
-      limits.set("global", global);
-      return { allowed: per <= perLimit && global <= globalLimit, retryAfterSeconds: 60 };
+      const per = limits.get(key) ?? 0;
+      const global = limits.get("global") ?? 0;
+      if (per >= perLimit || global >= globalLimit) return { allowed: false, retryAfterSeconds: 60 };
+      limits.set(key, per + 1);
+      limits.set("global", global + 1);
+      return { allowed: true, retryAfterSeconds: 60 };
     },
     async revokeSession(id, userId) {
       const session = sessions.get(id);
@@ -405,6 +409,57 @@ test("Apple identity token signature, issuer, audience, expiry and nonce are che
   assert.equal(await verify({ ...valid, nonce: "wrong" }), null);
   assert.equal(await verify({ ...valid, iss: "https://evil.example" }), null);
   assert.equal(await verify({ ...valid, exp: nowSeconds - 1 }), null);
+});
+
+test("unknown Apple key ids fetch Apple's keys at most once per interval, one fetch at a time (ADR-670)", async () => {
+  assert.equal(APPLE_KEYS_REFETCH_MIN_MS, 30_000);
+  const { privateKey, publicKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
+  const jwk = (kid) => ({ ...publicKey.export({ format: "jwk" }), kid, use: "sig", alg: "RS256" });
+  const rawNonce = "Y".repeat(43);
+  const segment = (value) => Buffer.from(JSON.stringify(value)).toString("base64url");
+  const signed = (kid, nowMs) => {
+    const nowSeconds = Math.floor(nowMs / 1_000);
+    const input = `${segment({ alg: "RS256", kid })}.${segment({ iss: "https://appleid.apple.com", aud: ENV.APPLE_BUNDLE_ID,
+      exp: nowSeconds + 300, iat: nowSeconds, nonce: createHash("sha256").update(rawNonce).digest("hex"), sub: "apple-sub" })}`;
+    return `${input}.${signRS256("RSA-SHA256", Buffer.from(input), privateKey).toString("base64url")}`;
+  };
+  // What anyone can send without signing in: a token naming a key id Apple never had.
+  const junk = (kid) => `${segment({ alg: "RS256", kid })}.${segment({ sub: "x" })}.c2ln`;
+  let published = [jwk("apple-1")];
+  let appleDown = false;
+  let fetches = 0;
+  const appleKeys = createAppleKeyCache();
+  const verifyAt = (token, now) => verifyAppleIdentityToken(token, rawNonce, ENV.APPLE_BUNDLE_ID, {
+    now, appleKeys,
+    fetch: async () => {
+      fetches += 1;
+      return appleDown ? new Response("down", { status: 503 }) : Response.json({ keys: published });
+    },
+  });
+
+  // Twenty junk sign-ins at once, then one a second for 29 s, each with a new key id: one fetch.
+  const together = await Promise.all(Array.from({ length: 20 }, (_, i) => verifyAt(junk(`junk-${i}`), NOW)));
+  assert.ok(together.every((result) => result === null));
+  for (let s = 1; s < 30; s += 1) assert.equal(await verifyAt(junk(`later-${s}`), NOW + s * 1_000), null);
+  assert.equal(fetches, 1);
+  // A real sign-in with a key id already fetched needs no fetch.
+  assert.deepEqual(await verifyAt(signed("apple-1", NOW + 29_000), NOW + 29_000), { sub: "apple-sub", nonce: rawNonce });
+  assert.equal(fetches, 1);
+
+  // Apple adds a key: a sign-in naming it waits for the interval, then the next fetch finds it.
+  published = [jwk("apple-1"), jwk("apple-2")];
+  assert.equal(await verifyAt(signed("apple-2", NOW + 29_500), NOW + 29_500), null);
+  assert.equal(fetches, 1);
+  assert.deepEqual(await verifyAt(signed("apple-2", NOW + 30_000), NOW + 30_000), { sub: "apple-sub", nonce: rawNonce });
+  assert.equal(fetches, 2);
+
+  // Apple failing keeps the keys already fetched, and still fetches no more often.
+  appleDown = true;
+  assert.equal(await verifyAt(junk("while-down"), NOW + 60_000), null);
+  assert.equal(await verifyAt(junk("while-down-2"), NOW + 61_000), null);
+  assert.equal(fetches, 3);
+  assert.deepEqual(await verifyAt(signed("apple-1", NOW + 62_000), NOW + 62_000), { sub: "apple-sub", nonce: rawNonce });
+  assert.equal(fetches, 3);
 });
 
 test("shared-store adapter sends credentials only in headers and fails closed on network errors", async () => {

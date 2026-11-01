@@ -80,11 +80,15 @@ agent IDs are cleared on launch; the old tester code Keychain item is deleted.
 ## Security behavior
 
 - Apple identity tokens are verified against Apple's published signing keys, issuer, audience,
-  expiry, issue time, and the hashed nonce.
+  expiry, issue time, and the hashed nonce. The keys are kept for an hour; a token naming a key id
+  that isn't known fetches them again at most once every 30 seconds per warm instance, so junk
+  sign-in attempts can't make the server call Apple on every request (ADR-670).
 - Refresh tokens are opaque, stored server-side only as hashes, and rotated after each refresh;
   replay fails closed.
 - Every provider-token request checks the signed access token against the active durable session.
-- Shared atomic per-account and global rate limits run before any paid provider request.
+- Shared atomic per-account and global rate limits run before any paid provider request. All or
+  nothing (ADR-670): the account's own limit is checked first and neither counter moves unless
+  both have room, so one account over its limit can't use up the global allowance for everyone.
 - Request sizes, method, provider, model, upstream timeout, and provider response shape are checked.
 - No content, credentials, Apple subject, or user/account identifier is written to application logs.
 - The server has no in-memory session or rate-limit fallback.
@@ -94,6 +98,10 @@ agent IDs are cleared on launch; the old tester code Keychain item is deleted.
 ```sh
 npm test
 ```
+
+`test/limits.test.js` runs the rate-limit Lua script on a real Redis: a `redis-server` on the PATH
+(started on a free port and stopped after), or `TEST_REDIS_URL`. Without either, those two tests are
+SKIPPED, not passed.
 
 ## Apple references for the iOS implementation
 

@@ -176,8 +176,10 @@ Before people can sign in (owner):
 ## Free plan caveats
 
 * Sleeps after idle time, so the first request (and an OAuth return) can be slow.
-* Without `DATABASE_URL` the server falls back to PGlite on the instance disk, which **resets on restart and
-  redeploy**. With it (ADR-525), nothing is lost.
+* Without `DATABASE_URL` the server would fall back to PGlite on the instance disk, which **resets on restart and
+  redeploy**. Since ADR-670 it refuses to start instead, whenever `DODDY_MODE=live` and `DODDY_HOST` isn't
+  loopback (as on Render), so the device owner and the daily caps can't be reset by a restart. With it
+  (ADR-525), nothing is lost.
 * Free plan is fine for one owner testing; it is not a production setup.
 
 ## Still not production

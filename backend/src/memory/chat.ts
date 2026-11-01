@@ -116,7 +116,8 @@ export class MemoryChat {
       }
     }
 
-    // The same daily caps as Ask Doddy, taken before anything is decrypted, read or sent.
+    // The same daily caps as Ask Doddy, taken before anything is decrypted, read or sent. Only
+    // full-access users reach the web chat, so it never draws from the guests' pool (ADR-670).
     const nowMs = this.deps.now?.() ?? Date.now();
     const day = `day:${new Date(nowMs).toISOString().slice(0, 10)}`;
     const allowed = await this.deps.store.reserveUsage(
