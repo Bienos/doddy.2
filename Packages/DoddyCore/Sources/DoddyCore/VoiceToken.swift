@@ -30,6 +30,9 @@ public enum VoiceTokenError: Error, Equatable, Sendable {
     case offline
     /// The request timed out: the iPhone is online but the server didn't answer in time (ADR-670).
     case serverSlow
+    /// A daily limit on voice was reached (ADR-671). `fullModelOnly` is true when only the full
+    /// OpenAI model is used up for today, so the smaller one still works.
+    case dailyLimit(fullModelOnly: Bool)
 }
 
 /// Contract with `server/voice-token`: POST with a short-lived DODDY access session.
@@ -53,6 +56,11 @@ public enum VoiceTokenServer {
             return .success(token)
         case 401: return .failure(.sessionExpired)
         case 429:
+            // The daily limits (ADR-671) say which one in the body; anything else is the hourly limit.
+            let json = try? JSONSerialization.jsonObject(with: body) as? [String: Any]
+            if json?["error"] as? String == "daily_limit" {
+                return .failure(.dailyLimit(fullModelOnly: json?["limit"] as? String == "full_model"))
+            }
             let seconds = retryAfter.flatMap { Int($0.trimmingCharacters(in: .whitespaces)) }.flatMap { $0 > 0 ? $0 : nil }
             return .failure(.rateLimited(retryAfterSeconds: seconds))
         case 503, 500:
@@ -85,6 +93,10 @@ public enum VoiceTokenServer {
             "Couldn't reach Doddy's voice service. Check your internet connection and try again."
         case .serverSlow:
             "Doddy's voice service is slow to answer. It may be waking up; try again in a moment."
+        case .dailyLimit(fullModelOnly: true):
+            "You've used today's conversations with the full OpenAI voice. Choose the smaller one in the voice picker, or try again tomorrow; your notes still work."
+        case .dailyLimit(fullModelOnly: false):
+            "You've reached today's limit of voice conversations. Try again tomorrow; your notes still work."
         }
     }
 }

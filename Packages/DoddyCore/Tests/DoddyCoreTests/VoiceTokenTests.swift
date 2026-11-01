@@ -41,4 +41,18 @@ final class VoiceTokenTests: XCTestCase {
         XCTAssertFalse(wait.contains("in a moment"))
         XCTAssertFalse(VoiceTokenServer.message(for: .rateLimited(retryAfterSeconds: nil)).contains("in a moment"))
     }
+
+    /// ADR-671: the daily limits say which one was reached, so the screen can point to the smaller
+    /// OpenAI voice instead of "try again in about 700 minutes".
+    func testADailyLimitIsToldApartFromTheHourlyOne() {
+        let full = Data(#"{"error":"daily_limit","limit":"full_model"}"#.utf8)
+        let any = Data(#"{"error":"daily_limit","limit":"voice"}"#.utf8)
+        XCTAssertEqual(VoiceTokenServer.token(status: 429, body: full, retryAfter: "40000"), .failure(.dailyLimit(fullModelOnly: true)))
+        XCTAssertEqual(VoiceTokenServer.token(status: 429, body: any, retryAfter: "40000"), .failure(.dailyLimit(fullModelOnly: false)))
+        XCTAssertEqual(VoiceTokenServer.openAIGrant(status: 429, body: full), .failure(.dailyLimit(fullModelOnly: true)))
+        XCTAssertEqual(VoiceTokenServer.token(status: 429, body: Data(#"{"error":"rate_limited"}"#.utf8), retryAfter: "60"), .failure(.rateLimited(retryAfterSeconds: 60)))
+        XCTAssertTrue(VoiceTokenServer.message(for: .dailyLimit(fullModelOnly: true)).contains("smaller one"))
+        XCTAssertTrue(VoiceTokenServer.message(for: .dailyLimit(fullModelOnly: false)).contains("tomorrow"))
+        XCTAssertFalse(Offline.isNoConnection(VoiceTokenError.dailyLimit(fullModelOnly: true)))
+    }
 }
