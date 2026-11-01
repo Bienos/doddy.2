@@ -11,6 +11,12 @@ import { dino } from "./chains/dino.js";
 import { lidl } from "./chains/lidl.js";
 import { rossmann } from "./chains/rossmann.js";
 import { zabka } from "./chains/zabka.js";
+import { delikatesy } from "./chains/delikatesy.js";
+import { leclerc } from "./chains/leclerc.js";
+import { maxizoo } from "./chains/maxizoo.js";
+import { komfort } from "./chains/komfort.js";
+import { ccc } from "./chains/ccc.js";
+import { chainsToRead, defaultChains } from "./specialty.js";
 import { furtherSearch, type FurtherDeps } from "./further.js";
 import { PoliteFetcher, type PageFetcher } from "./fetcher.js";
 import {
@@ -25,7 +31,7 @@ import {
   type LinkChain, type ModelUsage, type Money, type Offer, type OfferFlag, type PagesRead, type Promotion, type ReadChain, type UnitPrice,
 } from "./types.js";
 
-export const ADAPTERS: Record<ReadChain, ChainAdapter> = { biedronka, lidl, dino, rossmann, aldi, zabka };
+export const ADAPTERS: Record<ReadChain, ChainAdapter> = { biedronka, lidl, dino, rossmann, aldi, zabka, delikatesy, leclerc, maxizoo, komfort, ccc };
 
 /** What the leaflet search needs. Without `model` (no Anthropic key) chains that publish product data still
  * answer; image pages can't be read, so those chains come back `failed`. */
@@ -337,7 +343,7 @@ async function runChain(chain: ReadChain, adapter: ChainAdapter, env: Env): Prom
     const leaflets = read.leaflets.map((l, li) => {
       // A data product of the same family as an item counts too, as a similar one, even when its words don't match
       // ("Margaryna" for "masło"); the rest are left out.
-      const data = l.products.map((p) => ({ p, ...judge(p.name) })).filter((x) => best(x.scores) >= MATCH_THRESHOLD || x.similar.some(Boolean));
+      const data = l.products.map((p) => ({ p, ...judge(p.matchText ? `${p.name} ${p.matchText}` : p.name) })).filter((x) => best(x.scores) >= MATCH_THRESHOLD || x.similar.some(Boolean));
       let jobs: { li: number; page: LeafletPage; score: number }[] = [];
       if (l.strategy === "all") jobs = l.pages.map((page) => ({ li, page, score: 0 }));
       else if (l.strategy === "text") {
@@ -527,8 +533,11 @@ async function runChain(chain: ReadChain, adapter: ChainAdapter, env: Env): Prom
           const { scores, similar } = judge(v.name);
           if (best(scores) < MATCH_THRESHOLD && !similar.some(Boolean)) continue;
           const dates = readDates(v, l.leaflet, env.today);
+          // Komfort prints on every page that its crossed-out prices are the 30-day lowest (ADR-667); the reader
+          // reports a crossed-out price as the regular one, so here it is the 30-day price.
+          const thirty = chain === "komfort" && !v.lowest30d && v.regularPrice ? { regularPrice: undefined, lowest30d: v.regularPrice } : {};
           add({
-            chain, name: v.name, price: v.price, sizeText: v.sizeText, regularPrice: v.regularPrice, lowest30d: v.lowest30d,
+            chain, name: v.name, price: v.price, sizeText: v.sizeText, regularPrice: v.regularPrice, lowest30d: v.lowest30d, ...thirty,
             printedUnitPrice: v.printedUnitPrice, conditions: v.conditions, validFrom: dates.validFrom, validTo: dates.validTo,
             source: { url: page.url, page: page.number }, readBy: "page_image",
             doubts: [...(v.lowConfidence ? ["low_confidence_read"] : []), ...(dates.outside ? ["dates_outside_leaflet"] : [])],
@@ -666,7 +675,8 @@ export async function searchDeals(deps: DealsDeps, input: SearchInput, signal: A
   const fetcher = deps.fetcher ?? new PoliteFetcher();
   const queries = input.items.map((q) => q.trim());
   const rules = queries.map((q) => itemRules(q));
-  const requested = [...new Set(input.chains ?? READ_CHAINS)];
+  // ADR-667: the default leaves out the on-request chains (E.Leclerc); a specialty shop is read only for its kind of item.
+  const requested = chainsToRead([...new Set(input.chains ?? defaultChains(READ_CHAINS))], queries, isReadChain);
   let n = 0;
   const env: Env = {
     fetcher, model: deps.model, queries, queryTerms: rules.map((r) => terms(r.words)), queryCats: rules.map((r) => categoryOf(r.words)), queryRules: rules,

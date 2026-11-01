@@ -7,7 +7,9 @@ import type { PageOutput, ScreenOutput } from "./vision.js";
 import type { PickOutput } from "./match.js";
 
 /** Chains whose leaflets Doddy reads on request (Aldi and Żabka since ADR-660). */
-export const READ_CHAINS = ["biedronka", "lidl", "dino", "rossmann", "aldi", "zabka"] as const;
+// ADR-667: Delikatesy Centrum (grocery, read by default), E.Leclerc (only when asked: its leaflets are screened),
+// Maxi Zoo, Komfort and CCC (specialty shops, asked only when an item is their kind: src/deals/specialty.ts).
+export const READ_CHAINS = ["biedronka", "lidl", "dino", "rossmann", "aldi", "zabka", "delikatesy", "leclerc", "maxizoo", "komfort", "ccc"] as const;
 /** Chains that only get a link to their official leaflet page (bot walls, or no published data). */
 export const LINK_CHAINS = ["kaufland", "carrefour", "auchan", "netto"] as const;
 export const CHAINS = [...READ_CHAINS, ...LINK_CHAINS] as const;
@@ -29,6 +31,7 @@ export const LINK_ONLY_URLS: Record<LinkChain, string> = {
 export const CHAIN_NAMES: Record<Chain, string> = {
   biedronka: "Biedronka", lidl: "Lidl", dino: "Dino", rossmann: "Rossmann", aldi: "Aldi",
   kaufland: "Kaufland", carrefour: "Carrefour", auchan: "Auchan", netto: "Netto", zabka: "Żabka",
+  delikatesy: "Delikatesy Centrum", leclerc: "E.Leclerc", maxizoo: "Maxi Zoo", komfort: "Komfort", ccc: "CCC",
 };
 
 export interface Money { minor: number; currency: "PLN" }
@@ -146,6 +149,9 @@ export interface DataProduct {
   validTo?: string;
   /** The data carries no conditions (Dino's hotspots): the price is confirmed against the page image. */
   confirmOnPage?: boolean;
+  /** Words the matcher reads with the name but the person never sees: the shop's own category ("Karma dla psów ›
+   * Karma sucha") or the page's animal, for shops whose product names leave the kind out (Maxi Zoo, ADR-667). */
+  matchText?: string;
 }
 
 /** One leaflet page the reader may read. `text` is the chain's own text for the page (Lidl). */
