@@ -59,7 +59,7 @@ const KINDS: readonly Kind[] = [
   { label: "sandały", named: any(/^sandal/),
     paths: { damskie: "damskie/wyprzedaz/sandaly", meskie: "meskie/wyprzedaz/sandaly", dzieciece: "dzieciece/wyprzedaz/sandaly" } },
   { label: "szpilki i czółenka", named: any(/^(szpil|czolen)/), paths: { damskie: "damskie/wyprzedaz/szpilki-czolenka" } },
-  { label: "buty sportowe", named: (w) => w.some((x) => /^sportow/.test(x)) && w.some((x) => /^(but(y|ow|ami|ach)?|obuwi)$/.test(x)),
+  { label: "buty sportowe", named: (w) => w.some((x) => /^sportow/.test(x)) && w.some((x) => /^(but(y|ow|ami|ach)?|obuwi\w*)$/.test(x)),
     paths: { meskie: "meskie/wyprzedaz/buty-sportowe", dzieciece: "dzieciece/wyprzedaz/buty-sportowe" } },
   { label: "kapcie", named: any(/^(kapc|kapec$)/), paths: { dzieciece: "dzieciece/wyprzedaz/kapcie" } },
 ];

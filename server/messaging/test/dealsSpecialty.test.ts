@@ -25,9 +25,12 @@ describe("the shops a search asks", () => {
     const defaults = defaultChains(READ_CHAINS);
     assert.ok(!defaults.includes("leclerc"));
     assert.ok(defaults.includes("delikatesy"));
-    assert.deepEqual(chainsToRead(defaults, ["masło"], isReadChain), ["biedronka", "lidl", "dino", "rossmann", "aldi", "zabka", "delikatesy"]);
-    assert.deepEqual(chainsToRead(defaults, ["masło", "karma dla kota"], isReadChain).filter((c) => !["biedronka", "lidl", "dino", "rossmann", "aldi", "zabka", "delikatesy"].includes(c)), ["maxizoo"]);
+    assert.deepEqual(chainsToRead(defaults, ["masło"], isReadChain), ["biedronka", "lidl", "dino", "rossmann", "aldi", "zabka", "delikatesy", "lewiatan", "natura", "action"]);
+    assert.deepEqual(chainsToRead(defaults, ["masło", "karma dla kota"], isReadChain).filter((c) => !["biedronka", "lidl", "dino", "rossmann", "aldi", "zabka", "delikatesy", "lewiatan", "natura", "action"].includes(c)), ["maxizoo", "zooplus"]);
     assert.ok(chainsToRead(defaults, ["sneakersy"], isReadChain).includes("ccc"));
+    assert.ok(chainsToRead(defaults, ["sneakersy"], isReadChain).includes("deichmann"), "ADR-669: both shoe shops");
+    assert.ok(chainsToRead(defaults, ["karma dla kota"], isReadChain).includes("zooplus"), "ADR-669: both pet shops");
+    assert.ok(!chainsToRead(defaults, ["masło"], isReadChain).some((c) => c === "deichmann" || c === "zooplus"));
     assert.ok(chainsToRead(defaults, ["panele"], isReadChain).includes("komfort"));
   });
 
@@ -46,8 +49,8 @@ describe("the shops a search asks", () => {
       { settings: DEFAULT_DEALS_SETTINGS, fetcher: new PoliteFetcher({ fetch: new FakeWeb().fetch }), adapters, now: () => new Date("2026-10-30T08:00:00Z") },
       { items: ["masło"], language: "pl" },
     );
-    assert.deepEqual(asked.sort(), ["aldi", "biedronka", "delikatesy", "dino", "lidl", "rossmann", "zabka"]);
-    assert.deepEqual(response.chains.map((c) => c.chain), ["biedronka", "lidl", "dino", "rossmann", "aldi", "zabka", "delikatesy"]);
+    assert.deepEqual(asked.sort(), ["action", "aldi", "biedronka", "delikatesy", "dino", "lewiatan", "lidl", "natura", "rossmann", "zabka"]);
+    assert.deepEqual(response.chains.map((c) => c.chain), ["biedronka", "lidl", "dino", "rossmann", "aldi", "zabka", "delikatesy", "lewiatan", "natura", "action"]);
     asked.length = 0;
     await searchDeals(
       { settings: DEFAULT_DEALS_SETTINGS, fetcher: new PoliteFetcher({ fetch: new FakeWeb().fetch }), adapters, now: () => new Date("2026-10-30T08:00:00Z") },

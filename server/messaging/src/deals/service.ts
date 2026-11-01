@@ -16,6 +16,11 @@ import { leclerc } from "./chains/leclerc.js";
 import { maxizoo } from "./chains/maxizoo.js";
 import { komfort } from "./chains/komfort.js";
 import { ccc } from "./chains/ccc.js";
+import { lewiatan } from "./chains/lewiatan.js";
+import { natura } from "./chains/natura.js";
+import { action } from "./chains/action.js";
+import { deichmann } from "./chains/deichmann.js";
+import { zooplus } from "./chains/zooplus.js";
 import { chainsToRead, defaultChains } from "./specialty.js";
 import { furtherSearch, type FurtherDeps } from "./further.js";
 import { PoliteFetcher, type PageFetcher } from "./fetcher.js";
@@ -31,7 +36,7 @@ import {
   type LinkChain, type ModelUsage, type Money, type Offer, type OfferFlag, type PagesRead, type Promotion, type ReadChain, type UnitPrice,
 } from "./types.js";
 
-export const ADAPTERS: Record<ReadChain, ChainAdapter> = { biedronka, lidl, dino, rossmann, aldi, zabka, delikatesy, leclerc, maxizoo, komfort, ccc };
+export const ADAPTERS: Record<ReadChain, ChainAdapter> = { biedronka, lidl, dino, rossmann, aldi, zabka, delikatesy, leclerc, maxizoo, komfort, ccc, lewiatan, natura, action, deichmann, zooplus };
 
 /** What the leaflet search needs. Without `model` (no Anthropic key) chains that publish product data still
  * answer; image pages can't be read, so those chains come back `failed`. */
@@ -206,7 +211,8 @@ export function buildOffer(o: OfferInput, language: string): { offer: Offer; dou
   if (o.lowest30d && !isMultiBuy(o.conditions)) {
     if (o.lowest30d.minor > o.price.minor) {
       const percent = Math.round((1 - o.price.minor / o.lowest30d.minor) * 100);
-      if (percent >= 1) cut = { percent };
+      // Under 1% (e.g. a 30-day price 1 grosz above the price) is no real cut either (ADR-669).
+      if (percent >= 1) cut = { percent }; else flags.push("not_a_cut");
     } else flags.push("not_a_cut");
   }
   const eff = effectivePrice(o.price, o.conditions);

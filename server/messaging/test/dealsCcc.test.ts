@@ -90,6 +90,7 @@ describe("CCC: which sale pages fit the items", () => {
     assert.deepEqual(paths("trampki dla mężczyzn"), ["meskie/wyprzedaz/trampki"]);
     assert.deepEqual(paths("czółenka"), ["damskie/wyprzedaz/szpilki-czolenka"], "heels: CCC has a women's sale page only");
     assert.deepEqual(paths("buty sportowe dziecięce"), ["dzieciece/wyprzedaz/buty-sportowe"]);
+    assert.deepEqual(paths("obuwie sportowe dziecięce"), ["dzieciece/wyprzedaz/buty-sportowe"], "\"obuwie\" as well as \"buty\" (ADR-669)");
     assert.deepEqual(paths("kapcie"), ["dzieciece/wyprzedaz/kapcie"], "only children's slippers have a sale page");
   });
 

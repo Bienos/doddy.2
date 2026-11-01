@@ -9,7 +9,9 @@ export type ShopKind = "pets" | "shoes" | "home";
 /** The kind each specialty shop sells. */
 export const SPECIALTY: Readonly<Partial<Record<Chain, ShopKind>>> = {
   maxizoo: "pets",
+  zooplus: "pets",
   ccc: "shoes",
+  deichmann: "shoes",
   komfort: "home",
 };
 

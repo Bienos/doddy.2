@@ -36,13 +36,20 @@ public struct DealsChain: RawRepresentable, Codable, Hashable, Sendable, CustomS
     public static let maxizoo = DealsChain(rawValue: "maxizoo")
     public static let komfort = DealsChain(rawValue: "komfort")
     public static let ccc = DealsChain(rawValue: "ccc")
+    // ADR-669
+    public static let lewiatan = DealsChain(rawValue: "lewiatan")
+    public static let natura = DealsChain(rawValue: "natura")
+    public static let action = DealsChain(rawValue: "action")
+    public static let deichmann = DealsChain(rawValue: "deichmann")
+    public static let zooplus = DealsChain(rawValue: "zooplus")
 
     /// Read on request.
-    public static let read: [DealsChain] = [.biedronka, .lidl, .dino, .rossmann, .aldi, .zabka, .delikatesy, .leclerc, .maxizoo, .komfort, .ccc]
+    public static let read: [DealsChain] = [.biedronka, .lidl, .dino, .rossmann, .aldi, .zabka, .delikatesy, .leclerc, .maxizoo, .komfort, .ccc,
+                                                 .lewiatan, .natura, .action, .deichmann, .zooplus]
     /// Read only when picked (E.Leclerc: its leaflets are screened on every search, ADR-667).
     public static let onRequest: [DealsChain] = [.leclerc]
     /// Shops that sell one kind of thing (pets, home, shoes): the server asks them only when an item is that kind.
-    public static let specialty: [DealsChain] = [.maxizoo, .komfort, .ccc]
+    public static let specialty: [DealsChain] = [.maxizoo, .komfort, .ccc, .deichmann, .zooplus]
     /// What a search asks when nobody picks: every read chain but the on-request ones (the server's default too).
     public static let defaultRead: [DealsChain] = read.filter { !onRequest.contains($0) }
     /// Answered with a link to the chain's leaflet page only.
@@ -72,6 +79,11 @@ public struct DealsChain: RawRepresentable, Codable, Hashable, Sendable, CustomS
         case "maxizoo": "Maxi Zoo"
         case "komfort": "Komfort"
         case "ccc": "CCC"
+        case "lewiatan": "Lewiatan"
+        case "natura": "Natura"
+        case "action": "Action"
+        case "deichmann": "Deichmann"
+        case "zooplus": "zooplus"
         default: rawValue
         }
     }
