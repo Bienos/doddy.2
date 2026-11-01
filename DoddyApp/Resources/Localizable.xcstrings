@@ -52634,6 +52634,17 @@
         }
       }
     },
+    "Open in the shop": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz w sklepie"
+          }
+        }
+      }
+    },
     "Open inFakt": {
       "extractionState": "manual",
       "localizations": {

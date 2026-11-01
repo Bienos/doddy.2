@@ -221,8 +221,8 @@ export function chainsWeb(): FakeWeb {
 
 const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const money = z.strictObject({ minor: z.number().int().positive(), currency: z.literal("PLN") });
-const readChain = z.enum(["biedronka", "lidl", "dino", "rossmann", "aldi", "zabka", "delikatesy", "leclerc", "maxizoo", "komfort", "ccc"]);
-const anyChain = z.enum(["biedronka", "lidl", "dino", "rossmann", "aldi", "zabka", "delikatesy", "leclerc", "maxizoo", "komfort", "ccc", "kaufland", "carrefour", "auchan", "netto"]);
+const readChain = z.enum(["biedronka", "lidl", "dino", "rossmann", "aldi", "zabka", "delikatesy", "leclerc", "maxizoo", "komfort", "ccc", "lewiatan", "natura", "action", "deichmann", "zooplus"]);
+const anyChain = z.enum(["biedronka", "lidl", "dino", "rossmann", "aldi", "zabka", "delikatesy", "leclerc", "maxizoo", "komfort", "ccc", "lewiatan", "natura", "action", "deichmann", "zooplus", "kaufland", "carrefour", "auchan", "netto"]);
 export const OfferSchema = z.strictObject({
   chain: readChain,
   product: z.string().min(1).max(160),
@@ -244,6 +244,7 @@ export const OfferSchema = z.strictObject({
     unitPrice: z.strictObject({ minor: z.number().int().positive(), per: z.enum(["kg", "l", "szt"]) }).optional(),
   }).optional(),
   cut: z.strictObject({ percent: z.number().int().min(1).max(99) }).optional(),
+  buyUrl: z.string().url().startsWith("https://").optional(),
   limit: z.number().int().positive().optional(),
 });
 export const PromotionSchema = z.strictObject({

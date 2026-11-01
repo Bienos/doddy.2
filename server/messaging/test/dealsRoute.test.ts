@@ -105,7 +105,7 @@ describe("leaflet search route against real Postgres", { skip: dbSkip }, () => {
     const res = await w.ask(a.h, { items: ["  masło  "], language: "pl" });
     assert.equal(res.statusCode, 200);
     assert.equal(res.json().items[0].query, "masło");
-    assert.deepEqual(res.json().chains.map((c: { chain: string }) => c.chain), ["biedronka", "lidl", "dino", "rossmann", "aldi", "zabka", "delikatesy"]);
+    assert.deepEqual(res.json().chains.map((c: { chain: string }) => c.chain), ["biedronka", "lidl", "dino", "rossmann", "aldi", "zabka", "delikatesy", "lewiatan", "natura", "action"]);
     const before = w.web.requests.length;
     const link = await w.ask(a.h, { items: ["masło"], chains: ["netto", "kaufland", "netto"], language: "pl" });
     assert.deepEqual(link.json().chains, [

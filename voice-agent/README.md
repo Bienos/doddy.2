@@ -19,6 +19,14 @@ adding one adapter, not rewriting the app or the agent.
 - **The prompt was not changed:** the tool's description carries its rules (only what the user said, NIP and VAT checked against their words, sums from the result, never "issued"). `instructions.md` has the same line for the OpenAI voice.
 - **Not checked:** a real conversation. **Only an app build from `claude/invoices-by-voice-ksef` (ADR-677 or later) runs the tool**; an older build answers that it doesn't support it, and the agent then says it isn't available yet.
 
+**Applied to the live agent 1 Nov 2026, in two steps, about 14:20 and 15:32 UTC (ADR-667 and ADR-669, `find_deals`'s wording: the shops of #156 and #157; owner: "Yes" to putting the new `find_deals` text live, then "Approved").**
+- **Read first:** `tool_9201m5rpyjhfe2kv0yd5xbbfk6k3` with the text of 29 Oct (ADR-660): Biedronka, Lidl, Dino, Rossmann, Aldi and Żabka read; `chains` lists ten ids. **Rollback:** re-send that text (`git show ef3ff50:voice-agent/tools.json`, the `find_deals` entry, rendered with `voice_agent_spec.py elevenlabs`).
+- **Step 1 (14:20 UTC):** the tool as `voice_agent_spec.py elevenlabs` renders it at `20f8f55` (#156, the server deployed at 13:52 UTC): Delikatesy Centrum by default, E.Leclerc when named, Maxi Zoo, CCC and Komfort for their kind of item.
+- **Step 2 (15:32 UTC):** read again (step 1's text, unchanged), then the tool as rendered at `e0c755d` (#157, the server deployed at 15:31 UTC): adds Lewiatan, Natura and Action by default and zooplus and Deichmann for their kind of item; `chains` lists 20 ids. Two steps so the agent never named a shop the live server didn't read.
+- **Each step changed only two descriptions** (the tool's and a chain's); every other field was re-sent as read (client tool, 90 s, speak first, expects a response, interruptions allowed). The agent itself, its prompt and its `tool_ids` were not touched.
+- **Checked, by script, on each read-back:** the description and the `chains` item description equal the spec at that commit; the timeout, the pre-tool speech, the type and expects-response too.
+- **Older apps:** a build from before #156 (or #157) doesn't know the new ids: if the agent names one of those shops, that app refuses the request ("chains must be some of ...") and nothing is checked; with no shop named it works as before, and the server asks the new shops itself. **Not checked:** a real conversation.
+
 **Applied to the live agent 29 Oct 2026, about 04:10 UTC (ADR-660, `find_deals`'s wording: Aldi and Żabka are read chains; owner: "zaplikuj bez czekania", then "Tekst find_deals do agenta" to the question of what to apply).**
 - **Read first:** `tool_9201m5rpyjhfe2kv0yd5xbbfk6k3` with the text created on 25 Oct (`tools.json` as of `3e678c8`): Biedronka, Lidl, Dino and Rossmann read, Żabka a link, no Aldi. **Rollback:** re-send that text (`git show 3e678c8:voice-agent/tools.json`, the `find_deals` entry, rendered with `voice_agent_spec.py elevenlabs`).
 - **Saved:** the tool only, exactly as `voice_agent_spec.py elevenlabs` renders it from the default branch at `ef3ff50`. Only the three descriptions changed (the tool's, `chains`', and a chain's); every other field was re-sent as read (client tool, 90 s, speak first, expects a response, interruptions allowed). The agent itself, its prompt and its `tool_ids` were not touched.
@@ -335,7 +343,6 @@ places phone calls through the Twilio number (ADR-152, ADR-172). Same three file
 - **Voice: not set (decision needed).** Neither `phone/session.json` nor the setup script sets a TTS model or voice, and `languages` is only `en`. ElevenLabs therefore uses its default for an English agent. The prompt says to answer Polish callers in Polish, but whether that voice speaks Polish hasn't been checked. Before the first real call, choose a multilingual TTS model, or add a `pl` preset, and record it in `phone/session.json`.
 - Drift: export the live phone agent's prompt and tools as above and run `voice_agent_spec.py compare EXPORT.json --agent phone`.
 - Status: **not created yet** (needs the deployed messaging server, a Twilio number and the owner's go-ahead).
-
 
 **Applied to the live agent 2026-10-11 (ADR-300 to ADR-305): round 4.**
 - **Re-read first:** version `agtvrsn_7701m4n8vprrem78gmfjjmq77t96` (43 tools), unchanged since round 3. `instructions.md`, which includes the affectionate-edison lines merged in PR #27, matched it except for the order of one sentence.
