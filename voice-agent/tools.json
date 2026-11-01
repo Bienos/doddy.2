@@ -518,7 +518,7 @@
         },
         "required": []
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 60, "elevenlabs_tool_id": "not_synced"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 60, "elevenlabs_tool_id": "tool_9301m6bqvywnfmv93krv5jhdpd7b"}
     },
     {
       "type": "function",
