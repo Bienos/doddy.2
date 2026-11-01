@@ -212,6 +212,26 @@ final class InvoiceVoiceTests: XCTestCase {
         XCTAssertTrue(VoiceToolReply.invoiceDraft(operation, notes: notes).contains("offline"))
     }
 
+    func testAPrivateBuyersNameIsMadeFromTheirFirstAndLastName() throws {
+        var session = InvoiceVoiceSession()
+        var (operation, _) = apply(&session, #"{"buyer_kind":"private","buyer_first_name":"Jan","buyer_last_name":"Kowalski"}"#, heard: [])
+        XCTAssertEqual(operation.draft.contractor.name?.value, "Jan Kowalski")
+        XCTAssertFalse(Set(operation.draft.missingData).contains("contractor.first_name"))
+        XCTAssertFalse(Set(operation.draft.missingData).contains("contractor.nip"), "no NIP for a private person")
+        let card = InvoiceCard(operation, polish: true)
+        XCTAssertEqual(card.buyer.first { $0.label == "Nazwisko" }?.value, "Kowalski")
+
+        (operation, _) = apply(&session, #"{"buyer_last_name":"Nowak"}"#, heard: [])
+        XCTAssertEqual(operation.draft.contractor.name?.value, "Jan Nowak", "a made-up name follows its parts")
+        (operation, _) = apply(&session, #"{"buyer_name":"Jan Nowak-Kowalski"}"#, heard: [])
+        (operation, _) = apply(&session, #"{"buyer_first_name":"Janusz"}"#, heard: [])
+        XCTAssertEqual(operation.draft.contractor.name?.value, "Jan Nowak-Kowalski", "a name said whole stays as said")
+
+        var partial = InvoiceVoiceSession()
+        let (half, _) = apply(&partial, #"{"buyer_kind":"private","buyer_first_name":"Jan"}"#, heard: [])
+        XCTAssertTrue(half.draft.missingData.contains("contractor.last_name"))
+    }
+
     // MARK: Lines and a new invoice
 
     func testLinesAreAddedInOrderAndRemoved() throws {

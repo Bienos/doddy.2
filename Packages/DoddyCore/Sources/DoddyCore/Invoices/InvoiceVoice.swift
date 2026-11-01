@@ -35,6 +35,9 @@ public struct InvoiceVoiceUpdate: Equatable, Sendable {
     public var startNew = false
     public var buyerKind: ContractorKind?
     public var buyerName: String?
+    /// A private person's first and last name (ADR-669).
+    public var buyerFirstName: String?
+    public var buyerLastName: String?
     public var buyerNip: String?
     public var street: String?
     public var buildingNumber: String?
@@ -105,6 +108,10 @@ public struct InvoiceVoiceSession: Equatable, Sendable, Codable {
 
     private var kind: Sourced<ContractorKind>?
     private var name: Sourced<String>?
+    /// The name was made from the first and last name, not said as a whole: it follows them.
+    private var nameFromParts = false
+    private var firstName: Sourced<String>?
+    private var lastName: Sourced<String>?
     private var nip: Sourced<String>?
     private var address: InvoiceAddress?
     private var lines: [LineInput] = []
@@ -141,7 +148,16 @@ public struct InvoiceVoiceSession: Equatable, Sendable, Codable {
 
         // The buyer.
         if let value = update.buyerKind { next.kind = Sourced(value, source: .saidByUser) }
-        if let value = update.buyerName { next.name = Sourced(Self.oneSpaced(value), source: .saidByUser) }
+        if let value = update.buyerName {
+            next.name = Sourced(Self.oneSpaced(value), source: .saidByUser)
+            next.nameFromParts = false
+        }
+        if let value = update.buyerFirstName { next.firstName = Sourced(Self.oneSpaced(value), source: .saidByUser) }
+        if let value = update.buyerLastName { next.lastName = Sourced(Self.oneSpaced(value), source: .saidByUser) }
+        if next.name == nil || next.nameFromParts, let first = next.firstName?.value, let last = next.lastName?.value {
+            next.name = Sourced("\(first) \(last)", source: .saidByUser)
+            next.nameFromParts = true
+        }
         if let raw = update.buyerNip {
             // A NIP that fails its check digit is kept as said, so the card can show what is wrong with it.
             let heard = Nip(raw).map { InvoiceHeard.saidNip($0, in: userWords) } ?? true
@@ -312,7 +328,8 @@ public struct InvoiceVoiceSession: Equatable, Sendable, Codable {
         }
         let draft = InvoiceDraft(
             contractor: InvoiceContractor(
-                kind: kind, name: name, nip: nip, address: address.map { Sourced($0, source: .saidByUser) }),
+                kind: kind, name: name, nip: nip, address: address.map { Sourced($0, source: .saidByUser) },
+                firstName: firstName, lastName: lastName),
             lines: draftLines, currency: currency, issueDate: issueDate, saleDate: saleDate,
             paymentMethod: payment, paymentDueDate: due, vatExemptionReason: exemptionReason, splitPayment: splitPayment)
         return (draft, notes)
@@ -447,6 +464,8 @@ extension VoiceToolRequest {
             }
         }
         update.buyerName = args.text("buyer_name")
+        update.buyerFirstName = args.text("buyer_first_name")
+        update.buyerLastName = args.text("buyer_last_name")
         update.buyerNip = args.text("buyer_nip")
         update.street = args.text("street")
         update.buildingNumber = args.text("building_number")
@@ -545,7 +564,7 @@ extension VoiceToolRequest {
         }
 
         if !update.startNew, !update.removeLine, !update.hasLineFields, !update.hasAddressFields, update.buyerKind == nil,
-           update.buyerName == nil, update.buyerNip == nil, update.currency == nil, update.issueDate == nil, update.saleDate == nil,
+           update.buyerName == nil, update.buyerFirstName == nil, update.buyerLastName == nil, update.buyerNip == nil, update.currency == nil, update.issueDate == nil, update.saleDate == nil,
            update.dueDate == nil, update.dueInDays == nil, update.paymentMethod == nil, update.exemptionReason == nil,
            update.splitPayment == nil {
             return invalid("nothing to put on the invoice: pass what the user said")

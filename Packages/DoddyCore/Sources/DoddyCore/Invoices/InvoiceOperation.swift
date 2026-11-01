@@ -236,7 +236,8 @@ public struct InvoiceOperation: Equatable, Sendable, Codable {
         let nip = c.nip.flatMap { Nip($0.value)?.digits }
         let buyer = "{\"address\":{\"buildingNumber\":\(s(a.buildingNumber)),\"city\":\(s(a.city)),"
             + "\"countryCode\":\(s(a.countryCode)),\"flatNumber\":\(s(a.flatNumber)),\"postCode\":\(s(a.postCode)),"
-            + "\"street\":\(s(a.street))},\"kind\":\(s(c.kind?.value.rawValue)),\"name\":\(s(c.name?.value)),\"nip\":\(s(nip))}"
+            + "\"street\":\(s(a.street))},\"firstName\":\(s(c.firstName?.value)),\"kind\":\(s(c.kind?.value.rawValue)),"
+            + "\"lastName\":\(s(c.lastName?.value)),\"name\":\(s(c.name?.value)),\"nip\":\(s(nip))}"
         let lines = zip(draft.lines, totals.lineNetMinor).map { line, net in
             "{\"lineNetMinor\":\(net),\"name\":\(s(line.name?.value)),\"netUnitPriceMinor\":\(line.netUnitPriceMinor ?? 0),"
                 + "\"quantityMilli\":\(line.quantityMilli ?? 0),\"unit\":\(s(line.unit)),\"vat\":\(s(line.vat?.value.symbol))}"

@@ -1,4 +1,9 @@
 import Foundation
+#if canImport(CryptoKit)
+import CryptoKit
+#else
+import Crypto
+#endif
 
 // Where an invoice stands in KSeF, Poland's national e-invoice system (ADR-667). inFakt sends an
 // invoice to KSeF only when asked (`send_to_ksef`, or POST /api/v3/ksef2/documents/{uuid}/send.json)
@@ -37,6 +42,40 @@ public struct KsefNumber: Equatable, Hashable, Sendable, Codable {
 
     /// The seller's NIP the number starts with.
     public var sellerNip: String { String(value.prefix(10)) }
+}
+
+/// The link in KSeF's verification QR code, KOD I (ADR-669), that must be on any copy of an
+/// invoice given outside KSeF: to a consumer, a buyer abroad or without a NIP. From MF's KSeF 2.0
+/// documentation (`kody-qr.md`): `https://qr.ksef.mf.gov.pl/invoice/{seller's NIP}/{issue date as
+/// DD-MM-RRRR}/{SHA-256 of the invoice's XML file, Base64URL without padding}`, with the KSeF number
+/// printed under the code. The XML is the file inFakt sent to KSeF; Doddy doesn't have it yet.
+public enum KsefVerificationLink {
+    public enum Environment: String, Sendable {
+        case production, demo, test
+
+        var host: String {
+            switch self {
+            case .production: "https://qr.ksef.mf.gov.pl"
+            case .demo: "https://qr-demo.ksef.mf.gov.pl"
+            case .test: "https://qr-test.ksef.mf.gov.pl"
+            }
+        }
+    }
+
+    public static func url(sellerNip: Nip, issueDate: CalendarDate, invoiceXML: Data, environment: Environment = .production) -> String {
+        url(sellerNip: sellerNip, issueDate: issueDate, sha256Base64URL: base64URL(Data(SHA256.hash(data: invoiceXML))), environment: environment)
+    }
+
+    static func url(sellerNip: Nip, issueDate: CalendarDate, sha256Base64URL: String, environment: Environment) -> String {
+        let day = String(format: "%02d-%02d-%04d", issueDate.day, issueDate.month, issueDate.year)
+        return "\(environment.host)/invoice/\(sellerNip.digits)/\(day)/\(sha256Base64URL)"
+    }
+
+    /// Base64 with `-` and `_` for `+` and `/`, and no `=` at the end.
+    static func base64URL(_ data: Data) -> String {
+        data.base64EncodedString().replacingOccurrences(of: "+", with: "-").replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "")
+    }
 }
 
 public enum KsefStatus: Equatable, Sendable, Codable {

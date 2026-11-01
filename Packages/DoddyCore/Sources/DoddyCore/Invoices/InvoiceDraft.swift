@@ -43,14 +43,21 @@ public struct InvoiceAddress: Equatable, Sendable, Codable {
 public struct InvoiceContractor: Equatable, Sendable, Codable {
     public var kind: Sourced<ContractorKind>?
     public var name: Sourced<String>?
+    /// A private person's first and last name, which inFakt asks for separately (`private_person`,
+    /// ADR-669). Not used for a firm.
+    public var firstName: Sourced<String>?
+    public var lastName: Sourced<String>?
     /// As the person gave it; checked into a `Nip` only when the draft is validated.
     public var nip: Sourced<String>?
     public var address: Sourced<InvoiceAddress>?
 
     public init(kind: Sourced<ContractorKind>? = nil, name: Sourced<String>? = nil,
-                nip: Sourced<String>? = nil, address: Sourced<InvoiceAddress>? = nil) {
+                nip: Sourced<String>? = nil, address: Sourced<InvoiceAddress>? = nil,
+                firstName: Sourced<String>? = nil, lastName: Sourced<String>? = nil) {
         self.kind = kind
         self.name = name
+        self.firstName = firstName
+        self.lastName = lastName
         self.nip = nip
         self.address = address
     }
@@ -79,6 +86,7 @@ public struct InvoiceLine: Equatable, Sendable, Codable {
 /// A field of the draft, named so the reply can say exactly what is missing.
 public enum InvoiceField: Equatable, Hashable, Sendable {
     case contractorKind, contractorName, contractorNip, contractorAddress
+    case contractorFirstName, contractorLastName
     case lines
     case lineName(Int), lineQuantity(Int), lineUnitPrice(Int), lineVat(Int)
     case currency, issueDate, saleDate, paymentMethod, paymentDueDate, vatExemptionReason
@@ -92,6 +100,8 @@ public enum InvoiceField: Equatable, Hashable, Sendable {
         case .contractorName: "contractor.name"
         case .contractorNip: "contractor.nip"
         case .contractorAddress: "contractor.address"
+        case .contractorFirstName: "contractor.first_name"
+        case .contractorLastName: "contractor.last_name"
         case .lines: "lines"
         case .lineName(let i): "lines.\(i + 1).name"
         case .lineQuantity(let i): "lines.\(i + 1).quantity"
@@ -206,6 +216,11 @@ public struct InvoiceDraft: Equatable, Sendable, Codable {
         // pkt 3) asks for it on every invoice but a simplified one, which Doddy doesn't draft (ADR-667).
         let mayOmitFirmData = kind == .privatePerson
         text(contractor.name, .contractorName)
+        if kind == .privatePerson {
+            // inFakt takes a private person as a first and a last name (ADR-669).
+            text(contractor.firstName, .contractorFirstName)
+            text(contractor.lastName, .contractorLastName)
+        }
         if let nip = contractor.nip {
             if let raw = check(nip, .contractorNip), Nip(raw) == nil { found.append(.invalid(.contractorNip, .nipChecksum)) }
         } else if !mayOmitFirmData {

@@ -488,8 +488,10 @@
         "type": "object",
         "properties": {
           "start_new": {"type": "boolean", "description": "True only to throw away the draft on screen and start another invoice."},
-          "buyer_kind": {"type": "string", "enum": ["company", "private"], "description": "'company' when the buyer is a firm or the user gives a NIP, 'private' for a private person. Ask if unclear."},
+          "buyer_kind": {"type": "string", "enum": ["company", "private"], "description": "'company' when the buyer is a firm or the user gives a NIP, 'private' for a private person (then pass their first and last name). Ask if unclear."},
           "buyer_name": {"type": "string", "description": "The buyer's name as the user said it, for example 'ABC sp. z o.o.' or 'Jan Kowalski'."},
+          "buyer_first_name": {"type": "string", "description": "A private person's first name, as said, for example 'Jan'."},
+          "buyer_last_name": {"type": "string", "description": "A private person's last name, as said, for example 'Kowalski'."},
           "buyer_nip": {"type": "string", "description": "The buyer's NIP exactly as the user said it, ten digits, for example '1060006024'. Never from memory or a guess."},
           "street": {"type": "string", "description": "The buyer's street, as said."},
           "building_number": {"type": "string", "description": "The building number, as said, for example '3' or '12A'."},

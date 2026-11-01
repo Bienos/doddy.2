@@ -34201,6 +34201,17 @@
         }
       }
     },
+    "KSeF number": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Numer KSeF"
+          }
+        }
+      }
+    },
     "Keep Precise Location on, or iOS can't tell when you get there.": {
       "extractionState": "manual",
       "localizations": {

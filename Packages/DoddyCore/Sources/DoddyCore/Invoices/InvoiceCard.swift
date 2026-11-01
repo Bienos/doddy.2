@@ -53,6 +53,9 @@ public struct InvoiceCard: Equatable, Sendable {
     public let canSendToKsef: Bool
     /// Said next to Send to KSeF: it can't be undone, only corrected.
     public let ksefWarning: String?
+    /// The KSeF number once KSeF accepted the invoice (ADR-669): shown so it can be copied, and from
+    /// 1 Jan 2027 it goes in the title of a B2B transfer for this invoice.
+    public let ksefNumber: String?
 
     public init(_ operation: InvoiceOperation, polish: Bool) {
         let text = Words(polish: polish)
@@ -64,6 +67,10 @@ public struct InvoiceCard: Equatable, Sendable {
         let c = draft.contractor
         if let kind = c.kind { buyer.append(Row(text.kind, text.kindName(kind.value), proposed: !kind.isConfirmed)) }
         if let name = c.name { buyer.append(Row(text.name, name.value, proposed: !name.isConfirmed)) }
+        if c.kind?.value == .privatePerson {
+            if let first = c.firstName { buyer.append(Row(text.firstName, first.value)) }
+            if let last = c.lastName { buyer.append(Row(text.lastName, last.value)) }
+        }
         if let nip = c.nip {
             buyer.append(Row("NIP", Nip(nip.value)?.display ?? nip.value, proposed: !nip.isConfirmed, confirmField: .contractorNip))
         }
@@ -132,6 +139,7 @@ public struct InvoiceCard: Equatable, Sendable {
         }
         self.canSendToKsef = InFaktAPI.createVerified && operation.mayAskToSendToKsef
         self.ksefWarning = operation.mayAskToSendToKsef ? text.ksefIsFinal : nil
+        if case .accepted(let number) = operation.ksef { self.ksefNumber = number.value } else { self.ksefNumber = nil }
     }
 
     /// A field's name in a sentence ("buyer's NIP"), for the voice agent's replies too (ADR-667).
@@ -190,6 +198,8 @@ public struct InvoiceCard: Equatable, Sendable {
         var kind: String { pick("Nabywca", "Buyer") }
         var name: String { pick("Nazwa", "Name") }
         var address: String { pick("Adres", "Address") }
+        var firstName: String { pick("Imię", "First name") }
+        var lastName: String { pick("Nazwisko", "Last name") }
         var currency: String { pick("Waluta", "Currency") }
         var issueDate: String { pick("Data wystawienia", "Issue date") }
         var saleDate: String { pick("Data sprzedaży", "Sale date") }
@@ -238,6 +248,8 @@ public struct InvoiceCard: Equatable, Sendable {
             case .contractorName: pick("nazwa nabywcy", "buyer's name")
             case .contractorNip: pick("NIP nabywcy", "buyer's NIP")
             case .contractorAddress: pick("adres nabywcy", "buyer's address")
+            case .contractorFirstName: pick("imię nabywcy", "buyer's first name")
+            case .contractorLastName: pick("nazwisko nabywcy", "buyer's last name")
             case .lines: pick("pozycje faktury", "invoice lines")
             case .lineName(let i): pick("nazwa pozycji \(i + 1)", "name of line \(i + 1)")
             case .lineQuantity(let i): pick("ilość w pozycji \(i + 1)", "quantity in line \(i + 1)")

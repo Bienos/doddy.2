@@ -45,6 +45,21 @@ struct InvoiceCardView: View {
             block(NSLocalizedString("Details", comment: ""), rows: card.facts)
             block(NSLocalizedString("Totals", comment: ""), rows: card.totals)
 
+            // ADR-669: once KSeF accepted it. Selectable, because from 2027 it goes in a B2B transfer's title.
+            if let number = card.ksefNumber {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("KSeF number").font(.subheadline.weight(.semibold))
+                    Text(verbatim: number).font(.footnote.monospaced()).textSelection(.enabled)
+                }
+                .accessibilityIdentifier("invoice.ksefNumber")
+            }
+
+            if let warning = card.ksefWarning {
+                Label { Text(verbatim: warning) } icon: { Image(systemName: "exclamationmark.shield") }
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+            }
+
             if let note = card.sendingNote {
                 Label { Text(verbatim: note) } icon: { Image(systemName: "info.circle") }
                     .font(.footnote)

@@ -233,8 +233,13 @@ final class InvoiceTests: XCTestCase {
     func testAPrivatePersonNeedsNoNipButAFirmDoes() {
         var draft = readyDraft()
         let address = InvoiceAddress(street: "Polna", buildingNumber: "1", city: "Gdańsk", postCode: "80-001")
-        draft.contractor = InvoiceContractor(kind: said(.privatePerson), name: said("Jan Kowalski"), address: said(address))
+        draft.contractor = InvoiceContractor(kind: said(.privatePerson), name: said("Jan Kowalski"), address: said(address),
+                                             firstName: said("Jan"), lastName: said("Kowalski"))
         XCTAssertEqual(draft.issues(), [])
+        // ADR-669: inFakt takes a private person as a first and a last name.
+        draft.contractor.lastName = nil
+        XCTAssertEqual(draft.issues(), [.missing(.contractorLastName)])
+        draft.contractor.lastName = said("Kowalski")
         // ADR-667: the VAT act asks for every buyer's address (art. 106e ust. 1 pkt 3), a private person's too.
         draft.contractor.address = nil
         XCTAssertEqual(draft.issues(), [.missing(.contractorAddress)])

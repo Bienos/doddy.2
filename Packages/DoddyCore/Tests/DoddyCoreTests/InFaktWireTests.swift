@@ -60,9 +60,46 @@ final class InFaktWireTests: XCTestCase {
         draft.paymentMethod = said(.cod)
         XCTAssertEqual(InFaktWire.createBody(try confirmed(draft).1), .failure(.paymentMethod(.cod)))
         draft = readyDraft()
-        draft.contractor.kind = said(.privatePerson)
-        draft.contractor.nip = nil
-        XCTAssertEqual(InFaktWire.createBody(try confirmed(draft).1), .failure(.privatePerson), "inFakt wants a first and a last name")
+        draft.currency = said(.eur)
+        XCTAssertNil(InvoiceOperation(draft: draft).digest, "another currency can't even be confirmed yet")
+    }
+
+    func testAPrivatePersonGoesWithAFirstAndALastName() throws {
+        var draft = readyDraft()
+        draft.contractor = InvoiceContractor(
+            kind: said(.privatePerson), name: said("Jan Kowalski"),
+            address: said(InvoiceAddress(street: "Polna", buildingNumber: "1", city: "Gdańsk", postCode: "80-001")),
+            firstName: said("Jan"), lastName: said("Kowalski"))
+        let body = try InFaktWire.createBody(try confirmed(draft).1).get()
+        XCTAssertTrue(body.contains(#""client_business_activity_kind":"private_person""#))
+        XCTAssertTrue(body.contains(#""client_first_name":"Jan","client_last_name":"Kowalski""#))
+        XCTAssertFalse(body.contains("client_tax_code"), "no NIP for a private person")
+        XCTAssertFalse(body.contains("client_company_name"))
+    }
+
+    // MARK: KSeF number and verification link
+
+    func testTheVerificationLinkIsMinistrysFormat() throws {
+        // MF's own example (kody-qr.md): test environment, NIP 1111111111, 01-02-2026.
+        XCTAssertEqual(
+            KsefVerificationLink.url(sellerNip: try XCTUnwrap(Nip("1111111111")), issueDate: try XCTUnwrap(CalendarDate(iso: "2026-02-01")),
+                                     sha256Base64URL: "UtQp9Gpc51y-u3xApZjIjgkpZ01js-J8KflSPW8WzIE", environment: .test),
+            "https://qr-test.ksef.mf.gov.pl/invoice/1111111111/01-02-2026/UtQp9Gpc51y-u3xApZjIjgkpZ01js-J8KflSPW8WzIE")
+        // SHA-256("abc") is ungWv48Bz+pBQUDeXa4iI7ADYaOWF3qctBD/YfIAFa0= in Base64: + / and = all change.
+        XCTAssertEqual(
+            KsefVerificationLink.url(sellerNip: try XCTUnwrap(Nip("5265877635")), issueDate: try XCTUnwrap(CalendarDate(iso: "2026-10-30")),
+                                     invoiceXML: Data("abc".utf8)),
+            "https://qr.ksef.mf.gov.pl/invoice/5265877635/30-10-2026/ungWv48Bz-pBQUDeXa4iI7ADYaOWF3qctBD_YfIAFa0")
+    }
+
+    func testTheCardShowsTheKsefNumberOnlyOnceAccepted() throws {
+        var (operation, _) = try confirmed(readyDraft())
+        operation.record(receipt: InvoiceReceipt(operationId: operation.operationId, externalId: "inv-1", number: "1/10/2026", verifiedAt: Date()))
+        XCTAssertNil(InvoiceCard(operation, polish: true).ksefNumber)
+        operation.recordKsef(.pending)
+        XCTAssertNil(InvoiceCard(operation, polish: true).ksefNumber)
+        operation.recordKsef(.accepted(try XCTUnwrap(KsefNumber("5265877635-20251030-0100001AF629-AF"))))
+        XCTAssertEqual(InvoiceCard(operation, polish: true).ksefNumber, "5265877635-20251030-0100001AF629-AF")
     }
 
     // MARK: Answers (inFakt's own examples)

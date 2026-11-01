@@ -7,16 +7,15 @@ import Foundation
 // seen**: until one create call in the sandbox shows the same shapes, `InFaktAPI.createVerified`
 // stays false and nothing uses this to send.
 //
-// What it refuses rather than guesses: a private person (inFakt wants a first and a last name, the
-// draft has one name), a buyer abroad or another currency (not drafted yet), an exempt line without
-// an exemption id from inFakt's own list, and cash on delivery (inFakt's list says "delivery"; not
-// confirmed to be the same).
+// What it refuses rather than guesses: a buyer abroad or another currency (not drafted yet), an
+// exempt line without an exemption id from inFakt's own list, and cash on delivery (inFakt's list
+// says "delivery"; not confirmed to be the same). A private person goes as inFakt's `private_person`
+// with a first and a last name (ADR-669).
 //
 // Platforms: iPhone and iPad. Pure logic; tested on Linux.
 
 public enum InFaktWire {
     public enum Unsupported: Error, Equatable, Sendable {
-        case privatePerson
         case foreignBuyer
         case currency
         case exemptionIdNeeded
@@ -31,19 +30,16 @@ public enum InFaktWire {
     public static func createBody(_ invoice: ConfirmedInvoice, exemptionId: Int? = nil) -> Result<String, Unsupported> {
         let draft = invoice.draft
         let buyer = draft.contractor
-        guard buyer.kind?.value == .company else { return .failure(.privatePerson) }
+        guard let kind = buyer.kind?.value else { return .failure(.foreignBuyer) }
         guard let address = buyer.address?.value, address.countryCode == "PL" else { return .failure(.foreignBuyer) }
         guard draft.currency?.value == .pln else { return .failure(.currency) }
         guard let method = draft.paymentMethod?.value else { return .failure(.paymentMethod(.cod)) }
         if method == .cod { return .failure(.paymentMethod(.cod)) }
         let exempt = draft.lines.contains { $0.vat?.value == .exempt }
         if exempt, exemptionId == nil { return .failure(.exemptionIdNeeded) }
-        guard let issue = draft.issueDate, let nip = buyer.nip.flatMap({ Nip($0.value) }) else { return .failure(.foreignBuyer) }
+        guard let issue = draft.issueDate else { return .failure(.foreignBuyer) }
 
         var fields: [(String, JSON)] = [
-            ("client_business_activity_kind", .string("other_business")),
-            ("client_company_name", .string(buyer.name?.value ?? "")),
-            ("client_tax_code", .string(nip.digits)),
             ("client_street", .string(address.street ?? "")),
             ("client_city", .string(address.city ?? "")),
             ("client_post_code", .string(address.postCode ?? "")),
@@ -55,6 +51,18 @@ public enum InFaktWire {
             ("sale_date", .string((draft.saleDate ?? issue).iso)),
             ("payment_method", .string(method.rawValue)),
         ]
+        switch kind {
+        case .company:
+            // A ConfirmedInvoice for a firm always has a valid NIP (the draft refuses one without).
+            guard let nip = buyer.nip.flatMap({ Nip($0.value) }) else { return .failure(.foreignBuyer) }
+            fields += [("client_business_activity_kind", .string("other_business")),
+                       ("client_company_name", .string(buyer.name?.value ?? "")),
+                       ("client_tax_code", .string(nip.digits))]
+        case .privatePerson:
+            fields += [("client_business_activity_kind", .string("private_person")),
+                       ("client_first_name", .string(buyer.firstName?.value ?? "")),
+                       ("client_last_name", .string(buyer.lastName?.value ?? ""))]
+        }
         if let number = address.buildingNumber, !number.isEmpty { fields.append(("client_street_number", .string(number))) }
         if let flat = address.flatNumber, !flat.isEmpty { fields.append(("client_flat_number", .string(flat))) }
         if let due = draft.paymentDueDate { fields.append(("payment_date", .string(due.iso))) }
