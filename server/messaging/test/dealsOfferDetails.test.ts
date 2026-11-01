@@ -138,3 +138,13 @@ describe("page images over the size cap", () => {
     assert.deepEqual(response.chains, [{ chain: "biedronka", status: "failed", pages: { read: 1, of: 5 } }]);
   });
 });
+
+describe("a cut under 1% is no real cut (ADR-669)", () => {
+  test("a 30-day price 1 grosz above the price: no cut, flagged not a cut; 1% and more is a cut", () => {
+    const tiny = offer({ price: 23795, lowest30d: 23796, regular: 33999 });
+    assert.equal(tiny.cut, undefined);
+    assert.ok(tiny.flags?.includes("not_a_cut"), "Deichmann's 'SALE' tiles: the price has been this low for 30 days");
+    assert.deepEqual(offer({ price: 9900, lowest30d: 10000 }).cut, { percent: 1 });
+    assert.ok(!offer({ price: 9900, lowest30d: 10000 }).flags?.includes("not_a_cut"));
+  });
+});
