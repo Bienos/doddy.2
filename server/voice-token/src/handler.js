@@ -11,7 +11,7 @@
 const ELEVENLABS_TOKEN_URL = "https://api.elevenlabs.io/v1/convai/conversation/token";
 const OPENAI_CLIENT_SECRET_URL = "https://api.openai.com/v1/realtime/client_secrets";
 const UPSTREAM_TIMEOUT_MS = 10_000;
-import { authenticateVoiceSession, sessionStoreFromEnv, VoiceAuthStoreUnavailable } from "./voice-auth.js";
+import { beginVoiceSessionCheck, sessionStoreFromEnv, VoiceAuthStoreUnavailable } from "./voice-auth.js";
 
 const DEFAULT_TOKENS_PER_HOUR = 30;
 const DEFAULT_GLOBAL_TOKENS_PER_HOUR = 100;
@@ -74,17 +74,17 @@ export async function handleTokenRequest(request, env, deps = {}) {
   const model = provider === "openai" ? requested.model ?? (env.OPENAI_REALTIME_MODEL || OPENAI_DEFAULT_MODEL) : undefined;
 
   let store;
-  let session;
+  let check;
   try {
     store = deps.authStore ?? sessionStoreFromEnv(env, { fetch: deps.storeFetch });
-    session = deps.authenticateSession
-      ? await deps.authenticateSession(request)
-      : await authenticateVoiceSession(request, env, { store, now: now() });
+    check = deps.authenticateSession
+      ? { session: Promise.resolve(deps.authenticateSession(request)) }
+      : beginVoiceSessionCheck(request, env, { store, now: now() });
   } catch (error) {
     if (error instanceof VoiceAuthStoreUnavailable) return finish(503, "server_not_configured", { provider });
     return finish(503, "server_not_configured", { provider });
   }
-  if (!session) return finish(401, "session_expired", { provider });
+  if (!check) return finish(401, "session_expired", { provider });
 
   const perHour = tokensPerHour(env.DODDY_TOKENS_PER_HOUR, DEFAULT_TOKENS_PER_HOUR);
   const globalPerHour = tokensPerHour(env.DODDY_GLOBAL_TOKENS_PER_HOUR, DEFAULT_GLOBAL_TOKENS_PER_HOUR);
@@ -93,18 +93,26 @@ export async function handleTokenRequest(request, env, deps = {}) {
   const providerConfigured = provider === "openai"
     ? Boolean(env.OPENAI_API_KEY)
     : Boolean(env.ELEVENLABS_API_KEY && env.ELEVENLABS_AGENT_ID);
-  if (!providerConfigured || perHour === null || globalPerHour === null || dailyLimit === null
-      || fullModelDailyLimit === null || !store.hitLimits) {
-    return finish(500, "server_not_configured", { provider });
-  }
+  const configured = providerConfigured && perHour !== null && globalPerHour !== null && dailyLimit !== null
+      && fullModelDailyLimit !== null && Boolean(store.hitLimits);
 
-  let decision;
-  try {
-    decision = await store.hitLimits(session.userId, perHour, globalPerHour, now(),
-      { dailyLimit, fullModelDailyLimit, fullModel: model === OPENAI_FULL_MODEL });
-  } catch {
-    return finish(503, "server_not_configured", { provider });
-  }
+  // The session lookup and the limit count go to the store at the same time: the token's
+  // signature already names the account. So a revoked but correctly signed token (only someone
+  // who once signed in has one, and only for its 10 minutes) may use up one count per request
+  // (its account's hourly and daily ones, and the global hourly one) before its 401.
+  const count = async (userId) => store.hitLimits(userId, perHour, globalPerHour, now(),
+    { dailyLimit, fullModelDailyLimit, fullModel: model === OPENAI_FULL_MODEL });
+  const counting = !configured ? undefined
+    : check.userId !== undefined ? count(check.userId)
+      // An injected session (tests) names no account up front, so it is counted after.
+      : check.session.then((session) => (session ? count(session.userId) : undefined));
+  const [looked, counted] = await Promise.allSettled([check.session, counting]);
+  // Same outcomes, in the same order, as checking one after the other.
+  if (looked.status === "rejected") return finish(503, "server_not_configured", { provider });
+  if (!looked.value) return finish(401, "session_expired", { provider });
+  if (!configured) return finish(500, "server_not_configured", { provider });
+  if (counted.status === "rejected") return finish(503, "server_not_configured", { provider });
+  const decision = counted.value;
   if (!decision.allowed) {
     const retryAfter = { "retry-after": String(decision.retryAfterSeconds) };
     if (decision.limit === "voice" || decision.limit === "full_model") {

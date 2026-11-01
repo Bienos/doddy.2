@@ -324,6 +324,16 @@ export async function handleVoiceAuthRequest(request, env, deps = {}) {
 }
 
 export async function authenticateVoiceSession(request, env, deps = {}) {
+  const check = beginVoiceSessionCheck(request, env, deps);
+  return check ? check.session : null;
+}
+
+/**
+ * Checks the access token's signature now and starts the session lookup without waiting for it,
+ * so the caller can send other store requests at the same time. Null for a missing or bad token.
+ * @returns {{ userId: string, session: Promise<{userId: string, sessionId: string}|null> } | null}
+ */
+export function beginVoiceSessionCheck(request, env, deps = {}) {
   const store = deps.store;
   const signingKey = deps.signingKey ?? signingSecret(env.DODDY_SESSION_SIGNING_KEY);
   if (!store || !signingKey) throw new VoiceAuthStoreUnavailable();
@@ -331,9 +341,12 @@ export async function authenticateVoiceSession(request, env, deps = {}) {
   if (!token) return null;
   const claims = verifyAccessToken(token, signingKey, deps.now ?? Date.now());
   if (!claims) return null;
-  const session = await store.getSession(claims.sid);
-  if (!session || session.userId !== claims.sub || session.sessionId !== claims.sid) return null;
-  return { userId: claims.sub, sessionId: claims.sid };
+  const session = (async () => {
+    const stored = await store.getSession(claims.sid);
+    if (!stored || stored.userId !== claims.sub || stored.sessionId !== claims.sid) return null;
+    return { userId: claims.sub, sessionId: claims.sid };
+  })();
+  return { userId: claims.sub, session };
 }
 
 export function sessionStoreFromEnv(env, deps = {}) {

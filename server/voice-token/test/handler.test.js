@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { handleTokenRequest } from "../src/handler.js";
+import { signAccessToken } from "../src/voice-auth.js";
 
 const USER_ID = "opaque-account-id";
 const ENV = {
@@ -115,6 +116,65 @@ test("a daily limit refuses with daily_limit, says which one, and the full model
     assert.equal(refused.response.status, 500, "a bad setting fails closed");
     assert.equal(authStore.calls.length, 0);
   }
+});
+
+/** The real token check and store adapter, over a fake Redis REST endpoint that answers after a delay. */
+async function throughStore({ session = { userId: USER_ID, sessionId: "session-1", refreshHash: "h" }, sessionFails = false,
+  limits = [1, 1, "ok"], limitsFail = false, token, environment = {} } = {}) {
+  const now = Date.parse("2026-10-16T12:00:00Z");
+  const events = [];
+  const storeFetch = async (_url, init) => {
+    const name = JSON.parse(init.body)[0][0] === "GET" ? "session" : "limits";
+    events.push(`${name} sent`);
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    events.push(`${name} answered`);
+    if (name === "session") {
+      return sessionFails ? new Response("", { status: 500 }) : Response.json([{ result: session && JSON.stringify(session) }]);
+    }
+    return Response.json([limitsFail ? { error: "ERR" } : { result: limits }]);
+  };
+  const upstream = [];
+  const accessToken = token ?? signAccessToken({ userId: USER_ID, sessionId: "session-1" }, ENV.DODDY_SESSION_SIGNING_KEY, now);
+  const response = await handleTokenRequest(request(null, accessToken), {
+    ...ENV, UPSTASH_REDIS_REST_URL: "https://redis.example.test", UPSTASH_REDIS_REST_TOKEN: "store-secret", ...environment,
+  }, {
+    storeFetch, now: () => now, log: () => {},
+    fetch: async (url) => { upstream.push(String(url)); return Response.json({ token: "provider-credential" }); },
+  });
+  return { response, body: await response.json(), events, upstream };
+}
+
+test("the session lookup and the limit count are sent together, with the same outcomes as before", async () => {
+  const ok = await throughStore();
+  assert.equal(ok.response.status, 200);
+  assert.deepEqual(ok.events.slice(0, 2).sort(), ["limits sent", "session sent"], "both in flight before either answers");
+  assert.equal(ok.upstream.length, 1);
+
+  const otherAccount = { userId: "someone-else", sessionId: "session-1", refreshHash: "h" };
+  for (const options of [{ session: null }, { session: null, limitsFail: true }, { session: otherAccount },
+    { session: null, environment: { VOICE_DAILY_PER_USER: "x" } }]) {
+    const refused = await throughStore(options);
+    assert.equal(refused.response.status, 401, JSON.stringify(options));
+    assert.deepEqual(refused.body, { error: "session_expired" });
+    assert.equal(refused.upstream.length, 0);
+  }
+  for (const options of [{ sessionFails: true }, { limitsFail: true }]) {
+    const down = await throughStore(options);
+    assert.equal(down.response.status, 503, JSON.stringify(options));
+    assert.deepEqual(down.body, { error: "server_not_configured" });
+    assert.equal(down.upstream.length, 0);
+  }
+  const misconfigured = await throughStore({ environment: { VOICE_DAILY_PER_USER: "x" } });
+  assert.equal(misconfigured.response.status, 500);
+  assert.deepEqual(misconfigured.events, ["session sent", "session answered"], "nothing counted with a bad setting");
+  const limited = await throughStore({ limits: [31, 1, "hourly"] });
+  assert.equal(limited.response.status, 429);
+  assert.deepEqual(limited.body, { error: "rate_limited" });
+  assert.equal(limited.response.headers.get("retry-after"), "3600");
+  assert.equal(limited.upstream.length, 0);
+  const badToken = await throughStore({ token: "not-a-signed-token" });
+  assert.equal(badToken.response.status, 401);
+  assert.deepEqual(badToken.events, [], "a bad token reaches no store");
 });
 
 test("missing provider configuration and shared storage fail closed", async () => {
