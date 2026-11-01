@@ -15,6 +15,8 @@ import { authenticateVoiceSession, sessionStoreFromEnv, VoiceAuthStoreUnavailabl
 
 const DEFAULT_TOKENS_PER_HOUR = 30;
 const DEFAULT_GLOBAL_TOKENS_PER_HOUR = 100;
+const DEFAULT_VOICE_DAILY_PER_USER = 100;
+const DEFAULT_VOICE_DAILY_FULL_MODEL_PER_USER = 10;
 
 // How long the phone has to open the OpenAI connection with the secret (the session itself
 // may then run longer). Short, because the secret is a bearer credential.
@@ -22,6 +24,8 @@ const OPENAI_SECRET_SECONDS = 120;
 export const OPENAI_DEFAULT_MODEL = "gpt-realtime-2.1-mini";
 /** The models the app may ask for. Anything else is refused, so a client can't pick a pricier one. */
 export const OPENAI_ALLOWED_MODELS = Object.freeze(["gpt-realtime-2.1", "gpt-realtime-2.1-mini"]);
+/** The full model has its own, tighter daily limit per user. */
+export const OPENAI_FULL_MODEL = "gpt-realtime-2.1";
 export const OPENAI_DEFAULT_VOICE = "marin";
 
 /**
@@ -30,6 +34,8 @@ export const OPENAI_DEFAULT_VOICE = "marin";
  * @property {string} [ELEVENLABS_AGENT_ID] the authenticated Doddy agent
  * @property {string} [DODDY_TOKENS_PER_HOUR] per DODDY account; default 30
  * @property {string} [DODDY_GLOBAL_TOKENS_PER_HOUR] global shared limit; default 100
+ * @property {string} [VOICE_DAILY_PER_USER] voice tokens per account per UTC day, any provider; default 100
+ * @property {string} [VOICE_DAILY_FULL_MODEL_PER_USER] full-model OpenAI secrets per account per UTC day; default 10
  * @property {string} [OPENAI_API_KEY]        server-only secret; only needed for the OpenAI test voice
  * @property {string} [OPENAI_REALTIME_MODEL] used when the app names no model; default "gpt-realtime-2.1-mini"
  * @property {string} [OPENAI_REALTIME_VOICE] default "marin"
@@ -65,6 +71,7 @@ export async function handleTokenRequest(request, env, deps = {}) {
   if (provider === "openai" && requested.model !== undefined && !OPENAI_ALLOWED_MODELS.includes(requested.model)) {
     return finish(400, "unknown_model", { provider });
   }
+  const model = provider === "openai" ? requested.model ?? (env.OPENAI_REALTIME_MODEL || OPENAI_DEFAULT_MODEL) : undefined;
 
   let store;
   let session;
@@ -81,25 +88,35 @@ export async function handleTokenRequest(request, env, deps = {}) {
 
   const perHour = tokensPerHour(env.DODDY_TOKENS_PER_HOUR, DEFAULT_TOKENS_PER_HOUR);
   const globalPerHour = tokensPerHour(env.DODDY_GLOBAL_TOKENS_PER_HOUR, DEFAULT_GLOBAL_TOKENS_PER_HOUR);
+  const dailyLimit = tokensPerHour(env.VOICE_DAILY_PER_USER, DEFAULT_VOICE_DAILY_PER_USER);
+  const fullModelDailyLimit = tokensPerHour(env.VOICE_DAILY_FULL_MODEL_PER_USER, DEFAULT_VOICE_DAILY_FULL_MODEL_PER_USER);
   const providerConfigured = provider === "openai"
     ? Boolean(env.OPENAI_API_KEY)
     : Boolean(env.ELEVENLABS_API_KEY && env.ELEVENLABS_AGENT_ID);
-  if (!providerConfigured || perHour === null || globalPerHour === null || !store.hitLimits) {
+  if (!providerConfigured || perHour === null || globalPerHour === null || dailyLimit === null
+      || fullModelDailyLimit === null || !store.hitLimits) {
     return finish(500, "server_not_configured", { provider });
   }
 
   let decision;
   try {
-    decision = await store.hitLimits(session.userId, perHour, globalPerHour, now());
+    decision = await store.hitLimits(session.userId, perHour, globalPerHour, now(),
+      { dailyLimit, fullModelDailyLimit, fullModel: model === OPENAI_FULL_MODEL });
   } catch {
     return finish(503, "server_not_configured", { provider });
   }
   if (!decision.allowed) {
-    return finish(429, "rate_limited", { provider }, undefined, { "retry-after": String(decision.retryAfterSeconds) });
+    const retryAfter = { "retry-after": String(decision.retryAfterSeconds) };
+    if (decision.limit === "voice" || decision.limit === "full_model") {
+      // Today's (UTC) allowance is used up: for all voice, or only for the full model, so the
+      // app can offer the mini model or say "tomorrow". The model is never switched here.
+      return finish(429, "daily_limit", { provider, limit: decision.limit }, { error: "daily_limit", limit: decision.limit }, retryAfter);
+    }
+    return finish(429, "rate_limited", { provider }, undefined, retryAfter);
   }
 
   return provider === "openai"
-    ? openAISecret(env, fetchImpl, finish, requested.model)
+    ? openAISecret(env, fetchImpl, finish, model)
     : elevenLabsToken(env, fetchImpl, finish);
 }
 
@@ -137,8 +154,7 @@ function tokensPerHour(raw, fallback) {
 }
 
 /** A short-lived OpenAI Realtime client secret with model and voice set (ADR-265, ADR-442). */
-async function openAISecret(env, fetchImpl, finish, requestedModel) {
-  const model = requestedModel ?? (env.OPENAI_REALTIME_MODEL || OPENAI_DEFAULT_MODEL);
+async function openAISecret(env, fetchImpl, finish, model) {
   const voice = env.OPENAI_REALTIME_VOICE || OPENAI_DEFAULT_VOICE;
   const fields = { provider: "openai", model };
 

@@ -125,27 +125,47 @@ export function createVoiceAuthStore({ url, token, fetch: fetchImpl = fetch, tim
       return typeof value === "string" ? parseJSON(value) : null;
     },
 
-    async hitLimits(userId, perUserLimit, globalLimit, nowMs) {
+    /**
+     * One atomic step. The hourly counters count every request, as before. The daily ones (per
+     * user, UTC day: every voice token, and full-model OpenAI secrets) count only a request that
+     * every limit allows. `limit` names what refused: "hourly", "voice" or "full_model".
+     */
+    async hitLimits(userId, perUserLimit, globalLimit, nowMs, { dailyLimit, fullModelDailyLimit, fullModel }) {
       const windowSeconds = 3_600;
       const window = Math.floor(nowMs / (windowSeconds * 1_000));
       const ttl = windowSeconds + 60;
+      const daySeconds = 86_400;
+      const day = Math.floor(nowMs / (daySeconds * 1_000));
       const perUserKey = key("limit-user", `${userId}:${window}`);
       const globalKey = key("limit-global", String(window));
+      const keys = [perUserKey, globalKey, key("limit-day-user", `${userId}:${day}`)];
+      if (fullModel) keys.push(key("limit-day-full-model", `${userId}:${day}`));
       const script = `
         local per = redis.call('INCR', KEYS[1])
         if per == 1 then redis.call('EXPIRE', KEYS[1], ARGV[1]) end
         local global = redis.call('INCR', KEYS[2])
         if global == 1 then redis.call('EXPIRE', KEYS[2], ARGV[1]) end
-        return {per, global}
+        if per > tonumber(ARGV[2]) or global > tonumber(ARGV[3]) then return {per, global, 'hourly'} end
+        if tonumber(redis.call('GET', KEYS[3]) or '0') >= tonumber(ARGV[5]) then return {per, global, 'voice'} end
+        if KEYS[4] then
+          if tonumber(redis.call('GET', KEYS[4]) or '0') >= tonumber(ARGV[6]) then return {per, global, 'full_model'} end
+          if redis.call('INCR', KEYS[4]) == 1 then redis.call('EXPIRE', KEYS[4], ARGV[4]) end
+        end
+        if redis.call('INCR', KEYS[3]) == 1 then redis.call('EXPIRE', KEYS[3], ARGV[4]) end
+        return {per, global, 'ok'}
       `;
-      const counts = await evalScript(script, [perUserKey, globalKey], [ttl]);
-      if (!Array.isArray(counts) || counts.length !== 2) throw new VoiceAuthStoreUnavailable();
-      const [perUserCount, globalCount] = counts;
+      const counts = await evalScript(script, keys,
+        [ttl, perUserLimit, globalLimit, daySeconds + 60, dailyLimit, fullModelDailyLimit]);
+      if (!Array.isArray(counts) || counts.length !== 3) throw new VoiceAuthStoreUnavailable();
+      const [perUserCount, globalCount, outcome] = counts;
       const per = Number(perUserCount);
       const global = Number(globalCount);
-      if (!Number.isSafeInteger(per) || !Number.isSafeInteger(global)) throw new VoiceAuthStoreUnavailable();
-      return { allowed: per <= perUserLimit && global <= globalLimit, perUserCount: per, globalCount: global,
-        retryAfterSeconds: Math.max(1, Math.ceil(((window + 1) * windowSeconds * 1_000 - nowMs) / 1_000)) };
+      if (!Number.isSafeInteger(per) || !Number.isSafeInteger(global)
+          || !["ok", "hourly", "voice", "full_model"].includes(outcome)) throw new VoiceAuthStoreUnavailable();
+      const daily = outcome === "voice" || outcome === "full_model";
+      const resetMs = daily ? (day + 1) * daySeconds * 1_000 : (window + 1) * windowSeconds * 1_000;
+      return { allowed: outcome === "ok", limit: outcome === "ok" ? null : outcome, perUserCount: per, globalCount: global,
+        retryAfterSeconds: Math.max(1, Math.ceil((resetMs - nowMs) / 1_000)) };
     },
 
     async revokeSession(sessionId, userId) {

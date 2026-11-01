@@ -11,13 +11,15 @@ const ENV = {
   OPENAI_API_KEY: "openai-server-secret",
 };
 
-function store({ allowed = true } = {}) {
+function store({ allowed = true, limit } = {}) {
   const calls = [];
+  const daily = [];
   return {
-    calls,
-    async hitLimits(userId, perUserLimit, globalLimit, now) {
+    calls, daily,
+    async hitLimits(userId, perUserLimit, globalLimit, now, dailyLimits) {
       calls.push({ userId, perUserLimit, globalLimit, now });
-      return { allowed, retryAfterSeconds: 120 };
+      daily.push(dailyLimits);
+      return { allowed, limit, retryAfterSeconds: 120 };
     },
     async getSession() { return { userId: USER_ID, sessionId: "session-1" }; },
   };
@@ -81,6 +83,38 @@ test("shared per-user and global rate limits stop provider requests", async () =
   assert.equal(response.headers.get("retry-after"), "120");
   assert.equal(calls.length, 0);
   assert.deepEqual(authStore.calls[0], { userId: USER_ID, perUserLimit: 30, globalLimit: 100, now: 100_000 });
+});
+
+test("a daily limit refuses with daily_limit, says which one, and the full model counts on its own", async () => {
+  for (const limit of ["voice", "full_model"]) {
+    const { response, body, calls, logs } = await run(request({ provider: "openai", model: "gpt-realtime-2.1" }), {
+      limits: { allowed: false, limit },
+    });
+    assert.equal(response.status, 429);
+    assert.deepEqual(body, { error: "daily_limit", limit });
+    assert.equal(response.headers.get("retry-after"), "120");
+    assert.equal(calls.length, 0, "no provider request");
+    assert.equal(logs[0].limit, limit);
+  }
+  const counted = async (body, environment) => {
+    const authStore = store();
+    await run(request(body), { authStore, environment });
+    return authStore.daily[0];
+  };
+  assert.deepEqual(await counted({ provider: "openai", model: "gpt-realtime-2.1" }),
+    { dailyLimit: 100, fullModelDailyLimit: 10, fullModel: true });
+  assert.equal((await counted({ provider: "openai", model: "gpt-realtime-2.1-mini" })).fullModel, false);
+  assert.equal((await counted(null)).fullModel, false, "ElevenLabs counts only against the overall daily limit");
+  assert.equal((await counted({ provider: "openai" }, { ...ENV, OPENAI_REALTIME_MODEL: "gpt-realtime-2.1" })).fullModel, true,
+    "the server's default model counts too");
+  assert.deepEqual(await counted(null, { ...ENV, VOICE_DAILY_PER_USER: "250", VOICE_DAILY_FULL_MODEL_PER_USER: "3" }),
+    { dailyLimit: 250, fullModelDailyLimit: 3, fullModel: false });
+  for (const bad of [{ VOICE_DAILY_PER_USER: "0" }, { VOICE_DAILY_FULL_MODEL_PER_USER: "lots" }]) {
+    const authStore = store();
+    const refused = await run(request(null), { authStore, environment: { ...ENV, ...bad } });
+    assert.equal(refused.response.status, 500, "a bad setting fails closed");
+    assert.equal(authStore.calls.length, 0);
+  }
 });
 
 test("missing provider configuration and shared storage fail closed", async () => {
