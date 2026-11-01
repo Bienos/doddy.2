@@ -61,16 +61,26 @@ xcodebuild test -project Doddy.xcodeproj -scheme Doddy \
 scripts/ci.sh                  # set DODDY_DESTINATION to override the simulator
 ```
 
-**Hosted CI (`.github/workflows/ios.yml`, ADR-123, ADR-137, ADR-497)** has three jobs:
-- `core` (Ubuntu): `scripts/ci.sh --core-only`, on every pull request.
-- `changes` (Ubuntu, seconds): decides whether the pull request needs the macOS build
-  (`scripts/ci_needs_mac.sh`). It does when any changed file can reach an Xcode target or its tests;
-  a change made only of docs, servers, site or other non-app files skips it.
-- `ci` (macOS): the full `scripts/ci.sh`. Its iOS part builds once (`xcodebuild build-for-testing`), runs
-  the unit tests (`-only-testing:DoddyTests`), restarts the simulator, then runs the UI tests
-  (`-only-testing:DoddyUITests`), so the UI tests start on a fresh simulator (ADR-561). It runs only after `core`
-  passes and only when `changes` says so. Run the workflow by hand (Actions → iOS build and tests →
-  Run workflow) and it always runs.
+**Hosted CI (`.github/workflows/ios.yml`, ADR-123, ADR-137, ADR-497, ADR-683)** runs these jobs side by side:
+- `changes` (Ubuntu, seconds): `scripts/ci_needs_mac.sh` decides whether the pull request needs the macOS build
+  (any changed file that can reach an Xcode target or its tests), and `scripts/ci_groups.sh` decides which Linux
+  groups it needs. An unlisted path, or no list, runs everything.
+- Linux groups, each `scripts/ci.sh --only <group>`: `checks` (Python generators, guards, specs; always),
+  `swift` (package tests, app-logic type-check, model tests; SwiftPM `.build` cached), `backend`, `node`
+  (gateway, web, site, voice token, secrets tool) and `messaging` (with Postgres). npm downloads are cached.
+- `core`: one result for all the Linux groups, green when every group that ran passed (a skipped group is fine).
+- `ci` (macOS): `scripts/ci.sh --skip-node`: the Python checks, the Swift package tests, then the Xcode part (build
+  once with `xcodebuild build-for-testing`, unit tests, restart the simulator, UI tests: ADR-561). It no longer
+  waits for `core`, and no longer repeats the Node suites. Run the workflow by hand (Actions → iOS build and
+  tests → Run workflow) and it always runs.
+
+Locally: `scripts/ci.sh --only swift,backend` runs just those groups; `--skip-node` is what the Mac job runs.
+
+**Timings measured 1 Nov 2026** (runs 41330977302 on the Mac side, 41340906950 on the Linux side), before
+ADR-683: `core` 14.5 min (backend tests 411 s, Swift package tests 214 s, messaging 40 s, the rest under 45 s each);
+the Mac job 62 min (UI tests 40.7 min, unit tests 4.3, build 4.3, `xcodebuild -list` 1.3, and about 14 min of Linux
+checks it repeated, 413 s of them the backend tests). With the Mac waiting for `core`, a pull request took about
+79 minutes. Not yet measured after ADR-683.
 
 **Cost:** the repository is private, so Actions time is paid for. A macOS run took about 52 minutes
 (34 of them UI tests) at $0.062 a minute, about $3.20, on 14 October; ADR-499 should take about 10 minutes
