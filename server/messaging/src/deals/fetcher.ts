@@ -99,13 +99,33 @@ function normalisePattern(p: string): string {
   try { return encodeURI(decodeURI(p)); } catch { return p; }
 }
 
-/** True when `pattern` (with `*` and a trailing `$`) matches the start of `path`. */
+/** Longer patterns, or ones with more `*`, are ignored: they match nothing. Real files stay far below. */
+const ROBOTS_PATTERN_MAX_CHARS = 512;
+const ROBOTS_PATTERN_MAX_STARS = 16;
+
+/**
+ * True when `pattern` (with `*` and a trailing `$`) matches the start of `path`. Plain string search,
+ * never a RegExp: a pattern like `/*a*a*a*a*a*a*X` used to backtrack for seconds and stall the server.
+ * Taking the leftmost match of each piece between stars is enough, so this never backtracks.
+ */
 export function robotsPatternMatches(pattern: string, path: string): boolean {
   const p = normalisePattern(pattern);
   const anchored = p.endsWith("$");
   const body = anchored ? p.slice(0, -1) : p;
-  const re = body.split("*").map((s) => s.replace(/[.+?^${}()|[\]\\]/g, "\\$&")).join(".*");
-  return new RegExp(`^${re}${anchored ? "$" : ""}`).test(path);
+  const pieces = body.split("*");
+  if (body.length > ROBOTS_PATTERN_MAX_CHARS || pieces.length - 1 > ROBOTS_PATTERN_MAX_STARS) return false;
+  const first = pieces[0]!;
+  if (!path.startsWith(first)) return false;
+  if (pieces.length === 1) return !anchored || path.length === first.length;
+  let at = first.length;
+  for (let i = 1; i < pieces.length - 1; i++) {
+    const found = path.indexOf(pieces[i]!, at);
+    if (found < 0) return false;
+    at = found + pieces[i]!.length;
+  }
+  const last = pieces[pieces.length - 1]!;
+  if (anchored) return path.length - last.length >= at && path.endsWith(last);
+  return path.indexOf(last, at) >= 0;
 }
 
 /** The groups that apply to `token`: every group naming it, else every `*` group (merged, RFC 9309). */
