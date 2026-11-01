@@ -20,6 +20,7 @@ final class VoiceAuthSession {
     private var accessToken: String?
     private var accessTokenExpiresAt = Date.distantPast
     private var refreshTask: Task<VoiceSessionReply, Error>?
+    private var restoreTask: Task<Void, Never>?
     private var lastFailure: VoiceAuthFailure?
     private var revocationObserver: NSObjectProtocol?
 
@@ -33,10 +34,26 @@ final class VoiceAuthSession {
 
     func restore() async {
         if isSignedIn, accessTokenExpiresAt.timeIntervalSinceNow > 30 { return }
+        // One restore at a time (ADR-672): a second caller waits for the one in flight. Returning at
+        // once made `bearerToken()` throw "session expired" while the first restore was still working.
+        if let restoreTask {
+            await restoreTask.value
+            return
+        }
         guard !isLoading, let refreshToken = VoiceSessionKeychain.refreshToken(), let userID = VoiceSessionKeychain.userID() else {
             if !hasSavedSession { lastFailure = .sessionExpired }
             return
         }
+        // Its own task, so a caller that is cancelled (a sheet closed) doesn't cancel the refresh.
+        let task = Task { @MainActor in
+            await self.runRestore(refreshToken, userID: userID)
+            self.restoreTask = nil
+        }
+        restoreTask = task
+        await task.value
+    }
+
+    private func runRestore(_ refreshToken: String, userID: String) async {
         isLoading = true
         defer { isLoading = false }
         do {
