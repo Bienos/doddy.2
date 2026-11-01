@@ -665,6 +665,21 @@ final class VoiceSessionController {
         }
         actions.toggleMute = { [weak self] in await self?.toggleMute() }
 
+        // The voice token is asked for now and used below (ADR-670), so the wait for the notes and
+        // the rest of the context below overlaps with the wait for the server instead of adding to
+        // it. Only ElevenLabs through the token server, after consent and the microphone check.
+        var earlyToken: Task<Result<String, VoiceTokenError>, Never>?
+        if consentProvider == .elevenLabs, case .tokenServer(let endpoint) = mode {
+            earlyToken = Task { () -> Result<String, VoiceTokenError> in
+                do throws(VoiceTokenError) {
+                    return .success(try await VoiceTokenClient(endpoint: endpoint).fetchToken())
+                } catch {
+                    return .failure(error)
+                }
+            }
+        }
+        defer { earlyToken?.cancel() }
+
         // What Doddy knows at the start: the saved notes and, if the user keeps it on, the last
         // few conversations. Both are bounded and say when they were cut.
         await store.reload()
@@ -799,9 +814,20 @@ final class VoiceSessionController {
         let auth: ElevenLabsConfiguration
         switch mode {
         case .tokenServer(let endpoint):
-            do throws(VoiceTokenError) {
-                auth = .conversationToken(try await VoiceTokenClient(endpoint: endpoint).fetchToken())
-            } catch {
+            let fetched: Result<String, VoiceTokenError>
+            if let earlyToken {
+                fetched = await earlyToken.value
+            } else {
+                do throws(VoiceTokenError) {
+                    fetched = .success(try await VoiceTokenClient(endpoint: endpoint).fetchToken())
+                } catch {
+                    fetched = .failure(error)
+                }
+            }
+            switch fetched {
+            case .success(let token):
+                auth = .conversationToken(token)
+            case .failure(let error):
                 let tokenNote = "voice token not received: attempt \(attempt), \(LogSafeError.kind(of: error))"
                 Self.audioLog.notice("\(tokenNote, privacy: .public)")
                 if attempt == startAttempt, phase == .connecting {
