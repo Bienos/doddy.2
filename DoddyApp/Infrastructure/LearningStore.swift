@@ -85,7 +85,7 @@ final class LearningStore {
         for task in tasks { await task.value }
     }
 
-    /// True only when the row was written, so Doddy says "written down" only then (ADR-670).
+    /// True only when the row was written, so Doddy says "written down" only then (ADR-672).
     @discardableResult
     func recordGap(_ category: CapabilityGapCategory, requestID: String, sessionID: String?) async -> Bool {
         guard let service else { return false }

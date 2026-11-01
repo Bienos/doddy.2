@@ -79,7 +79,7 @@ struct VoiceView: View {
         }
         .foregroundStyle(Theme.ink)
         .task {
-            // Started in a task of its own (ADR-670): closing this sheet cancels the view's task, and a
+            // Started in a task of its own (ADR-672): closing this sheet cancels the view's task, and a
             // cancelled start ended the conversation as "You're offline". Home holds the conversation
             // and keeps it going after the sheet closes (ADR-595), as the gate's button already does.
             await Task { @MainActor in
@@ -193,7 +193,7 @@ struct VoiceView: View {
                         #if DEBUG
                         // Engineering text (audio session names, in English): the owner's Debug builds
                         // only, so a failure can be read without Xcode; Release and TestFlight hide it
-                        // (ADR-670). The log line in the controller stays in every build.
+                        // (ADR-672). The log line in the controller stays in every build.
                         if let note = controller.audioNote {
                             Text(note)
                                 .font(.caption2)

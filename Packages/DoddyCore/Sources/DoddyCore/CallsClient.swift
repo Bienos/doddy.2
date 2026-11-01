@@ -154,7 +154,7 @@ extension DoddyServerClient {
 
     /// Waits longer than the server's own ElevenLabs timeout (15 s). A request that may have
     /// reached the server without an answer coming back is `unknown`, never "offline, try again":
-    /// no reply, a 500, 502 or 504, or a 202 whose body can't be read (ADR-670).
+    /// no reply, a 500, 502 or 504, or a 202 whose body can't be read (ADR-672).
     public func callMeNow() async throws -> CallRequest {
         let unknown = CallRequest(callId: nil, status: "unknown")
         let response: ServerResponse

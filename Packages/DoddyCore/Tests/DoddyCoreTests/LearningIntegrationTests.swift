@@ -211,7 +211,7 @@ final class LearningIntegrationTests: XCTestCase {
         }
     }
 
-    /// ADR-670: the reply for a capability gap that wasn't written never says it was written down.
+    /// ADR-672: the reply for a capability gap that wasn't written never says it was written down.
     func testGapNotNotedNeverClaimsTheWrite() {
         XCTAssertTrue(LearningPrompt.gapNoted.hasPrefix("noted:"))
         XCTAssertTrue(LearningPrompt.gapNotNoted.hasPrefix("not noted:"))

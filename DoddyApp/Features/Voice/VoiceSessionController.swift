@@ -2179,7 +2179,7 @@ final class VoiceSessionController {
             AgentVoiceMeter.shared.markAttached(meteredConversation != nil)
         } else if !isLive, let metered = meteredConversation {
             // Let go of the conversation it was attached to: stop() and a drop clear `conversation`
-            // before the phase changes, so detaching from `conversation` did nothing (ADR-670).
+            // before the phase changes, so detaching from `conversation` did nothing (ADR-672).
             metered.detachAgentLevelMeter(AgentVoiceMeter.shared)
             meteredConversation = nil
             AgentVoiceMeter.shared.reset()
@@ -2847,7 +2847,7 @@ final class VoiceSessionController {
             await reply(call.toolCallId, await DealsModel.shared.searchForAgent(request))
         case .noteCapabilityGap(let category):
             // Nothing changes and no app is used: one row on this iPhone, as a category (ADR-440).
-            // "Written down" only after the write (ADR-670); no store or a failed write says so.
+            // "Written down" only after the write (ADR-672); no store or a failed write says so.
             let noted = await store.learning?.recordGap(category, requestID: call.toolCallId, sessionID: conversationID) ?? false
             await reply(call.toolCallId, noted ? LearningPrompt.gapNoted : LearningPrompt.gapNotNoted)
         case .unsupported(let name):

@@ -421,6 +421,14 @@ private struct DealRow: View {
                 }
                 .font(.footnote)
             }
+            // ADR-668: the shop's page through a partner link, said before the tap; it never moves the offer.
+            if offer.isPartner, let buy = offer.buyUrl.flatMap(ShopPage.url) {
+                Link(destination: buy) { Text("Open in the shop") }
+                    .font(.footnote)
+                    .accessibilityIdentifier("deals.offer.partner")
+                Text("Partner link: the page goes through an affiliate network on its way to the shop, and Doddy may earn a commission if you buy. Prices and the order of the picks don't change.")
+                    .font(.caption).foregroundStyle(Theme.secondaryText)
+            }
         }
         .accessibilityElement(children: .combine)
     }

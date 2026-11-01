@@ -149,7 +149,7 @@ final class CallCaseTests: XCTestCase {
         XCTAssertEqual(approval, CallApproval(attemptId: nil, state: "unknown"))
     }
 
-    /// ADR-670: a 500, 502 or 504 may come after the server dialled, and an accepted call whose
+    /// ADR-672: a 500, 502 or 504 may come after the server dialled, and an accepted call whose
     /// reply can't be read was still accepted: both are `unknown`, sent once and never redialled.
     func testApprovalWithAGatewayErrorOrAnUnreadableAcceptIsUnknown() async throws {
         for reply in [ServerResponse(status: 500, body: Data()), ServerResponse(status: 502, body: Data()),

@@ -34,7 +34,7 @@ extension DoddyServerClient {
     /// Approves exactly the preview with this digest; `at` schedules it (a retry at a set time).
     /// May start a call: an answer that never came back (no reply, or a 500, 502 or 504 that may
     /// have come after the server dialled) is `unknown`, and nothing is redialled. So is a 202 whose
-    /// body can't be read: the server took it (ADR-670, the same rule as errands and watches).
+    /// body can't be read: the server took it (ADR-672, the same rule as errands and watches).
     public func approveCallCase(_ caseId: UUID, digest: String, at: Date? = nil) async throws -> CallApproval {
         let unknown = CallApproval(attemptId: nil, state: "unknown")
         let response: ServerResponse
@@ -71,7 +71,7 @@ extension DoddyServerClient {
         } catch is OutcomeUnknown {
             return "unknown"
         }
-        // It rings the user's phone: the same rule as approving (ADR-670).
+        // It rings the user's phone: the same rule as approving (ADR-672).
         if Self.mayHaveStarted(response.status) { return "unknown" }
         guard response.status == 202 else { throw Self.callCaseError(from: response) }
         guard let body = try? JSONDecoder().decode(TakeoverReply.self, from: response.body) else { return "unknown" }

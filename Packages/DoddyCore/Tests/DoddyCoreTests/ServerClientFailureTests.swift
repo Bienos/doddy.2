@@ -23,7 +23,7 @@ final class ServerClientFailureTests: XCTestCase {
         XCTAssertEqual(request.status, "unknown")
     }
 
-    /// ADR-670: a gateway error or an unreadable accept may come after the call started.
+    /// ADR-672: a gateway error or an unreadable accept may come after the call started.
     func testCallMeNowWithAGatewayErrorOrAnUnreadableAcceptIsUnknown() async throws {
         for reply in [ServerResponse(status: 502, body: Data()), ServerResponse(status: 504, body: Data()),
                       ServerResponse(status: 202, body: Data("{".utf8))] {

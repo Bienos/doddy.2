@@ -9,7 +9,9 @@ import type { PickOutput } from "./match.js";
 /** Chains whose leaflets Doddy reads on request (Aldi and Żabka since ADR-660). */
 // ADR-667: Delikatesy Centrum (grocery, read by default), E.Leclerc (only when asked: its leaflets are screened),
 // Maxi Zoo, Komfort and CCC (specialty shops, asked only when an item is their kind: src/deals/specialty.ts).
-export const READ_CHAINS = ["biedronka", "lidl", "dino", "rossmann", "aldi", "zabka", "delikatesy", "leclerc", "maxizoo", "komfort", "ccc"] as const;
+// ADR-669: Lewiatan (grocery, screened like Biedronka), Natura (drugstore) and Action (discounter), read by default;
+// Deichmann (shoes, like CCC) and zooplus (online pet shop, like Maxi Zoo), asked only for their kind of item.
+export const READ_CHAINS = ["biedronka", "lidl", "dino", "rossmann", "aldi", "zabka", "delikatesy", "leclerc", "maxizoo", "komfort", "ccc", "lewiatan", "natura", "action", "deichmann", "zooplus"] as const;
 /** Chains that only get a link to their official leaflet page (bot walls, or no published data). */
 export const LINK_CHAINS = ["kaufland", "carrefour", "auchan", "netto"] as const;
 export const CHAINS = [...READ_CHAINS, ...LINK_CHAINS] as const;
@@ -32,6 +34,7 @@ export const CHAIN_NAMES: Record<Chain, string> = {
   biedronka: "Biedronka", lidl: "Lidl", dino: "Dino", rossmann: "Rossmann", aldi: "Aldi",
   kaufland: "Kaufland", carrefour: "Carrefour", auchan: "Auchan", netto: "Netto", zabka: "Żabka",
   delikatesy: "Delikatesy Centrum", leclerc: "E.Leclerc", maxizoo: "Maxi Zoo", komfort: "Komfort", ccc: "CCC",
+  lewiatan: "Lewiatan", natura: "Natura", action: "Action", deichmann: "Deichmann", zooplus: "zooplus",
 };
 
 export interface Money { minor: number; currency: "PLN" }
@@ -57,7 +60,10 @@ export interface Offer {
   source: { url: string; page?: number };
   readBy: "leaflet_data" | "page_image";
   ean?: string;
-  check: boolean;
+check: boolean;
+  /** The offer's own page through an affiliate network (ADR-612, ADR-668), only where a programme covers its host;
+   * added after the picks, so it never changes an offer, its order or its price. */
+  buyUrl?: string;
   /** What the price needs or carries, for the app's checklist and filters (ADR-661). */
   flags?: OfferFlag[];
   /** The price of one piece when buying `quantity` under the offer's mechanic ("2+1", "drugi za 5 zł",

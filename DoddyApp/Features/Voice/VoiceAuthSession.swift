@@ -34,7 +34,7 @@ final class VoiceAuthSession {
 
     func restore() async {
         if isSignedIn, accessTokenExpiresAt.timeIntervalSinceNow > 30 { return }
-        // One restore at a time (ADR-670): a second caller waits for the one in flight. Returning at
+        // One restore at a time (ADR-672): a second caller waits for the one in flight. Returning at
         // once made `bearerToken()` throw "session expired" while the first restore was still working.
         if let restoreTask {
             await restoreTask.value
