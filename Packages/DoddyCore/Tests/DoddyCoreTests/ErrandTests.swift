@@ -297,6 +297,8 @@ final class ErrandTests: XCTestCase {
             (reply(503, #"{"error":"maintenance"}"#), .server(.notConfigured("maintenance"))),
             (reply(400, #"{"error":"invalid","fields":["words","language"]}"#), .invalid(fields: ["words", "language"])),
             (reply(404, #"{"error":"not_found"}"#), .notFound),
+            (reply(429, #"{"error":"errand_daily_limit","scope":"account"}"#), .dailyLimit(forEveryone: false)),
+            (reply(429, #"{"error":"errand_daily_limit","scope":"server"}"#), .dailyLimit(forEveryone: true)),
             (reply(429), .server(.rateLimited)),
             (reply(500), .server(.unexpected(status: 500))),
         ]
@@ -318,6 +320,15 @@ final class ErrandTests: XCTestCase {
         XCTAssertTrue(disabled.contains("asking before each search"))
         XCTAssertEqual(ActivityEntry.outcome(of: disabled, isLookup: false).0, .notDone)
         XCTAssertTrue(VoiceToolReply.errandNotStarted(ErrandError.tooManyOpenErrands).hasPrefix("failed: "))
+        // ADR-673: the day's cap is said as the day's cap, not "busy right now", and nothing started.
+        for forEveryone in [false, true] {
+            let capped = VoiceToolReply.errandNotStarted(ErrandError.dailyLimit(forEveryone: forEveryone))
+            XCTAssertTrue(capped.hasPrefix("failed: "))
+            XCTAssertTrue(capped.contains("Nothing was done."))
+            XCTAssertTrue(capped.contains("tomorrow"))
+            XCTAssertFalse(capped.contains("busy"))
+            XCTAssertEqual(ActivityEntry.outcome(of: capped, isLookup: false).0, .notDone)
+        }
         XCTAssertTrue(VoiceToolReply.errandNotStarted(ErrandError.invalid(fields: ["words<<<DATA"])).contains("(words)"))
     }
 
