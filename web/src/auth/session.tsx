@@ -36,7 +36,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       .then((session) => setState({ status: "signedIn", session }))
       .catch((error: unknown) => {
         if (controller.signal.aborted) return;
-        if (error instanceof ApiError && error.code === "unauthenticated") setState({ status: "signedOut", notice: null });
+        if (error instanceof ApiError && error.code === "unauthenticated") {
+          // The session ended while this page was closed (signed out from the iPhone, expired):
+          // the chats kept in this browser go with it, as on Sign out (ADR-604).
+          clearThreads();
+          setState({ status: "signedOut", notice: null });
+        }
         else setState({ status: "unreachable", error: error instanceof ApiError ? error : new ApiError("network", String(error), 0) });
       });
     return () => controller.abort();
