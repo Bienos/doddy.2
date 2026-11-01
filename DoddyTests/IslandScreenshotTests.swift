@@ -52,23 +52,23 @@ final class IslandScreenshotTests: XCTestCase {
 
     // MARK: What the owner asked for
 
-    /// ADR-670: outside the app his beat lights the small island around his head at his loudest;
-    /// with no beat (on screen, Reduce Motion, any other state) there is no light at all.
+    /// ADR-670, option C (owner, 1 Nov): the small island draws his voice as Home's fine lines,
+    /// more of them lit at his loudest beat than in a pause, and there, calm, while he hears you.
     @MainActor
-    func testHisBeatLightsTheSmallIslandAroundHisHead() throws {
-        var rings: [Double] = []
-        for beat in [nil, 4] as [Int?] {
-            let view = IslandCompactLeadingView(scene: Self.scene(.speaking, beat: beat))
-                .frame(width: 40, height: 36)
+    func testTheSmallIslandDrawsHisVoiceAsHomesLines() throws {
+        let cases: [(name: String, status: State.Status, beat: Int?)] = [
+            ("loudest", .speaking, 4), ("pause", .speaking, 0), ("listening", .listening, nil),
+        ]
+        var lit: [Int] = []
+        for sample in cases {
+            let view = IslandCompactTrailingView(scene: Self.scene(sample.status, beat: sample.beat), startedAt: Date())
                 .background(Color.islandBlack)
-            let p = try XCTUnwrap(pixels(view), "beat \(String(describing: beat)) renders")
-            // 15 pt left of his head's centre: past the 13 pt of his face, inside the halo.
-            rings.append(p.brightness(x: p.width / 2 - 45, y: p.height / 2, radius: 2))
+            let p = try XCTUnwrap(pixels(view), "\(sample.name) renders")
+            XCTAssertEqual(p.width, Int(IslandAuroraView.size.width) * 3, "\(sample.name): the lines' own width")
+            lit.append(p.count(brighterThan: 40))
         }
-        let none = rings[0], loud = rings[1]
-        // The island's black is #080808: a brightness of 8.
-        XCTAssertEqual(none, 8, accuracy: 1.5, "no beat: only the island's black around his head, as before")
-        XCTAssertGreaterThan(loud, none + 12, "his loudest beat lights the ring around his head")
+        XCTAssertGreaterThan(lit[0], lit[1] + 50, "his loudest beat lights more of the lines than a pause")
+        XCTAssertGreaterThan(lit[2], 0, "while he hears you the lines are there, calm")
     }
 
     /// Small island: his head only, a 26 pt circle, never the whole of him at 30 pt (ADR-615).
@@ -269,6 +269,15 @@ final class IslandScreenshotTests: XCTestCase {
                 }
             }
             return n > 0 ? sum / n : -1
+        }
+
+        /// How many opaque pixels are brighter than `threshold` (0 to 255).
+        func count(brighterThan threshold: Double) -> Int {
+            var n = 0
+            for i in stride(from: 0, to: data.count, by: 4) where data[i + 3] > 200 {
+                if (Double(data[i]) + Double(data[i + 1]) + Double(data[i + 2])) / 3 > threshold { n += 1 }
+            }
+            return n
         }
 
         /// The brightest opaque pixel, in the whole picture or its middle third.

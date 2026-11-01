@@ -439,24 +439,41 @@ enum IslandSceneChecks {
         expect(!state(.speaking, beat: nil, moment: .noteSaved).wantsVoiceBeat, "a moment wants none")
         expect(!state(.ended, beat: nil).wantsVoiceBeat, "an ended island wants none")
 
-        // With no beat the island looks exactly as before ADR-670.
+        // Option C (owner, 1 Nov): the small island's aurora, Home's fine lines.
         let still = state(.speaking, beat: nil).islandScene(isStale: false)
-        expect(still.beatWaveScale == 1 && still.beatGlow == 0 && still.beatHalo == 0 && still.beatKeyline == 1,
-               "no beat draws the island as it was")
-        // Louder is never smaller, and every look stays in its bounds.
+        expect(still.beatWaveScale == 1, "no beat draws the big island's waves as before")
+        expect(still.aurora.count == IslandScene.auroraColumnCount, "21 lines while he talks")
+        expect(state(.speaking, beat: 3, muted: true).islandScene(isStale: false).aurora.isEmpty, "no lines while muted")
+        expect(state(.speaking, beat: 3).islandScene(isStale: true).aurora.isEmpty, "no lines when stale")
+        expect(state(.thinking, beat: nil).islandScene(isStale: false).aurora.isEmpty, "no lines while working")
+        let hearing = state(.listening, beat: nil).islandScene(isStale: false)
+        expect(hearing.aurora.count == IslandScene.auroraColumnCount && hearing.auroraLevel == 0.5,
+               "calm lines while he hears you, at Home's listening level")
+        expect(hearing.aurora == state(.listening, beat: 4).islandScene(isStale: false).aurora,
+               "a beat never moves the lines while he listens")
+        func total(_ scene: IslandScene) -> Double { scene.aurora.reduce(0) { $0 + $1.height } }
         var previous: IslandScene?
         for beat in 0...IslandScene.maxBeat {
             let scene = state(.speaking, beat: beat).islandScene(isStale: false)
-            expect(scene.beatWaveScale >= 0.75 && scene.beatWaveScale <= 1.2, "wave height \(beat)")
-            expect(scene.beatGlow >= 0 && scene.beatGlow <= 0.8, "glow \(beat)")
-            expect(scene.beatHalo >= 0.2 && scene.beatHalo <= 1, "halo \(beat): faint in a pause, never off mid-answer")
-            expect(scene.beatKeyline >= 0.45 && scene.beatKeyline <= 1, "outline \(beat)")
+            expect(scene.beatWaveScale >= 0.75 && scene.beatWaveScale <= 1, "big island waves \(beat): never taller than their band")
+            expect(scene.aurora.allSatisfy { $0.height >= 0.06 && $0.height <= 1 }, "lines \(beat) stay in their band")
             if let previous {
-                expect(scene.beatWaveScale > previous.beatWaveScale && scene.beatGlow > previous.beatGlow
-                       && scene.beatHalo > previous.beatHalo && scene.beatKeyline > previous.beatKeyline,
-                       "beat \(beat) swells more than \(beat - 1)")
+                expect(scene.auroraLevel > previous.auroraLevel && scene.beatWaveScale > previous.beatWaveScale,
+                       "beat \(beat) is stronger than \(beat - 1)")
+                expect(scene.aurora != previous.aurora, "beats \(beat - 1) and \(beat) have their own shapes")
             }
             previous = scene
+        }
+        expect(total(state(.speaking, beat: 4).islandScene(isStale: false))
+               > 2 * total(state(.speaking, beat: 0).islandScene(isStale: false)),
+               "his loudest beat draws the lines more than twice as tall as a pause")
+        let colours = still.aurora.map(\.colour)
+        if let first = colours.first, let middle = colours.dropFirst(colours.count / 2).first, let last = colours.last {
+            expect(first.red > 0.9 && first.blue < 0.3, "orange at the left")
+            expect(middle.green > first.green, "amber in the middle")
+            expect(last.blue > first.blue && last.green < middle.green, "rose at the right")
+        } else {
+            expect(false, "the lines have colours")
         }
 
         // The beat survives the trip to the widget, and older content without it still decodes.

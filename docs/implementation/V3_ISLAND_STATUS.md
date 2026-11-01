@@ -135,12 +135,16 @@ strip (ADR-665) moves 30 times a second and glows around the island; the island 
 loud his voice was since the last one, as a step from 0 (a pause) to 4 (his loudest). iOS moves the
 island from one beat to the next with its own short animation.
 
-| Where | What swells |
+**The look is option C, "Aurora, like Home"** (owner, 1 Nov: "go with C !", from a board of four
+options after "make it look more professional"). The first build's halo behind his head, glowing
+waves and brightening outline are gone.
+
+| Where | What it shows |
 |---|---|
-| Small island, right | His waves: 0.75 to 1.2 of their height, with an orange glow |
-| Small island, left | A soft orange halo behind his head, faint in a pause |
-| Big island | His talking waves ease between 0.75 and 1 of their height (they stay under "Speaking") |
-| Around the island | The orange keyline iOS draws, 45 % to full (iOS shows it only against some backgrounds) |
+| Small island, right | Home's fine lines (21, orange to amber to rose): calm while he hears you, a new shape and height with each beat while he talks |
+| Small island, left | His head, as before (no halo) |
+| Big island | His talking waves ease between 0.75 and 1 of their height (they stay under "Speaking"), no glow |
+| Around the island | The orange keyline, as before ADR-670 (it doesn't move) |
 
 Nothing changes while he listens or works, while muted, while a card or result is on the island,
 under Reduce Motion, on the minimal island or on the Lock Screen. The number comes from the loudness
@@ -150,14 +154,14 @@ of the audio he plays (ADR-655), never the microphone, and the island is updated
 |---|---|
 | The steps, the alternation, the made-up rhythm's peak | `Packages/DoddyCore/Sources/DoddyCore/IslandVoiceBeat.swift`, tests in `IslandVoiceBeatTests` |
 | The beat in the content, and when it is wanted | `Shared/VoiceActivity/DoddyVoiceAttributes.swift` (`voiceBeat`, `wantsVoiceBeat`) |
-| How each beat looks | `Shared/IslandArt/IslandScene.swift` (`beatWaveScale`, `beatGlow`, `beatHalo`, `beatKeyline`), `IslandViews.swift` (`islandBeat`, `IslandBeatHalo`), `DoddyWidgets/DoddyVoiceLiveActivity.swift` (keyline) |
+| How each beat looks | `Shared/IslandArt/IslandScene.swift` (`aurora`, `auroraLevel`, `beatWaveScale`), `IslandViews.swift` (`IslandAuroraView`) |
 | Sending it | `DoddyApp/Features/Voice/VoiceLiveActivity.swift` (`updateBeating`, `beatTick`), `AgentVoiceMeter.takePeak` |
-| Pictures | `DoddyTests/IslandScreenshotTests`: `3a-speaking-pause`, `3b-speaking-loud` in the `island-screenshots` artifact |
+| Pictures | `DoddyTests/IslandScreenshotTests`: `3a-speaking-pause`, `3b-speaking-loud` in the `island-screenshots` artifact; `testTheSmallIslandDrawsHisVoiceAsHomesLines` |
 
 **Device checks, not run** (iPhone 14 Pro or later):
 1. Start a conversation, ask something with a long answer, go to the Home Screen. Pass: while he
-   answers, the small island's waves and the halo behind his head swell and ease about twice a
-   second; between his sentences they settle; when he stops and listens they stop.
+   answers, the fine lines on the small island change height about twice a second; between his
+   sentences they settle; when he stops and listens they stand still, calm.
 2. Does iOS animate between beats, or jump? If it jumps, try a longer `IslandVoiceBeat.interval`
    (0.8 to 1 s) so each animation has time to finish.
 3. Keep it up through a two-minute answer: the island keeps pulsing and doesn't stall or lag
@@ -165,7 +169,7 @@ of the audio he plays (ADR-655), never the microphone, and the island is updated
 4. Mute from the island: the pulse stops at once, the island turns grey.
 5. Reduce Motion on (Settings › Accessibility › Motion): no pulse, the island draws still.
 6. Open Doddy while he talks: Home's strip takes over; no pulse is sent (Console shows no updates).
-7. Dark wallpaper: the orange outline around the island brightens and dims with him (if iOS shows it).
+7. The lines read at arm's length beside the camera, in light and dark wallpapers, and don't crowd it.
 8. Battery: a 10-minute conversation from another app, compared with the build before.
 
 **Checked here (Linux, Swift 6.1.2):** DoddyCore 2,215 tests, 0 failures (12 new); island checks
