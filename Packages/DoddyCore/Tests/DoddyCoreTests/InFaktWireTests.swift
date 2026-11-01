@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// inFakt's wire format and the KSeF send (ADR-668). The answers below are inFakt's own examples
+/// inFakt's wire format and the KSeF send (ADR-669). The answers below are inFakt's own examples
 /// from the Postman collection behind docs.infakt.pl (read 30 Oct 2026); no real answer has been seen.
 final class InFaktWireTests: XCTestCase {
     private func said<T: Equatable & Sendable & Codable>(_ value: T) -> Sourced<T> { Sourced(value, source: .saidByUser) }
@@ -253,7 +253,7 @@ actor FakeKsefProvider: KsefProvider {
     func ksefStatus(invoiceId: String) async throws -> KsefStatus { try status.get() }
 }
 
-/// The draft kept between conversations (ADR-668), on real files.
+/// The draft kept between conversations (ADR-669), on real files.
 final class InvoiceDraftFileTests: XCTestCase {
     private var directory: URL!
 

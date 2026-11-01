@@ -68,11 +68,11 @@ public struct InvoiceOperation: Equatable, Sendable, Codable {
     public private(set) var receipt: InvoiceReceipt?
     /// Why it failed or was set aside, in words for the person.
     public private(set) var note: String?
-    /// Where the invoice stands in KSeF once inFakt has it (ADR-667). Only `.accepted`, with a KSeF
+    /// Where the invoice stands in KSeF once inFakt has it (ADR-668). Only `.accepted`, with a KSeF
     /// number, means it is issued in KSeF; it is never set before a receipt exists.
     public private(set) var ksef: KsefStatus = .notSent
     /// The person tapped Send to KSeF for this invoice, after the card said it can't be undone
-    /// (ADR-668). Used up by the one send it allows.
+    /// (ADR-669). Used up by the one send it allows.
     public private(set) var ksefSendConfirmed = false
 
     public init(draft: InvoiceDraft, operationId: UUID = UUID()) {
@@ -162,7 +162,7 @@ public struct InvoiceOperation: Equatable, Sendable, Codable {
         }
     }
 
-    /// inFakt's answer about sending this invoice to KSeF (ADR-667). Only after a receipt: an invoice
+    /// inFakt's answer about sending this invoice to KSeF (ADR-668). Only after a receipt: an invoice
     /// that isn't known to exist can't be in KSeF. An accepted invoice stays accepted: KSeF never
     /// deletes or changes one (only a correction invoice can), so a later answer can't take it back.
     public mutating func recordKsef(_ status: KsefStatus) {
@@ -171,7 +171,7 @@ public struct InvoiceOperation: Equatable, Sendable, Codable {
         ksef = status
     }
 
-    // MARK: KSeF (ADR-668)
+    // MARK: KSeF (ADR-669)
 
     /// Sending to KSeF may be offered: the invoice exists in inFakt and isn't in KSeF, on its way, or
     /// of unknown state there. After a refusal it may be offered again (a fresh yes).

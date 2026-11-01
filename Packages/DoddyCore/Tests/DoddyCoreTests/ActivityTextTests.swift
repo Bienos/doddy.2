@@ -77,7 +77,7 @@ final class ActivityTextTests: XCTestCase {
         case .needsClarification, .calculate, .convertUnits, .undoLast, .startTranslator, .stopTranslator, .unsupported, .invalid,
              .noteCapabilityGap, .draftInvoice:
             // The gap tool leaves no row in What Doddy did (ADR-440); nor does an invoice draft on
-            // screen, which changes nothing (ADR-667).
+            // screen, which changes nothing (ADR-668).
             false
         }
     }

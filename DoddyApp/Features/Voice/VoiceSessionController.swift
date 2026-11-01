@@ -342,8 +342,8 @@ final class VoiceSessionController {
     /// or the next conversation, so the amount and number are there while they use their bank
     /// app. In memory only; Doddy never sends it.
     private(set) var blikCard: BlikCard?
-    /// The invoice being dictated (ADR-667): what the person said and the draft made from it. Kept on
-    /// this iPhone between conversations (ADR-668, `InvoiceDraftFile`, read back after every write)
+    /// The invoice being dictated (ADR-668): what the person said and the draft made from it. Kept on
+    /// this iPhone between conversations (ADR-669, `InvoiceDraftFile`, read back after every write)
     /// until the card is closed or Delete all; never sent. Issuing in inFakt is the card's own tap
     /// (ADR-640), not offered yet.
     private(set) var invoiceSession = InvoiceVoiceSession()
@@ -1848,7 +1848,7 @@ final class VoiceSessionController {
         blikCard = nil
     }
 
-    /// The user tapped Confirm next to a value only the model suggested (ADR-667): the NIP or a
+    /// The user tapped Confirm next to a value only the model suggested (ADR-668): the NIP or a
     /// line's VAT rate, exactly as the card showed it.
     func confirmInvoiceSuggestion(_ field: InvoiceField) {
         guard invoiceSession.confirmSuggested(field) else { return }
@@ -1862,7 +1862,7 @@ final class VoiceSessionController {
         Self.invoiceDraftFile?.remove()
     }
 
-    /// The draft kept from an earlier conversation (ADR-668), with a default issue date moved to today.
+    /// The draft kept from an earlier conversation (ADR-669), with a default issue date moved to today.
     private func restoreInvoiceDraft() {
         invoiceSession = InvoiceVoiceSession()
         guard let file = Self.invoiceDraftFile else { return }
@@ -1876,7 +1876,7 @@ final class VoiceSessionController {
     }
 
     /// The VAT register from this iPhone, then CEIDG through Doddy's server when the register has no
-    /// such taxpayer or couldn't be asked (ADR-670, `CompanyLookup.combined`).
+    /// such taxpayer or couldn't be asked (ADR-671, `CompanyLookup.combined`).
     private static func lookUpCompany(_ nip: Nip, on day: CalendarDate) async -> CompanyLookup {
         let vat = await VatRegisterClient.shared.lookup(nip, on: day)
         guard vat.asksCeidgToo, let server = ServerConfig.client() else { return vat }
@@ -2768,7 +2768,7 @@ final class VoiceSessionController {
                 propose(.blik(toolCallID: call.toolCallId, draft: draft, contactName: name, numbers: numbers), toolCallID: call.toolCallId)
             }
         case .draftInvoice(let update):
-            // ADR-667: the draft on the card changes with each detail the user dictates. Only the
+            // ADR-668: the draft on the card changes with each detail the user dictates. Only the
             // user's own transcribed words count as having said a NIP or a VAT rate; nothing leaves
             // this iPhone, and issuing is the card's own tap (not offered while
             // InFaktAPI.createVerified is false).
@@ -2785,7 +2785,7 @@ final class VoiceSessionController {
                     return
                 }
                 invoiceSession = session
-                // ADR-670: a NIP the person said is looked up in the public registers, the VAT register
+                // ADR-671: a NIP the person said is looked up in the public registers, the VAT register
                 // from this iPhone and CEIDG through Doddy's server; only the NIP leaves the phone.
                 // The answer is applied to the draft as it is now, and only if the NIP is still the same.
                 if let nip = invoiceSession.registerLookupNip {
@@ -2801,7 +2801,7 @@ final class VoiceSessionController {
                         operation = invoiceSession.operation ?? operation
                     }
                 }
-                // Kept only when the file reads back as this draft (ADR-668); the agent hears which.
+                // Kept only when the file reads back as this draft (ADR-669); the agent hears which.
                 let kept = Self.invoiceDraftFile?.save(invoiceSession) ?? false
                 var text = VoiceToolReply.invoiceDraft(operation, notes: notes, kept: kept)
                 if invoiceDraftWasSetAside {

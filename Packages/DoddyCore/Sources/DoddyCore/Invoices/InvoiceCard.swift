@@ -15,9 +15,9 @@ public struct InvoiceCard: Equatable, Sendable {
         public let value: String
         /// Only the model suggested this value: shown so it can be confirmed, marked so it is not mistaken for said.
         public let proposed: Bool
-        /// A public register gave this value (ADR-670).
+        /// A public register gave this value (ADR-671).
         public let fromRegister: Bool
-        /// The field a tap on Confirm settles, when this row is a suggestion the person can confirm (ADR-667).
+        /// The field a tap on Confirm settles, when this row is a suggestion the person can confirm (ADR-668).
         public let confirmField: InvoiceField?
 
         init(_ label: String, _ value: String, proposed: Bool = false, confirmField: InvoiceField? = nil, fromRegister: Bool = false) {
@@ -35,7 +35,7 @@ public struct InvoiceCard: Equatable, Sendable {
         public let detail: String
         public let net: String
         public let proposed: Bool
-        /// The field a tap on Confirm settles: the line's VAT rate when only the model suggested it (ADR-667).
+        /// The field a tap on Confirm settles: the line's VAT rate when only the model suggested it (ADR-668).
         public let confirmField: InvoiceField?
     }
 
@@ -52,14 +52,14 @@ public struct InvoiceCard: Equatable, Sendable {
     public let canConfirm: Bool
     /// Why Confirm is not offered although the card is complete: sending is not switched on.
     public let sendingNote: String?
-    /// Send to KSeF is offered (ADR-668): the invoice is in inFakt, not in KSeF, and sending is on.
+    /// Send to KSeF is offered (ADR-669): the invoice is in inFakt, not in KSeF, and sending is on.
     public let canSendToKsef: Bool
     /// Said next to Send to KSeF: it can't be undone, only corrected.
     public let ksefWarning: String?
-    /// The KSeF number once KSeF accepted the invoice (ADR-669): shown so it can be copied, and from
+    /// The KSeF number once KSeF accepted the invoice (ADR-670): shown so it can be copied, and from
     /// 1 Jan 2027 it goes in the title of a B2B transfer for this invoice.
     public let ksefNumber: String?
-    /// Where the buyer's name or address came from, when a register gave them (ADR-670).
+    /// Where the buyer's name or address came from, when a register gave them (ADR-671).
     public let registerLine: String?
 
     public init(_ operation: InvoiceOperation, polish: Bool, register: RegisteredCompany? = nil) {
@@ -156,7 +156,7 @@ public struct InvoiceCard: Equatable, Sendable {
         }
     }
 
-    /// A field's name in a sentence ("buyer's NIP"), for the voice agent's replies too (ADR-667).
+    /// A field's name in a sentence ("buyer's NIP"), for the voice agent's replies too (ADR-668).
     public static func fieldName(_ field: InvoiceField, polish: Bool) -> String { Words(polish: polish).field(field) }
 
     /// What is wrong with a value ("the NIP's check digit is wrong").
@@ -333,7 +333,7 @@ public struct InvoiceCard: Equatable, Sendable {
             case .verifiedSucceeded:
                 guard let receipt = operation.receipt else { return pick("Nie wiadomo, czy faktura powstała", "Not known whether the invoice was created") }
                 let number = receipt.number.map { " " + $0 } ?? ""
-                // Under KSeF an invoice is issued when KSeF accepts it (ADR-667): created in inFakt is not issued.
+                // Under KSeF an invoice is issued when KSeF accepts it (ADR-668): created in inFakt is not issued.
                 switch operation.ksef {
                 case .accepted(let ksef):
                     return pick("Wystawiona w KSeF\(number), numer KSeF \(ksef.value)", "Issued in KSeF\(number), KSeF number \(ksef.value)")

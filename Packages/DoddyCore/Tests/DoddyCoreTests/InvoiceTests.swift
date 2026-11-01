@@ -189,7 +189,7 @@ final class InvoiceTests: XCTestCase {
                     "currency", "issue_date", "payment_method"] {
             XCTAssertTrue(missing.contains(key), "\(key) should be missing: \(missing)")
         }
-        XCTAssertFalse(missing.contains("sale_date"), "no sale date means the issue date (art. 106e ust. 1 pkt 6, ADR-667)")
+        XCTAssertFalse(missing.contains("sale_date"), "no sale date means the issue date (art. 106e ust. 1 pkt 6, ADR-668)")
         XCTAssertNil(draft.totals, "no VAT rate was given, so no sum is shown")
         let operation = InvoiceOperation(draft: draft)
         XCTAssertEqual(operation.state, .needsClarification)
@@ -236,11 +236,11 @@ final class InvoiceTests: XCTestCase {
         draft.contractor = InvoiceContractor(kind: said(.privatePerson), name: said("Jan Kowalski"), address: said(address),
                                              firstName: said("Jan"), lastName: said("Kowalski"))
         XCTAssertEqual(draft.issues(), [])
-        // ADR-669: inFakt takes a private person as a first and a last name.
+        // ADR-670: inFakt takes a private person as a first and a last name.
         draft.contractor.lastName = nil
         XCTAssertEqual(draft.issues(), [.missing(.contractorLastName)])
         draft.contractor.lastName = said("Kowalski")
-        // ADR-667: the VAT act asks for every buyer's address (art. 106e ust. 1 pkt 3), a private person's too.
+        // ADR-668: the VAT act asks for every buyer's address (art. 106e ust. 1 pkt 3), a private person's too.
         draft.contractor.address = nil
         XCTAssertEqual(draft.issues(), [.missing(.contractorAddress)])
         draft.contractor.kind = said(.company)

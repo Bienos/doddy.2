@@ -7,7 +7,7 @@ import SwiftUI
 /// settled how inFakt takes an invoice (`InFaktAPI.createVerified`). Not seen on a device in this build.
 struct InvoiceCardView: View {
     let card: InvoiceCard
-    /// Confirms a value only the model suggested (ADR-667). Nil on the example card, which has no Confirm.
+    /// Confirms a value only the model suggested (ADR-668). Nil on the example card, which has no Confirm.
     var onConfirm: ((InvoiceField) -> Void)? = nil
 
     var body: some View {
@@ -26,7 +26,7 @@ struct InvoiceCardView: View {
 
             block(NSLocalizedString("Buyer", comment: ""), rows: card.buyer)
 
-            // ADR-670: where the buyer's official name and address came from.
+            // ADR-671: where the buyer's official name and address came from.
             if let line = card.registerLine {
                 Label { Text(verbatim: line) } icon: { Image(systemName: "building.columns") }
                     .font(.footnote)
@@ -53,7 +53,7 @@ struct InvoiceCardView: View {
             block(NSLocalizedString("Details", comment: ""), rows: card.facts)
             block(NSLocalizedString("Totals", comment: ""), rows: card.totals)
 
-            // ADR-669: once KSeF accepted it. Selectable, because from 2027 it goes in a B2B transfer's title.
+            // ADR-670: once KSeF accepted it. Selectable, because from 2027 it goes in a B2B transfer's title.
             if let number = card.ksefNumber {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("KSeF number").font(.subheadline.weight(.semibold))

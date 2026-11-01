@@ -5,7 +5,7 @@ import CryptoKit
 import Crypto
 #endif
 
-// Where an invoice stands in KSeF, Poland's national e-invoice system (ADR-667). inFakt sends an
+// Where an invoice stands in KSeF, Poland's national e-invoice system (ADR-668). inFakt sends an
 // invoice to KSeF only when asked (`send_to_ksef`, or POST /api/v3/ksef2/documents/{uuid}/send.json)
 // and answers asynchronously; its status endpoint says "pending", "sent", "success" (with
 // `ksef_number`), "error" (with `status_description`) or "rejected". Read on docs.infakt.pl on
@@ -44,7 +44,7 @@ public struct KsefNumber: Equatable, Hashable, Sendable, Codable {
     public var sellerNip: String { String(value.prefix(10)) }
 }
 
-/// The link in KSeF's verification QR code, KOD I (ADR-669), that must be on any copy of an
+/// The link in KSeF's verification QR code, KOD I (ADR-670), that must be on any copy of an
 /// invoice given outside KSeF: to a consumer, a buyer abroad or without a NIP. From MF's KSeF 2.0
 /// documentation (`kody-qr.md`): `https://qr.ksef.mf.gov.pl/invoice/{seller's NIP}/{issue date as
 /// DD-MM-RRRR}/{SHA-256 of the invoice's XML file, Base64URL without padding}`, with the KSeF number

@@ -44,7 +44,7 @@ public struct InvoiceContractor: Equatable, Sendable, Codable {
     public var kind: Sourced<ContractorKind>?
     public var name: Sourced<String>?
     /// A private person's first and last name, which inFakt asks for separately (`private_person`,
-    /// ADR-669). Not used for a firm.
+    /// ADR-670). Not used for a firm.
     public var firstName: Sourced<String>?
     public var lastName: Sourced<String>?
     /// As the person gave it; checked into a `Nip` only when the draft is validated.
@@ -90,7 +90,7 @@ public enum InvoiceField: Equatable, Hashable, Sendable {
     case lines
     case lineName(Int), lineQuantity(Int), lineUnitPrice(Int), lineVat(Int)
     case currency, issueDate, saleDate, paymentMethod, paymentDueDate, vatExemptionReason
-    /// Whether the split payment mechanism (MPP) applies: asked above 15,000 PLN gross (ADR-667).
+    /// Whether the split payment mechanism (MPP) applies: asked above 15,000 PLN gross (ADR-668).
     case splitPayment
 
     /// A stable key for `missing_data` in the result contract (lines are counted from 1).
@@ -127,13 +127,13 @@ public enum InvoiceProblem: Equatable, Sendable {
     case tooManyLines
     case textTooLong
     case dueBeforeIssue
-    /// inFakt refuses `&`, `<` and `>` in an item's name before it reaches KSeF (ADR-667).
+    /// inFakt refuses `&`, `<` and `>` in an item's name before it reaches KSeF (ADR-668).
     case characterNotAllowed
     /// KSeF needs the VAT in PLN and an exchange rate for an invoice in another currency; Doddy
-    /// doesn't draft those yet (ADR-667).
+    /// doesn't draft those yet (ADR-668).
     case foreignCurrencyNotReady
     /// A buyer abroad needs an EU VAT number or another tax id and 0 WDT, 0 EX or np rates; Doddy
-    /// doesn't draft those yet (ADR-667).
+    /// doesn't draft those yet (ADR-668).
     case foreignBuyerNotReady
 }
 
@@ -158,23 +158,23 @@ public struct InvoiceDraft: Equatable, Sendable, Codable {
     public static let maxQuantityMilli = 10_000_000
     public static let maxUnitPriceMinor = 100_000_000
     /// Above this gross total in PLN the invoice must say whether the split payment mechanism applies
-    /// (art. 106e ust. 1 pkt 18a of the VAT act, FA(3) P_18A): 15,000.00 PLN (ADR-667).
+    /// (art. 106e ust. 1 pkt 18a of the VAT act, FA(3) P_18A): 15,000.00 PLN (ADR-668).
     public static let splitPaymentThresholdMinor = 1_500_000
-    /// Characters inFakt refuses in an item's name (its list of KSeF rejections, ADR-667).
+    /// Characters inFakt refuses in an item's name (its list of KSeF rejections, ADR-668).
     public static let refusedNameCharacters: Set<Character> = ["&", "<", ">"]
 
     public var contractor: InvoiceContractor
     public var lines: [InvoiceLine]
     public var currency: Sourced<InvoiceCurrency>?
     public var issueDate: CalendarDate?
-    /// Nil means the same day as the issue date (ADR-667).
+    /// Nil means the same day as the issue date (ADR-668).
     public var saleDate: CalendarDate?
     public var paymentMethod: Sourced<InvoicePayment>?
     public var paymentDueDate: CalendarDate?
     /// Why VAT does not apply, in the person's words, when a line is exempt ("zw").
     public var vatExemptionReason: String?
     /// The split payment mechanism (MPP) applies: goods or services from annex 15 of the VAT act on
-    /// an invoice above 15,000 PLN gross. Asked only above that amount; nil below it (ADR-667).
+    /// an invoice above 15,000 PLN gross. Asked only above that amount; nil below it (ADR-668).
     public var splitPayment: Sourced<Bool>?
 
     public init(contractor: InvoiceContractor = InvoiceContractor(), lines: [InvoiceLine] = [],
@@ -213,11 +213,11 @@ public struct InvoiceDraft: Equatable, Sendable, Codable {
         let kind = check(contractor.kind, .contractorKind)
         // Only a person confirmed as a private person may go without a NIP: until the kind is settled,
         // a firm's NIP is required. Every buyer's address is required: the VAT act (art. 106e ust. 1
-        // pkt 3) asks for it on every invoice but a simplified one, which Doddy doesn't draft (ADR-667).
+        // pkt 3) asks for it on every invoice but a simplified one, which Doddy doesn't draft (ADR-668).
         let mayOmitFirmData = kind == .privatePerson
         text(contractor.name, .contractorName)
         if kind == .privatePerson {
-            // inFakt takes a private person as a first and a last name (ADR-669).
+            // inFakt takes a private person as a first and a last name (ADR-670).
             text(contractor.firstName, .contractorFirstName)
             text(contractor.lastName, .contractorLastName)
         }
@@ -275,7 +275,7 @@ public struct InvoiceDraft: Equatable, Sendable, Codable {
         }
         if issueDate == nil { found.append(.missing(.issueDate)) }
         // No sale date means it is the issue date: the VAT act (art. 106e ust. 1 pkt 6) and KSeF's
-        // FA(3) (P_6) ask for it only when it differs (ADR-667). A sale date after the issue date is
+        // FA(3) (P_6) ask for it only when it differs (ADR-668). A sale date after the issue date is
         // allowed (an advance invoice is a different kind, not drafted here), so it is not checked.
         let method = check(paymentMethod, .paymentMethod)
         if let due = paymentDueDate {
