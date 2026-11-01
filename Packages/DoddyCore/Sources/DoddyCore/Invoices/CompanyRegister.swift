@@ -1,7 +1,7 @@
 import Foundation
 
 // A buyer's official name and address from Poland's public registers, by the NIP the person said
-// (ADR-671; owner, 1 Nov 2026: "Connect with CEIDG for NIP etc so it takes details from register").
+// (ADR-680; owner, 1 Nov 2026: "Connect with CEIDG for NIP etc so it takes details from register").
 //
 //  - The Ministry of Finance's VAT register ("biała lista", `wl-api.mf.gov.pl`): every VAT taxpayer,
 //    firms and sole traders. No key; at most 100 searches a day per address (gov.pl, "Jak korzystać

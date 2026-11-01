@@ -196,7 +196,7 @@ public enum DataFlow {
                     : !state.inFaktKeySaved
                         ? "No inFakt key is saved, so nothing goes there."
                         : state.pauseAll ? "Connections are paused, so invoices aren't sent." : nil),
-            // Registers (ADR-671): only a buyer's NIP the person said for an invoice, to fill in their official name and address.
+            // Registers (ADR-680): only a buyer's NIP the person said for an invoice, to fill in their official name and address.
             DataFlowRow(
                 id: "vatRegister", destination: "Ministry of Finance (VAT register)",
                 what: "Only a buyer's NIP you said for an invoice, to fill in their official name and address. Nothing about you or the invoice.",

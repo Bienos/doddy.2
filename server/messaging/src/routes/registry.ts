@@ -1,4 +1,4 @@
-// Company registers (ADR-671): GET /v1/registry/ceidg?nip=… Bearer: the account's device token. Off unless
+// Company registers (ADR-680): GET /v1/registry/ceidg?nip=… Bearer: the account's device token. Off unless
 // CEIDG_API_TOKEN is set (503 registry_disabled). The iPhone asks the Ministry of Finance's VAT register itself
 // (no key); this route exists because CEIDG needs a token that must stay on the server. Only the NIP comes in;
 // the answer is CEIDG's entry cut to name, status and business address. Nothing is stored; the log holds the

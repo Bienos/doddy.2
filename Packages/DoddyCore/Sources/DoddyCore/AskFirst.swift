@@ -141,7 +141,7 @@ public enum AskFirst {
              .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders, .leaveBy, .parkingSpot(.save):
             return .ownPayloadCard
         case .draftInvoice:
-            // ADR-668: the draft card shows the exact invoice and changes nothing anywhere; issuing in
+            // ADR-677: the draft card shows the exact invoice and changes nothing anywhere; issuing in
             // inFakt is the card's own tap, bound to the digest of what it shows (ADR-640).
             return .ownPayloadCard
         case .cloudTool(let call):

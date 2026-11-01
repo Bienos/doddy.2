@@ -1595,7 +1595,7 @@ struct VoiceView: View {
         .accessibilityIdentifier("voice.blikCard")
     }
 
-    /// The invoice being dictated (ADR-668): every word and sum from `InvoiceCard` (DoddyCore,
+    /// The invoice being dictated (ADR-677): every word and sum from `InvoiceCard` (DoddyCore,
     /// tested). A value only the model suggested has its own Confirm; closing the card drops the
     /// draft. Nothing here sends anything: the card offers no issue button while
     /// `InFaktAPI.createVerified` is false.

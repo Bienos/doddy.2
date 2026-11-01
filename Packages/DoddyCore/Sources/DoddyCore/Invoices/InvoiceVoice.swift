@@ -1,6 +1,6 @@
 import Foundation
 
-// Drafting an invoice by voice (ADR-668). The person dictates; the agent calls `draft_invoice` with
+// Drafting an invoice by voice (ADR-677). The person dictates; the agent calls `draft_invoice` with
 // what they said, one change at a time; the app keeps the draft on screen and tells the agent what is
 // still missing and the sums code worked out. Nothing leaves the iPhone: issuing in inFakt stays a
 // separate tap on the card, offered only once `InFaktAPI.createVerified` is true (ADR-640).
@@ -18,7 +18,7 @@ import Foundation
 // Platforms: iPhone and iPad. Pure logic; tested on Linux.
 
 extension VoiceToolName {
-    /// Builds or changes the invoice draft on the user's screen (ADR-668). Nothing is sent.
+    /// Builds or changes the invoice draft on the user's screen (ADR-677). Nothing is sent.
     public static let draftInvoice = "draft_invoice"
 }
 
@@ -35,7 +35,7 @@ public struct InvoiceVoiceUpdate: Equatable, Sendable {
     public var startNew = false
     public var buyerKind: ContractorKind?
     public var buyerName: String?
-    /// A private person's first and last name (ADR-670).
+    /// A private person's first and last name (ADR-679).
     public var buyerFirstName: String?
     public var buyerLastName: String?
     public var buyerNip: String?
@@ -92,7 +92,7 @@ public enum InvoiceVoiceNote: Equatable, Sendable {
     /// The issue date said is before today: KSeF treats such an invoice as made offline (offline24),
     /// so it must reach KSeF by the next business day after that date.
     case issueDateInPast(CalendarDate)
-    /// The buyer's name and address came from a register for the NIP (ADR-671).
+    /// The buyer's name and address came from a register for the NIP (ADR-680).
     case fromRegister(RegisteredCompany)
     /// Neither register has this NIP.
     case notInRegister
@@ -106,7 +106,7 @@ public enum InvoiceVoiceNote: Equatable, Sendable {
 
 /// The invoice being drafted: what the person said, field by field, and the operation made from it.
 /// Held by the voice screen and kept on this iPhone between conversations in `InvoiceDraftFile`
-/// (ADR-669) until the person closes the card.
+/// (ADR-678) until the person closes the card.
 public struct InvoiceVoiceSession: Equatable, Sendable, Codable {
     struct LineInput: Equatable, Sendable, Codable {
         var name: Sourced<String>?
@@ -124,9 +124,9 @@ public struct InvoiceVoiceSession: Equatable, Sendable, Codable {
     private var lastName: Sourced<String>?
     private var nip: Sourced<String>?
     private var address: InvoiceAddress?
-    /// Where the address came from: what the person said, or a register (ADR-671).
+    /// Where the address came from: what the person said, or a register (ADR-680).
     private var addressSource: FieldSource = .saidByUser
-    /// The register entry the name and address were taken from (ADR-671).
+    /// The register entry the name and address were taken from (ADR-680).
     public private(set) var register: RegisteredCompany?
     /// A NIP no register has, so it isn't asked about again in this draft.
     private var registerMissFor: String?
@@ -134,7 +134,7 @@ public struct InvoiceVoiceSession: Equatable, Sendable, Codable {
     private var currency: Sourced<InvoiceCurrency>?
     private var issueDate: CalendarDate?
     /// The issue date is today's because none was said: it moves to the new day when the draft is
-    /// opened again on a later one (ADR-669), so a kept draft never turns into a back-dated invoice.
+    /// opened again on a later one (ADR-678), so a kept draft never turns into a back-dated invoice.
     private var issueDateIsDefault = false
     private var saleDate: CalendarDate?
     private var payment: Sourced<InvoicePayment>?
@@ -295,7 +295,7 @@ public struct InvoiceVoiceSession: Equatable, Sendable, Codable {
         return true
     }
 
-    /// The NIP to look up in the registers (ADR-671): valid, said or confirmed by the person (never
+    /// The NIP to look up in the registers (ADR-680): valid, said or confirmed by the person (never
     /// one only the model suggested), for a buyer who isn't a private person, and not asked about yet.
     public var registerLookupNip: Nip? {
         guard let operation, !Self.isLocked(operation.state), let said = nip, said.isConfirmed, let checked = Nip(said.value),
@@ -339,7 +339,7 @@ public struct InvoiceVoiceSession: Equatable, Sendable, Codable {
         self = InvoiceVoiceSession()
     }
 
-    /// A kept draft opened again (ADR-669): an issue date that was only today's by default becomes
+    /// A kept draft opened again (ADR-678): an issue date that was only today's by default becomes
     /// the new today. A date the person said stays, and the reply warns about it as usual. True when
     /// something changed.
     @discardableResult
@@ -632,7 +632,7 @@ extension VoiceToolRequest {
 extension VoiceToolReply {
     /// What the agent hears after a `draft_invoice` call. Sums and dates are Doddy's; names, the item
     /// text and the NIP are data (ToolData). Never says issued: sending is not built into this reply.
-    /// `kept`: the draft was written to this iPhone and read back (ADR-669); false says it wasn't.
+    /// `kept`: the draft was written to this iPhone and read back (ADR-678); false says it wasn't.
     public static func invoiceDraft(_ operation: InvoiceOperation, notes: [InvoiceVoiceNote], kept: Bool = false) -> String {
         let draft = operation.draft
         let currency = draft.currency?.value ?? .pln

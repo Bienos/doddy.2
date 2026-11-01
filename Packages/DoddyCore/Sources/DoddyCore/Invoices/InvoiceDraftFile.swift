@@ -1,6 +1,6 @@
 import Foundation
 
-// The invoice draft kept on this iPhone between conversations (ADR-669). One file, JSON, in the
+// The invoice draft kept on this iPhone between conversations (ADR-678). One file, JSON, in the
 // app's own container: written whole, read back and compared before the voice agent is told it is
 // kept; never sent anywhere, never backed up (the app excludes the folder), readable only while the
 // iPhone is unlocked (`.completeFileProtection` on iOS). Closing the card and Delete all remove it.

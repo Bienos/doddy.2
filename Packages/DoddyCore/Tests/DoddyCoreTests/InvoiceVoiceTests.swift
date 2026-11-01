@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// Drafting an invoice by voice (ADR-668): the tool's arguments, the draft built call by call, what
+/// Drafting an invoice by voice (ADR-677): the tool's arguments, the draft built call by call, what
 /// counts as said, the sums code works out, and what the agent hears.
 final class InvoiceVoiceTests: XCTestCase {
     private let today = CalendarDate(iso: "2026-10-30")!
@@ -337,7 +337,7 @@ final class InvoiceVoiceTests: XCTestCase {
     }
 }
 
-/// Where an invoice stands in KSeF (ADR-668): only a KSeF number is "issued".
+/// Where an invoice stands in KSeF (ADR-677): only a KSeF number is "issued".
 final class KsefStatusTests: XCTestCase {
     func testAKsefNumberIsCheckedForShape() {
         XCTAssertEqual(KsefNumber("5265877635-20250826-0100001AF629-AF")?.sellerNip, "5265877635")

@@ -277,7 +277,7 @@ public enum VoiceToolRequest: Equatable, Sendable {
     /// This week's leaflets from the chains asked (SHOPPING.md): a read of public data on Doddy's
     /// server, after the user's yes. Nothing about the user goes to the shops.
     case findDeals(DealsRequest)
-    /// Builds or changes the invoice draft on screen (ADR-668, InvoiceVoice.swift). Nothing is sent.
+    /// Builds or changes the invoice draft on screen (ADR-677, InvoiceVoice.swift). Nothing is sent.
     case draftInvoice(InvoiceVoiceUpdate)
     case unsupported(name: String)
     case invalid(name: String, reason: String)

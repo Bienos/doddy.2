@@ -28,7 +28,7 @@ public protocol InvoiceProvider: Sendable {
     func findInvoice(operationId: UUID) async throws -> InvoiceReceipt?
 }
 
-/// Where a created invoice goes to KSeF (ADR-669): inFakt sends it on request and answers with
+/// Where a created invoice goes to KSeF (ADR-678): inFakt sends it on request and answers with
 /// its KSeF status. Tests use a fake; the real one waits for the inFakt client.
 public protocol KsefProvider: Sendable {
     /// Asks inFakt to send the invoice to KSeF; returns the status in its answer.
@@ -37,7 +37,7 @@ public protocol KsefProvider: Sendable {
     func ksefStatus(invoiceId: String) async throws -> KsefStatus
 }
 
-/// Before Send to KSeF is offered (ADR-669): the invoice inFakt made must have exactly the sums the
+/// Before Send to KSeF is offered (ADR-678): the invoice inFakt made must have exactly the sums the
 /// person confirmed. KSeF does no arithmetic and an accepted invoice can only be corrected, so a
 /// difference (inFakt may round per line) stops it here, not after.
 public enum KsefSendGate {

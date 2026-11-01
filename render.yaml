@@ -215,7 +215,7 @@ services:
         sync: false
       - key: DEALS_ENABLED # Leaflets (ADR-609): "0" (the default) answers 503 deals_disabled; "1" reads the four chains' leaflets on request
         value: "0"
-      - key: CEIDG_API_TOKEN # Company registers (ADR-671): CEIDG's JWT from biznes.gov.pl (e-service 00_9999_00); empty means GET /v1/registry/ceidg answers 503 registry_disabled
+      - key: CEIDG_API_TOKEN # Company registers (ADR-680): CEIDG's JWT from biznes.gov.pl (e-service 00_9999_00); empty means GET /v1/registry/ceidg answers 503 registry_disabled
         sync: false
       - key: OPENAI_API_KEY # used only when ANTHROPIC_API_KEY is empty (ADR-197)
         sync: false

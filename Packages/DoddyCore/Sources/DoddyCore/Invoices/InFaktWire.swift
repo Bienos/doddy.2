@@ -1,6 +1,6 @@
 import Foundation
 
-// inFakt's wire format (ADR-669): the body Doddy would send to create an invoice, and how inFakt's
+// inFakt's wire format (ADR-678): the body Doddy would send to create an invoice, and how inFakt's
 // answers are read. Written from the Postman collection behind docs.infakt.pl as read on
 // 30 Oct 2026 (docs/research/2026-10-30/ksef_infakt_research.md, C1 to C3, C9, C10, C16, C17), with
 // inFakt's own examples as test fixtures. **No request is made here, and no real answer has been
@@ -10,7 +10,7 @@ import Foundation
 // What it refuses rather than guesses: a buyer abroad or another currency (not drafted yet), an
 // exempt line without an exemption id from inFakt's own list, and cash on delivery (inFakt's list
 // says "delivery"; not confirmed to be the same). A private person goes as inFakt's `private_person`
-// with a first and a last name (ADR-670).
+// with a first and a last name (ADR-679).
 //
 // Platforms: iPhone and iPad. Pure logic; tested on Linux.
 
@@ -46,7 +46,7 @@ public enum InFaktWire {
             ("client_country", .string("PL")),
             ("currency", .string("PLN")),
             ("invoice_date", .string(issue.iso)),
-            // No sale date on the draft means the issue date (ADR-668); said outright, so inFakt's own
+            // No sale date on the draft means the issue date (ADR-677); said outright, so inFakt's own
             // default for a missing one (not documented) never decides it.
             ("sale_date", .string((draft.saleDate ?? issue).iso)),
             ("payment_method", .string(method.rawValue)),

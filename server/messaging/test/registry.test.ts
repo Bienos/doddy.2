@@ -1,4 +1,4 @@
-// Company registers (ADR-671): the CEIDG client against a fake CEIDG, and GET /v1/registry/ceidg against real
+// Company registers (ADR-680): the CEIDG client against a fake CEIDG, and GET /v1/registry/ceidg against real
 // Postgres. CEIDG's answer below is the official integrator documentation's example (API v3, v1.0). Nothing
 // here reaches CEIDG.
 import assert from "node:assert/strict";
