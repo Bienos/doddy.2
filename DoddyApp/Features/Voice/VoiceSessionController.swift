@@ -1875,6 +1875,14 @@ final class VoiceSessionController {
         }
     }
 
+    /// The VAT register from this iPhone, then CEIDG through Doddy's server when the register has no
+    /// such taxpayer or couldn't be asked (ADR-670, `CompanyLookup.combined`).
+    private static func lookUpCompany(_ nip: Nip, on day: CalendarDate) async -> CompanyLookup {
+        let vat = await VatRegisterClient.shared.lookup(nip, on: day)
+        guard vat.asksCeidgToo, let server = ServerConfig.client() else { return vat }
+        return CompanyLookup.combined(vat: vat, ceidg: await server.lookupCeidg(nip, on: day))
+    }
+
     /// Application Support/Invoices/invoice-draft.json; a new file for each UI-test launch.
     static let invoiceDraftFile: InvoiceDraftFile? = ProcessInfo.processInfo.arguments.contains("-inMemoryStore")
         ? InvoiceDraftFile(url: FileManager.default.temporaryDirectory.appendingPathComponent("invoice-draft-\(UUID().uuidString).json"))
@@ -2771,14 +2779,30 @@ final class VoiceSessionController {
             let userWords = lines.filter(\.fromUser).map(\.text)
             var session = invoiceSession
             switch session.apply(update, userWords: userWords, today: today) {
-            case .drafted(let operation, let notes):
+            case .drafted(var operation, var notes):
                 guard onScreen(attempt) else {
                     await reply(call.toolCallId, VoiceToolReply.invoiceRefused("the conversation ended before the draft could be shown."))
                     return
                 }
                 invoiceSession = session
+                // ADR-670: a NIP the person said is looked up in the public registers, the VAT register
+                // from this iPhone and CEIDG through Doddy's server; only the NIP leaves the phone.
+                // The answer is applied to the draft as it is now, and only if the NIP is still the same.
+                if let nip = invoiceSession.registerLookupNip {
+                    if UserDefaults.standard.bool(forKey: ConnectionPause.preferenceKey) {
+                        notes.append(.registerPaused)
+                    } else {
+                        let lookup = await Self.lookUpCompany(nip, on: today)
+                        guard onScreen(attempt) else {
+                            await reply(call.toolCallId, VoiceToolReply.invoiceRefused("the conversation ended before the draft could be shown."))
+                            return
+                        }
+                        notes += invoiceSession.applyRegister(lookup, for: nip)
+                        operation = invoiceSession.operation ?? operation
+                    }
+                }
                 // Kept only when the file reads back as this draft (ADR-668); the agent hears which.
-                let kept = Self.invoiceDraftFile?.save(session) ?? false
+                let kept = Self.invoiceDraftFile?.save(invoiceSession) ?? false
                 var text = VoiceToolReply.invoiceDraft(operation, notes: notes, kept: kept)
                 if invoiceDraftWasSetAside {
                     invoiceDraftWasSetAside = false

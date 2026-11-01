@@ -26,6 +26,14 @@ struct InvoiceCardView: View {
 
             block(NSLocalizedString("Buyer", comment: ""), rows: card.buyer)
 
+            // ADR-670: where the buyer's official name and address came from.
+            if let line = card.registerLine {
+                Label { Text(verbatim: line) } icon: { Image(systemName: "building.columns") }
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+                    .accessibilityIdentifier("invoice.register")
+            }
+
             VStack(alignment: .leading, spacing: 8) {
                 Text("Lines").font(.subheadline.weight(.semibold))
                 ForEach(Array(card.lines.enumerated()), id: \.offset) { _, line in
@@ -81,6 +89,10 @@ struct InvoiceCardView: View {
                         Spacer(minLength: 12)
                         Text(verbatim: row.value).multilineTextAlignment(.trailing)
                         if row.proposed { suggestedMark }
+                        if row.fromRegister {
+                            Image(systemName: "building.columns").foregroundStyle(Theme.secondaryText)
+                                .accessibilityLabel("From the register")
+                        }
                     }
                     .font(.subheadline)
                     .accessibilityElement(children: .combine)

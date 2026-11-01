@@ -92,6 +92,16 @@ public enum InvoiceVoiceNote: Equatable, Sendable {
     /// The issue date said is before today: KSeF treats such an invoice as made offline (offline24),
     /// so it must reach KSeF by the next business day after that date.
     case issueDateInPast(CalendarDate)
+    /// The buyer's name and address came from a register for the NIP (ADR-670).
+    case fromRegister(RegisteredCompany)
+    /// Neither register has this NIP.
+    case notInRegister
+    /// A register said the NIP isn't valid.
+    case registerRefusedNip
+    /// The registers couldn't be asked just now (offline, a limit); nothing is known about the NIP.
+    case registerNotChecked
+    /// Pause all connections is on, so no register was asked.
+    case registerPaused
 }
 
 /// The invoice being drafted: what the person said, field by field, and the operation made from it.
@@ -114,6 +124,12 @@ public struct InvoiceVoiceSession: Equatable, Sendable, Codable {
     private var lastName: Sourced<String>?
     private var nip: Sourced<String>?
     private var address: InvoiceAddress?
+    /// Where the address came from: what the person said, or a register (ADR-670).
+    private var addressSource: FieldSource = .saidByUser
+    /// The register entry the name and address were taken from (ADR-670).
+    public private(set) var register: RegisteredCompany?
+    /// A NIP no register has, so it isn't asked about again in this draft.
+    private var registerMissFor: String?
     private var lines: [LineInput] = []
     private var currency: Sourced<InvoiceCurrency>?
     private var issueDate: CalendarDate?
@@ -166,6 +182,7 @@ public struct InvoiceVoiceSession: Equatable, Sendable, Codable {
         }
         if update.hasAddressFields {
             var address = next.address ?? InvoiceAddress()
+            next.addressSource = .saidByUser
             if let v = update.street { address.street = v }
             if let v = update.buildingNumber { address.buildingNumber = v }
             if let v = update.flatNumber { address.flatNumber = v }
@@ -278,6 +295,45 @@ public struct InvoiceVoiceSession: Equatable, Sendable, Codable {
         return true
     }
 
+    /// The NIP to look up in the registers (ADR-670): valid, said or confirmed by the person (never
+    /// one only the model suggested), for a buyer who isn't a private person, and not asked about yet.
+    public var registerLookupNip: Nip? {
+        guard let operation, !Self.isLocked(operation.state), let said = nip, said.isConfirmed, let checked = Nip(said.value),
+              kind?.value != .privatePerson, register?.nip != checked.digits, registerMissFor != checked.digits else { return nil }
+        return checked
+    }
+
+    /// What the registers said about `nip`. Ignored unless it is still the draft's NIP. A found entry
+    /// gives the buyer's official name and address; the person's later words still replace them.
+    public mutating func applyRegister(_ lookup: CompanyLookup, for nip: Nip) -> [InvoiceVoiceNote] {
+        guard let operation, !Self.isLocked(operation.state), let said = nip.digits as String?,
+              self.nip.flatMap({ Nip($0.value) })?.digits == said else { return [] }
+        let note: InvoiceVoiceNote
+        switch lookup {
+        case .found(let company):
+            guard company.nip == said else { return [] }
+            name = Sourced(company.name, source: .officialRegister)
+            nameFromParts = false
+            address = company.address
+            addressSource = .officialRegister
+            if kind == nil { kind = Sourced(.company, source: .officialRegister) }
+            register = company
+            note = .fromRegister(company)
+        case .notFound:
+            registerMissFor = said
+            note = .notInRegister
+        case .invalidNip:
+            registerMissFor = said
+            note = .registerRefusedNip
+        case .couldNotCheck, .unavailable:
+            note = .registerNotChecked
+        }
+        var updated = operation
+        guard (try? updated.update(makeDraft().0)) != nil else { return [] }
+        self.operation = updated
+        return [note]
+    }
+
     /// The person closed the card: the draft is gone.
     public mutating func close() {
         self = InvoiceVoiceSession()
@@ -328,7 +384,7 @@ public struct InvoiceVoiceSession: Equatable, Sendable, Codable {
         }
         let draft = InvoiceDraft(
             contractor: InvoiceContractor(
-                kind: kind, name: name, nip: nip, address: address.map { Sourced($0, source: .saidByUser) },
+                kind: kind, name: name, nip: nip, address: address.map { Sourced($0, source: addressSource) },
                 firstName: firstName, lastName: lastName),
             lines: draftLines, currency: currency, issueDate: issueDate, saleDate: saleDate,
             paymentMethod: payment, paymentDueDate: due, vatExemptionReason: exemptionReason, splitPayment: splitPayment)
@@ -641,6 +697,23 @@ extension VoiceToolReply {
             case .issueDateInPast(let date):
                 parts.append("The issue date \(date.iso) is before today: KSeF counts such an invoice as made offline, so it must reach KSeF by the "
                     + "next business day after that date. Tell the user in one sentence.")
+            case .fromRegister(let company):
+                let register = company.source == .vatRegister ? "the Ministry of Finance's VAT register" : "CEIDG"
+                parts.append("Doddy looked the NIP up in \(register) today: the card now has the buyer's official name and address "
+                    + "from it. Read the name back to the user in one short line; read the address only if asked.")
+                if !company.isActive {
+                    parts.append(company.source == .vatRegister
+                        ? "The register shows their VAT status as \"\(ToolData.clean(company.status))\", not an active VAT payer: tell the user in one sentence."
+                        : "CEIDG shows the business as \"\(ToolData.clean(company.status))\", not active: tell the user in one sentence.")
+                }
+            case .notInRegister:
+                parts.append("Doddy didn't find this NIP in the registers it could ask: ask the user for the buyer's name and address.")
+            case .registerRefusedNip:
+                parts.append("The register says this NIP isn't valid: ask the user to say it again, digit by digit.")
+            case .registerNotChecked:
+                parts.append("Doddy couldn't check the NIP in the registers just now: ask the user for the buyer's name and address.")
+            case .registerPaused:
+                parts.append("Connections are paused, so the NIP wasn't looked up in the registers: ask the user for the buyer's name and address.")
             case .nipNotHeard, .vatNotHeard:
                 break
             }

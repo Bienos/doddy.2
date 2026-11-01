@@ -1611,7 +1611,8 @@ struct VoiceView: View {
                 .accessibilityLabel("Close the draft")
             }
             InvoiceCardView(
-                card: InvoiceCard(operation, polish: NotificationLanguage.preferred(Bundle.main.preferredLocalizations) == .polish),
+                card: InvoiceCard(operation, polish: NotificationLanguage.preferred(Bundle.main.preferredLocalizations) == .polish,
+                                  register: controller.invoiceSession.register),
                 onConfirm: { controller.confirmInvoiceSuggestion($0) })
         }
         .padding(16)

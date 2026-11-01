@@ -29282,6 +29282,17 @@
         }
       }
     },
+    "From the register": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Z rejestru"
+          }
+        }
+      }
+    },
     "From walking to 30 minutes of running without stopping": {
       "extractionState": "manual",
       "localizations": {

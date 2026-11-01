@@ -15,13 +15,16 @@ public struct InvoiceCard: Equatable, Sendable {
         public let value: String
         /// Only the model suggested this value: shown so it can be confirmed, marked so it is not mistaken for said.
         public let proposed: Bool
+        /// A public register gave this value (ADR-670).
+        public let fromRegister: Bool
         /// The field a tap on Confirm settles, when this row is a suggestion the person can confirm (ADR-667).
         public let confirmField: InvoiceField?
 
-        init(_ label: String, _ value: String, proposed: Bool = false, confirmField: InvoiceField? = nil) {
+        init(_ label: String, _ value: String, proposed: Bool = false, confirmField: InvoiceField? = nil, fromRegister: Bool = false) {
             self.label = label
             self.value = value
             self.proposed = proposed
+            self.fromRegister = fromRegister
             self.confirmField = proposed ? confirmField : nil
         }
     }
@@ -56,8 +59,10 @@ public struct InvoiceCard: Equatable, Sendable {
     /// The KSeF number once KSeF accepted the invoice (ADR-669): shown so it can be copied, and from
     /// 1 Jan 2027 it goes in the title of a B2B transfer for this invoice.
     public let ksefNumber: String?
+    /// Where the buyer's name or address came from, when a register gave them (ADR-670).
+    public let registerLine: String?
 
-    public init(_ operation: InvoiceOperation, polish: Bool) {
+    public init(_ operation: InvoiceOperation, polish: Bool, register: RegisteredCompany? = nil) {
         let text = Words(polish: polish)
         let draft = operation.draft
         let currency = draft.currency?.value ?? .pln
@@ -66,7 +71,9 @@ public struct InvoiceCard: Equatable, Sendable {
         var buyer: [Row] = []
         let c = draft.contractor
         if let kind = c.kind { buyer.append(Row(text.kind, text.kindName(kind.value), proposed: !kind.isConfirmed)) }
-        if let name = c.name { buyer.append(Row(text.name, name.value, proposed: !name.isConfirmed)) }
+        if let name = c.name {
+            buyer.append(Row(text.name, name.value, proposed: !name.isConfirmed, fromRegister: name.source == .officialRegister))
+        }
         if c.kind?.value == .privatePerson {
             if let first = c.firstName { buyer.append(Row(text.firstName, first.value)) }
             if let last = c.lastName { buyer.append(Row(text.lastName, last.value)) }
@@ -75,7 +82,8 @@ public struct InvoiceCard: Equatable, Sendable {
             buyer.append(Row("NIP", Nip(nip.value)?.display ?? nip.value, proposed: !nip.isConfirmed, confirmField: .contractorNip))
         }
         if let address = c.address {
-            buyer.append(Row(text.address, Self.oneLine(address.value), proposed: !address.isConfirmed))
+            buyer.append(Row(text.address, Self.oneLine(address.value), proposed: !address.isConfirmed,
+                             fromRegister: address.source == .officialRegister))
         }
         self.buyer = buyer
 
@@ -140,6 +148,12 @@ public struct InvoiceCard: Equatable, Sendable {
         self.canSendToKsef = InFaktAPI.createVerified && operation.mayAskToSendToKsef
         self.ksefWarning = operation.mayAskToSendToKsef ? text.ksefIsFinal : nil
         if case .accepted(let number) = operation.ksef { self.ksefNumber = number.value } else { self.ksefNumber = nil }
+        let usesRegister = c.name?.source == .officialRegister || c.address?.source == .officialRegister
+        if let register, usesRegister, register.nip == c.nip.flatMap({ Nip($0.value)?.digits }) {
+            self.registerLine = text.registerLine(register, date: Self.date(register.checkedOn, polish: polish))
+        } else {
+            self.registerLine = nil
+        }
     }
 
     /// A field's name in a sentence ("buyer's NIP"), for the voice agent's replies too (ADR-667).
@@ -212,6 +226,17 @@ public struct InvoiceCard: Equatable, Sendable {
                  "Sending to KSeF can't be undone: an invoice KSeF accepted can only be corrected with a correction invoice.")
         }
         var yes: String { pick("tak", "yes") }
+
+        func registerLine(_ company: RegisteredCompany, date: String) -> String {
+            switch company.source {
+            case .vatRegister:
+                return pick("Dane nabywcy z wykazu podatników VAT (Ministerstwo Finansów), sprawdzone \(date). Status VAT: \(company.status).",
+                            "Buyer's details from the VAT register (Ministry of Finance), checked \(date). VAT status: \(company.status).")
+            case .ceidg:
+                return pick("Dane nabywcy z CEIDG, sprawdzone \(date). Status: \(company.status).",
+                            "Buyer's details from CEIDG, checked \(date). Status: \(company.status).")
+            }
+        }
         var no: String { pick("nie", "no") }
         var exemptionReason: String { pick("Podstawa zwolnienia z VAT", "VAT exemption reason") }
         var net: String { pick("Netto", "Net") }
