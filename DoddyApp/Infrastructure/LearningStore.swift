@@ -85,10 +85,17 @@ final class LearningStore {
         for task in tasks { await task.value }
     }
 
-    func recordGap(_ category: CapabilityGapCategory, requestID: String, sessionID: String?) async {
-        guard let service else { return }
-        do { try await service.recordGap(category, requestID: requestID, sessionID: sessionID) }
-        catch { problem = "Couldn't write down what Doddy can't do yet." }
+    /// True only when the row was written, so Doddy says "written down" only then (ADR-670).
+    @discardableResult
+    func recordGap(_ category: CapabilityGapCategory, requestID: String, sessionID: String?) async -> Bool {
+        guard let service else { return false }
+        do {
+            try await service.recordGap(category, requestID: requestID, sessionID: sessionID)
+            return true
+        } catch {
+            problem = "Couldn't write down what Doddy can't do yet."
+            return false
+        }
     }
 
     func recordChangedStep(tool: String, requestID: String, sessionID: String?) {

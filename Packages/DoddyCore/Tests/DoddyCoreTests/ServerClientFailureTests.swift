@@ -23,6 +23,19 @@ final class ServerClientFailureTests: XCTestCase {
         XCTAssertEqual(request.status, "unknown")
     }
 
+    /// ADR-670: a gateway error or an unreadable accept may come after the call started.
+    func testCallMeNowWithAGatewayErrorOrAnUnreadableAcceptIsUnknown() async throws {
+        for reply in [ServerResponse(status: 502, body: Data()), ServerResponse(status: 504, body: Data()),
+                      ServerResponse(status: 202, body: Data("{".utf8))] {
+            let transport = StepTransport([.success(reply)])
+            let client = DoddyServerClient(transport: transport, credentials: FixedCredentials(token: "t"))
+            let request = try await client.callMeNow()
+            XCTAssertEqual(request, CallRequest(callId: nil, status: "unknown"), "status \(reply.status)")
+            let sent = await transport.sent
+            XCTAssertEqual(sent.count, 1, "never sent twice")
+        }
+    }
+
     func testCallMeNowWithNoNetworkAtAllIsOffline() async {
         let transport = StepTransport([.failure(URLError(.notConnectedToInternet))])
         let client = DoddyServerClient(transport: transport, credentials: FixedCredentials(token: "t"))

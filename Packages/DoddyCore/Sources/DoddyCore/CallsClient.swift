@@ -153,18 +153,25 @@ extension DoddyServerClient {
     }
 
     /// Waits longer than the server's own ElevenLabs timeout (15 s). A request that may have
-    /// reached the server without an answer coming back is `unknown`, never "offline, try again".
+    /// reached the server without an answer coming back is `unknown`, never "offline, try again":
+    /// no reply, a 500, 502 or 504, or a 202 whose body can't be read (ADR-670).
     public func callMeNow() async throws -> CallRequest {
+        let unknown = CallRequest(callId: nil, status: "unknown")
         let response: ServerResponse
         do {
             response = try await authorized(.post, "/v1/calls/outbound", body: nil, startsSomething: true, timeout: 30)
         } catch is OutcomeUnknown {
-            return CallRequest(callId: nil, status: "unknown")
+            return unknown
         }
-        guard response.status == 202, let request = try? JSONDecoder().decode(CallRequest.self, from: response.body)
-        else { throw Self.error(from: response) }
+        if Self.mayHaveStarted(response.status) { return unknown }
+        guard response.status == 202 else { throw Self.error(from: response) }
+        guard let request = try? JSONDecoder().decode(CallRequest.self, from: response.body) else { return unknown }
         return request
     }
+
+    /// A 500, 502 or 504 can come after the server already started the call (a proxy or gateway
+    /// timing out behind it), so the outcome is open. 503 is the server saying calls are off.
+    static func mayHaveStarted(_ status: Int) -> Bool { [500, 502, 504].contains(status) }
 
     public func recentCalls() async throws -> [CallRecord] {
         let list: CallList = try await getJSON("/v1/calls")
