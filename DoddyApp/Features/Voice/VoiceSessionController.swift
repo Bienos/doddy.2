@@ -493,6 +493,18 @@ final class VoiceSessionController {
         phase = .listening
     }
 
+    /// Test seam only: Doddy starts speaking, as the provider's own event says (the voice meter
+    /// attaches then, ADR-655).
+    func speakForTesting() {
+        guard isLive else { return }
+        phase = .speaking
+    }
+
+    /// Test seam only: the provider's disconnect.
+    func disconnectForTesting(_ kind: VoiceSessionEnd.Disconnect) {
+        disconnected(kind)
+    }
+
     /// Test seam only: a tool call from the provider. The start it arrived in is taken now, as the
     /// ElevenLabs and OpenAI callbacks do, and the returned task runs it.
     @discardableResult
