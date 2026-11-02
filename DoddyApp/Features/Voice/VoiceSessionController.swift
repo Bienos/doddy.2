@@ -867,11 +867,11 @@ final class VoiceSessionController {
             // ended here, so nothing keeps listening.
             let started = try await StartLimit.run {
                 try await ElevenLabs.startConversation(auth: auth, config: startConfig)
-            } onTimeout: {
+            } onTimeout: { [weak self] in
                 // Block late SDK events before the deadline resumes the waiting start.
-                guard attempt == startAttempt else { return }
-                startAttempt += 1
-                fail(StartLimit.message)
+                guard let self, attempt == self.startAttempt else { return }
+                self.startAttempt += 1
+                self.fail(StartLimit.message)
             } lateResult: { late in
                 let lateNote = "a start that connected after the limit was ended: attempt \(attempt)"
                 Self.audioLog.notice("\(lateNote, privacy: .public)")
