@@ -407,6 +407,86 @@ enum IslandSceneChecks {
         return failures
     }
 
+    /// ADR-683: his beat outside the app shows only over his talking waves, and swells the island
+    /// with his voice within fixed bounds.
+    static func voiceBeat() -> Int {
+        var failures = 0
+        func expect(_ ok: Bool, _ message: String) {
+            if !ok { print("FAIL: voice beat: \(message)"); failures += 1 }
+        }
+        func state(_ status: State.Status, beat: Int?, muted: Bool = false, moment: State.Moment? = nil) -> State {
+            var s = State(status: status, isMuted: muted)
+            s.moment = moment
+            s.voiceBeat = beat
+            return s
+        }
+        let talking = state(.speaking, beat: 3).islandScene(isStale: false)
+        expect(talking.waves == .speaking && talking.voiceBeat == 3, "the beat reaches the island while he talks")
+        expect(state(.speaking, beat: 3).islandScene(isStale: true).voiceBeat == nil, "a stale island never pulses")
+        expect(state(.speaking, beat: 3, muted: true).islandScene(isStale: false).voiceBeat == nil, "no beat while muted")
+        expect(state(.listening, beat: 3).islandScene(isStale: false).voiceBeat == nil, "no beat while he listens")
+        expect(state(.thinking, beat: 3).islandScene(isStale: false).voiceBeat == nil, "no beat while working")
+        expect(state(.speaking, beat: 3, moment: .resultReady(.document)).islandScene(isStale: false).voiceBeat == nil,
+               "a moment keeps its own island")
+        expect(state(.speaking, beat: 99).islandScene(isStale: false).voiceBeat == IslandScene.maxBeat
+               && state(.speaking, beat: -2).islandScene(isStale: false).voiceBeat == 0, "a beat out of range is clamped")
+
+        // Only when the island draws his talking waves does the app send a beat.
+        expect(state(.speaking, beat: nil).wantsVoiceBeat, "talking wants a beat")
+        expect(!state(.speaking, beat: nil, muted: true).wantsVoiceBeat, "muted wants none")
+        expect(!state(.listening, beat: nil).wantsVoiceBeat && !state(.thinking, beat: nil).wantsVoiceBeat,
+               "listening and working want none")
+        expect(!state(.speaking, beat: nil, moment: .noteSaved).wantsVoiceBeat, "a moment wants none")
+        expect(!state(.ended, beat: nil).wantsVoiceBeat, "an ended island wants none")
+
+        // Option C (owner, 1 Nov): the small island's aurora, Home's fine lines.
+        let still = state(.speaking, beat: nil).islandScene(isStale: false)
+        expect(still.beatWaveScale == 1, "no beat draws the big island's waves as before")
+        expect(still.aurora.count == IslandScene.auroraColumnCount, "21 lines while he talks")
+        expect(state(.speaking, beat: 3, muted: true).islandScene(isStale: false).aurora.isEmpty, "no lines while muted")
+        expect(state(.speaking, beat: 3).islandScene(isStale: true).aurora.isEmpty, "no lines when stale")
+        expect(state(.thinking, beat: nil).islandScene(isStale: false).aurora.isEmpty, "no lines while working")
+        let hearing = state(.listening, beat: nil).islandScene(isStale: false)
+        expect(hearing.aurora.count == IslandScene.auroraColumnCount && hearing.auroraLevel == 0.5,
+               "calm lines while he hears you, at Home's listening level")
+        expect(hearing.aurora == state(.listening, beat: 4).islandScene(isStale: false).aurora,
+               "a beat never moves the lines while he listens")
+        func total(_ scene: IslandScene) -> Double { scene.aurora.reduce(0) { $0 + $1.height } }
+        var previous: IslandScene?
+        for beat in 0...IslandScene.maxBeat {
+            let scene = state(.speaking, beat: beat).islandScene(isStale: false)
+            expect(scene.beatWaveScale >= 0.75 && scene.beatWaveScale <= 1, "big island waves \(beat): never taller than their band")
+            expect(scene.aurora.allSatisfy { $0.height >= 0.06 && $0.height <= 1 }, "lines \(beat) stay in their band")
+            if let previous {
+                expect(scene.auroraLevel > previous.auroraLevel && scene.beatWaveScale > previous.beatWaveScale,
+                       "beat \(beat) is stronger than \(beat - 1)")
+                expect(scene.aurora != previous.aurora, "beats \(beat - 1) and \(beat) have their own shapes")
+            }
+            previous = scene
+        }
+        expect(total(state(.speaking, beat: 4).islandScene(isStale: false))
+               > 2 * total(state(.speaking, beat: 0).islandScene(isStale: false)),
+               "his loudest beat draws the lines more than twice as tall as a pause")
+        let colours = still.aurora.map(\.colour)
+        if let first = colours.first, let middle = colours.dropFirst(colours.count / 2).first, let last = colours.last {
+            expect(first.red > 0.9 && first.blue < 0.3, "orange at the left")
+            expect(middle.green > first.green, "amber in the middle")
+            expect(last.blue > first.blue && last.green < middle.green, "rose at the right")
+        } else {
+            expect(false, "the lines have colours")
+        }
+
+        // The beat survives the trip to the widget, and older content without it still decodes.
+        let encoded = try? JSONEncoder().encode(state(.speaking, beat: 2))
+        let back = encoded.flatMap { try? JSONDecoder().decode(State.self, from: $0) }
+        expect(back?.voiceBeat == 2, "the beat encodes and decodes")
+        let old = #"{"status":"speaking","isMuted":false}"#.data(using: .utf8)!
+        expect((try? JSONDecoder().decode(State.self, from: old))?.voiceBeat == nil, "content from an older build decodes")
+        let noBeat = (try? JSONEncoder().encode(state(.speaking, beat: nil))).flatMap { String(data: $0, encoding: .utf8) } ?? ""
+        expect(!noBeat.contains("voiceBeat"), "no beat adds nothing to the content")
+        return failures
+    }
+
     /// The strips (ADR-313): loops loop, once-only strips rest on their last frame, every box fits.
     static func motions() -> Int {
         var failures = 0
