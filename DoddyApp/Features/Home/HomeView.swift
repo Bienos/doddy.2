@@ -160,7 +160,8 @@ struct HomeView: View {
         ZStack {
             DoddyWordmark()
             HStack {
-                if conversation.live != nil {
+                // Also after a drop Home tells about (ADR-686): the transcript still has the lines.
+                if conversation.live != nil || conversation.droppedNotice != nil {
                     transcriptButton
                 }
                 Spacer()
@@ -299,7 +300,9 @@ struct HomeView: View {
             }
             // Back Tap exists only on iPhone (ADR-337), and waits for the first conversation (ADR-326).
             // After "Later" it comes back once, three conversations on; never once a way is in use (ADR-559).
-            if router.setup.cardDue(connectedConversations: connectedConversations), DeviceSupport.hasBackTap, hadFirstConversation {
+            // One thing at a time: it waits while the drop notice is up (ADR-686).
+            if router.setup.cardDue(connectedConversations: connectedConversations), DeviceSupport.hasBackTap, hadFirstConversation,
+               conversation.droppedNotice == nil {
                 backTapCard
             }
         }
@@ -325,7 +328,9 @@ struct HomeView: View {
                     // The first visit of a morning waves (ADR-380), then he sits.
                     DoddyMotionView(motion: .wave, height: 190)
                 } else {
-                    AliveDoddy(pose: perking ? .listening : .crosslegged, height: 190, hopTrigger: tapHops)
+                    // Worried after a drop (ADR-686): the pack's one worried pose, as on any failed screen.
+                    AliveDoddy(pose: conversation.droppedNotice != nil ? .facepalm : (perking ? .listening : .crosslegged),
+                               height: 190, hopTrigger: tapHops)
                 }
             }
             .frame(height: 210, alignment: .bottom)
@@ -365,9 +370,36 @@ struct HomeView: View {
     private var status: some View {
         if let live = conversation.live {
             liveStatus(live)
+        } else if let dropped = conversation.droppedNotice {
+            droppedStatus(dropped)
         } else {
             restStatus
         }
+    }
+
+    /// After a conversation dropped in the middle (ADR-686): his words under him, and the way back.
+    /// Says nothing about what was saved, because Home doesn't know. The words are the owner's.
+    private func droppedStatus(_ notice: HomeDropNotice) -> some View {
+        VStack(spacing: 8) {
+            Text(verbatim: notice.title)
+                .font(.title.weight(.bold)).tracking(-0.5)
+                .multilineTextAlignment(.center)
+                .accessibilityAddTraits(.isHeader)
+                .accessibilityIdentifier("home.dropped.title")
+            Text(verbatim: notice.line)
+                .font(.body)
+                .foregroundStyle(Theme.secondaryText)
+                .multilineTextAlignment(.center)
+            Button(action: talk) {
+                Label { Text(verbatim: notice.button) } icon: { Image(systemName: "waveform") }
+            }
+            .buttonStyle(PrimaryButtonStyle())
+            .disabled(!canTalk)
+            .padding(.top, 14)
+            .accessibilityIdentifier("home.reconnect")
+        }
+        .frame(maxWidth: .infinity)
+        .modifier(FacepalmWhileShown())
     }
 
     /// While he talks (ADR-595): what he is doing, then the last thing the user said and the last
@@ -757,6 +789,24 @@ struct HomeView: View {
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+    }
+}
+
+/// While the drop notice shows, the one Doddy on Home does the facepalm where he stands: told the
+/// same way a problem view tells him (`ProblemView`), so there is no second picture of him.
+private struct FacepalmWhileShown: ViewModifier {
+    @State private var reported = false
+
+    func body(content: Content) -> some View {
+        content
+            .onAppear { report(DoddyDirector.shared.isActive) }
+            .onDisappear { report(false) }
+    }
+
+    private func report(_ shown: Bool) {
+        guard shown != reported else { return }
+        reported = shown
+        DoddyDirector.shared.problemShown(shown)
     }
 }
 
