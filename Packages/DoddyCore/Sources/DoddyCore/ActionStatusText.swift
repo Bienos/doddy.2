@@ -78,7 +78,7 @@ extension SessionRecovery {
     }
 }
 
-/// What Home says after a conversation dropped in the middle (owner, 2 Nov 2026, ADR-686): a short
+/// What Home says after a conversation dropped in the middle (owner, 2 Nov 2026, ADR-687): a short
 /// line under a worried Doddy, instead of a sheet that opens by itself over Home. Says what
 /// happened and how to go on. It says nothing about what was or wasn't saved: Home doesn't know.
 public struct HomeDropNotice: Equatable, Sendable {

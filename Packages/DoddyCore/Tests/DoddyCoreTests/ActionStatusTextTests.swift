@@ -89,7 +89,7 @@ final class ActionStatusTextTests: XCTestCase {
         XCTAssertEqual(SessionRecovery.status(.dropped(.error("Token server down.")), connected: false, language: .polish).detail, "Token server down.", "a service's reason is kept as it was")
     }
 
-    /// ADR-686: Home's own words after a drop in the middle of a conversation.
+    /// ADR-687: Home's own words after a drop in the middle of a conversation.
     func testHomeSaysADropInTheMiddleInTheOwnersWords() {
         let polish = SessionRecovery.homeNotice(.dropped(.connectionLost), connected: true, language: .polish)
         XCTAssertEqual(polish?.title, "Chwila, nie słyszę Cię")

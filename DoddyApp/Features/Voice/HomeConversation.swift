@@ -31,7 +31,7 @@ final class HomeConversation {
         guard let controller else { return false }
         switch controller.phase {
         case .failed:
-            // A drop in the middle of a conversation is said on Home (ADR-686) and opens nothing
+            // A drop in the middle of a conversation is said on Home (ADR-687) and opens nothing
             // by itself, unless something in it waits for a decision: the draft of what Doddy last
             // heard, or the "Worth keeping?" card. Only the transcript can show those.
             if !stays(onHome: controller) { return true }
@@ -49,7 +49,7 @@ final class HomeConversation {
     }
 
     /// What Home says while the held conversation is a drop in the middle that needs nothing from
-    /// the user (ADR-686). It stays until the next conversation starts.
+    /// the user (ADR-687). It stays until the next conversation starts.
     var droppedNotice: HomeDropNotice? {
         guard let controller, stays(onHome: controller) else { return nil }
         return controller.homeDropNotice
