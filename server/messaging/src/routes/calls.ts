@@ -7,6 +7,7 @@ import { principal, requireDevice } from "../auth.js";
 import { OUTBOUND_CONSENT_VERSIONS, OUTBOUND_DAILY_LIMIT, openSession } from "../calls.js";
 import { hashPin, isAcceptablePin } from "../crypto.js";
 import { inTransaction } from "../db.js";
+import { ackRecap, deleteRecap, getRecap, publicState, type RecapContext } from "../callRecaps/service.js";
 
 const settingsBody = z.object({
   inboundEnabled: z.boolean().optional(),
@@ -25,16 +26,50 @@ const snapshotBody = z.object({
   })).max(5000),
 }).refine((b) => new Set(b.items.map((i) => i.id)).size === b.items.length, "duplicate ids");
 const idParam = z.object({ id: z.uuid() });
+// The recap's encryption is bound to the id as Postgres spells it (lowercase); iOS may send uppercase.
+const callIdParam = z.object({ id: z.uuid().transform((id) => id.toLowerCase()) });
+const ackBody = z.object({ digest: z.string().regex(/^[0-9a-f]{64}$/) });
 
 /** A changed or removed PIN also ends the access that calls in progress got with the old one. */
 const forgetPinOnCalls = (c: pg.PoolClient, accountId: string) =>
   c.query("UPDATE call_sessions SET pin_verified_at = NULL WHERE account_id = $1", [accountId]);
 
-export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
+export const callRoutes = (deps: Deps, recaps?: RecapContext): FastifyPluginAsync => async (app) => {
   const { db } = deps;
   const auth = requireDevice(db);
   const ensureRow = (accountId: string) =>
     db.query("INSERT INTO call_settings (account_id) VALUES ($1) ON CONFLICT DO NOTHING", [accountId]);
+
+  // ---------- recaps (ADR-684) ----------
+
+  app.get("/v1/calls/:id/recap", { preHandler: auth, config: { rateLimit: { max: 240, timeWindow: "1 hour" } } }, async (req, reply) => {
+    if (!recaps) return reply.code(503).send({ error: "not_configured" });
+    const p = parse(callIdParam, req.params, reply);
+    if (!p) return;
+    const r = await getRecap(recaps, principal(req).accountId, p.id);
+    if ("refusal" in r) return reply.code(r.refusal.status).send({ error: r.refusal.error, ...(r.refusal.state ? { state: r.refusal.state } : {}) });
+    return r;
+  });
+
+  // The app saved the recap on the iPhone: the server deletes its copy and says what it deleted.
+  app.post("/v1/calls/:id/recap/ack", { preHandler: auth, config: { rateLimit: { max: 240, timeWindow: "1 hour" } } }, async (req, reply) => {
+    if (!recaps) return reply.code(503).send({ error: "not_configured" });
+    const p = parse(callIdParam, req.params, reply);
+    const body = p && parse(ackBody, req.body, reply);
+    if (!p || !body) return;
+    const r = await ackRecap(recaps, principal(req).accountId, p.id, body.digest);
+    if ("refusal" in r) return reply.code(r.refusal.status).send({ error: r.refusal.error, ...(r.refusal.state ? { state: r.refusal.state } : {}) });
+    return r;
+  });
+
+  app.delete("/v1/calls/:id/recap", { preHandler: auth, config: { rateLimit: { max: 240, timeWindow: "1 hour" } } }, async (req, reply) => {
+    if (!recaps) return reply.code(503).send({ error: "not_configured" });
+    const p = parse(callIdParam, req.params, reply);
+    if (!p) return;
+    const r = await deleteRecap(recaps, principal(req).accountId, p.id);
+    if ("refusal" in r) return reply.code(r.refusal.status).send({ error: r.refusal.error });
+    return r;
+  });
 
   app.get("/v1/calls/settings", { preHandler: auth }, async (req) => {
     const { accountId } = principal(req);
@@ -144,10 +179,12 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
   });
 
   app.get("/v1/calls", { preHandler: auth }, async (req) => {
-    const { rows } = await db.query(
-      `SELECT id, direction, status, created_at AS "createdAt" FROM calls
-       WHERE account_id = $1 ORDER BY created_at DESC LIMIT 20`, [principal(req).accountId]);
-    return { calls: rows };
+    const { rows } = await db.query<{ id: string; direction: string; status: string; createdAt: Date; recap: string | null }>(
+      `SELECT c.id, c.direction, c.status, c.created_at AS "createdAt", r.state AS recap FROM calls c
+       LEFT JOIN call_recaps r ON r.call_id = c.id
+       WHERE c.account_id = $1 ORDER BY c.created_at DESC LIMIT 20`, [principal(req).accountId]);
+    // `recap` (ADR-684): none, waiting, ready, acked, deleted or expired. Older apps ignore it.
+    return { calls: rows.map((r) => ({ ...r, recap: publicState(r.recap) })) };
   });
 
   // Notes from calls wait here until the user confirms (saves locally) or discards them.

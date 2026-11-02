@@ -91,6 +91,19 @@ final class DataFlowTests: XCTestCase {
         XCTAssertTrue(errands.note?.contains("no words from the task") ?? false)
     }
 
+    /// ADR-684: call recaps send the call's words (PIN masked) to Anthropic through the messaging server.
+    func testCallRecapsRowSaysWhatGoesToAnthropicAndWhenItIsDeleted() {
+        XCTAssertFalse(row("callRecaps", base).isActive)
+        var state = base
+        state.messagingServerSet = true
+        let recaps = row("callRecaps", state)
+        XCTAssertTrue(recaps.isActive)
+        XCTAssertTrue(recaps.destination.contains("Anthropic"))
+        XCTAssertTrue(recaps.what.contains("masks a PIN"))
+        XCTAssertTrue(recaps.note?.contains("deleted after 30 days") ?? false)
+        XCTAssertTrue(DataFlow.cloudAISummary(state).contains("recaps of calls with Doddy"))
+    }
+
     /// SHOPPING.md: leaflets go through the messaging server; nothing that identifies the user goes to the
     /// shops, and the row says Rossmann gets the item names as a search.
     func testLeafletsRowSaysNothingIdentifyingGoesToTheShops() {
@@ -245,7 +258,7 @@ final class DataFlowSummaryTests: XCTestCase {
         // OpenAI runs the voice where the token server is set (ADR-442): ElevenLabs gets no voice then.
         XCTAssertEqual(
             DataFlow.cloudAISummary(everything),
-            "OpenAI (voice); Anthropic (Ask Doddy); ElevenLabs (phone calls) and Anthropic or OpenAI (daily news) on your messaging server; Anthropic (tasks you hand over); Anthropic (leaflets you check)")
+            "OpenAI (voice); Anthropic (Ask Doddy); ElevenLabs (phone calls) and Anthropic or OpenAI (daily news) on your messaging server; Anthropic (tasks you hand over); Anthropic (recaps of calls with Doddy); Anthropic (leaflets you check)")
         XCTAssertFalse(DataFlow.networkSummary(everything).contains("ElevenLabs (while talking)"))
         var elevenLabs = everything
         elevenLabs.voiceProvider = .elevenLabs

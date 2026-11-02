@@ -170,13 +170,34 @@ struct CallsSettingsView: View {
         }
 
         if !model.recent.isEmpty {
-            Section("Recent calls") {
+            Section {
                 ForEach(model.recent) { call in
-                    StatusRow(
+                    let row = StatusRow(
                         title: call.direction == "inbound" ? "You called Doddy" : "Doddy called you",
-                        value: "\(DateText.full(call.createdDate))\(call.status == "failed" ? " · failed" : call.status == "unknown" ? " · not confirmed" : "")")
+                        value: "\(DateText.full(call.createdDate))\(call.status == "failed" ? " · failed" : call.status == "unknown" ? " · not confirmed" : "")\(Self.recapSuffix(call.recapState))")
+                    // A call with a recap (ADR-684) opens it; the recap screen says when it's still coming.
+                    if call.recapState == .none {
+                        row
+                    } else {
+                        NavigationLink { CallRecapView(call: call) } label: { row }
+                            .accessibilityIdentifier("calls.recap")
+                    }
                 }
+            } header: {
+                Text("Recent calls")
+            } footer: {
+                Text("After a call, Doddy writes a recap from what was said: a short summary, what was settled and the notes taken. It's saved on this iPhone when you open it, and then deleted from Doddy's server.")
             }
+        }
+    }
+
+    /// What a recent call's row adds about its recap.
+    private static func recapSuffix(_ state: CallRecapState) -> String {
+        switch state {
+        case .ready: " · " + NSLocalizedString("recap ready", comment: "")
+        case .waiting: " · " + NSLocalizedString("recap coming", comment: "")
+        case .acked: " · " + NSLocalizedString("recap", comment: "")
+        default: ""
         }
     }
 }

@@ -250,6 +250,15 @@ public enum DataFlow {
                 note: state.messagingServerSet
                     ? "The server keeps the words and the result, encrypted, until the result is saved on this iPhone, then deletes them; a result never fetched is deleted after 30 days. The notification has no words from the task."
                     : "No messaging server is set, so tasks can't be handed over."),
+            // ADR-684: the recap of a call with Doddy's phone line, built from the call's transcript.
+            DataFlowRow(
+                id: "callRecaps", destination: "Your Doddy messaging server and Anthropic (recaps of calls with Doddy)",
+                what: "The words of a call between your confirmed number and Doddy (no audio), as ElevenLabs wrote them down, and the notes Doddy took on it. Doddy's server masks a PIN said on the call and sends the words to Anthropic's Claude to write a short summary. Never your saved notes, lists or profile, apart from what Doddy read out on the call.",
+                when: "After each call you make to Doddy's number and each Call me now, while phone calls are on.",
+                isActive: state.messagingServerSet,
+                note: state.messagingServerSet
+                    ? "The server keeps the call's words and the recap, encrypted, until the recap is saved on this iPhone when you open it, then deletes them; a recap never opened is deleted after 30 days. ElevenLabs keeps its own record of the call's words for 30 days."
+                    : "No messaging server is set, so calls have no recap."),
             // SHOPPING.md section 2: leaflets read on request; nothing that identifies the user goes to the chains
             // (Rossmann gets the item names as a search on rossmann.pl, from Doddy's server).
             DataFlowRow(
@@ -317,6 +326,8 @@ public enum DataFlow {
         }
         // ADR-570: Claude researches the tasks you hand over.
         if active.contains("errands") { parts.append("Anthropic (tasks you hand over)") }
+        // ADR-684: Claude summarises calls with Doddy's phone line.
+        if active.contains("callRecaps") { parts.append("Anthropic (recaps of calls with Doddy)") }
         // SHOPPING.md: item names and leaflet pages, for leaflets that are only pictures.
         if active.contains("deals") { parts.append("Anthropic (leaflets you check)") }
         return parts.isEmpty ? "None" : parts.joined(separator: "; ")
@@ -338,6 +349,7 @@ public enum DataFlow {
         "doddyServer": "your Doddy server (Connected Apps)",
         "messagingServer": "your Doddy messaging server",
         "errands": "Anthropic (tasks you hand over, through your messaging server)",
+        "callRecaps": "Anthropic (recaps of calls with Doddy, through your messaging server)",
         "deals": "the shops' leaflet pages and Anthropic (leaflets you check, through your messaging server)",
         "watches": "the shops' pages, read by your messaging server (prices you watch)",
         "siri": "Siri (when you ask it)",

@@ -11,6 +11,7 @@ import type { ErrandContext } from "./errands/context.js";
 import { newErrandLoopState, runErrandPasses, stopErrandRuns } from "./errands/worker.js";
 import type { WatchContext } from "./watches/context.js";
 import { BATCH, newWatchLoopState, runWatchPasses } from "./watches/worker.js";
+import { runRecapPasses, type RecapContext } from "./callRecaps/service.js";
 
 import { log } from "./log.js";
 
@@ -33,7 +34,7 @@ async function pause(ms: number, shouldStop: () => boolean) {
 export async function runWorkerLoop(
   db: Db, deps: {
     push?: PushSender; sms?: SmsSender; cipher?: TextCipher; news: NewsDeps; taskCalls?: TaskCallContext; errands?: ErrandContext;
-    watches?: WatchContext;
+    watches?: WatchContext; callRecaps?: RecapContext;
   },
   shouldStop: () => boolean,
 ): Promise<void> {
@@ -41,7 +42,24 @@ export async function runWorkerLoop(
   if (deps.taskCalls) loops.push(taskCallLoop(deps.taskCalls, shouldStop));
   if (deps.errands) loops.push(errandLoop(deps.errands, shouldStop));
   if (deps.watches) loops.push(watchLoop(deps.watches, shouldStop));
+  if (deps.callRecaps) loops.push(recapLoop(deps.callRecaps, shouldStop));
   await Promise.all(loops);
+}
+
+/**
+ * Recaps of S2 calls (ADR-684): builds the recaps whose transcript arrived, and wipes any older than 30
+ * days. Its own loop, so a slow summary never holds back pushes.
+ */
+async function recapLoop(ctx: RecapContext, shouldStop: () => boolean) {
+  while (!shouldStop()) {
+    try {
+      const counts = await runRecapPasses(ctx);
+      if (Object.keys(counts).length) log("call-recap passes", counts);
+    } catch (err) {
+      log("call-recap passes failed", { error: (err as Error).message });
+    }
+    await pause(5000, shouldStop);
+  }
 }
 
 /**

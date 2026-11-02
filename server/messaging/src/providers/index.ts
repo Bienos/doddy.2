@@ -20,6 +20,8 @@ import { AffiliateLinks } from "../shopping/affiliate.js";
 import { SerperOfferSource } from "../shopping/offers.js";
 import { RoutingErrandResearcher, ShoppingErrandResearcher } from "../shopping/runner.js";
 import type { WatchDeps } from "../watches/context.js";
+import type { CallRecapDeps } from "../callRecaps/service.js";
+import { ClaudeRecapWriter } from "../callRecaps/writer.js";
 
 /** Real provider adapters for whatever is configured; anything missing stays undefined. */
 export function providersFrom(config: Config) {
@@ -85,9 +87,19 @@ export function providersFrom(config: Config) {
       ? new ClaudeAssistantResponder(config.anthropicApiKey, { model: as.model, effort: as.effort })
       : undefined,
   };
+  // Recaps of S2 calls (ADR-684): Claude Haiku writes the summary when there is an Anthropic key; the
+  // recap is built either way once the post-call webhook brings a transcript.
+  const rc = config.callRecaps;
+  const callRecaps: CallRecapDeps = {
+    phoneAgentId: rc.phoneAgentId,
+    webhookSecret: rc.webhookSecret,
+    writer: config.anthropicApiKey ? new ClaudeRecapWriter(config.anthropicApiKey) : undefined,
+    settings: { dailyPerAccount: rc.dailyPerAccount, dailyPerServer: rc.dailyPerServer },
+  };
   return {
     push,
     sms: twilio,
+    callRecaps,
     verifier: twilio,
     outbound: config.phoneAgent ? new ElevenLabsOutboundCaller(config.phoneAgent) : undefined,
     cipher,

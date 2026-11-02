@@ -109,5 +109,10 @@ if (setWorkspaceWebhook) {
   console.log(JSON.stringify(webhook, null, 2));
 }
 
+// Recaps (ADR-684): the workspace's one post-call webhook (the same one call cases use) brings this agent's
+// transcripts too. Not changed here; set it once in ElevenLabs → Agents → Settings → Post-call webhook.
+console.log(`\nNot changed: the workspace post-call webhook. For call recaps it must point at ${origin}${el.post_call_webhook}`
+  + " (transcripts on, audio off), with its HMAC secret in ELEVENLABS_WEBHOOK_SECRET on the server.");
+
 console.log(`\nDone. ELEVENLABS_PHONE_AGENT_ID=${agent.agent_id}`);
 console.log("Next: import the Twilio number in ElevenLabs (Phone Numbers), assign it to this agent, and set ELEVENLABS_PHONE_NUMBER_ID and DODDY_PHONE_NUMBER on the server.");

@@ -87,6 +87,15 @@ enum ServerConfig {
 }
 SWIFT
 
+# CallRecapModel (ADR-684) words server errors through UpdatesModel, which imports UserNotifications;
+# only that one function is needed here.
+cat > "$work/UpdatesModelStub.swift" <<'SWIFT'
+@MainActor
+enum UpdatesModel {
+    static func text(for error: any Error) -> String { "" }
+}
+SWIFT
+
 # WatchModel (SHOPPING_WATCH.md) asks iOS for this iPhone's push token through WatchPush (UserNotifications)
 # once the user said yes to a watch; only its one entry point is needed here.
 cat > "$work/WatchPushStub.swift" <<'SWIFT'
@@ -140,6 +149,8 @@ files=(
   DoddyApp/DesignSystem/Motion/DoddyDirector.swift
   # Calls Doddy places for the user (ADR-500): the screens' state, without the views.
   DoddyApp/Features/CallCases/CallCasesModel.swift
+  # A call's recap (ADR-684): load, save here, then acknowledge; without the view.
+  DoddyApp/Features/Calls/CallRecapModel.swift
   # This week's leaflets (SHOPPING.md 2): the screen's state and the voice tool's answer, without the views.
   DoddyApp/Features/Shopping/DealsModel.swift
   # Price watch (SHOPPING_WATCH.md): the card's flow and the list's state, without the views.
@@ -156,7 +167,7 @@ files=(
 for f in "${files[@]}"; do [ -f "$f" ] || { echo "FAIL: $f is missing; update scripts/typecheck_app_logic.sh"; exit 1; }; done
 
 echo "Type-checking ${#files[@]} app files against DoddyCore (Swift 6)"
-swiftc -typecheck -swift-version 6 -I "$modules" "$work/PreferenceKey.swift" "$work/AppEnvironmentStub.swift" "$work/PlaceLocationStub.swift" "$work/SystemNoteNotificationsStub.swift" "$work/IslandRectStub.swift" "$work/OpenWaysReminderSchedulerStub.swift" "$work/ServerConfigStub.swift" "$work/WatchPushStub.swift" "${files[@]}"
+swiftc -typecheck -swift-version 6 -I "$modules" "$work/PreferenceKey.swift" "$work/AppEnvironmentStub.swift" "$work/PlaceLocationStub.swift" "$work/SystemNoteNotificationsStub.swift" "$work/IslandRectStub.swift" "$work/OpenWaysReminderSchedulerStub.swift" "$work/ServerConfigStub.swift" "$work/WatchPushStub.swift" "$work/UpdatesModelStub.swift" "${files[@]}"
 echo "PASS: ${#files[@]} app files type-check (SwiftUI, App Intents and widget code are not covered)"
 
 # App files that import no UI framework but aren't in the list: most use types this script can't

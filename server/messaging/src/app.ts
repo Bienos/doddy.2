@@ -25,9 +25,12 @@ import type { DealsDeps } from "./deals/service.js";
 import type { AssistantDeps } from "./assistant/deps.js";
 import { watchRoutes } from "./routes/watches.js";
 import { watchContext, type WatchContext, type WatchDeps } from "./watches/context.js";
+import { recapContext, type CallRecapDeps, type RecapContext } from "./callRecaps/service.js";
 
 declare module "fastify" {
   interface FastifyInstance {
+    /** The call-recap context the routes use (null without MEMORY_ENCRYPTION_KEY); tests run worker passes on it. */
+    callRecapContext: RecapContext | null;
     /** The call-case context the routes use (null when the feature is off); tests run worker passes on it. */
     taskCallContext: TaskCallContext | null;
     /** The errand context the routes use (null without MEMORY_ENCRYPTION_KEY); tests run worker passes on it. */
@@ -78,6 +81,10 @@ export interface Deps {
   smsChatLog?: (msg: string, extra?: object) => void;
   /** Called with each inbound text's answer in flight (tests await it). */
   onSmsChat?: (done: Promise<import("./smsChat.js").SmsChatOutcome>) => void;
+  /** Recaps of S2 calls (ADR-684): the phone agent id, the post-call webhook secret, the summary writer. Needs `cipher`. */
+  callRecaps?: CallRecapDeps;
+  /** Where call-recap log lines go (tests capture them); default: the request logger. */
+  callRecapLog?: (msg: string, extra?: object) => void;
 }
 
 export async function buildApp(deps: Deps): Promise<FastifyInstance> {
@@ -132,16 +139,19 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   const watchCtx = watchContext(deps.db, deps.watches, deps.cipher, deps.push,
     deps.watchLog ?? ((msg, extra = {}) => app.log.info(extra, msg)));
   app.decorate("watchContext", watchCtx ?? null);
+  const recapCtx = recapContext(deps.db, deps.callRecaps, deps.cipher, deps.push,
+    deps.callRecapLog ?? ((msg, extra = {}) => app.log.info(extra, msg)));
+  app.decorate("callRecapContext", recapCtx ?? null);
 
   await app.register(accountRoutes(deps, taskCtx));
   await app.register(phoneRoutes(deps));
   await app.register(updateRoutes(deps));
   await app.register(twilioWebhookRoutes(deps));
-  await app.register(callRoutes(deps));
+  await app.register(callRoutes(deps, recapCtx));
   await app.register(elevenLabsRoutes(deps));
   await app.register(newsRoutes(deps));
   await app.register(callCaseRoutes(deps, taskCtx));
-  await app.register(taskCallWebhookRoutes(deps, taskCtx));
+  await app.register(taskCallWebhookRoutes(deps, taskCtx, recapCtx));
   await app.register(errandRoutes(deps, errandCtx));
   await app.register(assistantRoutes(deps));
   await app.register(dealsRoutes(deps));

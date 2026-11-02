@@ -3,7 +3,7 @@
 // deals_usage, errand_usage) still go with the account.
 import type pg from "pg";
 
-export type CappedFeature = "assistant" | "deals" | "errands";
+export type CappedFeature = "assistant" | "deals" | "errands" | "call_recaps";
 type Q = Pick<pg.PoolClient, "query">;
 
 /** Today in UTC as the database counts it, or the day in parameter `n` (YYYY-MM-DD, for a fixed clock). */

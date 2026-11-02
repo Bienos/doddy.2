@@ -41,8 +41,9 @@
     "privacy": {
       "record_voice": false,
       "retention_days": 30,
-      "note": "Calls can contain memories read aloud (ADR-158)"
+      "note": "Calls can contain memories read aloud (ADR-158). The transcript also goes to Doddy's server by the workspace post-call webhook, for the call's recap (ADR-684)."
     },
-    "call_start_webhook": "/webhooks/elevenlabs/call-start"
+    "call_start_webhook": "/webhooks/elevenlabs/call-start",
+    "post_call_webhook": "/webhooks/elevenlabs/post-call"
   }
 }

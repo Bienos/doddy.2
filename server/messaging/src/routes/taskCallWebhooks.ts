@@ -3,6 +3,7 @@
 // safely; anything unexpected gets the short spoken AI apology, never silence.
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import type { Deps } from "../app.js";
+import { onPhonePostCall, type RecapContext } from "../callRecaps/service.js";
 import { isValidTwilioSignature } from "../providers/twilio.js";
 import type { TaskCallContext } from "../taskCalls/context.js";
 import { isValidElevenLabsSignature } from "../taskCalls/elevenLabsSignature.js";
@@ -13,7 +14,9 @@ import { onAnswer, onConnectEnded, onPostCall, onStatus, onTranscription, type F
 
 export const POST_CALL_BODY_LIMIT = 2 * 1024 * 1024;
 
-export const taskCallWebhookRoutes = (_deps: Deps, ctx: TaskCallContext | undefined): FastifyPluginAsync => async (app) => {
+export const taskCallWebhookRoutes = (
+  _deps: Deps, ctx: TaskCallContext | undefined, recaps?: RecapContext,
+): FastifyPluginAsync => async (app) => {
   /** Signed by Twilio for the task-call account; returns the form fields. */
   function verified(req: FastifyRequest, reply: FastifyReply): Form | undefined {
     if (!ctx) {
@@ -98,16 +101,19 @@ export const taskCallWebhookRoutes = (_deps: Deps, ctx: TaskCallContext | undefi
     return reply.code(204).send();
   });
 
-  // ElevenLabs post-call: raw bytes for the HMAC, and room for a long transcript.
+  // ElevenLabs post-call: raw bytes for the HMAC, and room for a long transcript. The workspace has one
+  // post-call webhook: the S2 phone agent's calls go to their recap (ADR-684), the task-call agent's to
+  // the answer card; anything else is dropped unread.
+  const webhookSecret = ctx?.config.webhookSecret ?? (recaps?.phoneAgentId ? recaps.webhookSecret : undefined);
   await app.register(async (scope) => {
     scope.removeContentTypeParser("application/json");
     scope.addContentTypeParser("application/json", { parseAs: "buffer", bodyLimit: POST_CALL_BODY_LIMIT },
       (_req, body, done) => done(null, body));
     scope.post("/webhooks/elevenlabs/post-call", { bodyLimit: POST_CALL_BODY_LIMIT }, async (req, reply) => {
-      if (!ctx) return reply.code(503).send({ error: "not_configured" });
+      if (!webhookSecret) return reply.code(503).send({ error: "not_configured" });
       const raw = req.body;
       const sig = req.headers["elevenlabs-signature"];
-      if (!Buffer.isBuffer(raw) || !isValidElevenLabsSignature(ctx.config.webhookSecret, typeof sig === "string" ? sig : undefined, raw)) {
+      if (!Buffer.isBuffer(raw) || !isValidElevenLabsSignature(webhookSecret, typeof sig === "string" ? sig : undefined, raw)) {
         return reply.code(401).send({ error: "bad_signature" });
       }
       let json: unknown;
@@ -116,7 +122,13 @@ export const taskCallWebhookRoutes = (_deps: Deps, ctx: TaskCallContext | undefi
       } catch {
         return reply.code(400).send({ error: "invalid_json" });
       }
-      await onPostCall(ctx, json);
+      const agentId = (json as { data?: { agent_id?: unknown } } | null)?.data?.agent_id;
+      if (recaps?.phoneAgentId && agentId === recaps.phoneAgentId) {
+        const outcome = await onPhonePostCall(recaps, json);
+        if (outcome !== "stored") recaps.log("phone post-call", { outcome });
+      } else if (ctx) {
+        await onPostCall(ctx, json);
+      }
       // Always 200 once verified: ElevenLabs switches a webhook off after repeated failures.
       return reply.code(200).send({ ok: true });
     });

@@ -467,6 +467,21 @@ public final class DoddyDatabase: Sendable {
         migrator.registerMigration("v20_thread_photo") { db in
             try db.execute(sql: "ALTER TABLE thread_messages ADD COLUMN has_photo INTEGER NOT NULL DEFAULT 0 CHECK (has_photo IN (0, 1))")
         }
+        // Recaps of calls with Doddy (ADR-684): the recap as the server built it, its digest, and what the
+        // server deleted once this iPhone had it. The recap lives only here after the acknowledgement.
+        migrator.registerMigration("v21_call_recaps") { db in
+            try db.execute(sql: """
+                CREATE TABLE call_recaps (
+                    call_id TEXT PRIMARY KEY NOT NULL,
+                    recap_json TEXT NOT NULL,
+                    digest TEXT NOT NULL CHECK (length(digest) = 64),
+                    saved_at_ms INTEGER NOT NULL,
+                    acknowledged_at_ms INTEGER CHECK (acknowledged_at_ms IS NULL OR acknowledged_at_ms >= saved_at_ms),
+                    deletions_json TEXT NOT NULL DEFAULT '[]'
+                );
+                CREATE INDEX call_recaps_saved ON call_recaps(saved_at_ms);
+                """)
+        }
         return migrator
     }
 

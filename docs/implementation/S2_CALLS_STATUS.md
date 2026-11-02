@@ -75,3 +75,54 @@ Date: 2026-10-10. Owner decisions on that date:
 - Search on calls is lexical (same rules as the app), not semantic.
 - The memory copy is re-uploaded in full after each change. That's fine for hundreds of memories; at much larger sizes it would need incremental sync.
 - One shared PIN lockout per account (not per call), so someone guessing can lock out the real user for 15 minutes.
+
+## Recaps (ADR-684, 2 Nov 2026, branch `claude/call-recap`, not merged)
+
+Owner: "czy daje mi recap rozmowy co było ogarnięte", then "i robimy ten recap też". **State: built and tested with fakes. No real call has produced a recap. The two SwiftUI files are not compiled.**
+
+**State of the line on 2 Nov 2026** (read only): Doddy's number +372 636 0658 is imported into ElevenLabs and assigned to "Doddy (phone)"; the live `doddy-messaging` start-up log says `calls`, `outboundCalls` and `taskCalls` true and `push` false; the phone agent had no conversations yet.
+
+### What the user gets
+After a call to Doddy's number or a Call me now: Settings › Phone calls › Recent calls shows "recap coming", then "recap ready". Opening it shows:
+- **Summary**: one or two sentences in the caller's language, written by Claude Haiku from the transcript only; or, when there is none, why (no key on the server, the daily cap, a second failure, the summary claimed something was saved, nobody spoke).
+- **Settled on the call** and **Doddy couldn't do this on a call**: each item with the words it came from (`Said: "…"`).
+- **Notes Doddy took**: the notes `save_note` put in the inbox on that call, with the reminder that each becomes a memory only when saved in Notes from your calls.
+- **Next step**, the **transcript** (a PIN said on the call shows as ••••), and **Delete recap**.
+
+### How it works
+1. ElevenLabs' workspace post-call webhook (`POST /webhooks/elevenlabs/post-call`, HMAC `ELEVENLABS_WEBHOOK_SECRET`) brings the transcript. Payloads of `ELEVENLABS_PHONE_AGENT_ID` go to `src/callRecaps/service.ts` (`onPhonePostCall`); the task-call agent's go to its answer card as before; others are dropped.
+2. A payload is kept only if a `calls` row from the last 2 days has its conversation id (Call me now: from ElevenLabs' reply) or its Twilio call SID (calls in: from the call-start webhook). Such a row exists only for a confirmed number with calls on. Kept: the turns' text, times and tool names, encrypted (`call_recaps.input_ciphertext`).
+3. The worker (`recapLoop`, every 5 s) masks the caller's PIN, asks the writer (optional), checks its answer (`src/callRecaps/recap.ts`), stores the recap encrypted with its SHA-256 digest, deletes the turns, and writes a receipt. A writer failure is tried once more after 3 minutes, then the recap is built without a summary.
+4. The app (`CallRecapLoader`, DoddyCore) gets `GET /v1/calls/:id/recap`, saves it in `v21_call_recaps` (read back), then `POST /v1/calls/:id/recap/ack {digest}`: the server deletes its copy and returns receipts. A failed ack leaves the server copy; it is retried the next time the recap opens. `DELETE /v1/calls/:id/recap` deletes the server's copy first, then the iPhone's. A recap never opened is wiped after 30 days; deleting the account removes every row.
+
+| Route | Reply |
+|---|---|
+| `GET /v1/calls` | each call now has `recap`: `none`, `waiting`, `ready`, `acked`, `deleted` or `expired` (older apps ignore it) |
+| `GET /v1/calls/:id/recap` | `{ callId, state }`, plus `recap` and `digest` when `ready`; 404 for a call of another account |
+| `POST /v1/calls/:id/recap/ack` | `{ deletions: [ { what, reason, deletedAt } ] }`; 409 `recap_mismatch` / `no_recap`; repeated acks get the same answer |
+| `DELETE /v1/calls/:id/recap` | `{ deletions }` |
+
+Limits: model-written recaps `CALL_RECAP_DAILY_PER_ACCOUNT` (default 30, ceiling 100) and `CALL_RECAP_DAILY_PER_SERVER` (default 300, ceiling 5000, in `server_daily_usage`); past them the recap has no summary.
+
+### Checked (Linux, 2 Nov 2026)
+- `server/messaging`: `npm run typecheck`; `npm test` against a throwaway Postgres 16: **609 pass, 0 fail, 0 skipped** (11 new in `test/callRecaps.test.ts`: PIN masking, save claims in English and Polish, pointer checks, the whole path from call-start to ack with receipts, Call me now, other accounts, unknown and calls-off callers, other agents, bad signatures, replays, writer retry, the daily cap, Delete, 30-day expiry, account deletion). Turning the PIN masking off made 3 of them fail.
+- DoddyCore `swift test` (Swift 6.2.3, Linux): **2,244 tests, 0 failures** (13 new: `CallRecapTests`, `SQLiteCallRecapRepositoryTests`, the `callRecaps` data-flow row).
+- `scripts/typecheck_app_logic.sh`: `CallRecapModel.swift` type-checks in Swift 6 against DoddyCore.
+- `tools/build_strings_catalog.py --check`, `voice_agent_spec.py check --agent phone`, `setup-phone-agent.mjs --dry-run`, the secrets manifest tests.
+
+### Not checked
+- **No real call, no real post-call payload.** The payload shape follows the call cases' (`conversationSchema`) and ElevenLabs' documented `metadata.phone_call.call_sid`; neither was seen from the phone agent. Whether ElevenLabs' call-start webhook sends `call_sid` (or `conversation_id`) for calls in, as the code expects, is unverified; with neither, a call in can't be matched and gets no recap (nothing is stored for it). The first real call answers this: its `calls` row shows whether `call_sid` was filled.
+- **`CallRecapView.swift` and the `CallsSettingsView.swift` change: BLOCKED / NOT RUN** (SwiftUI, no Xcode here). Nothing seen on a device.
+- The real Claude Haiku call with this schema; the Polish wording in context.
+
+### Owner steps to turn it on
+1. Merge and deploy `doddy-messaging` (migration 016 runs at start-up).
+2. In ElevenLabs › Agents › Settings, the workspace **post-call webhook** points at `https://doddy-messaging-zw1n.onrender.com/webhooks/elevenlabs/post-call`, transcripts on, audio off, with the secret that is in `ELEVENLABS_WEBHOOK_SECRET` (the same webhook call cases need). Nothing on the phone agent changes.
+3. Check `ELEVENLABS_PHONE_AGENT_ID` is `agent_4801m5q2sq5xft6ab6k0mnyda04v` on the server; the start-up log then says `callRecaps: true` (and `callRecapWriter: true` with `ANTHROPIC_API_KEY`).
+4. Build the app from the merged branch, make one call, open Recent calls.
+
+### Privacy
+- **To Anthropic:** the words of a call between the user's own confirmed number and Doddy (PIN masked), including anything Doddy read out from the memory copy on that call. Not the audio, not the phone number. `DataFlow` row `callRecaps` says so in What leaves this iPhone.
+- **On the server:** the turns until the recap is built, then the recap, encrypted with `MEMORY_ENCRYPTION_KEY`, until the app acknowledges it (at most 30 days). Logs carry ids, states and counts only.
+- **Caller ID can be faked:** a caller spoofing the user's number (calls on) gets a recap written into the user's account, without the PIN. It holds only what that caller said and what Doddy answered without the PIN; the daily caps bound the cost.
+- A PIN said as words ("dwa pięć…") instead of digits is not masked.

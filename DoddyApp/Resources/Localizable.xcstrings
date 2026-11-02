@@ -789,6 +789,17 @@
         }
       }
     },
+    "A PIN said on the call is shown as ••••.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PIN podany w rozmowie jest pokazany jako ••••."
+          }
+        }
+      }
+    },
     "A browser": {
       "extractionState": "manual",
       "localizations": {
@@ -5106,6 +5117,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "更改后"
+          }
+        }
+      }
+    },
+    "After a call, Doddy writes a recap from what was said: a short summary, what was settled and the notes taken. It's saved on this iPhone when you open it, and then deleted from Doddy's server.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "After a call, Doddy writes a recap from what was said: a short summary, what was settled and the notes taken. It's saved on this iPad when you open it, and then deleted from Doddy's server."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "After a call, Doddy writes a recap from what was said: a short summary, what was settled and the notes taken. It's saved on this iPhone when you open it, and then deleted from Doddy's server."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Po rozmowie Doddy pisze podsumowanie na podstawie tego, co padło: krótkie streszczenie, ustalenia i zrobione notatki. Gdy je otworzysz, zapisuje się na tym iPadzie, a potem jest usuwane z serwera Doddy’ego."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Po rozmowie Doddy pisze podsumowanie na podstawie tego, co padło: krótkie streszczenie, ustalenia i zrobione notatki. Gdy je otworzysz, zapisuje się na tym iPhonie, a potem jest usuwane z serwera Doddy’ego."
+                }
+              }
+            }
           }
         }
       }
@@ -9753,6 +9805,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zadzwoń teraz"
+          }
+        }
+      }
+    },
+    "Call recap": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podsumowanie rozmowy"
+          }
+        }
+      }
+    },
+    "Call recaps aren't set up on Doddy's server yet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podsumowania rozmów nie są jeszcze skonfigurowane na serwerze Doddy’ego."
           }
         }
       }
@@ -16206,6 +16280,17 @@
         }
       }
     },
+    "Delete recap": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuń podsumowanie"
+          }
+        }
+      }
+    },
     "Delete the list": {
       "extractionState": "manual",
       "localizations": {
@@ -16589,6 +16674,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Usunąć ten plan?"
+          }
+        }
+      }
+    },
+    "Delete this recap?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usunąć to podsumowanie?"
           }
         }
       }
@@ -18130,6 +18226,17 @@
         }
       }
     },
+    "Doddy called you": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy dzwonił do Ciebie"
+          }
+        }
+      }
+    },
     "Doddy calls": {
       "extractionState": "manual",
       "localizations": {
@@ -19268,6 +19375,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Doddy couldn't do this on a call": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tego Doddy nie mógł zrobić przez telefon"
           }
         }
       }
@@ -20915,6 +21033,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy jeszcze nad tym pracuje"
+          }
+        }
+      }
+    },
+    "Doddy is still writing the recap. It's usually ready a minute or two after the call ends.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy jeszcze pisze podsumowanie. Zwykle jest gotowe minutę lub dwie po zakończeniu rozmowy."
           }
         }
       }
@@ -22715,6 +22844,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "这些是 Doddy 在通话中记下的。只有你保存后，它们才会成为记忆。"
+          }
+        }
+      }
+    },
+    "Doddy wrote these down on the call. Each becomes a memory only when you save it in Notes from your calls.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy zanotował to w rozmowie. Każda notatka stanie się wspomnieniem dopiero, gdy zapiszesz ją w „Notatkach z Twoich rozmów telefonicznych”."
           }
         }
       }
@@ -32247,6 +32387,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "它还没有保存。选择“留到以后”，下次你开始新笔记时它会打开；照片或录音不会随它一起保留。"
+          }
+        }
+      }
+    },
+    "It is deleted from this iPhone and from Doddy's server. Notes from the call stay in Notes from your calls.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It is deleted from this iPad and from Doddy's server. Notes from the call stay in Notes from your calls."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It is deleted from this iPhone and from Doddy's server. Notes from the call stay in Notes from your calls."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zostanie usunięte z tego iPada i z serwera Doddy’ego. Notatki z rozmowy zostaną w „Notatkach z Twoich rozmów telefonicznych”."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zostanie usunięte z tego iPhone’a i z serwera Doddy’ego. Notatki z rozmowy zostaną w „Notatkach z Twoich rozmów telefonicznych”."
+                }
+              }
+            }
           }
         }
       }
@@ -44020,6 +44201,17 @@
         }
       }
     },
+    "No summary for this call. The notes and the transcript are below.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ta rozmowa nie ma streszczenia. Notatki i zapis rozmowy są poniżej."
+          }
+        }
+      }
+    },
     "No summary yet. Doddy can't write summaries of recordings yet. The words below were written out on this iPhone, and you can search them.": {
       "extractionState": "manual",
       "localizations": {
@@ -44057,6 +44249,72 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "No summary: Doddy's server has no summary writer set up. The notes and the transcript are below.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brak streszczenia: serwer Doddy’ego nie ma skonfigurowanego pisania streszczeń. Notatki i zapis rozmowy są poniżej."
+          }
+        }
+      }
+    },
+    "No summary: nobody spoke to Doddy on this call.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brak streszczenia: w tej rozmowie nikt nie odezwał się do Doddy’ego."
+          }
+        }
+      }
+    },
+    "No summary: the call's transcript couldn't be read.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brak streszczenia: nie udało się odczytać zapisu rozmowy."
+          }
+        }
+      }
+    },
+    "No summary: the one written said something was saved, but a note from a call is saved only when you confirm it, so it was left out. The notes and the transcript are below.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brak streszczenia: napisane streszczenie mówiło, że coś zostało zapisane, a notatka z rozmowy zapisuje się dopiero po Twoim potwierdzeniu, więc je pominięto. Notatki i zapis rozmowy są poniżej."
+          }
+        }
+      }
+    },
+    "No summary: today's limit for call summaries was reached. The notes and the transcript are below.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brak streszczenia: osiągnięto dzisiejszy limit streszczeń rozmów. Notatki i zapis rozmowy są poniżej."
+          }
+        }
+      }
+    },
+    "No summary: writing it failed twice. The notes and the transcript are below.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brak streszczenia: dwie próby napisania go się nie udały. Notatki i zapis rozmowy są poniżej."
           }
         }
       }
@@ -46080,6 +46338,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "笔记"
+          }
+        }
+      }
+    },
+    "Notes Doddy took": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notatki Doddy’ego"
           }
         }
       }
@@ -62753,6 +63022,17 @@
         }
       }
     },
+    "Said: “%@”": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Padło: „%@”"
+          }
+        }
+      }
+    },
     "Same as this iPhone": {
       "extractionState": "manual",
       "localizations": {
@@ -64454,6 +64734,47 @@
         }
       }
     },
+    "Saved on this iPhone only. Doddy's server deleted its copy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Saved on this iPad only. Doddy's server deleted its copy."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Saved on this iPhone only. Doddy's server deleted its copy."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zapisano tylko na tym iPadzie. Serwer Doddy’ego usunął swoją kopię."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zapisano tylko na tym iPhonie. Serwer Doddy’ego usunął swoją kopię."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Saved on this iPhone. Doddy's server deleted its copy of the words and the result.": {
       "extractionState": "manual",
       "localizations": {
@@ -64488,6 +64809,47 @@
                 "stringUnit": {
                   "state": "translated",
                   "value": "Zapisano na tym iPhonie. Serwer Doddy’ego usunął swoją kopię słów i wyniku."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Saved on this iPhone. Doddy's server still has its copy; it's deleted the next time you open this recap.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Saved on this iPad. Doddy's server still has its copy; it's deleted the next time you open this recap."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Saved on this iPhone. Doddy's server still has its copy; it's deleted the next time you open this recap."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zapisano na tym iPadzie. Serwer Doddy’ego ma jeszcze swoją kopię; zostanie usunięta, gdy następnym razem otworzysz to podsumowanie."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Zapisano na tym iPhonie. Serwer Doddy’ego ma jeszcze swoją kopię; zostanie usunięta, gdy następnym razem otworzysz to podsumowanie."
                 }
               }
             }
@@ -68035,6 +68397,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "设置"
+          }
+        }
+      }
+    },
+    "Settled on the call": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ustalone w rozmowie"
           }
         }
       }
@@ -80270,6 +80643,17 @@
         }
       }
     },
+    "The recap couldn't be deleted. %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się usunąć podsumowania. %@"
+          }
+        }
+      }
+    },
     "The recording is deleted from this iPhone. The note's words stay.": {
       "extractionState": "manual",
       "localizations": {
@@ -81832,6 +82216,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "找到了。"
+          }
+        }
+      }
+    },
+    "There's no recap for this call.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ta rozmowa nie ma podsumowania."
+          }
+        }
+      }
+    },
+    "There's no recap for this call. Calls from before recaps, and calls whose transcript didn't reach Doddy's server, have none.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ta rozmowa nie ma podsumowania. Nie mają go rozmowy sprzed wprowadzenia podsumowań ani te, których zapis nie dotarł do serwera Doddy’ego."
           }
         }
       }
@@ -84466,6 +84872,69 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ta cena tylko przy zakupie co najmniej %lld szt."
+          }
+        }
+      }
+    },
+    "This recap was deleted from Doddy's server after 30 days without being opened.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To podsumowanie zostało usunięte z serwera Doddy’ego po 30 dniach, bo nikt go nie otworzył."
+          }
+        }
+      }
+    },
+    "This recap was deleted.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To podsumowanie zostało usunięte."
+          }
+        }
+      }
+    },
+    "This recap was saved on another device and deleted from Doddy's server, so it isn't on this iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "This recap was saved on another device and deleted from Doddy's server, so it isn't on this iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "This recap was saved on another device and deleted from Doddy's server, so it isn't on this iPhone."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "To podsumowanie zostało zapisane na innym urządzeniu i usunięte z serwera Doddy’ego, więc nie ma go na tym iPadzie."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "To podsumowanie zostało zapisane na innym urządzeniu i usunięte z serwera Doddy’ego, więc nie ma go na tym iPhonie."
+                }
+              }
+            }
           }
         }
       }
@@ -95250,6 +95719,17 @@
         }
       }
     },
+    "Written by Doddy from what was said on the call. If something looks wrong, the transcript below is what was said.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Napisane przez Doddy’ego na podstawie tego, co padło w rozmowie. Jeśli coś się nie zgadza, poniżej jest zapis tego, co zostało powiedziane."
+          }
+        }
+      }
+    },
     "Wrong number": {
       "extractionState": "manual",
       "localizations": {
@@ -95747,6 +96227,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dzwonisz ze swojego telefonu. Doddy’ego nie ma na linii i nic nie jest zapisywane."
+          }
+        }
+      }
+    },
+    "You called Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dzwoniłeś do Doddy’ego"
           }
         }
       }
@@ -100143,6 +100634,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "w toku"
+          }
+        }
+      }
+    },
+    "recap": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "podsumowanie"
+          }
+        }
+      }
+    },
+    "recap coming": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "podsumowanie w drodze"
+          }
+        }
+      }
+    },
+    "recap ready": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "podsumowanie gotowe"
           }
         }
       }

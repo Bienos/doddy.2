@@ -161,12 +161,13 @@ export const elevenLabsRoutes = (deps: Deps): FastifyPluginAsync => async (app) 
       const { rows } = await c.query<{ n: number }>(
         "SELECT count(*)::int AS n FROM call_notes WHERE account_id = $1", [s.accountId]);
       if ((rows[0]?.n ?? 0) >= MAX_PENDING_NOTES) return false;
-      const { rows: call } = await c.query<{ conversation_id: string | null }>(
-        "SELECT c.conversation_id FROM call_sessions s LEFT JOIN calls c ON c.id = s.call_id WHERE s.id = $1", [s.id]);
+      const { rows: call } = await c.query<{ id: string | null; conversation_id: string | null }>(
+        "SELECT c.id, c.conversation_id FROM call_sessions s LEFT JOIN calls c ON c.id = s.call_id WHERE s.id = $1", [s.id]);
+      // The call's id lets its recap list this note (ADR-684).
       await c.query(
-        `INSERT INTO call_notes (id, account_id, key_version, ciphertext, conversation_id) VALUES ($1, $2, $3, $4, $5)`,
+        `INSERT INTO call_notes (id, account_id, key_version, ciphertext, conversation_id, call_id) VALUES ($1, $2, $3, $4, $5, $6)`,
         [id, s.accountId, cipher.keyVersion, cipher.encrypt(body.data.text, `${s.accountId}:note:${id}`),
-          call[0]?.conversation_id ?? null]);
+          call[0]?.conversation_id ?? null, call[0]?.id ?? null]);
       return true;
     });
     if (!saved) return { status: "inbox_full" };
