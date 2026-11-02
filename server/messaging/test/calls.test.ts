@@ -6,9 +6,10 @@ import { isAcceptablePin } from "../src/crypto.js";
 import type { Db } from "../src/db.js";
 import { searchMemories } from "../src/memorySearch.js";
 import { bodyAad, dispatchDue } from "../src/outbox.js";
+import { runDeletions } from "../src/taskCalls/worker.js";
 import { twilioSignature } from "../src/providers/twilio.js";
 import {
-  BASE_URL, CONNECT_TWIML, dbSkip, DODDY_NUMBER, FakeOutbound, FakePush, FakeRegistrar, FakeSms, freshDb, testApp,
+  BASE_URL, CONNECT_TWIML, dbSkip, DODDY_NUMBER, FakeOutbound, FakePush, FakeRegistrar, FakeSms, FakeVoice, freshDb, testApp,
   testCipher, TOOL_SECRET, TWILIO_TOKEN, twilioRequest,
 } from "./helpers.js";
 
@@ -294,6 +295,32 @@ describe("phone calls against real Postgres", { skip: dbSkip }, () => {
     await call("PUT", "/v1/memory-copy", h, { enabled: false });
     assert.equal(await count(), 0);
     assert.equal((await call("PUT", "/v1/memory-copy/snapshot", h, { items: [] })).statusCode, 409);
+  });
+
+  test("account deletion queues the ElevenLabs conversations of phone-agent calls, and the worker deletes them", async () => {
+    // Task calls are off in this app (no taskCalls dep): the phone agent's conversations are queued anyway.
+    const own = await testApp(db);
+    const r = await own.app.inject({ method: "POST", url: "/v1/accounts" });
+    const { accountId, deviceToken } = r.json() as { accountId: string; deviceToken: string };
+    const other = (await own.app.inject({ method: "POST", url: "/v1/accounts" })).json() as { accountId: string };
+    for (const [owner, conv] of [[accountId, "conv_del_a"], [accountId, "conv_del_b"], [accountId, null], [other.accountId, "conv_keep"]] as const) {
+      await db.query("INSERT INTO calls (id, account_id, direction, status, conversation_id) VALUES ($1, $2, 'inbound', 'requested', $3)",
+        [randomUUID(), owner, conv]);
+    }
+    assert.equal((await own.app.inject({ method: "DELETE", url: "/v1/account", headers: { authorization: `Bearer ${deviceToken}` } })).statusCode, 204);
+    const { rows } = await db.query("SELECT provider_ref, reason, result FROM server_data_deletions WHERE provider_ref LIKE 'conv_del_%' OR provider_ref = 'conv_keep' ORDER BY provider_ref");
+    assert.deepEqual(rows, [
+      { provider_ref: "conv_del_a", reason: "account_deleted", result: "pending" },
+      { provider_ref: "conv_del_b", reason: "account_deleted", result: "pending" },
+    ]);
+
+    const voice = new FakeVoice();
+    for (const id of ["conv_del_a", "conv_del_b"]) voice.conversations.set(id, { conversation_id: id, transcript: [], metadata: {} } as never);
+    assert.equal(await runDeletions({ db, voice, now: () => new Date(), log: () => {} }), 2);
+    assert.deepEqual(voice.deleted.sort(), ["conv_del_a", "conv_del_b"]);
+    const done = await db.query("SELECT result FROM server_data_deletions WHERE provider_ref LIKE 'conv_del_%'");
+    assert.deepEqual(done.rows.map((x) => x.result), ["deleted", "deleted"]);
+    await own.app.close();
   });
 
   const consent = (h: object, on: boolean) =>

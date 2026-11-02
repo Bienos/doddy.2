@@ -9,8 +9,9 @@ import { dispatchDue, reconcileUnknownSms } from "./outbox.js";
 import { DELETE_AFTER_HOURS_DEFAULT, deleteAfterMinutes, pruneDeletions, runDueDeletions } from "./providerRecords.js";
 import type { PushSender, RecordDeleter, SmsSender } from "./providers/types.js";
 import { placeDueCall, pruneCallReasons, type ScheduledCallDeps } from "./scheduledCalls.js";
+import type { TaskVoice } from "./providers/taskCalls.js";
 import type { TaskCallContext } from "./taskCalls/context.js";
-import { runTaskCallPasses } from "./taskCalls/worker.js";
+import { runDeletions, runTaskCallPasses } from "./taskCalls/worker.js";
 import type { ErrandContext } from "./errands/context.js";
 import { newErrandLoopState, runErrandPasses, stopErrandRuns } from "./errands/worker.js";
 import type { StudioContext } from "./studio/context.js";
@@ -45,6 +46,8 @@ export interface WorkerDeps {
   deleteAfterMinutes?: number;
   /** Places scheduled calls (ADR-754); only when calls are fully set up, else due calls fail with a notice. */
   scheduledCalls?: Omit<ScheduledCallDeps, "db" | "cipher" | "now">;
+  /** Deletes phone-agent conversations queued at account deletion when task calls (and their worker) are off. */
+  phoneAgentVoice?: TaskVoice;
 }
 
 /**
@@ -58,6 +61,7 @@ export async function runWorkerLoop(db: Db, deps: WorkerDeps, shouldStop: () => 
   const loops = [dispatchLoop(db, deps, shouldStop), digestLoop(db, deps.news, shouldStop), deletionLoop(db, deps, shouldStop),
     callLoop(db, deps, shouldStop)];
   if (deps.taskCalls) loops.push(taskCallLoop(deps.taskCalls, shouldStop));
+  else if (deps.phoneAgentVoice) loops.push(conversationDeletionLoop(db, deps.phoneAgentVoice, shouldStop));
   if (deps.errands) loops.push(errandLoop(deps.errands, shouldStop));
   if (deps.studio) loops.push(studioLoop(deps.studio, shouldStop));
   if (deps.watches) loops.push(watchLoop(deps.watches, shouldStop));
@@ -132,6 +136,20 @@ async function errandLoop(ctx: ErrandContext, shouldStop: () => boolean) {
  * Call cases (ADR-500): scheduled dials, the goodbye at the time limit, the kill switch, answer
  * cards, costs and deletions. Its own loop, so a slow provider call never holds back pushes.
  */
+/** Without task calls, only the ElevenLabs deletions queued at account deletion still need a worker. */
+async function conversationDeletionLoop(db: Db, voice: TaskVoice, shouldStop: () => boolean) {
+  while (!shouldStop()) {
+    try {
+      const n = await runDeletions({ db, voice, now: () => new Date(), log });
+      if (n) log("conversation deletions", { processed: n });
+      if (n) continue;
+    } catch (err) {
+      log("conversation deletions failed", { error: (err as Error).message });
+    }
+    await pause(30_000, shouldStop);
+  }
+}
+
 async function taskCallLoop(ctx: TaskCallContext, shouldStop: () => boolean) {
   const state = { lastSweep: 0 };
   while (!shouldStop()) {

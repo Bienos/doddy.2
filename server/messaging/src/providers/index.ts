@@ -130,6 +130,8 @@ export function providersFrom(config: Config) {
   return {
     push,
     sms: twilio,
+    // Deletes phone-agent conversations queued at account deletion when task calls (and their worker) are off.
+    phoneAgentVoice: config.phoneAgent ? new ElevenLabsTaskClient(config.phoneAgent.apiKey) : undefined,
     verifier: twilio,
     // Calls (ADR-750): Twilio places Doddy's calls; ElevenLabs connects answered calls to the agent.
     outbound: config.twilio ? new TwilioVoiceCaller(config.twilio) : undefined,

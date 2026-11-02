@@ -3,6 +3,7 @@ import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import { parse, type Deps } from "../app.js";
 import { newDeviceToken, principal, requireDevice } from "../auth.js";
+import { queuePhoneAgentDeletions } from "../calls.js";
 import { abuseLimits } from "../config.js";
 import { clientBucket, counterKey, pruneCounters, returnCounter, takeCounter } from "../dailyCounters.js";
 import { inTransaction } from "../db.js";
@@ -58,7 +59,12 @@ export const accountRoutes = (deps: Deps, taskCtx?: TaskCallContext): FastifyPlu
     if (taskCtx) await beforeAccountDeleted(taskCtx, principal(req).accountId);
     // Studio's copies at Anthropic not yet confirmed deleted outlive the account until they are (ADR-740).
     await studioBeforeAccountDeleted(db, principal(req).accountId, new Date());
-    await db.query("DELETE FROM accounts WHERE id = $1", [principal(req).accountId]);
+    // Phone-agent conversations (incoming calls, "call me now") are queued for deletion at ElevenLabs
+    // whether or not task calls are on; the delete cascade removes the rows that hold their ids.
+    await inTransaction(db, async (c) => {
+      await queuePhoneAgentDeletions(c, principal(req).accountId, new Date());
+      await c.query("DELETE FROM accounts WHERE id = $1", [principal(req).accountId]);
+    });
     return reply.code(204).send();
   });
 

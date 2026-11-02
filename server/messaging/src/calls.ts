@@ -1,6 +1,7 @@
 import { randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import { sha256 } from "./crypto.js";
 import type { Db } from "./db.js";
+import type pg from "pg";
 
 export const SESSION_HOURS = 2;
 export const PIN_MAX_ATTEMPTS = 5;
@@ -102,3 +103,18 @@ export async function purgeExpiredSessions(db: Db): Promise<number> {
 
 /** Wording shown next to the "Doddy may call me" switch; stored with its version. */
 export const OUTBOUND_CONSENT_VERSIONS = new Set(["calls-v1"]);
+
+/**
+ * Queues the deletion at ElevenLabs of every phone-agent conversation (incoming calls, "call me now")
+ * recorded for the account. Run before the account is deleted: the cascade removes the `calls` rows
+ * that hold the ids, the queued rows (account_id then cleared) outlive it.
+ */
+export async function queuePhoneAgentDeletions(db: Db | pg.PoolClient, accountId: string, now: Date): Promise<number> {
+  const r = await db.query(
+    `INSERT INTO server_data_deletions (id, account_id, item, location, reason, result, provider_ref, next_try_at, requested_at)
+     SELECT gen_random_uuid(), account_id, 'elevenlabs_conversation', 'elevenlabs', 'account_deleted', 'pending', conversation_id, $2, $2
+     FROM calls WHERE account_id = $1 AND conversation_id IS NOT NULL AND length(conversation_id) <= 128
+     ON CONFLICT (location, item, provider_ref) WHERE location <> 'doddy_server' DO NOTHING`,
+    [accountId, now]);
+  return r.rowCount ?? 0;
+}
