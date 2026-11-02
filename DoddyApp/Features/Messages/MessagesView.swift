@@ -786,11 +786,9 @@ private struct MessagesComposer: View {
             return
         }
         dictationBase = model.draft
-        let busy = VoiceSessionController.current?.isLive == true
-            || MicrophoneHolders.shared.isRecording
-            || RecordingCoordinator.shared.isActive
+        // Whether the microphone is free is asked of the audio session's owner when it starts (ADR-695).
         Task {
-            await dictation.start(isOtherMicrophoneBusy: busy) { spoken in
+            await dictation.start { spoken in
                 model.draft = DictationRules.merged(base: dictationBase, spoken: spoken)
             }
         }
