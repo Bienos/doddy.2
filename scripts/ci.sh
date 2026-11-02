@@ -8,20 +8,16 @@
 #                              the iOS app build and tests are reported NOT RUN (exit 0
 #                              only if everything that was requested passed)
 #   scripts/ci.sh --app-only   Swift package and iOS build/unit/UI tests; Linux checks SKIPPED (ADR-680)
-#   scripts/ci.sh --skip-node  everything except the Node suites (backend, gateway, web, site,
-#                              messaging, voice-token, secrets tool). Available locally; hosted Mac keeps --app-only (ADR-680):
-#                              Node behaves the same on every OS and the Linux jobs already ran it.
 #   scripts/ci.sh --only a,b   only these groups (hosted Linux jobs run one group each, in parallel):
 #                              checks swift backend node messaging ios
 #                              `ios` is the Xcode build and tests; --only never includes it unless listed.
 set -uo pipefail
 cd "$(dirname "$0")/.."
 
-core_only=0 app_only=0 skip_node=0 only=""
+core_only=0 app_only=0 only=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --core-only) core_only=1 ;;
-    --skip-node) skip_node=1 ;;
     --app-only) app_only=1 ;;
     --only)
       [ -n "${2:-}" ] || { echo "--only needs a comma-separated list of groups" >&2; exit 64; }
@@ -30,12 +26,15 @@ while [ $# -gt 0 ]; do
   esac
   shift
 done
-if [ "$app_only" -eq 1 ] && { [ "$core_only" -eq 1 ] || [ -n "$only" ] || [ "$skip_node" -eq 1 ]; }; then
+if [ "$app_only" -eq 1 ] && { [ "$core_only" -eq 1 ] || [ -n "$only" ]; }; then
   echo "--app-only cannot be combined with other scope flags" >&2; exit 64
+fi
+if [ "$core_only" -eq 1 ] && [ -n "$only" ]; then
+  echo "--core-only cannot be combined with --only" >&2; exit 64
 fi
 if [ -n "$only" ]; then
   case ",$only," in *,ios,*) ;; *) core_only=1 ;; esac
-  case "$only" in ,*|*,|*,,*) echo "empty group in --only" >&2; exit 64 ;; esac
+  case "$only" in ,*|*,|*,,*|*[!a-z,]*) echo "empty group in --only" >&2; exit 64 ;; esac
   for g in $(echo "$only" | tr ',' ' '); do
     case "$g" in checks|swift|backend|node|messaging|ios) ;; *) echo "unknown group: $g" >&2; exit 64 ;; esac
   done
@@ -45,7 +44,6 @@ want() {
   if [ "$app_only" -eq 1 ]; then
     case "$1" in swift|ios) ;; *) return 1 ;; esac
   fi
-  case "$1" in backend|node|messaging) [ "$skip_node" -eq 0 ] || return 1 ;; esac
   [ -z "$only" ] && return 0
   case ",$only," in *",$1,"*) return 0 ;; esac
   return 1
@@ -264,7 +262,13 @@ echo; echo "================ SUMMARY"
 for r in "${results[@]}"; do IFS='|' read -r n s d <<<"$r"; printf '%-8s %s %s\n' "$s" "$n" "${d:+($d)}"; done
 if [ "$failed" -ne 0 ]; then echo "RESULT: FAIL"; exit 1; fi
 if [ "$blocked" -ne 0 ]; then echo "RESULT: BLOCKED (a required step could not run)"; exit 2; fi
-if [ -n "$only" ]; then echo "RESULT: PASS for groups: $only; iOS app NOT verified"; exit 0; fi
+if [ -n "$only" ]; then
+  case ",$only," in
+    *,ios,*) echo "RESULT: PASS for groups: $only" ;;
+    *) echo "RESULT: PASS for groups: $only; iOS app NOT verified" ;;
+  esac
+  exit 0
+fi
 if [ "$core_only" -eq 1 ]; then echo "RESULT: PASS for core-only scope; iOS app NOT verified"; exit 0; fi
 if [ "$app_only" -eq 1 ]; then echo "RESULT: PASS for app-only scope; the Linux job (core) runs the other checks"; exit 0; fi
 echo "RESULT: PASS"
