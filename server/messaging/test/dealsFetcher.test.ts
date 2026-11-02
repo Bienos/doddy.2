@@ -2,7 +2,7 @@
 // blocks never worked around, HTTPS only, the size cap and the time limit. Nothing here reaches the network.
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
-import { DODDY_BOT_UA, looksLikeChallenge, parseRobots, PoliteFetcher, robotsAllows, safeHttpsFetch } from "../src/deals/fetcher.js";
+import { DODDY_BOT_UA, looksLikeChallenge, parseRobots, PoliteFetcher, robotsAllows, robotsPatternMatches, safeHttpsFetch } from "../src/deals/fetcher.js";
 import { FakeWeb, ROBOTS } from "./dealsFakes.js";
 
 const allows = (robots: string, path: string, token = "doddybot") => robotsAllows(parseRobots(robots), token, path).allowed;
@@ -36,6 +36,41 @@ describe("robots.txt", () => {
     assert.equal(allows("User-agent: *\nDisallow: /x\nAllow: /x\n", "/x"), true);
     assert.equal(allows("User-agent: *\nDisallow: /\n", "/robots.txt"), true);
     assert.equal(allows("Disallow: /\n", "/x"), true, "rules outside any group bind nobody");
+  });
+
+  test("wildcards: `*` matches any run, a trailing `$` anchors the end, anything else is a prefix", () => {
+    const m = robotsPatternMatches;
+    assert.equal(m("/a*b$", "/a-x-b"), true);
+    assert.equal(m("/a*b$", "/ab"), true);
+    assert.equal(m("/a*b$", "/a-x-b-c"), false);
+    assert.equal(m("/a*b$", "/b"), false);
+    assert.equal(m("/*.php$", "/index.php"), true);
+    assert.equal(m("/*.php$", "/x/y.php"), true);
+    assert.equal(m("/*.php$", "/index.php?x=1"), false);
+    assert.equal(m("/*.php$", "/index.phpx"), false);
+    assert.equal(m("/fish*", "/fish"), true);
+    assert.equal(m("/fish*", "/fishheads/yummy.html"), true);
+    assert.equal(m("/fish*", "/Fish.asp"), false);
+    assert.equal(m("/fish*", "/catfish"), false);
+    assert.equal(m("/fish$", "/fish"), true);
+    assert.equal(m("/fish$", "/fish/"), false);
+    assert.equal(m("*search?q=*", "/q/search?q=maslo"), true);
+    assert.equal(m("/a*b*c$", "/abxbc"), true, "a later piece may follow the first match of an earlier one");
+    assert.equal(m("/a*b*c$", "/abc-c"), true);
+    assert.equal(m("/a$b", "/a$b"), true, "a `$` that isn't last is a plain character");
+  });
+
+  test("a hostile pattern can't stall the server: no backtracking, and patterns over the caps are ignored", () => {
+    const hostile = "/*a*a*a*a*a*a*a*a*X";
+    for (const n of [60, 120, 200]) {
+      const path = "/" + "a".repeat(n);
+      const t0 = performance.now();
+      assert.equal(robotsPatternMatches(hostile, path), false);
+      assert.ok(performance.now() - t0 < 50, `took ${performance.now() - t0} ms for a ${n}-character path`);
+    }
+    assert.equal(robotsPatternMatches("/" + "*a".repeat(17), "/" + "a".repeat(40)), false, "17 stars: ignored");
+    assert.equal(robotsPatternMatches("/" + "x".repeat(600), "/" + "x".repeat(600)), false, "over 512 characters: ignored");
+    assert.equal(allows(`User-agent: *\nDisallow: ${hostile}\n`, "/" + "a".repeat(200) + "X"), false);
   });
 
   test("Content-Signal lines are read per group", () => {

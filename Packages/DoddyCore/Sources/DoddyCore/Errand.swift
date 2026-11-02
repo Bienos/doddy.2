@@ -946,6 +946,10 @@ extension VoiceToolReply {
              "Offer to look it up now instead, asking before each search.")
         case ErrandError.tooManyOpenErrands:
             ("the user already has as many open tasks as Doddy's server allows.", "Offer to wait until one finishes, or to cancel one in the app.")
+        case ErrandError.dailyLimit(let forEveryone):
+            (forEveryone ? "Doddy's server has taken as many background tasks today as it allows for everyone."
+                         : "the user has handed over as many tasks today as Doddy's server allows for one person.",
+             "It can be handed over again tomorrow. Offer to look it up now instead, asking before each search.")
         case ErrandError.digestMismatch, ErrandError.notApprovable:
             ("the request expired or changed before it was approved.", "It can be handed over again with a new yes.")
         case ErrandError.previewMismatch:

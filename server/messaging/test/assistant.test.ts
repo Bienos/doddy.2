@@ -40,7 +40,7 @@ describe("Messages route against real Postgres", { skip: dbSkip }, () => {
   let db: Db;
   before(async () => { db = await freshDb(); });
   after(async () => { await db?.end(); });
-  beforeEach(async () => { await db.query("DELETE FROM assistant_usage"); });
+  beforeEach(async () => { await db.query("DELETE FROM assistant_usage; DELETE FROM server_daily_usage"); });
 
   async function world(opts: { settings?: Partial<AssistantSettings>; responder?: FakeResponder | null; timeoutMs?: number } = {}) {
     const responder = opts.responder === null ? undefined : opts.responder ?? new FakeResponder();
@@ -164,6 +164,32 @@ describe("Messages route against real Postgres", { skip: dbSkip }, () => {
     const over = await w.ask(b.h, wire());
     assert.equal(over.statusCode, 429);
     assert.equal(over.json().error.code, "dailyLimitReached");
+  });
+
+  test("deleting an account doesn't give the server's day back (ADR-673)", async () => {
+    const w = await world({ settings: { dailyPerAccount: 100, dailyPerServer: 2 } });
+    const a = await w.account();
+    assert.equal((await w.ask(a.h, wire())).statusCode, 200);
+    assert.equal((await w.ask(a.h, wire())).statusCode, 200);
+    const del = await w.app.inject({ method: "DELETE", url: "/v1/account", headers: a.h });
+    assert.ok(del.statusCode < 300, del.body);
+    const b = await w.account();
+    const over = await w.ask(b.h, wire());
+    assert.equal(over.statusCode, 429, "a new account still meets the server's cap");
+    assert.equal(over.json().error.code, "dailyLimitReached");
+    assert.equal(w.responder!.seen.length, 2);
+  });
+
+  test("a refused account gives its server slot back; both caps are exact under concurrency", async () => {
+    const w = await world();
+    const [a, b] = [await w.account(), await w.account()];
+    const results = await Promise.all([
+      ...Array.from({ length: 6 }, () => reserve(db, a.accountId, { perAccount: 2, perServer: 4 })),
+      ...Array.from({ length: 6 }, () => reserve(db, b.accountId, { perAccount: 2, perServer: 4 })),
+    ]);
+    assert.equal(results.filter((r) => r === "ok").length, 4);
+    const { rows } = await db.query("SELECT requests FROM server_daily_usage WHERE feature = 'assistant'");
+    assert.deepEqual(rows.map((r) => r.requests), [4], "account refusals don't use up the server's day");
   });
 
   test("the per-account cap is exact under concurrency", async () => {

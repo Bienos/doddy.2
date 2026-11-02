@@ -3,7 +3,8 @@
  * - accepted:  the provider took it (we have its id).
  * - rejected:  the provider refused it for good (bad number, unsubscribed, bad token…).
  * - transient: the provider refused it *before* accepting (429/5xx); safe to try again later.
- * - unknown:   the request may or may not have been accepted (timeout, connection drop).
+ * - unknown:   the request may or may not have been accepted (timeout, connection drop, a
+ *              gateway's 502 or 504).
  *              Never retried automatically, so the user is not messaged twice.
  */
 export type SendOutcome =

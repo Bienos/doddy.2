@@ -210,4 +210,11 @@ final class LearningIntegrationTests: XCTestCase {
             XCTAssertFalse(ProcedureStepTemplates.asked(for: tool).isEmpty, "\(tool) lists what Doddy asks")
         }
     }
+
+    /// ADR-672: the reply for a capability gap that wasn't written never says it was written down.
+    func testGapNotNotedNeverClaimsTheWrite() {
+        XCTAssertTrue(LearningPrompt.gapNoted.hasPrefix("noted:"))
+        XCTAssertTrue(LearningPrompt.gapNotNoted.hasPrefix("not noted:"))
+        XCTAssertFalse(LearningPrompt.gapNotNoted.contains("It's written down"))
+    }
 }

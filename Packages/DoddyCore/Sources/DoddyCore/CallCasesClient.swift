@@ -32,18 +32,22 @@ extension DoddyServerClient {
     }
 
     /// Approves exactly the preview with this digest; `at` schedules it (a retry at a set time).
-    /// May start a call: an answer that never came back is `unknown`, and nothing is redialled.
+    /// May start a call: an answer that never came back (no reply, or a 500, 502 or 504 that may
+    /// have come after the server dialled) is `unknown`, and nothing is redialled. So is a 202 whose
+    /// body can't be read: the server took it (ADR-672, the same rule as errands and watches).
     public func approveCallCase(_ caseId: UUID, digest: String, at: Date? = nil) async throws -> CallApproval {
+        let unknown = CallApproval(attemptId: nil, state: "unknown")
         let response: ServerResponse
         do {
             response = try await authorized(.post, "/v1/call-cases/\(Self.id(caseId))/approve",
                                             body: try Self.json(ApproveBody(digest: digest, at: at.map(ServerDates.format))),
                                             startsSomething: true, timeout: 30)
         } catch is OutcomeUnknown {
-            return CallApproval(attemptId: nil, state: "unknown")
+            return unknown
         }
-        guard response.status == 202, let body = try? JSONDecoder().decode(ApprovalReply.self, from: response.body)
-        else { throw Self.callCaseError(from: response) }
+        if Self.mayHaveStarted(response.status) { return unknown }
+        guard response.status == 202 else { throw Self.callCaseError(from: response) }
+        guard let body = try? JSONDecoder().decode(ApprovalReply.self, from: response.body) else { return unknown }
         return CallApproval(attemptId: body.attemptId, state: body.state)
     }
 
@@ -67,8 +71,10 @@ extension DoddyServerClient {
         } catch is OutcomeUnknown {
             return "unknown"
         }
-        guard response.status == 202, let body = try? JSONDecoder().decode(TakeoverReply.self, from: response.body)
-        else { throw Self.callCaseError(from: response) }
+        // It rings the user's phone: the same rule as approving (ADR-672).
+        if Self.mayHaveStarted(response.status) { return "unknown" }
+        guard response.status == 202 else { throw Self.callCaseError(from: response) }
+        guard let body = try? JSONDecoder().decode(TakeoverReply.self, from: response.body) else { return "unknown" }
         return body.state
     }
 

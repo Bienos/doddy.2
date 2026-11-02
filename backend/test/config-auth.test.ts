@@ -51,6 +51,16 @@ test("test identities can never be used with live mode, production or a public h
   assert.ok(problems({ DODDY_HOST: "0.0.0.0" }).some((x) => x.includes("loopback")));
 });
 
+test("live mode outside loopback needs a hosted database, never a local file", () => {
+  const p = problems({ ...live, DODDY_HOST: "0.0.0.0" });
+  assert.ok(p.some((x) => x.includes("DATABASE_URL is required when DODDY_MODE=live")), p.join("; "));
+  assert.equal(loadConfig({ ...live, DODDY_HOST: "0.0.0.0", DATABASE_URL: "postgres://u@db.example.com/doddy" }).databaseUrl, "postgres://u@db.example.com/doddy");
+  // Loopback development and mock mode may still use PGlite.
+  assert.equal(loadConfig({ ...live, DODDY_HOST: "127.0.0.1" }).databaseUrl, null);
+  assert.equal(loadConfig({ ...live, DODDY_HOST: "localhost" }).databaseUrl, null);
+  assert.ok(!problems({ DODDY_HOST: "0.0.0.0", DODDY_AUTH_MODE: "signed", DODDY_SESSION_SIGNING_KEY: KEY }).some((x) => x.includes("DATABASE_URL")));
+});
+
 test("production live mode is blocked until real sign-in exists", () => {
   assert.ok(problems({ ...live, DODDY_ENV: "production" }).some((x) => x.includes("production")));
 });

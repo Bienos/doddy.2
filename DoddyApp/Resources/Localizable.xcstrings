@@ -14087,6 +14087,17 @@
         }
       }
     },
+    "Couldn't confirm that what Doddy's server keeps for you was deleted, so your voice account was kept. Check your connection and try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się potwierdzić, że to, co serwer Doddy’ego przechowuje dla ciebie, zostało usunięte, więc konto głosowe zostało zachowane. Sprawdź połączenie i spróbuj ponownie."
+          }
+        }
+      }
+    },
     "Couldn't confirm the call started. Doddy won't redial on its own; the line is checked now.": {
       "extractionState": "manual",
       "localizations": {
@@ -23198,6 +23209,17 @@
         }
       }
     },
+    "Doddy's server can't delete accounts yet, so what it keeps for you is still there.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego nie umie jeszcze usuwać kont, więc to, co przechowuje dla ciebie, wciąż tam jest."
+          }
+        }
+      }
+    },
     "Doddy's server couldn't be reached. Check your connection and try again.": {
       "extractionState": "manual",
       "localizations": {
@@ -31926,6 +31948,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "Faktury (inFakt)"
+          }
+        }
+      }
+    },
+    "It also deletes what Doddy's server keeps for you and disconnects your online accounts. Notes on this iPhone stay.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It also deletes what Doddy's server keeps for you and disconnects your online accounts. Notes on this iPad stay."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "It also deletes what Doddy's server keeps for you and disconnects your online accounts. Notes on this iPhone stay."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Usuwa też to, co serwer Doddy’ego przechowuje dla ciebie, i odłącza twoje konta online. Notatki na tym iPadzie zostają."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Usuwa też to, co serwer Doddy’ego przechowuje dla ciebie, i odłącza twoje konta online. Notatki na tym iPhonie zostają."
+                }
+              }
+            }
           }
         }
       }
@@ -84385,6 +84448,17 @@
         }
       }
     },
+    "This plays after your conversation with Doddy ends.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odtworzysz to, gdy skończysz rozmowę z Doddym."
+          }
+        }
+      }
+    },
     "This price only when buying at least %lld": {
       "extractionState": "manual",
       "localizations": {
@@ -92152,6 +92226,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Co Doddy widzi teraz"
+          }
+        }
+      }
+    },
+    "What Doddy's server kept for you was deleted, and your online accounts were disconnected.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To, co serwer Doddy’ego przechowywał dla ciebie, zostało usunięte, a twoje konta online zostały odłączone."
+          }
+        }
+      }
+    },
+    "What Doddy's server kept for you was deleted. Removing Doddy's access at %@ isn't confirmed yet; the server keeps trying. You can also remove Doddy in that account's settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To, co serwer Doddy’ego przechowywał dla ciebie, zostało usunięte. Odebranie Doddy’emu dostępu w %@ nie jest jeszcze potwierdzone; serwer próbuje dalej. Możesz też usunąć Doddy’ego w ustawieniach tego konta."
           }
         }
       }
