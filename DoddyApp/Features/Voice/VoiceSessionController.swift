@@ -168,7 +168,7 @@ final class VoiceSessionController {
         let numbers: [BlikPhoneNumber]
     }
 
-    /// "I lost my wallet" (ADR-686): the official steps, as shown. `done` holds only the steps the
+    /// "I lost my wallet" (ADR-692): the official steps, as shown. `done` holds only the steps the
     /// person ticked themselves; Doddy never ticks one and can't see whether a step was done.
     struct LostWalletCard: Equatable {
         let situation: LostWalletSituation
@@ -350,7 +350,7 @@ final class VoiceSessionController {
     /// or the next conversation, so the amount and number are there while they use their bank
     /// app. In memory only; Doddy never sends it.
     private(set) var blikCard: BlikCard?
-    /// The lost-wallet checklist (ADR-686). It stays on screen until dismissed or the next
+    /// The lost-wallet checklist (ADR-692). It stays on screen until dismissed or the next
     /// conversation, so the steps are there while the person uses mObywatel or their bank. In
     /// memory only: what was lost and the ticks are never saved or sent.
     private(set) var lostWalletCard: LostWalletCard?
@@ -1869,7 +1869,7 @@ final class VoiceSessionController {
         lostWalletCard = nil
     }
 
-    /// The person's own tick (ADR-686): it records only that they said they did the step.
+    /// The person's own tick (ADR-692): it records only that they said they did the step.
     func toggleLostWalletStep(_ id: LostWalletStepID) {
         guard var card = lostWalletCard, card.steps.contains(where: { $0.id == id }) else { return }
         if card.done.contains(id) { card.done.remove(id) } else { card.done.insert(id) }
@@ -2888,7 +2888,7 @@ final class VoiceSessionController {
             // chains' leaflets for it and keeps nothing. The answer also stays on the leaflets screen.
             await reply(call.toolCallId, await DealsModel.shared.searchForAgent(request))
         case .lostWallet(let situation):
-            // ADR-686: the checklist is its own card and changes nothing. Its steps and links come
+            // ADR-692: the checklist is its own card and changes nothing. Its steps and links come
             // from DoddyCore's table; a page opens or a number is dialled only on the person's tap.
             if isCurrent(call.toolCallId) {
                 lostWalletCard = LostWalletCard(situation: situation, steps: LostWalletPlan.steps(for: situation, polish: Self.cardsInPolish))

@@ -277,7 +277,7 @@ public enum VoiceToolRequest: Equatable, Sendable {
     /// This week's leaflets from the chains asked (SHOPPING.md): a read of public data on Doddy's
     /// server, after the user's yes. Nothing about the user goes to the shops.
     case findDeals(DealsRequest)
-    /// "I lost my wallet" (ADR-686): a checklist of official steps on a card. Doddy does none of them;
+    /// "I lost my wallet" (ADR-692): a checklist of official steps on a card. Doddy does none of them;
     /// a step's page opens or its number is dialled only on the person's tap.
     case lostWallet(LostWalletSituation)
     case unsupported(name: String)

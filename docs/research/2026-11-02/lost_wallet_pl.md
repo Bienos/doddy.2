@@ -1,4 +1,4 @@
-<!-- Research for ADR-686 (lost wallet by voice), 2 Nov 2026. Written by a research agent from official pages and statutes
+<!-- Research for ADR-692 (lost wallet by voice), 2 Nov 2026. Written by a research agent from official pages and statutes
      read that day; every item says whether it is confirmed. Nothing was tested inside the iOS app. The six gov.pl addresses
      and the Dokumenty Zastrzeżone address the checklist opens were fetched again by hand afterwards, and each page's own
      title was read. -->

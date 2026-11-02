@@ -1,7 +1,7 @@
 import DoddyCore
 import SwiftUI
 
-/// "I lost my wallet" (ADR-686): the official steps, most urgent first. Each step's page opens, or
+/// "I lost my wallet" (ADR-692): the official steps, most urgent first. Each step's page opens, or
 /// its number is dialled, only on the person's tap; the tick is theirs alone and says only that they
 /// did the step. Doddy can't block a card, cancel an ID or reserve a PESEL, and the card never says
 /// it did.

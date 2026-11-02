@@ -1,6 +1,6 @@
 import Foundation
 
-// "I lost my wallet" by voice (ADR-686; owner, 2 Nov 2026: "Continue", to "Shall I start on the
+// "I lost my wallet" by voice (ADR-692; owner, 2 Nov 2026: "Continue", to "Shall I start on the
 // lost-wallet flow?", after the mObywatel review of 1 Nov). Doddy can't cancel an ID card, reserve a
 // PESEL number or block a bank card: no state or bank service lets an app do that for a person. So it
 // shows the steps in the order that limits the damage most, each with the one official page or

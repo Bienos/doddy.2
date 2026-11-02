@@ -26,7 +26,7 @@ public enum CarProfile {
             // Bookkeeping on the iPhone (ADR-440): one category, none of the user's data, nothing to undo.
             return .run
         case .lostWallet:
-            // A guide (ADR-686): spoken aloud and shown on a card; nothing changes and nothing leaves
+            // A guide (ADR-692): spoken aloud and shown on a card; nothing changes and nothing leaves
             // the iPhone. Its buttons open a page or dial a number only on the person's own tap.
             return .run
         case .handOverErrand, .checkErrands, .findDeals:

@@ -1,4 +1,4 @@
-# Lost wallet by voice: status (ADR-686)
+# Lost wallet by voice: status (ADR-692)
 
 Owner, 2 Nov 2026: "Continue", to "Shall I start on the lost-wallet flow?" (the mObywatel review of 1 Nov
 ranked "I lost my wallet / ID by voice" first, because it needs no API and nothing from the owner).

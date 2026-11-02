@@ -141,7 +141,7 @@ public enum AskFirst {
              .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders, .leaveBy, .parkingSpot(.save):
             return .ownPayloadCard
         case .lostWallet:
-            // ADR-686: the checklist is its own card. Showing it reads and changes nothing; each
+            // ADR-692: the checklist is its own card. Showing it reads and changes nothing; each
             // step's page or number opens only on the person's tap on that step.
             return .ownPayloadCard
         case .cloudTool(let call):

@@ -2,7 +2,7 @@ import Foundation
 import XCTest
 @testable import DoddyCore
 
-/// "I lost my wallet" (ADR-686): the model says only what was lost; the steps, their order, their
+/// "I lost my wallet" (ADR-692): the model says only what was lost; the steps, their order, their
 /// links and numbers come from DoddyCore's fixed table, and nothing is ever marked done for the person.
 final class LostWalletTests: XCTestCase {
     private func parse(_ json: String) -> VoiceToolRequest {

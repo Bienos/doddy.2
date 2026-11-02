@@ -318,7 +318,7 @@ public struct ActivityRequest: Equatable, Sendable {
             // A category Doddy notes for itself (ADR-440); no app is used and nothing changes.
             return nil
         case .lostWallet:
-            // A checklist on screen (ADR-686): nothing changes, and what was lost isn't kept in the log.
+            // A checklist on screen (ADR-692): nothing changes, and what was lost isn't kept in the log.
             return nil
         case .handOverErrand(let draft):
             // ADR-570: the 30-day log keeps that a task was handed over, not its title or words.
