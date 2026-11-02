@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// A buyer's name and address from the registers by NIP (ADR-680). The VAT register answer is a real
+/// A buyer's name and address from the registers by NIP (ADR-683). The VAT register answer is a real
 /// one (NIP 5260250995, 1 Nov 2026, bank accounts cut); the CEIDG one is the official documentation's.
 final class CompanyRegisterTests: XCTestCase {
     private let day = CalendarDate(iso: "2026-11-01")!

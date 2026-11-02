@@ -92,7 +92,7 @@ public enum InvoiceVoiceNote: Equatable, Sendable {
     /// The issue date said is before today: KSeF treats such an invoice as made offline (offline24),
     /// so it must reach KSeF by the next business day after that date.
     case issueDateInPast(CalendarDate)
-    /// The buyer's name and address came from a register for the NIP (ADR-680).
+    /// The buyer's name and address came from a register for the NIP (ADR-683).
     case fromRegister(RegisteredCompany)
     /// Neither register has this NIP.
     case notInRegister
@@ -124,9 +124,9 @@ public struct InvoiceVoiceSession: Equatable, Sendable, Codable {
     private var lastName: Sourced<String>?
     private var nip: Sourced<String>?
     private var address: InvoiceAddress?
-    /// Where the address came from: what the person said, or a register (ADR-680).
+    /// Where the address came from: what the person said, or a register (ADR-683).
     private var addressSource: FieldSource = .saidByUser
-    /// The register entry the name and address were taken from (ADR-680).
+    /// The register entry the name and address were taken from (ADR-683).
     public private(set) var register: RegisteredCompany?
     /// A NIP no register has, so it isn't asked about again in this draft.
     private var registerMissFor: String?
@@ -295,7 +295,7 @@ public struct InvoiceVoiceSession: Equatable, Sendable, Codable {
         return true
     }
 
-    /// The NIP to look up in the registers (ADR-680): valid, said or confirmed by the person (never
+    /// The NIP to look up in the registers (ADR-683): valid, said or confirmed by the person (never
     /// one only the model suggested), for a buyer who isn't a private person, and not asked about yet.
     public var registerLookupNip: Nip? {
         guard let operation, !Self.isLocked(operation.state), let said = nip, said.isConfirmed, let checked = Nip(said.value),

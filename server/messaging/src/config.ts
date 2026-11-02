@@ -107,7 +107,7 @@ const schema = z.object({
   // Biedronka, Lidl, Dino, Rossmann, Aldi and Żabka on request (ADR-660) and keeps only counts. "0" answers 503 deals_disabled.
   // Image pages need ANTHROPIC_API_KEY (Claude Haiku reads them); the caps count requests per UTC day.
   DEALS_ENABLED: z.enum(["0", "1"]).default("0"),
-  // Company registers (ADR-680): CEIDG's JWT, which the owner gets free at biznes.gov.pl (e-service 00_9999_00,
+  // Company registers (ADR-683): CEIDG's JWT, which the owner gets free at biznes.gov.pl (e-service 00_9999_00,
   // signing in with mObywatel or a trusted profile). Not set: GET /v1/registry/ceidg answers 503 registry_disabled.
   CEIDG_API_TOKEN: z.string().min(20).optional(),
   CEIDG_API_BASE: z.string().url().default("https://dane.biznes.gov.pl/api/ceidg/v3"),
@@ -214,7 +214,7 @@ export interface Config {
   dealsSettings: DealsSettings;
   /** "Search further" under a leaflet answer (ADR-666). */
   dealsSearchShops: SearchShop[];
-  /** CEIDG (ADR-680): only with a token; the base is checked to be CEIDG's own host when the client is made. */
+  /** CEIDG (ADR-683): only with a token; the base is checked to be CEIDG's own host when the client is made. */
   ceidg?: { token: string; baseUrl: string };
   watchSettings: WatchSettings;
   assistantSettings: AssistantSettings;

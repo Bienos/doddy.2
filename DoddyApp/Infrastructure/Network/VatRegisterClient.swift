@@ -1,7 +1,7 @@
 import DoddyCore
 import Foundation
 
-/// Asks the Ministry of Finance's VAT register about one NIP (ADR-680), from this iPhone and only at
+/// Asks the Ministry of Finance's VAT register about one NIP (ADR-683), from this iPhone and only at
 /// `VatRegister.url(for:on:)`, which DoddyCore builds from a NIP that passed its check digit. The
 /// register asks for no key or account; the request carries the NIP and the app's name, nothing about
 /// the user: ephemeral session, no cookies, no cache, redirects refused, a size cap, a 10 s timeout,

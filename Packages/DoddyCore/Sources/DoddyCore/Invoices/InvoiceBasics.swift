@@ -16,7 +16,7 @@ public enum FieldSource: String, Codable, Sendable {
     case userDefault
     /// The model suggested it. Never enough on its own.
     case proposedByModel
-    /// A public register gave it, for the NIP the person said (ADR-680): the VAT register or CEIDG.
+    /// A public register gave it, for the NIP the person said (ADR-683): the VAT register or CEIDG.
     case officialRegister
 }
 

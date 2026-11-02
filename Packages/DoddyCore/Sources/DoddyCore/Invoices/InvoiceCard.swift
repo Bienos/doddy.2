@@ -15,7 +15,7 @@ public struct InvoiceCard: Equatable, Sendable {
         public let value: String
         /// Only the model suggested this value: shown so it can be confirmed, marked so it is not mistaken for said.
         public let proposed: Bool
-        /// A public register gave this value (ADR-680).
+        /// A public register gave this value (ADR-683).
         public let fromRegister: Bool
         /// The field a tap on Confirm settles, when this row is a suggestion the person can confirm (ADR-677).
         public let confirmField: InvoiceField?
@@ -59,7 +59,7 @@ public struct InvoiceCard: Equatable, Sendable {
     /// The KSeF number once KSeF accepted the invoice (ADR-679): shown so it can be copied, and from
     /// 1 Jan 2027 it goes in the title of a B2B transfer for this invoice.
     public let ksefNumber: String?
-    /// Where the buyer's name or address came from, when a register gave them (ADR-680).
+    /// Where the buyer's name or address came from, when a register gave them (ADR-683).
     public let registerLine: String?
 
     public init(_ operation: InvoiceOperation, polish: Bool, register: RegisteredCompany? = nil) {

@@ -1876,7 +1876,7 @@ final class VoiceSessionController {
     }
 
     /// The VAT register from this iPhone, then CEIDG through Doddy's server when the register has no
-    /// such taxpayer or couldn't be asked (ADR-680, `CompanyLookup.combined`).
+    /// such taxpayer or couldn't be asked (ADR-683, `CompanyLookup.combined`).
     private static func lookUpCompany(_ nip: Nip, on day: CalendarDate) async -> CompanyLookup {
         let vat = await VatRegisterClient.shared.lookup(nip, on: day)
         guard vat.asksCeidgToo, let server = ServerConfig.client() else { return vat }
@@ -2785,7 +2785,7 @@ final class VoiceSessionController {
                     return
                 }
                 invoiceSession = session
-                // ADR-680: a NIP the person said is looked up in the public registers, the VAT register
+                // ADR-683: a NIP the person said is looked up in the public registers, the VAT register
                 // from this iPhone and CEIDG through Doddy's server; only the NIP leaves the phone.
                 // The answer is applied to the draft as it is now, and only if the NIP is still the same.
                 if let nip = invoiceSession.registerLookupNip {
