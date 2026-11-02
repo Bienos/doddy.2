@@ -25,5 +25,15 @@ echo "ui-a:$(printf ' %s' $UI_SHARD_A)"
 echo "ui-b:$(printf ' %s' $UI_SHARD_B)"
 echo "ui-c (the rest):${rest:- NONE}"
 [ -n "$rest" ] || { echo "FAIL: ui-c would run no tests"; fail=1; }
+
+# xcodebuild runs a part's classes in alphabetical order. MemoryBaselineTests' island test needs a
+# warm simulator (a cold widget-extension launch failed it twice as the first test, see
+# scripts/ui_test_shards.sh), so no part may start with it.
+for part in "ui-a:$UI_SHARD_A" "ui-b:$UI_SHARD_B" "ui-c:$rest"; do
+  name=${part%%:*}; first=$(printf '%s\n' ${part#*:} | sort | head -1)
+  if [ "$first" = "MemoryBaselineTests" ]; then
+    echo "FAIL: $name would start with MemoryBaselineTests; it needs other tests to run before it"; fail=1
+  fi
+done
 [ "$fail" -eq 0 ] && echo "ok: $(printf '%s\n' "$all" | wc -l | tr -d ' ') UI test classes, each run in exactly one part"
 exit "$fail"
