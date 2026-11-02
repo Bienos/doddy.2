@@ -79,6 +79,11 @@ struct DoddyVoiceAttributes: ActivityAttributes {
         /// use it too (ADR-617); the widget extension can't see the app's own setting. Nil: the
         /// iPhone's language.
         var language: String?
+        /// How loud Doddy's voice was over the last moment, as a step from 0 (a pause between his
+        /// words) to `IslandVoiceBeat.maxStep` (ADR-683): the island swells with it while he talks
+        /// and Doddy is not on screen. Nil otherwise. A number from the loudness of the audio he
+        /// plays, never the microphone and never what he says.
+        var voiceBeat: Int?
     }
 
     /// When the activity started: the conversation, or "Hey Doddy" listening (ADR-254).
@@ -130,10 +135,11 @@ enum IslandResult: String, Codable, Hashable, Sendable, CaseIterable {
 extension DoddyVoiceAttributes.ContentState {
     private enum CodingKeys: String, CodingKey {
         case status, isMuted, savedCount, endedAt, moment, islandStyle, greeting, conversationStartedAt, language
+        case voiceBeat
     }
 
     /// Content written by an older build (without `savedCount`, `endedAt`, `moment`,
-    /// `islandStyle`, `greeting` or `conversationStartedAt`) still decodes. An unknown style or
+    /// `islandStyle`, `greeting`, `conversationStartedAt` or `voiceBeat`) still decodes. An unknown style or
     /// moment from a newer build falls back to Whole Doddy and no moment rather than failing.
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -146,6 +152,13 @@ extension DoddyVoiceAttributes.ContentState {
         greeting = try container.decodeIfPresent(String.self, forKey: .greeting)
         conversationStartedAt = try container.decodeIfPresent(Date.self, forKey: .conversationStartedAt)
         language = try? container.decodeIfPresent(String.self, forKey: .language)
+        voiceBeat = (try? container.decodeIfPresent(Int.self, forKey: .voiceBeat)) ?? nil
+    }
+
+    /// The island draws his talking waves, so a beat would show (ADR-683): speaking, live, not
+    /// muted, nothing on the island instead (a card, a result, translating).
+    var wantsVoiceBeat: Bool {
+        status == .speaking && wholeDoddyWaves(stale: false) == .speaking
     }
 
     /// "Hey Doddy" listening (ADR-254): the iPhone waits for the wake word; no conversation.
