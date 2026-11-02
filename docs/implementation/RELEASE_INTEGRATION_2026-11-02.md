@@ -16,7 +16,8 @@ DOD-02, DOD-08, DOD-09 and UX-02: a timeout reports failure, never a successful 
 
 - Local checks/guards/generators/spec validation: passed with Python 3.15 and PyYAML.
 - Focused Swift tests: 22 passed, zero failures (offline 3, warmup 3, deadline/cancellation 7, token 9).
-- Full Swift suite, real Xcode build, app unit/UI tests and current hosted CI: required; do not treat this pre-validation record as a pass.
+- Full local Swift suite: 2,247 passed (2,048 core, 190 persistence, 9 design-token tests), zero failures.
+- Real Xcode build, app unit/UI tests and current hosted CI: required before merge; consult PR #170 for the final evidence.
 - No physical iPhone, live microphone/provider call, paid API, deployment or live-agent mutation has been performed.
 
 ## Deferred
