@@ -80,7 +80,12 @@ Locally: `scripts/ci.sh --only swift,backend` runs just those groups; `--skip-no
 ADR-683: `core` 14.5 min (backend tests 411 s, Swift package tests 214 s, messaging 40 s, the rest under 45 s each);
 the Mac job 62 min (UI tests 40.7 min, unit tests 4.3, build 4.3, `xcodebuild -list` 1.3, and about 14 min of Linux
 checks it repeated, 413 s of them the backend tests). With the Mac waiting for `core`, a pull request took about
-79 minutes. Not yet measured after ADR-683.
+79 minutes.
+
+**After ADR-683** (first hosted run of the new workflow, run 41344675285, 1 Nov): all jobs green. The Linux side
+finished in 7.5 min (`swift` 6.7 min on a cold SwiftPM cache, `backend` 4.0, `messaging` 0.8, `node` 0.6,
+`checks` 0.3); the Mac job took 48.6 min (`ci.sh --skip-node` 47.4), so the whole pull request took 48.8 min
+instead of about 79. The npm caches and the SwiftPM cache were empty on that run; the next run shows their effect.
 
 **Cost:** the repository is private, so Actions time is paid for. A macOS run took about 52 minutes
 (34 of them UI tests) at $0.062 a minute, about $3.20, on 14 October; ADR-499 should take about 10 minutes
