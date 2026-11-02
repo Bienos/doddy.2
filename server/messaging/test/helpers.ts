@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { enforceDbGate } from "./dbGate.js";
 import { buildApp, type Deps } from "../src/app.js";
 import { DEFAULT_TASK_CALL_SETTINGS, type TaskCallSettings } from "../src/config.js";
 import { createPool, migrate, type Db } from "../src/db.js";
@@ -16,6 +17,8 @@ import type { BriefInput } from "../src/taskCalls/brief.js";
 import type { ResultWriter } from "../src/taskCalls/context.js";
 
 export const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL;
+// In CI a missing database fails the run (throws here); locally it skips with one warning line.
+enforceDbGate();
 export const dbSkip = TEST_DATABASE_URL ? false : "TEST_DATABASE_URL not set (needs a disposable Postgres database)";
 
 /** Wipes the test database's public schema and re-applies migrations. */
