@@ -28,12 +28,11 @@ Linux, and `scripts/ci.sh` runs that test.
 1. **Merge the TestFlight validation fixes** (`claude/testflight-validation-fixes`, ADR-693).
    App Store Connect rejected the first release archive without the Health "update" permission
    text. Every Xcode Cloud build would be rejected the same way until that branch is in.
-2. **Export compliance.** Every upload asks whether the app uses encryption until `Config/Doddy-Info.plist`
-   answers it (`ITSAppUsesNonExemptEncryption`, go-live checklist B9). Until the plist answers, each
-   build waits as "Missing Compliance" until you answer in App Store Connect. That takes one tap per
-   build, but it isn't automatic. Doddy uses HTTPS and AES-256-GCM (Apple's CryptoKit) for its
-   local backup file. Apple treats standard encryption like that as exempt in most cases. The
-   answer is yours to give; once you've given it, a coding agent can set the key.
+2. **Export compliance is answered.** Owner, 2 Nov 2026: "Exempt: set it to NO".
+   `Config/Doddy-Info.plist` now says `ITSAppUsesNonExemptEncryption` = `false` (go-live checklist
+   B9). Doddy uses only standard encryption: HTTPS, and Apple's CryptoKit (AES-256-GCM) for its
+   local backup file. So builds don't wait as "Missing Compliance". If Doddy ever adds its own or
+   non-standard encryption, the key has to change.
 
 ## The setup (once, on your Mac, about 15 minutes)
 

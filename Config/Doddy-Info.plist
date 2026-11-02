@@ -10,6 +10,13 @@
 -->
 <plist version="1.0">
 <dict>
+	<!-- Export compliance (ADR-697, go-live checklist B9; owner, 2 Nov 2026: "Exempt: set it to NO").
+	     Doddy uses only standard encryption: HTTPS, and Apple's CryptoKit (AES-256-GCM) for the local
+	     backup file. With this key App Store Connect doesn't ask on every upload, so Xcode Cloud's
+	     TestFlight builds don't wait as "Missing Compliance". Change it if Doddy ever adds its own or
+	     non-standard encryption. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<!-- Screens in English and the languages with a table in l10n/ (ADR-223, ADR-458); iOS picks by
 	     the iPhone's language. tools/build_strings_catalog.py writes the array; don't edit it. -->
 	<key>CFBundleDevelopmentRegion</key>
