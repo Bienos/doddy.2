@@ -26,7 +26,7 @@ Last updated 2026-11-02: #158 merged as ADR-683 (the Dynamic Island pulses with 
 - **#149** (`claude/home-commands`, draft), home control through HomeKit, ADR-658: `control_home` is on the live agent since 28 Oct.
 - **`claude/magical-cray-4299gg`** (no PR, 29 Oct, owner: "daj mi najświeższy update"): the default branch of 29 Oct plus Following, home control, light appearance by default and the Action Button talking in the island again. Hosted CI green on `799823f0`. Its ADR-667 to 669 clash with the default branch's.
 
-**ADR numbers:** the default branch uses up to 669, 670 to 676 (#159), 682 (#165) and 683 (#158); 658 is held for #149. Open work holds 670 again (`claude/sleepy-mendel-7h3l21` with no PR: it must renumber), 677 to 680 (#161), 680 again (#164) and 681 (#162). **The next free number is 684.** Of #161 and #164, whichever merges second renumbers.
+**ADR numbers:** the default branch uses up to 669, 670 to 676 (#159), 682 (#165) and 683 (#158); 658 is held for #149. Open work holds 670 again (`claude/sleepy-mendel-7h3l21` with no PR: it must renumber), 677 to 680 (#161), 680 again (#164) and 681 (#162). Since then (2 Nov): #164 merged as 680 and #162 as 681; #161 holds 677 to 679 and 685, #166 683 and 684, and `claude/lost-wallet-flow` (no PR yet) 686. **The next free number is 687.** Of #161 and #164, whichever merges second renumbers.
 
 **Most urgent for the owner** (the full list is in "Waiting on the owner"):
 1. **Before 10 Nov, 10:11 UTC:** move the messaging server's database to a paid plan. Everything `doddy-messaging` keeps (the server side of Messages, errands, leaflet counts, price watches, texting Doddy) is in it.

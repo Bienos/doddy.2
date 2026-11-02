@@ -39737,6 +39737,17 @@
         }
       }
     },
+    "Mark as done": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oznacz jako zrobione"
+          }
+        }
+      }
+    },
     "Mark done": {
       "extractionState": "manual",
       "localizations": {
@@ -41064,6 +41075,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Większość biegania spokojnie i nigdy dwa mocne dni pod rząd"
+          }
+        }
+      }
+    },
+    "Most urgent first. Doddy can't do these for you: each button opens the official page or calls the number when you tap it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Najpilniejsze na górze. Doddy nie zrobi tego za ciebie: każdy przycisk otwiera oficjalną stronę albo dzwoni pod numer dopiero, gdy go stukniesz."
           }
         }
       }
@@ -85523,6 +85545,17 @@
         }
       }
     },
+    "Tick a step when you've done it. Doddy can't see your bank or mObywatel, so only you know it's done.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaznacz krok, gdy go zrobisz. Doddy nie widzi twojego banku ani mObywatela, więc tylko ty wiesz, że jest zrobiony."
+          }
+        }
+      }
+    },
     "Tick an item": {
       "extractionState": "manual",
       "localizations": {
@@ -92735,6 +92768,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Co zostaje tutaj"
+          }
+        }
+      }
+    },
+    "What to do now": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co zrobić teraz"
           }
         }
       }

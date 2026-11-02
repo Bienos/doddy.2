@@ -2555,5 +2555,9 @@
   "Doddy's server can't delete accounts yet, so what it keeps for you is still there.": "Serwer Doddy’ego nie umie jeszcze usuwać kont, więc to, co przechowuje dla ciebie, wciąż tam jest.",
   "Couldn't confirm that what Doddy's server keeps for you was deleted, so your voice account was kept. Check your connection and try again.": "Nie udało się potwierdzić, że to, co serwer Doddy’ego przechowuje dla ciebie, zostało usunięte, więc konto głosowe zostało zachowane. Sprawdź połączenie i spróbuj ponownie.",
   "It also deletes what Doddy's server keeps for you and disconnects your online accounts. Notes on this iPhone stay.": "Usuwa też to, co serwer Doddy’ego przechowuje dla ciebie, i odłącza twoje konta online. Notatki na tym iPhonie zostają.",
-  "This plays after your conversation with Doddy ends.": "Odtworzysz to, gdy skończysz rozmowę z Doddym."
+  "This plays after your conversation with Doddy ends.": "Odtworzysz to, gdy skończysz rozmowę z Doddym.",
+  "What to do now": "Co zrobić teraz",
+  "Most urgent first. Doddy can't do these for you: each button opens the official page or calls the number when you tap it.": "Najpilniejsze na górze. Doddy nie zrobi tego za ciebie: każdy przycisk otwiera oficjalną stronę albo dzwoni pod numer dopiero, gdy go stukniesz.",
+  "Tick a step when you've done it. Doddy can't see your bank or mObywatel, so only you know it's done.": "Zaznacz krok, gdy go zrobisz. Doddy nie widzi twojego banku ani mObywatela, więc tylko ty wiesz, że jest zrobiony.",
+  "Mark as done": "Oznacz jako zrobione"
 }
