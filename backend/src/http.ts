@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
+import type { AccountService } from "./account.js";
 import { ASSIST_MAX_BODY_BYTES, type AssistService } from "./assist.js";
 import { requireFullAccess, type SessionVerifier } from "./auth.js";
 import { clientAddress } from "./clientAddress.js";
@@ -34,6 +35,8 @@ export interface HttpDeps {
   web?: { auth: WebAuth; routes: WebRoutes; pages: WebStatic } | null;
   /** Ask Doddy (ADR-587): typed questions answered by Claude. Absent: `POST /v1/assist` is not found. */
   assist?: AssistService | null;
+  /** Delete my data (`DELETE /v1/account`). Absent: the route is not found. */
+  account?: AccountService | null;
   appReturnUrl: string;
   maxBodyBytes: number;
   /** Behind one proxy that appends the client to X-Forwarded-For (Render). For per-client limits. */
@@ -138,6 +141,16 @@ export function createHandler(deps: HttpDeps) {
         const reply = await deps.assist.answer(user.userId, body);
         status = 200;
         return send(res, 200, reply);
+      }
+
+      // Delete my data: the iPhone's own session only (never a browser cookie), a guest's included.
+      if (key === "DELETE /v1/account" && deps.account) {
+        route = key;
+        const user = await deps.verifier.verify(header(req, "authorization"), now());
+        if (!user) throw new AppError("unauthenticated");
+        const result = await deps.account.deleteAll(user.userId);
+        status = 200;
+        return send(res, 200, result);
       }
 
       // Doddy Web (ADR-600): its own routes, then its pages for anything that isn't the API.

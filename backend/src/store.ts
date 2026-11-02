@@ -681,6 +681,45 @@ export class Store {
     });
   }
 
+  // ------------------------------------------------------------ account deletion
+
+  /**
+   * Deletes everything that belongs to one user, in one transaction, and reads it back. Every
+   * connection (and any open attempt's pending connection) is first queued in `cleanups`, which has
+   * no foreign key to users and is not deleted here, so the grant is removed at the provider later
+   * even though the user row is gone. Tables with a user_id, all deleted: attempts, connections,
+   * receipts, tool_receipts, approvals, tool_switches, documents, web_link_codes, web_sessions,
+   * logbook_state, logbook_days, memory_state, memory_notes, memory_conversations, message_threads,
+   * users; plus the user's own `usage` counters (`user:<id>:…`). `device_owner` is left alone: it
+   * holds only the owner's opaque user id, and clearing it would let the next device claim the
+   * server. If any row is left after the deletes, this throws and nothing is deleted.
+   */
+  deleteAccount(userId: string, now: number): Promise<{ deleted: Record<string, number>; queued: QueuedCleanup[] }> {
+    const TABLES = [
+      "attempts", "connections", "receipts", "tool_receipts", "approvals", "tool_switches", "documents", "web_link_codes",
+      "web_sessions", "logbook_state", "logbook_days", "memory_state", "memory_notes", "memory_conversations", "message_threads",
+    ] as const;
+    const counterPrefix = `user:${userId}:`;
+    return this.db.transaction(async (tx) => {
+      const queued: QueuedCleanup[] = [];
+      const open = (await tx.query<AttemptRow>("SELECT * FROM attempts WHERE user_id = $1 AND consumed_at IS NULL", [userId])).rows;
+      queued.push(...(await this.endAttempts(tx, open, now)));
+      const connections = (await tx.query<{ connection_id: string; provider: string }>("SELECT connection_id, provider FROM connections WHERE user_id = $1", [userId])).rows;
+      for (const c of connections) {
+        await this.queueCleanupIn(tx, c.connection_id, userId, c.provider, now);
+        queued.push({ connectionId: c.connection_id, userId, provider: c.provider });
+      }
+      const deleted: Record<string, number> = {};
+      for (const table of TABLES) deleted[table] = (await tx.query(`DELETE FROM ${table} WHERE user_id = $1`, [userId])).rowCount;
+      deleted.usage = (await tx.query("DELETE FROM usage WHERE starts_with(counter, $1)", [counterPrefix])).rowCount;
+      deleted.users = (await tx.query("DELETE FROM users WHERE user_id = $1", [userId])).rowCount;
+      let left = (await this.one<{ n: number }>(tx, "SELECT COUNT(*)::int AS n FROM usage WHERE starts_with(counter, $1)", [counterPrefix]))?.n ?? 1;
+      for (const table of [...TABLES, "users"]) left += (await this.one<{ n: number }>(tx, `SELECT COUNT(*)::int AS n FROM ${table} WHERE user_id = $1`, [userId]))?.n ?? 1;
+      if (left !== 0) throw new Error("account_rows_left");
+      return { deleted, queued };
+    });
+  }
+
   // ------------------------------------------------------------ device owner (ADR-563)
 
   /**

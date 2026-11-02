@@ -459,7 +459,8 @@ export class CloudToolsService {
   }
 
   /** Already queued: removed at the provider and dequeued, or kept as `failed` to retry. */
-  private async removeQueued(queued: readonly QueuedCleanup[]): Promise<void> {
+  async removeQueued(queued: readonly QueuedCleanup[]): Promise<{ removed: number; queued: number }> {
+    const count = { removed: 0, queued: 0 };
     for (const connectionId of new Set(queued.map((q) => q.connectionId))) {
       let result: "removed" | "failed";
       try {
@@ -469,7 +470,9 @@ export class CloudToolsService {
       }
       if (result === "removed") await this.store.finishCleanup(connectionId);
       else await this.store.failCleanup(connectionId, "remote_cleanup_failed");
+      count[result === "removed" ? "removed" : "queued"] += 1;
     }
+    return count;
   }
 
   private async removeRemote(userId: string, id: ToolkitId): Promise<"removed" | "failed"> {

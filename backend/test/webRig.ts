@@ -8,6 +8,7 @@ import { DevSessionVerifier, type SessionVerifier } from "../src/auth.js";
 import { defaultRegistry } from "../src/capabilities.js";
 import { testLimits } from "../src/config.js";
 import { DocumentLinks } from "../src/documents.js";
+import { AccountService } from "../src/account.js";
 import { createHandler } from "../src/http.js";
 import { MockCalendarProvider } from "../src/providers/mock.js";
 import { ConnectedAppsService } from "../src/service.js";
@@ -39,6 +40,8 @@ export interface WebRig {
   base: string;
   store: Store;
   tools: CloudToolsService;
+  /** The mock Composio behind `tools`: what was asked of it. */
+  toolsProvider: MockToolsProvider;
   /** Kept notes and conversations (ADR-603), keyed with a throwaway test key unless the rig was started with `memoryKey: null`. */
   memory: MemoryService;
   clock: Clock;
@@ -83,9 +86,10 @@ export async function startWeb(
   const origin = o.origin ?? WEB_ORIGIN;
   const common = { store, limits: testLimits(), publicBaseUrl: "https://api.doddy.test", appReturnUrl: "doddy-dev://connected-apps/return", now: clock.now, sleep: async () => {} };
   const documentLinks = new DocumentLinks(Buffer.alloc(32, 7), common.publicBaseUrl);
+  const toolsProvider = new MockToolsProvider();
   const tools = new CloudToolsService({
     ...common,
-    provider: new MockToolsProvider(),
+    provider: toolsProvider,
     webSearch: new MockWebSearchProvider(),
     claude: o.claude ?? new MockClaudeProvider(),
     documentLinks,
@@ -129,6 +133,7 @@ export async function startWeb(
     service,
     tools,
     verifier,
+    account: new AccountService({ store, service, tools, now: clock.now }),
     web: { auth, routes: new WebRoutes(auth, store, verifier, 8 * 1024, { service: memory, chat }, thread), pages: new WebStatic(o.withDist === false ? join(distDir, "missing") : distDir, origin) },
     documents: { links: documentLinks, store },
     appReturnUrl: common.appReturnUrl,
@@ -146,6 +151,7 @@ export async function startWeb(
     base,
     store,
     tools,
+    toolsProvider,
     memory,
     clock,
     logs,

@@ -1,4 +1,5 @@
 import { createServer, type Server } from "node:http";
+import { AccountService } from "./account.js";
 import { AssistService } from "./assist.js";
 import { AnyOfSessionVerifier, DevSessionVerifier, type SessionVerifier, SignedSessionVerifier, SupabaseSessionVerifier } from "./auth.js";
 import { defaultRegistry } from "./capabilities.js";
@@ -134,6 +135,7 @@ export async function buildApp(
     deviceSessions,
     web,
     assist,
+    account: new AccountService({ store, service, tools, log }),
     documents: documentLinks ? { links: documentLinks, store } : null,
     appReturnUrl: config.appReturnUrl,
     maxBodyBytes: config.limits.maxBodyBytes,
