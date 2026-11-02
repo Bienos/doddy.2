@@ -20,7 +20,7 @@ expect "f f f f" "paused Watch and Mac apps" DoddyWatch/A.swift DoddyMac/B.swift
 expect "t f f f" "design includes motion test fixtures" design/a.svg l10n/pl.json blog/p.md
 expect "t f f f" "app source" DoddyApp/Features/Voice/VoiceView.swift
 expect "t f f f" "the shared package" Packages/DoddyCore/Sources/DoddyCore/A.swift
-expect "f t t f" "backend source (web and the secrets check read it too)" backend/src/a.ts
+expect "t t t f" "backend source (Swift tool-catalog and Node secrets checks read it too)" backend/src/a.ts
 expect "f f t f" "web app" web/src/App.tsx
 expect "f f t f" "site" site/api/join.js
 expect "f f t f" "gateway" gateway/api/b.js

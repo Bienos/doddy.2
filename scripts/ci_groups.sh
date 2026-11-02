@@ -24,7 +24,7 @@ groups_for() {
     DoddyWatch/* | DoddyWatchWidgets/* | DoddyMac/* | DoddyMacWidgets/* \
       | Config/DoddyWatch* | Config/DoddyMac* | project-watch.yml | project-mac.yml) echo none; return ;;
     render.yaml | skills-lock.json | MANIFEST.json | PACKAGE_MANIFEST.json | .gitignore) echo none; return ;;
-    backend/*) echo "backend node"; return ;;           # node: the secrets check reads backend/.env.op
+    backend/*) echo "swift backend node"; return ;;     # Swift tool-catalog tests and Node secrets checks read backend files
     web/* | gateway/* | site/* | server/voice-token/* | secrets/* | tools/secrets/*) echo node; return ;;
     server/messaging/*) echo "messaging node"; return ;;
     contracts/*) echo "swift backend node messaging"; return ;;
