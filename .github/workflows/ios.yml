@@ -8,12 +8,17 @@
 # target of project.yml. The "macOS" below is the runner Xcode needs, not an app being built.
 # The macOS job is the expensive one (about 62 minutes at $0.062 a minute, 14 of them the Linux
 # checks it used to repeat), so on a pull request it runs only when the change can reach the app
-# build or its tests (ADR-497, scripts/ci_needs_mac.sh). It now starts together with the Linux
-# groups instead of after them (ADR-683): a pull request that is red on Linux still spends its Mac
-# minutes; a new push cancels both. Run by hand, it always runs.
+# build or its tests (ADR-497, scripts/ci_needs_mac.sh); a push to the default branch is checked the
+# same way (ADR-675). It now starts together with the Linux groups instead of after them (ADR-683):
+# a pull request that is red on Linux still spends its Mac minutes; a new push cancels both. Run by
+# hand, it always runs.
 name: iOS build and tests
 
 on:
+  # The default branch is what Render deploys, and it sometimes gets direct pushes (ADR-675): those
+  # are tested too. The macOS job runs only when the push can reach the app build (ci_needs_mac.sh).
+  push:
+    branches: [claude/loving-dirac-uuxoux]
   pull_request:
   workflow_dispatch:
     inputs:
@@ -53,10 +58,20 @@ jobs:
         id: files
         env:
           EVENT: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
         run: |
           # An empty list makes both scripts run everything: the safe answer.
           : > "$RUNNER_TEMP/changed.txt"
-          if [ "$EVENT" != "pull_request" ]; then
+          if [ "$EVENT" = "push" ]; then
+            # What the push changes: from the commit the branch was at before it, to the new head (ADR-675).
+            if [ -n "$BEFORE" ] && [ "$BEFORE" != "0000000000000000000000000000000000000000" ] \
+              && git fetch -q --depth=1 origin "$BEFORE" \
+              && git diff --name-only --no-renames "$BEFORE" HEAD > "$RUNNER_TEMP/changed.txt.new"; then
+              mv "$RUNNER_TEMP/changed.txt.new" "$RUNNER_TEMP/changed.txt"
+            else
+              echo "Couldn't list what the push changes: everything runs." >&2
+            fi
+          elif [ "$EVENT" != "pull_request" ]; then
             echo "Run by hand: everything runs." >&2
           elif git rev-parse --verify -q 'HEAD^2' >/dev/null \
             && git diff --name-only --no-renames 'HEAD^1' HEAD > "$RUNNER_TEMP/changed.txt.new"; then

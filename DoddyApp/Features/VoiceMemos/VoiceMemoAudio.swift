@@ -59,6 +59,11 @@ final class VoiceMemoRecorder {
             state = .failed(NSLocalizedString("Doddy is recording. Stop the recording to record a voice memo.", comment: ""))
             return
         }
+        // A memo would take the conversation's microphone and audio setup (ADR-676).
+        guard !VoiceSessionController.conversationInProgress else {
+            state = .failed(NSLocalizedString("Recording couldn't start. If you're talking to Doddy or on a call, finish that first.", comment: ""))
+            return
+        }
         guard await AVAudioApplication.requestRecordPermission() else {
             state = .failed(NSLocalizedString("The microphone is off for Doddy. Turn it on in the Settings app to record.", comment: ""))
             return
@@ -112,7 +117,9 @@ final class VoiceMemoRecorder {
         recorder.stop()
         self.recorder = nil
         state = .idle
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        if !VoiceSessionController.conversationInProgress {
+            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        }
         MicrophoneHolders.shared.recording(self, false)
         let milliseconds = min(Int((seconds * 1000).rounded()), VoiceMemoLimits.maxSeconds * 1000)
         guard MemoryAudio.isValidDuration(milliseconds), FileManager.default.fileExists(atPath: recorder.url.path) else {
@@ -162,6 +169,12 @@ final class VoiceMemoPlayer {
             problem = NSLocalizedString("Stop recording to play this.", comment: "")
             return
         }
+        // Playing switches the audio session to playback only, which turns off the conversation's
+        // microphone while Home still says Listening (ADR-676).
+        guard !VoiceSessionController.conversationInProgress else {
+            problem = NSLocalizedString("This plays after your conversation with Doddy ends.", comment: "")
+            return
+        }
         do {
             if player?.url != url {
                 player = try AVAudioPlayer(contentsOf: url)
@@ -203,7 +216,7 @@ final class VoiceMemoPlayer {
         ticker = nil
         isPlaying = false
         position = 0
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        release()
     }
 
     private func finished() {
@@ -211,6 +224,13 @@ final class VoiceMemoPlayer {
         isPlaying = false
         position = 0
         player?.currentTime = 0
+        release()
+    }
+
+    /// Lets go of the audio session, unless a conversation started meanwhile: deactivating would stop
+    /// what it plays and hears (ADR-676).
+    private func release() {
+        guard !VoiceSessionController.conversationInProgress else { return }
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
 }

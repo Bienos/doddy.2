@@ -456,7 +456,7 @@ Paths are relative to the repository root. "ADR" means a row in `DECISIONS.md`.
 9. **"What leaves" for the voice token server** shows only "Your access code". The OpenAI token mint also goes through it.
 10. **Outlook** is in the Settings paragraph and the code (`backend/src/tools/catalog.ts`) but not in `ONLINE_ACCOUNTS.md`'s tool table.
 11. **Deployment status is unclear.** `render.yaml` says neither Render service is deployed. `ONLINE_ACCOUNTS.md` says web search ran on a Render service. `GO_LIVE_STATUS` says the token server is deployed. The privacy policy must describe only what runs.
-12. **Backend data deletion.** `SECURITY_AND_PERMISSIONS.md` says deleting a backend account and exporting backend data is not built, while the messaging server has `DELETE /v1/account`. The two servers differ.
+12. **Backend data deletion.** Both servers now have `DELETE /v1/account`: the messaging server's (ADR-143, "Delete my Doddy messaging data") and the backend's (ADR-674, run before the voice account is deleted by Settings’ "Delete Doddy voice account"). They are still two buttons. Exporting backend data is not built.
 13. **Website promises deletion on request** but lists no contact address.
 14. **Google Fonts** load before consent; the footer says so, but a notice and a basis are needed.
 15. **`PrivacyInfo.xcprivacy` exists only for the main app** (`GO_LIVE_STATUS`). Widgets, share extension and watch have none.

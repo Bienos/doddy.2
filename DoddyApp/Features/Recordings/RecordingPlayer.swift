@@ -47,6 +47,11 @@ final class RecordingPlayer {
             problem = NSLocalizedString("Stop recording to play this.", comment: "")
             return
         }
+        // Playback only would turn off the conversation's microphone (ADR-676).
+        guard !VoiceSessionController.conversationInProgress else {
+            problem = NSLocalizedString("This plays after your conversation with Doddy ends.", comment: "")
+            return
+        }
         do {
             let session = AVAudioSession.sharedInstance()
             try session.setCategory(.playback, mode: .spokenAudio)
@@ -135,7 +140,7 @@ final class RecordingPlayer {
     }
 
     private func release() {
-        guard !RecordingCoordinator.shared.isActive else { return }
+        guard !RecordingCoordinator.shared.isActive, !VoiceSessionController.conversationInProgress else { return }
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
 }

@@ -97,6 +97,14 @@ describe("signing in", () => {
     expect(screen.getByRole("button", { name: "Try again" })).toBeInTheDocument();
   });
 
+  test("a session that ended while the page was closed takes this browser's chats with it", async () => {
+    window.localStorage.setItem("doddy.web.chats.v1", JSON.stringify({ owner: "someone", threads: [] }));
+    fakeServer({ "GET /v1/web/session": signedOut });
+    renderApp("/", "en");
+    expect(await screen.findByRole("heading", { name: "Sign in to Doddy" })).toBeInTheDocument();
+    expect(window.localStorage.getItem("doddy.web.chats.v1")).toBeNull();
+  });
+
   test("typed codes are tidied the way the server reads them", () => {
     expect(canonicalCode(" k7qm-4xpa ")).toBe("K7QM-4XPA");
     expect(canonicalCode("K7QM4XPA")).toBe("K7QM-4XPA");

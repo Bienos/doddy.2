@@ -66,7 +66,10 @@ export const updateRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
     const p = parse(idParam, req.params, reply);
     if (!p) return;
     const r = await db.query(
-      `UPDATE outbound_messages SET state = 'cancelled', error_code = 'cancelled_by_user', body = NULL, updated_at = now()
+      // Both body forms go: with an encryption key the text sits in body_ciphertext, and the
+      // table refuses a final row that still holds either (migration 007).
+      `UPDATE outbound_messages SET state = 'cancelled', error_code = 'cancelled_by_user',
+         body = NULL, body_ciphertext = NULL, body_key_version = NULL, updated_at = now()
        WHERE id = $1 AND account_id = $2 AND state = 'queued'`,
       [p.id, principal(req).accountId]);
     if (r.rowCount) return reply.code(204).send();
