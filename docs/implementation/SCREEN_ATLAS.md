@@ -50,7 +50,8 @@ Example text typed by the test (the notes, the list) is made up. Starting Focus 
 | `dealsHome` | Home's "Leaflet offers" card | `test7cShopping` | the same |
 | `errand` | Home's "Done" card, Tasks, a task's three picks | `test7cShopping` | `errand_result_shopping_v1.json` (Polish sample task) |
 | `report` | the two pages of the shopping report PDF, full screen | `test7cShopping` | the same result, written by the app's own `ShoppingReport` |
+| `island:<state>` | the real voice Live Activity in one real state (connecting, listening, thinking, speaking, muted, confirm, text, transfer, document, translator): iOS draws the compact island on the Home Screen, the expanded island (a long press) and the Lock Screen card; three whole-screen pictures each | `test8aNativeIsland`, `test8bNativeIsland` | none: the activity has no conversation behind it |
 
-Not covered yet: the translator screens, the learning cards, receipts, the leave-by card (needs a Maps lookup), a note reminder card, widgets, the Lock Screen cards and the shopping-mode Live Activity (those are in the widget extension, which the app target can't draw).
+Not covered yet: the translator screens, the learning cards, receipts, the leave-by card (needs a Maps lookup), a note reminder card, the Home Screen, Lock Screen and StandBy widgets, and the focus, stopwatch, shopping, call and recording Live Activities (the widget extension's own views; the voice activity above is the only one with a fixture).
 
 `scripts/gen_screen_fixture_data.py` rebuilds `ScreenFixtureData.swift` from the contract fixtures; `ci.sh` checks it with `--check`.

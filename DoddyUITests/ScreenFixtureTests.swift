@@ -132,6 +132,53 @@ final class ScreenFixtureTests: XCTestCase {
         return see(app.descendants(matching: .any)["shopping.summary"], 10)
     }
 
+    // MARK: The real iOS island and Lock Screen
+
+    private static let firstIslands = ["connecting", "listening", "thinking", "speaking", "muted"]
+    private static let otherIslands = ["confirm", "text", "transfer", "document", "translator"]
+
+    @MainActor
+    func test8aNativeIsland() {
+        for (index, id) in Self.firstIslands.enumerated() { native(id, number: index + 1) }
+    }
+
+    @MainActor
+    func test8bNativeIsland() {
+        for (index, id) in Self.otherIslands.enumerated() { native(id, number: Self.firstIslands.count + index + 1) }
+    }
+
+    /// The app's real voice Live Activity in one state, drawn by iOS: the compact island on the Home
+    /// Screen, the expanded island (a long press), then the Lock Screen with its card. Three whole-screen
+    /// pictures; the page crops the island out. A fixture with no conversation behind it.
+    @MainActor
+    private func native(_ id: String, number: Int) {
+        let numbered = number < 10 ? "0\(number)" : "\(number)"
+        let name = "8-native-\(numbered)-\(id)"
+        let app = XCUIApplication()
+        app.launchArguments = UITestLaunch.arguments(store: .inMemory, appearance: "light", language: .english)
+        app.launchArguments += ["-quickStartOffered", "NO", "-hadFirstConversation", "YES", "-firstLaunchIntroSeen", "YES"]
+        app.launchArguments += ["-screenFixture", "island:\(id)"]
+        app.launch()
+        let started = see(app.buttons["home.more"], 12)
+        settle(5)
+        XCUIDevice.shared.press(.home)
+        settle(2)
+        keep("\(name)-a-compact", reached: started)
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        springboard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.04)).press(forDuration: 1.2)
+        settle(2)
+        keep("\(name)-b-expanded", reached: started)
+        // Lock, wake, and look at the Lock Screen; then swipe up to leave it (no passcode).
+        _ = XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
+        settle(1.5)
+        _ = XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
+        settle(2.5)
+        keep("\(name)-c-lock", reached: started)
+        springboard.swipeUp()
+        settle(1)
+        app.terminate()
+    }
+
     // MARK: Visiting and keeping (as ScreenAtlasTests)
 
     @MainActor

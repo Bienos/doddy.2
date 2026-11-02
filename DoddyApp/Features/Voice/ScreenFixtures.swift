@@ -1,4 +1,5 @@
 #if DEBUG
+import ActivityKit
 import DoddyCore
 import Foundation
 import SwiftUI
@@ -17,6 +18,8 @@ import UIKit
 /// - `errand`: Tasks holds one finished shopping task (the same fixture's result) and Home shows its
 ///   "Done" card.
 /// - `report`: the shopping report PDF the app makes for that task, its two pages full screen.
+/// - `island:<state>`: the app's real voice Live Activity in one real state (the one a conversation
+///   sends), for iOS to draw on the simulator's island and Lock Screen. No conversation behind it.
 ///
 /// Nothing here ships: the whole file is `#if DEBUG`, and nothing runs without the launch argument.
 /// NOT COMPILED OR RUN in the authoring environment (Linux, no Xcode): the hosted Mac job is the
@@ -39,6 +42,12 @@ enum ScreenFixtures {
             seedDeals(homeCard: name == "dealsHome")
         } else if name == "errand" {
             Task { await seedErrand() }
+        } else if name.hasPrefix("island:") {
+            let id = String(name.dropFirst("island:".count))
+            Task {
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+                startIsland(id)
+            }
         } else if name == "report" {
             Task {
                 try? await Task.sleep(nanoseconds: 3_000_000_000)
@@ -297,6 +306,43 @@ private struct ReportPictures: View {
         }
         .background(Color(white: 0.82))
         .accessibilityIdentifier("fixture.report")
+    }
+}
+
+extension ScreenFixtures {
+    private static var islandActivity: VoiceLiveActivity?
+
+    /// The real voice Live Activity in one real state. Statuses and moments are the ones a
+    /// conversation sends (see `IslandScreenshotTests`); iOS draws the island and the Lock Screen card.
+    fileprivate static func startIsland(_ id: String) {
+        typealias State = DoddyVoiceAttributes.ContentState
+        var state: State
+        switch id {
+        case "connecting": state = State(status: .connecting, isMuted: false)
+        case "listening": state = State(status: .listening, isMuted: false)
+        case "thinking": state = State(status: .thinking, isMuted: false)
+        case "speaking": state = State(status: .speaking, isMuted: false)
+        case "muted": state = State(status: .listening, isMuted: true)
+        case "confirm": state = State(status: .needsConfirmation, isMuted: false)
+        case "text":
+            state = State(status: .needsConfirmation, isMuted: false)
+            state.moment = .actionWaiting(.text)
+        case "transfer":
+            state = State(status: .needsConfirmation, isMuted: false)
+            state.moment = .actionWaiting(.transfer)
+        case "document":
+            state = State(status: .speaking, isMuted: false)
+            state.moment = .resultReady(.document)
+        case "translator":
+            state = State(status: .listening, isMuted: false)
+            state.moment = .translating(from: "pl", to: "en", bothWays: true)
+        default:
+            return
+        }
+        state.language = Bundle.main.preferredLocalizations.first
+        let island = VoiceLiveActivity()
+        island.show(state, startedAt: .now)
+        islandActivity = island
     }
 }
 
