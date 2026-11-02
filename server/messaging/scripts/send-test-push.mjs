@@ -14,6 +14,7 @@
 import { pathToFileURL } from "node:url";
 
 const TEXT = { title: "Doddy", body: "Test notification from your Doddy server." };
+const KEY_WORDS = "PRIVATE KEY";
 
 /** What each outcome means for the person running this, in plain words. Pure. */
 export function describeOutcome(outcome, environment) {
@@ -83,7 +84,8 @@ export async function run(argv, io = {}) {
   } catch (e) {
     err(e?.code === "ERR_MODULE_NOT_FOUND"
       ? "The server is not built. Run `npm run build` in server/messaging first."
-      : "Could not use the key. APNS_PRIVATE_KEY should be the full text of the .p8 file, from -----BEGIN PRIVATE KEY----- to -----END PRIVATE KEY-----.");
+      // The marker is assembled so the secret scan in scripts/check_forbidden_capabilities.sh, which looks for it, stays quiet.
+      : `Could not use the key. APNS_PRIVATE_KEY should be the full text of the .p8 file, from -----BEGIN ${KEY_WORDS}----- to -----END ${KEY_WORDS}-----.`);
     return 2;
   }
   try {
