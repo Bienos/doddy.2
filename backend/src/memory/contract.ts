@@ -154,5 +154,16 @@ export function refuse(error: z.ZodError): never {
   throw new AppError("invalid_request", { message: `That wasn't valid (${sections.join(", ")}). Nothing was stored.` });
 }
 
+/**
+ * The same refusal for a list field that isn't a list or has more than `max` items, before the
+ * schema reads it: zod 3 checks every item of an array before its `.max()`, which costs a lot of
+ * memory on a large body. Pass the constant the schema's `.max()` uses.
+ */
+export function refuseLongList(body: unknown, field: string, max: number): void {
+  if (typeof body !== "object" || body === null) return; // the schema refuses it without reading any list
+  const list = (body as Record<string, unknown>)[field];
+  if (!Array.isArray(list) || list.length > max) throw new AppError("invalid_request", { message: `That wasn't valid (${field}). Nothing was stored.` });
+}
+
 export const ONE_DAY_MS = 86_400_000;
 export const keptSince = (now: number) => now - MEMORY_KEPT_DAYS * ONE_DAY_MS;
