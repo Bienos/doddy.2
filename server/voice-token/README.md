@@ -42,6 +42,8 @@ Vercel project `doddy-voice-token` through `tools/secrets/sync.mjs` (ADR-493,
 | `OPENAI_REALTIME_VOICE` | Optional server default voice. |
 | `DODDY_TOKENS_PER_HOUR` | Optional shared per-account issuance limit; defaults to `30`. |
 | `DODDY_GLOBAL_TOKENS_PER_HOUR` | Optional shared global issuance limit; defaults to `100`. |
+| `VOICE_DAILY_PER_USER` | Optional voice tokens per account per UTC day, any provider; defaults to `100`. Past it the reply is 429 `{ error: "daily_limit", limit: "voice" }` until midnight UTC. |
+| `VOICE_DAILY_FULL_MODEL_PER_USER` | Optional OpenAI secrets for the full `gpt-realtime-2.1` model per account per UTC day; defaults to `10`. Past it the reply is 429 `{ error: "daily_limit", limit: "full_model" }`; the mini model still works. Only allowed requests count toward either daily limit. |
 | `APPLE_TEAM_ID` | Optional, with the next two: the Apple Developer team ID. Lets "Delete voice account" also revoke Sign in with Apple (ADR-524). |
 | `APPLE_SIGN_IN_KEY_ID` | The key ID of a Sign in with Apple key (Apple Developer › Certificates, Identifiers & Profiles › Keys). |
 | `APPLE_SIGN_IN_PRIVATE_KEY` | That key's `.p8` file contents (PEM; literal `\n` line breaks work). Secret: 1Password only. |

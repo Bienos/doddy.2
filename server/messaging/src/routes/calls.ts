@@ -5,6 +5,8 @@ import { z } from "zod";
 import { parse, type Deps } from "../app.js";
 import { principal, requireDevice } from "../auth.js";
 import { OUTBOUND_CONSENT_VERSIONS, OUTBOUND_DAILY_LIMIT, openSession } from "../calls.js";
+import { hasAllowedCallingCode } from "../callingCodes.js";
+import { DEFAULT_SMS_SETTINGS } from "../config.js";
 import { hashPin, isAcceptablePin } from "../crypto.js";
 import { inTransaction } from "../db.js";
 
@@ -15,6 +17,7 @@ const settingsBody = z.object({
 }).refine((b) => b.outboundConsent !== true || OUTBOUND_CONSENT_VERSIONS.has(b.outboundConsentTextVersion ?? ""),
   { path: ["outboundConsentTextVersion"] });
 const pinBody = z.object({ pin: z.string() });
+const MAX_SNAPSHOT_ITEMS = 5000;
 const snapshotBody = z.object({
   items: z.array(z.object({
     // Postgres returns uuids in lowercase; the encryption binding must use the same spelling
@@ -22,7 +25,7 @@ const snapshotBody = z.object({
     id: z.uuid().transform((id) => id.toLowerCase()),
     text: z.string().min(1).max(5000),
     capturedAt: z.iso.datetime({ offset: true }).nullable().optional(),
-  })).max(5000),
+  })).max(MAX_SNAPSHOT_ITEMS),
 }).refine((b) => new Set(b.items.map((i) => i.id)).size === b.items.length, "duplicate ids");
 const idParam = z.object({ id: z.uuid() });
 
@@ -117,6 +120,10 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
     const target = rows[0];
     if (!target) return reply.code(409).send({ error: "no_verified_phone" });
     if (!target.consent) return reply.code(409).send({ error: "outbound_not_enabled" });
+    // A number verified before its country left the list is not dialled.
+    if (!hasAllowedCallingCode(target.e164, (deps.smsSettings ?? DEFAULT_SMS_SETTINGS).allowedCallingCodes)) {
+      return reply.code(409).send({ error: "phone_country_not_supported" });
+    }
     const callId = randomUUID();
     const underLimit = await inTransaction(db, async (c) => {
       // Count and insert under one per-account lock, so parallel taps can't pass the limit together.
@@ -201,6 +208,11 @@ export const callRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
     preHandler: auth, bodyLimit: 8 * 1024 * 1024, config: { rateLimit: { max: 60, timeWindow: "1 hour" } },
   }, async (req, reply) => {
     if (!deps.cipher) return reply.code(503).send({ error: "not_configured" });
+    // Checked before parsing, so an over-long list is refused without validating each element.
+    const rawItems = (req.body as { items?: unknown } | null)?.items;
+    if (!Array.isArray(rawItems) || rawItems.length > MAX_SNAPSHOT_ITEMS) {
+      return reply.code(400).send({ error: "invalid_request", fields: ["items"] });
+    }
     const body = parse(snapshotBody, req.body, reply);
     if (!body) return;
     const { accountId } = principal(req);

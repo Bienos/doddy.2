@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import type { FastifyInstance } from "fastify";
+import { DEFAULT_SMS_SETTINGS } from "../src/config.js";
 import type { Db } from "../src/db.js";
 import { TextCipher } from "../src/crypto.js";
-import { dispatchDue, MAX_ATTEMPTS } from "../src/outbox.js";
+import { DailyTextLimit, dispatchDue, enqueue, MAX_ATTEMPTS } from "../src/outbox.js";
 import { twilioSignature } from "../src/providers/twilio.js";
-import { BASE_URL, dbSkip, FakePush, FakeSms, freshDb, testApp, testCipher, TWILIO_TOKEN } from "./helpers.js";
+import { BASE_URL, dbSkip, FakeOutbound, FakePush, FakeSms, freshDb, testApp, testCipher, TWILIO_TOKEN } from "./helpers.js";
 
 const APNS_TOKEN = "ab".repeat(32);
 const PHONE = "+48500100200";
@@ -15,10 +16,11 @@ describe("server against real Postgres", { skip: dbSkip }, () => {
   let app: FastifyInstance;
   let push: FakePush;
   let sms: FakeSms;
+  let outbound: FakeOutbound;
 
   before(async () => {
     db = await freshDb();
-    ({ app, push, sms } = await testApp(db));
+    ({ app, push, sms, outbound } = await testApp(db));
   });
   after(async () => {
     await app?.close();
@@ -308,6 +310,108 @@ describe("server against real Postgres", { skip: dbSkip }, () => {
     } finally {
       await own.app.close();
     }
+  });
+
+  test("verify codes go only to numbers in the allowed countries", async () => {
+    const own = await testApp(db);
+    try {
+      const acc = (await own.app.inject({ method: "POST", url: "/v1/accounts" })).json() as { deviceToken: string };
+      const start = (phone: string) => own.app.inject({
+        method: "POST", url: "/v1/phone/verification", headers: { authorization: `Bearer ${acc.deviceToken}` }, payload: { phone },
+      });
+      for (const phone of ["+12025550123", "+79161234567", "+2348012345678", "+8801712345678"]) {
+        const r = await start(phone);
+        assert.equal(r.statusCode, 400, phone);
+        assert.deepEqual(r.json(), { error: "phone_country_not_supported" });
+      }
+      assert.deepEqual(own.verifier.started, [], "Verify is never asked");
+      assert.equal((await start("+48500999002")).statusCode, 202);
+      assert.deepEqual(own.verifier.started, ["+48500999002"]);
+    } finally {
+      await own.app.close();
+    }
+  });
+
+  test("a number verified outside the allowed countries is never texted or called", async () => {
+    const a = await newAccount();
+    const phone = "+12025550123";
+    // As if verified before the list applied: the check takes any number Verify approved.
+    assert.equal((await call("POST", "/v1/phone/verification/check", a.headers, { phone, code: "123456" })).statusCode, 200);
+    assert.equal((await call("PUT", "/v1/phone/sms-consent", a.headers, { consent: true, textVersion: "sms-v1" })).statusCode, 204);
+    const r = await call("POST", "/v1/updates", a.headers, { text: "Hello", channels: ["sms"], idempotencyKey: "country-1" });
+    assert.equal(r.statusCode, 202);
+    const id = (r.json() as { messages: { id: string }[] }).messages[0]!.id;
+    await dispatchDue(db, { push, sms, cipher: testCipher });
+    assert.equal(sms.sent.filter((s) => s.to === phone).length, 0, "never handed to Twilio");
+    const m = (await call("GET", `/v1/updates/${id}`, a.headers)).json();
+    assert.equal(m.state, "failed", "definitely not sent, not unknown");
+    assert.equal(m.errorCode, "sms_country_not_supported");
+
+    assert.equal((await call("PUT", "/v1/calls/settings", a.headers, { outboundConsent: true, outboundConsentTextVersion: "calls-v1" })).statusCode, 204);
+    const placed = outbound.calls.length;
+    const c = await call("POST", "/v1/calls/outbound", a.headers);
+    assert.equal(c.statusCode, 409);
+    assert.equal(c.json().error, "phone_country_not_supported");
+    assert.equal(outbound.calls.length, placed, "never dialled");
+    assert.equal((await db.query("SELECT 1 FROM calls WHERE account_id = $1", [a.accountId])).rowCount, 0);
+  });
+
+  test("texts: 20 a day per account; the 21st is refused, nothing of it is queued or sent; another account still texts", async () => {
+    const texting = async (phone: string) => {
+      const acc = await newAccount();
+      assert.equal((await call("POST", "/v1/phone/verification/check", acc.headers, { phone, code: "123456" })).statusCode, 200);
+      assert.equal((await call("PUT", "/v1/phone/sms-consent", acc.headers, { consent: true, textVersion: "sms-v1" })).statusCode, 204);
+      return acc;
+    };
+    const phone = "+48500100301";
+    const a = await texting(phone);
+    await call("PUT", "/v1/device/push-token", a.headers, { token: "a1".repeat(32), environment: "sandbox" });
+    const update = (k: string, channels = ["sms"]) => call("POST", "/v1/updates", a.headers, { text: `cap ${k}`, channels, idempotencyKey: k });
+    for (let i = 1; i <= 20; i++) assert.equal((await update(`cap-${i}`)).statusCode, 202, `text ${i}`);
+    const over = await update("cap-21");
+    assert.equal(over.statusCode, 429);
+    assert.deepEqual(over.json(), { error: "daily_text_limit" });
+    assert.equal((await update("cap-22", ["push", "sms"])).statusCode, 429, "refused as a whole: the push isn't queued either");
+    assert.equal((await update("cap-1")).statusCode, 202, "a retry of a text already queued is not counted again");
+    const { rows } = await db.query<{ k: string }>("SELECT idempotency_key AS k FROM outbound_messages WHERE account_id = $1", [a.accountId]);
+    assert.equal(rows.length, 20);
+    assert.ok(!rows.some((r) => r.k === "cap-21" || r.k === "cap-22"));
+
+    // Its own provider ids: they are unique across the database.
+    const texts = new FakeSms();
+    const send = texts.send.bind(texts);
+    texts.send = async (to, body) => {
+      const o = await send(to, body);
+      return o.kind === "accepted" ? { ...o, providerId: `SMcap${texts.sent.length}` } : o;
+    };
+    while ((await dispatchDue(db, { push, sms: texts, cipher: testCipher })).processed) { /* until nothing is due */ }
+    assert.equal(texts.sent.filter((s) => s.to === phone).length, 20);
+
+    const b = await texting("+48500100302");
+    assert.equal((await call("POST", "/v1/updates", b.headers, { text: "hi", channels: ["sms"], idempotencyKey: "b1" })).statusCode, 202);
+  });
+
+  test("texts: the server-wide cap counts every account (deleted ones too), and the next UTC day starts again", async () => {
+    const [a, b, c] = [await newAccount(), await newAccount(), await newAccount()];
+    const caps = { ...DEFAULT_SMS_SETTINGS, dailyPerAccount: 2, dailyPerServer: 3 };
+    // Days no other test texts on, so the server-wide count is only these.
+    const day1 = new Date("2031-03-01T23:59:00Z");
+    const day2 = new Date("2031-03-02T00:01:00Z");
+    const text = (accountId: string, key: string, now: Date) => enqueue(db, accountId, ["sms"], "x", now, key, { smsSettings: caps, now });
+    const refused = (cap: string) => (err: unknown) => err instanceof DailyTextLimit && err.cap === cap;
+    await text(a.accountId, "d1-a1", day1);
+    await text(a.accountId, "d1-a2", day1);
+    await assert.rejects(text(a.accountId, "d1-a3", day1), refused("account"));
+    await text(b.accountId, "d1-b1", day1);
+    await assert.rejects(text(b.accountId, "d1-b2", day1), refused("server"));
+    assert.equal((await call("DELETE", "/v1/account", a.headers)).statusCode, 204);
+    await assert.rejects(text(c.accountId, "d1-c1", day1), refused("server"));
+
+    await text(b.accountId, "d2-b1", day2);
+    await text(c.accountId, "d2-c1", day2);
+    const { rows } = await db.query<{ k: string }>(
+      "SELECT idempotency_key AS k FROM outbound_messages WHERE account_id = ANY($1) ORDER BY 1", [[b.accountId, c.accountId]]);
+    assert.deepEqual(rows.map((r) => r.k), ["d1-b1", "d2-b1", "d2-c1"]);
   });
 
   test("features without provider credentials answer 503, not a fake success", async () => {

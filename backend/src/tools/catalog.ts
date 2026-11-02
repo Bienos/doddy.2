@@ -2293,7 +2293,7 @@ export const DECLINE_OUTLOOK_INVITE: CloudToolDefinition = {
 function outlookMessageLookup(o: { notFound: string; needsSender: boolean }): TargetLookup {
   return {
     slug: "OUTLOOK_LIST_MESSAGES",
-    toArguments: (args) => ({ user_id: "me", folder: "inbox", top: 3, search: args.query, select: ["id", "subject", "from", "receivedDateTime"] }),
+    toArguments: (args) => ({ user_id: "me", folder: "inbox", top: 3, search: args.query, select: ["id", "subject", "from", "receivedDateTime", ...(o.needsSender ? ["replyTo"] : [])] }),
     read: (raw) => {
       const messages = outlookMessages(raw);
       if (messages.length === 0) return null;
@@ -2303,6 +2303,24 @@ function outlookMessageLookup(o: { notFound: string; needsSender: boolean }): Ta
       const address = typeof fromObj?.emailAddress?.address === "string" && EMAIL_ADDRESS.safeParse(fromObj.emailAddress.address).success ? fromObj.emailAddress.address : "";
       if (o.needsSender && address === "") {
         return { kind: "missing", message: "Doddy can't tell who to reply to: the newest matching Outlook email has no usable sender address. Nothing was sent." };
+      }
+      if (o.needsSender) {
+        // Microsoft sends a reply to the email's Reply-To addresses when it has any, not to `from`,
+        // and the card names `from`. Any other Reply-To (or one Doddy can't read) is refused.
+        const replyTo = newest.replyTo === undefined || newest.replyTo === null ? [] : Array.isArray(newest.replyTo) ? newest.replyTo : [newest.replyTo];
+        const others = replyTo
+          .map((r) => {
+            const a = (r as { emailAddress?: { address?: unknown } } | null)?.emailAddress?.address;
+            return typeof a === "string" && EMAIL_ADDRESS.safeParse(a).success ? a : null;
+          })
+          .filter((a) => a === null || a.toLowerCase() !== address.toLowerCase());
+        if (others.length > 0) {
+          const named = others.slice(0, 3).map((a) => a ?? "an address Doddy can't read").join(", ") + (others.length > 3 ? ` and ${others.length - 3} more` : "");
+          return {
+            kind: "missing",
+            message: `The newest matching Outlook email is from ${address} but asks for replies to go to ${named}, so Outlook would send a reply there. Doddy didn't prepare it. Nothing was sent.`,
+          };
+        }
       }
       return { kind: "outlook_email", messageId: newest.id, from: outlookSender(newest.from) ?? "unknown sender", to: address, subject: plain(newest.subject, 200) };
     },
@@ -2361,7 +2379,8 @@ export const REPLY_OUTLOOK_EMAIL: CloudToolDefinition = {
     const email = outlookEmailOf(target);
     return {
       title: "Send this Outlook reply now?",
-      lines: [`To: ${email.from}`, replySubject(email.subject), args.body as string, "It is sent at once and can't be taken back."],
+      // The address the reply goes to, whole: a long display name can't push it off the card.
+      lines: [`To: ${email.to}`, replySubject(email.subject), args.body as string, "It is sent at once and can't be taken back."],
       confirmLabel: "Send reply",
     };
   },

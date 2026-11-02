@@ -3,7 +3,7 @@ import { after, before, describe, test } from "node:test";
 import type { FastifyInstance } from "fastify";
 import type { AssistOutcome, AssistantResponder } from "../src/assistant/responder.js";
 import type { AssistRequest } from "../src/assistant/request.js";
-import { DEFAULT_ASSISTANT_SETTINGS, type AssistantSettings } from "../src/config.js";
+import { DEFAULT_ASSISTANT_SETTINGS, DEFAULT_SMS_SETTINGS, type AssistantSettings, type SmsSettings } from "../src/config.js";
 import type { Db } from "../src/db.js";
 import { dispatchDue } from "../src/outbox.js";
 import { twilioSignature } from "../src/providers/twilio.js";
@@ -44,13 +44,16 @@ describe("texting Doddy against real Postgres", { skip: dbSkip }, () => {
   let n = 0;
   let smsIds = 0;
 
-  async function world(opts: { settings?: Partial<AssistantSettings>; responder?: FakeResponder | null; cipher?: boolean } = {}) {
+  async function world(opts: {
+    settings?: Partial<AssistantSettings>; responder?: FakeResponder | null; cipher?: boolean; sms?: Partial<SmsSettings>;
+  } = {}) {
     const responder = opts.responder === null ? undefined : opts.responder ?? new FakeResponder();
     const pending: Promise<SmsChatOutcome>[] = [];
     const logs: { msg: string; extra?: object }[] = [];
     const base = await testApp(db, {
       assistant: { settings: { ...DEFAULT_ASSISTANT_SETTINGS, ...opts.settings }, responder },
       ...(opts.cipher === false ? { cipher: undefined } : {}),
+      ...(opts.sms ? { smsSettings: { ...DEFAULT_SMS_SETTINGS, ...opts.sms } } : {}),
       onSmsChat: (p) => pending.push(p),
       smsChatLog: (msg, extra) => logs.push({ msg, extra }),
     });
@@ -166,6 +169,20 @@ describe("texting Doddy against real Postgres", { skip: dbSkip }, () => {
       SMS_CHAT_COPY.unavailable, SMS_CHAT_COPY.unavailable,
       "Zrobię prezentację o kotach.\n\n" + SMS_CHAT_COPY.needsApp, SMS_CHAT_COPY.limit,
     ], "the limit is said once a day, not once per text");
+    await w.app.close();
+  });
+
+  test("over the daily text cap a reply is skipped, with one log line and no content", async () => {
+    const w = await world({ sms: { dailyPerAccount: 1 } });
+    const from = "+48500300408";
+    await w.turnOn(await w.account(from));
+    await w.text("pierwsze", sid(40), from);
+    await w.text("drugie", sid(41), from);
+    assert.equal(w.sms.sent.filter((s) => s.to === from).length, 1, "the second reply never reaches Twilio");
+    const skipped = w.logs.filter((l) => l.msg === "sms chat reply skipped: daily text limit");
+    assert.equal(skipped.length, 1);
+    assert.deepEqual(Object.keys(skipped[0]!.extra!).sort(), ["accountId", "cap"]);
+    assert.equal((skipped[0]!.extra as { cap: string }).cap, "account");
     await w.app.close();
   });
 

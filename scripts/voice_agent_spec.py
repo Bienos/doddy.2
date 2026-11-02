@@ -18,6 +18,10 @@ parameters instead of a fixed https url.
 ADR-500): no function tools at all, only the end_call and voicemail_detection system tools, its first
 message is the server-built variable, Polish, phone audio, no recording, and the expected values the
 server embeds (server/messaging/src/taskCalls/agentSpec.ts, payload.ts) match this folder.
+
+`check` on the app agent also holds a size budget (BUDGET): every turn carries the whole prompt and
+every tool as the model sees it, so the tools without x_doddy (compact JSON), each tool, and
+instructions.md must stay under their limits. Over a limit: trim before adding.
 """
 import hashlib
 import json
@@ -40,6 +44,9 @@ PUBLIC_LOOKUPS = {"calculate", "convert_units", "convert_currency", "web_search"
 # Translator mode starts and stops at once, without asking (owner, 24 Oct 2026, ADR-619).
 RUNS_NOW_MODES = {"start_translator", "stop_translator"}
 APP_INSTRUCTIONS = SPEC / "instructions.md"
+# Size budget of the app agent (audit of 1 Nov 2026): about 5% above the sizes after that day's trim
+# (tools 105,483 characters, largest tool 3,918, instructions.md 53,740 bytes).
+BUDGET = {"tools_chars": 110_000, "tool_chars": 4_100, "instructions_bytes": 56_000}
 
 
 def load(spec=SPEC):
@@ -240,6 +247,39 @@ def check_app(tools, sources=APP_SOURCES):
     return errors
 
 
+def model_visible(value):
+    """Tools as the model sees them, as compact JSON: x_doddy is app-only and never sent."""
+    def strip(tool):
+        return {k: v for k, v in tool.items() if k != "x_doddy"}
+    shown = [strip(t) for t in value] if isinstance(value, list) else strip(value)
+    return json.dumps(shown, separators=(",", ":"), ensure_ascii=False)
+
+
+def check_budget(tools, instructions, budget=BUDGET):
+    """Size budget: returns (errors, a one-line summary of the sizes for the PASS line)."""
+    errors = []
+    trim = ("trim before adding: say a rule many tools share once in instructions.md, not in each "
+            "description, and keep only what is this tool's own")
+    sizes = {t.get("name", f"#{i}"): len(model_visible(t)) for i, t in enumerate(tools.get("tools", []))}
+    total = len(model_visible(tools.get("tools", [])))
+    prompt = len(instructions.encode("utf-8"))
+    if total > budget["tools_chars"]:
+        errors.append(f"budget: the tools as the model sees them (no x_doddy, compact JSON) are {total:,} "
+                      f"characters, over {budget['tools_chars']:,}; {trim}")
+    for name, size in sizes.items():
+        if size > budget["tool_chars"]:
+            errors.append(f"budget: tool {name} is {size:,} characters as the model sees it, over "
+                          f"{budget['tool_chars']:,}; {trim}")
+    if prompt > budget["instructions_bytes"]:
+        errors.append(f"budget: instructions.md is {prompt:,} bytes, over {budget['instructions_bytes']:,}; "
+                      "trim before adding: say each rule once, and leave a tool's own details to its description")
+    largest = max(sizes, key=sizes.get) if sizes else "none"
+    summary = (f"size: tools {total:,}/{budget['tools_chars']:,} characters (about {total // 4:,} tokens), "
+               f"largest {largest} {sizes.get(largest, 0):,}/{budget['tool_chars']:,}, "
+               f"instructions.md {prompt:,}/{budget['instructions_bytes']:,} bytes")
+    return errors, summary
+
+
 def openai_session(tools, session, instructions):
     clean = [{k: v for k, v in t.items() if k != "x_doddy"} for t in tools["tools"]]
     body = json.loads(json.dumps(session["openai_realtime"]["session_update"]))
@@ -385,19 +425,25 @@ def main(argv):
         errors += check_app(tools)
     if agent == "task-call":
         errors += check_task_call(tools, session, instructions)
+    cmd = argv[1]
+    sizes = ""
+    if cmd == "check" and agent == "app":
+        budget_errors, sizes = check_budget(tools, instructions)
+        errors += budget_errors
     if errors:
         print(f"FAIL voice agent spec ({where})")
         for e in errors:
             print(f"  - {e}")
+        if sizes:
+            print(f"  ({sizes})")
         return 1
-    cmd = argv[1]
     if cmd == "check" and agent == "task-call":
         print(f"PASS voice agent spec ({where}): no function tools; system tools {', '.join(t['name'] for t in tools['system_tools'])}; matches the server's agentSpec.ts")
     elif cmd == "check":
         phone = [t["name"] for t in tools["tools"] if t["x_doddy"]["runs_on"] == "phone"]
         web = [t["name"] for t in tools["tools"] if t["x_doddy"]["runs_on"] == "web"]
         groups = "; ".join(f"{label}: {', '.join(names)}" for label, names in (("phone", phone), ("web", web)) if names)
-        print(f"PASS voice agent spec ({where}): {len(tools['tools'])} tools ({groups})")
+        print(f"PASS voice agent spec ({where}): {len(tools['tools'])} tools{'; ' + sizes if sizes else ''} ({groups})")
     elif cmd == "openai":
         print(json.dumps(openai_session(tools, session, instructions), ensure_ascii=False, indent=2))
     elif cmd == "elevenlabs":

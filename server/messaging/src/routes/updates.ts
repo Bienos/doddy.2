@@ -3,12 +3,13 @@ import { z } from "zod";
 import { parse, type Deps } from "../app.js";
 import { principal, requireDevice } from "../auth.js";
 import { inTransaction } from "../db.js";
-import { enqueue, IdempotencyConflict, usableChannels, type Channel } from "../outbox.js";
+import { DailyTextLimit, enqueue, IdempotencyConflict, usableChannels, type Channel } from "../outbox.js";
 
 const MAX_DAYS_AHEAD = 30;
 
 const updateBody = z.object({
-  // 640 chars ≈ 4 GSM SMS segments; enough for an update, small enough to keep cost visible.
+  // 640 chars: about 4 SMS segments in plain GSM text, but about 10 when Polish letters make it UCS-2
+  // (67 per segment). Enough for an update, small enough to keep cost visible.
   text: z.string().trim().min(1).max(640),
   channels: z.array(z.enum(["push", "sms"])).min(1).max(2).refine((c) => new Set(c).size === c.length),
   sendAt: z.iso.datetime({ offset: true }).optional(),
@@ -41,11 +42,12 @@ export const updateRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
       // sendAt is still the same request).
       const messages = await inTransaction(db, (c) =>
         enqueue(c, accountId, channels, body.text, sendAt, body.idempotencyKey, {
-          fingerprint: JSON.stringify([body.text, body.sendAt ?? null]), cipher: deps.cipher,
+          fingerprint: JSON.stringify([body.text, body.sendAt ?? null]), cipher: deps.cipher, smsSettings: deps.smsSettings,
         }));
       return reply.code(202).send({ messages });
     } catch (err) {
       if (err instanceof IdempotencyConflict) return reply.code(409).send({ error: "idempotency_mismatch" });
+      if (err instanceof DailyTextLimit) return reply.code(429).send({ error: "daily_text_limit" });
       throw err;
     }
   });

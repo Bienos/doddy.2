@@ -17,6 +17,7 @@ import {
   sealAppleToken,
   openAppleToken,
 } from "../src/voice-auth.js";
+import { redisAvailable, startLocalRedis } from "./local-redis.js";
 
 const NOW = Date.parse("2026-10-16T12:00:00Z");
 const NONCE = "A".repeat(43);
@@ -540,5 +541,64 @@ test("the Redis limit script: a user over their own limit doesn't use up the glo
     client.close();
   } finally {
     server.kill();
+  }
+});
+
+test("daily caps: 100 voice tokens and 10 full-model secrets per user per UTC day, counting only allowed requests",
+  { skip: !redisAvailable && "redis-server is not installed" }, async (t) => {
+    const redis = await startLocalRedis();
+    t.after(() => redis.stop());
+    const store = createVoiceAuthStore({ url: "https://redis.example.test", token: "store-secret", fetch: redis.fetch });
+    const daily = { dailyLimit: 100, fullModelDailyLimit: 10 };
+    // Hourly limits high enough to stay out of the way.
+    const hit = (userId, { fullModel = false, now = NOW, perUser = 1_000 } = {}) =>
+      store.hitLimits(userId, perUser, 10_000, now, { ...daily, fullModel });
+    const day = Math.floor(NOW / 86_400_000);
+
+    for (let count = 1; count <= 10; count += 1) assert.equal((await hit("a", { fullModel: true })).allowed, true);
+    const eleventh = await hit("a", { fullModel: true });
+    assert.deepEqual([eleventh.allowed, eleventh.limit, eleventh.retryAfterSeconds], [false, "full_model", 12 * 3_600],
+      "refused until the next UTC midnight");
+    assert.equal((await hit("a")).allowed, true, "the mini model or ElevenLabs still works");
+    // 11 allowed so far; the refused one used up nothing, so exactly 89 more fit.
+    for (let count = 12; count <= 100; count += 1) assert.equal((await hit("a")).allowed, true, `token ${count}`);
+    const over = await hit("a");
+    assert.deepEqual([over.allowed, over.limit], [false, "voice"]);
+    assert.equal((await hit("a", { fullModel: true })).limit, "voice");
+    assert.equal(await redis.command("GET", `doddy:voice:v1:limit-day-user:a:${day}`), "100");
+    assert.equal(await redis.command("GET", `doddy:voice:v1:limit-day-full-model:a:${day}`), "10");
+    assert.ok(await redis.command("TTL", `doddy:voice:v1:limit-day-user:a:${day}`) >= 86_400);
+    assert.ok(await redis.command("TTL", `doddy:voice:v1:limit-day-full-model:a:${day}`) >= 86_400);
+
+    assert.equal((await hit("b", { fullModel: true })).allowed, true, "another user is unaffected");
+    // A request refused by the hourly limit doesn't use up the daily count either.
+    assert.equal((await hit("c", { perUser: 1 })).allowed, true);
+    assert.equal((await hit("c", { perUser: 1 })).limit, "hourly");
+    assert.equal(await redis.command("GET", `doddy:voice:v1:limit-day-user:c:${day}`), "1");
+
+    const nextDay = Date.parse("2026-10-17T00:00:00Z");
+    assert.equal((await hit("a", { now: nextDay })).allowed, true, "a new UTC day starts afresh");
+    assert.equal((await hit("a", { now: nextDay, fullModel: true })).allowed, true);
+  });
+
+test("the limiter keys its daily counts by UTC day and fails closed on an unexpected reply", async () => {
+  const sent = [];
+  let reply = [1, 1, "ok"];
+  const store = createVoiceAuthStore({
+    url: "https://redis.example.test", token: "store-secret",
+    fetch: async (_url, init) => { sent.push(JSON.parse(init.body)[0]); return Response.json([{ result: reply }]); },
+  });
+  const daily = { dailyLimit: 100, fullModelDailyLimit: 10 };
+  await store.hitLimits("u", 30, 100, Date.parse("2026-10-16T23:59:59Z"), { ...daily, fullModel: true });
+  await store.hitLimits("u", 30, 100, Date.parse("2026-10-17T00:00:00Z"), { ...daily, fullModel: false });
+  const keysOf = (command) => command.slice(3, 3 + Number(command[2]));
+  const [late, early] = sent.map(keysOf);
+  assert.equal(late.length, 4, "a full-model request also counts against its own limit");
+  assert.equal(early.length, 3);
+  assert.notEqual(late[2], early[2], "a new UTC day uses a new key");
+  assert.ok(Number(sent[0][3 + 4 + 3]) >= 86_400, "daily keys live at least a day");
+  for (const bad of [[1, 1], [1, 1, "maybe"], ["x", 1, "ok"]]) {
+    reply = bad;
+    await assert.rejects(() => store.hitLimits("u", 30, 100, NOW, { ...daily, fullModel: false }), VoiceAuthStoreUnavailable);
   }
 });

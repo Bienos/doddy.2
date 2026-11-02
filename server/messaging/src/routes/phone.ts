@@ -2,6 +2,8 @@ import type { FastifyPluginAsync, FastifyReply } from "fastify";
 import { z } from "zod";
 import { parse, type Deps } from "../app.js";
 import { principal, requireDevice } from "../auth.js";
+import { hasAllowedCallingCode } from "../callingCodes.js";
+import { DEFAULT_SMS_SETTINGS } from "../config.js";
 import { sha256 } from "../crypto.js";
 import { inTransaction } from "../db.js";
 import { cancelQueuedSms } from "../outbox.js";
@@ -33,6 +35,9 @@ export const phoneRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
     if (!verifier) return reply.code(503).send({ error: "not_configured" });
     const body = parse(startBody, req.body, reply);
     if (!body) return;
+    if (!hasAllowedCallingCode(body.phone, (deps.smsSettings ?? DEFAULT_SMS_SETTINGS).allowedCallingCodes)) {
+      return reply.code(400).send({ error: "phone_country_not_supported" });
+    }
     // Per destination number and per server, whatever account asks: new accounts can't be used
     // to text one number over and over, and a flood can't run up the SMS bill (ADR-175).
     const phoneHash = sha256(body.phone);

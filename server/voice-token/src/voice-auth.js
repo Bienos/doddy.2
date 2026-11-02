@@ -129,32 +129,52 @@ export function createVoiceAuthStore({ url, token, fetch: fetchImpl = fetch, tim
       return typeof value === "string" ? parseJSON(value) : null;
     },
 
-    async hitLimits(userId, perUserLimit, globalLimit, nowMs) {
+    /**
+     * One atomic step. The hourly counters count every request, as before. The daily ones (per
+     * user, UTC day: every voice token, and full-model OpenAI secrets) count only a request that
+     * every limit allows. `limit` names what refused: "hourly", "voice" or "full_model".
+     */
+    async hitLimits(userId, perUserLimit, globalLimit, nowMs, { dailyLimit = 100, fullModelDailyLimit = 10, fullModel = false } = {}) {
       const windowSeconds = 3_600;
       const window = Math.floor(nowMs / (windowSeconds * 1_000));
       const ttl = windowSeconds + 60;
+      const daySeconds = 86_400;
+      const day = Math.floor(nowMs / (daySeconds * 1_000));
       const perUserKey = key("limit-user", `${userId}:${window}`);
       const globalKey = key("limit-global", String(window));
-      // A user already over their own limit doesn't count toward the global one, so one account
-      // can't use up the hour for everyone.
+      const keys = [perUserKey, globalKey, key("limit-day-user", `${userId}:${day}`)];
+      if (fullModel) keys.push(key("limit-day-full-model", `${userId}:${day}`));
+      // A user already over their own hourly limit doesn't count toward the global one, so one
+      // account can't use up the hour for everyone.
       const script = `
         local per = redis.call('INCR', KEYS[1])
         if per == 1 then redis.call('EXPIRE', KEYS[1], ARGV[1]) end
         if per > tonumber(ARGV[2]) then
-          return {per, tonumber(redis.call('GET', KEYS[2]) or '0')}
+          return {per, tonumber(redis.call('GET', KEYS[2]) or '0'), 'hourly'}
         end
         local global = redis.call('INCR', KEYS[2])
         if global == 1 then redis.call('EXPIRE', KEYS[2], ARGV[1]) end
-        return {per, global}
+        if global > tonumber(ARGV[3]) then return {per, global, 'hourly'} end
+        if tonumber(redis.call('GET', KEYS[3]) or '0') >= tonumber(ARGV[5]) then return {per, global, 'voice'} end
+        if KEYS[4] then
+          if tonumber(redis.call('GET', KEYS[4]) or '0') >= tonumber(ARGV[6]) then return {per, global, 'full_model'} end
+          if redis.call('INCR', KEYS[4]) == 1 then redis.call('EXPIRE', KEYS[4], ARGV[4]) end
+        end
+        if redis.call('INCR', KEYS[3]) == 1 then redis.call('EXPIRE', KEYS[3], ARGV[4]) end
+        return {per, global, 'ok'}
       `;
-      const counts = await evalScript(script, [perUserKey, globalKey], [ttl, perUserLimit]);
-      if (!Array.isArray(counts) || counts.length !== 2) throw new VoiceAuthStoreUnavailable();
-      const [perUserCount, globalCount] = counts;
+      const counts = await evalScript(script, keys,
+        [ttl, perUserLimit, globalLimit, daySeconds + 60, dailyLimit, fullModelDailyLimit]);
+      if (!Array.isArray(counts) || counts.length !== 3) throw new VoiceAuthStoreUnavailable();
+      const [perUserCount, globalCount, outcome] = counts;
       const per = Number(perUserCount);
       const global = Number(globalCount);
-      if (!Number.isSafeInteger(per) || !Number.isSafeInteger(global)) throw new VoiceAuthStoreUnavailable();
-      return { allowed: per <= perUserLimit && global <= globalLimit, perUserCount: per, globalCount: global,
-        retryAfterSeconds: Math.max(1, Math.ceil(((window + 1) * windowSeconds * 1_000 - nowMs) / 1_000)) };
+      if (!Number.isSafeInteger(per) || !Number.isSafeInteger(global)
+          || !["ok", "hourly", "voice", "full_model"].includes(outcome)) throw new VoiceAuthStoreUnavailable();
+      const daily = outcome === "voice" || outcome === "full_model";
+      const resetMs = daily ? (day + 1) * daySeconds * 1_000 : (window + 1) * windowSeconds * 1_000;
+      return { allowed: outcome === "ok", limit: outcome === "ok" ? null : outcome, perUserCount: per, globalCount: global,
+        retryAfterSeconds: Math.max(1, Math.ceil((resetMs - nowMs) / 1_000)) };
     },
 
     async revokeSession(sessionId, userId) {
@@ -313,6 +333,16 @@ export async function handleVoiceAuthRequest(request, env, deps = {}) {
 }
 
 export async function authenticateVoiceSession(request, env, deps = {}) {
+  const check = beginVoiceSessionCheck(request, env, deps);
+  return check ? check.session : null;
+}
+
+/**
+ * Checks the access token's signature now and starts the session lookup without waiting for it,
+ * so the caller can send other store requests at the same time. Null for a missing or bad token.
+ * @returns {{ userId: string, session: Promise<{userId: string, sessionId: string}|null> } | null}
+ */
+export function beginVoiceSessionCheck(request, env, deps = {}) {
   const store = deps.store;
   const signingKey = deps.signingKey ?? signingSecret(env.DODDY_SESSION_SIGNING_KEY);
   if (!store || !signingKey) throw new VoiceAuthStoreUnavailable();
@@ -320,9 +350,12 @@ export async function authenticateVoiceSession(request, env, deps = {}) {
   if (!token) return null;
   const claims = verifyAccessToken(token, signingKey, deps.now ?? Date.now());
   if (!claims) return null;
-  const session = await store.getSession(claims.sid);
-  if (!session || session.userId !== claims.sub || session.sessionId !== claims.sid) return null;
-  return { userId: claims.sub, sessionId: claims.sid };
+  const session = (async () => {
+    const stored = await store.getSession(claims.sid);
+    if (!stored || stored.userId !== claims.sub || stored.sessionId !== claims.sid) return null;
+    return { userId: claims.sub, sessionId: claims.sid };
+  })();
+  return { userId: claims.sub, session };
 }
 
 export function sessionStoreFromEnv(env, deps = {}) {

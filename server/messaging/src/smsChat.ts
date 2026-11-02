@@ -11,8 +11,9 @@ import type { Db } from "./db.js";
 import type { AssistantDeps } from "./assistant/deps.js";
 import { LIMITS } from "./assistant/request.js";
 import { addTokens, reserve } from "./assistant/usage.js";
+import type { SmsSettings } from "./config.js";
 import type { TextCipher } from "./crypto.js";
-import { enqueue, IdempotencyConflict } from "./outbox.js";
+import { DailyTextLimit, enqueue, IdempotencyConflict } from "./outbox.js";
 
 /** Longest reply sent, in characters. Polish letters make a text UCS-2 (67 per part), so 600 is at most 9 parts. */
 export const SMS_REPLY_MAX = 600;
@@ -31,6 +32,8 @@ export interface SmsChatDeps {
   db: Db;
   cipher?: TextCipher;
   assistant?: AssistantDeps;
+  /** The daily text caps; default DEFAULT_SMS_SETTINGS. */
+  smsSettings?: SmsSettings;
   log: (msg: string, extra?: object) => void;
 }
 
@@ -66,7 +69,8 @@ export async function handleSmsChat(deps: SmsChatDeps, from: string, body: strin
   if ((seen.rowCount ?? 0) > 0) return "duplicate";
   // Two deliveries of the same webhook at once can both get here; the key lets only the first reply out.
   const send = async (text: string, idempotencyKey = key) => {
-    try { await enqueue(db, accountId, ["sms"], text, new Date(), idempotencyKey, { cipher: deps.cipher }); } catch (err) {
+    try { await enqueue(db, accountId, ["sms"], text, new Date(), idempotencyKey, { cipher: deps.cipher, smsSettings: deps.smsSettings }); } catch (err) {
+      if (err instanceof DailyTextLimit) { log("sms chat reply skipped: daily text limit", { accountId, cap: err.cap }); return; }
       if (!(err instanceof IdempotencyConflict)) throw err;
     }
   };

@@ -4,6 +4,7 @@ import formbody from "@fastify/formbody";
 import rateLimit from "@fastify/rate-limit";
 import type { z } from "zod";
 import type { Db } from "./db.js";
+import type { SmsSettings } from "./config.js";
 import type { TextCipher } from "./crypto.js";
 import type { OutboundCaller, PhoneVerifier, PushSender, SmsSender } from "./providers/types.js";
 import { callRoutes } from "./routes/calls.js";
@@ -58,6 +59,8 @@ export interface Deps {
   trustProxyHops?: number;
   /** Verify codes the whole server may start per UTC day. Default 200. */
   verifyDailyCap?: number;
+  /** The countries numbers may be verified in, texted and called, and the daily text caps. Default DEFAULT_SMS_SETTINGS. */
+  smsSettings?: SmsSettings;
   /** Calls Doddy places for the user (ADR-500). Needs `cipher` and `publicBaseUrl` too. */
   taskCalls?: TaskCallDeps;
   /** Where task-call log lines go (tests capture them); default: the request logger. */

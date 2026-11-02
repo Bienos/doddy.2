@@ -88,6 +88,9 @@ export function providersFrom(config: Config) {
   return {
     push,
     sms: twilio,
+    smsSettings: config.smsSettings,
+    // Deletes phone-agent conversations queued at account deletion when task calls (and their worker) are off.
+    phoneAgentVoice: config.phoneAgent ? new ElevenLabsTaskClient(config.phoneAgent.apiKey) : undefined,
     verifier: twilio,
     outbound: config.phoneAgent ? new ElevenLabsOutboundCaller(config.phoneAgent) : undefined,
     cipher,
@@ -98,6 +101,7 @@ export function providersFrom(config: Config) {
     watches,
     news: {
       cipher,
+      smsSettings: config.smsSettings,
       feeds: new HttpFeedSource(),
       search: config.gnewsApiKey ? new GNewsSearch(config.gnewsApiKey) : undefined,
       // Anthropic first when both keys are set; OpenAI otherwise (ADR-197).

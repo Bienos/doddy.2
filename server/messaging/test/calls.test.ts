@@ -6,7 +6,8 @@ import { isAcceptablePin } from "../src/crypto.js";
 import type { Db } from "../src/db.js";
 import { searchMemories } from "../src/memorySearch.js";
 import { bodyAad, dispatchDue } from "../src/outbox.js";
-import { dbSkip, FakeOutbound, FakePush, FakeSms, freshDb, testApp, testCipher, TOOL_SECRET } from "./helpers.js";
+import { runDeletions } from "../src/taskCalls/worker.js";
+import { dbSkip, FakeOutbound, FakePush, FakeSms, FakeVoice, freshDb, testApp, testCipher, TOOL_SECRET } from "./helpers.js";
 
 test("PIN rules reject trivial PINs", () => {
   for (const bad of ["123", "2580", "11111", "111111", "123456", "987654", "012345", "12a456", "123456789"]) {
@@ -230,6 +231,61 @@ describe("phone calls against real Postgres", { skip: dbSkip }, () => {
     await call("PUT", "/v1/memory-copy", h, { enabled: false });
     assert.equal(await count(), 0);
     assert.equal((await call("PUT", "/v1/memory-copy/snapshot", h, { items: [] })).statusCode, 409);
+  });
+
+  test("account deletion queues the ElevenLabs conversations of phone-agent calls, and the worker deletes them", async () => {
+    // Task calls are off in this app (no taskCalls dep): the phone agent's conversations are queued anyway.
+    const own = await testApp(db);
+    const r = await own.app.inject({ method: "POST", url: "/v1/accounts" });
+    const { accountId, deviceToken } = r.json() as { accountId: string; deviceToken: string };
+    const other = (await own.app.inject({ method: "POST", url: "/v1/accounts" })).json() as { accountId: string };
+    for (const [owner, conv] of [[accountId, "conv_del_a"], [accountId, "conv_del_b"], [accountId, null], [other.accountId, "conv_keep"]] as const) {
+      await db.query("INSERT INTO calls (id, account_id, direction, status, conversation_id) VALUES ($1, $2, 'inbound', 'requested', $3)",
+        [randomUUID(), owner, conv]);
+    }
+    assert.equal((await own.app.inject({ method: "DELETE", url: "/v1/account", headers: { authorization: `Bearer ${deviceToken}` } })).statusCode, 204);
+    const { rows } = await db.query("SELECT provider_ref, reason, result FROM server_data_deletions WHERE provider_ref LIKE 'conv_del_%' OR provider_ref = 'conv_keep' ORDER BY provider_ref");
+    assert.deepEqual(rows, [
+      { provider_ref: "conv_del_a", reason: "account_deleted", result: "pending" },
+      { provider_ref: "conv_del_b", reason: "account_deleted", result: "pending" },
+    ]);
+
+    const voice = new FakeVoice();
+    for (const id of ["conv_del_a", "conv_del_b"]) voice.conversations.set(id, { conversation_id: id, transcript: [], metadata: {} } as never);
+    assert.equal(await runDeletions({ db, voice, now: () => new Date(), log: () => {} }), 2);
+    assert.deepEqual(voice.deleted.sort(), ["conv_del_a", "conv_del_b"]);
+    const done = await db.query("SELECT result FROM server_data_deletions WHERE provider_ref LIKE 'conv_del_%'");
+    assert.deepEqual(done.rows.map((x) => x.result), ["deleted", "deleted"]);
+    await own.app.close();
+  });
+
+  test("memory copy: a list over 5000 items is refused before its items are validated", async () => {
+    // Its own app: the shared one has used up this hour's account sign-ups for the test address.
+    const own = await testApp(db);
+    const r = await own.app.inject({ method: "POST", url: "/v1/accounts" });
+    const { accountId, deviceToken } = r.json() as { accountId: string; deviceToken: string };
+    const snapshot = (payload: object) => own.app.inject({
+      method: "PUT", url: "/v1/memory-copy/snapshot", headers: { authorization: `Bearer ${deviceToken}` }, payload,
+    });
+    const count = async () => (await db.query("SELECT 1 FROM memory_copies WHERE account_id = $1", [accountId])).rowCount;
+    assert.equal((await own.app.inject({
+      method: "PUT", url: "/v1/memory-copy", headers: { authorization: `Bearer ${deviceToken}` }, payload: { enabled: true },
+    })).statusCode, 204);
+    assert.equal((await snapshot({ items: [{ id: randomUUID(), text: "kept" }] })).statusCode, 200);
+
+    const tooMany = await snapshot({ items: Array.from({ length: 5001 }, () => ({})) });
+    assert.equal(tooMany.statusCode, 400);
+    // Only the list itself is named: no per-item issues, so the items were never parsed.
+    assert.deepEqual(tooMany.json(), { error: "invalid_request", fields: ["items"] });
+    assert.equal((await snapshot({ items: "x" })).statusCode, 400);
+    assert.equal(await count(), 1);
+
+    const full = Array.from({ length: 5000 }, (_, n) => ({ id: randomUUID(), text: `memory ${n}` }));
+    const ok = await snapshot({ items: full });
+    assert.equal(ok.statusCode, 200);
+    assert.equal(ok.json().count, 5000);
+    assert.equal(await count(), 5000);
+    await own.app.close();
   });
 
   test("outbound: needs consent, calls only the verified number, passes a session", async () => {

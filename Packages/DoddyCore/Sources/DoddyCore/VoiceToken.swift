@@ -36,6 +36,9 @@ public enum VoiceTokenError: Error, Equatable, Sendable {
     /// No secure (TLS) connection could be made: often a Wi-Fi that wants a sign-in first, or a
     /// wrong date on the iPhone. Not "offline" either.
     case secureConnectionFailed
+    /// A daily limit on voice was reached (ADR-687). `fullModelOnly` is true when only the full
+    /// OpenAI model is used up for today, so the smaller one still works.
+    case dailyLimit(fullModelOnly: Bool)
 }
 
 /// Contract with `server/voice-token`: POST with a short-lived DODDY access session.
@@ -59,6 +62,11 @@ public enum VoiceTokenServer {
             return .success(token)
         case 401: return .failure(.sessionExpired)
         case 429:
+            // The daily limits (ADR-687) say which one in the body; anything else is the hourly limit.
+            let json = try? JSONSerialization.jsonObject(with: body) as? [String: Any]
+            if json?["error"] as? String == "daily_limit" {
+                return .failure(.dailyLimit(fullModelOnly: json?["limit"] as? String == "full_model"))
+            }
             let seconds = retryAfter.flatMap { Int($0.trimmingCharacters(in: .whitespaces)) }.flatMap { $0 > 0 ? $0 : nil }
             return .failure(.rateLimited(retryAfterSeconds: seconds))
         case 503, 500:
@@ -120,6 +128,10 @@ public enum VoiceTokenServer {
             "Doddy's voice service didn't answer in time, so voice didn't start. Try again in a moment."
         case .secureConnectionFailed:
             "Doddy couldn't open a secure connection to his voice service, so voice didn't start. A Wi-Fi that asks you to sign in first, or a wrong date and time on this iPhone, can cause this."
+        case .dailyLimit(fullModelOnly: true):
+            "You've used today's conversations with the full OpenAI voice. Choose the smaller one in the voice picker, or try again tomorrow; your notes still work."
+        case .dailyLimit(fullModelOnly: false):
+            "You've reached today's limit of voice conversations. Try again tomorrow; your notes still work."
         }
     }
 }
