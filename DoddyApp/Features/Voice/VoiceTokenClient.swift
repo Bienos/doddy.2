@@ -45,7 +45,7 @@ struct VoiceTokenClient: Sendable {
         do {
             (data, response) = try await session.data(for: request)
         } catch {
-            // A timeout means the server was slow, not that the iPhone is offline (ADR-670).
+            // A timeout means the server was slow, not that the iPhone is offline (ADR-686).
             throw Offline.isServerSlow(error) ? .serverSlow : .offline
         }
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0

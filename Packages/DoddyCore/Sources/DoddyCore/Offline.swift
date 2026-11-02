@@ -10,7 +10,7 @@ import Foundation
 public enum Offline {
     /// URL loading errors that mean "no connection", not "the server said no". A timeout isn't one
     /// of them: the iPhone reached the network and the server was slow, which Doddy's free server
-    /// is while it wakes up (ADR-670, `isServerSlow`).
+    /// is while it wakes up (ADR-686, `isServerSlow`).
     static let networkCodes: Set<Int> = [
         URLError.notConnectedToInternet.rawValue,
         URLError.networkConnectionLost.rawValue,
@@ -29,7 +29,7 @@ public enum Offline {
     }
 
     /// True when the error, or an error inside it, is a request that timed out: the connection
-    /// works but the server took too long, so "You're offline" would be wrong (ADR-670).
+    /// works but the server took too long, so "You're offline" would be wrong (ADR-686).
     public static func isServerSlow(_ error: any Error) -> Bool {
         if let token = error as? VoiceTokenError { return token == .serverSlow }
         return containsURLError(error, codes: [URLError.timedOut.rawValue])

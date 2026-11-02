@@ -163,10 +163,12 @@ describe("texting Doddy against real Postgres", { skip: dbSkip }, () => {
     assert.deepEqual(await w.text("b", sid(31), from), ["unavailable"]);
     assert.deepEqual(await w.text("c", sid(32), from), ["answered"]);
     assert.deepEqual(await w.text("d", sid(33), from), ["limit"]);
+    assert.deepEqual(await w.text("e", sid(34), from), ["limit"]);
+    assert.deepEqual(await w.text("f", sid(35), from), ["limit"]);
     assert.deepEqual(w.sms.sent.map((s) => s.body), [
       SMS_CHAT_COPY.unavailable, SMS_CHAT_COPY.unavailable,
       "Zrobię prezentację o kotach.\n\n" + SMS_CHAT_COPY.needsApp, SMS_CHAT_COPY.limit,
-    ]);
+    ], "the limit is said once a day, not once per text");
     await w.app.close();
   });
 
@@ -184,10 +186,12 @@ describe("texting Doddy against real Postgres", { skip: dbSkip }, () => {
     await w.app.close();
   });
 
-  test("with Messages off the person is told once per text; without the key nothing runs", async () => {
+  test("with Messages off the person is told once a day, not once per text; without the key nothing runs", async () => {
     const off = await world({ settings: { enabled: false } });
     await off.turnOn(await off.account("+48500300404"));
     assert.deepEqual(await off.text("hej", sid(40), "+48500300404"), ["off"]);
+    assert.deepEqual(await off.text("halo?", sid(42), "+48500300404"), ["off"]);
+    assert.deepEqual(await off.text("halo?", sid(42), "+48500300404"), ["off"], "a retried webhook");
     assert.deepEqual(off.sms.sent.map((s) => s.body), [SMS_CHAT_COPY.off]);
     await off.app.close();
 

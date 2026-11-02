@@ -1,5 +1,5 @@
 import { createServer, type Server } from "node:http";
-import { AccountService } from "./account.js";
+import { AccountEraser } from "./account.js";
 import { AssistService } from "./assist.js";
 import { AnyOfSessionVerifier, DevSessionVerifier, type SessionVerifier, SignedSessionVerifier, SupabaseSessionVerifier } from "./auth.js";
 import { defaultRegistry } from "./capabilities.js";
@@ -17,8 +17,9 @@ import { ComposioCalendarProvider } from "./providers/composio.js";
 import { MockCalendarProvider } from "./providers/mock.js";
 import { UnconfiguredCalendarProvider, UnconfiguredToolsProvider } from "./providers/unconfigured.js";
 import type { CalendarProvider } from "./providers/types.js";
-import { ConnectedAppsService } from "./service.js";
+import { ConnectedAppsService, PROVIDER as CALENDAR_PROVIDER } from "./service.js";
 import { Store } from "./store.js";
+import { TOOLKITS } from "./tools/catalog.js";
 import { ComposioToolsProvider } from "./tools/composio.js";
 import { MockToolsProvider } from "./tools/mock.js";
 import type { ToolsProvider } from "./tools/provider.js";
@@ -128,6 +129,16 @@ export async function buildApp(
       : null;
   // Ask Doddy (ADR-587): always routed; without an Anthropic key it says "not set up" (503).
   const assist = new AssistService({ store, claude, limits: config.limits, log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`) });
+  // Deleting the account (ADR-674): each connection is removed by the provider that made it.
+  const accountEraser = new AccountEraser({
+    store,
+    removers: [
+      { providers: [CALENDAR_PROVIDER], remove: (connectionId, signal) => provider.removeConnection({ connectionId, signal }) },
+      { providers: Object.keys(TOOLKITS), remove: (connectionId, signal) => toolsProvider.removeConnection({ connectionId, signal }) },
+    ],
+    timeoutMs: config.limits.providerTimeoutMs,
+    log,
+  });
   const handler = createHandler({
     service,
     tools,
@@ -135,7 +146,7 @@ export async function buildApp(
     deviceSessions,
     web,
     assist,
-    account: new AccountService({ store, service, tools, log }),
+    account: accountEraser,
     documents: documentLinks ? { links: documentLinks, store } : null,
     appReturnUrl: config.appReturnUrl,
     maxBodyBytes: config.limits.maxBodyBytes,

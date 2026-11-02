@@ -90,6 +90,30 @@ describe("server against real Postgres", { skip: dbSkip }, () => {
     assert.equal((await call("GET", `/v1/updates/${id}`, other.headers)).statusCode, 404, "no cross-account reads");
   });
 
+  test("cancel: a queued, encrypted update is cancelled with both body forms erased, and never sent", async () => {
+    const a = await newAccount();
+    await call("PUT", "/v1/device/push-token", a.headers, { token: "aa".repeat(32), environment: "sandbox" });
+    const later = new Date(Date.now() + 3_600_000).toISOString();
+    const r = await call("POST", "/v1/updates", a.headers, { text: "Dentist tomorrow", channels: ["push"], sendAt: later, idempotencyKey: "cancel-1" });
+    assert.equal(r.statusCode, 202);
+    const id = (r.json() as { messages: { id: string }[] }).messages[0]!.id;
+    const { rows: before } = await db.query("SELECT body, body_ciphertext FROM outbound_messages WHERE id = $1", [id]);
+    assert.ok(before[0].body_ciphertext, "this server has a key, so the text is encrypted");
+
+    assert.equal((await call("DELETE", `/v1/updates/${id}`, a.headers)).statusCode, 204);
+    const { rows } = await db.query(
+      "SELECT state, error_code, body, body_ciphertext, body_key_version FROM outbound_messages WHERE id = $1", [id]);
+    assert.deepEqual(rows[0], { state: "cancelled", error_code: "cancelled_by_user", body: null, body_ciphertext: null, body_key_version: null });
+    assert.equal((await call("DELETE", `/v1/updates/${id}`, a.headers)).statusCode, 409, "already cancelled");
+    const other = await newAccount();
+    assert.equal((await call("DELETE", `/v1/updates/${id}`, other.headers)).statusCode, 404, "no cross-account cancels");
+
+    await db.query("UPDATE outbound_messages SET send_at = now() - interval '1 minute' WHERE id = $1", [id]);
+    push.sent = [];
+    await dispatchDue(db, { push, sms, cipher: testCipher });
+    assert.equal(push.sent.length, 0, "a cancelled update never goes out");
+  });
+
   test("push: a token Apple reports as gone is switched off", async () => {
     const a = await newAccount();
     await call("PUT", "/v1/device/push-token", a.headers, { token: "cd".repeat(32), environment: "production" });

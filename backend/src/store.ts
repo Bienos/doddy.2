@@ -54,6 +54,48 @@ export interface CleanupRow {
 const sha256 = (s: string) => createHash("sha256").update(s).digest("hex");
 
 /**
+ * Every table that holds one person's rows, by `user_id` (ADR-674). `eraseUser` empties each, in
+ * this order (`users` last: attempts and connections refer to it). A test reads the live schema and
+ * fails when a table with a `user_id` column is in neither this list nor `KEPT_ON_ERASE`.
+ */
+export const ERASED_TABLES = [
+  "attempts",
+  "connections",
+  "receipts",
+  "approvals",
+  "tool_switches",
+  "tool_receipts",
+  "documents",
+  "web_link_codes",
+  "web_sessions",
+  "logbook_state",
+  "logbook_days",
+  "memory_state",
+  "memory_notes",
+  "memory_conversations",
+  "message_threads",
+  "users",
+] as const;
+
+/**
+ * `user_id` tables erasure keeps on purpose, and why. Neither holds anything the person said or did:
+ * - `cleanups`: a removal still owed at the provider (a connection id and its kind). It goes when the
+ *   provider confirms; until then it is what lets the hourly sweep keep trying.
+ * - `device_owner`: who this server belongs to. Clearing it would let the next caller claim it
+ *   (ADR-563); the same iPhone signs in again to the same id and is still the owner.
+ * Usage counters (`usage`) have no `user_id` column. A person's own counters stay until their day or
+ * month is pruned: counts only, and erasing must not reset a daily cap. Server-wide ones are never touched.
+ */
+export const KEPT_ON_ERASE = ["cleanups", "device_owner"] as const;
+
+/** What `eraseUser` did: rows deleted per table, rows still found after (0 when complete), removals owed. */
+export interface UserErasure {
+  deleted: Record<(typeof ERASED_TABLES)[number], number>;
+  remaining: number;
+  cleanups: QueuedCleanup[];
+}
+
+/**
  * The hourly sweep's retry of queued remote removals: only rows older than five minutes (a request
  * may still be working on a newer one), at most 20 a sweep, and 24 tries (a day) per row. A row
  * past that stays visible as `failed` and is still retried before the user's next Connect.
@@ -681,42 +723,32 @@ export class Store {
     });
   }
 
-  // ------------------------------------------------------------ account deletion
+  // ------------------------------------------------------------ account erasure (ADR-674)
 
   /**
-   * Deletes everything that belongs to one user, in one transaction, and reads it back. Every
-   * connection (and any open attempt's pending connection) is first queued in `cleanups`, which has
-   * no foreign key to users and is not deleted here, so the grant is removed at the provider later
-   * even though the user row is gone. Tables with a user_id, all deleted: attempts, connections,
-   * receipts, tool_receipts, approvals, tool_switches, documents, web_link_codes, web_sessions,
-   * logbook_state, logbook_days, memory_state, memory_notes, memory_conversations, message_threads,
-   * users; plus the user's own `usage` counters (`user:<id>:…`). `device_owner` is left alone: it
-   * holds only the owner's opaque user id, and clearing it would let the next device claim the
-   * server. If any row is left after the deletes, this throws and nothing is deleted.
+   * Deletes every row of this person in one transaction and reads back that none is left. Their
+   * connections, and any connection an open sign-in left at the provider, are queued for removal there
+   * first (in the same transaction), so a grant is never forgotten; the caller removes them and the
+   * hourly sweeps retry what fails. Server-wide counters and the owner binding stay (`KEPT_ON_ERASE`).
    */
-  deleteAccount(userId: string, now: number): Promise<{ deleted: Record<string, number>; queued: QueuedCleanup[] }> {
-    const TABLES = [
-      "attempts", "connections", "receipts", "tool_receipts", "approvals", "tool_switches", "documents", "web_link_codes",
-      "web_sessions", "logbook_state", "logbook_days", "memory_state", "memory_notes", "memory_conversations", "message_threads",
-    ] as const;
-    const counterPrefix = `user:${userId}:`;
+  eraseUser(userId: string, now: number): Promise<UserErasure> {
     return this.db.transaction(async (tx) => {
-      const queued: QueuedCleanup[] = [];
-      const open = (await tx.query<AttemptRow>("SELECT * FROM attempts WHERE user_id = $1 AND consumed_at IS NULL", [userId])).rows;
-      queued.push(...(await this.endAttempts(tx, open, now)));
-      const connections = (await tx.query<{ connection_id: string; provider: string }>("SELECT connection_id, provider FROM connections WHERE user_id = $1", [userId])).rows;
-      for (const c of connections) {
-        await this.queueCleanupIn(tx, c.connection_id, userId, c.provider, now);
-        queued.push({ connectionId: c.connection_id, userId, provider: c.provider });
+      const openAttempts = (await tx.query<AttemptRow>("SELECT * FROM attempts WHERE user_id = $1 AND consumed_at IS NULL", [userId])).rows;
+      await this.endAttempts(tx, openAttempts, now);
+      const connections = (await tx.query<ConnectionRow>("SELECT * FROM connections WHERE user_id = $1", [userId])).rows;
+      for (const c of connections) await this.queueCleanupIn(tx, c.connection_id, userId, c.provider, now);
+      const deleted = {} as UserErasure["deleted"];
+      for (const table of ERASED_TABLES) deleted[table] = (await tx.query(`DELETE FROM ${table} WHERE user_id = $1`, [userId])).rowCount;
+      let remaining = 0;
+      for (const table of ERASED_TABLES) {
+        const row = await this.one<{ n: number | string }>(tx, `SELECT count(*) AS n FROM ${table} WHERE user_id = $1`, [userId]);
+        remaining += Number(row?.n ?? 0);
       }
-      const deleted: Record<string, number> = {};
-      for (const table of TABLES) deleted[table] = (await tx.query(`DELETE FROM ${table} WHERE user_id = $1`, [userId])).rowCount;
-      deleted.usage = (await tx.query("DELETE FROM usage WHERE starts_with(counter, $1)", [counterPrefix])).rowCount;
-      deleted.users = (await tx.query("DELETE FROM users WHERE user_id = $1", [userId])).rowCount;
-      let left = (await this.one<{ n: number }>(tx, "SELECT COUNT(*)::int AS n FROM usage WHERE starts_with(counter, $1)", [counterPrefix]))?.n ?? 1;
-      for (const table of [...TABLES, "users"]) left += (await this.one<{ n: number }>(tx, `SELECT COUNT(*)::int AS n FROM ${table} WHERE user_id = $1`, [userId]))?.n ?? 1;
-      if (left !== 0) throw new Error("account_rows_left");
-      return { deleted, queued };
+      const cleanups = (await tx.query<{ connection_id: string; provider: string }>(
+        "SELECT connection_id, provider FROM cleanups WHERE user_id = $1 ORDER BY created_at ASC",
+        [userId],
+      )).rows.map((r) => ({ connectionId: r.connection_id, userId, provider: r.provider }));
+      return { deleted, remaining, cleanups };
     });
   }
 

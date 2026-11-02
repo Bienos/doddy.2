@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
-import type { AccountService } from "./account.js";
+import type { AccountEraser } from "./account.js";
 import { ASSIST_MAX_BODY_BYTES, type AssistService } from "./assist.js";
 import { requireFullAccess, type SessionVerifier } from "./auth.js";
 import { clientAddress } from "./clientAddress.js";
@@ -35,8 +35,8 @@ export interface HttpDeps {
   web?: { auth: WebAuth; routes: WebRoutes; pages: WebStatic } | null;
   /** Ask Doddy (ADR-587): typed questions answered by Claude. Absent: `POST /v1/assist` is not found. */
   assist?: AssistService | null;
-  /** Delete my data (`DELETE /v1/account`). Absent: the route is not found. */
-  account?: AccountService | null;
+  /** Deleting the account on this server (ADR-674). Absent: `DELETE /v1/account` is not found. */
+  account?: AccountEraser | null;
   appReturnUrl: string;
   maxBodyBytes: number;
   /** Behind one proxy that appends the client to X-Forwarded-For (Render). For per-client limits. */
@@ -138,19 +138,21 @@ export function createHandler(deps: HttpDeps) {
         const user = await deps.verifier.verify(header(req, "authorization"), now());
         if (!user) throw new AppError("unauthenticated");
         const body = await readJson(req, ASSIST_MAX_BODY_BYTES);
-        const reply = await deps.assist.answer(user.userId, body);
+        const reply = await deps.assist.answer(user.userId, body, user.scope);
         status = 200;
         return send(res, 200, reply);
       }
 
-      // Delete my data: the iPhone's own session only (never a browser cookie), a guest's included.
+      // Deleting the account (ADR-674): the iPhone's own session in the Authorization header, never a
+      // browser cookie (Doddy Web deletes its parts on its own pages), a guest's included: it is their
+      // data. No body. The answer is the receipt; `complete: false` says what is still owed.
       if (key === "DELETE /v1/account" && deps.account) {
         route = key;
         const user = await deps.verifier.verify(header(req, "authorization"), now());
         if (!user) throw new AppError("unauthenticated");
-        const result = await deps.account.deleteAll(user.userId);
+        const erasure = await deps.account.erase(user.userId);
         status = 200;
-        return send(res, 200, result);
+        return send(res, 200, erasure);
       }
 
       // Doddy Web (ADR-600): its own routes, then its pages for anything that isn't the API.

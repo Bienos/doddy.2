@@ -8,7 +8,7 @@ import XCTest
     func end() async { ended = true }
 }
 
-/// ADR-670: a start that takes too long is cancelled and reported, and a start that connects
+/// ADR-686: a start that takes too long is cancelled and reported, and a start that connects
 /// after the limit anyway is ended, so nothing keeps listening.
 @MainActor
 final class StartLimitTests: XCTestCase {

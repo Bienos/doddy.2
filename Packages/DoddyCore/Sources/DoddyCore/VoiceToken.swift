@@ -28,9 +28,9 @@ public enum VoiceTokenError: Error, Equatable, Sendable {
     case serverProblem(status: Int)
     case badResponse
     case offline
-    /// The request timed out: the iPhone is online but the server didn't answer in time (ADR-670).
+    /// The request timed out: the iPhone is online but the server didn't answer in time (ADR-686).
     case serverSlow
-    /// A daily limit on voice was reached (ADR-671). `fullModelOnly` is true when only the full
+    /// A daily limit on voice was reached (ADR-687). `fullModelOnly` is true when only the full
     /// OpenAI model is used up for today, so the smaller one still works.
     case dailyLimit(fullModelOnly: Bool)
 }
@@ -56,7 +56,7 @@ public enum VoiceTokenServer {
             return .success(token)
         case 401: return .failure(.sessionExpired)
         case 429:
-            // The daily limits (ADR-671) say which one in the body; anything else is the hourly limit.
+            // The daily limits (ADR-687) say which one in the body; anything else is the hourly limit.
             let json = try? JSONSerialization.jsonObject(with: body) as? [String: Any]
             if json?["error"] as? String == "daily_limit" {
                 return .failure(.dailyLimit(fullModelOnly: json?["limit"] as? String == "full_model"))

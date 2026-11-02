@@ -1,6 +1,6 @@
 import Foundation
 
-/// A time limit on starting a voice conversation (ADR-670).
+/// A time limit on starting a voice conversation (ADR-686).
 ///
 /// A start that never gets going leaves a silent session that ends only when iOS or the provider
 /// gives up (STATUS "Known problems", docs/implementation/VOICE_SESSION_STARTS.md: "Bound the

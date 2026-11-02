@@ -17,7 +17,7 @@ final class OfflineTests: XCTestCase {
         XCTAssertFalse(Offline.isNoConnection(NSError(domain: "x", code: 1)))
     }
 
-    /// ADR-670: a timeout means the server was slow (a free server waking up), not that the
+    /// ADR-686: a timeout means the server was slow (a free server waking up), not that the
     /// iPhone is offline, so it isn't shown as "You're offline".
     func testATimeoutIsASlowServerNotOffline() {
         XCTAssertFalse(Offline.isNoConnection(URLError(.timedOut)))

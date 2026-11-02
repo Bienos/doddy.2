@@ -42,7 +42,7 @@ final class VoiceTokenTests: XCTestCase {
         XCTAssertFalse(VoiceTokenServer.message(for: .rateLimited(retryAfterSeconds: nil)).contains("in a moment"))
     }
 
-    /// ADR-671: the daily limits say which one was reached, so the screen can point to the smaller
+    /// ADR-687: the daily limits say which one was reached, so the screen can point to the smaller
     /// OpenAI voice instead of "try again in about 700 minutes".
     func testADailyLimitIsToldApartFromTheHourlyOne() {
         let full = Data(#"{"error":"daily_limit","limit":"full_model"}"#.utf8)
