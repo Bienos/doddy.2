@@ -38,3 +38,19 @@ Example text typed by the test (the notes, the list) is made up. Starting Focus 
 - `DoddyUITests/ScreenAtlasTests.swift`: the visits.
 - `scripts/ci_screens.sh`: the run.
 - `.github/workflows/ios.yml`: the `screens` choice and job.
+
+## Sample states (ADR-694)
+
+`ScreenAtlasTests` photographs what the offline simulator reaches. `ScreenFixtureTests` photographs the rest, from a Debug build launched with `-screenFixture <name>` (`DoddyApp/Features/Voice/ScreenFixtures.swift`, all `#if DEBUG`, one call in `DoddyApp.init`):
+
+| Fixture | What it puts on screen | Test | Data |
+|---|---|---|---|
+| `card:<id>` | the conversation (transcript sheet) with one card waiting: memory, event, reminder, timer, alarm, message, BLIK, email, presentation, plan, ingredients, parking, changeEvent, deleteEvent, map, shortcut, camera, createList, askYes, askTap | `test7aCards`, `test7bCards` | sample arguments through DoddyCore's real tool parser, shown by the controller's `showCardForTesting`; a stand-in link drops every reply |
+| `deals` | Cheapest this week with an answer, its lower parts and the basket | `test7cShopping` | `schemas/fixtures/deals_search_v1.json` (made-up shops and prices, dates of 24 Oct) |
+| `dealsHome` | Home's "Leaflet offers" card | `test7cShopping` | the same |
+| `errand` | Home's "Done" card, Tasks, a task's three picks | `test7cShopping` | `errand_result_shopping_v1.json` (Polish sample task) |
+| `report` | the two pages of the shopping report PDF, full screen | `test7cShopping` | the same result, written by the app's own `ShoppingReport` |
+
+Not covered yet: the translator screens, the learning cards, receipts, the leave-by card (needs a Maps lookup), a note reminder card, widgets, the Lock Screen cards and the shopping-mode Live Activity (those are in the widget extension, which the app target can't draw).
+
+`scripts/gen_screen_fixture_data.py` rebuilds `ScreenFixtureData.swift` from the contract fixtures; `ci.sh` checks it with `--check`.
