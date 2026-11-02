@@ -74,7 +74,7 @@ scripts/ci.sh                  # set DODDY_DESTINATION to override the simulator
   waits for `core`, and no longer repeats the Node suites. Run the workflow by hand (Actions → iOS build and
   tests → Run workflow) and it always runs.
 
-Locally: `scripts/ci.sh --only swift,backend` runs just those groups; `--app-only` is what the Mac job runs; `--skip-node` remains a local option.
+Locally: `scripts/ci.sh --only swift,backend` runs just those groups; `--app-only` is what the Mac job runs.
 
 **Timings measured 1 Nov 2026** (runs 41330977302 on the Mac side, 41340906950 on the Linux side), before
 ADR-684: `core` 14.5 min (backend tests 411 s, Swift package tests 214 s, messaging 40 s, the rest under 45 s each);
@@ -84,7 +84,7 @@ checks it repeated, 413 s of them the backend tests). With the Mac waiting for `
 
 **Historical #166 run before reconciliation with #164** (first hosted run of the new workflow, run 41344675285, 1 Nov): all jobs green. The Linux side
 finished in 7.5 min (`swift` 6.7 min on a cold SwiftPM cache, `backend` 4.0, `messaging` 0.8, `node` 0.6,
-`checks` 0.3); the Mac job took 48.6 min (`ci.sh --skip-node` 47.4), so the whole pull request took 48.8 min
+`checks` 0.3); the Mac job took 48.6 min (the historical `ci.sh --skip-node` path 47.4), so the whole pull request took 48.8 min
 instead of about 79. The npm caches and the SwiftPM cache were empty on that run; the next run shows their effect.
 
 **Cost:** the repository is now public, so standard hosted Actions runners are free (ADR-543). Historical private-repository costs follow. A macOS run took about 52 minutes
