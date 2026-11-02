@@ -38,7 +38,10 @@ final class ScreenFixtureTests: XCTestCase {
     @MainActor
     private func card(_ id: String, number: Int) {
         let numbered = number < 10 ? "0\(number)" : "\(number)"
-        visit("7-card-\(numbered)-\(id)", fixture: "card:\(id)") { app in
+        // The consent answer is a launch argument (held in memory, never saved): without it the sheet
+        // stops at "Before Doddy listens" (the first run's pictures, 2 Nov). The stand-in link sends nothing.
+        visit("7-card-\(numbered)-\(id)", fixture: "card:\(id)",
+              extra: ["-voice.providerConsent.elevenlabs.v1", "YES"]) { app in
             // The card comes up by itself, half height, 3 s after launch (a conversation waiting
             // for the user's tap); drag the sheet up so the whole card shows.
             guard self.see(app.buttons["voice.confirm"], 30) else { return false }
@@ -57,15 +60,19 @@ final class ScreenFixtureTests: XCTestCase {
 
     @MainActor
     func test7cShopping() {
-        visit("7-shop-01-cheapest-results", fixture: "deals") { app in self.openDeals(app) }
+        visit("7-shop-01-cheapest-results", fixture: "deals") { app in
+            guard self.openDeals(app) else { return false }
+            app.scrollStep(); self.settle(0.6)
+            return true
+        }
         visit("7-shop-02-cheapest-results-lower", fixture: "deals") { app in
             guard self.openDeals(app) else { return false }
-            for _ in 0..<2 { app.swipeUp(); self.settle(0.6) }
+            for _ in 0..<2 { app.scrollStep(); self.settle(0.6) }
             return true
         }
         visit("7-shop-03-cheapest-results-bottom", fixture: "deals") { app in
             guard self.openDeals(app) else { return false }
-            for _ in 0..<5 { app.swipeUp(); self.settle(0.5) }
+            for _ in 0..<5 { app.scrollStep(); self.settle(0.5) }
             return true
         }
         visit("7-shop-04-basket", fixture: "deals") { app in self.openBasket(app) }
@@ -110,8 +117,10 @@ final class ScreenFixtureTests: XCTestCase {
     @MainActor
     private func openDeals(_ app: XCUIApplication) -> Bool {
         settle(2)
-        guard menu(app, ["home.deals"]) else { return false }
-        return see(app.buttons["deals.basket"], 15)
+        guard menu(app, ["home.deals"]), see(app.descendants(matching: .any)["deals.items"], 15) else { return false }
+        // The answer sits below the form's long list of shops, which isn't built until it scrolls in
+        // (the first run's picture, 2 Nov, showed only the form).
+        return app.reveal(app.buttons["deals.basket"], maxSteps: 14)
     }
 
     @MainActor
@@ -182,10 +191,11 @@ final class ScreenFixtureTests: XCTestCase {
     // MARK: Visiting and keeping (as ScreenAtlasTests)
 
     @MainActor
-    private func visit(_ name: String, fixture: String, _ steps: @MainActor (XCUIApplication) -> Bool) {
+    private func visit(_ name: String, fixture: String, extra: [String] = [], _ steps: @MainActor (XCUIApplication) -> Bool) {
         let app = XCUIApplication()
         app.launchArguments = UITestLaunch.arguments(store: .inMemory, appearance: "light", language: .english)
         app.launchArguments += ["-quickStartOffered", "NO", "-hadFirstConversation", "YES", "-firstLaunchIntroSeen", "YES"]
+        app.launchArguments += extra
         app.launchArguments += ["-screenFixture", fixture]
         app.launch()
         let reached = steps(app)
