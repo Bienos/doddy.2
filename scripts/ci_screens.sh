@@ -27,8 +27,11 @@ xcrun simctl bootstatus "$sim_id" -b
 # Each group is one test with its own 10-minute limit (ADR-680). TEST_RUNNER_ hands
 # DODDY_SCREEN_ATLAS=1 to the test runner; without it every ScreenAtlasTests test skips.
 status=0
+# SCREENS_ONLY=fixtures (workflow input only=fixtures): skip the atlas walk, take only the sample-state pictures.
+only_tests=(-only-testing:DoddyUITests/ScreenFixtureTests)
+[ "${SCREENS_ONLY:-}" = "fixtures" ] || only_tests=(-only-testing:DoddyUITests/ScreenAtlasTests "${only_tests[@]}")
 TEST_RUNNER_DODDY_SCREEN_ATLAS=1 xcodebuild test-without-building -project Doddy.xcodeproj -scheme Doddy -destination "$dest" \
-  -only-testing:DoddyUITests/ScreenAtlasTests -only-testing:DoddyUITests/ScreenFixtureTests -resultBundlePath build/screen-atlas.xcresult \
+  "${only_tests[@]}" -resultBundlePath build/screen-atlas.xcresult \
   -test-timeouts-enabled YES -default-test-execution-time-allowance 600 || status=$?
 
 # Every picture is also an attachment; export them (Xcode 16 and later) as a second copy.

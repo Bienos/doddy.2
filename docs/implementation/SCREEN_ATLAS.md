@@ -7,6 +7,7 @@ Owner, 2 Nov 2026, after a capability map drawn as HTML mockups from the code: "
 ## How to run it
 
 - **On GitHub:** Actions › iOS build and tests › Run workflow › branch › `only: screens`. About 40 to 60 minutes. The pictures are in the run's `screen-atlas` artifact (kept 30 days): `build/screen-atlas/*.png`, `index.tsv`, and a second copy exported from the `.xcresult` in `screen-atlas-attachments/`.
+- **Only the sample-state pictures (ADR-694):** `only: fixtures` runs `ScreenFixtureTests` alone (about 30 minutes), for when only the fixtures changed. The script reads `SCREENS_ONLY=fixtures`.
 - **On a Mac:** `scripts/ci_screens.sh`, then open `build/screen-atlas/`.
 - **Anywhere else:** every `ScreenAtlasTests` test skips unless the test runner sees `DODDY_SCREEN_ATLAS=1`, so the full run (`scripts/ci.sh`) gets no slower.
 
