@@ -697,6 +697,21 @@ final class VoiceSessionController {
         }
         actions.toggleMute = { [weak self] in await self?.toggleMute() }
 
+        // The voice token is asked for now and used below (ADR-686), so the wait for the notes and
+        // the rest of the context below overlaps with the wait for the server instead of adding to
+        // it. Only ElevenLabs through the token server, after consent and the microphone check.
+        var earlyToken: Task<Result<String, VoiceTokenError>, Never>?
+        if consentProvider == .elevenLabs, case .tokenServer(let endpoint) = mode {
+            earlyToken = Task { () -> Result<String, VoiceTokenError> in
+                do throws(VoiceTokenError) {
+                    return .success(try await VoiceTokenClient(endpoint: endpoint).fetchToken())
+                } catch {
+                    return .failure(error)
+                }
+            }
+        }
+        defer { earlyToken?.cancel() }
+
         // What Doddy knows at the start: the saved notes and, if the user keeps it on, the last
         // few conversations. Both are bounded and say when they were cut.
         await store.reload()
@@ -807,8 +822,15 @@ final class VoiceSessionController {
         }
         config.onError = { error in
             let offline = Offline.isNoConnection(error)
+            let slow = Offline.isServerSlow(error)
             Task { @MainActor in
-                if offline { ref.value?.failOffline() } else { ref.value?.fail(error.errorDescription ?? "Something went wrong.") }
+                if offline {
+                    ref.value?.failOffline()
+                } else if slow {
+                    ref.value?.fail(Offline.slowServerMessage)
+                } else {
+                    ref.value?.fail(error.errorDescription ?? "Something went wrong.")
+                }
             }
         }
 
@@ -830,9 +852,20 @@ final class VoiceSessionController {
         let auth: ElevenLabsConfiguration
         switch mode {
         case .tokenServer(let endpoint):
-            do throws(VoiceTokenError) {
-                auth = .conversationToken(try await VoiceTokenClient(endpoint: endpoint).fetchToken())
-            } catch {
+            let fetched: Result<String, VoiceTokenError>
+            if let earlyToken {
+                fetched = await earlyToken.value
+            } else {
+                do throws(VoiceTokenError) {
+                    fetched = .success(try await VoiceTokenClient(endpoint: endpoint).fetchToken())
+                } catch {
+                    fetched = .failure(error)
+                }
+            }
+            switch fetched {
+            case .success(let token):
+                auth = .conversationToken(token)
+            case .failure(let error):
                 let tokenNote = "voice token not received: attempt \(attempt), \(LogSafeError.kind(of: error))"
                 Self.audioLog.notice("\(tokenNote, privacy: .public)")
                 if attempt == startAttempt, phase == .connecting {
@@ -854,8 +887,22 @@ final class VoiceSessionController {
         Self.allowOtherAppsAudio()
         let connectNote = "connecting to ElevenLabs: attempt \(attempt)"
         Self.audioLog.notice("\(connectNote, privacy: .public)")
+        let startConfig = config
         do {
-            let started = try await ElevenLabs.startConversation(auth: auth, config: config)
+            // At most `StartLimit.seconds` (ADR-686). One that connects after the limit anyway is
+            // ended here, so nothing keeps listening.
+            let started = try await StartLimit.run {
+                try await ElevenLabs.startConversation(auth: auth, config: startConfig)
+            } onTimeout: { [weak self] in
+                // Block late SDK events before the deadline resumes the waiting start.
+                guard let self, attempt == self.startAttempt else { return }
+                self.startAttempt += 1
+                self.fail(StartLimit.message)
+            } lateResult: { late in
+                let lateNote = "a start that connected after the limit was ended: attempt \(attempt)"
+                Self.audioLog.notice("\(lateNote, privacy: .public)")
+                await late.endConversation()
+            }
             guard attempt == startAttempt, isLive else {
                 // Closed (or closed and started again) while connecting: end it so nothing keeps
                 // listening and its tool calls stop (review H1).
@@ -872,8 +919,13 @@ final class VoiceSessionController {
             Self.audioLog.notice("\(failedNote, privacy: .public)")
             // A replaced start's failure isn't the new conversation's.
             guard attempt == startAttempt else { return }
+            if error is StartLimit.TimedOut { return }
             if Offline.isNoConnection(error) {
                 failOffline()
+                return
+            }
+            if Offline.isServerSlow(error) {
+                fail(Offline.slowServerMessage)
                 return
             }
             // An agent that doesn't allow the voice overrides refuses the conversation.
