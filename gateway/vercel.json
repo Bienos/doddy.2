@@ -5,9 +5,6 @@
       "claude/!(loving-dirac-uuxoux)": false
     }
   },
-  "github": {
-    "silent": true
-  },
   "functions": {
     "api/assist.js": {
       "maxDuration": 30

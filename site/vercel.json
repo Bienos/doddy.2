@@ -6,9 +6,6 @@
       "claude/!(loving-dirac-uuxoux)": false
     }
   },
-  "github": {
-    "silent": true
-  },
   "headers": [
     {
       "source": "/(.*)",
