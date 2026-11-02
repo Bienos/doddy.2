@@ -59,7 +59,7 @@ export interface Deps {
   trustProxyHops?: number;
   /** Verify codes the whole server may start per UTC day. Default 200. */
   verifyDailyCap?: number;
-  /** The countries numbers may be verified in and called (SMS_ALLOWED_CALLING_CODES). Default DEFAULT_SMS_SETTINGS. */
+  /** The countries numbers may be verified in, texted and called, and the daily text caps. Default DEFAULT_SMS_SETTINGS. */
   smsSettings?: SmsSettings;
   /** Calls Doddy places for the user (ADR-500). Needs `cipher` and `publicBaseUrl` too. */
   taskCalls?: TaskCallDeps;

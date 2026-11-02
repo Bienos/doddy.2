@@ -99,6 +99,7 @@ export function providersFrom(config: Config) {
     watches,
     news: {
       cipher,
+      smsSettings: config.smsSettings,
       feeds: new HttpFeedSource(),
       search: config.gnewsApiKey ? new GNewsSearch(config.gnewsApiKey) : undefined,
       // Anthropic first when both keys are set; OpenAI otherwise (ADR-197).

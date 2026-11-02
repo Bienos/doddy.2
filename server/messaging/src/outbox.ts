@@ -1,10 +1,10 @@
 import { randomUUID } from "node:crypto";
-import type pg from "pg";
+import pg from "pg";
 import { hasAllowedCallingCode } from "./callingCodes.js";
 import { DEFAULT_SMS_SETTINGS, type SmsSettings } from "./config.js";
 import { sha256, type TextCipher } from "./crypto.js";
 import { log } from "./log.js";
-import type { Db } from "./db.js";
+import { inTransaction, type Db } from "./db.js";
 import type { PushSender, SendOutcome, SmsSender } from "./providers/types.js";
 
 export type Channel = "push" | "sms";
@@ -47,6 +47,31 @@ export class IdempotencyConflict extends Error {
   constructor() { super("idempotency_mismatch"); }
 }
 
+/** Today's texts are used up, for this account or for the whole server (SMS_DAILY_PER_*). Nothing was queued. */
+export class DailyTextLimit extends Error {
+  constructor(readonly cap: "account" | "server") { super("daily_text_limit"); }
+}
+
+/** One lock for every text queued: the count and the check happen together, so both daily caps are exact. */
+const TEXT_COUNT_LOCK = 4242015;
+
+/** Counts one new text against today's caps (UTC), or throws DailyTextLimit. A key already queued isn't counted again. */
+async function countText(c: Queryable, accountId: string, idempotencyKey: string, settings: SmsSettings, now: Date) {
+  await c.query("SELECT pg_advisory_xact_lock($1)", [TEXT_COUNT_LOCK]);
+  const seen = await c.query(
+    "SELECT 1 FROM outbound_messages WHERE account_id = $1 AND channel = 'sms' AND idempotency_key = $2", [accountId, idempotencyKey]);
+  if (seen.rowCount) return;
+  const day = now.toISOString().slice(0, 10);
+  const { rows } = await c.query<{ total: string; mine: string }>(
+    `SELECT COALESCE(SUM(texts), 0) AS total, COALESCE(SUM(texts) FILTER (WHERE account_id = $1), 0) AS mine
+     FROM sms_daily_usage WHERE day = $2`, [accountId, day]);
+  if (Number(rows[0]!.total) >= settings.dailyPerServer) throw new DailyTextLimit("server");
+  if (Number(rows[0]!.mine) >= settings.dailyPerAccount) throw new DailyTextLimit("account");
+  await c.query(
+    `INSERT INTO sms_daily_usage (account_id, day, texts) VALUES ($1, $2, 1)
+     ON CONFLICT (account_id, day) DO UPDATE SET texts = sms_daily_usage.texts + 1`, [accountId, day]);
+}
+
 /** Associated data binding an encrypted message body to its account and row. */
 export const bodyAad = (accountId: string, messageId: string) => `${accountId}:outbound:${messageId}`;
 
@@ -55,19 +80,31 @@ export interface EnqueueOptions {
   fingerprint?: string;
   /** When set, the body is stored encrypted instead of in plain text. */
   cipher?: TextCipher;
+  /** The daily text caps (SMS_DAILY_PER_ACCOUNT, SMS_DAILY_PER_SERVER). Default DEFAULT_SMS_SETTINGS. */
+  smsSettings?: SmsSettings;
+  /** The clock the UTC day of a text is read from (tests). Default now. */
+  now?: Date;
 }
 
 /**
  * Inserts one row per channel. Re-sending the same idempotency key with the same payload returns
  * the existing rows; with a different payload it throws IdempotencyConflict and queues nothing.
+ * A new text counts against the daily caps; over one it throws DailyTextLimit. A client passed in
+ * must be inside a transaction (the caller rolls back); a pool gets a transaction of its own.
  */
 export async function enqueue(
   db: Queryable, accountId: string, channels: Channel[], body: string, sendAt: Date, idempotencyKey: string,
   opts: EnqueueOptions = {},
 ): Promise<QueuedMessage[]> {
+  if (channels.includes("sms") && db instanceof pg.Pool) {
+    return inTransaction(db, (c) => enqueue(c, accountId, channels, body, sendAt, idempotencyKey, opts));
+  }
   const payloadHash = sha256(opts.fingerprint ?? body);
   const out: QueuedMessage[] = [];
   for (const channel of channels) {
+    if (channel === "sms") {
+      await countText(db, accountId, idempotencyKey, opts.smsSettings ?? DEFAULT_SMS_SETTINGS, opts.now ?? new Date());
+    }
     const id = randomUUID();
     const sealed = opts.cipher?.encrypt(body, bodyAad(accountId, id));
     await db.query(

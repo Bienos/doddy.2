@@ -51,7 +51,8 @@ export const twilioWebhookRoutes = (deps: Deps): FastifyPluginAsync => async (ap
         "UPDATE phone_numbers SET sms_opted_out_at = NULL, updated_at = now() WHERE e164 = $1", [from]);
     } else if (kind === "other") {
       // Twilio waits at most 15 s for this answer and a model call can take longer, so it runs after.
-      const done = handleSmsChat({ db, cipher: deps.cipher, assistant: deps.assistant, log: smsChatLog }, from, str(form.Body), str(form.MessageSid))
+      const done = handleSmsChat({ db, cipher: deps.cipher, assistant: deps.assistant, smsSettings: deps.smsSettings, log: smsChatLog },
+        from, str(form.Body), str(form.MessageSid))
         .catch((err: unknown): SmsChatOutcome => {
           smsChatLog("sms chat failed", { kind: String((err as { name?: unknown }).name) });
           return "unavailable";

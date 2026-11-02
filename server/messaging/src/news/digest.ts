@@ -1,8 +1,9 @@
 import { randomUUID } from "node:crypto";
+import type { SmsSettings } from "../config.js";
 import type { TextCipher } from "../crypto.js";
 import { inTransaction, type Db } from "../db.js";
 import { log } from "../log.js";
-import { enqueue, usableChannels, type Channel } from "../outbox.js";
+import { DailyTextLimit, enqueue, usableChannels, type Channel } from "../outbox.js";
 import { catalogById } from "./catalog.js";
 import { pushBody, smsBody } from "./compose.js";
 import type { NewsItem } from "./feeds.js";
@@ -17,6 +18,8 @@ export interface NewsDeps {
   writer?: DigestWriter;
   /** Encrypts queued digest text at rest when the server has the key. */
   cipher?: TextCipher;
+  /** The daily text caps; default DEFAULT_SMS_SETTINGS. */
+  smsSettings?: SmsSettings;
 }
 
 export const MAX_TOPICS = 10;
@@ -88,6 +91,7 @@ export async function buildDigest(db: Db, news: NewsDeps, accountId: string, kin
 
     const entries = picks.map((p) => ({ line: p.line, url: p.candidate.url, source: p.candidate.source }));
     // One transaction: stories count as sent only if the digest was really kept and queued.
+    let queued = 0;
     await inTransaction(db, async (c) => {
       for (const [i, p] of picks.entries()) {
         await c.query(
@@ -100,13 +104,21 @@ export async function buildDigest(db: Db, news: NewsDeps, accountId: string, kin
       }
       for (const ch of channels) {
         const body = ch === "push" ? pushBody(entries, settings.language) : smsBody(entries, settings.language);
-        await enqueue(c, accountId, [ch], body, now, `news:${digestId}`, { cipher: news.cipher });
+        try {
+          await enqueue(c, accountId, [ch], body, now, `news:${digestId}`, { cipher: news.cipher, smsSettings: news.smsSettings, now });
+          queued++;
+        } catch (err) {
+          if (!(err instanceof DailyTextLimit)) throw err;
+          log("news text skipped: daily text limit", { accountId, digestId, cap: err.cap });
+        }
       }
     });
     if (channels.length === 0) {
       // Kept for the app. no_channel only when the user chose a channel that can't be used now.
       return finish({ status: "ready", aiWritten, errorCode: settings.channels.length > 0 ? "no_channel" : undefined });
     }
+    // Only the text was wanted and today's texts are used up: kept for the app, not "queued".
+    if (queued === 0) return finish({ status: "ready", aiWritten, errorCode: "daily_text_limit" });
     return finish({ status: "queued", aiWritten });
   } catch {
     return finish({ status: "failed", errorCode: "build_error" });
