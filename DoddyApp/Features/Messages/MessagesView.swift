@@ -693,6 +693,7 @@ private struct MessagesComposer: View {
     @State private var dictation = MessageDictation()
     /// What was in the box when the mic was tapped; the words heard are added after it.
     @State private var dictationBase = ""
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         VStack(spacing: 0) {
@@ -747,6 +748,9 @@ private struct MessagesComposer: View {
         // with the keyboard.
         .motionSurface(.composer)
         .onChange(of: model.isSending) { _, sending in if sending { dictation.stop() } }
+        // Dictation listens only while this screen is in front (ADR-676): the app may run in the
+        // background for a conversation, and the microphone must not stay on for a box nobody sees.
+        .onChange(of: scenePhase) { _, phase in if phase != .active { dictation.stop() } }
         .onDisappear { dictation.stop() }
     }
 

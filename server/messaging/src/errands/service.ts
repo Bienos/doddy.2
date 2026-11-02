@@ -4,11 +4,15 @@
 //   - only a draft can be approved, only with its own digest, only within 10 minutes, and only
 //     while the account has fewer than ERRANDS_MAX_OPEN queued or running errands (counted under an
 //     advisory lock, so two approvals can't both take the last place);
+//   - at most ERRANDS_DAILY_PER_ACCOUNT approvals a UTC day per account and ERRANDS_DAILY_PER_SERVER for
+//     the server (ADR-673; 429 errand_daily_limit, nothing queued); the server's count survives
+//     deleting the account;
 //   - nothing is created or approved while errands are off or not set up (503 errands_disabled).
 import { randomUUID } from "node:crypto";
 import type pg from "pg";
 import { sameBytes } from "../crypto.js";
 import { inTransaction, type Db } from "../db.js";
+import { returnServerSlot, takeServerSlot } from "../serverUsage.js";
 import { contentAad, resultAad, type ErrandContext } from "./context.js";
 import { contentDigest, contentJson, createBody, type ErrandContent, type ErrandResult } from "./schema.js";
 
@@ -22,6 +26,7 @@ export type Refusal =
   | { status: 404; error: "not_found" }
   | { status: 409; error: "not_approvable" | "not_cancellable" | "no_result"; state: string }
   | { status: 409; error: "digest_mismatch" | "too_many_open_errands" | "result_mismatch" }
+  | { status: 429; error: "errand_daily_limit"; scope: "account" | "server" }
   | { status: 503; error: "errands_disabled" };
 
 const refuse = (r: Refusal) => ({ refusal: r });
@@ -94,6 +99,19 @@ export async function approveErrand(ctx: ErrandContext, accountId: string, id: s
     const { rows: open } = await c.query<{ n: number }>(
       "SELECT count(*)::int AS n FROM errands WHERE account_id = $1 AND state IN ('queued', 'running')", [accountId]);
     if ((open[0]?.n ?? 0) >= ctx.settings.maxOpen) return refuse({ status: 409, error: "too_many_open_errands" });
+    // The day's caps (ADR-673), counted with the approval in this transaction: a refusal queues nothing.
+    const day = now.toISOString().slice(0, 10);
+    if (!(await takeServerSlot(c, "errands", ctx.settings.dailyPerServer, day))) {
+      return refuse({ status: 429, error: "errand_daily_limit", scope: "server" });
+    }
+    const { rowCount } = await c.query(
+      `INSERT INTO errand_usage (account_id, day, approvals) VALUES ($1, $2, 1)
+       ON CONFLICT (account_id, day) DO UPDATE SET approvals = errand_usage.approvals + 1
+         WHERE errand_usage.approvals < $3`, [accountId, day, ctx.settings.dailyPerAccount]);
+    if (rowCount !== 1) {
+      await returnServerSlot(c, "errands", day);
+      return refuse({ status: 429, error: "errand_daily_limit", scope: "account" });
+    }
     await c.query("UPDATE errands SET state = 'queued', approved_at = $2 WHERE id = $1", [id, now]);
     return { approved: { id, state: "queued" as const } };
   });

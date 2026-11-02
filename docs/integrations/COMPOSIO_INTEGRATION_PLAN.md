@@ -116,6 +116,7 @@ Product contracts designed here — **not** Composio endpoints. All routes under
 | `POST …/google-calendar/events` | `{date: "YYYY-MM-DD", timeZone: IANA}` | `EventsResult` |
 | `POST …/google-calendar/disconnect` | `{}` | `ConnectionResult` |
 | `GET …/google-calendar/receipts` | — | last 20 sanitized receipts |
+| `DELETE /v1/account` (the iPhone's session, a guest's included; never a browser cookie) | — | `{complete, deleted:{table: rows}, remaining, onlineAccounts:{removed, pending}, kept, erasedAt}` (ADR-674) |
 | `GET /v1/oauth/return`, `GET /v1/oauth/verify` (browser, no auth) | — | 302 to the configured app return URL with allowlisted parameters only; changes no state |
 
 Errors: `{error: {code, message, correlationId, retryAfterSeconds?, receipt?}}` with codes listed in

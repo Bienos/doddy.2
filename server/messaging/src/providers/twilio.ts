@@ -59,6 +59,10 @@ export class TwilioClient implements SmsSender, PhoneVerifier {
     const json = (await res.json().catch(() => ({}))) as TwilioError & { sid?: string };
     if (res.status === 201 && json.sid) return { kind: "accepted", providerId: json.sid };
     const code = `twilio_${json.code ?? res.status}`;
+    // 502 and 504 come from a gateway in front of Twilio that gave up waiting: the message may
+    // already exist, so it is never resent. 429, 500 and 503 are Twilio itself refusing the request
+    // before taking it (rate limit, error, overloaded), so it can be tried again later.
+    if (res.status === 502 || res.status === 504) return { kind: "unknown", code };
     if (res.status === 429 || res.status >= 500) return { kind: "transient", code };
     // 21610: the recipient replied STOP to this sender.
     return { kind: "rejected", code, unsubscribed: json.code === 21610 };

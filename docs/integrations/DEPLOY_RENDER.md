@@ -176,8 +176,9 @@ Before people can sign in (owner):
 ## Free plan caveats
 
 * Sleeps after idle time, so the first request (and an OAuth return) can be slow.
-* Without `DATABASE_URL` the server falls back to PGlite on the instance disk, which **resets on restart and
-  redeploy**. With it (ADR-525), nothing is lost.
+* Without `DATABASE_URL` a live server on a public host refuses to start (ADR-671): PGlite on the instance disk
+  **resets on restart and redeploy**, which would hand the server to its next caller. With it (ADR-525), nothing
+  is lost. PGlite is for loopback development and mock mode only.
 * Free plan is fine for one owner testing; it is not a production setup.
 
 ## Still not production
