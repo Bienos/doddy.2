@@ -96,7 +96,7 @@ export function providersFrom(config: Config) {
     errands,
     assistant,
     deals,
-    // ADR-683: CEIDG only with the owner's token; the route answers 503 registry_disabled otherwise.
+    // ADR-685: CEIDG only with the owner's token; the route answers 503 registry_disabled otherwise.
     ceidg: config.ceidg ? new CeidgClient(config.ceidg) : undefined,
     watches,
     news: {

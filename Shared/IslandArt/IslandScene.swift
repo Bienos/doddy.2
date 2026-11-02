@@ -100,6 +100,9 @@ struct IslandScene: Equatable, Sendable {
     var pose: IslandPose?
     /// Whole Doddy's waves (ADR-596).
     var waves: IslandWaveState = .none
+    /// His beat while he talks and Doddy is not on screen (ADR-683), 0 to `IslandScene.maxBeat`;
+    /// nil when the app sends none, and always nil unless `waves` is `.speaking`.
+    var voiceBeat: Int?
     /// Something waits for the user in the conversation, or is ready there: the expanded island's
     /// main button is Show (`doddy://conversation`), which opens it (ADR-616). Opening approves nothing.
     var showsInDoddy = false
@@ -107,6 +110,100 @@ struct IslandScene: Equatable, Sendable {
     func art(_ presentation: IslandPresentation) -> IslandArt {
         IslandBoardArt.art(board, scenario: scenario, presentation)
     }
+}
+
+/// How the island moves with his beat (ADR-683). Outside the app the island can't run Home's
+/// moving strip (`IslandExtension`): iOS draws a Live Activity again only when the app sends an
+/// update, and keeps everything inside the island's black shape. The owner picked option C,
+/// "Aurora, like Home", on 1 Nov 2026 from the island pulse board: the small island draws his
+/// voice as Home's fine orange-to-rose lines beside his head, taller with each beat; no halo, no
+/// glow, and the island's outline stays as it was. iOS moves between two beats with its own short
+/// animation. Plain numbers here so they are checked on Linux (`IslandSceneChecks`).
+extension IslandScene {
+    /// The loudest beat (`IslandVoiceBeat.maxStep` in DoddyCore, which the widget can't import).
+    static let maxBeat = 4
+
+    /// 0 for a pause between his words, 1 for his loudest; nil with no beat.
+    var beatStrength: Double? {
+        voiceBeat.map { Double($0) / Double(Self.maxBeat) }
+    }
+
+    /// How tall the big island's talking waves are drawn: as they always were with no beat, a
+    /// little lower in a pause. Never taller: they stay in their band under his status (ADR-615).
+    var beatWaveScale: Double {
+        guard let strength = beatStrength else { return 1 }
+        return 0.75 + 0.25 * strength
+    }
+
+    /// How many lines the small island's aurora has.
+    static let auroraColumnCount = 21
+
+    /// How strongly the aurora is drawn, 0 to 1: calm while he hears you (Home's listening level),
+    /// steady while he talks with no beat (Doddy on screen, Reduce Motion, before the first beat),
+    /// and with each beat from a pause (0.15) to his loudest (1).
+    var auroraLevel: Double {
+        switch waves {
+        case .none: return 0
+        case .listening: return 0.5
+        case .speaking:
+            guard let voiceBeat else { return 0.6 }
+            let levels = [0.15, 0.4, 0.6, 0.8, 1]
+            return levels[min(levels.count - 1, max(0, voiceBeat))]
+        }
+    }
+
+    /// The small island's aurora (option C): Home's fine lines, orange at the left, amber in the
+    /// middle, rose at the right, highest in the middle and fading to the ends. Each line's height
+    /// is a fraction of the band. While he talks each beat gives the lines their own shape, so two
+    /// beats in a row never look the same; while he hears you, and with no beat, they stand still.
+    /// Empty when the island shows no waves (muted, a moment, stale).
+    var aurora: [IslandAuroraColumn] {
+        guard waves != .none else { return [] }
+        let level = auroraLevel
+        let n = Self.auroraColumnCount
+        let phase = voiceBeat.map(Double.init)
+        return (0..<n).map { k in
+            let u = Double(k) / Double(n - 1)
+            let envelope = pow(max(0, sin(Double.pi * (0.06 + 0.88 * u))), 1.1)
+            let noise: Double
+            if waves == .speaking, let t = phase {
+                noise = 0.5 + 0.25 * sin(u * 49 + t * 1.7) + 0.25 * sin(u * 116 - t * 2.3)
+            } else {
+                noise = 0.75 + 0.25 * sin(u * 12)
+            }
+            let height = min(1, max(0.06, (0.12 + 0.88 * level) * envelope * noise))
+            return IslandAuroraColumn(height: height, colour: Self.warm(u))
+        }
+    }
+
+    /// Home's colours (`IslandExtension`): orange at the left, amber in the middle, rose at the
+    /// right, as 0 to 1 red, green, blue.
+    static func warm(_ u: Double) -> IslandRGB {
+        let orange = IslandRGB(red: 236, green: 128, blue: 63)
+        let amber = IslandRGB(red: 255, green: 176, blue: 102)
+        let rose = IslandRGB(red: 229, green: 82, blue: 107)
+        func mix(_ a: IslandRGB, _ b: IslandRGB, _ amount: Double) -> IslandRGB {
+            let k = min(1, max(0, amount))
+            return IslandRGB(red: a.red + (b.red - a.red) * k, green: a.green + (b.green - a.green) * k,
+                             blue: a.blue + (b.blue - a.blue) * k)
+        }
+        let c = u < 0.5 ? mix(orange, amber, u * 1.2) : mix(amber, rose, (u - 0.5) * 1.4)
+        return IslandRGB(red: c.red / 255, green: c.green / 255, blue: c.blue / 255)
+    }
+}
+
+/// A colour as red, green and blue (0 to 255 while it is mixed, 0 to 1 once `warm` returns it).
+struct IslandRGB: Equatable, Sendable {
+    var red: Double
+    var green: Double
+    var blue: Double
+}
+
+/// One fine line of the small island's aurora (ADR-683, option C).
+struct IslandAuroraColumn: Equatable, Sendable {
+    /// Its height as a fraction of the band, 0.06 to 1.
+    var height: Double
+    var colour: IslandRGB
 }
 
 extension DoddyVoiceAttributes.ContentState {
@@ -123,6 +220,10 @@ extension DoddyVoiceAttributes.ContentState {
         if islandStyle == .wholeDoddy {
             scene.pose = wholeDoddyPose(stale: stale)
             scene.waves = wholeDoddyWaves(stale: stale)
+        }
+        // ADR-683: only over his talking waves; a stale island never pulses.
+        if scene.waves == .speaking, let voiceBeat {
+            scene.voiceBeat = min(IslandScene.maxBeat, max(0, voiceBeat))
         }
         return scene
     }

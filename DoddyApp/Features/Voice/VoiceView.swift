@@ -79,10 +79,15 @@ struct VoiceView: View {
         }
         .foregroundStyle(Theme.ink)
         .task {
-            await authSession.restore()
-            if (authSession.isSignedIn || VoiceConfig.usesDirectAgent(for: provider)) && VoiceProviderConsent.isGranted(for: provider) {
-                await beginConversation()
-            }
+            // Started in a task of its own (ADR-672): closing this sheet cancels the view's task, and a
+            // cancelled start ended the conversation as "You're offline". Home holds the conversation
+            // and keeps it going after the sheet closes (ADR-595), as the gate's button already does.
+            await Task { @MainActor in
+                await authSession.restore()
+                if (authSession.isSignedIn || VoiceConfig.usesDirectAgent(for: provider)) && VoiceProviderConsent.isGranted(for: provider) {
+                    await beginConversation()
+                }
+            }.value
         }
         .sheet(item: $openConnection, onDismiss: {
             Task {
@@ -185,6 +190,10 @@ struct VoiceView: View {
                                 .foregroundStyle(Theme.secondaryText)
                                 .accessibilityIdentifier("voice.audioPaused")
                         }
+                        #if DEBUG
+                        // Engineering text (audio session names, in English): the owner's Debug builds
+                        // only, so a failure can be read without Xcode; Release and TestFlight hide it
+                        // (ADR-672). The log line in the controller stays in every build.
                         if let note = controller.audioNote {
                             Text(note)
                                 .font(.caption2)
@@ -192,6 +201,7 @@ struct VoiceView: View {
                                 .textSelection(.enabled)
                                 .accessibilityIdentifier("voice.audioNote")
                         }
+                        #endif
 
                         if controller.isPrivate {
                             Label {

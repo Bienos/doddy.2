@@ -80,7 +80,7 @@ rates_client=DoddyApp/Infrastructure/Network/ExchangeRateClient.swift
 off_client=DoddyApp/Infrastructure/Network/OpenFoodFactsClient.swift
 # A parcel number, one address built by DoddyCore (ADR-641).
 inpost_client=DoddyApp/Infrastructure/Network/InPostTrackingClient.swift
-# A buyer's NIP, one address built by DoddyCore: the Ministry of Finance's VAT register (ADR-683).
+# A buyer's NIP, one address built by DoddyCore: the Ministry of Finance's VAT register (ADR-685).
 vat_register_client=DoddyApp/Infrastructure/Network/VatRegisterClient.swift
 # The Keychain: the files that hold a token or key. AccountKeyStore (ADR-640) holds keys the person pasted in.
 keychain_only='import Security|SecItem(Add|Update|Delete|CopyMatching)|kSecClass'
@@ -188,7 +188,7 @@ fi
 if [ -f "$off_client" ] && grep -nE 'URL\(string|URLComponents|appendingPathComponent|https?://|URLRequest\(url: *[^ O]' "$off_client" | code_only; then
   echo "FAIL: $off_client may only ask OpenFoodFacts.productURL(for:)." >&2; status=1
 fi
-# The VAT register client may only ask VatRegister.url(for:on:) (ADR-683), never an address it builds.
+# The VAT register client may only ask VatRegister.url(for:on:) (ADR-685), never an address it builds.
 if [ -f "$vat_register_client" ] && grep -nE 'URL\(string|URLComponents|appendingPathComponent|https?://|URLRequest\(url: *[^ V]' "$vat_register_client" | code_only; then
   echo "FAIL: $vat_register_client may only ask VatRegister.url(for:on:)." >&2; status=1
 fi

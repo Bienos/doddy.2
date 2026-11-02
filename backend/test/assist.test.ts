@@ -488,6 +488,34 @@ test("first-device sign-up is unchanged: other iPhones are still refused", async
   assert.equal(other.status, 401);
 });
 
+test("guests ask from their own daily pool: they can't use up the owner's questions, and the owner never uses theirs", async () => {
+  const claude = new ScriptedClaude(() => ({ value: { answer: "ok" }, usage: { inputTokens: 1, outputTokens: 1 } }));
+  rig = await start({
+    claude,
+    signed: true,
+    limits: { userDailyAsk: 10, serviceDailyAsk: 3, serviceDailyGuestAsk: 2 },
+    devices: (store) => new Issuer(KEY, { signup: "open", inviteCodes: [], store }),
+  });
+  const session = async (n: number) => (await rig!.call("POST", "/v1/session/device", { body: { deviceId: PHONE(n) } })).body;
+  const owner = await session(1);
+  assert.equal(owner.access, "full");
+  const guests = [await session(2), await session(3), await session(4)];
+  assert.ok(guests.every((g) => g.access === "ask"));
+
+  // Three fresh guests (anyone can make one) stop at the guests' pool of two...
+  assert.equal((await rig.post(ask(), { token: guests[0].token })).status, 200);
+  assert.equal((await rig.post(ask(), { token: guests[1].token })).status, 200);
+  const guestFull = await rig.post(ask(), { token: guests[2].token });
+  assert.equal(guestFull.status, 429);
+  assert.equal(guestFull.body.error.code, "quota_exceeded");
+  // ...and the owner still has all three of the server's questions.
+  for (let i = 0; i < 3; i += 1) assert.equal((await rig.post(ask(), { token: owner.token })).status, 200);
+  assert.equal((await rig.post(ask(), { token: owner.token })).body.error.code, "quota_exceeded");
+  assert.equal(await rig.store.usage("service:ask", "day:2026-10-22"), 3);
+  assert.equal(await rig.store.usage("service:ask:guest", "day:2026-10-22"), 2);
+  assert.equal(claude.calls.length, 5);
+});
+
 test("new guest sessions are limited per network per hour and per day for the server", async () => {
   rig = await start({
     signed: true,

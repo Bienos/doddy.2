@@ -149,6 +149,38 @@ final class CallCaseTests: XCTestCase {
         XCTAssertEqual(approval, CallApproval(attemptId: nil, state: "unknown"))
     }
 
+    /// ADR-672: a 500, 502 or 504 may come after the server dialled, and an accepted call whose
+    /// reply can't be read was still accepted: both are `unknown`, sent once and never redialled.
+    func testApprovalWithAGatewayErrorOrAnUnreadableAcceptIsUnknown() async throws {
+        for reply in [ServerResponse(status: 500, body: Data()), ServerResponse(status: 502, body: Data()),
+                      ServerResponse(status: 504, body: Data()), ServerResponse(status: 202, body: Data("not json".utf8))] {
+            let transport = Scripted([reply])
+            let client = DoddyServerClient(transport: transport, credentials: Credentials(token: "t"))
+            let approval = try await client.approveCallCase(UUID(), digest: "ab")
+            XCTAssertEqual(approval, CallApproval(attemptId: nil, state: "unknown"), "status \(reply.status)")
+            let sent = await transport.sent
+            XCTAssertEqual(sent.count, 1, "never sent twice")
+        }
+    }
+
+    func testApprovalWhenCallsAreOffIsStillARefusal() async {
+        let transport = Scripted([ServerResponse(status: 503, body: Data(#"{"error":"calls_disabled"}"#.utf8))])
+        let client = DoddyServerClient(transport: transport, credentials: Credentials(token: "t"))
+        do {
+            _ = try await client.approveCallCase(UUID(), digest: "ab")
+            XCTFail("expected calls_disabled")
+        } catch {
+            XCTAssertEqual(error as? CallCaseError, .callsDisabled)
+        }
+    }
+
+    func testTakeoverWithAGatewayErrorIsUnknown() async throws {
+        let transport = Scripted([ServerResponse(status: 504, body: Data())])
+        let client = DoddyServerClient(transport: transport, credentials: Credentials(token: "t"))
+        let state = try await client.takeOverCallCase(UUID())
+        XCTAssertEqual(state, "unknown")
+    }
+
     func testApproveSendsOnlyTheDigestAndTime() async throws {
         let attempt = UUID()
         let transport = Scripted([ServerResponse(status: 202, body: Data(#"{"attemptId":"\#(attempt.uuidString.lowercased())","state":"scheduled"}"#.utf8))])

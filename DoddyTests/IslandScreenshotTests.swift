@@ -16,12 +16,20 @@ final class IslandScreenshotTests: XCTestCase {
     private typealias State = DoddyVoiceAttributes.ContentState
 
     private static func scene(_ status: State.Status, muted: Bool = false, moment: State.Moment? = nil,
-                              style: IslandStyle = .wholeDoddy) -> IslandScene {
+                              style: IslandStyle = .wholeDoddy, beat: Int? = nil) -> IslandScene {
         var state = State(status: status, isMuted: muted)
         state.moment = moment
         state.islandStyle = style
+        state.voiceBeat = beat
         return state.islandScene(isStale: false)
     }
+
+    /// ADR-683: his beat while he talks outside the app, in a pause and at his loudest. Two
+    /// moments of it: on the iPhone it moves between them about every 0.6 s.
+    private static let beatSamples: [(file: String, name: String, beat: Int)] = [
+        ("3a-speaking-pause", "Speaking outside the app: a pause between words (beat 0)", 0),
+        ("3b-speaking-loud", "Speaking outside the app: his loudest (beat 4)", 4),
+    ]
 
     /// The states shown, in a conversation's order, then cards and results (ADR-616).
     private static let samples: [(file: String, name: String, status: State.Status, muted: Bool, moment: State.Moment?)] = [
@@ -43,6 +51,25 @@ final class IslandScreenshotTests: XCTestCase {
     ]
 
     // MARK: What the owner asked for
+
+    /// ADR-683, option C (owner, 1 Nov): the small island draws his voice as Home's fine lines,
+    /// more of them lit at his loudest beat than in a pause, and there, calm, while he hears you.
+    @MainActor
+    func testTheSmallIslandDrawsHisVoiceAsHomesLines() throws {
+        let cases: [(name: String, status: State.Status, beat: Int?)] = [
+            ("loudest", .speaking, 4), ("pause", .speaking, 0), ("listening", .listening, nil),
+        ]
+        var lit: [Int] = []
+        for sample in cases {
+            let view = IslandCompactTrailingView(scene: Self.scene(sample.status, beat: sample.beat), startedAt: Date())
+                .background(Color.islandBlack)
+            let p = try XCTUnwrap(pixels(view), "\(sample.name) renders")
+            XCTAssertEqual(p.width, Int(IslandAuroraView.size.width) * 3, "\(sample.name): the lines' own width")
+            lit.append(p.count(brighterThan: 40))
+        }
+        XCTAssertGreaterThan(lit[0], lit[1] + 50, "his loudest beat lights more of the lines than a pause")
+        XCTAssertGreaterThan(lit[2], 0, "while he hears you the lines are there, calm")
+    }
 
     /// Small island: his head only, a 26 pt circle, never the whole of him at 30 pt (ADR-615).
     @MainActor
@@ -172,6 +199,14 @@ final class IslandScreenshotTests: XCTestCase {
                          name: prefix + sample.file)
             boards.append(board)
         }
+        for sample in Self.beatSamples {
+            let board = IslandBoardPicture(name: (language.map { "\($0.uppercased()) · " } ?? "") + sample.name,
+                                           scene: Self.scene(.speaking, beat: sample.beat),
+                                           muted: false, startedAt: startedAt)
+            _ = try keep(board.padding(16).background(Self.backdrop).environment(\.islandLanguage, language),
+                         name: prefix + sample.file)
+            boards.append(board)
+        }
         let all = boards
         let sheet = VStack(alignment: .leading, spacing: 22) {
             Text(verbatim: note)
@@ -234,6 +269,15 @@ final class IslandScreenshotTests: XCTestCase {
                 }
             }
             return n > 0 ? sum / n : -1
+        }
+
+        /// How many opaque pixels are brighter than `threshold` (0 to 255).
+        func count(brighterThan threshold: Double) -> Int {
+            var n = 0
+            for i in stride(from: 0, to: data.count, by: 4) where data[i + 3] > 200 {
+                if (Double(data[i]) + Double(data[i + 1]) + Double(data[i + 2])) / 3 > threshold { n += 1 }
+            }
+            return n
         }
 
         /// The brightest opaque pixel, in the whole picture or its middle third.

@@ -68,7 +68,7 @@ export interface Deps {
   errands?: ErrandDeps;
   /** Leaflets (ADR-609, SHOPPING.md section 2): settings, the polite fetcher and the Haiku reader. */
   deals?: DealsDeps;
-  /** Company registers (ADR-683): CEIDG with the owner's token; absent answers 503 registry_disabled. */
+  /** Company registers (ADR-685): CEIDG with the owner's token; absent answers 503 registry_disabled. */
   ceidg?: CeidgClient;
   /** Where errand log lines go (tests capture them); default: the request logger. */
   errandLog?: (msg: string, extra?: object) => void;

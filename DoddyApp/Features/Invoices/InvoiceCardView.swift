@@ -26,7 +26,7 @@ struct InvoiceCardView: View {
 
             block(NSLocalizedString("Buyer", comment: ""), rows: card.buyer)
 
-            // ADR-683: where the buyer's official name and address came from.
+            // ADR-685: where the buyer's official name and address came from.
             if let line = card.registerLine {
                 Label { Text(verbatim: line) } icon: { Image(systemName: "building.columns") }
                     .font(.footnote)

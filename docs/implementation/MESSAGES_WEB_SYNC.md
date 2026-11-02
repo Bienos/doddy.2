@@ -20,4 +20,4 @@ Owner, 28 Oct 2026: item 4 "yes", then for the switch: **"No, sync always on"** 
 - Swift not compiled or run (no Swift or Xcode here): `ThreadSyncTests` (5), the new `MessagesModelTests` (2), `ServerThreadSync.swift`, the alert.
 - Not deployed: `doddy` needs a deploy (the table is created at start) and `DODDY_MEMORY_KEY` set, or the routes answer "not set up".
 - The privacy pages (`site/privacy/`), Settings' "What leaves this iPhone" and the Ask Doddy consent dialog do not mention the web copy yet. The consent dialog wording was the owner's "c" on 22 Oct; it should be revisited now that the thread leaves the iPhone.
-- Account deletion: `message_threads` follows the same path as the memory tables; not separately tested.
+- Account deletion: `DELETE /v1/account` on the backend (ADR-674) deletes `message_threads` with every other table of the person, in one transaction, and reads back that none is left (`backend/test/account.test.ts`). The iPhone calls it from Settings’ "Delete Doddy voice account", before the voice account goes. The copy is always on, so the next message sent from the iPhone makes a new one.

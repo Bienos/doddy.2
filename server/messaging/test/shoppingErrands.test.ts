@@ -56,7 +56,7 @@ describe("shopping errands against real Postgres", { skip: dbSkip }, () => {
   let db: Db;
   before(async () => { db = await freshDb(); });
   after(async () => { await db?.end(); });
-  beforeEach(async () => { await db.query("DELETE FROM errands; DELETE FROM errand_deletions;"); });
+  beforeEach(async () => { await db.query("DELETE FROM errands; DELETE FROM errand_deletions; DELETE FROM errand_usage; DELETE FROM server_daily_usage;"); });
 
   async function world() {
     const queries: string[] = [];

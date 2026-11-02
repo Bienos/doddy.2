@@ -266,7 +266,10 @@ struct VoiceAccountSettings: View {
             Button("Delete voice account", role: .destructive) { Task { await session.deleteAccount() } }
             Button("Cancel", role: .cancel) {}
         } message: {
+            // ADR-674: the server's part goes first (`VoiceAuthSession.deleteAccount`).
             Text("This revokes all Doddy voice sessions on your devices. To remove Doddy from Sign in with Apple, also revoke it in your Apple ID settings.")
+                + Text(verbatim: " ")
+                + Text("It also deletes what Doddy's server keeps for you and disconnects your online accounts. Notes on this iPhone stay.")
         }
     }
 }

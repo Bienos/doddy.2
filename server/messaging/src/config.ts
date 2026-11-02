@@ -85,6 +85,10 @@ const schema = z.object({
   ERRAND_TIME_LIMIT_MINUTES: z.coerce.number().int().min(1).max(120).default(30),
   // Queued or running errands per account.
   ERRANDS_MAX_OPEN: z.coerce.number().int().min(1).max(20).default(5),
+  // Approvals per UTC day (ADR-673): per account, and for the whole server, counted where deleting an
+  // account can't give them back. Each errand can run Opus for up to ERRAND_TIME_LIMIT_MINUTES.
+  ERRANDS_DAILY_PER_ACCOUNT: z.coerce.number().int().min(1).max(1000).default(10),
+  ERRANDS_DAILY_PER_SERVER: z.coerce.number().int().min(1).max(100000).default(30),
   // Shopping errands (ADR-607, docs/implementation/SHOPPING.md): the runner's model and the paid
   // look-ups per errand. Serper is the offer source (Google Shopping for Poland); without its key,
   // find_offers answers "not set up" and the runner reads shop pages it finds through web search.
@@ -107,7 +111,7 @@ const schema = z.object({
   // Biedronka, Lidl, Dino, Rossmann, Aldi and Żabka on request (ADR-660) and keeps only counts. "0" answers 503 deals_disabled.
   // Image pages need ANTHROPIC_API_KEY (Claude Haiku reads them); the caps count requests per UTC day.
   DEALS_ENABLED: z.enum(["0", "1"]).default("0"),
-  // Company registers (ADR-683): CEIDG's JWT, which the owner gets free at biznes.gov.pl (e-service 00_9999_00,
+  // Company registers (ADR-685): CEIDG's JWT, which the owner gets free at biznes.gov.pl (e-service 00_9999_00,
   // signing in with mObywatel or a trusted profile). Not set: GET /v1/registry/ceidg answers 503 registry_disabled.
   CEIDG_API_TOKEN: z.string().min(20).optional(),
   CEIDG_API_BASE: z.string().url().default("https://dane.biznes.gov.pl/api/ceidg/v3"),
@@ -173,6 +177,7 @@ export type ErrandEffort = "low" | "medium" | "high" | "xhigh" | "max";
 /** Errand switches and limits. `enabled` is the env switch only; the key and cipher are checked where wired. */
 export interface ErrandSettings {
   enabled: boolean; model: string; effort: ErrandEffort; timeLimitMinutes: number; maxOpen: number;
+  dailyPerAccount: number; dailyPerServer: number;
 }
 
 /** Shopping errands (ADR-607): the runner's model and the paid look-ups per errand. */
@@ -214,7 +219,7 @@ export interface Config {
   dealsSettings: DealsSettings;
   /** "Search further" under a leaflet answer (ADR-666). */
   dealsSearchShops: SearchShop[];
-  /** CEIDG (ADR-683): only with a token; the base is checked to be CEIDG's own host when the client is made. */
+  /** CEIDG (ADR-685): only with a token; the base is checked to be CEIDG's own host when the client is made. */
   ceidg?: { token: string; baseUrl: string };
   watchSettings: WatchSettings;
   assistantSettings: AssistantSettings;
@@ -284,6 +289,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       effort: e.ERRANDS_EFFORT,
       timeLimitMinutes: e.ERRAND_TIME_LIMIT_MINUTES,
       maxOpen: e.ERRANDS_MAX_OPEN,
+      dailyPerAccount: e.ERRANDS_DAILY_PER_ACCOUNT,
+      dailyPerServer: e.ERRANDS_DAILY_PER_SERVER,
     },
     shoppingSettings: {
       model: e.SHOPPING_MODEL,
@@ -324,10 +331,12 @@ export const DEFAULT_TASK_CALL_SETTINGS: TaskCallSettings = {
   sayVoice: "Polly.Ewa",
 };
 
-/** Settings for an injected ErrandDeps without its own (tests): on, Opus 5.5 at high effort, 30 min, 5 open.
+/** Settings for an injected ErrandDeps without its own (tests): on, Opus 5.5 at high effort, 30 min, 5 open,
+ * 10 approvals a day per account and 30 for the server.
  * The environment's ERRANDS_ENABLED defaults to "0": errands start only when the owner turns them on. */
 export const DEFAULT_ERRAND_SETTINGS: ErrandSettings = {
   enabled: true, model: "claude-opus-5-5", effort: "high", timeLimitMinutes: 30, maxOpen: 5,
+  dailyPerAccount: 10, dailyPerServer: 30,
 };
 
 /** Settings for an injected WatchDeps without its own (tests): on, 5 open, a check every 6 hours.

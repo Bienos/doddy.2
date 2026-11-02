@@ -1,4 +1,4 @@
-// CEIDG, the register of sole traders (ADR-683): GET dane.biznes.gov.pl/api/ceidg/v3/firma?nip= with the
+// CEIDG, the register of sole traders (ADR-685): GET dane.biznes.gov.pl/api/ceidg/v3/firma?nip= with the
 // owner's JWT, which only this server holds (the iPhone asks GET /v1/registry/ceidg). Free, but the token is
 // Doddy's own (biznes.gov.pl, e-service 00_9999_00), so it never goes to an app. CEIDG's limits are 50
 // requests per 3 minutes and 1000 per hour (integrator documentation, API v3, v1.0); this module keeps a
