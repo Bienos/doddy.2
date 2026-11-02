@@ -493,6 +493,18 @@ final class VoiceSessionController {
         phase = .listening
     }
 
+    /// Test seam only: Doddy starts speaking, as the provider's own event says (the voice meter
+    /// attaches then, ADR-655).
+    func speakForTesting() {
+        guard isLive else { return }
+        phase = .speaking
+    }
+
+    /// Test seam only: the provider's disconnect.
+    func disconnectForTesting(_ kind: VoiceSessionEnd.Disconnect) {
+        disconnected(kind)
+    }
+
     /// Test seam only: a tool call from the provider. The start it arrived in is taken now, as the
     /// ElevenLabs and OpenAI callbacks do, and the returned task runs it.
     @discardableResult
@@ -855,6 +867,11 @@ final class VoiceSessionController {
             // ended here, so nothing keeps listening.
             let started = try await StartLimit.run {
                 try await ElevenLabs.startConversation(auth: auth, config: startConfig)
+            } onTimeout: { [weak self] in
+                // Block late SDK events before the deadline resumes the waiting start.
+                guard let self, attempt == self.startAttempt else { return }
+                self.startAttempt += 1
+                self.fail(StartLimit.message)
             } lateResult: { late in
                 let lateNote = "a start that connected after the limit was ended: attempt \(attempt)"
                 Self.audioLog.notice("\(lateNote, privacy: .public)")
@@ -876,10 +893,7 @@ final class VoiceSessionController {
             Self.audioLog.notice("\(failedNote, privacy: .public)")
             // A replaced start's failure isn't the new conversation's.
             guard attempt == startAttempt else { return }
-            if error is StartLimit.TimedOut {
-                fail(StartLimit.message)
-                return
-            }
+            if error is StartLimit.TimedOut { return }
             if Offline.isNoConnection(error) {
                 failOffline()
                 return

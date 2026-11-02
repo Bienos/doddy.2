@@ -22,13 +22,13 @@ final class OfflineTests: XCTestCase {
     func testATimeoutIsASlowServerNotOffline() {
         XCTAssertFalse(Offline.isNoConnection(URLError(.timedOut)))
         XCTAssertTrue(Offline.isServerSlow(URLError(.timedOut)))
-        XCTAssertTrue(Offline.isServerSlow(VoiceTokenError.serverSlow))
-        XCTAssertFalse(Offline.isNoConnection(VoiceTokenError.serverSlow))
+        XCTAssertTrue(Offline.isServerSlow(VoiceTokenError.timedOut))
+        XCTAssertFalse(Offline.isNoConnection(VoiceTokenError.timedOut))
         let wrapped = NSError(domain: "LiveKit", code: 1, userInfo: [NSUnderlyingErrorKey: NSError(domain: NSURLErrorDomain, code: URLError.timedOut.rawValue)])
         XCTAssertTrue(Offline.isServerSlow(wrapped))
         XCTAssertFalse(Offline.isServerSlow(URLError(.notConnectedToInternet)))
         XCTAssertFalse(Offline.isServerSlow(VoiceTokenError.offline))
-        XCTAssertFalse(VoiceTokenServer.message(for: .serverSlow).lowercased().contains("internet connection"))
+        XCTAssertFalse(VoiceTokenServer.message(for: .timedOut).lowercased().contains("internet connection"))
         XCTAssertFalse(Offline.slowServerMessage.lowercased().contains("offline"))
     }
 }

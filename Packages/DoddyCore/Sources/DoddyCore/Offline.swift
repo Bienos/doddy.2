@@ -31,7 +31,7 @@ public enum Offline {
     /// True when the error, or an error inside it, is a request that timed out: the connection
     /// works but the server took too long, so "You're offline" would be wrong (ADR-686).
     public static func isServerSlow(_ error: any Error) -> Bool {
-        if let token = error as? VoiceTokenError { return token == .serverSlow }
+        if let token = error as? VoiceTokenError { return token == .timedOut }
         return containsURLError(error, codes: [URLError.timedOut.rawValue])
     }
 

@@ -42,6 +42,47 @@ final class VoiceTokenTests: XCTestCase {
         XCTAssertFalse(VoiceTokenServer.message(for: .rateLimited(retryAfterSeconds: nil)).contains("in a moment"))
     }
 
+    // MARK: Loading errors (ADR-681)
+
+    func testOnlyAMissingOrLostConnectionIsOffline() {
+        for code in [URLError.Code.notConnectedToInternet, .networkConnectionLost, .cannotFindHost,
+                     .cannotConnectToHost, .dnsLookupFailed, .dataNotAllowed, .internationalRoamingOff] {
+            XCTAssertEqual(VoiceTokenServer.loadingFailure(URLError(code)), .offline, "\(code)")
+        }
+    }
+
+    func testACancelledStartIsNotOffline() {
+        // Closing the voice sheet while it connected cancelled the start, which said "You're offline".
+        XCTAssertEqual(VoiceTokenServer.loadingFailure(URLError(.cancelled)), .cancelled)
+        XCTAssertEqual(VoiceTokenServer.loadingFailure(CancellationError()), .cancelled)
+        XCTAssertFalse(Offline.isNoConnection(VoiceTokenError.cancelled))
+    }
+
+    func testATimeoutAndARefusedSecureConnectionAreNotOffline() {
+        XCTAssertEqual(VoiceTokenServer.loadingFailure(URLError(.timedOut)), .timedOut)
+        for code in [URLError.Code.secureConnectionFailed, .serverCertificateHasBadDate, .serverCertificateUntrusted,
+                     .serverCertificateHasUnknownRoot, .serverCertificateNotYetValid,
+                     .clientCertificateRejected, .clientCertificateRequired] {
+            XCTAssertEqual(VoiceTokenServer.loadingFailure(URLError(code)), .secureConnectionFailed, "\(code)")
+        }
+        XCTAssertFalse(Offline.isNoConnection(VoiceTokenError.timedOut))
+        XCTAssertFalse(Offline.isNoConnection(VoiceTokenError.secureConnectionFailed))
+    }
+
+    func testAnUnnamedLoadingErrorStaysOfflineAsBefore() {
+        XCTAssertEqual(VoiceTokenServer.loadingFailure(URLError(.unknown)), .offline)
+        XCTAssertEqual(VoiceTokenServer.loadingFailure(NSError(domain: "x", code: 1)), .offline)
+    }
+
+    func testTheNewFailuresNeverSayOffline() {
+        for error in [VoiceTokenError.cancelled, .timedOut, .secureConnectionFailed] {
+            let text = VoiceTokenServer.message(for: error)
+            XCTAssertFalse(text.localizedCaseInsensitiveContains("offline"), text)
+            XCTAssertFalse(text.localizedCaseInsensitiveContains("internet connection"), text)
+            XCTAssertNotEqual(text, VoiceTokenServer.message(for: .offline))
+        }
+    }
+
     /// ADR-687: the daily limits say which one was reached, so the screen can point to the smaller
     /// OpenAI voice instead of "try again in about 700 minutes".
     func testADailyLimitIsToldApartFromTheHourlyOne() {
