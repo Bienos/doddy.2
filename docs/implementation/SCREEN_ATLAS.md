@@ -2,7 +2,7 @@
 
 Owner, 2 Nov 2026, after a capability map drawn as HTML mockups from the code: "Make sure these mock ups are real", then "Do" to a UI test that photographs every screen in the hosted Mac build.
 
-**Status: written on Linux; NOT COMPILED, NOT RUN here (no Xcode).** The pull request's full run is the first compile (the tests skip there). The first `only: screens` run is the first time a picture is taken.
+**Status:** written on Linux (no Xcode here). PR #168's full run (41475443201) compiled it and passed, with these tests skipping. The first `only: screens` run (41475441329, 2 Nov) kept 89 screens and missed 3; Settings and Connections ran past the 10-minute limit per test, so each was split in two, and three routes were fixed (Lists, a leftover draft, iOS's notification question over Focus). Nothing here was seen on a device.
 
 ## How to run it
 
@@ -27,8 +27,8 @@ Names are `<group>-<area>-<number>-<what>.png`, so they sort in the order below.
 | 1 First run | `test1FirstRun` | the five welcome chapters, the sign-in sheet and its "not connected" line, Before we start, the introduction's two questions and its review, What I can do |
 | 2 Home | `test2Home` | Home on a first visit and after it, the ••• menu and its Focus and stopwatch submenu, the conversation without a voice account, Messages, Files, Today, Tasks, Cheapest this week, Translate, Focus (start and running), Stopwatch (running), What leaves this iPhone, the voice picker, Recordings and its "Before you record" notice |
 | 3 Memory | `test3Memory` | the empty notes list, a new note, two save receipts, the notes list with three notes, Find with a match and with none, a note, Correct this detail, the reminder sheet, the empty lists, a new list, a list with four items, What Doddy did |
-| 4 Settings | `test4Settings` | Settings, Voice, Voice and personality, the voice list, Siri and Back Tap, Ways to open Doddy and the Back Tap steps, Doddy's memory, My profile, What Doddy knows, What I've learned, Remembered conversations, Export backup and delete, the backup and import sheets, Language, Appearance, Privacy, What leaves this iPhone, Advanced, Try a plan card |
-| 5 Connections and notifications | `test5ConnectionsAndNotifications` | Connections (and paused), Calendar reminders contacts, Online accounts, Parcels, Invoices, Doddy on the web, Ask Doddy, Apple Health, Training plan and its safety questions, Training log; Notifications, Notifications and texts, Check-ins and reminders, Alarms, Birthdays, Daily news, Phone calls, and the morning check-in, evening wrap-up, weekly plan, weekly look-back and tidy-up screens |
+| 4 Settings | `test4aSettings`, `test4bSettings` | Settings, Voice, Voice and personality, the voice list, Siri and Back Tap, Ways to open Doddy and the Back Tap steps, Doddy's memory, My profile, What Doddy knows, What I've learned, Remembered conversations, Export backup and delete, the backup and import sheets, Language, Appearance, Privacy, What leaves this iPhone, Advanced, Try a plan card |
+| 5 Connections and notifications | `test5aConnections`, `test5bNotifications` | Connections (and paused), Calendar reminders contacts, Online accounts, Parcels, Invoices, Doddy on the web, Ask Doddy, Apple Health, Training plan and its safety questions, Training log; Notifications, Notifications and texts, Check-ins and reminders, Alarms, Birthdays, Daily news, Phone calls, and the morning check-in, evening wrap-up, weekly plan, weekly look-back and tidy-up screens |
 | 6 Looks | `test6Looks` | Home and Settings in dark, in Polish, and Home at the largest text size |
 
 Example text typed by the test (the notes, the list) is made up. Starting Focus can bring iOS's notification question on screen; the picture keeps whatever iOS shows.

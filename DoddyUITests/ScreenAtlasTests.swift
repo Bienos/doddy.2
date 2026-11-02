@@ -94,7 +94,12 @@ final class ScreenAtlasTests: XCTestCase {
         visit("2-home-11-translate") { app in self.menu(app, ["home.translate"]) && self.see(app.buttons["translator.start"]) }
         visit("2-home-12-focus") { app in self.menu(app, ["home.timers", "home.focus"]) && self.see(app.buttons["focus.start"]) }
         visit("2-home-13-focus-running") { app in
-            self.menu(app, ["home.timers", "home.focus"]) && self.tap(app.buttons["focus.start"], app) && self.see(app.buttons["focus.pause"])
+            guard self.menu(app, ["home.timers", "home.focus"]), self.tap(app.buttons["focus.start"], app) else { return false }
+            // The first start asks iOS for notifications (the first screens run kept the question
+            // over the timer); allow, so the picture shows the timer.
+            let allow = XCUIApplication(bundleIdentifier: "com.apple.springboard").buttons["Allow"]
+            if allow.waitForExistence(timeout: 4) { allow.tap(); self.settle(0.8) }
+            return self.see(app.buttons["focus.pause"])
         }
         visit("2-home-14-stopwatch-running") { app in
             self.menu(app, ["home.timers", "home.stopwatch"]) && self.tap(app.buttons["stopwatch.start"], app)
@@ -121,7 +126,8 @@ final class ScreenAtlasTests: XCTestCase {
         visit("3-memory-01-notes-empty", store: store) { app in
             self.settings(app, ["settings.memory", "settings.memory.notes"]) && self.see(app.text("No memories yet"))
         }
-        visit("3-memory-02-new-note", store: store) { app in
+        // Its own store: the words it leaves unsaved would come back as a draft in the next save.
+        visit("3-memory-02-new-note") { app in
             guard self.tap(app.buttons["home.save"], app, 10) else { return false }
             let editor = app.textViews.firstMatch
             guard self.see(editor) else { return false }
@@ -157,15 +163,18 @@ final class ScreenAtlasTests: XCTestCase {
         visit("3-memory-10-remind-me", store: store) { app in
             self.openFirstNote(app) && self.tap(app.buttons["detail.remind"], app)
         }
-        visit("3-memory-11-lists-empty", store: store) { app in self.openLists(app) && self.see(app.descendants(matching: .any)["lists.empty"]) }
-        visit("3-memory-12-new-list", store: store) { app in
+        // UITestLaunch pins Memories to Notes (-memoriesShowsLists NO), which holds the picker on
+        // Notes; these three visits override it.
+        let lists = ["-memoriesShowsLists", "YES"]
+        visit("3-memory-11-lists-empty", store: store, extra: lists) { app in self.openLists(app) && self.see(app.descendants(matching: .any)["lists.empty"]) }
+        visit("3-memory-12-new-list", store: store, extra: lists) { app in
             guard self.openLists(app), self.tap(app.buttons["lists.new"], app) else { return false }
             let name = app.textFields["newList.name"]
             guard self.see(name) else { return false }
             name.tapAndType("Weekend shop")
             return true
         }
-        visit("3-memory-13-a-list", store: store) { app in
+        visit("3-memory-13-a-list", store: store, extra: lists) { app in
             guard self.openLists(app), self.tap(app.buttons["lists.new"], app) else { return false }
             let name = app.textFields["newList.name"]
             guard self.see(name) else { return false }
@@ -189,7 +198,7 @@ final class ScreenAtlasTests: XCTestCase {
     // MARK: 4. Settings: Doddy, memory, this iPhone, about
 
     @MainActor
-    func test4Settings() {
+    func test4aSettings() {
         let pages: [(String, [String])] = [
             ("4-settings-01-settings", []),
             ("4-settings-02-voice", ["settings.voice"]),
@@ -202,6 +211,15 @@ final class ScreenAtlasTests: XCTestCase {
             ("4-settings-09-what-doddy-knows", ["settings.memory", "settings.knowledge"]),
             ("4-settings-10-what-ive-learned", ["settings.memory", "settings.knowledge", "settings.learned"]),
             ("4-settings-11-remembered-conversations", ["settings.memory", "settings.knowledge", "settings.rememberedConversations"]),
+        ]
+        for (name, path) in pages { visit(name) { app in self.settings(app, path) } }
+    }
+
+    /// Split from 4a: one test with all of Settings ran past the 10-minute limit (ADR-680) in the
+    /// first screens run (41475441329).
+    @MainActor
+    func test4bSettings() {
+        let pages: [(String, [String])] = [
             ("4-settings-12-export-backup-delete", ["settings.memory", "settings.memories"]),
             ("4-settings-13-language", ["settings.language"]),
             ("4-settings-14-appearance", ["settings.appearance"]),
@@ -226,7 +244,7 @@ final class ScreenAtlasTests: XCTestCase {
     // MARK: 5. Connections and notifications
 
     @MainActor
-    func test5ConnectionsAndNotifications() {
+    func test5aConnections() {
         let pages: [(String, [String])] = [
             ("5-connect-01-connections", ["settings.connectionsHub"]),
             ("5-connect-02-calendar-reminders-contacts", ["settings.connectionsHub", "settings.connections"]),
@@ -238,6 +256,20 @@ final class ScreenAtlasTests: XCTestCase {
             ("5-connect-08-apple-health", ["settings.connectionsHub", "connections.appleHealth"]),
             ("5-connect-09-training-plan", ["settings.connectionsHub", "connections.trainingPlan"]),
             ("5-connect-10-training-log", ["settings.connectionsHub", "connections.trainingLog"]),
+        ]
+        for (name, path) in pages { visit(name) { app in self.settings(app, path) } }
+        visit("5-connect-11-connections-paused", extra: ["-connections.pauseAll", "YES"]) { app in
+            self.settings(app, ["settings.connectionsHub"])
+        }
+        visit("5-connect-12-new-training-plan") { app in
+            self.settings(app, ["settings.connectionsHub", "connections.trainingPlan"]) && self.tap(app.buttons["plan.make"], app)
+        }
+    }
+
+    /// Split from 5a, for the 10-minute limit (see 4b).
+    @MainActor
+    func test5bNotifications() {
+        let pages: [(String, [String])] = [
             ("5-notify-01-notifications", ["settings.notifications"]),
             ("5-notify-02-notifications-and-texts", ["settings.notifications", "settings.updates"]),
             ("5-notify-03-check-ins-and-reminders", ["settings.notifications", "settings.routines"]),
@@ -252,12 +284,6 @@ final class ScreenAtlasTests: XCTestCase {
             ("5-notify-12-tidy-up", ["settings.notifications", "settings.routines", "label:Open the tidy-up now"]),
         ]
         for (name, path) in pages { visit(name) { app in self.settings(app, path) } }
-        visit("5-connect-11-connections-paused", extra: ["-connections.pauseAll", "YES"]) { app in
-            self.settings(app, ["settings.connectionsHub"])
-        }
-        visit("5-connect-12-new-training-plan") { app in
-            self.settings(app, ["settings.connectionsHub", "connections.trainingPlan"]) && self.tap(app.buttons["plan.make"], app)
-        }
     }
 
     // MARK: 6. The same app in dark, in Polish and at the largest text
@@ -289,7 +315,12 @@ final class ScreenAtlasTests: XCTestCase {
         // As LaunchSmokeTests: someone who has talked to Doddy before, unless the visit is a first one.
         app.launchArguments += ["-quickStartOffered", "NO", "-hadFirstConversation", firstVisit ? "NO" : "YES",
                                 "-firstLaunchIntroSeen", firstVisit ? "NO" : "YES"]
-        app.launchArguments += extra
+        // A key in `extra` replaces the same key set above (UITestLaunch's -memoriesShowsLists NO).
+        var arguments = app.launchArguments
+        for key in extra where key.hasPrefix("-") {
+            if let at = arguments.firstIndex(of: key), at + 1 < arguments.count { arguments.removeSubrange(at...(at + 1)) }
+        }
+        app.launchArguments = arguments + extra
         app.launch()
         let reached = steps(app)
         settle(1.2)
