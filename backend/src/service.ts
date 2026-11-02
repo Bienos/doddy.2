@@ -493,8 +493,7 @@ export class ConnectedAppsService {
   }
 
   /** Already queued: removed at the provider and dequeued, or kept as `failed` to retry. */
-  async removeQueued(queued: readonly QueuedCleanup[]): Promise<{ removed: number; queued: number }> {
-    const count = { removed: 0, queued: 0 };
+  private async removeQueued(queued: readonly QueuedCleanup[]): Promise<void> {
     for (const connectionId of new Set(queued.map((q) => q.connectionId))) {
       let result: "removed" | "failed";
       try {
@@ -504,9 +503,7 @@ export class ConnectedAppsService {
       }
       if (result === "removed") await this.store.finishCleanup(connectionId);
       else await this.store.failCleanup(connectionId, "remote_cleanup_failed");
-      count[result === "removed" ? "removed" : "queued"] += 1;
     }
-    return count;
   }
 
   private async removeRemote(userId: string): Promise<"removed" | "failed"> {
