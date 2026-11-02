@@ -168,21 +168,32 @@ final class ScreenFixtureTests: XCTestCase {
         app.launchArguments += ["-quickStartOffered", "NO", "-hadFirstConversation", "YES", "-firstLaunchIntroSeen", "YES"]
         app.launchArguments += ["-screenFixture", "island:\(id)"]
         app.launch()
-        let started = see(app.buttons["home.more"], 12)
-        settle(5)
+        var started = see(app.buttons["home.more"], 12)
+        // The fixture asks for the activity 2 s after launch and writes what iOS answered on screen.
+        let answer = app.staticTexts["fixture.island.report"]
+        let said = see(answer, 10) ? answer.label : "no answer from the fixture"
+        add(XCTAttachment(string: "\(name): \(said)"))
+        if !said.contains("started") {
+            // Nothing to draw: keep the app's own screen, with the answer on it, as the evidence.
+            keep("\(name)-0-app", reached: false, note: said)
+            started = false
+        }
+        settle(3)
         XCUIDevice.shared.press(.home)
-        settle(2)
-        keep("\(name)-a-compact", reached: started)
+        // The widget extension can take a long time to draw its first card on a hosted Mac (the
+        // 1 Nov island test allowed 30 s); later states find it warm.
+        settle(number == 1 ? 30 : 12)
+        keep("\(name)-a-compact", reached: started, note: said)
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
         springboard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.04)).press(forDuration: 1.2)
-        settle(2)
-        keep("\(name)-b-expanded", reached: started)
+        settle(4)
+        keep("\(name)-b-expanded", reached: started, note: said)
         // Lock, wake, and look at the Lock Screen; then swipe up to leave it (no passcode).
         _ = XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
-        settle(1.5)
+        settle(2)
         _ = XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
-        settle(2.5)
-        keep("\(name)-c-lock", reached: started)
+        settle(5)
+        keep("\(name)-c-lock", reached: started, note: said)
         springboard.swipeUp()
         settle(1)
         app.terminate()
@@ -205,7 +216,7 @@ final class ScreenFixtureTests: XCTestCase {
     }
 
     @MainActor
-    private func keep(_ name: String, reached: Bool) {
+    private func keep(_ name: String, reached: Bool, note: String = "") {
         let shot = XCUIScreen.main.screenshot()
         let file = (reached ? "" : "missed-") + name
         let attachment = XCTAttachment(screenshot: shot)
@@ -215,7 +226,8 @@ final class ScreenFixtureTests: XCTestCase {
         do {
             try FileManager.default.createDirectory(at: Self.folder, withIntermediateDirectories: true)
             try shot.pngRepresentation.write(to: Self.folder.appendingPathComponent(file + ".png"))
-            let line = Data("\(name)\t\(reached ? "reached" : "missed")\n".utf8)
+            let tail = note.isEmpty ? "" : "\t" + note.replacingOccurrences(of: "\t", with: " ").replacingOccurrences(of: "\n", with: " ")
+            let line = Data("\(name)\t\(reached ? "reached" : "missed")\(tail)\n".utf8)
             let index = Self.folder.appendingPathComponent("index.tsv")
             if let handle = try? FileHandle(forWritingTo: index) {
                 try handle.seekToEnd()

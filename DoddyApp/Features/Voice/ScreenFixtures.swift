@@ -310,7 +310,7 @@ private struct ReportPictures: View {
 }
 
 extension ScreenFixtures {
-    private static var islandActivity: VoiceLiveActivity?
+    private static var islandActivity: Activity<DoddyVoiceAttributes>?
 
     /// The real voice Live Activity in one real state. Statuses and moments are the ones a
     /// conversation sends (see `IslandScreenshotTests`); iOS draws the island and the Lock Screen card.
@@ -340,9 +340,38 @@ extension ScreenFixtures {
             return
         }
         state.language = Bundle.main.preferredLocalizations.first
-        let island = VoiceLiveActivity()
-        island.show(state, startedAt: .now)
-        islandActivity = island
+        // The same attributes and content the conversation's activity sends, requested here with the
+        // answer shown on screen: the first run's pictures (2 Nov) showed an empty island and no Lock
+        // Screen card, and `VoiceLiveActivity.show` swallows the reason a request fails.
+        var report = "activities enabled: \(ActivityAuthorizationInfo().areActivitiesEnabled)"
+        if ActivityAuthorizationInfo().areActivitiesEnabled {
+            do {
+                let activity = try Activity.request(
+                    attributes: DoddyVoiceAttributes(startedAt: .now),
+                    content: ActivityContent(state: state, staleDate: Date().addingTimeInterval(900)),
+                    pushType: nil)
+                islandActivity = activity
+                report += "; started \(activity.id.prefix(8)) (\(id))"
+            } catch {
+                report += "; request failed: \(error)"
+            }
+        }
+        showIslandReport(report)
+    }
+
+    /// The outcome as a label on the app's own screen (read by the test, kept with the pictures).
+    private static func showIslandReport(_ text: String) {
+        guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let window = scene.windows.first(where: \.isKeyWindow) else { return }
+        let label = UILabel()
+        label.text = text
+        label.numberOfLines = 0
+        label.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
+        label.textColor = .white
+        label.backgroundColor = UIColor.black.withAlphaComponent(0.75)
+        label.accessibilityIdentifier = "fixture.island.report"
+        label.frame = CGRect(x: 8, y: window.safeAreaInsets.top + 70, width: window.bounds.width - 16, height: 64)
+        window.addSubview(label)
     }
 }
 
