@@ -8,7 +8,7 @@ import XCTest
     func end() async { ended = true }
 }
 
-/// ADR-670: a start that takes too long is cancelled and reported, and a start that connects
+/// ADR-686: a start that takes too long is cancelled and reported, and a start that connects
 /// after the limit anyway is ended, so nothing keeps listening.
 @MainActor
 final class StartLimitTests: XCTestCase {
@@ -63,6 +63,38 @@ final class StartLimitTests: XCTestCase {
         XCTAssertTrue(conversation.ended, "a conversation that connected after the limit is ended")
     }
 
+    func testCallerCancellationFinishesBeforeUncooperativeProviderAndCleansUpLateResult() async throws {
+        let provider = SuspendedStart()
+        let conversation = FakeConversation()
+        let task = Task {
+            try await StartLimit.run(seconds: 30, operation: {
+                await provider.wait()
+                return conversation
+            }, lateResult: { await $0.end() })
+        }
+        while provider.continuation == nil { await Task.yield() }
+        task.cancel()
+        // Release the provider only after the cancelled caller returns. A failure to resume the
+        // caller hangs here until the outer test timeout instead of falsely passing after 30 s.
+        do { _ = try await task.value; XCTFail("expected cancellation") }
+        catch { XCTAssertTrue(error is CancellationError) }
+        XCTAssertFalse(conversation.ended)
+        provider.continuation?.resume()
+        for _ in 0..<100 where !conversation.ended { await Task.yield() }
+        XCTAssertTrue(conversation.ended)
+    }
+
+    func testAlreadyCancelledCallerNeverStartsProvider() async {
+        let called = LateBox()
+        let task = Task {
+            withUnsafeCurrentTask { $0?.cancel() }
+            return try await StartLimit.run(operation: { called.count += 1; return 1 }, lateResult: { _ in })
+        }
+        do { _ = try await task.value; XCTFail("expected cancellation") }
+        catch { XCTAssertTrue(error is CancellationError) }
+        XCTAssertEqual(called.count, 0)
+    }
+
     func testTheMessageIsNotTheOfflineOne() {
         XCTAssertFalse(StartLimit.message.lowercased().contains("offline"))
         XCTAssertEqual(StartLimit.seconds, 10)
@@ -70,3 +102,8 @@ final class StartLimitTests: XCTestCase {
 }
 
 @MainActor private final class LateBox { var count = 0 }
+
+@MainActor private final class SuspendedStart {
+    var continuation: CheckedContinuation<Void, Never>?
+    func wait() async { await withCheckedContinuation { continuation = $0 } }
+}

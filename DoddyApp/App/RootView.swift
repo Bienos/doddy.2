@@ -258,7 +258,7 @@ struct RootView: View {
                                                notesLoaded: store.hasLoaded && store.loadError == nil)
                 pickUpSharedItem()
                 Task { await OpenWaysReminderScheduler.refresh(router.setup) }
-                // Doddy's free server sleeps when idle (ADR-670): one health ping now starts its
+                // Doddy's free server sleeps when idle (ADR-686): one health ping now starts its
                 // wake-up before a request needs it. Only for an iPhone that has a session with it.
                 if let server = DeviceSession.serverURL(), KeychainSessionStore.read()?.token(for: server) != nil {
                     Task { await ServerWarmUp.shared.wake(server: server, transport: URLSessionTransport.shared) }

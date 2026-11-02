@@ -677,7 +677,7 @@ final class VoiceSessionController {
         }
         actions.toggleMute = { [weak self] in await self?.toggleMute() }
 
-        // The voice token is asked for now and used below (ADR-670), so the wait for the notes and
+        // The voice token is asked for now and used below (ADR-686), so the wait for the notes and
         // the rest of the context below overlaps with the wait for the server instead of adding to
         // it. Only ElevenLabs through the token server, after consent and the microphone check.
         var earlyToken: Task<Result<String, VoiceTokenError>, Never>?
@@ -863,7 +863,7 @@ final class VoiceSessionController {
         Self.audioLog.notice("\(connectNote, privacy: .public)")
         let startConfig = config
         do {
-            // At most `StartLimit.seconds` (ADR-670). One that connects after the limit anyway is
+            // At most `StartLimit.seconds` (ADR-686). One that connects after the limit anyway is
             // ended here, so nothing keeps listening.
             let started = try await StartLimit.run {
                 try await ElevenLabs.startConversation(auth: auth, config: startConfig)
@@ -889,6 +889,9 @@ final class VoiceSessionController {
             // A replaced start's failure isn't the new conversation's.
             guard attempt == startAttempt else { return }
             if error is StartLimit.TimedOut {
+                // Revoke the callbacks before reporting failure: a late SDK connection must not
+                // change the phase, append a transcript or run a tool after the deadline.
+                startAttempt += 1
                 fail(StartLimit.message)
                 return
             }

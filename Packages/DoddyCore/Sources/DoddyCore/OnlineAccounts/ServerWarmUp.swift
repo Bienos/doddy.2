@@ -1,6 +1,6 @@
 import Foundation
 
-/// Wakes Doddy's server before anything needs it (ADR-670).
+/// Wakes Doddy's server before anything needs it (ADR-686).
 ///
 /// The backend runs on a free Render instance that sleeps when idle and takes about 20 seconds
 /// to wake (docs/implementation/MESSAGES_STATUS.md), while the app gives a request 20 seconds.

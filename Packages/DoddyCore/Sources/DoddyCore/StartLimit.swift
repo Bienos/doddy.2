@@ -1,22 +1,10 @@
 import Foundation
 
-/// A time limit on starting a voice conversation (ADR-670).
-///
-/// A start that never gets going leaves a silent session that ends only when iOS or the provider
-/// gives up (STATUS "Known problems", docs/implementation/VOICE_SESSION_STARTS.md: "Bound the
-/// start"). `run` gives the start `seconds`; past that it cancels it and says so, so the person
-/// sees a clear message instead of a conversation that can't hear them.
-///
-/// If the start ignores the cancellation and connects after the limit, `lateResult` gets what it
-/// made, so the caller can end it and nothing keeps the microphone open.
+/// Bounds provider startup, including providers that ignore cancellation (ADR-686).
+/// Late conversations are returned only to `lateResult` so the caller can end them.
 public enum StartLimit {
-    /// How long a start may take. The voice token request has its own 15 s limit before this.
     public static let seconds: TimeInterval = 10
-
-    public struct TimedOut: Error, Equatable, Sendable {
-        public init() {}
-    }
-
+    public struct TimedOut: Error, Equatable, Sendable { public init() {} }
     public static let message = "Doddy's voice didn't connect in time. Check your internet connection and try again in a moment."
 
     @MainActor
@@ -25,43 +13,50 @@ public enum StartLimit {
         operation: @escaping @MainActor () async throws -> T,
         lateResult: @escaping @MainActor (T) async -> Void
     ) async throws -> T {
-        let race = Race()
-        var worker: Task<Void, Never>?
-        var timer: Task<Void, Never>?
-        defer { timer?.cancel() }
+        try Task.checkCancellation()
+        let race = Race<T>()
         return try await withTaskCancellationHandler {
-            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<T, any Error>) in
-                worker = Task { @MainActor in
+            try await withCheckedThrowingContinuation { continuation in
+                race.continuation = continuation
+                race.worker = Task { @MainActor in
                     do {
                         let value = try await operation()
-                        if race.claim() { continuation.resume(returning: value) } else { await lateResult(value) }
+                        if let continuation = race.claim() { continuation.resume(returning: value) }
+                        else { await lateResult(value) }
                     } catch {
-                        if race.claim() { continuation.resume(throwing: error) }
+                        race.claim()?.resume(throwing: error)
                     }
                 }
-                timer = Task { @MainActor in
-                    try? await Task.sleep(nanoseconds: UInt64(max(0, seconds) * 1_000_000_000))
-                    if race.claim() {
-                        worker?.cancel()
+                race.timer = Task { @MainActor in
+                    do { try await Task.sleep(for: .seconds(max(0, seconds))) }
+                    catch { return }
+                    if let continuation = race.claim() {
+                        race.worker?.cancel()
                         continuation.resume(throwing: TimedOut())
                     }
                 }
             }
         } onCancel: {
-            Task { @MainActor in worker?.cancel() }
+            // Cancelling the caller must finish immediately even if the provider ignores it.
+            Task { @MainActor in
+                if let continuation = race.claim() {
+                    race.worker?.cancel()
+                    continuation.resume(throwing: CancellationError())
+                }
+            }
         }
     }
 
-    /// The first of the start finishing and the limit passing wins; the other does nothing.
-    private final class Race: @unchecked Sendable {
-        private let lock = NSLock()
-        private var decided = false
-        func claim() -> Bool {
-            lock.lock()
-            defer { lock.unlock() }
-            if decided { return false }
-            decided = true
-            return true
+    @MainActor
+    private final class Race<T> {
+        var continuation: CheckedContinuation<T, any Error>?
+        var worker: Task<Void, Never>?
+        var timer: Task<Void, Never>?
+        func claim() -> CheckedContinuation<T, any Error>? {
+            guard let continuation else { return nil }
+            self.continuation = nil
+            timer?.cancel()
+            return continuation
         }
     }
 }

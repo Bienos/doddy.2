@@ -13,7 +13,7 @@ private actor PingRecorder: HTTPTransport {
     }
 }
 
-/// ADR-670: one health ping wakes the sleeping server before the first real request.
+/// ADR-686: one health ping wakes the sleeping server before the first real request.
 final class ServerWarmUpTests: XCTestCase {
     private let server = URL(string: "https://doddy.example")!
     private let start = Date(timeIntervalSince1970: 1_800_000_000)
