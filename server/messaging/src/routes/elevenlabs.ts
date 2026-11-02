@@ -163,7 +163,7 @@ export const elevenLabsRoutes = (deps: Deps): FastifyPluginAsync => async (app) 
       if ((rows[0]?.n ?? 0) >= MAX_PENDING_NOTES) return false;
       const { rows: call } = await c.query<{ id: string | null; conversation_id: string | null }>(
         "SELECT c.id, c.conversation_id FROM call_sessions s LEFT JOIN calls c ON c.id = s.call_id WHERE s.id = $1", [s.id]);
-      // The call's id lets its recap list this note (ADR-684).
+      // The call's id lets its recap list this note (ADR-693).
       await c.query(
         `INSERT INTO call_notes (id, account_id, key_version, ciphertext, conversation_id, call_id) VALUES ($1, $2, $3, $4, $5, $6)`,
         [id, s.accountId, cipher.keyVersion, cipher.encrypt(body.data.text, `${s.accountId}:note:${id}`),

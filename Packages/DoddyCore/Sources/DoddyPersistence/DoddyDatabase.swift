@@ -467,7 +467,7 @@ public final class DoddyDatabase: Sendable {
         migrator.registerMigration("v20_thread_photo") { db in
             try db.execute(sql: "ALTER TABLE thread_messages ADD COLUMN has_photo INTEGER NOT NULL DEFAULT 0 CHECK (has_photo IN (0, 1))")
         }
-        // Recaps of calls with Doddy (ADR-684): the recap as the server built it, its digest, and what the
+        // Recaps of calls with Doddy (ADR-693): the recap as the server built it, its digest, and what the
         // server deleted once this iPhone had it. The recap lives only here after the acknowledgement.
         migrator.registerMigration("v21_call_recaps") { db in
             try db.execute(sql: """

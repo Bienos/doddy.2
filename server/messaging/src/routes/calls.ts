@@ -40,7 +40,7 @@ export const callRoutes = (deps: Deps, recaps?: RecapContext): FastifyPluginAsyn
   const ensureRow = (accountId: string) =>
     db.query("INSERT INTO call_settings (account_id) VALUES ($1) ON CONFLICT DO NOTHING", [accountId]);
 
-  // ---------- recaps (ADR-684) ----------
+  // ---------- recaps (ADR-693) ----------
 
   app.get("/v1/calls/:id/recap", { preHandler: auth, config: { rateLimit: { max: 240, timeWindow: "1 hour" } } }, async (req, reply) => {
     if (!recaps) return reply.code(503).send({ error: "not_configured" });
@@ -183,7 +183,7 @@ export const callRoutes = (deps: Deps, recaps?: RecapContext): FastifyPluginAsyn
       `SELECT c.id, c.direction, c.status, c.created_at AS "createdAt", r.state AS recap FROM calls c
        LEFT JOIN call_recaps r ON r.call_id = c.id
        WHERE c.account_id = $1 ORDER BY c.created_at DESC LIMIT 20`, [principal(req).accountId]);
-    // `recap` (ADR-684): none, waiting, ready, acked, deleted or expired. Older apps ignore it.
+    // `recap` (ADR-693): none, waiting, ready, acked, deleted or expired. Older apps ignore it.
     return { calls: rows.map((r) => ({ ...r, recap: publicState(r.recap) })) };
   });
 

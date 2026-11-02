@@ -2,7 +2,7 @@ import DoddyCore
 import Foundation
 import Observation
 
-/// State for one call's recap (ADR-684), without the view. The recap is saved on this iPhone before the
+/// State for one call's recap (ADR-693), without the view. The recap is saved on this iPhone before the
 /// server is told it can delete its copy (`CallRecapLoader`); nothing here says anything was saved as a
 /// memory: the notes it lists wait in "Notes from your calls" until the user saves them there.
 @MainActor

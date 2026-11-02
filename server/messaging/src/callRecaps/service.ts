@@ -1,4 +1,4 @@
-// Recaps of S2 calls (ADR-684): what happens with ElevenLabs' post-call payload for the phone agent, the
+// Recaps of S2 calls (ADR-693): what happens with ElevenLabs' post-call payload for the phone agent, the
 // worker pass that builds the recap, and what the app reads, acknowledges or deletes. Logs carry ids,
 // states and counts only, never words from the call.
 import { randomUUID } from "node:crypto";

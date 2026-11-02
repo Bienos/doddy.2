@@ -175,7 +175,7 @@ struct CallsSettingsView: View {
                     let row = StatusRow(
                         title: call.direction == "inbound" ? "You called Doddy" : "Doddy called you",
                         value: "\(DateText.full(call.createdDate))\(call.status == "failed" ? " · failed" : call.status == "unknown" ? " · not confirmed" : "")\(Self.recapSuffix(call.recapState))")
-                    // A call with a recap (ADR-684) opens it; the recap screen says when it's still coming.
+                    // A call with a recap (ADR-693) opens it; the recap screen says when it's still coming.
                     if call.recapState == .none {
                         row
                     } else {

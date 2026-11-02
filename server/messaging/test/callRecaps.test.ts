@@ -1,4 +1,4 @@
-// Recaps of S2 calls (ADR-684): the rules on their own, then the whole path against real Postgres:
+// Recaps of S2 calls (ADR-693): the rules on their own, then the whole path against real Postgres:
 // call-start → note → signed post-call webhook → worker → GET → ack (receipts) → expiry.
 import assert from "node:assert/strict";
 import { after, before, beforeEach, describe, test } from "node:test";

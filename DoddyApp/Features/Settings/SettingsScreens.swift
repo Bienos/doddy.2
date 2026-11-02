@@ -388,7 +388,7 @@ struct MemoriesSettingsView: View {
             try await environment.callCaseRepository.deleteAll()
             // Tasks handed to Doddy (ADR-570): words and results kept on this iPhone.
             try await environment.errandRepository.deleteAll()
-            // Recaps of calls with Doddy (ADR-684): summaries, notes and transcripts kept on this iPhone.
+            // Recaps of calls with Doddy (ADR-693): summaries, notes and transcripts kept on this iPhone.
             try await environment.callRecapRepository.deleteAll()
             // The typed conversation with Doddy (ADR-585): messages kept on this iPhone.
             try await environment.messageThreadRepository.deleteAll()

@@ -1,4 +1,4 @@
-// The recap of an S2 call (ADR-684): built in code from the call's transcript and the notes it left. A
+// The recap of an S2 call (ADR-693): built in code from the call's transcript and the notes it left. A
 // model, if configured, may only write the summary, the next step, and point at the lines where something
 // was settled or where Doddy said it can't do something. Every pointer is checked against the transcript
 // here: its quote must be words from that line, or the item is dropped. Notes come from the database (only

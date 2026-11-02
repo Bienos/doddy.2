@@ -63,7 +63,7 @@ public struct CallRecord: Equatable, Sendable, Decodable, Identifiable {
     public let direction: String
     public let status: String
     public let createdAt: String
-    /// The server's state for this call's recap (ADR-684); servers before it send none.
+    /// The server's state for this call's recap (ADR-693); servers before it send none.
     public let recap: String?
 
     public init(id: UUID, direction: String, status: String, createdAt: String, recap: String? = nil) {

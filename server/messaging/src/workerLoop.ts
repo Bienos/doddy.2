@@ -47,7 +47,7 @@ export async function runWorkerLoop(
 }
 
 /**
- * Recaps of S2 calls (ADR-684): builds the recaps whose transcript arrived, and wipes any older than 30
+ * Recaps of S2 calls (ADR-693): builds the recaps whose transcript arrived, and wipes any older than 30
  * days. Its own loop, so a slow summary never holds back pushes.
  */
 async function recapLoop(ctx: RecapContext, shouldStop: () => boolean) {

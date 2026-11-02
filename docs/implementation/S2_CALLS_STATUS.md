@@ -76,7 +76,7 @@ Date: 2026-10-10. Owner decisions on that date:
 - The memory copy is re-uploaded in full after each change. That's fine for hundreds of memories; at much larger sizes it would need incremental sync.
 - One shared PIN lockout per account (not per call), so someone guessing can lock out the real user for 15 minutes.
 
-## Recaps (ADR-684, 2 Nov 2026, branch `claude/call-recap`, not merged)
+## Recaps (ADR-693, 2 Nov 2026, branch `claude/call-recap`, not merged)
 
 Owner: "czy daje mi recap rozmowy co było ogarnięte", then "i robimy ten recap też". **State: built and tested with fakes. No real call has produced a recap. The two SwiftUI files are not compiled.**
 

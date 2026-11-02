@@ -3,7 +3,7 @@
 import GRDB
 import XCTest
 
-/// Recaps of calls with Doddy, kept on the iPhone (ADR-684, `v21_call_recaps`).
+/// Recaps of calls with Doddy, kept on the iPhone (ADR-693, `v21_call_recaps`).
 final class SQLiteCallRecapRepositoryTests: XCTestCase {
     private func recap() -> CallRecap {
         CallRecap(

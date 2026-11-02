@@ -87,7 +87,7 @@ export function providersFrom(config: Config) {
       ? new ClaudeAssistantResponder(config.anthropicApiKey, { model: as.model, effort: as.effort })
       : undefined,
   };
-  // Recaps of S2 calls (ADR-684): Claude Haiku writes the summary when there is an Anthropic key; the
+  // Recaps of S2 calls (ADR-693): Claude Haiku writes the summary when there is an Anthropic key; the
   // recap is built either way once the post-call webhook brings a transcript.
   const rc = config.callRecaps;
   const callRecaps: CallRecapDeps = {

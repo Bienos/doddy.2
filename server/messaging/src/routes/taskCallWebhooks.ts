@@ -102,7 +102,7 @@ export const taskCallWebhookRoutes = (
   });
 
   // ElevenLabs post-call: raw bytes for the HMAC, and room for a long transcript. The workspace has one
-  // post-call webhook: the S2 phone agent's calls go to their recap (ADR-684), the task-call agent's to
+  // post-call webhook: the S2 phone agent's calls go to their recap (ADR-693), the task-call agent's to
   // the answer card; anything else is dropped unread.
   const webhookSecret = ctx?.config.webhookSecret ?? (recaps?.phoneAgentId ? recaps.webhookSecret : undefined);
   await app.register(async (scope) => {

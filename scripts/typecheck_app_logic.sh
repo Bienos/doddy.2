@@ -87,7 +87,7 @@ enum ServerConfig {
 }
 SWIFT
 
-# CallRecapModel (ADR-684) words server errors through UpdatesModel, which imports UserNotifications;
+# CallRecapModel (ADR-693) words server errors through UpdatesModel, which imports UserNotifications;
 # only that one function is needed here.
 cat > "$work/UpdatesModelStub.swift" <<'SWIFT'
 @MainActor
@@ -149,7 +149,7 @@ files=(
   DoddyApp/DesignSystem/Motion/DoddyDirector.swift
   # Calls Doddy places for the user (ADR-500): the screens' state, without the views.
   DoddyApp/Features/CallCases/CallCasesModel.swift
-  # A call's recap (ADR-684): load, save here, then acknowledge; without the view.
+  # A call's recap (ADR-693): load, save here, then acknowledge; without the view.
   DoddyApp/Features/Calls/CallRecapModel.swift
   # This week's leaflets (SHOPPING.md 2): the screen's state and the voice tool's answer, without the views.
   DoddyApp/Features/Shopping/DealsModel.swift

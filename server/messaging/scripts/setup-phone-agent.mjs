@@ -109,7 +109,7 @@ if (setWorkspaceWebhook) {
   console.log(JSON.stringify(webhook, null, 2));
 }
 
-// Recaps (ADR-684): the workspace's one post-call webhook (the same one call cases use) brings this agent's
+// Recaps (ADR-693): the workspace's one post-call webhook (the same one call cases use) brings this agent's
 // transcripts too. Not changed here; set it once in ElevenLabs → Agents → Settings → Post-call webhook.
 console.log(`\nNot changed: the workspace post-call webhook. For call recaps it must point at ${origin}${el.post_call_webhook}`
   + " (transcripts on, audio off), with its HMAC secret in ELEVENLABS_WEBHOOK_SECRET on the server.");

@@ -1,7 +1,7 @@
 import DoddyCore
 import SwiftUI
 
-/// Settings → Phone calls → a recent call: its recap (ADR-684). Only what the server built from the
+/// Settings → Phone calls → a recent call: its recap (ADR-693). Only what the server built from the
 /// call's transcript; the notes it lists wait in "Notes from your calls" until the user saves them.
 struct CallRecapView: View {
     let call: CallRecord

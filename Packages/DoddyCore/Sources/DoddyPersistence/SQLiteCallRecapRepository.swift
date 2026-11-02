@@ -2,7 +2,7 @@ import DoddyCore
 import Foundation
 import GRDB
 
-/// Recaps of calls with Doddy, on the iPhone (ADR-684, `v21_call_recaps`). A save reads the row back and
+/// Recaps of calls with Doddy, on the iPhone (ADR-693, `v21_call_recaps`). A save reads the row back and
 /// fails unless it matches, so the app acknowledges a recap (and the server deletes its copy) only after
 /// this returned.
 public final class SQLiteCallRecapRepository: CallRecapRepository {

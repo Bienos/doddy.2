@@ -91,7 +91,7 @@ final class DataFlowTests: XCTestCase {
         XCTAssertTrue(errands.note?.contains("no words from the task") ?? false)
     }
 
-    /// ADR-684: call recaps send the call's words (PIN masked) to Anthropic through the messaging server.
+    /// ADR-693: call recaps send the call's words (PIN masked) to Anthropic through the messaging server.
     func testCallRecapsRowSaysWhatGoesToAnthropicAndWhenItIsDeleted() {
         XCTAssertFalse(row("callRecaps", base).isActive)
         var state = base

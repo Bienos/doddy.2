@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// Recaps of calls with Doddy (ADR-684): decoding the server's reply, and saving before acknowledging.
+/// Recaps of calls with Doddy (ADR-693): decoding the server's reply, and saving before acknowledging.
 final class CallRecapTests: XCTestCase {
     private let callId = UUID(uuidString: "6F9619FF-8B86-4D11-B42D-00C04FC964FF")!
     private let digest = String(repeating: "a", count: 64)

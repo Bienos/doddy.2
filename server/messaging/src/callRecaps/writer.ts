@@ -1,4 +1,4 @@
-// Optional model step for the call recap (ADR-684), the same shape as the answer card's writer (ADR-504):
+// Optional model step for the call recap (ADR-693), the same shape as the answer card's writer (ADR-504):
 // Claude Haiku writes a short summary and next step, and points at transcript lines. recap.ts checks every
 // pointer against the transcript and drops what doesn't match; the notes come from the database, not from
 // here. The transcript is untrusted input: the prompt says so, and nothing it returns is executed.

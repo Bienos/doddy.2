@@ -1,6 +1,6 @@
 import Foundation
 
-// Recaps of S2 calls (ADR-684; server/messaging/src/callRecaps/). After a call with Doddy's number
+// Recaps of S2 calls (ADR-693; server/messaging/src/callRecaps/). After a call with Doddy's number
 // (or a Call me now), the server builds a recap from the call's transcript. The app saves it on this
 // iPhone first and only then acknowledges it, so the server deletes its copy only once the recap is
 // here (the same order as errands and call cases).

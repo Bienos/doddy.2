@@ -53,7 +53,7 @@ struct AppEnvironment: Sendable {
     /// Tasks handed to Doddy's background worker (ADR-570): the user's words, the state, and the
     /// result once it is saved here (then the server deletes its copy), in the same file.
     var errandRepository: any ErrandRepository = UnavailableErrandRepository()
-    /// Recaps of calls with Doddy (ADR-684): saved here before the server deletes its copy, in the same file.
+    /// Recaps of calls with Doddy (ADR-693): saved here before the server deletes its copy, in the same file.
     var callRecapRepository: any CallRecapRepository = UnavailableCallRecapRepository()
     /// The typed conversation with Doddy (ADR-585): messages kept on this iPhone until deleted, in the same file.
     var messageThreadRepository: any MessageThreadRepository = UnavailableMessageThreadRepository()

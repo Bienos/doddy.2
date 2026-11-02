@@ -81,7 +81,7 @@ export interface Deps {
   smsChatLog?: (msg: string, extra?: object) => void;
   /** Called with each inbound text's answer in flight (tests await it). */
   onSmsChat?: (done: Promise<import("./smsChat.js").SmsChatOutcome>) => void;
-  /** Recaps of S2 calls (ADR-684): the phone agent id, the post-call webhook secret, the summary writer. Needs `cipher`. */
+  /** Recaps of S2 calls (ADR-693): the phone agent id, the post-call webhook secret, the summary writer. Needs `cipher`. */
   callRecaps?: CallRecapDeps;
   /** Where call-recap log lines go (tests capture them); default: the request logger. */
   callRecapLog?: (msg: string, extra?: object) => void;

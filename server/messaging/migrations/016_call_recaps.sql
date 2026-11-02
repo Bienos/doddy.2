@@ -1,4 +1,4 @@
--- ADR-684: a recap after every S2 call with Doddy (a call to Doddy's number, or "Call me now").
+-- ADR-693: a recap after every S2 call with Doddy (a call to Doddy's number, or "Call me now").
 -- ElevenLabs' post-call webhook brings the transcript; the worker builds the recap; the app saves it on
 -- the iPhone and acknowledges it, and the server then deletes its copy and keeps a receipt. Only calls
 -- that already have a `calls` row get one (a verified number with calls on): unknown callers and callers

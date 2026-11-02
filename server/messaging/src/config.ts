@@ -38,7 +38,7 @@ const schema = z.object({
   RUN_WORKER_IN_WEB: z.enum(["0", "1"]).default("0"),
   ELEVENLABS_PHONE_AGENT_ID: optional,
   ELEVENLABS_PHONE_NUMBER_ID: optional, // ElevenLabs id of the imported Twilio number
-  // Recaps of S2 calls (ADR-684): built from the post-call webhook (ELEVENLABS_WEBHOOK_SECRET below) for the
+  // Recaps of S2 calls (ADR-693): built from the post-call webhook (ELEVENLABS_WEBHOOK_SECRET below) for the
   // calls of ELEVENLABS_PHONE_AGENT_ID. Claude writes the summary only within these daily caps (needs
   // ANTHROPIC_API_KEY); past them, or without a key, the recap has the notes and the transcript and says so.
   CALL_RECAP_DAILY_PER_ACCOUNT: z.coerce.number().int().min(0).max(100).default(30),
@@ -62,7 +62,7 @@ const schema = z.object({
   TASK_CALL_FROM_NUMBER: z.string().regex(/^\+[1-9][0-9]{6,14}$/).optional(),
   ELEVENLABS_TASK_AGENT_ID: optional,
   // Secret of the ElevenLabs post-call webhook (HMAC). The one workspace webhook serves call cases and the
-  // recaps of S2 calls (ADR-684).
+  // recaps of S2 calls (ADR-693).
   ELEVENLABS_WEBHOOK_SECRET: z.string().min(16).optional(),
   // Spoken after the AI disclosure. "off" until the owner confirms the legal basis (calls.md).
   CALL_RECORDING_NOTICE: z.enum(["off", "nagrywana", "zapisywana"]).default("off"),
@@ -197,7 +197,7 @@ export interface AssistantSettings {
   enabled: boolean; model: string; effort: "low" | "medium" | "high"; dailyPerAccount: number; dailyPerServer: number;
 }
 
-/** Recaps of S2 calls (ADR-684). */
+/** Recaps of S2 calls (ADR-693). */
 export interface CallRecapConfig {
   /** The S2 agent whose post-call payloads get a recap; without it, those payloads are ignored. */
   phoneAgentId?: string;
