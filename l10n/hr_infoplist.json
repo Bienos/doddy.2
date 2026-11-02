@@ -39,6 +39,10 @@
     "en": "Doddy reads your workouts, heart rate, resting heart rate, heart rate variability, sleep and VO2 max from Health to show them to you on its Apple Health screen. Only a short summary of the week leaves this iPhone, and only when you allow it: in Messages when you send it yourself, or to Doddy's voice when you ask and say yes. Doddy keeps none of it and writes nothing to Health. Turn this off in Settings, Connections, Apple Health, or in the Health app.",
     "hr": "Doddy čita tvoje treninge, puls, puls u mirovanju, varijabilnost srčanog ritma (HRV), san i VO2 max iz aplikacije Zdravlje da ti ih prikaže na svom zaslonu Apple Health. S ovog iPhonea izlazi samo kratak tjedni sažetak, i to samo kad to dopustiš: u Porukama kad ga sam pošalješ ili Doddyjevu glasu kad pitaš i pristaneš. Doddy ništa ne čuva i ništa ne upisuje u Zdravlje. Isključi to u Postavkama, Veze, Apple Health, ili u aplikaciji Zdravlje."
   },
+  "NSHealthUpdateUsageDescription": {
+    "en": "Doddy never writes to or changes Apple Health. It only asks to read your workouts, heart rate, resting heart rate, heart rate variability, sleep and VO2 max. iOS asks apps for this text because its Health permission screen covers both reading and writing.",
+    "hr": "Doddy nikad ne upisuje u Zdravlje i ništa tamo ne mijenja. Samo traži dopuštenje za čitanje tvojih treninga, pulsa, pulsa u mirovanju, varijabilnosti srčanog ritma (HRV), sna i VO2 max. iOS traži ovaj tekst od aplikacija jer njegov zaslon dopuštenja za Zdravlje obuhvaća i čitanje i upisivanje."
+  },
   "NSCameraUsageDescription": {
     "en": "Doddy opens the camera only when you tap Take a photo or Open camera. The photo you keep goes into a note on this iPhone and its text is read here; it is never sent anywhere or saved to your photo library.",
     "hr": "Doddy otvara kameru samo kad dodirneš Snimi fotografiju ili Otvori kameru. Fotografija koju zadržiš ide u bilješku na ovom iPhoneu, a njezin se tekst čita ovdje; nikad se nikamo ne šalje niti sprema u tvoju knjižnicu fotografija."

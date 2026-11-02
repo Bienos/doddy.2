@@ -38,6 +38,10 @@ Polish only, written by the agent that built the Tasks screens; the other eight 
 - **Check first:** "Przełączniki" for iOS's Action Button › *Controls* and "Przycisk czynności" for the Action Button: use exactly the words Polish iOS shows. "Regulamin" for Terms & Conditions and "Polityka prywatności" for the Privacy Policy, to match the website's Polish legal pages (`site/pl/terms/`, `site/pl/privacy/`) and the lawyer's wording. "Akceptuję Regulamin" on the unticked box.
 - 31 Polish lines and 23 lines in each other table were removed with the Settings paragraphs they translated.
 
+## Added 2 November 2026 (ADR-693, App Store validation)
+
+- **New permission prompt** `NSHealthUpdateUsageDescription` in all ten languages; the nine translations are machine drafts, not read by a native speaker. It says Doddy never writes to Health and only asks to read, and that iOS asks for the text because its permission screen covers reading and writing. The Health app's own names are the same as for the read prompt above.
+
 ## Added 24 October 2026 (ADR-621, Apple Health)
 
 - **New permission prompt** `NSHealthShareUsageDescription` in all ten languages; the nine translations are machine drafts. The Health app's own names used: Zdrowie, Health (de), Salud, Santé, Salute, Zdravlje, ヘルスケア, Saúde, 健康. "Apple Health" is kept as the name of Doddy's screen.

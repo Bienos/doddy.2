@@ -136,5 +136,11 @@ With 1Password (ADR-493): `npm run start:op` takes the secrets from the `doddy-d
    - Point the inbound webhook at `/webhooks/twilio/sms`.
    - Create a Verify service.
    - US numbers also need A2P 10DLC registration.
-4. APNs: create a .p8 key and enable the Push capability on the app id.
+4. APNs: create a .p8 key and enable the Push capability on the app id. Turning push on, in this order:
+   1. developer.apple.com → Identifiers → the app's ID (`com.bienos.doddy2.dev`): tick **Push Notifications**. Keys → **+** → tick **Apple Push Notifications service (APNs)** → download the `.p8` once. Note the Key ID and your Team ID. Keep the `.p8` in 1Password (`apns-auth-key`), never in a chat or a commit.
+   2. On Render, set `APNS_TEAM_ID`, `APNS_KEY_ID`, `APNS_PRIVATE_KEY` (the whole `.p8` text) and `APNS_BUNDLE_ID` (must equal the app's bundle id) on **both** `doddy-messaging` and `doddy-messaging-worker`, then deploy. All four or none: with one missing the server starts with `push: false` in its startup log.
+   3. Build the app with push: `DODDY_APP_ENTITLEMENTS = Config/Doddy-Push-AppGroup.entitlements` (see `project.yml`). `make project-iphone` has no entitlements and can't receive push. A Debug build from Xcode registers in `sandbox`; TestFlight and App Store builds in `production`.
+   4. In the app, turn notifications on and allow them; the app then uploads its token (`PUT /v1/device/push-token`).
+   5. Check Apple's side without running an errand: `npm run build`, then `node scripts/send-test-push.mjs <device token, hex> [sandbox|production]` with the four `APNS_` variables in your shell (the script's header says how). It sends one fixed test notification and says why Apple refused if it did. The token is in the `devices` table (`apns_token`).
+   6. Only after a real notification has arrived on the phone: bring back the notification wording that #145 removed (STATUS.md, "28 Oct 2026: errands by voice are live"), as one change with its tests.
 5. ElevenLabs: turn on **authentication** for the Doddy agent, so tokens are required.
