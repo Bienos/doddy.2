@@ -65,16 +65,19 @@ export async function handleSmsChat(deps: SmsChatDeps, from: string, body: strin
     [accountId, key]);
   if ((seen.rowCount ?? 0) > 0) return "duplicate";
   // Two deliveries of the same webhook at once can both get here; the key lets only the first reply out.
-  const send = async (text: string) => {
-    try { await enqueue(db, accountId, ["sms"], text, new Date(), key, { cipher: deps.cipher }); } catch (err) {
+  const send = async (text: string, idempotencyKey = key) => {
+    try { await enqueue(db, accountId, ["sms"], text, new Date(), idempotencyKey, { cipher: deps.cipher }); } catch (err) {
       if (!(err instanceof IdempotencyConflict)) throw err;
     }
   };
+  // "Off" and "limit" are said once a (UTC) day, the day the cap counts in, not once per text:
+  // an auto-reply or a flood of texts would otherwise get a paid text back for every one.
+  const today = new Date().toISOString().slice(0, 10);
 
   const assistant = deps.assistant;
   const responder = assistant?.responder;
   if (!assistant || !assistant.settings.enabled || !responder) {
-    await send(SMS_CHAT_COPY.off);
+    await send(SMS_CHAT_COPY.off, `sms-chat-off:${today}`);
     log("sms chat off", { accountId });
     return "off";
   }
@@ -83,7 +86,7 @@ export async function handleSmsChat(deps: SmsChatDeps, from: string, body: strin
     perAccount: assistant.settings.dailyPerAccount, perServer: assistant.settings.dailyPerServer,
   });
   if (reservation !== "ok") {
-    await send(SMS_CHAT_COPY.limit);
+    await send(SMS_CHAT_COPY.limit, `sms-chat-limit:${today}`);
     log("sms chat daily cap reached", { accountId, cap: reservation });
     return "limit";
   }

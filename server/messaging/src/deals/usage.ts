@@ -2,26 +2,25 @@
 // no item, page or offer is stored. A request is reserved before anything is fetched, so a flood can't spend
 // more than the caps, and an attempt that fails still counts (the caps bound spend, not success).
 import { inTransaction, type Db } from "../db.js";
+import { returnServerSlot, takeServerSlot } from "../serverUsage.js";
 
 export type Reservation = "ok" | "account_cap" | "server_cap";
 
-/** One lock for every reservation: the check and the count happen together, so both caps are exact. */
-const RESERVE_LOCK = 4242012;
-
-/** Reserves one request for the account today against both caps, or says which cap stopped it. */
+/**
+ * Reserves one request for the account today against both caps, or says which cap stopped it. The
+ * server's count lives in server_daily_usage (ADR-673), so deleting an account doesn't give it back;
+ * its row stays locked until the transaction ends, so both caps are exact.
+ */
 export async function reserve(db: Db, accountId: string, caps: { perAccount: number; perServer: number }): Promise<Reservation> {
   return inTransaction(db, async (c) => {
-    await c.query("SELECT pg_advisory_xact_lock($1)", [RESERVE_LOCK]);
-    const { rows } = await c.query<{ total: string; mine: string }>(
-      `SELECT COALESCE(SUM(requests), 0) AS total,
-              COALESCE(SUM(requests) FILTER (WHERE account_id = $1), 0) AS mine
-       FROM deals_usage WHERE day = (now() AT TIME ZONE 'utc')::date`, [accountId]);
-    if (Number(rows[0]!.total) >= caps.perServer) return "server_cap";
-    if (Number(rows[0]!.mine) >= caps.perAccount) return "account_cap";
-    await c.query(
+    if (!(await takeServerSlot(c, "deals", caps.perServer))) return "server_cap";
+    const { rowCount } = await c.query(
       `INSERT INTO deals_usage (account_id, day, requests) VALUES ($1, (now() AT TIME ZONE 'utc')::date, 1)
-       ON CONFLICT (account_id, day) DO UPDATE SET requests = deals_usage.requests + 1`, [accountId]);
-    return "ok";
+       ON CONFLICT (account_id, day) DO UPDATE SET requests = deals_usage.requests + 1
+         WHERE deals_usage.requests < $2`, [accountId, caps.perAccount]);
+    if (rowCount === 1) return "ok";
+    await returnServerSlot(c, "deals");
+    return "account_cap";
   });
 }
 

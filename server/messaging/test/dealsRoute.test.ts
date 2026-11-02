@@ -13,7 +13,7 @@ describe("leaflet search route against real Postgres", { skip: dbSkip }, () => {
   let db: Db;
   before(async () => { db = await freshDb(); });
   after(async () => { await db?.end(); });
-  beforeEach(async () => { await db.query("DELETE FROM deals_usage"); });
+  beforeEach(async () => { await db.query("DELETE FROM deals_usage; DELETE FROM server_daily_usage"); });
 
   async function world(opts: { settings?: Partial<DealsSettings>; off?: boolean } = {}) {
     const web = chainsWeb();
@@ -144,7 +144,7 @@ describe("leaflet search route against real Postgres", { skip: dbSkip }, () => {
     const mine = await Promise.all(Array.from({ length: 12 }, () => reserve(db, a.accountId, { perAccount: 3, perServer: 1000 })));
     assert.equal(mine.filter((r) => r === "ok").length, 3);
     assert.equal(mine.filter((r) => r === "account_cap").length, 9);
-    await db.query("DELETE FROM deals_usage");
+    await db.query("DELETE FROM deals_usage; DELETE FROM server_daily_usage");
     const accounts = await Promise.all(Array.from({ length: 4 }, () => w.account()));
     const all = await Promise.all(accounts.flatMap((x) => Array.from({ length: 4 }, () => reserve(db, x.accountId, { perAccount: 10, perServer: 5 }))));
     assert.equal(all.filter((r) => r === "ok").length, 5);
@@ -159,5 +159,19 @@ describe("leaflet search route against real Postgres", { skip: dbSkip }, () => {
     const del = await w.app.inject({ method: "DELETE", url: "/v1/account", headers: a.h });
     assert.ok(del.statusCode < 300, del.body);
     assert.equal((await usageRow(a.accountId)).length, 0);
+  });
+
+  test("deleting an account doesn't give the server's day back (ADR-673)", async () => {
+    const w = await world({ settings: { dailyPerServer: 2 } });
+    const a = await w.account();
+    const req = { items: ["masło"], chains: ["dino"], language: "pl" };
+    assert.equal((await w.ask(a.h, req)).statusCode, 200);
+    assert.equal((await w.ask(a.h, req)).statusCode, 200);
+    const del = await w.app.inject({ method: "DELETE", url: "/v1/account", headers: a.h });
+    assert.ok(del.statusCode < 300, del.body);
+    const { rows } = await db.query("SELECT requests FROM server_daily_usage WHERE feature = 'deals'");
+    assert.deepEqual(rows.map((r) => r.requests), [2], "the server's count stays");
+    const b = await w.account();
+    assert.equal((await w.ask(b.h, req)).statusCode, 429, "a new account still meets the server's cap");
   });
 });

@@ -149,24 +149,32 @@ async function gatherTopics(db: Db, news: NewsDeps, accountId: string, language:
   return out;
 }
 
+/** A digest more than this late is not sent: the server slept through its time (free plan). */
+export const DIGEST_MAX_LATE_MS = 2 * 3_600_000;
+
 /**
  * Scheduler pass: claims accounts whose digest time has come, moves their next run to tomorrow
- * first (so a crash can't cause a repeat), then builds each digest.
+ * first (so a crash can't cause a repeat), then builds each digest. One that is more than two hours
+ * late is skipped, not sent at a random hour: tomorrow's comes at its usual time.
  */
 export async function runDueDigests(db: Db, news: NewsDeps, batch = 5, now = new Date()): Promise<number> {
   const client = await db.connect();
-  let due: string[] = [];
+  const due: string[] = [];
   try {
     await client.query("BEGIN");
-    const { rows } = await client.query<{ account_id: string; send_time: string; timezone: string }>(
-      `SELECT account_id, to_char(send_time, 'HH24:MI') AS send_time, timezone FROM news_settings
+    const { rows } = await client.query<{ account_id: string; send_time: string; timezone: string; next_run_at: Date }>(
+      `SELECT account_id, to_char(send_time, 'HH24:MI') AS send_time, timezone, next_run_at FROM news_settings
        WHERE enabled AND next_run_at <= $2 ORDER BY next_run_at LIMIT $1 FOR UPDATE SKIP LOCKED`, [batch, now]);
     for (const r of rows) {
       await client.query("UPDATE news_settings SET next_run_at = $2 WHERE account_id = $1",
         [r.account_id, nextRunAt(now, r.send_time, r.timezone)]);
     }
     await client.query("COMMIT");
-    due = rows.map((r) => r.account_id);
+    for (const r of rows) {
+      const lateMs = now.getTime() - r.next_run_at.getTime();
+      if (lateMs > DIGEST_MAX_LATE_MS) log("news digest skipped, too late", { accountId: r.account_id, lateMinutes: Math.round(lateMs / 60_000) });
+      else due.push(r.account_id);
+    }
   } catch (err) {
     await client.query("ROLLBACK").catch(() => {});
     throw err;

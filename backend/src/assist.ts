@@ -141,13 +141,14 @@ export class AssistService {
     private readonly deps: {
       store: Store;
       claude: ClaudeProvider | null;
-      limits: Pick<Limits, "userDailyAsk" | "serviceDailyAsk">;
+      limits: Pick<Limits, "userDailyAsk" | "serviceDailyAsk" | "serviceDailyGuestAsk">;
       log?: (line: Record<string, unknown>) => void;
       now?: () => number;
     },
   ) {}
 
-  async answer(userId: string, body: unknown): Promise<AssistReply> {
+  /** `scope`: the caller's session scope; `ask` is a guest (ADR-587), counted in the guests' own pool. */
+  async answer(userId: string, body: unknown, scope?: "ask"): Promise<AssistReply> {
     const req = validateAssistRequest(body);
     if (!req) throw new AppError("invalid_request", { message: "That question can't be sent as written." });
     const claude = this.deps.claude;
@@ -157,7 +158,11 @@ export class AssistService {
     const allowed = await this.deps.store.reserveUsage(
       [
         { counter: `user:${userId}:ask`, period: day, limit: this.deps.limits.userDailyAsk },
-        { counter: "service:ask", period: day, limit: this.deps.limits.serviceDailyAsk },
+        // Guests (anyone with a device ID can get a guest session) have their own server-wide pool,
+        // so they can never use up the owner's questions; the owner never draws from theirs.
+        scope === "ask"
+          ? { counter: "service:ask:guest", period: day, limit: this.deps.limits.serviceDailyGuestAsk }
+          : { counter: "service:ask", period: day, limit: this.deps.limits.serviceDailyAsk },
       ],
       1,
     );

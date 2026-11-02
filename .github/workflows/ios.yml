@@ -6,15 +6,19 @@
 # Builds the iPhone/iPad app only: the Apple Watch and Mac apps are paused (ADR-572) and are in no
 # target of project.yml. The "macOS" below is the runner Xcode needs, not an app being built.
 # The macOS job is the slow one. Since ADR-680 (owner, 1 Nov 2026: "why these builds take so long")
-# it starts at the same time as the Linux job instead of after it, runs only what needs a Mac
+# it starts at the same time as the Linux job instead of after it and runs only what needs a Mac
 # (`scripts/ci.sh --app-only`: the Swift package tests on Apple's Foundation, the app build, the
-# unit tests and the UI tests on two simulators at once), and leaves the other checks to the Linux
-# job. The repository is public, so hosted runners cost nothing (ADR-543). On a pull request it
-# still runs only when the change can reach the app build or its tests (ADR-497,
-# scripts/ci_needs_mac.sh). Run by hand, it always runs.
+# unit tests and the UI tests), leaving the other checks to the Linux job. The repository is
+# public, so hosted runners cost nothing (ADR-543). On a pull request it still runs only when the
+# change can reach the app build or its tests (ADR-497, scripts/ci_needs_mac.sh); a push to the
+# default branch is checked the same way (ADR-675). Run by hand, it always runs.
 name: iOS build and tests
 
 on:
+  # The default branch is what Render deploys, and it sometimes gets direct pushes (ADR-675): those
+  # are tested too. The macOS job runs only when the push can reach the app build (ci_needs_mac.sh).
+  push:
+    branches: [claude/loving-dirac-uuxoux]
   pull_request:
   workflow_dispatch:
     inputs:
@@ -50,8 +54,19 @@ jobs:
         id: decide
         env:
           EVENT: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
         run: |
-          if [ "$EVENT" != "pull_request" ]; then
+          if [ "$EVENT" = "push" ]; then
+            # What the push changes: from the commit the branch was at before it, to the new head.
+            if [ -n "$BEFORE" ] && [ "$BEFORE" != "0000000000000000000000000000000000000000" ] \
+              && git fetch -q --depth=1 origin "$BEFORE" \
+              && files=$(git diff --name-only --no-renames "$BEFORE" HEAD); then
+              printf '%s\n' "$files" | scripts/ci_needs_mac.sh >> "$GITHUB_OUTPUT"
+            else
+              echo "Couldn't list what the push changes: the macOS build runs." >&2
+              echo "mac=true" >> "$GITHUB_OUTPUT"
+            fi
+          elif [ "$EVENT" != "pull_request" ]; then
             echo "Run by hand: the macOS build runs." >&2
             echo "mac=true" >> "$GITHUB_OUTPUT"
           elif git rev-parse --verify -q 'HEAD^2' >/dev/null \
@@ -98,9 +113,8 @@ jobs:
           node --version
 
       - name: scripts/ci.sh --app-only
-        # Two simulator clones for the UI tests (ADR-680); every test still runs once.
-        env:
-          DODDY_UI_TEST_WORKERS: "2"
+        # The UI tests on one simulator: two at once were slower and two tests failed on this
+        # runner (ADR-680, run 41341166440).
         run: scripts/ci.sh --app-only
 
       - name: Keep the test results

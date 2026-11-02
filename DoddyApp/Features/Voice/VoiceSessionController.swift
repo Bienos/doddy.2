@@ -422,9 +422,9 @@ final class VoiceSessionController {
     private let alarmWriter = AlarmKitWriter()
     private let leaveByWriter = LeaveByScheduler()
     private var conversation: (any LiveVoiceLink)?
-    /// Home's island extension is reading the loudness of his voice from this conversation
-    /// (ADR-655).
-    @ObservationIgnored private var voiceMeterAttached = false
+    /// The conversation Home's island extension is reading the loudness of his voice from
+    /// (ADR-655), kept so the meter is detached from it even after `conversation` is cleared.
+    @ObservationIgnored private var meteredConversation: (any LiveVoiceLink)?
     /// Who runs the conversation now (Home's voice switch, read when it starts; ADR-265, ADR-442).
     private(set) var provider: VoiceProvider = .elevenLabs
     /// The OpenAI model of the conversation being started or open (only meaningful when `provider` is OpenAI).
@@ -2174,12 +2174,14 @@ final class VoiceSessionController {
     /// attached the first time he speaks (that is when his audio track exists), let go when the
     /// conversation is over. A provider without such a track attaches nothing.
     private func updateVoiceMeter() {
-        if phase == .speaking, !voiceMeterAttached, let conversation {
-            voiceMeterAttached = conversation.attachAgentLevelMeter(AgentVoiceMeter.shared)
-            AgentVoiceMeter.shared.markAttached(voiceMeterAttached)
-        } else if !isLive, voiceMeterAttached {
-            conversation?.detachAgentLevelMeter(AgentVoiceMeter.shared)
-            voiceMeterAttached = false
+        if phase == .speaking, meteredConversation == nil, let conversation {
+            if conversation.attachAgentLevelMeter(AgentVoiceMeter.shared) { meteredConversation = conversation }
+            AgentVoiceMeter.shared.markAttached(meteredConversation != nil)
+        } else if !isLive, let metered = meteredConversation {
+            // Let go of the conversation it was attached to: stop() and a drop clear `conversation`
+            // before the phase changes, so detaching from `conversation` did nothing (ADR-672).
+            metered.detachAgentLevelMeter(AgentVoiceMeter.shared)
+            meteredConversation = nil
             AgentVoiceMeter.shared.reset()
         }
     }
@@ -2845,8 +2847,9 @@ final class VoiceSessionController {
             await reply(call.toolCallId, await DealsModel.shared.searchForAgent(request))
         case .noteCapabilityGap(let category):
             // Nothing changes and no app is used: one row on this iPhone, as a category (ADR-440).
-            await store.learning?.recordGap(category, requestID: call.toolCallId, sessionID: conversationID)
-            await reply(call.toolCallId, LearningPrompt.gapNoted)
+            // "Written down" only after the write (ADR-672); no store or a failed write says so.
+            let noted = await store.learning?.recordGap(category, requestID: call.toolCallId, sessionID: conversationID) ?? false
+            await reply(call.toolCallId, noted ? LearningPrompt.gapNoted : LearningPrompt.gapNotNoted)
         case .unsupported(let name):
             await reply(call.toolCallId, VoiceToolReply.unsupported(name), isError: true)
         case .invalid(_, let reason):

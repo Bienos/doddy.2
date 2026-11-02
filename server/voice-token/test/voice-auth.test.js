@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
+import { spawn, spawnSync } from "node:child_process";
 import { generateKeyPairSync, sign as signRS256, createHash, verify as verifySig } from "node:crypto";
+import { connect } from "node:net";
 import { test } from "node:test";
 import {
   handleVoiceAuthRequest,
@@ -64,10 +66,11 @@ function fakeStore() {
       return sessions.get(prior.sessionId);
     },
     async hitLimits(userId, perLimit, globalLimit) {
+      // Same rule as the Redis script: a user over their own limit doesn't move the global count.
       const key = `${userId}:per`;
       const per = (limits.get(key) ?? 0) + 1;
-      const global = (limits.get("global") ?? 0) + 1;
       limits.set(key, per);
+      const global = per > perLimit ? (limits.get("global") ?? 0) : (limits.get("global") ?? 0) + 1;
       limits.set("global", global);
       return { allowed: per <= perLimit && global <= globalLimit, retryAfterSeconds: 60 };
     },
@@ -435,4 +438,107 @@ test("shared-store adapter sends credentials only in headers and fails closed on
   await assert.rejects(() => down.getSession("sid"), VoiceAuthStoreUnavailable);
   assert.throws(() => createVoiceAuthStore({ url: "http://redis.example.test", token: "x" }), VoiceAuthStoreUnavailable);
   assert.throws(() => createVoiceAuthStore({ url: "https://user:pass@redis.example.test", token: "x" }), VoiceAuthStoreUnavailable);
+});
+
+test("an unknown Apple key ID fetches Apple's keys at most once every 30 seconds", async () => {
+  const { publicKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
+  const jwk = { ...publicKey.export({ format: "jwk" }), kid: "known-kid", use: "sig", alg: "RS256" };
+  let fetches = 0;
+  const fetch = async () => { fetches += 1; return Response.json({ keys: [jwk] }); };
+  const junk = (kid) => `${Buffer.from(JSON.stringify({ alg: "RS256", kid })).toString("base64url")}.e30.c2ln`;
+  // Ten days after the other tests' clock, so their cached keys have expired.
+  const later = NOW + 10 * 86_400_000;
+  assert.equal(await verifyAppleIdentityToken(junk("junk-1"), NONCE, ENV.APPLE_BUNDLE_ID, { fetch, now: later }), null);
+  assert.equal(fetches, 1);
+  for (let i = 0; i < 20; i += 1) {
+    assert.equal(await verifyAppleIdentityToken(junk(`junk-${i + 2}`), NONCE, ENV.APPLE_BUNDLE_ID, { fetch, now: later + 1_000 }), null);
+  }
+  assert.equal(fetches, 1, "junk key IDs within 30 s don't call Apple again");
+  await verifyAppleIdentityToken(junk("known-kid"), NONCE, ENV.APPLE_BUNDLE_ID, { fetch, now: later + 2_000 });
+  assert.equal(fetches, 1, "a key already fetched is used from the cache");
+  await verifyAppleIdentityToken(junk("junk-late"), NONCE, ENV.APPLE_BUNDLE_ID, { fetch, now: later + 31_000 });
+  assert.equal(fetches, 2, "after 30 s an unknown key ID may fetch again");
+});
+
+// The limit script itself, run on a real Redis when one is installed (CI may not have it).
+const hasRedis = spawnSync("redis-server", ["--version"]).status === 0;
+
+/** Upstash's /multi-exec, served by a local redis-server over its own protocol. */
+async function localRedisFetch(port) {
+  const socket = connect(port, "127.0.0.1");
+  await new Promise((resolve, reject) => { socket.once("connect", resolve); socket.once("error", reject); });
+  let buffer = Buffer.alloc(0);
+  let waiting = null;
+  socket.on("data", (chunk) => { buffer = Buffer.concat([buffer, chunk]); waiting?.(); });
+  const parse = (at) => {
+    const end = buffer.indexOf("\r\n", at);
+    if (end < 0) return null;
+    const type = String.fromCharCode(buffer[at]);
+    const line = buffer.toString("utf8", at + 1, end);
+    if (type === "+" ) return { value: line, next: end + 2 };
+    if (type === "-") return { value: new Error(line), next: end + 2 };
+    if (type === ":") return { value: Number(line), next: end + 2 };
+    if (type === "$") {
+      const length = Number(line);
+      if (length < 0) return { value: null, next: end + 2 };
+      if (buffer.length < end + 2 + length + 2) return null;
+      return { value: buffer.toString("utf8", end + 2, end + 2 + length), next: end + 2 + length + 2 };
+    }
+    if (type === "*") {
+      const items = [];
+      let next = end + 2;
+      for (let i = 0; i < Number(line); i += 1) {
+        const item = parse(next);
+        if (!item) return null;
+        items.push(item.value);
+        next = item.next;
+      }
+      return { value: items, next };
+    }
+    throw new Error(`unexpected reply ${type}`);
+  };
+  const send = async (command) => {
+    socket.write(`*${command.length}\r\n${command.map((part) => `$${Buffer.byteLength(part)}\r\n${part}\r\n`).join("")}`);
+    for (;;) {
+      const reply = parse(0);
+      if (reply) { buffer = buffer.subarray(reply.next); return reply.value; }
+      await new Promise((resolve) => { waiting = resolve; });
+    }
+  };
+  const fetch = async (_url, init) => {
+    const results = [];
+    for (const command of JSON.parse(init.body)) {
+      const value = await send(command);
+      results.push(value instanceof Error ? { error: value.message } : { result: value });
+    }
+    return Response.json(results);
+  };
+  return { fetch, close: () => socket.destroy() };
+}
+
+test("the Redis limit script: a user over their own limit doesn't use up the global one", { skip: !hasRedis && "redis-server not installed" }, async () => {
+  const port = 20_000 + Math.floor(Math.random() * 20_000);
+  const server = spawn("redis-server", ["--port", String(port), "--save", "", "--appendonly", "no"], { stdio: "ignore" });
+  try {
+    let client;
+    for (let i = 0; i < 50 && !client; i += 1) {
+      try { client = await localRedisFetch(port); } catch { await new Promise((resolve) => setTimeout(resolve, 50)); }
+    }
+    assert.ok(client, "local redis-server started");
+    const store = createVoiceAuthStore({ url: "https://redis.example.test", token: "t", fetch: client.fetch });
+    const perUser = 3;
+    const global = 5;
+    for (let i = 0; i < perUser; i += 1) assert.equal((await store.hitLimits("greedy", perUser, global, NOW)).allowed, true);
+    for (let i = 0; i < 50; i += 1) {
+      const over = await store.hitLimits("greedy", perUser, global, NOW);
+      assert.equal(over.allowed, false);
+      assert.equal(over.globalCount, perUser, "refused calls don't move the global count");
+    }
+    const other = await store.hitLimits("someone-else", perUser, global, NOW);
+    assert.equal(other.allowed, true, "another user still gets a token");
+    assert.equal(other.globalCount, perUser + 1);
+    client.close();
+  } finally {
+    server.kill();
+  }
 });

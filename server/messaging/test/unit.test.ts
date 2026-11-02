@@ -7,7 +7,7 @@ import twilio from "twilio";
 import { createPool, dbErrorFields } from "../src/db.js";
 import { apnsJwt } from "../src/providers/apns.js";
 import { ElevenLabsOutboundCaller } from "../src/providers/elevenlabs.js";
-import { isValidTwilioSignature, twilioSignature } from "../src/providers/twilio.js";
+import { isValidTwilioSignature, TwilioClient, twilioSignature } from "../src/providers/twilio.js";
 import { classifySms } from "../src/sms.js";
 
 test("Twilio signature matches the official twilio library", () => {
@@ -59,6 +59,29 @@ test("outbound call: a gateway error after the request may have rung is unknown,
     assert.deepEqual(await caller.placeCall("+48500000000", {}), { kind: "rejected", code: "elevenlabs_422" });
   } finally {
     server.close();
+  }
+});
+
+test("SMS send: a gateway's 502 or 504 is unknown and never resent; 429, 500 and 503 can be tried again", async () => {
+  const original = globalThis.fetch;
+  let status = 201;
+  let body: object = { sid: "SM1" };
+  globalThis.fetch = (async () => new Response(JSON.stringify(body), { status })) as never;
+  try {
+    const client = new TwilioClient({ accountSid: "AC1", authToken: "t", messagingServiceSid: "MG1", verifyServiceSid: "VA1" });
+    assert.deepEqual(await client.send("+48500000000", "hi"), { kind: "accepted", providerId: "SM1" });
+    for (const s of [502, 504]) {
+      status = s; body = {};
+      assert.deepEqual(await client.send("+48500000000", "hi"), { kind: "unknown", code: `twilio_${s}` });
+    }
+    for (const s of [429, 500, 503]) {
+      status = s; body = {};
+      assert.deepEqual(await client.send("+48500000000", "hi"), { kind: "transient", code: `twilio_${s}` });
+    }
+    status = 400; body = { code: 21610 };
+    assert.deepEqual(await client.send("+48500000000", "hi"), { kind: "rejected", code: "twilio_21610", unsubscribed: true });
+  } finally {
+    globalThis.fetch = original;
   }
 });
 

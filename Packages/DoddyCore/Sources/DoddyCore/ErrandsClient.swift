@@ -16,6 +16,9 @@ public enum ErrandError: Error, Equatable, Sendable {
     case tooManyOpenErrands
     /// Errands are switched off or not set up on the server (503 `errands_disabled`).
     case errandsDisabled
+    /// The day's approvals are used up (429 `errand_daily_limit`, ADR-673): the account's own, or the
+    /// server's for everyone (`forEveryone`). Nothing was queued.
+    case dailyLimit(forEveryone: Bool)
     /// The server's schema refused a field (400).
     case invalid(fields: [String])
     /// The server has no such errand (404).
@@ -116,6 +119,7 @@ extension DoddyServerClient {
         case (409, "too_many_open_errands"): return .tooManyOpenErrands
         case (409, let code): return .conflict(code)
         case (503, "errands_disabled"): return .errandsDisabled
+        case (429, "errand_daily_limit"): return .dailyLimit(forEveryone: body?.scope == "server")
         case (400, _): return .invalid(fields: body?.fields ?? [])
         case (404, _): return .notFound
         default: return .server(error(from: response))
@@ -148,4 +152,4 @@ private struct ApprovalBody: Decodable { let id: UUID?; let state: String }
 private struct ErrandList: Decodable { let errands: [ErrandSummary] }
 private struct AckErrandBody: Encodable { let resultDigest: String }
 private struct AckErrandReply: Decodable { let deletions: [ErrandDeletion] }
-private struct ErrandRefusal: Decodable { let error: String?; let fields: [String]? }
+private struct ErrandRefusal: Decodable { let error: String?; let fields: [String]?; let scope: String? }

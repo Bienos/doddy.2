@@ -43,6 +43,10 @@ public enum LearningPrompt {
         return lines.joined(separator: "\n")
     }
 
-    /// The agent's result for `note_capability_gap`.
+    /// The agent's result for `note_capability_gap`, only after the row was written.
     public static let gapNoted = "noted: Doddy can't do this yet. It's written down on this iPhone as something to add, as a category only. Tell the user in one sentence that you can't do it yet, and move on."
+
+    /// The agent's result for `note_capability_gap` when nothing was written (no store, or the write
+    /// failed): it must not say it was written down (ADR-672).
+    public static let gapNotNoted = "not noted: Doddy can't do this yet, and it couldn't be written down on this iPhone. Tell the user in one sentence that you can't do it yet, and move on. Don't say it was written down."
 }

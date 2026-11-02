@@ -13,7 +13,9 @@
 #                              never PASS; run without a flag to have every step here.
 #
 #   DODDY_UI_TEST_WORKERS=N    run the UI tests on N simulator clones at once (default 1: one
-#                              simulator, as before). Every test still runs exactly once.
+#                              simulator, as before). Every test still runs exactly once. On the
+#                              hosted Mac two were slower and two tests failed (ADR-680), so CI
+#                              uses one; worth trying on a machine with more cores.
 set -uo pipefail
 cd "$(dirname "$0")/.."
 
@@ -201,8 +203,8 @@ else
         run_step "Restart the simulator before the UI tests" restart_simulator "$sim_id"
       fi
       # DODDY_UI_TEST_WORKERS > 1 (ADR-680): xcodebuild clones the simulator and hands each clone
-      # whole test classes, so the UI tests (40 of the Mac job's 64 minutes on 1 Nov) run side by
-      # side. Each clone starts fresh, as ADR-561 wants. Every test still runs once.
+      # whole test classes, so the UI tests run side by side. Each clone starts fresh, as ADR-561
+      # wants. Every test still runs once. Not used in CI: the hosted Mac was too small for two.
       ui_workers=${DODDY_UI_TEST_WORKERS:-1}
       if [ "$ui_workers" -gt 1 ] 2>/dev/null; then
         run_step "xcodebuild test: UI tests ($ui_workers simulators)" xcodebuild test-without-building \

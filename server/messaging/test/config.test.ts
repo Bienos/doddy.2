@@ -21,13 +21,19 @@ test("limits can only be lowered below the code's ceilings", () => {
 
 test("errands: off by default (switched on with ERRANDS_ENABLED=1), Opus 5.5 at high effort, 30 minutes, 5 open; empty values count as unset", () => {
   const c = loadConfig({ DATABASE_URL: "postgres://x/y", ERRANDS_ENABLED: "", ERRANDS_MODEL: "", ERRANDS_EFFORT: "" });
-  assert.deepEqual(c.errandSettings, { enabled: false, model: "claude-opus-5-5", effort: "high", timeLimitMinutes: 30, maxOpen: 5 });
+  assert.deepEqual(c.errandSettings, {
+    enabled: false, model: "claude-opus-5-5", effort: "high", timeLimitMinutes: 30, maxOpen: 5, dailyPerAccount: 10, dailyPerServer: 30,
+  });
   assert.equal(loadConfig({ DATABASE_URL: "postgres://x/y", ERRANDS_ENABLED: "1" }).errandSettings.enabled, true);
   const set = loadConfig({
     DATABASE_URL: "postgres://x/y", ERRANDS_ENABLED: "0", ERRANDS_MODEL: "claude-sonnet-5-5", ERRANDS_EFFORT: "xhigh",
-    ERRAND_TIME_LIMIT_MINUTES: "45", ERRANDS_MAX_OPEN: "2",
+    ERRAND_TIME_LIMIT_MINUTES: "45", ERRANDS_MAX_OPEN: "2", ERRANDS_DAILY_PER_ACCOUNT: "3", ERRANDS_DAILY_PER_SERVER: "12",
   });
-  assert.deepEqual(set.errandSettings, { enabled: false, model: "claude-sonnet-5-5", effort: "xhigh", timeLimitMinutes: 45, maxOpen: 2 });
+  assert.deepEqual(set.errandSettings, {
+    enabled: false, model: "claude-sonnet-5-5", effort: "xhigh", timeLimitMinutes: 45, maxOpen: 2, dailyPerAccount: 3, dailyPerServer: 12,
+  });
+  assert.throws(() => loadConfig({ DATABASE_URL: "postgres://x/y", ERRANDS_DAILY_PER_ACCOUNT: "0" }));
+  assert.throws(() => loadConfig({ DATABASE_URL: "postgres://x/y", ERRANDS_DAILY_PER_SERVER: "-1" }));
 });
 
 test("errands: effort, time limit, open limit and the switch are validated", () => {
