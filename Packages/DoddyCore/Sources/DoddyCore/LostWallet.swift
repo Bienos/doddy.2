@@ -7,10 +7,10 @@ import Foundation
 // number for it, and opens that page or dials that number only when the person taps.
 //
 // The rules as code:
-//  - the steps and their links come from this file's fixed table, checked against the official pages
-//    (docs/research/2026-11-02/lost_wallet_pl.md); the model only says what was lost, whether it was
-//    stolen and whether the person is abroad, and never supplies a link or a number;
-//  - a link opens only an https page on an allowed government host, and a call only a number listed here;
+//  - the steps and their links come from this file's fixed table, written from the official pages
+//    read on 2 Nov 2026 (docs/research/2026-11-02/lost_wallet_pl.md); the model only says what was
+//    lost, whether it was stolen and whether the person is abroad, and never supplies a link or a number;
+//  - a link opens only an https page on an allowed host, and a call only a number listed here;
 //  - nothing is ever marked done by Doddy or the model: a step is ticked only by the person's own tap,
 //    and the tick says only that they said they did it;
 //  - no card number, PESEL, ID number or account detail is asked for, kept or sent anywhere.
@@ -64,11 +64,12 @@ public enum LostWalletAction: Equatable, Sendable {
 public enum LostWalletStepID: String, CaseIterable, Codable, Sendable {
     case blockCards
     case cancelIdCard
-    case reservePesel
+    case checkPesel
+    case blockDocuments
     case reportTheft
-    case reportDrivingLicence
     case reportPassport
     case consulAbroad
+    case reportDrivingLicence
     case newIdCard
 }
 
@@ -90,8 +91,9 @@ public struct LostWalletStep: Equatable, Sendable, Identifiable {
 }
 
 public enum LostWalletPlan {
-    /// The only hosts a step may open.
-    public static let allowedHosts: Set<String> = ["www.gov.pl"]
+    /// The only hosts a step may open: the government portal and the banks' own database of blocked
+    /// documents (Związek Banków Polskich).
+    public static let allowedHosts: Set<String> = ["www.gov.pl", "dokumentyzastrzezone.pl"]
     /// The only numbers a step may dial: the shared card-blocking line (+48 828 828 828).
     public static let allowedNumbers: Set<String> = ["+48828828828"]
 
@@ -120,10 +122,12 @@ public enum LostWalletPlan {
             steps.append(LostWalletStep(.cancelIdCard, title: text.cancelIdTitle,
                                         detail: situation.abroad ? text.cancelIdDetailAbroad : text.cancelIdDetail,
                                         action: .open(Links.reportIdCard), actionLabel: text.openGovPl))
-        }
-        if situation.has(.idCard) || situation.has(.passport) || situation.has(.drivingLicence) {
-            steps.append(LostWalletStep(.reservePesel, title: text.reservePeselTitle, detail: text.reservePeselDetail,
+            steps.append(LostWalletStep(.checkPesel, title: text.checkPeselTitle, detail: text.checkPeselDetail,
                                         action: .open(Links.reservePesel), actionLabel: text.openGovPl))
+        }
+        if situation.has(.idCard) || situation.has(.passport) {
+            steps.append(LostWalletStep(.blockDocuments, title: text.blockDocumentsTitle, detail: text.blockDocumentsDetail,
+                                        action: .open(Links.blockDocuments), actionLabel: text.openDokumentyZastrzezone))
         }
         if situation.stolen {
             steps.append(LostWalletStep(.reportTheft, title: text.reportTheftTitle,
@@ -149,78 +153,105 @@ public enum LostWalletPlan {
         return steps
     }
 
-    /// The official pages, checked on 2 Nov 2026 (docs/research/2026-11-02/lost_wallet_pl.md).
+    /// The official pages, each opened and read on 2 Nov 2026 (docs/research/2026-11-02/lost_wallet_pl.md).
+    /// `LostWalletTests.testLinksAreTheOnesReadOnTheOfficialPages` pins them.
     enum Links {
-        static let reportIdCard = URL(string: "https://www.gov.pl/web/gov/zglos-utrate-lub-uszkodzenie-dowodu-osobistego")!
-        static let reservePesel = URL(string: "https://www.gov.pl/web/gov/zastrzez-swoj-numer-pesel")!
-        static let reportPassport = URL(string: "https://www.gov.pl/web/gov/zglos-utrate-lub-uszkodzenie-paszportu")!
+        static let reportIdCard = URL(string: "https://www.gov.pl/web/gov/zglos-utrate-lub-uszkodzenie-swojego-dowodu-osobistego-uniewaznij-dowod")!
+        static let reservePesel = URL(string: "https://www.gov.pl/web/gov/zastrzez-swoj-numer-pesel-lub-cofnij-zastrzezenie")!
+        static let blockDocuments = URL(string: "https://dokumentyzastrzezone.pl/zastrzeganie-dokumentow/")!
+        static let reportPassport = URL(string: "https://www.gov.pl/web/gov/zglos-utrate-lub-zniszczenie-paszportu")!
         static let consulates = URL(string: "https://www.gov.pl/web/dyplomacja/polskie-przedstawicielstwa-na-swiecie")!
-        static let reportDrivingLicence = URL(string: "https://www.gov.pl/web/gov/zglos-utrate-prawa-jazdy")!
+        static let reportDrivingLicence = URL(string: "https://www.gov.pl/web/gov/zglos-utrate-lub-uszkodzenie-prawa-jazdy")!
         static let newIdCard = URL(string: "https://www.gov.pl/web/gov/uzyskaj-dowod-osobisty")!
 
-        static let all: [URL] = [reportIdCard, reservePesel, reportPassport, consulates, reportDrivingLicence, newIdCard]
+        static let all: [URL] = [reportIdCard, reservePesel, blockDocuments, reportPassport, consulates, reportDrivingLicence, newIdCard]
     }
 }
 
-/// The card's words. Fixed here, so the model never writes a step, a link or a number.
+/// The card's words. Fixed here, so the model never writes a step, a link or a number. What each
+/// sentence says is in the official pages (docs/research/2026-11-02/lost_wallet_pl.md); what those
+/// pages don't say plainly is left out (whether mDowód stays valid after the ID card is cancelled,
+/// whether a police report alone reserves the PESEL, the exact button names in the app).
 struct LostWalletText {
-    let blockCardsTitle, blockCardsDetail, blockCardsDetailAbroad, callCardLine: String
-    let cancelIdTitle, cancelIdDetail, cancelIdDetailAbroad: String
-    let reservePeselTitle, reservePeselDetail: String
-    let reportTheftTitle, reportTheftDetail, reportTheftDetailAbroad: String
-    let reportPassportTitle, reportPassportDetail, reportPassportDetailAbroad: String
-    let consulTitle, consulDetail: String
-    let drivingLicenceTitle, drivingLicenceDetail: String
-    let newIdTitle, newIdDetail: String
+    let blockCardsTitle: String
+    let blockCardsDetail: String
+    let blockCardsDetailAbroad: String
+    let callCardLine: String
+    let cancelIdTitle: String
+    let cancelIdDetail: String
+    let cancelIdDetailAbroad: String
+    let checkPeselTitle: String
+    let checkPeselDetail: String
+    let blockDocumentsTitle: String
+    let blockDocumentsDetail: String
+    let reportTheftTitle: String
+    let reportTheftDetail: String
+    let reportTheftDetailAbroad: String
+    let reportPassportTitle: String
+    let reportPassportDetail: String
+    let reportPassportDetailAbroad: String
+    let consulTitle: String
+    let consulDetail: String
+    let drivingLicenceTitle: String
+    let drivingLicenceDetail: String
+    let newIdTitle: String
+    let newIdDetail: String
     let openGovPl: String
+    let openDokumentyZastrzezone: String
 
     static let english = LostWalletText(
         blockCardsTitle: "Block your bank cards",
-        blockCardsDetail: "First in your bank's app, or on your bank's helpline. The shared card-blocking line +48 828 828 828 works for many Polish banks, day and night.",
-        blockCardsDetailAbroad: "First in your bank's app, or on your bank's helpline. The shared card-blocking line +48 828 828 828 works for many Polish banks, from abroad too.",
+        blockCardsDetail: "In your bank's app or on its helpline, choose a permanent block (zastrzeżenie), which can't be undone; a temporary lock is only for a card you may just have mislaid. Or call the shared line +48 828 828 828, day and night: say your bank's name and it puts you through. One call covers one bank. If your bank isn't recognised, use its app or the number on its website.",
+        blockCardsDetailAbroad: "In your bank's app or on its helpline, choose a permanent block (zastrzeżenie), which can't be undone; a temporary lock is only for a card you may just have mislaid. The shared line +48 828 828 828 works from abroad too: say your bank's name and it puts you through. One call covers one bank. If your bank isn't recognised, use its app or the international number on its website.",
         callCardLine: "Call 828 828 828",
         cancelIdTitle: "Report your ID card lost",
-        cancelIdDetail: "In the mObywatel app, on gov.pl, or at any town or municipal office. Once reported, the ID card is cancelled for good, even if you find it.",
-        cancelIdDetailAbroad: "In the mObywatel app, on gov.pl, or at a Polish consulate. Once reported, the ID card is cancelled for good, even if you find it.",
-        reservePeselTitle: "Reserve your PESEL number",
-        reservePeselDetail: "In the mObywatel app or on gov.pl. It's free, and banks and lenders must check it, so nobody can take a loan in your name. You can lift it at any time.",
+        cancelIdDetail: "In the mObywatel app (look for “Unieważnij swój dowód”), on gov.pl, or at any gmina office. It takes effect at once and can't be undone, even if you find the card. If it was stolen, a police report alone cancels it. Online you need Profil Zaufany and an e-Doręczenia address; at a gmina office you need no account. An e-dowód you may still find can be suspended for up to 14 days instead.",
+        cancelIdDetailAbroad: "In the mObywatel app or on gov.pl, which cancel it at once, or at a Polish consulate (in person, by post or by fax), which passes it to your gmina. Cancelling can't be undone, even if you find the card.",
+        checkPeselTitle: "Check that your PESEL is reserved",
+        checkPeselDetail: "Reporting a lost ID card reserves your PESEL automatically if you're an adult, but check it: in the mObywatel app open Usługi, then Zastrzeż PESEL, or use gov.pl. If it isn't reserved, reserve it. It's free, and banks and lenders must check it before lending in your name. You can lift it at any time.",
+        blockDocumentsTitle: "Report the documents to Dokumenty Zastrzeżone",
+        blockDocumentsDetail: "The banks' shared database of blocked documents: a report reaches banks, phone operators and thousands of firms, separately from the state register. gov.pl still recommends it. Report in the mObywatel app (Usługi › Ochrona danych › Zastrzeż dokument) or at a bank branch; with no account, use a bank from the list on the page. For an ID card or passport.",
         reportTheftTitle: "Report the theft to the police",
-        reportTheftDetail: "At any police station. Call 112 only if you are in danger now.",
-        reportTheftDetailAbroad: "To the local police, and keep the report for your bank and the consulate. Call 112 if you are in danger now.",
+        reportTheftDetail: "At any police station; bring a photo ID if you have one (a passport, a driving licence or your mDowód). Call 112 only if there is danger or a thief nearby right now. A police report also cancels a stolen ID card or passport.",
+        reportTheftDetailAbroad: "Tell the local police and keep a copy of the report for your bank and the consulate. If you're in danger now, call the local emergency number (112 in the EU).",
         reportPassportTitle: "Report your passport lost",
-        reportPassportDetail: "On gov.pl or at a passport office. Once reported, it is cancelled for good.",
-        reportPassportDetailAbroad: "At a Polish consulate, or on gov.pl. Once reported, it is cancelled for good.",
+        reportPassportDetail: "On gov.pl, in the mObywatel app, or at any passport office. It's cancelled at once and can't be undone. If it was stolen and already reported to the Polish police, you don't need to report it again.",
+        reportPassportDetailAbroad: "At a Polish consulate (no appointment needed to report), in the mObywatel app, or on gov.pl. It's cancelled at once and can't be undone.",
         consulTitle: "Contact a Polish consulate",
-        consulDetail: "If you need a document to travel home, the consulate can issue a temporary passport.",
+        consulDetail: "To get home, the consul can issue a temporary passport after checking your identity and citizenship. An honorary consul can't take the report. Find your nearest consulate on gov.pl.",
         drivingLicenceTitle: "Report your driving licence lost",
-        drivingLicenceDetail: "On gov.pl or at the driving-licence office of your town or district. In Poland you don't need to carry it while driving.",
+        drivingLicenceDetail: "Within 30 days, at the district office (starostwo) or city office where you live, or online. A duplicate costs 100 zł.",
         newIdTitle: "Apply for a new ID card",
-        newIdDetail: "Online on gov.pl or at any town or municipal office. It's free; you collect it in person.",
-        openGovPl: "Open gov.pl")
+        newIdDetail: "Only after the old one is cancelled. Apply at any gmina office, or online (you then visit an office within 30 days for fingerprints). It's free and takes up to 30 days. You collect it in person; bring a passport or other photo ID.",
+        openGovPl: "Open gov.pl",
+        openDokumentyZastrzezone: "Open Dokumenty Zastrzeżone")
 
     static let polish = LostWalletText(
         blockCardsTitle: "Zastrzeż karty płatnicze",
-        blockCardsDetail: "Najpierw w aplikacji banku albo na infolinii banku. Wspólny numer do zastrzegania kart +48 828 828 828 działa dla wielu polskich banków, przez całą dobę.",
-        blockCardsDetailAbroad: "Najpierw w aplikacji banku albo na infolinii banku. Wspólny numer do zastrzegania kart +48 828 828 828 działa dla wielu polskich banków, także z zagranicy.",
+        blockCardsDetail: "W aplikacji banku albo na jego infolinii wybierz zastrzeżenie karty, którego nie da się cofnąć; blokada tymczasowa jest tylko na wypadek, gdy karta mogła się po prostu zawieruszyć. Możesz też zadzwonić na wspólny numer +48 828 828 828, całą dobę: powiedz nazwę banku, a numer połączy cię z bankiem. Jedno połączenie obejmuje jeden bank. Jeśli twój bank nie zostanie rozpoznany, użyj aplikacji banku albo numeru ze strony banku.",
+        blockCardsDetailAbroad: "W aplikacji banku albo na jego infolinii wybierz zastrzeżenie karty, którego nie da się cofnąć; blokada tymczasowa jest tylko na wypadek, gdy karta mogła się po prostu zawieruszyć. Wspólny numer +48 828 828 828 działa też z zagranicy: powiedz nazwę banku, a numer połączy cię z bankiem. Jedno połączenie obejmuje jeden bank. Jeśli twój bank nie zostanie rozpoznany, użyj aplikacji banku albo numeru międzynarodowego ze strony banku.",
         callCardLine: "Zadzwoń: 828 828 828",
         cancelIdTitle: "Zgłoś utratę dowodu osobistego",
-        cancelIdDetail: "W aplikacji mObywatel, na gov.pl albo w dowolnym urzędzie gminy. Zgłoszony dowód jest od razu unieważniony, nawet jeśli się znajdzie.",
-        cancelIdDetailAbroad: "W aplikacji mObywatel, na gov.pl albo w polskim konsulacie. Zgłoszony dowód jest od razu unieważniony, nawet jeśli się znajdzie.",
-        reservePeselTitle: "Zastrzeż numer PESEL",
-        reservePeselDetail: "W aplikacji mObywatel albo na gov.pl. To nic nie kosztuje, a banki i pożyczkodawcy muszą to sprawdzać, więc nikt nie weźmie kredytu na ciebie. Możesz cofnąć zastrzeżenie w każdej chwili.",
+        cancelIdDetail: "W aplikacji mObywatel (szukaj „Unieważnij swój dowód”), na gov.pl albo w dowolnym urzędzie gminy. Unieważnienie działa od razu i nie da się go cofnąć, nawet jeśli dowód się znajdzie. Jeśli dowód ukradziono, wystarczy zgłoszenie na policji. Przez internet potrzebujesz profilu zaufanego i adresu do e-Doręczeń; w urzędzie gminy nie potrzebujesz żadnego konta. E-dowód, który może się jeszcze znaleźć, możesz zamiast tego zawiesić na maksymalnie 14 dni.",
+        cancelIdDetailAbroad: "W aplikacji mObywatel albo na gov.pl (unieważnienie następuje od razu), albo w polskim konsulacie, osobiście, pocztą lub faksem; konsul przekaże zgłoszenie twojej gminie. Unieważnienia nie da się cofnąć, nawet jeśli dowód się znajdzie.",
+        checkPeselTitle: "Sprawdź, czy twój PESEL jest zastrzeżony",
+        checkPeselDetail: "Zgłoszenie utraty dowodu zastrzega PESEL automatycznie, jeśli masz skończone 18 lat, ale sprawdź to: w aplikacji mObywatel wejdź w Usługi, potem Zastrzeż PESEL, albo skorzystaj z gov.pl. Jeśli nie jest zastrzeżony, zastrzeż go. To nic nie kosztuje, a banki i pożyczkodawcy muszą to sprawdzać, zanim udzielą pożyczki na twoje dane. Możesz cofnąć zastrzeżenie w każdej chwili.",
+        blockDocumentsTitle: "Zgłoś dokumenty do Dokumentów Zastrzeżonych",
+        blockDocumentsDetail: "Wspólna baza banków z zastrzeżonymi dokumentami: zgłoszenie dociera do banków, operatorów telefonii i tysięcy firm, niezależnie od rejestru państwowego. Gov.pl nadal to zaleca. Zgłoś w aplikacji mObywatel (Usługi › Ochrona danych › Zastrzeż dokument) albo w oddziale banku; kto nie ma konta, może skorzystać z banku z listy na stronie. Dotyczy dowodu i paszportu.",
         reportTheftTitle: "Zgłoś kradzież na policji",
-        reportTheftDetail: "Na dowolnym komisariacie. Na 112 dzwoń tylko, jeśli coś ci teraz grozi.",
-        reportTheftDetailAbroad: "Na miejscowej policji. Zachowaj zgłoszenie dla banku i konsulatu. Na 112 dzwoń, jeśli coś ci teraz grozi.",
+        reportTheftDetail: "Na dowolnym komisariacie; weź dokument ze zdjęciem, jeśli go masz (paszport, prawo jazdy albo mDowód). Na 112 dzwoń tylko, gdy teraz coś ci grozi albo złodziej jest w pobliżu. Zgłoszenie na policji unieważnia też skradziony dowód lub paszport.",
+        reportTheftDetailAbroad: "Zgłoś na miejscowej policji i zachowaj kopię zgłoszenia dla banku i konsulatu. Gdy teraz coś ci grozi, zadzwoń pod lokalny numer alarmowy (w UE 112).",
         reportPassportTitle: "Zgłoś utratę paszportu",
-        reportPassportDetail: "Na gov.pl albo w punkcie paszportowym. Zgłoszony paszport jest unieważniony na stałe.",
-        reportPassportDetailAbroad: "W polskim konsulacie albo na gov.pl. Zgłoszony paszport jest unieważniony na stałe.",
+        reportPassportDetail: "Na gov.pl, w aplikacji mObywatel albo w dowolnym punkcie paszportowym. Paszport jest unieważniony od razu i nie da się tego cofnąć. Jeśli go ukradziono i zgłoszono to już polskiej policji, nie trzeba zgłaszać ponownie.",
+        reportPassportDetailAbroad: "W polskim konsulacie (do zgłoszenia nie trzeba się umawiać), w aplikacji mObywatel albo na gov.pl. Paszport jest unieważniony od razu i nie da się tego cofnąć.",
         consulTitle: "Skontaktuj się z polskim konsulatem",
-        consulDetail: "Jeśli potrzebujesz dokumentu, żeby wrócić do kraju, konsul może wydać paszport tymczasowy.",
+        consulDetail: "Żeby wrócić do kraju, konsul może wydać paszport tymczasowy po sprawdzeniu tożsamości i obywatelstwa. Konsul honorowy nie przyjmuje zgłoszeń. Najbliższy konsulat znajdziesz na gov.pl.",
         drivingLicenceTitle: "Zgłoś utratę prawa jazdy",
-        drivingLicenceDetail: "Na gov.pl albo w wydziale komunikacji starostwa lub urzędu miasta. W Polsce nie musisz mieć go przy sobie, gdy prowadzisz.",
+        drivingLicenceDetail: "W ciągu 30 dni, w starostwie albo urzędzie miasta właściwym dla twojego miejsca zamieszkania, lub przez internet. Duplikat kosztuje 100 zł.",
         newIdTitle: "Złóż wniosek o nowy dowód",
-        newIdDetail: "Przez internet na gov.pl albo w dowolnym urzędzie gminy. To nic nie kosztuje; odbierasz go osobiście.",
-        openGovPl: "Otwórz gov.pl")
+        newIdDetail: "Dopiero po unieważnieniu starego. Złóż wniosek w dowolnym urzędzie gminy albo przez internet (wtedy w ciągu 30 dni odwiedzasz urząd po odciski palców). To nic nie kosztuje, a dowód jest gotowy do 30 dni. Odbierasz go osobiście; weź paszport albo inny dokument ze zdjęciem.",
+        openGovPl: "Otwórz gov.pl",
+        openDokumentyZastrzezone: "Otwórz Dokumenty Zastrzeżone")
 }
 
 extension VoiceToolRequest {

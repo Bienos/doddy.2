@@ -72,17 +72,17 @@ final class LostWalletTests: XCTestCase {
 
     func testIdCardLost() {
         let s = LostWalletSituation(lost: [.idCard], stolen: false, abroad: false)
-        XCTAssertEqual(ids(s), [.cancelIdCard, .reservePesel, .newIdCard])
+        XCTAssertEqual(ids(s), [.cancelIdCard, .checkPesel, .blockDocuments, .newIdCard])
     }
 
     func testWholeWalletStolenAtHome() {
         let s = LostWalletSituation(lost: [.idCard, .bankCards, .drivingLicence], stolen: true, abroad: false)
-        XCTAssertEqual(ids(s), [.blockCards, .cancelIdCard, .reservePesel, .reportTheft, .reportDrivingLicence, .newIdCard])
+        XCTAssertEqual(ids(s), [.blockCards, .cancelIdCard, .checkPesel, .blockDocuments, .reportTheft, .reportDrivingLicence, .newIdCard])
     }
 
     func testPassportStolenAbroad() {
         let s = LostWalletSituation(lost: [.passport, .bankCards], stolen: true, abroad: true)
-        XCTAssertEqual(ids(s), [.blockCards, .reservePesel, .reportTheft, .reportPassport, .consulAbroad])
+        XCTAssertEqual(ids(s), [.blockCards, .blockDocuments, .reportTheft, .reportPassport, .consulAbroad])
     }
 
     func testCardsComeFirstWheneverTheyWereLost() {
@@ -94,6 +94,34 @@ final class LostWalletTests: XCTestCase {
     func testTheftIsReportedOnlyWhenStolen() {
         for s in everySituation {
             XCTAssertEqual(ids(s).contains(.reportTheft), s.stolen, "\(s)")
+        }
+    }
+
+    func testDrivingLicenceAloneIsOneStep() {
+        let s = LostWalletSituation(lost: [.drivingLicence], stolen: false, abroad: false)
+        XCTAssertEqual(ids(s), [.reportDrivingLicence])
+    }
+
+    /// The PESEL check and the new-ID step belong to the ID card; the register of blocked documents
+    /// to the ID card and the passport (the pages say so); nothing else adds them.
+    func testWhichItemsBringWhichSteps() {
+        for s in everySituation {
+            XCTAssertEqual(ids(s).contains(.checkPesel), s.has(.idCard), "\(s)")
+            XCTAssertEqual(ids(s).contains(.newIdCard), s.has(.idCard), "\(s)")
+            XCTAssertEqual(ids(s).contains(.cancelIdCard), s.has(.idCard), "\(s)")
+            XCTAssertEqual(ids(s).contains(.blockDocuments), s.has(.idCard) || s.has(.passport), "\(s)")
+            XCTAssertEqual(ids(s).contains(.reportPassport), s.has(.passport), "\(s)")
+            XCTAssertEqual(ids(s).contains(.reportDrivingLicence), s.has(.drivingLicence), "\(s)")
+            XCTAssertEqual(ids(s).contains(.consulAbroad), s.abroad && (s.has(.idCard) || s.has(.passport)), "\(s)")
+        }
+    }
+
+    func testTheNewIdCardComesLastAndTheCancellationBeforeIt() {
+        for s in everySituation where s.has(.idCard) {
+            let order = ids(s)
+            XCTAssertEqual(order.last, .newIdCard, "\(s)")
+            XCTAssertLessThan(order.firstIndex(of: .cancelIdCard)!, order.firstIndex(of: .newIdCard)!, "\(s)")
+            XCTAssertLessThan(order.firstIndex(of: .cancelIdCard)!, order.firstIndex(of: .checkPesel)!, "\(s)")
         }
     }
 
@@ -125,8 +153,26 @@ final class LostWalletTests: XCTestCase {
         }
     }
 
+    /// Each link was opened and read on the official page on 2 Nov 2026; a guessed or edited address
+    /// would break this (docs/research/2026-11-02/lost_wallet_pl.md).
+    func testLinksAreTheOnesReadOnTheOfficialPages() {
+        XCTAssertEqual(LostWalletPlan.Links.all.map(\.absoluteString), [
+            "https://www.gov.pl/web/gov/zglos-utrate-lub-uszkodzenie-swojego-dowodu-osobistego-uniewaznij-dowod",
+            "https://www.gov.pl/web/gov/zastrzez-swoj-numer-pesel-lub-cofnij-zastrzezenie",
+            "https://dokumentyzastrzezone.pl/zastrzeganie-dokumentow/",
+            "https://www.gov.pl/web/gov/zglos-utrate-lub-zniszczenie-paszportu",
+            "https://www.gov.pl/web/dyplomacja/polskie-przedstawicielstwa-na-swiecie",
+            "https://www.gov.pl/web/gov/zglos-utrate-lub-uszkodzenie-prawa-jazdy",
+            "https://www.gov.pl/web/gov/uzyskaj-dowod-osobisty",
+        ])
+        XCTAssertEqual(LostWalletPlan.allowedHosts, ["www.gov.pl", "dokumentyzastrzezone.pl"])
+    }
+
     func testRefusesAnyOtherPageOrNumber() {
         let refused: [LostWalletAction] = [
+            .open(URL(string: "http://dokumentyzastrzezone.pl/zastrzeganie-dokumentow/")!),
+            .open(URL(string: "https://dokumentyzastrzezone.pl.example.com/")!),
+            .open(URL(string: "https://www.dokumentyzastrzezone.pl/")!),
             .open(URL(string: "http://www.gov.pl/web/gov/zastrzez-swoj-numer-pesel")!),
             .open(URL(string: "https://gov.pl.example.com/web/gov")!),
             .open(URL(string: "https://example.com/zastrzez")!),
@@ -161,7 +207,7 @@ final class LostWalletTests: XCTestCase {
     func testTheReplyListsTheStepsAndWhatTheAgentMustNeverSay() {
         let s = LostWalletSituation(lost: [.idCard, .bankCards], stolen: true, abroad: false)
         let reply = VoiceToolReply.lostWalletShown(s)
-        XCTAssertTrue(reply.hasPrefix("shown: a checklist with 5 steps"), reply)
+        XCTAssertTrue(reply.hasPrefix("shown: a checklist with 6 steps"), reply)
         for step in LostWalletPlan.steps(for: s, polish: false) { XCTAssertTrue(reply.contains(step.title), step.title) }
         XCTAssertTrue(reply.contains("1. Block your bank cards"), reply)
         XCTAssertTrue(reply.contains("Never say a card is blocked"), reply)
