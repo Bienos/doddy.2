@@ -196,8 +196,13 @@ else
     # error instead of stopping at the first target that fails (owner request, 2026-10-12).
     if run_step "xcodebuild build-for-testing" xcodebuild build-for-testing -project Doddy.xcodeproj -scheme Doddy \
       -destination "$dest" -IDEBuildingContinueBuildingAfterErrors=YES; then
+      # A per-test time limit (ADR-680): a test that hangs fails after 10 minutes instead of using
+      # up the job (on 2 Nov one waited 49 minutes for the app to close, run 41368047283). The
+      # longest UI test takes about 290 s, so 600 s only ends a test that is stuck.
+      test_limits="-test-timeouts-enabled YES -default-test-execution-time-allowance 600"
+      # shellcheck disable=SC2086
       run_step "xcodebuild test: unit tests" xcodebuild test-without-building -project Doddy.xcodeproj -scheme Doddy \
-        -destination "$dest" -only-testing:DoddyTests
+        -destination "$dest" -only-testing:DoddyTests $test_limits
       # Only when this script picked the simulator: a DODDY_DESTINATION may name one by name.
       if [ -n "${sim_id:-}" ]; then
         run_step "Restart the simulator before the UI tests" restart_simulator "$sim_id"
@@ -207,12 +212,14 @@ else
       # wants. Every test still runs once. Not used in CI: the hosted Mac was too small for two.
       ui_workers=${DODDY_UI_TEST_WORKERS:-1}
       if [ "$ui_workers" -gt 1 ] 2>/dev/null; then
+        # shellcheck disable=SC2086
         run_step "xcodebuild test: UI tests ($ui_workers simulators)" xcodebuild test-without-building \
           -project Doddy.xcodeproj -scheme Doddy -destination "$dest" -only-testing:DoddyUITests \
-          -parallel-testing-enabled YES -parallel-testing-worker-count "$ui_workers"
+          -parallel-testing-enabled YES -parallel-testing-worker-count "$ui_workers" $test_limits
       else
+        # shellcheck disable=SC2086
         run_step "xcodebuild test: UI tests" xcodebuild test-without-building -project Doddy.xcodeproj -scheme Doddy \
-          -destination "$dest" -only-testing:DoddyUITests
+          -destination "$dest" -only-testing:DoddyUITests $test_limits
       fi
     else
       not_run "xcodebuild test (unit + UI)" "the build for testing failed"
