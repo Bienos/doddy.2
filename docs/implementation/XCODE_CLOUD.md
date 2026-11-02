@@ -25,9 +25,9 @@ Linux, and `scripts/ci.sh` runs that test.
 
 ## Before the first build
 
-1. **Merge the TestFlight validation fixes** (`claude/testflight-validation-fixes`, ADR-693).
-   App Store Connect rejected the first release archive without the Health "update" permission
-   text. Every Xcode Cloud build would be rejected the same way until that branch is in.
+1. **The TestFlight validation fixes are merged** (#174, ADR-693, 2 Nov 2026). App Store Connect
+   rejected the first release archive without the Health "update" permission text; it's in
+   `Config/Doddy-Info.plist` now, so Xcode Cloud's builds carry it.
 2. **Export compliance is answered.** Owner, 2 Nov 2026: "Exempt: set it to NO".
    `Config/Doddy-Info.plist` now says `ITSAppUsesNonExemptEncryption` = `false` (go-live checklist
    B9). Doddy uses only standard encryption: HTTPS, and Apple's CryptoKit (AES-256-GCM) for its
