@@ -7,23 +7,47 @@
 #                              (on Linux also a type-check of the non-UI app files);
 #                              the iOS app build and tests are reported NOT RUN (exit 0
 #                              only if everything that was requested passed)
-#   scripts/ci.sh --app-only   for the hosted Mac job (ADR-680): the Swift package tests (on
-#                              Apple's own Foundation) and the iOS app build and tests only. The
-#                              checks the Linux job runs with --core-only are listed as SKIPPED,
-#                              never PASS; run without a flag to have every step here.
-#
-#   DODDY_UI_TEST_WORKERS=N    run the UI tests on N simulator clones at once (default 1: one
-#                              simulator, as before). Every test still runs exactly once. On the
-#                              hosted Mac two were slower and two tests failed (ADR-680), so CI
-#                              uses one; worth trying on a machine with more cores.
+#   scripts/ci.sh --app-only   Swift package and iOS build/unit/UI tests; Linux checks SKIPPED (ADR-680)
+#   scripts/ci.sh --only a,b   only these groups (hosted Linux jobs run one group each, in parallel):
+#                              checks swift backend node messaging ios
+#                              `ios` is the Xcode build and tests; --only never includes it unless listed.
 set -uo pipefail
 cd "$(dirname "$0")/.."
 
-core_only=0 app_only=0
-case "${1:-}" in
-  --core-only) core_only=1 ;;
-  --app-only) app_only=1 ;;
-esac
+core_only=0 app_only=0 only=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --core-only) core_only=1 ;;
+    --app-only) app_only=1 ;;
+    --only)
+      [ -n "${2:-}" ] || { echo "--only needs a comma-separated list of groups" >&2; exit 64; }
+      only=$2; shift ;;
+    *) echo "unknown argument: $1" >&2; exit 64 ;;
+  esac
+  shift
+done
+if [ "$app_only" -eq 1 ] && { [ "$core_only" -eq 1 ] || [ -n "$only" ]; }; then
+  echo "--app-only cannot be combined with other scope flags" >&2; exit 64
+fi
+if [ "$core_only" -eq 1 ] && [ -n "$only" ]; then
+  echo "--core-only cannot be combined with --only" >&2; exit 64
+fi
+if [ -n "$only" ]; then
+  case ",$only," in *,ios,*) ;; *) core_only=1 ;; esac
+  case "$only" in ,*|*,|*,,*|*[!a-z,]*) echo "empty group in --only" >&2; exit 64 ;; esac
+  for g in $(echo "$only" | tr ',' ' '); do
+    case "$g" in checks|swift|backend|node|messaging|ios) ;; *) echo "unknown group: $g" >&2; exit 64 ;; esac
+  done
+fi
+# want GROUP: does this run include the group? (bash 3.2: no associative arrays)
+want() {
+  if [ "$app_only" -eq 1 ]; then
+    case "$1" in swift|ios) ;; *) return 1 ;; esac
+  fi
+  [ -z "$only" ] && return 0
+  case ",$only," in *",$1,"*) return 0 ;; esac
+  return 1
+}
 
 declare -a results=()
 failed=0 blocked=0
@@ -40,11 +64,12 @@ restart_simulator() {
   xcrun simctl bootstatus "$1" -b                 # -b boots it first, then waits for the boot
 }
 
-# --app-only (ADR-680): the Linux job runs these; on the Mac they would only repeat it.
-skipped_for_linux() { record "$1" "SKIPPED" "--app-only: the Linux job (core) runs it"; }
 if [ "$app_only" -eq 1 ]; then
-  skipped_for_linux "Pack, guard, agent spec, page and catalog checks"
-else
+  record "Pack, guard, agent spec, page and catalog checks" "SKIPPED" "--app-only: Linux core runs them"
+  record "Token server, backend, gateway, web, messaging, site and secrets checks" "SKIPPED" "--app-only: Linux core runs them"
+fi
+
+if want checks; then
 run_step "Imported pack integrity" python3 -I scripts/verify_imported_pack.py
 run_step "Forbidden-capability guard" scripts/check_forbidden_capabilities.sh
 run_step "Voice agent spec" python3 -I scripts/voice_agent_spec.py check
@@ -57,14 +82,16 @@ run_step "What-can-doddy-do page up to date" python3 -I tools/build_day.py --che
 run_step "Web app tokens and brand files match the app (ADR-600)" python3 -I tools/gen_web_assets.py --check
 run_step "Which pull requests need the macOS build (ADR-497)" scripts/test_ci_needs_mac.sh
 run_step "Binary packages' dSYMs into the archive (ADR-693)" scripts/test_copy_binary_dsyms.sh
+run_step "Which pull requests need which Linux groups (ADR-684)" scripts/test_ci_groups.sh
 if python3 -I -c "import yaml" 2>/dev/null; then
   run_step "Per-platform Xcode specs in step" python3 -I scripts/check_platform_specs.py
 else
   not_run "Per-platform Xcode specs in step" "PyYAML not installed (apt install python3-yaml or pip install pyyaml)"
 fi
-fi
+fi  # checks
 
-if command -v swift >/dev/null 2>&1; then
+if ! want swift; then :
+elif command -v swift >/dev/null 2>&1; then
   swift --version
   # Ubuntu's system SQLite lacks the snapshot API GRDB enables by default; Doddy does not use it.
   # (No arrays: macOS ships bash 3.2, where an empty "${arr[@]}" fails under `set -u`.)
@@ -91,7 +118,7 @@ if command -v swift >/dev/null 2>&1; then
   fi
   # Island drawing data matches the owner's SVGs, parses, and maps states correctly (ADR-239).
   if [ "$app_only" -eq 1 ]; then
-    skipped_for_linux "Dynamic Island art and scenes"
+    record "Dynamic Island art and scenes" "SKIPPED" "--app-only: Linux core runs them"
   else
     run_step "Dynamic Island art and scenes" scripts/check_island_art.sh
   fi
@@ -99,15 +126,14 @@ else
   not_run "Swift package tests (DoddyCore)" "swift not found on PATH"
 fi
 
-if [ "$app_only" -eq 1 ]; then
-  skipped_for_linux "Token server, backend, gateway, web, messaging, site and secrets checks"
-else
-if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
+if ! want node; then :
+elif command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
   run_step "Voice token server tests" npm test --prefix server/voice-token
 else
   not_run "Voice token server tests" "node/npm not found on PATH"
 fi
-if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
+if ! want backend; then :
+elif command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
   node --version
   if [ ! -d backend/node_modules ]; then run_step "Backend install (npm ci)" npm ci --prefix backend; fi
   run_step "Backend type-check" npm run --prefix backend typecheck
@@ -115,7 +141,8 @@ if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
 else
   not_run "Backend type-check + tests" "node/npm not found on PATH"
 fi
-if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
+if ! want node; then :
+elif command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
   if [ ! -d gateway/node_modules ]; then run_step "Gateway install (npm ci)" npm ci --prefix gateway; fi
   run_step "Gateway typecheck" npm run typecheck --prefix gateway
   run_step "Gateway tests (node)" npm test --prefix gateway
@@ -126,12 +153,13 @@ fi
 # Doddy Web (web/, ADR-600): type-check, unit tests against the server's own fixtures, and the
 # production build. The end-to-end run (real backend + Chromium) needs a Playwright Chromium; where
 # there is none it is listed as SKIPPED, never PASS.
-if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
+if ! want node; then :
+elif command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
   if [ ! -d web/node_modules ]; then run_step "Web app install (npm ci)" npm ci --prefix web --no-audit --no-fund; fi
   run_step "Web app type-check" npm run typecheck --prefix web
   run_step "Web app unit tests" npm test --prefix web
   run_step "Web app build" npm run build --prefix web
-  if [ -n "${PLAYWRIGHT_BROWSERS_PATH:-}" ] && ls "${PLAYWRIGHT_BROWSERS_PATH}"/chromium-* >/dev/null 2>&1; then
+  if [ -n "${PLAYWRIGHT_BROWSERS_PATH:-}" ] && [ -d backend/node_modules ] && ls "${PLAYWRIGHT_BROWSERS_PATH}"/chromium-* >/dev/null 2>&1; then
     run_step "Backend build for the web end-to-end run" npm run build --prefix backend
     run_step "Web end-to-end (backend + Chromium)" npm run e2e --prefix web
   else
@@ -143,7 +171,8 @@ fi
 
 # Messaging server (server/messaging, Node 22 + Postgres). Its database tests need a disposable
 # database in TEST_DATABASE_URL; without one they are skipped and listed as SKIPPED, never PASS.
-if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
+if ! want messaging; then :
+elif command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
   if [ ! -d server/messaging/node_modules ]; then run_step "Messaging server install (npm ci)" npm ci --prefix server/messaging --no-audit --no-fund; fi
   run_step "Messaging server typecheck + tests" npm test --prefix server/messaging
   [ -z "${TEST_DATABASE_URL:-}" ] && record "Messaging server database tests" "SKIPPED" "TEST_DATABASE_URL not set"
@@ -152,7 +181,8 @@ else
 fi
 
 # Landing page waitlist functions (site/api), against an in-memory @vercel/blob stand-in; no network.
-if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
+if ! want node; then :
+elif command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
   if [ ! -d site/node_modules ]; then run_step "Site install (npm ci)" npm ci --prefix site --no-audit --no-fund; fi
   run_step "Site waitlist function tests" npm test --prefix site
 else
@@ -161,15 +191,16 @@ fi
 
 # Project secrets in 1Password (ADR-493): the manifest, the generated .env.op templates (references
 # only) and the sync tool, against a fake `op` and fake Vercel/Render APIs. No network, no values.
-if command -v node >/dev/null 2>&1; then
+if ! want node; then :
+elif command -v node >/dev/null 2>&1; then
   run_step "Secrets manifest and .env.op templates" node tools/secrets/sync.mjs check
   run_step "Secrets sync tool tests (fake op and hosts)" node --test "tools/secrets/test/*.test.mjs"
 else
   not_run "Secrets manifest and sync tool" "node not found on PATH"
 fi
-fi
 
-if [ "$core_only" -eq 1 ]; then
+if ! want ios; then :
+elif [ "$core_only" -eq 1 ]; then
   record "iOS app build + tests" "NOT RUN" "--core-only requested"
 elif ! command -v xcodebuild >/dev/null 2>&1; then
   not_run "iOS app build + tests" "xcodebuild not found (needs macOS with Xcode)"
@@ -232,6 +263,13 @@ echo; echo "================ SUMMARY"
 for r in "${results[@]}"; do IFS='|' read -r n s d <<<"$r"; printf '%-8s %s %s\n' "$s" "$n" "${d:+($d)}"; done
 if [ "$failed" -ne 0 ]; then echo "RESULT: FAIL"; exit 1; fi
 if [ "$blocked" -ne 0 ]; then echo "RESULT: BLOCKED (a required step could not run)"; exit 2; fi
+if [ -n "$only" ]; then
+  case ",$only," in
+    *,ios,*) echo "RESULT: PASS for groups: $only" ;;
+    *) echo "RESULT: PASS for groups: $only; iOS app NOT verified" ;;
+  esac
+  exit 0
+fi
 if [ "$core_only" -eq 1 ]; then echo "RESULT: PASS for core-only scope; iOS app NOT verified"; exit 0; fi
 if [ "$app_only" -eq 1 ]; then echo "RESULT: PASS for app-only scope; the Linux job (core) runs the other checks"; exit 0; fi
 echo "RESULT: PASS"
