@@ -106,7 +106,7 @@ Limits: model-written recaps `CALL_RECAP_DAILY_PER_ACCOUNT` (default 30, ceiling
 
 ### Checked (Linux, 2 Nov 2026)
 - `server/messaging`: `npm run typecheck`; `npm test` against a throwaway Postgres 16: **609 pass, 0 fail, 0 skipped** (11 new in `test/callRecaps.test.ts`: PIN masking, save claims in English and Polish, pointer checks, the whole path from call-start to ack with receipts, Call me now, other accounts, unknown and calls-off callers, other agents, bad signatures, replays, writer retry, the daily cap, Delete, 30-day expiry, account deletion). Turning the PIN masking off made 3 of them fail.
-- DoddyCore `swift test` (Swift 6.2.3, Linux): **2,244 tests, 0 failures** (13 new: `CallRecapTests`, `SQLiteCallRecapRepositoryTests`, the `callRecaps` data-flow row).
+- DoddyCore `swift test` (Swift 6.2.3, Linux, with the Linux SQLite flags): **2,249 tests, 0 failures** after merging the default branch of 2 Nov (2,244 before it) (13 new: `CallRecapTests`, `SQLiteCallRecapRepositoryTests`, the `callRecaps` data-flow row).
 - `scripts/typecheck_app_logic.sh`: `CallRecapModel.swift` type-checks in Swift 6 against DoddyCore.
 - `tools/build_strings_catalog.py --check`, `voice_agent_spec.py check --agent phone`, `setup-phone-agent.mjs --dry-run`, the secrets manifest tests.
 
