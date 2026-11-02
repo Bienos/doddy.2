@@ -28,6 +28,14 @@ public enum VoiceTokenError: Error, Equatable, Sendable {
     case serverProblem(status: Int)
     case badResponse
     case offline
+    /// The request was cancelled before an answer came (ADR-681: a start cancelled with the voice
+    /// sheet was shown as "You're offline").
+    case cancelled
+    /// The server didn't answer in time. Not "offline": the iPhone had a connection.
+    case timedOut
+    /// No secure (TLS) connection could be made: often a Wi-Fi that wants a sign-in first, or a
+    /// wrong date on the iPhone. Not "offline" either.
+    case secureConnectionFailed
 }
 
 /// Contract with `server/voice-token`: POST with a short-lived DODDY access session.
@@ -61,6 +69,31 @@ public enum VoiceTokenServer {
         }
     }
 
+    /// What a failed request to the token server means (ADR-681). Before, every loading
+    /// error was `.offline`, so a cancelled start, a timeout or a refused secure connection said
+    /// "You're offline" and showed the offline note card. Only a missing or lost connection is
+    /// `.offline` now; a loading error none of these names stays `.offline`, as before.
+    public static func loadingFailure(_ error: any Error) -> VoiceTokenError {
+        if error is CancellationError { return .cancelled }
+        guard let url = error as? URLError else { return .offline }
+        switch url.code {
+        case .cancelled: return .cancelled
+        case .timedOut: return .timedOut
+        default: return secureConnectionCodes.contains(url.code) ? .secureConnectionFailed : .offline
+        }
+    }
+
+    /// URL loading errors that mean the secure connection itself failed.
+    static let secureConnectionCodes: Set<URLError.Code> = [
+        .secureConnectionFailed,
+        .serverCertificateHasBadDate,
+        .serverCertificateUntrusted,
+        .serverCertificateHasUnknownRoot,
+        .serverCertificateNotYetValid,
+        .clientCertificateRejected,
+        .clientCertificateRequired,
+    ]
+
     public static func message(for error: VoiceTokenError) -> String {
         switch error {
         case .sessionExpired:
@@ -81,6 +114,12 @@ public enum VoiceTokenServer {
             "Doddy's voice service sent an unexpected reply, so voice didn't start."
         case .offline:
             "Couldn't reach Doddy's voice service. Check your internet connection and try again."
+        case .cancelled:
+            "Starting the conversation was interrupted before Doddy's voice service answered. Tap Talk to Doddy to try again."
+        case .timedOut:
+            "Doddy's voice service didn't answer in time, so voice didn't start. Try again in a moment."
+        case .secureConnectionFailed:
+            "Doddy couldn't open a secure connection to his voice service, so voice didn't start. A Wi-Fi that asks you to sign in first, or a wrong date and time on this iPhone, can cause this."
         }
     }
 }
