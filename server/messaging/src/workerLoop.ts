@@ -6,8 +6,9 @@ import { runDueDigests, type NewsDeps } from "./news/digest.js";
 import { pruneNewsCache } from "./news/sources.js";
 import { dispatchDue } from "./outbox.js";
 import type { PushSender, SmsSender } from "./providers/types.js";
+import type { TaskVoice } from "./providers/taskCalls.js";
 import type { TaskCallContext } from "./taskCalls/context.js";
-import { runTaskCallPasses } from "./taskCalls/worker.js";
+import { runDeletions, runTaskCallPasses } from "./taskCalls/worker.js";
 import type { ErrandContext } from "./errands/context.js";
 import { newErrandLoopState, runErrandPasses, stopErrandRuns } from "./errands/worker.js";
 import type { WatchContext } from "./watches/context.js";
@@ -34,12 +35,13 @@ async function pause(ms: number, shouldStop: () => boolean) {
 export async function runWorkerLoop(
   db: Db, deps: {
     push?: PushSender; sms?: SmsSender; cipher?: TextCipher; news: NewsDeps; taskCalls?: TaskCallContext; errands?: ErrandContext;
-    watches?: WatchContext; smsSettings?: SmsSettings;
+    watches?: WatchContext; smsSettings?: SmsSettings; phoneAgentVoice?: TaskVoice;
   },
   shouldStop: () => boolean,
 ): Promise<void> {
   const loops = [dispatchLoop(db, deps, shouldStop), digestLoop(db, deps.news, shouldStop)];
   if (deps.taskCalls) loops.push(taskCallLoop(deps.taskCalls, shouldStop));
+  else if (deps.phoneAgentVoice) loops.push(deletionLoop(db, deps.phoneAgentVoice, shouldStop));
   if (deps.errands) loops.push(errandLoop(deps.errands, shouldStop));
   if (deps.watches) loops.push(watchLoop(deps.watches, shouldStop));
   await Promise.all(loops);
@@ -94,6 +96,20 @@ async function errandLoop(ctx: ErrandContext, shouldStop: () => boolean) {
  * Call cases (ADR-500): scheduled dials, the goodbye at the time limit, the kill switch, answer
  * cards, costs and deletions. Its own loop, so a slow provider call never holds back pushes.
  */
+/** Without task calls, only the ElevenLabs deletions queued at account deletion still need a worker. */
+async function deletionLoop(db: Db, voice: TaskVoice, shouldStop: () => boolean) {
+  while (!shouldStop()) {
+    try {
+      const n = await runDeletions({ db, voice, now: () => new Date(), log });
+      if (n) log("conversation deletions", { processed: n });
+      if (n) continue;
+    } catch (err) {
+      log("conversation deletions failed", { error: (err as Error).message });
+    }
+    await pause(30_000, shouldStop);
+  }
+}
+
 async function taskCallLoop(ctx: TaskCallContext, shouldStop: () => boolean) {
   const state = { lastSweep: 0 };
   while (!shouldStop()) {

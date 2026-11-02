@@ -11,7 +11,7 @@ import { log, runWorkerLoop } from "./workerLoop.js";
 const config = loadConfig();
 const db = createPool(config.databaseUrl);
 await migrateOrExit(db, log);
-const { push, sms, smsSettings, cipher, news, taskCalls, errands, watches } = providersFrom(config);
+const { push, sms, smsSettings, phoneAgentVoice, cipher, news, taskCalls, errands, watches } = providersFrom(config);
 const taskCtx = taskCallContext(db, taskCalls, cipher, config.publicBaseUrl, push, log);
 const errandCtx = errandContext(db, errands, cipher, push, log);
 const watchCtx = watchContext(db, watches, cipher, push, log);
@@ -24,7 +24,7 @@ let stopping = false;
 process.on("SIGTERM", () => { stopping = true; });
 process.on("SIGINT", () => { stopping = true; });
 
-await runWorkerLoop(db, { push, sms, smsSettings, cipher, news, taskCalls: taskCtx, errands: errandCtx, watches: watchCtx }, () => stopping);
+await runWorkerLoop(db, { push, sms, smsSettings, phoneAgentVoice, cipher, news, taskCalls: taskCtx, errands: errandCtx, watches: watchCtx }, () => stopping);
 push?.close();
 await db.end();
 log("worker stopped");
