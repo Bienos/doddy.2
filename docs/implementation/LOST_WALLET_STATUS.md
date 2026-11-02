@@ -51,9 +51,12 @@ title read. A test now pins them.
 
 ## Not done
 
-- **Not on the live voice agent.** `tools.json` says `not_synced`. Adding the tool to the ElevenLabs agent
-  changes what the live agent can call, so it waits for the owner's yes. Until then the live agent doesn't know
-  the tool, and an app built from this branch never receives the call.
+- **On the live voice agent since 2 Nov 2026, about 22:10 UTC** (owner: "add lost_wallet to the live agent"):
+  tool `tool_4201m6f4xwztfs08n8r4ht6nf0ka`, agent version `agtvrsn_0401m6f4z169efmrdjy87wc4ys6k`, rollback
+  `agtvrsn_5301m6et97fde7ysr5q2em33x62h`. Only the tool list changed; the live prompt has no `lost_wallet` line
+  (its rules are in the tool's description). Details: `voice-agent/README.md`. **Only an app build from PR #176
+  runs the tool; every other build answers it as unsupported**, so until one is installed the voice may offer
+  steps it cannot show.
 - **No device test.** The SwiftUI card and the controller were syntax-checked here, not compiled: the hosted Mac
   job is the first compile.
 - **Left out because the official pages don't say it plainly:** whether mDowód stays valid after the ID card is
