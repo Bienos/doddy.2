@@ -63,6 +63,20 @@ final class StartLimitTests: XCTestCase {
         XCTAssertTrue(conversation.ended, "a conversation that connected after the limit is ended")
     }
 
+    func testTimeoutInvalidatesCallbacksBeforeTheCallerResumes() async {
+        let callbacks = LateBox()
+        do {
+            _ = try await StartLimit.run(seconds: 0.01, operation: { () async throws -> Int in
+                try await Task.sleep(for: .seconds(5))
+                return 1
+            }, onTimeout: { callbacks.count += 1 }, lateResult: { _ in })
+            XCTFail("expected timeout")
+        } catch {
+            XCTAssertEqual(error as? StartLimit.TimedOut, StartLimit.TimedOut())
+            XCTAssertEqual(callbacks.count, 1, "callbacks are invalidated before the caller resumes")
+        }
+    }
+
     func testCallerCancellationFinishesBeforeUncooperativeProviderAndCleansUpLateResult() async throws {
         let provider = SuspendedStart()
         let conversation = FakeConversation()

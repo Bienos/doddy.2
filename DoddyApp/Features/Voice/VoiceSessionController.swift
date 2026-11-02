@@ -867,6 +867,11 @@ final class VoiceSessionController {
             // ended here, so nothing keeps listening.
             let started = try await StartLimit.run {
                 try await ElevenLabs.startConversation(auth: auth, config: startConfig)
+            } onTimeout: {
+                // Block late SDK events before the deadline resumes the waiting start.
+                guard attempt == startAttempt else { return }
+                startAttempt += 1
+                fail(StartLimit.message)
             } lateResult: { late in
                 let lateNote = "a start that connected after the limit was ended: attempt \(attempt)"
                 Self.audioLog.notice("\(lateNote, privacy: .public)")
@@ -888,13 +893,7 @@ final class VoiceSessionController {
             Self.audioLog.notice("\(failedNote, privacy: .public)")
             // A replaced start's failure isn't the new conversation's.
             guard attempt == startAttempt else { return }
-            if error is StartLimit.TimedOut {
-                // Revoke the callbacks before reporting failure: a late SDK connection must not
-                // change the phase, append a transcript or run a tool after the deadline.
-                startAttempt += 1
-                fail(StartLimit.message)
-                return
-            }
+            if error is StartLimit.TimedOut { return }
             if Offline.isNoConnection(error) {
                 failOffline()
                 return

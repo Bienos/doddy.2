@@ -11,6 +11,7 @@ public enum StartLimit {
     public static func run<T>(
         seconds: TimeInterval = StartLimit.seconds,
         operation: @escaping @MainActor () async throws -> T,
+        onTimeout: @escaping @MainActor () -> Void = {},
         lateResult: @escaping @MainActor (T) async -> Void
     ) async throws -> T {
         try Task.checkCancellation()
@@ -32,6 +33,9 @@ public enum StartLimit {
                     catch { return }
                     if let continuation = race.claim() {
                         race.worker?.cancel()
+                        // Invalidate the caller’s callbacks before resuming it: the provider may
+                        // already have queued a ready or tool event on the main actor.
+                        onTimeout()
                         continuation.resume(throwing: TimedOut())
                     }
                 }
