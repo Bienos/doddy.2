@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Which Linux check groups does a pull request need? (ADR-683, the cousin of ci_needs_mac.sh)
+# Which Linux check groups does a pull request need? (ADR-684, the cousin of ci_needs_mac.sh)
 #
 # Reads the changed paths on stdin, one per line. Prints one line per group on stdout, for
 # $GITHUB_OUTPUT:  swift=true|false  backend=…  node=…  messaging=…
@@ -15,9 +15,10 @@ set -euo pipefail
 groups_for() {
   local p=$1
   case "$p" in
+    docs/* | design/*) echo swift; return ;;
     # Notes, text sources, archives, agent tooling: no heavy suite reads them (the generators and
     # the pack check, which do, are in the `checks` group that always runs).
-    docs/* | prompts/* | reference/* | blog/* | design/* | l10n/* | VISUAL_REVIEW/* \
+    prompts/* | reference/* | blog/* | l10n/* | VISUAL_REVIEW/* \
       | .agents/* | .claude/* | */CLAUDE.md | */AGENTS.md) echo none; return ;;
     # Paused Watch and Mac apps (ADR-572): in no target of project.yml, in no suite.
     DoddyWatch/* | DoddyWatchWidgets/* | DoddyMac/* | DoddyMacWidgets/* \
@@ -25,10 +26,10 @@ groups_for() {
     render.yaml | skills-lock.json | MANIFEST.json | PACKAGE_MANIFEST.json | .gitignore) echo none; return ;;
     backend/*) echo "backend node"; return ;;           # node: the secrets check reads backend/.env.op
     web/* | gateway/* | site/* | server/voice-token/* | secrets/* | tools/secrets/*) echo node; return ;;
-    server/messaging/*) echo messaging; return ;;
-    contracts/*) echo "backend node messaging"; return ;;
-    schemas/*) echo "backend node messaging"; return ;;
-    voice-agent/*) echo "swift messaging"; return ;;
+    server/messaging/*) echo "messaging node"; return ;;
+    contracts/*) echo "swift backend node messaging"; return ;;
+    schemas/*) echo "swift backend node messaging"; return ;;
+    voice-agent/*) echo "swift backend messaging"; return ;;
     Packages/* | DoddyApp/* | DoddyTests/* | DoddyUITests/* | DoddyWidgets/* | DoddyShare/* \
       | Shared/* | Config/* | assets/* | project.yml | project-iphone.yml) echo swift; return ;;
     */*) echo all; return ;;                             # scripts/, tools/, .github/, server/other, new folders

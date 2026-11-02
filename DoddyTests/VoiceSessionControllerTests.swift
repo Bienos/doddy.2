@@ -594,6 +594,61 @@ final class PermissionSheetTests: XCTestCase {
     }
 }
 
+/// Voice fixes from the read-only review of 29 Oct (ADR-672, tests ADR-681): the voice meter is
+/// detached from the conversation it was attached to, and a capability gap is "written down" only
+/// after a verified write. App-target tests: hosted Mac job only (no Xcode where they were written).
+final class VoiceReviewFixesTests: XCTestCase {
+    private typealias Harness = VoiceSessionControllerTests.Harness
+
+    @MainActor
+    func testEndDetachesTheVoiceMeterFromTheConversationItWasAttachedTo() async {
+        let t = Harness()
+        defer { t.restore() }
+        let link = MeterLink()
+        t.controller.beginForTesting(link: link)
+        t.controller.speakForTesting()
+        XCTAssertEqual(link.attached, 1, "attached when Doddy starts speaking")
+
+        await t.controller.stop()
+
+        XCTAssertEqual(link.detached, 1, "stop() clears the conversation first; the meter is still let go of that one")
+        XCTAssertFalse(AgentVoiceMeter.shared.hasSource)
+    }
+
+    @MainActor
+    func testADisconnectDetachesTheVoiceMeterToo() async {
+        let t = Harness()
+        defer { t.restore() }
+        let link = MeterLink()
+        t.controller.beginForTesting(link: link)
+        t.controller.speakForTesting()
+
+        t.controller.disconnectForTesting(.user)
+
+        XCTAssertEqual(link.detached, 1)
+        XCTAssertFalse(AgentVoiceMeter.shared.hasSource)
+    }
+
+    @MainActor
+    func testAGapIsNotCalledWrittenDownWhenNothingWasWritten() async {
+        let t = Harness()
+        defer { t.restore() }
+        t.controller.beginForTesting(link: t.link)
+        // The harness's store has no learning store, so nothing can be written.
+        await t.controller.receiveToolCallForTesting(
+            name: VoiceToolName.noteCapabilityGap, id: "gap-1", parameters: #"{"category":"music"}"#).value
+        guard case .ask? = t.controller.pendingAction else {
+            return XCTFail("ASK-01: the gap is noted after a tap, got \(String(describing: t.controller.pendingAction))")
+        }
+
+        await t.controller.confirmPendingAction()
+
+        XCTAssertEqual(t.link.results.map(\.id), ["gap-1"])
+        XCTAssertEqual(t.link.results.first?.text, LearningPrompt.gapNotNoted)
+        XCTAssertFalse(t.link.results.first?.text.contains("It's written down") ?? true)
+    }
+}
+
 /// find_photos and open_camera (ADR-569) with the fake device: a read asks first and the agent
 /// hears counts only; a device without a camera says so instead of asking for a permission.
 final class PhotosAndCameraControllerTests: XCTestCase {
@@ -784,5 +839,24 @@ private final class FakeLink: LiveVoiceLink, @unchecked Sendable {
     func updateContext(_ context: String) async throws { lock.withLock { sentContext.append(context) } }
     func endConversation() async {}
     func setAgentVolume(_ volume: Double) -> Double? { nil }
+}
+
+/// A provider link with a voice to listen to, counting the meter's attach and detach (ADR-655).
+@MainActor
+private final class MeterLink: LiveVoiceLink {
+    private(set) var attached = 0
+    private(set) var detached = 0
+
+    func sendToolResult(for toolCallId: String, result: String, isError: Bool) async throws {}
+    func setMuted(_ muted: Bool) async throws {}
+    func sendMessage(_ text: String) async throws {}
+    func updateContext(_ context: String) async throws {}
+    func endConversation() async {}
+    func setAgentVolume(_ volume: Double) -> Double? { nil }
+    func attachAgentLevelMeter(_ meter: AgentVoiceMeter) -> Bool {
+        attached += 1
+        return true
+    }
+    func detachAgentLevelMeter(_ meter: AgentVoiceMeter) { detached += 1 }
 }
 #endif

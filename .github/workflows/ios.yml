@@ -1,17 +1,14 @@
 # Hosted macOS build for Doddy (owner approval 2026-10-10, closes ADR-022's open choice).
 # Runs the same scripts/ci.sh a contributor runs locally, split so the slow parts run side by side
-# (ADR-683): the Linux groups (checks, swift, backend, node, messaging; `core` below collects them)
+# (ADR-684): the Linux groups (checks, swift, backend, node, messaging; `core` below collects them)
 # and the Mac job (the Xcode build, then the unit tests and the UI tests on the first available
 # iPhone simulator, restarted between the two, ADR-561).
 # No signing team or secrets are used; nothing is deployed.
 # Builds the iPhone/iPad app only: the Apple Watch and Mac apps are paused (ADR-572) and are in no
 # target of project.yml. The "macOS" below is the runner Xcode needs, not an app being built.
-# The macOS job is the expensive one (about 62 minutes at $0.062 a minute, 14 of them the Linux
-# checks it used to repeat), so on a pull request it runs only when the change can reach the app
-# build or its tests (ADR-497, scripts/ci_needs_mac.sh); a push to the default branch is checked the
-# same way (ADR-675). It now starts together with the Linux groups instead of after them (ADR-683):
-# a pull request that is red on Linux still spends its Mac minutes; a new push cancels both. Run by
-# hand, it always runs.
+# The Mac runs beside Linux and keeps #164's --app-only path (ADR-680): Swift package tests
+# on Apple's Foundation, build, unit tests and UI tests. The public repository uses free hosted
+# runners. Path selection only skips jobs whose inputs are known unaffected; unknown paths run all.
 name: iOS build and tests
 
 on:
@@ -37,7 +34,7 @@ permissions:
   contents: read
 
 jobs:
-  # Decides which jobs are needed (ADR-497, ADR-683). Cheap: a shallow checkout and a file list.
+  # Decides which jobs are needed (ADR-497, ADR-684). Cheap: a shallow checkout and a file list.
   changes:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -88,9 +85,7 @@ jobs:
         id: groups
         run: scripts/ci_groups.sh < "$RUNNER_TEMP/changed.txt" >> "$GITHUB_OUTPUT"
 
-  # The Mac job: only the Xcode part, plus the Python checks and the Swift package tests, which
-  # behave differently on macOS (bash 3.2, BSD tools, Darwin SQLite). The Node suites are the same
-  # on every OS and run in the Linux jobs, so --skip-node leaves them out here (about 8 minutes).
+  # Preserve #164: Mac Swift + Xcode tests only, no repeated Linux checks.
   ci:
     needs: [changes]
     if: needs.changes.outputs.mac == 'true' && inputs.only != 'island'
@@ -118,8 +113,8 @@ jobs:
           swift --version
           xcodegen --version
 
-      - name: scripts/ci.sh --skip-node
-        run: scripts/ci.sh --skip-node
+      - name: scripts/ci.sh --app-only
+        run: scripts/ci.sh --app-only
 
       - name: Keep the test results
         if: always()
@@ -141,7 +136,7 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
-  # ---- The Linux groups (ADR-137, ADR-683). Each runs one `scripts/ci.sh --only <group>`, in
+  # ---- The Linux groups (ADR-137, ADR-684). Each runs one `scripts/ci.sh --only <group>`, in
   # parallel; a group is skipped when `changes` says no changed file can reach it.
 
   # Python generators and guards, the agent specs, the pack check: seconds, always run.
@@ -220,6 +215,8 @@ jobs:
             gateway/package-lock.json
             web/package-lock.json
             site/package-lock.json
+      - name: Install backend dependencies for web end-to-end tests
+        run: npm ci --prefix backend --no-audit --no-fund
       - name: scripts/ci.sh --only node
         run: scripts/ci.sh --only node
 

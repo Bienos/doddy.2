@@ -45,7 +45,9 @@ struct VoiceTokenClient: Sendable {
         do {
             (data, response) = try await session.data(for: request)
         } catch {
-            throw .offline
+            // Only a missing or lost connection is "offline"; a cancelled request, a timeout and a
+            // refused secure connection each say what happened (ADR-681).
+            throw VoiceTokenServer.loadingFailure(error)
         }
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
         if status == 401 { await VoiceAuthSession.shared.serverRejectedSession() }

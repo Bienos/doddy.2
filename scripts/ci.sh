@@ -7,8 +7,9 @@
 #                              (on Linux also a type-check of the non-UI app files);
 #                              the iOS app build and tests are reported NOT RUN (exit 0
 #                              only if everything that was requested passed)
+#   scripts/ci.sh --app-only   Swift package and iOS build/unit/UI tests; Linux checks SKIPPED (ADR-680)
 #   scripts/ci.sh --skip-node  everything except the Node suites (backend, gateway, web, site,
-#                              messaging, voice-token, secrets tool). The hosted Mac job uses it:
+#                              messaging, voice-token, secrets tool). Available locally; hosted Mac keeps --app-only (ADR-680):
 #                              Node behaves the same on every OS and the Linux jobs already ran it.
 #   scripts/ci.sh --only a,b   only these groups (hosted Linux jobs run one group each, in parallel):
 #                              checks swift backend node messaging ios
@@ -16,11 +17,12 @@
 set -uo pipefail
 cd "$(dirname "$0")/.."
 
-core_only=0 skip_node=0 only=""
+core_only=0 app_only=0 skip_node=0 only=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --core-only) core_only=1 ;;
     --skip-node) skip_node=1 ;;
+    --app-only) app_only=1 ;;
     --only)
       [ -n "${2:-}" ] || { echo "--only needs a comma-separated list of groups" >&2; exit 64; }
       only=$2; shift ;;
@@ -28,14 +30,21 @@ while [ $# -gt 0 ]; do
   esac
   shift
 done
+if [ "$app_only" -eq 1 ] && { [ "$core_only" -eq 1 ] || [ -n "$only" ] || [ "$skip_node" -eq 1 ]; }; then
+  echo "--app-only cannot be combined with other scope flags" >&2; exit 64
+fi
 if [ -n "$only" ]; then
   case ",$only," in *,ios,*) ;; *) core_only=1 ;; esac
+  case "$only" in ,*|*,|*,,*) echo "empty group in --only" >&2; exit 64 ;; esac
   for g in $(echo "$only" | tr ',' ' '); do
     case "$g" in checks|swift|backend|node|messaging|ios) ;; *) echo "unknown group: $g" >&2; exit 64 ;; esac
   done
 fi
 # want GROUP: does this run include the group? (bash 3.2: no associative arrays)
 want() {
+  if [ "$app_only" -eq 1 ]; then
+    case "$1" in swift|ios) ;; *) return 1 ;; esac
+  fi
   case "$1" in backend|node|messaging) [ "$skip_node" -eq 0 ] || return 1 ;; esac
   [ -z "$only" ] && return 0
   case ",$only," in *",$1,"*) return 0 ;; esac
@@ -57,6 +66,11 @@ restart_simulator() {
   xcrun simctl bootstatus "$1" -b                 # -b boots it first, then waits for the boot
 }
 
+if [ "$app_only" -eq 1 ]; then
+  record "Pack, guard, agent spec, page and catalog checks" "SKIPPED" "--app-only: Linux core runs them"
+  record "Token server, backend, gateway, web, messaging, site and secrets checks" "SKIPPED" "--app-only: Linux core runs them"
+fi
+
 if want checks; then
 run_step "Imported pack integrity" python3 -I scripts/verify_imported_pack.py
 run_step "Forbidden-capability guard" scripts/check_forbidden_capabilities.sh
@@ -69,7 +83,7 @@ run_step "String catalogs up to date" python3 -I tools/build_strings_catalog.py 
 run_step "What-can-doddy-do page up to date" python3 -I tools/build_day.py --check
 run_step "Web app tokens and brand files match the app (ADR-600)" python3 -I tools/gen_web_assets.py --check
 run_step "Which pull requests need the macOS build (ADR-497)" scripts/test_ci_needs_mac.sh
-run_step "Which pull requests need which Linux groups (ADR-683)" scripts/test_ci_groups.sh
+run_step "Which pull requests need which Linux groups (ADR-684)" scripts/test_ci_groups.sh
 if python3 -I -c "import yaml" 2>/dev/null; then
   run_step "Per-platform Xcode specs in step" python3 -I scripts/check_platform_specs.py
 else
@@ -104,7 +118,11 @@ elif command -v swift >/dev/null 2>&1; then
     run_step "Swift package tests (DoddyCore)" swift test --package-path Packages/DoddyCore
   fi
   # Island drawing data matches the owner's SVGs, parses, and maps states correctly (ADR-239).
-  run_step "Dynamic Island art and scenes" scripts/check_island_art.sh
+  if [ "$app_only" -eq 1 ]; then
+    record "Dynamic Island art and scenes" "SKIPPED" "--app-only: Linux core runs them"
+  else
+    run_step "Dynamic Island art and scenes" scripts/check_island_art.sh
+  fi
 else
   not_run "Swift package tests (DoddyCore)" "swift not found on PATH"
 fi
@@ -211,14 +229,31 @@ else
     # error instead of stopping at the first target that fails (owner request, 2026-10-12).
     if run_step "xcodebuild build-for-testing" xcodebuild build-for-testing -project Doddy.xcodeproj -scheme Doddy \
       -destination "$dest" -IDEBuildingContinueBuildingAfterErrors=YES; then
+      # A per-test time limit (ADR-680): a test that hangs fails after 10 minutes instead of using
+      # up the job (on 2 Nov one waited 49 minutes for the app to close, run 41368047283). The
+      # longest UI test takes about 290 s, so 600 s only ends a test that is stuck.
+      test_limits="-test-timeouts-enabled YES -default-test-execution-time-allowance 600"
+      # shellcheck disable=SC2086
       run_step "xcodebuild test: unit tests" xcodebuild test-without-building -project Doddy.xcodeproj -scheme Doddy \
-        -destination "$dest" -only-testing:DoddyTests
+        -destination "$dest" -only-testing:DoddyTests $test_limits
       # Only when this script picked the simulator: a DODDY_DESTINATION may name one by name.
       if [ -n "${sim_id:-}" ]; then
         run_step "Restart the simulator before the UI tests" restart_simulator "$sim_id"
       fi
-      run_step "xcodebuild test: UI tests" xcodebuild test-without-building -project Doddy.xcodeproj -scheme Doddy \
-        -destination "$dest" -only-testing:DoddyUITests
+      # DODDY_UI_TEST_WORKERS > 1 (ADR-680): xcodebuild clones the simulator and hands each clone
+      # whole test classes, so the UI tests run side by side. Each clone starts fresh, as ADR-561
+      # wants. Every test still runs once. Not used in CI: the hosted Mac was too small for two.
+      ui_workers=${DODDY_UI_TEST_WORKERS:-1}
+      if [ "$ui_workers" -gt 1 ] 2>/dev/null; then
+        # shellcheck disable=SC2086
+        run_step "xcodebuild test: UI tests ($ui_workers simulators)" xcodebuild test-without-building \
+          -project Doddy.xcodeproj -scheme Doddy -destination "$dest" -only-testing:DoddyUITests \
+          -parallel-testing-enabled YES -parallel-testing-worker-count "$ui_workers" $test_limits
+      else
+        # shellcheck disable=SC2086
+        run_step "xcodebuild test: UI tests" xcodebuild test-without-building -project Doddy.xcodeproj -scheme Doddy \
+          -destination "$dest" -only-testing:DoddyUITests $test_limits
+      fi
     else
       not_run "xcodebuild test (unit + UI)" "the build for testing failed"
     fi
@@ -229,7 +264,7 @@ echo; echo "================ SUMMARY"
 for r in "${results[@]}"; do IFS='|' read -r n s d <<<"$r"; printf '%-8s %s %s\n' "$s" "$n" "${d:+($d)}"; done
 if [ "$failed" -ne 0 ]; then echo "RESULT: FAIL"; exit 1; fi
 if [ "$blocked" -ne 0 ]; then echo "RESULT: BLOCKED (a required step could not run)"; exit 2; fi
-if [ -n "$only" ] && [ "$core_only" -eq 1 ]; then echo "RESULT: PASS for groups: $only; iOS app NOT verified"; exit 0; fi
-if [ "$skip_node" -eq 1 ]; then echo "RESULT: PASS (Node suites skipped by --skip-node)"; exit 0; fi
+if [ -n "$only" ]; then echo "RESULT: PASS for groups: $only; iOS app NOT verified"; exit 0; fi
 if [ "$core_only" -eq 1 ]; then echo "RESULT: PASS for core-only scope; iOS app NOT verified"; exit 0; fi
+if [ "$app_only" -eq 1 ]; then echo "RESULT: PASS for app-only scope; the Linux job (core) runs the other checks"; exit 0; fi
 echo "RESULT: PASS"

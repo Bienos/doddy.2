@@ -17,15 +17,17 @@ dest="platform=iOS Simulator,id=${sim_id}"
 echo "Destination: $dest"
 
 xcodebuild build-for-testing -project Doddy.xcodeproj -scheme Doddy -destination "$dest"
+# As in ci.sh (ADR-680): a stuck test fails after 10 minutes instead of using up the job.
+limits=(-test-timeouts-enabled YES -default-test-execution-time-allowance 600)
 # The island's views drawn in every state, in English and Polish, and their checks.
 xcodebuild test-without-building -project Doddy.xcodeproj -scheme Doddy -destination "$dest" \
   -only-testing:DoddyTests/IslandScreenshotTests -only-testing:DoddyTests/IslandBaselineTests \
-  -only-testing:DoddyTests/VoiceSessionControllerTests/testTranslatorStartsAtOnceWithoutAQuestion
+  -only-testing:DoddyTests/VoiceSessionControllerTests/testTranslatorStartsAtOnceWithoutAQuestion "${limits[@]}"
 # As in ci.sh (ADR-561): the UI tests start on a freshly restarted simulator.
 xcrun simctl shutdown "$sim_id" 2>/dev/null || true
 xcrun simctl bootstatus "$sim_id" -b
 # The real island on the simulator, in English and in Polish (offline fixture).
 xcodebuild test-without-building -project Doddy.xcodeproj -scheme Doddy -destination "$dest" \
   -only-testing:DoddyUITests/MemoryBaselineTests/testNativeIslandOfflineFixtureCanStartMuteAndEnd \
-  -only-testing:DoddyUITests/IslandPolishTests
+  -only-testing:DoddyUITests/IslandPolishTests "${limits[@]}"
 echo "RESULT: PASS for the island only; the rest of the app is NOT verified by this run"
