@@ -123,7 +123,7 @@ is unknown until step 3.
 | DOD-11 observable_privacy | No conversation text in the activity; the new log holds a bundle identifier and a yes/no only (`privacy: .public` on those two values, nothing else) | Guard PASS | Logs are readable in Console on a connected Mac; that is the point, and they contain nothing personal |
 | Honest capability claims (T35/T42) | This document and the ADR rows keep "unbuilt / not run"; the user-facing text in `VoiceView` already says iOS may stop Doddy in the background | — | Do not describe the island as working until step 3 above is recorded |
 
-## Since 30 Oct: the island pulses with his voice outside the app (ADR-670)
+## Since 30 Oct: the island pulses with his voice outside the app (ADR-683)
 Owner: "Can it also pulse around Dynamic Island outside app like it is [now] on home inside app when
 talking to Doddy". Merged in #158 on 1 Nov (branch `claude/island-pulse-outside-app`).
 
@@ -144,7 +144,7 @@ waves and brightening outline are gone.
 | Small island, right | Home's fine lines (21, orange to amber to rose): calm while he hears you, a new shape and height with each beat while he talks |
 | Small island, left | His head, as before (no halo) |
 | Big island | His talking waves ease between 0.75 and 1 of their height (they stay under "Speaking"), no glow |
-| Around the island | The orange keyline, as before ADR-670 (it doesn't move) |
+| Around the island | The orange keyline, as before ADR-683 (it doesn't move) |
 
 Nothing changes while he listens or works, while muted, while a card or result is on the island,
 under Reduce Motion, on the minimal island or on the Lock Screen. The number comes from the loudness

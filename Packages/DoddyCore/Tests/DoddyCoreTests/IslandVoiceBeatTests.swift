@@ -1,7 +1,7 @@
 import XCTest
 @testable import DoddyCore
 
-/// ADR-670: the beat the Dynamic Island swells with while Doddy talks outside the app.
+/// ADR-683: the beat the Dynamic Island swells with while Doddy talks outside the app.
 final class IslandVoiceBeatTests: XCTestCase {
     func testAPauseIsZeroAndHisLoudestIsTheTopStep() {
         XCTAssertEqual(IslandVoiceBeat.step(peak: 0), 0)

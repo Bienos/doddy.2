@@ -7,10 +7,15 @@
 # target of project.yml. The "macOS" below is the runner Xcode needs, not an app being built.
 # The macOS job is the expensive one (about 52 minutes at $0.062 a minute), so it runs only after
 # the Linux checks pass, and on a pull request only when the change can reach the app build or its
-# tests (ADR-497, scripts/ci_needs_mac.sh). Run by hand, it always runs.
+# tests (ADR-497, scripts/ci_needs_mac.sh); a push to the default branch is checked the same way
+# (ADR-675). Run by hand, it always runs.
 name: iOS build and tests
 
 on:
+  # The default branch is what Render deploys, and it sometimes gets direct pushes (ADR-675): those
+  # are tested too. The macOS job runs only when the push can reach the app build (ci_needs_mac.sh).
+  push:
+    branches: [claude/loving-dirac-uuxoux]
   pull_request:
   workflow_dispatch:
     inputs:
@@ -46,8 +51,19 @@ jobs:
         id: decide
         env:
           EVENT: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
         run: |
-          if [ "$EVENT" != "pull_request" ]; then
+          if [ "$EVENT" = "push" ]; then
+            # What the push changes: from the commit the branch was at before it, to the new head.
+            if [ -n "$BEFORE" ] && [ "$BEFORE" != "0000000000000000000000000000000000000000" ] \
+              && git fetch -q --depth=1 origin "$BEFORE" \
+              && files=$(git diff --name-only --no-renames "$BEFORE" HEAD); then
+              printf '%s\n' "$files" | scripts/ci_needs_mac.sh >> "$GITHUB_OUTPUT"
+            else
+              echo "Couldn't list what the push changes: the macOS build runs." >&2
+              echo "mac=true" >> "$GITHUB_OUTPUT"
+            fi
+          elif [ "$EVENT" != "pull_request" ]; then
             echo "Run by hand: the macOS build runs." >&2
             echo "mac=true" >> "$GITHUB_OUTPUT"
           elif git rev-parse --verify -q 'HEAD^2' >/dev/null \

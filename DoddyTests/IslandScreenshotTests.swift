@@ -24,7 +24,7 @@ final class IslandScreenshotTests: XCTestCase {
         return state.islandScene(isStale: false)
     }
 
-    /// ADR-670: his beat while he talks outside the app, in a pause and at his loudest. Two
+    /// ADR-683: his beat while he talks outside the app, in a pause and at his loudest. Two
     /// moments of it: on the iPhone it moves between them about every 0.6 s.
     private static let beatSamples: [(file: String, name: String, beat: Int)] = [
         ("3a-speaking-pause", "Speaking outside the app: a pause between words (beat 0)", 0),
@@ -52,7 +52,7 @@ final class IslandScreenshotTests: XCTestCase {
 
     // MARK: What the owner asked for
 
-    /// ADR-670, option C (owner, 1 Nov): the small island draws his voice as Home's fine lines,
+    /// ADR-683, option C (owner, 1 Nov): the small island draws his voice as Home's fine lines,
     /// more of them lit at his loudest beat than in a pause, and there, calm, while he hears you.
     @MainActor
     func testTheSmallIslandDrawsHisVoiceAsHomesLines() throws {

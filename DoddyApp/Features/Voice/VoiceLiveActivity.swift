@@ -18,7 +18,7 @@ import UIKit
 /// behind the one before it, so a status that flipped quickly (speaking, listening, speaking)
 /// reached the island one step at a time, seconds late, and it looked stuck.
 ///
-/// While Doddy talks and Doddy is not the app on screen, it also sends his beat (ADR-670): every
+/// While Doddy talks and Doddy is not the app on screen, it also sends his beat (ADR-683): every
 /// `IslandVoiceBeat.interval` a step for how loud his voice was, so the island swells and eases
 /// with him as Home's strip does. iOS can't animate a Live Activity between updates, so this is
 /// the only way it moves. Nothing is sent for it while Doddy is on screen (iOS shows no island
@@ -51,9 +51,9 @@ final class VoiceLiveActivity {
     private var wantsRefresh = false
     /// The last `finish`/`end` request, so callers can wait until iOS has it.
     private var ending: Task<Void, Never>?
-    /// The state the conversation asked for, before his beat is put in (ADR-670).
+    /// The state the conversation asked for, before his beat is put in (ADR-683).
     private var asked: DoddyVoiceAttributes.ContentState?
-    /// Sends his beat while he talks (ADR-670); nil while he doesn't.
+    /// Sends his beat while he talks (ADR-683); nil while he doesn't.
     private var beating: Task<Void, Never>?
     private var beat = IslandVoiceBeat()
     /// The step the island was last asked to show, or nil for none.
@@ -247,7 +247,7 @@ final class VoiceLiveActivity {
         return pending
     }
 
-    // MARK: His beat (ADR-670)
+    // MARK: His beat (ADR-683)
 
     /// `state` with the step the island shows now; none unless he is talking.
     private func withBeat(_ state: DoddyVoiceAttributes.ContentState) -> DoddyVoiceAttributes.ContentState {

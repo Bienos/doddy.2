@@ -48,8 +48,8 @@ services:
       - key: DODDY_SESSION_SIGNING_KEY
         generateValue: true
       # Hosted Postgres (ADR-525): postgres://… URL, and the CA's PEM when it isn't a public one
-      # (Supabase: its root CA). Without DATABASE_URL the server uses PGlite at DODDY_DB_PATH, which
-      # the free plan loses on every restart.
+      # (Supabase: its root CA). Required here: live mode on a non-loopback host refuses to start
+      # without it (a PGlite file at DODDY_DB_PATH would be lost on every restart of the free plan).
       - key: DATABASE_URL
         sync: false
       - key: DATABASE_CA_CERT

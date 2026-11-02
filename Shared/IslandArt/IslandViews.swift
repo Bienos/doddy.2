@@ -381,7 +381,7 @@ struct IslandBottomView<Controls: View>: View {
                 } else if scene.waves == .speaking {
                     IslandWavesView(kind: .speech, live: scene.live)
                         .frame(height: Self.waveBand)
-                        // ADR-670: they ease with his voice while Doddy isn't on screen, never
+                        // ADR-683: they ease with his voice while Doddy isn't on screen, never
                         // taller than their band.
                         .scaleEffect(x: 1, y: CGFloat(scene.beatWaveScale), anchor: .center)
                         .animation(.easeOut(duration: 0.38), value: scene.voiceBeat)
@@ -425,7 +425,7 @@ struct IslandCompactTrailingView: View {
     let startedAt: Date
 
     var body: some View {
-        // ADR-596: his voice while he hears you or talks; the sign otherwise. Since ADR-670 (owner,
+        // ADR-596: his voice while he hears you or talks; the sign otherwise. Since ADR-683 (owner,
         // 1 Nov: option C) it is Home's fine lines, moving with each beat outside the app.
         if scene.waves != .none {
             IslandAuroraView(scene: scene)
@@ -436,7 +436,7 @@ struct IslandCompactTrailingView: View {
 }
 
 /// His voice on the small island as Home's fine lines (owner, 1 Nov 2026: option C, "Aurora, like
-/// Home", ADR-670): orange to amber to rose, highest in the middle, fading at their ends. Calm while
+/// Home", ADR-683): orange to amber to rose, highest in the middle, fading at their ends. Calm while
 /// he hears you. While he talks outside the app, each beat (about every 0.6 s) gives the lines a new
 /// height and iOS moves to it with its own short animation; the one asked for here is a request iOS
 /// may replace with its own timing. No glow, and nothing drawn outside its frame.

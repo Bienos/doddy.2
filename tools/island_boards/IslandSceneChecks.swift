@@ -407,7 +407,7 @@ enum IslandSceneChecks {
         return failures
     }
 
-    /// ADR-670: his beat outside the app shows only over his talking waves, and swells the island
+    /// ADR-683: his beat outside the app shows only over his talking waves, and swells the island
     /// with his voice within fixed bounds.
     static func voiceBeat() -> Int {
         var failures = 0

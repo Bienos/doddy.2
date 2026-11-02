@@ -26,6 +26,8 @@ export interface Limits {
   /** Ask Doddy questions (typed, ADR-587; Doddy pays Anthropic) per user, and for the service, per UTC day. */
   userDailyAsk: number;
   serviceDailyAsk: number;
+  /** Guests' Ask Doddy questions (`ask` sessions, ADR-587), for the whole service, per UTC day: their own pool, so guests can't use up `serviceDailyAsk`. */
+  serviceDailyGuestAsk: number;
   serviceDailyCalls: number;
   serviceMonthlyCalls: number;
   userConcurrency: number;
@@ -170,6 +172,7 @@ const EnvSchema = z.object({
   /** Ask Doddy (ADR-587): typed questions answered by Claude. */
   DODDY_LIMIT_USER_DAILY_ASK: intSetting(50, 1, 10_000),
   DODDY_LIMIT_SERVICE_DAILY_ASK: intSetting(500, 1, 1_000_000),
+  DODDY_LIMIT_SERVICE_DAILY_GUEST_ASK: intSetting(100, 1, 1_000_000),
   COMPOSIO_API_KEY: z.string().optional(),
   COMPOSIO_GOOGLECALENDAR_AUTH_CONFIG_ID: z.string().optional(),
   COMPOSIO_GOOGLECALENDAR_TOOLKIT_VERSION: z.string().optional(),
@@ -404,6 +407,12 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
   }
   // Production keeps its data: a file on an instance disk is lost on every restart of most hosts.
   if (e.DODDY_ENV === "production" && databaseUrl === null) problems.push("DATABASE_URL is required in production");
+  // Live and reachable from outside (the hosted service runs DODDY_ENV=development): a local PGlite
+  // file would be lost on a restart, taking the device owner and the daily caps with it, so the
+  // first caller afterwards would own the server. Loopback development may still use PGlite.
+  else if (e.DODDY_MODE === "live" && databaseUrl === null && !isLoopbackHost(e.DODDY_HOST)) {
+    problems.push("DATABASE_URL is required when DODDY_MODE=live and DODDY_HOST isn't loopback");
+  }
 
   if (problems.length > 0) throw new ConfigError(problems);
 
@@ -439,6 +448,7 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
       serviceDailyClaude: e.DODDY_LIMIT_SERVICE_DAILY_CLAUDE,
       userDailyAsk: e.DODDY_LIMIT_USER_DAILY_ASK,
       serviceDailyAsk: e.DODDY_LIMIT_SERVICE_DAILY_ASK,
+      serviceDailyGuestAsk: e.DODDY_LIMIT_SERVICE_DAILY_GUEST_ASK,
       serviceDailyCalls: e.DODDY_LIMIT_SERVICE_DAILY_CALLS,
       serviceMonthlyCalls: e.DODDY_LIMIT_SERVICE_MONTHLY_CALLS,
       userConcurrency: e.DODDY_LIMIT_USER_CONCURRENCY,
@@ -466,6 +476,7 @@ export function testLimits(overrides: Partial<Limits> = {}): Limits {
     serviceDailyClaude: 100,
     userDailyAsk: 50,
     serviceDailyAsk: 500,
+    serviceDailyGuestAsk: 100,
     serviceDailyCalls: 300,
     serviceMonthlyCalls: 3_000,
     userConcurrency: 1,

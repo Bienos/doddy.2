@@ -1,7 +1,7 @@
 import Foundation
 
 /// Doddy's beat on the Dynamic Island while he talks and Doddy is not the app on screen (owner,
-/// 30 Oct 2026, ADR-670: "pulse around Dynamic Island outside app like it is on Home").
+/// 30 Oct 2026, ADR-683: "pulse around Dynamic Island outside app like it is on Home").
 ///
 /// A Live Activity can't run an animation of its own: iOS draws it again only when the app sends
 /// an update. So while he talks, the app sends one small number every `interval`: how loud his
@@ -52,7 +52,7 @@ public struct IslandVoiceBeat: Sendable {
 
 extension SpeechPulse {
     /// The loudest the made-up pulse gets between `start` and `end` (seconds after he started
-    /// speaking), looked at every 20 ms. For a beat that stands for a stretch of time (ADR-670)
+    /// speaking), looked at every 20 ms. For a beat that stands for a stretch of time (ADR-683)
     /// when there is no audio track to measure.
     public static func peak(from start: TimeInterval, to end: TimeInterval) -> Double {
         guard start.isFinite, end.isFinite else { return 0 }

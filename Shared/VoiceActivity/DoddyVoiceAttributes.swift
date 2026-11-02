@@ -80,7 +80,7 @@ struct DoddyVoiceAttributes: ActivityAttributes {
         /// iPhone's language.
         var language: String?
         /// How loud Doddy's voice was over the last moment, as a step from 0 (a pause between his
-        /// words) to `IslandVoiceBeat.maxStep` (ADR-670): the island swells with it while he talks
+        /// words) to `IslandVoiceBeat.maxStep` (ADR-683): the island swells with it while he talks
         /// and Doddy is not on screen. Nil otherwise. A number from the loudness of the audio he
         /// plays, never the microphone and never what he says.
         var voiceBeat: Int?
@@ -155,7 +155,7 @@ extension DoddyVoiceAttributes.ContentState {
         voiceBeat = (try? container.decodeIfPresent(Int.self, forKey: .voiceBeat)) ?? nil
     }
 
-    /// The island draws his talking waves, so a beat would show (ADR-670): speaking, live, not
+    /// The island draws his talking waves, so a beat would show (ADR-683): speaking, live, not
     /// muted, nothing on the island instead (a card, a result, translating).
     var wantsVoiceBeat: Bool {
         status == .speaking && wholeDoddyWaves(stale: false) == .speaking

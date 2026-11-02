@@ -26,6 +26,10 @@ const STORE_TIMEOUT_MS = 2_000;
 const STORE_PREFIX = "doddy:voice:v1:";
 
 let appleKeysCache;
+let appleKeysFetchedAt = -Infinity;
+const APPLE_KEYS_TTL_MS = 60 * 60 * 1_000;
+/** An unknown key ID fetches Apple's keys again at most this often (the backend's Supabase rule). */
+const APPLE_KEYS_REFETCH_MIN_MS = 30_000;
 
 export class VoiceAuthStoreUnavailable extends Error {
   constructor() {
@@ -131,14 +135,19 @@ export function createVoiceAuthStore({ url, token, fetch: fetchImpl = fetch, tim
       const ttl = windowSeconds + 60;
       const perUserKey = key("limit-user", `${userId}:${window}`);
       const globalKey = key("limit-global", String(window));
+      // A user already over their own limit doesn't count toward the global one, so one account
+      // can't use up the hour for everyone.
       const script = `
         local per = redis.call('INCR', KEYS[1])
         if per == 1 then redis.call('EXPIRE', KEYS[1], ARGV[1]) end
+        if per > tonumber(ARGV[2]) then
+          return {per, tonumber(redis.call('GET', KEYS[2]) or '0')}
+        end
         local global = redis.call('INCR', KEYS[2])
         if global == 1 then redis.call('EXPIRE', KEYS[2], ARGV[1]) end
         return {per, global}
       `;
-      const counts = await evalScript(script, [perUserKey, globalKey], [ttl]);
+      const counts = await evalScript(script, [perUserKey, globalKey], [ttl, perUserLimit]);
       if (!Array.isArray(counts) || counts.length !== 2) throw new VoiceAuthStoreUnavailable();
       const [perUserCount, globalCount] = counts;
       const per = Number(perUserCount);
@@ -359,7 +368,7 @@ export async function verifyAppleIdentityToken(token, rawNonce, audience, { fetc
   const header = parseJSON(Buffer.from(headerText, "base64url").toString("utf8"));
   const claims = parseJSON(Buffer.from(claimsText, "base64url").toString("utf8"));
   if (header?.alg !== "RS256" || typeof header.kid !== "string" || !claims) return null;
-  const keys = await appleSigningKeys(fetchImpl, header.kid);
+  const keys = await appleSigningKeys(fetchImpl, header.kid, now);
   const jwk = keys.find((item) => item.kid === header.kid && item.kty === "RSA" && item.use === "sig");
   if (!jwk) return null;
   const key = createPublicKey({ key: jwk, format: "jwk" });
@@ -469,10 +478,12 @@ export function openAppleToken(value, signingKey) {
   }
 }
 
-async function appleSigningKeys(fetchImpl, requiredKid) {
-  const now = Date.now();
-  if (appleKeysCache && appleKeysCache.expiresAt > now
-      && appleKeysCache.keys.some((item) => item.kid === requiredKid)) return appleKeysCache.keys;
+async function appleSigningKeys(fetchImpl, requiredKid, now) {
+  const cached = appleKeysCache && appleKeysCache.expiresAt > now ? appleKeysCache.keys : null;
+  if (cached?.some((item) => item.kid === requiredKid)) return cached;
+  // Junk tokens with made-up key IDs must not make this unauthenticated route call Apple every time.
+  if (now >= appleKeysFetchedAt && now - appleKeysFetchedAt < APPLE_KEYS_REFETCH_MIN_MS) return cached ?? [];
+  appleKeysFetchedAt = now;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 5_000);
   try {
@@ -480,7 +491,7 @@ async function appleSigningKeys(fetchImpl, requiredKid) {
     if (!response.ok) return [];
     const body = await response.json();
     if (!Array.isArray(body?.keys)) return [];
-    appleKeysCache = { keys: body.keys, expiresAt: now + 60 * 60 * 1_000 };
+    appleKeysCache = { keys: body.keys, expiresAt: now + APPLE_KEYS_TTL_MS };
     return body.keys;
   } catch {
     return [];

@@ -4,7 +4,7 @@ import Foundation
 import LiveKit
 
 /// Listens to how loud Doddy's voice is while he talks, for Home's island extension (ADR-655) and
-/// the Dynamic Island's beat outside the app (ADR-670). LiveKit hands it each buffer of the audio
+/// the Dynamic Island's beat outside the app (ADR-683). LiveKit hands it each buffer of the audio
 /// his track plays; it keeps one smoothed number from 0 to 1, the loudest it has been since the
 /// island's last beat, and the moment it was updated. The sound itself is never kept, copied or sent: only that
 /// number, in memory, for a moment. It reads Doddy's output, never the microphone.
@@ -16,7 +16,7 @@ final class AgentVoiceMeter: NSObject, AudioRenderer, @unchecked Sendable {
 
     private let lock = NSLock()
     private var smoother = VoiceLevelSmoother()
-    /// The loudest smoothed level since `takePeak` was last called (ADR-670).
+    /// The loudest smoothed level since `takePeak` was last called (ADR-683).
     private var peak = 0.0
     /// `systemUptime` of the last buffer, or nil when none has come since `reset`.
     private var updatedAt: TimeInterval?
@@ -57,7 +57,7 @@ final class AgentVoiceMeter: NSObject, AudioRenderer, @unchecked Sendable {
         return smoother.value
     }
 
-    /// The loudest level since the last call, 0 to 1, and starts the next stretch (ADR-670: one
+    /// The loudest level since the last call, 0 to 1, and starts the next stretch (ADR-683: one
     /// island beat stands for the whole stretch, so a word between two beats isn't missed). 0 when
     /// no audio has come in the last half second.
     func takePeak() -> Double {

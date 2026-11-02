@@ -50,7 +50,7 @@ describe("errands against real Postgres", { skip: dbSkip }, () => {
   before(async () => { db = await freshDb(); });
   after(async () => { await db?.end(); });
   // The worker claims the oldest queued errand of any account: each test starts with none.
-  beforeEach(async () => { await db.query("DELETE FROM errands; DELETE FROM errand_deletions;"); });
+  beforeEach(async () => { await db.query("DELETE FROM errands; DELETE FROM errand_deletions; DELETE FROM errand_usage; DELETE FROM server_daily_usage;"); });
 
   async function world(opts: { settings?: Partial<ErrandSettings>; researcher?: FakeResearcher | null; cipher?: null } = {}) {
     const researcher = opts.researcher === null ? undefined : opts.researcher ?? new FakeResearcher();
@@ -186,6 +186,44 @@ describe("errands against real Postgres", { skip: dbSkip }, () => {
     // One finishes: there is room again.
     assert.ok([a.id, b.id].includes((await researchNext(w.ctx))!));
     assert.equal((await w.api("POST", `/v1/errands/${third.id}/approve`, { digest: third.digest })).statusCode, 202);
+    await w.app.close();
+  });
+
+  test("daily caps (ADR-673): per account, then for the server; a refusal queues nothing; deleting the account doesn't free the server's day", async () => {
+    const w = await world({ settings: { maxOpen: 20, dailyPerAccount: 2, dailyPerServer: 3 } });
+    const serverCount = async () =>
+      (await db.query<{ requests: number }>("SELECT requests FROM server_daily_usage WHERE feature = 'errands'")).rows.map((r) => r.requests);
+    await handOver(w);
+    await handOver(w);
+    const third = (await w.api("POST", "/v1/errands", body())).json();
+    const refused = await w.api("POST", `/v1/errands/${third.id}/approve`, { digest: third.digest });
+    assert.deepEqual([refused.statusCode, refused.json()], [429, { error: "errand_daily_limit", scope: "account" }]);
+    assert.equal((await row(third.id)).state, "draft", "nothing is queued");
+    assert.deepEqual(await serverCount(), [2], "the account's refusal took no server slot");
+
+    // Another account takes the server's last slot; then the server is full for everyone.
+    const signup = async () => {
+      const r = await w.app.inject({ method: "POST", url: "/v1/accounts" });
+      return { authorization: `Bearer ${(r.json() as { deviceToken: string }).deviceToken}` };
+    };
+    const other = await signup();
+    const approve = async (h: object) => {
+      const d = (await w.api("POST", "/v1/errands", body(), h)).json();
+      return w.api("POST", `/v1/errands/${d.id}/approve`, { digest: d.digest }, h);
+    };
+    assert.equal((await approve(other)).statusCode, 202);
+    const full = await approve(other);
+    assert.deepEqual([full.statusCode, full.json()], [429, { error: "errand_daily_limit", scope: "server" }]);
+
+    // Deleting the first account (two of the day's approvals) gives the server nothing back.
+    const del = await w.api("DELETE", "/v1/account");
+    assert.ok(del.statusCode < 300, del.body);
+    assert.deepEqual(await serverCount(), [3]);
+    assert.equal((await approve(await signup())).statusCode, 429);
+
+    // The next UTC day starts again.
+    w.clock.now = new Date(w.clock.now.getTime() + 24 * 3600_000);
+    assert.equal((await approve(other)).statusCode, 202);
     await w.app.close();
   });
 

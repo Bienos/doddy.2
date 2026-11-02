@@ -100,7 +100,7 @@ struct IslandScene: Equatable, Sendable {
     var pose: IslandPose?
     /// Whole Doddy's waves (ADR-596).
     var waves: IslandWaveState = .none
-    /// His beat while he talks and Doddy is not on screen (ADR-670), 0 to `IslandScene.maxBeat`;
+    /// His beat while he talks and Doddy is not on screen (ADR-683), 0 to `IslandScene.maxBeat`;
     /// nil when the app sends none, and always nil unless `waves` is `.speaking`.
     var voiceBeat: Int?
     /// Something waits for the user in the conversation, or is ready there: the expanded island's
@@ -112,7 +112,7 @@ struct IslandScene: Equatable, Sendable {
     }
 }
 
-/// How the island moves with his beat (ADR-670). Outside the app the island can't run Home's
+/// How the island moves with his beat (ADR-683). Outside the app the island can't run Home's
 /// moving strip (`IslandExtension`): iOS draws a Live Activity again only when the app sends an
 /// update, and keeps everything inside the island's black shape. The owner picked option C,
 /// "Aurora, like Home", on 1 Nov 2026 from the island pulse board: the small island draws his
@@ -199,7 +199,7 @@ struct IslandRGB: Equatable, Sendable {
     var blue: Double
 }
 
-/// One fine line of the small island's aurora (ADR-670, option C).
+/// One fine line of the small island's aurora (ADR-683, option C).
 struct IslandAuroraColumn: Equatable, Sendable {
     /// Its height as a fraction of the band, 0.06 to 1.
     var height: Double
@@ -221,7 +221,7 @@ extension DoddyVoiceAttributes.ContentState {
             scene.pose = wholeDoddyPose(stale: stale)
             scene.waves = wholeDoddyWaves(stale: stale)
         }
-        // ADR-670: only over his talking waves; a stale island never pulses.
+        // ADR-683: only over his talking waves; a stale island never pulses.
         if scene.waves == .speaking, let voiceBeat {
             scene.voiceBeat = min(IslandScene.maxBeat, max(0, voiceBeat))
         }
