@@ -39,6 +39,10 @@
     "en": "Doddy reads your workouts, heart rate, resting heart rate, heart rate variability, sleep and VO2 max from Health to show them to you on its Apple Health screen. Only a short summary of the week leaves this iPhone, and only when you allow it: in Messages when you send it yourself, or to Doddy's voice when you ask and say yes. Doddy keeps none of it and writes nothing to Health. Turn this off in Settings, Connections, Apple Health, or in the Health app.",
     "de": "Doddy liest deine Trainings, Herzfrequenz, Ruheherzfrequenz, Herzfrequenzvariabilität (HRV), deinen Schlaf und VO2max aus Health, um sie dir auf seinem Apple-Health-Bildschirm zu zeigen. Nur eine kurze Wochenzusammenfassung verlässt dieses iPhone, und nur wenn du es erlaubst: in „Nachrichten“, wenn du sie selbst sendest, oder an Doddys Stimme, wenn du fragst und zustimmst. Doddy speichert nichts davon und schreibt nichts in Health. Schalte das unter Einstellungen, Verbindungen, Apple Health oder in der Health-App aus."
   },
+  "NSHealthUpdateUsageDescription": {
+    "en": "Doddy never writes to or changes Apple Health. It only asks to read your workouts, heart rate, resting heart rate, heart rate variability, sleep and VO2 max. iOS asks apps for this text because its Health permission screen covers both reading and writing.",
+    "de": "Doddy schreibt nie in Apple Health und ändert dort nichts. Es fragt nur an, deine Trainings, Herzfrequenz, Ruheherzfrequenz, Herzfrequenzvariabilität (HRV), deinen Schlaf und VO2max zu lesen. iOS verlangt von Apps diesen Text, weil der Health-Berechtigungsbildschirm sowohl Lesen als auch Schreiben abdeckt."
+  },
   "NSCameraUsageDescription": {
     "en": "Doddy opens the camera only when you tap Take a photo or Open camera. The photo you keep goes into a note on this iPhone and its text is read here; it is never sent anywhere or saved to your photo library.",
     "de": "Doddy öffnet die Kamera nur, wenn du auf „Foto aufnehmen“ oder „Kamera öffnen“ tippst. Das Foto, das du behältst, kommt in eine Notiz auf diesem iPhone und sein Text wird hier gelesen; es wird nie irgendwohin gesendet oder in deiner Fotomediathek gespeichert."

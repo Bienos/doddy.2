@@ -25,7 +25,7 @@ struct CaptureIntentProblem: Error, CustomLocalizedStringResourceConvertible {
 struct StartDoddyRecordingIntent: AppIntent {
     static let title: LocalizedStringResource = "Start DODDY Recording"
     static var description: IntentDescription {
-        IntentDescription("Starts recording a meeting or conversation. Doddy opens first; the recording then carries on in the Dynamic Island and with the screen locked. The audio stays on this iPhone.")
+        IntentDescription("Starts recording a meeting or conversation. Doddy opens first; the recording then carries on in the Dynamic Island and with the screen locked. The audio stays on this device.")
     }
     static let openAppWhenRun = true
     /// A recording of other people, started from a locked iPhone, would be a recording nobody saw begin.
@@ -64,7 +64,7 @@ struct StartDoddyRecordingIntent: AppIntent {
 struct RecordWithDoddyIntent: AudioRecordingIntent {
     static let title: LocalizedStringResource = "Record with DODDY"
     static var description: IntentDescription {
-        IntentDescription("Opens Doddy and starts recording. The recording carries on in the Dynamic Island. The audio stays on this iPhone.")
+        IntentDescription("Opens Doddy and starts recording. The recording carries on in the Dynamic Island. The audio stays on this device.")
     }
     static let isDiscoverable = false
     static let openAppWhenRun = true

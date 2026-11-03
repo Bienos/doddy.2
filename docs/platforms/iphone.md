@@ -8,12 +8,13 @@
 **State:** this is what the owner builds and uses. The known-good branch and the unmerged changes are in `/STATUS.md`. iPad work (sidebar, fixes) is in `docs/implementation/IPAD_STATUS.md`; it compiles in the hosted Mac job (whose iPad sidebar UI test is skipped on the iPhone simulator) and hasn't been seen on an iPad. **Everything on the default branch compiles in the hosted Mac job** (last: #157's run, 1 Nov); that is not a run on a device, and almost nothing merged since 20 Oct has a recorded device check.
 
 ## Voice: the core of the app
-- **Code:** `DoddyApp/Features/Voice/` (26 files). Session: `VoiceSessionController.swift`. Screen: `VoiceView.swift`; on Home, `HomeConversation.swift`. Provider config: `VoiceConfig.swift`. The island's activity: `VoiceLiveActivity.swift`; the loudness of Doddy's voice: `AgentVoiceMeter.swift`. The wake word (`WakeWordListener.swift`) was removed with Hey Doddy (ADR-549).
+- **Code:** `DoddyApp/Features/Voice/` (27 files). Session: `VoiceSessionController.swift`. Screen: `VoiceView.swift`; on Home, `HomeConversation.swift`. Provider config: `VoiceConfig.swift`. The island's activity: `VoiceLiveActivity.swift`; the loudness of Doddy's voice: `AgentVoiceMeter.swift`. The wake word (`WakeWordListener.swift`) was removed with Hey Doddy (ADR-549).
 - **Agent:**
   - ElevenLabs `agent_0501m4et27vyeawrwqfdxxfszfa6`. The prompt and tools are in `voice-agent/` (`instructions.md`, `tools.json`, `session.json`). `python3 -I scripts/voice_agent_spec.py check` validates them.
   - The live agent is changed by the owner, never from the app.
   - The app sends dynamic variables at start (notes, lists, profile, `learned_context`, opening line). A variable the live prompt requires but the app doesn't send stops the call before it starts.
 - **Providers:** ElevenLabs (default, ADR-546) or OpenAI Realtime, chosen in Settings › Voice (and on Home after the first conversation) (ADR-265, ADR-442, ADR-443). `docs/implementation/VOICE_PROVIDER_TEST_STATUS.md`. OpenAI always goes through the token server with a Doddy voice account (Sign in with Apple, so a paid Apple team); a Debug build's developer connection reaches ElevenLabs only (ADR-551, ADR-633).
+- **Audio session:** one owner, `AudioSessionOwner.swift` (ADR-695; the rule is `AudioSessionPolicy` in DoddyCore). Anything new that records or plays sound registers there, asks `claim` before setting the session up and calls `release` when done; it never switches the session off itself. A phone call during a conversation follows `VoiceInterruptionPolicy` (ADR-696).
 - **Status docs:** `V1_VOICE_STATUS`, `V3_ISLAND_STATUS` (Dynamic Island), `HEY_DODDY_STATUS` (history: removed, ADR-549), `OPENING_SCENE_STATUS` (the intro and listen-on-open).
 - **To debug a voice problem,** look at the ElevenLabs conversation log for the agent first:
   - no conversation at all means the app failed before connecting;

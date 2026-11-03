@@ -844,6 +844,17 @@
         }
       }
     },
+    "A call rehearsal has the microphone. End it to talk to Doddy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mikrofonu używa próba rozmowy. Zakończ ją, aby porozmawiać z Doddym."
+          }
+        }
+      }
+    },
     "A change in an online app": {
       "extractionState": "manual",
       "localizations": {
@@ -3153,6 +3164,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Przelew do sprawdzenia"
+          }
+        }
+      }
+    },
+    "A voice memo is recording. Stop it to talk to Doddy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nagrywa się notatka głosowa. Zatrzymaj ją, aby porozmawiać z Doddym."
           }
         }
       }
@@ -53161,187 +53183,61 @@
         }
       }
     },
-    "Opens Doddy and searches your saved notes on this iPhone.": {
+    "Opens Doddy and searches your saved notes.": {
       "extractionState": "manual",
       "localizations": {
         "de": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Öffnet Doddy und durchsucht deine gespeicherten Notizen auf diesem iPad."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Öffnet Doddy und durchsucht deine gespeicherten Notizen auf diesem iPhone."
-                }
-              }
-            }
-          }
-        },
-        "en": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Opens Doddy and searches your saved notes on this iPad."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Opens Doddy and searches your saved notes on this iPhone."
-                }
-              }
-            }
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffnet Doddy und durchsucht deine gespeicherten Notizen."
           }
         },
         "es": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Abre Doddy y busca en tus notas guardadas en este iPad."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Abre Doddy y busca en tus notas guardadas en este iPhone."
-                }
-              }
-            }
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abre Doddy y busca en tus notas guardadas."
           }
         },
         "fr": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Ouvre Doddy et cherche dans tes notes enregistrées sur cet iPad."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Ouvre Doddy et cherche dans tes notes enregistrées sur cet iPhone."
-                }
-              }
-            }
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvre Doddy et cherche dans tes notes enregistrées."
           }
         },
         "hr": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Otvara Doddyja i pretražuje tvoje spremljene bilješke na ovom iPadu."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Otvara Doddyja i pretražuje tvoje spremljene bilješke na ovom iPhoneu."
-                }
-              }
-            }
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otvara Doddyja i pretražuje tvoje spremljene bilješke."
           }
         },
         "it": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Apre Doddy e cerca nelle tue note salvate su questo iPad."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Apre Doddy e cerca nelle tue note salvate su questo iPhone."
-                }
-              }
-            }
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apre Doddy e cerca nelle tue note salvate."
           }
         },
         "ja": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Doddyを開いて、このiPadに保存されたメモを検索します。"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Doddyを開いて、このiPhoneに保存されたメモを検索します。"
-                }
-              }
-            }
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddyを開いて、保存したメモを検索します。"
           }
         },
         "pl": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Otwiera Doddy’ego i przeszukuje zapisane notatki na tym iPadzie."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Otwiera Doddy’ego i przeszukuje zapisane notatki na tym iPhonie."
-                }
-              }
-            }
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwiera Doddy’ego i przeszukuje zapisane notatki."
           }
         },
         "pt-BR": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Abre o Doddy e busca nas suas notas salvas neste iPad."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Abre o Doddy e busca nas suas notas salvas neste iPhone."
-                }
-              }
-            }
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abre o Doddy e busca nas suas notas salvas."
           }
         },
         "zh-Hans": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "打开 Doddy 并搜索这台 iPad 上保存的笔记。"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "打开 Doddy 并搜索这台 iPhone 上保存的笔记。"
-                }
-              }
-            }
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开 Doddy 并搜索已保存的笔记。"
           }
         }
       }
@@ -53405,43 +53301,13 @@
         }
       }
     },
-    "Opens Doddy and starts recording. The recording carries on in the Dynamic Island. The audio stays on this iPhone.": {
+    "Opens Doddy and starts recording. The recording carries on in the Dynamic Island. The audio stays on this device.": {
       "extractionState": "manual",
       "localizations": {
-        "en": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Opens Doddy and starts recording. The recording carries on in the Dynamic Island. The audio stays on this iPad."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Opens Doddy and starts recording. The recording carries on in the Dynamic Island. The audio stays on this iPhone."
-                }
-              }
-            }
-          }
-        },
         "pl": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Otwiera Doddy’ego i zaczyna nagrywać. Nagrywanie trwa dalej w Dynamic Island. Dźwięk zostaje na tym iPadzie."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Otwiera Doddy’ego i zaczyna nagrywać. Nagrywanie trwa dalej w Dynamic Island. Dźwięk zostaje na tym iPhonie."
-                }
-              }
-            }
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwiera Doddy’ego i zaczyna nagrywać. Nagrywanie trwa dalej w Dynamic Island. Dźwięk zostaje na tym urządzeniu."
           }
         }
       }
@@ -66007,187 +65873,61 @@
         }
       }
     },
-    "Searches your saved notes on this iPhone and reads the matching note aloud. Works only when your iPhone is unlocked.": {
+    "Searches your saved notes and reads the matching note aloud. Works only when your device is unlocked.": {
       "extractionState": "manual",
       "localizations": {
         "de": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Durchsucht deine gespeicherten Notizen auf diesem iPad und liest die passende Notiz vor. Geht nur, wenn dein iPad entsperrt ist."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Durchsucht deine gespeicherten Notizen auf diesem iPhone und liest die passende Notiz vor. Geht nur, wenn dein iPhone entsperrt ist."
-                }
-              }
-            }
-          }
-        },
-        "en": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Searches your saved notes on this iPad and reads the matching note aloud. Works only when your iPad is unlocked."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Searches your saved notes on this iPhone and reads the matching note aloud. Works only when your iPhone is unlocked."
-                }
-              }
-            }
+          "stringUnit": {
+            "state": "translated",
+            "value": "Durchsucht deine gespeicherten Notizen und liest die passende Notiz vor. Geht nur, wenn dein Gerät entsperrt ist."
           }
         },
         "es": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Busca en tus notas guardadas en este iPad y lee en voz alta la nota que coincide. Solo funciona con el iPad desbloqueado."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Busca en tus notas guardadas en este iPhone y lee en voz alta la nota que coincide. Solo funciona con el iPhone desbloqueado."
-                }
-              }
-            }
+          "stringUnit": {
+            "state": "translated",
+            "value": "Busca en tus notas guardadas y lee en voz alta la nota que coincide. Solo funciona con el dispositivo desbloqueado."
           }
         },
         "fr": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Cherche dans tes notes enregistrées sur cet iPad et lit à voix haute la note correspondante. Fonctionne seulement quand ton iPad est déverrouillé."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Cherche dans tes notes enregistrées sur cet iPhone et lit à voix haute la note correspondante. Fonctionne seulement quand ton iPhone est déverrouillé."
-                }
-              }
-            }
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cherche dans tes notes enregistrées et lit à voix haute la note correspondante. Fonctionne seulement quand l’appareil est déverrouillé."
           }
         },
         "hr": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Pretražuje tvoje spremljene bilješke na ovom iPadu i naglas čita odgovarajuću bilješku. Radi samo kad je iPad otključan."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Pretražuje tvoje spremljene bilješke na ovom iPhoneu i naglas čita odgovarajuću bilješku. Radi samo kad je iPhone otključan."
-                }
-              }
-            }
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pretražuje tvoje spremljene bilješke i naglas čita odgovarajuću bilješku. Radi samo kad je uređaj otključan."
           }
         },
         "it": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Cerca nelle tue note salvate su questo iPad e legge ad alta voce la nota corrispondente. Funziona solo quando il tuo iPad è sbloccato."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Cerca nelle tue note salvate su questo iPhone e legge ad alta voce la nota corrispondente. Funziona solo quando il tuo iPhone è sbloccato."
-                }
-              }
-            }
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cerca nelle tue note salvate e legge ad alta voce la nota corrispondente. Funziona solo quando il dispositivo è sbloccato."
           }
         },
         "ja": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "このiPadに保存したメモを検索し、一致するメモを読み上げます。iPadのロックが解除されているときだけ使えます。"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "このiPhoneに保存したメモを検索し、一致するメモを読み上げます。iPhoneのロックが解除されているときだけ使えます。"
-                }
-              }
-            }
+          "stringUnit": {
+            "state": "translated",
+            "value": "保存したメモを検索し、一致するメモを読み上げます。デバイスのロックが解除されているときだけ使えます。"
           }
         },
         "pl": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Przeszukuje notatki zapisane na tym iPadzie i czyta pasującą na głos. Działa tylko, gdy iPad jest odblokowany."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Przeszukuje notatki zapisane na tym iPhonie i czyta pasującą na głos. Działa tylko, gdy iPhone jest odblokowany."
-                }
-              }
-            }
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przeszukuje zapisane notatki i czyta pasującą na głos. Działa tylko, gdy urządzenie jest odblokowane."
           }
         },
         "pt-BR": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Busca nas suas notas salvas neste iPad e lê a nota correspondente em voz alta. Só funciona com o iPad desbloqueado."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Busca nas suas notas salvas neste iPhone e lê a nota correspondente em voz alta. Só funciona com o iPhone desbloqueado."
-                }
-              }
-            }
+          "stringUnit": {
+            "state": "translated",
+            "value": "Busca nas suas notas salvas e lê a nota correspondente em voz alta. Só funciona com o dispositivo desbloqueado."
           }
         },
         "zh-Hans": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "搜索这台 iPad 上保存的笔记，并朗读匹配的笔记。仅在你的 iPad 解锁时有效。"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "搜索这台 iPhone 上保存的笔记，并朗读匹配的笔记。仅在你的 iPhone 解锁时有效。"
-                }
-              }
-            }
+          "stringUnit": {
+            "state": "translated",
+            "value": "搜索已保存的笔记，并朗读匹配的笔记。仅在设备解锁时有效。"
           }
         }
       }
@@ -70631,6 +70371,17 @@
         }
       }
     },
+    "Something else in Doddy has the microphone. Finish it to talk to him.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mikrofonu używa coś innego w Doddym. Zakończ to, aby z nim porozmawiać."
+          }
+        }
+      }
+    },
     "Something in that request wasn't accepted. Nothing was changed.": {
       "extractionState": "manual",
       "localizations": {
@@ -72031,43 +71782,13 @@
         }
       }
     },
-    "Starts recording a meeting or conversation. Doddy opens first; the recording then carries on in the Dynamic Island and with the screen locked. The audio stays on this iPhone.": {
+    "Starts recording a meeting or conversation. Doddy opens first; the recording then carries on in the Dynamic Island and with the screen locked. The audio stays on this device.": {
       "extractionState": "manual",
       "localizations": {
-        "en": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Starts recording a meeting or conversation. Doddy opens first; the recording then carries on in the Dynamic Island and with the screen locked. The audio stays on this iPad."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Starts recording a meeting or conversation. Doddy opens first; the recording then carries on in the Dynamic Island and with the screen locked. The audio stays on this iPhone."
-                }
-              }
-            }
-          }
-        },
         "pl": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Zaczyna nagrywać spotkanie lub rozmowę. Najpierw otwiera się Doddy; potem nagrywanie trwa w Dynamic Island i przy zablokowanym ekranie. Dźwięk zostaje na tym iPadzie."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Zaczyna nagrywać spotkanie lub rozmowę. Najpierw otwiera się Doddy; potem nagrywanie trwa w Dynamic Island i przy zablokowanym ekranie. Dźwięk zostaje na tym iPhonie."
-                }
-              }
-            }
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaczyna nagrywać spotkanie lub rozmowę. Najpierw otwiera się Doddy; potem nagrywanie trwa w Dynamic Island i przy zablokowanym ekranie. Dźwięk zostaje na tym urządzeniu."
           }
         }
       }
@@ -72710,6 +72431,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "停止听写"
+          }
+        }
+      }
+    },
+    "Stop dictating to play this.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przestań dyktować, aby to odtworzyć."
           }
         }
       }
@@ -96629,6 +96361,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "你之前记下了“钥匙在沙发垫下面”。"
+          }
+        }
+      }
+    },
+    "You're dictating in Messages. Stop dictating to talk to Doddy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dyktujesz w Wiadomościach. Przestań dyktować, aby porozmawiać z Doddym."
           }
         }
       }
