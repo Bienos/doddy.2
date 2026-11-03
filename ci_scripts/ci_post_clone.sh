@@ -9,7 +9,7 @@
 #      extensions must have the same one. Xcode Cloud numbers its builds (CI_BUILD_NUMBER).
 #   3. Xcode Cloud does not resolve Swift packages by itself: it needs `Package.resolved` in the
 #      project, which a generated project doesn't have. Resolving here writes it.
-#   4. Push notifications (ADR-699). The project's default entitlements have no `aps-environment`,
+#   4. Push notifications (ADR-700). The project's default entitlements have no `aps-environment`,
 #      so a build from them can never receive a push, however the server is set up. Xcode Cloud's
 #      builds are the ones testers install, so they get Config/Doddy-Push-AppGroup.entitlements.
 #
