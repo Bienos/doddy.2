@@ -3228,43 +3228,13 @@
         }
       }
     },
-    "Opens Doddy and starts recording. The recording carries on in the Dynamic Island. The audio stays on this iPhone.": {
+    "Opens Doddy and starts recording. The recording carries on in the Dynamic Island. The audio stays on this device.": {
       "extractionState": "manual",
       "localizations": {
-        "en": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Opens Doddy and starts recording. The recording carries on in the Dynamic Island. The audio stays on this iPad."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Opens Doddy and starts recording. The recording carries on in the Dynamic Island. The audio stays on this iPhone."
-                }
-              }
-            }
-          }
-        },
         "pl": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Otwiera Doddy’ego i zaczyna nagrywać. Nagrywanie trwa dalej w Dynamic Island. Dźwięk zostaje na tym iPadzie."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Otwiera Doddy’ego i zaczyna nagrywać. Nagrywanie trwa dalej w Dynamic Island. Dźwięk zostaje na tym iPhonie."
-                }
-              }
-            }
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwiera Doddy’ego i zaczyna nagrywać. Nagrywanie trwa dalej w Dynamic Island. Dźwięk zostaje na tym urządzeniu."
           }
         }
       }
@@ -4613,43 +4583,13 @@
         }
       }
     },
-    "Starts recording a meeting or conversation. Doddy opens first; the recording then carries on in the Dynamic Island and with the screen locked. The audio stays on this iPhone.": {
+    "Starts recording a meeting or conversation. Doddy opens first; the recording then carries on in the Dynamic Island and with the screen locked. The audio stays on this device.": {
       "extractionState": "manual",
       "localizations": {
-        "en": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Starts recording a meeting or conversation. Doddy opens first; the recording then carries on in the Dynamic Island and with the screen locked. The audio stays on this iPad."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Starts recording a meeting or conversation. Doddy opens first; the recording then carries on in the Dynamic Island and with the screen locked. The audio stays on this iPhone."
-                }
-              }
-            }
-          }
-        },
         "pl": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Zaczyna nagrywać spotkanie lub rozmowę. Najpierw otwiera się Doddy; potem nagrywanie trwa w Dynamic Island i przy zablokowanym ekranie. Dźwięk zostaje na tym iPadzie."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Zaczyna nagrywać spotkanie lub rozmowę. Najpierw otwiera się Doddy; potem nagrywanie trwa w Dynamic Island i przy zablokowanym ekranie. Dźwięk zostaje na tym iPhonie."
-                }
-              }
-            }
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaczyna nagrywać spotkanie lub rozmowę. Najpierw otwiera się Doddy; potem nagrywanie trwa w Dynamic Island i przy zablokowanym ekranie. Dźwięk zostaje na tym urządzeniu."
           }
         }
       }
