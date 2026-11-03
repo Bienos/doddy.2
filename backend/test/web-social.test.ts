@@ -5,7 +5,17 @@ import type { FetchJson } from "../src/auth.js";
 import { appScheme } from "../src/app.js";
 import { loadConfig } from "../src/config.js";
 import { ERASED_TABLES } from "../src/store.js";
-import { LINK_REAUTH_MS, OAUTH_STATE_TTL_MS, OAUTH_TICKET_TTL_MS, PENDING_LINK_TTL_MS, type PostJson, SOCIAL_LIMITS } from "../src/web/social.js";
+import {
+  type DeleteCall,
+  LINK_REAUTH_MS,
+  OAUTH_STATE_TTL_MS,
+  OAUTH_TICKET_TTL_MS,
+  PENDING_LINK_TTL_MS,
+  PENDING_SIGNUP_TTL_MS,
+  type PostJson,
+  SIGNUP_LIMITS,
+  SOCIAL_LIMITS,
+} from "../src/web/social.js";
 import { DEV_IDENTITIES } from "../src/auth.js";
 import { USER_A, USER_B } from "./helpers.js";
 import { CHROME_MAC, COOKIE, cookieValue, startWeb, WEB_ORIGIN, type WebRig } from "./webRig.js";
@@ -87,10 +97,19 @@ afterEach(async () => {
   rig = undefined;
 });
 
-async function socialRig(o: { providers?: ("google" | "apple")[] } = {}) {
+async function socialRig(o: { providers?: ("google" | "apple")[]; signup?: boolean; deleteUser?: DeleteCall } = {}) {
   let r!: WebRig;
   const supabase = fakeSupabase(() => r.clock.ms);
-  r = await startWeb({ social: { projectUrl: PROJECT, postJson: supabase.postJson, fetchJson: supabase.fetchJson, ...(o.providers ? { providers: o.providers } : {}) } });
+  r = await startWeb({
+    social: {
+      projectUrl: PROJECT,
+      postJson: supabase.postJson,
+      fetchJson: supabase.fetchJson,
+      ...(o.providers ? { providers: o.providers } : {}),
+      ...(o.signup !== undefined ? { signup: o.signup } : {}),
+      ...(o.deleteUser ? { deleteUser: o.deleteUser } : {}),
+    },
+  });
   rig = r;
   return { rig: r, supabase };
 }
@@ -141,9 +160,12 @@ test("without Supabase settings the sign-in page offers the code only, and the s
   assert.equal((await rig.call("POST", "/v1/web/oauth/tickets", { token: USER_A, body: { provider: "google" } })).status, 404);
 });
 
-test("with them it offers the configured buttons in order", async () => {
+test("with them it offers the configured buttons in order, and says whether new accounts can be made", async () => {
   const { rig: r } = await socialRig({ providers: ["apple", "google"] });
-  assert.deepEqual((await r.call("GET", "/v1/web/sign-in-options")).body, { providers: ["apple", "google"] });
+  assert.deepEqual((await r.call("GET", "/v1/web/sign-in-options")).body, { providers: ["apple", "google"], signup: false });
+  await r.close();
+  const { rig: open } = await socialRig({ signup: true });
+  assert.deepEqual((await open.call("GET", "/v1/web/sign-in-options")).body, { providers: ["google", "apple"], signup: true });
 });
 
 // ------------------------------------------------------------------ the start: PKCE and the state cookie
@@ -475,6 +497,8 @@ test("config: Apple and Google on the web need SUPABASE_URL and the publishable 
     projectUrl: "https://abcdefghijklmnopqrst.supabase.co",
     publishableKey: "sb_publishable_qvClrOM9aE-OZvFGZ54x",
     providers: ["google", "apple"],
+    signup: true,
+    secretKey: null,
   });
   assert.deepEqual(
     loadConfig({ ...web, SUPABASE_URL: PROJECT, SUPABASE_PUBLISHABLE_KEY: "sb_publishable_qvClrOM9aE-OZvFGZ54x", DODDY_WEB_SIGNIN_PROVIDERS: "Apple" }).web!.social!.providers,
@@ -492,3 +516,223 @@ test("the iPhone's sheet ends at a doddy scheme, never at https", () => {
   assert.equal(appScheme("doddy://connected-apps/return"), "doddy");
   assert.equal(appScheme("https://doddy.lol/return"), "doddy");
 });
+
+// ------------------------------------------------------------------ a new account on the web (owner, 3 Nov 2026)
+
+const SIGNUP_COOKIE = "__Host-doddy_signup";
+
+/** Google, then "Create my Doddy account". Returns the sign-in's end and the reply to the button. */
+async function signupWithGoogle(r: WebRig, supabase: ReturnType<typeof fakeSupabase>, sub: string, o: { press?: boolean } = {}) {
+  const done = await googleSignIn(r, supabase, sub);
+  const pending = cookieValue(done.setCookie, SIGNUP_COOKIE);
+  if (o.press === false) return { done, pending, created: null };
+  const created = await r.call("POST", "/v1/web/signup", { body: {}, browser: true, headers: pending ? { cookie: `${SIGNUP_COOKIE}=${pending}`, "user-agent": CHROME_MAC } : { "user-agent": CHROME_MAC } });
+  return { done, pending, created };
+}
+
+test("a Google account with no Doddy account is asked first, and makes nothing until the person says so", async () => {
+  const { rig: r, supabase } = await socialRig({ signup: true });
+  const { done, pending } = await signupWithGoogle(r, supabase, GOOGLE_PERSON, { press: false });
+  assert.equal(done.location, "/sign-in?signin=new_account&provider=google");
+  assert.equal(cookieValue(done.setCookie, COOKIE), null, "no session yet");
+  assert.ok(pending);
+  assert.match(done.setCookie, new RegExp(`${SIGNUP_COOKIE}=[A-Za-z0-9_-]{43}; Path=/; Max-Age=${PENDING_SIGNUP_TTL_MS / 1000}; HttpOnly; SameSite=Strict; Secure`));
+  assert.equal(await r.store.webIdentityOwner(GOOGLE_PERSON), null, "no account was made by the redirect");
+});
+
+test("Create my Doddy account makes a new account, links Google to it and signs this browser in", async () => {
+  const { rig: r, supabase } = await socialRig({ signup: true });
+  const { created } = await signupWithGoogle(r, supabase, GOOGLE_PERSON);
+  assert.equal(created!.status, 200, created!.text);
+  assert.equal(created!.body.created, true);
+  assert.equal(created!.body.provider, "google");
+  const session = cookieValue(created!.headers.get("set-cookie"), COOKIE)!;
+  assert.ok(session);
+  assert.match(created!.headers.get("set-cookie")!, new RegExp(`${SIGNUP_COOKIE}=; Path=/; Max-Age=0`), "the one-time cookie is removed");
+  const owner = await r.store.webIdentityOwner(GOOGLE_PERSON);
+  assert.match(owner!, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+  assert.notEqual(owner, DEV_IDENTITIES[USER_A]);
+  assert.notEqual(owner, DEV_IDENTITIES[USER_B]);
+  // A real, empty workspace of its own.
+  assert.equal((await r.call("GET", "/v1/web/session", { cookie: session })).status, 200);
+  assert.deepEqual((await r.call("GET", "/v1/web/documents", { cookie: session })).body.documents, []);
+  assert.deepEqual((await r.call("GET", "/v1/web/identities", { cookie: session })).body.identities.map((i: { provider: string }) => i.provider), ["google"]);
+  // Next time, Continue with Google signs straight in to it.
+  const again = await googleSignIn(r, supabase, GOOGLE_PERSON);
+  assert.equal(again.location, "/");
+  assert.ok(r.logs.some((line) => line.includes('"event":"web_signup"') && line.includes('"result":"created"')));
+  assert.ok(!r.logs.some((line) => line.includes(GOOGLE_PERSON) || line.includes(owner!)), "no ids in the logs");
+});
+
+test("the button works once, only with its own cookie, from the web app, and for ten minutes", async () => {
+  const { rig: r, supabase } = await socialRig({ signup: true });
+  const { pending } = await signupWithGoogle(r, supabase, GOOGLE_PERSON, { press: false });
+  // Not from the web app (no Origin and header): refused before anything happens.
+  assert.equal((await r.call("POST", "/v1/web/signup", { body: {}, headers: { cookie: `${SIGNUP_COOKIE}=${pending}` } })).status, 401);
+  // Without the cookie, or with a made-up one.
+  assert.equal((await r.call("POST", "/v1/web/signup", { body: {}, browser: true })).status, 404);
+  assert.equal((await r.call("POST", "/v1/web/signup", { body: {}, browser: true, headers: { cookie: `${SIGNUP_COOKIE}=${"D".repeat(43)}` } })).status, 404);
+  assert.equal(await r.store.webIdentityOwner(GOOGLE_PERSON), null);
+  // Expired.
+  r.clock.advance(PENDING_SIGNUP_TTL_MS + 1);
+  assert.equal((await r.call("POST", "/v1/web/signup", { body: {}, browser: true, headers: { cookie: `${SIGNUP_COOKIE}=${pending}` } })).status, 404);
+  assert.equal(await r.store.webIdentityOwner(GOOGLE_PERSON), null);
+  // A fresh one works, once.
+  const { pending: second } = await signupWithGoogle(r, supabase, GOOGLE_PERSON, { press: false });
+  assert.equal((await r.call("POST", "/v1/web/signup", { body: {}, browser: true, headers: { cookie: `${SIGNUP_COOKIE}=${second}` } })).status, 200);
+  assert.equal((await r.call("POST", "/v1/web/signup", { body: {}, browser: true, headers: { cookie: `${SIGNUP_COOKIE}=${second}` } })).status, 404);
+});
+
+test("two tabs for the same Google account make one account, not two", async () => {
+  const { rig: r, supabase } = await socialRig({ signup: true });
+  const first = await signupWithGoogle(r, supabase, GOOGLE_PERSON, { press: false });
+  const second = await signupWithGoogle(r, supabase, GOOGLE_PERSON, { press: false });
+  const a = await r.call("POST", "/v1/web/signup", { body: {}, browser: true, headers: { cookie: `${SIGNUP_COOKIE}=${first.pending}` } });
+  const b = await r.call("POST", "/v1/web/signup", { body: {}, browser: true, headers: { cookie: `${SIGNUP_COOKIE}=${second.pending}` } });
+  assert.equal(a.body.created, true);
+  assert.equal(b.status, 200);
+  assert.equal(b.body.created, false, "the second signs in to the account the first made");
+  const owner = await r.store.webIdentityOwner(GOOGLE_PERSON);
+  const listed = await r.call("GET", "/v1/web/sessions", { cookie: cookieValue(b.headers.get("set-cookie"), COOKIE)! });
+  assert.equal(listed.body.sessions.length, 2, "both browsers are in the one account");
+  assert.ok(owner);
+});
+
+test("a Google account already linked to an iPhone's account signs in to it, never a new one", async () => {
+  const { rig: r, supabase } = await socialRig({ signup: true });
+  await linkFromBrowser(r, supabase, GOOGLE_PERSON);
+  const done = await googleSignIn(r, supabase, GOOGLE_PERSON);
+  assert.equal(done.location, "/");
+  assert.equal(cookieValue(done.setCookie, SIGNUP_COOKIE), null);
+  assert.equal(await r.store.webIdentityOwner(GOOGLE_PERSON), DEV_IDENTITIES[USER_A]);
+});
+
+test("with DODDY_WEB_SIGNUP=off an unlinked Google account opens nothing, as before", async () => {
+  const { rig: r, supabase } = await socialRig({ signup: false });
+  const done = await googleSignIn(r, supabase, GOOGLE_PERSON);
+  assert.equal(done.location, "/sign-in?signin=not_linked&provider=google");
+  assert.equal(cookieValue(done.setCookie, SIGNUP_COOKIE), null);
+  assert.equal((await r.call("POST", "/v1/web/signup", { body: {}, browser: true })).status, 404);
+});
+
+test("new accounts are limited per address an hour", async () => {
+  const { rig: r, supabase } = await socialRig({ signup: true });
+  for (let i = 0; i < SIGNUP_LIMITS.perClientPerHour; i++) {
+    const sub = `5b0c8f7e-2a41-4c3d-9e6f-${String(i).padStart(12, "0")}`;
+    assert.equal((await signupWithGoogle(r, supabase, sub)).created!.status, 200);
+  }
+  const over = await signupWithGoogle(r, supabase, "5b0c8f7e-2a41-4c3d-9e6f-999999999999");
+  assert.equal(over.created!.status, 429);
+  assert.equal(await r.store.webIdentityOwner("5b0c8f7e-2a41-4c3d-9e6f-999999999999"), null);
+});
+
+// ------------------------------------------------------------------ deleting the account from the web
+
+test("an account made on the web is deleted from the web: everything, its Google sign-in at Supabase too", async () => {
+  const deleted: string[] = [];
+  const deleteUser: DeleteCall = async (url, init) => {
+    assert.equal(init.headers.apikey, "sb_secret_test_key_456");
+    deleted.push(url);
+    return { status: 200 };
+  };
+  const { rig: r, supabase } = await socialRig({ signup: true, deleteUser });
+  const { created } = await signupWithGoogle(r, supabase, GOOGLE_PERSON);
+  const session = cookieValue(created!.headers.get("set-cookie"), COOKIE)!;
+  const owner = (await r.store.webIdentityOwner(GOOGLE_PERSON))!;
+
+  assert.deepEqual((await r.call("GET", "/v1/web/account", { cookie: session })).body, { madeOnWeb: true });
+  // The word is sent back, from the web app.
+  assert.equal((await r.call("POST", "/v1/web/account/delete", { cookie: session, browser: true, body: {} })).status, 400);
+  assert.equal((await r.call("POST", "/v1/web/account/delete", { cookie: session, body: { confirm: "delete" } })).status, 401);
+  const gone = await r.call("POST", "/v1/web/account/delete", { cookie: session, browser: true, body: { confirm: "delete" } });
+  assert.equal(gone.status, 200, gone.text);
+  assert.equal(gone.body.complete, true);
+  assert.equal(gone.body.remaining, 0);
+  assert.deepEqual(gone.body.onlineAccounts, { removed: ["supabase_auth"], pending: [] });
+  assert.deepEqual(deleted, [`${PROJECT}/auth/v1/admin/users/${GOOGLE_PERSON}`]);
+  assert.match(gone.headers.get("set-cookie")!, /__Host-doddy_web=; Path=\/; Max-Age=0/);
+  assert.equal((await r.call("GET", "/v1/web/session", { cookie: session })).status, 401, "signed out");
+  assert.equal(await r.store.webIdentityOwner(GOOGLE_PERSON), null);
+  assert.equal((await r.store.webSessions(owner, r.clock.ms, 1e12, 50)).length, 0);
+});
+
+test("deleting from a browser needs a recent sign-in, and without the secret key says the sign-in is still owed", async () => {
+  const { rig: r, supabase } = await socialRig({ signup: true });
+  const { created } = await signupWithGoogle(r, supabase, GOOGLE_PERSON);
+  const session = cookieValue(created!.headers.get("set-cookie"), COOKIE)!;
+  r.clock.advance(LINK_REAUTH_MS + 1);
+  const old = await r.call("POST", "/v1/web/account/delete", { cookie: session, browser: true, body: { confirm: "delete" } });
+  assert.equal(old.status, 422);
+  assert.ok(await r.store.webIdentityOwner(GOOGLE_PERSON), "nothing was deleted");
+  // Sign in again (Google), then delete: done here, but Supabase's copy is honestly still owed.
+  const fresh = cookieValue((await googleSignIn(r, supabase, GOOGLE_PERSON)).setCookie, COOKIE)!;
+  const gone = await r.call("POST", "/v1/web/account/delete", { cookie: fresh, browser: true, body: { confirm: "delete" } });
+  assert.equal(gone.status, 200, gone.text);
+  assert.equal(gone.body.complete, false);
+  assert.deepEqual(gone.body.onlineAccounts, { removed: [], pending: ["supabase_auth"] });
+  assert.equal(await r.store.webIdentityOwner(GOOGLE_PERSON), null);
+});
+
+test("an iPhone's account can't be deleted from a browser: that stays on the iPhone (ADR-674)", async () => {
+  const { rig: r } = await socialRig({ signup: true });
+  const session = await r.signIn(await r.code());
+  assert.deepEqual((await r.call("GET", "/v1/web/account", { cookie: session })).body, { madeOnWeb: false });
+  const refused = await r.call("POST", "/v1/web/account/delete", { cookie: session, browser: true, body: { confirm: "delete" } });
+  assert.equal(refused.status, 422, refused.text);
+  assert.match(refused.body.error.message, /iPhone/);
+  assert.equal((await r.call("GET", "/v1/web/session", { cookie: session })).status, 200, "nothing happened");
+  // Only browsers: the phone deletes with DELETE /v1/account, as before.
+  assert.equal((await r.call("GET", "/v1/web/account", { token: USER_A })).status, 401);
+});
+
+test("SupabaseUserRemover: removed, already gone, refused, unreachable", async () => {
+  const { SupabaseUserRemover } = await import("../src/web/social.js");
+  const answer = (status: number | Error): DeleteCall => async () => {
+    if (status instanceof Error) throw status;
+    return { status };
+  };
+  const signal = new AbortController().signal;
+  assert.equal(await new SupabaseUserRemover(PROJECT, "sb_secret_x", answer(200)).remove(GOOGLE_PERSON, signal), "removed");
+  assert.equal(await new SupabaseUserRemover(PROJECT, "sb_secret_x", answer(404)).remove(GOOGLE_PERSON, signal), "removed");
+  assert.equal(await new SupabaseUserRemover(PROJECT, "sb_secret_x", answer(401)).remove(GOOGLE_PERSON, signal), "failed");
+  assert.equal(await new SupabaseUserRemover(PROJECT, "sb_secret_x", answer(new Error("down"))).remove(GOOGLE_PERSON, signal), "failed");
+  assert.equal(await new SupabaseUserRemover(PROJECT, "sb_secret_x", answer(200)).remove("../../etc", signal), "failed");
+});
+
+test("config: sign-up is open by default with Supabase set, can be switched off, and the secret key is checked", () => {
+  const base = { DODDY_WEB_ORIGIN: "https://app.doddy.lol", SUPABASE_URL: PROJECT, SUPABASE_PUBLISHABLE_KEY: "sb_publishable_qvClrOM9aE-OZvFGZ54x" };
+  assert.equal(loadConfig(base).web!.social!.signup, true);
+  assert.equal(loadConfig({ ...base, DODDY_WEB_SIGNUP: "off" }).web!.social!.signup, false);
+  assert.equal(loadConfig(base).web!.social!.secretKey, null);
+  assert.equal(loadConfig({ ...base, SUPABASE_SECRET_KEY: "sb_secret_abcdefghijklmnop" }).web!.social!.secretKey, "sb_secret_abcdefghijklmnop");
+  assert.throws(() => loadConfig({ ...base, SUPABASE_SECRET_KEY: "not-a-key" }), /SUPABASE_SECRET_KEY/);
+  assert.throws(() => loadConfig({ ...base, DODDY_WEB_SIGNUP: "maybe" }), /DODDY_WEB_SIGNUP/);
+});
+
+test("a Supabase removal that failed at the deletion is retried by the hourly sweep", async () => {
+  const { Store } = await import("../src/store.js");
+  const { AccountEraser } = await import("../src/account.js");
+  const { SupabaseUserRemover } = await import("../src/web/social.js");
+  const store = await Store.memory();
+  try {
+    let up = false;
+    const calls: string[] = [];
+    const remover = new SupabaseUserRemover(PROJECT, "sb_secret_x", async (url) => {
+      calls.push(url);
+      return { status: up ? 200 : 503 };
+    });
+    let now = 1_000_000;
+    const eraser = new AccountEraser({ store, removers: [remover], timeoutMs: 1_000, now: () => now });
+    await store.createWebAccount({ userId: OTHER_PERSON, identityId: GOOGLE_PERSON, provider: "google", now });
+    const first = await eraser.erase(OTHER_PERSON);
+    assert.deepEqual(first.onlineAccounts, { removed: [], pending: ["supabase_auth"] });
+    up = true;
+    now += 6 * 60_000;
+    await eraser.sweep(["supabase_auth"]);
+    assert.equal(calls.length, 2);
+    assert.deepEqual(await store.cleanupsToRetry(["supabase_auth"], now, 99, 10), [], "done, dequeued");
+  } finally {
+    await store.close();
+  }
+});
+

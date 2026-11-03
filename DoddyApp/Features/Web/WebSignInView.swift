@@ -226,7 +226,7 @@ private struct WebLinkOutcomeText: View {
             Text("It was already linked to this account.")
                 .foregroundStyle(Theme.secondaryText)
         case .taken:
-            Text("That account is already linked to another Doddy account, so it wasn't linked here. Nothing was merged.")
+            Text("That account is already linked to another Doddy account (perhaps one made on the web), so it wasn't linked here. Nothing was merged.")
                 .foregroundStyle(Theme.error)
         case .canceled:
             Text("Linking was cancelled. Nothing changed.")

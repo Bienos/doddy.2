@@ -68,6 +68,7 @@ async function seed(store: Store, userId: string, tag: string): Promise<void> {
      VALUES ($1, $2, 'google', 'link', 'app', 'v', 1, 9999999999999)`,
     [`os-${tag}`, userId],
   );
+  await q("INSERT INTO web_accounts (user_id, provider, created_at) VALUES ($1, 'google', 1)", [userId]);
   await q(
     `INSERT INTO web_link_pending (code_hash, user_id, identity_id, provider, created_at, expires_at) VALUES ($1, $2, $3, 'google', 1, 9999999999999)`,
     [`lp-${tag}`, userId, uuid(4)],
@@ -107,12 +108,13 @@ test("eraseUser deletes every row of one person, queues every grant for removal,
     for (const table of ERASED_TABLES) assert.ok(erased.deleted[table] >= 1, `${table} had a row of A`);
     const after = await rows(store, ID_A);
     for (const table of ERASED_TABLES) assert.equal(after[table], 0, `${table} still holds A`);
-    // The open sign-in's grant and both connections are owed a removal at the provider.
+    // The open sign-in's grant, both connections and the linked Google sign-in (ADR-700, at
+    // Supabase) are owed a removal at the provider.
     assert.deepEqual(
       erased.cleanups.map((c) => `${c.provider}:${c.connectionId}`).sort(),
-      [`${CALENDAR_PROVIDER}:conn-cal-aaaa`, "gmail:pending-aaaa", "notion:conn-notion-aaaa"].sort(),
+      [`${CALENDAR_PROVIDER}:conn-cal-aaaa`, "gmail:pending-aaaa", "notion:conn-notion-aaaa", "supabase_auth:aaaa0000-0000-4000-8000-000000000003"].sort(),
     );
-    assert.equal(after.cleanups, 3);
+    assert.equal(after.cleanups, 4);
     // Not reset by deleting: the server stays A's, and the counts (A's own and the server's) stay.
     assert.equal(await store.claimDeviceOwner(ID_B, 6), ID_A);
     assert.equal(await store.usage(`user:${ID_A}:ask`, "day:2026-10-10"), 1);

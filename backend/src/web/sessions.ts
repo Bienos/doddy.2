@@ -237,14 +237,23 @@ export class WebAuth {
     return this.cookie("", 0);
   }
 
-  /** How a session token is stored (for sessions opened by Apple or Google sign-in, ADR-700). */
-  tokenHashOf(token: string): string {
-    return tokenHash(token);
-  }
-
-  /** Set-Cookie for a new session token. */
-  sessionCookie(token: string): string {
-    return this.cookie(token, SESSION_TTL_MS / 1000);
+  /**
+   * Opens a browser session for `userId` without a code: Apple or Google sign-in, or a new account
+   * made with one (ADR-700). The same session as a code's, with the same limits.
+   */
+  async openFor(userId: string, req: IncomingMessage, now: Date): Promise<{ view: WebSessionView; setCookie: string }> {
+    const token = randomBytes(32).toString("base64url");
+    const agent = describeAgent(header(req, "user-agent"));
+    const sessionId = randomUUID();
+    const expiresAt = now.getTime() + SESSION_TTL_MS;
+    await this.store.openWebSession(userId, {
+      session: { sessionId, tokenHash: tokenHash(token), browser: agent.browser, os: agent.os, expiresAt },
+      now: now.getTime(),
+      idleMs: SESSION_IDLE_MS,
+      maxSessions: MAX_SESSIONS_PER_USER,
+    });
+    const row: WebSessionRow = { session_id: sessionId, user_id: userId, browser: agent.browser, os: agent.os, created_at: now.getTime(), last_seen_at: now.getTime(), expires_at: expiresAt };
+    return { view: view(row, sessionId), setCookie: this.cookie(token, SESSION_TTL_MS / 1000) };
   }
 
   private cookie(value: string, maxAgeSeconds: number): string {

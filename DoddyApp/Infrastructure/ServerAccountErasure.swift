@@ -21,6 +21,11 @@ enum ServerAccountErasure {
         do { return .success(try await client.eraseAccount()) } catch { return .failure(error) }
     }
 
+    /// ADR-700: a linked Google or Apple sign-in is removed at Doddy's sign-in service (Supabase).
+    private static func displayName(_ kind: String) -> String {
+        kind == "supabase_auth" ? "Google or Apple sign-in" : kind
+    }
+
     /// One line for Settings; nil when there was nothing on the server.
     static func message(for outcome: AccountErasureOutcome) -> String? {
         switch outcome {
@@ -29,7 +34,7 @@ enum ServerAccountErasure {
         case .complete:
             return NSLocalizedString("What Doddy's server kept for you was deleted, and your online accounts were disconnected.", comment: "ADR-674")
         case .onlineAccountsPending(let kinds):
-            return String(format: NSLocalizedString("What Doddy's server kept for you was deleted. Removing Doddy's access at %@ isn't confirmed yet; the server keeps trying. You can also remove Doddy in that account's settings.", comment: "ADR-674: online account kinds"), kinds.joined(separator: ", "))
+            return String(format: NSLocalizedString("What Doddy's server kept for you was deleted. Removing Doddy's access at %@ isn't confirmed yet; the server keeps trying. You can also remove Doddy in that account's settings.", comment: "ADR-674: online account kinds"), kinds.map(displayName).joined(separator: ", "))
         case .notAvailable:
             return NSLocalizedString("Doddy's server can't delete accounts yet, so what it keeps for you is still there.", comment: "ADR-674")
         case .failed:

@@ -18,7 +18,7 @@ import { MockCalendarProvider } from "./providers/mock.js";
 import { UnconfiguredCalendarProvider, UnconfiguredToolsProvider } from "./providers/unconfigured.js";
 import type { CalendarProvider } from "./providers/types.js";
 import { ConnectedAppsService, PROVIDER as CALENDAR_PROVIDER } from "./service.js";
-import { Store } from "./store.js";
+import { Store, SUPABASE_AUTH_CLEANUP } from "./store.js";
 import { TOOLKITS } from "./tools/catalog.js";
 import { ComposioToolsProvider } from "./tools/composio.js";
 import { MockToolsProvider } from "./tools/mock.js";
@@ -29,7 +29,7 @@ import { AccountContext } from "./web/chatContext.js";
 import { WebRoutes } from "./web/routes.js";
 import { oldestKeptDay } from "./web/logbook.js";
 import { REDEEM_LIMITS, SESSION_IDLE_MS, WebAuth } from "./web/sessions.js";
-import { SocialSignIn } from "./web/social.js";
+import { SocialSignIn, SupabaseUserRemover } from "./web/social.js";
 import { WebStatic } from "./web/static.js";
 
 /** Composition root: picks adapters strictly from validated config (mock never silently replaces live). */
@@ -120,6 +120,19 @@ export async function buildApp(
   const memoryChat = new MemoryChat({ memory, store, claude: chatClaude, limits: config.limits, account, log });
   // The Messages copy for the web, with the same key; without it the routes answer "not set up".
   const thread = new ThreadService({ store, cipher: config.memoryKey ? new MemoryCipher(config.memoryKey) : null, log });
+  // Deleting the account (ADR-674): each connection is removed by the provider that made it, and
+  // each linked Google or Apple sign-in at Supabase, with the secret key (ADR-700).
+  const supabaseUsers = config.web?.social?.secretKey ? new SupabaseUserRemover(config.web.social.projectUrl, config.web.social.secretKey) : null;
+  const accountEraser = new AccountEraser({
+    store,
+    removers: [
+      { providers: [CALENDAR_PROVIDER], remove: (connectionId, signal) => provider.removeConnection({ connectionId, signal }) },
+      { providers: Object.keys(TOOLKITS), remove: (connectionId, signal) => toolsProvider.removeConnection({ connectionId, signal }) },
+      ...(supabaseUsers ? [supabaseUsers] : []),
+    ],
+    timeoutMs: config.limits.providerTimeoutMs,
+    log,
+  });
   // Apple and Google on the web (ADR-700): only with the Supabase project's URL and publishable key.
   const social =
     config.web?.social && webAuth
@@ -129,22 +142,12 @@ export async function buildApp(
     config.web && webAuth
       ? {
           auth: webAuth,
-          routes: new WebRoutes(webAuth, store, verifier, config.limits.maxBodyBytes, { service: memory, chat: memoryChat }, thread, social),
+          routes: new WebRoutes(webAuth, store, verifier, config.limits.maxBodyBytes, { service: memory, chat: memoryChat }, thread, social, accountEraser),
           pages: new WebStatic(config.web.distDir, config.web.origin),
         }
       : null;
   // Ask Doddy (ADR-587): always routed; without an Anthropic key it says "not set up" (503).
   const assist = new AssistService({ store, claude, limits: config.limits, log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`) });
-  // Deleting the account (ADR-674): each connection is removed by the provider that made it.
-  const accountEraser = new AccountEraser({
-    store,
-    removers: [
-      { providers: [CALENDAR_PROVIDER], remove: (connectionId, signal) => provider.removeConnection({ connectionId, signal }) },
-      { providers: Object.keys(TOOLKITS), remove: (connectionId, signal) => toolsProvider.removeConnection({ connectionId, signal }) },
-    ],
-    timeoutMs: config.limits.providerTimeoutMs,
-    log,
-  });
   const handler = createHandler({
     service,
     tools,
@@ -167,7 +170,12 @@ export async function buildApp(
   // Retention and abandoned sign-ins: once at start, then hourly while the server runs. The sweep
   // runs first so an expired attempt's connection is queued for removal before prune drops the attempt.
   const housekeeping = () => {
-    void Promise.allSettled([service.sweepAbandoned(), tools.sweepAbandoned()])
+    void Promise.allSettled([
+      service.sweepAbandoned(),
+      tools.sweepAbandoned(),
+      // ADR-700: a deleted person's Supabase sign-in, when the first try failed.
+      ...(supabaseUsers ? [accountEraser.sweep([SUPABASE_AUTH_CLEANUP])] : []),
+    ])
       .then(() => store.prune(Date.now()))
       .then(() => store.pruneDocuments(Date.now()))
       .then(() => store.pruneLogbook(oldestKeptDay(Date.now())))

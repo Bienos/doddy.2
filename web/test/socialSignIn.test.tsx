@@ -155,3 +155,108 @@ describe("Settings › Sign-in methods", () => {
     expect(await screen.findByText("Google jest połączone. Następnym razem wybierz Kontynuuj z Google na stronie logowania.")).toBeInTheDocument();
   });
 });
+
+describe("a new account on the web (owner, 3 Nov 2026)", () => {
+  test("with sign-up open, Google and Apple come first, and the code is the other way in", async () => {
+    fakeServer({ "GET /v1/web/session": signedOut, "GET /v1/web/sign-in-options": { body: { providers: ["google", "apple"], signup: true } } });
+    renderApp();
+    expect(await screen.findByText("Sign in, or make an account, with Google or Apple. Already use Doddy on your iPhone? A code from it works too.")).toBeInTheDocument();
+    const google = screen.getByRole("link", { name: "Continue with Google" });
+    const code = screen.getByLabelText("Sign-in code");
+    expect(google.compareDocumentPosition(code) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  test("an unlinked Google account is asked first; Create my Doddy account makes it and opens Home", async () => {
+    let signedIn = false;
+    const { seen } = fakeServer({
+      ...signedInRoutes,
+      "GET /v1/web/sign-in-options": { body: { providers: ["google"], signup: true } },
+      "GET /v1/web/session": () => (signedIn ? { body: fixture("web/session-current") } : signedOut),
+      "POST /v1/web/signup": () => {
+        signedIn = true;
+        return { body: { session: (fixture("web/session-signed-in") as { session: unknown }).session, created: true, provider: "google" } };
+      },
+    });
+    renderApp("/sign-in?signin=new_account&provider=google");
+    expect(await screen.findByRole("heading", { name: "Make a Doddy account with Google?" })).toBeInTheDocument();
+    expect(screen.getByText(/gives Doddy's sign-in service \(Supabase\) your name and email address/)).toBeInTheDocument();
+    expect(seen.some((s) => s.path === "/v1/web/signup")).toBe(false);
+    await userEvent.click(screen.getByRole("button", { name: "Create my Doddy account" }));
+    expect(await screen.findByRole("heading", { name: "I'm here." })).toBeInTheDocument();
+    const post = seen.find((s) => s.path === "/v1/web/signup")!;
+    expect(post.method).toBe("POST");
+    expect(post.headers["x-doddy-web"]).toBe("1");
+  });
+
+  test("an expired sign-in says to choose Google again, and makes nothing", async () => {
+    fakeServer({
+      "GET /v1/web/session": signedOut,
+      "GET /v1/web/sign-in-options": { body: { providers: ["google"], signup: true } },
+      "POST /v1/web/signup": { status: 404, body: { error: { code: "not_found", message: "x" } } },
+    });
+    renderApp("/sign-in?signin=new_account&provider=google", "pl");
+    await userEvent.click(await screen.findByRole("button", { name: "Załóż moje konto Doddy" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("To logowanie wygasło");
+  });
+});
+
+describe("Settings › Delete account", () => {
+  test("an account made on the web is deleted here in two steps, and the sign-in page says so", async () => {
+    let signedIn = true;
+    const { seen } = fakeServer({
+      ...signedInRoutes,
+      "GET /v1/web/session": () => (signedIn ? { body: fixture("web/session-current") } : signedOut),
+      "GET /v1/web/account": { body: { madeOnWeb: true } },
+      "POST /v1/web/account/delete": () => {
+        signedIn = false;
+        return { body: { complete: true, deleted: {}, remaining: 0, onlineAccounts: { removed: ["supabase_auth"], pending: [] }, kept: [], erasedAt: "2026-11-03T10:00:00.000Z" } };
+      },
+    });
+    renderApp("/settings");
+    const section = (await screen.findByRole("heading", { name: "Delete account" })).closest("section")!;
+    await userEvent.click(await within(section).findByRole("button", { name: "Delete my Doddy account" }));
+    expect(seen.some((s) => s.path === "/v1/web/account/delete")).toBe(false);
+    await userEvent.click(within(section).getByRole("button", { name: "Yes, delete everything" }));
+    expect(await screen.findByText("Your Doddy account and everything Doddy's server kept for it were deleted.")).toBeInTheDocument();
+    expect(seen.find((s) => s.path === "/v1/web/account/delete")?.body).toEqual({ confirm: "delete" });
+  });
+
+  test("Keep my account changes nothing, and a removal still owed is said on the sign-in page", async () => {
+    const { seen } = fakeServer({
+      ...signedInRoutes,
+      "GET /v1/web/account": { body: { madeOnWeb: true } },
+      "POST /v1/web/account/delete": { body: { complete: false, onlineAccounts: { removed: [], pending: ["supabase_auth"] } } },
+    });
+    renderApp("/settings");
+    const section = (await screen.findByRole("heading", { name: "Delete account" })).closest("section")!;
+    await userEvent.click(await within(section).findByRole("button", { name: "Delete my Doddy account" }));
+    await userEvent.click(within(section).getByRole("button", { name: "Keep my account" }));
+    expect(within(section).getByRole("button", { name: "Delete my Doddy account" })).toBeInTheDocument();
+    await userEvent.click(within(section).getByRole("button", { name: "Delete my Doddy account" }));
+    await userEvent.click(within(section).getByRole("button", { name: "Yes, delete everything" }));
+    expect(await screen.findByText(/isn't confirmed yet; the server keeps trying/)).toBeInTheDocument();
+    expect(seen.filter((s) => s.path === "/v1/web/account/delete")).toHaveLength(1);
+  });
+
+  test("an iPhone's account is sent to the iPhone, with no delete button here", async () => {
+    fakeServer({ ...signedInRoutes, "GET /v1/web/account": { body: { madeOnWeb: false } } });
+    renderApp("/settings");
+    const section = (await screen.findByRole("heading", { name: "Delete account" })).closest("section")!;
+    expect(within(section).getByText(/belongs to Doddy on your iPhone/)).toBeInTheDocument();
+    expect(within(section).queryByRole("button")).toBeNull();
+  });
+
+  test("an old sign-in is asked to sign in again; nothing is deleted", async () => {
+    fakeServer({
+      ...signedInRoutes,
+      "GET /v1/web/account": { body: { madeOnWeb: true } },
+      "POST /v1/web/account/delete": { status: 422, body: { error: { code: "refused", message: "x" } } },
+    });
+    renderApp("/settings");
+    const section = (await screen.findByRole("heading", { name: "Delete account" })).closest("section")!;
+    await userEvent.click(await within(section).findByRole("button", { name: "Delete my Doddy account" }));
+    await userEvent.click(within(section).getByRole("button", { name: "Yes, delete everything" }));
+    expect(await within(section).findByText(/deleting needs a fresh sign-in/)).toBeInTheDocument();
+  });
+});
+

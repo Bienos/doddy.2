@@ -133,6 +133,13 @@ export interface WebSocialSettings {
   publishableKey: string;
   /** Sign-in buttons offered, in this order. */
   providers: ("google" | "apple")[];
+  /** A Google or Apple account with no Doddy account may make one on the web, after saying so (DODDY_WEB_SIGNUP). */
+  signup: boolean;
+  /**
+   * The project's secret key, used only to delete a person's Supabase Auth user when their Doddy
+   * account is deleted. Null: the removal stays owed (and the deletion says so).
+   */
+  secretKey: string | null;
 }
 
 export class ConfigError extends Error {
@@ -227,6 +234,10 @@ const EnvSchema = z.object({
   SUPABASE_PUBLISHABLE_KEY: z.string().optional(),
   /** Which buttons the web shows, comma-separated: google, apple. */
   DODDY_WEB_SIGNIN_PROVIDERS: z.string().default("google,apple"),
+  /** `open`: a Google or Apple account with no Doddy account can make one on the web (owner, 3 Nov 2026). `off`: it can only sign in to a linked one. */
+  DODDY_WEB_SIGNUP: z.enum(["open", "off"]).default("open"),
+  /** Server only, never the web app: deletes a person's Supabase Auth user when their account is deleted. */
+  SUPABASE_SECRET_KEY: z.string().optional(),
 });
 
 /** Custom scheme (`doddy-dev://…`) or https. No query, no fragment: the server adds its own parameters. */
@@ -327,6 +338,11 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     problems.push("SUPABASE_PUBLISHABLE_KEY must be the project's publishable key (sb_publishable_…) or its legacy anon key, never the secret key");
   }
   if (publishableKey.startsWith("sb_secret_")) problems.push("SUPABASE_PUBLISHABLE_KEY is a secret key: use the publishable one");
+  const secretKey = (e.SUPABASE_SECRET_KEY ?? "").trim();
+  if (secretKey !== "" && !/^(sb_secret_[A-Za-z0-9_-]{10,200}|eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)$/.test(secretKey)) {
+    problems.push("SUPABASE_SECRET_KEY must be the project's secret key (sb_secret_…) or its legacy service_role key");
+  }
+  if (secretKey !== "" && secretKey === publishableKey) problems.push("SUPABASE_SECRET_KEY and SUPABASE_PUBLISHABLE_KEY must differ");
   const socialProviders: ("google" | "apple")[] = [];
   for (const raw of e.DODDY_WEB_SIGNIN_PROVIDERS.split(",").map((p) => p.trim().toLowerCase()).filter(Boolean)) {
     if (raw !== "google" && raw !== "apple") problems.push(`DODDY_WEB_SIGNIN_PROVIDERS: unknown sign-in "${raw}" (google, apple)`);
@@ -430,7 +446,8 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
       problems.push("DODDY_WEB_ORIGIN must be https outside loopback development");
     } else {
       const social: WebSocialSettings | null =
-        publishableKey !== "" && supabaseOrigin && socialProviders.length > 0 ? { projectUrl: supabaseOrigin, publishableKey, providers: socialProviders } : null;
+        publishableKey !== "" && supabaseOrigin && socialProviders.length > 0 ? { projectUrl: supabaseOrigin, publishableKey, providers: socialProviders, signup: e.DODDY_WEB_SIGNUP === "open", secretKey: secretKey || null }
+          : null;
       web = { origin: parsed.origin, distDir: e.DODDY_WEB_DIST, trustProxy: e.DODDY_TRUST_PROXY === "1", signInTriesPerClient: e.DODDY_WEB_SIGNIN_TRIES_PER_CLIENT, social };
     }
   }

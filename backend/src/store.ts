@@ -71,6 +71,7 @@ export const ERASED_TABLES = [
   "web_identities",
   "web_oauth_states",
   "web_link_pending",
+  "web_accounts",
   "logbook_state",
   "logbook_days",
   "memory_state",
@@ -90,6 +91,9 @@ export const ERASED_TABLES = [
  * month is pruned: counts only, and erasing must not reset a daily cap. Server-wide ones are never touched.
  */
 export const KEPT_ON_ERASE = ["cleanups", "device_owner"] as const;
+
+/** The `cleanups.provider` of a Supabase Auth user owed a removal (a linked Google or Apple sign-in, ADR-700). */
+export const SUPABASE_AUTH_CLEANUP = "supabase_auth";
 
 /** What `eraseUser` did: rows deleted per table, rows still found after (0 when complete), removals owed. */
 export interface UserErasure {
@@ -210,6 +214,19 @@ export const SCHEMA_SQL = `
   CREATE TABLE IF NOT EXISTS web_link_codes (
     code_hash TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
+    created_at BIGINT NOT NULL,
+    expires_at BIGINT NOT NULL,
+    consumed_at BIGINT
+  );
+  CREATE TABLE IF NOT EXISTS web_accounts (
+    user_id TEXT PRIMARY KEY,
+    provider TEXT NOT NULL,
+    created_at BIGINT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS web_signup_pending (
+    code_hash TEXT PRIMARY KEY,
+    identity_id TEXT NOT NULL,
+    provider TEXT NOT NULL,
     created_at BIGINT NOT NULL,
     expires_at BIGINT NOT NULL,
     consumed_at BIGINT
@@ -787,6 +804,10 @@ export class Store {
       await this.endAttempts(tx, openAttempts, now);
       const connections = (await tx.query<ConnectionRow>("SELECT * FROM connections WHERE user_id = $1", [userId])).rows;
       for (const c of connections) await this.queueCleanupIn(tx, c.connection_id, userId, c.provider, now);
+      // ADR-700: each linked Google or Apple sign-in is a Supabase Auth user (with the person's name
+      // and email), owed a removal there like any online account.
+      const identities = (await tx.query<{ identity_id: string }>("SELECT identity_id FROM web_identities WHERE user_id = $1", [userId])).rows;
+      for (const i of identities) await this.queueCleanupIn(tx, i.identity_id, userId, SUPABASE_AUTH_CLEANUP, now);
       const deleted = {} as UserErasure["deleted"];
       for (const table of ERASED_TABLES) deleted[table] = (await tx.query(`DELETE FROM ${table} WHERE user_id = $1`, [userId])).rowCount;
       let remaining = 0;
@@ -1227,6 +1248,30 @@ export class Store {
     });
   }
 
+  /**
+   * Makes a Doddy account on the web (ADR-700): the account row and its Google or Apple sign-in, in
+   * one transaction. `existing`: that sign-in got an account a moment ago (another tab); nothing new is made.
+   */
+  async createWebAccount(input: { userId: string; identityId: string; provider: string; now: number }): Promise<{ userId: string; created: boolean } | null> {
+    return this.db.transaction(async (tx) => {
+      const inserted = await tx.query(
+        "INSERT INTO web_identities (identity_id, user_id, provider, created_at) VALUES ($1, $2, $3, $4) ON CONFLICT (identity_id) DO NOTHING",
+        [input.identityId, input.userId, input.provider, input.now],
+      );
+      if (inserted.rowCount === 1) {
+        await tx.query("INSERT INTO web_accounts (user_id, provider, created_at) VALUES ($1, $2, $3)", [input.userId, input.provider, input.now]);
+        return { userId: input.userId, created: true };
+      }
+      const owner = await this.one<{ user_id: string }>(tx, "SELECT user_id FROM web_identities WHERE identity_id = $1", [input.identityId]);
+      return owner ? { userId: owner.user_id, created: false } : null;
+    });
+  }
+
+  /** True for an account made on the web (it has no iPhone to delete it from). */
+  async isWebAccount(userId: string): Promise<boolean> {
+    return (await this.one<{ user_id: string }>(this.db, "SELECT user_id FROM web_accounts WHERE user_id = $1", [userId])) !== null;
+  }
+
   /** The Doddy account a Supabase user is linked to, or null. */
   async webIdentityOwner(identityId: string): Promise<string | null> {
     return (await this.one<{ user_id: string }>(this.db, "SELECT user_id FROM web_identities WHERE identity_id = $1", [identityId]))?.user_id ?? null;
@@ -1259,6 +1304,27 @@ export class Store {
       `UPDATE web_link_pending SET consumed_at = $3 WHERE code_hash = $1 AND user_id = $2 AND consumed_at IS NULL AND expires_at > $3
        RETURNING identity_id, provider`,
       [codeHash, userId, now],
+    );
+  }
+
+  /**
+   * A Google or Apple sign-in with no Doddy account yet, waiting for the person to say "create my
+   * account" (ADR-700). It belongs to no account, so it has no `user_id`; it lasts minutes.
+   */
+  async createPendingSignup(input: { codeHash: string; identityId: string; provider: string; now: number; ttlMs: number }): Promise<void> {
+    await this.db.query(
+      "INSERT INTO web_signup_pending (code_hash, identity_id, provider, created_at, expires_at) VALUES ($1, $2, $3, $4, $5)",
+      [input.codeHash, input.identityId, input.provider, input.now, input.now + input.ttlMs],
+    );
+  }
+
+  /** Uses a pending sign-up once: unknown, used or expired returns null. */
+  async consumePendingSignup(codeHash: string, now: number): Promise<{ identity_id: string; provider: string } | null> {
+    return this.one<{ identity_id: string; provider: string }>(
+      this.db,
+      `UPDATE web_signup_pending SET consumed_at = $2 WHERE code_hash = $1 AND consumed_at IS NULL AND expires_at > $2
+       RETURNING identity_id, provider`,
+      [codeHash, now],
     );
   }
 
@@ -1306,7 +1372,8 @@ export class Store {
       const codes =
         (await tx.query("DELETE FROM web_link_codes WHERE expires_at < $1", [now - DAY])).rowCount +
         (await tx.query("DELETE FROM web_oauth_states WHERE expires_at < $1", [now - DAY])).rowCount +
-        (await tx.query("DELETE FROM web_link_pending WHERE expires_at < $1", [now - DAY])).rowCount;
+        (await tx.query("DELETE FROM web_link_pending WHERE expires_at < $1", [now - DAY])).rowCount +
+        (await tx.query("DELETE FROM web_signup_pending WHERE expires_at < $1", [now - DAY])).rowCount;
       const sessions = (
         await tx.query("DELETE FROM web_sessions WHERE revoked_at < $1 OR expires_at < $1 OR last_seen_at < $2", [now - DAY, now - idleMs - DAY])
       ).rowCount;

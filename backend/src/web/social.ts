@@ -4,8 +4,9 @@ import { SupabaseSessionVerifier, type FetchJson } from "../auth.js";
 import { clientAddress, clientKey } from "../clientAddress.js";
 import type { WebSocialSettings } from "../config.js";
 import { AppError } from "../errors.js";
-import type { Store, WebIdentityRow } from "../store.js";
-import { describeAgent, MAX_SESSIONS_PER_USER, readCookie, SESSION_IDLE_MS, SESSION_TTL_MS, type WebAuth, type WebSessionContext } from "./sessions.js";
+import { type Store, SUPABASE_AUTH_CLEANUP as SUPABASE_AUTH, type WebIdentityRow } from "../store.js";
+import type { WebSessionView } from "./contracts.js";
+import { readCookie, type WebAuth, type WebSessionContext } from "./sessions.js";
 
 /**
  * Apple and Google sign-in for Doddy Web (ADR-700), through Supabase Auth.
@@ -24,8 +25,11 @@ import { describeAgent, MAX_SESSIONS_PER_USER, readCookie, SESSION_IDLE_MS, SESS
  *    can't be confirmed for the sender's account.
  *  - A browser links or unlinks only within LINK_REAUTH_MS of signing in, so a stolen or forgotten
  *    browser session can't add a way back in that outlives signing it out.
- * A Google or Apple account linked to nobody opens nothing and creates nothing: accounts are never
- * made or merged behind the person's back (ADR-600).
+ * A Google or Apple account linked to nobody can make a new Doddy account on the web (owner, 3 Nov
+ * 2026: "it must be able to create account in web as well"), but only after the person says so on
+ * the sign-in page ("Create my Doddy account", `POST /v1/web/signup`); nothing is made by the
+ * redirect alone, and with DODDY_WEB_SIGNUP=off it opens nothing. Accounts are never merged behind
+ * the person's back (ADR-600): an account made on the web is its own account.
  *
  * The flow is OAuth 2.0 with PKCE, run by this server, so the browser never holds a Supabase token:
  *  1. `GET /v1/web/oauth/start` keeps a random verifier and the intent in `web_oauth_states`, sets
@@ -51,6 +55,10 @@ export const OAUTH_STATE_TTL_MS = 10 * 60_000;
 export const OAUTH_TICKET_TTL_MS = 5 * 60_000;
 /** The iPhone's confirmation code, from the end of its sheet, must be redeemed this soon. */
 export const PENDING_LINK_TTL_MS = 5 * 60_000;
+/** "Create my Doddy account" must be pressed this soon after Google or Apple sent the person back. */
+export const PENDING_SIGNUP_TTL_MS = 10 * 60_000;
+/** New accounts per client address per hour, and for the whole server per day. */
+export const SIGNUP_LIMITS = { perClientPerHour: 5, servicePerDay: 500 } as const;
 /** A browser may link or unlink Apple or Google only this soon after it signed in. */
 export const LINK_REAUTH_MS = 15 * 60_000;
 /** Starts and callbacks (counted apart) per client per quarter hour, and tickets per user per hour. */
@@ -77,6 +85,8 @@ const defaultPostJson: PostJson = async (url, init) => {
 
 export interface SignInOptions {
   providers: SocialProvider[];
+  /** Whether a Google or Apple account with no Doddy account can make one here. */
+  signup: boolean;
 }
 
 export interface IdentityView {
@@ -92,7 +102,7 @@ export interface SocialOutcome {
 }
 
 /** Why a sign-in didn't finish, as the page shows it (`?signin=` or `?link=`). Never a provider's own text. */
-export type SocialResult = "linked" | "already" | "taken" | "not_linked" | "canceled" | "failed" | "busy" | "signed_out" | "reauth" | "confirm";
+export type SocialResult = "linked" | "already" | "taken" | "not_linked" | "new_account" | "canceled" | "failed" | "busy" | "signed_out" | "reauth" | "confirm";
 
 export class SocialSignIn {
   readonly providers: readonly SocialProvider[];
@@ -101,6 +111,8 @@ export class SocialSignIn {
   private readonly verifier: SupabaseSessionVerifier;
   private readonly postJson: PostJson;
   private readonly stateCookie: string;
+  private readonly signupCookie: string;
+  private readonly signupOpen: boolean;
   private readonly secure: boolean;
   private readonly callbackUrl: string;
   private readonly appReturn: string;
@@ -126,12 +138,14 @@ export class SocialSignIn {
     this.postJson = o.postJson ?? defaultPostJson;
     this.secure = web.origin.startsWith("https:");
     this.stateCookie = this.secure ? "__Host-doddy_oauth" : "doddy_oauth";
+    this.signupCookie = this.secure ? "__Host-doddy_signup" : "doddy_signup";
+    this.signupOpen = settings.signup;
     this.callbackUrl = `${web.origin}/v1/web/oauth/callback`;
     this.appReturn = `${o.appScheme}://web-sign-in/return`;
   }
 
   options(): SignInOptions {
-    return { providers: [...this.providers] };
+    return { providers: [...this.providers], signup: this.signupOpen };
   }
 
   /** The app's callback scheme, so the iPhone's sheet knows when the sign-in has finished. */
@@ -269,19 +283,52 @@ export class SocialSignIn {
     }
     const userId = await this.store.webIdentityOwner(identityId);
     if (!userId) {
-      this.log({ event: "web_social_signin", provider, result: "not_linked" });
-      return back("not_linked");
+      if (!this.signupOpen) {
+        this.log({ event: "web_social_signin", provider, result: "not_linked" });
+        return back("not_linked");
+      }
+      // No account yet: nothing is made until the person presses "Create my Doddy account". This
+      // browser holds the one-time code for that (Strict: only Doddy's own page can use it).
+      const signupCode = randomBytes(32).toString("base64url");
+      await this.store.createPendingSignup({ codeHash: stateHash(`signup:${signupCode}`), identityId, provider, now: now.getTime(), ttlMs: PENDING_SIGNUP_TTL_MS });
+      this.log({ event: "web_social_signin", provider, result: "new_account" });
+      return { location: `/sign-in?signin=new_account&provider=${provider}`, setCookies: [clear, this.signupCookieValue(signupCode, PENDING_SIGNUP_TTL_MS / 1000)] };
     }
-    const sessionToken = randomBytes(32).toString("base64url");
-    const agent = describeAgent(header(req, "user-agent"));
-    await this.store.openWebSession(userId, {
-      session: { sessionId: randomUUID(), tokenHash: this.web.tokenHashOf(sessionToken), browser: agent.browser, os: agent.os, expiresAt: now.getTime() + SESSION_TTL_MS },
-      now: now.getTime(),
-      idleMs: SESSION_IDLE_MS,
-      maxSessions: MAX_SESSIONS_PER_USER,
-    });
+    const opened = await this.web.openFor(userId, req, now);
     this.log({ event: "web_social_signin", provider, result: "signed_in" });
-    return { location: "/", setCookies: [clear, this.web.sessionCookie(sessionToken)] };
+    return { location: "/", setCookies: [clear, opened.setCookie] };
+  }
+
+  /**
+   * `POST /v1/web/signup`: the person pressed "Create my Doddy account" after Google or Apple. A new
+   * account, with that sign-in linked, and this browser signed in to it. If the same Google account
+   * got an account a moment ago (a second tab), this signs in to that one instead of making two.
+   */
+  async signup(req: IncomingMessage, now: Date): Promise<{ view: WebSessionView; setCookies: string[]; created: boolean; provider: SocialProvider }> {
+    const clear = this.signupCookieValue("", 0);
+    const code = readCookie(header(req, "cookie"), this.signupCookie);
+    if (!this.signupOpen || !code || !STATE.test(code)) {
+      throw new AppError("not_found", { message: "That sign-in has expired. Choose Continue with Google or Apple again." });
+    }
+    const hour = `day:${now.toISOString().slice(0, 13)}`;
+    const day = `day:${now.toISOString().slice(0, 10)}`;
+    const client = `web_signup:${sha256(`client:${clientKey(clientAddress(req, this.o.trustProxy))}`)}`;
+    const allowed = await this.store.reserveUsage(
+      [
+        { counter: client, period: hour, limit: SIGNUP_LIMITS.perClientPerHour },
+        { counter: "web_signup:service", period: day, limit: SIGNUP_LIMITS.servicePerDay },
+      ],
+      1,
+    );
+    if (!allowed) throw new AppError("rate_limited", { message: "Too many new accounts right now. Try again later.", retryAfterSeconds: 3600 });
+    const pending = await this.store.consumePendingSignup(stateHash(`signup:${code}`), now.getTime());
+    const provider = pending ? this.provider(pending.provider) : null;
+    if (!pending || !provider) throw new AppError("not_found", { message: "That sign-in has expired. Choose Continue with Google or Apple again." });
+    const account = await this.store.createWebAccount({ userId: randomUUID(), identityId: pending.identity_id, provider, now: now.getTime() });
+    if (!account) throw new AppError("not_found");
+    const opened = await this.web.openFor(account.userId, req, now);
+    this.log({ event: "web_signup", provider, result: account.created ? "created" : "existing" });
+    return { view: opened.view, setCookies: [clear, opened.setCookie], created: account.created, provider };
   }
 
   /**
@@ -371,6 +418,10 @@ export class SocialSignIn {
     return this.store.reserveUsage([{ counter: client, period: quarter, limit }], 1);
   }
 
+  private signupCookieValue(value: string, maxAgeSeconds: number): string {
+    return `${this.signupCookie}=${value}; Path=/; Max-Age=${maxAgeSeconds}; HttpOnly; SameSite=Strict${this.secure ? "; Secure" : ""}`;
+  }
+
   private stateCookieValue(value: string, maxAgeSeconds: number): string {
     return `${this.stateCookie}=${value}; Path=/; Max-Age=${maxAgeSeconds}; HttpOnly; SameSite=Lax${this.secure ? "; Secure" : ""}`;
   }
@@ -396,4 +447,44 @@ function withCookie(outcome: SocialOutcome, ...cookies: string[]): SocialOutcome
 function header(req: IncomingMessage, name: string): string | undefined {
   const value = req.headers[name];
   return Array.isArray(value) ? undefined : value;
+}
+
+/** Sends DELETE and reads only the status; injectable for tests. */
+export type DeleteCall = (url: string, init: { headers: Record<string, string>; signal: AbortSignal }) => Promise<{ status: number }>;
+
+const defaultDelete: DeleteCall = async (url, init) => {
+  const response = await fetch(url, { method: "DELETE", headers: init.headers, signal: init.signal, redirect: "error" });
+  await response.body?.cancel();
+  return { status: response.status };
+};
+
+/**
+ * Deletes a person's Supabase Auth user (their Google or Apple sign-in, with name and email) when
+ * their Doddy account is deleted (ADR-700), through Supabase's admin API with the project's secret
+ * key, on the server only. A user already gone counts as removed; anything else stays owed.
+ */
+export class SupabaseUserRemover {
+  readonly providers = [SUPABASE_AUTH] as const;
+  private readonly call: DeleteCall;
+
+  constructor(
+    private readonly projectUrl: string,
+    private readonly secretKey: string,
+    call?: DeleteCall,
+  ) {
+    this.call = call ?? defaultDelete;
+  }
+
+  async remove(identityId: string, signal: AbortSignal): Promise<"removed" | "failed"> {
+    if (!UUID.test(identityId)) return "failed";
+    try {
+      const { status } = await this.call(`${this.projectUrl}/auth/v1/admin/users/${identityId}`, {
+        headers: { apikey: this.secretKey, authorization: `Bearer ${this.secretKey}` },
+        signal,
+      });
+      return status === 200 || status === 204 || status === 404 ? "removed" : "failed";
+    } catch {
+      return "failed";
+    }
+  }
 }

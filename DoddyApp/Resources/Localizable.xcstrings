@@ -74685,13 +74685,13 @@
         }
       }
     },
-    "That account is already linked to another Doddy account, so it wasn't linked here. Nothing was merged.": {
+    "That account is already linked to another Doddy account (perhaps one made on the web), so it wasn't linked here. Nothing was merged.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "To konto jest już połączone z innym kontem Doddy, więc nie połączono go tutaj. Nic nie zostało scalone."
+            "value": "To konto jest już połączone z innym kontem Doddy (może założonym w przeglądarce), więc nie połączono go tutaj. Nic nie zostało scalone."
           }
         }
       }

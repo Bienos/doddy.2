@@ -26,11 +26,24 @@ export const CurrentSession = z.object({ session: WebSessionView });
 /** Apple and Google sign-in (ADR-700): which buttons this server offers (none: the code only). */
 export const SocialProvider = z.enum(["google", "apple"]);
 export type SocialProvider = z.infer<typeof SocialProvider>;
-export const SignInOptions = z.object({ providers: z.array(z.string()).transform((list) => list.filter((p): p is SocialProvider => p === "google" || p === "apple")) });
+export const SignInOptions = z.object({
+  providers: z.array(z.string()).transform((list) => list.filter((p): p is SocialProvider => p === "google" || p === "apple")),
+  /** Whether a Google or Apple account with no Doddy account can make one here. An older server: no. */
+  signup: z.boolean().optional().default(false),
+});
+/** "Create my Doddy account": the new (or, from a second tab, the just-made) account's session. */
+export const SignedUp = z.object({ session: WebSessionView, created: z.boolean(), provider: SocialProvider });
+/** Deleting the account from the web: the server's receipt (ADR-674). Only `complete` and what's still owed are read. */
+export const AccountDeleted = z.object({
+  complete: z.boolean(),
+  onlineAccounts: z.object({ removed: z.array(z.string()), pending: z.array(z.string()) }),
+});
 export const LinkedIdentity = z.object({ id: z.string().uuid(), provider: SocialProvider, linkedAt: z.string() });
 export type LinkedIdentity = z.infer<typeof LinkedIdentity>;
 export const IdentityList = z.object({ identities: z.array(LinkedIdentity) });
 export const Unlinked = z.object({ unlinked: z.literal(true) });
+/** Whether this account was made on the web (then it is deleted here; an iPhone's is deleted on the iPhone). */
+export const AccountKind = z.object({ madeOnWeb: z.boolean() });
 export const SessionList = z.object({ sessions: z.array(WebSessionView) });
 
 export const DocumentKind = z.enum(["deck", "doc", "spreadsheet", "pdf", "text", "file"]);

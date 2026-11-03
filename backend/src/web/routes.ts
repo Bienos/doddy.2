@@ -10,7 +10,8 @@ import type { MemoryService } from "../memory/service.js";
 import { threadRoutes } from "../messages/routes.js";
 import type { ThreadService } from "../messages/service.js";
 import type { WebAuth, WebSessionContext } from "./sessions.js";
-import type { SocialSignIn } from "./social.js";
+import { LINK_REAUTH_MS, type SocialSignIn } from "./social.js";
+import type { AccountEraser } from "../account.js";
 
 /**
  * The `/v1/web/…` routes (ADR-600). Each route says who may call it:
@@ -72,6 +73,8 @@ export class WebRoutes {
     thread?: ThreadService,
     /** Apple and Google sign-in (ADR-700). Without it the sign-in page offers the code only. */
     private readonly social?: SocialSignIn | null,
+    /** Deleting the account from a browser (ADR-700: an account made on the web has no iPhone to do it). */
+    account?: AccountEraser | null,
   ) {
     this.routes = [
       {
@@ -234,6 +237,17 @@ export class WebRoutes {
               run: async ({ caller, body, now }) => ({ status: 200, body: await social.ticket(caller!.userId, body, now) }),
             },
             {
+              // "Create my Doddy account", after Google or Apple. Public (its own one-time cookie), same origin.
+              method: "POST",
+              pattern: /^\/v1\/web\/signup$/,
+              template: "POST /v1/web/signup",
+              access: "public",
+              run: async ({ req, now }) => {
+                const done = await social.signup(req, now);
+                return { status: 200, body: { session: done.view, created: done.created, provider: done.provider }, setCookie: done.setCookies };
+              },
+            },
+            {
               method: "POST",
               pattern: /^\/v1\/web\/oauth\/complete$/,
               template: "POST /v1/web/oauth/complete",
@@ -256,6 +270,40 @@ export class WebRoutes {
                 social.assertMayChange(caller!.session, now);
                 await social.unlink(caller!.userId, params[0]!);
                 return { status: 200, body: { unlinked: true } };
+              },
+            },
+          ] satisfies Route[])
+        : []),
+      ...(account
+        ? ([
+            {
+              // Whether this browser may delete the account: only one made on the web. An iPhone's
+              // account is deleted on the iPhone, as before (ADR-674).
+              method: "GET",
+              pattern: /^\/v1\/web\/account$/,
+              template: "GET /v1/web/account",
+              access: "browser",
+              run: async ({ caller }) => ({ status: 200, body: { madeOnWeb: await this.store.isWebAccount(caller!.userId) } }),
+            },
+            {
+              // Deletes the whole account, as the iPhone's Delete account does (ADR-674): only an account
+              // made on the web, from a browser signed in within the last 15 minutes, with the word sent
+              // back. The answer is the receipt.
+              method: "POST",
+              pattern: /^\/v1\/web\/account\/delete$/,
+              template: "POST /v1/web/account/delete",
+              access: "browser",
+              run: async ({ caller, body, now }) => {
+                const confirm = typeof body === "object" && body !== null ? (body as Record<string, unknown>).confirm : undefined;
+                if (confirm !== "delete" || Object.keys(body as object).length !== 1) throw new AppError("invalid_request");
+                if (!(await this.store.isWebAccount(caller!.userId))) {
+                  throw new AppError("refused", { message: "This account belongs to your iPhone: delete it in Doddy on the iPhone." });
+                }
+                if (now.getTime() - caller!.session!.createdAt > LINK_REAUTH_MS) {
+                  throw new AppError("refused", { message: "For safety, sign in again, then delete within 15 minutes." });
+                }
+                const erasure = await account.erase(caller!.userId);
+                return { status: 200, body: erasure, setCookie: this.auth.clearCookie() };
               },
             },
           ] satisfies Route[])

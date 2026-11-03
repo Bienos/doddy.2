@@ -175,8 +175,9 @@ Before people can sign in (owner):
 
 ## Google and Apple on the web (ADR-700)
 
-Doddy Web can sign in with Google or Apple once a person has linked one to their Doddy account (from the iPhone,
-or from a browser signed in with a code). This is separate from `DODDY_AUTH_MODE`: the iPhone keeps its own session,
+Doddy Web can sign in with Google or Apple: into the person's own account once they have linked one to it (from the
+iPhone, or from a browser signed in with a code), and, for someone new, into a new account made on the web after they
+press "Create my Doddy account" (`DODDY_WEB_SIGNUP=open`, the default; owner, 3 Nov 2026). This is separate from `DODDY_AUTH_MODE`: the iPhone keeps its own session,
 and the auth mode stays `signed`. Checked on 3 Nov 2026: in the project `doddy-gateway` (`sliondswemhneuzehpoq`),
 Google and Apple are **off** and email is on; no one has signed in through it.
 
@@ -200,15 +201,20 @@ Owner steps, in this order (each is in your own account; nothing here is a secre
 5. **Render → `doddy` → Environment:** `SUPABASE_URL=https://sliondswemhneuzehpoq.supabase.co` and
    `SUPABASE_PUBLISHABLE_KEY=` the project's publishable key (Supabase → Project Settings → API keys, `sb_publishable_…`;
    never the `sb_secret_…` one: the server refuses to start with it). Optional: `DODDY_WEB_SIGNIN_PROVIDERS=google` to
-   offer Google alone until Apple is set up.
+   offer Google alone until Apple is set up; `DODDY_WEB_SIGNUP=off` to stop new accounts on the web.
+   **Recommended:** `SUPABASE_SECRET_KEY` (the `sb_secret_…` key, from 1Password item `supabase-secret-key`). With it,
+   deleting a Doddy account also deletes the person's Supabase sign-in (their name and email); without it the deletion
+   says that part is still owed, and it stays in Supabase until you remove it there (Authentication, Users).
 6. Deploy a build that has ADR-700 (Render's Branch must be the default branch, see STATUS.md).
 
 **Check after deploying:** `GET https://doddy-yaci.onrender.com/v1/web/sign-in-options` answers
 `{"providers":["google","apple"]}`; the sign-in page shows "Continue with Google"; an unlinked Google account comes
-back to "isn't linked to a Doddy account yet"; after Link Google on the iPhone, Continue with Google opens Home.
+back to "Make a Doddy account with Google?", and Create my Doddy account opens an empty workspace; after Link Google on
+the iPhone, Continue with Google opens that iPhone's account.
 
 **Rollback:** unset `SUPABASE_PUBLISHABLE_KEY` and redeploy. The buttons disappear and the code works as before; linked
-sign-ins stay in `web_identities` until an account is deleted. To end every Google or Apple link at once:
+sign-ins stay in `web_identities` until an account is deleted. Accounts made on the web (`web_accounts`) can't sign in
+while the buttons are off: turn them back on, or delete those accounts. To end every Google or Apple link at once:
 `DELETE FROM doddy_backend.web_identities;`.
 
 ## Free plan caveats

@@ -46,6 +46,7 @@ export function SettingsPage() {
         <h2 id="data-heading">{t("settings.data")}</h2>
         <p>{t("settings.dataBody")}</p>
       </section>
+      <DeleteAccount />
     </>
   );
 }
@@ -229,5 +230,76 @@ function IdentityItem({ identity, label, linkedOn, onChanged }: { identity: Link
         </p>
       ) : null}
     </li>
+  );
+}
+
+/**
+ * Delete account (ADR-700): an account made on the web has no iPhone to delete it from. Two steps;
+ * the server deletes everything it keeps for this account and signs every browser out. It needs a
+ * sign-in from the last 15 minutes, and says so instead.
+ */
+function DeleteAccount() {
+  const { t } = useI18n();
+  const { deleted, expired } = useSession();
+  const { resource } = useResource(api.account);
+  const [asking, setAsking] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const remove = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      const receipt = await api.deleteAccount();
+      deleted(receipt.complete);
+    } catch (caught) {
+      if (caught instanceof ApiError && caught.code === "unauthenticated") {
+        expired();
+        return;
+      }
+      if (caught instanceof ApiError && caught.code === "refused") setError(t("settings.delete.reauth"));
+      else setError(errorText(caught instanceof ApiError ? caught : new ApiError("network", String(caught), 0), t));
+      setBusy(false);
+    }
+  };
+
+  if (resource.status === "loading") return null;
+  if (resource.status === "error" || !resource.data.madeOnWeb) {
+    // An iPhone's account (or not known): deleted on the iPhone, as before (ADR-674).
+    return (
+      <section className="card" aria-labelledby="delete-heading">
+        <h2 id="delete-heading">{t("settings.delete")}</h2>
+        <p>{t("settings.delete.iphone")}</p>
+      </section>
+    );
+  }
+
+  return (
+    <section className="card" aria-labelledby="delete-heading">
+      <h2 id="delete-heading">{t("settings.delete")}</h2>
+      <p>{t("settings.delete.body")}</p>
+      {error ? (
+        <p className="field-error" role="alert">
+          {error}
+        </p>
+      ) : null}
+      {asking ? (
+        <div className="button-row">
+          <p className="notice" role="alert">
+            {t("settings.delete.confirm")}
+          </p>
+          <button type="button" className="button" onClick={remove} disabled={busy}>
+            {busy ? t("settings.delete.deleting") : t("settings.delete.yes")}
+          </button>
+          <button type="button" className="button button-quiet" onClick={() => setAsking(false)} disabled={busy}>
+            {t("settings.delete.no")}
+          </button>
+        </div>
+      ) : (
+        <button type="button" className="button button-quiet" onClick={() => setAsking(true)}>
+          {t("settings.delete.start")}
+        </button>
+      )}
+    </section>
   );
 }
