@@ -9,12 +9,19 @@
 #      extensions must have the same one. Xcode Cloud numbers its builds (CI_BUILD_NUMBER).
 #   3. Xcode Cloud does not resolve Swift packages by itself: it needs `Package.resolved` in the
 #      project, which a generated project doesn't have. Resolving here writes it.
+#   4. Push notifications (ADR-699). The project's default entitlements have no `aps-environment`,
+#      so a build from them can never receive a push, however the server is set up. Xcode Cloud's
+#      builds are the ones testers install, so they get Config/Doddy-Push-AppGroup.entitlements.
 #
 # Optional environment variables, set in the workflow (App Store Connect › Xcode Cloud › the
 # workflow › Environment). None is a secret:
 #   DODDY_TEAM_ID    the Apple Developer team ID, when Xcode Cloud asks for a team (the spec
 #                    commits none: `DEVELOPMENT_TEAM: ""`).
 #   DODDY_BUNDLE_ID  another bundle ID than `com.bienos.doddy2.dev` (go-live checklist C1).
+#   DODDY_PUSH       `0` builds without push notifications (for example while Push Notifications
+#                    isn't enabled on the App ID, which makes signing fail). Anything else, or not
+#                    set: push on. The App ID needs the Push Notifications capability either way
+#                    it is on.
 #
 # Nothing here signs, uploads or reads a key: Xcode Cloud signs with the team's cloud-managed
 # certificates and uploads to TestFlight as the workflow says.
@@ -72,7 +79,18 @@ if [ -n "${DODDY_BUNDLE_ID:-}" ]; then
     "DODDY_APP_BUNDLE_IDENTIFIER = $DODDY_BUNDLE_ID;" "bundle ID $DODDY_BUNDLE_ID"
 fi
 
-# 5. The Swift packages, so Package.resolved exists before Xcode Cloud builds.
+# 5. Push notifications: the entitlements file with `aps-environment` (and the same App Group, Sign in
+# with Apple and Health entries as the default), unless the workflow says DODDY_PUSH=0. Xcode
+# replaces the file's `development` with `production` when it signs for TestFlight. The line it
+# replaces must be there: a build that quietly ships without push is the failure this step exists
+# to stop.
+if [ "${DODDY_PUSH:-1}" != "0" ]; then
+  [ -f Config/Doddy-Push-AppGroup.entitlements ] || { echo "ci_post_clone: Config/Doddy-Push-AppGroup.entitlements is missing" >&2; exit 1; }
+  set_in_project "DODDY_APP_ENTITLEMENTS = Config/Doddy-AppGroup.entitlements;" \
+    "DODDY_APP_ENTITLEMENTS = Config/Doddy-Push-AppGroup.entitlements;" "push notifications"
+fi
+
+# 6. The Swift packages, so Package.resolved exists before Xcode Cloud builds.
 if [ -z "${DODDY_SKIP_RESOLVE:-}" ]; then
   xcodebuild -resolvePackageDependencies -project Doddy.xcodeproj -scheme Doddy
 fi

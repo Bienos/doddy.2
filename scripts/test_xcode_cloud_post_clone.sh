@@ -15,10 +15,12 @@ fail() { echo "FAIL: $1"; failures=$((failures + 1)); }
 
 fresh() {
   rm -rf "$work/repo"
-  mkdir -p "$work/repo/Doddy.xcodeproj"
+  mkdir -p "$work/repo/Doddy.xcodeproj" "$work/repo/Config"
+  : > "$work/repo/Config/Doddy-Push-AppGroup.entitlements"
   local block='				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
 				DODDY_APP_BUNDLE_IDENTIFIER = com.bienos.doddy2.dev;
+				DODDY_APP_ENTITLEMENTS = Config/Doddy-AppGroup.entitlements;
 				MARKETING_VERSION = 0.0.1;'
   printf '%s\n%s\n%s\n' "$block" "$block" "$block" > "$work/repo/Doddy.xcodeproj/project.pbxproj"
 }
@@ -47,6 +49,26 @@ fresh; run CI_BUILD_NUMBER=7 DODDY_TEAM_ID=ABCDE12345 DODDY_BUNDLE_ID=com.bienos
 [ "$(count 'DODDY_APP_BUNDLE_IDENTIFIER = com.bienos.doddy;')" = 3 ] || fail "the bundle ID reaches all three targets"
 [ "$(count 'com.bienos.doddy2.dev')" = 0 ] || fail "the placeholder bundle ID is gone"
 
+# Push notifications (ADR-699): on unless the workflow says DODDY_PUSH=0.
+fresh; run
+[ "$(count 'DODDY_APP_ENTITLEMENTS = Config/Doddy-Push-AppGroup.entitlements;')" = 3 ] || fail "by default every target gets the push entitlements"
+[ "$(count 'Doddy-AppGroup.entitlements')" = 0 ] || fail "and none keeps the entitlements without push"
+fresh; run DODDY_PUSH=1
+[ "$(count 'Doddy-Push-AppGroup.entitlements')" = 3 ] || fail "DODDY_PUSH=1 is the same as the default"
+fresh; run DODDY_PUSH=0
+[ $? -eq 0 ] || fail "DODDY_PUSH=0 should succeed: $(cat "$work/out")"
+[ "$(count 'DODDY_APP_ENTITLEMENTS = Config/Doddy-AppGroup.entitlements;')" = 3 ] || fail "DODDY_PUSH=0 keeps the entitlements without push"
+fresh; run DODDY_PUSH=no
+[ "$(count 'Doddy-Push-AppGroup.entitlements')" = 3 ] || fail "only the exact value 0 turns push off, so a typo can't ship a build without it"
+fresh; rm "$work/repo/Config/Doddy-Push-AppGroup.entitlements"; run
+[ $? -ne 0 ] || fail "with the push entitlements file missing the build must stop"
+grep -q "Doddy-Push-AppGroup.entitlements is missing" "$work/out" || fail "and say which file"
+fresh; sed 's|DODDY_APP_ENTITLEMENTS = Config/Doddy-AppGroup.entitlements;|DODDY_APP_ENTITLEMENTS = "";|' "$work/repo/Doddy.xcodeproj/project.pbxproj" > "$work/p" \
+  && mv "$work/p" "$work/repo/Doddy.xcodeproj/project.pbxproj"
+run
+[ $? -ne 0 ] || fail "when the entitlements line isn't found the build must stop, not ship without push"
+grep -q "couldn't set push notifications" "$work/out" || fail "and say what it couldn't set"
+
 # Refusals: a build number, team or bundle ID that isn't one stops the build.
 fresh; run CI_BUILD_NUMBER=4a
 [ $? -ne 0 ] || fail "a build number with a letter must stop the build"
@@ -68,4 +90,4 @@ rm -rf "$work/repo"; mkdir -p "$work/repo"; run
 [ $? -ne 0 ] || fail "with no Doddy.xcodeproj the build must stop"
 
 if [ "$failures" -ne 0 ]; then echo "FAIL: $failures check(s)"; exit 1; fi
-echo "PASS: ci_post_clone.sh sets the build number, team and bundle ID and refuses bad values"
+echo "PASS: ci_post_clone.sh sets the build number, team, bundle ID and push entitlements and refuses bad values"
