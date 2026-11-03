@@ -391,6 +391,71 @@
         }
       }
     },
+    "NSHealthUpdateUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy schreibt nie in Apple Health und ändert dort nichts. Es fragt nur an, deine Trainings, Herzfrequenz, Ruheherzfrequenz, Herzfrequenzvariabilität (HRV), deinen Schlaf und VO2max zu lesen. iOS verlangt von Apps diesen Text, weil der Health-Berechtigungsbildschirm sowohl Lesen als auch Schreiben abdeckt."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy never writes to or changes Apple Health. It only asks to read your workouts, heart rate, resting heart rate, heart rate variability, sleep and VO2 max. iOS asks apps for this text because its Health permission screen covers both reading and writing."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nunca escribe en Salud ni cambia nada allí. Solo pide permiso para leer tus entrenamientos, frecuencia cardiaca, frecuencia cardiaca en reposo, variabilidad de la frecuencia cardiaca (VFC), sueño y VO2 máx. iOS pide este texto a las apps porque su pantalla de permisos de Salud cubre tanto la lectura como la escritura."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy n’écrit jamais dans Santé et n’y modifie rien. Il demande seulement à lire tes entraînements, ta fréquence cardiaque, ta fréquence cardiaque au repos, ta variabilité de la fréquence cardiaque (VFC), ton sommeil et ta VO2 max. iOS demande ce texte aux apps parce que son écran d’autorisation de Santé couvre à la fois la lecture et l’écriture."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nikad ne upisuje u Zdravlje i ništa tamo ne mijenja. Samo traži dopuštenje za čitanje tvojih treninga, pulsa, pulsa u mirovanju, varijabilnosti srčanog ritma (HRV), sna i VO2 max. iOS traži ovaj tekst od aplikacija jer njegov zaslon dopuštenja za Zdravlje obuhvaća i čitanje i upisivanje."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy non scrive mai in Salute e non vi modifica nulla. Chiede solo di leggere i tuoi allenamenti, la frequenza cardiaca, la frequenza cardiaca a riposo, la variabilità della frequenza cardiaca (HRV), il sonno e il VO2 max. iOS richiede questo testo alle app perché la sua schermata dei permessi di Salute riguarda sia la lettura sia la scrittura."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddyがヘルスケアに書き込んだり、内容を変更したりすることはありません。読み取りの許可を求めるのは、ワークアウト、心拍数、安静時心拍数、心拍変動（HRV）、睡眠、VO2最大値だけです。ヘルスケアの許可画面は読み取りと書き込みの両方を扱うため、iOSはアプリにこの文章を求めます。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nigdy niczego nie zapisuje w aplikacji Zdrowie ani tam niczego nie zmienia. Prosi tylko o zgodę na odczyt Twoich treningów, tętna, tętna spoczynkowego, zmienności rytmu serca (HRV), snu i VO2 max. iOS wymaga od aplikacji tego tekstu, bo jego ekran uprawnień Zdrowia obejmuje zarówno odczyt, jak i zapis."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Doddy nunca escreve no Saúde nem altera nada lá. Ele só pede para ler seus treinos, frequência cardíaca, frequência cardíaca em repouso, variabilidade da frequência cardíaca (VFC), sono e VO2 máx. O iOS pede este texto aos apps porque a tela de permissões do Saúde abrange leitura e escrita."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy 绝不会向“健康”写入或更改任何内容。它只请求读取你的体能训练、心率、静息心率、心率变异性（HRV）、睡眠和最大摄氧量。iOS 要求 App 提供这段文字，因为“健康”的权限页面同时涵盖读取和写入。"
+          }
+        }
+      }
+    },
     "NSLocationWhenInUseUsageDescription": {
       "extractionState": "manual",
       "localizations": {

@@ -39,6 +39,10 @@
   "en": "Doddy reads your workouts, heart rate, resting heart rate, heart rate variability, sleep and VO2 max from Health to show them to you on its Apple Health screen. Only a short summary of the week leaves this iPhone, and only when you allow it: in Messages when you send it yourself, or to Doddy's voice when you ask and say yes. Doddy keeps none of it and writes nothing to Health. Turn this off in Settings, Connections, Apple Health, or in the Health app.",
   "pl": "Doddy odczytuje z aplikacji Zdrowie Twoje treningi, tętno, tętno spoczynkowe, zmienność rytmu serca (HRV), sen i VO2 max, żeby pokazać je na swoim ekranie Apple Health. Z tego iPhone’a wychodzi tylko krótkie podsumowanie tygodnia i tylko za Twoją zgodą: w Wiadomościach, gdy sam je wyślesz, albo do głosu Doddy’ego, gdy zapytasz i się zgodzisz. Doddy niczego nie zachowuje i nic nie zapisuje w Zdrowiu. Wyłączysz to w Ustawieniach, w sekcji Połączenia, Apple Health, albo w aplikacji Zdrowie."
  },
+ "NSHealthUpdateUsageDescription": {
+  "en": "Doddy never writes to or changes Apple Health. It only asks to read your workouts, heart rate, resting heart rate, heart rate variability, sleep and VO2 max. iOS asks apps for this text because its Health permission screen covers both reading and writing.",
+  "pl": "Doddy nigdy niczego nie zapisuje w aplikacji Zdrowie ani tam niczego nie zmienia. Prosi tylko o zgodę na odczyt Twoich treningów, tętna, tętna spoczynkowego, zmienności rytmu serca (HRV), snu i VO2 max. iOS wymaga od aplikacji tego tekstu, bo jego ekran uprawnień Zdrowia obejmuje zarówno odczyt, jak i zapis."
+ },
  "NSCameraUsageDescription": {
   "en": "Doddy opens the camera only when you tap Take a photo or Open camera. The photo you keep goes into a note on this iPhone and its text is read here; it is never sent anywhere or saved to your photo library.",
   "pl": "Doddy otwiera aparat tylko wtedy, gdy stukniesz Zrób zdjęcie albo Otwórz aparat. Zdjęcie, które zachowasz, trafia do notatki na tym iPhonie, a jego tekst jest odczytywany tutaj; nigdy nie jest nigdzie wysyłane ani zapisywane w Twojej bibliotece zdjęć."
