@@ -55,16 +55,15 @@ public enum OpenWaysOffer {
     /// The card comes back once: after the second "later" it stays gone (Settings still has it).
     public static let deferralsBeforeStopping = 2
 
-    /// The words of Home's slim row (owner, 3 Nov 2026, ADR-699): casual, two ways (Back Tap and a
-    /// button, no Siri), and nothing about how easy or how long. Tapping the row opens the ways.
+    /// The words of Home's slim row (owner, 3 Nov 2026, ADR-699): casual and general (no Siri, no
+    /// named ways), nothing about how easy or how long, and no promise that Doddy is always
+    /// reachable (he isn't: no internet, no voice). Tapping the row opens the ways.
     public static func rowTitle(_ language: NotificationLanguage) -> String {
-        language == .polish ? "Stuk, stuk. Jestem." : "Knock, knock. I'm here."
+        language == .polish ? "Jestem pod ręką" : "I'm within reach"
     }
 
     public static func rowLine(_ language: NotificationLanguage) -> String {
-        language == .polish
-            ? "Dwa razy w tył iPhone’a albo przycisk. Wybierz sposób."
-            : "Double-tap the back of your iPhone or press a button. Pick a way."
+        language == .polish ? "Ustaw sposób, żeby mnie zawołać." : "Set up a way to call me."
     }
 
     /// The person is already using a way, or said their Back Tap test worked.

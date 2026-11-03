@@ -132,11 +132,13 @@ final class OpenWaysOfferTests: XCTestCase {
 
     /// ADR-699: the owner's words for the row: no Siri, and nothing about ease or minutes.
     func testTheRowSaysTwoWaysInTheOwnersWordsWithoutSiriOrEase() {
-        XCTAssertEqual(OpenWaysOffer.rowTitle(.polish), "Stuk, stuk. Jestem.")
-        XCTAssertEqual(OpenWaysOffer.rowLine(.polish), "Dwa razy w tył iPhone’a albo przycisk. Wybierz sposób.")
+        XCTAssertEqual(OpenWaysOffer.rowTitle(.polish), "Jestem pod ręką")
+        XCTAssertEqual(OpenWaysOffer.rowLine(.polish), "Ustaw sposób, żeby mnie zawołać.")
         for language in [NotificationLanguage.english, .polish] {
             let words = (OpenWaysOffer.rowTitle(language) + " " + OpenWaysOffer.rowLine(language)).lowercased()
-            for banned in ["siri", "minut", "minute", "easy", "łatw", "quick", "szybk", "faster"] {
+            // No Siri, nothing about ease or minutes, and no promise that he is always there.
+            for banned in ["siri", "minut", "minute", "easy", "łatw", "quick", "szybk", "faster",
+                           "zawsze", "cały czas", "always", "all the time"] {
                 XCTAssertFalse(words.contains(banned), "\(language): \(banned)")
             }
         }
