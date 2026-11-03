@@ -121,9 +121,8 @@ struct IslandElapsedText: View {
     }
 }
 
-/// "VOICE" (or the moment's label) beside the camera, and an orange "LIVE" while Doddy can
-/// hear you (the owner asked to see that it is live; not on the boards). No dot beside it: the
-/// owner asked for it gone (3 Nov 2026); iOS draws its own orange microphone dot, which an app can't hide.
+/// "VOICE" (or the moment's label) beside the camera, and an orange "● LIVE" while Doddy can
+/// hear you (the owner asked to see that it is live; not on the boards).
 struct IslandLabelView: View {
     let scene: IslandScene
 
@@ -132,10 +131,12 @@ struct IslandLabelView: View {
             IslandText(scene.label)
                 .foregroundStyle(Color.islandSecondary)
             if scene.live {
-                IslandText("LIVE")
-                    .foregroundStyle(Color.islandOrange)
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityLabel("Live, Doddy can hear you")
+                HStack(spacing: 3) {
+                    Circle().fill(Color.islandOrange).frame(width: 5, height: 5)
+                    IslandText("LIVE").foregroundStyle(Color.islandOrange)
+                }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("Live, Doddy can hear you")
             }
         }
         .font(.system(size: 9.5, weight: .semibold))
