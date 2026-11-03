@@ -43,6 +43,8 @@ Last updated 2026-11-03, 03:30 UTC: branch `claude/determined-brown-w9ts47` (PR 
 
 **Branch `claude/home-open-ways-row`** (ADR-699, 3 Nov): Home's "Open Doddy faster" card is one slim row ("Jestem pod ręką"), no Siri. Not compiled here; the hosted CI is the first build.
 
+**Branch `claude/open-ways-no-siri`** (ADR-701, 3 Nov): no Siri tile on the ways screen and none in the weekly reminder. Not compiled here; the hosted CI (it runs the UI test) is the first build.
+
 **Not checked by this refresh:** the live ElevenLabs agent's current version, Render's database dashboard, anything on a device.
 
 ## Log, newest first

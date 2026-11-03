@@ -6,30 +6,41 @@ final class OpenDoddyWaysTests: XCTestCase {
         OpenDoddyWays.available(on: OpenDoddyDevice(isPhone: isPhone, supportsControls: controls, actionButton: actionButton))
     }
 
-    func testAnIPhoneWithEverythingShowsAllFourInOrderWithSiriLast() {
-        XCTAssertEqual(ways(), [.backTap, .actionButton, .control, .siri])
+    func testAnIPhoneWithEverythingShowsThreeInOrderAndNoSiri() {
+        XCTAssertEqual(ways(), [.backTap, .actionButton, .control])
     }
 
     func testAnIPhoneWithoutAnActionButtonIsNotOfferedOne() {
-        XCTAssertEqual(ways(actionButton: .no), [.backTap, .control, .siri])
+        XCTAssertEqual(ways(actionButton: .no), [.backTap, .control])
     }
 
     func testAnUnknownModelStillShowsTheActionButtonWayBecauseItMayExist() {
-        XCTAssertEqual(ways(actionButton: .unknown), [.backTap, .actionButton, .control, .siri])
+        XCTAssertEqual(ways(actionButton: .unknown), [.backTap, .actionButton, .control])
     }
 
     func testControlsNeedIOS18() {
-        XCTAssertEqual(ways(controls: false), [.backTap, .actionButton, .siri])
+        XCTAssertEqual(ways(controls: false), [.backTap, .actionButton])
     }
 
     func testAnIPadHasNeitherBackTapNorAnActionButtonEvenIfTheModelSaysYes() {
-        XCTAssertEqual(ways(isPhone: false, actionButton: .yes), [.control, .siri])
+        XCTAssertEqual(ways(isPhone: false, actionButton: .yes), [.control])
         XCTAssertEqual(ways(isPhone: false, controls: false, actionButton: .no), [.siri])
     }
 
-    func testSiriIsAlwaysThereAndIsTheOnlyWayWithNothingToSetUp() {
+    /// ADR-701: Siri is not listed any more; it is only the last resort when nothing else can be
+    /// offered, so the screen is never empty (an iPad without controls).
+    func testSiriIsOnlyTheLastResortSoTheScreenIsNeverEmpty() {
         XCTAssertEqual(OpenDoddyWay.allCases.filter { !$0.needsSetup }, [.siri])
-        XCTAssertTrue(ways(isPhone: false, controls: false, actionButton: .no).contains(.siri))
+        XCTAssertEqual(ways(isPhone: false, controls: false, actionButton: .no), [.siri])
+        for phone in [true, false] {
+            for controls in [true, false] {
+                for button in [ActionButtonSupport.yes, .no, .unknown] {
+                    let offered = ways(isPhone: phone, controls: controls, actionButton: button)
+                    XCTAssertFalse(offered.isEmpty)
+                    if offered != [.siri] { XCTAssertFalse(offered.contains(.siri)) }
+                }
+            }
+        }
     }
 
     func testTheActionButtonStartsWithTheIPhone15Pro() {
