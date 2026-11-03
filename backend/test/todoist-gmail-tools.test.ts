@@ -35,7 +35,7 @@ test("list_todoist_tasks text gives each task's id, says ids are for the two Tod
 
 // ------------------------------------------------------------------ switches start off
 
-test("the three new switches come on with the connection (ADR-563); switched off, the writes and read_email refuse", async () => {
+test("the three new switches are on once the user chose act (ADR-700); switched off, the writes and read_email refuse", async () => {
   rig = await start();
   await connect(rig, "todoist");
   await connect(rig, "gmail");
@@ -50,7 +50,7 @@ test("the three new switches come on with the connection (ADR-563); switched off
   }
   assert.equal(tools.find((t: any) => t.name === "read_email").risk, "read");
   assert.equal(tools.find((t: any) => t.name === "complete_todoist_task").risk, "write");
-  assert.equal(TOOL_COPY.read_email!.blurb, "Reads one email aloud when you ask, the newest that matches. On when you connect the account; switch it off any time.");
+  assert.equal(TOOL_COPY.read_email!.blurb, "Reads one email aloud when you ask, the newest that matches. Off until you choose what Doddy may do with this account; change it any time.");
   assert.match(TOOLKITS.gmail.access, /read one email aloud when you ask/);
 
   const email = await run(rig, "read_email", { query: "from:anna" });

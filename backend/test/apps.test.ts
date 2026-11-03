@@ -233,7 +233,29 @@ test("PUT /v1/tools/access sets an app's switches in bulk: off, read only, read 
   assert.deepEqual([...(await enabledNames(rig))].filter((n) => gmailAll.includes(n)), []);
 });
 
-test("an access choice that can't be honoured changes nothing", async () => {
+test("a fresh connection starts with every tool off until the user chooses (ADR-700)", async () => {
+  rig = await start();
+  const done = await connect(rig, "gmail", undefined, undefined, "unset");
+  assert.equal(done.status, 200, done.text);
+  assert.equal(done.body.toolkit.status, "connected");
+  assert.match(done.body.receipt.summary, /won't use it until you choose/);
+  for (const tool of done.body.toolkit.tools) assert.equal(tool.enabled, false, tool.name);
+  assert.deepEqual([...(await enabledNames(rig))].filter((n) => appTools("gmail").some((t) => t.name === n)), []);
+
+  // Nothing runs, generic or named, until the choice is made.
+  const blocked = await prepare(rig, FIND_IN_APP, { app: "gmail", query: "in:inbox" });
+  assert.equal(blocked.status, 403);
+  assert.equal(blocked.body.error.code, "capability_disabled");
+  assert.equal((await prepare(rig, "check_email", {})).status, 403);
+  assert.equal(rig.provider.executed.length, 0);
+
+  assert.equal((await access(rig, "gmail", "read")).status, 200);
+  assert.equal((await ask(rig, FIND_IN_APP, { app: "gmail", query: "in:inbox" })).status, 200);
+  // Read only: a send is still refused at once.
+  assert.equal((await prepare(rig, "send_email", { to: "a@b.example", subject: "s", body: "b" })).status, 403);
+});
+
+test("an access choice the account can't back changes nothing, or turns on only what the grant covers", async () => {
   rig = await start();
   // Not connected: read or act is refused, and off is fine.
   const refused = await access(rig, "gmail", "read");
@@ -241,13 +263,13 @@ test("an access choice that can't be honoured changes nothing", async () => {
   assert.equal(refused.body.error.code, "not_connected");
   assert.equal((await access(rig, "gmail", "off")).status, 200);
 
-  // Connected with only compose-level reads: "act" needs every tool's grant, so it is refused whole.
-  await connect(rig, "gmail", undefined, "read_compose_only");
-  const before = await enabledNames(rig);
+  // Connected with a grant that covers the reads and drafts but not Gmail changes: "act" turns on what it covers.
+  await connect(rig, "gmail", undefined, "read_compose_only", "unset");
   const act = await access(rig, "gmail", "act");
-  assert.equal(act.status, 403, act.text);
-  assert.equal(act.body.error.code, "permission_insufficient");
-  assert.deepEqual([...(await enabledNames(rig))].sort(), [...before].sort());
+  assert.equal(act.status, 200, act.text);
+  const on = await enabledNames(rig);
+  assert.ok(on.has("check_email"));
+  assert.ok(!on.has("trash_email"), "a tool the grant doesn't cover stays off");
 });
 
 test("access strict bodies, unknown apps, and one user can't change another's", async () => {

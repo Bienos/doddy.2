@@ -87,7 +87,7 @@ final class OnlineAccountsContractTests: XCTestCase {
         let connected = try decode(ToolkitResult.self, "toolkit-result-connected")
         XCTAssertEqual(connected.toolkit.status, .connected)
         XCTAssertEqual(connected.receipt.operation, .connect)
-        XCTAssertTrue(connected.toolkit.tools.allSatisfy(\.enabled), "connecting turns the account's tools on (ADR-563)")
+        XCTAssertTrue(connected.toolkit.tools.allSatisfy { !$0.enabled }, "a fresh connection starts with every tool off until the user chooses (ADR-700)")
 
         let broad = try decode(ToolkitResult.self, "toolkit-result-too-broad")
         XCTAssertEqual(broad.toolkit.status, .permissionInsufficient)
@@ -409,7 +409,7 @@ final class OnlineAccountsModelTests: XCTestCase {
         XCTAssertNil(model.demoAttempt)
         XCTAssertEqual(model.toolkit("gmail")?.status, .connected)
         XCTAssertEqual(model.lastReceipt?.operation, .connect)
-        XCTAssertTrue(model.isEnabled("check_email"), "connecting turns the account's tools on (ADR-563)")
+        XCTAssertFalse(model.isEnabled("check_email"), "a fresh connection starts with every tool off until the user chooses (ADR-700)")
     }
 
     func testASwitchMovesOnlyWhenTheServerSaysSo() async throws {

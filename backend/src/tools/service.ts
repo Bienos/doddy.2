@@ -387,11 +387,11 @@ export class CloudToolsService {
       // A fresh connection never inherits switches from an earlier one.
       await this.store.disableTools(userId, toolNames(id), this.now());
       if (verdict !== "ok") return await done("blocked", blockedSummary(title, verdict), reason);
-      // ADR-563: connecting is the user saying "use this", usually from the Connect card in the
-      // middle of a request, so the account's tools come on with it. ASK-01 is unchanged: every
-      // read still asks, and every send, change or delete still needs a tap on its exact card.
-      for (const name of toolNames(id)) await this.store.setToolEnabled(userId, name, true, this.now());
-      return await done("succeeded", `${title} connected. Doddy can use it now; he still asks before every look and every change.`);
+      // ADR-700 (replaces ADR-563's "tools come on with the connection"): a connection starts with
+      // every tool off, and the user chooses Off, Read only or Read and act for the app
+      // (PUT /v1/tools/access). ASK-01 is unchanged: every read still asks, and every send,
+      // change or delete still needs a tap on its exact card.
+      return await done("succeeded", `${title} connected. Doddy won't use it until you choose what he may do: look only, or look and act.`);
     } catch (error) {
       if (error instanceof AppError) throw error;
       const appError = toAppError(error, title);
@@ -520,21 +520,29 @@ export class CloudToolsService {
   /**
    * One choice per app (ADR-699): Off, Read only, or Read and act. It only sets the app's existing
    * per-tool switches in bulk, so everything those switches already mean still holds, and ASK-01
-   * still asks before every look and every change. Every switch that would go on is checked first
-   * (account connected, grant covers the tool); if any can't, nothing changes.
+   * still asks before every look and every change. Only tools the account can run come on (the
+   * grant may not cover them all); if none can, nothing changes and the reason is returned.
    */
   async setAppAccess(userId: string, body: unknown): Promise<ToolkitResult> {
     const request = parse(AccessRequestSchema, body);
     const id = toolkit(request.app);
     const def = TOOLKITS[id];
-    const { on, off } = toolsForAccess(id, request.mode);
+    const wanted = toolsForAccess(id, request.mode);
+    let on = wanted.on;
+    let off = wanted.off;
     if (on.length > 0) {
       this.requireConfigured(id);
       const row = await this.store.getConnection(userId, id);
-      for (const name of on) {
-        const reason = this.blockReason(row, def, this.requireTool(name));
-        if (reason) throw new AppError(reason.code, { message: reason.message(def.title) });
+      const blocks = on.map((name) => this.blockReason(row, def, this.requireTool(name)));
+      // Only tools the account can really run come on (the grant may not cover them all). If none
+      // can, the account itself is the problem (not connected, expired, wrong grant): refuse, change nothing.
+      const usable = on.filter((_, i) => blocks[i] === null);
+      if (usable.length === 0) {
+        const reason = blocks.find((b) => b !== null)!;
+        throw new AppError(reason.code, { message: reason.message(def.title) });
       }
+      off = [...off, ...on.filter((name) => !usable.includes(name))];
+      on = usable;
     }
     for (const name of off) await this.store.setToolEnabled(userId, name, false, this.now());
     for (const name of on) await this.store.setToolEnabled(userId, name, true, this.now());
