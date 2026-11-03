@@ -30,7 +30,12 @@ final class HomeConversation {
     var needsYou: Bool {
         guard let controller else { return false }
         switch controller.phase {
-        case .failed, .microphoneDenied: return true
+        case .failed:
+            // A drop in the middle of a conversation is said on Home (ADR-687) and opens nothing
+            // by itself, unless something in it waits for a decision: the draft of what Doddy last
+            // heard, or the "Worth keeping?" card. Only the transcript can show those.
+            if !stays(onHome: controller) { return true }
+        case .microphoneDenied: return true
         default: break
         }
         // Every pending action is a card waiting for the user's tap; results are `reminderStatus`
@@ -43,10 +48,25 @@ final class HomeConversation {
         self.controller = controller
     }
 
+    /// What Home says while the held conversation is a drop in the middle that needs nothing from
+    /// the user (ADR-687). It stays until the next conversation starts.
+    var droppedNotice: HomeDropNotice? {
+        guard let controller, stays(onHome: controller) else { return nil }
+        return controller.homeDropNotice
+    }
+
+    /// A drop in the middle that waits on no decision: no draft of what Doddy last heard, no saved
+    /// draft to read back, no "Worth keeping?" card.
+    private func stays(onHome controller: VoiceSessionController) -> Bool {
+        controller.homeDropNotice != nil
+            && controller.recovery == nil && controller.recoverySaved == nil && controller.saveSuggestions == nil
+    }
+
     /// For the transcript: the held conversation when there is something in it to show (live, or
-    /// waiting for the user), so opening the sheet never starts a second one.
+    /// waiting for the user, or a drop Home is telling about), so opening the sheet never starts a
+    /// second one.
     var forTranscript: VoiceSessionController? {
-        guard let controller, controller.isLive || needsYou else { return nil }
+        guard let controller, controller.isLive || needsYou || droppedNotice != nil else { return nil }
         return controller
     }
 

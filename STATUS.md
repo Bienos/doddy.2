@@ -39,6 +39,8 @@ Last updated 2026-11-03, 03:30 UTC: branch `claude/determined-brown-w9ts47` (PR 
 3. Build the app from the default branch and put it on the iPhone: the live servers and voice agent expect it (new shop ids, the partner-link button, the island pulse, everything since the last install). Note here which commit is installed.
 4. Review #161; decide on #166.
 
+**Branch `claude/home-dropped-call`** (ADR-687, 2 Nov, PR #175; owner: the dropped-call sheet moves to Home): a drop in the middle of a conversation is told on Home under a worried Doddy ("Chwila, nie słyszę Cię", button "Połącz ponownie") and no longer opens the transcript by itself unless a draft or "Worth keeping?" waits. **NOT COMPILED and NOT RUN** (no Xcode or Swift in that session); the hosted Mac job and `make test-core` are the first checks. Nothing seen on a device.
+
 **Not checked by this refresh:** the live ElevenLabs agent's current version, Render's database dashboard, anything on a device.
 
 ## Log, newest first
