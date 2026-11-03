@@ -39,6 +39,10 @@
     "en": "Doddy reads your workouts, heart rate, resting heart rate, heart rate variability, sleep and VO2 max from Health to show them to you on its Apple Health screen. Only a short summary of the week leaves this iPhone, and only when you allow it: in Messages when you send it yourself, or to Doddy's voice when you ask and say yes. Doddy keeps none of it and writes nothing to Health. Turn this off in Settings, Connections, Apple Health, or in the Health app.",
     "pt-BR": "O Doddy lê seus treinos, frequência cardíaca, frequência cardíaca em repouso, variabilidade da frequência cardíaca (VFC), sono e VO2 máx. do app Saúde para mostrá-los na tela Apple Health dele. Só um breve resumo da semana sai deste iPhone, e só se você permitir: em Mensagens quando você mesmo o envia, ou para a voz do Doddy quando você pergunta e diz sim. O Doddy não guarda nada e não escreve nada no Saúde. Desative em Ajustes, Conexões, Apple Health, ou no app Saúde."
   },
+  "NSHealthUpdateUsageDescription": {
+    "en": "Doddy never writes to or changes Apple Health. It only asks to read your workouts, heart rate, resting heart rate, heart rate variability, sleep and VO2 max. iOS asks apps for this text because its Health permission screen covers both reading and writing.",
+    "pt-BR": "O Doddy nunca escreve no Saúde nem altera nada lá. Ele só pede para ler seus treinos, frequência cardíaca, frequência cardíaca em repouso, variabilidade da frequência cardíaca (VFC), sono e VO2 máx. O iOS pede este texto aos apps porque a tela de permissões do Saúde abrange leitura e escrita."
+  },
   "NSCameraUsageDescription": {
     "en": "Doddy opens the camera only when you tap Take a photo or Open camera. The photo you keep goes into a note on this iPhone and its text is read here; it is never sent anywhere or saved to your photo library.",
     "pt-BR": "O Doddy abre a câmera só quando você toca em Tirar foto ou Abrir câmera. A foto que você mantém vai para uma nota neste iPhone e o texto dela é lido aqui; ela nunca é enviada a lugar nenhum nem salva na sua fototeca."

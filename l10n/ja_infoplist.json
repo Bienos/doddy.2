@@ -39,6 +39,10 @@
     "en": "Doddy reads your workouts, heart rate, resting heart rate, heart rate variability, sleep and VO2 max from Health to show them to you on its Apple Health screen. Only a short summary of the week leaves this iPhone, and only when you allow it: in Messages when you send it yourself, or to Doddy's voice when you ask and say yes. Doddy keeps none of it and writes nothing to Health. Turn this off in Settings, Connections, Apple Health, or in the Health app.",
     "ja": "Doddyは、ワークアウト、心拍数、安静時心拍数、心拍変動（HRV）、睡眠、VO2最大値をヘルスケアから読み取り、Doddyの「Apple Health」画面に表示します。このiPhoneの外に出るのは週の短いまとめだけで、それもあなたが許可したときだけです。メッセージであなた自身が送るとき、またはあなたが尋ねて「はい」と答えたときにDoddyの音声に渡されます。Doddyは何も保存せず、ヘルスケアに何も書き込みません。オフにするには、設定の「連携」の「Apple Health」か、ヘルスケアAppを使ってください。"
   },
+  "NSHealthUpdateUsageDescription": {
+    "en": "Doddy never writes to or changes Apple Health. It only asks to read your workouts, heart rate, resting heart rate, heart rate variability, sleep and VO2 max. iOS asks apps for this text because its Health permission screen covers both reading and writing.",
+    "ja": "Doddyがヘルスケアに書き込んだり、内容を変更したりすることはありません。読み取りの許可を求めるのは、ワークアウト、心拍数、安静時心拍数、心拍変動（HRV）、睡眠、VO2最大値だけです。ヘルスケアの許可画面は読み取りと書き込みの両方を扱うため、iOSはアプリにこの文章を求めます。"
+  },
   "NSCameraUsageDescription": {
     "en": "Doddy opens the camera only when you tap Take a photo or Open camera. The photo you keep goes into a note on this iPhone and its text is read here; it is never sent anywhere or saved to your photo library.",
     "ja": "Doddyがカメラを開くのは、「写真を撮る」または「カメラを開く」をタップしたときだけです。残した写真はこのiPhone上のメモに入り、その文字はここで読み取られます。どこにも送信されず、写真ライブラリにも保存されません。"
