@@ -49,7 +49,7 @@ fresh; run CI_BUILD_NUMBER=7 DODDY_TEAM_ID=ABCDE12345 DODDY_BUNDLE_ID=com.bienos
 [ "$(count 'DODDY_APP_BUNDLE_IDENTIFIER = com.bienos.doddy;')" = 3 ] || fail "the bundle ID reaches all three targets"
 [ "$(count 'com.bienos.doddy2.dev')" = 0 ] || fail "the placeholder bundle ID is gone"
 
-# Push notifications (ADR-700): on unless the workflow says DODDY_PUSH=0.
+# Push notifications (ADR-701): on unless the workflow says DODDY_PUSH=0.
 fresh; run
 [ "$(count 'DODDY_APP_ENTITLEMENTS = Config/Doddy-Push-AppGroup.entitlements;')" = 3 ] || fail "by default every target gets the push entitlements"
 [ "$(count 'Doddy-AppGroup.entitlements')" = 0 ] || fail "and none keeps the entitlements without push"

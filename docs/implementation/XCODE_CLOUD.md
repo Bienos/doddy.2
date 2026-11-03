@@ -39,7 +39,7 @@ Linux, and `scripts/ci.sh` runs that test.
    local backup file. So builds don't wait as "Missing Compliance". If Doddy ever adds its own or
    non-standard encryption, the key has to change.
 
-3. **Push notifications are on the App ID** (ADR-700). Xcode Cloud's builds carry the push
+3. **Push notifications are on the App ID** (ADR-701). Xcode Cloud's builds carry the push
    entitlements by default (`ci_post_clone.sh`, `DODDY_PUSH`), so developer.apple.com › Identifiers
    › the app's ID must have **Push Notifications** ticked, or signing fails with "doesn't include
    the aps-environment entitlement". Not ready yet? Set `DODDY_PUSH` = `0` in the workflow for now
