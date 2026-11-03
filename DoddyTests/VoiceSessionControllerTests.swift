@@ -649,6 +649,62 @@ final class VoiceReviewFixesTests: XCTestCase {
     }
 }
 
+/// A phone call during a conversation (ADR-696): iOS taking the audio and not giving it back in a
+/// way that can resume ends the conversation as interrupted, never "listening" with a deaf microphone.
+/// The short-interruption resume activates the real audio session, so it is left to a device test.
+/// App-target tests: hosted Mac job only.
+final class CallInterruptionTests: XCTestCase {
+    private typealias Harness = VoiceSessionControllerTests.Harness
+
+    @MainActor
+    func testAnInterruptionMarksTheConversationPaused() async {
+        let t = Harness()
+        defer { t.restore() }
+        t.controller.beginForTesting(link: t.link)
+        t.controller.audioInterruptionForTesting(began: true, shouldResume: false)
+        XCTAssertTrue(t.controller.audioPausedByOtherApp)
+        XCTAssertTrue(t.controller.isLive, "a short interruption may still be resumed")
+        await t.controller.stop()
+        XCTAssertFalse(t.controller.audioPausedByOtherApp, "End stops the wait for iOS")
+    }
+
+    @MainActor
+    func testAnInterruptionThatEndsWithoutResumeEndsTheConversationAsInterrupted() {
+        let t = Harness()
+        defer { t.restore() }
+        t.controller.beginForTesting(link: t.link)
+        t.controller.audioInterruptionForTesting(began: true, shouldResume: false)
+        t.controller.audioInterruptionForTesting(began: false, shouldResume: false)
+
+        XCTAssertEqual(t.controller.sessionEnd, .dropped(.audioInterrupted))
+        let expected = SessionRecovery.status(.dropped(.audioInterrupted), connected: true, language: .current).detail ?? ""
+        XCTAssertEqual(t.controller.phase, .failed(expected))
+        XCTAssertFalse(t.controller.isLive, "the microphone, the island and the gate are freed")
+        XCTAssertFalse(t.controller.audioPausedByOtherApp)
+    }
+
+    @MainActor
+    func testAMediaServicesResetEndsTheConversationAsInterrupted() {
+        let t = Harness()
+        defer { t.restore() }
+        t.controller.beginForTesting(link: t.link)
+        t.controller.mediaServicesResetForTesting()
+        XCTAssertEqual(t.controller.sessionEnd, .dropped(.audioInterrupted))
+        XCTAssertFalse(t.controller.isLive)
+    }
+
+    @MainActor
+    func testAnEndWithoutABeginningChangesNothing() async {
+        let t = Harness()
+        defer { t.restore() }
+        t.controller.beginForTesting(link: t.link)
+        t.controller.audioInterruptionForTesting(began: false, shouldResume: false)
+        XCTAssertTrue(t.controller.isLive)
+        XCTAssertNil(t.controller.sessionEnd)
+        await t.controller.stop()
+    }
+}
+
 /// find_photos and open_camera (ADR-569) with the fake device: a read asks first and the agent
 /// hears counts only; a device without a camera says so instead of asking for a permission.
 final class PhotosAndCameraControllerTests: XCTestCase {

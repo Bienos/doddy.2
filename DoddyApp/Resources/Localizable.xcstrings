@@ -844,6 +844,17 @@
         }
       }
     },
+    "A call rehearsal has the microphone. End it to talk to Doddy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mikrofonu używa próba rozmowy. Zakończ ją, aby porozmawiać z Doddym."
+          }
+        }
+      }
+    },
     "A change in an online app": {
       "extractionState": "manual",
       "localizations": {
@@ -3153,6 +3164,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Przelew do sprawdzenia"
+          }
+        }
+      }
+    },
+    "A voice memo is recording. Stop it to talk to Doddy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nagrywa się notatka głosowa. Zatrzymaj ją, aby porozmawiać z Doddym."
           }
         }
       }
@@ -70609,6 +70631,17 @@
         }
       }
     },
+    "Something else in Doddy has the microphone. Finish it to talk to him.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mikrofonu używa coś innego w Doddym. Zakończ to, aby z nim porozmawiać."
+          }
+        }
+      }
+    },
     "Something in that request wasn't accepted. Nothing was changed.": {
       "extractionState": "manual",
       "localizations": {
@@ -72688,6 +72721,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "停止听写"
+          }
+        }
+      }
+    },
+    "Stop dictating to play this.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przestań dyktować, aby to odtworzyć."
           }
         }
       }
@@ -96585,6 +96629,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "你之前记下了“钥匙在沙发垫下面”。"
+          }
+        }
+      }
+    },
+    "You're dictating in Messages. Stop dictating to talk to Doddy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dyktujesz w Wiadomościach. Przestań dyktować, aby porozmawiać z Doddym."
           }
         }
       }

@@ -125,14 +125,14 @@ camera_access_file=DoddyApp/Infrastructure/Connections/CameraAccess.swift
 # ADR-621: Apple Health is read in one file, and never written.
 health_file=DoddyApp/Infrastructure/Health/HealthReader.swift
 health_only='import HealthKit|HKHealthStore|HKSampleQueryDescriptor|HKQuantityType|HKCategoryType|HKObjectType|HKWorkout'
-health_never='NSHealthUpdateUsageDescription|NSHealthClinicalHealthRecordsShareUsageDescription|NSHealthRequiredReadAuthorizationTypeIdentifiers|HKClinicalType|healthkit\.background-delivery|enableBackgroundDelivery|HKObserverQuery|HKWorkoutSession|HKWorkoutBuilder'
+health_never='NSHealthClinicalHealthRecordsShareUsageDescription|NSHealthRequiredReadAuthorizationTypeIdentifiers|HKClinicalType|healthkit\.background-delivery|enableBackgroundDelivery|HKObserverQuery|HKWorkoutSession|HKWorkoutBuilder'
 health_writes='\.save\(|\.delete\(|deleteObjects|toShare:[[:space:]]*\[[^]]'
 # Never, anywhere: a camera session of Doddy's own, or a write to the user's photo library.
 camera_and_library_never='AVCaptureSession|AVCapturePhotoOutput|AVCaptureVideoDataOutput|AVCaptureMovieFileOutput|PHAssetChangeRequest|PHAssetCreationRequest|UIImageWriteToSavedPhotosAlbum|NSPhotoLibraryAddUsageDescription|performChanges'
 location_tracking='requestAlwaysAuthorization|NSLocationAlways|allowsBackgroundLocationUpdates|startMonitoringSignificantLocationChanges|startMonitoringVisits|CLBackgroundActivitySession|UIBackgroundModes.*location'
 messaging_secrets='(sk-[A-Za-z0-9]{20,}|sk_[A-Za-z0-9]{20,}|AC[0-9a-f]{32}|SK[0-9a-f]{32}|BEGIN (RSA |EC )?PRIVATE KEY|(KEY|TOKEN|SECRET)=[^[:space:]]{8,})'
 secrets='(sk-[A-Za-z0-9]{20,}|sk_[A-Za-z0-9]{20,}|ak_[A-Za-z0-9_-]{20,}|monid_(live|test)_[A-Za-z0-9_-]{16,}|xi-api-key|api[_-]?key[[:space:]]*[:=][[:space:]]*"[^"]+"|BEGIN (RSA |EC )?PRIVATE KEY)'
-allowed_permissions='NSHealthShareUsageDescription|NSAlarmKitUsageDescription|NSMicrophoneUsageDescription|NSSpeechRecognitionUsageDescription|NSCalendarsFullAccessUsageDescription|NSRemindersFullAccessUsageDescription|NSContactsUsageDescription|NSMotionUsageDescription|NSCameraUsageDescription|NSPhotoLibraryUsageDescription|NSLocationWhenInUseUsageDescription|NSFaceIDUsageDescription'
+allowed_permissions='NSHealthShareUsageDescription|NSHealthUpdateUsageDescription|NSAlarmKitUsageDescription|NSMicrophoneUsageDescription|NSSpeechRecognitionUsageDescription|NSCalendarsFullAccessUsageDescription|NSRemindersFullAccessUsageDescription|NSContactsUsageDescription|NSMotionUsageDescription|NSCameraUsageDescription|NSPhotoLibraryUsageDescription|NSLocationWhenInUseUsageDescription|NSFaceIDUsageDescription'
 backend_src=backend/src
 # Drops comment-only lines from `grep -n` output (file:line:   // …, /// …, * …).
 code_only() { grep -vE '^[^:]+:[0-9]+:[[:space:]]*(//|\*|/\*)'; }
@@ -304,6 +304,15 @@ if grep -RInE "$health_never" "${dirs[@]}" project.yml Config | code_only; then
 fi
 if [ -f "$health_file" ] && grep -HnE "$health_writes" "$health_file" | code_only; then
   echo "FAIL: $health_file may not write to or delete from Apple Health (ADR-621)." >&2; status=1
+fi
+# ADR-693: HealthReader asks through requestAuthorization(toShare:read:), and App Store Connect rejects a build
+# that has the call without both Health purpose strings. The Update text is in the partial Info.plist, the Share
+# text is a build setting in project.yml. Their absence is as much a failure as a write.
+if [ -f "$health_file" ]; then
+  grep -q 'NSHealthUpdateUsageDescription' Config/Doddy-Info.plist \
+    || { echo "FAIL: Config/Doddy-Info.plist lacks NSHealthUpdateUsageDescription; App Store Connect rejects the build without it (ADR-693)." >&2; status=1; }
+  grep -q 'NSHealthShareUsageDescription' project.yml \
+    || { echo "FAIL: project.yml lacks NSHealthShareUsageDescription, which HealthReader needs (ADR-621)." >&2; status=1; }
 fi
 if grep -RInE "$camera_and_library_never" "${dirs[@]}" project.yml Config | code_only; then
   echo "FAIL: a capture session or a write to the photo library; Doddy only reads the library and uses iOS's camera screen (ADR-569)." >&2; status=1

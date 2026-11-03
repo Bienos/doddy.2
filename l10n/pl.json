@@ -2555,5 +2555,10 @@
   "Doddy's server can't delete accounts yet, so what it keeps for you is still there.": "Serwer Doddy’ego nie umie jeszcze usuwać kont, więc to, co przechowuje dla ciebie, wciąż tam jest.",
   "Couldn't confirm that what Doddy's server keeps for you was deleted, so your voice account was kept. Check your connection and try again.": "Nie udało się potwierdzić, że to, co serwer Doddy’ego przechowuje dla ciebie, zostało usunięte, więc konto głosowe zostało zachowane. Sprawdź połączenie i spróbuj ponownie.",
   "It also deletes what Doddy's server keeps for you and disconnects your online accounts. Notes on this iPhone stay.": "Usuwa też to, co serwer Doddy’ego przechowuje dla ciebie, i odłącza twoje konta online. Notatki na tym iPhonie zostają.",
-  "This plays after your conversation with Doddy ends.": "Odtworzysz to, gdy skończysz rozmowę z Doddym."
+  "This plays after your conversation with Doddy ends.": "Odtworzysz to, gdy skończysz rozmowę z Doddym.",
+  "A voice memo is recording. Stop it to talk to Doddy.": "Nagrywa się notatka głosowa. Zatrzymaj ją, aby porozmawiać z Doddym.",
+  "You're dictating in Messages. Stop dictating to talk to Doddy.": "Dyktujesz w Wiadomościach. Przestań dyktować, aby porozmawiać z Doddym.",
+  "A call rehearsal has the microphone. End it to talk to Doddy.": "Mikrofonu używa próba rozmowy. Zakończ ją, aby porozmawiać z Doddym.",
+  "Something else in Doddy has the microphone. Finish it to talk to him.": "Mikrofonu używa coś innego w Doddym. Zakończ to, aby z nim porozmawiać.",
+  "Stop dictating to play this.": "Przestań dyktować, aby to odtworzyć."
 }
