@@ -1,6 +1,6 @@
 # Proposal: connect any app to Doddy (bounded generic tools, app context, app memory)
 
-**Status: PROPOSAL. Nothing is implemented, built or tested.** ADR number to be assigned when approved (STATUS.md: next free is 699). Owner instruction of 2026-11-03; supersedes nothing until approved. Related: ADR-073 to 103 (`DECISIONS.md`), `CONNECTED_APPS_PROPOSAL.md`, `docs/trust/config/doddy_rules.yaml` (ASK-01, `memory_policy`).
+**Status (3 Nov 2026): proposal approved by the owner as option B; A0 and A1 are on branch `claude/any-app-connections-proposal` as ADR-699 (backend only: `find_in_app`, `read_from_app` for Gmail and Google Calendar, and `PUT /v1/tools/access`; 466/466 backend tests on Linux). Everything from section 5 on (auto-look, memory, new apps from data, the app's connect sheet, the live voice agent) is NOT built.** **Correction to sections 3 and 7:** they say tools start Off, but since ADR-563 connecting an account switches its tools on (every look still asks, every change still needs a tap). Off by default is not today's behaviour; the access choice lets a user narrow an app afterwards. Whether to restore Off-by-default is an owner decision. Owner instruction of 2026-11-03; supersedes nothing until approved. Related: ADR-073 to 103 (`DECISIONS.md`), `CONNECTED_APPS_PROPOSAL.md`, `docs/trust/config/doddy_rules.yaml` (ASK-01, `memory_policy`).
 
 ## 1. What the owner asked for
 

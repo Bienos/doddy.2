@@ -3,6 +3,7 @@ import { type CompleteRequest, CompleteRequestSchema, type ConnectionReason, typ
 import type { Limits } from "../config.js";
 import { AppError, ProviderError } from "../errors.js";
 import { argumentDigest, UsageLimiter } from "../policy.js";
+import { AccessRequestSchema, type AppAccess, isAppsTool, toolsForAccess, translateAppsCall } from "./apps.js";
 import { AskGate, type AskBinding, WEB_ACCOUNT } from "./askFirst.js";
 import { CLEANUP_RETRY, type ConnectionRow, type QueuedCleanup, type Store } from "../store.js";
 import { isSupportedTimeZone } from "../time.js";
@@ -516,6 +517,32 @@ export class CloudToolsService {
     return { toolkit: await this.view(userId, tool.toolkit), receipt };
   }
 
+  /**
+   * One choice per app (ADR-699): Off, Read only, or Read and act. It only sets the app's existing
+   * per-tool switches in bulk, so everything those switches already mean still holds, and ASK-01
+   * still asks before every look and every change. Every switch that would go on is checked first
+   * (account connected, grant covers the tool); if any can't, nothing changes.
+   */
+  async setAppAccess(userId: string, body: unknown): Promise<ToolkitResult> {
+    const request = parse(AccessRequestSchema, body);
+    const id = toolkit(request.app);
+    const def = TOOLKITS[id];
+    const { on, off } = toolsForAccess(id, request.mode);
+    if (on.length > 0) {
+      this.requireConfigured(id);
+      const row = await this.store.getConnection(userId, id);
+      for (const name of on) {
+        const reason = this.blockReason(row, def, this.requireTool(name));
+        if (reason) throw new AppError(reason.code, { message: reason.message(def.title) });
+      }
+    }
+    for (const name of off) await this.store.setToolEnabled(userId, name, false, this.now());
+    for (const name of on) await this.store.setToolEnabled(userId, name, true, this.now());
+    const label: Record<AppAccess, string> = { off: "off", read: "read only", act: "read and act" };
+    const receipt = await this.receipt(userId, id, "switch", null, "succeeded", `${def.title} access set to ${label[request.mode]}.`, null, null);
+    return { toolkit: await this.view(userId, id), receipt };
+  }
+
   // ---------------------------------------------------------------- prepare / run
 
   /**
@@ -528,6 +555,12 @@ export class CloudToolsService {
    */
   async prepare(userId: string, body: unknown): Promise<PrepareResult> {
     const request = parse(PrepareRequestSchema, body);
+    if (isAppsTool(request.tool)) {
+      // A1 (ADR-699): a generic call becomes the one reviewed read it maps to, and everything below
+      // (switch, grants, ASK-01 approval bound to the translated arguments, caps) applies to that.
+      const call = translateAppsCall(request.tool, request.arguments);
+      return { ...(await this.prepare(userId, { ...request, tool: call.tool, arguments: call.arguments })), tool: request.tool };
+    }
     if (isWebTool(request.tool)) return this.prepareWebSearch(userId, request.tool, request.arguments);
     if (isClaudeTool(request.tool)) return this.prepareClaude(userId, request.tool, request.arguments);
     const tool = this.requireTool(request.tool);
@@ -706,6 +739,10 @@ export class CloudToolsService {
 
   async run(userId: string, body: unknown): Promise<RunResult> {
     const request = parse(RunRequestSchema, body);
+    if (isAppsTool(request.tool)) {
+      const call = translateAppsCall(request.tool, request.arguments);
+      return { ...(await this.run(userId, { ...request, tool: call.tool, arguments: call.arguments })), tool: request.tool };
+    }
     if (isWebTool(request.tool)) return this.runWebSearch(userId, request.tool, request);
     if (isClaudeTool(request.tool)) return this.runClaude(userId, request.tool, request);
     const tool = this.requireTool(request.tool);
