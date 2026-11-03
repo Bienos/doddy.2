@@ -108,6 +108,8 @@ final class ActionStatusTextTests: XCTestCase {
                 XCTAssertNil(SessionRecovery.homeNotice(end, connected: true, language: language), "\(end)")
             }
             XCTAssertNil(SessionRecovery.homeNotice(.dropped(.offline), connected: true, language: language), "offline has its own note card")
+            XCTAssertNil(SessionRecovery.homeNotice(.dropped(.audioInterrupted), connected: true, language: language),
+                         "a phone call took the microphone: not \"the connection dropped\"")
             XCTAssertNil(SessionRecovery.homeNotice(.dropped(.connectionLost), connected: false, language: language), "never connected: Couldn't connect")
         }
     }
