@@ -26,14 +26,28 @@ echo "ui-b:$(printf ' %s' $UI_SHARD_B)"
 echo "ui-c (the rest):${rest:- NONE}"
 [ -n "$rest" ] || { echo "FAIL: ui-c would run no tests"; fail=1; }
 
-# xcodebuild runs a part's classes in alphabetical order. MemoryBaselineTests' island test needs a
-# warm simulator (a cold widget-extension launch failed it twice as the first test, see
-# scripts/ui_test_shards.sh), so no part may start with it.
+# The classes that drive the real Live Activity in SpringBoard need a warm simulator (a cold
+# widget-extension launch failed two of them as the first test on a fresh Mac, see
+# scripts/ui_test_shards.sh). Find every such class from the sources, so a new one can't be missed.
+found=""
+for f in DoddyUITests/*.swift; do
+  if grep -qi 'springboard' "$f"; then
+    for c in $(grep -hoE '^(final )?class [A-Za-z0-9_]+: XCTestCase' "$f" | sed -E 's/^(final )?class ([A-Za-z0-9_]+):.*/\2/'); do found="$found $c"; done
+  fi
+done
+for c in $found; do
+  case " $UI_SPRINGBOARD_CLASSES " in *" $c "*) ;; *) echo "FAIL: $c uses SpringBoard but is not in UI_SPRINGBOARD_CLASSES"; fail=1 ;; esac
+done
+for c in $UI_SPRINGBOARD_CLASSES; do
+  printf '%s\n' "$all" | grep -qx "$c" || { echo "FAIL: $c is in UI_SPRINGBOARD_CLASSES but is not a class in DoddyUITests"; fail=1; }
+done
+
+# xcodebuild runs a part's classes in alphabetical order, so no part may start with one of them.
 for part in "ui-a:$UI_SHARD_A" "ui-b:$UI_SHARD_B" "ui-c:$rest"; do
   name=${part%%:*}; first=$(printf '%s\n' ${part#*:} | sort | head -1)
-  if [ "$first" = "MemoryBaselineTests" ]; then
-    echo "FAIL: $name would start with MemoryBaselineTests; it needs other tests to run before it"; fail=1
-  fi
+  case " $UI_SPRINGBOARD_CLASSES " in
+    *" $first "*) echo "FAIL: $name would start with $first, a SpringBoard test that needs other tests to run before it"; fail=1 ;;
+  esac
 done
 [ "$fail" -eq 0 ] && echo "ok: $(printf '%s\n' "$all" | wc -l | tr -d ' ') UI test classes, each run in exactly one part"
 exit "$fail"
