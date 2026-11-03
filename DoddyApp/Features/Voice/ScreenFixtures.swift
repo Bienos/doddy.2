@@ -5,7 +5,7 @@ import Foundation
 import SwiftUI
 import UIKit
 
-/// Real screens with sample data, for the screens run (ADR-694). `-screenFixture <name>` on the
+/// Real screens with sample data, for the screens run (ADR-696). `-screenFixture <name>` on the
 /// command line makes a Debug build put one state on screen that the offline simulator can't reach
 /// by itself, so `DoddyUITests/ScreenFixtureTests` can photograph the app's own views:
 ///
@@ -83,7 +83,7 @@ enum ScreenFixtures {
     private static func lines(_ id: String) -> (user: String, doddy: String) {
         switch id {
         case "memory": ("Remember the gate code at Ola's is 4821.", "Got it. Tap Save if that's right.")
-        case "event": ("Put the dentist in on Thursday at four.", "Thursday, 16:00 to 17:00. Tap Add if that's right.")
+        case "event": ("Put the dentist in the day after tomorrow at four.", "The day after tomorrow, 16:00 to 17:00. Tap Add if that's right.")
         case "reminder": ("Remind me to call Mum at six tomorrow.", "Tomorrow at 18:00. Tap Add if that's right.")
         case "timer": ("Set a timer for eight minutes.", "Eight minutes for the pasta. Tap Start.")
         case "alarm": ("Wake me at seven on weekdays.", "Weekdays at 07:00. Tap Set alarm.")
@@ -91,11 +91,11 @@ enum ScreenFixtures {
         case "blik": ("Send Ania fifty zloty for the pizza.", "Here's the transfer. You send it in your bank app.")
         case "email": ("Email the landlord about the boiler.", "Here's the email. Nothing is sent until you tap.")
         case "presentation": ("Make me a short deck for the offsite.", "Six slides. Tap Make presentation.")
-        case "plan": ("I'm at Mum's for lunch on Saturday, sort it out.", "Here's what I'd do. Untick anything you don't want.")
+        case "plan": ("I'm at Mum's for lunch in three days, sort it out.", "Here's what I'd do. Untick anything you don't want.")
         case "ingredients": ("Add what I need for pancakes to Shopping.", "Untick what you already have.")
         case "parking": ("I parked on level two, row C.", "Save your parking spot here?")
-        case "changeEvent": ("Move the dentist to Friday at ten.", "Here's the change. Nothing happens until you tap.")
-        case "deleteEvent": ("Cancel my dentist on Thursday.", "This can't be undone from Doddy. Tap Delete.")
+        case "changeEvent": ("Move the dentist a day later.", "Here's the change. Nothing happens until you tap.")
+        case "deleteEvent": ("Cancel my dentist the day after tomorrow.", "This can't be undone from Doddy. Tap Delete.")
         case "map": ("Show me where the Biedronka is.", "Open it in Maps?")
         case "shortcut": ("Run my Good night shortcut.", "The Shortcuts app opens for a moment.")
         case "camera": ("Take a photo of the receipt.", "Open the camera?")

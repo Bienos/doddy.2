@@ -1,7 +1,7 @@
 #if DEBUG
 import Foundation
 
-/// Sample data for the screens run (ADR-694), copied from the repository's contract fixtures
+/// Sample data for the screens run (ADR-696), copied from the repository's contract fixtures
 /// (`schemas/fixtures/deals_search_v1.json` and `errand_result_shopping_v1.json`) by
 /// `scripts/gen_screen_fixture_data.py`. Made-up shops, prices and dates (24 Oct 2026): nothing here
 /// is a real offer. Debug builds only.

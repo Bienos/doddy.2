@@ -500,7 +500,7 @@ final class VoiceSessionController {
         phase = .speaking
     }
 
-    /// Test seam only (ADR-694, the screens run): a line of the transcript, as the provider's own
+    /// Test seam only (ADR-696, the screens run): a line of the transcript, as the provider's own
     /// events add one, so a photographed conversation shows what was said before its card.
     func addLineForTesting(_ text: String, fromUser: Bool) {
         lines.append(Line(fromUser: fromUser, text: text))

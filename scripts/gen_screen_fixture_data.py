@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Rebuilds DoddyApp/Features/Voice/ScreenFixtureData.swift from the contract fixtures (ADR-694)."""
+"""Rebuilds DoddyApp/Features/Voice/ScreenFixtureData.swift from the contract fixtures (ADR-696)."""
 import json, pathlib, sys
 
 root = pathlib.Path(__file__).resolve().parent.parent
@@ -16,7 +16,7 @@ def lit(name, obj):
 out = '''#if DEBUG
 import Foundation
 
-/// Sample data for the screens run (ADR-694), copied from the repository's contract fixtures
+/// Sample data for the screens run (ADR-696), copied from the repository's contract fixtures
 /// (`schemas/fixtures/deals_search_v1.json` and `errand_result_shopping_v1.json`) by
 /// `scripts/gen_screen_fixture_data.py`. Made-up shops, prices and dates (24 Oct 2026): nothing here
 /// is a real offer. Debug builds only.

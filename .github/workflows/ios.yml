@@ -23,13 +23,13 @@ on:
   workflow_dispatch:
     inputs:
       only:
-        description: "all: the full run. island: only the Dynamic Island's tests and pictures, about 15-20 minutes (ADR-618). screens: a picture of each screen, about 40-60 minutes (ADR-693). fixtures: only the sample-state pictures of the screens run (ADR-694), about 30 minutes. None of the last three is enough for a merge."
+        description: "all: the full run. island: only the Dynamic Island's tests and pictures, about 15-20 minutes (ADR-618). screens: a picture of each screen, about 40-60 minutes (ADR-695). fixtures: only the sample-state pictures of the screens run (ADR-696), about 30 minutes. None of the last three is enough for a merge."
         type: choice
         options: [all, island, screens, fixtures]
         default: all
 
 concurrency:
-  # The quick island run (ADR-618) and the screens run (ADR-693) have their own groups, so they don't cancel a full run of the same branch.
+  # The quick island run (ADR-618) and the screens run (ADR-695) have their own groups, so they don't cancel a full run of the same branch.
   group: ios-${{ github.ref }}-${{ inputs.only || 'all' }}
   cancel-in-progress: true
 
@@ -219,7 +219,7 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
-  # The screens run (ADR-693), by hand with only=screens: one build, then only
+  # The screens run (ADR-695), by hand with only=screens: one build, then only
   # DoddyUITests/ScreenAtlasTests, which keeps a picture of each screen it reaches. Pictures only:
   # it verifies nothing about the app's behaviour and is no substitute for the full run.
   screens:

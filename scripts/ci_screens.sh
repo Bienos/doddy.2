@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # The screens run (owner, 2 Nov 2026: "Do", after asking for real pictures of every screen instead
-# of mockups; ADR-693): builds the app once and runs only DoddyUITests/ScreenAtlasTests, which walks
+# of mockups; ADR-695): builds the app once and runs only DoddyUITests/ScreenAtlasTests, which walks
 # to each screen on the simulator and keeps a picture of it in build/screen-atlas/ (and an index.tsv
 # of reached and missed screens), then ScreenFixtureTests, which launches the app with sample states
-# (ADR-694) for what the offline simulator can't reach. The attachments in the .xcresult are exported too, in case the
+# (ADR-696) for what the offline simulator can't reach. The attachments in the .xcresult are exported too, in case the
 # simulator couldn't write to build/. It checks nothing about how the app behaves: before a merge the
 # full run (scripts/ci.sh) still has to pass. macOS with Xcode and XcodeGen only.
 set -euo pipefail

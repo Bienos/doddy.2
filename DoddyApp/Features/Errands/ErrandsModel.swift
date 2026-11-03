@@ -59,7 +59,7 @@ final class ErrandsModel {
     func errand(_ id: UUID) -> StoredErrand? { errands.first { $0.id == id } }
 
     #if DEBUG
-    /// Test seam only (ADR-694, the screens run): tasks finished since the user last looked, in
+    /// Test seam only (ADR-696, the screens run): tasks finished since the user last looked, in
     /// memory only, so Home shows its "Done" card.
     func seedUnseenForTesting(_ ids: [UUID]) {
         unseenFinished = ids

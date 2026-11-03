@@ -61,7 +61,7 @@ struct DoddyApp: App {
         _store = State(initialValue: store)
         _noteReminders = State(initialValue: noteReminders)
         #if DEBUG
-        // The screens run (ADR-694): one sample state on screen when the launch argument asks for it.
+        // The screens run (ADR-696): one sample state on screen when the launch argument asks for it.
         ScreenFixtures.startIfRequested(store: store)
         #endif
         let profiles = ProfileStore(environment: environment)

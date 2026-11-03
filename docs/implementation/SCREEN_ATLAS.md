@@ -1,4 +1,4 @@
-# Pictures of every screen (ADR-693)
+# Pictures of every screen (ADR-695)
 
 Owner, 2 Nov 2026, after a capability map drawn as HTML mockups from the code: "Make sure these mock ups are real", then "Do" to a UI test that photographs every screen in the hosted Mac build.
 
@@ -7,7 +7,7 @@ Owner, 2 Nov 2026, after a capability map drawn as HTML mockups from the code: "
 ## How to run it
 
 - **On GitHub:** Actions › iOS build and tests › Run workflow › branch › `only: screens`. About 40 to 60 minutes. The pictures are in the run's `screen-atlas` artifact (kept 30 days): `build/screen-atlas/*.png`, `index.tsv`, and a second copy exported from the `.xcresult` in `screen-atlas-attachments/`.
-- **Only the sample-state pictures (ADR-694):** `only: fixtures` runs `ScreenFixtureTests` alone (about 30 minutes), for when only the fixtures changed. The script reads `SCREENS_ONLY=fixtures`.
+- **Only the sample-state pictures (ADR-696):** `only: fixtures` runs `ScreenFixtureTests` alone (about 30 minutes), for when only the fixtures changed. The script reads `SCREENS_ONLY=fixtures`.
 - **On a Mac:** `scripts/ci_screens.sh`, then open `build/screen-atlas/`.
 - **Anywhere else:** every `ScreenAtlasTests` test skips unless the test runner sees `DODDY_SCREEN_ATLAS=1`, so the full run (`scripts/ci.sh`) gets no slower.
 
@@ -40,7 +40,7 @@ Example text typed by the test (the notes, the list) is made up. Starting Focus 
 - `scripts/ci_screens.sh`: the run.
 - `.github/workflows/ios.yml`: the `screens` choice and job.
 
-## Sample states (ADR-694)
+## Sample states (ADR-696)
 
 `ScreenAtlasTests` photographs what the offline simulator reaches. `ScreenFixtureTests` photographs the rest, from a Debug build launched with `-screenFixture <name>` (`DoddyApp/Features/Voice/ScreenFixtures.swift`, all `#if DEBUG`, one call in `DoddyApp.init`):
 
@@ -52,6 +52,13 @@ Example text typed by the test (the notes, the list) is made up. Starting Focus 
 | `errand` | Home's "Done" card, Tasks, a task's three picks | `test7cShopping` | `errand_result_shopping_v1.json` (Polish sample task) |
 | `report` | the two pages of the shopping report PDF, full screen | `test7cShopping` | the same result, written by the app's own `ShoppingReport` |
 | `island:<state>` | the real voice Live Activity in one real state (connecting, listening, thinking, speaking, muted, confirm, text, transfer, document, translator): iOS draws the compact island on the Home Screen, the expanded island (a long press) and the Lock Screen card; three whole-screen pictures each | `test8aNativeIsland`, `test8bNativeIsland` | none: the activity has no conversation behind it |
+
+**What the runs showed (2 Nov, hosted Mac, nothing seen on a device):**
+
+- The screens run on commit 26254d62 (41524238017) kept all 94 walk screens and the shopping, Tasks, picks and report pictures. All 20 cards stopped at the voice consent screen and the Deals visit showed only the form; the cards now launch with `-voice.providerConsent.elevenlabs.v1 YES` (a launch argument, held in memory, never saved) and the Deals visit scrolls to the answer.
+- The `only: fixtures` run on 22d8d860 (41539601647) reached all 20 cards, the Deals answer (three pictures), the basket and all ten island states. The first island pictures (41527612593) were blank: the activity is now requested directly, iOS's answer is written on the app's screen and kept in `index.tsv`'s third column, and the test waits 30 s (first state) or 12 s for the widget's card. The Lock Screen pictures carry iOS's own first-use question, "Allow Live Activities from Doddy?"; nobody answers it in the run.
+- The basket picture was marked missed only because the test waited for a button in a lower section; it now waits for the Basket screen.
+- The sample sentences around the cards no longer name weekdays, because the dates in a card count from the day of the run.
 
 Not covered yet: the translator screens, the learning cards, receipts, the leave-by card (needs a Maps lookup), a note reminder card, the Home Screen, Lock Screen and StandBy widgets, and the focus, stopwatch, shopping, call and recording Live Activities (the widget extension's own views; the voice activity above is the only one with a fixture).
 

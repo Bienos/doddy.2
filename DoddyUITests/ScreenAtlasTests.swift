@@ -1,6 +1,6 @@
 import XCTest
 
-/// Pictures of Doddy's screens (ADR-693), for the owner's capability map: the real app on the
+/// Pictures of Doddy's screens (ADR-695), for the owner's capability map: the real app on the
 /// simulator, not mockups. It checks nothing about how a screen behaves. Each visit starts the app
 /// fresh, walks to one screen, waits for it to settle and keeps a picture of the whole simulator
 /// screen. A screen it can't reach is kept as "missed-…" with whatever was on screen, and listed
@@ -17,7 +17,7 @@ final class ScreenAtlasTests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = true
         try XCTSkipUnless(ProcessInfo.processInfo.environment["DODDY_SCREEN_ATLAS"] == "1",
-                          "Only in the screens run (scripts/ci_screens.sh, ADR-693)")
+                          "Only in the screens run (scripts/ci_screens.sh, ADR-695)")
     }
 
     /// The repository's build/screen-atlas/, found from this file's path, as IslandScreenshotTests does.

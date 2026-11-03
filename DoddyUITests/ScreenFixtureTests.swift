@@ -1,7 +1,7 @@
 import XCTest
 
 /// The screens the offline simulator can't reach on its own, photographed with sample data
-/// (ADR-694): conversation cards, "Cheapest this week" with an answer, the basket, a finished
+/// (ADR-696): conversation cards, "Cheapest this week" with an answer, the basket, a finished
 /// shopping task with its three picks, Home's shopping cards and the report's pages. Each visit
 /// launches a Debug build with `-screenFixture <name>` (DoddyApp/Features/Voice/ScreenFixtures.swift),
 /// waits for the screen and keeps a picture of the whole simulator screen, as ScreenAtlasTests does,
@@ -14,7 +14,7 @@ final class ScreenFixtureTests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = true
         try XCTSkipUnless(ProcessInfo.processInfo.environment["DODDY_SCREEN_ATLAS"] == "1",
-                          "Only in the screens run (scripts/ci_screens.sh, ADR-694)")
+                          "Only in the screens run (scripts/ci_screens.sh, ADR-696)")
     }
 
     private static let folder = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
@@ -130,7 +130,9 @@ final class ScreenFixtureTests: XCTestCase {
         if !basket.isHittable { _ = app.reveal(basket, maxSteps: 12) }
         guard basket.isHittable else { return false }
         basket.tap()
-        return see(app.descendants(matching: .any)["basket.share"], 10)
+        // The Basket screen itself (the 2 Nov picture was the real Basket, but this waited for a button
+        // lower down, in a section a Form doesn't build until it scrolls in).
+        return see(app.navigationBars["Basket"], 10)
     }
 
     @MainActor
