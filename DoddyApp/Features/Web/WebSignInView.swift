@@ -9,7 +9,9 @@ struct WebSignInScreen: View {
         makeClient: { await WebLinkClientFactory.ready() },
         renewClient: { await WebLinkClientFactory.renewed() },
         // ADR-700: Apple and Google open in the system sign-in sheet, as Connected Apps do.
-        authenticator: SystemWebAuthenticator())
+        authenticator: SystemWebAuthenticator(),
+        // ADR-701: this iPhone's own device ID, so the server knows which iPhone uses which account.
+        deviceID: { DeviceSession.deviceID() })
 
     var body: some View {
         WebSignInView(model: model)
@@ -28,6 +30,9 @@ struct WebSignInView: View {
             } footer: {
                 Text("Open Doddy's web address in a browser and type the code there. It works once, for five minutes. Doddy will never ask you to read it out or send it to anyone.")
             }
+
+            // ADR-701: this iPhone using an account made on the web (or another iPhone's).
+            WebDeviceAccountSection(model: model)
 
             // ADR-700: Apple and Google as a second way in on the web. Hidden when the server offers neither.
             WebSignInMethodsSection(model: model)
@@ -49,10 +54,12 @@ struct WebSignInView: View {
         }
         .navigationTitle("Doddy on the web")
         .task {
+            await model.refreshDeviceAccount()
             await model.refreshBrowsers()
             await model.refreshMethods()
         }
         .refreshable {
+            await model.refreshDeviceAccount()
             await model.refreshBrowsers()
             await model.refreshMethods()
         }
@@ -105,6 +112,105 @@ struct WebSignInView: View {
                     busy: model.signingOut.contains(session.id),
                     signOut: { Task { await model.signOut(session.id) } })
             }
+        }
+    }
+}
+
+/// ADR-701: which account this iPhone uses. "Sign in with Google" switches this iPhone to the account
+/// of that Google sign-in (made on the web, or another iPhone's); "Use this iPhone's own account" goes
+/// back. Nothing moves between accounts. Hidden when the server offers neither Google nor Apple.
+private struct WebDeviceAccountSection: View {
+    let model: WebSignInModel
+
+    var body: some View {
+        if !model.joinProviders.isEmpty || model.deviceAccount.map({ if case .joined = $0 { true } else { false } }) == true {
+            Section {
+                if case .joined(let account) = model.deviceAccount {
+                    VStack(alignment: .leading, spacing: 6) {
+                        switch account.provider {
+                        case .google: Text("This iPhone uses your Doddy account from Google.")
+                        case .apple: Text("This iPhone uses your Doddy account from Apple.")
+                        }
+                        HStack(spacing: 4) {
+                            Text("Since")
+                            Text(account.since, format: .dateTime.day().month().year())
+                        }
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                        .accessibilityElement(children: .combine)
+                    }
+                    Button {
+                        Task { await model.leaveJoinedAccount() }
+                    } label: {
+                        if model.leaving { ProgressView() } else { Text("Use this iPhone's own account") }
+                    }
+                    .disabled(model.leaving)
+                    .accessibilityIdentifier("web.leaveAccount")
+                } else {
+                    ForEach(model.joinProviders, id: \.self) { provider in
+                        Button {
+                            Task { await model.joinAccount(with: provider) }
+                        } label: {
+                            if model.joining == provider {
+                                HStack(spacing: 12) {
+                                    ProgressView()
+                                    Text("Opening the sign-in…")
+                                }
+                            } else {
+                                switch provider {
+                                case .google: Text("Sign in with Google")
+                                case .apple: Text("Sign in with Apple")
+                                }
+                            }
+                        }
+                        .disabled(model.joining != nil)
+                        .accessibilityIdentifier("web.join.\(provider.rawValue)")
+                    }
+                }
+                if let outcome = model.joinOutcome {
+                    WebJoinOutcomeText(outcome: outcome)
+                        .accessibilityIdentifier("web.joinOutcome")
+                }
+            } header: {
+                Text("Your account from the web")
+            } footer: {
+                Text("Made a Doddy account on the web with Google or Apple? Sign in with it here and this iPhone uses that account. What this iPhone's own account keeps on Doddy's server stays there; you can switch back. Notes on this iPhone stay on this iPhone.")
+            }
+        }
+    }
+}
+
+private struct WebJoinOutcomeText: View {
+    let outcome: WebSignInModel.JoinOutcome
+
+    var body: some View {
+        switch outcome {
+        case .joined:
+            Text("Done. This iPhone now uses that account.")
+                .foregroundStyle(Theme.secondaryText)
+        case .joinedRenewPending:
+            Text("Done on Doddy's server. This iPhone switches the next time it connects.")
+                .foregroundStyle(Theme.secondaryText)
+        case .own:
+            Text("That is already this iPhone's own account. Nothing changed.")
+                .foregroundStyle(Theme.secondaryText)
+        case .notLinked:
+            Text("That account has no Doddy account yet. Make one on Doddy's web page first, or use Link below to add it to this iPhone's account.")
+                .foregroundStyle(Theme.error)
+        case .canceled:
+            Text("Sign-in was cancelled. Nothing changed.")
+                .foregroundStyle(Theme.secondaryText)
+        case .busy:
+            Text("Too many tries. Wait a few minutes, then try again.")
+                .foregroundStyle(Theme.error)
+        case .failed:
+            Text("That sign-in didn't finish. Nothing changed. Try again.")
+                .foregroundStyle(Theme.error)
+        case .problem(let problem):
+            WebProblemText(problem: problem)
+        case .left:
+            Text("This iPhone uses its own account again.")
+                .foregroundStyle(Theme.secondaryText)
         }
     }
 }
@@ -234,7 +340,7 @@ private struct WebLinkOutcomeText: View {
         case .busy:
             Text("Too many tries. Wait a few minutes, then try again.")
                 .foregroundStyle(Theme.error)
-        case .failed:
+        case .failed, .notLinked:
             Text("Linking didn't finish. Nothing changed. Try again.")
                 .foregroundStyle(Theme.error)
         }

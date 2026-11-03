@@ -57,9 +57,40 @@ public final class WebSignInModel {
     /// Linked sign-ins being removed right now.
     public private(set) var unlinking: Set<UUID> = []
 
+    /// ADR-701: which account this iPhone uses (nil: not known yet).
+    public enum DeviceAccountState: Equatable, Sendable {
+        case own
+        case joined(WebJoinedAccount)
+    }
+    public private(set) var deviceAccount: DeviceAccountState?
+    /// Which "Sign in with …" buttons to offer (a guest iPhone reads this too). Empty: none.
+    public private(set) var joinProviders: [WebSignInProvider] = []
+    /// The provider whose "Sign in with …" sheet is open.
+    public private(set) var joining: WebSignInProvider?
+    public private(set) var joinOutcome: JoinOutcome?
+    public private(set) var leaving = false
+
+    /// What signing in to an account with Google or Apple did, as the server said it.
+    public enum JoinOutcome: Equatable, Sendable {
+        /// This iPhone now uses that account (its session was renewed).
+        case joined(WebSignInProvider)
+        /// That was this iPhone's own account already.
+        case own(WebSignInProvider)
+        /// Joined on the server, but the new session couldn't be fetched yet: it comes at the next sign-in.
+        case joinedRenewPending(WebSignInProvider)
+        case notLinked
+        case canceled
+        case busy
+        case failed
+        case problem(Problem)
+        /// Back to this iPhone's own account.
+        case left
+    }
+
     private let makeClient: @Sendable () async -> (any WebLinkClient)?
     private let renewClient: @Sendable () async -> (any WebLinkClient)?
     private let authenticator: (any WebAuthenticator)?
+    private let deviceID: @Sendable () -> String?
     private var client: (any WebLinkClient)?
 
     /// `makeClient` signs the phone in first if needed; `renewClient` gets a fresh session after
@@ -68,11 +99,96 @@ public final class WebSignInModel {
     public init(
         makeClient: @escaping @Sendable () async -> (any WebLinkClient)?,
         renewClient: @escaping @Sendable () async -> (any WebLinkClient)?,
-        authenticator: (any WebAuthenticator)? = nil
+        authenticator: (any WebAuthenticator)? = nil,
+        deviceID: @escaping @Sendable () -> String? = { nil }
     ) {
         self.makeClient = makeClient
         self.renewClient = renewClient
         self.authenticator = authenticator
+        self.deviceID = deviceID
+    }
+
+    // MARK: - This iPhone using another account (ADR-701)
+
+    public func refreshDeviceAccount() async {
+        guard let id = deviceID() else { return }
+        if authenticator != nil, case .success(let providers) = await perform({ client throws(WebLinkError) in try await client.signInProviders() }) {
+            joinProviders = providers
+        }
+        switch await perform({ client throws(WebLinkError) in try await client.deviceAccount(deviceID: id) }) {
+        case .success(let joined): deviceAccount = joined.map(DeviceAccountState.joined) ?? .own
+        case .failure: break // shown as before: nothing claimed
+        }
+    }
+
+    /// "Sign in with Google" on the iPhone: proves the account in the system sheet, then the server
+    /// confirms with this iPhone's own session, and the session is renewed into that account.
+    public func joinAccount(with provider: WebSignInProvider) async {
+        guard joining == nil, let authenticator, let id = deviceID() else { return }
+        joining = provider
+        joinOutcome = nil
+        defer { joining = nil }
+        let ticket: WebLinkTicket
+        switch await perform({ client throws(WebLinkError) in try await client.joinTicket(for: provider) }) {
+        case .failure(let problem):
+            joinOutcome = .problem(problem)
+            return
+        case .success(let t): ticket = t
+        }
+        let end: WebSheetEnd
+        do throws(WebAuthenticationError) {
+            end = ticket.end(of: try await authenticator.authenticate(url: ticket.url, callbackScheme: ticket.callbackScheme))
+        } catch {
+            end = .done(error == .canceled ? .canceled : .failed)
+        }
+        guard case .joinConfirm(let code) = end else {
+            if case .done(let outcome) = end {
+                switch outcome {
+                case .notLinked: joinOutcome = .notLinked
+                case .canceled: joinOutcome = .canceled
+                case .busy: joinOutcome = .busy
+                default: joinOutcome = .failed
+                }
+            } else {
+                joinOutcome = .failed
+            }
+            return
+        }
+        switch await perform({ client throws(WebLinkError) in try await client.join(code: code, deviceID: id) }) {
+        case .failure(let problem):
+            joinOutcome = problem == .unreadable ? .failed : .problem(problem)
+        case .success(.own(let p)):
+            joinOutcome = .own(p)
+        case .success(.joined(let p)):
+            // The server now gives this iPhone that account: fetch the new session, then read it back.
+            if let renewed = await renewClient() {
+                client = renewed
+                joinOutcome = .joined(p)
+            } else {
+                joinOutcome = .joinedRenewPending(p)
+            }
+            await refreshDeviceAccount()
+            await refreshBrowsers()
+            await refreshMethods()
+        }
+    }
+
+    /// "Use this iPhone's own account": the joined account is left as it is.
+    public func leaveJoinedAccount() async {
+        guard !leaving, let id = deviceID() else { return }
+        leaving = true
+        joinOutcome = nil
+        defer { leaving = false }
+        switch await perform({ client throws(WebLinkError) in try await client.leaveJoinedAccount(deviceID: id) }) {
+        case .failure(let problem):
+            joinOutcome = .problem(problem)
+        case .success:
+            if let renewed = await renewClient() { client = renewed }
+            joinOutcome = .left
+            await refreshDeviceAccount()
+            await refreshBrowsers()
+            await refreshMethods()
+        }
     }
 
     // MARK: - Apple and Google (ADR-700)
@@ -112,6 +228,9 @@ public final class WebSignInModel {
                 end = .done(error == .canceled ? .canceled : .failed)
             }
             switch end {
+            case .joinConfirm:
+                // A link ticket never ends this way; read as not linked.
+                linkOutcome = .failed
             case .done(let outcome):
                 linkOutcome = outcome
             case .confirm(let code):

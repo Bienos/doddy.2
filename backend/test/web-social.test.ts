@@ -17,6 +17,7 @@ import {
   SOCIAL_LIMITS,
 } from "../src/web/social.js";
 import { DEV_IDENTITIES } from "../src/auth.js";
+import { deviceUserId } from "../src/deviceSession.js";
 import { USER_A, USER_B } from "./helpers.js";
 import { CHROME_MAC, COOKIE, cookieValue, startWeb, WEB_ORIGIN, type WebRig } from "./webRig.js";
 
@@ -97,7 +98,7 @@ afterEach(async () => {
   rig = undefined;
 });
 
-async function socialRig(o: { providers?: ("google" | "apple")[]; signup?: boolean; deleteUser?: DeleteCall } = {}) {
+async function socialRig(o: { providers?: ("google" | "apple")[]; signup?: boolean; deleteUser?: DeleteCall; devices?: boolean } = {}) {
   let r!: WebRig;
   const supabase = fakeSupabase(() => r.clock.ms);
   r = await startWeb({
@@ -109,6 +110,7 @@ async function socialRig(o: { providers?: ("google" | "apple")[]; signup?: boole
       ...(o.signup !== undefined ? { signup: o.signup } : {}),
       ...(o.deleteUser ? { deleteUser: o.deleteUser } : {}),
     },
+    ...(o.devices ? { devices: Buffer.alloc(32, 9) } : {}),
   });
   rig = r;
   return { rig: r, supabase };
@@ -735,4 +737,138 @@ test("a Supabase removal that failed at the deletion is retried by the hourly sw
     await store.close();
   }
 });
+
+// ------------------------------------------------------------------ an iPhone using an account made on the web (ADR-701)
+
+const OWNER_PHONE = "11111111-1111-4111-8111-111111111111";
+const NEW_PHONE = "22222222-2222-4222-8222-222222222222";
+const OTHER_PHONE = "33333333-3333-4333-8333-333333333333";
+
+/** The iPhone signs itself in, as the app does. */
+async function deviceSession(r: WebRig, deviceId: string) {
+  const res = await r.call("POST", "/v1/session/device", { body: { deviceId } });
+  assert.equal(res.status, 200, res.text);
+  return res.body as { token: string; access: "full" | "ask" };
+}
+
+/** The iPhone's "Sign in with Google": ticket, sheet, Google as `sub`. Returns where the sheet ended. */
+async function joinSheet(r: WebRig, supabase: ReturnType<typeof fakeSupabase>, token: string, sub: string) {
+  const ticket = await r.call("POST", "/v1/web/oauth/join-tickets", { token, body: { provider: "google" } });
+  assert.equal(ticket.status, 200, ticket.text);
+  const s = await start(r, new URL(ticket.body.url).search.slice(1));
+  const done = await callback(r, `code=${supabase.issueCode(s.location, sub)}`, s.state);
+  return new URL(done.location);
+}
+
+test("a guest iPhone signs in to an account made on the web, and keeps it on every renewal", async () => {
+  const { rig: r, supabase } = await socialRig({ signup: true, devices: true });
+  assert.equal((await deviceSession(r, OWNER_PHONE)).access, "full", "the first iPhone owns the server");
+  // Someone new makes an account on the web with Google...
+  const { created } = await signupWithGoogle(r, supabase, GOOGLE_PERSON);
+  const webAccount = (await r.store.webIdentityOwner(GOOGLE_PERSON))!;
+  const webSession = cookieValue(created!.headers.get("set-cookie"), COOKIE)!;
+  // ...then installs the app: a guest, Ask Doddy only.
+  const guest = await deviceSession(r, NEW_PHONE);
+  assert.equal(guest.access, "ask");
+  assert.notEqual((await r.call("GET", "/v1/web/identities", { token: guest.token })).status, 200, "a guest can't open the web workspace");
+
+  // Settings › Doddy on the web › Sign in with Google.
+  const end = await joinSheet(r, supabase, guest.token, GOOGLE_PERSON);
+  assert.equal(end.searchParams.get("result"), "join");
+  const code = end.searchParams.get("code")!;
+  assert.equal((await r.store.deviceJoin(deviceUserIdOf(NEW_PHONE))), null, "the sheet alone changed nothing");
+  const joined = await r.call("POST", "/v1/web/oauth/join", { token: guest.token, body: { code, deviceId: NEW_PHONE } });
+  assert.equal(joined.status, 200, joined.text);
+  assert.deepEqual(joined.body, { result: "joined", provider: "google" });
+
+  // The app renews its session: now the web account, in full.
+  const renewed = await deviceSession(r, NEW_PHONE);
+  assert.equal(renewed.access, "full");
+  const ids = await r.call("GET", "/v1/web/identities", { token: renewed.token });
+  assert.equal(ids.status, 200, ids.text);
+  assert.deepEqual(ids.body.identities.map((i: { id: string }) => i.id), [GOOGLE_PERSON]);
+  // The same account as the browser's: the phone sees the web's browser session.
+  const browsers = await r.call("GET", "/v1/web/sessions", { token: renewed.token });
+  assert.equal(browsers.body.sessions.length, 1);
+  assert.equal((await r.call("GET", "/v1/web/sessions", { cookie: webSession })).body.sessions[0].id, browsers.body.sessions[0].id);
+  assert.deepEqual((await r.call("POST", "/v1/web/device-account", { token: renewed.token, body: { deviceId: NEW_PHONE } })).body.joined?.provider, "google");
+  // Every later renewal keeps it.
+  assert.equal((await deviceSession(r, NEW_PHONE)).access, "full");
+  assert.notEqual(webAccount, deviceUserIdOf(NEW_PHONE));
+  // The owner's iPhone is untouched.
+  assert.equal((await deviceSession(r, OWNER_PHONE)).access, "full");
+});
+
+test("Leave takes the iPhone back to its own account; neither account changes", async () => {
+  const { rig: r, supabase } = await socialRig({ signup: true, devices: true });
+  await deviceSession(r, OWNER_PHONE);
+  await signupWithGoogle(r, supabase, GOOGLE_PERSON);
+  const guest = await deviceSession(r, NEW_PHONE);
+  const code = (await joinSheet(r, supabase, guest.token, GOOGLE_PERSON)).searchParams.get("code")!;
+  await r.call("POST", "/v1/web/oauth/join", { token: guest.token, body: { code, deviceId: NEW_PHONE } });
+  const joined = await deviceSession(r, NEW_PHONE);
+  const left = await r.call("POST", "/v1/web/device-account/leave", { token: joined.token, body: { deviceId: NEW_PHONE } });
+  assert.deepEqual(left.body, { left: true });
+  assert.equal((await deviceSession(r, NEW_PHONE)).access, "ask", "its own guest account again");
+  assert.ok(await r.store.webIdentityOwner(GOOGLE_PERSON), "the web account is still there");
+  assert.deepEqual((await r.call("POST", "/v1/web/device-account", { token: guest.token, body: { deviceId: NEW_PHONE } })).body, { joined: null });
+});
+
+test("a join code works only for the iPhone session that asked for it, once", async () => {
+  const { rig: r, supabase } = await socialRig({ signup: true, devices: true });
+  await deviceSession(r, OWNER_PHONE);
+  await signupWithGoogle(r, supabase, GOOGLE_PERSON);
+  const asker = await deviceSession(r, NEW_PHONE);
+  const other = await deviceSession(r, OTHER_PHONE);
+  const code = (await joinSheet(r, supabase, asker.token, GOOGLE_PERSON)).searchParams.get("code")!;
+  // Another iPhone with the code (a forwarded ticket ended in its sheet): refused, nothing joined.
+  assert.equal((await r.call("POST", "/v1/web/oauth/join", { token: other.token, body: { code, deviceId: OTHER_PHONE } })).status, 404);
+  // Another iPhone's session claiming this device: refused.
+  assert.equal((await r.call("POST", "/v1/web/oauth/join", { token: other.token, body: { code, deviceId: NEW_PHONE } })).status, 401);
+  assert.equal(await r.store.deviceJoin(deviceUserIdOf(OTHER_PHONE)), null);
+  // The asker can, once.
+  assert.equal((await r.call("POST", "/v1/web/oauth/join", { token: asker.token, body: { code, deviceId: NEW_PHONE } })).status, 200);
+  assert.equal((await r.call("POST", "/v1/web/oauth/join", { token: asker.token, body: { code, deviceId: NEW_PHONE } })).status, 404);
+  // No session, a browser, a bad body: refused.
+  assert.equal((await r.call("POST", "/v1/web/oauth/join-tickets", { body: { provider: "google" } })).status, 401);
+  const browser = await r.signIn(await r.code());
+  assert.equal((await r.call("POST", "/v1/web/oauth/join-tickets", { cookie: browser, browser: true, body: { provider: "google" } })).status, 401);
+  assert.equal((await r.call("POST", "/v1/web/oauth/join", { token: asker.token, body: { code, deviceId: "not-a-device" } })).status, 400);
+});
+
+test("a Google account with no Doddy account can't be joined: the sheet says so and nothing changes", async () => {
+  const { rig: r, supabase } = await socialRig({ signup: true, devices: true });
+  await deviceSession(r, OWNER_PHONE);
+  const guest = await deviceSession(r, NEW_PHONE);
+  const end = await joinSheet(r, supabase, guest.token, GOOGLE_PERSON);
+  assert.equal(end.toString(), "doddy-dev://web-sign-in/return?result=not_linked&provider=google");
+  assert.equal(await r.store.webIdentityOwner(GOOGLE_PERSON), null, "no account made from the iPhone's sheet");
+});
+
+test("joining the iPhone's own account changes nothing", async () => {
+  const { rig: r, supabase } = await socialRig({ signup: true, devices: true });
+  const owner = await deviceSession(r, OWNER_PHONE);
+  const { code: linkCode } = await sheet(r, supabase, owner.token, GOOGLE_PERSON);
+  assert.equal((await r.call("POST", "/v1/web/oauth/complete", { token: owner.token, body: { code: linkCode } })).body.result, "linked");
+  const code = (await joinSheet(r, supabase, owner.token, GOOGLE_PERSON)).searchParams.get("code")!;
+  assert.deepEqual((await r.call("POST", "/v1/web/oauth/join", { token: owner.token, body: { code, deviceId: OWNER_PHONE } })).body, { result: "own", provider: "google" });
+  assert.equal(await r.store.deviceJoin(deviceUserIdOf(OWNER_PHONE)), null);
+});
+
+test("deleting the web account sends a joined iPhone back to its own account", async () => {
+  const { rig: r, supabase } = await socialRig({ signup: true, devices: true });
+  await deviceSession(r, OWNER_PHONE);
+  const { created } = await signupWithGoogle(r, supabase, GOOGLE_PERSON);
+  const webSession = cookieValue(created!.headers.get("set-cookie"), COOKIE)!;
+  const guest = await deviceSession(r, NEW_PHONE);
+  const code = (await joinSheet(r, supabase, guest.token, GOOGLE_PERSON)).searchParams.get("code")!;
+  await r.call("POST", "/v1/web/oauth/join", { token: guest.token, body: { code, deviceId: NEW_PHONE } });
+  assert.equal((await r.call("POST", "/v1/web/account/delete", { cookie: webSession, browser: true, body: { confirm: "delete" } })).status, 200);
+  assert.equal(await r.store.deviceJoin(deviceUserIdOf(NEW_PHONE)), null);
+  assert.equal((await deviceSession(r, NEW_PHONE)).access, "ask");
+});
+
+function deviceUserIdOf(deviceId: string): string {
+  return deviceUserId(Buffer.alloc(32, 9), deviceId);
+}
 

@@ -126,6 +126,10 @@ private final class FakeMethods: WebLinkClient, @unchecked Sendable {
     var onConfirm: [WebLinkedSignIn] = []
     private(set) var confirmed: [String] = []
     private(set) var tickets: [WebSignInProvider] = []
+    var joinResult: Result<WebJoinOutcome, WebLinkError> = .success(.joined(.google))
+    var joinedAccount: WebJoinedAccount?
+    private(set) var joins: [(String, String)] = []
+    private(set) var leaves: [String] = []
 
     func newCode() async throws(WebLinkError) -> WebLinkCode { throw .notConfigured }
     func browsers() async throws(WebLinkError) -> [WebBrowserSession] { [] }
@@ -141,6 +145,23 @@ private final class FakeMethods: WebLinkClient, @unchecked Sendable {
         let outcome = try completeResult.get()
         lock.withLock { linked = onConfirm }
         return outcome
+    }
+    func joinTicket(for provider: WebSignInProvider) async throws(WebLinkError) -> WebLinkTicket {
+        lock.withLock { tickets.append(provider) }
+        return try ticketResult.get()
+    }
+    func join(code: String, deviceID: String) async throws(WebLinkError) -> WebJoinOutcome {
+        lock.withLock { joins.append((code, deviceID)) }
+        let outcome = try joinResult.get()
+        if case .joined(let p) = outcome { lock.withLock { joinedAccount = WebJoinedAccount(provider: p, since: Date(timeIntervalSince1970: 5)) } }
+        return outcome
+    }
+    func deviceAccount(deviceID: String) async throws(WebLinkError) -> WebJoinedAccount? { lock.withLock { joinedAccount } }
+    func leaveJoinedAccount(deviceID: String) async throws(WebLinkError) {
+        lock.withLock {
+            leaves.append(deviceID)
+            joinedAccount = nil
+        }
     }
     func unlink(signIn id: UUID) async throws(WebLinkError) {
         let result = lock.withLock { unlinkResults.removeFirst() }
@@ -257,3 +278,109 @@ final class WebSignInMethodsModelTests: XCTestCase {
         XCTAssertTrue(model.unlinking.isEmpty)
     }
 }
+
+// ADR-701: this iPhone using an account made on the web.
+
+final class WebJoinClientTests: XCTestCase {
+    private let code = String(repeating: "Ab3_-", count: 8) + "xyz"
+    private let device = "22222222-2222-4222-8222-222222222222"
+
+    func testJoinSendsTheCodeAndThisDeviceAndReadsTheAnswer() async throws {
+        let transport = RoutedTransport(["POST /v1/web/oauth/join": (200, #"{"result":"joined","provider":"apple"}"#)])
+        let outcome = try await client(transport).join(code: code, deviceID: device.uppercased())
+        XCTAssertEqual(outcome, .joined(.apple))
+        let body = try XCTUnwrap(transport.requests.first?.body)
+        XCTAssertEqual(String(data: body, encoding: .utf8), #"{"code":"\#(code)","deviceId":"\#(device)"}"#)
+    }
+
+    func testTheDeviceAccountIsReadAndAnOlderServerMeansItsOwn() async throws {
+        let joined = RoutedTransport(["POST /v1/web/device-account": (200, #"{"joined":{"provider":"google","since":"2026-11-03T10:00:00.000Z"}}"#)])
+        let account = try await client(joined).deviceAccount(deviceID: device)
+        XCTAssertEqual(account?.provider, .google)
+        let own = RoutedTransport(["POST /v1/web/device-account": (200, #"{"joined":null}"#)])
+        let none = try await client(own).deviceAccount(deviceID: device)
+        XCTAssertNil(none)
+        let older = RoutedTransport([:])
+        let unknown = try await client(older).deviceAccount(deviceID: device)
+        XCTAssertNil(unknown)
+    }
+
+    func testTheSheetsJoinEndIsReadStrictly() {
+        let ticket = WebLinkTicket(url: URL(string: ticketURL)!, callbackScheme: "doddy")
+        XCTAssertEqual(ticket.end(of: URL(string: "doddy://web-sign-in/return?result=join&provider=google&code=\(code)")!), .joinConfirm(code: code))
+        XCTAssertEqual(ticket.end(of: URL(string: "doddy://web-sign-in/return?result=not_linked&provider=google")!), .done(.notLinked))
+        XCTAssertEqual(ticket.end(of: URL(string: "doddy://web-sign-in/return?result=join&code=bad")!), .done(.failed))
+        XCTAssertEqual(ticket.end(of: URL(string: "doddy://web-sign-in/return?result=joined&provider=google")!), .done(.failed), "never 'joined' from the sheet alone")
+    }
+}
+
+@MainActor
+final class WebJoinModelTests: XCTestCase {
+    private let code = String(repeating: "Ab3_-", count: 8) + "xyz"
+    private let device = "22222222-2222-4222-8222-222222222222"
+    private var joinURL: URL { URL(string: "doddy://web-sign-in/return?result=join&provider=google&code=\(code)")! }
+
+    func testJoiningConfirmsWithThisIPhoneThenRenewsItsSession() async {
+        let fake = FakeMethods()
+        final class Renewals: @unchecked Sendable { var count = 0 }
+        let renewals = Renewals()
+        let id = device
+        let model = WebSignInModel(makeClient: { fake }, renewClient: { renewals.count += 1; return fake }, authenticator: FakeSheet(.success(joinURL)), deviceID: { id })
+        await model.refreshDeviceAccount()
+        XCTAssertEqual(model.deviceAccount, .own)
+        await model.joinAccount(with: .google)
+        XCTAssertEqual(fake.joins.map(\.0), [code])
+        XCTAssertEqual(fake.joins.map(\.1), [device])
+        XCTAssertEqual(renewals.count, 1, "the session is renewed into the joined account")
+        XCTAssertEqual(model.joinOutcome, .joined(.google))
+        XCTAssertEqual(model.deviceAccount, .joined(WebJoinedAccount(provider: .google, since: Date(timeIntervalSince1970: 5))))
+        XCTAssertNil(model.joining)
+    }
+
+    func testNoAccountCancelledOrOwnChangeNothing() async {
+        for (sheet, result, outcome) in [
+            (FakeSheet(.success(URL(string: "doddy://web-sign-in/return?result=not_linked&provider=google")!)), Result<WebJoinOutcome, WebLinkError>.success(.joined(.google)), WebSignInModel.JoinOutcome.notLinked),
+            (FakeSheet(.failure(.canceled)), .success(.joined(.google)), .canceled),
+            (FakeSheet(.success(joinURL)), .success(.own(.google)), .own(.google)),
+            (FakeSheet(.success(joinURL)), .failure(.notFound), .failed),
+        ] {
+            let fake = FakeMethods()
+            fake.joinResult = result
+            let id = device
+            let model = WebSignInModel(makeClient: { fake }, renewClient: { nil }, authenticator: sheet, deviceID: { id })
+            await model.joinAccount(with: .google)
+            XCTAssertEqual(model.joinOutcome, outcome)
+            XCTAssertNil(fake.joinedAccount)
+        }
+    }
+
+    func testJoinedButNoNewSessionYetSaysSo() async {
+        let fake = FakeMethods()
+        let id = device
+        let model = WebSignInModel(makeClient: { fake }, renewClient: { nil }, authenticator: FakeSheet(.success(joinURL)), deviceID: { id })
+        await model.joinAccount(with: .google)
+        XCTAssertEqual(model.joinOutcome, .joinedRenewPending(.google))
+    }
+
+    func testLeavingGoesBackToThisIPhonesOwnAccount() async {
+        let fake = FakeMethods()
+        fake.joinedAccount = WebJoinedAccount(provider: .apple, since: Date(timeIntervalSince1970: 1))
+        let id = device
+        let model = WebSignInModel(makeClient: { fake }, renewClient: { fake }, authenticator: FakeSheet(.failure(.canceled)), deviceID: { id })
+        await model.refreshDeviceAccount()
+        XCTAssertEqual(model.deviceAccount, .joined(WebJoinedAccount(provider: .apple, since: Date(timeIntervalSince1970: 1))))
+        await model.leaveJoinedAccount()
+        XCTAssertEqual(fake.leaves, [device])
+        XCTAssertEqual(model.joinOutcome, .left)
+        XCTAssertEqual(model.deviceAccount, .own)
+    }
+
+    func testWithoutADeviceIdNothingIsTried() async {
+        let fake = FakeMethods()
+        let model = WebSignInModel(makeClient: { fake }, renewClient: { nil }, authenticator: FakeSheet(.success(joinURL)))
+        await model.joinAccount(with: .google)
+        XCTAssertNil(model.joinOutcome)
+        XCTAssertTrue(fake.tickets.isEmpty)
+    }
+}
+

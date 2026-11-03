@@ -19,10 +19,11 @@ import type { AccountEraser } from "../account.js";
  *  - `phone`: the iPhone's own session (Authorization header) only.
  *  - `either`: the iPhone's session, or a browser session cookie.
  *  - `browser`: a browser session cookie only.
+ *  - `device`: the iPhone's own session, a guest's too (ADR-701: a guest iPhone may sign in to an account).
  * A cookie request that changes something must pass the same-origin check (`assertSameOrigin`).
  */
 
-export type Access = "public" | "phone" | "either" | "browser";
+export type Access = "public" | "phone" | "either" | "browser" | "device";
 
 export interface WebCaller {
   userId: string;
@@ -75,6 +76,8 @@ export class WebRoutes {
     private readonly social?: SocialSignIn | null,
     /** Deleting the account from a browser (ADR-700: an account made on the web has no iPhone to do it). */
     account?: AccountEraser | null,
+    /** This server's device sign-in (ADR-563), so an iPhone can use another account (ADR-701). */
+    devices?: { userIdFor(deviceId: unknown): string | null } | null,
   ) {
     this.routes = [
       {
@@ -254,6 +257,38 @@ export class WebRoutes {
               access: "phone",
               run: async ({ caller, body, now }) => ({ status: 200, body: await social.complete(caller!.userId, body, now) }),
             },
+            ...(devices
+              ? ([
+                  {
+                    method: "POST",
+                    pattern: /^\/v1\/web\/oauth\/join-tickets$/,
+                    template: "POST /v1/web/oauth/join-tickets",
+                    access: "device",
+                    run: async ({ caller, body, now }) => ({ status: 200, body: await social.joinTicket(caller!.userId, body, now) }),
+                  },
+                  {
+                    method: "POST",
+                    pattern: /^\/v1\/web\/oauth\/join$/,
+                    template: "POST /v1/web/oauth/join",
+                    access: "device",
+                    run: async ({ caller, body, now }) => ({ status: 200, body: await social.join(caller!.userId, body, now, (id) => devices.userIdFor(id)) }),
+                  },
+                  {
+                    method: "POST",
+                    pattern: /^\/v1\/web\/device-account$/,
+                    template: "POST /v1/web/device-account",
+                    access: "device",
+                    run: async ({ caller, body }) => ({ status: 200, body: await social.deviceAccount(caller!.userId, body, (id) => devices.userIdFor(id)) }),
+                  },
+                  {
+                    method: "POST",
+                    pattern: /^\/v1\/web\/device-account\/leave$/,
+                    template: "POST /v1/web/device-account/leave",
+                    access: "device",
+                    run: async ({ caller, body }) => ({ status: 200, body: await social.leave(caller!.userId, body, (id) => devices.userIdFor(id)) }),
+                  },
+                ] satisfies Route[])
+              : []),
             {
               method: "GET",
               pattern: /^\/v1\/web\/identities$/,
@@ -364,11 +399,12 @@ export class WebRoutes {
       if (access === "browser") throw new AppError("unauthenticated");
       const user: AuthenticatedUser | null = await this.verifier.verify(authorization, now);
       if (!user) throw new AppError("unauthenticated");
-      // A guest iPhone (ADR-587) can't open the web workspace: it has Ask Doddy only.
-      requireFullAccess(user);
+      // A guest iPhone (ADR-587) can't open the web workspace: it has Ask Doddy only. It may still
+      // sign in to an account it proves with Google or Apple (`device`, ADR-701).
+      if (access !== "device") requireFullAccess(user);
       return { userId: user.userId, session: null };
     }
-    if (access === "phone") throw new AppError("unauthenticated");
+    if (access === "phone" || access === "device") throw new AppError("unauthenticated");
     const session = await this.auth.fromCookie(req, now);
     if (!session) {
       // A stale cookie is removed, so the browser stops sending it.

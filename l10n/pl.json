@@ -2570,5 +2570,20 @@
   "Linking was cancelled. Nothing changed.": "Łączenie anulowano. Nic się nie zmieniło.",
   "Too many tries. Wait a few minutes, then try again.": "Za dużo prób. Poczekaj kilka minut i spróbuj ponownie.",
   "Linking didn't finish. Nothing changed. Try again.": "Łączenie się nie udało. Nic się nie zmieniło. Spróbuj ponownie.",
-  "That account is already linked to another Doddy account (perhaps one made on the web), so it wasn't linked here. Nothing was merged.": "To konto jest już połączone z innym kontem Doddy (może założonym w przeglądarce), więc nie połączono go tutaj. Nic nie zostało scalone."
+  "That account is already linked to another Doddy account (perhaps one made on the web), so it wasn't linked here. Nothing was merged.": "To konto jest już połączone z innym kontem Doddy (może założonym w przeglądarce), więc nie połączono go tutaj. Nic nie zostało scalone.",
+  "This iPhone uses your Doddy account from Google.": "Ten iPhone używa Twojego konta Doddy z Google.",
+  "This iPhone uses your Doddy account from Apple.": "Ten iPhone używa Twojego konta Doddy z Apple.",
+  "Since": "Od",
+  "Use this iPhone's own account": "Użyj własnego konta tego iPhone’a",
+  "Sign in with Google": "Zaloguj się przez Google",
+  "Sign in with Apple": "Zaloguj się przez Apple",
+  "Your account from the web": "Twoje konto z przeglądarki",
+  "Made a Doddy account on the web with Google or Apple? Sign in with it here and this iPhone uses that account. What this iPhone's own account keeps on Doddy's server stays there; you can switch back. Notes on this iPhone stay on this iPhone.": "Założono konto Doddy w przeglądarce przez Google lub Apple? Zaloguj się nim tutaj, a ten iPhone będzie używał tego konta. To, co własne konto tego iPhone’a przechowuje na serwerze Doddy’ego, tam zostaje; możesz wrócić. Notatki na tym iPhonie zostają na tym iPhonie.",
+  "Done. This iPhone now uses that account.": "Gotowe. Ten iPhone używa teraz tego konta.",
+  "Done on Doddy's server. This iPhone switches the next time it connects.": "Gotowe na serwerze Doddy’ego. Ten iPhone przełączy się przy następnym połączeniu.",
+  "That is already this iPhone's own account. Nothing changed.": "To już jest własne konto tego iPhone’a. Nic się nie zmieniło.",
+  "That account has no Doddy account yet. Make one on Doddy's web page first, or use Link below to add it to this iPhone's account.": "To konto nie ma jeszcze konta Doddy. Najpierw załóż je na stronie Doddy w przeglądarce albo użyj Połącz poniżej, żeby dodać je do konta tego iPhone’a.",
+  "Sign-in was cancelled. Nothing changed.": "Logowanie anulowano. Nic się nie zmieniło.",
+  "That sign-in didn't finish. Nothing changed. Try again.": "To logowanie się nie udało. Nic się nie zmieniło. Spróbuj ponownie.",
+  "This iPhone uses its own account again.": "Ten iPhone znów używa własnego konta."
 }

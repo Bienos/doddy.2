@@ -45,7 +45,7 @@ import { readCookie, type WebAuth, type WebSessionContext } from "./sessions.js"
  */
 
 export type SocialProvider = "google" | "apple";
-export type SocialIntent = "signin" | "link";
+export type SocialIntent = "signin" | "link" | "join";
 /** Where the person goes back to: the web app, or the iPhone's sign-in sheet. */
 export type SocialReturn = "web" | "app";
 
@@ -102,7 +102,7 @@ export interface SocialOutcome {
 }
 
 /** Why a sign-in didn't finish, as the page shows it (`?signin=` or `?link=`). Never a provider's own text. */
-export type SocialResult = "linked" | "already" | "taken" | "not_linked" | "new_account" | "canceled" | "failed" | "busy" | "signed_out" | "reauth" | "confirm";
+export type SocialResult = "linked" | "already" | "taken" | "not_linked" | "new_account" | "canceled" | "failed" | "busy" | "signed_out" | "reauth" | "confirm" | "join";
 
 export class SocialSignIn {
   readonly providers: readonly SocialProvider[];
@@ -156,7 +156,19 @@ export class SocialSignIn {
   // ---------------------------------------------------------------- iPhone side
 
   /** A one-time address the iPhone opens to link Apple or Google to its own account. */
-  async ticket(userId: string, body: unknown, now: Date): Promise<{ url: string; expiresAt: string; callbackScheme: string }> {
+  ticket(userId: string, body: unknown, now: Date): Promise<{ url: string; expiresAt: string; callbackScheme: string }> {
+    return this.makeTicket(userId, body, now, "link");
+  }
+
+  /**
+   * ADR-701: a one-time address the iPhone opens to sign in to the Doddy account of a Google or
+   * Apple sign-in (one made on the web, or another iPhone's). Any device session may ask, a guest's too.
+   */
+  joinTicket(userId: string, body: unknown, now: Date): Promise<{ url: string; expiresAt: string; callbackScheme: string }> {
+    return this.makeTicket(userId, body, now, "join");
+  }
+
+  private async makeTicket(userId: string, body: unknown, now: Date, intent: "link" | "join"): Promise<{ url: string; expiresAt: string; callbackScheme: string }> {
     const provider = this.provider(typeof body === "object" && body !== null ? (body as Record<string, unknown>).provider : undefined);
     if (!provider || Object.keys(body as object).length !== 1) throw new AppError("invalid_request");
     const hour = `day:${now.toISOString().slice(0, 13)}`;
@@ -167,7 +179,7 @@ export class SocialSignIn {
       stateHash: stateHash(token),
       userId,
       provider,
-      intent: "link",
+      intent,
       returnTo: "app",
       verifier: randomBytes(48).toString("base64url"),
       now: now.getTime(),
@@ -217,9 +229,10 @@ export class SocialSignIn {
     const back = (result: SocialResult) => this.done({ intent: "link", returnTo: "app", result });
     if (!(await this.withinLimit(req, now, "start"))) return back("busy");
     if (!STATE.test(ticket)) return back("failed");
+    // (Both kinds of ticket end at the app's scheme; its result names what to do next.)
     // The ticket is used once here; a fresh state (new token, same verifier) carries the sign-in on.
     const row = await this.store.consumeWebOAuthState(stateHash(ticket), now.getTime());
-    if (!row || row.intent !== "link" || row.return_to !== "app" || !row.user_id) return back("failed");
+    if (!row || (row.intent !== "link" && row.intent !== "join") || row.return_to !== "app" || !row.user_id) return back("failed");
     const provider = this.provider(row.provider);
     if (!provider) return back("failed");
     const token = randomBytes(32).toString("base64url");
@@ -227,7 +240,7 @@ export class SocialSignIn {
       stateHash: stateHash(token),
       userId: row.user_id,
       provider,
-      intent: "link",
+      intent: row.intent,
       returnTo: "app",
       verifier: row.verifier,
       now: now.getTime(),
@@ -245,7 +258,7 @@ export class SocialSignIn {
     if (!(await this.withinLimit(req, now, "callback"))) return withCookie(this.done({ intent: "signin", returnTo: "web", result: "busy" }), clear);
     const row = await this.store.consumeWebOAuthState(stateHash(token), now.getTime());
     if (!row) return withCookie(this.done({ intent: "signin", returnTo: "web", result: "failed" }), clear);
-    const intent: SocialIntent = row.intent === "link" ? "link" : "signin";
+    const intent: SocialIntent = row.intent === "link" ? "link" : row.intent === "join" ? "join" : "signin";
     const returnTo: SocialReturn = row.return_to === "app" ? "app" : "web";
     const provider = this.provider(row.provider);
     const back = (result: SocialResult, confirmCode?: string) =>
@@ -268,6 +281,18 @@ export class SocialSignIn {
       return back("failed");
     }
 
+    if (intent === "join") {
+      // ADR-701: only an account that exists can be joined; the iPhone that asked confirms with its own session.
+      if (!row.user_id || returnTo !== "app") return back("failed");
+      if (!(await this.store.webIdentityOwner(identityId))) {
+        this.log({ event: "device_join", provider, result: "not_linked" });
+        return back("not_linked");
+      }
+      const joinCode = randomBytes(32).toString("base64url");
+      await this.store.createPendingLink({ codeHash: stateHash(`join:${joinCode}`), userId: row.user_id, identityId, provider, now: now.getTime(), ttlMs: PENDING_LINK_TTL_MS, intent: "join" });
+      this.log({ event: "device_join", provider, result: "confirm" });
+      return back("join", joinCode);
+    }
     if (intent === "link") {
       if (!row.user_id) return back("failed");
       if (returnTo === "app") {
@@ -344,6 +369,65 @@ export class SocialSignIn {
     const result = await this.store.linkWebIdentity(pending.identity_id, userId, provider, now.getTime());
     this.log({ event: "web_identity_link", provider, result });
     return { result, provider };
+  }
+
+  /**
+   * `POST /v1/web/oauth/join` (ADR-701): this iPhone now signs in to the account its sheet signed in
+   * to. The caller proves it holds this device's session (its own account, or the one it uses now),
+   * and only the session that asked for the ticket can redeem the code. Nothing moves between
+   * accounts: the iPhone's own account stays as it is, and Leave goes back to it.
+   */
+  async join(callerUserId: string, body: unknown, now: Date, deviceUserId: (deviceId: unknown) => string | null): Promise<{ result: "joined" | "own"; provider: SocialProvider }> {
+    const b = typeof body === "object" && body !== null ? (body as Record<string, unknown>) : {};
+    if (typeof b.code !== "string" || !STATE.test(b.code) || Object.keys(b).length !== 2) throw new AppError("invalid_request");
+    const device = deviceUserId(b.deviceId);
+    if (!device) throw new AppError("invalid_request");
+    await this.assertThisDevice(callerUserId, device);
+    const pending = await this.store.consumePendingLink(stateHash(`join:${b.code}`), callerUserId, now.getTime(), "join");
+    const provider = pending ? this.provider(pending.provider) : null;
+    const owner = pending ? await this.store.webIdentityOwner(pending.identity_id) : null;
+    if (!pending || !provider || !owner) throw new AppError("not_found", { message: "That sign-in has expired or was already used. Try again." });
+    if (owner === device) {
+      // It is this iPhone's own account: nothing to join; any earlier choice ends.
+      await this.store.removeDeviceJoin(device);
+      this.log({ event: "device_join", provider, result: "own" });
+      return { result: "own", provider };
+    }
+    await this.store.setDeviceJoin(device, owner, provider, now.getTime());
+    this.log({ event: "device_join", provider, result: "joined" });
+    return { result: "joined", provider };
+  }
+
+  /** Which account this iPhone uses (ADR-701): its own, or one it joined with Google or Apple. */
+  async deviceAccount(callerUserId: string, body: unknown, deviceUserId: (deviceId: unknown) => string | null): Promise<{ joined: { provider: SocialProvider; since: string } | null }> {
+    const device = this.deviceFrom(body, deviceUserId);
+    await this.assertThisDevice(callerUserId, device);
+    const joined = await this.store.deviceJoin(device);
+    const provider = joined ? this.provider(joined.provider) ?? "google" : null;
+    return { joined: joined && provider ? { provider, since: new Date(joined.created_at).toISOString() } : null };
+  }
+
+  /** Back to the iPhone's own account (ADR-701). Neither account is changed. */
+  async leave(callerUserId: string, body: unknown, deviceUserId: (deviceId: unknown) => string | null): Promise<{ left: boolean }> {
+    const device = this.deviceFrom(body, deviceUserId);
+    await this.assertThisDevice(callerUserId, device);
+    const left = await this.store.removeDeviceJoin(device);
+    this.log({ event: "device_join", result: left ? "left" : "not_joined" });
+    return { left };
+  }
+
+  private deviceFrom(body: unknown, deviceUserId: (deviceId: unknown) => string | null): string {
+    const b = typeof body === "object" && body !== null ? (body as Record<string, unknown>) : {};
+    const device = Object.keys(b).length === 1 ? deviceUserId(b.deviceId) : null;
+    if (!device) throw new AppError("invalid_request");
+    return device;
+  }
+
+  /** The caller's session is this device's: its own account, or the account it uses now. */
+  private async assertThisDevice(callerUserId: string, device: string): Promise<void> {
+    if (callerUserId === device) return;
+    if ((await this.store.deviceJoin(device))?.user_id === callerUserId) return;
+    throw new AppError("unauthenticated", { message: "This iPhone's session doesn't match. Sign in again." });
   }
 
   // ---------------------------------------------------------------- linked sign-ins

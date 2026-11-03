@@ -4,7 +4,8 @@ import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { DevSessionVerifier, type SessionVerifier } from "../src/auth.js";
+import { AnyOfSessionVerifier, DevSessionVerifier, type SessionVerifier, SignedSessionVerifier } from "../src/auth.js";
+import { DeviceSessionIssuer } from "../src/deviceSession.js";
 import { defaultRegistry } from "../src/capabilities.js";
 import { testLimits } from "../src/config.js";
 import { DocumentLinks } from "../src/documents.js";
@@ -89,6 +90,8 @@ export async function startWeb(
       /** Supabase's admin API, for deleting a person's sign-in with their account. Absent: no secret key. */
       deleteUser?: DeleteCall;
     };
+    /** Real device sign-in (`POST /v1/session/device`, ADR-563) with this key, `open` sign-up: the first device owns the server. */
+    devices?: Buffer;
   } = {},
 ): Promise<WebRig> {
   const store = await Store.memory();
@@ -107,7 +110,8 @@ export async function startWeb(
     log: (line) => logs.push(JSON.stringify(line)),
   });
   const service = new ConnectedAppsService({ ...common, provider: new MockCalendarProvider(), registry: defaultRegistry(), completionMode: "mock" });
-  const verifier = o.verifier ?? new DevSessionVerifier();
+  const verifier = o.verifier ?? (o.devices ? new AnyOfSessionVerifier([new DevSessionVerifier(), new SignedSessionVerifier(o.devices)]) : new DevSessionVerifier());
+  const deviceSessions = o.devices ? new DeviceSessionIssuer(o.devices, { signup: "open", inviteCodes: [], store }) : null;
 
   const distDir = mkdtempSync(join(tmpdir(), "doddy-web-dist-"));
   if (o.withDist !== false) {
@@ -164,8 +168,9 @@ export async function startWeb(
     service,
     tools,
     verifier,
-    web: { auth, routes: new WebRoutes(auth, store, verifier, 8 * 1024, { service: memory, chat }, thread, social, account), pages: new WebStatic(o.withDist === false ? join(distDir, "missing") : distDir, origin) },
+    web: { auth, routes: new WebRoutes(auth, store, verifier, 8 * 1024, { service: memory, chat }, thread, social, account, deviceSessions), pages: new WebStatic(o.withDist === false ? join(distDir, "missing") : distDir, origin) },
     documents: { links: documentLinks, store },
+    deviceSessions,
     appReturnUrl: common.appReturnUrl,
     maxBodyBytes: 8 * 1024,
     now: () => new Date(clock.ms),

@@ -69,6 +69,8 @@ async function seed(store: Store, userId: string, tag: string): Promise<void> {
     [`os-${tag}`, userId],
   );
   await q("INSERT INTO web_accounts (user_id, provider, created_at) VALUES ($1, 'google', 1)", [userId]);
+  // ADR-701: another iPhone signed in to this account.
+  await q("INSERT INTO device_joins (device_user_id, user_id, provider, created_at) VALUES ($1, $2, 'google', 1)", [uuid(5), userId]);
   await q(
     `INSERT INTO web_link_pending (code_hash, user_id, identity_id, provider, created_at, expires_at) VALUES ($1, $2, $3, 'google', 1, 9999999999999)`,
     [`lp-${tag}`, userId, uuid(4)],

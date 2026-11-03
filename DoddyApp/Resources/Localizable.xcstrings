@@ -24761,6 +24761,17 @@
         }
       }
     },
+    "Done on Doddy's server. This iPhone switches the next time it connects.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gotowe na serwerze Doddy’ego. Ten iPhone przełączy się przy następnym połączeniu."
+          }
+        }
+      }
+    },
     "Done with Doddy, and checked": {
       "extractionState": "manual",
       "localizations": {
@@ -24816,6 +24827,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "已由 Doddy 完成，并已核对"
+          }
+        }
+      }
+    },
+    "Done. This iPhone now uses that account.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gotowe. Ten iPhone używa teraz tego konta."
           }
         }
       }
@@ -39197,6 +39219,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "Maszyny, hantle i sztanga"
+          }
+        }
+      }
+    },
+    "Made a Doddy account on the web with Google or Apple? Sign in with it here and this iPhone uses that account. What this iPhone's own account keeps on Doddy's server stays there; you can switch back. Notes on this iPhone stay on this iPhone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Made a Doddy account on the web with Google or Apple? Sign in with it here and this iPad uses that account. What this iPad's own account keeps on Doddy's server stays there; you can switch back. Notes on this iPad stay on this iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Made a Doddy account on the web with Google or Apple? Sign in with it here and this iPhone uses that account. What this iPhone's own account keeps on Doddy's server stays there; you can switch back. Notes on this iPhone stay on this iPhone."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Założono konto Doddy w przeglądarce przez Google lub Apple? Zaloguj się nim tutaj, a ten iPad będzie używał tego konta. To, co własne konto tego iPada przechowuje na serwerze Doddy’ego, tam zostaje; możesz wrócić. Notatki na tym iPadzie zostają na tym iPadzie."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Założono konto Doddy w przeglądarce przez Google lub Apple? Zaloguj się nim tutaj, a ten iPhone będzie używał tego konta. To, co własne konto tego iPhone’a przechowuje na serwerze Doddy’ego, tam zostaje; możesz wrócić. Notatki na tym iPhonie zostają na tym iPhonie."
+                }
+              }
+            }
           }
         }
       }
@@ -69859,6 +69922,28 @@
         }
       }
     },
+    "Sign in with Apple": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaloguj się przez Apple"
+          }
+        }
+      }
+    },
+    "Sign in with Google": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaloguj się przez Google"
+          }
+        }
+      }
+    },
     "Sign in with Google or Apple": {
       "extractionState": "manual",
       "localizations": {
@@ -69892,6 +69977,17 @@
         }
       }
     },
+    "Sign-in was cancelled. Nothing changed.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logowanie anulowano. Nic się nie zmieniło."
+          }
+        }
+      }
+    },
     "Signed-in browsers": {
       "extractionState": "manual",
       "localizations": {
@@ -69910,6 +70006,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Podobne, nie to samo"
+          }
+        }
+      }
+    },
+    "Since": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Od"
           }
         }
       }
@@ -74685,6 +74792,47 @@
         }
       }
     },
+    "That account has no Doddy account yet. Make one on Doddy's web page first, or use Link below to add it to this iPhone's account.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "That account has no Doddy account yet. Make one on Doddy's web page first, or use Link below to add it to this iPad's account."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "That account has no Doddy account yet. Make one on Doddy's web page first, or use Link below to add it to this iPhone's account."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "To konto nie ma jeszcze konta Doddy. Najpierw załóż je na stronie Doddy w przeglądarce albo użyj Połącz poniżej, żeby dodać je do konta tego iPada."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "To konto nie ma jeszcze konta Doddy. Najpierw załóż je na stronie Doddy w przeglądarce albo użyj Połącz poniżej, żeby dodać je do konta tego iPhone’a."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "That account is already linked to another Doddy account (perhaps one made on the web), so it wasn't linked here. Nothing was merged.": {
       "extractionState": "manual",
       "localizations": {
@@ -75622,6 +75770,47 @@
         }
       }
     },
+    "That is already this iPhone's own account. Nothing changed.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "That is already this iPad's own account. Nothing changed."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "That is already this iPhone's own account. Nothing changed."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "To już jest własne konto tego iPada. Nic się nie zmieniło."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "To już jest własne konto tego iPhone’a. Nic się nie zmieniło."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "That isn't a Doddy memory export (Settings › Export as JSON). Nothing was added.": {
       "extractionState": "manual",
       "localizations": {
@@ -76348,6 +76537,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tego treningu już nie ma."
+          }
+        }
+      }
+    },
+    "That sign-in didn't finish. Nothing changed. Try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To logowanie się nie udało. Nic się nie zmieniło. Spróbuj ponownie."
           }
         }
       }
@@ -83076,6 +83276,39 @@
           "stringUnit": {
             "state": "translated",
             "value": "这台 iPhone 没有设置密码或面容 ID，所以 Doddy 无法锁定。"
+          }
+        }
+      }
+    },
+    "This iPhone uses its own account again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten iPhone znów używa własnego konta."
+          }
+        }
+      }
+    },
+    "This iPhone uses your Doddy account from Apple.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten iPhone używa Twojego konta Doddy z Apple."
+          }
+        }
+      }
+    },
+    "This iPhone uses your Doddy account from Google.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten iPhone używa Twojego konta Doddy z Google."
           }
         }
       }
@@ -90219,6 +90452,47 @@
         }
       }
     },
+    "Use this iPhone's own account": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Use this iPad's own account"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Use this iPhone's own account"
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Użyj własnego konta tego iPada"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Użyj własnego konta tego iPhone’a"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Use what Doddy learned in voice conversations": {
       "extractionState": "manual",
       "localizations": {
@@ -96878,6 +97152,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "你的 PIN 码"
+          }
+        }
+      }
+    },
+    "Your account from the web": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoje konto z przeglądarki"
           }
         }
       }

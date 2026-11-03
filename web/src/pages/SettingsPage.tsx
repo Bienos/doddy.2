@@ -28,6 +28,7 @@ export function SettingsPage() {
           </ul>
         ) : null}
       </section>
+      <OnYourIphone />
       <SignInMethods />
       <section className="card" aria-labelledby="language-heading">
         <h2 id="language-heading">{t("settings.language")}</h2>
@@ -303,3 +304,17 @@ function DeleteAccount() {
     </section>
   );
 }
+
+/** ADR-701: an account made on the web can be used on the iPhone too. Shown only for those accounts. */
+function OnYourIphone() {
+  const { t } = useI18n();
+  const { resource } = useResource(api.account);
+  if (resource.status !== "ready" || !resource.data.madeOnWeb) return null;
+  return (
+    <section className="card" aria-labelledby="iphone-heading">
+      <h2 id="iphone-heading">{t("settings.iphone")}</h2>
+      <p>{t("settings.iphoneBody")}</p>
+    </section>
+  );
+}
+

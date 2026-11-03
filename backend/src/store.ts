@@ -72,6 +72,7 @@ export const ERASED_TABLES = [
   "web_oauth_states",
   "web_link_pending",
   "web_accounts",
+  "device_joins",
   "logbook_state",
   "logbook_days",
   "memory_state",
@@ -231,11 +232,19 @@ export const SCHEMA_SQL = `
     expires_at BIGINT NOT NULL,
     consumed_at BIGINT
   );
+  CREATE TABLE IF NOT EXISTS device_joins (
+    device_user_id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    provider TEXT NOT NULL,
+    created_at BIGINT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS device_joins_user ON device_joins(user_id);
   CREATE TABLE IF NOT EXISTS web_link_pending (
     code_hash TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
     identity_id TEXT NOT NULL,
     provider TEXT NOT NULL,
+    intent TEXT NOT NULL DEFAULT 'link',
     created_at BIGINT NOT NULL,
     expires_at BIGINT NOT NULL,
     consumed_at BIGINT
@@ -809,6 +818,8 @@ export class Store {
       const identities = (await tx.query<{ identity_id: string }>("SELECT identity_id FROM web_identities WHERE user_id = $1", [userId])).rows;
       for (const i of identities) await this.queueCleanupIn(tx, i.identity_id, userId, SUPABASE_AUTH_CLEANUP, now);
       const deleted = {} as UserErasure["deleted"];
+      // ADR-701: an iPhone whose own account this is stops using another one too.
+      await tx.query("DELETE FROM device_joins WHERE device_user_id = $1", [userId]);
       for (const table of ERASED_TABLES) deleted[table] = (await tx.query(`DELETE FROM ${table} WHERE user_id = $1`, [userId])).rowCount;
       let remaining = 0;
       for (const table of ERASED_TABLES) {
@@ -1290,21 +1301,46 @@ export class Store {
    * An Apple or Google sign-in made in the iPhone's sheet, waiting for that iPhone to confirm it with
    * its own session (ADR-700). `codeHash` is the SHA-256 of the code the sheet ended with.
    */
-  async createPendingLink(input: { codeHash: string; userId: string; identityId: string; provider: string; now: number; ttlMs: number }): Promise<void> {
+  async createPendingLink(input: { codeHash: string; userId: string; identityId: string; provider: string; now: number; ttlMs: number; intent?: "link" | "join" }): Promise<void> {
     await this.db.query(
-      "INSERT INTO web_link_pending (code_hash, user_id, identity_id, provider, created_at, expires_at) VALUES ($1, $2, $3, $4, $5, $6)",
-      [input.codeHash, input.userId, input.identityId, input.provider, input.now, input.now + input.ttlMs],
+      "INSERT INTO web_link_pending (code_hash, user_id, identity_id, provider, intent, created_at, expires_at) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+      [input.codeHash, input.userId, input.identityId, input.provider, input.intent ?? "link", input.now, input.now + input.ttlMs],
     );
   }
 
   /** Uses a pending link once, only for the account that asked for it; anything else returns null and changes nothing. */
-  async consumePendingLink(codeHash: string, userId: string, now: number): Promise<{ identity_id: string; provider: string } | null> {
+  async consumePendingLink(codeHash: string, userId: string, now: number, intent: "link" | "join" = "link"): Promise<{ identity_id: string; provider: string } | null> {
     return this.one<{ identity_id: string; provider: string }>(
       this.db,
-      `UPDATE web_link_pending SET consumed_at = $3 WHERE code_hash = $1 AND user_id = $2 AND consumed_at IS NULL AND expires_at > $3
+      `UPDATE web_link_pending SET consumed_at = $3 WHERE code_hash = $1 AND user_id = $2 AND intent = $4 AND consumed_at IS NULL AND expires_at > $3
        RETURNING identity_id, provider`,
-      [codeHash, userId, now],
+      [codeHash, userId, now, intent],
     );
+  }
+
+  // ------------------------------------------------------------ an iPhone using another account (ADR-701)
+
+  /** The account this iPhone (its own device user) uses instead of its own, or null. */
+  async deviceJoin(deviceUserId: string): Promise<{ user_id: string; provider: string; created_at: number } | null> {
+    return this.one<{ user_id: string; provider: string; created_at: number }>(
+      this.db,
+      "SELECT user_id, provider, created_at FROM device_joins WHERE device_user_id = $1",
+      [deviceUserId],
+    );
+  }
+
+  /** This iPhone now signs in to `userId` (replacing any earlier choice). */
+  async setDeviceJoin(deviceUserId: string, userId: string, provider: string, now: number): Promise<void> {
+    await this.db.query(
+      `INSERT INTO device_joins (device_user_id, user_id, provider, created_at) VALUES ($1, $2, $3, $4)
+       ON CONFLICT (device_user_id) DO UPDATE SET user_id = EXCLUDED.user_id, provider = EXCLUDED.provider, created_at = EXCLUDED.created_at`,
+      [deviceUserId, userId, provider, now],
+    );
+  }
+
+  /** Back to the iPhone's own account. False when it wasn't using another. */
+  async removeDeviceJoin(deviceUserId: string): Promise<boolean> {
+    return (await this.db.query("DELETE FROM device_joins WHERE device_user_id = $1", [deviceUserId])).rowCount === 1;
   }
 
   /**

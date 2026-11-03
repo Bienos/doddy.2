@@ -56,6 +56,8 @@ export interface DeviceSessionResponse {
 /** The store calls device sessions need. */
 export interface DeviceOwnerStore {
   claimDeviceOwner(userId: string, now: number): Promise<string>;
+  /** ADR-701: the account this iPhone chose to use instead of its own (Google or Apple on the iPhone). */
+  deviceJoin?(deviceUserId: string): Promise<{ user_id: string } | null>;
   reserveUsage(checks: readonly { counter: string; period: string; limit: number }[], units: number): Promise<boolean>;
 }
 
@@ -84,6 +86,9 @@ export class DeviceSessionIssuer {
     const parsed = DeviceSessionRequest.safeParse(body);
     if (!parsed.success) throw new AppError("invalid_request");
     const userId = deviceUserId(this.key, parsed.data.deviceId.toLowerCase());
+    // ADR-701: an iPhone that signed in to an account with Google or Apple keeps getting that account.
+    const joined = await this.options.store.deviceJoin?.(userId);
+    if (joined) return this.mint(joined.user_id, now);
     const code = parsed.data.inviteCode?.trim() ?? "";
     if (code !== "" && this.codeMatches(code)) return this.mint(userId, now);
     if (this.options.signup === "first-device" || this.options.signup === "open") {
@@ -109,6 +114,12 @@ export class DeviceSessionIssuer {
     );
     if (!allowed) throw new AppError("rate_limited", { message: "Too many new sign-ins right now. Try again later.", retryAfterSeconds: 3_600 });
     return this.mint(userId, now, "ask");
+  }
+
+  /** This device's own user ID (ADR-701), or null for something that isn't a device ID. */
+  userIdFor(deviceId: unknown): string | null {
+    const parsed = DeviceSessionRequest.shape.deviceId.safeParse(deviceId);
+    return parsed.success ? deviceUserId(this.key, parsed.data.toLowerCase()) : null;
   }
 
   private codeMatches(code: string): boolean {

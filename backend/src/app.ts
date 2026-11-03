@@ -142,7 +142,7 @@ export async function buildApp(
     config.web && webAuth
       ? {
           auth: webAuth,
-          routes: new WebRoutes(webAuth, store, verifier, config.limits.maxBodyBytes, { service: memory, chat: memoryChat }, thread, social, accountEraser),
+          routes: new WebRoutes(webAuth, store, verifier, config.limits.maxBodyBytes, { service: memory, chat: memoryChat }, thread, social, accountEraser, deviceSessions),
           pages: new WebStatic(config.web.distDir, config.web.origin),
         }
       : null;

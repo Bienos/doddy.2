@@ -238,6 +238,17 @@ describe("Settings › Delete account", () => {
     expect(seen.filter((s) => s.path === "/v1/web/account/delete")).toHaveLength(1);
   });
 
+  test("a web-made account is told how to use it on the iPhone; an iPhone's account isn't", async () => {
+    fakeServer({ ...signedInRoutes, "GET /v1/web/account": { body: { madeOnWeb: true } } });
+    const first = renderApp("/settings");
+    expect(await screen.findByRole("heading", { name: "On your iPhone" })).toBeInTheDocument();
+    first.unmount();
+    fakeServer({ ...signedInRoutes, "GET /v1/web/account": { body: { madeOnWeb: false } } });
+    renderApp("/settings");
+    await screen.findByText(/belongs to Doddy on your iPhone/);
+    expect(screen.queryByRole("heading", { name: "On your iPhone" })).toBeNull();
+  });
+
   test("an iPhone's account is sent to the iPhone, with no delete button here", async () => {
     fakeServer({ ...signedInRoutes, "GET /v1/web/account": { body: { madeOnWeb: false } } });
     renderApp("/settings");
