@@ -161,3 +161,41 @@ test("price watches read pages through the one shared polite fetcher, with the c
   assert.equal(p.watches.fetcher, p.deals.fetcher, "the same instance as the leaflets (one robots.txt cache, one user agent)");
   assert.deepEqual(p.watches.settings, { enabled: true, maxOpen: 3, checkHours: 12 });
 });
+
+test("a bad APNS_PRIVATE_KEY leaves push off instead of stopping the server, and the key is never logged", async () => {
+  const { generateKeyPairSync } = await import("node:crypto");
+  const { providersFrom, pushSenderFrom } = await import("../src/providers/index.js");
+  const apns = { teamId: "TEAM123456", keyId: "KEY1234567", bundleId: "com.example.doddy" };
+  const reports: { msg: string; extra: object }[] = [];
+  const report = (msg: string, extra: object = {}) => { reports.push({ msg, extra }); };
+
+  // Not configured: no sender, nothing reported.
+  assert.equal(pushSenderFrom(undefined, undefined, report), undefined);
+  assert.equal(reports.length, 0);
+
+  // A real P-256 key, as a .p8 holds it: a sender is made (constructing one opens no connection).
+  const pem = generateKeyPairSync("ec", { namedCurve: "P-256" }).privateKey.export({ format: "pem", type: "pkcs8" }).toString();
+  const good = pushSenderFrom({ ...apns, privateKey: pem }, undefined, report);
+  assert.ok(good, "a readable key gives a sender");
+  good.close();
+  assert.equal(reports.length, 0);
+
+  // The mistake seen on 3 Nov 2026: the Key ID pasted where the key belongs. And a key cut short.
+  for (const bad of ["TBL2Q27UL9", pem.slice(0, 60)]) {
+    reports.length = 0;
+    assert.equal(pushSenderFrom({ ...apns, privateKey: bad }, undefined, report), undefined);
+    assert.equal(reports.length, 1);
+    assert.match(reports[0]!.msg, /^push off: APNS_PRIVATE_KEY is not a readable private key/);
+    assert.equal(typeof (reports[0]!.extra as { error?: unknown }).error, "string");
+    assert.ok(!JSON.stringify(reports[0]).includes(bad), "the key's text is not in the log line");
+  }
+
+  // Something other than an unreadable key is not hidden: only what `make` throws is caught, and it is reported.
+  reports.length = 0;
+  assert.equal(pushSenderFrom({ ...apns, privateKey: pem }, () => { throw new Error("boom"); }, report), undefined);
+  assert.equal((reports[0]!.extra as { error?: unknown }).error, "unreadable_key");
+
+  // End to end through the real config: the server's providers come up, with push off.
+  const env = { DATABASE_URL: "postgres://x/y", APNS_TEAM_ID: "TEAM123456", APNS_KEY_ID: "KEY1234567", APNS_BUNDLE_ID: "com.example.doddy", APNS_PRIVATE_KEY: "TBL2Q27UL9" };
+  assert.equal(providersFrom(loadConfig(env)).push, undefined);
+});

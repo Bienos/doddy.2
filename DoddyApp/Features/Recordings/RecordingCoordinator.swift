@@ -263,7 +263,13 @@ final class RecordingCoordinator {
             return .microphoneDenied
         }
         if let free = files.freeBytes(), free < CaptureLimits.minFreeBytesToStart { return .storageLow }
-        return nil
+        // One owner of the audio session (ADR-695): Messages dictation or a call rehearsal has the
+        // microphone too. Asked last, so a player is stopped only for a recording that will start.
+        switch AudioSessionOwner.shared.claim(.captureRecording, by: self) {
+        case .refused(.conversation): return .conversationRunning
+        case .refused: return .microphoneBusy
+        case .go: return nil
+        }
     }
 
     // MARK: - Starting a part
@@ -600,7 +606,8 @@ final class RecordingCoordinator {
         openDebt = [:]
         isSwitchingPart = false
         isStartingPart = false
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        // Kept on for anything else of Doddy's still using it (ADR-695).
+        AudioSessionOwner.shared.release(.captureRecording, by: self)
     }
 
     private func refreshIndicator() {

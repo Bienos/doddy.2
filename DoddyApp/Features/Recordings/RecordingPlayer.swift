@@ -25,6 +25,10 @@ final class RecordingPlayer {
     @ObservationIgnored private var items: [ObjectIdentifier: Int] = [:]
     @ObservationIgnored private var timeObserver: Any?
 
+    init() {
+        AudioSessionOwner.shared.register(self, as: .recordingPlayback, isUsing: { $0.isPlaying }, stop: { $0.stop() })
+    }
+
     var hasAudio: Bool { !pieces.isEmpty }
     var totalMilliseconds: Int { pieces.last.map { $0.offsetMilliseconds + $0.durationMilliseconds } ?? 0 }
 
@@ -43,13 +47,9 @@ final class RecordingPlayer {
     /// Plays from `milliseconds` on the recording's own time, or from where it was.
     func play(from milliseconds: Int?) {
         guard hasAudio else { return }
-        guard !RecordingCoordinator.shared.isActive else {
-            problem = NSLocalizedString("Stop recording to play this.", comment: "")
-            return
-        }
-        // Playback only would turn off the conversation's microphone (ADR-676).
-        guard !VoiceSessionController.conversationInProgress else {
-            problem = NSLocalizedString("This plays after your conversation with Doddy ends.", comment: "")
+        // Playback only would break a recording or turn off a conversation's microphone (ADR-676, ADR-695).
+        if case .refused(let holder) = AudioSessionOwner.shared.claim(.recordingPlayback, by: self) {
+            problem = AudioPlaybackRefusal.message(by: holder)
             return
         }
         do {
@@ -58,6 +58,7 @@ final class RecordingPlayer {
             try session.setActive(true)
         } catch {
             problem = NSLocalizedString("This recording couldn't be played.", comment: "")
+            release()
             return
         }
         problem = nil
@@ -139,8 +140,8 @@ final class RecordingPlayer {
         positionMilliseconds = pieces[position].offsetMilliseconds + Int(max(0, item.currentTime().seconds) * 1000)
     }
 
+    /// Lets go of the audio session, which stays on for a recording or a conversation (ADR-695).
     private func release() {
-        guard !RecordingCoordinator.shared.isActive, !VoiceSessionController.conversationInProgress else { return }
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        AudioSessionOwner.shared.release(.recordingPlayback, by: self)
     }
 }
