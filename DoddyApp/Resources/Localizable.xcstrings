@@ -12086,6 +12086,17 @@
         }
       }
     },
+    "Close the draft": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zamknij szkic"
+          }
+        }
+      }
+    },
     "Cloud AI": {
       "extractionState": "manual",
       "localizations": {
@@ -29304,6 +29315,17 @@
         }
       }
     },
+    "From the register": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Z rejestru"
+          }
+        }
+      }
+    },
     "From walking to 30 minutes of running without stopping": {
       "extractionState": "manual",
       "localizations": {
@@ -31952,6 +31974,17 @@
         }
       }
     },
+    "Invoice draft": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szkic faktury"
+          }
+        }
+      }
+    },
     "Invoices (inFakt)": {
       "extractionState": "manual",
       "localizations": {
@@ -34249,6 +34282,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Po prostu zapytaj."
+          }
+        }
+      }
+    },
+    "KSeF number": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Numer KSeF"
           }
         }
       }
@@ -77903,6 +77947,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "Plik nie powstał albo Doddy nie mógł tego potwierdzić. Spróbuj jeszcze raz."
+          }
+        }
+      }
+    },
+    "The invoice draft couldn't be removed from this iPhone. Close it on the voice screen to try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The invoice draft couldn't be removed from this iPad. Close it on the voice screen to try again."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The invoice draft couldn't be removed from this iPhone. Close it on the voice screen to try again."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Nie udało się usunąć szkicu faktury z tego iPada. Zamknij go na ekranie rozmowy, żeby spróbować ponownie."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Nie udało się usunąć szkicu faktury z tego iPhone’a. Zamknij go na ekranie rozmowy, żeby spróbować ponownie."
+                }
+              }
+            }
           }
         }
       }

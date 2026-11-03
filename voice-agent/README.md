@@ -11,6 +11,14 @@ adding one adapter, not rewriting the app or the agent.
 | `session.json` | First message, languages, variables, turn-taking, per-provider settings | Agent settings | `session.update` body |
 
 **OpenAI Realtime voice (ADR-265; a choice in the voice picker, not the default: ElevenLabs is, ADR-546):** the picker runs these same files on OpenAI Realtime (`gpt-realtime-2.1` or `gpt-realtime-2.1-mini`, picked in the picker).
+**Applied to the live agent 1 Nov 2026 (ADR-677 to ADR-679, `draft_invoice`; owner: "Add everything", then "Go" after being told the first try on 30 Oct was refused by the session's safety check).**
+- **Read first, twice (30 Oct and right before writing on 1 Nov), unchanged between the two:** `agtvrsn_1401m63gw56bfm6934d4g33gef37`, 102 tool ids (two more than the entries below record: `tool_5201m626991zfjgrw2b4mhsyqzcb`, `tool_9101m626b83yfsyr5d68zckqjnqd`, kept as found), model `gpt-6-luna`, temperature 0.5, Europe/Warsaw, backup LLMs `qwen36-35b-a3b`, `gpt-6.1-sol`. A tool listing showed no `draft_invoice`. **Rollback:** `agtvrsn_1401m63gw56bfm6934d4g33gef37`.
+- **Created:** `draft_invoice` `tool_9301m6bqvywnfmv93krv5jhdpd7b`, exactly as `voice_agent_spec.py elevenlabs` renders it from this branch at `2ca3de7` (client tool, 60 s, speak first, expects a response, 28 parameters).
+- **Saved:** `agtvrsn_7901m6bqz362eah8t83pghsbdj3e`, `tool_ids` only: the 102 live ids unchanged and in order, plus the new one (103). No prompt, model or other setting was sent; the read-back shows the model, temperature, time zone and backup LLMs as they were.
+- **Checked, by script, on a read-back:** the tool's description, its 28 parameters (type, description, enum), required list, timeout, speech settings and expects-response equal the spec.
+- **The prompt was not changed:** the tool's description carries its rules (only what the user said, NIP and VAT checked against their words, sums from the result, never "issued"). `instructions.md` has the same line for the OpenAI voice.
+- **Not checked:** a real conversation. **Only an app build from `claude/invoices-by-voice-ksef` (ADR-677 or later) runs the tool**; an older build answers that it doesn't support it, and the agent then says it isn't available yet.
+
 **Applied to the live agent 1 Nov 2026, in two steps, about 14:20 and 15:32 UTC (ADR-667 and ADR-669, `find_deals`'s wording: the shops of #156 and #157; owner: "Yes" to putting the new `find_deals` text live, then "Approved").**
 - **Read first:** `tool_9201m5rpyjhfe2kv0yd5xbbfk6k3` with the text of 29 Oct (ADR-660): Biedronka, Lidl, Dino, Rossmann, Aldi and Żabka read; `chains` lists ten ids. **Rollback:** re-send that text (`git show ef3ff50:voice-agent/tools.json`, the `find_deals` entry, rendered with `voice_agent_spec.py elevenlabs`).
 - **Step 1 (14:20 UTC):** the tool as `voice_agent_spec.py elevenlabs` renders it at `20f8f55` (#156, the server deployed at 13:52 UTC): Delikatesy Centrum by default, E.Leclerc when named, Maxi Zoo, CCC and Komfort for their kind of item.
@@ -335,7 +343,6 @@ places phone calls through the Twilio number (ADR-152, ADR-172). Same three file
 - **Voice: not set (decision needed).** Neither `phone/session.json` nor the setup script sets a TTS model or voice, and `languages` is only `en`. ElevenLabs therefore uses its default for an English agent. The prompt says to answer Polish callers in Polish, but whether that voice speaks Polish hasn't been checked. Before the first real call, choose a multilingual TTS model, or add a `pl` preset, and record it in `phone/session.json`.
 - Drift: export the live phone agent's prompt and tools as above and run `voice_agent_spec.py compare EXPORT.json --agent phone`.
 - Status: **not created yet** (needs the deployed messaging server, a Twilio number and the owner's go-ahead).
-
 
 **Applied to the live agent 2026-10-11 (ADR-300 to ADR-305): round 4.**
 - **Re-read first:** version `agtvrsn_7701m4n8vprrem78gmfjjmq77t96` (43 tools), unchanged since round 3. `instructions.md`, which includes the affectionate-edison lines merged in PR #27, matched it except for the order of one sentence.

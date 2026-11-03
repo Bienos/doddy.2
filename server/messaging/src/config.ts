@@ -111,6 +111,10 @@ const schema = z.object({
   // Biedronka, Lidl, Dino, Rossmann, Aldi and Żabka on request (ADR-660) and keeps only counts. "0" answers 503 deals_disabled.
   // Image pages need ANTHROPIC_API_KEY (Claude Haiku reads them); the caps count requests per UTC day.
   DEALS_ENABLED: z.enum(["0", "1"]).default("0"),
+  // Company registers (ADR-685): CEIDG's JWT, which the owner gets free at biznes.gov.pl (e-service 00_9999_00,
+  // signing in with mObywatel or a trusted profile). Not set: GET /v1/registry/ceidg answers 503 registry_disabled.
+  CEIDG_API_TOKEN: z.string().min(20).optional(),
+  CEIDG_API_BASE: z.string().url().default("https://dane.biznes.gov.pl/api/ceidg/v3"),
   DEALS_VISION_MODEL: z.string().regex(/^[a-z0-9][a-z0-9.\-]{1,63}$/).default("claude-haiku-5-5"),
   DEALS_MAX_PAGES: z.coerce.number().int().min(0).max(100).default(40),
   DEALS_SCREEN_PAGES: z.coerce.number().int().min(0).max(200).default(120),
@@ -215,6 +219,8 @@ export interface Config {
   dealsSettings: DealsSettings;
   /** "Search further" under a leaflet answer (ADR-666). */
   dealsSearchShops: SearchShop[];
+  /** CEIDG (ADR-685): only with a token; the base is checked to be CEIDG's own host when the client is made. */
+  ceidg?: { token: string; baseUrl: string };
   watchSettings: WatchSettings;
   assistantSettings: AssistantSettings;
 }
@@ -301,6 +307,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       dailyPerAccount: e.DEALS_DAILY_PER_ACCOUNT, dailyPerServer: e.DEALS_DAILY_PER_SERVER,
     },
     dealsSearchShops: e.DEALS_SEARCH_SHOPS,
+    ceidg: e.CEIDG_API_TOKEN ? { token: e.CEIDG_API_TOKEN, baseUrl: e.CEIDG_API_BASE } : undefined,
     watchSettings: { enabled: e.WATCHES_ENABLED === "1", maxOpen: e.WATCHES_MAX_OPEN, checkHours: e.WATCHES_CHECK_HOURS },
     assistantSettings: {
       enabled: e.ASSISTANT_ENABLED === "1",

@@ -26,6 +26,7 @@ app.log.info({
   deals: config.dealsSettings.enabled, dealsReader: !!providers.deals.model, shoppingOffers: !!config.shoppingSettings.serperApiKey,
   dealsSearchShops: config.dealsSearchShops.length, affiliateRules: config.shoppingSettings.affiliateRules.length,
   watches: config.watchSettings.enabled && !!providers.cipher,
+  ceidg: !!providers.ceidg,
 }, "configured features");
 
 // One service instead of web + worker (a small or free deploy): RUN_WORKER_IN_WEB=1 runs the
