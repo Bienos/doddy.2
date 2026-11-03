@@ -210,7 +210,7 @@ final class LaunchSmokeTests: XCTestCase {
     /// Ways to open Doddy (ADR-558): Settings opens a list with Double Back Tap and Siri on every
     /// iPhone; Back Tap is three steps on one screen, and nothing on the way says "verified".
     @MainActor
-    func testWaysToOpenDoddyListsBackTapAndSiriAndBackTapIsOneScreen() throws {
+    func testWaysToOpenDoddyListsBackTapAndNoSiriAndBackTapIsOneScreen() throws {
         try XCTSkipIf(UIDevice.current.userInterfaceIdiom == .pad, "the Settings entry is iPhone-only")
         let app = launch(onboardingDone: true, backTapSetup: "notStarted")
         app.goToTab("settings")
@@ -223,15 +223,18 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertEqual(reminder.value as? String, "1")
         entry.tap()
         XCTAssertTrue(app.buttons["ways.backTap"].waitForExistence(timeout: 5), app.debugDescription)
-        XCTAssertTrue(app.buttons["ways.siri"].exists, "Siri needs no setup, so it is always offered")
+        XCTAssertFalse(app.buttons["ways.siri"].exists, "Siri is not listed any more (ADR-701)")
 
         app.buttons["ways.backTap"].tap()
         XCTAssertTrue(app.buttons["setup.startTest"].waitForExistence(timeout: 5), "the three steps and the test button share one screen")
         XCTAssertTrue(app.buttons["ways.openSettings"].exists)
 
         app.buttons["ways.all"].tap()
-        XCTAssertTrue(app.buttons["ways.siri"].waitForExistence(timeout: 5))
-        app.buttons["ways.siri"].tap()
+        // Another way, whichever this device offers (the Action Button, or a control): it has no
+        // test, and still has a way back.
+        let other = app.buttons["ways.actionButton"].exists ? app.buttons["ways.actionButton"] : app.buttons["ways.control"]
+        XCTAssertTrue(other.waitForExistence(timeout: 5))
+        other.tap()
         XCTAssertTrue(app.buttons["ways.all"].waitForExistence(timeout: 5), "a way without a test still has a way back")
     }
 

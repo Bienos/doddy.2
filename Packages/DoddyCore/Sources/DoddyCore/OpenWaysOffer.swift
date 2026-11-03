@@ -126,7 +126,7 @@ public enum OpenWaysReminder {
 
     public static func body(_ language: NotificationLanguage) -> String {
         language == .polish
-            ? "Stuknij dwa razy w tył iPhone’a, naciśnij przycisk albo zapytaj Siri. Wybierz sposób, kiedy chcesz."
-            : "Double-tap the back of your iPhone, press a button or ask Siri. Pick a way whenever you like."
+            ? "Stuknij dwa razy w tył iPhone’a albo naciśnij przycisk. Wybierz sposób, kiedy chcesz."
+            : "Double-tap the back of your iPhone or press a button. Pick a way whenever you like."
     }
 }

@@ -128,6 +128,9 @@ final class OpenWaysOfferTests: XCTestCase {
         }
         XCTAssertNotEqual(OpenWaysReminder.title(.english), OpenWaysReminder.title(.polish))
         XCTAssertFalse(OpenWaysReminder.body(.english).contains("!"), "no pressure")
+        for language in [NotificationLanguage.english, .polish] {
+            XCTAssertFalse(OpenWaysReminder.body(language).lowercased().contains("siri"), "ADR-701: no Siri in the reminder")
+        }
     }
 
     /// ADR-699: the owner's words for the row: no Siri, and nothing about ease or minutes.
