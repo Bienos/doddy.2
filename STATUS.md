@@ -39,7 +39,7 @@ Last updated 2026-11-03, 03:30 UTC: branch `claude/determined-brown-w9ts47` (PR 
 3. Build the app from the default branch and put it on the iPhone: the live servers and voice agent expect it (new shop ids, the partner-link button, the island pulse, everything since the last install). Note here which commit is installed.
 4. Review #161; decide on #166.
 
-**Merged 2 Nov as #175 (ADR-687):** a drop in the middle of a conversation is told on Home under a worried Doddy ("Chwila, nie słyszę Cię", button "Połącz ponownie"); hosted CI green (run 41530794891, the Mac job built and tested it); nothing seen on a device. **Branch `claude/home-dropped-last-words`** (ADR-698, 3 Nov): Home also shows the draft of what Doddy last heard with Save as note and Discard, and a phone-call interruption is no longer told as a dropped connection (a gap #175 had after #173). Not compiled here.
+**Merged 2 Nov as #175 (ADR-687):** a drop in the middle of a conversation is told on Home under a worried Doddy ("Chwila, nie słyszę Cię", button "Połącz ponownie"); hosted CI green (run 41530794891, the Mac job built and tested it); nothing seen on a device. **Branch `claude/home-dropped-last-words`** (ADR-700, 3 Nov): Home also shows the draft of what Doddy last heard with Save as note and Discard, and a phone-call interruption is no longer told as a dropped connection (a gap #175 had after #173). Not compiled here.
 
 **Branch `claude/home-open-ways-row`** (ADR-699, 3 Nov): Home's "Open Doddy faster" card is one slim row ("Jestem pod ręką"), no Siri. Not compiled here; the hosted CI is the first build.
 

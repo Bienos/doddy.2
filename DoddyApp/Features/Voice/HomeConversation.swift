@@ -33,7 +33,7 @@ final class HomeConversation {
         case .failed:
             // A drop in the middle of a conversation is said on Home (ADR-687) and opens nothing
             // by itself, unless the "Worth keeping?" card waits: only the transcript shows it. The
-            // draft of what Doddy last heard is on Home too (ADR-698).
+            // draft of what Doddy last heard is on Home too (ADR-700).
             if !stays(onHome: controller) { return true }
         case .microphoneDenied: return true
         default: break
@@ -56,7 +56,7 @@ final class HomeConversation {
     }
 
     /// A drop in the middle that Home can tell completely: Home has the words and the draft of what
-    /// Doddy last heard with its Save and Discard (ADR-698), but not the "Worth keeping?" card.
+    /// Doddy last heard with its Save and Discard (ADR-700), but not the "Worth keeping?" card.
     private func stays(onHome controller: VoiceSessionController) -> Bool {
         controller.homeDropNotice != nil && controller.saveSuggestions == nil
     }
