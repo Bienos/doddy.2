@@ -105,11 +105,23 @@ public final class WebSignInModel {
         case .failure(let problem):
             linkProblem = problem
         case .success(let ticket):
+            let end: WebSheetEnd
             do throws(WebAuthenticationError) {
-                let callback = try await authenticator.authenticate(url: ticket.url, callbackScheme: ticket.callbackScheme)
-                linkOutcome = ticket.outcome(of: callback)
+                end = ticket.end(of: try await authenticator.authenticate(url: ticket.url, callbackScheme: ticket.callbackScheme))
             } catch {
-                linkOutcome = error == .canceled ? .canceled : .failed
+                end = .done(error == .canceled ? .canceled : .failed)
+            }
+            switch end {
+            case .done(let outcome):
+                linkOutcome = outcome
+            case .confirm(let code):
+                // The server links only when this iPhone's own session confirms the sheet's code.
+                switch await perform({ client throws(WebLinkError) in try await client.completeLink(code: code) }) {
+                case .success(let outcome): linkOutcome = outcome
+                case .failure(let problem):
+                    // Expired, already used or unreadable: nothing was linked.
+                    if problem == .unreadable { linkOutcome = .failed } else { linkProblem = problem }
+                }
             }
             await refreshMethods()
         }

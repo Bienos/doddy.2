@@ -67,6 +67,8 @@ public protocol WebLinkClient: Sendable {
     func linkedSignIns() async throws(WebLinkError) -> [WebLinkedSignIn]
     /// A one-time address to open in the system sign-in sheet, which links `provider` to this account.
     func linkTicket(for provider: WebSignInProvider) async throws(WebLinkError) -> WebLinkTicket
+    /// Links what the sheet signed in with. Only this iPhone's session can, with the code its sheet ended with.
+    func completeLink(code: String) async throws(WebLinkError) -> WebLinkOutcome
     func unlink(signIn id: UUID) async throws(WebLinkError)
 }
 
@@ -75,6 +77,7 @@ public extension WebLinkClient {
     func signInProviders() async throws(WebLinkError) -> [WebSignInProvider] { [] }
     func linkedSignIns() async throws(WebLinkError) -> [WebLinkedSignIn] { [] }
     func linkTicket(for provider: WebSignInProvider) async throws(WebLinkError) -> WebLinkTicket { throw .notConfigured }
+    func completeLink(code: String) async throws(WebLinkError) -> WebLinkOutcome { throw .notConfigured }
     func unlink(signIn id: UUID) async throws(WebLinkError) { throw .notConfigured }
 }
 
@@ -106,22 +109,32 @@ public struct WebLinkTicket: Equatable, Sendable {
         self.callbackScheme = callbackScheme
     }
 
-    /// How it went, read from the address the sheet ended at (`<scheme>://web-sign-in/return?result=…`).
-    /// Anything else, including an address of another scheme or path, reads as `failed`.
-    public func outcome(of callback: URL) -> WebLinkOutcome {
+    /// How the sheet ended, read from the address it ended at (`<scheme>://web-sign-in/return?result=…`).
+    /// `confirm` carries the code this iPhone redeems with its own session; nothing is linked before
+    /// that. Anything else, including an address of another scheme or path, reads as `failed`.
+    public func end(of callback: URL) -> WebSheetEnd {
         guard callback.scheme == callbackScheme, callback.host == "web-sign-in", callback.path == "/return",
               let items = URLComponents(url: callback, resolvingAgainstBaseURL: false)?.queryItems
-        else { return .failed }
-        let provider = items.first { $0.name == "provider" }?.value.flatMap(WebSignInProvider.init(rawValue:))
+        else { return .done(.failed) }
         switch items.first(where: { $0.name == "result" })?.value {
-        case "linked": return provider.map(WebLinkOutcome.linked) ?? .failed
-        case "already": return provider.map(WebLinkOutcome.already) ?? .failed
-        case "taken": return provider.map(WebLinkOutcome.taken) ?? .failed
-        case "canceled": return .canceled
-        case "busy": return .busy
-        default: return .failed
+        case "confirm":
+            guard let code = items.first(where: { $0.name == "code" })?.value,
+                  code.range(of: "^[A-Za-z0-9_-]{43}$", options: .regularExpression) != nil
+            else { return .done(.failed) }
+            return .confirm(code: code)
+        case "canceled": return .done(.canceled)
+        case "busy": return .done(.busy)
+        default: return .done(.failed)
         }
     }
+}
+
+/// Where the sign-in sheet left things (ADR-700).
+public enum WebSheetEnd: Equatable, Sendable {
+    /// Signed in at Apple or Google; this iPhone confirms with this code to link it.
+    case confirm(code: String)
+    /// Nothing to confirm: how it ended.
+    case done(WebLinkOutcome)
 }
 
 /// What linking Apple or Google did, as the server said it. Only `linked` and `already` mean linked.
@@ -214,6 +227,18 @@ public struct BackendWebLinkClient: WebLinkClient {
         return WebLinkTicket(url: url, callbackScheme: reply.callbackScheme)
     }
 
+    public func completeLink(code: String) async throws(WebLinkError) -> WebLinkOutcome {
+        guard code.range(of: "^[A-Za-z0-9_-]{43}$", options: .regularExpression) != nil else { throw .unreadable }
+        let reply: CompleteReply = try await call("POST", "v1/web/oauth/complete", body: Data(#"{"code":"\#(code)"}"#.utf8))
+        guard let provider = WebSignInProvider(rawValue: reply.provider) else { throw .unreadable }
+        switch reply.result {
+        case "linked": return .linked(provider)
+        case "already": return .already(provider)
+        case "taken": return .taken(provider)
+        default: throw .unreadable
+        }
+    }
+
     public func unlink(signIn id: UUID) async throws(WebLinkError) {
         let _: UnlinkedReply = try await call("DELETE", "v1/web/identities/\(id.uuidString.lowercased())", body: nil)
     }
@@ -236,6 +261,11 @@ public struct BackendWebLinkClient: WebLinkClient {
     struct TicketReply: Decodable {
         let url: String
         let callbackScheme: String
+    }
+
+    struct CompleteReply: Decodable {
+        let result: String
+        let provider: String
     }
 
     struct UnlinkedReply: Decodable {

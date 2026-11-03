@@ -234,6 +234,13 @@ export class WebRoutes {
               run: async ({ caller, body, now }) => ({ status: 200, body: await social.ticket(caller!.userId, body, now) }),
             },
             {
+              method: "POST",
+              pattern: /^\/v1\/web\/oauth\/complete$/,
+              template: "POST /v1/web/oauth/complete",
+              access: "phone",
+              run: async ({ caller, body, now }) => ({ status: 200, body: await social.complete(caller!.userId, body, now) }),
+            },
+            {
               method: "GET",
               pattern: /^\/v1\/web\/identities$/,
               template: "GET /v1/web/identities",
@@ -245,7 +252,8 @@ export class WebRoutes {
               pattern: /^\/v1\/web\/identities\/([0-9a-f-]{36})$/,
               template: "DELETE /v1/web/identities/:id",
               access: "either",
-              run: async ({ caller, params }) => {
+              run: async ({ caller, params, now }) => {
+                social.assertMayChange(caller!.session, now);
                 await social.unlink(caller!.userId, params[0]!);
                 return { status: 200, body: { unlinked: true } };
               },

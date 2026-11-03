@@ -68,6 +68,10 @@ async function seed(store: Store, userId: string, tag: string): Promise<void> {
      VALUES ($1, $2, 'google', 'link', 'app', 'v', 1, 9999999999999)`,
     [`os-${tag}`, userId],
   );
+  await q(
+    `INSERT INTO web_link_pending (code_hash, user_id, identity_id, provider, created_at, expires_at) VALUES ($1, $2, $3, 'google', 1, 9999999999999)`,
+    [`lp-${tag}`, userId, uuid(4)],
+  );
   await q("INSERT INTO logbook_state (user_id, enabled, changed_at) VALUES ($1, true, 1)", [userId]);
   await q("INSERT INTO logbook_days (user_id, day, summary, received_at) VALUES ($1, '2026-10-09', '{}', 1)", [userId]);
   await q("INSERT INTO memory_state (user_id, notes, conversations, changed_at) VALUES ($1, true, true, 1)", [userId]);

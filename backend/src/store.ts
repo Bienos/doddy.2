@@ -70,6 +70,7 @@ export const ERASED_TABLES = [
   "web_sessions",
   "web_identities",
   "web_oauth_states",
+  "web_link_pending",
   "logbook_state",
   "logbook_days",
   "memory_state",
@@ -209,6 +210,15 @@ export const SCHEMA_SQL = `
   CREATE TABLE IF NOT EXISTS web_link_codes (
     code_hash TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
+    created_at BIGINT NOT NULL,
+    expires_at BIGINT NOT NULL,
+    consumed_at BIGINT
+  );
+  CREATE TABLE IF NOT EXISTS web_link_pending (
+    code_hash TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    identity_id TEXT NOT NULL,
+    provider TEXT NOT NULL,
     created_at BIGINT NOT NULL,
     expires_at BIGINT NOT NULL,
     consumed_at BIGINT
@@ -1231,6 +1241,27 @@ export class Store {
     ).rows;
   }
 
+  /**
+   * An Apple or Google sign-in made in the iPhone's sheet, waiting for that iPhone to confirm it with
+   * its own session (ADR-700). `codeHash` is the SHA-256 of the code the sheet ended with.
+   */
+  async createPendingLink(input: { codeHash: string; userId: string; identityId: string; provider: string; now: number; ttlMs: number }): Promise<void> {
+    await this.db.query(
+      "INSERT INTO web_link_pending (code_hash, user_id, identity_id, provider, created_at, expires_at) VALUES ($1, $2, $3, $4, $5, $6)",
+      [input.codeHash, input.userId, input.identityId, input.provider, input.now, input.now + input.ttlMs],
+    );
+  }
+
+  /** Uses a pending link once, only for the account that asked for it; anything else returns null and changes nothing. */
+  async consumePendingLink(codeHash: string, userId: string, now: number): Promise<{ identity_id: string; provider: string } | null> {
+    return this.one<{ identity_id: string; provider: string }>(
+      this.db,
+      `UPDATE web_link_pending SET consumed_at = $3 WHERE code_hash = $1 AND user_id = $2 AND consumed_at IS NULL AND expires_at > $3
+       RETURNING identity_id, provider`,
+      [codeHash, userId, now],
+    );
+  }
+
   /** Removes one of `userId`'s linked sign-ins. False when it isn't theirs. */
   async unlinkWebIdentity(userId: string, identityId: string): Promise<boolean> {
     return (await this.db.query("DELETE FROM web_identities WHERE identity_id = $1 AND user_id = $2", [identityId, userId])).rowCount === 1;
@@ -1274,7 +1305,8 @@ export class Store {
     return this.db.transaction(async (tx) => {
       const codes =
         (await tx.query("DELETE FROM web_link_codes WHERE expires_at < $1", [now - DAY])).rowCount +
-        (await tx.query("DELETE FROM web_oauth_states WHERE expires_at < $1", [now - DAY])).rowCount;
+        (await tx.query("DELETE FROM web_oauth_states WHERE expires_at < $1", [now - DAY])).rowCount +
+        (await tx.query("DELETE FROM web_link_pending WHERE expires_at < $1", [now - DAY])).rowCount;
       const sessions = (
         await tx.query("DELETE FROM web_sessions WHERE revoked_at < $1 OR expires_at < $1 OR last_seen_at < $2", [now - DAY, now - idleMs - DAY])
       ).rowCount;

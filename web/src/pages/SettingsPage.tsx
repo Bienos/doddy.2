@@ -108,7 +108,7 @@ function SessionItem({ session, onChanged }: { session: WebSessionView; onChange
 }
 
 /** What the server said after linking (`/settings?link=…`), read once (ADR-700). */
-const LINK_RESULTS = ["linked", "already", "taken", "canceled", "failed", "busy", "signed_out"] as const;
+const LINK_RESULTS = ["linked", "already", "taken", "canceled", "failed", "busy", "signed_out", "reauth"] as const;
 type LinkResult = (typeof LINK_RESULTS)[number];
 
 export function readLinkResult(search: string): { result: LinkResult; provider: SocialProvider | null } | null {
@@ -200,6 +200,11 @@ function IdentityItem({ identity, label, linkedOn, onChanged }: { identity: Link
       }
       if (caught instanceof ApiError && caught.code === "not_found") {
         onChanged();
+        return;
+      }
+      // ADR-700: a browser changes sign-in methods only soon after signing in with a code.
+      if (caught instanceof ApiError && caught.code === "refused") {
+        setError(t("settings.link.reauth"));
         return;
       }
       const apiError = caught instanceof ApiError ? caught : new ApiError("network", String(caught), 0);

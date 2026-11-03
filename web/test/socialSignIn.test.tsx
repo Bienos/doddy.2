@@ -129,6 +129,22 @@ describe("Settings › Sign-in methods", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("already linked to another Doddy account");
   });
 
+  test("an old browser session is asked to sign in again before changing anything", async () => {
+    const { seen } = fakeServer({
+      ...signedInRoutes,
+      "GET /v1/web/sign-in-options": { body: { providers: ["google"] } },
+      "GET /v1/web/identities": { body: { identities: [{ id: GOOGLE_ID, provider: "google", linkedAt: "2026-11-03T10:00:00.000Z" }] } },
+      [`DELETE /v1/web/identities/${GOOGLE_ID}`]: { status: 422, body: { error: { code: "refused", message: "x" } } },
+    });
+    renderApp("/settings?link=reauth");
+    expect(await screen.findByRole("alert")).toHaveTextContent("needs a fresh sign-in");
+    const section = screen.getByRole("heading", { name: "Sign-in methods" }).closest("section")!;
+    await userEvent.click(await within(section).findByRole("button", { name: "Unlink: Google" }));
+    expect((await within(section).findAllByRole("alert")).at(-1)).toHaveTextContent("needs a fresh sign-in");
+    expect(within(section).getByText("Google")).toBeInTheDocument();
+    expect(seen.some((s) => s.method === "DELETE")).toBe(true);
+  });
+
   test("a finished link is a status line", async () => {
     fakeServer({
       ...signedInRoutes,

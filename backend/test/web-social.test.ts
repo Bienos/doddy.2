@@ -5,7 +5,7 @@ import type { FetchJson } from "../src/auth.js";
 import { appScheme } from "../src/app.js";
 import { loadConfig } from "../src/config.js";
 import { ERASED_TABLES } from "../src/store.js";
-import { OAUTH_STATE_TTL_MS, OAUTH_TICKET_TTL_MS, type PostJson, SOCIAL_LIMITS } from "../src/web/social.js";
+import { LINK_REAUTH_MS, OAUTH_STATE_TTL_MS, OAUTH_TICKET_TTL_MS, PENDING_LINK_TTL_MS, type PostJson, SOCIAL_LIMITS } from "../src/web/social.js";
 import { DEV_IDENTITIES } from "../src/auth.js";
 import { USER_A, USER_B } from "./helpers.js";
 import { CHROME_MAC, COOKIE, cookieValue, startWeb, WEB_ORIGIN, type WebRig } from "./webRig.js";
@@ -305,17 +305,32 @@ test("an email or phone sign-in at Supabase opens nothing, even for a linked per
   assert.equal(done.location, "/sign-in?signin=failed&provider=google");
 });
 
-test("one client gets a limited number of starts and callbacks a quarter hour", async () => {
-  const { rig: r } = await socialRig();
-  for (let i = 0; i < SOCIAL_LIMITS.perClientPerQuarter; i++) assert.equal(new URL((await start(r, "provider=google")).location).origin, PROJECT);
+test("one client gets a limited number of starts a quarter hour, and callbacks are counted apart", async () => {
+  const { rig: r, supabase } = await socialRig();
+  await linkFromBrowser(r, supabase, GOOGLE_PERSON);
+  const waiting = await start(r, "provider=google");
+  // Linking took one start and `waiting` another.
+  for (let i = 2; i < SOCIAL_LIMITS.startsPerClientPerQuarter; i++) assert.equal(new URL((await start(r, "provider=google")).location).origin, PROJECT);
   assert.equal((await start(r, "provider=google")).location, "/sign-in?signin=busy");
+  // A sign-in already under way still finishes: a burst of starts can't block callbacks.
+  assert.equal((await callback(r, `code=${supabase.issueCode(waiting.location, GOOGLE_PERSON)}`, waiting.state)).location, "/");
   r.clock.advance(15 * 60_000);
   assert.equal(new URL((await start(r, "provider=google")).location).origin, PROJECT);
 });
 
 // ------------------------------------------------------------------ from the iPhone
 
-test("the iPhone links Google with a one-time ticket, and its sheet ends at the app's scheme", async () => {
+/** The iPhone's sheet: ticket, start, Google, callback. Returns the confirmation code it ended with. */
+async function sheet(r: WebRig, supabase: ReturnType<typeof fakeSupabase>, token: string, sub: string) {
+  const ticket = await r.call("POST", "/v1/web/oauth/tickets", { token, body: { provider: "google" } });
+  assert.equal(ticket.status, 200, ticket.text);
+  const s = await start(r, new URL(ticket.body.url).search.slice(1));
+  const done = await callback(r, `code=${supabase.issueCode(s.location, sub)}`, s.state);
+  const end = new URL(done.location);
+  return { ticket, end, code: end.searchParams.get("code") };
+}
+
+test("the iPhone links Google with a one-time ticket, then confirms it with its own session", async () => {
   const { rig: r, supabase } = await socialRig();
   const ticket = await r.call("POST", "/v1/web/oauth/tickets", { token: USER_A, body: { provider: "google" } });
   assert.equal(ticket.status, 200, ticket.text);
@@ -327,13 +342,77 @@ test("the iPhone links Google with a one-time ticket, and its sheet ends at the 
   const s = await start(r, url.search.slice(1));
   assert.equal(new URL(s.location).origin, PROJECT);
   const done = await callback(r, `code=${supabase.issueCode(s.location, GOOGLE_PERSON)}`, s.state);
-  assert.equal(done.location, "doddy-dev://web-sign-in/return?result=linked&provider=google");
+  const end = new URL(done.location);
+  assert.equal(`${end.protocol}//${end.host}${end.pathname}`, "doddy-dev://web-sign-in/return");
+  assert.equal(end.searchParams.get("result"), "confirm");
+  assert.equal(end.searchParams.get("provider"), "google");
+  const code = end.searchParams.get("code")!;
+  assert.match(code, /^[A-Za-z0-9_-]{43}$/);
+  // The sheet alone linked nothing.
+  assert.equal(await r.store.webIdentityOwner(GOOGLE_PERSON), null);
+
+  const confirmed = await r.call("POST", "/v1/web/oauth/complete", { token: USER_A, body: { code } });
+  assert.equal(confirmed.status, 200, confirmed.text);
+  assert.deepEqual(confirmed.body, { result: "linked", provider: "google" });
   assert.equal(await r.store.webIdentityOwner(GOOGLE_PERSON), DEV_IDENTITIES[USER_A]);
+  // Once.
+  assert.equal((await r.call("POST", "/v1/web/oauth/complete", { token: USER_A, body: { code } })).status, 404);
 
   // The ticket worked once.
   assert.equal((await start(r, url.search.slice(1))).location, "doddy-dev://web-sign-in/return?result=failed");
   // And now Google opens the web for this person without any code.
   assert.equal((await googleSignIn(r, supabase, GOOGLE_PERSON)).location, "/");
+});
+
+test("a ticket sent to someone else can't link their Google to the sender's account", async () => {
+  const { rig: r, supabase } = await socialRig();
+  // B (the sender) asks for a ticket and gets someone (A) to open it and sign in with A's Google.
+  const { code } = await sheet(r, supabase, USER_B, GOOGLE_PERSON);
+  // The confirmation code ended in A's browser. B, without it, can't confirm anything...
+  assert.equal((await r.call("POST", "/v1/web/oauth/complete", { token: USER_B, body: { code: "C".repeat(43) } })).status, 404);
+  // ...and A's own iPhone can't confirm it either: it was asked for by another account.
+  assert.equal((await r.call("POST", "/v1/web/oauth/complete", { token: USER_A, body: { code } })).status, 404);
+  assert.equal(await r.store.webIdentityOwner(GOOGLE_PERSON), null, "nothing was linked to anyone");
+  // A's Google is still free for A to link to A's own account.
+  const own = await sheet(r, supabase, USER_A, GOOGLE_PERSON);
+  assert.equal((await r.call("POST", "/v1/web/oauth/complete", { token: USER_A, body: { code: own.code } })).body.result, "linked");
+});
+
+test("a confirmation needs the iPhone's session, a well-formed code, and comes in time", async () => {
+  const { rig: r, supabase } = await socialRig();
+  const { code } = await sheet(r, supabase, USER_A, GOOGLE_PERSON);
+  const session = await r.signIn(await r.code());
+  assert.equal((await r.call("POST", "/v1/web/oauth/complete", { cookie: session, browser: true, body: { code } })).status, 401);
+  assert.equal((await r.call("POST", "/v1/web/oauth/complete", { token: USER_A, body: { code: "short" } })).status, 400);
+  assert.equal((await r.call("POST", "/v1/web/oauth/complete", { token: USER_A, body: { code, userId: "x" } })).status, 400);
+  r.clock.advance(PENDING_LINK_TTL_MS + 1);
+  assert.equal((await r.call("POST", "/v1/web/oauth/complete", { token: USER_A, body: { code } })).status, 404);
+  assert.equal(await r.store.webIdentityOwner(GOOGLE_PERSON), null);
+});
+
+test("an iPhone confirming a Google account already linked elsewhere is told so, and nothing merges", async () => {
+  const { rig: r, supabase } = await socialRig();
+  await linkFromBrowser(r, supabase, GOOGLE_PERSON, USER_B);
+  const { code } = await sheet(r, supabase, USER_A, GOOGLE_PERSON);
+  assert.deepEqual((await r.call("POST", "/v1/web/oauth/complete", { token: USER_A, body: { code } })).body, { result: "taken", provider: "google" });
+  assert.equal(await r.store.webIdentityOwner(GOOGLE_PERSON), DEV_IDENTITIES[USER_B]);
+});
+
+test("a browser links or unlinks only soon after signing in; the iPhone always can", async () => {
+  const { rig: r, supabase } = await socialRig();
+  const session = await r.signIn(await r.code());
+  r.clock.advance(LINK_REAUTH_MS + 1);
+  const s = await start(r, "provider=google&intent=link", session);
+  assert.equal(s.location, "/settings?link=reauth");
+  assert.equal(s.state, null);
+
+  await linkFromBrowser(r, supabase, GOOGLE_PERSON);
+  r.clock.advance(LINK_REAUTH_MS + 1);
+  const refused = await r.call("DELETE", `/v1/web/identities/${GOOGLE_PERSON}`, { cookie: session, browser: true });
+  assert.equal(refused.status, 422, refused.text);
+  assert.equal(refused.body.error.code, "refused");
+  assert.equal(await r.store.webIdentityOwner(GOOGLE_PERSON), DEV_IDENTITIES[USER_A]);
+  assert.equal((await r.call("DELETE", `/v1/web/identities/${GOOGLE_PERSON}`, { token: USER_A })).status, 200);
 });
 
 test("a ticket comes only from the iPhone's own session, for a configured provider, and expires", async () => {
@@ -377,11 +456,12 @@ test("deleting the account removes its linked sign-ins and sign-ins in progress"
   const { rig: r, supabase } = await socialRig();
   await linkFromBrowser(r, supabase, GOOGLE_PERSON);
   await r.call("POST", "/v1/web/oauth/tickets", { token: USER_A, body: { provider: "google" } });
-  assert.ok((ERASED_TABLES as readonly string[]).includes("web_identities"));
-  assert.ok((ERASED_TABLES as readonly string[]).includes("web_oauth_states"));
+  await sheet(r, supabase, USER_A, OTHER_PERSON);
+  for (const table of ["web_identities", "web_oauth_states", "web_link_pending"]) assert.ok((ERASED_TABLES as readonly string[]).includes(table), table);
   const erasure = await r.store.eraseUser(DEV_IDENTITIES[USER_A]!, r.clock.ms);
   assert.equal(erasure.deleted.web_identities, 1);
   assert.ok(erasure.deleted.web_oauth_states >= 1);
+  assert.equal(erasure.deleted.web_link_pending, 1);
   assert.equal(erasure.remaining, 0);
   assert.equal(await r.store.webIdentityOwner(GOOGLE_PERSON), null);
 });

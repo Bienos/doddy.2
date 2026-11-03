@@ -19,7 +19,8 @@ export { clientKey };
  *  3. The browser gets a session for the same user: a random token in an HttpOnly, SameSite=Strict
  *     cookie that the page's scripts can't read. The server keeps only its SHA-256.
  * A browser session can read the workspace and sign browsers out; it can't run tools, change
- * accounts or make more codes (`COOKIE_READABLE` and the web routes decide). The iPhone lists and
+ * accounts or make more codes (`COOKIE_READABLE` and the web routes decide). It can link or unlink
+ * Apple and Google only within 15 minutes of signing in (`social.ts`, ADR-700). The iPhone lists and
  * signs out browsers too.
  */
 
@@ -53,6 +54,8 @@ export const COOKIE_READABLE: ReadonlySet<string> = new Set(["GET /v1/tools", "G
 export interface WebSessionContext {
   sessionId: string;
   userId: string;
+  /** When this browser signed in (ms). Linking Apple or Google from a browser needs a recent sign-in (ADR-700). */
+  createdAt: number;
 }
 
 const sha256 = (value: string) => createHash("sha256").update(value).digest("hex");
@@ -193,7 +196,7 @@ export class WebAuth {
     const row = await this.store.webSessionByToken(tokenHash(token), now.getTime(), SESSION_IDLE_MS);
     if (!row) return null;
     if (now.getTime() - row.last_seen_at >= TOUCH_EVERY_MS) await this.store.touchWebSession(row.session_id, now.getTime());
-    return { sessionId: row.session_id, userId: row.user_id };
+    return { sessionId: row.session_id, userId: row.user_id, createdAt: row.created_at };
   }
 
   /** True when the request carries this server's session cookie at all (valid or not). */

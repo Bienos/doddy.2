@@ -16,6 +16,14 @@ import { describeAgent, MAX_SESSIONS_PER_USER, readCookie, SESSION_IDLE_MS, SESS
  *    one-time ticket (`POST /v1/web/oauth/tickets`) and opens it in the system sign-in sheet;
  *  - from a browser already signed in with a code: Settings › Sign-in methods › Link.
  * After that, "Continue with Google" on the sign-in page opens a browser session for that account.
+ *
+ * Two rules keep a link from being planted (security review of 3 Nov):
+ *  - The iPhone's sheet links nothing by itself. It ends with a one-time confirmation code at the
+ *    app's scheme, and only the iPhone that asked can redeem it, with its own session
+ *    (`POST /v1/web/oauth/complete`). A ticket sent to someone else ends in their browser, where it
+ *    can't be confirmed for the sender's account.
+ *  - A browser links or unlinks only within LINK_REAUTH_MS of signing in, so a stolen or forgotten
+ *    browser session can't add a way back in that outlives signing it out.
  * A Google or Apple account linked to nobody opens nothing and creates nothing: accounts are never
  * made or merged behind the person's back (ADR-600).
  *
@@ -41,8 +49,12 @@ export type SocialReturn = "web" | "app";
 export const OAUTH_STATE_TTL_MS = 10 * 60_000;
 /** An iPhone's ticket must be opened this soon; the sign-in then has OAUTH_STATE_TTL_MS. */
 export const OAUTH_TICKET_TTL_MS = 5 * 60_000;
-/** Starts and callbacks per client per quarter hour, and tickets per user per hour. */
-export const SOCIAL_LIMITS = { perClientPerQuarter: 30, ticketsPerUserPerHour: 20 } as const;
+/** The iPhone's confirmation code, from the end of its sheet, must be redeemed this soon. */
+export const PENDING_LINK_TTL_MS = 5 * 60_000;
+/** A browser may link or unlink Apple or Google only this soon after it signed in. */
+export const LINK_REAUTH_MS = 15 * 60_000;
+/** Starts and callbacks (counted apart) per client per quarter hour, and tickets per user per hour. */
+export const SOCIAL_LIMITS = { startsPerClientPerQuarter: 30, callbacksPerClientPerQuarter: 60, ticketsPerUserPerHour: 20 } as const;
 
 const STATE = /^[A-Za-z0-9_-]{43}$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
@@ -80,7 +92,7 @@ export interface SocialOutcome {
 }
 
 /** Why a sign-in didn't finish, as the page shows it (`?signin=` or `?link=`). Never a provider's own text. */
-export type SocialResult = "linked" | "already" | "taken" | "not_linked" | "canceled" | "failed" | "busy" | "signed_out";
+export type SocialResult = "linked" | "already" | "taken" | "not_linked" | "canceled" | "failed" | "busy" | "signed_out" | "reauth" | "confirm";
 
 export class SocialSignIn {
   readonly providers: readonly SocialProvider[];
@@ -162,13 +174,14 @@ export class SocialSignIn {
     if (ticket !== null) return this.startFromTicket(req, ticket, now);
     const intent: SocialIntent = query.get("intent") === "link" ? "link" : "signin";
     const back = (result: SocialResult) => this.done({ intent, returnTo: "web", result });
-    if (!(await this.withinLimit(req, now))) return back("busy");
+    if (!(await this.withinLimit(req, now, "start"))) return back("busy");
     const provider = this.provider(query.get("provider"));
     if (!provider) return back("failed");
     let session: WebSessionContext | null = null;
     if (intent === "link") {
       session = await this.web.fromCookie(req, now);
       if (!session) return back("signed_out");
+      if (!isRecent(session, now)) return back("reauth");
     }
     const token = randomBytes(32).toString("base64url");
     const verifier = randomBytes(48).toString("base64url");
@@ -188,7 +201,7 @@ export class SocialSignIn {
   /** The iPhone's ticket: its row was made with the phone's session; this browser takes it over once. */
   private async startFromTicket(req: IncomingMessage, ticket: string, now: Date): Promise<SocialOutcome> {
     const back = (result: SocialResult) => this.done({ intent: "link", returnTo: "app", result });
-    if (!(await this.withinLimit(req, now))) return back("busy");
+    if (!(await this.withinLimit(req, now, "start"))) return back("busy");
     if (!STATE.test(ticket)) return back("failed");
     // The ticket is used once here; a fresh state (new token, same verifier) carries the sign-in on.
     const row = await this.store.consumeWebOAuthState(stateHash(ticket), now.getTime());
@@ -215,13 +228,14 @@ export class SocialSignIn {
     const token = readCookie(header(req, "cookie"), this.stateCookie);
     // Without our cookie we can't tell which sign-in this was, or where to send the person back.
     if (!token || !STATE.test(token)) return withCookie(this.done({ intent: "signin", returnTo: "web", result: "failed" }), clear);
-    if (!(await this.withinLimit(req, now))) return withCookie(this.done({ intent: "signin", returnTo: "web", result: "busy" }), clear);
+    if (!(await this.withinLimit(req, now, "callback"))) return withCookie(this.done({ intent: "signin", returnTo: "web", result: "busy" }), clear);
     const row = await this.store.consumeWebOAuthState(stateHash(token), now.getTime());
     if (!row) return withCookie(this.done({ intent: "signin", returnTo: "web", result: "failed" }), clear);
     const intent: SocialIntent = row.intent === "link" ? "link" : "signin";
     const returnTo: SocialReturn = row.return_to === "app" ? "app" : "web";
     const provider = this.provider(row.provider);
-    const back = (result: SocialResult, extra: string[] = []) => withCookie(this.done({ intent, returnTo, result, ...(provider ? { provider } : {}) }), clear, ...extra);
+    const back = (result: SocialResult, confirmCode?: string) =>
+      withCookie(this.done({ intent, returnTo, result, ...(provider ? { provider } : {}), ...(confirmCode ? { confirmCode } : {}) }), clear);
 
     const code = query.get("code");
     if (!code) {
@@ -242,6 +256,13 @@ export class SocialSignIn {
 
     if (intent === "link") {
       if (!row.user_id) return back("failed");
+      if (returnTo === "app") {
+        // Nothing is linked yet: the iPhone that asked confirms with its own session.
+        const confirmCode = randomBytes(32).toString("base64url");
+        await this.store.createPendingLink({ codeHash: stateHash(`confirm:${confirmCode}`), userId: row.user_id, identityId, provider, now: now.getTime(), ttlMs: PENDING_LINK_TTL_MS });
+        this.log({ event: "web_identity_link", provider, result: "confirm" });
+        return back("confirm", confirmCode);
+      }
       const linked = await this.store.linkWebIdentity(identityId, row.user_id, provider, now.getTime());
       this.log({ event: "web_identity_link", provider, result: linked });
       return back(linked);
@@ -263,7 +284,29 @@ export class SocialSignIn {
     return { location: "/", setCookies: [clear, this.web.sessionCookie(sessionToken)] };
   }
 
+  /**
+   * `POST /v1/web/oauth/complete` (the iPhone's session): links what its sheet signed in with. Only
+   * the account that asked for the ticket can, and only once, within PENDING_LINK_TTL_MS.
+   */
+  async complete(userId: string, body: unknown, now: Date): Promise<{ result: "linked" | "already" | "taken"; provider: SocialProvider }> {
+    const code = typeof body === "object" && body !== null ? (body as Record<string, unknown>).code : undefined;
+    if (typeof code !== "string" || !STATE.test(code) || Object.keys(body as object).length !== 1) throw new AppError("invalid_request");
+    const pending = await this.store.consumePendingLink(stateHash(`confirm:${code}`), userId, now.getTime());
+    const provider = pending ? this.provider(pending.provider) : null;
+    if (!pending || !provider) throw new AppError("not_found", { message: "That sign-in has expired or was already used. Link it again." });
+    const result = await this.store.linkWebIdentity(pending.identity_id, userId, provider, now.getTime());
+    this.log({ event: "web_identity_link", provider, result });
+    return { result, provider };
+  }
+
   // ---------------------------------------------------------------- linked sign-ins
+
+  /** A browser changes its linked sign-ins only soon after signing in; the iPhone always can. */
+  assertMayChange(session: WebSessionContext | null, now: Date): void {
+    if (session && !isRecent(session, now)) {
+      throw new AppError("refused", { message: "For safety, sign in again with a code from your iPhone, then change this within 15 minutes." });
+    }
+  }
 
   async list(userId: string): Promise<IdentityView[]> {
     return (await this.store.webIdentities(userId)).map(identityView).filter((v): v is IdentityView => v !== null);
@@ -309,8 +352,8 @@ export class SocialSignIn {
     return user.userId;
   }
 
-  private done(o: { intent: SocialIntent; returnTo: SocialReturn; result: SocialResult; provider?: SocialProvider }): SocialOutcome {
-    const params = new URLSearchParams({ result: o.result, ...(o.provider ? { provider: o.provider } : {}) });
+  private done(o: { intent: SocialIntent; returnTo: SocialReturn; result: SocialResult; provider?: SocialProvider; confirmCode?: string }): SocialOutcome {
+    const params = new URLSearchParams({ result: o.result, ...(o.provider ? { provider: o.provider } : {}), ...(o.confirmCode ? { code: o.confirmCode } : {}) });
     if (o.returnTo === "app") return { location: `${this.appReturn}?${params}`, setCookies: [] };
     if (o.intent === "link") return { location: `/settings?link=${o.result}${o.provider ? `&provider=${o.provider}` : ""}`, setCookies: [] };
     return { location: `/sign-in?signin=${o.result}${o.provider ? `&provider=${o.provider}` : ""}`, setCookies: [] };
@@ -320,10 +363,12 @@ export class SocialSignIn {
     return typeof value === "string" && (this.providers as readonly string[]).includes(value) ? (value as SocialProvider) : null;
   }
 
-  private async withinLimit(req: IncomingMessage, now: Date): Promise<boolean> {
+  /** Starts and callbacks are counted apart: a burst of starts can't make others' callbacks fail. */
+  private async withinLimit(req: IncomingMessage, now: Date, step: "start" | "callback"): Promise<boolean> {
     const quarter = `day:${now.toISOString().slice(0, 14)}${String(Math.floor(now.getUTCMinutes() / 15) * 15).padStart(2, "0")}`;
-    const client = `web_oauth:${sha256(`client:${clientKey(clientAddress(req, this.o.trustProxy))}`)}`;
-    return this.store.reserveUsage([{ counter: client, period: quarter, limit: SOCIAL_LIMITS.perClientPerQuarter }], 1);
+    const client = `web_oauth_${step}:${sha256(`client:${clientKey(clientAddress(req, this.o.trustProxy))}`)}`;
+    const limit = step === "start" ? SOCIAL_LIMITS.startsPerClientPerQuarter : SOCIAL_LIMITS.callbacksPerClientPerQuarter;
+    return this.store.reserveUsage([{ counter: client, period: quarter, limit }], 1);
   }
 
   private stateCookieValue(value: string, maxAgeSeconds: number): string {
@@ -333,6 +378,10 @@ export class SocialSignIn {
   private log(line: Record<string, unknown>): void {
     this.o.log?.({ level: "info", ...line });
   }
+}
+
+function isRecent(session: WebSessionContext, now: Date): boolean {
+  return now.getTime() - session.createdAt <= LINK_REAUTH_MS;
 }
 
 function identityView(row: WebIdentityRow): IdentityView | null {

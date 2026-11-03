@@ -82,16 +82,33 @@ final class WebSignInMethodsClientTests: XCTestCase {
 
     func testTheSheetsEndIsReadStrictly() {
         let ticket = WebLinkTicket(url: URL(string: ticketURL)!, callbackScheme: "doddy")
-        XCTAssertEqual(ticket.outcome(of: URL(string: "doddy://web-sign-in/return?result=linked&provider=google")!), .linked(.google))
-        XCTAssertEqual(ticket.outcome(of: URL(string: "doddy://web-sign-in/return?result=already&provider=apple")!), .already(.apple))
-        XCTAssertEqual(ticket.outcome(of: URL(string: "doddy://web-sign-in/return?result=taken&provider=google")!), .taken(.google))
-        XCTAssertEqual(ticket.outcome(of: URL(string: "doddy://web-sign-in/return?result=canceled&provider=google")!), .canceled)
-        XCTAssertEqual(ticket.outcome(of: URL(string: "doddy://web-sign-in/return?result=busy")!), .busy)
-        XCTAssertEqual(ticket.outcome(of: URL(string: "doddy://web-sign-in/return?result=failed")!), .failed)
-        // "linked" without a provider, another scheme, another path: never read as linked.
-        XCTAssertEqual(ticket.outcome(of: URL(string: "doddy://web-sign-in/return?result=linked")!), .failed)
-        XCTAssertEqual(ticket.outcome(of: URL(string: "doddy-dev://web-sign-in/return?result=linked&provider=google")!), .failed)
-        XCTAssertEqual(ticket.outcome(of: URL(string: "doddy://connected-apps/return?result=linked&provider=google")!), .failed)
+        let code = String(repeating: "Ab3_-", count: 8) + "xyz"
+        XCTAssertEqual(ticket.end(of: URL(string: "doddy://web-sign-in/return?result=confirm&provider=google&code=\(code)")!), .confirm(code: code))
+        XCTAssertEqual(ticket.end(of: URL(string: "doddy://web-sign-in/return?result=canceled&provider=google")!), .done(.canceled))
+        XCTAssertEqual(ticket.end(of: URL(string: "doddy://web-sign-in/return?result=busy")!), .done(.busy))
+        XCTAssertEqual(ticket.end(of: URL(string: "doddy://web-sign-in/return?result=failed")!), .done(.failed))
+        // The sheet can never say "linked" by itself: only the server's answer to this iPhone's confirmation can.
+        XCTAssertEqual(ticket.end(of: URL(string: "doddy://web-sign-in/return?result=linked&provider=google")!), .done(.failed))
+        XCTAssertEqual(ticket.end(of: URL(string: "doddy://web-sign-in/return?result=confirm&provider=google&code=short")!), .done(.failed))
+        XCTAssertEqual(ticket.end(of: URL(string: "doddy-dev://web-sign-in/return?result=confirm&code=\(code)")!), .done(.failed))
+        XCTAssertEqual(ticket.end(of: URL(string: "doddy://connected-apps/return?result=confirm&code=\(code)")!), .done(.failed))
+    }
+
+    func testConfirmingSendsTheCodeAndReadsTheServersAnswer() async throws {
+        let code = String(repeating: "Ab3_-", count: 8) + "xyz"
+        let transport = RoutedTransport(["POST /v1/web/oauth/complete": (200, #"{"result":"taken","provider":"google"}"#)])
+        let outcome = try await client(transport).completeLink(code: code)
+        XCTAssertEqual(outcome, .taken(.google))
+        let request = try XCTUnwrap(transport.requests.first)
+        XCTAssertEqual(String(data: try XCTUnwrap(request.body), encoding: .utf8), #"{"code":"\#(code)"}"#)
+        XCTAssertEqual(request.headers["authorization"], "Bearer ds1.a.b")
+        let odd = RoutedTransport(["POST /v1/web/oauth/complete": (200, #"{"result":"merged","provider":"google"}"#)])
+        do {
+            _ = try await client(odd).completeLink(code: code)
+            XCTFail("an unknown answer was read")
+        } catch {
+            XCTAssertEqual(error, .unreadable)
+        }
     }
 }
 
@@ -104,6 +121,10 @@ private final class FakeMethods: WebLinkClient, @unchecked Sendable {
     /// What linking does on the server when the sheet ends.
     var onSheetEnd: (() -> Void)?
     var unlinkResults: [Result<Void, WebLinkError>] = []
+    /// What the server answers this iPhone's confirmation; linking `onConfirm` when it succeeds.
+    var completeResult: Result<WebLinkOutcome, WebLinkError> = .success(.linked(.google))
+    var onConfirm: [WebLinkedSignIn] = []
+    private(set) var confirmed: [String] = []
     private(set) var tickets: [WebSignInProvider] = []
 
     func newCode() async throws(WebLinkError) -> WebLinkCode { throw .notConfigured }
@@ -114,6 +135,12 @@ private final class FakeMethods: WebLinkClient, @unchecked Sendable {
     func linkTicket(for provider: WebSignInProvider) async throws(WebLinkError) -> WebLinkTicket {
         lock.withLock { tickets.append(provider) }
         return try ticketResult.get()
+    }
+    func completeLink(code: String) async throws(WebLinkError) -> WebLinkOutcome {
+        lock.withLock { confirmed.append(code) }
+        let outcome = try completeResult.get()
+        lock.withLock { linked = onConfirm }
+        return outcome
     }
     func unlink(signIn id: UUID) async throws(WebLinkError) {
         let result = lock.withLock { unlinkResults.removeFirst() }
@@ -153,15 +180,18 @@ final class WebSignInMethodsModelTests: XCTestCase {
         XCTAssertEqual(noSheet.methods, .unavailable)
     }
 
-    func testLinkingShowsWhatTheServerSaidAndThenWhatItKeeps() async {
+    private let confirmCode = String(repeating: "Ab3_-", count: 8) + "xyz"
+    private var confirmURL: URL { URL(string: "doddy://web-sign-in/return?result=confirm&provider=google&code=\(confirmCode)")! }
+
+    func testLinkingConfirmsWithThisIPhoneThenShowsWhatTheServerKeeps() async {
         let fake = FakeMethods()
-        let signIn = googleSignIn
-        let sheet = FakeSheet(.success(URL(string: "doddy://web-sign-in/return?result=linked&provider=google")!), before: { fake.linked = [signIn] })
-        let model = WebSignInModel(makeClient: { fake }, renewClient: { nil }, authenticator: sheet)
+        fake.onConfirm = [googleSignIn]
+        let model = WebSignInModel(makeClient: { fake }, renewClient: { nil }, authenticator: FakeSheet(.success(confirmURL)))
         await model.refreshMethods()
         XCTAssertEqual(model.methods, .loaded(offered: [.google, .apple], linked: []))
         await model.link(.google)
         XCTAssertEqual(fake.tickets, [.google])
+        XCTAssertEqual(fake.confirmed, [confirmCode])
         XCTAssertEqual(model.linkOutcome, .linked(.google))
         XCTAssertEqual(model.methods, .loaded(offered: [.google, .apple], linked: [googleSignIn]), "the list is the server's, read again")
         XCTAssertNil(model.linking)
@@ -169,8 +199,10 @@ final class WebSignInMethodsModelTests: XCTestCase {
 
     func testTakenCancelledOrABrokenSheetLinkNothing() async {
         let fake = FakeMethods()
+        fake.completeResult = .success(.taken(.google))
         for (sheet, outcome) in [
-            (FakeSheet(.success(URL(string: "doddy://web-sign-in/return?result=taken&provider=google")!)), WebLinkOutcome.taken(.google)),
+            (FakeSheet(.success(confirmURL)), WebLinkOutcome.taken(.google)),
+            (FakeSheet(.success(URL(string: "doddy://web-sign-in/return?result=linked&provider=google")!)), .failed),
             (FakeSheet(.failure(.canceled)), .canceled),
             (FakeSheet(.failure(.failed)), .failed),
             (FakeSheet(.success(URL(string: "doddy://elsewhere?result=linked&provider=google")!)), .failed),
@@ -180,6 +212,22 @@ final class WebSignInMethodsModelTests: XCTestCase {
             XCTAssertEqual(model.linkOutcome, outcome)
             XCTAssertEqual(model.methods, .loaded(offered: [.google, .apple], linked: []))
         }
+    }
+
+    func testAnExpiredConfirmationLinksNothingAndSaysSo() async {
+        let fake = FakeMethods()
+        fake.completeResult = .failure(.notFound)
+        fake.onConfirm = [googleSignIn]
+        let model = WebSignInModel(makeClient: { fake }, renewClient: { nil }, authenticator: FakeSheet(.success(confirmURL)))
+        await model.link(.google)
+        XCTAssertEqual(model.linkOutcome, .failed)
+        XCTAssertEqual(model.methods, .loaded(offered: [.google, .apple], linked: []))
+        let offline = FakeMethods()
+        offline.completeResult = .failure(.transport)
+        let second = WebSignInModel(makeClient: { offline }, renewClient: { nil }, authenticator: FakeSheet(.success(confirmURL)))
+        await second.link(.google)
+        XCTAssertEqual(second.linkProblem, .offline)
+        XCTAssertNil(second.linkOutcome)
     }
 
     func testNoTicketMeansNoSheet() async {
