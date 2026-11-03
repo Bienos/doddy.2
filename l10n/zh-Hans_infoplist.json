@@ -39,6 +39,10 @@
     "en": "Doddy reads your workouts, heart rate, resting heart rate, heart rate variability, sleep and VO2 max from Health to show them to you on its Apple Health screen. Only a short summary of the week leaves this iPhone, and only when you allow it: in Messages when you send it yourself, or to Doddy's voice when you ask and say yes. Doddy keeps none of it and writes nothing to Health. Turn this off in Settings, Connections, Apple Health, or in the Health app.",
     "zh-Hans": "Doddy 从“健康”读取你的体能训练、心率、静息心率、心率变异性（HRV）、睡眠和最大摄氧量，并在它的“Apple Health”页面上显示给你看。只有本周的简短摘要会离开这部 iPhone，而且只在你允许时：你在“信息”中自己发送时，或你询问并同意后交给 Doddy 的语音。Doddy 不保存任何数据，也不会向“健康”写入任何内容。可在设置的“连接”中的“Apple Health”或在“健康”App 中关闭。"
   },
+  "NSHealthUpdateUsageDescription": {
+    "en": "Doddy never writes to or changes Apple Health. It only asks to read your workouts, heart rate, resting heart rate, heart rate variability, sleep and VO2 max. iOS asks apps for this text because its Health permission screen covers both reading and writing.",
+    "zh-Hans": "Doddy 绝不会向“健康”写入或更改任何内容。它只请求读取你的体能训练、心率、静息心率、心率变异性（HRV）、睡眠和最大摄氧量。iOS 要求 App 提供这段文字，因为“健康”的权限页面同时涵盖读取和写入。"
+  },
   "NSCameraUsageDescription": {
     "en": "Doddy opens the camera only when you tap Take a photo or Open camera. The photo you keep goes into a note on this iPhone and its text is read here; it is never sent anywhere or saved to your photo library.",
     "zh-Hans": "只有在你轻点“拍照”或“打开相机”时，Doddy 才会打开相机。你保留的照片会放进这台 iPhone 上的一条笔记，其中的文字在这里读取；照片绝不会发送到任何地方，也不会存入你的照片图库。"
