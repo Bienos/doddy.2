@@ -32,8 +32,8 @@ final class HomeConversation {
         switch controller.phase {
         case .failed:
             // A drop in the middle of a conversation is said on Home (ADR-687) and opens nothing
-            // by itself, unless something in it waits for a decision: the draft of what Doddy last
-            // heard, or the "Worth keeping?" card. Only the transcript can show those.
+            // by itself, unless the "Worth keeping?" card waits: only the transcript shows it. The
+            // draft of what Doddy last heard is on Home too (ADR-700).
             if !stays(onHome: controller) { return true }
         case .microphoneDenied: return true
         default: break
@@ -55,11 +55,10 @@ final class HomeConversation {
         return controller.homeDropNotice
     }
 
-    /// A drop in the middle that waits on no decision: no draft of what Doddy last heard, no saved
-    /// draft to read back, no "Worth keeping?" card.
+    /// A drop in the middle that Home can tell completely: Home has the words and the draft of what
+    /// Doddy last heard with its Save and Discard (ADR-700), but not the "Worth keeping?" card.
     private func stays(onHome controller: VoiceSessionController) -> Bool {
-        controller.homeDropNotice != nil
-            && controller.recovery == nil && controller.recoverySaved == nil && controller.saveSuggestions == nil
+        controller.homeDropNotice != nil && controller.saveSuggestions == nil
     }
 
     /// For the transcript: the held conversation when there is something in it to show (live, or

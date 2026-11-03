@@ -390,6 +390,12 @@ struct HomeView: View {
                 .font(.body)
                 .foregroundStyle(Theme.secondaryText)
                 .multilineTextAlignment(.center)
+            // What Doddy last heard, as a draft (ADR-700): the transcript's own card, so it is saved
+            // only on Save as note, read back by the store, and dropped by Discard.
+            if let held = conversation.controller, held.recovery != nil || held.recoverySaved != nil {
+                RecoveryDraftCard(controller: held)
+                    .padding(.top, 12)
+            }
             Button(action: talk) {
                 Label { Text(verbatim: notice.button) } icon: { Image(systemName: "waveform") }
             }

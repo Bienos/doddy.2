@@ -94,9 +94,15 @@ public struct HomeDropNotice: Equatable, Sendable {
 extension SessionRecovery {
     /// The notice for a conversation that connected and then stopped by itself. Nil for every other
     /// end: one the user or Doddy ended, "Stop listening", no internet (the offline note card is
-    /// in the transcript) and one that never connected ("Couldn't connect" keeps its own screen).
+    /// in the transcript), one that never connected ("Couldn't connect" keeps its own screen) and
+    /// one iOS cut off for a phone call or another app (ADR-696: "the connection dropped" would be
+    /// wrong, and the transcript says what happened).
     public static func homeNotice(_ end: VoiceSessionEnd, connected: Bool, language: NotificationLanguage) -> HomeDropNotice? {
-        guard connected, case .dropped(let drop) = end, drop != .offline else { return nil }
+        guard connected, case .dropped(let drop) = end else { return nil }
+        switch drop {
+        case .offline, .audioInterrupted: return nil
+        case .connectionLost, .error: break
+        }
         switch language {
         case .polish:
             return HomeDropNotice(
