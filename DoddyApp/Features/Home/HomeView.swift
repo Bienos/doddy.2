@@ -775,26 +775,52 @@ struct HomeView: View {
 
     /// Offered once; "Later" hides it (Settings can reopen the guide). Never shown as done
     /// unless the user reported a successful tap test.
+    /// One slim row (owner, 3 Nov 2026, ADR-699): tap it to see the ways, tap the cross for "Later".
+    /// Two ways, Back Tap and a button; no Siri here. The words are `OpenWaysOffer.rowTitle/rowLine`.
     private var backTapCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Open Doddy faster")
-                .font(.headline)
-                .accessibilityAddTraits(.isHeader)
-            Text("Double-tap the back of your iPhone, press a button or just ask Siri. Pick a way; it takes about a minute.")
-                .font(.subheadline)
-                .foregroundStyle(Theme.secondaryText)
-            HStack(spacing: 12) {
-                Button("Show me the ways") { router.isSetupPresented = true }
-                    .buttonStyle(PrimaryButtonStyle())
-                    .accessibilityIdentifier("home.backTap.setup")
-                Button("Later") { router.setup.send(.deferSetup) }
-                    .buttonStyle(SecondaryButtonStyle())
-                    .accessibilityIdentifier("home.backTap.later")
+        let language = NotificationLanguage.current
+        return HStack(spacing: 4) {
+            Button { router.isSetupPresented = true } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "iphone.radiowaves.left.and.right")
+                        .font(.title3)
+                        .foregroundStyle(Theme.orangeCue)
+                        .frame(width: 40, height: 40)
+                        .background(Theme.canvas, in: RoundedRectangle(cornerRadius: 12))
+                        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Theme.separator, lineWidth: 1))
+                        .accessibilityHidden(true)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(verbatim: OpenWaysOffer.rowTitle(language))
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Theme.ink)
+                        Text(verbatim: OpenWaysOffer.rowLine(language))
+                            .font(.footnote)
+                            .foregroundStyle(Theme.secondaryText)
+                            .multilineTextAlignment(.leading)
+                    }
+                    Spacer(minLength: 0)
+                }
+                .padding(.vertical, 10)
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("home.backTap.setup")
+            Button { router.setup.send(.deferSetup) } label: {
+                Image(systemName: "xmark")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Theme.secondaryText)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Later")
+            .accessibilityIdentifier("home.backTap.later")
         }
-        .padding(16)
+        .padding(.leading, 12)
+        .padding(.trailing, 2)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+        .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(Theme.separator, lineWidth: 1))
     }
 }
 
