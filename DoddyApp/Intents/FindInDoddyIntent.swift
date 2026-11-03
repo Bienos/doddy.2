@@ -6,7 +6,7 @@ import AppIntents
 struct FindInDoddyIntent: AppIntent {
     static let title: LocalizedStringResource = "Find in Doddy"
     static var description: IntentDescription {
-        IntentDescription("Opens Doddy and searches your saved notes on this iPhone.")
+        IntentDescription("Opens Doddy and searches your saved notes.")
     }
     static let openAppWhenRun = true
 

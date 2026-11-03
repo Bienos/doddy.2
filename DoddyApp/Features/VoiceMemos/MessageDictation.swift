@@ -9,8 +9,9 @@ import Speech
 /// nothing is saved; only the words reach the draft, and the draft goes to Doddy's server only when sent as
 /// a normal message. It lives in this folder because audio and speech code may only be here (ADR-230).
 ///
-/// It refuses to start while a conversation with Doddy, a voice memo or a Capture recording holds the
-/// microphone, because all of them share one audio session.
+/// It refuses to start while a conversation with Doddy, a voice memo, a call rehearsal or a Capture
+/// recording holds the microphone, because all of them share one audio session, and it lets go of the
+/// session through `AudioSessionOwner`, which keeps it on for anything else still using it (ADR-695).
 @MainActor
 @Observable
 final class MessageDictation {
@@ -32,12 +33,15 @@ final class MessageDictation {
     /// Bumped on every start and stop so a late callback from an earlier dictation is ignored.
     @ObservationIgnored private var generation = 0
 
-    /// - Parameters:
-    ///   - isOtherMicrophoneBusy: true while a conversation, memo or recording has the microphone.
-    ///   - onText: everything heard since the mic was tapped (it grows and is corrected while they talk).
-    func start(isOtherMicrophoneBusy: Bool, onText: @escaping @MainActor (String) -> Void) async {
+    init() {
+        AudioSessionOwner.shared.register(self, as: .dictation, isUsing: { $0.state == .starting || $0.isListening })
+    }
+
+    /// - Parameter onText: everything heard since the mic was tapped (it grows and is corrected while they talk).
+    func start(onText: @escaping @MainActor (String) -> Void) async {
         guard state != .starting, !isListening else { return }
-        guard !isOtherMicrophoneBusy else {
+        // A conversation, a memo, a rehearsal or a recording has the microphone (ADR-695).
+        if case .refused = AudioSessionOwner.shared.claim(.dictation, by: self) {
             state = .failed(NSLocalizedString("Doddy is already listening or recording. Finish that first.", comment: ""))
             return
         }
@@ -82,8 +86,8 @@ final class MessageDictation {
             try engine.start()
         } catch {
             engine.inputNode.removeTap(onBus: 0)
-            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
             state = .failed(NSLocalizedString("Dictation couldn't start. If you're talking to Doddy or on a call, finish that first.", comment: ""))
+            AudioSessionOwner.shared.release(.dictation, by: self)
             return
         }
         self.engine = engine
@@ -120,8 +124,10 @@ final class MessageDictation {
         task?.cancel()
         task = nil
         if state == .listening || state == .starting {
-            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
             state = .idle
+            // Switched off only if nothing else of Doddy's uses it: a conversation started meanwhile
+            // (the Action Button, Back Tap) keeps its microphone (ADR-695).
+            AudioSessionOwner.shared.release(.dictation, by: self)
         }
     }
 

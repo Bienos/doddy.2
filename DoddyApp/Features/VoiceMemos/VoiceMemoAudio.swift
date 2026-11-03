@@ -37,6 +37,7 @@ final class VoiceMemoRecorder {
 
     init() {
         Self.deleteLeftovers()
+        AudioSessionOwner.shared.register(self, as: .memoRecording, isUsing: { $0.isCapturing })
     }
 
     /// Recordings left in the temporary folder by a crash or a force-quit before their note was
@@ -55,14 +56,16 @@ final class VoiceMemoRecorder {
     /// Asks for the microphone once (the same permission as talking to Doddy), then records.
     func start() async {
         guard !isRecording else { return }
-        guard !RecordingCoordinator.shared.isActive else {
+        // A memo would take the microphone and audio setup of whatever else listens (ADR-676, ADR-695).
+        switch AudioSessionOwner.shared.claim(.memoRecording, by: self) {
+        case .refused(.captureRecording):
             state = .failed(NSLocalizedString("Doddy is recording. Stop the recording to record a voice memo.", comment: ""))
             return
-        }
-        // A memo would take the conversation's microphone and audio setup (ADR-676).
-        guard !VoiceSessionController.conversationInProgress else {
+        case .refused:
             state = .failed(NSLocalizedString("Recording couldn't start. If you're talking to Doddy or on a call, finish that first.", comment: ""))
             return
+        case .go:
+            break
         }
         guard await AVAudioApplication.requestRecordPermission() else {
             state = .failed(NSLocalizedString("The microphone is off for Doddy. Turn it on in the Settings app to record.", comment: ""))
@@ -105,6 +108,7 @@ final class VoiceMemoRecorder {
         } catch {
             try? FileManager.default.removeItem(at: url)
             state = .failed(NSLocalizedString("Recording couldn't start. If you're talking to Doddy or on a call, finish that first.", comment: ""))
+            AudioSessionOwner.shared.release(.memoRecording, by: self)
         }
     }
 
@@ -117,9 +121,8 @@ final class VoiceMemoRecorder {
         recorder.stop()
         self.recorder = nil
         state = .idle
-        if !VoiceSessionController.conversationInProgress {
-            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-        }
+        // Kept on for anything else of Doddy's still using it, a conversation first (ADR-676, ADR-695).
+        AudioSessionOwner.shared.release(.memoRecording, by: self)
         MicrophoneHolders.shared.recording(self, false)
         let milliseconds = min(Int((seconds * 1000).rounded()), VoiceMemoLimits.maxSeconds * 1000)
         guard MemoryAudio.isValidDuration(milliseconds), FileManager.default.fileExists(atPath: recorder.url.path) else {
@@ -160,19 +163,19 @@ final class VoiceMemoPlayer {
     private var player: AVAudioPlayer?
     private var ticker: Task<Void, Never>?
 
+    init() {
+        AudioSessionOwner.shared.register(self, as: .memoPlayback, isUsing: { $0.isPlaying }, stop: { $0.stop() })
+    }
+
     func toggle(_ url: URL) {
         if isPlaying {
             pause()
             return
         }
-        guard !RecordingCoordinator.shared.isActive else {
-            problem = NSLocalizedString("Stop recording to play this.", comment: "")
-            return
-        }
-        // Playing switches the audio session to playback only, which turns off the conversation's
-        // microphone while Home still says Listening (ADR-676).
-        guard !VoiceSessionController.conversationInProgress else {
-            problem = NSLocalizedString("This plays after your conversation with Doddy ends.", comment: "")
+        // Playing switches the audio session to playback only, which turns off the microphone of
+        // whatever listens while Home still says Listening (ADR-676). Another player stops for this one.
+        if case .refused(let holder) = AudioSessionOwner.shared.claim(.memoPlayback, by: self) {
+            problem = AudioPlaybackRefusal.message(by: holder)
             return
         }
         do {
@@ -207,6 +210,7 @@ final class VoiceMemoPlayer {
         ticker?.cancel()
         ticker = nil
         isPlaying = false
+        release()
     }
 
     func stop() {
@@ -227,10 +231,10 @@ final class VoiceMemoPlayer {
         release()
     }
 
-    /// Lets go of the audio session, unless a conversation started meanwhile: deactivating would stop
-    /// what it plays and hears (ADR-676).
+    /// Lets go of the audio session, which stays on for anything else of Doddy's still using it: a
+    /// conversation started meanwhile keeps what it plays and hears (ADR-676, ADR-695).
     private func release() {
-        guard !VoiceSessionController.conversationInProgress else { return }
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        AudioSessionOwner.shared.release(.memoPlayback, by: self)
     }
 }
+
