@@ -22,3 +22,12 @@
 UI_SPRINGBOARD_CLASSES="IslandPolishTests MemoryBaselineTests"
 UI_SHARD_A="LaunchSmokeTests LegalAcceptanceUITests MemoryBaselineTests MotionBehaviourUITests"
 UI_SHARD_B="MemoryJourneyTests MotionHopTests PolishSmokeTests WelcomeUITests"
+#
+# Warm-up (ADR-687): the cold-start failures were not only the SpringBoard tests. On a freshly booted
+# Mac the first tests of a part can be slow or fail while the simulator, SpringBoard and the app's first
+# launch settle (run 41619070789: LaunchSmokeTests.testFirstLaunchOpeningCanBeSkippedAndNeverStartsVoice
+# took 204 s and failed as the first test of ui-a; ui-a failed the same way in the run before). So each UI
+# part first runs this one quick test on its own, in a separate xcodebuild run whose result is ignored,
+# and then runs its real tests on a settled simulator. Every real test still runs and must pass; the
+# warm-up only absorbs the cold start. It must name a real, quick test (the shard check verifies it exists).
+UI_WARMUP_TEST="LaunchSmokeTests/testOpeningOffShowsHomeStraightAway"

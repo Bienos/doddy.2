@@ -262,6 +262,21 @@ else
         if [ -n "${sim_id:-}" ]; then
           run_step "Restart the simulator before the UI tests" restart_simulator "$sim_id"
         fi
+        # Warm-up (ADR-687): one quick UI test in its own xcodebuild run, result ignored, so that none
+        # of the real tests is the first thing to run on a cold simulator (see scripts/ui_test_shards.sh).
+        # The real run below still runs every test, including this one, and decides pass or fail.
+        if [ -n "$app_part" ]; then
+          # shellcheck source=scripts/ui_test_shards.sh
+          . scripts/ui_test_shards.sh
+          echo; echo "=== Warm up the simulator (result ignored)"
+          # shellcheck disable=SC2086
+          if xcodebuild test-without-building -project Doddy.xcodeproj -scheme Doddy -destination "$dest" \
+            -only-testing:DoddyUITests/$UI_WARMUP_TEST $test_limits; then
+            record "Warm up the simulator (one quick test, not counted)" "INFO" "passed"
+          else
+            record "Warm up the simulator (one quick test, not counted)" "INFO" "failed and ignored; the real run decides"
+          fi
+        fi
         # Which UI test classes (ADR-687). No part: all of them. ui-a and ui-b: the classes listed in
         # scripts/ui_test_shards.sh. ui-c: everything except those, so a new class always runs.
         ui_select="-only-testing:DoddyUITests"

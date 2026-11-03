@@ -73,7 +73,7 @@ scripts/ci.sh                  # set DODDY_DESTINATION to override the simulator
   each. `unit`: the Swift package tests, then build and the unit tests. `ui-a`, `ui-b`, `ui-c`: build, restart the
   simulator, then a third of the UI tests. The split is in `scripts/ui_test_shards.sh` (`ui-c` is every class not
   listed there, so a new class always runs; `scripts/check_ui_test_shards.sh` fails on a misspelt or doubled name).
-  Each Mac builds the app itself. Two simulators on one Mac were slower and flaky (ADR-680), so that is not used.
+  Each Mac builds the app itself. Two simulators on one Mac were slower and flaky (ADR-680), so that is not used. Each UI part first runs one quick test as a warm-up (result ignored) so no real test is the first thing on a cold simulator.
 - `ci`: one result for the Mac side, green when every `mac` part that ran passed (no app change: skipped, fine).
   It no longer waits for `core`, and does not repeat the Node suites. Run the workflow by hand (Actions → iOS build
   and tests → Run workflow) and it always runs.

@@ -42,6 +42,14 @@ for c in $UI_SPRINGBOARD_CLASSES; do
   printf '%s\n' "$all" | grep -qx "$c" || { echo "FAIL: $c is in UI_SPRINGBOARD_CLASSES but is not a class in DoddyUITests"; fail=1; }
 done
 
+# The warm-up test (UI_WARMUP_TEST, "Class/testName") must be a real test, or the warm-up would run
+# nothing and its ignored result would hide that.
+wclass=${UI_WARMUP_TEST%%/*}; wtest=${UI_WARMUP_TEST#*/}
+if ! grep -qE "^(final )?class $wclass: XCTestCase" DoddyUITests/*.swift \
+  || ! grep -hE "func $wtest\(" $(grep -lE "^(final )?class $wclass: XCTestCase" DoddyUITests/*.swift) >/dev/null 2>&1; then
+  echo "FAIL: UI_WARMUP_TEST $UI_WARMUP_TEST is not a test in DoddyUITests"; fail=1
+fi
+
 # xcodebuild runs a part's classes in alphabetical order, so no part may start with one of them.
 for part in "ui-a:$UI_SHARD_A" "ui-b:$UI_SHARD_B" "ui-c:$rest"; do
   name=${part%%:*}; first=$(printf '%s\n' ${part#*:} | sort | head -1)
