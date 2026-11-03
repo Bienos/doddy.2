@@ -130,6 +130,25 @@ final class OpenWaysOfferTests: XCTestCase {
         XCTAssertFalse(OpenWaysReminder.body(.english).contains("!"), "no pressure")
     }
 
+    /// ADR-699: the owner's words for the row: no Siri, and nothing about ease or minutes.
+    func testTheRowSaysTwoWaysInTheOwnersWordsWithoutSiriOrEase() {
+        XCTAssertEqual(OpenWaysOffer.rowTitle(.polish), "Jestem pod ręką")
+        XCTAssertEqual(OpenWaysOffer.rowLine(.polish), "Ustaw sposób, żeby mnie zawołać.")
+        for language in [NotificationLanguage.english, .polish] {
+            let words = (OpenWaysOffer.rowTitle(language) + " " + OpenWaysOffer.rowLine(language)).lowercased()
+            // No Siri and nothing about ease or minutes. (The English title is the owner's "I'm here
+            // non-stop"; the Polish one makes no promise of being always there.)
+            for banned in ["siri", "minut", "minute", "easy", "łatw", "quick", "szybk", "faster"] {
+                XCTAssertFalse(words.contains(banned), "\(language): \(banned)")
+            }
+        }
+        XCTAssertEqual(OpenWaysOffer.rowTitle(.english), "I'm here non-stop")
+        XCTAssertNotEqual(OpenWaysOffer.rowTitle(.english), OpenWaysOffer.rowTitle(.polish))
+        for polishPromise in ["zawsze", "cały czas", "non stop"] {
+            XCTAssertFalse(OpenWaysOffer.rowTitle(.polish).lowercased().contains(polishPromise))
+        }
+    }
+
     func testTheStateRoundTripsAndHoldsNoWords() throws {
         let state = OpenWaysOfferState(deferrals: 1, conversationsAtLastDefer: 3, usedAWay: false, remindersOff: false,
                                        remindersArmedAt: Date(timeIntervalSince1970: 1_800_000_000))
