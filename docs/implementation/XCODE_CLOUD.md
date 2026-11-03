@@ -10,13 +10,10 @@ repository is public. It's part of the Apple Developer Program: 25 compute hours
 archive takes roughly 15 to 25 minutes, so that's about 60 to 100 builds a month, and only merges
 start one.
 
-**A second path exists: the manual GitHub workflow (ADR-694, `docs/implementation/TESTFLIGHT_WORKFLOW.md`).**
-It was merged on 2 Nov 2026, after the owner chose Xcode Cloud only (#178 was closed, then merged
-again by someone using the owner's account). It starts only by hand and needs an App Store Connect
-admin key stored in GitHub. **Use one path.** Its build number is the workflow's run number and
-Xcode Cloud's is its own counter, and TestFlight refuses a build number it has already seen for a
-version, so mixing them can fail an upload. If both are ever used, set Xcode Cloud's next build
-number above the last one the manual workflow uploaded (step 6 below).
+**This is the one TestFlight path.** A manual GitHub workflow (ADR-694) was merged by mistake on
+2 Nov 2026 and removed on 3 Nov at the owner's say-so; the branch `claude/testflight-workflow`
+keeps it. Two paths would number their builds differently (the workflow's run number against Xcode
+Cloud's own counter), and TestFlight refuses a build number it has already seen for a version.
 
 **What this repository adds:** `ci_scripts/ci_post_clone.sh`. Xcode Cloud runs it on its Mac
 after it downloads the code and before it builds. It does four things:
@@ -42,6 +39,13 @@ Linux, and `scripts/ci.sh` runs that test.
    local backup file. So builds don't wait as "Missing Compliance". If Doddy ever adds its own or
    non-standard encryption, the key has to change.
 
+3. **Push notifications are on the App ID** (ADR-701). Xcode Cloud's builds carry the push
+   entitlements by default (`ci_post_clone.sh`, `DODDY_PUSH`), so developer.apple.com › Identifiers
+   › the app's ID must have **Push Notifications** ticked, or signing fails with "doesn't include
+   the aps-environment entitlement". Not ready yet? Set `DODDY_PUSH` = `0` in the workflow for now
+   (no notification then reaches that build). The server side is already on: `doddy-messaging`
+   started with `push: true` on 3 Nov 2026.
+
 ## The setup (once, on your Mac, about 15 minutes)
 
 1. Get the default branch, run `make project`, and open `Doddy.xcodeproj` in Xcode.
@@ -60,7 +64,7 @@ Linux, and `scripts/ci.sh` runs that test.
    - **Environment:** the latest released Xcode. Environment variables only if needed:
      `DODDY_TEAM_ID` = your team ID (developer.apple.com › Account › Membership) if the first
      build says signing needs a team; `DODDY_BUNDLE_ID` only if you choose another bundle ID than
-     the app record's (checklist C1).
+     the app record's (checklist C1); `DODDY_PUSH` = `0` only to leave push out (see above).
    - **Actions:** one **Archive** action, platform iOS, scheme **Doddy**, distribution preparation
      **TestFlight (Internal Testing Only)**. Delete the default Build and Test actions: GitHub runs
      the tests.

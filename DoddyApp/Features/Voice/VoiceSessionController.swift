@@ -2586,6 +2586,13 @@ final class VoiceSessionController {
     /// True once Doddy was ready to listen, so a later stop is a drop, not "Couldn't connect".
     private var connectedOnce = false
 
+    /// What Home says when this conversation connected and then dropped (ADR-687); nil while it
+    /// runs, after any other end, and when it never connected.
+    var homeDropNotice: HomeDropNotice? {
+        guard case .failed = phase, let end = sessionEnd else { return nil }
+        return SessionRecovery.homeNotice(end, connected: connectedOnce, language: .current)
+    }
+
     /// The title for how it ended: "The conversation dropped", "Couldn't connect"…
     var endTitle: String? {
         sessionEnd.map { SessionRecovery.status($0, connected: connectedOnce, language: .current).title }

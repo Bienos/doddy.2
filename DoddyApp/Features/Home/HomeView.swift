@@ -160,7 +160,8 @@ struct HomeView: View {
         ZStack {
             DoddyWordmark()
             HStack {
-                if conversation.live != nil {
+                // Also after a drop Home tells about (ADR-687): the transcript still has the lines.
+                if conversation.live != nil || conversation.droppedNotice != nil {
                     transcriptButton
                 }
                 Spacer()
@@ -299,7 +300,9 @@ struct HomeView: View {
             }
             // Back Tap exists only on iPhone (ADR-337), and waits for the first conversation (ADR-326).
             // After "Later" it comes back once, three conversations on; never once a way is in use (ADR-559).
-            if router.setup.cardDue(connectedConversations: connectedConversations), DeviceSupport.hasBackTap, hadFirstConversation {
+            // One thing at a time: it waits while the drop notice is up (ADR-687).
+            if router.setup.cardDue(connectedConversations: connectedConversations), DeviceSupport.hasBackTap, hadFirstConversation,
+               conversation.droppedNotice == nil {
                 backTapCard
             }
         }
@@ -325,7 +328,9 @@ struct HomeView: View {
                     // The first visit of a morning waves (ADR-380), then he sits.
                     DoddyMotionView(motion: .wave, height: 190)
                 } else {
-                    AliveDoddy(pose: perking ? .listening : .crosslegged, height: 190, hopTrigger: tapHops)
+                    // Worried after a drop (ADR-687): the pack's one worried pose, as on any failed screen.
+                    AliveDoddy(pose: conversation.droppedNotice != nil ? .facepalm : (perking ? .listening : .crosslegged),
+                               height: 190, hopTrigger: tapHops)
                 }
             }
             .frame(height: 210, alignment: .bottom)
@@ -365,9 +370,42 @@ struct HomeView: View {
     private var status: some View {
         if let live = conversation.live {
             liveStatus(live)
+        } else if let dropped = conversation.droppedNotice {
+            droppedStatus(dropped)
         } else {
             restStatus
         }
+    }
+
+    /// After a conversation dropped in the middle (ADR-687): his words under him, and the way back.
+    /// Says nothing about what was saved, because Home doesn't know. The words are the owner's.
+    private func droppedStatus(_ notice: HomeDropNotice) -> some View {
+        VStack(spacing: 8) {
+            Text(verbatim: notice.title)
+                .font(.title.weight(.bold)).tracking(-0.5)
+                .multilineTextAlignment(.center)
+                .accessibilityAddTraits(.isHeader)
+                .accessibilityIdentifier("home.dropped.title")
+            Text(verbatim: notice.line)
+                .font(.body)
+                .foregroundStyle(Theme.secondaryText)
+                .multilineTextAlignment(.center)
+            // What Doddy last heard, as a draft (ADR-700): the transcript's own card, so it is saved
+            // only on Save as note, read back by the store, and dropped by Discard.
+            if let held = conversation.controller, held.recovery != nil || held.recoverySaved != nil {
+                RecoveryDraftCard(controller: held)
+                    .padding(.top, 12)
+            }
+            Button(action: talk) {
+                Label { Text(verbatim: notice.button) } icon: { Image(systemName: "waveform") }
+            }
+            .buttonStyle(PrimaryButtonStyle())
+            .disabled(!canTalk)
+            .padding(.top, 14)
+            .accessibilityIdentifier("home.reconnect")
+        }
+        .frame(maxWidth: .infinity)
+        .modifier(FacepalmWhileShown())
     }
 
     /// While he talks (ADR-595): what he is doing, then the last thing the user said and the last
@@ -737,26 +775,70 @@ struct HomeView: View {
 
     /// Offered once; "Later" hides it (Settings can reopen the guide). Never shown as done
     /// unless the user reported a successful tap test.
+    /// One slim row (owner, 3 Nov 2026, ADR-699): tap it to see the ways, tap the cross for "Later".
+    /// Two ways, Back Tap and a button; no Siri here. The words are `OpenWaysOffer.rowTitle/rowLine`.
     private var backTapCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Open Doddy faster")
-                .font(.headline)
-                .accessibilityAddTraits(.isHeader)
-            Text("Double-tap the back of your iPhone, press a button or just ask Siri. Pick a way; it takes about a minute.")
-                .font(.subheadline)
-                .foregroundStyle(Theme.secondaryText)
-            HStack(spacing: 12) {
-                Button("Show me the ways") { router.isSetupPresented = true }
-                    .buttonStyle(PrimaryButtonStyle())
-                    .accessibilityIdentifier("home.backTap.setup")
-                Button("Later") { router.setup.send(.deferSetup) }
-                    .buttonStyle(SecondaryButtonStyle())
-                    .accessibilityIdentifier("home.backTap.later")
+        let language = NotificationLanguage.current
+        return HStack(spacing: 4) {
+            Button { router.isSetupPresented = true } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "iphone.radiowaves.left.and.right")
+                        .font(.title3)
+                        .foregroundStyle(Theme.orangeCue)
+                        .frame(width: 40, height: 40)
+                        .background(Theme.canvas, in: RoundedRectangle(cornerRadius: 12))
+                        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Theme.separator, lineWidth: 1))
+                        .accessibilityHidden(true)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(verbatim: OpenWaysOffer.rowTitle(language))
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Theme.ink)
+                        Text(verbatim: OpenWaysOffer.rowLine(language))
+                            .font(.footnote)
+                            .foregroundStyle(Theme.secondaryText)
+                            .multilineTextAlignment(.leading)
+                    }
+                    Spacer(minLength: 0)
+                }
+                .padding(.vertical, 10)
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("home.backTap.setup")
+            Button { router.setup.send(.deferSetup) } label: {
+                Image(systemName: "xmark")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Theme.secondaryText)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Later")
+            .accessibilityIdentifier("home.backTap.later")
         }
-        .padding(16)
+        .padding(.leading, 12)
+        .padding(.trailing, 2)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+        .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(Theme.separator, lineWidth: 1))
+    }
+}
+
+/// While the drop notice shows, the one Doddy on Home does the facepalm where he stands: told the
+/// same way a problem view tells him (`ProblemView`), so there is no second picture of him.
+private struct FacepalmWhileShown: ViewModifier {
+    @State private var reported = false
+
+    func body(content: Content) -> some View {
+        content
+            .onAppear { report(DoddyDirector.shared.isActive) }
+            .onDisappear { report(false) }
+    }
+
+    private func report(_ shown: Bool) {
+        guard shown != reported else { return }
+        reported = shown
+        DoddyDirector.shared.problemShown(shown)
     }
 }
 

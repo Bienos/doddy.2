@@ -22,13 +22,35 @@ import { SerperOfferSource } from "../shopping/offers.js";
 import { RoutingErrandResearcher, ShoppingErrandResearcher } from "../shopping/runner.js";
 import type { WatchDeps } from "../watches/context.js";
 
+/**
+ * The APNs sender, or undefined. A key that can't be read (APNS_PRIVATE_KEY pasted as the Key ID, or cut short)
+ * must not stop the whole server: push stays off, the startup line says `push: false`, and one line says why.
+ * Only the error's code is logged, never the key. Exported for the tests.
+ */
+export function pushSenderFrom(
+  apns: Config["apns"],
+  make: (c: NonNullable<Config["apns"]>) => ApnsPushSender = (c) => new ApnsPushSender(c),
+  report: typeof log = log,
+): ApnsPushSender | undefined {
+  if (!apns) return undefined;
+  try {
+    return make(apns);
+  } catch (e) {
+    const code = (e as { code?: unknown }).code;
+    report("push off: APNS_PRIVATE_KEY is not a readable private key; paste the whole .p8 text, from its BEGIN line to its END line", {
+      error: typeof code === "string" ? code : "unreadable_key",
+    });
+    return undefined;
+  }
+}
+
 /** Real provider adapters for whatever is configured; anything missing stays undefined. */
 export function providersFrom(config: Config) {
   const twilio = config.twilio
     ? new TwilioClient(config.twilio, config.publicBaseUrl && `${config.publicBaseUrl}/webhooks/twilio/status`)
     : undefined;
   const cipher = config.memoryEncryptionKey ? TextCipher.fromBase64(config.memoryEncryptionKey) : undefined;
-  const push = config.apns ? new ApnsPushSender(config.apns) : undefined;
+  const push = pushSenderFrom(config.apns);
   const t = config.taskCalls;
   const taskCalls: TaskCallDeps | undefined = t ? {
     telephony: new TwilioCallClient(t.twilioAccountSid, t.twilioAuthToken),

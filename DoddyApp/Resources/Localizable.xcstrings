@@ -24971,17 +24971,6 @@
         }
       }
     },
-    "Double-tap the back of your iPhone, press a button or just ask Siri. Pick a way; it takes about a minute.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Stuknij dwa razy w tył iPhone’a, naciśnij przycisk albo po prostu zapytaj Siri. Wybierz sposób; to zajmuje około minuty."
-          }
-        }
-      }
-    },
     "Double-tap to skip.": {
       "extractionState": "manual",
       "localizations": {
@@ -51540,17 +51529,6 @@
         }
       }
     },
-    "Open Doddy faster": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Otwieraj Doddy’ego szybciej"
-          }
-        }
-      }
-    },
     "Open Doddy from the menu bar to count your notes here.": {
       "extractionState": "manual",
       "localizations": {
@@ -68922,17 +68900,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pokaż w Doddym"
-          }
-        }
-      }
-    },
-    "Show me the ways": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pokaż mi sposoby"
           }
         }
       }
