@@ -1,7 +1,7 @@
 import type { z } from "zod";
 import { LogbookDeleted, LogbookView } from "../logbook/schema.js";
 import { ChatContext, ChatReply, ConversationDeleted, ConversationDetail, ConversationList, MemoryDeleted, MemoryOverview, NotesList } from "../memory/schema.js";
-import { CurrentSession, DocumentList, ErrorBody, ReceiptList, SessionList, SignedOut, ThreadView, ToolsCatalog } from "./schemas.js";
+import { CurrentSession, DocumentList, ErrorBody, IdentityList, ReceiptList, SessionList, SignedOut, SignInOptions, type SocialProvider, ThreadView, ToolsCatalog, Unlinked } from "./schemas.js";
 
 /**
  * Talks to Doddy's server on this page's own origin (ADR-600). The session is a cookie the page
@@ -112,6 +112,17 @@ export const api = {
   signIn: (code: string) => json(CurrentSession, "/v1/web/session", { method: "POST", body: { code } }).then((r) => r.session),
   signOut: () => json(SignedOut, "/v1/web/session", { method: "DELETE" }),
   sessions: (signal?: AbortSignal) => json(SessionList, "/v1/web/sessions", { signal }).then((r) => r.sessions),
+  /** Which Apple or Google buttons the sign-in page shows (ADR-700). An older server has none. */
+  signInOptions: (signal?: AbortSignal) =>
+    json(SignInOptions, "/v1/web/sign-in-options", { signal })
+      .then((r) => r.providers)
+      .catch((error: unknown) => {
+        if (error instanceof ApiError && error.code === "not_found") return [] as SocialProvider[];
+        throw error;
+      }),
+  /** Apple and Google sign-ins linked to this account. */
+  identities: (signal?: AbortSignal) => json(IdentityList, "/v1/web/identities", { signal }).then((r) => r.identities),
+  unlinkIdentity: (id: string) => json(Unlinked, `/v1/web/identities/${encodeURIComponent(id)}`, { method: "DELETE" }),
   revokeSession: (id: string) => json(SignedOut, `/v1/web/sessions/${encodeURIComponent(id)}`, { method: "DELETE" }),
   documents: (signal?: AbortSignal) => json(DocumentList, "/v1/web/documents", { signal }),
   /** The iPhone's Messages thread, as it last sent it. Read only. */
@@ -158,3 +169,11 @@ export const api = {
     return response.blob();
   },
 };
+
+/**
+ * Where the browser goes to sign in with Apple or Google, or to link one to this account (ADR-700).
+ * A whole-page navigation: the server sends it on to Supabase, then Apple or Google, and back.
+ */
+export function socialStartUrl(provider: SocialProvider, intent: "signin" | "link"): string {
+  return `/v1/web/oauth/start?${new URLSearchParams({ provider, ...(intent === "link" ? { intent } : {}) })}`;
+}

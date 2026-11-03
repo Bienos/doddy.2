@@ -29,6 +29,7 @@ import { AccountContext } from "./web/chatContext.js";
 import { WebRoutes } from "./web/routes.js";
 import { oldestKeptDay } from "./web/logbook.js";
 import { REDEEM_LIMITS, SESSION_IDLE_MS, WebAuth } from "./web/sessions.js";
+import { SocialSignIn } from "./web/social.js";
 import { WebStatic } from "./web/static.js";
 
 /** Composition root: picks adapters strictly from validated config (mock never silently replaces live). */
@@ -119,11 +120,16 @@ export async function buildApp(
   const memoryChat = new MemoryChat({ memory, store, claude: chatClaude, limits: config.limits, account, log });
   // The Messages copy for the web, with the same key; without it the routes answer "not set up".
   const thread = new ThreadService({ store, cipher: config.memoryKey ? new MemoryCipher(config.memoryKey) : null, log });
+  // Apple and Google on the web (ADR-700): only with the Supabase project's URL and publishable key.
+  const social =
+    config.web?.social && webAuth
+      ? new SocialSignIn(store, webAuth, config.web.social, { appScheme: appScheme(config.appReturnUrl), trustProxy: config.web.trustProxy, log })
+      : null;
   const web =
     config.web && webAuth
       ? {
           auth: webAuth,
-          routes: new WebRoutes(webAuth, store, verifier, config.limits.maxBodyBytes, { service: memory, chat: memoryChat }, thread),
+          routes: new WebRoutes(webAuth, store, verifier, config.limits.maxBodyBytes, { service: memory, chat: memoryChat }, thread, social),
           pages: new WebStatic(config.web.distDir, config.web.origin),
         }
       : null;
@@ -192,4 +198,10 @@ export function sessionVerifier(config: Config): SessionVerifier {
   const supabase = new SupabaseSessionVerifier({ projectUrl: config.supabaseUrl! });
   // Development only (config enforces it): the owner's minted token still works next to Supabase.
   return config.sessionSigningKey ? new AnyOfSessionVerifier([new SignedSessionVerifier(config.sessionSigningKey), supabase]) : supabase;
+}
+
+/** The iPhone's own URL scheme, where its Apple or Google sign-in sheet ends (ADR-700): DODDY_APP_RETURN_URL's when it is a doddy scheme. */
+export function appScheme(appReturnUrl: string): string {
+  const scheme = new URL(appReturnUrl).protocol.slice(0, -1);
+  return /^doddy(-[a-z]+)?$/.test(scheme) ? scheme : "doddy";
 }

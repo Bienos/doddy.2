@@ -118,6 +118,21 @@ export interface WebSettings {
   trustProxy: boolean;
   /** Sign-in tries per client address (an IPv6 /64) per quarter hour. */
   signInTriesPerClient: number;
+  /**
+   * Apple and Google sign-in on the web, through Supabase Auth (ADR-700). Null: the web signs in
+   * with the iPhone's code only. Needs SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY; independent of
+   * DODDY_AUTH_MODE (the iPhone keeps its own session).
+   */
+  social: WebSocialSettings | null;
+}
+
+export interface WebSocialSettings {
+  /** https://<project-ref>.supabase.co */
+  projectUrl: string;
+  /** The project's publishable (anon) key: public by design, sent as `apikey` to Supabase Auth. */
+  publishableKey: string;
+  /** Sign-in buttons offered, in this order. */
+  providers: ("google" | "apple")[];
 }
 
 export class ConfigError extends Error {
@@ -208,6 +223,10 @@ const EnvSchema = z.object({
   DODDY_TRUST_PROXY: z.enum(["0", "1"]).default("0"),
   /** Sign-in tries per client per quarter hour (raise it for an office behind one address). */
   DODDY_WEB_SIGNIN_TRIES_PER_CLIENT: intSetting(10, 1, 1_000),
+  /** Apple and Google sign-in on the web (ADR-700): the Supabase project's publishable key. Empty: off. */
+  SUPABASE_PUBLISHABLE_KEY: z.string().optional(),
+  /** Which buttons the web shows, comma-separated: google, apple. */
+  DODDY_WEB_SIGNIN_PROVIDERS: z.string().default("google,apple"),
 });
 
 /** Custom scheme (`doddy-dev://…`) or https. No query, no fragment: the server adds its own parameters. */
@@ -285,8 +304,11 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     }
   }
 
+  // SUPABASE_URL is read for supabase mode (ADR-526) and for Apple and Google on the web (ADR-700).
+  const publishableKey = (e.SUPABASE_PUBLISHABLE_KEY ?? "").trim();
   let supabaseUrl: string | null = null;
-  if (e.DODDY_AUTH_MODE === "supabase") {
+  let supabaseOrigin: string | null = null;
+  if (e.DODDY_AUTH_MODE === "supabase" || publishableKey !== "") {
     const raw = (e.SUPABASE_URL ?? "").trim();
     let parsed: URL | null = null;
     try {
@@ -297,8 +319,18 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     if (!parsed || parsed.protocol !== "https:" || parsed.username || parsed.password || parsed.search || parsed.hash || (parsed.pathname !== "/" && parsed.pathname !== "")) {
       problems.push("SUPABASE_URL must be the project's https origin, e.g. https://<project-ref>.supabase.co");
     } else {
-      supabaseUrl = parsed.origin;
+      supabaseOrigin = parsed.origin;
+      if (e.DODDY_AUTH_MODE === "supabase") supabaseUrl = parsed.origin;
     }
+  }
+  if (publishableKey !== "" && !/^(sb_publishable_[A-Za-z0-9_-]{10,200}|eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+)$/.test(publishableKey)) {
+    problems.push("SUPABASE_PUBLISHABLE_KEY must be the project's publishable key (sb_publishable_…) or its legacy anon key, never the secret key");
+  }
+  if (publishableKey.startsWith("sb_secret_")) problems.push("SUPABASE_PUBLISHABLE_KEY is a secret key: use the publishable one");
+  const socialProviders: ("google" | "apple")[] = [];
+  for (const raw of e.DODDY_WEB_SIGNIN_PROVIDERS.split(",").map((p) => p.trim().toLowerCase()).filter(Boolean)) {
+    if (raw !== "google" && raw !== "apple") problems.push(`DODDY_WEB_SIGNIN_PROVIDERS: unknown sign-in "${raw}" (google, apple)`);
+    else if (!socialProviders.includes(raw)) socialProviders.push(raw);
   }
 
   // Live mode needs Composio (accounts) or Monid (web search), or both. Composio is optional: a
@@ -397,7 +429,9 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     } else if (parsed.protocol !== "https:" && !(parsed.protocol === "http:" && isLoopbackUrl(parsed))) {
       problems.push("DODDY_WEB_ORIGIN must be https outside loopback development");
     } else {
-      web = { origin: parsed.origin, distDir: e.DODDY_WEB_DIST, trustProxy: e.DODDY_TRUST_PROXY === "1", signInTriesPerClient: e.DODDY_WEB_SIGNIN_TRIES_PER_CLIENT };
+      const social: WebSocialSettings | null =
+        publishableKey !== "" && supabaseOrigin && socialProviders.length > 0 ? { projectUrl: supabaseOrigin, publishableKey, providers: socialProviders } : null;
+      web = { origin: parsed.origin, distDir: e.DODDY_WEB_DIST, trustProxy: e.DODDY_TRUST_PROXY === "1", signInTriesPerClient: e.DODDY_WEB_SIGNIN_TRIES_PER_CLIENT, social };
     }
   }
 

@@ -22,6 +22,15 @@ export const WebSessionView = z.object({
 export type WebSessionView = z.infer<typeof WebSessionView>;
 
 export const CurrentSession = z.object({ session: WebSessionView });
+
+/** Apple and Google sign-in (ADR-700): which buttons this server offers (none: the code only). */
+export const SocialProvider = z.enum(["google", "apple"]);
+export type SocialProvider = z.infer<typeof SocialProvider>;
+export const SignInOptions = z.object({ providers: z.array(z.string()).transform((list) => list.filter((p): p is SocialProvider => p === "google" || p === "apple")) });
+export const LinkedIdentity = z.object({ id: z.string().uuid(), provider: SocialProvider, linkedAt: z.string() });
+export type LinkedIdentity = z.infer<typeof LinkedIdentity>;
+export const IdentityList = z.object({ identities: z.array(LinkedIdentity) });
+export const Unlinked = z.object({ unlinked: z.literal(true) });
 export const SessionList = z.object({ sessions: z.array(WebSessionView) });
 
 export const DocumentKind = z.enum(["deck", "doc", "spreadsheet", "pdf", "text", "file"]);

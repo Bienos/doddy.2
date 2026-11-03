@@ -61,6 +61,13 @@ async function seed(store: Store, userId: string, tag: string): Promise<void> {
      VALUES ($1, $2, $3, 'Safari', 'macOS', 1, 1, 9999999999999)`,
     [`ws-${tag}`, userId, `th-${tag}`],
   );
+  // ADR-700: a linked Google sign-in, and an iPhone's link ticket not yet opened.
+  await q("INSERT INTO web_identities (identity_id, user_id, provider, created_at) VALUES ($1, $2, 'google', 1)", [uuid(3), userId]);
+  await q(
+    `INSERT INTO web_oauth_states (state_hash, user_id, provider, intent, return_to, verifier, created_at, expires_at)
+     VALUES ($1, $2, 'google', 'link', 'app', 'v', 1, 9999999999999)`,
+    [`os-${tag}`, userId],
+  );
   await q("INSERT INTO logbook_state (user_id, enabled, changed_at) VALUES ($1, true, 1)", [userId]);
   await q("INSERT INTO logbook_days (user_id, day, summary, received_at) VALUES ($1, '2026-10-09', '{}', 1)", [userId]);
   await q("INSERT INTO memory_state (user_id, notes, conversations, changed_at) VALUES ($1, true, true, 1)", [userId]);

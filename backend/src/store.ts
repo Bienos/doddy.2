@@ -68,6 +68,8 @@ export const ERASED_TABLES = [
   "documents",
   "web_link_codes",
   "web_sessions",
+  "web_identities",
+  "web_oauth_states",
   "logbook_state",
   "logbook_days",
   "memory_state",
@@ -224,6 +226,24 @@ export const SCHEMA_SQL = `
     revoked_at BIGINT
   );
   CREATE INDEX IF NOT EXISTS web_sessions_user ON web_sessions(user_id, created_at);
+  CREATE TABLE IF NOT EXISTS web_identities (
+    identity_id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    provider TEXT NOT NULL,
+    created_at BIGINT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS web_identities_user ON web_identities(user_id);
+  CREATE TABLE IF NOT EXISTS web_oauth_states (
+    state_hash TEXT PRIMARY KEY,
+    user_id TEXT,
+    provider TEXT NOT NULL,
+    intent TEXT NOT NULL,
+    return_to TEXT NOT NULL,
+    verifier TEXT NOT NULL,
+    created_at BIGINT NOT NULL,
+    expires_at BIGINT NOT NULL,
+    consumed_at BIGINT
+  );
   CREATE TABLE IF NOT EXISTS logbook_state (
     user_id TEXT PRIMARY KEY,
     enabled BOOLEAN NOT NULL,
@@ -274,6 +294,26 @@ export const SCHEMA_SQL = `
   );
   CREATE INDEX IF NOT EXISTS message_threads_age ON message_threads(received_at);
 `;
+
+/**
+ * An Apple or Google sign-in linked to a Doddy account (ADR-700). `identity_id` is the Supabase Auth
+ * user's UUID; one Supabase user belongs to at most one Doddy account.
+ */
+export interface WebIdentityRow {
+  identity_id: string;
+  user_id: string;
+  provider: string;
+  created_at: number;
+}
+
+/** A sign-in with Apple or Google in progress (ADR-700): what the callback needs, kept ten minutes, used once. */
+export interface WebOAuthStateRow {
+  user_id: string | null;
+  provider: string;
+  intent: string;
+  return_to: string;
+  verifier: string;
+}
 
 /** A browser signed in to Doddy Web (ADR-600). The cookie's token is stored only as a hash. */
 export interface WebSessionRow {
@@ -1098,21 +1138,102 @@ export class Store {
         [input.codeHash, input.now],
       );
       if (!used) return null;
-      const s = input.session;
-      await tx.query(
-        `INSERT INTO web_sessions (session_id, user_id, token_hash, browser, os, created_at, last_seen_at, expires_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $6, $7)`,
-        [s.sessionId, used.user_id, s.tokenHash, s.browser, s.os, input.now, s.expiresAt],
-      );
-      await tx.query(
-        `UPDATE web_sessions SET revoked_at = $2 WHERE session_id IN (
-           SELECT session_id FROM web_sessions
-           WHERE user_id = $1 AND revoked_at IS NULL AND expires_at > $2 AND last_seen_at > $3
-           ORDER BY created_at DESC, session_id OFFSET $4)`,
-        [used.user_id, input.now, input.now - input.idleMs, input.maxSessions],
-      );
+      await this.insertWebSession(tx, used.user_id, input);
       return used.user_id;
     });
+  }
+
+  /** Opens a browser session for `userId` (an Apple or Google sign-in, ADR-700), signing out the oldest beyond `maxSessions`. */
+  async openWebSession(
+    userId: string,
+    input: { session: { sessionId: string; tokenHash: string; browser: string; os: string; expiresAt: number }; now: number; idleMs: number; maxSessions: number },
+  ): Promise<void> {
+    await this.db.transaction((tx) => this.insertWebSession(tx, userId, input));
+  }
+
+  private async insertWebSession(
+    tx: Queryable,
+    userId: string,
+    input: { session: { sessionId: string; tokenHash: string; browser: string; os: string; expiresAt: number }; now: number; idleMs: number; maxSessions: number },
+  ): Promise<void> {
+    const s = input.session;
+    await tx.query(
+      `INSERT INTO web_sessions (session_id, user_id, token_hash, browser, os, created_at, last_seen_at, expires_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $6, $7)`,
+      [s.sessionId, userId, s.tokenHash, s.browser, s.os, input.now, s.expiresAt],
+    );
+    await tx.query(
+      `UPDATE web_sessions SET revoked_at = $2 WHERE session_id IN (
+         SELECT session_id FROM web_sessions
+         WHERE user_id = $1 AND revoked_at IS NULL AND expires_at > $2 AND last_seen_at > $3
+         ORDER BY created_at DESC, session_id OFFSET $4)`,
+      [userId, input.now, input.now - input.idleMs, input.maxSessions],
+    );
+  }
+
+  // ------------------------------------------------------------ Apple and Google on the web (ADR-700)
+
+  /** Keeps what a sign-in in progress needs. `stateHash` is the SHA-256 of the browser's state token. */
+  async createWebOAuthState(input: {
+    stateHash: string;
+    userId: string | null;
+    provider: string;
+    intent: string;
+    returnTo: string;
+    verifier: string;
+    now: number;
+    ttlMs: number;
+  }): Promise<void> {
+    await this.db.query(
+      `INSERT INTO web_oauth_states (state_hash, user_id, provider, intent, return_to, verifier, created_at, expires_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [input.stateHash, input.userId, input.provider, input.intent, input.returnTo, input.verifier, input.now, input.now + input.ttlMs],
+    );
+  }
+
+  /** Uses a sign-in in progress once: unknown, used or expired returns null. */
+  async consumeWebOAuthState(stateHash: string, now: number): Promise<WebOAuthStateRow | null> {
+    return this.one<WebOAuthStateRow>(
+      this.db,
+      `UPDATE web_oauth_states SET consumed_at = $2 WHERE state_hash = $1 AND consumed_at IS NULL AND expires_at > $2
+       RETURNING user_id, provider, intent, return_to, verifier`,
+      [stateHash, now],
+    );
+  }
+
+  /**
+   * Links a Supabase user to a Doddy account. `taken`: it already belongs to another account, and
+   * nothing changes (accounts are never merged, ADR-600).
+   */
+  async linkWebIdentity(identityId: string, userId: string, provider: string, now: number): Promise<"linked" | "already" | "taken"> {
+    return this.db.transaction(async (tx) => {
+      const inserted = await tx.query(
+        "INSERT INTO web_identities (identity_id, user_id, provider, created_at) VALUES ($1, $2, $3, $4) ON CONFLICT (identity_id) DO NOTHING",
+        [identityId, userId, provider, now],
+      );
+      if (inserted.rowCount === 1) return "linked";
+      const owner = await this.one<{ user_id: string }>(tx, "SELECT user_id FROM web_identities WHERE identity_id = $1", [identityId]);
+      return owner?.user_id === userId ? "already" : "taken";
+    });
+  }
+
+  /** The Doddy account a Supabase user is linked to, or null. */
+  async webIdentityOwner(identityId: string): Promise<string | null> {
+    return (await this.one<{ user_id: string }>(this.db, "SELECT user_id FROM web_identities WHERE identity_id = $1", [identityId]))?.user_id ?? null;
+  }
+
+  async webIdentities(userId: string): Promise<WebIdentityRow[]> {
+    return (
+      await this.db.query<WebIdentityRow>(
+        "SELECT identity_id, user_id, provider, created_at FROM web_identities WHERE user_id = $1 ORDER BY created_at, identity_id",
+        [userId],
+      )
+    ).rows;
+  }
+
+  /** Removes one of `userId`'s linked sign-ins. False when it isn't theirs. */
+  async unlinkWebIdentity(userId: string, identityId: string): Promise<boolean> {
+    return (await this.db.query("DELETE FROM web_identities WHERE identity_id = $1 AND user_id = $2", [identityId, userId])).rowCount === 1;
   }
 
   /** The live session behind a cookie's token hash: not revoked, not expired, not idle too long. */
@@ -1151,7 +1272,9 @@ export class Store {
   async pruneWeb(now: number, idleMs: number): Promise<number> {
     const DAY = 86_400_000;
     return this.db.transaction(async (tx) => {
-      const codes = (await tx.query("DELETE FROM web_link_codes WHERE expires_at < $1", [now - DAY])).rowCount;
+      const codes =
+        (await tx.query("DELETE FROM web_link_codes WHERE expires_at < $1", [now - DAY])).rowCount +
+        (await tx.query("DELETE FROM web_oauth_states WHERE expires_at < $1", [now - DAY])).rowCount;
       const sessions = (
         await tx.query("DELETE FROM web_sessions WHERE revoked_at < $1 OR expires_at < $1 OR last_seen_at < $2", [now - DAY, now - idleMs - DAY])
       ).rowCount;

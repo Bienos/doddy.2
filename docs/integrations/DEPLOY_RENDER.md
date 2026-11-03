@@ -173,6 +173,44 @@ Before people can sign in (owner):
    Supabase → Providers → **Google**: on; Client IDs: that iOS client ID.
 3. The app's sign-in screens (not built yet, see ADR-526).
 
+## Google and Apple on the web (ADR-700)
+
+Doddy Web can sign in with Google or Apple once a person has linked one to their Doddy account (from the iPhone,
+or from a browser signed in with a code). This is separate from `DODDY_AUTH_MODE`: the iPhone keeps its own session,
+and the auth mode stays `signed`. Checked on 3 Nov 2026: in the project `doddy-gateway` (`sliondswemhneuzehpoq`),
+Google and Apple are **off** and email is on; no one has signed in through it.
+
+Owner steps, in this order (each is in your own account; nothing here is a secret except the Apple key in step 2):
+
+1. **Google.** Google Cloud console → APIs & Services → OAuth consent screen (External, app name Doddy, your support
+   email). Then Credentials → Create credentials → OAuth client ID → **Web application**. Authorised redirect URI:
+   `https://sliondswemhneuzehpoq.supabase.co/auth/v1/callback`. Copy the client ID and secret into Supabase →
+   Authentication → Sign In / Providers → **Google** → on → Save.
+2. **Apple** (needs the paid team, which you have since 2 Nov). Apple Developer → Certificates, Identifiers & Profiles:
+   the App ID `com.bienos.doddy2.dev` with Sign in with Apple on; a **Services ID** (e.g. `com.bienos.doddy2.web`) with
+   Sign in with Apple on, domain `sliondswemhneuzehpoq.supabase.co`, return URL
+   `https://sliondswemhneuzehpoq.supabase.co/auth/v1/callback`; a **Key** with Sign in with Apple (download the `.p8`
+   once). Then Supabase → Providers → **Apple** → on: Client IDs = the Services ID (and the bundle ID, for a later iPhone
+   sign-in), Secret Key = the one Supabase's Apple page generates from the `.p8`, Key ID and Team ID. Apple's secret
+   expires after six months at most: put a reminder in the calendar.
+3. **Supabase → Authentication → URL Configuration → Redirect URLs:** add
+   `https://doddy-yaci.onrender.com/v1/web/oauth/callback` (and the custom domain's, once `app.doddy.lol` is used).
+   Without it Supabase sends people to its Site URL instead and the sign-in fails.
+4. **Supabase → Providers → Email: off** (recommended). The server refuses email sessions anyway, but nobody needs them.
+5. **Render → `doddy` → Environment:** `SUPABASE_URL=https://sliondswemhneuzehpoq.supabase.co` and
+   `SUPABASE_PUBLISHABLE_KEY=` the project's publishable key (Supabase → Project Settings → API keys, `sb_publishable_…`;
+   never the `sb_secret_…` one: the server refuses to start with it). Optional: `DODDY_WEB_SIGNIN_PROVIDERS=google` to
+   offer Google alone until Apple is set up.
+6. Deploy a build that has ADR-700 (Render's Branch must be the default branch, see STATUS.md).
+
+**Check after deploying:** `GET https://doddy-yaci.onrender.com/v1/web/sign-in-options` answers
+`{"providers":["google","apple"]}`; the sign-in page shows "Continue with Google"; an unlinked Google account comes
+back to "isn't linked to a Doddy account yet"; after Link Google on the iPhone, Continue with Google opens Home.
+
+**Rollback:** unset `SUPABASE_PUBLISHABLE_KEY` and redeploy. The buttons disappear and the code works as before; linked
+sign-ins stay in `web_identities` until an account is deleted. To end every Google or Apple link at once:
+`DELETE FROM doddy_backend.web_identities;`.
+
 ## Free plan caveats
 
 * Sleeps after idle time, so the first request (and an OAuth return) can be slow.

@@ -7,7 +7,9 @@ import SwiftUI
 struct WebSignInScreen: View {
     @State private var model = WebSignInModel(
         makeClient: { await WebLinkClientFactory.ready() },
-        renewClient: { await WebLinkClientFactory.renewed() })
+        renewClient: { await WebLinkClientFactory.renewed() },
+        // ADR-700: Apple and Google open in the system sign-in sheet, as Connected Apps do.
+        authenticator: SystemWebAuthenticator())
 
     var body: some View {
         WebSignInView(model: model)
@@ -27,6 +29,9 @@ struct WebSignInView: View {
                 Text("Open Doddy's web address in a browser and type the code there. It works once, for five minutes. Doddy will never ask you to read it out or send it to anyone.")
             }
 
+            // ADR-700: Apple and Google as a second way in on the web. Hidden when the server offers neither.
+            WebSignInMethodsSection(model: model)
+
             Section {
                 browsersContent
                 if let problem = model.signOutProblem {
@@ -43,8 +48,14 @@ struct WebSignInView: View {
             WebMemorySection()
         }
         .navigationTitle("Doddy on the web")
-        .task { await model.refreshBrowsers() }
-        .refreshable { await model.refreshBrowsers() }
+        .task {
+            await model.refreshBrowsers()
+            await model.refreshMethods()
+        }
+        .refreshable {
+            await model.refreshBrowsers()
+            await model.refreshMethods()
+        }
     }
 
     @ViewBuilder private var codeContent: some View {
@@ -94,6 +105,138 @@ struct WebSignInView: View {
                     busy: model.signingOut.contains(session.id),
                     signOut: { Task { await model.signOut(session.id) } })
             }
+        }
+    }
+}
+
+/// Apple and Google linked to this account (ADR-700). Linking opens the system sign-in sheet; what
+/// the section then shows is the server's answer and its list, read again, never a hoped-for state.
+private struct WebSignInMethodsSection: View {
+    let model: WebSignInModel
+
+    var body: some View {
+        switch model.methods {
+        case .unavailable:
+            EmptyView()
+        case .loading:
+            Section {
+                HStack(spacing: 12) {
+                    ProgressView()
+                    Text("Loading…")
+                }
+            } header: {
+                Text("Sign in with Google or Apple")
+            }
+        case .failed(let problem):
+            Section {
+                WebProblemText(problem: problem)
+                Button("Try again") {
+                    Task { await model.refreshMethods() }
+                }
+            } header: {
+                Text("Sign in with Google or Apple")
+            }
+        case .loaded(let offered, let linked):
+            Section {
+                ForEach(linked) { signIn in
+                    WebLinkedRow(signIn: signIn, busy: model.unlinking.contains(signIn.id)) {
+                        Task { await model.unlink(signIn.id) }
+                    }
+                }
+                ForEach(offered.filter { provider in !linked.contains { $0.provider == provider } }, id: \.self) { provider in
+                    Button {
+                        Task { await model.link(provider) }
+                    } label: {
+                        if model.linking == provider {
+                            HStack(spacing: 12) {
+                                ProgressView()
+                                Text("Opening the sign-in…")
+                            }
+                        } else {
+                            switch provider {
+                            case .google: Text("Link Google")
+                            case .apple: Text("Link Apple")
+                            }
+                        }
+                    }
+                    .disabled(model.linking != nil)
+                    .accessibilityIdentifier("web.link.\(provider.rawValue)")
+                }
+                if let outcome = model.linkOutcome {
+                    WebLinkOutcomeText(outcome: outcome)
+                        .accessibilityIdentifier("web.linkOutcome")
+                }
+                if let problem = model.linkProblem {
+                    WebProblemText(problem: problem)
+                }
+            } header: {
+                Text("Sign in with Google or Apple")
+            } footer: {
+                Text("Link Google or Apple once, then choose it on Doddy's web sign-in page instead of typing a code. It opens this same account; nothing is copied or merged. The code keeps working.")
+            }
+        }
+    }
+}
+
+private struct WebLinkedRow: View {
+    let signIn: WebLinkedSignIn
+    let busy: Bool
+    let unlink: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Group {
+                switch signIn.provider {
+                case .google: Text(verbatim: "Google")
+                case .apple: Text(verbatim: "Apple")
+                }
+            }
+            .font(.body.weight(.semibold))
+            HStack(spacing: 4) {
+                Text("Linked")
+                Text(signIn.linkedAt, format: .dateTime.day().month().year())
+            }
+            .font(.footnote)
+            .foregroundStyle(Theme.secondaryText)
+            .accessibilityElement(children: .combine)
+            Button(role: .destructive, action: unlink) {
+                if busy {
+                    ProgressView()
+                } else {
+                    Text("Unlink")
+                }
+            }
+            .disabled(busy)
+            .accessibilityIdentifier("web.unlink")
+        }
+        .padding(.vertical, 2)
+    }
+}
+
+/// What the server said about the link. Only `linked` and `already` say it is linked.
+private struct WebLinkOutcomeText: View {
+    let outcome: WebLinkOutcome
+
+    var body: some View {
+        switch outcome {
+        case .linked:
+            Text("Linked. Next time, choose it on Doddy's web sign-in page.")
+                .foregroundStyle(Theme.secondaryText)
+        case .already:
+            Text("It was already linked to this account.")
+                .foregroundStyle(Theme.secondaryText)
+        case .taken:
+            Text("That account is already linked to another Doddy account, so it wasn't linked here. Nothing was merged.")
+                .foregroundStyle(Theme.error)
+        case .canceled:
+            Text("Linking was cancelled. Nothing changed.")
+                .foregroundStyle(Theme.secondaryText)
+        case .busy:
+            Text("Too many tries. Wait a few minutes, then try again.")
+                .foregroundStyle(Theme.error)
+        case .failed:
+            Text("Linking didn't finish. Nothing changed. Try again.")
+                .foregroundStyle(Theme.error)
         }
     }
 }

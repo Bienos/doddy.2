@@ -34,6 +34,13 @@ Doddy Web follows the website's design (owner, 22 Oct): the cream canvas, a stic
 
 The phone can list and sign out every browser. A browser can sign itself or others out.
 
+## Google and Apple (ADR-700, branch `claude/web-google-apple-signin`)
+The code still works. Next to it, the sign-in page shows "Continue with Google" and "Continue with Apple" once the server has `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY`. They open a person's own Doddy account only after they have linked Google or Apple to it once:
+- **On the iPhone:** Settings › Doddy on the web › Link Google (or Apple). The phone opens the system sign-in sheet with a one-time ticket from the server.
+- **In a browser signed in with a code:** Settings › Sign-in methods › Link.
+
+A Google or Apple account that isn't linked opens nothing and makes no account. One that is linked to another Doddy account is refused, and nothing is merged. Both sides list and unlink. The server runs the sign-in itself (OAuth with PKCE through Supabase Auth, `backend/src/web/social.ts`), so the browser never holds a Supabase token. The owner's setup steps (Google and Apple in Supabase, the redirect address, Render's two variables) are in `docs/integrations/DEPLOY_RENDER.md`, "Google and Apple on the web". **Not tried against the real Supabase, Google or Apple, and the iPhone part hasn't been compiled yet** (the hosted Mac job is its first build).
+
 ## Folders
 | Folder | What |
 |---|---|

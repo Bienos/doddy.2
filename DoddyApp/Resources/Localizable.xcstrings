@@ -33164,6 +33164,17 @@
         }
       }
     },
+    "It was already linked to this account.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Było już połączone z tym kontem."
+          }
+        }
+      }
+    },
     "It was changed elsewhere since, so Doddy left it alone. Check it in Calendar or Reminders.": {
       "extractionState": "manual",
       "localizations": {
@@ -37155,6 +37166,39 @@
         }
       }
     },
+    "Link Apple": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Połącz Apple"
+          }
+        }
+      }
+    },
+    "Link Google": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Połącz Google"
+          }
+        }
+      }
+    },
+    "Link Google or Apple once, then choose it on Doddy's web sign-in page instead of typing a code. It opens this same account; nothing is copied or merged. The code keeps working.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Połącz Google lub Apple raz, potem wybieraj je na stronie logowania Doddy w przeglądarce zamiast wpisywać kod. Otwiera to samo konto; nic nie jest kopiowane ani łączone. Kod dalej działa."
+          }
+        }
+      }
+    },
     "Link to the leaflet only": {
       "extractionState": "manual",
       "localizations": {
@@ -37162,6 +37206,50 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tylko link do gazetki"
+          }
+        }
+      }
+    },
+    "Linked": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Połączono"
+          }
+        }
+      }
+    },
+    "Linked. Next time, choose it on Doddy's web sign-in page.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Połączono. Następnym razem wybierz je na stronie logowania Doddy w przeglądarce."
+          }
+        }
+      }
+    },
+    "Linking didn't finish. Nothing changed. Try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Łączenie się nie udało. Nic się nie zmieniło. Spróbuj ponownie."
+          }
+        }
+      }
+    },
+    "Linking was cancelled. Nothing changed.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Łączenie anulowano. Nic się nie zmieniło."
           }
         }
       }
@@ -53135,6 +53223,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Otwarto stronę sklepu %@"
+          }
+        }
+      }
+    },
+    "Opening the sign-in…": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwieram logowanie…"
           }
         }
       }
@@ -69760,6 +69859,17 @@
         }
       }
     },
+    "Sign in with Google or Apple": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logowanie przez Google lub Apple"
+          }
+        }
+      }
+    },
     "Sign out": {
       "extractionState": "manual",
       "localizations": {
@@ -74571,6 +74681,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "来自 Doddy 的短信"
+          }
+        }
+      }
+    },
+    "That account is already linked to another Doddy account, so it wasn't linked here. Nothing was merged.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To konto jest już połączone z innym kontem Doddy, więc nie połączono go tutaj. Nic nie zostało scalone."
           }
         }
       }
@@ -86561,6 +86682,17 @@
         }
       }
     },
+    "Too many tries. Wait a few minutes, then try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Za dużo prób. Poczekaj kilka minut i spróbuj ponownie."
+          }
+        }
+      }
+    },
     "Too many tries. Wait a minute and try again.": {
       "extractionState": "manual",
       "localizations": {
@@ -88795,6 +88927,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "未完成的笔记"
+          }
+        }
+      }
+    },
+    "Unlink": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odłącz"
           }
         }
       }

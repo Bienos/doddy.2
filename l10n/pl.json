@@ -2557,5 +2557,18 @@
   "You're dictating in Messages. Stop dictating to talk to Doddy.": "Dyktujesz w Wiadomościach. Przestań dyktować, aby porozmawiać z Doddym.",
   "A call rehearsal has the microphone. End it to talk to Doddy.": "Mikrofonu używa próba rozmowy. Zakończ ją, aby porozmawiać z Doddym.",
   "Something else in Doddy has the microphone. Finish it to talk to him.": "Mikrofonu używa coś innego w Doddym. Zakończ to, aby z nim porozmawiać.",
-  "Stop dictating to play this.": "Przestań dyktować, aby to odtworzyć."
+  "Stop dictating to play this.": "Przestań dyktować, aby to odtworzyć.",
+  "Sign in with Google or Apple": "Logowanie przez Google lub Apple",
+  "Opening the sign-in…": "Otwieram logowanie…",
+  "Link Google": "Połącz Google",
+  "Link Apple": "Połącz Apple",
+  "Link Google or Apple once, then choose it on Doddy's web sign-in page instead of typing a code. It opens this same account; nothing is copied or merged. The code keeps working.": "Połącz Google lub Apple raz, potem wybieraj je na stronie logowania Doddy w przeglądarce zamiast wpisywać kod. Otwiera to samo konto; nic nie jest kopiowane ani łączone. Kod dalej działa.",
+  "Linked": "Połączono",
+  "Unlink": "Odłącz",
+  "Linked. Next time, choose it on Doddy's web sign-in page.": "Połączono. Następnym razem wybierz je na stronie logowania Doddy w przeglądarce.",
+  "It was already linked to this account.": "Było już połączone z tym kontem.",
+  "That account is already linked to another Doddy account, so it wasn't linked here. Nothing was merged.": "To konto jest już połączone z innym kontem Doddy, więc nie połączono go tutaj. Nic nie zostało scalone.",
+  "Linking was cancelled. Nothing changed.": "Łączenie anulowano. Nic się nie zmieniło.",
+  "Too many tries. Wait a few minutes, then try again.": "Za dużo prób. Poczekaj kilka minut i spróbuj ponownie.",
+  "Linking didn't finish. Nothing changed. Try again.": "Łączenie się nie udało. Nic się nie zmieniło. Spróbuj ponownie."
 }

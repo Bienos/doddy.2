@@ -1,15 +1,30 @@
 import { type FormEvent, useEffect, useId, useRef, useState } from "react";
-import { ApiError } from "../api/client.js";
+import { api, ApiError, socialStartUrl } from "../api/client.js";
+import type { SocialProvider } from "../api/schemas.js";
 import { useSession } from "../auth/session.js";
 import { DoddyFigure, Wordmark } from "../components/Brand.js";
 import { errorText } from "../components/States.js";
+import { useLocation, useNavigate } from "react-router";
 import { useI18n } from "../i18n/i18n.js";
+import type { MessageKey } from "../i18n/messages.js";
 import { LANGUAGE_NAMES, LANGUAGES, type Language } from "../i18n/messages.js";
 
 /** What a person typed, as the canonical code, or null. The server checks it again. */
 export function canonicalCode(typed: string): string | null {
   const plain = typed.toUpperCase().replace(/[\s-]/g, "");
   return /^[A-HJKMNP-TV-Z2-9]{8}$/.test(plain) ? `${plain.slice(0, 4)}-${plain.slice(4)}` : null;
+}
+
+/** What the server said about an Apple or Google sign-in (`/sign-in?signin=…`), read once. */
+const SIGNIN_RESULTS = ["not_linked", "canceled", "failed", "busy"] as const;
+type SignInResult = (typeof SIGNIN_RESULTS)[number];
+
+export function readSignInResult(search: string): { result: SignInResult; provider: SocialProvider | null } | null {
+  const params = new URLSearchParams(search);
+  const result = params.get("signin");
+  if (!result || !(SIGNIN_RESULTS as readonly string[]).includes(result)) return null;
+  const provider = params.get("provider");
+  return { result: result as SignInResult, provider: provider === "google" || provider === "apple" ? provider : null };
 }
 
 export function SignInPage() {
@@ -23,8 +38,25 @@ export function SignInPage() {
   const errorId = useId();
   const heading = useRef<HTMLHeadingElement>(null);
   const notice = state.status === "signedOut" ? state.notice : null;
+  const [providers, setProviders] = useState<SocialProvider[]>([]);
+  // Read once, then the address is tidied, so a reload or a later sign-in doesn't show it again.
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [social] = useState(() => readSignInResult(location.search));
 
   useEffect(() => heading.current?.focus(), []);
+  useEffect(() => {
+    if (social || location.pathname === "/sign-in") navigate("/", { replace: true });
+    // Once, on arrival.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => {
+    const controller = new AbortController();
+    // Without the list (an older server, or offline) the page simply offers the code.
+    api.signInOptions(controller.signal).then(setProviders, () => setProviders([]));
+    return () => controller.abort();
+  }, []);
+  const providerName = (p: SocialProvider | null) => (p ? t(`provider.${p}` as MessageKey) : "Google");
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -64,6 +96,11 @@ export function SignInPage() {
           {t("signIn.title")}
         </h1>
         <p className="lead">{t("signIn.lead")}</p>
+        {social ? (
+          <p className="notice" role={social.result === "not_linked" || social.result === "failed" ? "alert" : "status"}>
+            {t(`signIn.result.${social.result}` as MessageKey, { provider: providerName(social.provider) })}
+          </p>
+        ) : null}
         {notice === "expired" ? (
           <p className="notice" role="status">
             {t("common.signedOutNotice")}
@@ -107,6 +144,19 @@ export function SignInPage() {
             {busy ? t("signIn.submitting") : t("signIn.submit")}
           </button>
         </form>
+        {providers.length > 0 ? (
+          <div className="social-sign-in">
+            <p className="divider">
+              <span>{t("signIn.or")}</span>
+            </p>
+            {providers.map((provider) => (
+              <a key={provider} className={`button button-social button-${provider}`} href={socialStartUrl(provider, "signin")}>
+                {t(`signIn.with.${provider}` as MessageKey)}
+              </a>
+            ))}
+            <p className="field-hint">{t("signIn.socialHint")}</p>
+          </div>
+        ) : null}
         <p className="fine-print">{t("signIn.safety", { origin: window.location.origin })}</p>
         <div className="sign-in-foot">
           <p className="says">{t("signIn.hand")}</p>

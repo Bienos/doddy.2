@@ -10,6 +10,7 @@ import type { MemoryService } from "../memory/service.js";
 import { threadRoutes } from "../messages/routes.js";
 import type { ThreadService } from "../messages/service.js";
 import type { WebAuth, WebSessionContext } from "./sessions.js";
+import type { SocialSignIn } from "./social.js";
 
 /**
  * The `/v1/web/…` routes (ADR-600). Each route says who may call it:
@@ -31,7 +32,9 @@ export interface WebCaller {
 export interface Reply {
   status: number;
   body?: unknown;
-  setCookie?: string;
+  setCookie?: string | string[];
+  /** A redirect (303) instead of JSON: the browser steps of Apple and Google sign-in (ADR-700). */
+  redirect?: string;
   /** A file instead of JSON. */
   file?: { name: string; mime: string; bytes: Buffer };
 }
@@ -43,7 +46,7 @@ export interface Route {
   access: Access;
   /** A larger body than the default, for the one route that takes a summary. */
   maxBodyBytes?: number;
-  run(input: { caller: WebCaller | null; params: string[]; body: unknown; req: IncomingMessage; now: Date }): Promise<Reply>;
+  run(input: { caller: WebCaller | null; params: string[]; query: URLSearchParams; body: unknown; req: IncomingMessage; now: Date }): Promise<Reply>;
 }
 
 /** Documents are kept a week (ADR-564); the list says so instead of implying they stay. */
@@ -67,6 +70,8 @@ export class WebRoutes {
     memory?: { service: MemoryService; chat: MemoryChat },
     /** The Messages copy for the web. Without it those routes don't exist. */
     thread?: ThreadService,
+    /** Apple and Google sign-in (ADR-700). Without it the sign-in page offers the code only. */
+    private readonly social?: SocialSignIn | null,
   ) {
     this.routes = [
       {
@@ -197,6 +202,56 @@ export class WebRoutes {
           return { status: 200, body: { stored: true, day: day.day } };
         },
       },
+      // ---------------------------------------------------------------- Apple and Google (ADR-700)
+      {
+        method: "GET",
+        pattern: /^\/v1\/web\/sign-in-options$/,
+        template: "GET /v1/web/sign-in-options",
+        access: "public",
+        run: async () => ({ status: 200, body: this.social ? this.social.options() : { providers: [] } }),
+      },
+      ...(social
+        ? ([
+            {
+              method: "GET",
+              pattern: /^\/v1\/web\/oauth\/start$/,
+              template: "GET /v1/web/oauth/start",
+              access: "public",
+              run: async ({ req, query, now }) => redirect(await social.start(req, query, now)),
+            },
+            {
+              method: "GET",
+              pattern: /^\/v1\/web\/oauth\/callback$/,
+              template: "GET /v1/web/oauth/callback",
+              access: "public",
+              run: async ({ req, query, now }) => redirect(await social.callback(req, query, now)),
+            },
+            {
+              method: "POST",
+              pattern: /^\/v1\/web\/oauth\/tickets$/,
+              template: "POST /v1/web/oauth/tickets",
+              access: "phone",
+              run: async ({ caller, body, now }) => ({ status: 200, body: await social.ticket(caller!.userId, body, now) }),
+            },
+            {
+              method: "GET",
+              pattern: /^\/v1\/web\/identities$/,
+              template: "GET /v1/web/identities",
+              access: "either",
+              run: async ({ caller }) => ({ status: 200, body: { identities: await social.list(caller!.userId) } }),
+            },
+            {
+              method: "DELETE",
+              pattern: /^\/v1\/web\/identities\/([0-9a-f-]{36})$/,
+              template: "DELETE /v1/web/identities/:id",
+              access: "either",
+              run: async ({ caller, params }) => {
+                await social.unlink(caller!.userId, params[0]!);
+                return { status: 200, body: { unlinked: true } };
+              },
+            },
+          ] satisfies Route[])
+        : []),
       ...(memory ? memoryRoutes(memory) : []),
       ...(thread ? threadRoutes(thread) : []),
     ];
@@ -219,7 +274,7 @@ export class WebRoutes {
   }
 
   /** Authenticates, checks the origin, runs the route and writes the reply. Throws AppError before writing. */
-  async serve(match: { route: Route; params: string[] }, req: IncomingMessage, res: ServerResponse, now: Date): Promise<number> {
+  async serve(match: { route: Route; params: string[] }, req: IncomingMessage, res: ServerResponse, now: Date, query: URLSearchParams = new URLSearchParams()): Promise<number> {
     const { route } = match;
     if (route === notFoundRoute) throw new AppError("not_found");
     const caller = await this.caller(route.access, req, res, now);
@@ -227,8 +282,14 @@ export class WebRoutes {
     // A browser request that changes something (signing in included) must come from the web app.
     if (unsafe && (route.access === "public" || caller?.session)) this.auth.assertSameOrigin(req);
     const body = route.method === "POST" || route.method === "PUT" ? await readJson(req, route.maxBodyBytes ?? this.maxBodyBytes) : undefined;
-    const reply = await route.run({ caller, params: match.params, body, req, now });
-    if (reply.setCookie) res.setHeader("set-cookie", reply.setCookie);
+    const reply = await route.run({ caller, params: match.params, query, body, req, now });
+    if (reply.setCookie && reply.setCookie.length > 0) res.setHeader("set-cookie", reply.setCookie);
+    if (reply.redirect !== undefined) {
+      // The callback's address carries Supabase's code: no Referer to the next page, nothing cached.
+      res.writeHead(303, { location: reply.redirect, "cache-control": "no-store", "referrer-policy": "no-referrer", "content-length": 0 });
+      res.end();
+      return 303;
+    }
     if (reply.file) {
       writeFile(res, reply.file);
       return 200;
@@ -333,4 +394,8 @@ async function readJson(req: IncomingMessage, maxBytes: number): Promise<unknown
 function header(req: IncomingMessage, name: string): string | undefined {
   const value = req.headers[name];
   return Array.isArray(value) ? undefined : value;
+}
+
+function redirect(outcome: { location: string; setCookies: string[] }): Reply {
+  return { status: 303, redirect: outcome.location, setCookie: outcome.setCookies };
 }

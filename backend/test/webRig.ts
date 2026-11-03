@@ -23,6 +23,8 @@ import { AccountContext } from "../src/web/chatContext.js";
 import { WebRoutes } from "../src/web/routes.js";
 import { ThreadService } from "../src/messages/service.js";
 import { type RedeemLimits, WebAuth } from "../src/web/sessions.js";
+import { type PostJson, SocialSignIn } from "../src/web/social.js";
+import type { FetchJson } from "../src/auth.js";
 import { WebStatic } from "../src/web/static.js";
 import { Clock, USER_A } from "./helpers.js";
 
@@ -75,6 +77,8 @@ export async function startWeb(
     trustProxy?: boolean;
     limits?: RedeemLimits;
     verifier?: SessionVerifier;
+    /** Apple and Google sign-in (ADR-700) against a fake Supabase. Absent: off. */
+    social?: { projectUrl: string; providers?: ("google" | "apple")[]; postJson: PostJson; fetchJson: FetchJson };
   } = {},
 ): Promise<WebRig> {
   const store = await Store.memory();
@@ -125,11 +129,19 @@ export async function startWeb(
     log: (line) => logs.push(JSON.stringify(line)),
   });
   const auth = new WebAuth(store, origin, o.trustProxy ?? false, o.limits);
+  const social = o.social
+    ? new SocialSignIn(
+        store,
+        auth,
+        { projectUrl: o.social.projectUrl, publishableKey: "sb_publishable_test_key_123", providers: o.social.providers ?? ["google", "apple"] },
+        { appScheme: "doddy-dev", trustProxy: o.trustProxy ?? false, postJson: o.social.postJson, fetchJson: o.social.fetchJson, log: (line) => logs.push(JSON.stringify(line)) },
+      )
+    : null;
   const handler = createHandler({
     service,
     tools,
     verifier,
-    web: { auth, routes: new WebRoutes(auth, store, verifier, 8 * 1024, { service: memory, chat }, thread), pages: new WebStatic(o.withDist === false ? join(distDir, "missing") : distDir, origin) },
+    web: { auth, routes: new WebRoutes(auth, store, verifier, 8 * 1024, { service: memory, chat }, thread, social), pages: new WebStatic(o.withDist === false ? join(distDir, "missing") : distDir, origin) },
     documents: { links: documentLinks, store },
     appReturnUrl: common.appReturnUrl,
     maxBodyBytes: 8 * 1024,
@@ -163,7 +175,7 @@ export async function startWeb(
         headers["content-type"] = "application/json";
         body = JSON.stringify(c.body);
       }
-      const res = await fetch(`${base}${path}`, { method, headers, ...(body !== undefined ? { body } : {}) });
+      const res = await fetch(`${base}${path}`, { method, headers, redirect: "manual", ...(body !== undefined ? { body } : {}) });
       const text = await res.text();
       let parsed: unknown = null;
       try {

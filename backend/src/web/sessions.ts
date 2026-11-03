@@ -11,8 +11,8 @@ export { clientKey };
 /**
  * Doddy Web sign-in (ADR-600).
  *
- * The browser has no Apple or Google sign-in of its own yet, and the iPhone's account is a device
- * session (ADR-563). So the iPhone vouches for the browser:
+ * The iPhone's account is a device session (ADR-563), so the iPhone vouches for the browser (Apple
+ * and Google sign-in, once linked to the account, are the other way in: `social.ts`, ADR-700):
  *  1. In Settings the iPhone asks for a code (`POST /v1/web/link-codes`, with its own session).
  *  2. The person types the code at the web address the phone shows. It lasts five minutes, works
  *     once, and only the newest code of a user works.
@@ -232,6 +232,16 @@ export class WebAuth {
   /** Set-Cookie that removes the session cookie. */
   clearCookie(): string {
     return this.cookie("", 0);
+  }
+
+  /** How a session token is stored (for sessions opened by Apple or Google sign-in, ADR-700). */
+  tokenHashOf(token: string): string {
+    return tokenHash(token);
+  }
+
+  /** Set-Cookie for a new session token. */
+  sessionCookie(token: string): string {
+    return this.cookie(token, SESSION_TTL_MS / 1000);
   }
 
   private cookie(value: string, maxAgeSeconds: number): string {

@@ -1,0 +1,414 @@
+import assert from "node:assert/strict";
+import { createHash, generateKeyPairSync, type KeyObject, sign } from "node:crypto";
+import { afterEach, test } from "node:test";
+import type { FetchJson } from "../src/auth.js";
+import { appScheme } from "../src/app.js";
+import { loadConfig } from "../src/config.js";
+import { ERASED_TABLES } from "../src/store.js";
+import { OAUTH_STATE_TTL_MS, OAUTH_TICKET_TTL_MS, type PostJson, SOCIAL_LIMITS } from "../src/web/social.js";
+import { DEV_IDENTITIES } from "../src/auth.js";
+import { USER_A, USER_B } from "./helpers.js";
+import { CHROME_MAC, COOKIE, cookieValue, startWeb, WEB_ORIGIN, type WebRig } from "./webRig.js";
+
+// ADR-700: Apple and Google sign-in on Doddy Web, linked to the iPhone's account, through Supabase Auth.
+
+const PROJECT = "https://abcdefghijklmnopqrst.supabase.co";
+const ISSUER = `${PROJECT}/auth/v1`;
+const STATE_COOKIE = "__Host-doddy_oauth";
+const GOOGLE_PERSON = "5b0c8f7e-2a41-4c3d-9e6f-0123456789ab";
+const OTHER_PERSON = "7d1e9a0b-3c52-4d6e-8f70-123456789abc";
+
+const ec = generateKeyPairSync("ec", { namedCurve: "P-256" });
+const b64 = (value: unknown) => Buffer.from(JSON.stringify(value)).toString("base64url");
+
+function accessToken(sub: string, provider: string, nowMs: number, key: KeyObject = ec.privateKey): string {
+  const header = b64({ alg: "ES256", kid: "k1", typ: "JWT" });
+  const now = Math.floor(nowMs / 1000);
+  const body = b64({
+    iss: ISSUER,
+    aud: "authenticated",
+    role: "authenticated",
+    sub,
+    iat: now - 5,
+    exp: now + 3600,
+    is_anonymous: false,
+    app_metadata: { provider, providers: [provider] },
+  });
+  const signature = sign("sha256", Buffer.from(`${header}.${body}`), { key, dsaEncoding: "ieee-p1363" });
+  return `${header}.${body}.${signature.toString("base64url")}`;
+}
+
+/**
+ * A fake Supabase Auth: `/authorize` is the test itself (it reads the challenge from the redirect and
+ * "signs the person in" by issuing a code for it), `/token?grant_type=pkce` checks the verifier
+ * against that challenge and the publishable key, the way GoTrue does.
+ */
+function fakeSupabase(clock: () => number) {
+  const codes = new Map<string, { challenge: string; sub: string; provider: string }>();
+  const state = { exchanges: 0, requests: [] as { url: string; headers: Record<string, string>; body: Record<string, unknown> }[], down: false, wrongKey: false };
+  const postJson: PostJson = async (url, init) => {
+    state.exchanges += 1;
+    const body = JSON.parse(init.body) as Record<string, unknown>;
+    state.requests.push({ url, headers: init.headers, body });
+    if (state.down) throw new Error("unreachable");
+    if (url !== `${ISSUER}/token?grant_type=pkce` || init.headers.apikey !== "sb_publishable_test_key_123") return { status: 401, body: { error: "invalid apikey" } };
+    const entry = codes.get(String(body.auth_code));
+    if (!entry) return { status: 404, body: { error_code: "flow_state_not_found" } };
+    codes.delete(String(body.auth_code));
+    const challenge = createHash("sha256").update(String(body.code_verifier)).digest("base64url");
+    if (challenge !== entry.challenge) return { status: 403, body: { error_code: "bad_code_verifier" } };
+    return {
+      status: 200,
+      body: { access_token: state.wrongKey ? accessToken(entry.sub, entry.provider, clock(), generateKeyPairSync("ec", { namedCurve: "P-256" }).privateKey) : accessToken(entry.sub, entry.provider, clock()), refresh_token: "rt-never-kept", token_type: "bearer", user: { id: entry.sub } },
+    };
+  };
+  const fetchJson: FetchJson = async () => ({ keys: [{ ...ec.publicKey.export({ format: "jwk" }), kid: "k1", alg: "ES256", use: "sig" }] });
+  let n = 0;
+  return {
+    state,
+    postJson,
+    fetchJson,
+    /** What Supabase does after the person signs in: a code bound to the challenge of `authorizeUrl`. */
+    issueCode(authorizeUrl: string, sub: string, provider = "google"): string {
+      const url = new URL(authorizeUrl);
+      assert.equal(url.origin + url.pathname, `${ISSUER}/authorize`);
+      assert.equal(url.searchParams.get("code_challenge_method"), "s256");
+      assert.equal(url.searchParams.get("redirect_to"), `${WEB_ORIGIN}/v1/web/oauth/callback`);
+      const code = `code-${(n += 1)}-${sub.slice(0, 8)}`;
+      codes.set(code, { challenge: url.searchParams.get("code_challenge")!, sub, provider });
+      return code;
+    },
+  };
+}
+
+let rig: WebRig | undefined;
+afterEach(async () => {
+  await rig?.close();
+  rig = undefined;
+});
+
+async function socialRig(o: { providers?: ("google" | "apple")[] } = {}) {
+  let r!: WebRig;
+  const supabase = fakeSupabase(() => r.clock.ms);
+  r = await startWeb({ social: { projectUrl: PROJECT, postJson: supabase.postJson, fetchJson: supabase.fetchJson, ...(o.providers ? { providers: o.providers } : {}) } });
+  rig = r;
+  return { rig: r, supabase };
+}
+
+/** Starts a sign-in in "the browser" and returns where it was sent and its state cookie. */
+async function start(r: WebRig, query: string, cookie?: string) {
+  const res = await r.call("GET", `/v1/web/oauth/start?${query}`, cookie ? { cookie } : {});
+  assert.equal(res.status, 303, res.text);
+  const location = res.headers.get("location")!;
+  const state = cookieValue(res.headers.get("set-cookie"), STATE_COOKIE);
+  return { location, state, setCookie: res.headers.get("set-cookie") };
+}
+
+/** Supabase sends the browser back with a code; the browser carries its state cookie. */
+async function callback(r: WebRig, query: string, state: string | null, userAgent = CHROME_MAC) {
+  const headers: Record<string, string> = { "user-agent": userAgent };
+  if (state) headers.cookie = `${STATE_COOKIE}=${state}`;
+  const res = await r.call("GET", `/v1/web/oauth/callback?${query}`, { headers });
+  assert.equal(res.status, 303, res.text);
+  return { location: res.headers.get("location")!, setCookie: res.headers.get("set-cookie") ?? "", headers: res.headers };
+}
+
+/** The whole browser sign-in with Google as `sub`. */
+async function googleSignIn(r: WebRig, supabase: ReturnType<typeof fakeSupabase>, sub: string) {
+  const s = await start(r, "provider=google");
+  const code = supabase.issueCode(s.location, sub);
+  return callback(r, `code=${code}`, s.state);
+}
+
+/** Links Google as `sub` from a browser signed in with the iPhone's code for `token`. */
+async function linkFromBrowser(r: WebRig, supabase: ReturnType<typeof fakeSupabase>, sub: string, token = USER_A) {
+  const session = await r.signIn(await r.code(token));
+  const s = await start(r, "provider=google&intent=link", session);
+  const code = supabase.issueCode(s.location, sub);
+  return callback(r, `code=${code}`, s.state);
+}
+
+// ------------------------------------------------------------------ what the sign-in page is offered
+
+test("without Supabase settings the sign-in page offers the code only, and the sign-in routes don't exist", async () => {
+  rig = await startWeb();
+  const options = await rig.call("GET", "/v1/web/sign-in-options");
+  assert.equal(options.status, 200);
+  assert.deepEqual(options.body, { providers: [] });
+  assert.equal((await rig.call("GET", "/v1/web/oauth/start?provider=google")).status, 404);
+  assert.equal((await rig.call("GET", "/v1/web/oauth/callback?code=x")).status, 404);
+  assert.equal((await rig.call("GET", "/v1/web/identities", { token: USER_A })).status, 404);
+  assert.equal((await rig.call("POST", "/v1/web/oauth/tickets", { token: USER_A, body: { provider: "google" } })).status, 404);
+});
+
+test("with them it offers the configured buttons in order", async () => {
+  const { rig: r } = await socialRig({ providers: ["apple", "google"] });
+  assert.deepEqual((await r.call("GET", "/v1/web/sign-in-options")).body, { providers: ["apple", "google"] });
+});
+
+// ------------------------------------------------------------------ the start: PKCE and the state cookie
+
+test("start sends the browser to Supabase with a S256 challenge and sets a short Lax state cookie", async () => {
+  const { rig: r } = await socialRig();
+  const s = await start(r, "provider=google");
+  const url = new URL(s.location);
+  assert.equal(url.origin, PROJECT);
+  assert.equal(url.pathname, "/auth/v1/authorize");
+  assert.equal(url.searchParams.get("provider"), "google");
+  assert.match(url.searchParams.get("code_challenge")!, /^[A-Za-z0-9_-]{43}$/);
+  assert.equal(url.searchParams.get("code_challenge_method"), "s256");
+  assert.match(s.setCookie!, new RegExp(`^${STATE_COOKIE}=[A-Za-z0-9_-]{43}; Path=/; Max-Age=${OAUTH_STATE_TTL_MS / 1000}; HttpOnly; SameSite=Lax; Secure$`));
+  // The verifier stays on the server: neither the address nor the cookie carries it.
+  const again = await start(r, "provider=google");
+  assert.notEqual(new URL(again.location).searchParams.get("code_challenge"), url.searchParams.get("code_challenge"));
+});
+
+test("an unknown or switched-off provider goes back to the sign-in page, without a state", async () => {
+  const { rig: r } = await socialRig({ providers: ["google"] });
+  for (const query of ["provider=apple", "provider=facebook", "provider=", ""]) {
+    const s = await start(r, query);
+    assert.equal(s.location, "/sign-in?signin=failed", query);
+    assert.equal(s.state, null);
+  }
+});
+
+// ------------------------------------------------------------------ signing in
+
+test("a Google account linked to nobody opens nothing and creates no account", async () => {
+  const { rig: r, supabase } = await socialRig();
+  const done = await googleSignIn(r, supabase, GOOGLE_PERSON);
+  assert.equal(done.location, "/sign-in?signin=not_linked&provider=google");
+  assert.equal(cookieValue(done.setCookie, COOKIE), null, "no session cookie");
+  assert.match(done.setCookie, new RegExp(`${STATE_COOKIE}=; Path=/; Max-Age=0`), "the state cookie is removed");
+  assert.equal(done.headers.get("referrer-policy"), "no-referrer");
+  assert.equal(done.headers.get("cache-control"), "no-store");
+  assert.equal(await r.store.webIdentityOwner(GOOGLE_PERSON), null);
+  // The exchange carried the publishable key and the verifier that matched the challenge.
+  assert.equal(supabase.state.requests[0]!.headers.apikey, "sb_publishable_test_key_123");
+  assert.ok(!r.logs.some((line) => line.includes("rt-never-kept") || line.includes("code-1")), "no token or code in the logs");
+});
+
+test("linked from a browser signed in with the iPhone's code, Google then signs in to the same account", async () => {
+  const { rig: r, supabase } = await socialRig();
+  const linked = await linkFromBrowser(r, supabase, GOOGLE_PERSON);
+  assert.equal(linked.location, "/settings?link=linked&provider=google");
+  assert.equal(await r.store.webIdentityOwner(GOOGLE_PERSON), DEV_IDENTITIES[USER_A]);
+
+  const done = await googleSignIn(r, supabase, GOOGLE_PERSON);
+  assert.equal(done.location, "/");
+  const session = cookieValue(done.setCookie, COOKIE);
+  assert.ok(session, done.setCookie);
+  assert.match(done.setCookie, /__Host-doddy_web=[A-Za-z0-9_-]{43}; Path=\/; Max-Age=2592000; HttpOnly; SameSite=Strict; Secure/);
+  const current = await r.call("GET", "/v1/web/session", { cookie: session });
+  assert.equal(current.status, 200, current.text);
+  assert.equal(current.body.session.browser, "chrome");
+  // The phone sees the new browser among its own.
+  const listed = await r.call("GET", "/v1/web/sessions", { token: USER_A });
+  assert.equal(listed.body.sessions.length, 2);
+  // And the linked sign-in, from either side.
+  const identities = await r.call("GET", "/v1/web/identities", { token: USER_A });
+  assert.deepEqual(identities.body.identities.map((i: { id: string; provider: string }) => [i.id, i.provider]), [[GOOGLE_PERSON, "google"]]);
+  assert.deepEqual((await r.call("GET", "/v1/web/identities", { cookie: session })).body, identities.body);
+  // Another account sees none of it.
+  assert.deepEqual((await r.call("GET", "/v1/web/identities", { token: USER_B })).body, { identities: [] });
+});
+
+test("linking needs the browser's own session: without one it goes back signed out", async () => {
+  const { rig: r } = await socialRig();
+  const s = await start(r, "provider=google&intent=link");
+  assert.equal(s.location, "/settings?link=signed_out");
+  assert.equal(s.state, null);
+  const stale = await start(r, "provider=google&intent=link", "A".repeat(43));
+  assert.equal(stale.location, "/settings?link=signed_out");
+});
+
+test("a Google account linked to one Doddy account can't be linked to another, and nothing is merged", async () => {
+  const { rig: r, supabase } = await socialRig();
+  await linkFromBrowser(r, supabase, GOOGLE_PERSON, USER_A);
+  const again = await linkFromBrowser(r, supabase, GOOGLE_PERSON, USER_A);
+  assert.equal(again.location, "/settings?link=already&provider=google");
+  const taken = await linkFromBrowser(r, supabase, GOOGLE_PERSON, USER_B);
+  assert.equal(taken.location, "/settings?link=taken&provider=google");
+  assert.equal(await r.store.webIdentityOwner(GOOGLE_PERSON), DEV_IDENTITIES[USER_A]);
+  assert.deepEqual((await r.call("GET", "/v1/web/identities", { token: USER_B })).body, { identities: [] });
+});
+
+// ------------------------------------------------------------------ what the callback refuses
+
+test("a state works once, only with its own cookie, and only for ten minutes", async () => {
+  const { rig: r, supabase } = await socialRig();
+  await linkFromBrowser(r, supabase, GOOGLE_PERSON);
+
+  // Used twice: the second time nothing is exchanged.
+  const s = await start(r, "provider=google");
+  const code = supabase.issueCode(s.location, GOOGLE_PERSON);
+  assert.equal((await callback(r, `code=${code}`, s.state)).location, "/");
+  const exchanges = supabase.state.exchanges;
+  assert.equal((await callback(r, `code=${code}`, s.state)).location, "/sign-in?signin=failed");
+  assert.equal(supabase.state.exchanges, exchanges);
+
+  // No cookie, or a made-up one.
+  const s2 = await start(r, "provider=google");
+  const code2 = supabase.issueCode(s2.location, GOOGLE_PERSON);
+  assert.equal((await callback(r, `code=${code2}`, null)).location, "/sign-in?signin=failed");
+  assert.equal((await callback(r, `code=${code2}`, "B".repeat(43))).location, "/sign-in?signin=failed");
+
+  // Expired.
+  const s3 = await start(r, "provider=google");
+  const code3 = supabase.issueCode(s3.location, GOOGLE_PERSON);
+  r.clock.advance(OAUTH_STATE_TTL_MS + 1);
+  assert.equal((await callback(r, `code=${code3}`, s3.state)).location, "/sign-in?signin=failed");
+});
+
+test("someone else's code is useless: the verifier of this browser's sign-in doesn't match its challenge", async () => {
+  const { rig: r, supabase } = await socialRig();
+  await linkFromBrowser(r, supabase, GOOGLE_PERSON);
+  // The attacker starts a sign-in of their own and gets a code for it...
+  const attacker = await start(r, "provider=google");
+  const stolen = supabase.issueCode(attacker.location, GOOGLE_PERSON);
+  // ...and sends the victim's browser (with its own state) to the callback with it.
+  const victim = await start(r, "provider=google");
+  const done = await callback(r, `code=${stolen}`, victim.state);
+  assert.equal(done.location, "/sign-in?signin=failed&provider=google");
+  assert.equal(cookieValue(done.setCookie, COOKIE), null);
+});
+
+test("cancelling, a provider error, Supabase down or a token it didn't sign: no session, plain words", async () => {
+  const { rig: r, supabase } = await socialRig();
+  await linkFromBrowser(r, supabase, GOOGLE_PERSON);
+  const cancel = await start(r, "provider=google");
+  assert.equal((await callback(r, "error=access_denied&error_description=The+user+said+%3Cscript%3E", cancel.state)).location, "/sign-in?signin=canceled&provider=google");
+  const refused = await start(r, "provider=google");
+  assert.equal((await callback(r, "error=server_error", refused.state)).location, "/sign-in?signin=failed&provider=google");
+  const malformed = await start(r, "provider=google");
+  assert.equal((await callback(r, "code=%22%3E%3Cscript%3E", malformed.state)).location, "/sign-in?signin=failed&provider=google");
+
+  supabase.state.down = true;
+  const down = await start(r, "provider=google");
+  assert.equal((await callback(r, `code=${supabase.issueCode(down.location, GOOGLE_PERSON)}`, down.state)).location, "/sign-in?signin=failed&provider=google");
+  supabase.state.down = false;
+
+  supabase.state.wrongKey = true;
+  const forged = await start(r, "provider=google");
+  const done = await callback(r, `code=${supabase.issueCode(forged.location, GOOGLE_PERSON)}`, forged.state);
+  assert.equal(done.location, "/sign-in?signin=failed&provider=google");
+  assert.equal(cookieValue(done.setCookie, COOKIE), null);
+  assert.ok(!r.logs.some((line) => line.includes("<script>")), "the provider's words aren't logged");
+});
+
+test("an email or phone sign-in at Supabase opens nothing, even for a linked person", async () => {
+  const { rig: r, supabase } = await socialRig();
+  await linkFromBrowser(r, supabase, GOOGLE_PERSON);
+  const s = await start(r, "provider=google");
+  const code = supabase.issueCode(s.location, GOOGLE_PERSON, "email");
+  const done = await callback(r, `code=${code}`, s.state);
+  assert.equal(done.location, "/sign-in?signin=failed&provider=google");
+});
+
+test("one client gets a limited number of starts and callbacks a quarter hour", async () => {
+  const { rig: r } = await socialRig();
+  for (let i = 0; i < SOCIAL_LIMITS.perClientPerQuarter; i++) assert.equal(new URL((await start(r, "provider=google")).location).origin, PROJECT);
+  assert.equal((await start(r, "provider=google")).location, "/sign-in?signin=busy");
+  r.clock.advance(15 * 60_000);
+  assert.equal(new URL((await start(r, "provider=google")).location).origin, PROJECT);
+});
+
+// ------------------------------------------------------------------ from the iPhone
+
+test("the iPhone links Google with a one-time ticket, and its sheet ends at the app's scheme", async () => {
+  const { rig: r, supabase } = await socialRig();
+  const ticket = await r.call("POST", "/v1/web/oauth/tickets", { token: USER_A, body: { provider: "google" } });
+  assert.equal(ticket.status, 200, ticket.text);
+  assert.equal(ticket.body.callbackScheme, "doddy-dev");
+  assert.equal(Date.parse(ticket.body.expiresAt) - r.clock.ms, OAUTH_TICKET_TTL_MS);
+  const url = new URL(ticket.body.url);
+  assert.equal(url.origin + url.pathname, `${WEB_ORIGIN}/v1/web/oauth/start`);
+
+  const s = await start(r, url.search.slice(1));
+  assert.equal(new URL(s.location).origin, PROJECT);
+  const done = await callback(r, `code=${supabase.issueCode(s.location, GOOGLE_PERSON)}`, s.state);
+  assert.equal(done.location, "doddy-dev://web-sign-in/return?result=linked&provider=google");
+  assert.equal(await r.store.webIdentityOwner(GOOGLE_PERSON), DEV_IDENTITIES[USER_A]);
+
+  // The ticket worked once.
+  assert.equal((await start(r, url.search.slice(1))).location, "doddy-dev://web-sign-in/return?result=failed");
+  // And now Google opens the web for this person without any code.
+  assert.equal((await googleSignIn(r, supabase, GOOGLE_PERSON)).location, "/");
+});
+
+test("a ticket comes only from the iPhone's own session, for a configured provider, and expires", async () => {
+  const { rig: r } = await socialRig({ providers: ["google"] });
+  assert.equal((await r.call("POST", "/v1/web/oauth/tickets", { body: { provider: "google" } })).status, 401);
+  const session = await r.signIn(await r.code());
+  assert.equal((await r.call("POST", "/v1/web/oauth/tickets", { cookie: session, browser: true, body: { provider: "google" } })).status, 401);
+  assert.equal((await r.call("POST", "/v1/web/oauth/tickets", { token: USER_A, body: { provider: "apple" } })).status, 400);
+  assert.equal((await r.call("POST", "/v1/web/oauth/tickets", { token: USER_A, body: { provider: "google", userId: "someone" } })).status, 400);
+  const ticket = await r.call("POST", "/v1/web/oauth/tickets", { token: USER_A, body: { provider: "google" } });
+  r.clock.advance(OAUTH_TICKET_TTL_MS + 1);
+  assert.equal((await start(r, new URL(ticket.body.url).search.slice(1))).location, "doddy-dev://web-sign-in/return?result=failed");
+  assert.equal((await start(r, "ticket=not-a-ticket")).location, "doddy-dev://web-sign-in/return?result=failed");
+});
+
+test("cancelling the iPhone's sheet tells the app, and links nothing", async () => {
+  const { rig: r } = await socialRig();
+  const ticket = await r.call("POST", "/v1/web/oauth/tickets", { token: USER_A, body: { provider: "apple" } });
+  const s = await start(r, new URL(ticket.body.url).search.slice(1));
+  assert.equal(new URL(s.location).searchParams.get("provider"), "apple");
+  const done = await callback(r, "error=access_denied", s.state);
+  assert.equal(done.location, "doddy-dev://web-sign-in/return?result=canceled&provider=apple");
+  assert.deepEqual((await r.call("GET", "/v1/web/identities", { token: USER_A })).body, { identities: [] });
+});
+
+// ------------------------------------------------------------------ unlinking and erasure
+
+test("unlinking needs the web app's origin from a browser, and Google then opens nothing", async () => {
+  const { rig: r, supabase } = await socialRig();
+  await linkFromBrowser(r, supabase, GOOGLE_PERSON);
+  const session = await r.signIn(await r.code());
+  assert.equal((await r.call("DELETE", `/v1/web/identities/${GOOGLE_PERSON}`, { cookie: session })).status, 401, "no same-origin header");
+  assert.equal((await r.call("DELETE", `/v1/web/identities/${GOOGLE_PERSON}`, { token: USER_B })).status, 404, "another account's");
+  assert.equal((await r.call("DELETE", `/v1/web/identities/${OTHER_PERSON}`, { token: USER_A })).status, 404);
+  const gone = await r.call("DELETE", `/v1/web/identities/${GOOGLE_PERSON}`, { cookie: session, browser: true });
+  assert.equal(gone.status, 200, gone.text);
+  assert.equal((await googleSignIn(r, supabase, GOOGLE_PERSON)).location, "/sign-in?signin=not_linked&provider=google");
+});
+
+test("deleting the account removes its linked sign-ins and sign-ins in progress", async () => {
+  const { rig: r, supabase } = await socialRig();
+  await linkFromBrowser(r, supabase, GOOGLE_PERSON);
+  await r.call("POST", "/v1/web/oauth/tickets", { token: USER_A, body: { provider: "google" } });
+  assert.ok((ERASED_TABLES as readonly string[]).includes("web_identities"));
+  assert.ok((ERASED_TABLES as readonly string[]).includes("web_oauth_states"));
+  const erasure = await r.store.eraseUser(DEV_IDENTITIES[USER_A]!, r.clock.ms);
+  assert.equal(erasure.deleted.web_identities, 1);
+  assert.ok(erasure.deleted.web_oauth_states >= 1);
+  assert.equal(erasure.remaining, 0);
+  assert.equal(await r.store.webIdentityOwner(GOOGLE_PERSON), null);
+});
+
+// ------------------------------------------------------------------ config
+
+test("config: Apple and Google on the web need SUPABASE_URL and the publishable key, never the secret one", () => {
+  const web = { DODDY_WEB_ORIGIN: "https://app.doddy.lol" };
+  assert.equal(loadConfig(web).web!.social, null);
+  assert.deepEqual(loadConfig({ ...web, SUPABASE_URL: "https://abcdefghijklmnopqrst.supabase.co/", SUPABASE_PUBLISHABLE_KEY: "sb_publishable_qvClrOM9aE-OZvFGZ54x" }).web!.social, {
+    projectUrl: "https://abcdefghijklmnopqrst.supabase.co",
+    publishableKey: "sb_publishable_qvClrOM9aE-OZvFGZ54x",
+    providers: ["google", "apple"],
+  });
+  assert.deepEqual(
+    loadConfig({ ...web, SUPABASE_URL: PROJECT, SUPABASE_PUBLISHABLE_KEY: "sb_publishable_qvClrOM9aE-OZvFGZ54x", DODDY_WEB_SIGNIN_PROVIDERS: "Apple" }).web!.social!.providers,
+    ["apple"],
+  );
+  // The iPhone's own sign-in is unchanged: the auth mode stays as it was.
+  assert.equal(loadConfig({ ...web, SUPABASE_URL: PROJECT, SUPABASE_PUBLISHABLE_KEY: "sb_publishable_qvClrOM9aE-OZvFGZ54x" }).supabaseUrl, null);
+  assert.throws(() => loadConfig({ ...web, SUPABASE_PUBLISHABLE_KEY: "sb_publishable_qvClrOM9aE-OZvFGZ54x" }), /SUPABASE_URL/);
+  assert.throws(() => loadConfig({ ...web, SUPABASE_URL: PROJECT, SUPABASE_PUBLISHABLE_KEY: "sb_secret_abcdefghijklmnop" }), /secret key/);
+  assert.throws(() => loadConfig({ ...web, SUPABASE_URL: PROJECT, SUPABASE_PUBLISHABLE_KEY: "sb_publishable_ok_1234567", DODDY_WEB_SIGNIN_PROVIDERS: "google,facebook" }), /facebook/);
+});
+
+test("the iPhone's sheet ends at a doddy scheme, never at https", () => {
+  assert.equal(appScheme("doddy-dev://connected-apps/return"), "doddy-dev");
+  assert.equal(appScheme("doddy://connected-apps/return"), "doddy");
+  assert.equal(appScheme("https://doddy.lol/return"), "doddy");
+});
