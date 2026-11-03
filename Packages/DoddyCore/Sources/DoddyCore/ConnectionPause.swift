@@ -21,6 +21,9 @@ public enum ConnectionPause {
         case .checkErrands:
             // Reads the tasks Doddy keeps for the user (ADR-570); no other app or account.
             false
+        case .lostWallet:
+            // Doddy's own checklist (ADR-692); a page or a call opens only on the person's tap, like any link.
+            false
         case .handOverErrand:
             // Doddy's server searches and reads the web for it (ADR-570).
             true

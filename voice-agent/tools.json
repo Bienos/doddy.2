@@ -563,6 +563,21 @@
     },
     {
       "type": "function",
+      "name": "lost_wallet",
+      "description": "Show the user the official steps to take after their wallet, ID card, bank cards, driving licence or passport is lost or stolen, in Poland or abroad. Use it as soon as the user says something like 'I lost my wallet', 'my cards were stolen', 'zgubiłem portfel' or 'ukradli mi dowód'. Doddy can't block a card, cancel an ID card or reserve a PESEL number for anyone: the app shows a checklist, most urgent first, and each step's button opens an official page (gov.pl, or the banks' Dokumenty Zastrzeżone) or dials the card-blocking line +48 828 828 828 only when the user taps it. Pass only what the user said was lost; if you don't know what was in the wallet, ask one short question first, for example 'Were your bank cards and ID card in it?' (Polish: 'Czy były w nim karty i dowód?'). Never ask for, write down or repeat a card number, PESEL, ID number, PIN or password. The result starts with 'shown' (the checklist is on the screen; nothing was done for the user) and lists the steps: go through them one at a time, in a calm, plain voice. Before this tool runs, say only one short line, for example 'I'll put the steps on your screen.' (Polish: 'Pokażę ci kroki na ekranie.'). Never say a card is blocked, a document cancelled or a PESEL reserved: only the user can see that. If the user is in danger now, tell them to call 112 first.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "lost": {"type": "array", "items": {"type": "string", "description": "One of: 'id_card' (dowód osobisty), 'bank_cards' (debit or credit cards), 'driving_licence' (prawo jazdy), 'passport'."}, "description": "What the user said is gone. At least one."},
+          "stolen": {"type": "boolean", "description": "true only if the user said it was stolen; leave out if it was lost or they don't know."},
+          "abroad": {"type": "boolean", "description": "true only if the user is outside Poland now; leave out otherwise."}
+        },
+        "required": ["lost"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "tap", "speak_before": "force", "timeout_secs": 60, "elevenlabs_tool_id": "tool_4201m6f4xwztfs08n8r4ht6nf0ka"}
+    },
+    {
+      "type": "function",
       "name": "check_email",
       "description": "Check the user's newest Gmail emails: sender, subject, time and a short preview only. Use it when the user asks whether they have new email, what is in their inbox, or whether someone wrote to them. Optional query uses Gmail search words, e.g. 'from:anna' or 'is:unread'; leave it out for the inbox. Answer only from the result and never invent emails. It gives previews only; to hear one whole email, use read_email. If the result says the tool is switched off or Gmail isn't connected, tell the user in one sentence that they can switch it on in Settings, Online accounts. If the result starts with DEMO DATA, tell the user it is demo data. ASK-01: before this tool runs, say in one short line exactly what you will look at and ask, for example 'Shall I check your inbox?' (Polish: 'Mam sprawdzić twoją skrzynkę?'). The app shows the same question on screen and runs it only after the user says yes or taps Yes; if the result starts with 'declined', nothing was looked at: say so in one short sentence.",
       "parameters": {

@@ -140,6 +140,10 @@ public enum AskFirst {
              .openMap, .runShortcut, .draftMessage, .draftBlikTransfer, .makePresentation, .openCamera, .addIngredients, .createList, .changeCalendarEvent, .changeReminder,
              .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders, .leaveBy, .parkingSpot(.save):
             return .ownPayloadCard
+        case .lostWallet:
+            // ADR-692: the checklist is its own card. Showing it reads and changes nothing; each
+            // step's page or number opens only on the person's tap on that step.
+            return .ownPayloadCard
         case .cloudTool(let call):
             return !call.isWrite && publicLookups.contains(call.name) ? .runsNow : .serverCard(isWrite: call.isWrite)
         }
