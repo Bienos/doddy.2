@@ -56,10 +56,11 @@ public enum OpenWaysOffer {
     public static let deferralsBeforeStopping = 2
 
     /// The words of Home's slim row (owner, 3 Nov 2026, ADR-699): casual and general (no Siri, no
-    /// named ways), nothing about how easy or how long, and no promise that Doddy is always
-    /// reachable (he isn't: no internet, no voice). Tapping the row opens the ways.
+    /// named ways), nothing about how easy or how long. The English title is the owner's own
+    /// ("I'm here non-stop"); the Polish one stays "Jestem pod ręką", because Doddy is not there
+    /// without internet or voice. Tapping the row opens the ways.
     public static func rowTitle(_ language: NotificationLanguage) -> String {
-        language == .polish ? "Jestem pod ręką" : "I'm within reach"
+        language == .polish ? "Jestem pod ręką" : "I'm here non-stop"
     }
 
     public static func rowLine(_ language: NotificationLanguage) -> String {

@@ -136,13 +136,17 @@ final class OpenWaysOfferTests: XCTestCase {
         XCTAssertEqual(OpenWaysOffer.rowLine(.polish), "Ustaw sposób, żeby mnie zawołać.")
         for language in [NotificationLanguage.english, .polish] {
             let words = (OpenWaysOffer.rowTitle(language) + " " + OpenWaysOffer.rowLine(language)).lowercased()
-            // No Siri, nothing about ease or minutes, and no promise that he is always there.
-            for banned in ["siri", "minut", "minute", "easy", "łatw", "quick", "szybk", "faster",
-                           "zawsze", "cały czas", "always", "all the time"] {
+            // No Siri and nothing about ease or minutes. (The English title is the owner's "I'm here
+            // non-stop"; the Polish one makes no promise of being always there.)
+            for banned in ["siri", "minut", "minute", "easy", "łatw", "quick", "szybk", "faster"] {
                 XCTAssertFalse(words.contains(banned), "\(language): \(banned)")
             }
         }
+        XCTAssertEqual(OpenWaysOffer.rowTitle(.english), "I'm here non-stop")
         XCTAssertNotEqual(OpenWaysOffer.rowTitle(.english), OpenWaysOffer.rowTitle(.polish))
+        for polishPromise in ["zawsze", "cały czas", "non stop"] {
+            XCTAssertFalse(OpenWaysOffer.rowTitle(.polish).lowercased().contains(polishPromise))
+        }
     }
 
     func testTheStateRoundTripsAndHoldsNoWords() throws {
