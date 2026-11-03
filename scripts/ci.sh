@@ -8,17 +8,25 @@
 #                              the iOS app build and tests are reported NOT RUN (exit 0
 #                              only if everything that was requested passed)
 #   scripts/ci.sh --app-only   Swift package and iOS build/unit/UI tests; Linux checks SKIPPED (ADR-680)
+#   scripts/ci.sh --app-part P One part of --app-only (ADR-687), for the hosted Mac matrix, one Mac each:
+#                              unit (package + unit tests), ui-a, ui-b, ui-c (the UI test classes split in
+#                              scripts/ui_test_shards.sh; ui-c is every class not listed there)
 #   scripts/ci.sh --only a,b   only these groups (hosted Linux jobs run one group each, in parallel):
 #                              checks swift backend node messaging ios
 #                              `ios` is the Xcode build and tests; --only never includes it unless listed.
 set -uo pipefail
 cd "$(dirname "$0")/.."
 
-core_only=0 app_only=0 only=""
+core_only=0 app_only=0 app_part="" only=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --core-only) core_only=1 ;;
     --app-only) app_only=1 ;;
+    --app-part)
+      case "${2:-}" in
+        unit|ui-a|ui-b|ui-c) app_part=$2; app_only=1; shift ;;
+        *) echo "--app-part needs unit, ui-a, ui-b or ui-c" >&2; exit 64 ;;
+      esac ;;
     --only)
       [ -n "${2:-}" ] || { echo "--only needs a comma-separated list of groups" >&2; exit 64; }
       only=$2; shift ;;
@@ -43,6 +51,7 @@ fi
 want() {
   if [ "$app_only" -eq 1 ]; then
     case "$1" in swift|ios) ;; *) return 1 ;; esac
+    case "$app_part:$1" in ui-*:swift) return 1 ;; esac
   fi
   [ -z "$only" ] && return 0
   case ",$only," in *",$1,"*) return 0 ;; esac
@@ -64,6 +73,9 @@ restart_simulator() {
   xcrun simctl bootstatus "$1" -b                 # -b boots it first, then waits for the boot
 }
 
+case "$app_part" in
+  ui-*) record "Swift package tests (DoddyCore)" "SKIPPED" "--app-part $app_part: the unit part runs them" ;;
+esac
 if [ "$app_only" -eq 1 ]; then
   record "Pack, guard, agent spec, page and catalog checks" "SKIPPED" "--app-only: Linux core runs them"
   record "Token server, backend, gateway, web, messaging, site and secrets checks" "SKIPPED" "--app-only: Linux core runs them"
@@ -85,6 +97,7 @@ run_step "Binary packages' dSYMs into the archive (ADR-693)" scripts/test_copy_b
 run_step "TestFlight script (ADR-694)" scripts/test_testflight.sh
 run_step "Xcode Cloud post-clone script (ADR-697)" scripts/test_xcode_cloud_post_clone.sh
 run_step "Which pull requests need which Linux groups (ADR-684)" scripts/test_ci_groups.sh
+run_step "UI test split: every class runs in exactly one Mac part (ADR-687)" scripts/check_ui_test_shards.sh
 if python3 -I -c "import yaml" 2>/dev/null; then
   run_step "Per-platform Xcode specs in step" python3 -I scripts/check_platform_specs.py
 else
@@ -235,25 +248,47 @@ else
       # longest UI test takes about 290 s, so 600 s only ends a test that is stuck.
       test_limits="-test-timeouts-enabled YES -default-test-execution-time-allowance 600"
       # shellcheck disable=SC2086
-      run_step "xcodebuild test: unit tests" xcodebuild test-without-building -project Doddy.xcodeproj -scheme Doddy \
-        -destination "$dest" -only-testing:DoddyTests $test_limits
-      # Only when this script picked the simulator: a DODDY_DESTINATION may name one by name.
-      if [ -n "${sim_id:-}" ]; then
-        run_step "Restart the simulator before the UI tests" restart_simulator "$sim_id"
-      fi
-      # DODDY_UI_TEST_WORKERS > 1 (ADR-680): xcodebuild clones the simulator and hands each clone
-      # whole test classes, so the UI tests run side by side. Each clone starts fresh, as ADR-561
-      # wants. Every test still runs once. Not used in CI: the hosted Mac was too small for two.
-      ui_workers=${DODDY_UI_TEST_WORKERS:-1}
-      if [ "$ui_workers" -gt 1 ] 2>/dev/null; then
-        # shellcheck disable=SC2086
-        run_step "xcodebuild test: UI tests ($ui_workers simulators)" xcodebuild test-without-building \
-          -project Doddy.xcodeproj -scheme Doddy -destination "$dest" -only-testing:DoddyUITests \
-          -parallel-testing-enabled YES -parallel-testing-worker-count "$ui_workers" $test_limits
+      case "$app_part" in
+        ui-*) record "xcodebuild test: unit tests" "SKIPPED" "--app-part $app_part: the unit part runs them" ;;
+        *)
+          run_step "xcodebuild test: unit tests" xcodebuild test-without-building -project Doddy.xcodeproj -scheme Doddy \
+            -destination "$dest" -only-testing:DoddyTests $test_limits ;;
+      esac
+      if [ "$app_part" = "unit" ]; then
+        record "xcodebuild test: UI tests" "SKIPPED" "--app-part unit: the ui-a, ui-b and ui-c parts run them"
       else
-        # shellcheck disable=SC2086
-        run_step "xcodebuild test: UI tests" xcodebuild test-without-building -project Doddy.xcodeproj -scheme Doddy \
-          -destination "$dest" -only-testing:DoddyUITests $test_limits
+        # Only when this script picked the simulator: a DODDY_DESTINATION may name one by name.
+        # On a UI part's fresh Mac it also boots and warms the simulator (ADR-561's slow first launch).
+        if [ -n "${sim_id:-}" ]; then
+          run_step "Restart the simulator before the UI tests" restart_simulator "$sim_id"
+        fi
+        # Which UI test classes (ADR-687). No part: all of them. ui-a and ui-b: the classes listed in
+        # scripts/ui_test_shards.sh. ui-c: everything except those, so a new class always runs.
+        ui_select="-only-testing:DoddyUITests"
+        if [ -n "$app_part" ]; then
+          # shellcheck source=scripts/ui_test_shards.sh
+          . scripts/ui_test_shards.sh
+          case "$app_part" in
+            ui-a) ui_select=""; for c in $UI_SHARD_A; do ui_select="$ui_select -only-testing:DoddyUITests/$c"; done ;;
+            ui-b) ui_select=""; for c in $UI_SHARD_B; do ui_select="$ui_select -only-testing:DoddyUITests/$c"; done ;;
+            ui-c) for c in $UI_SHARD_A $UI_SHARD_B; do ui_select="$ui_select -skip-testing:DoddyUITests/$c"; done ;;
+          esac
+        fi
+        ui_label=${app_part:+ ($app_part)}
+        # DODDY_UI_TEST_WORKERS > 1 (ADR-680): xcodebuild clones the simulator and hands each clone
+        # whole test classes, so the UI tests run side by side. Each clone starts fresh, as ADR-561
+        # wants. Every test still runs once. Not used in CI: the hosted Mac was too small for two.
+        ui_workers=${DODDY_UI_TEST_WORKERS:-1}
+        if [ "$ui_workers" -gt 1 ] 2>/dev/null; then
+          # shellcheck disable=SC2086
+          run_step "xcodebuild test: UI tests$ui_label ($ui_workers simulators)" xcodebuild test-without-building \
+            -project Doddy.xcodeproj -scheme Doddy -destination "$dest" $ui_select \
+            -parallel-testing-enabled YES -parallel-testing-worker-count "$ui_workers" $test_limits
+        else
+          # shellcheck disable=SC2086
+          run_step "xcodebuild test: UI tests$ui_label" xcodebuild test-without-building -project Doddy.xcodeproj -scheme Doddy \
+            -destination "$dest" $ui_select $test_limits
+        fi
       fi
     else
       not_run "xcodebuild test (unit + UI)" "the build for testing failed"
@@ -273,5 +308,6 @@ if [ -n "$only" ]; then
   exit 0
 fi
 if [ "$core_only" -eq 1 ]; then echo "RESULT: PASS for core-only scope; iOS app NOT verified"; exit 0; fi
+if [ -n "$app_part" ]; then echo "RESULT: PASS for app part $app_part only; the other parts and the Linux job (core) run the rest"; exit 0; fi
 if [ "$app_only" -eq 1 ]; then echo "RESULT: PASS for app-only scope; the Linux job (core) runs the other checks"; exit 0; fi
 echo "RESULT: PASS"

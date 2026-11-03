@@ -69,12 +69,17 @@ scripts/ci.sh                  # set DODDY_DESTINATION to override the simulator
   `swift` (package tests, app-logic type-check, model tests; SwiftPM `.build` cached), `backend`, `node`
   (gateway, web, site, voice token, secrets tool) and `messaging` (with Postgres). npm downloads are cached.
 - `core`: one result for all the Linux groups, green when every group that ran passed (a skipped group is fine).
-- `ci` (macOS): `scripts/ci.sh --app-only`: the Swift package tests, then the Xcode part (build
-  once with `xcodebuild build-for-testing`, unit tests, restart the simulator, UI tests: ADR-561). It no longer
-  waits for `core`, and no longer repeats the Node suites. Run the workflow by hand (Actions → iOS build and
-  tests → Run workflow) and it always runs.
+- `mac` (macOS, four jobs side by side, ADR-687): `scripts/ci.sh --app-part <part>`, one Mac and one simulator
+  each. `unit`: the Swift package tests, then build and the unit tests. `ui-a`, `ui-b`, `ui-c`: build, restart the
+  simulator, then a third of the UI tests. The split is in `scripts/ui_test_shards.sh` (`ui-c` is every class not
+  listed there, so a new class always runs; `scripts/check_ui_test_shards.sh` fails on a misspelt or doubled name).
+  Each Mac builds the app itself. Two simulators on one Mac were slower and flaky (ADR-680), so that is not used.
+- `ci`: one result for the Mac side, green when every `mac` part that ran passed (no app change: skipped, fine).
+  It no longer waits for `core`, and does not repeat the Node suites. Run the workflow by hand (Actions → iOS build
+  and tests → Run workflow) and it always runs.
 
-Locally: `scripts/ci.sh --only swift,backend` runs just those groups; `--app-only` is what the Mac job runs.
+Locally: `scripts/ci.sh --only swift,backend` runs just those groups; `--app-only` is the whole Mac side on one
+Mac (all four parts in one go); `--app-part ui-b` runs one slice.
 
 **Timings measured 1 Nov 2026** (runs 41330977302 on the Mac side, 41340906950 on the Linux side), before
 ADR-684: `core` 14.5 min (backend tests 411 s, Swift package tests 214 s, messaging 40 s, the rest under 45 s each);

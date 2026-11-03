@@ -86,11 +86,21 @@ jobs:
         run: scripts/ci_groups.sh < "$RUNNER_TEMP/changed.txt" >> "$GITHUB_OUTPUT"
 
   # Preserve #164: Mac Swift + Xcode tests only, no repeated Linux checks.
-  ci:
+  # The Mac work, split over four Macs that run side by side (ADR-687): `unit` (Swift package and unit
+  # tests) and three slices of the UI tests, one simulator each. Two simulators on one Mac were slower
+  # and flaky (ADR-680); one simulator per Mac is the setup that passed. Each Mac builds the app
+  # itself (about 5 minutes), because the build isn't shared between jobs. Which UI test classes
+  # a part runs: scripts/ui_test_shards.sh; ui-c is everything not listed, so a new class always runs.
+  mac:
     needs: [changes]
     if: needs.changes.outputs.mac == 'true' && inputs.only != 'island'
     runs-on: macos-latest
-    timeout-minutes: 75
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        part: [unit, ui-a, ui-b, ui-c]
+    name: mac (${{ matrix.part }})
     steps:
       - uses: actions/checkout@v4
 
@@ -102,39 +112,51 @@ jobs:
       - name: Install XcodeGen
         run: brew install xcodegen
 
-      # scripts/check_platform_specs.py reads the per-platform XcodeGen specs.
-      - name: Install PyYAML
-        # Not --user: ci.sh runs python3 -I, which ignores the user site-packages.
-        run: python3 -m pip install --break-system-packages pyyaml || python3 -m pip install pyyaml
-
       - name: Tool versions
         run: |
           xcodebuild -version
           swift --version
           xcodegen --version
 
-      - name: scripts/ci.sh --app-only
-        run: scripts/ci.sh --app-only
+      - name: scripts/ci.sh --app-part ${{ matrix.part }}
+        run: scripts/ci.sh --app-part ${{ matrix.part }}
 
       - name: Keep the test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: xcode-test-results
+          name: xcode-test-results-${{ matrix.part }}
           path: ~/Library/Developer/Xcode/DerivedData/**/Logs/Test/*.xcresult
           if-no-files-found: ignore
           retention-days: 7
 
       # Pictures of the Dynamic Island's views in each conversation state, drawn by
-      # DoddyTests/IslandScreenshotTests (ADR-615). Small PNGs, so the look can be checked from here.
+      # DoddyTests/IslandScreenshotTests (ADR-615), a unit test, so only the unit part has them.
       - name: Keep the island pictures
-        if: always()
+        if: always() && matrix.part == 'unit'
         uses: actions/upload-artifact@v4
         with:
           name: island-screenshots
           path: build/island-screenshots/
           if-no-files-found: ignore
           retention-days: 14
+
+  # One result for the Mac side, named `ci` as before so anything that waits on that check still
+  # works. Skipped (no app change) counts as fine; any part failed or cancelled does not.
+  ci:
+    needs: [changes, mac]
+    if: always() && inputs.only != 'island'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: All Mac parts that ran passed
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "Results: $RESULTS"
+          case " $RESULTS " in
+            *" failure "* | *" cancelled "*) echo "A Mac part failed or was cancelled." >&2; exit 1 ;;
+          esac
 
   # ---- The Linux groups (ADR-137, ADR-684). Each runs one `scripts/ci.sh --only <group>`, in
   # parallel; a group is skipped when `changes` says no changed file can reach it.
