@@ -10,6 +10,14 @@ repository is public. It's part of the Apple Developer Program: 25 compute hours
 archive takes roughly 15 to 25 minutes, so that's about 60 to 100 builds a month, and only merges
 start one.
 
+**A second path exists: the manual GitHub workflow (ADR-694, `docs/implementation/TESTFLIGHT_WORKFLOW.md`).**
+It was merged on 2 Nov 2026, after the owner chose Xcode Cloud only (#178 was closed, then merged
+again by someone using the owner's account). It starts only by hand and needs an App Store Connect
+admin key stored in GitHub. **Use one path.** Its build number is the workflow's run number and
+Xcode Cloud's is its own counter, and TestFlight refuses a build number it has already seen for a
+version, so mixing them can fail an upload. If both are ever used, set Xcode Cloud's next build
+number above the last one the manual workflow uploaded (step 6 below).
+
 **What this repository adds:** `ci_scripts/ci_post_clone.sh`. Xcode Cloud runs it on its Mac
 after it downloads the code and before it builds. It does four things:
 1. Generates `Doddy.xcodeproj` from `project.yml`, as `make project` does. The project isn't

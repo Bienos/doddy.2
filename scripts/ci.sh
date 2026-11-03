@@ -82,6 +82,7 @@ run_step "What-can-doddy-do page up to date" python3 -I tools/build_day.py --che
 run_step "Web app tokens and brand files match the app (ADR-600)" python3 -I tools/gen_web_assets.py --check
 run_step "Which pull requests need the macOS build (ADR-497)" scripts/test_ci_needs_mac.sh
 run_step "Binary packages' dSYMs into the archive (ADR-693)" scripts/test_copy_binary_dsyms.sh
+run_step "TestFlight script (ADR-694)" scripts/test_testflight.sh
 run_step "Xcode Cloud post-clone script (ADR-697)" scripts/test_xcode_cloud_post_clone.sh
 run_step "Which pull requests need which Linux groups (ADR-684)" scripts/test_ci_groups.sh
 if python3 -I -c "import yaml" 2>/dev/null; then
