@@ -29,6 +29,11 @@ public final class OnlineAccountsModel {
     /// Switches waiting for the server's answer.
     public private(set) var switching: Set<String> = []
     public private(set) var demoAttempt: DemoAttempt?
+    /// The account just connected whose tools are all still off: the screen asks what Doddy may do
+    /// with it (ADR-700). Cleared by a choice, by "Not now", or when the account is disconnected.
+    public private(set) var choosingAccess: String?
+    /// Accounts whose access choice is waiting for the server's answer.
+    public private(set) var settingAccess: Set<String> = []
 
     private let client: any OnlineAccountsClient
     private let authenticator: any WebAuthenticator
@@ -48,6 +53,11 @@ public final class OnlineAccountsModel {
 
     public func isEnabled(_ tool: String) -> Bool {
         catalog?.toolkits.flatMap(\.tools).first { $0.name == tool }?.enabled ?? false
+    }
+
+    /// The choice the account's tools amount to now (Off when it isn't in the list).
+    public func accessMode(_ toolkit: String) -> AppAccess {
+        self.toolkit(toolkit).map { AppAccess.of($0.tools) } ?? .off
     }
 
     public func refresh() async {
@@ -116,6 +126,7 @@ public final class OnlineAccountsModel {
         defer { busyToolkit = nil }
         do {
             let result = try await client.disconnect(toolkit: toolkit)
+            if choosingAccess == toolkit { choosingAccess = nil }
             apply(result)
             if result.toolkit.remoteCleanup == .failed || result.receipt.status != .succeeded { message = result.receipt.summary }
         } catch {
@@ -138,10 +149,34 @@ public final class OnlineAccountsModel {
         }
     }
 
+    /// Deliberate user action: Off, look only, or look and act for the whole account. The server sets
+    /// the account's switches and says what it did; nothing changes here until it answers, and a
+    /// refusal (not connected, access expired) leaves the choice where it was and shows the reason.
+    public func setAccess(_ toolkit: String, mode: AppAccess) async {
+        guard isConfigured, !settingAccess.contains(toolkit) else { return }
+        settingAccess.insert(toolkit)
+        message = nil
+        defer { settingAccess.remove(toolkit) }
+        do {
+            apply(try await client.setAccess(app: toolkit, mode: mode))
+            if choosingAccess == toolkit { choosingAccess = nil }
+        } catch {
+            fail(error)
+        }
+    }
+
+    /// "Not now": the account stays connected with every tool off.
+    public func dismissAccessChoice() { choosingAccess = nil }
+
     private func finish(_ toolkit: String, _ attempt: ConnectResponse, _ result: CompletionResult) async throws(OnlineAccountsError) {
         let done = try await client.complete(toolkit: toolkit, CompleteRequest(attemptId: attempt.attemptId, nonce: attempt.nonce, result: result))
         apply(done)
         if done.receipt.status != .succeeded { message = done.receipt.summary }
+        // A fresh connection starts with every tool off (ADR-700): ask right away what Doddy may do.
+        if done.receipt.status == .succeeded, done.toolkit.status == .connected, done.toolkit.hasAccount,
+           AppAccess.of(done.toolkit.tools) == .off {
+            choosingAccess = toolkit
+        }
     }
 
     private func apply(_ result: ToolkitResult) {

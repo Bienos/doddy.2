@@ -1598,7 +1598,6 @@
   "These stay on this iPhone. Doddy's voice hears only how many there are and when they were taken.": "Zostają na tym iPhonie. Głos Doddy’ego słyszy tylko, ile ich jest i kiedy zostały zrobione.",
   "You let Doddy see only some of your photos, so there may be more.": "Pozwoliłeś Doddy’emu widzieć tylko część zdjęć, więc może ich być więcej.",
   "Your photos": "Twoje zdjęcia",
-  "Web search is on, and an account's tools come on when you connect it. Doddy still asks before every look, and anything that sends, adds or changes something shows you a card first and waits for your tap. Switch any tool off here.": "Wyszukiwanie w sieci jest włączone, a narzędzia konta włączają się, gdy je połączysz. Doddy i tak pyta przed każdym sprawdzeniem, a wszystko, co coś wysyła, dodaje lub zmienia, najpierw pokazuje kartę i czeka na Twoje stuknięcie. Tutaj możesz wyłączyć każde narzędzie.",
   "It takes a minute or two. Open it now; it shows the file as soon as it's ready.": "To potrwa minutę lub dwie. Otwórz teraz; plik pokaże się, gdy tylko będzie gotowy.",
   "Ask Doddy in a conversation to do any of these.": "Każdą z tych rzeczy możesz zlecić Doddy’emu w rozmowie.",
   "Budget: %@": "Budżet: %@",
@@ -2560,5 +2559,14 @@
   "You're dictating in Messages. Stop dictating to talk to Doddy.": "Dyktujesz w Wiadomościach. Przestań dyktować, aby porozmawiać z Doddym.",
   "A call rehearsal has the microphone. End it to talk to Doddy.": "Mikrofonu używa próba rozmowy. Zakończ ją, aby porozmawiać z Doddym.",
   "Something else in Doddy has the microphone. Finish it to talk to him.": "Mikrofonu używa coś innego w Doddym. Zakończ to, aby z nim porozmawiać.",
-  "Stop dictating to play this.": "Przestań dyktować, aby to odtworzyć."
+  "Stop dictating to play this.": "Przestań dyktować, aby to odtworzyć.",
+  "Web search is on. When you connect an account its tools start off, and you choose what Doddy may do with it. Doddy still asks before every look, and anything that sends, adds or changes something shows you a card first and waits for your tap. You can switch any tool off here.": "Wyszukiwanie w sieci jest włączone. Gdy połączysz konto, jego narzędzia są na początku wyłączone, a Ty wybierasz, co Doddy może z nim robić. Doddy i tak pyta przed każdym sprawdzeniem, a wszystko, co coś wysyła, dodaje lub zmienia, najpierw pokazuje kartę i czeka na Twoje stuknięcie. Tutaj możesz wyłączyć każde narzędzie.",
+  "What Doddy may do": "Co Doddy może robić",
+  "What may Doddy do?": "Co może robić Doddy?",
+  "Choose what Doddy may do with this account. You can change it any time in Settings.": "Wybierz, co Doddy może robić z tym kontem. Możesz to zmienić w każdej chwili w Ustawieniach.",
+  "Look only": "Tylko sprawdzanie",
+  "Look and act": "Sprawdzanie i działanie",
+  "Doddy won't use this account.": "Doddy nie będzie używać tego konta.",
+  "Doddy can look things up in this account when you ask. He asks first every time.": "Doddy może sprawdzać rzeczy na tym koncie, gdy o to poprosisz. Za każdym razem najpierw pyta.",
+  "Doddy can also send, add or change things, but only after you tap a card that shows exactly what will happen.": "Doddy może też wysyłać, dodawać lub zmieniać rzeczy, ale dopiero po stuknięciu karty, która pokazuje dokładnie, co się stanie."
 }

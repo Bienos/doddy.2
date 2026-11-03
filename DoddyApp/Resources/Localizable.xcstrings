@@ -11662,6 +11662,17 @@
         }
       }
     },
+    "Choose what Doddy may do with this account. You can change it any time in Settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wybierz, co Doddy może robić z tym kontem. Możesz to zmienić w każdej chwili w Ustawieniach."
+          }
+        }
+      }
+    },
     "Clear": {
       "extractionState": "manual",
       "localizations": {
@@ -18277,6 +18288,28 @@
         }
       }
     },
+    "Doddy can also send, add or change things, but only after you tap a card that shows exactly what will happen.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy może też wysyłać, dodawać lub zmieniać rzeczy, ale dopiero po stuknięciu karty, która pokazuje dokładnie, co się stanie."
+          }
+        }
+      }
+    },
+    "Doddy can look things up in this account when you ask. He asks first every time.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy może sprawdzać rzeczy na tym koncie, gdy o to poprosisz. Za każdym razem najpierw pyta."
+          }
+        }
+      }
+    },
     "Doddy can make a file": {
       "extractionState": "manual",
       "localizations": {
@@ -22678,6 +22711,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy spróbuje ponownie."
+          }
+        }
+      }
+    },
+    "Doddy won't use this account.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie będzie używać tego konta."
           }
         }
       }
@@ -38844,6 +38888,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Najdłuższy bieg: %lld min"
+          }
+        }
+      }
+    },
+    "Look and act": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdzanie i działanie"
+          }
+        }
+      }
+    },
+    "Look only": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tylko sprawdzanie"
           }
         }
       }
@@ -91343,61 +91409,13 @@
         }
       }
     },
-    "Web search is on, and an account's tools come on when you connect it. Doddy still asks before every look, and anything that sends, adds or changes something shows you a card first and waits for your tap. Switch any tool off here.": {
+    "Web search is on. When you connect an account its tools start off, and you choose what Doddy may do with it. Doddy still asks before every look, and anything that sends, adds or changes something shows you a card first and waits for your tap. You can switch any tool off here.": {
       "extractionState": "manual",
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Die Websuche ist an, und die Werkzeuge eines Kontos gehen an, sobald du es verbindest. Doddy fragt trotzdem vor jedem Nachsehen, und alles, was etwas sendet, hinzufügt oder ändert, zeigt dir zuerst eine Karte und wartet auf dein Tippen. Hier kannst du jedes Werkzeug ausschalten."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La búsqueda web está activada, y las herramientas de una cuenta se activan al conectarla. Doddy sigue preguntando antes de cada consulta, y todo lo que envía, añade o cambia algo te muestra primero una tarjeta y espera tu toque. Aquí puedes desactivar cualquier herramienta."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La recherche web est activée, et les outils d’un compte s’activent quand vous le connectez. Doddy demande quand même avant chaque consultation, et tout ce qui envoie, ajoute ou modifie quelque chose vous montre d’abord une carte et attend votre toucher. Désactivez ici n’importe quel outil."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pretraživanje weba je uključeno, a alati računa uključuju se kad ga povežeš. Doddy ipak pita prije svakog pregleda, a sve što nešto šalje, dodaje ili mijenja najprije ti pokaže karticu i čeka tvoj dodir. Ovdje možeš isključiti bilo koji alat."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La ricerca web è attiva, e gli strumenti di un account si attivano quando lo colleghi. Doddy chiede comunque prima di ogni controllo, e tutto ciò che invia, aggiunge o modifica qualcosa ti mostra prima una scheda e aspetta il tuo tocco. Qui puoi disattivare qualsiasi strumento."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ウェブ検索はオンです。アカウントのツールは、接続するとオンになります。それでもDoddyは確認のたびに尋ね、何かを送信・追加・変更するものは、まずカードを表示してあなたのタップを待ちます。ここでどのツールもオフにできます。"
-          }
-        },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Wyszukiwanie w sieci jest włączone, a narzędzia konta włączają się, gdy je połączysz. Doddy i tak pyta przed każdym sprawdzeniem, a wszystko, co coś wysyła, dodaje lub zmienia, najpierw pokazuje kartę i czeka na Twoje stuknięcie. Tutaj możesz wyłączyć każde narzędzie."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "A busca na web está ativada, e as ferramentas de uma conta são ativadas quando você a conecta. O Doddy ainda pergunta antes de cada consulta, e tudo o que envia, adiciona ou muda algo mostra primeiro um cartão e espera seu toque. Desative qualquer ferramenta aqui."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "网页搜索已开启，账户的工具会在你连接账户后开启。Doddy 每次查看前仍会询问，任何会发送、添加或更改内容的操作都会先显示一张卡片，等你轻点确认。你可以在这里关闭任何工具。"
+            "value": "Wyszukiwanie w sieci jest włączone. Gdy połączysz konto, jego narzędzia są na początku wyłączone, a Ty wybierasz, co Doddy może z nim robić. Doddy i tak pyta przed każdym sprawdzeniem, a wszystko, co coś wysyła, dodaje lub zmienia, najpierw pokazuje kartę i czeka na Twoje stuknięcie. Tutaj możesz wyłączyć każde narzędzie."
           }
         }
       }
@@ -91940,6 +91958,17 @@
         }
       }
     },
+    "What Doddy may do": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co Doddy może robić"
+          }
+        }
+      }
+    },
     "What Doddy may say": {
       "extractionState": "manual",
       "localizations": {
@@ -92386,6 +92415,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Co opuszcza telefon"
+          }
+        }
+      }
+    },
+    "What may Doddy do?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co może robić Doddy?"
           }
         }
       }

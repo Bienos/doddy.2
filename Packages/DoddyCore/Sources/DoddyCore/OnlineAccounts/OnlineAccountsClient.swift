@@ -38,11 +38,18 @@ public protocol OnlineAccountsClient: Sendable {
     func complete(toolkit: String, _ request: CompleteRequest) async throws(OnlineAccountsError) -> ToolkitResult
     func disconnect(toolkit: String) async throws(OnlineAccountsError) -> ToolkitResult
     func setSwitch(tool: String, enabled: Bool) async throws(OnlineAccountsError) -> ToolkitResult
+    /// One choice for the whole app (ADR-699): the server sets that app's tool switches to match.
+    func setAccess(app: String, mode: AppAccess) async throws(OnlineAccountsError) -> ToolkitResult
     /// Every tool (ASK-01, ADR-483): asks the server for the card and a single-use approval for
     /// exactly these arguments. For a read nothing is read; `run` refuses without the approval.
     func prepare(_ call: CloudToolCall) async throws(OnlineAccountsError) -> PrepareResult
     func run(_ call: CloudToolCall, timeZone: String, approvalId: UUID?) async throws(OnlineAccountsError) -> RunResult
     func receipts() async throws(OnlineAccountsError) -> [OnlineToolReceipt]
+}
+
+extension OnlineAccountsClient {
+    /// A client that doesn't implement the access choice (older stand-ins) says it isn't available.
+    public func setAccess(app: String, mode: AppAccess) async throws(OnlineAccountsError) -> ToolkitResult { throw .notConfigured }
 }
 
 public struct BackendOnlineAccountsClient: OnlineAccountsClient {
@@ -83,6 +90,10 @@ public struct BackendOnlineAccountsClient: OnlineAccountsClient {
         try await call("PUT", "v1/tools/switch", body: SwitchBody(tool: tool, enabled: enabled))
     }
 
+    public func setAccess(app: String, mode: AppAccess) async throws(OnlineAccountsError) -> ToolkitResult {
+        try await call("PUT", "v1/tools/access", body: AccessBody(app: app, mode: mode.rawValue))
+    }
+
     public func prepare(_ call: CloudToolCall) async throws(OnlineAccountsError) -> PrepareResult {
         // The user's zone, for tools that find an item by its local time (a calendar event at 15:00).
         try await self.call("POST", "v1/tools/prepare", body: PrepareBody(tool: call.name, arguments: call.arguments, timeZone: TimeZone.current.identifier))
@@ -102,6 +113,11 @@ public struct BackendOnlineAccountsClient: OnlineAccountsClient {
     struct SwitchBody: Encodable, Equatable {
         let tool: String
         let enabled: Bool
+    }
+
+    struct AccessBody: Encodable, Equatable {
+        let app: String
+        let mode: String
     }
 
     struct PrepareBody: Encodable, Equatable {

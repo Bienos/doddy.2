@@ -195,6 +195,15 @@ final class OnlineAccountsClientTests: XCTestCase {
         XCTAssertEqual(try object(request.body) as NSDictionary, ["tool": "check_email", "enabled": true] as NSDictionary)
     }
 
+    func testTheAccessChoiceIsAPutWithOnlyTheAppAndTheMode() async throws {
+        let transport = RecordingTransport(body: try fixture("switch-result-on"))
+        _ = try await client(transport).setAccess(app: "gmail", mode: .read)
+        let request = try XCTUnwrap(transport.requests.first)
+        XCTAssertEqual(request.method, "PUT")
+        XCTAssertEqual(request.url.absoluteString, "https://doddy.example.com/v1/tools/access")
+        XCTAssertEqual(try object(request.body) as NSDictionary, ["app": "gmail", "mode": "read"] as NSDictionary, "no user id, connection id or tool slug is ever sent")
+    }
+
     func testRunSendsArgumentsTimeZoneAndALowercaseApproval() async throws {
         let transport = RecordingTransport(body: try fixture("run-result-draft"))
         let approval = UUID(uuidString: "50CBF646-DBEF-4A17-9EFA-C529621DF5BF")!
@@ -359,6 +368,11 @@ private actor FakeOnline: OnlineAccountsClient {
         return try! JSONDecoder().decode(ToolkitResult.self, from: fixture("switch-result-on"))
     }
 
+    func setAccess(app: String, mode: AppAccess) async throws(OnlineAccountsError) -> ToolkitResult {
+        calls.append("access:\(app):\(mode.rawValue)")
+        return try! JSONDecoder().decode(ToolkitResult.self, from: fixture("switch-result-on"))
+    }
+
     func prepare(_ call: CloudToolCall) async throws(OnlineAccountsError) -> PrepareResult { throw .notConfigured }
     func run(_ call: CloudToolCall, timeZone: String, approvalId: UUID?) async throws(OnlineAccountsError) -> RunResult { throw .notConfigured }
     func receipts() async throws(OnlineAccountsError) -> [OnlineToolReceipt] { [] }
@@ -412,6 +426,34 @@ final class OnlineAccountsModelTests: XCTestCase {
         XCTAssertFalse(model.isEnabled("check_email"), "a fresh connection starts with every tool off until the user chooses (ADR-700)")
     }
 
+    func testAFreshConnectionAsksWhatDoddyMayDoAndTheAnswerGoesToTheServer() async throws {
+        let (model, client) = try await model()
+        XCTAssertNil(model.choosingAccess)
+        await model.connect("gmail")
+        await model.completeDemo(approve: true)
+        XCTAssertEqual(model.choosingAccess, "gmail", "a fresh connection has every tool off, so the screen asks (ADR-700)")
+        XCTAssertEqual(model.accessMode("gmail"), .off)
+
+        await model.setAccess("gmail", mode: .read)
+        let calls = await client.calls
+        XCTAssertTrue(calls.contains("access:gmail:read"))
+        XCTAssertNil(model.choosingAccess, "answered")
+        XCTAssertTrue(model.settingAccess.isEmpty)
+    }
+
+    func testNotNowKeepsTheAccountConnectedWithEverythingOffAndSendsNothing() async throws {
+        let (model, client) = try await model()
+        await model.connect("gmail")
+        await model.completeDemo(approve: true)
+        XCTAssertEqual(model.choosingAccess, "gmail")
+        model.dismissAccessChoice()
+        XCTAssertNil(model.choosingAccess)
+        XCTAssertEqual(model.toolkit("gmail")?.status, .connected)
+        XCTAssertEqual(model.accessMode("gmail"), .off)
+        let calls = await client.calls
+        XCTAssertFalse(calls.contains { $0.hasPrefix("access:") })
+    }
+
     func testASwitchMovesOnlyWhenTheServerSaysSo() async throws {
         let (model, client) = try await model()
         await client.failSwitch(with: .server(code: "not_connected", message: "Gmail isn't connected.", retryAfterSeconds: nil, receipt: nil))
@@ -431,6 +473,24 @@ final class OnlineAccountsModelTests: XCTestCase {
         let calls = await client.calls
         XCTAssertTrue(calls.contains("disconnect:gmail"))
         XCTAssertNil(model.busyToolkit)
+    }
+}
+
+final class AppAccessTests: XCTestCase {
+    func testTheChoiceIsReadBackFromTheToolListTheWayTheServerShowsIt() throws {
+        let disconnected = try decode(ToolsCatalog.self, "catalog-disconnected")
+        let none = try XCTUnwrap(disconnected.toolkits.first { $0.id == "gmail" })
+        XCTAssertEqual(AppAccess.of(none.tools), .off)
+        XCTAssertEqual(AppAccess.of([]), .off)
+
+        let on = try decode(ToolsCatalog.self, "catalog-gmail-on")
+        let gmail = try XCTUnwrap(on.toolkits.first { $0.id == "gmail" })
+        XCTAssertEqual(AppAccess.of(gmail.tools), .act, "a write tool (draft_email) is on")
+        XCTAssertEqual(AppAccess.of(gmail.tools.filter { $0.risk == .read }), .read, "only reads are on")
+    }
+
+    func testTheThreeChoicesUseTheServersWords() {
+        XCTAssertEqual(AppAccess.allCases.map(\.rawValue), ["off", "read", "act"])
     }
 }
 
