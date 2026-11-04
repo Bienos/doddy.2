@@ -77,8 +77,9 @@
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Doddy never writes to or changes Apple Health. It only asks to read your workouts, heart rate, resting heart rate, heart rate variability, sleep and VO2 max. iOS asks apps for this text because its Health permission screen covers both reading and writing.</string>
 	<!-- ADR-563: Doddy's own server (web search, Claude, Gmail and the other online accounts).
-	     Built in, so the app works without typing an address in Settings; Settings' development
-	     field still overrides it. The phone signs itself in there with a device ID. -->
+	     Built in, so the app works without typing an address in Settings. Only a Debug build lets
+	     Settings' development field override it (ADR-720); a shipped build always uses this address,
+	     because the device ID the phone signs in with goes there. -->
 	<key>DoddyServerURL</key>
 	<string>https://doddy-yaci.onrender.com</string>
 	<key>CFBundleURLTypes</key>

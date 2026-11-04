@@ -668,11 +668,12 @@ struct VoiceView: View {
             if let text = plan.replaceNotes {
                 VStack(alignment: .leading, spacing: 4) {
                     Label(text.isEmpty ? "Clear the notes" : "Replace the notes", systemImage: "note.text")
+                    // ADR-718: the notes are shown in full, both the old (which this replaces) and the new (which is written).
                     if let old = plan.notesBefore, !old.isEmpty {
-                        Text("Now: “\(old)”").font(.footnote).foregroundStyle(Theme.secondaryText).lineLimit(4)
+                        Text("Now: “\(old)”").font(.footnote).foregroundStyle(Theme.secondaryText)
                     }
                     if !text.isEmpty {
-                        Text("New: “\(text)”").font(.footnote).lineLimit(6)
+                        Text("New: “\(text)”").font(.footnote)
                     }
                 }
             }
@@ -699,11 +700,12 @@ struct VoiceView: View {
             if let text = draft.replaceNotes {
                 VStack(alignment: .leading, spacing: 4) {
                     Label(text.isEmpty ? "Clear the notes" : "Replace the notes", systemImage: "note.text")
+                    // ADR-718: in full, as for an event.
                     if let old = reminder.notes, !old.isEmpty {
-                        Text("Now: “\(old)”").font(.footnote).foregroundStyle(Theme.secondaryText).lineLimit(4)
+                        Text("Now: “\(old)”").font(.footnote).foregroundStyle(Theme.secondaryText)
                     }
                     if !text.isEmpty {
-                        Text("New: “\(text)”").font(.footnote).lineLimit(6)
+                        Text("New: “\(text)”").font(.footnote)
                     }
                 }
             }

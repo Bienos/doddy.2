@@ -11,7 +11,10 @@ struct MorningCheckInView: View {
     let openSettings: () -> Void
 
     private var briefing: MorningBriefing {
-        MorningBriefing.make(now: .now, memories: store.memories, lists: store.lists, reminders: noteReminders.reminders)
+        // A Private note's words are never in it, on the screen or in what the agent is given (ADR-722).
+        MorningBriefing.make(
+            now: .now, memories: store.memories, lists: store.lists, reminders: noteReminders.reminders,
+            privateNotes: PrivateNotesStore.current())
     }
 
     var body: some View {
@@ -33,7 +36,12 @@ struct MorningCheckInView: View {
                         ForEach(briefing.reminders, id: \.memoryID) { line in
                             HStack(alignment: .firstTextBaseline) {
                                 Text(line.time, format: .dateTime.hour().minute()).monospacedDigit()
-                                Text(line.text)
+                                if line.isPrivate {
+                                    // A private note's words show only on its own screen after Face ID (ADR-310).
+                                    Label("Private note", systemImage: "lock.fill").foregroundStyle(Theme.secondaryText)
+                                } else {
+                                    Text(line.text)
+                                }
                             }
                         }
                     }

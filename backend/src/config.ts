@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { InviteLimits } from "./deviceSession.js";
 import { TOOLKIT_IDS, type ToolkitId } from "./tools/catalog.js";
 import { MONID_DEFAULT_BASE_URL } from "./tools/websearch.js";
 
@@ -12,6 +13,11 @@ export type Mode = "mock" | "live";
 export type Env = "development" | "test" | "production";
 export type AuthMode = "dev" | "signed" | "supabase";
 export type CompletionMode = "verifier" | "callback";
+/**
+ * Whether an empty server (no owner row yet) can be claimed by the first iPhone that signs in
+ * (ADR-707). `closed` means nobody can until the operator opens it.
+ */
+export type OwnerClaim = "open" | "closed";
 
 export interface Limits {
   userDailyReads: number;
@@ -23,6 +29,14 @@ export interface Limits {
   /** Claude runs (writing, summaries, documents; Doddy pays) per user, and for the service, per UTC day. */
   userDailyClaude: number;
   serviceDailyClaude: number;
+  /**
+   * One make_document counts as this many Claude runs against both daily caps (ADR-710): a single
+   * document can take up to nine Anthropic calls, so counting it as one understated the cost.
+   */
+  documentClaudeUnits: number;
+  /** Documents being made in the background at the same moment: per user, and for the whole server (ADR-710). */
+  userDocumentJobs: number;
+  serviceDocumentJobs: number;
   /** Ask Doddy questions (typed, ADR-587; Doddy pays Anthropic) per user, and for the service, per UTC day. */
   userDailyAsk: number;
   serviceDailyAsk: number;
@@ -89,6 +103,14 @@ export interface Config {
   deviceSignup: "off" | "first-device" | "open";
   /** Extra invite codes for device sign-in (ADR-563). */
   deviceInviteCodes: string[];
+  /**
+   * Whether the first iPhone to sign in may claim a server that has no owner yet (ADR-707). The app
+   * is built from a public repository, so it can carry no secret for that first claim; instead the
+   * operator opens the claim by hand. Default: `open` in mock mode, `closed` in live mode.
+   */
+  ownerClaim: OwnerClaim;
+  /** Limits on invite codes (ADR-709): tries per client, sessions per code per day, iPhones per code. */
+  inviteLimits: InviteLimits;
   /** Claude for writing, summaries and documents (ADR-564). Null: not set up. */
   claude: ClaudeSettings | null;
   /** Supabase Auth project origin for `supabase` mode (ADR-526): Apple and Google sign-in. */
@@ -164,11 +186,25 @@ const EnvSchema = z.object({
   DODDY_DEVICE_SIGNUP: z.enum(["off", "first-device", "open"]).default("off"),
   /** Extra invite codes for more devices (ADR-563), comma-separated. */
   DODDY_DEVICE_INVITE_CODES: z.string().optional(),
+  /**
+   * `open` | `closed` (ADR-707): may the first iPhone to sign in claim a server with no owner yet?
+   * Read as text so a wrong value is reported by name below. Unset or empty: the default, which is
+   * `open` in mock mode and `closed` in live mode.
+   */
+  DODDY_OWNER_CLAIM: z.string().optional(),
+  /** Invite codes (ADR-709): tries per client per hour, sessions per code per UTC day, iPhones per code. */
+  DODDY_INVITE_TRIES_PER_CLIENT: intSetting(20, 1, 1_000),
+  DODDY_INVITE_SESSIONS_PER_CODE_PER_DAY: intSetting(20, 1, 10_000),
+  DODDY_INVITE_DEVICES_PER_CODE: intSetting(5, 1, 100),
   /** Claude for writing, summaries and documents (ADR-564). Empty: those tools say "not set up". */
   ANTHROPIC_API_KEY: z.string().optional(),
   DODDY_CLAUDE_MODEL: z.string().default("claude-sonnet-5-5"),
   DODDY_LIMIT_USER_DAILY_CLAUDE: intSetting(40, 1, 10_000),
   DODDY_LIMIT_SERVICE_DAILY_CLAUDE: intSetting(100, 1, 100_000),
+  /** A document counts as this many Claude runs against both daily caps, and at most this many are made at once (ADR-710). */
+  DODDY_DOCUMENT_CLAUDE_UNITS: intSetting(5, 1, 50),
+  DODDY_LIMIT_USER_DOCUMENT_JOBS: intSetting(1, 1, 10),
+  DODDY_LIMIT_SERVICE_DOCUMENT_JOBS: intSetting(3, 1, 50),
   /** Ask Doddy (ADR-587): typed questions answered by Claude. */
   DODDY_LIMIT_USER_DAILY_ASK: intSetting(50, 1, 10_000),
   DODDY_LIMIT_SERVICE_DAILY_ASK: intSetting(500, 1, 1_000_000),
@@ -284,6 +320,15 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
       problems.push("DODDY_DEVICE_INVITE_CODES must be 8 to 64 letters, digits, - or _ each");
     }
   }
+
+  // Who may claim a server that has no owner yet (ADR-707). Unset: open for mock runs (tests, demos),
+  // closed for a live server, where an empty owner row after a wipe, a restore or a changed
+  // DATABASE_URL would otherwise make the first caller to post any device ID the owner. Only the
+  // setting's name is reported when it is wrong, never a value.
+  let ownerClaim: OwnerClaim = e.DODDY_MODE === "live" ? "closed" : "open";
+  const claimSetting = (e.DODDY_OWNER_CLAIM ?? "").trim().toLowerCase();
+  if (claimSetting === "open" || claimSetting === "closed") ownerClaim = claimSetting;
+  else if (claimSetting !== "") problems.push("DODDY_OWNER_CLAIM must be open or closed");
 
   let supabaseUrl: string | null = null;
   if (e.DODDY_AUTH_MODE === "supabase") {
@@ -431,6 +476,12 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     memoryKey,
     deviceSignup: e.DODDY_DEVICE_SIGNUP,
     deviceInviteCodes,
+    ownerClaim,
+    inviteLimits: {
+      triesPerClientPerHour: e.DODDY_INVITE_TRIES_PER_CLIENT,
+      sessionsPerCodePerDay: e.DODDY_INVITE_SESSIONS_PER_CODE_PER_DAY,
+      devicesPerCode: e.DODDY_INVITE_DEVICES_PER_CODE,
+    },
     claude: claudeKey !== "" ? { apiKey: claudeKey, model: e.DODDY_CLAUDE_MODEL } : null,
     chatClaude: claudeKey !== "" ? { apiKey: claudeKey, model: e.DODDY_CHAT_MODEL } : null,
     supabaseUrl,
@@ -446,6 +497,9 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
       serviceDailyWebSearches: e.DODDY_LIMIT_SERVICE_DAILY_WEB_SEARCHES,
       userDailyClaude: e.DODDY_LIMIT_USER_DAILY_CLAUDE,
       serviceDailyClaude: e.DODDY_LIMIT_SERVICE_DAILY_CLAUDE,
+      documentClaudeUnits: e.DODDY_DOCUMENT_CLAUDE_UNITS,
+      userDocumentJobs: e.DODDY_LIMIT_USER_DOCUMENT_JOBS,
+      serviceDocumentJobs: e.DODDY_LIMIT_SERVICE_DOCUMENT_JOBS,
       userDailyAsk: e.DODDY_LIMIT_USER_DAILY_ASK,
       serviceDailyAsk: e.DODDY_LIMIT_SERVICE_DAILY_ASK,
       serviceDailyGuestAsk: e.DODDY_LIMIT_SERVICE_DAILY_GUEST_ASK,
@@ -474,6 +528,9 @@ export function testLimits(overrides: Partial<Limits> = {}): Limits {
     serviceDailyWebSearches: 200,
     userDailyClaude: 40,
     serviceDailyClaude: 100,
+    documentClaudeUnits: 5,
+    userDocumentJobs: 1,
+    serviceDocumentJobs: 3,
     userDailyAsk: 50,
     serviceDailyAsk: 500,
     serviceDailyGuestAsk: 100,

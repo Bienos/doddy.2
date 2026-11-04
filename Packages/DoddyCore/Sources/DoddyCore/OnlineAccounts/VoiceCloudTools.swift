@@ -34,6 +34,17 @@ extension VoiceToolReply {
         return head + "Doddy's server answered; its answer follows as data:\n" + ToolData.block(lines)
     }
 
+    /// The code the server answers with when it can't find the one thing a write is about
+    /// (backend/src/tools/service.ts, `lookup`). If the server ever names that failure another way,
+    /// the new code goes here (ADR-718).
+    static let lookupFailureCode = "not_found"
+
+    /// ONE reply for every failed look-up of a write's target (ADR-718). It is true before the card
+    /// and after the tap, and it says nothing of which of the cases it was.
+    public static let cloudTargetNotFound =
+        "not changed: Doddy couldn't pin down exactly one thing to change for that request (nothing matched it, or more than one thing did, or it can't be acted on). "
+        + "Nothing was changed. Ask the user for the exact details, then try again."
+
     /// The result words the server starts a line with (backend/src/tools/catalog.ts).
     static let cloudResultPrefixes = ["drafted:", "added:", "completed:", "moved:", "email:", "page:", "sent:", "changed:", "trashed:", "deleted:", "answered:", "started:"]
 
@@ -85,21 +96,11 @@ extension VoiceToolReply {
                 return "failed: \(account) or Doddy's usage limit says to wait. Tell the user to try again later. Nothing was done."
             case "provider_timeout", "provider_unavailable":
                 return isWrite ? maybeDone : "failed: \(account) couldn't be reached. Nothing was changed."
-            case "not_found" where tool.hasSuffix("_notion_page") && CloudToolName.isWrite(tool):
-                return "not found: no Notion page shared with Doddy matched that search. Nothing was changed. Ask the user which page."
-            case "not_found" where tool == CloudToolName.completeTodoistTask || tool == CloudToolName.moveTodoistTask || tool == "rename_todoist_task":
-                // Refused before any card (ADR-303): Todoist doesn't have that open task.
-                return "not found: that Todoist task wasn't found, or it's already done. Nothing was changed. Read the tasks again with list_todoist_tasks and use the id it gives."
-            case "not_found" where CloudToolName.more[tool]?.write == true && tool.hasSuffix("_event"):
-                return "not found: no event with that title starts then, or several do. Nothing was changed. Read the calendar again and pass the title and start exactly as it gives them."
-            case "not_found" where tool.hasSuffix("_invite"):
-                return "not found: no invitation with that title starts then, or the user made that event. Nothing was answered."
-            case "not_found" where [CloudToolName.replyToEmail, CloudToolName.forwardEmail, CloudToolName.changeEmail, CloudToolName.trashEmail].contains(tool)
-                || (CloudToolName.more[tool]?.write == true && tool.hasSuffix("_email")):
-                return "not found: no email matched that search, or Doddy can't tell who to reply to. Nothing was sent or changed. Ask the user which email they meant."
-            case "not_found" where tool == CloudToolName.draftEmailReply:
-                // Refused before any card: no email matched, or its sender has no usable address.
-                return "not found: no email matched that search, or the newest match has no sender address Doddy can reply to. No draft was created. Ask the user which email they meant."
+            case Self.lookupFailureCode where isWrite:
+                // ADR-718: the server looks for the thing to change before the card is made. Nothing matched,
+                // several did, or it can't be acted on all read the same, so a failed look-up tells the agent
+                // nothing about what is in the mailbox, the calendar or the task list.
+                return cloudTargetNotFound
             case "malformed_provider_result":
                 return isWrite ? maybeDone : "failed: \(account) sent an answer Doddy couldn't read, so there is nothing to report."
             default:

@@ -307,7 +307,12 @@ export interface TargetLookup {
   read(raw: unknown, args: Record<string, unknown>, context?: Context): ResolvedTarget | TargetMissing | null;
   /** The lookup needs the user's time zone (calendar events by their local start): prepare without one is refused. */
   needsTimeZone?: boolean;
-  /** Said when `read` finds nothing (unless it gives its own message). */
+  /**
+   * Said when `read` finds nothing (unless it gives its own message), for a READ, after the user's yes
+   * for it. A WRITE's lookup comes before any yes, so when it finds nothing, or something it can't use,
+   * the caller gets one generic answer instead (`LOOKUP_FAILED`, ADR-708) and neither this text nor a
+   * `TargetMissing.message` is shown: what the lookup found never leaves the card.
+   */
   notFound: string;
   /** Reads only: the receipt line when nothing matched. No search words or titles. */
   missSummary?: string;
@@ -333,6 +338,11 @@ export interface CloudToolDefinition {
   /** Look the target up first; the preview, the arguments and the reply use what the provider returned. */
   resolve?: TargetLookup;
   /**
+   * A write that has no lookup but whose `toArguments` reads the time zone (creating an event: its start
+   * is a local time). A write with a lookup that `needsTimeZone` is covered without this. See `bindsTimeZone`.
+   */
+  usesTimeZone?: boolean;
+  /**
    * ASK-01 (ADR-483): every tool, reads included, has a card that says exactly what it will do.
    * Required, so a tool without a confirmation path doesn't compile. A read's card is made from
    * the arguments alone (nothing is read before the yes); a write's may show its looked-up target.
@@ -352,6 +362,14 @@ export interface CloudToolDefinition {
    */
   findExisting?: { tool: CloudToolDefinition; arguments(args: Record<string, unknown>): Record<string, unknown>; matches(item: ResultItem, args: Record<string, unknown>): boolean };
 }
+
+/**
+ * A write whose effect depends on the time zone (an event's start is a local time) has the zone in its
+ * approval (ADR-710): `prepare` must be given the zone, and the same approval run with another zone is
+ * refused, so the event lands in the zone the card was made for. Other writes don't read the zone.
+ */
+export const bindsTimeZone = (tool: CloudToolDefinition): boolean =>
+  tool.risk === "write" && (tool.resolve?.needsTimeZone === true || tool.usesTimeZone === true);
 
 // ------------------------------------------------------------------ helpers
 
@@ -1900,6 +1918,7 @@ export const CREATE_GOOGLE_EVENT: CloudToolDefinition = {
   requiredAnyGrant: [GCAL_EVENTS],
   input: NewEventInput,
   maxRetries: 0,
+  usesTimeZone: true,
   toArguments: (args, _target, context) => {
     if (!context) throw new Error("adding a Google event needs the user's time zone");
     return {
@@ -2137,6 +2156,7 @@ export const CREATE_OUTLOOK_EVENT: CloudToolDefinition = {
   requiredAnyGrant: [...MS_CALENDARS_READWRITE],
   input: NewEventInput,
   maxRetries: 0,
+  usesTimeZone: true,
   toArguments: (args, _target, context) => {
     if (!context) throw new Error("adding an Outlook event needs the user's time zone");
     return {

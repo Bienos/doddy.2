@@ -27,6 +27,7 @@ secrets/.sync-state.json.tmp
 *.pem
 *.key
 *.p12
+*.p8
 *.mobileprovision
 *.xcconfig.local
 # OS

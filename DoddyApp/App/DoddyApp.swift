@@ -21,6 +21,12 @@ struct DoddyApp: App {
         // Back Tap's old "Small island" becomes Settings › "Expand when Doddy speaks" (ADR-579),
         // before anything reads either preference.
         Self.migrateLaunchPreferences()
+        // A shipped build ignores the server address typed in Settings; one saved by an earlier build is
+        // removed, before anything can read it (ADR-720).
+        DeviceSession.removeSavedServerOverride()
+        // Shortcuts, links, notifications and Siri ask the Face ID lock through this (ADR-723). Set here,
+        // not when the lock is first used, because iOS can start the app just to run an intent.
+        AppLockGate.isLocked = { AppLock.shared.isLocked }
         #if DEBUG
         // UI tests of "Before we start" (ADR-581) start without an acceptance from an earlier test.
         if ProcessInfo.processInfo.arguments.contains("-resetLegalAcceptanceForUITests") {

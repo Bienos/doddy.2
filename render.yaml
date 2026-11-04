@@ -105,6 +105,10 @@ services:
       - key: DODDY_DEVICE_SIGNUP
         value: open
       # Optional, comma-separated: codes that let a further device in (8-64 letters, digits, - or _).
+      # ADR-707: with DODDY_MODE=live the first sign-in can claim ownership only while DODDY_OWNER_CLAIM=open.
+      # Do NOT add it here. Leave it unset (closed); set it to open by hand in the dashboard only to set up an
+      # empty or wiped database, then remove it after the owner's first sign-in. The live service already has
+      # an owner, so deploying changes nothing for it.
       - key: DODDY_DEVICE_INVITE_CODES
         sync: false
       # ADR-564: Claude for summaries, writing and documents (decks, Word, Excel, PDF, blog posts).
@@ -169,6 +173,8 @@ services:
       # Phone calls (S2)
       - key: ELEVENLABS_API_KEY
         sync: false
+      # ADR-706: required in production. Without it texts, pushes and digests are not queued (they would be
+      # stored unencrypted). Set it on BOTH doddy-messaging and the worker before deploying.
       - key: MEMORY_ENCRYPTION_KEY
         sync: false
       - key: ELEVENLABS_TOOL_SECRET
@@ -191,6 +197,11 @@ services:
         sync: false
       - key: ELEVENLABS_WEBHOOK_SECRET
         sync: false
+      # Optional limits (ADR-702 to 705), all with safe defaults in the code, so none is needed here: account
+      # creation per address/day and per server/day, a separate small daily pool for new accounts, a research
+      # budget per errand, the countries that may get codes, texts and calls (PHONE_ALLOWED_COUNTRY_CODES), daily
+      # text/call/verification caps and TASK_CALL_BLOCKED_NUMBERS. Names, defaults and meaning: server/messaging/.env.example.
+      # Web and worker read the same values: if you change one, set it on both services.
       - key: TASK_CALLS_KILL_SWITCH # "1" stops every call by Doddy at once
         value: "0"
       - key: CALL_RECORDING_NOTICE # off until the owner confirms the legal basis

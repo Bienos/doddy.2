@@ -71,6 +71,8 @@ async function seed(store: Store, userId: string, tag: string): Promise<void> {
     [userId, uuid(2), Buffer.from("x")],
   );
   await q("INSERT INTO message_threads (user_id, key_version, ciphertext, message_count, received_at) VALUES ($1, 1, $2, 1, 1)", [userId, Buffer.from("x")]);
+  // The iPhone an invite code signed in (ADR-709): deleting the account frees that place.
+  await q("INSERT INTO invite_devices (code_id, user_id, first_used_at) VALUES ($1, $2, 1)", [`code-${tag}`, userId]);
   await store.reserveUsage([{ counter: `user:${userId}:ask`, period: "day:2026-10-10", limit: 50 }, { counter: "service:ask", period: "day:2026-10-10", limit: 500 }], 1);
 }
 
@@ -102,6 +104,11 @@ test("eraseUser deletes every row of one person, queues every grant for removal,
       [`${CALENDAR_PROVIDER}:conn-cal-aaaa`, "gmail:pending-aaaa", "notion:conn-notion-aaaa"].sort(),
     );
     assert.equal(after.cleanups, 3);
+    // The erasure itself cut off A's earlier sign-ins (ADR-709), and that cut-off is kept (KEPT_ON_ERASE).
+    assert.equal(after.token_floor, 1);
+    assert.equal(erased.tokensValidAfter, 1, "the second after the erasure's clock (5 ms)");
+    assert.equal(await store.tokenFloor(ID_A), 1);
+    assert.equal(await store.tokenFloor(ID_B), 0, "nobody else is cut off");
     // Not reset by deleting: the server stays A's, and the counts (A's own and the server's) stay.
     assert.equal(await store.claimDeviceOwner(ID_B, 6), ID_A);
     assert.equal(await store.usage(`user:${ID_A}:ask`, "day:2026-10-10"), 1);
@@ -231,7 +238,7 @@ test("DELETE /v1/account erases the person's rows and removes each online accoun
   assert.equal(res.body.deleted.connections, 2);
   assert.equal(res.body.deleted.users, 1);
   assert.equal(res.body.erasedAt, "2026-10-10T10:00:00.000Z");
-  assert.ok(Array.isArray(res.body.kept) && res.body.kept.length === 3);
+  assert.ok(Array.isArray(res.body.kept) && res.body.kept.length === 4, "the owner, the counts, the owed removals and (ADR-709) the sign-in cut-off");
   assert.equal(r.toolsProvider.calls.filter((c) => c === "removeConnection").length, 2);
   const left = await rows(r.store, ID_A);
   for (const table of ERASED_TABLES) assert.equal(left[table], 0, `${table} still holds A`);

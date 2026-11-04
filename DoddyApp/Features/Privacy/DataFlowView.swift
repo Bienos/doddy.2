@@ -9,15 +9,16 @@ extension DataFlowState {
     @MainActor
     static func current(_ defaults: UserDefaults = .standard) -> DataFlowState {
         func flag(_ key: String, default value: Bool) -> Bool { defaults.object(forKey: key) as? Bool ?? value }
-        func text(_ key: String) -> String { (defaults.string(forKey: key) ?? "").trimmingCharacters(in: .whitespaces) }
         return DataFlowState(
             rememberConversations: flag(PreferenceKey.rememberConversations, default: true),
             shareProfileWithVoice: flag(PreferenceKey.shareProfileWithVoice, default: false),
             tokenServerSet: true,
             connectionsOn: Set(VoiceConnection.allCases.filter { defaults.bool(forKey: $0.preferenceKey) }),
             pauseAll: flag(ConnectionPause.preferenceKey, default: false),
-            // Same rule as OnlineAccountsClientFactory: an address and a session token.
-            doddyServerSet: !text(PreferenceKey.connectedAppsServerURL).isEmpty && KeychainSessionStore.read() != nil,
+            // Doddy's server is in use once the app has an address for it (the built-in one, or in a Debug build a
+            // typed one) and has a session with it or has made the device ID that signs in (ADR-721). Nothing
+            // typed is needed: since ADR-563 the phone signs itself in to the built-in server.
+            doddyServerSet: DeviceSession.isServerInUse(),
             askDoddyOn: flag(PreferenceKey.assistantConsent, default: false),
             askDoddyUsesNotes: flag(PreferenceKey.assistantUseNotes, default: true),
             // Same rule as ServerConfig: the built-in address, or a valid one entered in Settings.
@@ -40,7 +41,10 @@ extension DataFlowState {
 struct DataFlowView: View {
     @AppStorage(PreferenceKey.rememberConversations) private var rememberConversations = true
     @AppStorage(PreferenceKey.shareProfileWithVoice) private var shareProfileWithVoice = false
+    #if DEBUG
+    // Redraws this screen when the development server address changes; a shipped build has no such address (ADR-720).
     @AppStorage(PreferenceKey.connectedAppsServerURL) private var connectedAppsServerURL = ""
+    #endif
     @AppStorage(PreferenceKey.assistantConsent) private var assistantConsent = false
     @AppStorage(PreferenceKey.assistantUseNotes) private var assistantUseNotes = true
     @AppStorage(ConnectionPause.preferenceKey) private var pauseAll = false

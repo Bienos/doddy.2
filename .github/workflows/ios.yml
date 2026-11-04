@@ -9,6 +9,10 @@
 # The Mac runs beside Linux and keeps #164's --app-only path (ADR-680): Swift package tests
 # on Apple's Foundation, build, unit tests and UI tests. The public repository uses free hosted
 # runners. Path selection only skips jobs whose inputs are known unaffected; unknown paths run all.
+# Every action is pinned to a full commit SHA, with the release it was on kept as the comment (ADR-715):
+# a moved tag can't change what runs here. To update one, find the commit of the new tag with
+# `git ls-remote https://github.com/<owner>/<repo>.git "refs/tags/<tag>" "refs/tags/<tag>^{}"` (the
+# peeled ^{} line, when there is one, is the commit) and change the SHA and the comment together.
 name: iOS build and tests
 
 on:
@@ -45,7 +49,7 @@ jobs:
       node: ${{ steps.groups.outputs.node }}
       messaging: ${{ steps.groups.outputs.messaging }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           # A pull request is checked out as its test merge commit. Its first parent is the base
           # branch, so HEAD^1..HEAD is exactly what the pull request changes.
@@ -92,10 +96,10 @@ jobs:
     runs-on: macos-latest
     timeout-minutes: 75
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Select the latest stable Xcode
-        uses: maxim-lobanov/setup-xcode@v1
+        uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
         with:
           xcode-version: latest-stable
 
@@ -118,7 +122,7 @@ jobs:
 
       - name: Keep the test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: xcode-test-results
           path: ~/Library/Developer/Xcode/DerivedData/**/Logs/Test/*.xcresult
@@ -129,7 +133,7 @@ jobs:
       # DoddyTests/IslandScreenshotTests (ADR-615). Small PNGs, so the look can be checked from here.
       - name: Keep the island pictures
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: island-screenshots
           path: build/island-screenshots/
@@ -145,7 +149,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - name: Python for the checks
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends python3-yaml
       - name: scripts/ci.sh --only checks
@@ -160,11 +164,11 @@ jobs:
     container: swift:6.1-noble
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       # Cache SwiftPM's checkouts and build products (GRDB, swift-crypto and the rest compile once).
       # Our own sources get fresh timestamps on checkout and rebuild; the dependencies' don't.
-      - uses: actions/cache@v4
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: Packages/DoddyCore/.build
           key: swiftpm-6.1-${{ hashFiles('Packages/DoddyCore/Package.swift') }}-${{ github.sha }}
@@ -190,8 +194,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: "22"
           cache: npm
@@ -206,8 +210,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: "22"
           cache: npm
@@ -217,6 +221,12 @@ jobs:
             site/package-lock.json
       - name: Install backend dependencies for web end-to-end tests
         run: npm ci --prefix backend --no-audit --no-fund
+      # The voice token server's tests run its Redis scripts (limits, sign-in throttle, refresh reuse) on a
+      # real redis-server when there is one (ADR-712); without it they are skipped. If this step fails
+      # the tests skip as before, so it can't turn the job red by itself.
+      - name: Install redis-server for the voice token server's script tests
+        continue-on-error: true
+        run: sudo apt-get install -y --no-install-recommends redis-server
       - name: scripts/ci.sh --only node
         run: scripts/ci.sh --only node
 
@@ -243,8 +253,8 @@ jobs:
     env:
       TEST_DATABASE_URL: postgres://doddy:doddy@localhost:5432/doddy_test
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: "22"
           cache: npm
@@ -278,10 +288,10 @@ jobs:
     runs-on: macos-latest
     timeout-minutes: 40
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Select the latest stable Xcode
-        uses: maxim-lobanov/setup-xcode@v1
+        uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
         with:
           xcode-version: latest-stable
 
@@ -293,7 +303,7 @@ jobs:
 
       - name: Keep the test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: xcode-test-results
           path: ~/Library/Developer/Xcode/DerivedData/**/Logs/Test/*.xcresult
@@ -302,7 +312,7 @@ jobs:
 
       - name: Keep the island pictures
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: island-screenshots
           path: build/island-screenshots/

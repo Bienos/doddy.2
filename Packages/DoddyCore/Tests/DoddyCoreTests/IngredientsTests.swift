@@ -56,7 +56,7 @@ final class IngredientsTests: XCTestCase {
         XCTAssertEqual(outcome(VoiceToolReply.parkingNotSaved), .notDone)
         XCTAssertEqual(outcome(VoiceToolReply.parkingDeclined), .declined)
         XCTAssertEqual(outcome(VoiceToolReply.reminderDetailsChanged("x", change: ReminderDetailsChange(priority: .high), due: nil)), .done)
-        XCTAssertEqual(outcome(VoiceToolReply.reminderListNotFound("x", lists: [])), .notDone)
+        XCTAssertEqual(outcome(VoiceToolReply.reminderListNotPrepared("x")), .notDone)
         XCTAssertEqual(outcome("completed: Todoist task \"Buy milk\" is done."), .done)
         XCTAssertEqual(outcome("moved: Todoist task \"Buy milk\" is now due tomorrow."), .done)
         XCTAssertEqual(outcome(VoiceToolReply.currency(CurrencyConversionRequest(amount: 1, from: "EUR", to: "PLN"), rates: nil, isLastKnown: false), lookup: true), .notDone)

@@ -23,6 +23,9 @@ test("errands: off by default (switched on with ERRANDS_ENABLED=1), Opus 5.5 at 
   const c = loadConfig({ DATABASE_URL: "postgres://x/y", ERRANDS_ENABLED: "", ERRANDS_MODEL: "", ERRANDS_EFFORT: "" });
   assert.deepEqual(c.errandSettings, {
     enabled: false, model: "claude-opus-5-5", effort: "high", timeLimitMinutes: 30, maxOpen: 5, dailyPerAccount: 10, dailyPerServer: 30,
+    // ADR-702: a pool of 10 a day for accounts still new, "new" for 24 hours, and a finite research budget per errand.
+    dailyForNewAccounts: 10, newAccountHours: 24,
+    budget: { maxSearches: 40, maxFetches: 40, maxRequests: 30, maxOutputTokens: 300_000 },
   });
   assert.equal(loadConfig({ DATABASE_URL: "postgres://x/y", ERRANDS_ENABLED: "1" }).errandSettings.enabled, true);
   const set = loadConfig({
@@ -31,6 +34,8 @@ test("errands: off by default (switched on with ERRANDS_ENABLED=1), Opus 5.5 at 
   });
   assert.deepEqual(set.errandSettings, {
     enabled: false, model: "claude-sonnet-5-5", effort: "xhigh", timeLimitMinutes: 45, maxOpen: 2, dailyPerAccount: 3, dailyPerServer: 12,
+    dailyForNewAccounts: 10, newAccountHours: 24,
+    budget: { maxSearches: 40, maxFetches: 40, maxRequests: 30, maxOutputTokens: 300_000 },
   });
   assert.throws(() => loadConfig({ DATABASE_URL: "postgres://x/y", ERRANDS_DAILY_PER_ACCOUNT: "0" }));
   assert.throws(() => loadConfig({ DATABASE_URL: "postgres://x/y", ERRANDS_DAILY_PER_SERVER: "-1" }));
@@ -62,9 +67,13 @@ test("errands get a researcher only with an Anthropic key and the switch on", as
 test("Messages: off by default, Haiku 5.5 at medium effort, 100 per account and 1000 per server; caps only go down", () => {
   const base = { DATABASE_URL: "postgres://x/y" };
   const c = loadConfig({ ...base, ASSISTANT_ENABLED: "", ASSISTANT_MODEL: "", ASSISTANT_EFFORT: "" });
-  assert.deepEqual(c.assistantSettings, { enabled: false, model: "claude-haiku-5-5", effort: "medium", dailyPerAccount: 100, dailyPerServer: 1000 });
+  assert.deepEqual(c.assistantSettings, {
+    enabled: false, model: "claude-haiku-5-5", effort: "medium", dailyPerAccount: 100, dailyPerServer: 1000, dailyForNewAccounts: 200, newAccountHours: 24,
+  });
   const on = loadConfig({ ...base, ASSISTANT_ENABLED: "1", ASSISTANT_MODEL: "claude-sonnet-5-5", ASSISTANT_EFFORT: "low", ASSISTANT_DAILY_PER_ACCOUNT: "20", ASSISTANT_DAILY_PER_SERVER: "200" });
-  assert.deepEqual(on.assistantSettings, { enabled: true, model: "claude-sonnet-5-5", effort: "low", dailyPerAccount: 20, dailyPerServer: 200 });
+  assert.deepEqual(on.assistantSettings, {
+    enabled: true, model: "claude-sonnet-5-5", effort: "low", dailyPerAccount: 20, dailyPerServer: 200, dailyForNewAccounts: 200, newAccountHours: 24,
+  });
   for (const bad of [{ ASSISTANT_ENABLED: "yes" }, { ASSISTANT_EFFORT: "max" }, { ASSISTANT_DAILY_PER_ACCOUNT: "0" },
     { ASSISTANT_DAILY_PER_ACCOUNT: "1001" }, { ASSISTANT_DAILY_PER_SERVER: "100001" }, { ASSISTANT_MODEL: "Claude Haiku" }]) {
     assert.throws(() => loadConfig({ ...base, ...bad }), JSON.stringify(bad));
@@ -129,7 +138,10 @@ test("search further (ADR-666): Allegro then Ceneo by default, {} for none, a ba
 
 test("leaflets (ADR-609, 662): off by default, Haiku 5.5 reads pages, 40 pages per chain, 120 screened, 30 a day per account, 1000 per server", () => {
   const c = loadConfig({ DATABASE_URL: "postgres://x/y", DEALS_ENABLED: "" });
-  assert.deepEqual(c.dealsSettings, { enabled: false, visionModel: "claude-haiku-5-5", maxPages: 40, screenPages: 120, dailyPerAccount: 30, dailyPerServer: 1000 });
+  assert.deepEqual(c.dealsSettings, {
+    enabled: false, visionModel: "claude-haiku-5-5", maxPages: 40, screenPages: 120, dailyPerAccount: 30, dailyPerServer: 1000,
+    dailyForNewAccounts: 200, newAccountHours: 24,
+  });
   assert.equal(loadConfig({ DATABASE_URL: "postgres://x/y", DEALS_ENABLED: "1" }).dealsSettings.enabled, true);
   assert.equal(loadConfig({ DATABASE_URL: "postgres://x/y", DEALS_SCREEN_PAGES: "0" }).dealsSettings.screenPages, 0, "0 turns screening off");
   for (const bad of [{ DEALS_ENABLED: "yes" }, { DEALS_MAX_PAGES: "101" }, { DEALS_SCREEN_PAGES: "201" }, { DEALS_DAILY_PER_ACCOUNT: "0" }, { DEALS_VISION_MODEL: "Claude Haiku" }]) {

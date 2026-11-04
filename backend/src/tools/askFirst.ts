@@ -47,6 +47,17 @@ export class AskGate {
   }
 
   /**
+   * True when `prepare` issued this approval to this user for this tool and account, and it is unused and
+   * unexpired, whatever it is bound to. A write with a lookup is bound to what the lookup finds, so it can
+   * only be checked in full after the lookup; this is the check that comes first, so a run that never had
+   * a card can't be used to look things up (ADR-708).
+   */
+  issuedFor(binding: Pick<AskBinding, "userId" | "tool" | "accountId">, approvalId: string | undefined): Promise<boolean> {
+    if (approvalId === undefined) return Promise.resolve(false);
+    return this.store.approvalIssuedFor({ approvalId, userId: binding.userId, capability: binding.tool, accountId: binding.accountId, now: this.now() });
+  }
+
+  /**
    * True only for an approval issued for exactly this binding, unexpired and unused. "check"
    * leaves it unused (a refusal before the provider call shouldn't cost the user their yes);
    * "use" uses it up atomically, so two runs with one approval can't both pass.

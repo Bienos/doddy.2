@@ -84,8 +84,13 @@ struct AppEnvironment: Sendable {
             let repository = SQLiteMemoryRepository(database: database)
             // UI-test launches never touch iOS notifications: reminders stay inside Doddy.
             let notifications: any NoteNotificationScheduling = isUITest ? DisabledNoteNotifications() : SystemNoteNotifications()
+            // A Private note's words never reach a banner, whatever "Show note text in notifications" says (ADR-722).
             let noteReminders = NoteReminderCoordinator(
-                repository: SQLiteNoteReminderRepository(database: database), center: notifications,
+                repository: PrivacyAwareNoteReminderRepository(
+                    base: SQLiteNoteReminderRepository(database: database),
+                    privateIDs: { PrivateNotes(stored: UserDefaults.standard.string(forKey: PrivateNotes.storageKey)).ids },
+                    language: { .current }),
+                center: notifications,
                 showNoteText: { UserDefaults.standard.bool(forKey: PreferenceKey.showNoteTextInNotifications) },
                 language: { .current })
             return AppEnvironment(

@@ -74,12 +74,13 @@ export function providersFrom(config: Config) {
     settings: es,
     researcher: es.enabled && config.anthropicApiKey
       ? new RoutingErrandResearcher(
-        new ClaudeErrandResearcher(config.anthropicApiKey, { model: es.model, effort: es.effort }),
+        new ClaudeErrandResearcher(config.anthropicApiKey, { model: es.model, effort: es.effort, budget: es.budget }),
         new ShoppingErrandResearcher(config.anthropicApiKey, {
           offers: new SerperOfferSource(ss.serperApiKey), fetcher,
           maxOfferSearches: ss.maxOfferSearches, maxPageChecks: ss.maxPageChecks,
           affiliate: new AffiliateLinks(ss.affiliateRules),
-        }, { model: ss.model, effort: ss.effort, premiumModel: ss.premiumModel, premiumAccountIds: ss.premiumAccountIds }))
+          budget: es.budget,
+        }, { model: ss.model, effort: ss.effort, premiumModel: ss.premiumModel, premiumAccountIds: ss.premiumAccountIds, budget: es.budget }))
       : undefined,
   };
   // Leaflets (ADR-609): without an Anthropic key, Dino and Rossmann still answer from their own data
@@ -118,8 +119,12 @@ export function providersFrom(config: Config) {
     assistant,
     deals,
     watches,
+    // Account, verification, text and call caps and the allowed countries (ADR-702, ADR-704): the web service and the
+    // worker read the same settings.
+    limits: config.limits,
     news: {
       cipher,
+      smsCaps: { perAccount: config.limits.smsPerAccountDay, perServer: config.limits.smsPerServerDay },
       feeds: new HttpFeedSource(),
       search: config.gnewsApiKey ? new GNewsSearch(config.gnewsApiKey) : undefined,
       // Anthropic first when both keys are set; OpenAI otherwise (ADR-197).

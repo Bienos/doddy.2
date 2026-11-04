@@ -103,7 +103,7 @@ struct MemoriesView: View {
                                         }
                                         // A private note's words only after Face ID (ADR-310).
                                         if !hides {
-                                            Button { UIPasteboard.general.string = record.currentText } label: {
+                                            Button { NoteClipboard.copy(record.currentText) } label: {
                                                 Label("Copy text", systemImage: "doc.on.doc")
                                             }
                                             ShareLink(item: record.currentText) {

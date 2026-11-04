@@ -2,6 +2,7 @@
 // fetcher, the chain adapters, the page reader, the matcher and the route. Money is integer minor units
 // (grosze) with its currency; every price on the wire comes from a chain's own data or from a page the
 // reader read, never from anything else.
+import { DEFAULT_NEW_ACCOUNT_HOURS, DEFAULT_NEW_ACCOUNT_POOL } from "../serverUsage.js";
 import type { PageFetcher } from "./fetcher.js";
 import type { PageOutput, ScreenOutput } from "./vision.js";
 import type { PickOutput } from "./match.js";
@@ -230,9 +231,14 @@ export interface DealsSettings {
   screenPages: number;
   dailyPerAccount: number;
   dailyPerServer: number;
+  /** What accounts still new may use together per UTC day, inside dailyPerServer (ADR-702). Absent: the default pool. */
+  dailyForNewAccounts?: number;
+  /** Hours after which an account without a verified phone number counts as established. Absent: 24. */
+  newAccountHours?: number;
 }
 
 /** Settings for an injected DealsDeps without its own (tests). The environment's DEALS_ENABLED defaults to "0". */
 export const DEFAULT_DEALS_SETTINGS: DealsSettings = {
   enabled: true, visionModel: "claude-haiku-5-5", maxPages: 40, screenPages: 120, dailyPerAccount: 30, dailyPerServer: 1000,
+  dailyForNewAccounts: DEFAULT_NEW_ACCOUNT_POOL.deals, newAccountHours: DEFAULT_NEW_ACCOUNT_HOURS,
 };

@@ -3,6 +3,7 @@ import Fastify, { type FastifyInstance, type FastifyReply } from "fastify";
 import formbody from "@fastify/formbody";
 import rateLimit from "@fastify/rate-limit";
 import type { z } from "zod";
+import type { AbuseLimits } from "./config.js";
 import type { Db } from "./db.js";
 import type { TextCipher } from "./crypto.js";
 import type { OutboundCaller, PhoneVerifier, PushSender, SmsSender } from "./providers/types.js";
@@ -58,6 +59,8 @@ export interface Deps {
   trustProxyHops?: number;
   /** Verify codes the whole server may start per UTC day. Default 200. */
   verifyDailyCap?: number;
+  /** Account, verification, text and call caps and the countries whose numbers are allowed (ADR-702, ADR-704). Defaults: DEFAULT_ABUSE_LIMITS. */
+  limits?: Partial<AbuseLimits>;
   /** Calls Doddy places for the user (ADR-500). Needs `cipher` and `publicBaseUrl` too. */
   taskCalls?: TaskCallDeps;
   /** Where task-call log lines go (tests capture them); default: the request logger. */

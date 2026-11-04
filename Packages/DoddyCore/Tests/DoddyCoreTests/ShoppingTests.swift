@@ -138,20 +138,23 @@ final class ShoppingTests: XCTestCase {
     func testTheShoppingCardShowsThePrioritiesAndSaysNothingIsBought() throws {
         let draft = try fixtureDraft()
         let need = AskFirst.need(for: .handOverErrand(draft))
-        XCTAssertEqual(need, .yesFirst(AskCard(
+        // ADR-716: a tap, with the words, Doddy's note and the title each labelled as whose they are.
+        XCTAssertEqual(need, .tapFirst(AskCard(
             title: "Hand this to Doddy?",
             lines: [
-                "\u{201C}\(draft.words)\u{201D}",
-                "Doddy's note: \(draft.brief)",
-                "What matters most: Cisza, Cena, Gwarancja",
+                "Your words, as Doddy will pass them on: \u{201C}\(draft.words)\u{201D}",
+                "Doddy's own note, written by Doddy and not by you: \u{201C}\(draft.brief)\u{201D}",
+                "Title in Tasks, also Doddy's: \u{201C}\(draft.title)\u{201D}",
+                "What matters most, as Doddy heard it, in this order: Cisza, Cena, Gwarancja",
+                "Check that the words are what you said. If they aren't, tap No.",
                 "Doddy looks for offers in shops in Poland and reads their pages, in the background. The result waits in Tasks in the app when it's done.",
                 "Nothing is bought, ordered or sent.",
             ],
             confirmLabel: "Yes, go")))
-        XCTAssertFalse(AskFirst.needsTap(need), "a read: a spoken yes or a tap")
+        XCTAssertTrue(AskFirst.needsTap(need), "a spoken yes can't start it")
         let none = ErrandAsk.handOverCard(ErrandDraft(words: "w", brief: "b", title: "t", kind: .shopping))
         XCTAssertFalse(none.lines.contains { $0.hasPrefix("What matters most") }, "no priorities, no line")
-        // A research card is unchanged.
+        // A research card ends the same way as before.
         XCTAssertEqual(ErrandAsk.handOverCard(try fixtureDraft(kind: nil)).lines.last, "Nothing is booked, bought or sent.")
     }
 

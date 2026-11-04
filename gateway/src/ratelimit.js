@@ -1,6 +1,7 @@
 // Fixed-window limiter behind a small port (ADR-114, ADR-124).
 // - MemoryRateLimiter: per function instance. On serverless it is a best-effort brake only; used for
-//   local development and when no shared store is configured (a startup warning is logged).
+//   tests and local development, or where GATEWAY_ALLOW_MEMORY_LIMITS=1 says so on purpose (ADR-713;
+//   a startup warning is logged). Anywhere else a missing shared store makes the gateway refuse to serve.
 // - SharedRateLimiter: counters in a shared Redis-compatible store, so every instance sees the same
 //   counts. If the store cannot be reached it throws StoreUnavailableError and the handler refuses the
 //   request (fail closed); it never falls back to per-instance memory.

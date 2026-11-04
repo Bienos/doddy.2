@@ -2,9 +2,12 @@ import type { FastifyPluginAsync, FastifyReply } from "fastify";
 import { z } from "zod";
 import { parse, type Deps } from "../app.js";
 import { principal, requireDevice } from "../auth.js";
-import { sha256 } from "../crypto.js";
+import { abuseLimits } from "../config.js";
+import { clientBucket } from "../dailyCounters.js";
+import { keyedDigest, sha256 } from "../crypto.js";
 import { inTransaction } from "../db.js";
 import { cancelQueuedSms } from "../outbox.js";
+import { isAllowedNumber } from "../phoneCountries.js";
 import { ProviderError } from "../providers/types.js";
 
 /** Verify codes one phone number may receive, across all accounts. */
@@ -28,26 +31,41 @@ export const phoneRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
   const { db, verifier } = deps;
   const auth = requireDevice(db);
   const limited = { max: 5, timeWindow: "1 hour" };
+  const limits = abuseLimits(deps.limits);
+  // Keys for the counts below (ADR-705). With MEMORY_ENCRYPTION_KEY the number and the client address are stored as
+  // HMACs, so the table can't be searched for a known number or address; without it, as plain SHA-256 as before.
+  const numberSecret = deps.cipher?.derivedKey("verify-number");
+  const addressSecret = deps.cipher?.derivedKey("client-address");
 
   app.post("/v1/phone/verification", { preHandler: auth, config: { rateLimit: limited } }, async (req, reply) => {
     if (!verifier) return reply.code(503).send({ error: "not_configured" });
     const body = parse(startBody, req.body, reply);
     if (!body) return;
-    // Per destination number and per server, whatever account asks: new accounts can't be used
-    // to text one number over and over, and a flood can't run up the SMS bill (ADR-175).
-    const phoneHash = sha256(body.phone);
+    // Only numbers from the allowed countries get a code, and this is checked before anything is counted or sent (ADR-704).
+    if (!isAllowedNumber(body.phone, limits.allowedCountryCodes)) return reply.code(400).send({ error: "phone_rejected" });
+    // Per destination number, per client address, per account and per server, whatever account asks: new accounts
+    // can't be used to text one number over and over, and a flood can't run up the SMS bill (ADR-175, ADR-705).
+    // Rows made before the number was keyed (plain SHA-256) still count until they are deleted after two days.
+    const phoneHash = keyedDigest(numberSecret, body.phone);
+    const phoneHashes = numberSecret ? [phoneHash, sha256(body.phone)] : [phoneHash];
+    const ipHash = keyedDigest(addressSecret, clientBucket(req.ip));
+    const accountHash = sha256(principal(req).accountId);
     const allowed = await inTransaction(db, async (c) => {
       // The caps include a server-wide one, so count and insert under one lock.
       await c.query("SELECT pg_advisory_xact_lock(4242002)");
-      const { rows: [counts] } = await c.query<{ hour: number; day: number; server: number }>(
-        `SELECT count(*) FILTER (WHERE phone_hash = $1 AND started_at > now() - interval '1 hour')::int AS hour,
-                count(*) FILTER (WHERE phone_hash = $1 AND started_at > now() - interval '1 day')::int AS day,
-                count(*) FILTER (WHERE started_at > date_trunc('day', now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC')::int AS server
-         FROM phone_verification_starts WHERE started_at > now() - interval '1 day'`, [phoneHash]);
-      if (counts!.hour >= VERIFY_PER_NUMBER_HOUR || counts!.day >= VERIFY_PER_NUMBER_DAY || counts!.server >= (deps.verifyDailyCap ?? 200)) {
+      const { rows: [counts] } = await c.query<{ hour: number; day: number; server: number; ip_day: number; account_day: number }>(
+        `WITH utc_day AS (SELECT date_trunc('day', now() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC' AS since)
+         SELECT count(*) FILTER (WHERE phone_hash = ANY($1::bytea[]) AND started_at > now() - interval '1 hour')::int AS hour,
+                count(*) FILTER (WHERE phone_hash = ANY($1::bytea[]) AND started_at > now() - interval '1 day')::int AS day,
+                count(*) FILTER (WHERE started_at > (SELECT since FROM utc_day))::int AS server,
+                count(*) FILTER (WHERE ip_hash = $2 AND started_at > (SELECT since FROM utc_day))::int AS ip_day,
+                count(*) FILTER (WHERE account_hash = $3 AND started_at > (SELECT since FROM utc_day))::int AS account_day
+         FROM phone_verification_starts WHERE started_at > now() - interval '1 day'`, [phoneHashes, ipHash, accountHash]);
+      if (counts!.hour >= VERIFY_PER_NUMBER_HOUR || counts!.day >= VERIFY_PER_NUMBER_DAY || counts!.server >= (deps.verifyDailyCap ?? 200)
+        || counts!.ip_day >= limits.verifyPerIpDay || counts!.account_day >= limits.verifyPerAccountDay) {
         return false;
       }
-      await c.query("INSERT INTO phone_verification_starts (phone_hash) VALUES ($1)", [phoneHash]);
+      await c.query("INSERT INTO phone_verification_starts (phone_hash, ip_hash, account_hash) VALUES ($1, $2, $3)", [phoneHash, ipHash, accountHash]);
       await c.query("DELETE FROM phone_verification_starts WHERE started_at < now() - interval '2 days'");
       return true;
     });
@@ -64,6 +82,8 @@ export const phoneRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
     if (!verifier) return reply.code(503).send({ error: "not_configured" });
     const body = parse(checkBody, req.body, reply);
     if (!body) return;
+    // A number outside the allowed countries is never confirmed, even if a code for it was somehow sent (ADR-704).
+    if (!isAllowedNumber(body.phone, limits.allowedCountryCodes)) return reply.code(400).send({ error: "phone_rejected" });
     let result;
     try {
       result = await verifier.check(body.phone, body.code);

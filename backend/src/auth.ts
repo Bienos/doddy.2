@@ -310,3 +310,97 @@ export class AnyOfSessionVerifier implements SessionVerifier {
     return null;
   }
 }
+
+// ------------------------------------------------------------------ cutting off a person's tokens (ADR-709)
+
+/**
+ * The `iat` (seconds since 1970) of a device-session token (`ds1`), `undefined` for any other kind of
+ * token, and `null` for a `ds1` token whose claims can't be read. It only READS: call it for a token a
+ * verifier has already accepted, never to decide whether a token is genuine.
+ */
+export function sessionTokenIssuedAt(header: string | undefined): number | null | undefined {
+  const token = bearer(header);
+  if (!token) return undefined;
+  const parts = token.split(".");
+  if (parts.length !== 3 || parts[0] !== "ds1") return undefined;
+  try {
+    const claims = JSON.parse(Buffer.from(parts[1]!, "base64url").toString("utf8")) as { iat?: unknown };
+    return Number.isInteger(claims.iat) ? (claims.iat as number) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Where a person's cut-off second is kept (the store). */
+export interface TokenFloorSource {
+  tokenFloor(userId: string): Promise<number>;
+}
+
+/**
+ * A person's "tokens valid after" second, with a short memory so a busy phone doesn't cost a database
+ * read on every request. A cut-off made on THIS instance is written into the memory at once
+ * (`remember`), so it takes effect immediately here; another instance would see it within `ttlMs`
+ * (this backend is designed to run as one instance).
+ */
+export class TokenFloors {
+  private readonly seen = new Map<string, { floor: number; at: number }>();
+
+  constructor(
+    private readonly source: TokenFloorSource,
+    private readonly ttlMs = 30_000,
+    private readonly maxEntries = 10_000,
+  ) {}
+
+  async floorOf(userId: string, nowMs: number): Promise<number> {
+    const hit = this.seen.get(userId);
+    if (hit && nowMs >= hit.at && nowMs - hit.at < this.ttlMs) return hit.floor;
+    const floor = await this.source.tokenFloor(userId);
+    this.remember(userId, floor, nowMs);
+    return floor;
+  }
+
+  /** The person was just cut off at `floor` (never lowers a floor already known). */
+  remember(userId: string, floor: number, nowMs = Date.now()): void {
+    const known = this.seen.get(userId)?.floor ?? 0;
+    this.seen.delete(userId);
+    // Bounded: only people holding a genuine token get here, but the memory still must not grow without end.
+    if (this.seen.size >= this.maxEntries) {
+      const oldest = this.seen.keys().next();
+      if (!oldest.done) this.seen.delete(oldest.value);
+    }
+    this.seen.set(userId, { floor: Math.max(floor, known), at: nowMs });
+  }
+}
+
+/**
+ * Refuses a device-session token dated before its person's cut-off second. Deleting the account sets the
+ * cut-off (`Store.eraseUser`), so a token minted before the deletion stops working at once, and one
+ * minted by a later sign-in (dated at or after the cut-off) works. Only `ds1` tokens are covered: an
+ * owner-minted or device token is the one that lasts 30 days. A Supabase access token (an hour) is
+ * Supabase's to end.
+ *
+ * Rotating the signing key still revokes every token at once, and changes every device's user ID
+ * (see `deviceUserId`); that is unchanged. If the cut-off can't be read the request is refused with
+ * "can't check your sign-in right now" (never a 401, which would make the app sign in again in a loop).
+ */
+export class RevocableSessionVerifier implements SessionVerifier {
+  constructor(
+    private readonly inner: SessionVerifier,
+    private readonly floors: TokenFloors,
+  ) {}
+
+  async verify(header: string | undefined, now: Date): Promise<AuthenticatedUser | null> {
+    const user = await this.inner.verify(header, now);
+    if (!user) return null;
+    const issuedAt = sessionTokenIssuedAt(header);
+    if (issuedAt === undefined) return user; // not a device-session token
+    if (issuedAt === null) return null;
+    let floor: number;
+    try {
+      floor = await this.floors.floorOf(user.userId, now.getTime());
+    } catch {
+      throw new AppError("provider_unavailable", { message: "Doddy couldn't check your sign-in right now. Try again shortly." });
+    }
+    return issuedAt < floor ? null : user;
+  }
+}

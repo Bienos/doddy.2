@@ -704,23 +704,18 @@ struct RoutinesSettingsView: View {
 // MARK: About
 
 /// Settings › Advanced: build details, the Terms acceptance, the plan-card demo, the welcome again,
-/// what's built, and the development server with its Connected Apps screen.
-/// The server fields show only in Debug builds, or when one is already set, so it can still be removed.
+/// what's built, and, in a Debug build only, the development server with its Connected Apps screen.
+/// A shipped build has no server field and ignores any address typed earlier (ADR-720): the phone's
+/// device ID is sent to that address, and it is the credential that mints session tokens.
 struct AdvancedSettingsView: View {
     @Environment(MemoryStore.self) private var store
-    @AppStorage(PreferenceKey.connectedAppsServerURL) private var connectedAppsServerURL = ""
     @AppStorage(LegalAcceptance.preferenceKey) private var legalRecordData: Data?
+    #if DEBUG
+    @AppStorage(PreferenceKey.connectedAppsServerURL) private var connectedAppsServerURL = ""
     @State private var sessionTokenDraft = ""
     @State private var hasSessionToken = KeychainSessionStore.hasToken
     @State private var tokenMessage: String?
-
-    private var showsDeveloperServer: Bool {
-        #if DEBUG
-        return true
-        #else
-        return !connectedAppsServerURL.isEmpty || hasSessionToken
-        #endif
-    }
+    #endif
 
     var body: some View {
         Form {
@@ -756,12 +751,15 @@ struct AdvancedSettingsView: View {
                 }
             }
             .accessibilityIdentifier("settings.capabilities")
-            if showsDeveloperServer { developerServer }
+            #if DEBUG
+            developerServer
+            #endif
         }
         .settingsPage()
         .navigationTitle("Advanced")
     }
 
+    #if DEBUG
     private var developerServer: some View {
         Section {
             TextField("Server address (https://…)", text: $connectedAppsServerURL)
@@ -784,9 +782,10 @@ struct AdvancedSettingsView: View {
                     .accessibilityIdentifier("settings.connectedAppsToken")
                 Button("Save session token") {
                     let token = sessionTokenDraft.trimmingCharacters(in: .whitespacesAndNewlines)
-                    // The token is kept for this server only and never sent to another (DOD-11).
+                    // The token is kept for this server only and never sent to another (DOD-11). The address must
+                    // pass the same rule as the sign-in's: https, or http to this computer (ADR-720).
                     if let server = URL(string: connectedAppsServerURL.trimmingCharacters(in: .whitespaces)),
-                       server.scheme != nil, server.host != nil {
+                       ServerAddressPolicy.accepts(server, debug: true) {
                         if KeychainSessionStore.save(token, issuedBy: server) {
                             hasSessionToken = true
                             tokenMessage = nil
@@ -817,6 +816,7 @@ struct AdvancedSettingsView: View {
             Text("Use https, or http://localhost with the Simulator. The token is kept in this iPhone's Keychain for that address only.")
         }
     }
+    #endif
 }
 
 extension View {

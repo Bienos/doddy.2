@@ -3,6 +3,7 @@ import { afterEach, test } from "node:test";
 import { DEV_IDENTITIES } from "../src/auth.js";
 import { ProviderError } from "../src/errors.js";
 import { COMPLETE_TODOIST_TASK, EMAIL_TEXT_MAX, emailText, MOVE_TODOIST_TASK, READ_EMAIL, TOOL_COPY, TOOLKITS } from "../src/tools/catalog.js";
+import { LOOKUP_FAILED } from "../src/tools/service.js";
 import { USER_A, USER_B } from "./helpers.js";
 import { connect, off, on, type Rig, ready, run, start } from "./toolsRig.js";
 
@@ -109,7 +110,7 @@ test("an unknown or already completed task is refused at prepare, with a receipt
     const res = await prepare(rig, tool, args);
     assert.equal(res.status, 404, `${tool} ${JSON.stringify(args)}`);
     assert.equal(res.body.error.code, "not_found");
-    assert.match(res.body.error.message, /wasn't found, or it's already done/);
+    assert.equal(res.body.error.message, LOOKUP_FAILED, "ADR-708: unknown and already done answer alike");
     assert.equal(res.body.error.receipt.status, "blocked");
     assert.equal(res.body.error.receipt.errorCode, "not_found");
     assert.equal(res.body.error.receipt.operation, "write");

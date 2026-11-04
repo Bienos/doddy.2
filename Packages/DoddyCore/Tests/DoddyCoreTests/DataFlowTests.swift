@@ -127,7 +127,8 @@ final class DataFlowTests: XCTestCase {
                      "The notification has no product words", "Nothing is bought, ordered or signed in", "Never your saved notes"] {
             XCTAssertTrue(watches.what.contains(part), part)
         }
-        XCTAssertTrue(watches.when.contains("when you say yes"))
+        XCTAssertTrue(watches.when.contains("when you tap Yes on the card"), "a watch starts from the card's Yes, watch button, never by a spoken yes")
+        XCTAssertFalse(watches.when.contains("say yes"))
         XCTAssertTrue(watches.note?.contains("keeps no page content") ?? false)
         XCTAssertTrue(DataFlow.networkSummary(state).contains("the shops' pages, read by your messaging server (prices you watch)"))
         // No model reads a watch: it is in no AI summary.
@@ -245,7 +246,7 @@ final class DataFlowSummaryTests: XCTestCase {
         // OpenAI runs the voice where the token server is set (ADR-442): ElevenLabs gets no voice then.
         XCTAssertEqual(
             DataFlow.cloudAISummary(everything),
-            "OpenAI (voice); Anthropic (Ask Doddy); ElevenLabs (phone calls) and Anthropic or OpenAI (daily news) on your messaging server; Anthropic (tasks you hand over); Anthropic (leaflets you check)")
+            "OpenAI (voice); Anthropic (Ask Doddy); ElevenLabs (phone calls) and Anthropic or OpenAI (daily news) on your messaging server; Anthropic (tasks you hand over); Anthropic (the answer card of calls Doddy places for you); Anthropic (leaflets you check)")
         XCTAssertFalse(DataFlow.networkSummary(everything).contains("ElevenLabs (while talking)"))
         var elevenLabs = everything
         elevenLabs.voiceProvider = .elevenLabs
@@ -299,13 +300,99 @@ final class DataFlowSummaryTests: XCTestCase {
         XCTAssertTrue(browser.what.contains("notes and conversations you keep on Doddy's server"))
     }
 
-    func testNothingIsSaidToGoToTheServerWithoutOne() throws {
+    /// ADR-721: before this iPhone has signed in to Doddy's server nothing has been sent, and the row says that.
+    /// It used to say "No Doddy server is set", which was false for everybody since ADR-563 built the address in.
+    func testNothingIsSaidToGoToTheServerBeforeTheFirstSignIn() throws {
         var state = base
         state.webNotesKept = true
         state.doddyServerSet = false
         let row = try XCTUnwrap(DataFlow.rows(state).first { $0.id == "webMemory" })
         XCTAssertFalse(row.isActive)
-        XCTAssertEqual(row.note, "No Doddy server is set, so nothing goes there.")
+        XCTAssertEqual(row.note, "Keep on Doddy's server is on, but this iPhone hasn't signed in there yet, so nothing has been sent. It is sent once it has.")
+        // With the switches off the row says so, whether or not the iPhone has signed in.
+        state.webNotesKept = false
+        XCTAssertEqual(try XCTUnwrap(DataFlow.rows(state).first { $0.id == "webMemory" }).note,
+                       "Keep on Doddy's server is off in Settings › Doddy on the web, so nothing goes there.")
+        state.doddyServerSet = true
+        XCTAssertEqual(try XCTUnwrap(DataFlow.rows(state).first { $0.id == "webMemory" }).note,
+                       "Keep on Doddy's server is off in Settings › Doddy on the web, so nothing goes there.")
+    }
+
+    /// ADR-721: the Doddy server row is true both before the first sign-in and after it.
+    func testTheDoddyServerRowIsTrueBeforeAndAfterTheFirstSignIn() throws {
+        // Before: not sent, and it says what will happen instead of claiming there is no server.
+        let before = try XCTUnwrap(DataFlow.rows(base).first { $0.id == "doddyServer" })
+        XCTAssertFalse(before.isActive)
+        let note = try XCTUnwrap(before.note)
+        XCTAssertTrue(note.hasPrefix("Nothing has been sent to Doddy's server yet."))
+        XCTAssertTrue(note.contains("random device ID"), "it says what the first online feature sends")
+        XCTAssertFalse(note.localizedCaseInsensitiveContains("no doddy server is set"))
+
+        // After: the device ID, the searches that go at once and what waits for a yes are all named.
+        var state = base
+        state.doddyServerSet = true
+        let after = try XCTUnwrap(DataFlow.rows(state).first { $0.id == "doddyServer" })
+        XCTAssertTrue(after.isActive)
+        XCTAssertNil(after.note)
+        for part in ["random device ID", "Keychain", "web, news or places search", "go at once without asking", "Monid",
+                     "after you say yes or tap", "only after you tap its card to confirm",
+                     "Never your saved notes, except the copy you choose to keep on Doddy's server"] {
+            XCTAssertTrue(after.what.contains(part), part)
+        }
+        XCTAssertFalse(after.what.contains("a search word, or the text"), "the old wording said every search word waits for a yes")
+        XCTAssertTrue(after.when.contains("signs in or renews its session"))
+        // Paused connections keep the note they had.
+        state.pauseAll = true
+        XCTAssertTrue(try XCTUnwrap(DataFlow.rows(state).first { $0.id == "doddyServer" }).note?.contains("paused") ?? false)
+    }
+
+    func testNoRowClaimsThereIsNoDoddyServerInEitherState() {
+        for signedIn in [false, true] {
+            for kept in [false, true] {
+                var state = base
+                state.doddyServerSet = signedIn
+                state.webNotesKept = kept
+                state.webConversationsKept = kept
+                for row in DataFlow.rows(state) {
+                    for text in [row.what, row.when, row.note ?? ""] {
+                        XCTAssertFalse(text.localizedCaseInsensitiveContains("no doddy server is set"), "\(row.id): \(text)")
+                    }
+                }
+            }
+        }
+        // The browser's row, before the first sign-in, says nothing has been sent and when something would be.
+        let browser = DataFlow.rows(base).first { $0.id == "webSignIn" }
+        XCTAssertEqual(browser?.isActive, false)
+        XCTAssertTrue(browser?.note?.hasPrefix("Nothing has been sent to Doddy's server yet.") ?? false)
+    }
+
+    /// ADR-721: the Network summary in Settings › Privacy names Doddy's server once it is in use, by what it is for.
+    func testTheNetworkSummaryNamesTheServerOnceItIsInUse() {
+        XCTAssertFalse(DataFlow.networkSummary(base).contains("your Doddy server"))
+        var state = base
+        state.doddyServerSet = true
+        XCTAssertTrue(DataFlow.networkSummary(state).contains("your Doddy server (web search, online accounts and the web)"))
+        XCTAssertFalse(DataFlow.networkSummary(state).contains("(Connected Apps)"), "it is not only Connected Apps any more")
+    }
+
+    /// The voice token server row no longer talks about a wake word, which was removed in ADR-549.
+    func testTheTokenServerRowHasNoWakeWordSetup() throws {
+        let token = try XCTUnwrap(DataFlow.rows(base).first { $0.id == "tokenServer" })
+        XCTAssertFalse(token.when.localizedCaseInsensitiveContains("wake"))
+        XCTAssertTrue(token.when.contains("a conversation requests a provider connection credential"))
+        XCTAssertTrue(token.what.contains("No voice, transcript, notes or profile details are sent"))
+    }
+
+    /// ADR-722: the promise that Private notes are never sent holds for the morning check-in too, and the rows say so.
+    func testThePrivateNotePromiseIsNamedWhereTheCheckInIsListed() throws {
+        var state = base
+        state.morningCheckInOn = true
+        let what = try XCTUnwrap(DataFlow.rows(state).first { $0.id == "elevenlabs" }).what
+        XCTAssertTrue(what.contains("today's Doddy reminders (not those of notes you mark Private)"))
+        XCTAssertTrue(try XCTUnwrap(DataFlow.rows(state).first { $0.id == "elevenlabs" }).note?.contains("Notes you mark Private are never sent.") ?? false)
+        let siri = try XCTUnwrap(DataFlow.rows(state).first { $0.id == "siri" })
+        XCTAssertTrue(siri.when.contains("Doddy unlocked, if you use the Face ID lock"))
+        XCTAssertTrue(siri.when.contains("Notes you mark Private are never read out."))
     }
 }
 
@@ -363,5 +450,126 @@ final class DataFlowInvoiceAndParcelTests: XCTestCase {
         state.inFaktKeySaved = true
         XCTAssertFalse(DataFlow.cloudAISummary(state).contains("InPost"))
         XCTAssertFalse(DataFlow.cloudAISummary(state).contains("inFakt"))
+    }
+}
+
+/// Calls Doddy places for the user (ADR-500..507) and the messages Doddy sends back (POST /v1/updates), and the words
+/// for the actions that are a tap and no longer a spoken yes (ADR-716). Each statement was read from the app's and the
+/// server's code in the review of 4 Nov 2026 (see the comments in `DataFlow.rows`).
+final class DataFlowCallsAndUpdatesTests: XCTestCase {
+    private let base = DataFlowState(
+        rememberConversations: false, shareProfileWithVoice: false, tokenServerSet: false,
+        connectionsOn: [], pauseAll: false, doddyServerSet: false, askDoddyOn: false, askDoddyUsesNotes: true)
+
+    private var withServer: DataFlowState {
+        var state = base
+        state.messagingServerSet = true
+        return state
+    }
+
+    private func row(_ id: String, _ state: DataFlowState) throws -> DataFlowRow {
+        try XCTUnwrap(DataFlow.rows(state).first { $0.id == id }, id)
+    }
+
+    func testPlacedCallsHaveARowThatSaysWhatIsSentWhenAndWhere() throws {
+        let calls = try row("callCases", withServer)
+        XCTAssertTrue(calls.isActive)
+        for place in ["messaging server", "Twilio", "ElevenLabs", "Anthropic"] {
+            XCTAssertTrue(calls.destination.contains(place), place)
+        }
+        // What is sent: the brief, ticked facts only, and nothing dialled before the card is approved.
+        for part in ["Polish phone number", "who the call is for", "only the facts you ticked", "Unticked facts never leave",
+                     "Nothing is dialled until you approve the card", "ElevenLabs also hears the other person",
+                     "Twilio transcribes both sides", "Google engine", "told not to record it",
+                     "Anthropic's Claude reads the call's transcript", "If you tap Take over", "never words"] {
+            XCTAssertTrue(calls.what.contains(part), part)
+        }
+        XCTAssertTrue(calls.when.contains("When you prepare a call's card (nothing is dialled)"))
+        XCTAssertTrue(calls.when.contains("between 8:00 and 23:00 Warsaw time"))
+        XCTAssertTrue(calls.when.contains("at most 5 minutes"))
+        // What the server keeps and deletes, and what the notification says.
+        let note = try XCTUnwrap(calls.note)
+        for part in ["encrypted", "each with a receipt", "7 days", "asks ElevenLabs to delete its copy", "only that an answer is waiting",
+                     "once your number is verified"] {
+            XCTAssertTrue(note.contains(part), part)
+        }
+        // It starts from Settings, not from a conversation, so pausing connections doesn't change it.
+        var paused = withServer
+        paused.pauseAll = true
+        XCTAssertTrue(try row("callCases", paused).isActive)
+    }
+
+    func testTheUpdatesRowSaysTheAppSendsOnlyTheTestsAndWhatTextingDoddyDoes() throws {
+        let updates = try row("updates", withServer)
+        XCTAssertTrue(updates.isActive)
+        XCTAssertTrue(updates.destination.contains("Apple (notifications)") && updates.destination.contains("Twilio (texts)"))
+        XCTAssertTrue(updates.what.contains("Test from Doddy: notifications are working."))
+        XCTAssertTrue(updates.what.contains("Test from Doddy: texts are working."))
+        XCTAssertTrue(updates.what.contains("in their own rows"), "what other features send is described where it belongs")
+        // Text with Doddy sends the person's words to Anthropic; the row says so, says it is off by default and that notes stay out.
+        XCTAssertTrue(updates.what.contains("If you also turn on Text with Doddy"))
+        XCTAssertTrue(updates.what.contains("Anthropic, whose Claude writes one reply by text"))
+        XCTAssertTrue(updates.what.contains("can't read your notes or change anything"))
+        XCTAssertTrue(updates.when.contains("Only when you tap Send a test notification or Send a test text"))
+        XCTAssertTrue(updates.when.contains("only if you turned on Text with Doddy"))
+        let note = try XCTUnwrap(updates.note)
+        XCTAssertTrue(note.contains("only until it is sent"))
+        XCTAssertTrue(note.contains("Text with Doddy is off until you turn it on"))
+    }
+
+    func testWithoutAMessagingServerNeitherRowClaimsAnythingGoes() throws {
+        let calls = try row("callCases", base)
+        let updates = try row("updates", base)
+        XCTAssertFalse(calls.isActive)
+        XCTAssertFalse(updates.isActive)
+        XCTAssertEqual(calls.note, "No messaging server is set, so calls can't be placed.")
+        XCTAssertEqual(updates.note, "No messaging server is set, so nothing goes there.")
+        XCTAssertFalse(DataFlow.networkSummary(base).contains("Twilio, ElevenLabs and Anthropic (calls"))
+        XCTAssertFalse(DataFlow.cloudAISummary(base).contains("calls Doddy places"))
+    }
+
+    func testTheNewRowsAreInTheSummariesOnlyWhenTheServerIsSet() {
+        let network = DataFlow.networkSummary(withServer)
+        XCTAssertTrue(network.contains("Twilio, ElevenLabs and Anthropic (calls Doddy places for you, through your messaging server)"))
+        XCTAssertTrue(network.contains("Apple and Twilio (notifications and texts from Doddy, through your messaging server)"))
+        // The answer card is written by Claude, so Settings' Cloud AI line names it like the other Anthropic features.
+        XCTAssertTrue(DataFlow.cloudAISummary(withServer).contains("Anthropic (the answer card of calls Doddy places for you)"))
+    }
+
+    /// ADR-716: handing a task over is a tap on its card. A watch is started only from the card's Yes, watch button. Neither
+    /// is described as something you say.
+    func testActionsThatAreATapAreNotDescribedAsSpokenYes() throws {
+        let errands = try row("errands", withServer)
+        XCTAssertEqual(errands.when, "Only when you tap Yes on the card to hand a task over, until its result is saved on this iPhone.")
+        XCTAssertFalse(errands.when.contains("say yes"))
+        let watches = try row("watches", withServer)
+        XCTAssertTrue(watches.when.hasPrefix("Only when you tap Yes on the card to watch a price"))
+        XCTAssertFalse(watches.when.contains("say yes"))
+    }
+
+    /// Reads that still accept a spoken yes keep their wording; a write never says "say yes" without a tap. The rows that may
+    /// mention a spoken yes are the leaflets (a read) and the Doddy server row (reads: "say yes or tap").
+    func testOnlyReadsStillMentionASpokenYes() {
+        var all = withServer
+        all.doddyServerSet = true
+        all.webNotesKept = true
+        all.webConversationsKept = true
+        all.morningCheckInOn = true
+        all.askDoddyOn = true
+        all.siriReadsNotes = true
+        all.sharedLists = 1
+        all.pushOn = true
+        all.memoryCopyOn = true
+        all.shareProfileWithVoice = true
+        all.rememberConversations = true
+        let mentioning = DataFlow.rows(all)
+            .filter { [$0.what, $0.when, $0.note ?? ""].contains { $0.localizedCaseInsensitiveContains("say yes") } }
+            .map(\.id)
+        XCTAssertEqual(Set(mentioning), ["deals", "doddyServer"])
+        let deals = DataFlow.rows(all).first { $0.id == "deals" }
+        XCTAssertEqual(deals?.when, "Only when you say yes to checking this week's leaflets.", "find_deals is a read and still accepts a spoken yes")
+        let server = DataFlow.rows(all).first { $0.id == "doddyServer" }
+        XCTAssertTrue(server?.what.contains("after you say yes or tap") ?? false)
+        XCTAssertTrue(server?.what.contains("only after you tap its card to confirm") ?? false, "drafts, emails and tasks are tap-only")
     }
 }

@@ -50,10 +50,13 @@ struct TidyUpView: View {
     private let sharing = SharedListsController.shared
 
     /// Notes with a photo or a voice memo are never offered as copies (review D2): deleting one
-    /// would delete a different photo or recording.
+    /// would delete a different photo or recording. A private note's words show only after Face ID
+    /// (ADR-310), so until then it is not offered here, as a copy or as a reminder that passed: no card
+    /// would show them (ADR-722). `TidyUp.suggestions` only knows the notes it is given.
     private var tidy: TidyUp.Suggestions {
-        TidyUp.suggestions(
-            memories: store.memories, lists: store.lists, reminders: noteReminders.reminders, now: .now,
+        let memories = AppLock.shared.privateUnlocked ? store.memories : PrivateNotesStore.current().shareable(store.memories)
+        return TidyUp.suggestions(
+            memories: memories, lists: store.lists, reminders: noteReminders.reminders, now: .now,
             withAttachments: Set(store.photos.keys).union(store.recordings.keys))
     }
 

@@ -1,5 +1,7 @@
 import { purgeExpiredSessions } from "./calls.js";
+import type { AbuseLimits } from "./config.js";
 import type { TextCipher } from "./crypto.js";
+import { pruneCounters } from "./dailyCounters.js";
 import type { Db } from "./db.js";
 import { runDueDigests, type NewsDeps } from "./news/digest.js";
 import { pruneNewsCache } from "./news/sources.js";
@@ -34,6 +36,8 @@ export async function runWorkerLoop(
   db: Db, deps: {
     push?: PushSender; sms?: SmsSender; cipher?: TextCipher; news: NewsDeps; taskCalls?: TaskCallContext; errands?: ErrandContext;
     watches?: WatchContext;
+    /** Calling codes a text may go to, checked again when it is sent (ADR-704). */
+    limits?: Pick<AbuseLimits, "allowedCountryCodes">;
   },
   shouldStop: () => boolean,
 ): Promise<void> {
@@ -106,15 +110,19 @@ async function taskCallLoop(ctx: TaskCallContext, shouldStop: () => boolean) {
   }
 }
 
-async function dispatchLoop(db: Db, deps: { push?: PushSender; sms?: SmsSender; cipher?: TextCipher }, shouldStop: () => boolean) {
+async function dispatchLoop(
+  db: Db, deps: { push?: PushSender; sms?: SmsSender; cipher?: TextCipher; limits?: Pick<AbuseLimits, "allowedCountryCodes"> },
+  shouldStop: () => boolean,
+) {
   let lastTidy = 0;
   while (!shouldStop()) {
     try {
-      const r = await dispatchDue(db, { push: deps.push, sms: deps.sms, cipher: deps.cipher });
+      const r = await dispatchDue(db, { push: deps.push, sms: deps.sms, cipher: deps.cipher, allowedCountryCodes: deps.limits?.allowedCountryCodes });
       if (Date.now() - lastTidy > 3_600_000) {
         lastTidy = Date.now();
         // Expired sessions are already refused by findSession; this only reclaims space.
         const sessions = await purgeExpiredSessions(db);
+        await pruneCounters(db); // daily counts older than two days (ADR-702)
         const pruned = await pruneNewsCache(db);
         if (sessions || pruned) log("tidied", { sessions, newsCacheRows: pruned });
       }

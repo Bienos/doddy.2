@@ -1,7 +1,7 @@
 import { createServer, type Server } from "node:http";
 import { AccountEraser } from "./account.js";
 import { AssistService } from "./assist.js";
-import { AnyOfSessionVerifier, DevSessionVerifier, type SessionVerifier, SignedSessionVerifier, SupabaseSessionVerifier } from "./auth.js";
+import { AnyOfSessionVerifier, DevSessionVerifier, RevocableSessionVerifier, type SessionVerifier, SignedSessionVerifier, SupabaseSessionVerifier, TokenFloors } from "./auth.js";
 import { defaultRegistry } from "./capabilities.js";
 import type { Config } from "./config.js";
 import { DeviceSessionIssuer } from "./deviceSession.js";
@@ -54,7 +54,10 @@ export async function buildApp(
     provider = config.composio ? new ComposioCalendarProvider(config.composio) : new UnconfiguredCalendarProvider();
   } else provider = new MockCalendarProvider();
 
-  const verifier: SessionVerifier = overrides.verifier ?? sessionVerifier(config);
+  // A person's cut-off second (ADR-709): deleting the account ends every token issued before it, for
+  // any verifier this server builds. A verifier handed in by a test is used as it is.
+  const floors = new TokenFloors(store);
+  const verifier: SessionVerifier = overrides.verifier ?? new RevocableSessionVerifier(sessionVerifier(config), floors);
 
   const service = new ConnectedAppsService({
     store,
@@ -99,10 +102,18 @@ export async function buildApp(
     log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`),
   });
   // Beta device sign-in (ADR-563): first-device, open (ADR-587: other iPhones get Ask Doddy only) or
-  // invite codes, and a signing key (config checks both).
+  // invite codes, and a signing key (config checks both). Whether the first caller may claim a server
+  // with no owner yet (ADR-707) and the invite limits (ADR-709) come from config.
   const deviceSessions =
     (config.deviceSignup !== "off" || config.deviceInviteCodes.length > 0) && config.sessionSigningKey
-      ? new DeviceSessionIssuer(config.sessionSigningKey, { signup: config.deviceSignup, inviteCodes: config.deviceInviteCodes, store })
+      ? new DeviceSessionIssuer(config.sessionSigningKey, {
+          signup: config.deviceSignup,
+          inviteCodes: config.deviceInviteCodes,
+          store,
+          ownerClaim: config.ownerClaim,
+          inviteLimits: config.inviteLimits,
+          log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`),
+        })
       : null;
   // Doddy Web (ADR-600): only when DODDY_WEB_ORIGIN is set.
   const webAuth = config.web
@@ -137,6 +148,7 @@ export async function buildApp(
       { providers: Object.keys(TOOLKITS), remove: (connectionId, signal) => toolsProvider.removeConnection({ connectionId, signal }) },
     ],
     timeoutMs: config.limits.providerTimeoutMs,
+    floors,
     log,
   });
   const handler = createHandler({
@@ -165,6 +177,7 @@ export async function buildApp(
       .then(() => store.prune(Date.now()))
       .then(() => store.pruneDocuments(Date.now()))
       .then(() => store.pruneLogbook(oldestKeptDay(Date.now())))
+      .then(() => store.pruneTokenFloors(Date.now()))
       .then(() => (web ? store.pruneWeb(Date.now(), SESSION_IDLE_MS) : 0))
       .catch(() => {}); // the store closed with the server; the next start sweeps again
     // Kept memory (ADR-603) is swept on its own, so a failure in the steps above can't skip it, and its

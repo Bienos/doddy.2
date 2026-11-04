@@ -14,6 +14,7 @@ import {
   toolHasGrant,
 } from "../src/tools/catalog.js";
 import type { ExecuteCall } from "../src/tools/provider.js";
+import { LOOKUP_FAILED } from "../src/tools/service.js";
 import { USER_A, USER_B } from "./helpers.js";
 import { connect, off, type Rig, ready, run, start } from "./toolsRig.js";
 
@@ -142,15 +143,19 @@ test("no matching email, or a sender without an address, is refused at prepare w
   const none = await prepare(rig, "draft_email_reply", { query: "nomatch", body: "Hi" });
   assert.equal(none.status, 404);
   assert.equal(none.body.error.code, "not_found");
-  assert.match(none.body.error.message, /No email matched that search/);
+  // ADR-708: nothing found and "found, but no address to reply to" answer alike (code, words, receipt),
+  // so the answer doesn't tell the caller which of the two it was.
+  assert.equal(none.body.error.message, LOOKUP_FAILED);
   assert.equal(none.body.error.receipt.status, "blocked");
   assert.equal(none.body.error.receipt.errorCode, "not_found");
 
   const nameOnly = await prepare(rig, "draft_email_reply", { query: "newsletter", body: "Hi" });
   assert.equal(nameOnly.status, 404);
   assert.equal(nameOnly.body.error.code, "not_found");
-  assert.match(nameOnly.body.error.message, /can't tell who to reply to/);
+  assert.equal(nameOnly.body.error.message, LOOKUP_FAILED);
   assert.equal(nameOnly.body.error.receipt.status, "blocked");
+  assert.equal(nameOnly.body.error.receipt.errorCode, none.body.error.receipt.errorCode);
+  assert.equal(nameOnly.body.error.receipt.summary, none.body.error.receipt.summary);
 
   assert.equal((await approvals(rig)), 0, "no approval was created");
   assert.deepEqual(slugs(rig), ["GMAIL_FETCH_EMAILS", "GMAIL_FETCH_EMAILS"], "only lookups ran");

@@ -11,13 +11,13 @@ const ENV = {
   OPENAI_API_KEY: "openai-server-secret",
 };
 
-function store({ allowed = true } = {}) {
+function store({ allowed = true, limit = undefined } = {}) {
   const calls = [];
   return {
     calls,
-    async hitLimits(userId, perUserLimit, globalLimit, now) {
-      calls.push({ userId, perUserLimit, globalLimit, now });
-      return { allowed, retryAfterSeconds: 120 };
+    async hitLimits(userId, perUserLimit, globalLimit, now, perUserDailyLimit) {
+      calls.push({ userId, perUserLimit, globalLimit, now, perUserDailyLimit });
+      return { allowed, limit, retryAfterSeconds: 120 };
     },
     async getSession() { return { userId: USER_ID, sessionId: "session-1" }; },
   };
@@ -80,7 +80,74 @@ test("shared per-user and global rate limits stop provider requests", async () =
   assert.deepEqual(body, { error: "rate_limited" });
   assert.equal(response.headers.get("retry-after"), "120");
   assert.equal(calls.length, 0);
-  assert.deepEqual(authStore.calls[0], { userId: USER_ID, perUserLimit: 30, globalLimit: 100, now: 100_000 });
+  assert.deepEqual(authStore.calls[0], { userId: USER_ID, perUserLimit: 30, globalLimit: 100, now: 100_000, perUserDailyLimit: 150 });
+});
+
+test("an account's daily cap defaults to 150, can be set, and a bad value fails closed before any provider request (ADR-712)", async () => {
+  const set = store();
+  await run(request(null), { authStore: set, environment: { ...ENV, DODDY_TOKENS_PER_DAY: "40", DODDY_TOKENS_PER_HOUR: "5" } });
+  assert.deepEqual([set.calls[0].perUserDailyLimit, set.calls[0].perUserLimit], [40, 5]);
+  for (const bad of ["many", "0", "-3", "1.5", "10001", "1e2"]) {
+    const authStore = store();
+    const { response, body, calls } = await run(request(null), { authStore, environment: { ...ENV, DODDY_TOKENS_PER_DAY: bad } });
+    assert.equal(response.status, 500, bad);
+    assert.deepEqual(body, { error: "server_not_configured" });
+    assert.equal(calls.length, 0);
+    assert.equal(authStore.calls.length, 0, "nothing is counted against anyone");
+  }
+});
+
+test("a refusal says which limit it was in the log, as a fixed word, and sets Retry-After", async () => {
+  for (const limit of ["user_hour", "user_day", "global"]) {
+    const { response, body, logs, calls } = await run(request({ provider: "openai", model: "gpt-realtime-2.1-mini" }), {
+      authStore: store({ allowed: false, limit }),
+    });
+    assert.equal(response.status, 429);
+    assert.deepEqual(body, { error: "rate_limited" }, "the app sees the same answer for all three");
+    assert.equal(response.headers.get("retry-after"), "120");
+    assert.equal(logs[0].limit, limit);
+    assert.equal(calls.length, 0, "no provider request is made");
+    assert.ok(!JSON.stringify(logs).includes(USER_ID));
+  }
+});
+
+// ADR-712: the app's voice picker offers both models in every build, so both stay allowed by default;
+// the owner can narrow the list without a code change.
+test("the OpenAI model allowlist: both models by default, and OPENAI_ALLOWED_MODELS replaces the list", async () => {
+  const upstream = () => Response.json({ value: "openai-short-secret", session: {} });
+  for (const model of ["gpt-realtime-2.1", "gpt-realtime-2.1-mini"]) {
+    const { response } = await run(request({ provider: "openai", model }), { upstream: upstream() });
+    assert.equal(response.status, 200, model);
+  }
+  const mini = { ...ENV, OPENAI_ALLOWED_MODELS: " gpt-realtime-2.1-mini " };
+  const allowed = await run(request({ provider: "openai", model: "gpt-realtime-2.1-mini" }), { environment: mini, upstream: upstream() });
+  assert.equal(allowed.response.status, 200);
+  const pricier = await run(request({ provider: "openai", model: "gpt-realtime-2.1" }), { environment: mini });
+  assert.equal(pricier.response.status, 400);
+  assert.deepEqual(pricier.body, { error: "unknown_model" });
+  assert.equal(pricier.calls.length, 0, "nothing is sent upstream and no limit is used");
+  assert.equal((await run(request({ provider: "openai", model: "gpt-4o" }), { environment: mini })).response.status, 400);
+
+  // The setting can allow another id, or several; it never widens beyond what it lists.
+  const both = { ...ENV, OPENAI_ALLOWED_MODELS: "gpt-realtime-2.1-mini,gpt-realtime-next" };
+  assert.equal((await run(request({ provider: "openai", model: "gpt-realtime-next" }), { environment: both, upstream: upstream() })).response.status, 200);
+  assert.equal((await run(request({ provider: "openai", model: "gpt-realtime-2.1" }), { environment: both })).response.status, 400);
+  // ElevenLabs doesn't read it at all.
+  assert.equal((await run(request(null), { environment: { ...ENV, OPENAI_ALLOWED_MODELS: "!!!" } })).response.status, 200);
+});
+
+test("an OPENAI_ALLOWED_MODELS setting that doesn't parse fails closed for OpenAI and sends nothing upstream", async () => {
+  for (const bad of [",", " , ", "gpt realtime", "gpt-realtime-2.1;drop", "model/with/slash", `x${"y".repeat(70)}`]) {
+    const environment = { ...ENV, OPENAI_ALLOWED_MODELS: bad };
+    for (const body of [{ provider: "openai", model: "gpt-realtime-2.1-mini" }, { provider: "openai" }]) {
+      const authStore = store();
+      const { response, body: reply, calls } = await run(request(body), { environment, authStore });
+      assert.equal(response.status, 500, JSON.stringify(bad));
+      assert.deepEqual(reply, { error: "server_not_configured" });
+      assert.equal(calls.length, 0);
+      assert.equal(authStore.calls.length, 0);
+    }
+  }
 });
 
 test("missing provider configuration and shared storage fail closed", async () => {

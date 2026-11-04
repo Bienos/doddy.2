@@ -271,9 +271,10 @@ final class CloudToolVoiceTests: XCTestCase {
         XCTAssertTrue(VoiceToolReply.cloudFailed(.transport("URLError"), tool: "check_email").hasPrefix("failed:"))
         XCTAssertTrue(VoiceToolReply.cloudFailed(.notConfigured, tool: "check_email").contains("aren't set up"))
 
-        // A reply draft with nothing to reply to was refused before any card (round 5).
+        // A reply draft with nothing to reply to was refused before any card (round 5). Since ADR-718 that
+        // reads the same as every other failed look-up of a write's target (tested in PreTapRepliesTests).
         let noEmail = VoiceToolReply.cloudFailed(.server(code: "not_found", message: "x", retryAfterSeconds: nil, receipt: nil), tool: "draft_email_reply")
-        XCTAssertTrue(noEmail.hasPrefix("not found:") && noEmail.contains("No draft was created"))
+        XCTAssertEqual(noEmail, VoiceToolReply.cloudTargetNotFound)
         XCTAssertEqual(ActivityRequest.describe(cloud: "draft_email_reply")?.isLookup, false)
         XCTAssertEqual(ActivityRequest.describe(cloud: "read_notion_page")?.title, "Read a Notion page")
 

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { cappedArray } from "../cappedArray.js";
 
 /**
  * Messages on the web (owner, 28 Oct 2026: "sync always on"): a copy of the iPhone's Messages thread, so Doddy Web
@@ -32,7 +33,7 @@ export const ThreadMessageItem = z
 export type ThreadMessageItem = z.output<typeof ThreadMessageItem>;
 
 export const ThreadSnapshot = z
-  .object({ messages: z.array(ThreadMessageItem).max(THREAD_MAX_MESSAGES) })
+  .object({ messages: cappedArray(ThreadMessageItem, THREAD_MAX_MESSAGES) })
   .strict()
   .refine((snapshot) => new Set(snapshot.messages.map((m) => m.id)).size === snapshot.messages.length, "a message appears twice");
 

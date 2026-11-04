@@ -66,7 +66,9 @@ enum PreferenceKey {
     static let shareLearnedWithVoice = "learning.shareWithVoice"
     /// HTTPS address of `server/voice-token`. Empty = development public agent.
     static let voiceTokenServer = "voiceTokenServer"
-    /// Development setting: base URL of the Doddy Connected Apps server (not a secret).
+    /// Development setting: base URL of the Doddy Connected Apps server (not a secret). Only a Debug build
+    /// reads it, and only through `DeviceSession.serverURL()` (ADR-720); a shipped build ignores it and
+    /// removes a value an earlier build saved.
     static let connectedAppsServerURL = "connectedAppsServerURL"
     /// Ask Doddy: the user agreed that questions go to Doddy's server and Anthropic (ADR-587). Off by default.
     static let assistantConsent = "assistantConsent"
@@ -130,7 +132,6 @@ struct RootView: View {
     @State private var voiceDetent: PresentationDetent = .large
     @Environment(NoteReminderStore.self) private var noteReminders
     @Environment(\.scenePhase) private var scenePhase
-    @Environment(\.openURL) private var openURL
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverOn
@@ -144,6 +145,9 @@ struct RootView: View {
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideArt = false
     /// The Face ID cover is up (ADR-310); it stays briefly after an unlock for the door (ADR-380).
     @State private var lockCovered = false
+    /// Counts the times the Face ID lock came back; the screens under the cover are made new each time,
+    /// so no sheet state of theirs can open a screen over it (ADR-723).
+    @State private var lockEpoch = 0
     /// Settings › "Show the welcome again" (ADR-598).
     @AppStorage(PreferenceKey.welcomeReplay) private var welcomeReplay = false
     /// The welcome was finished in this run, so it doesn't show again until a replay is asked for.
@@ -195,17 +199,22 @@ struct RootView: View {
         .preferredColorScheme(colorScheme)
         // The Face ID lock (ADR-310) covers everything until iOS says yes.
         // After a real unlock the cover stays up a moment while Doddy's door opens (ADR-380).
-        .overlay { if AppLock.shared.isLocked || lockCovered { AppLockView(skip: { lockCovered = false }) } }
+        .overlay { if AppLock.shared.isLocked || lockCovered { AppLockView(skip: { lockCovered = false; lockLifted() }) } }
         .onAppear { lockCovered = AppLock.shared.isLocked }
         .onChange(of: AppLock.shared.isLocked) { _, locked in
-            guard !locked else { lockCovered = true; return }
+            guard !locked else {
+                lockCovered = true
+                lockEngaged()
+                return
+            }
             // Unlocked with a conversation from Talk in the Island running (ADR-577): its screen
             // waited for Face ID, because a full-screen cover would sit above the lock.
             if VoiceSessionController.runningConversation != nil { router.showConversationStartedElsewhere() }
-            guard lockCovered, !reduceMotion, !hideArt else { lockCovered = false; return }
+            guard lockCovered, !reduceMotion, !hideArt else { lockCovered = false; lockLifted(); return }
             Task {
                 try? await Task.sleep(for: .seconds(AppLockView.doorTime))
                 withAnimation(.easeOut(duration: 0.25)) { lockCovered = false }
+                lockLifted()
             }
         }
         .task {
@@ -264,6 +273,8 @@ struct RootView: View {
                     Task { await ServerWarmUp.shared.wake(server: server, transport: URLSessionTransport.shared) }
                 }
             }
+            // The app switcher's picture of Doddy: with the Face ID lock on, an opaque cover while he isn't in front (ADR-723).
+            if phase != .active { PrivacyCover.shared.update(sceneIsActive: false) }
             if phase == .background {
                 // What is being typed on a capture screen is on disk before iOS may end Doddy (ADR-362).
                 UnfinishedNoteStore.shared.flush()
@@ -271,7 +282,12 @@ struct RootView: View {
                 AppLock.shared.wentToBackground()
                 QuickActions.install()
             }
-            if phase == .active { AppLock.shared.cameBack() }
+            if phase == .active {
+                AppLock.shared.cameBack()
+                // Away long enough for the lock to come back: whatever was open is closed before the cover goes (ADR-723).
+                if AppLock.shared.isLocked, !lockCovered { lockEngaged() }
+                PrivacyCover.shared.update(sceneIsActive: true)
+            }
             if phase == .active { listeningIndicatorBecameActive() }
             // On later returns, only the separately opted-in listen-on-open preference applies.
             switch phase {
@@ -379,8 +395,42 @@ struct RootView: View {
     /// Text or a link shared from another app with "Save to Doddy" (ADR-311): opens the capture
     /// screen with it, as the shortcut does. Nothing is saved until Save there.
     private func pickUpSharedItem() {
-        guard let item = ShareInboxFile.take() else { return }
+        // While the Face ID lock is up the shared text stays in the inbox; it is picked up after the unlock (ADR-723).
+        guard !AppLock.shared.isLocked, let item = ShareInboxFile.take() else { return }
         ShortcutRouter.shared.saveToDoddyInvoked(text: item.text)
+    }
+
+    /// The shared-list invitation sheet's binding. Not over the Face ID cover (ADR-723): an invitation that comes
+    /// in while Doddy is locked waits for the unlock, and the sheet closing because the lock came back is not
+    /// the person declining it.
+    private var inviteSheet: Binding<SharedListsController.Invite?> {
+        Binding(
+            get: { AppLock.shared.isLocked ? nil : SharedListsController.shared.invite },
+            set: { if $0 == nil, !AppLock.shared.isLocked { SharedListsController.shared.declineInvite() } })
+    }
+
+    /// The Face ID lock came back (ADR-723). Its cover is part of this view, so a sheet or cover presented
+    /// over the app would stay above it: they are all closed, the screens under it start over, and the router
+    /// forgets what it was about to open.
+    private func lockEngaged() {
+        lockEpoch += 1
+        router.dismissForLock()
+        PresentedScreens.dismissAll()
+    }
+
+    /// The Face ID cover and its door are gone: what was asked for while it was up goes ahead now (ADR-723).
+    private func lockLifted() {
+        router.runHeldAfterUnlock()
+        pickUpSharedItem()
+        presentTranscriptIfNeeded()
+    }
+
+    /// A conversation with a card waiting for the user opens its transcript, half height (ADR-595). Not over
+    /// the Face ID cover: `lockLifted` does it after the unlock.
+    private func presentTranscriptIfNeeded() {
+        guard HomeConversation.shared.needsYou, !router.isVoicePresented, !AppLock.shared.isLocked else { return }
+        voiceDetent = .medium
+        router.isVoicePresented = true
     }
 
     private func listeningIndicatorBecameActive() {
@@ -436,7 +486,7 @@ struct RootView: View {
 
     private var tabs: some View {
         ZStack {
-            tabContent
+            tabContent.id(lockEpoch)
             // Motion v2: the one Doddy in the air (flights and fades). Under every sheet and cover.
             DoddyOverlay()
             // The opening (ADR-225) sits over the ready app and fades away to reveal it; a tap
@@ -480,9 +530,8 @@ struct RootView: View {
                 .presentationDragIndicator(.visible)
         }
         .onChange(of: HomeConversation.shared.needsYou) { _, needsYou in
-            guard needsYou, !router.isVoicePresented else { return }
-            voiceDetent = .medium
-            router.isVoicePresented = true
+            guard needsYou else { return }
+            presentTranscriptIfNeeded()
         }
         .sheet(isPresented: $router.isSetupPresented, onDismiss: { router.showWaitingDraft() }) {
             OpenDoddyWaysView(model: router.setup)
@@ -490,7 +539,7 @@ struct RootView: View {
         // The weekly tidy-up (ADR-228), from its notification or Settings.
         .sheet(isPresented: $router.isTidyUpPresented, onDismiss: { router.showWaitingDraft() }) { TidyUpView() }
         // A shared list's link (ADR-263): nothing is joined until Join.
-        .sheet(item: Binding(get: { SharedListsController.shared.invite }, set: { if $0 == nil { SharedListsController.shared.declineInvite() } })) { invite in
+        .sheet(item: inviteSheet) { invite in
             SharedListInviteView(invite: invite) { list in
                 selectedTab = .home
                 homePath = [list.id]
@@ -558,9 +607,10 @@ struct RootView: View {
             case .home: selectedTab = .home
             case .memories: selectedTab = .memories
             case .settings: selectedTab = .settings
-            // The parking widget (ADR-315): the saved spot in Maps. No spot, nothing opens.
+            // The parking widget (ADR-315): the saved spot in Maps. No spot, nothing opens. With the
+            // Face ID lock up it opens after the unlock (ADR-723).
             case .parking:
-                if let spot = ParkingStore.current(), let maps = Parking.mapsURL(spot) { openURL(maps) }
+                router.runWhenUnlocked(.openParking) { QuickActions.openParkingSpot() }
             // DODDY Capture (ADR-588): the island's Open button. Navigation only.
             case .recordings:
                 router.openRecordings()

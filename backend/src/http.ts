@@ -69,6 +69,9 @@ export function createHandler(deps: HttpDeps) {
     "GET /v1/connected-apps/google-calendar/receipts": async ({ userId }) => ({ receipts: await service.receipts(userId) }),
     "POST /v1/connected-apps/google-calendar/connect": async ({ userId, body, scenario }) => service.connect(userId, body, scenario),
     "POST /v1/connected-apps/google-calendar/complete": async ({ userId, body }) => service.complete(userId, body),
+    // The one read with no approval, on purpose (ADR-708): the Connected Apps screen's own button, with the
+    // owner's session. Not reachable by a model (its calendar tool is `read_google_calendar`, which asks
+    // first), by a guest iPhone or by a browser cookie. See `CALENDAR_LIST_EVENTS`.
     "POST /v1/connected-apps/google-calendar/events": async ({ userId, body, scenario }) => service.listEvents(userId, body, scenario),
     "POST /v1/connected-apps/google-calendar/disconnect": async ({ userId, body }) => service.disconnect(userId, body),
   };

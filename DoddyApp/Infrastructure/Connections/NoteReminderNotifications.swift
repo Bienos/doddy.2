@@ -29,10 +29,11 @@ struct SystemNoteNotifications: NoteNotificationScheduling {
         let language = NotificationLanguage.current
         let title = { (action: NoteReminderCopy.Action) in NoteReminderCopy.action(action, language) }
         let open = UNNotificationAction(identifier: openAction, title: title(.openNote), options: [.foreground])
-        let hour = UNNotificationAction(identifier: hourAction, title: title(.inAnHour), options: [])
-        let tomorrow = UNNotificationAction(identifier: tomorrowAction, title: title(.tomorrowMorning), options: [])
-        let done = UNNotificationAction(identifier: doneAction, title: title(.done), options: [])
-        let doneThisTime = UNNotificationAction(identifier: doneAction, title: title(.doneThisTime), options: [])
+        // Done, In 1 hour and Tomorrow change a reminder, so not from a locked iPhone (ADR-724).
+        let hour = UNNotificationAction(identifier: hourAction, title: title(.inAnHour), options: [.authenticationRequired])
+        let tomorrow = UNNotificationAction(identifier: tomorrowAction, title: title(.tomorrowMorning), options: [.authenticationRequired])
+        let done = UNNotificationAction(identifier: doneAction, title: title(.done), options: [.authenticationRequired])
+        let doneThisTime = UNNotificationAction(identifier: doneAction, title: title(.doneThisTime), options: [.authenticationRequired])
         let category = UNNotificationCategory(
             identifier: categoryID, actions: [open, hour, tomorrow, done], intentIdentifiers: [], options: [])
         let repeatingCategory = UNNotificationCategory(

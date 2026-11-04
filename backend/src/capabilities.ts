@@ -66,6 +66,15 @@ export function evaluateGrant(grantedScopes: readonly string[] | null): GrantVer
   return "read_only";
 }
 
+/**
+ * The one capability that runs with no approval (`confirmation: "none"`), on purpose (ADR-708). It is
+ * the Connected Apps screen's own "Tomorrow's events" button: the person taps it, the app sends it with
+ * the owner's session in the Authorization header, and the events are shown on that screen. No model
+ * is in that path. A model's calendar read is the tool `read_google_calendar` (tools/catalog.ts),
+ * which asks first like every other tool. The route also refuses a guest iPhone and a browser cookie
+ * (http.ts), and `test/ask-first-lookups.test.ts` fails if another capability is given no
+ * confirmation, so a new exemption has to be decided, not slipped in.
+ */
 export const CALENDAR_LIST_EVENTS: CapabilityDefinition = {
   id: "calendar.listEvents",
   version: 1,

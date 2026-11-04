@@ -1,3 +1,4 @@
+import type { TokenFloors } from "./auth.js";
 import type { QueuedCleanup, Store, UserErasure } from "./store.js";
 
 /**
@@ -32,6 +33,7 @@ export const KEPT_EXPLAINED = [
   "Which iPhone this server belongs to, so no one else can claim it.",
   "Counts of use per day and month (numbers only), until their period ends, so deleting can't reset a daily limit.",
   "Removals still owed at an online account's provider, until the provider confirms them.",
+  "The moment this iPhone's earlier sign-ins were cut off (a time only), so they can't be used again.",
 ] as const;
 
 export class AccountEraser {
@@ -40,6 +42,8 @@ export class AccountEraser {
       store: Store;
       removers: readonly ConnectionRemover[];
       timeoutMs: number;
+      /** Told the moment this person's earlier sign-ins are cut off, so it takes effect at once on this instance (ADR-709). */
+      floors?: TokenFloors;
       now?: () => number;
       log?: (line: Record<string, unknown>) => void;
     },
@@ -48,6 +52,8 @@ export class AccountEraser {
   async erase(userId: string): Promise<AccountErasure> {
     const now = this.deps.now?.() ?? Date.now();
     const erased = await this.deps.store.eraseUser(userId, now);
+    // The cut-off is already in the database (same transaction as the erasure); this makes it count here without waiting for the memory to refresh.
+    this.deps.floors?.remember(userId, erased.tokensValidAfter, now);
     const removed: string[] = [];
     const pending: string[] = [];
     for (const cleanup of erased.cleanups) {

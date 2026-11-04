@@ -73,11 +73,13 @@ final class ErrandsModel {
         hasLoaded = true
     }
 
-    // MARK: Hand-over (the voice tool, after the user's yes)
+    // MARK: Hand-over (the voice tool, after the user's tap)
 
     /// Creates the task on the server and approves it with the digest of exactly these words. The
     /// returned text is the tool result for the agent. Never approves twice, never retries.
     func handOver(_ draft: ErrandDraft, now: Date = Date()) async -> String {
+        // ADR-716: whoever calls this, nothing with a link in it (or any other issue) is sent to the server.
+        if let issue = draft.validationIssues().first { return VoiceToolReply.failed("The request was incomplete (\(issue.reason)).") }
         guard let backend else { return VoiceToolReply.errandNotStarted(ErrandError.errandsDisabled) }
         let preview: ErrandPreview
         do {

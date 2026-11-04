@@ -29,9 +29,20 @@ All `/v1` routes except account creation need `Authorization: Bearer <deviceToke
 - Outbox states: `queued → sending → sent | failed | unknown | cancelled`.
   - A timeout or dropped connection becomes `unknown` and is **never resent automatically**, so nobody gets a text twice.
   - A 429 or 5xx refusal is retried with backoff, at most 5 attempts.
-- Message text is erased from the database as soon as a message reaches a final state. While queued it is encrypted with `MEMORY_ENCRYPTION_KEY` when that key is set (plain text otherwise).
+- Message text is erased from the database as soon as a message reaches a final state. While queued it is encrypted with `MEMORY_ENCRYPTION_KEY`. Outside production it is plain text when the key is not set; **in production nothing is queued without the key** (ADR-706).
 - Logs carry ids and counts only. No message text, no phone numbers, no tokens.
 - A missing provider configuration returns `503 not_configured`. It never fakes success.
+
+## Abuse limits (ADR-702 to 706)
+
+Accounts are free and anonymous, so the server caps what any one address, account or number can cost. Every setting is optional with a safe default, and `.env.example` lists the names, defaults and meaning; web and worker read the same values, so set a changed one on both services.
+
+- **Accounts:** 10 an hour and 50 a UTC day per client address (IPv6 per /64), 1,000 a day for the server.
+- **New accounts** (no verified phone and younger than `NEW_ACCOUNT_HOURS`, default 24) share a small daily pool inside each feature's server cap (errands 10, leaflets 200, Messages 200), so a flood of new accounts cannot use the capacity of established ones.
+- **Errands:** per-errand research budget (40 searches, 40 fetches, 30 requests, 300,000 output tokens, 30 minutes), and no links in the words, note, title or priorities (400 `invalid_request`, field names only).
+- **Phone numbers:** only the calling codes in `PHONE_ALLOWED_COUNTRY_CODES` (Poland, the rest of the EU/EEA, the UK and Switzerland by default) can be verified, get texts or be called by "call me". Verification codes are capped per number, per address (20 a day) and per account (6 a day).
+- **Texts and calls:** 30 texts an account and 300 for the server a UTC day; 10 "call me" calls an account and 20 for the server; task calls count per account as well as per verified number, and `TASK_CALL_BLOCKED_NUMBERS` is an operator-side do-not-call list.
+- **Not covered here (dashboards, owner):** Twilio geo-permissions and Verify Fraud Guard, the ElevenLabs agent's own maximum call length and authentication, and provider spend limits. Premium-rate ranges inside an allowed country are not filtered by this server.
 
 ## Phone calls (S2)
 - **Who:** Doddy answers only verified numbers whose owner turned calls on. Unknown numbers get a polite "add this number in the app".

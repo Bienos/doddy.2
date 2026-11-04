@@ -10,6 +10,7 @@ import {
   timingSafeEqual,
   verify as verifySignature,
 } from "node:crypto";
+import { isIP } from "node:net";
 
 const APPLE_ISSUER = "https://appleid.apple.com";
 const APPLE_KEYS_URL = "https://appleid.apple.com/auth/keys";
@@ -24,6 +25,17 @@ const NONCE_TTL_SECONDS = 600;
 const MAX_BODY_BYTES = 24_000;
 const STORE_TIMEOUT_MS = 2_000;
 const STORE_PREFIX = "doddy:voice:v1:";
+const HOUR_SECONDS = 3_600;
+const DAY_SECONDS = 86_400;
+/** Voice tokens per account per UTC day, on top of the hourly limit (ADR-712). */
+export const DEFAULT_TOKENS_PER_DAY = 150;
+
+// Sign-ins per caller address (ADR-712). Counted only for sign-ins that carry a valid Apple token,
+// so junk can't use up the allowance of a shared address, and only on sign-in, never on refresh.
+const DEFAULT_SIGNINS_PER_CLIENT_HOUR = 10;
+const DEFAULT_SIGNINS_PER_CLIENT_DAY = 30;
+/** With no usable address every caller shares one bucket, so that bucket gets a higher limit. */
+const UNKNOWN_CLIENT_LIMIT_FACTOR = 10;
 
 let appleKeysCache;
 let appleKeysFetchedAt = -Infinity;
@@ -94,6 +106,13 @@ export function createVoiceAuthStore({ url, token, fetch: fetchImpl = fetch, tim
       ], [refresh, session, ttlSeconds, NONCE_TTL_SECONDS, sessionId]));
     },
 
+    /**
+     * Swaps the refresh token for a new one. The swapped-out hash stays behind as a marked record,
+     * with the same lifetime as the session, so if it is ever presented again the whole session
+     * ends (ADR-712): the token was copied, or two devices hold it. Only the latest swapped-out
+     * hash is kept; an older one is just unknown. Returns the new session record, `{ reused: true }`
+     * when a swapped-out token came back (the session is already revoked), or null.
+     */
     async rotateRefreshSession(oldHash, newHash, prior, ttlSeconds) {
       const script = `
         local old = redis.call('GET', KEYS[1])
@@ -103,11 +122,21 @@ export function createVoiceAuthStore({ url, token, fetch: fetchImpl = fetch, tim
         if not session then redis.call('DEL', KEYS[1]); return false end
         local state = cjson.decode(session)
         if state.userId ~= info.userId or state.sessionId ~= info.sessionId then return false end
+        if info.used then
+          redis.call('DEL', KEYS[2])
+          redis.call('DEL', ARGV[3] .. state.refreshHash)
+          if state.previousRefreshHash then redis.call('DEL', ARGV[3] .. state.previousRefreshHash) end
+          redis.call('SREM', KEYS[4], state.sessionId)
+          return 'reused'
+        end
         local fresh = redis.call('SET', KEYS[3], cjson.encode(info), 'EX', ARGV[1], 'NX')
         if not fresh then return false end
+        if state.previousRefreshHash then redis.call('DEL', ARGV[3] .. state.previousRefreshHash) end
+        info.used = true
+        redis.call('SET', KEYS[1], cjson.encode(info), 'EX', ARGV[1])
+        state.previousRefreshHash = ARGV[4]
         state.refreshHash = ARGV[2]
         redis.call('SET', KEYS[2], cjson.encode(state), 'EX', ARGV[1])
-        redis.call('DEL', KEYS[1])
         redis.call('EXPIRE', KEYS[4], ARGV[1])
         redis.call('EXPIRE', KEYS[5], ARGV[1])
         return cjson.encode(state)
@@ -115,8 +144,8 @@ export function createVoiceAuthStore({ url, token, fetch: fetchImpl = fetch, tim
       const result = await evalScript(script, [
         key("refresh", oldHash), key("session", prior.sessionId), key("refresh", newHash), key("user-sessions", prior.userId),
         key("apple-token", prior.userId),
-      ], [ttlSeconds, newHash]);
-      return parseJSON(result);
+      ], [ttlSeconds, newHash, `${STORE_PREFIX}refresh:`, oldHash]);
+      return result === "reused" ? { reused: true } : parseJSON(result);
     },
 
     async getRefresh(hash) {
@@ -129,32 +158,79 @@ export function createVoiceAuthStore({ url, token, fetch: fetchImpl = fetch, tim
       return typeof value === "string" ? parseJSON(value) : null;
     },
 
-    async hitLimits(userId, perUserLimit, globalLimit, nowMs) {
-      const windowSeconds = 3_600;
-      const window = Math.floor(nowMs / (windowSeconds * 1_000));
-      const ttl = windowSeconds + 60;
-      const perUserKey = key("limit-user", `${userId}:${window}`);
-      const globalKey = key("limit-global", String(window));
-      // A user already over their own limit doesn't count toward the global one, so one account
-      // can't use up the hour for everyone.
+    /**
+     * One voice token for `userId`: the account's hourly and daily limits and the service's hourly
+     * limit, checked and counted in one step. Only a token that is actually issued is counted, so a
+     * refused request never uses up the global budget (an account at its own limit can't starve
+     * the others, ADR-671) and a refusal for a full global budget never uses up the account's own
+     * allowance (ADR-712). `limit` says which one refused: user_hour, user_day or global.
+     */
+    async hitLimits(userId, perUserLimit, globalLimit, nowMs, perUserDailyLimit = DEFAULT_TOKENS_PER_DAY) {
+      if (!Number.isSafeInteger(perUserDailyLimit) || perUserDailyLimit < 1) throw new VoiceAuthStoreUnavailable();
+      const hourWindow = Math.floor(nowMs / (HOUR_SECONDS * 1_000));
+      const dayWindow = Math.floor(nowMs / (DAY_SECONDS * 1_000));
       const script = `
-        local per = redis.call('INCR', KEYS[1])
-        if per == 1 then redis.call('EXPIRE', KEYS[1], ARGV[1]) end
-        if per > tonumber(ARGV[2]) then
-          return {per, tonumber(redis.call('GET', KEYS[2]) or '0')}
+        local hour = tonumber(redis.call('GET', KEYS[1]) or '0')
+        local day = tonumber(redis.call('GET', KEYS[2]) or '0')
+        local global = tonumber(redis.call('GET', KEYS[3]) or '0')
+        local refused = 0
+        if hour >= tonumber(ARGV[3]) then refused = 1
+        elseif day >= tonumber(ARGV[4]) then refused = 2
+        elseif global >= tonumber(ARGV[5]) then refused = 3 end
+        if refused == 0 then
+          hour = redis.call('INCR', KEYS[1])
+          if hour == 1 then redis.call('EXPIRE', KEYS[1], ARGV[1]) end
+          day = redis.call('INCR', KEYS[2])
+          if day == 1 then redis.call('EXPIRE', KEYS[2], ARGV[2]) end
+          global = redis.call('INCR', KEYS[3])
+          if global == 1 then redis.call('EXPIRE', KEYS[3], ARGV[1]) end
         end
-        local global = redis.call('INCR', KEYS[2])
-        if global == 1 then redis.call('EXPIRE', KEYS[2], ARGV[1]) end
-        return {per, global}
+        return {refused, hour, day, global}
       `;
-      const counts = await evalScript(script, [perUserKey, globalKey], [ttl, perUserLimit]);
-      if (!Array.isArray(counts) || counts.length !== 2) throw new VoiceAuthStoreUnavailable();
-      const [perUserCount, globalCount] = counts;
-      const per = Number(perUserCount);
-      const global = Number(globalCount);
-      if (!Number.isSafeInteger(per) || !Number.isSafeInteger(global)) throw new VoiceAuthStoreUnavailable();
-      return { allowed: per <= perUserLimit && global <= globalLimit, perUserCount: per, globalCount: global,
-        retryAfterSeconds: Math.max(1, Math.ceil(((window + 1) * windowSeconds * 1_000 - nowMs) / 1_000)) };
+      const counts = await evalScript(script, [
+        key("limit-user", `${userId}:${hourWindow}`), key("limit-user-day", `${userId}:${dayWindow}`),
+        key("limit-global", String(hourWindow)),
+      ], [HOUR_SECONDS + 60, DAY_SECONDS + 3_600, perUserLimit, perUserDailyLimit, globalLimit]);
+      if (!Array.isArray(counts) || counts.length !== 4) throw new VoiceAuthStoreUnavailable();
+      const [refused, perUserCount, dailyCount, globalCount] = counts.map(Number);
+      if (![refused, perUserCount, dailyCount, globalCount].every(Number.isSafeInteger)) throw new VoiceAuthStoreUnavailable();
+      const limit = [null, "user_hour", "user_day", "global"][refused];
+      if (limit === undefined) throw new VoiceAuthStoreUnavailable();
+      return { allowed: refused === 0, limit, perUserCount, dailyCount, globalCount,
+        retryAfterSeconds: secondsUntilWindowEnds(nowMs, limit === "user_day" ? DAY_SECONDS : HOUR_SECONDS) };
+    },
+
+    /**
+     * One sign-in for a caller (`bucket` is a keyed hash of the address, never the address). Checked
+     * and counted in one step against the hourly and the daily limit; only a granted sign-in counts.
+     */
+    async hitSignInLimits(bucket, perHourLimit, perDayLimit, nowMs) {
+      const hourWindow = Math.floor(nowMs / (HOUR_SECONDS * 1_000));
+      const dayWindow = Math.floor(nowMs / (DAY_SECONDS * 1_000));
+      const script = `
+        local hour = tonumber(redis.call('GET', KEYS[1]) or '0')
+        local day = tonumber(redis.call('GET', KEYS[2]) or '0')
+        local refused = 0
+        if hour >= tonumber(ARGV[3]) then refused = 1
+        elseif day >= tonumber(ARGV[4]) then refused = 2 end
+        if refused == 0 then
+          hour = redis.call('INCR', KEYS[1])
+          if hour == 1 then redis.call('EXPIRE', KEYS[1], ARGV[1]) end
+          day = redis.call('INCR', KEYS[2])
+          if day == 1 then redis.call('EXPIRE', KEYS[2], ARGV[2]) end
+        end
+        return {refused, hour, day}
+      `;
+      const counts = await evalScript(script, [
+        key("limit-signin", `${bucket}:${hourWindow}`), key("limit-signin-day", `${bucket}:${dayWindow}`),
+      ], [HOUR_SECONDS + 60, DAY_SECONDS + 3_600, perHourLimit, perDayLimit]);
+      if (!Array.isArray(counts) || counts.length !== 3) throw new VoiceAuthStoreUnavailable();
+      const [refused, hourCount, dayCount] = counts.map(Number);
+      if (![refused, hourCount, dayCount].every(Number.isSafeInteger)) throw new VoiceAuthStoreUnavailable();
+      const limit = [null, "client_hour", "client_day"][refused];
+      if (limit === undefined) throw new VoiceAuthStoreUnavailable();
+      return { allowed: refused === 0, limit, hourCount, dayCount,
+        retryAfterSeconds: secondsUntilWindowEnds(nowMs, limit === "client_day" ? DAY_SECONDS : HOUR_SECONDS) };
     },
 
     async revokeSession(sessionId, userId) {
@@ -165,6 +241,7 @@ export function createVoiceAuthStore({ url, token, fetch: fetchImpl = fetch, tim
         if state.userId ~= ARGV[1] then return 0 end
         redis.call('DEL', KEYS[1])
         redis.call('DEL', KEYS[2] .. state.refreshHash)
+        if state.previousRefreshHash then redis.call('DEL', KEYS[2] .. state.previousRefreshHash) end
         redis.call('SREM', KEYS[3], state.sessionId)
         return 1
       `;
@@ -190,6 +267,7 @@ export function createVoiceAuthStore({ url, token, fetch: fetchImpl = fetch, tim
           if session then
             local state = cjson.decode(session)
             redis.call('DEL', ARGV[2] .. state.refreshHash)
+            if state.previousRefreshHash then redis.call('DEL', ARGV[2] .. state.previousRefreshHash) end
             redis.call('DEL', sessionKey)
           end
         end
@@ -244,9 +322,25 @@ export async function handleVoiceAuthRequest(request, env, deps = {}) {
         return finish(400, "invalid_request");
       }
       if (!voiceProviderConfigured(body.provider, env)) return finish(503, "server_not_configured");
+      // A bad setting stops new sign-ins only; refresh and sign-out don't read it.
+      const signIns = signInLimits(env);
+      if (!signIns || typeof store.hitSignInLimits !== "function") return finish(503, "server_not_configured");
       const claims = await (deps.verifyAppleIdentityToken ?? verifyAppleIdentityToken)(
         body.identityToken, body.rawNonce, env.APPLE_BUNDLE_ID.trim(), { fetch: deps.fetch ?? fetch, now: now() });
       if (!claims) return finish(401, "apple_sign_in_failed");
+      // One Apple ID makes one account, so what bounds how many accounts one caller can make is a
+      // limit per caller address (ADR-712). Counted here, after Apple has vouched for the token and
+      // before anything is created, so unverified requests never use up a shared address's allowance.
+      const address = clientAddress(request, env);
+      const unknownCaller = address === "unknown";
+      const callerFlag = unknownCaller ? { noClientAddress: true } : {};
+      const factor = unknownCaller ? UNKNOWN_CLIENT_LIMIT_FACTOR : 1;
+      const turn = await store.hitSignInLimits(hmac(signingKey, `client:${address}`),
+        signIns.perHour * factor, signIns.perDay * factor, now());
+      if (!turn.allowed) {
+        return finish(429, "rate_limited", undefined, { "retry-after": String(turn.retryAfterSeconds) },
+          { limit: turn.limit, ...callerFlag });
+      }
       const userId = hmac(signingKey, `apple-sub:${claims.sub}`);
       const sessionId = randomBytes(24).toString("base64url");
       const refreshToken = randomBytes(32).toString("base64url");
@@ -269,7 +363,7 @@ export async function handleVoiceAuthRequest(request, env, deps = {}) {
           // The account works without it; deleting it later just can't revoke at Apple.
         }
       }
-      return finish(200, null, sessionReply(signingKey, userId, sessionId, refreshToken, now()));
+      return finish(200, null, sessionReply(signingKey, userId, sessionId, refreshToken, now()), {}, callerFlag);
     }
 
     if (action === "refresh") {
@@ -284,6 +378,10 @@ export async function handleVoiceAuthRequest(request, env, deps = {}) {
       const nextToken = randomBytes(32).toString("base64url");
       const nextHash = sha256(nextToken);
       const rotated = await store.rotateRefreshSession(oldHash, nextHash, prior, REFRESH_TOKEN_SECONDS);
+      // A token that was already swapped for a newer one came back: the store has ended the whole
+      // session (ADR-712). The caller sees the same answer as for any other dead token; only the
+      // content-free log line says why.
+      if (rotated?.reused) return finish(401, "session_expired", undefined, {}, { reuse: true });
       if (!rotated) return finish(401, "session_expired");
       return finish(200, null, sessionReply(signingKey, prior.userId, prior.sessionId, nextToken, now()));
     }
@@ -524,6 +622,54 @@ function voiceProviderConfigured(provider, env) {
     ? typeof env.OPENAI_API_KEY === "string" && env.OPENAI_API_KEY.trim().length > 0
     : typeof env.ELEVENLABS_API_KEY === "string" && env.ELEVENLABS_API_KEY.trim().length > 0
       && typeof env.ELEVENLABS_AGENT_ID === "string" && env.ELEVENLABS_AGENT_ID.trim().length > 0;
+}
+
+/**
+ * A limit from the environment: the fallback when unset, a whole number from 1 to 10 000 when set,
+ * and null when set to anything else (so a typo fails closed instead of leaving a default in force).
+ */
+export function limitSetting(raw, fallback) {
+  if (raw === undefined || raw === null || String(raw).trim() === "") return fallback;
+  const text = String(raw).trim();
+  return /^[1-9][0-9]*$/.test(text) && Number(text) <= 10_000 ? Number(text) : null;
+}
+
+/** The sign-in limits per caller address, or null when a setting is invalid. */
+function signInLimits(env) {
+  const perHour = limitSetting(env.DODDY_SIGNINS_PER_CLIENT_HOUR, DEFAULT_SIGNINS_PER_CLIENT_HOUR);
+  const perDay = limitSetting(env.DODDY_SIGNINS_PER_CLIENT_DAY, DEFAULT_SIGNINS_PER_CLIENT_DAY);
+  return perHour === null || perDay === null ? null : { perHour, perDay };
+}
+
+/**
+ * The caller's address, taken only from the header Vercel sets itself (ADR-712). On any other host
+ * that header is whatever the caller sends, so there (or when it is missing or not an address) the
+ * answer is "unknown": one bucket shared by everyone, with a higher limit. An IPv4 address behind
+ * IPv6 (::ffff:a.b.c.d) is that IPv4 address; any other IPv6 address counts as its /64, because one
+ * network hands out 2^64 of them.
+ */
+export function clientAddress(request, env) {
+  if (typeof env?.VERCEL !== "string" || env.VERCEL.trim() === "") return "unknown";
+  const first = (request.headers.get("x-vercel-forwarded-for") ?? "").split(",")[0].trim();
+  const family = isIP(first);
+  if (family === 0) return "unknown";
+  if (family === 4) return first;
+  const mapped = /^::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/i.exec(first);
+  return mapped ? mapped[1] : ipv6Prefix64(first);
+}
+
+function ipv6Prefix64(address) {
+  const [head, tail = ""] = address.toLowerCase().split("::");
+  const first = head ? head.split(":") : [];
+  const rest = tail ? tail.split(":") : [];
+  const groups = address.includes("::") ? [...first, ...Array(Math.max(0, 8 - first.length - rest.length)).fill("0"), ...rest] : first;
+  return `${groups.slice(0, 4).map((group) => group.replace(/^0+(?=.)/, "") || "0").join(":")}::/64`;
+}
+
+/** Whole seconds until the fixed window of this length (aligned to the epoch) ends; at least 1. */
+function secondsUntilWindowEnds(nowMs, windowSeconds) {
+  const windowMs = windowSeconds * 1_000;
+  return Math.max(1, Math.ceil((windowMs - (nowMs % windowMs)) / 1_000));
 }
 
 function bearer(header) {
