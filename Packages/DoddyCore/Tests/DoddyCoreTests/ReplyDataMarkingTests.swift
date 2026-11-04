@@ -97,8 +97,6 @@ final class ReplyDataMarkingTests: XCTestCase {
         }
         assertMarked("failed: Apple Maps found no place for the search below.") { VoiceToolReply.placeNotFound($0) }
         assertMarked("not found: Apple Maps found no place for the search below.") { VoiceToolReply.leaveByNoPlace($0) }
-        assertMarked("not found: no event with the title below") { VoiceToolReply.eventNotFound($0) }
-        assertMarked("not found: no open reminder with the title below") { VoiceToolReply.reminderNotFound($0) }
         assertMarked("not found: there is no list template with the name below.") { VoiceToolReply.templateNotFound($0, templates: ListTemplates()) }
         assertMarked("not changed: Doddy couldn't use a Reminders list with the name below") { VoiceToolReply.reminderListNotPrepared($0) }
         try assertMarked("not found: there is no list with the name below.") { VoiceToolReply.listNotFound($0, lists: [try list("Shopping")]) }

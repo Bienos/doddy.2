@@ -3749,10 +3749,8 @@ final class VoiceSessionController {
         }
         let events = await devices.readEvents(in: EventChange.searchRange(draft, calendar: .current))
         switch EventChange.match(draft, in: events, calendar: .current) {
-        case .none:
-            await reply(toolCallID, VoiceToolReply.eventNotFound(draft.title))
-        case .several(let found):
-            await reply(toolCallID, VoiceToolReply.eventAmbiguous(found, calendar: .current))
+        case .none, .several:
+            await reply(toolCallID, VoiceToolReply.eventNotPrepared)
         case .one(let event):
             let place = draft.newLocation == nil ? nil : devices.eventLocation(event)
             let notes = draft.replaceNotes == nil ? nil : devices.eventNotes(event)
@@ -3787,10 +3785,8 @@ final class VoiceSessionController {
         do {
             let open = try await devices.incompleteReminders()
             switch EventChange.matchReminder(draft.title, in: open) {
-            case .none:
-                await reply(toolCallID, VoiceToolReply.reminderNotFound(draft.title))
-            case .several(let found):
-                await reply(toolCallID, VoiceToolReply.reminderAmbiguous(found))
+            case .none, .several:
+                await reply(toolCallID, VoiceToolReply.reminderNotPrepared)
             case .one(let reminder):
                 // A repeat needs a due (Reminders' rule, ADR-314).
                 if case .set? = draft.repeatChange, reminder.due == nil, draft.newDue == nil {
@@ -3965,8 +3961,7 @@ final class VoiceSessionController {
         }
         let events = await devices.readEvents(in: EventChange.searchRange(draft, calendar: .current))
         switch EventChange.match(draft, in: events, calendar: .current) {
-        case .none: await reply(toolCallID, VoiceToolReply.eventNotFound(draft.title))
-        case .several(let found): await reply(toolCallID, VoiceToolReply.eventAmbiguous(found, calendar: .current))
+        case .none, .several: await reply(toolCallID, VoiceToolReply.eventNotPrepared)
         case .one(let event): propose(.deleteEvent(toolCallID: toolCallID, event: event), toolCallID: toolCallID)
         }
     }
@@ -3980,8 +3975,7 @@ final class VoiceSessionController {
         do {
             let open = try await devices.incompleteReminders()
             switch EventChange.matchReminder(title, in: open) {
-            case .none: await reply(toolCallID, VoiceToolReply.reminderNotFound(title))
-            case .several(let found): await reply(toolCallID, VoiceToolReply.reminderAmbiguous(found))
+            case .none, .several: await reply(toolCallID, VoiceToolReply.reminderNotPrepared)
             case .one(let reminder): propose(.deleteReminder(toolCallID: toolCallID, reminder: reminder), toolCallID: toolCallID)
             }
         } catch {

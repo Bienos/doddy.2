@@ -1,6 +1,6 @@
 # Security review: controls and what was checked (4 Nov 2026)
 
-`THREAT_MODEL.md` (imported pack, left unchanged) asks for this file: evidence of controls and open risks. A code review of every component on 4 Nov 2026 led to ADR-702 to 724. **This is not a penetration test.** Nothing here has been checked on a device or against the live services, and the iPhone app files under `DoddyApp/` have not been compiled (no Xcode in the sessions that made the changes); the hosted macOS build is the first compile.
+`THREAT_MODEL.md` (imported pack, left unchanged) asks for this file: evidence of controls and open risks. A code review of every component on 4 Nov 2026 led to ADR-702 to 725. **This is not a penetration test.** Nothing here has been checked on a device or against the live services, and the iPhone app files under `DoddyApp/` have not been compiled (no Xcode in the sessions that made the changes); the hosted macOS build is the first compile.
 
 ## Controls added and how each was checked
 
