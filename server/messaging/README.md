@@ -35,7 +35,7 @@ All `/v1` routes except account creation need `Authorization: Bearer <deviceToke
 
 ## Abuse limits (ADR-702 to 706)
 
-Accounts are free and anonymous, so the server caps what any one address, account or number can cost. Every setting is optional with a safe default, and `.env.example` lists the names, defaults and meaning; web and worker read the same values, so set a changed one on both services.
+Accounts are free and anonymous, so the server caps what any one address, account or number can cost. Every setting is optional with a safe default, and `.env.example` lists the names, defaults and meaning; web and worker read the same values, so with a separate worker set a changed one on both services (the live setup is one service with the worker inside it).
 
 - **Accounts:** 10 an hour and 50 a UTC day per client address (IPv6 per /64), 1,000 a day for the server.
 - **New accounts** (no verified phone and younger than `NEW_ACCOUNT_HOURS`, default 24) share a small daily pool inside each feature's server cap (errands 10, leaflets 200, Messages 200), so a flood of new accounts cannot use the capacity of established ones.
