@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { cappedArray } from "../cappedArray.js";
 import { AppError } from "../errors.js";
 
 /**
@@ -50,7 +51,7 @@ export type NoteItem = z.output<typeof NoteItem>;
 
 /** The whole list of notes the iPhone holds now. Notes it no longer holds are deleted here too. */
 export const NotesSnapshot = z
-  .object({ items: z.array(NoteItem).max(MEMORY_MAX_NOTES) })
+  .object({ items: cappedArray(NoteItem, MEMORY_MAX_NOTES) })
   .strict()
   .refine((snapshot) => new Set(snapshot.items.map((item) => item.id)).size === snapshot.items.length, "a note appears twice");
 
@@ -63,7 +64,7 @@ export const ConversationUpload = z
     endedAt: instant,
     language: locale.optional(),
     endedBy: z.enum(ENDINGS).optional(),
-    turns: z.array(Turn).min(1).max(MEMORY_MAX_TURNS),
+    turns: cappedArray(Turn, MEMORY_MAX_TURNS, 1),
   })
   .strict()
   .refine((conversation) => Date.parse(conversation.endedAt) >= Date.parse(conversation.startedAt), "it ended before it started");

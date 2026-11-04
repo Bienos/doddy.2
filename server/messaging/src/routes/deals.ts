@@ -33,6 +33,7 @@ export const dealsRoutes = (deps: { db: Db; deals?: DealsDeps }): FastifyPluginA
     const accountId = principal(req).accountId;
     const reservation = await reserve(deps.db, accountId, {
       perAccount: deals.settings.dailyPerAccount, perServer: deals.settings.dailyPerServer,
+      newAccountPool: deals.settings.dailyForNewAccounts, newAccountHours: deals.settings.newAccountHours,
     });
     if (reservation !== "ok") {
       req.log.warn({ cap: reservation }, "deals daily cap reached");

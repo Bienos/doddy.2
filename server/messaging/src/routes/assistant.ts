@@ -35,6 +35,7 @@ export const assistantRoutes = (deps: Deps): FastifyPluginAsync => async (app) =
 
     const reservation = await reserve(deps.db, principal(req).accountId, {
       perAccount: assistant.settings.dailyPerAccount, perServer: assistant.settings.dailyPerServer,
+      newAccountPool: assistant.settings.dailyForNewAccounts, newAccountHours: assistant.settings.newAccountHours,
     });
     if (reservation !== "ok") {
       req.log.warn({ cap: reservation }, "assistant daily cap reached");

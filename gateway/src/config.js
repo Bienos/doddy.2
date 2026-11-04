@@ -13,7 +13,7 @@ import { inviteTag } from './token.js';
  * @property {number} tokenTtlSeconds
  * @property {number} providerTimeoutMs
  * @property {number} providerDeadlineMs
- * @property {{url: string, token: string} | null} sharedStore   null = per-instance memory limits (dev only)
+ * @property {{url: string, token: string} | null} sharedStore   null = per-instance memory limits (tests and local development only, ADR-713)
  * @property {number} dailyBudgetMicros       everyone, per UTC day
  * @property {number} installBudgetMicros     one install (device id), per UTC day
  * @property {number} inviteBudgetMicros      every install on one invite code, per UTC day
@@ -26,17 +26,32 @@ export const DEFAULT_DAILY_BUDGET_USD = 1;
 export const DEFAULT_INSTALL_BUDGET_USD = 0.25;
 
 /**
+ * Whether per-instance memory limits may stand in for the shared store (ADR-713). Only for tests
+ * and local development (`NODE_ENV` is `test` or `development`), or when someone says so on purpose
+ * with `GATEWAY_ALLOW_MEMORY_LIMITS=1`. Everywhere else (Render, a Vercel preview, a host that sets
+ * nothing) the daily budgets would silently become per instance and start again at every restart.
+ * `REQUIRE_SHARED_LIMITS=1` and a Vercel production deployment always win over the opt-in.
+ * @param {Record<string, string | undefined>} env
+ */
+function memoryLimitsAllowed(env) {
+  if ((env.REQUIRE_SHARED_LIMITS ?? '').trim() === '1' || (env.VERCEL_ENV ?? '').trim() === 'production') return false;
+  const nodeEnv = (env.NODE_ENV ?? '').trim().toLowerCase();
+  return nodeEnv === 'test' || nodeEnv === 'development' || (env.GATEWAY_ALLOW_MEMORY_LIMITS ?? '').trim() === '1';
+}
+
+/**
  * Shared rate-limit/budget store (ADR-124). Upstash names first, Vercel KV names as a fallback.
- * Half a configuration is an error, never a silent fallback to per-instance memory. A Vercel
- * production deployment always requires the store: per-instance budgets there would multiply the
- * daily cap by the number of warm instances (review 2026-10-11, finding 1).
+ * Half a configuration is an error, never a silent fallback to per-instance memory. The store is
+ * required by default, on every host: per-instance budgets would multiply the daily cap by the number
+ * of warm instances and reset on restart (review 2026-10-11, finding 1; ADR-713 for hosts other
+ * than Vercel production). `memoryLimitsAllowed` is the one way around it.
  * @param {Record<string, string | undefined>} env
  * @returns {{store: {url: string, token: string} | null, problems: string[], required: boolean}}
  */
 export function sharedStoreEnv(env) {
   const url = (env.UPSTASH_REDIS_REST_URL || env.KV_REST_API_URL || '').trim();
   const token = (env.UPSTASH_REDIS_REST_TOKEN || env.KV_REST_API_TOKEN || '').trim();
-  const required = (env.REQUIRE_SHARED_LIMITS ?? '').trim() === '1' || (env.VERCEL_ENV ?? '').trim() === 'production';
+  const required = !memoryLimitsAllowed(env);
   const problems = [];
   if (url && !/^https:\/\/[^\s/]+/.test(url)) problems.push('UPSTASH_REDIS_REST_URL');
   if (url && !token) problems.push('UPSTASH_REDIS_REST_TOKEN');

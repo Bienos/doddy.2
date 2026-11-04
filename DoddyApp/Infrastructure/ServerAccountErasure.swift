@@ -6,7 +6,9 @@ import Foundation
 /// receipt says; the rules are `AccountErasureOutcome` in DoddyCore, tested on Linux.
 enum ServerAccountErasure {
     static func run() async -> AccountErasureOutcome {
-        // The token is used only with the server that issued it (`BoundSessionToken`).
+        // The token is used only with the server that issued it (`BoundSessionToken`), and the address is the
+        // one `DeviceSession` allows: the built-in one in a shipped build, never one typed in Settings (ADR-720).
+        // The device ID is not rotated here: the server would then see a new phone and the owner would become a guest.
         guard let url = DeviceSession.serverURL(), KeychainSessionStore.read()?.token(for: url) != nil else { return .nothingThere }
         var result = await erase(url)
         // An expired session (tokens last 30 days): a fresh one, then once more. Deleting twice is harmless.

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
 import { CHANGE_EMAIL, CLOUD_TOOLS, evaluateToolkitGrant, TOOLKITS, TRASH_EMAIL } from "../src/tools/catalog.js";
 import { ProviderError } from "../src/errors.js";
+import { LOOKUP_FAILED } from "../src/tools/service.js";
 import { USER_A } from "./helpers.js";
 import { connect, on, type Rig, runRaw, start } from "./toolsRig.js";
 
@@ -81,7 +82,7 @@ test("reply: to Gmail's sender in Gmail's conversation, never an address from th
   // An email whose sender has no address can't be replied to; nothing is sent.
   const none = await prepare(rig, "reply_to_email", { query: "newsletter", body: "x" });
   assert.equal(none.status, 404);
-  assert.match(none.body.error.message, /Nothing was sent/);
+  assert.equal(none.body.error.message, LOOKUP_FAILED, "ADR-708: the same answer as for an email that isn't there");
 });
 
 test("forward: the card names the email from Gmail and the recipient; the message id comes from the lookup", async () => {

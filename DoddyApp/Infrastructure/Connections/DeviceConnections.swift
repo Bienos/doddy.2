@@ -43,6 +43,7 @@ final class DeviceConnections {
         case noDefaultReminderList
         case stepsNotAllowed
         case stepsTimedOut
+        case contactsSwitchedOff
 
         var errorDescription: String? {
             switch self {
@@ -50,6 +51,7 @@ final class DeviceConnections {
             case .noDefaultReminderList: "There is no list to add the reminder to."
             case .stepsNotAllowed: "Motion & Fitness isn't allowed for Doddy."
             case .stepsTimedOut: "Motion & Fitness didn't answer in time."
+            case .contactsSwitchedOff: "Contacts is switched off for Doddy."
             }
         }
     }
@@ -739,12 +741,20 @@ final class DeviceConnections {
 
     // MARK: Contacts
 
+    /// Doddy's own Contacts switch (Settings, Connections), which iOS's permission knows nothing of.
+    /// Checked here as well as by the callers, so no search of Contacts can run with it off (ADR-717).
+    private var contactsSwitchIsOn: Bool {
+        UserDefaults.standard.bool(forKey: VoiceConnection.contacts.preferenceKey)
+    }
+
     func findContacts(named name: String) throws -> [ContactMatch] {
-        try Self.matches(named: name, in: contactStore)
+        guard contactsSwitchIsOn else { throw Failure.contactsSwitchedOff }
+        return try Self.matches(named: name, in: contactStore)
     }
 
     /// The same read, off the main actor (ADR-604); see `readEvents`.
     func readContacts(named name: String) async throws -> [ContactMatch] {
+        guard contactsSwitchIsOn else { throw Failure.contactsSwitchedOff }
         let stores = Stores(events: eventStore, contacts: contactStore)
         return try await Task.detached(priority: .userInitiated) {
             try Self.matches(named: name, in: stores.contacts)

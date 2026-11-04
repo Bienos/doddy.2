@@ -11,7 +11,11 @@ public struct DataFlowState: Equatable, Sendable {
     /// Device connections switched on in Settings → Connections.
     public var connectionsOn: Set<VoiceConnection>
     public var pauseAll: Bool
-    /// A Doddy server address is set for Connected Apps and online accounts.
+    /// The app is using Doddy's server (ADR-721): it has an address for it (the built-in one; in a
+    /// development build also one typed in Settings) and has signed in there, or made the device ID
+    /// that signs in. Until then nothing has been sent. Since ADR-563 the phone signs itself in, so
+    /// this is true for an ordinary user once an online feature has been used, with no address typed.
+    /// The server is behind web search, the online accounts, Connected Apps and "Doddy on the web".
     public var doddyServerSet: Bool
     public var askDoddyOn: Bool
     public var askDoddyUsesNotes: Bool
@@ -95,7 +99,7 @@ public enum DataFlow {
         let apps = state.pauseAll ? [] : state.connectionsOn
         var voice = ["your voice", "the conversation", "your saved notes", "your list names (items only when Doddy reads or changes a list)", "your personality settings"]
         if state.rememberConversations { voice.append("your last few conversations") }
-        if state.morningCheckInOn { voice.append("today's Doddy reminders and lists with things left, when you talk through the morning check-in") }
+        if state.morningCheckInOn { voice.append("today's Doddy reminders (not those of notes you mark Private) and lists with things left, when you talk through the morning check-in") }
         if state.shareProfileWithVoice { voice.append("your introduction answers") }
         if state.learnedSharedWithVoice { voice.append("the facts and routines you confirmed under What I've learned") }
         if !apps.isEmpty { voice.append("calendar entries, reminders, contact names and birthdays (day and month) or drafts Doddy uses (\(names(apps)))") }
@@ -204,15 +208,19 @@ public enum DataFlow {
             DataFlowRow(
                 id: "tokenServer", destination: "Voice token server",
                 what: "A short-lived DODDY session credential and the selected voice provider/model. Apple sign-in is verified here to create your account; the session authorizes voice access. No voice, transcript, notes or profile details are sent to this server for token requests.",
-                when: "When you sign in or refresh your session, and when a conversation or wake-word setup requests a provider connection credential.", isActive: state.tokenServerSet,
+                when: "When you sign in or refresh your session, and when a conversation requests a provider connection credential.", isActive: state.tokenServerSet,
                 note: state.tokenServerSet ? "Provider credentials stay on DODDY's server. Your voice and any approved conversation context go directly to the selected provider." : "Voice isn't set up yet."),
+            // ADR-563: the phone signs itself in to the built-in server with a random device ID, so there is a
+            // Doddy server for every ordinary user once an online feature has been used, with no address typed
+            // (ADR-721). Before that nothing has been sent, and the row says so instead of "no server is set".
+            // ADR-575: web, news and places searches run at once, without asking, and go on to Monid.
             DataFlowRow(
-                id: "doddyServer", destination: "Your Doddy server (Google, Microsoft Outlook, Notion, Todoist via Composio)",
-                what: "What you ask for, only after you say yes: a date, a search word, or the text of a draft, email, reply or task you tap to confirm. An email you send or forward goes on to its recipient. Never your saved notes. With Read an email or Read a Notion page on, that one email or page comes back.",
-                when: "When you use Connected Apps, or Doddy uses an online-account tool you switched on.",
+                id: "doddyServer", destination: "Your Doddy server (web search; Google, Microsoft Outlook, Notion, Todoist via Composio)",
+                what: "A random device ID that Doddy made and keeps in this iPhone's Keychain; it signs this iPhone in. Then what you ask for: the words of a web, news or places search, which go at once without asking and on to Monid, the search service Doddy's server uses; a date or a search word for a look-up in one of your accounts, after you say yes or tap; and the text of a draft, email, reply or task, only after you tap its card to confirm. An email you send or forward goes on to its recipient. Never your saved notes, except the copy you choose to keep on Doddy's server (see the rows below). With Read an email or Read a Notion page on, that one email or page comes back.",
+                when: "When this iPhone signs in or renews its session (about every 30 days), when Doddy looks something up on the web or uses an online-account tool you switched on, and when you use Online accounts or Connected Apps.",
                 isActive: state.doddyServerSet,
                 note: !state.doddyServerSet
-                    ? "No Doddy server is set, so nothing goes there."
+                    ? "Nothing has been sent to Doddy's server yet. The first time you use something online (web search, an online account, Doddy on the web), this iPhone signs in there with a random device ID, and this row moves up."
                     : state.pauseAll ? "Connections are paused, so Doddy doesn't use it in conversations. The Connected Apps screen still works when you open it." : nil),
             // ADR-600: the phone vouches for a browser; the browser sees what the server already keeps.
             DataFlowRow(
@@ -221,35 +229,58 @@ public enum DataFlow {
                     + (webKept.isEmpty ? "Never your saved notes, lists, profile or conversations." : "It also sees the notes and conversations you keep on Doddy's server (see the next row). Never your lists or profile."),
                 when: "When you tap Get a sign-in code, and while that browser stays signed in (30 days at most; sign it out in Settings › Doddy on the web).",
                 isActive: state.doddyServerSet,
-                note: state.doddyServerSet ? nil : "No Doddy server is set, so no browser can sign in."),
+                note: state.doddyServerSet ? nil : "Nothing has been sent to Doddy's server yet. A sign-in code is asked for only when you tap Get a sign-in code in Settings › Doddy on the web."),
             // ADR-603: only what the person chose to keep there, as text, and only while a switch is on.
             DataFlowRow(
                 id: "webMemory", destination: "Your Doddy server, and Anthropic when you ask a question on the web (notes and conversations you keep there)",
                 what: webKept.isEmpty ? "Nothing: both switches are off." : sentence(webKept),
                 when: "Once when you turn a switch on, then whenever a note changes or a conversation ends. Claude reads the best matches only when you ask a question on the web.",
                 isActive: state.doddyServerSet && !webKept.isEmpty,
-                note: !state.doddyServerSet
-                    ? "No Doddy server is set, so nothing goes there."
-                    : webKept.isEmpty
-                        ? "Keep on Doddy's server is off in Settings › Doddy on the web, so nothing goes there."
+                note: webKept.isEmpty
+                    ? "Keep on Doddy's server is off in Settings › Doddy on the web, so nothing goes there."
+                    : !state.doddyServerSet
+                        ? "Keep on Doddy's server is on, but this iPhone hasn't signed in there yet, so nothing has been sent. It is sent once it has."
                         : "Stored encrypted; the server can read it so the web can search it. Never audio, never private notes or private conversations. Conversations are kept 1 year. Turning a switch off, or Delete everything, removes it from Doddy's server."),
             DataFlowRow(
                 id: "messagingServer", destination: "Your Doddy messaging server (Apple, Twilio, ElevenLabs, \(writer), GNews)",
                 what: sentence(messaging),
-                when: "When you turn on notifications, texts, phone calls or daily news, and while they are on.",
+                when: "When you turn on notifications, texts, phone calls or daily news, or use Ask Doddy, tasks, leaflets or watched prices (they have rows of their own), and while they are on.",
                 isActive: state.messagingServerSet,
                 note: state.messagingServerSet
                     ? "It sends notifications through Apple and texts and calls through Twilio; calls run on ElevenLabs. Daily news sends your topics and public headlines to \(writer), and your own keywords to GNews."
+                    : "No messaging server is set, so nothing goes there."),
+            // Messages to the user (POST /v1/updates, ADR-148, review of 4 Nov 2026): the app itself sends only the two
+            // test messages, on a tap (UpdatesModel.sendTest); what the other features send has its own rows. Text with
+            // Doddy (SMS_CHAT.md) is read from the server's code and from SMSChatConsent.text.
+            DataFlowRow(
+                id: "updates", destination: "Apple (notifications) and Twilio (texts), through your Doddy messaging server",
+                what: "The words of a message Doddy sends to you. The app writes one kind itself: a short test, \"Test from Doddy: notifications are working.\" or \"Test from Doddy: texts are working.\" Other notifications and texts (a finished task or call, a price you watch, the daily news) come from those features and are described in their own rows. If you also turn on Text with Doddy, a text you send to Doddy's number goes through Twilio to Doddy's server and to Anthropic, whose Claude writes one reply by text; by text Doddy can't read your notes or change anything.",
+                when: "Only when you tap Send a test notification or Send a test text in Settings › Notifications and texts. Notifications need to be on; texts need your verified number and Texts from Doddy on. Doddy answers a text only from your verified number, and only if you turned on Text with Doddy.",
+                isActive: state.messagingServerSet,
+                note: state.messagingServerSet
+                    ? "The server keeps a message's text, encrypted, only until it is sent, and caps the texts it sends per day. Apple delivers notifications and Twilio sends texts, so each sees the message it delivers. Text with Doddy is off until you turn it on."
                     : "No messaging server is set, so nothing goes there."),
             // ADR-570: a task handed to Doddy's background worker.
             DataFlowRow(
                 id: "errands", destination: "Your Doddy messaging server and Anthropic (tasks you hand over)",
                 what: "The words of a task you hand to Doddy, Doddy's one-line note on it and its language, and for a shopping task what matters most to you. Anthropic's Claude searches the web and reads pages for it, so search words made from your task go to Anthropic's search provider. For a shopping task, search words Claude writes also go to Serper (Google Shopping results), and Doddy's server opens shops' pages; your own words go to neither. Never your saved notes, lists, profile or earlier conversations.",
-                when: "Only when you say yes to handing a task over, until its result is saved on this iPhone.",
+                // ADR-716: handing a task over is tap-only, so a spoken yes no longer starts one.
+                when: "Only when you tap Yes on the card to hand a task over, until its result is saved on this iPhone.",
                 isActive: state.messagingServerSet,
                 note: state.messagingServerSet
                     ? "The server keeps the words and the result, encrypted, until the result is saved on this iPhone, then deletes them; a result never fetched is deleted after 30 days. The notification has no words from the task."
                     : "No messaging server is set, so tasks can't be handed over."),
+            // ADR-500..507 (docs/decisions/calls.md): a call Doddy places for the user, from Settings › Notifications ›
+            // Phone calls › Calls for you. Read from CallBriefDraft.requestBody, CallCasesModel and server/messaging/src/
+            // taskCalls (payload, twiml, worker, cases, writer), review of 4 Nov 2026.
+            DataFlowRow(
+                id: "callCases", destination: "Your Doddy messaging server, Twilio, ElevenLabs and Anthropic (calls Doddy places for you)",
+                what: "A call you set up in Settings › Notifications › Phone calls › Calls for you. When you prepare its card, the brief goes to the server: the name and Polish phone number of whom Doddy calls, who the call is for, the goal, the one question, and only the facts you ticked (a PESEL or an address only if you tick it as that kind). Unticked facts never leave. Nothing is dialled until you approve the card. Then the server has Twilio ring the number and ElevenLabs speak as Doddy, so ElevenLabs also hears the other person. Twilio transcribes both sides while the call runs (the server asks for Twilio's Google engine) and is told not to record it. Anthropic's Claude reads the call's transcript, with your question and goal, to write the answer card, where the server is set up for that. If you tap Take over, the server rings your own verified number. The server also gets a token so it can update the call's Live Activity (phase and times, never words).",
+                when: "When you prepare a call's card (nothing is dialled), when you approve it (the call is placed between 8:00 and 23:00 Warsaw time and lasts at most 5 minutes, plus a few seconds to say goodbye), and while it runs (this iPhone reads the live lines from the server).",
+                isActive: state.messagingServerSet,
+                note: state.messagingServerSet
+                    ? "The server keeps the brief, the live lines and the answer card encrypted. It deletes the answer and the live lines once this iPhone has saved the answer, and the brief when the case is done, each with a receipt; an answer never fetched is deleted after 7 days. It asks ElevenLabs to delete its copy of the conversation once the answer card is made. A notification says only that an answer is waiting. Calls work only once your number is verified and the server's calling line is set up; the app says when they aren't."
+                    : "No messaging server is set, so calls can't be placed."),
             // SHOPPING.md section 2: leaflets read on request; nothing that identifies the user goes to the chains
             // (Rossmann gets the item names as a search on rossmann.pl, from Doddy's server).
             DataFlowRow(
@@ -267,7 +298,8 @@ public enum DataFlow {
             DataFlowRow(
                 id: "watches", destination: "Your Doddy messaging server and the shops' pages (prices you watch)",
                 what: "For each price you ask Doddy to watch: the shop's name and page address, the product's title and the price you want. Doddy's server reads that shop's page a few times a day for 30 days, as a polite automated reader that follows the shop's rules, and sends you one notification if the price it read reaches yours. The notification has no product words. Nothing is bought, ordered or signed in. Never your saved notes, lists or profile.",
-                when: "Only when you say yes to watching a price, until it ends (30 days at most) or you stop or delete it.",
+                // A watch starts only from the card's "Yes, watch" button (WatchCard): no voice tool starts one.
+                when: "Only when you tap Yes on the card to watch a price, until it ends (30 days at most) or you stop or delete it.",
                 isActive: state.messagingServerSet && !state.pauseAll,
                 note: !state.messagingServerSet
                     ? "No messaging server is set, so prices can't be watched."
@@ -277,7 +309,7 @@ public enum DataFlow {
             DataFlowRow(
                 id: "siri", destination: "Apple (Siri)",
                 what: "What you ask Siri to look for, and the note Siri reads back with when you saved it.",
-                when: "Only when you say \"Ask Doddy what I saved\" with your iPhone unlocked.",
+                when: "Only when you say \"Ask Doddy what I saved\" with your iPhone unlocked (and Doddy unlocked, if you use the Face ID lock). Notes you mark Private are never read out.",
                 isActive: state.siriReadsNotes,
                 note: state.siriReadsNotes
                     ? "Doddy searches on this iPhone; Siri hears the request and speaks the answer as your Siri settings allow, which can include Apple's servers."
@@ -317,6 +349,8 @@ public enum DataFlow {
         }
         // ADR-570: Claude researches the tasks you hand over.
         if active.contains("errands") { parts.append("Anthropic (tasks you hand over)") }
+        // ADR-504: Claude reads a call's transcript to write its answer card.
+        if active.contains("callCases") { parts.append("Anthropic (the answer card of calls Doddy places for you)") }
         // SHOPPING.md: item names and leaflet pages, for leaflets that are only pictures.
         if active.contains("deals") { parts.append("Anthropic (leaflets you check)") }
         return parts.isEmpty ? "None" : parts.joined(separator: "; ")
@@ -335,9 +369,11 @@ public enum DataFlow {
         "inFakt": "inFakt (invoices you confirm, with your own key)",
         "placeSearch": "Apple Maps (place searches)",
         "tokenServer": "your voice token server",
-        "doddyServer": "your Doddy server (Connected Apps)",
+        "doddyServer": "your Doddy server (web search, online accounts and the web)",
         "messagingServer": "your Doddy messaging server",
         "errands": "Anthropic (tasks you hand over, through your messaging server)",
+        "callCases": "Twilio, ElevenLabs and Anthropic (calls Doddy places for you, through your messaging server)",
+        "updates": "Apple and Twilio (notifications and texts from Doddy, through your messaging server)",
         "deals": "the shops' leaflet pages and Anthropic (leaflets you check, through your messaging server)",
         "watches": "the shops' pages, read by your messaging server (prices you watch)",
         "siri": "Siri (when you ask it)",

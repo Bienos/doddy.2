@@ -301,6 +301,9 @@ final class VoiceSessionController {
     private(set) var permissionRequest: PermissionRequest? { didSet { syncIsland() } }
     /// Connections the user said Not now to in this conversation: not asked for again.
     private var declinedPermissions: Set<VoiceConnection> = []
+    /// The searches of Contacts this conversation made for a text, email or BLIK draft, before any
+    /// card: at most `ContactSearchBudget.perConversation` (ADR-717).
+    private var contactSearches = ContactSearchBudget()
     /// Each call as it came, until it is answered, so one held for the permission sheet can be
     /// handled again from the start once the user allows it.
     private var callsAsReceived: [String: (toolName: String, parameters: Data)] = [:]
@@ -620,6 +623,7 @@ final class VoiceSessionController {
         connectionNeeded = nil
         permissionRequest = nil
         declinedPermissions = []
+        contactSearches = ContactSearchBudget()
         callsAsReceived = [:]
         presentationReady = nil
         photoResults = nil
@@ -2311,7 +2315,9 @@ final class VoiceSessionController {
         case .cloud(_, let call, _, _, _):
             let name = call.name.lowercased()
             return name.contains("gmail") || name.contains("outlook") || name.contains("mail") ? .email : .onlineApp
-        case .ask, .cloudRead: return .askFirst
+        // A spoken yes answers a read only (ADR-483); an ask that needs a tap (ADR-716) says nothing of "yes".
+        case .ask(_, _, let needsTap, _, _): return needsTap ? .other : .askFirst
+        case .cloudRead: return .askFirst
         case .memory, .plan, .bulk, .undo, .parking: return .other
         }
     }
@@ -2846,10 +2852,11 @@ final class VoiceSessionController {
                 await reply(call.toolCallId, VoiceToolReply.alarmsUnreadable)
                 return
             }
-            switch AlarmMatch.match(clock: clock, label: label, in: alarms) {
-            case .none: await reply(call.toolCallId, VoiceToolReply.alarmNotFound(clock))
-            case .several(let found): await reply(call.toolCallId, VoiceToolReply.alarmAmbiguous(found))
-            case .one(let alarm): propose(.cancelAlarm(toolCallID: call.toolCallId, alarm: alarm), toolCallID: call.toolCallId)
+            // ADR-718: before the tap the agent hears nothing about the user's alarms, whether none
+            // matched or several did; the one that matched is on the card.
+            switch AlarmMatch.prepare(clock: clock, label: label, in: alarms) {
+            case .refuse(let text): await reply(call.toolCallId, text)
+            case .card(let alarm): propose(.cancelAlarm(toolCallID: call.toolCallId, alarm: alarm), toolCallID: call.toolCallId)
             }
         case .setAlarm(let draft):
             // Said now, before a card that could only fail: an older iOS, or alarms refused.
@@ -2865,32 +2872,52 @@ final class VoiceSessionController {
         case .runShortcut(let name):
             propose(.shortcut(toolCallID: call.toolCallId, name: name), toolCallID: call.toolCallId)
         case .draftMessage(let draft):
-            guard devices.access(for: .contacts) == .granted else {
+            // ADR-717: Doddy's own Contacts switch as well as iOS's permission, as for lookup_contact, and at
+            // most three searches before a card. A draft needs an address from Contacts, so with the switch off
+            // the access card asks for it.
+            switch ContactRead.decide(
+                switchOn: isOn(.contacts), iosAllows: devices.access(for: .contacts) == .granted, budget: &contactSearches) {
+            case .switchOff, .notAllowedByIOS:
                 await notConnected(call.toolCallId, .contacts)
                 return
+            case .budgetSpent:
+                await reply(call.toolCallId, VoiceToolReply.contactSearchesSpent, isError: true)
+                return
+            case .search:
+                break
             }
             do {
-                guard let match = try devices.findContacts(named: draft.recipientName).first else {
+                let found = try devices.findContacts(named: draft.recipientName)
+                // Several matches are never guessed between: unless one is exactly the name asked for, the
+                // agent hears how many and asks the user for the full name.
+                switch MessageRecipient.resolve(
+                    found.map { (name: $0.name, phoneNumbers: $0.phoneNumbers, emailAddresses: $0.emailAddresses) },
+                    query: draft.recipientName) {
+                case .nobody:
                     await reply(call.toolCallId, VoiceToolReply.contactMatches([], query: draft.recipientName))
-                    return
+                case .several(let names):
+                    await reply(call.toolCallId, VoiceToolReply.messageSeveralContacts(names, query: draft.recipientName))
+                case .contact(let name, let phoneNumbers, let emailAddresses):
+                    guard let address = draft.channel == .text ? phoneNumbers.first : emailAddresses.first else {
+                        await reply(call.toolCallId, VoiceToolReply.noAddress(name, channel: draft.channel), isError: true)
+                        return
+                    }
+                    propose(.message(toolCallID: call.toolCallId, draft: draft, address: address), toolCallID: call.toolCallId)
                 }
-                let address = draft.channel == .text ? match.phoneNumbers.first : match.emailAddresses.first
-                guard let address else {
-                    await reply(call.toolCallId, VoiceToolReply.noAddress(match.name, channel: draft.channel), isError: true)
-                    return
-                }
-                propose(.message(toolCallID: call.toolCallId, draft: draft, address: address), toolCallID: call.toolCallId)
             } catch {
                 await reply(call.toolCallId, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
             }
         case .draftBlikTransfer(let draft):
             // ADR-510: a card with the details, for the user to send in their bank app. Doddy never
-            // sends money. Contacts only adds the number, when iOS allows it; when several contacts
-            // have the name, the agent asks which one instead of the card guessing.
+            // sends money. Contacts only adds the number, when Doddy's Contacts switch is on, iOS allows
+            // it and this conversation still has a search left (ADR-717); otherwise the card shows the name
+            // as said. When several contacts have the name, the agent asks which one instead of the card
+            // guessing.
             var recipient = BlikRecipient.nameOnly
-            if devices.access(for: .contacts) == .granted,
+            if ContactRead.decide(
+                switchOn: isOn(.contacts), iosAllows: devices.access(for: .contacts) == .granted, budget: &contactSearches) == .search,
                let matches = try? devices.findContacts(named: draft.recipientName) {
-                recipient = BlikRecipient.resolve(matches.map { (name: $0.name, phoneNumbers: $0.phoneNumbers) })
+                recipient = BlikRecipient.resolve(matches.map { (name: $0.name, phoneNumbers: $0.phoneNumbers) }, query: draft.recipientName)
             }
             switch recipient {
             case .several(let names):
@@ -3010,9 +3037,10 @@ final class VoiceSessionController {
             endTranslator()
             await reply(call.toolCallId, VoiceToolReply.translatorStopped)
         case .handOverErrand(let draft):
-            // ADR-570: after the user's yes for exactly these words (the ask card above), the app
-            // creates the task on Doddy's server and approves it with the digest of those words.
-            // That one yes covers every look-up of this task; it is never approved twice.
+            // ADR-570: after the user's tap on the ask card above (a spoken yes can't start it, ADR-716),
+            // the app creates the task on Doddy's server and approves it with the digest of exactly
+            // the words and note on that card. That one tap covers every look-up of this task; it is
+            // never approved twice.
             if let issue = draft.validationIssues().first {
                 await reply(call.toolCallId, VoiceToolReply.failed(issue.reason), isError: true)
                 return
@@ -3721,10 +3749,8 @@ final class VoiceSessionController {
         }
         let events = await devices.readEvents(in: EventChange.searchRange(draft, calendar: .current))
         switch EventChange.match(draft, in: events, calendar: .current) {
-        case .none:
-            await reply(toolCallID, VoiceToolReply.eventNotFound(draft.title))
-        case .several(let found):
-            await reply(toolCallID, VoiceToolReply.eventAmbiguous(found, calendar: .current))
+        case .none, .several:
+            await reply(toolCallID, VoiceToolReply.eventNotPrepared)
         case .one(let event):
             let place = draft.newLocation == nil ? nil : devices.eventLocation(event)
             let notes = draft.replaceNotes == nil ? nil : devices.eventNotes(event)
@@ -3746,24 +3772,21 @@ final class VoiceSessionController {
         // The list the user named (ADR-302): exactly one of their Reminders lists, or nothing.
         if let name = draft.listName {
             let lists = devices.reminderLists()
-            switch ReminderDetails.matchList(name, in: lists) {
-            case .none:
-                await reply(toolCallID, VoiceToolReply.reminderListNotFound(name, lists: lists))
+            // ADR-718: none of the user's lists is named to the agent before the tap, and it isn't said
+            // whether the name matched none or several.
+            switch ReminderDetails.prepareList(name, in: lists) {
+            case .refuse(let text):
+                await reply(toolCallID, text)
                 return
-            case .several(let found):
-                await reply(toolCallID, VoiceToolReply.reminderListAmbiguous(found))
-                return
-            case .one(let list):
+            case .list(let list):
                 draft.toList = list
             }
         }
         do {
             let open = try await devices.incompleteReminders()
             switch EventChange.matchReminder(draft.title, in: open) {
-            case .none:
-                await reply(toolCallID, VoiceToolReply.reminderNotFound(draft.title))
-            case .several(let found):
-                await reply(toolCallID, VoiceToolReply.reminderAmbiguous(found))
+            case .none, .several:
+                await reply(toolCallID, VoiceToolReply.reminderNotPrepared)
             case .one(let reminder):
                 // A repeat needs a due (Reminders' rule, ADR-314).
                 if case .set? = draft.repeatChange, reminder.due == nil, draft.newDue == nil {
@@ -3938,8 +3961,7 @@ final class VoiceSessionController {
         }
         let events = await devices.readEvents(in: EventChange.searchRange(draft, calendar: .current))
         switch EventChange.match(draft, in: events, calendar: .current) {
-        case .none: await reply(toolCallID, VoiceToolReply.eventNotFound(draft.title))
-        case .several(let found): await reply(toolCallID, VoiceToolReply.eventAmbiguous(found, calendar: .current))
+        case .none, .several: await reply(toolCallID, VoiceToolReply.eventNotPrepared)
         case .one(let event): propose(.deleteEvent(toolCallID: toolCallID, event: event), toolCallID: toolCallID)
         }
     }
@@ -3953,8 +3975,7 @@ final class VoiceSessionController {
         do {
             let open = try await devices.incompleteReminders()
             switch EventChange.matchReminder(title, in: open) {
-            case .none: await reply(toolCallID, VoiceToolReply.reminderNotFound(title))
-            case .several(let found): await reply(toolCallID, VoiceToolReply.reminderAmbiguous(found))
+            case .none, .several: await reply(toolCallID, VoiceToolReply.reminderNotPrepared)
             case .one(let reminder): propose(.deleteReminder(toolCallID: toolCallID, reminder: reminder), toolCallID: toolCallID)
             }
         } catch {

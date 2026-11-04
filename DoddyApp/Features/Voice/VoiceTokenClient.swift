@@ -8,17 +8,19 @@ struct VoiceTokenClient: Sendable {
     let endpoint: URL
     /// ElevenLabs conversation token. Sends no body, exactly as before ADR-265.
     func fetchToken() async throws(VoiceTokenError) -> String {
-        let (status, data) = try await post(VoiceTokenServer.requestBody(for: .elevenLabs))
-        return try VoiceTokenServer.token(status: status, body: data).get()
+        let (status, data, retryAfter) = try await post(VoiceTokenServer.requestBody(for: .elevenLabs))
+        return try VoiceTokenServer.token(status: status, body: data, retryAfter: retryAfter).get()
     }
 
     /// OpenAI Realtime client secret for the chosen model.
     func fetchOpenAIGrant(model: OpenAIRealtimeModel) async throws(VoiceTokenError) -> OpenAIRealtimeGrant {
-        let (status, data) = try await post(VoiceTokenServer.requestBody(for: .openAIRealtime, model: model))
-        return try VoiceTokenServer.openAIGrant(status: status, body: data).get()
+        let (status, data, retryAfter) = try await post(VoiceTokenServer.requestBody(for: .openAIRealtime, model: model))
+        return try VoiceTokenServer.openAIGrant(status: status, body: data, retryAfter: retryAfter).get()
     }
 
-    private func post(_ body: Data?) async throws(VoiceTokenError) -> (Int, Data) {
+    /// The status, the body and the reply's Retry-After header, which says how long a 429 lasts (the
+    /// message reads it in minutes, hours or "tomorrow", ADR-712).
+    private func post(_ body: Data?) async throws(VoiceTokenError) -> (Int, Data, String?) {
         var request = URLRequest(url: endpoint, timeoutInterval: 15)
         request.httpMethod = "POST"
         let accessToken: String
@@ -29,6 +31,8 @@ struct VoiceTokenClient: Sendable {
             case .sessionExpired: throw .sessionExpired
             case .serverNotConfigured: throw .serverNotConfigured
             case .rejected, .badResponse: throw .badResponse
+            // Only a failed sign-in leaves this behind, and then no session is saved: a new sign-in is what's needed.
+            case .tooManySignIns: throw .sessionExpired
             }
         } catch { throw .badResponse }
         request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
@@ -51,7 +55,7 @@ struct VoiceTokenClient: Sendable {
         }
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
         if status == 401 { await VoiceAuthSession.shared.serverRejectedSession() }
-        return (status, data)
+        return (status, data, (response as? HTTPURLResponse)?.value(forHTTPHeaderField: "Retry-After"))
     }
 }
 
@@ -96,9 +100,15 @@ actor VoiceAuthAPI {
         catch { throw VoiceAuthFailure.offline }
         guard let status = (response as? HTTPURLResponse)?.statusCode else { throw VoiceAuthFailure.badResponse }
         guard (200..<300).contains(status) else {
-            if status == 401 { throw VoiceAuthFailure.sessionExpired }
-            if status == 404 || status == 500 || status == 503 { throw VoiceAuthFailure.serverNotConfigured }
-            throw VoiceAuthFailure.rejected
+            // A 429 on a sign-in is the server's limit per caller address, not Apple's token failing to
+            // verify (ADR-712); DoddyCore reads the status and the Retry-After header.
+            let retryAfter = (response as? HTTPURLResponse)?.value(forHTTPHeaderField: "Retry-After")
+            switch VoiceAuthStatus.failure(status: status, action: body["action"] as? String ?? "", retryAfter: retryAfter) {
+            case .sessionExpired: throw VoiceAuthFailure.sessionExpired
+            case .serverNotConfigured: throw VoiceAuthFailure.serverNotConfigured
+            case .tooManySignIns(let seconds): throw VoiceAuthFailure.tooManySignIns(retryAfterSeconds: seconds)
+            case .rejected: throw VoiceAuthFailure.rejected
+            }
         }
         guard let decoded = try? JSONDecoder().decode(T.self, from: data) else { throw VoiceAuthFailure.badResponse }
         return decoded

@@ -355,7 +355,7 @@ final class StaleToolCallTests: XCTestCase {
         await call.value
 
         XCTAssertEqual(link.results.map(\.id), ["now-lookup"])
-        XCTAssertEqual(link.results.first?.text, VoiceToolReply.reminderNotFound("Buy milk"))
+        XCTAssertEqual(link.results.first?.text, VoiceToolReply.reminderNotPrepared)
     }
 
     // MARK: Helpers

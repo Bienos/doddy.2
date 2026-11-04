@@ -188,6 +188,8 @@ final class VoiceAuthSession {
 
 enum VoiceAuthFailure: Error, Equatable {
     case offline, sessionExpired, serverNotConfigured, rejected, badResponse
+    /// The server limits sign-ins per caller address (ADR-712). `retryAfterSeconds` is the reply's Retry-After.
+    case tooManySignIns(retryAfterSeconds: Int?)
 
     var message: String {
         switch self {
@@ -196,6 +198,7 @@ enum VoiceAuthFailure: Error, Equatable {
         case .serverNotConfigured: "Voice isn’t set up yet. Try again later; you don’t need a code or provider key."
         case .rejected: "Apple sign-in couldn’t be verified. Try again."
         case .badResponse: "Doddy’s voice service sent an unexpected reply. Try again."
+        case .tooManySignIns(let seconds): VoiceTokenServer.signInThrottledMessage(retryAfterSeconds: seconds)
         }
     }
 }

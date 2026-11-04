@@ -13,7 +13,7 @@ import { briefSchema, checkBriefContent, type ContentRefusal } from "./brief.js"
 import type { TaskCallContext } from "./context.js";
 import { callFits } from "./hours.js";
 import {
-  ATTEMPT_VARIABLE, callerPhoneHash, canonicalJson, compilePayload, destinationHash, payloadAad, payloadDigest, previewOf,
+  ATTEMPT_VARIABLE, callerAccountHash, callerPhoneHash, canonicalJson, compilePayload, destinationHash, payloadAad, payloadDigest, previewOf,
   type CallPayload,
 } from "./payload.js";
 import { classifyDestination, type DestinationRefusal } from "./phone.js";
@@ -33,7 +33,7 @@ type Q = Pick<pg.PoolClient, "query"> | Db;
 export type Refusal =
   | { status: 400; error: "invalid_request"; fields: string[] }
   | { status: 400; error: "brief_refused"; field: string; reason: ContentRefusal | "too_long" }
-  | { status: 400; error: "destination_refused"; reason: DestinationRefusal | "own_number" | "doddy_number" }
+  | { status: 400; error: "destination_refused"; reason: DestinationRefusal | "own_number" | "doddy_number" | "blocked" }
   | { status: 400; error: "bad_time" }
   | { status: 404; error: "not_found" }
   | { status: 409; error: "no_verified_phone" | "too_many_open_cases" | "not_approvable" | "digest_mismatch" | "outside_hours"
@@ -91,6 +91,8 @@ export async function createCase(ctx: TaskCallContext, accountId: string, body: 
   if (!own) return refuse(409, "no_verified_phone");
   if (dest.e164 === own) return { refusal: { status: 400, error: "destination_refused", reason: "own_number" } as Refusal };
   if (dest.e164 === ctx.config.fromNumber) return { refusal: { status: 400, error: "destination_refused", reason: "doddy_number" } as Refusal };
+  // The operator's stop list (TASK_CALL_BLOCKED_NUMBERS, ADR-705): a callee who asked not to be called, refused before anything is built.
+  if (ctx.settings.blockedNumbers?.includes(dest.e164)) return { refusal: { status: 400, error: "destination_refused", reason: "blocked" } as Refusal };
 
   const now = ctx.now();
   const caseId = randomUUID();
@@ -217,7 +219,11 @@ export async function dialAttempt(ctx: TaskCallContext, attemptId: string): Prom
     if (!own) return gate("no_verified_phone");
     if (!dest.ok || dest.e164 !== payload.twilio.to || dest.e164 === own || dest.e164 === ctx.config.fromNumber
       || payload.twilio.from !== ctx.config.fromNumber) return gate("destination");
-    const limit = await limitReached(ctx, c, callerPhoneHash(ctx.keys, own), a.destination_hash, now);
+    // Checked again here: the list may have grown since the user approved the call (ADR-705).
+    if (ctx.settings.blockedNumbers?.includes(dest.e164)) return gate("blocked_number");
+    const callerPhone = callerPhoneHash(ctx.keys, own);
+    const callerAccount = callerAccountHash(ctx.keys, a.account_id);
+    const limit = await limitReached(ctx, c, callerPhone, callerAccount, a.destination_hash, now);
     if (limit) return gate(limit);
     // One call at a time per account (also a unique index; checked here so it is a clear refusal).
     const { rows: live } = await c.query(
@@ -232,8 +238,8 @@ export async function dialAttempt(ctx: TaskCallContext, attemptId: string): Prom
       `INSERT INTO call_cost_items (attempt_id, account_id, component, status, due_by, next_try_at)
        SELECT $1, $2, x, 'pending', $3, $4 FROM unnest($5::text[]) AS x`,
       [attemptId, a.account_id, plus(now, ms(24 * 60)), plus(now, ms(2)), ["twilio_call", "twilio_transcription", "elevenlabs_voice"]]);
-    await c.query("INSERT INTO call_dial_log (destination_hash, caller_phone_hash, dialed_at) VALUES ($1, $2, $3)",
-      [a.destination_hash, callerPhoneHash(ctx.keys, own), now]);
+    await c.query("INSERT INTO call_dial_log (destination_hash, caller_phone_hash, caller_account_hash, dialed_at) VALUES ($1, $2, $3, $4)",
+      [a.destination_hash, callerPhone, callerAccount, now]);
     return { kind: "claimed" as const, payload, accountId: a.account_id };
   });
   if (claim.kind !== "claimed") return claim;
@@ -274,19 +280,23 @@ export async function dialAttempt(ctx: TaskCallContext, attemptId: string): Prom
   return { kind: "unknown", code: outcome.code };
 }
 
-/** Which limit a new dial would break, if any. Counted from the content-free dial log. */
-async function limitReached(ctx: TaskCallContext, c: Q, caller: Buffer, destination: Buffer, now: Date): Promise<string | undefined> {
+/**
+ * Which limit a new dial would break, if any. Counted from the content-free dial log. A user is the verified number
+ * or the account: either one reaching a per-user limit stops the call, so neither a new number nor a new account
+ * (with the same number) starts the count again (ADR-705). Rows from before the account hash existed count by number only.
+ */
+async function limitReached(ctx: TaskCallContext, c: Q, caller: Buffer, account: Buffer, destination: Buffer, now: Date): Promise<string | undefined> {
   const l = ctx.settings.limits;
   const { rows } = await c.query<{ caller_hour: number; caller_day: number; dest_caller_day: number; dest_day: number; dest_recent: number; global_day: number }>(
     `SELECT
-       count(*) FILTER (WHERE caller_phone_hash = $1 AND dialed_at > $3::timestamptz - interval '1 hour')::int AS caller_hour,
-       count(*) FILTER (WHERE caller_phone_hash = $1 AND dialed_at > $3::timestamptz - interval '1 day')::int AS caller_day,
-       count(*) FILTER (WHERE caller_phone_hash = $1 AND destination_hash = $2 AND dialed_at > $3::timestamptz - interval '1 day')::int AS dest_caller_day,
+       count(*) FILTER (WHERE (caller_phone_hash = $1 OR caller_account_hash = $5) AND dialed_at > $3::timestamptz - interval '1 hour')::int AS caller_hour,
+       count(*) FILTER (WHERE (caller_phone_hash = $1 OR caller_account_hash = $5) AND dialed_at > $3::timestamptz - interval '1 day')::int AS caller_day,
+       count(*) FILTER (WHERE (caller_phone_hash = $1 OR caller_account_hash = $5) AND destination_hash = $2 AND dialed_at > $3::timestamptz - interval '1 day')::int AS dest_caller_day,
        count(*) FILTER (WHERE destination_hash = $2 AND dialed_at > $3::timestamptz - interval '1 day')::int AS dest_day,
        count(*) FILTER (WHERE destination_hash = $2 AND dialed_at > $3::timestamptz - make_interval(mins => $4))::int AS dest_recent,
        count(*)::int AS global_day
      FROM call_dial_log WHERE dialed_at > $3::timestamptz - interval '1 day'`,
-    [caller, destination, now, l.destinationGapMinutes]);
+    [caller, destination, now, l.destinationGapMinutes, account]);
   const r = rows[0]!;
   if (r.global_day >= l.globalPerDay) return "limit_global_day";
   if (r.caller_hour >= l.userPerHour) return "limit_user_hour";

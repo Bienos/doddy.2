@@ -9,7 +9,7 @@ import {
 import { verifyPin } from "../crypto.js";
 import { inTransaction } from "../db.js";
 import { searchMemories } from "../memorySearch.js";
-import { canPush, enqueue } from "../outbox.js";
+import { canPush, EncryptionNotConfigured, enqueue } from "../outbox.js";
 
 // Endpoints called by ElevenLabs during phone calls. All require the shared tool secret.
 // Tool replies are always HTTP 200 with a `status` the agent's prompt knows how to say aloud;
@@ -106,9 +106,14 @@ export const elevenLabsRoutes = (deps: Deps): FastifyPluginAsync => async (app) 
         [s.accountId, lock ? 0 : attempts, lock, minutes]);
       if (lock && deps.push && await canPush(c, s.accountId)) {
         // Tell the owner: someone may be guessing their PIN. No caller number in the text.
-        await enqueue(c, s.accountId, ["push"],
-          `Someone entered a wrong Doddy PIN ${PIN_MAX_ATTEMPTS} times on a phone call. PIN entry is locked for ${minutes >= 60 ? `${minutes / 60} h` : `${minutes} min`}. If it wasn't you, change your PIN in Doddy.`,
-          new Date(), `pin-lock:${s.accountId}:${st.locks + 1}:${Date.now()}`, { cipher: deps.cipher });
+        try {
+          await enqueue(c, s.accountId, ["push"],
+            `Someone entered a wrong Doddy PIN ${PIN_MAX_ATTEMPTS} times on a phone call. PIN entry is locked for ${minutes >= 60 ? `${minutes / 60} h` : `${minutes} min`}. If it wasn't you, change your PIN in Doddy.`,
+            new Date(), `pin-lock:${s.accountId}:${st.locks + 1}:${Date.now()}`, { cipher: deps.cipher });
+        } catch (err) {
+          // Production without MEMORY_ENCRYPTION_KEY queues no text (ADR-706). The alert is skipped; the lock above still stands.
+          if (!(err instanceof EncryptionNotConfigured)) throw err;
+        }
       }
       return lock ? { status: "locked", minutes } : { status: "wrong_pin", attemptsLeft: PIN_MAX_ATTEMPTS - attempts };
     });

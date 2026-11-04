@@ -6,6 +6,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import type { ErrandEffort } from "../config.js";
+import { budgetLeft, DEFAULT_RESEARCH_BUDGET, requestTokens, withMaxUses, type BudgetLeft, type ResearchBudget } from "../errands/budget.js";
 import {
   countToolUses, echoable, FALLBACK_BETA, languageName, RESEARCH_TOOLS,
   type ErrandResearcher, type ErrandTask, type ResearchControl, type ResearchOutcome, type RunStats, type Usage,
@@ -33,7 +34,8 @@ export type ShoppingCardReply =
 /** The two model calls, behind an interface so tests drive the loop with a fake. */
 export interface ShoppingModelApi {
   readonly model: string;
-  research(messages: ShoppingTurn[], signal: AbortSignal): Promise<ShoppingMessage>;
+  /** `left` is what the errand's research budget still allows this request (ADR-702). */
+  research(messages: ShoppingTurn[], signal: AbortSignal, left?: BudgetLeft): Promise<ShoppingMessage>;
   card(input: string, signal: AbortSignal): Promise<ShoppingCardReply>;
 }
 
@@ -46,6 +48,8 @@ export interface ShoppingTools {
   maxPageChecks?: number;
   /** Tracked links for shops the owner has a programme with (ADR-612); written into the finished result only. */
   affiliate?: Pick<AffiliateLinks, "link">;
+  /** Web searches, web fetches, requests and output tokens per errand (ADR-702). Default DEFAULT_RESEARCH_BUDGET. */
+  budget?: ResearchBudget;
 }
 
 export const SHOPPING_SYSTEM = `You are Doddy's shopping researcher. One person handed Doddy a shopping task, and you find where to buy it in Poland while they get on with their day. Nobody is waiting on the line and you can't ask them anything, so make sensible assumptions and say what they were.
@@ -114,6 +118,7 @@ function offerLine(o: RegisteredOffer, language: string) {
 
 /** Runs both phases. Never throws for model, source or network problems: they end as a failure code. */
 export async function runShopping(api: ShoppingModelApi, tools: ShoppingTools, task: ErrandTask, control: ResearchControl): Promise<ResearchOutcome> {
+  const budget = tools.budget ?? DEFAULT_RESEARCH_BUDGET;
   const now = control.now ?? (() => new Date());
   const log = control.log ?? (() => {});
   const usage = emptyUsage();
@@ -208,7 +213,16 @@ export async function runShopping(api: ShoppingModelApi, tools: ShoppingTools, t
   for (;;) {
     const stop = await before();
     if (stop) return stopped(stop);
-    const r = await guarded(control.deadline, (signal) => api.research(messages, signal));
+    // The web searches and fetches are counted over the whole errand (the code's own offer searches and page reads
+    // have their limits above); a used-up budget ends the research with the notes so far (ADR-702).
+    const room = budgetLeft(budget, {
+      requests, searches: Math.max(searches, reportedSearches), fetches: Math.max(fetches, reportedFetches), outputTokens: usage.outputTokens,
+    });
+    if ("reached" in room) {
+      log("shopping research budget reached; using its notes", { errandId: task.id, limit: room.reached, requests });
+      break;
+    }
+    const r = await guarded(control.deadline, (signal) => api.research(messages, signal, room.left));
     if ("stop" in r) return stopped(r.stop);
     if ("error" in r) {
       log("shopping request failed", { errandId: task.id, requests, error: errorCode(r.error) });
@@ -302,16 +316,19 @@ const BASIC_WEB_TOOLS = [
 
 export const supportsServerFallback = (model: string): boolean => SERVER_FALLBACK_MODELS.has(model);
 /** Haiku 5.5 is not on the documented list of dynamic-filtering models, so it gets the basic tools (ADR-611). */
-export const webToolsFor = (model: string) => (DYNAMIC_FILTERING_MODELS.has(model) ? RESEARCH_TOOLS : BASIC_WEB_TOOLS);
+export const webToolsFor = (model: string, left?: BudgetLeft, budget: ResearchBudget = DEFAULT_RESEARCH_BUDGET) =>
+  withMaxUses(DYNAMIC_FILTERING_MODELS.has(model) ? RESEARCH_TOOLS : BASIC_WEB_TOOLS, left, budget);
 
 export class AnthropicShoppingApi implements ShoppingModelApi {
   readonly model: string;
   private readonly effort: ErrandEffort;
   private readonly client: Anthropic;
+  private readonly budget: ResearchBudget;
 
-  constructor(apiKey: string, options: { model?: string; effort?: ErrandEffort; baseURL?: string } = {}) {
+  constructor(apiKey: string, options: { model?: string; effort?: ErrandEffort; baseURL?: string; budget?: ResearchBudget } = {}) {
     this.model = options.model ?? "claude-haiku-5-5";
     this.effort = options.effort ?? "medium";
+    this.budget = options.budget ?? DEFAULT_RESEARCH_BUDGET;
     this.client = new Anthropic({ apiKey, baseURL: options.baseURL, maxRetries: 2, timeout: 10 * 60_000 });
   }
 
@@ -319,16 +336,16 @@ export class AnthropicShoppingApi implements ShoppingModelApi {
     return supportsServerFallback(this.model) ? { betas: [FALLBACK_BETA], fallbacks: "default" as const } : {};
   }
 
-  async research(messages: ShoppingTurn[], signal: AbortSignal): Promise<ShoppingMessage> {
+  async research(messages: ShoppingTurn[], signal: AbortSignal, left?: BudgetLeft): Promise<ShoppingMessage> {
     const stream = this.client.beta.messages.stream({
       model: this.model,
-      max_tokens: 32000,
+      max_tokens: requestTokens(left, this.budget, 32000),
       thinking: { type: "adaptive" },
       output_config: { effort: this.effort },
       ...this.fallback,
       cache_control: { type: "ephemeral" },
       system: SHOPPING_SYSTEM,
-      tools: [...SHOPPING_TOOLS, ...webToolsFor(this.model)] as never,
+      tools: [...SHOPPING_TOOLS, ...webToolsFor(this.model, left, this.budget)] as never,
       messages: messages as never,
     }, { signal });
     return (await stream.finalMessage()) as unknown as ShoppingMessage;
@@ -360,6 +377,8 @@ export class AnthropicShoppingApi implements ShoppingModelApi {
 export interface ShoppingTiers {
   model?: string;
   effort?: ErrandEffort;
+  /** The errand research budget the real API enforces on the web tools and `max_tokens` (ADR-702). */
+  budget?: ResearchBudget;
   /** The premium model (Sonnet 5.5): used for the accounts listed in `premiumAccountIds`. There are no plans yet (ADR-611). */
   premiumModel?: string;
   premiumAccountIds?: readonly string[];
@@ -378,7 +397,7 @@ export class ShoppingErrandResearcher {
     this.premiumAccounts = new Set(options.premiumAccountIds ?? []);
     this.premiumApi = options.premiumApi
       ?? (typeof apiOrKey === "string" && options.premiumModel && this.premiumAccounts.size > 0
-        ? new AnthropicShoppingApi(apiOrKey, { model: options.premiumModel, effort: options.effort })
+        ? new AnthropicShoppingApi(apiOrKey, { model: options.premiumModel, effort: options.effort, budget: options.budget })
         : undefined);
   }
   research(task: ErrandTask, control: ResearchControl): Promise<ResearchOutcome> {

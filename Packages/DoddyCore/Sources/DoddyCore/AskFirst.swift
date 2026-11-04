@@ -4,7 +4,9 @@ import Foundation
 // ask." Before every action of every tool, reads included, Doddy says exactly what it will do and
 // waits for a yes for that one action. A task handed over (`hand_over_errand`) is that one action:
 // its single yes covers every web search and page read Doddy's server makes for that task, with no
-// limit, and nothing else (owner, 21 Oct 2026, ADR-570). Anything that changes, sends, deletes, books or shares
+// limit, and nothing else (owner, 21 Oct 2026, ADR-570). That yes is a tap since ADR-716: the task's
+// text goes to a server that opens whatever it names, so a spoken "yes" (to another question, or
+// anything the microphone heard) must not start one. Anything that changes, sends, deletes, books or shares
 // something needs a tap on a card with the exact payload: a spoken yes is not enough there,
 // because the model hears it (model-only approval is forbidden, DOD-07). No yes, a no, an unclear
 // answer or a timeout: nothing runs, and the agent is told so. Text from emails, the web or
@@ -42,7 +44,8 @@ public enum AskFirst {
         /// only after a tap, or the user's own spoken yes said after the card appeared.
         case yesFirst(AskCard)
         /// A change with no card of its own (list items, clearing the parking spot): this card
-        /// shows the exact change, and only a tap runs it.
+        /// shows the exact change, and only a tap runs it. Also a task handed over to Doddy's
+        /// server (ADR-716) and a trip's travel time, which reads where the iPhone is (ADR-718).
         case tapFirst(AskCard)
         /// The tool's own flow shows the exact payload on a card and changes something only on a
         /// tap (notes, calendar, reminders, alarms, timers, messages, shortcuts, Maps, plans).
@@ -115,8 +118,10 @@ public enum AskFirst {
         case .startTranslator, .stopTranslator:
             return .runsNow
         case .handOverErrand(let draft):
-            // Reads the web and changes nothing (ADR-570); the card shows the user's exact words.
-            return .yesFirst(ErrandAsk.handOverCard(draft))
+            // Reads the web and changes nothing on the iPhone (ADR-570), but the text goes to a server
+            // that opens what it names, and a spoken "yes" could be anything the microphone heard, so
+            // only a tap starts it (ADR-716). The card shows whose each text is, in full.
+            return .tapFirst(ErrandAsk.handOverCard(draft))
         case .checkErrands:
             return .yesFirst(ErrandAsk.checkCard)
         case .findDeals(let request):
@@ -136,9 +141,14 @@ public enum AskFirst {
                 title: "Note that Doddy couldn't do this?",
                 lines: ["Kept on this iPhone as a category only: \(category.rawValue.replacingOccurrences(of: "_", with: " "))"],
                 confirmLabel: "Note it"))
+        case .leaveBy(let request):
+            // Working out the trip reads where the iPhone is and asks Apple Maps, so nothing of it
+            // happens, and the agent hears nothing of it, until this tap; the payload card with the
+            // place Maps found and the leave time follows (ADR-718).
+            return .tapFirst(LeaveByAsk.card(request, calendar: calendar))
         case .saveMemory, .createCalendarEvent, .createReminder, .remindAboutNote, .undoLast, .setTimer, .setAlarm, .cancelAlarm,
              .openMap, .runShortcut, .draftMessage, .draftBlikTransfer, .makePresentation, .openCamera, .addIngredients, .createList, .changeCalendarEvent, .changeReminder,
-             .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders, .leaveBy, .parkingSpot(.save):
+             .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders, .parkingSpot(.save):
             return .ownPayloadCard
         case .cloudTool(let call):
             return !call.isWrite && publicLookups.contains(call.name) ? .runsNow : .serverCard(isWrite: call.isWrite)
@@ -183,7 +193,9 @@ public enum SpokenYes {
         "yes go ahead", "yes do it", "ok go ahead", "okay go ahead", "sure go ahead",
         // Polish
         "tak", "tak proszę", "tak prosze", "dobrze", "jasne", "śmiało", "smialo", "zrób to", "zrob to", "tak zrób to", "tak zrob to", "okej", "pewnie",
-        // German
+        // German. "ja" is also Polish for "I", so a stray one could pass as a yes. It stays: it is the
+        // German yes, a spoken yes answers reads only (a hand-over needs a tap since ADR-716), and a list
+        // per language is the owner's call.
         "ja", "ja bitte", "klar", "mach das", "ja mach das", "in ordnung",
         // French
         "oui", "oui vas-y", "oui vas y", "vas-y", "vas y", "d'accord", "oui s'il te plaît", "oui s'il te plait",

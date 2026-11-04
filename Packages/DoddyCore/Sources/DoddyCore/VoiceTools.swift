@@ -269,8 +269,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case findFreeTime(FreeTimeRequest)
     /// "Remind me when to leave" (ADR-335): travel time from Apple Maps, then a card.
     case leaveBy(LeaveByRequest)
-    /// A task Doddy's server researches in the background (ADR-570). One yes covers every look-up
-    /// of this task and nothing else; nothing is booked, bought or sent.
+    /// A task Doddy's server researches in the background (ADR-570). One tap (not a spoken yes,
+    /// ADR-716) covers every look-up of this task and nothing else; nothing is booked, bought or sent.
     case handOverErrand(ErrandDraft)
     /// The tasks handed over, as saved on this iPhone; `about` is which one, in the agent's words.
     case checkErrands(about: String?)

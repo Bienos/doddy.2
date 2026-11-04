@@ -217,7 +217,12 @@ export async function testApp(db: Db, extra: Partial<Deps> = {}) {
   const outbound = new FakeOutbound();
   const app = await buildApp({
     db, push, sms, verifier, outbound, cipher: testCipher, toolSecret: TOOL_SECRET, doddyPhoneNumber: "+48221234567",
-    twilioAuthToken: TWILIO_TOKEN, publicBaseUrl: BASE_URL, logger: false, ...extra,
+    twilioAuthToken: TWILIO_TOKEN, publicBaseUrl: BASE_URL, logger: false,
+    // The tests of other features make dozens of accounts from the one test address in a single database, so the
+    // daily account cap per address (50 in production, ADR-702) would be a hidden limit on how many tests a file may
+    // have. The tests of that cap pass their own `limits`.
+    limits: { accountsPerIpDay: 100_000 },
+    ...extra,
   });
   return { app, push, sms, verifier, outbound };
 }

@@ -74,25 +74,36 @@ export const ERASED_TABLES = [
   "memory_notes",
   "memory_conversations",
   "message_threads",
+  "invite_devices",
   "users",
 ] as const;
 
 /**
- * `user_id` tables erasure keeps on purpose, and why. Neither holds anything the person said or did:
+ * `user_id` tables erasure keeps on purpose, and why. None holds anything the person said or did:
  * - `cleanups`: a removal still owed at the provider (a connection id and its kind). It goes when the
  *   provider confirms; until then it is what lets the hourly sweep keep trying.
  * - `device_owner`: who this server belongs to. Clearing it would let the next caller claim it
  *   (ADR-563); the same iPhone signs in again to the same id and is still the owner.
+ * - `token_floor`: one number per person, the second before which their earlier sign-in tokens no
+ *   longer work (ADR-709). It is written by the erasure itself; deleting it would bring back the
+ *   very tokens the person just cut off. It is dropped once every token it covers has expired.
  * Usage counters (`usage`) have no `user_id` column. A person's own counters stay until their day or
  * month is pruned: counts only, and erasing must not reset a daily cap. Server-wide ones are never touched.
  */
-export const KEPT_ON_ERASE = ["cleanups", "device_owner"] as const;
+export const KEPT_ON_ERASE = ["cleanups", "device_owner", "token_floor"] as const;
 
-/** What `eraseUser` did: rows deleted per table, rows still found after (0 when complete), removals owed. */
+/** A device session token lives 30 days at most; a cut-off older than this covers no live token any more (ADR-709). */
+const TOKEN_FLOOR_KEPT_DAYS = 31;
+
+/**
+ * What `eraseUser` did: rows deleted per table, rows still found after (0 when complete), removals
+ * owed, and the second (since 1970) before which the person's earlier sign-in tokens stopped working.
+ */
 export interface UserErasure {
   deleted: Record<(typeof ERASED_TABLES)[number], number>;
   remaining: number;
   cleanups: QueuedCleanup[];
+  tokensValidAfter: number;
 }
 
 /**
@@ -193,6 +204,16 @@ export const SCHEMA_SQL = `
     slot INTEGER PRIMARY KEY CHECK (slot = 1),
     user_id TEXT NOT NULL,
     claimed_at BIGINT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS token_floor (
+    user_id TEXT PRIMARY KEY,
+    valid_after BIGINT NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS invite_devices (
+    code_id TEXT NOT NULL,
+    user_id TEXT NOT NULL,
+    first_used_at BIGINT NOT NULL,
+    PRIMARY KEY (code_id, user_id)
   );
   CREATE TABLE IF NOT EXISTS documents (
     id TEXT PRIMARY KEY,
@@ -679,20 +700,23 @@ export class Store {
    * incremented or none are. Counters live in the database, so they survive restarts.
    */
   reserveUsage(checks: readonly { counter: string; period: string; limit: number }[], units: number): Promise<boolean> {
-    return this.db.transaction(async (tx) => {
-      for (const c of checks) {
-        const row = await this.one<{ count: number }>(tx, "SELECT count FROM usage WHERE counter = $1 AND period = $2", [c.counter, c.period]);
-        if ((row?.count ?? 0) + units > c.limit) return false;
-      }
-      for (const c of checks) {
-        await tx.query(
-          `INSERT INTO usage (counter, period, count) VALUES ($1, $2, $3)
-           ON CONFLICT (counter, period) DO UPDATE SET count = usage.count + EXCLUDED.count`,
-          [c.counter, c.period, units],
-        );
-      }
-      return true;
-    });
+    return this.db.transaction((tx) => this.reserveUsageIn(tx, checks, units));
+  }
+
+  /** `reserveUsage` inside a transaction the caller already has, so it can be one step of a larger all-or-nothing one. */
+  private async reserveUsageIn(tx: Queryable, checks: readonly { counter: string; period: string; limit: number }[], units: number): Promise<boolean> {
+    for (const c of checks) {
+      const row = await this.one<{ count: number }>(tx, "SELECT count FROM usage WHERE counter = $1 AND period = $2", [c.counter, c.period]);
+      if ((row?.count ?? 0) + units > c.limit) return false;
+    }
+    for (const c of checks) {
+      await tx.query(
+        `INSERT INTO usage (counter, period, count) VALUES ($1, $2, $3)
+         ON CONFLICT (counter, period) DO UPDATE SET count = usage.count + EXCLUDED.count`,
+        [c.counter, c.period, units],
+      );
+    }
+    return true;
   }
 
   /**
@@ -748,8 +772,30 @@ export class Store {
         "SELECT connection_id, provider FROM cleanups WHERE user_id = $1 ORDER BY created_at ASC",
         [userId],
       )).rows.map((r) => ({ connectionId: r.connection_id, userId, provider: r.provider }));
-      return { deleted, remaining, cleanups };
+      // Cut off the person's earlier sign-in tokens in the same step (ADR-709): the second after this
+      // one, so every token dated up to now stops working and one dated later (a new sign-in) does not.
+      const tokensValidAfter = Math.floor(now / 1000) + 1;
+      await tx.query(
+        `INSERT INTO token_floor (user_id, valid_after) VALUES ($1, $2)
+         ON CONFLICT (user_id) DO UPDATE SET valid_after = GREATEST(token_floor.valid_after, EXCLUDED.valid_after)`,
+        [userId, tokensValidAfter],
+      );
+      return { deleted, remaining, cleanups, tokensValidAfter };
     });
+  }
+
+  // ------------------------------------------------------------ sign-in tokens (ADR-709)
+
+  /** The second (since 1970) before which this person's sign-in tokens no longer work; 0 when none was ever cut off. */
+  async tokenFloor(userId: string): Promise<number> {
+    const row = await this.one<{ valid_after: number }>(this.db, "SELECT valid_after FROM token_floor WHERE user_id = $1", [userId]);
+    return row?.valid_after ?? 0;
+  }
+
+  /** Cut-offs older than any live token. Separate from `prune` so its counts stay as they were. */
+  async pruneTokenFloors(now: number): Promise<number> {
+    const before = Math.floor(now / 1000) - TOKEN_FLOOR_KEPT_DAYS * 86_400;
+    return (await this.db.query("DELETE FROM token_floor WHERE valid_after < $1", [before])).rowCount;
   }
 
   // ------------------------------------------------------------ device owner (ADR-563)
@@ -757,11 +803,46 @@ export class Store {
   /**
    * "Only me" for the beta: the first device user to sign in claims the server; the answer is the
    * owner's user ID afterwards. One row, slot 1; a second claim never replaces the first.
+   *
+   * ADR-707: with `allowClaim` false nothing is written. The answer is the owner's user ID, or null on
+   * a server with no owner yet. The claim itself stays one atomic insert (the primary key lets exactly
+   * one concurrent caller in), and a caller learns it won from the insert's own answer.
    */
-  async claimDeviceOwner(userId: string, now: number): Promise<string> {
-    await this.db.query("INSERT INTO device_owner (slot, user_id, claimed_at) VALUES (1, $1, $2) ON CONFLICT (slot) DO NOTHING", [userId, now]);
+  async claimDeviceOwner(userId: string, now: number, allowClaim = true): Promise<string | null> {
+    if (allowClaim) {
+      const claimed = await this.db.query<{ user_id: string }>(
+        "INSERT INTO device_owner (slot, user_id, claimed_at) VALUES (1, $1, $2) ON CONFLICT (slot) DO NOTHING RETURNING user_id",
+        [userId, now],
+      );
+      if (claimed.rows[0]) return claimed.rows[0].user_id;
+    }
     const row = await this.one<{ user_id: string }>(this.db, "SELECT user_id FROM device_owner WHERE slot = 1", []);
-    return row?.user_id ?? userId;
+    return row?.user_id ?? null;
+  }
+
+  // ------------------------------------------------------------ invite codes (ADR-709)
+
+  /**
+   * One session of an invite code, all or nothing: refused when the code already signs in as many
+   * other iPhones as it may, or has made as many sessions today (UTC) as it may. An iPhone the code
+   * already signed in counts as itself, not as one more. The caps are checked and the iPhone and the
+   * day's count are written in one transaction, so parallel sessions can't get past either cap.
+   * `codeId` is derived from the code with the server's secret; the code itself is never stored.
+   */
+  useInviteCode(input: { codeId: string; userId: string; now: number; maxDevices: number; maxSessionsPerDay: number }): Promise<"ok" | "devices_full" | "day_full"> {
+    return this.db.transaction(async (tx) => {
+      const known = await this.one<{ ok: number }>(tx, "SELECT 1 AS ok FROM invite_devices WHERE code_id = $1 AND user_id = $2", [input.codeId, input.userId]);
+      if (!known) {
+        const count = await this.one<{ n: number | string }>(tx, "SELECT count(*) AS n FROM invite_devices WHERE code_id = $1", [input.codeId]);
+        if (Number(count?.n ?? 0) >= input.maxDevices) return "devices_full";
+      }
+      const day = `day:${new Date(input.now).toISOString().slice(0, 10)}`;
+      if (!(await this.reserveUsageIn(tx, [{ counter: `invite_sessions:${input.codeId}`, period: day, limit: input.maxSessionsPerDay }], 1))) return "day_full";
+      if (!known) {
+        await tx.query("INSERT INTO invite_devices (code_id, user_id, first_used_at) VALUES ($1, $2, $3) ON CONFLICT (code_id, user_id) DO NOTHING", [input.codeId, input.userId, input.now]);
+      }
+      return "ok";
+    });
   }
 
   // ------------------------------------------------------------ documents (ADR-564)
@@ -1217,6 +1298,21 @@ export class Store {
       );
       return changed.rowCount === 1;
     });
+  }
+
+  /**
+   * True when `prepare` issued this approval to this user for this tool and account, and it is unused
+   * and unexpired, whatever it is bound to. It says nothing about the arguments, only that a card was
+   * made: a write whose approval is bound to a looked-up target checks that before it looks anything up (ADR-708).
+   */
+  async approvalIssuedFor(input: { approvalId: string; userId: string; capability: string; accountId: string; now: number }): Promise<boolean> {
+    const row = await this.one<{ ok: number }>(
+      this.db,
+      `SELECT 1 AS ok FROM approvals
+       WHERE approval_id = $1 AND user_id = $2 AND capability = $3 AND account_id = $4 AND consumed_at IS NULL AND expires_at > $5`,
+      [input.approvalId, input.userId, input.capability, input.accountId, input.now],
+    );
+    return row !== null;
   }
 
   /** Records what happened after a used approval ran (ADR-322). Only the first record counts. */

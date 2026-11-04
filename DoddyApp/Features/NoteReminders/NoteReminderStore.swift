@@ -67,10 +67,14 @@ final class NoteReminderStore {
         }
         let showText = UserDefaults.standard.bool(forKey: PreferenceKey.showNoteTextInNotifications)
         let language = NotificationLanguage.current
+        // A ringing reminder's title shows on the Lock Screen too: a Private note (ADR-310) gets the title
+        // used when "Show note text in notifications" is off, never its words (ADR-722).
+        let privateNotes = PrivateNotes(stored: UserDefaults.standard.string(forKey: PrivateNotes.storageKey))
         var titles: [UUID: String] = [:]
         for reminder in reminders where ReminderRinger.wantsToRing(reminder.memoryID) {
-            let text = noteText?(reminder.memoryID) ?? ""
-            titles[reminder.memoryID] = ReminderRing.title(noteText: text, showNoteText: showText, language: language)
+            let isPrivate = privateNotes.contains(reminder.memoryID)
+            let text = isPrivate ? "" : (noteText?(reminder.memoryID) ?? "")
+            titles[reminder.memoryID] = ReminderRing.title(noteText: text, showNoteText: showText && !isPrivate, language: language)
         }
         ringing = await ReminderRinger.sync(reminders, title: { titles[$0] ?? NoteReminderCopy.title(language) })
     }
@@ -85,7 +89,22 @@ final class NoteReminderStore {
             await coordinator?.refreshContent()
             UserDefaults.standard.set(language, forKey: key)
         }
+        // Once after the update (ADR-722): a banner that was set while "Show note text in notifications" was on
+        // may hold the words of a note that is Private; they are written again without them. After this, making
+        // a note Private rewrites its own banner (`refreshContent(forMemory:)`).
+        let privateTextKey = "noteReminders.privateTextRewritten"
+        if let coordinator, !UserDefaults.standard.bool(forKey: privateTextKey) {
+            await coordinator.refreshContent()
+            UserDefaults.standard.set(true, forKey: privateTextKey)
+        }
         await coordinator?.reconcile()
+        await reload()
+    }
+
+    /// A note was made Private, or no longer is: its waiting banner and its alarm are written again with
+    /// or without its words (ADR-722).
+    func refreshContent(forMemory memoryID: UUID) async {
+        await coordinator?.refreshContent(forMemory: memoryID)
         await reload()
     }
 

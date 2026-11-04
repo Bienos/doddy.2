@@ -53,7 +53,7 @@ final class ActivityUndoTests: XCTestCase {
         XCTAssertEqual(entry(change, reply: VoiceToolReply.eventChanged(event(start: date(11, 9)), calendar: calendar), undo: nil).outcome, .done)
         XCTAssertEqual(entry(change, reply: VoiceToolReply.reminderChangeUnconfirmed, undo: nil).outcome, .notSure)
         XCTAssertEqual(entry(change, reply: VoiceToolReply.reminderChangedElsewhere, undo: nil).outcome, .notDone)
-        XCTAssertEqual(entry(change, reply: VoiceToolReply.reminderNotFound("Call mum"), undo: nil).outcome, .notDone)
+        XCTAssertEqual(entry(change, reply: VoiceToolReply.reminderNotPrepared, undo: nil).outcome, .notDone)
         XCTAssertEqual(entry(change, reply: VoiceToolReply.changeNothingNew, undo: nil).outcome, .notDone)
         XCTAssertEqual(entry(change, reply: VoiceToolReply.changeDeclined, undo: nil).outcome, .declined)
     }

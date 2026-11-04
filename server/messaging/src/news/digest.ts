@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { TextCipher } from "../crypto.js";
 import { inTransaction, type Db } from "../db.js";
 import { log } from "../log.js";
-import { enqueue, usableChannels, type Channel } from "../outbox.js";
+import { EncryptionNotConfigured, enqueue, SmsDailyLimit, usableChannels, type Channel } from "../outbox.js";
 import { catalogById } from "./catalog.js";
 import { pushBody, smsBody } from "./compose.js";
 import type { NewsItem } from "./feeds.js";
@@ -17,6 +17,8 @@ export interface NewsDeps {
   writer?: DigestWriter;
   /** Encrypts queued digest text at rest when the server has the key. */
   cipher?: TextCipher;
+  /** Texts queued per UTC day, per account and for the server (ADR-704). Default DEFAULT_ABUSE_LIMITS. */
+  smsCaps?: { perAccount: number; perServer: number };
 }
 
 export const MAX_TOPICS = 10;
@@ -87,6 +89,7 @@ export async function buildDigest(db: Db, news: NewsDeps, accountId: string, kin
     const channels = await usableChannels(db, accountId, settings.channels);
 
     const entries = picks.map((p) => ({ line: p.line, url: p.candidate.url, source: p.candidate.source }));
+    const queued: Channel[] = [];
     // One transaction: stories count as sent only if the digest was really kept and queued.
     await inTransaction(db, async (c) => {
       for (const [i, p] of picks.entries()) {
@@ -100,10 +103,18 @@ export async function buildDigest(db: Db, news: NewsDeps, accountId: string, kin
       }
       for (const ch of channels) {
         const body = ch === "push" ? pushBody(entries, settings.language) : smsBody(entries, settings.language);
-        await enqueue(c, accountId, [ch], body, now, `news:${digestId}`, { cipher: news.cipher });
+        try {
+          await enqueue(c, accountId, [ch], body, now, `news:${digestId}`, { cipher: news.cipher, smsCaps: news.smsCaps });
+          queued.push(ch);
+        } catch (err) {
+          // A channel that can't take the digest now (the day's cap on texts, ADR-704; production without the
+          // encryption key, ADR-706) is skipped. The digest is still kept for the app, like one with no channel.
+          if (!(err instanceof SmsDailyLimit || err instanceof EncryptionNotConfigured)) throw err;
+          log("news digest channel skipped", { channel: ch, reason: err instanceof SmsDailyLimit ? "daily_limit" : "not_configured" });
+        }
       }
     });
-    if (channels.length === 0) {
+    if (queued.length === 0) {
       // Kept for the app. no_channel only when the user chose a channel that can't be used now.
       return finish({ status: "ready", aiWritten, errorCode: settings.channels.length > 0 ? "no_channel" : undefined });
     }

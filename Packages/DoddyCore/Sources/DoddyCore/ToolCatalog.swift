@@ -16,7 +16,8 @@ public struct ToolDescriptor: Equatable, Sendable {
         case localChange
         /// Changes something in an online account, through Doddy's server.
         case accountWrite
-        /// Opens another app with something filled in; the user finishes there.
+        /// Opens another app with something filled in; the user finishes there. Also a task
+        /// handed to Doddy's server, which works on it and keeps the result in the app (ADR-716).
         case handoff
         /// Changes the conversation itself (translator mode, the plan card).
         case session
@@ -142,9 +143,10 @@ public enum ToolCatalog {
         .init(VoiceToolName.makePresentation, .handoff, .card),
         // Doddy's camera opens on the tap; a kept photo becomes a note the user saves (ADR-569).
         .init(VoiceToolName.openCamera, .handoff, .card),
-        // A task handed over (ADR-570): web research on Doddy's server that changes nothing, so a
-        // spoken yes or a tap starts it; one yes covers every look-up of that task.
-        .init(VoiceToolName.handOverErrand, .lookup, .askFirst),
+        // A task handed over (ADR-570): web research on Doddy's server that changes nothing on the
+        // iPhone; one tap covers every look-up of that task. A tap and not a spoken yes (ADR-716):
+        // its text goes to a server that opens what it names. Checking what it found is a read.
+        .init(VoiceToolName.handOverErrand, .handoff, .card),
         .init(VoiceToolName.checkErrands, .lookup, .askFirst),
         // This week's leaflets, read on Doddy's server (SHOPPING.md): public data, nothing
         // changes; it asks first until the owner decides whether it joins the public look-ups.

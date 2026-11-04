@@ -147,14 +147,17 @@ export class UsageLimiter {
     if (!ok) throw new AppError("quota_exceeded");
   }
 
-  /** One Claude run (ADR-564, Doddy's Anthropic key): per-user and service-wide daily caps. */
-  async reserveClaude(userId: string, now: number): Promise<void> {
+  /**
+   * Claude runs (ADR-564, Doddy's Anthropic key): per-user and service-wide daily caps. `units` is 1 for a
+   * quick answer; a document counts as more (ADR-710), because it can take up to nine Anthropic calls.
+   */
+  async reserveClaude(userId: string, now: number, units = 1): Promise<void> {
     const ok = await this.store.reserveUsage(
       [
         { counter: `user:${userId}:claude`, period: `day:${day(now)}`, limit: this.limits.userDailyClaude },
         { counter: "service:claude", period: `day:${day(now)}`, limit: this.limits.serviceDailyClaude },
       ],
-      1,
+      units,
     );
     if (!ok) throw new AppError("quota_exceeded");
   }

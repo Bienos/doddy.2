@@ -90,9 +90,9 @@ extension VoiceTokenServer {
     /// Reply `{"token": "ek_…", "provider": "openai", "model": "…"}`. A server from before
     /// ADR-265 ignores the body and returns an ElevenLabs token without `provider`; that is
     /// refused here rather than sent to OpenAI.
-    public static func openAIGrant(status: Int, body: Data) -> Result<OpenAIRealtimeGrant, VoiceTokenError> {
+    public static func openAIGrant(status: Int, body: Data, retryAfter: String? = nil) -> Result<OpenAIRealtimeGrant, VoiceTokenError> {
         guard status == 200 else {
-            if case .failure(let error) = token(status: status, body: body) { return .failure(error) }
+            if case .failure(let error) = token(status: status, body: body, retryAfter: retryAfter) { return .failure(error) }
             return .failure(.serverProblem(status: status))
         }
         guard let json = try? JSONSerialization.jsonObject(with: body) as? [String: Any],

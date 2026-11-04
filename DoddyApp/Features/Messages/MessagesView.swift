@@ -851,7 +851,8 @@ private struct MessageBubble: View {
             // The tail sticks out 5 pt; every bubble of a run keeps that room so they line up.
             .padding(fromUser ? .trailing : .leading, 6)
             .contextMenu {
-                Button("Copy", systemImage: "doc.on.doc") { UIPasteboard.general.string = text }
+                // This iPhone only, and gone from the clipboard after two minutes, as a note's copy is (ADR-724).
+                Button("Copy", systemImage: "doc.on.doc") { NoteClipboard.copy(text) }
             }
     }
 

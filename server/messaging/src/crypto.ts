@@ -7,6 +7,10 @@ export function sha256(value: string): Buffer {
 
 const scryptAsync = promisify(scrypt) as (pw: string, salt: Buffer, len: number, opts: object) => Promise<Buffer>;
 
+const IV_BYTES = 12;
+/** The tag is always 16 bytes (ADR-706): Node would otherwise accept a tag of 4, 8 or 12 bytes, which is far easier to forge. */
+const TAG_BYTES = 16;
+
 /**
  * AES-256-GCM for memory text stored on the server. The associated data binds each
  * ciphertext to its account and row, so a row copied to another account fails to decrypt.
@@ -24,18 +28,20 @@ export class TextCipher {
   }
 
   encrypt(plaintext: string, aad: string): Buffer {
-    const iv = randomBytes(12);
-    const cipher = createCipheriv("aes-256-gcm", this.key, iv);
+    const iv = randomBytes(IV_BYTES);
+    const cipher = createCipheriv("aes-256-gcm", this.key, iv, { authTagLength: TAG_BYTES });
     cipher.setAAD(Buffer.from(aad));
     const body = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()]);
     return Buffer.concat([iv, cipher.getAuthTag(), body]);
   }
 
   decrypt(blob: Buffer, aad: string): string {
-    const decipher = createDecipheriv("aes-256-gcm", this.key, blob.subarray(0, 12));
+    // A blob too short to hold the IV and the whole tag is refused before any key is used (ADR-706).
+    if (blob.length < IV_BYTES + TAG_BYTES) throw new Error("ciphertext too short");
+    const decipher = createDecipheriv("aes-256-gcm", this.key, blob.subarray(0, IV_BYTES), { authTagLength: TAG_BYTES });
     decipher.setAAD(Buffer.from(aad));
-    decipher.setAuthTag(blob.subarray(12, 28));
-    return Buffer.concat([decipher.update(blob.subarray(28)), decipher.final()]).toString("utf8");
+    decipher.setAuthTag(blob.subarray(IV_BYTES, IV_BYTES + TAG_BYTES));
+    return Buffer.concat([decipher.update(blob.subarray(IV_BYTES + TAG_BYTES)), decipher.final()]).toString("utf8");
   }
 
   /** A separate 32-byte key for one purpose (HKDF-SHA256), so no key is used for two jobs. */
@@ -46,6 +52,15 @@ export class TextCipher {
 
 export function hmacSha256(key: Buffer, value: string | Buffer): Buffer {
   return createHmac("sha256", key).update(value).digest();
+}
+
+/**
+ * HMAC-SHA256 under a server secret when there is one, else a plain SHA-256 (ADR-705). Used for values kept only to
+ * be counted (a phone number, a client address): an IPv4 address or a phone number has too few possible values for
+ * a bare hash to protect it, so the secret matters whenever MEMORY_ENCRYPTION_KEY is set.
+ */
+export function keyedDigest(secret: Buffer | undefined, value: string): Buffer {
+  return secret ? hmacSha256(secret, value) : sha256(value);
 }
 
 /** Constant-time comparison of two byte strings of any length. */

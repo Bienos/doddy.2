@@ -104,6 +104,21 @@ public enum ReminderDetails {
         }
     }
 
+    /// What the app does with "move it to the list …" before the user has tapped anything (ADR-718):
+    /// use the one list that matched, or answer the agent with the same words whether none matched or
+    /// several did. None of the user's lists is named to the agent.
+    public enum ListPreparation: Equatable, Sendable {
+        case list(ReminderListRef)
+        case refuse(String)
+    }
+
+    public static func prepareList(_ name: String, in lists: [ReminderListRef]) -> ListPreparation {
+        switch matchList(name, in: lists) {
+        case .one(let list): .list(list)
+        case .none, .several: .refuse(VoiceToolReply.reminderListNotPrepared(name))
+        }
+    }
+
     /// True when the reminder read back shows every change (and the due, when one was asked for).
     public static func confirms(_ back: ReminderSnapshot, notes: String?, change: ReminderDetailsChange, newDue: ReminderDue?) -> Bool {
         guard !back.isCompleted else { return false }
@@ -176,19 +191,12 @@ extension VoiceToolReply {
         return text + ". Checked in Reminders.\n" + ToolData.block([quoted("Title", title)] + ReminderDetails.summaryData(change))
     }
 
-    /// The name asked for (the agent's words) and the user's Reminders lists follow as data.
-    public static func reminderListNotFound(_ name: String, lists: [ReminderListRef]) -> String {
-        let asked = quoted("Asked for", name)
-        guard !lists.isEmpty else {
-            return "not found: no Reminders list with the name below. The user has no lists. Nothing changed; ask which one.\n"
-                + ToolData.block([asked])
-        }
-        return "not found: no Reminders list with the name below. Nothing changed; ask which one. The name asked for, then the user's lists:\n"
-            + ToolData.block([asked] + lists.map { "- \"\(ToolData.clean($0.title))\"" })
-    }
-
-    public static func reminderListAmbiguous(_ lists: [ReminderListRef]) -> String {
-        "not changed: more than one Reminders list has that name. Nothing changed; ask the user to rename one in Reminders. The lists:\n"
-            + ToolData.block(lists.map { "- \"\(ToolData.clean($0.title))\"" })
+    /// ADR-718: one answer for "no Reminders list has that name" and "several do". It is said before
+    /// the user taps anything, so it names none of the user's lists and doesn't say whether one
+    /// exists. The name asked for is the agent's own word, so it follows as data.
+    public static func reminderListNotPrepared(_ name: String) -> String {
+        "not changed: Doddy couldn't use a Reminders list with the name below, so no card was shown. Nothing changed. "
+            + "Ask the user for the list's exact name, then try once more.\n"
+            + ToolData.block([quoted("Asked for", name)])
     }
 }

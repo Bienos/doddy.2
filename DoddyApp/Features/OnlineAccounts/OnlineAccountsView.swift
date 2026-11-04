@@ -1,19 +1,19 @@
 import DoddyCore
 import SwiftUI
 
-/// Builds the model for Doddy's server (built in, or Settings' development address). The phone signs
-/// itself in first (ADR-563). Without a server or a session the screen says online accounts aren't
-/// set up; it never shows invented connections.
+/// Builds the model for Doddy's server: the address `DeviceSession.serverURL()` gives (the one built in; a
+/// Debug build may use the development address, ADR-720). The phone signs itself in first (ADR-563).
+/// Without a server or a session the screen says online accounts aren't ready; it never shows invented connections.
 struct OnlineAccountsScreen: View {
-    @AppStorage(PreferenceKey.connectedAppsServerURL) private var serverURL = ""
     @State private var signedIn = false
 
     var body: some View {
+        let server = DeviceSession.serverURL()
         OnlineAccountsView(
             model: OnlineAccountsModel(client: OnlineAccountsClientFactory.make(), authenticator: SystemWebAuthenticator()))
-            .id("\(serverURL)|\(signedIn)")
-            .task(id: serverURL) {
-                if let url = DeviceSession.serverURL() { signedIn = await DeviceSession.ensure(server: url) }
+            .id("\(server?.absoluteString ?? "")|\(signedIn)")
+            .task(id: server) {
+                if let server { signedIn = await DeviceSession.ensure(server: server) }
             }
     }
 }
@@ -42,7 +42,7 @@ struct OnlineAccountsView: View {
             switch model.load {
             case .notConfigured:
                 Section {
-                    Text("Online accounts need a Doddy server. Set its address and a session token in Settings › Connected Apps server.")
+                    notConfiguredText
                         .accessibilityIdentifier("onlineAccounts.notConfigured")
                 }
             case .loading:
@@ -114,6 +114,17 @@ struct OnlineAccountsView: View {
             Text("Doddy switches off every \(toolkit.title) tool right away and asks \(toolkit.title) to remove its access. Nothing you saved in Doddy is deleted.")
         }
         .foregroundStyle(Theme.ink)
+    }
+
+    /// Why there is nothing to show yet. A shipped build has no server field in Settings (ADR-720), so it never
+    /// tells the person to type an address; the Debug build keeps the sentence that names the field.
+    @ViewBuilder
+    private var notConfiguredText: some View {
+        #if DEBUG
+        Text("Online accounts need a Doddy server. Set its address and a session token in Settings › Connected Apps server.")
+        #else
+        Text("Signing in to Doddy's server isn't ready yet. Try again in a moment.")
+        #endif
     }
 
     private func connectExplanation(_ toolkit: ToolkitView) -> String {

@@ -12,7 +12,7 @@ import type { AssistantDeps } from "./assistant/deps.js";
 import { LIMITS } from "./assistant/request.js";
 import { addTokens, reserve } from "./assistant/usage.js";
 import type { TextCipher } from "./crypto.js";
-import { enqueue, IdempotencyConflict } from "./outbox.js";
+import { enqueue, IdempotencyConflict, SmsDailyLimit } from "./outbox.js";
 
 /** Longest reply sent, in characters. Polish letters make a text UCS-2 (67 per part), so 600 is at most 9 parts. */
 export const SMS_REPLY_MAX = 600;
@@ -32,6 +32,8 @@ export interface SmsChatDeps {
   cipher?: TextCipher;
   assistant?: AssistantDeps;
   log: (msg: string, extra?: object) => void;
+  /** Texts queued per UTC day, per account and for the server (ADR-704). Default DEFAULT_ABUSE_LIMITS. */
+  smsCaps?: { perAccount: number; perServer: number };
 }
 
 const MESSAGE_SID = /^(SM|MM)[0-9a-fA-F]{32}$/;
@@ -66,8 +68,13 @@ export async function handleSmsChat(deps: SmsChatDeps, from: string, body: strin
   if ((seen.rowCount ?? 0) > 0) return "duplicate";
   // Two deliveries of the same webhook at once can both get here; the key lets only the first reply out.
   const send = async (text: string, idempotencyKey = key) => {
-    try { await enqueue(db, accountId, ["sms"], text, new Date(), idempotencyKey, { cipher: deps.cipher }); } catch (err) {
-      if (!(err instanceof IdempotencyConflict)) throw err;
+    try { await enqueue(db, accountId, ["sms"], text, new Date(), idempotencyKey, { cipher: deps.cipher, smsCaps: deps.smsCaps }); } catch (err) {
+      if (err instanceof SmsDailyLimit) {
+        // The day's cap on texts is reached (ADR-704): no reply goes out, and the webhook still answers normally.
+        log("sms chat reply not queued; daily text cap reached", { accountId, scope: err.scope });
+      } else if (!(err instanceof IdempotencyConflict)) {
+        throw err;
+      }
     }
   };
   // "Off" and "limit" are said once a (UTC) day, the day the cap counts in, not once per text:
@@ -84,6 +91,7 @@ export async function handleSmsChat(deps: SmsChatDeps, from: string, body: strin
 
   const reservation = await reserve(db, accountId, {
     perAccount: assistant.settings.dailyPerAccount, perServer: assistant.settings.dailyPerServer,
+    newAccountPool: assistant.settings.dailyForNewAccounts, newAccountHours: assistant.settings.newAccountHours,
   });
   if (reservation !== "ok") {
     await send(SMS_CHAT_COPY.limit, `sms-chat-limit:${today}`);

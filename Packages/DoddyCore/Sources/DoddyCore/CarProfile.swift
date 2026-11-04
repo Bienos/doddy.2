@@ -25,11 +25,14 @@ public enum CarProfile {
         case .noteCapabilityGap:
             // Bookkeeping on the iPhone (ADR-440): one category, none of the user's data, nothing to undo.
             return .run
-        case .handOverErrand, .checkErrands, .findDeals:
-            // A task handed over is web research on Doddy's server and changes nothing (ADR-570);
-            // its ask is answered by voice like any other look-up. So is reading this week's
-            // leaflets (SHOPPING.md).
+        case .checkErrands, .findDeals:
+            // Reading what a task found, and this week's leaflets (SHOPPING.md), change nothing: the
+            // ask is answered by voice like any other look-up.
             return .run
+        case .handOverErrand:
+            // Web research on Doddy's server changes nothing (ADR-570), but starting it takes a tap on
+            // its card, not a spoken yes (ADR-716), so it waits until the user isn't driving.
+            return .refuse(reason: "This needs a tap on a card on the iPhone, so it waits until the user isn't driving.")
         case .parkingSpot(let action):
             // Finding the car is a look-up; saving or clearing the spot waits until parked.
             if case .find = action { return .run }

@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import type { Deps } from "../app.js";
+import { abuseLimits } from "../config.js";
 import { inTransaction } from "../db.js";
 import { cancelQueuedSms } from "../outbox.js";
 import { isValidTwilioSignature } from "../providers/twilio.js";
@@ -13,6 +14,7 @@ const str = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) 
 
 export const twilioWebhookRoutes = (deps: Deps): FastifyPluginAsync => async (app) => {
   const { db } = deps;
+  const limits = abuseLimits(deps.limits);
   const smsChatLog = deps.smsChatLog ?? ((msg: string, extra: object = {}) => app.log.info(extra, msg));
 
   /** Rejects anything not signed by Twilio. Returns the form fields when valid. */
@@ -51,7 +53,7 @@ export const twilioWebhookRoutes = (deps: Deps): FastifyPluginAsync => async (ap
         "UPDATE phone_numbers SET sms_opted_out_at = NULL, updated_at = now() WHERE e164 = $1", [from]);
     } else if (kind === "other") {
       // Twilio waits at most 15 s for this answer and a model call can take longer, so it runs after.
-      const done = handleSmsChat({ db, cipher: deps.cipher, assistant: deps.assistant, log: smsChatLog }, from, str(form.Body), str(form.MessageSid))
+      const done = handleSmsChat({ db, cipher: deps.cipher, assistant: deps.assistant, log: smsChatLog, smsCaps: { perAccount: limits.smsPerAccountDay, perServer: limits.smsPerServerDay } }, from, str(form.Body), str(form.MessageSid))
         .catch((err: unknown): SmsChatOutcome => {
           smsChatLog("sms chat failed", { kind: String((err as { name?: unknown }).name) });
           return "unavailable";

@@ -86,6 +86,18 @@ public enum ActivityOutcome: String, Codable, Sendable {
     }
 }
 
+/// What a save writes beyond its title and time, as a plan card's step line says it (ADR-718): the
+/// place of an event and the notes of an event or reminder, each in full and in the user's words.
+/// Empty when there is neither, so a step without them reads as it always did.
+enum WrittenFields {
+    static func line(place: String? = nil, notes: String? = nil) -> String {
+        var text = ""
+        if let place, !place.isEmpty { text += " · place “\(place)”" }
+        if let notes, !notes.isEmpty { text += " · notes “\(notes)”" }
+        return text
+    }
+}
+
 /// What the agent asked for, before anything happened.
 public struct ActivityRequest: Equatable, Sendable {
     public let app: ActivityApp
@@ -165,15 +177,19 @@ public struct ActivityRequest: Equatable, Sendable {
         case .createCalendarEvent(let draft):
             let time = draft.allDay ? "\(when(draft.start, hasTime: false)), all day" : when(draft.start, hasTime: true)
             let repeats = draft.repeats.map { " · repeats \($0.text)" } ?? ""
+            let kept = "“\(draft.title)” · \(time)\(repeats)"
+            // ADR-718: the save also writes the place and the notes, so the plan card's step names them in
+            // full; the 30-day log keeps what it always kept.
             return ActivityRequest(
-                app: .calendar, title: "Add event", detail: "“\(draft.title)” · \(time)\(repeats)", isLookup: false,
-                operationKey: EventIdempotency.key(draft))
+                app: .calendar, title: "Add event", detail: kept + WrittenFields.line(place: draft.location, notes: draft.notes),
+                logDetail: kept, isLookup: false, operationKey: EventIdempotency.key(draft))
         case .createReminder(let draft):
             let due = draft.due.map { " · due \(ReminderText.due($0))" } ?? ""
             let repeats = draft.repeats.map { " · repeats \($0.text)" } ?? ""
+            let kept = "“\(draft.title)”\(due)\(repeats)"
             return ActivityRequest(
-                app: .reminders, title: "Add reminder", detail: "“\(draft.title)”\(due)\(repeats)", isLookup: false,
-                reminderKey: ReminderWrite(draft).key)
+                app: .reminders, title: "Add reminder", detail: kept + WrittenFields.line(notes: draft.notes),
+                logDetail: kept, isLookup: false, reminderKey: ReminderWrite(draft).key)
         case .remindAboutNote(let draft):
             let target: String
             switch draft.target {

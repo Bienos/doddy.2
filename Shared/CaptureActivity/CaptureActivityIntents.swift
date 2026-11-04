@@ -94,6 +94,9 @@ struct ResumeDoddyRecordingIntent: LiveActivityIntent {
     static var description: IntentDescription {
         IntentDescription("Carries on a paused or interrupted recording.")
     }
+    /// Starts the microphone again, so not from a locked iPhone (ADR-724). Stop and Pause stay open to
+    /// anyone: a recording must always be stoppable, and Pause only turns the microphone off.
+    static let authenticationPolicy: IntentAuthenticationPolicy = .requiresAuthentication
 
     #if compiler(>=6.4)
     @available(iOS 27.0, *)

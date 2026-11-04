@@ -5,6 +5,7 @@ import { connect } from "node:net";
 import { test } from "node:test";
 import {
   handleVoiceAuthRequest,
+  clientAddress,
   createVoiceAuthStore,
   VoiceAuthStoreUnavailable,
   signAccessToken,
@@ -25,7 +26,10 @@ const ENV = {
   APPLE_BUNDLE_ID: "com.bienos.doddy2.dev", DODDY_SESSION_SIGNING_KEY: SIGNING_KEY,
   OPENAI_API_KEY: "openai-test-server-secret", ELEVENLABS_API_KEY: "elevenlabs-test-server-secret",
   ELEVENLABS_AGENT_ID: "agent_test",
+  // Vercel sets this itself; the caller's address is only trusted from Vercel's header (ADR-712).
+  VERCEL: "1",
 };
+const CALLER = "203.0.113.7";
 
 // A Sign in with Apple key, as the owner would make one in the Apple Developer account (ADR-524).
 const APPLE_KEY = generateKeyPairSync("ec", { namedCurve: "P-256" });
@@ -41,9 +45,16 @@ function fakeStore() {
   const refresh = new Map();
   const nonces = new Set();
   const limits = new Map();
+  const signIns = new Map();
   const appleTokens = new Map();
+  /** Ends a session the way the Redis scripts do: the record and both remembered refresh hashes. */
+  const endSession = (session) => {
+    sessions.delete(session.sessionId);
+    refresh.delete(session.refreshHash);
+    if (session.previousRefreshHash) refresh.delete(session.previousRefreshHash);
+  };
   return {
-    sessions, refresh, nonces, appleTokens,
+    sessions, refresh, nonces, appleTokens, signIns,
     async setAppleToken(userId, sealed) { appleTokens.set(userId, sealed); },
     async getAppleToken(userId) { return appleTokens.get(userId) ?? null; },
     async createSession(input) {
@@ -55,38 +66,55 @@ function fakeStore() {
     },
     async getRefresh(hash) { return refresh.get(hash) ?? null; },
     async getSession(id) { return sessions.get(id) ?? null; },
+    // Same contract as the Redis script: the swapped-out hash stays as a marked record; showing it
+    // again ends the session. Only the latest swapped-out hash is remembered.
     async rotateRefreshSession(oldHash, newHash, prior) {
       const current = refresh.get(oldHash);
       if (!current || current.userId !== prior.userId || current.sessionId !== prior.sessionId) return null;
       const session = sessions.get(prior.sessionId);
       if (!session) return null;
-      refresh.delete(oldHash);
-      refresh.set(newHash, current);
-      sessions.set(prior.sessionId, { ...session, refreshHash: newHash });
+      if (current.used) {
+        endSession(session);
+        return { reused: true };
+      }
+      if (session.previousRefreshHash) refresh.delete(session.previousRefreshHash);
+      refresh.set(newHash, { userId: current.userId, sessionId: current.sessionId });
+      refresh.set(oldHash, { ...current, used: true });
+      sessions.set(prior.sessionId, { ...session, refreshHash: newHash, previousRefreshHash: oldHash });
       return sessions.get(prior.sessionId);
     },
-    async hitLimits(userId, perLimit, globalLimit) {
-      // Same rule as the Redis script: a user over their own limit doesn't move the global count.
-      const key = `${userId}:per`;
-      const per = (limits.get(key) ?? 0) + 1;
-      limits.set(key, per);
-      const global = per > perLimit ? (limits.get("global") ?? 0) : (limits.get("global") ?? 0) + 1;
-      limits.set("global", global);
-      return { allowed: per <= perLimit && global <= globalLimit, retryAfterSeconds: 60 };
+    async hitLimits(userId, perLimit, globalLimit, _now, dailyLimit = 150) {
+      // Same rule as the Redis script: only an issued token counts, so a refused request never moves
+      // the global count, and a refusal for a full global budget never uses the account's allowance.
+      const hour = limits.get(`${userId}:hour`) ?? 0;
+      const day = limits.get(`${userId}:day`) ?? 0;
+      const global = limits.get("global") ?? 0;
+      const limit = hour >= perLimit ? "user_hour" : day >= dailyLimit ? "user_day" : global >= globalLimit ? "global" : null;
+      if (limit) return { allowed: false, limit, retryAfterSeconds: 60 };
+      limits.set(`${userId}:hour`, hour + 1);
+      limits.set(`${userId}:day`, day + 1);
+      limits.set("global", global + 1);
+      return { allowed: true, limit: null, retryAfterSeconds: 60 };
+    },
+    // Same rule as the Redis script. The test clock stands still, so hour and day never roll over.
+    async hitSignInLimits(bucket, perHour, perDay) {
+      const entry = signIns.get(bucket) ?? { hour: 0, day: 0 };
+      const limit = entry.hour >= perHour ? "client_hour" : entry.day >= perDay ? "client_day" : null;
+      if (limit) return { allowed: false, limit, retryAfterSeconds: limit === "client_day" ? 3_600 : 60 };
+      signIns.set(bucket, { hour: entry.hour + 1, day: entry.day + 1 });
+      return { allowed: true, limit: null, retryAfterSeconds: 60 };
     },
     async revokeSession(id, userId) {
       const session = sessions.get(id);
       if (!session || session.userId !== userId) return 0;
-      sessions.delete(id);
-      refresh.delete(session.refreshHash);
+      endSession(session);
       return 1;
     },
     async deleteAccount(userId) {
       let deleted = 0;
-      for (const [id, session] of sessions) {
+      for (const session of [...sessions.values()]) {
         if (session.userId === userId) {
-          sessions.delete(id);
-          refresh.delete(session.refreshHash);
+          endSession(session);
           deleted += 1;
         }
       }
@@ -96,11 +124,12 @@ function fakeStore() {
   };
 }
 
-function request(action, body = {}, authorization) {
+function request(action, body = {}, authorization, headers = { "x-vercel-forwarded-for": CALLER }) {
   return new Request("https://example.test/api/voice-auth", {
     method: "POST",
     headers: {
       "content-type": "application/json",
+      ...headers,
       ...(authorization ? { authorization: `Bearer ${authorization}` } : {}),
     },
     body: JSON.stringify({ action, ...(action === "sign-in" ? { provider: "openai" } : {}), ...body }),
@@ -184,6 +213,45 @@ test("refresh rotates the refresh token and rejects reuse of the old token", asy
   const replay = await run(request("refresh", { refreshToken: signedIn.body.refreshToken }), { store });
   assert.equal(replay.response.status, 401);
   assert.deepEqual(replay.body, { error: "session_expired" });
+  // A swapped-out token coming back means it was copied (ADR-712): the whole session ends, so the
+  // newest refresh token and the access token stop working too.
+  assert.equal(store.sessions.size, 0, "the session is revoked");
+  assert.equal(store.refresh.size, 0, "no refresh token of it is left");
+  const newest = await run(request("refresh", { refreshToken: rotated.body.refreshToken }), { store });
+  assert.equal(newest.response.status, 401);
+  const access = await run(request("sign-out", {}, rotated.body.accessToken), { store });
+  assert.equal(access.response.status, 401, "the access token no longer maps to a session");
+});
+
+test("reusing a swapped-out refresh token ends the session, and is the same 401 as any dead token", async () => {
+  const store = fakeStore();
+  const other = await run(request("sign-in", { identityToken: "id-other", rawNonce: "O".repeat(43) }), {
+    store, verifyAppleIdentityToken: async (_t, rawNonce) => ({ sub: "someone-else", nonce: rawNonce }),
+  });
+  const signedIn = await run(request("sign-in", { identityToken: "apple-id-token", rawNonce: NONCE }), { store });
+  const first = await run(request("refresh", { refreshToken: signedIn.body.refreshToken }), { store });
+  // Normal rotation keeps working, several times in a row, and leaves nothing behind but the latest swapped-out hash.
+  const second = await run(request("refresh", { refreshToken: first.body.refreshToken }), { store });
+  const third = await run(request("refresh", { refreshToken: second.body.refreshToken }), { store });
+  for (const step of [first, second, third]) assert.equal(step.response.status, 200);
+  assert.equal(store.sessions.size, 2);
+  assert.equal(store.refresh.size, 2 + 1, "one current hash per session, plus the latest swapped-out one");
+
+  const unknown = await run(request("refresh", { refreshToken: "never-issued-".padEnd(43, "x") }), { store });
+  assert.equal(store.sessions.size, 2, "a token nobody ever held ends nothing");
+  const replay = await run(request("refresh", { refreshToken: second.body.refreshToken }), { store });
+  assert.equal(replay.response.status, 401);
+  assert.deepEqual(replay.body, unknown.body, "the caller can't tell reuse from any other invalid token");
+  assert.equal(replay.response.headers.get("cache-control"), unknown.response.headers.get("cache-control"));
+  assert.equal(replay.logs[0].reuse, true, "the content-free log line says it happened");
+  assert.equal(unknown.logs[0].reuse, undefined);
+  assert.ok(!JSON.stringify(replay.logs).includes(second.body.refreshToken));
+  // That session and every token of it are gone; someone else's session is untouched.
+  assert.equal(store.sessions.size, 1);
+  const dead = await run(request("refresh", { refreshToken: third.body.refreshToken }), { store });
+  assert.equal(dead.response.status, 401);
+  const alive = await run(request("refresh", { refreshToken: other.body.refreshToken }), { store });
+  assert.equal(alive.response.status, 200);
 });
 
 test("sign-out revokes the refresh session and the current access token", async () => {
@@ -460,6 +528,145 @@ test("an unknown Apple key ID fetches Apple's keys at most once every 30 seconds
   assert.equal(fetches, 2, "after 30 s an unknown key ID may fetch again");
 });
 
+// ADR-712: how many accounts one caller can make is limited per caller address.
+const nonceFor = (n) => String(n).padStart(43, "n");
+const from = (address) => ({ "x-vercel-forwarded-for": address });
+async function signInAs(address, n, options = {}) {
+  return run(request("sign-in", { identityToken: `id-${n}`, rawNonce: nonceFor(n) }, undefined, address === null ? {} : from(address)), {
+    verifyAppleIdentityToken: async (_token, rawNonce) => ({ sub: `apple-sub-${n}`, nonce: rawNonce }), ...options,
+  });
+}
+
+test("sign-ins are limited per caller address, refresh and sign-out are not, and the address is never stored or logged", async () => {
+  const store = fakeStore();
+  const granted = [];
+  for (let n = 1; n <= 10; n += 1) {
+    const result = await signInAs("198.51.100.1", n, { store });
+    assert.equal(result.response.status, 200, `sign-in ${n}`);
+    granted.push(result);
+  }
+  const refused = await signInAs("198.51.100.1", 11, { store });
+  assert.equal(refused.response.status, 429);
+  assert.deepEqual(refused.body, { error: "rate_limited" });
+  assert.match(refused.response.headers.get("retry-after"), /^[1-9][0-9]*$/);
+  assert.equal(store.sessions.size, 10, "no account is made for a refused sign-in");
+  assert.equal(store.nonces.size, 10, "and its Apple token is not used up");
+  assert.deepEqual(refused.logs[0], { event: "voice_auth", action: "sign-in", status: 429, error: "rate_limited", ms: 0, limit: "client_hour" });
+
+  // Someone else is not affected, and neither is anything that isn't a sign-in.
+  assert.equal((await signInAs("198.51.100.2", 12, { store })).response.status, 200);
+  const refreshed = await run(request("refresh", { refreshToken: granted[0].body.refreshToken }, undefined, from("198.51.100.1")), { store });
+  assert.equal(refreshed.response.status, 200);
+  const signedOut = await run(request("sign-out", {}, granted[1].body.accessToken, from("198.51.100.1")), { store });
+  assert.equal(signedOut.response.status, 200);
+  assert.equal((await signInAs("198.51.100.1", 13, { store })).response.status, 429, "still refused");
+
+  const seen = JSON.stringify([...store.signIns.keys(), ...refused.logs]);
+  assert.ok(!seen.includes("198.51.100"), "the store holds a keyed hash, the log holds nothing about the caller");
+  for (const bucket of store.signIns.keys()) assert.match(bucket, /^[0-9a-f]{64}$/);
+});
+
+test("sign-ins have a daily limit per caller address too, and both limits can be set", async () => {
+  const daily = { ...ENV, DODDY_SIGNINS_PER_CLIENT_HOUR: "100", DODDY_SIGNINS_PER_CLIENT_DAY: "3" };
+  const store = fakeStore();
+  for (let n = 1; n <= 3; n += 1) assert.equal((await signInAs("198.51.100.3", n, { store, environment: daily })).response.status, 200);
+  const refused = await signInAs("198.51.100.3", 4, { store, environment: daily });
+  assert.equal(refused.response.status, 429);
+  assert.equal(refused.logs[0].limit, "client_day");
+
+  const hourly = { ...ENV, DODDY_SIGNINS_PER_CLIENT_HOUR: "2" };
+  const other = fakeStore();
+  assert.equal((await signInAs("198.51.100.4", 1, { store: other, environment: hourly })).response.status, 200);
+  assert.equal((await signInAs("198.51.100.4", 2, { store: other, environment: hourly })).response.status, 200);
+  assert.equal((await signInAs("198.51.100.4", 3, { store: other, environment: hourly })).response.status, 429);
+});
+
+test("an invalid sign-in limit setting stops new sign-ins, and only those", async () => {
+  const store = fakeStore();
+  const signedIn = await signInAs("198.51.100.5", 1, { store });
+  for (const bad of ["ten", "0", "-1", "1e3", "10001", "2.5"]) {
+    for (const name of ["DODDY_SIGNINS_PER_CLIENT_HOUR", "DODDY_SIGNINS_PER_CLIENT_DAY"]) {
+      const environment = { ...ENV, [name]: bad };
+      const refused = await signInAs("198.51.100.5", 2, { store, environment });
+      assert.equal(refused.response.status, 503, `${name}=${bad}`);
+      assert.deepEqual(refused.body, { error: "server_not_configured" });
+      const refreshed = await run(request("refresh", { refreshToken: signedIn.body.refreshToken }), { store, environment });
+      assert.equal(refreshed.response.status, 200, "existing sessions keep working");
+      signedIn.body.refreshToken = refreshed.body.refreshToken;
+    }
+  }
+  assert.equal(store.sessions.size, 1, "nothing was created by a refused sign-in");
+});
+
+test("a sign-in the throttle can't check is refused, never let through", async () => {
+  const store = { ...fakeStore(), async hitSignInLimits() { throw new VoiceAuthStoreUnavailable(); } };
+  const result = await signInAs("198.51.100.6", 1, { store });
+  assert.equal(result.response.status, 503);
+  assert.deepEqual(result.body, { error: "server_not_configured" });
+  assert.equal(store.sessions.size, 0);
+  const noMethod = { ...fakeStore(), hitSignInLimits: undefined };
+  assert.equal((await signInAs("198.51.100.6", 2, { store: noMethod })).response.status, 503);
+});
+
+test("a sign-in only counts once Apple has vouched for it", async () => {
+  const store = fakeStore();
+  for (let n = 1; n <= 25; n += 1) {
+    const junk = await signInAs("198.51.100.7", n, { store, verifyAppleIdentityToken: async () => null });
+    assert.equal(junk.response.status, 401);
+  }
+  assert.equal(store.signIns.size, 0, "unverified requests use up nobody's allowance");
+  assert.equal((await signInAs("198.51.100.7", 26, { store })).response.status, 200);
+});
+
+test("only the address Vercel sets is believed; otherwise every caller shares one bucket with a higher limit", async () => {
+  const environment = { ...ENV, DODDY_SIGNINS_PER_CLIENT_HOUR: "2" };
+  // Headers a caller can set on any host are ignored: spoofing them buys no new allowance.
+  const store = fakeStore();
+  for (let n = 1; n <= 20; n += 1) {
+    const result = await run(request("sign-in", { identityToken: `id-${n}`, rawNonce: nonceFor(n) }, undefined, {
+      "x-forwarded-for": `192.0.2.${n}`, "x-real-ip": `192.0.2.${n}`, forwarded: `for=192.0.2.${n}`,
+    }), { store, environment, verifyAppleIdentityToken: async (_t, rawNonce) => ({ sub: `s-${n}`, nonce: rawNonce }) });
+    assert.equal(result.response.status, 200, `the shared bucket allows ten times the limit (${n})`);
+    assert.equal(result.logs[0].noClientAddress, true, "and the log line says there was no address to use");
+  }
+  const spoofed = await run(request("sign-in", { identityToken: "id-21", rawNonce: nonceFor(21) }, undefined, { "x-forwarded-for": "192.0.2.99" }), {
+    store, environment, verifyAppleIdentityToken: async (_t, rawNonce) => ({ sub: "s-21", nonce: rawNonce }),
+  });
+  assert.equal(spoofed.response.status, 429);
+  assert.equal(spoofed.logs[0].noClientAddress, true);
+  assert.equal(store.signIns.size, 1, "one shared bucket");
+
+  // Off Vercel even that header is whatever the caller sends, so it is not believed either.
+  const elsewhere = fakeStore();
+  const offVercel = { ...environment, VERCEL: undefined };
+  for (let n = 1; n <= 20; n += 1) {
+    assert.equal((await signInAs(`192.0.2.${n}`, n, { store: elsewhere, environment: offVercel })).response.status, 200);
+  }
+  assert.equal((await signInAs("192.0.2.200", 21, { store: elsewhere, environment: offVercel })).response.status, 429);
+
+  // On Vercel but with something that isn't an address: the same shared bucket.
+  const junk = fakeStore();
+  for (let n = 1; n <= 20; n += 1) assert.equal((await signInAs("not-an-address", n, { store: junk, environment })).response.status, 200);
+  assert.equal((await signInAs("not-an-address", 21, { store: junk, environment })).response.status, 429);
+});
+
+test("the caller's address: first of Vercel's list, an IPv4 behind IPv6 is IPv4, other IPv6 counts as its /64", () => {
+  const vercel = { VERCEL: "1" };
+  const addressOf = (header, env = vercel) => clientAddress(new Request("https://example.test/", { headers: header === null ? {} : { "x-vercel-forwarded-for": header } }), env);
+  assert.equal(addressOf("203.0.113.9"), "203.0.113.9");
+  assert.equal(addressOf("203.0.113.9, 10.0.0.1"), "203.0.113.9");
+  assert.equal(addressOf("::ffff:203.0.113.9"), "203.0.113.9");
+  assert.equal(addressOf("2001:db8:1:2::1"), addressOf("2001:DB8:1:2:ffff:ffff:ffff:ffff"), "one /64 is one caller");
+  assert.equal(addressOf("2001:db8:1:2::1"), "2001:db8:1:2::/64");
+  assert.notEqual(addressOf("2001:db8:1:2::1"), addressOf("2001:db8:1:3::1"));
+  assert.equal(addressOf(null), "unknown");
+  assert.equal(addressOf(""), "unknown");
+  assert.equal(addressOf("203.0.113.9", {}), "unknown", "not believed off Vercel");
+  assert.equal(addressOf("203.0.113.9", { VERCEL: "" }), "unknown");
+  assert.equal(addressOf("203.0.113.999"), "unknown");
+  assert.equal(addressOf("<script>"), "unknown");
+});
+
 // The limit script itself, run on a real Redis when one is installed (CI may not have it).
 const hasRedis = spawnSync("redis-server", ["--version"]).status === 0;
 
@@ -497,13 +704,20 @@ async function localRedisFetch(port) {
     }
     throw new Error(`unexpected reply ${type}`);
   };
-  const send = async (command) => {
+  const sendNow = async (command) => {
     socket.write(`*${command.length}\r\n${command.map((part) => `$${Buffer.byteLength(part)}\r\n${part}\r\n`).join("")}`);
     for (;;) {
       const reply = parse(0);
       if (reply) { buffer = buffer.subarray(reply.next); return reply.value; }
       await new Promise((resolve) => { waiting = resolve; });
     }
+  };
+  // One command at a time on the one connection, so two requests running at once can't read each other's replies.
+  let queue = Promise.resolve();
+  const send = (command) => {
+    const turn = queue.then(() => sendNow(command));
+    queue = turn.catch(() => {});
+    return turn;
   };
   const fetch = async (_url, init) => {
     const results = [];
@@ -513,7 +727,7 @@ async function localRedisFetch(port) {
     }
     return Response.json(results);
   };
-  return { fetch, close: () => socket.destroy() };
+  return { fetch, send, close: () => socket.destroy() };
 }
 
 test("the Redis limit script: a user over their own limit doesn't use up the global one", { skip: !hasRedis && "redis-server not installed" }, async () => {
@@ -541,4 +755,158 @@ test("the Redis limit script: a user over their own limit doesn't use up the glo
   } finally {
     server.kill();
   }
+});
+
+/** A throwaway local redis-server and a store on it; `command` runs one raw Redis command. */
+async function withLocalRedis(body) {
+  const port = 20_000 + Math.floor(Math.random() * 20_000);
+  const server = spawn("redis-server", ["--port", String(port), "--save", "", "--appendonly", "no"], { stdio: "ignore" });
+  let client;
+  try {
+    for (let i = 0; i < 50 && !client; i += 1) {
+      try { client = await localRedisFetch(port); } catch { await new Promise((resolve) => setTimeout(resolve, 50)); }
+    }
+    assert.ok(client, "local redis-server started");
+    const store = createVoiceAuthStore({ url: "https://redis.example.test", token: "t", fetch: client.fetch });
+    await body({ store, command: (...parts) => client.send(parts.map(String)) });
+  } finally {
+    client?.close();
+    server.kill();
+  }
+}
+const REDIS_SKIP = !hasRedis && "redis-server not installed";
+const HOUR = 3_600_000;
+
+// ADR-712: the daily cap sits in the same step as the hourly and global limits.
+test("the Redis limit script: a daily cap per account, and a refusal never uses up shared budget or the account's own allowance", { skip: REDIS_SKIP }, async () => {
+  await withLocalRedis(async ({ store, command }) => {
+    // 5 an hour, 7 a day, 100 for everyone.
+    for (let i = 1; i <= 5; i += 1) {
+      const granted = await store.hitLimits("busy", 5, 100, NOW, 7);
+      assert.deepEqual([granted.allowed, granted.limit, granted.perUserCount, granted.dailyCount, granted.globalCount], [true, null, i, i, i]);
+    }
+    for (let i = 0; i < 20; i += 1) {
+      const refused = await store.hitLimits("busy", 5, 100, NOW, 7);
+      assert.deepEqual([refused.allowed, refused.limit, refused.perUserCount, refused.dailyCount, refused.globalCount], [false, "user_hour", 5, 5, 5],
+        "refused calls move no counter, the global one included");
+      assert.equal(refused.retryAfterSeconds, 3_600);
+    }
+    // Next hour: two more fit in the day, then the daily cap says no even though the hour has room.
+    for (let i = 6; i <= 7; i += 1) assert.equal((await store.hitLimits("busy", 5, 100, NOW + HOUR, 7)).allowed, true);
+    for (let i = 0; i < 20; i += 1) {
+      const refused = await store.hitLimits("busy", 5, 100, NOW + HOUR, 7);
+      assert.deepEqual([refused.allowed, refused.limit, refused.dailyCount], [false, "user_day", 7]);
+      assert.equal(refused.retryAfterSeconds, 11 * 3_600, "until the next UTC midnight");
+    }
+    // The shared budget only ever saw the 7 issued tokens, so others still get theirs.
+    const other = await store.hitLimits("someone-else", 5, 100, NOW + HOUR, 7);
+    assert.deepEqual([other.allowed, other.globalCount], [true, 3], "this hour's global count: the account's 2 issued tokens, plus this one");
+    const day = Math.floor(NOW / 86_400_000);
+    assert.equal(await command("GET", `doddy:voice:v1:limit-user-day:busy:${day}`), "7");
+    const dayTtl = await command("TTL", `doddy:voice:v1:limit-user-day:busy:${day}`);
+    assert.ok(dayTtl > 3_660 && dayTtl <= 90_000, `the daily counter lives about a day, not an hour (${dayTtl})`);
+    const hourTtl = await command("TTL", `doddy:voice:v1:limit-user:busy:${Math.floor(NOW / HOUR)}`);
+    assert.ok(hourTtl > 0 && hourTtl <= 3_660);
+  });
+});
+
+test("the Redis limit script: a full global budget refuses without costing the account anything", { skip: REDIS_SKIP }, async () => {
+  await withLocalRedis(async ({ store }) => {
+    assert.equal((await store.hitLimits("a", 10, 2, NOW, 10)).allowed, true);
+    assert.equal((await store.hitLimits("b", 10, 2, NOW, 10)).allowed, true);
+    for (let i = 0; i < 10; i += 1) {
+      const refused = await store.hitLimits("c", 10, 2, NOW, 10);
+      assert.deepEqual([refused.allowed, refused.limit, refused.perUserCount, refused.dailyCount, refused.globalCount], [false, "global", 0, 0, 2]);
+    }
+    // When the hour's budget starts again, "c" has all of its own allowance left: one token used, not eleven.
+    const later = await store.hitLimits("c", 10, 2, NOW + HOUR, 10);
+    assert.deepEqual([later.allowed, later.dailyCount], [true, 1]);
+  });
+});
+
+test("the Redis sign-in script: per caller, per hour and per day, counting only sign-ins that were let through", { skip: REDIS_SKIP }, async () => {
+  await withLocalRedis(async ({ store, command }) => {
+    for (let i = 1; i <= 3; i += 1) {
+      const granted = await store.hitSignInLimits("caller-a", 3, 5, NOW);
+      assert.deepEqual([granted.allowed, granted.limit, granted.hourCount, granted.dayCount], [true, null, i, i]);
+    }
+    for (let i = 0; i < 20; i += 1) {
+      const refused = await store.hitSignInLimits("caller-a", 3, 5, NOW);
+      assert.deepEqual([refused.allowed, refused.limit, refused.hourCount, refused.dayCount], [false, "client_hour", 3, 3], "refusals don't count");
+      assert.equal(refused.retryAfterSeconds, 3_600);
+    }
+    assert.equal((await store.hitSignInLimits("caller-b", 3, 5, NOW)).allowed, true, "another caller has its own allowance");
+    for (let i = 4; i <= 5; i += 1) assert.equal((await store.hitSignInLimits("caller-a", 3, 5, NOW + HOUR)).allowed, true);
+    const dayRefused = await store.hitSignInLimits("caller-a", 3, 5, NOW + HOUR);
+    assert.deepEqual([dayRefused.allowed, dayRefused.limit, dayRefused.dayCount], [false, "client_day", 5]);
+    assert.equal(dayRefused.retryAfterSeconds, 11 * 3_600);
+    const dayTtl = await command("TTL", `doddy:voice:v1:limit-signin-day:caller-a:${Math.floor(NOW / 86_400_000)}`);
+    assert.ok(dayTtl > 3_660 && dayTtl <= 90_000, `the daily counter lives about a day (${dayTtl})`);
+    // A script that can't be run is "unavailable", never "allowed".
+    await assert.rejects(() => store.hitSignInLimits("caller-a", "three", 5, NOW), VoiceAuthStoreUnavailable);
+  });
+});
+
+test("the Redis refresh script: a swapped-out token that comes back ends the session, and only the latest one is remembered", { skip: REDIS_SKIP }, async () => {
+  await withLocalRedis(async ({ store, command }) => {
+    const options = { store, verifyAppleIdentityToken: async (_t, rawNonce) => ({ sub: "apple-sub-redis", nonce: rawNonce }) };
+    const refreshKeys = async () => (await command("KEYS", "doddy:voice:v1:refresh:*")).length;
+    const signedIn = await run(request("sign-in", { identityToken: "id", rawNonce: NONCE }), options);
+    assert.equal(signedIn.response.status, 200);
+    const first = await run(request("refresh", { refreshToken: signedIn.body.refreshToken }), options);
+    const second = await run(request("refresh", { refreshToken: first.body.refreshToken }), options);
+    assert.equal(second.response.status, 200);
+    assert.equal(await refreshKeys(), 2, "the current token and the latest swapped-out one");
+    const [sessionKey] = await command("KEYS", "doddy:voice:v1:session:*");
+    const hashOf = (token) => createHash("sha256").update(token).digest("hex");
+    const tombstone = `doddy:voice:v1:refresh:${hashOf(first.body.refreshToken)}`;
+    assert.equal(JSON.parse(await command("GET", tombstone)).used, true);
+    const sessionTtl = await command("TTL", sessionKey);
+    assert.ok(Math.abs(sessionTtl - await command("TTL", tombstone)) <= 2, "the remembered hash lives as long as the session");
+    assert.ok(sessionTtl > 29 * 86_400);
+
+    // Two swaps back is no longer remembered: unknown, so the same plain 401 and nothing ends.
+    const old = await run(request("refresh", { refreshToken: signedIn.body.refreshToken }), options);
+    assert.equal(old.response.status, 401);
+    assert.equal(old.logs[0].reuse, undefined);
+    const third = await run(request("refresh", { refreshToken: second.body.refreshToken }), options);
+    assert.equal(third.response.status, 200, "the session lived on");
+
+    // The latest swapped-out token coming back ends everything, in one step.
+    const replay = await run(request("refresh", { refreshToken: second.body.refreshToken }), options);
+    assert.equal(replay.response.status, 401);
+    assert.deepEqual(replay.body, { error: "session_expired" });
+    assert.equal(replay.logs[0].reuse, true);
+    assert.equal(await command("GET", sessionKey), null);
+    assert.equal(await refreshKeys(), 0, "no refresh record of that session is left");
+    assert.equal((await run(request("refresh", { refreshToken: third.body.refreshToken }), options)).response.status, 401);
+    assert.equal((await run(request("sign-out", {}, third.body.accessToken), options)).response.status, 401, "the access token is dead too");
+  });
+});
+
+test("the Redis refresh script: two refreshes with the same token at once leave one winner and no session", { skip: REDIS_SKIP }, async () => {
+  await withLocalRedis(async ({ store, command }) => {
+    const options = { store, verifyAppleIdentityToken: async (_t, rawNonce) => ({ sub: "apple-sub-race", nonce: rawNonce }) };
+    const signedIn = await run(request("sign-in", { identityToken: "id", rawNonce: NONCE }), options);
+    const both = await Promise.all([1, 2].map(() => run(request("refresh", { refreshToken: signedIn.body.refreshToken }), options)));
+    assert.deepEqual(both.map((reply) => reply.response.status).sort(), [200, 401]);
+    assert.equal((await command("KEYS", "doddy:voice:v1:session:*")).length, 0, "the second showing of one token ended the session");
+    assert.equal((await command("KEYS", "doddy:voice:v1:refresh:*")).length, 0);
+  });
+});
+
+test("the Redis scripts: sign-out and account deletion also remove the remembered swapped-out token", { skip: REDIS_SKIP }, async () => {
+  await withLocalRedis(async ({ store, command }) => {
+    const options = { store, verifyAppleIdentityToken: async (_t, rawNonce) => ({ sub: "apple-sub-clean", nonce: rawNonce }) };
+    const keys = async () => (await command("KEYS", "doddy:voice:v1:refresh:*")).length;
+    for (const [action, nonce] of [["sign-out", "S".repeat(43)], ["delete-account", "D".repeat(43)]]) {
+      const signedIn = await run(request("sign-in", { identityToken: "id", rawNonce: nonce }), options);
+      const rotated = await run(request("refresh", { refreshToken: signedIn.body.refreshToken }), options);
+      assert.equal(rotated.response.status, 200);
+      assert.equal(await keys(), 2, `${action}: current and swapped-out`);
+      const ended = await run(request(action, {}, rotated.body.accessToken), options);
+      assert.equal(ended.response.status, 200);
+      assert.equal(await keys(), 0, `${action} leaves no refresh record behind`);
+    }
+  });
 });
