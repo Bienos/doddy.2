@@ -174,7 +174,7 @@ services:
       - key: ELEVENLABS_API_KEY
         sync: false
       # ADR-706: required in production. Without it texts, pushes and digests are not queued (they would be
-      # stored unencrypted). Set it on BOTH doddy-messaging and the worker before deploying.
+      # stored unencrypted). Set it on BOTH doddy-messaging and the worker before deploying (the live setup is one service with the worker inside it).
       - key: MEMORY_ENCRYPTION_KEY
         sync: false
       - key: ELEVENLABS_TOOL_SECRET
@@ -201,7 +201,7 @@ services:
       # creation per address/day and per server/day, a separate small daily pool for new accounts, a research
       # budget per errand, the countries that may get codes, texts and calls (PHONE_ALLOWED_COUNTRY_CODES), daily
       # text/call/verification caps and TASK_CALL_BLOCKED_NUMBERS. Names, defaults and meaning: server/messaging/.env.example.
-      # Web and worker read the same values: if you change one, set it on both services.
+      # Web and worker read the same values: with a separate worker, set a changed one on both services (the live setup is one service).
       - key: TASK_CALLS_KILL_SWITCH # "1" stops every call by Doddy at once
         value: "0"
       - key: CALL_RECORDING_NOTICE # off until the owner confirms the legal basis
