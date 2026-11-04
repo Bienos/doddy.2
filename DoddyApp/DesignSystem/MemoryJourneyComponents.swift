@@ -190,9 +190,9 @@ struct CharacterArtImage: View {
         Image(decorative: assetName)
             .resizable().scaledToFit()
             .frame(height: height)
-            .padding(.horizontal, colorScheme == .dark ? 12 : 0)
-            .background(colorScheme == .dark ? Color(red: 245/255, green: 239/255, blue: 226/255) : .clear,
-                        in: RoundedRectangle(cornerRadius: 24))
+            // The pictures are transparent. In dark appearance the black outline gets the island's thin
+            // cream edge, as Whole Doddy does, instead of a cream card behind him.
+            .islandCreamEdge(colorScheme == .dark)
             .accessibilityHidden(true)
     }
 }

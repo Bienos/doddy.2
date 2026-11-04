@@ -121,7 +121,7 @@ enum AppTab: Hashable {
 
 struct RootView: View {
     @Environment(MemoryStore.self) private var store
-    @AppStorage(PreferenceKey.appearance) private var appearanceRaw = AppearancePreference.system.rawValue
+    @AppStorage(PreferenceKey.appearance) private var appearanceRaw = AppearancePreference.default.rawValue
     @Environment(ProfileStore.self) private var profiles
     @State private var selectedTab: AppTab = .home
     @State private var showFind = false
@@ -167,7 +167,8 @@ struct RootView: View {
     @AppStorage(PreferenceKey.legalAcceptance) private var legalRecordData: Data?
 
     private var colorScheme: ColorScheme? {
-        switch AppearancePreference(rawValue: appearanceRaw) ?? .system {
+        // Light until the person picks otherwise in Settings, including on the welcome, sign-in and terms covers.
+        switch AppearancePreference(rawValue: appearanceRaw) ?? .default {
         case .system: nil
         case .light: .light
         case .dark: .dark

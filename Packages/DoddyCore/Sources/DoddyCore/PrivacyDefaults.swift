@@ -61,4 +61,8 @@ public struct PrivacyDefaults: Equatable, Sendable {
 /// User-selectable appearance. Persisted by the app as a UI preference only.
 public enum AppearancePreference: String, CaseIterable, Sendable {
     case system, light, dark
+
+    /// What the app uses until the person picks something in Settings › Appearance: light, so
+    /// installing, signing in and first use look the same on every phone, whatever its system mode.
+    public static let `default`: AppearancePreference = .light
 }
